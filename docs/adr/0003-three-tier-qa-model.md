@@ -2,7 +2,7 @@
 
 ## Decision
 
-fid ships the full three-tier quality model: validation contracts, QA plans, and QA reviews. Plans + reviews land in v0.3; contracts + assertions + outcomes + the AC↔assertion linkage + coverage reports land in v0.4. All three layers are schema-optional — a project can use any subset — but they are not optional *from fid*: they ship together as the supported quality model.
+fid ships the full three-tier quality model: validation contracts, QA plans, and QA reviews. Plans + reviews land in v0.3; contracts + assertions + required-validator rows + outcomes + the AC↔assertion linkage + coverage reports land in v0.4. All three layers are schema-optional — a project can use any subset — but they are not optional *from fid*: they ship together as the supported quality model.
 
 ## Context
 
@@ -21,8 +21,8 @@ Reference patterns: Cucumber/Gherkin (feature → scenario → step), regulated-
 
 ## Consequences
 
-- **Schema cost is real.** Six tables (`validation_contracts`, `validation_assertions`, `qa_plans`, `qa_plan_steps`, `qa_plan_step_assertions`, `val_assertion_outcomes`) plus two column additions. Maintained.
-- **Implementation order:** v0.3 ships plans + steps + AC-citing-step backbone; v0.4 ships contracts + assertions + outcomes + linkage + the three coverage/trace named reports.
+- **Schema cost is real.** Seven tables (`validation_contracts`, `validation_assertions`, `validation_assertion_validators`, `qa_plans`, `qa_plan_steps`, `qa_plan_step_assertions`, `val_assertion_outcomes`) plus two column additions. Maintained.
+- **Implementation order:** v0.3 ships plans + steps + AC-citing-step backbone; v0.4 ships contracts + assertions + required-validator rows + outcomes + linkage + the three coverage/trace named reports.
 - **Optionality is per-project, not per-tool.** §6.15 is structured so a reader who only wants ACs + ad-hoc reviews stops after the layering overview; readers who want the full pattern read on. The schema does not require contracts; the docs do not push them as default.
 - **Coverage rules only activate when both a contract and a plan are present and active for the same epic.** A project running ACs + reviews-only sees no extra friction.
 - **Future readers who land on §6.15 and wonder "why all this for a personal tracker" find their answer in this ADR.**

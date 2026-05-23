@@ -71,8 +71,8 @@ _Avoid_: "responsible role" (RACI overloaded), "assignee" (Linear-style).
 **Claim holder**:
 The role currently holding the exclusive-access lease on an entity. Stored on `claims.claimed_by`. Short-lived (minutes, TTL-bounded). A right to *advance* the work right now. Does not transfer ownership.
 
-**Expected validator**:
-The role that is *supposed to* validate a [[Validation assertion]] when verification time comes. Stored on `validation_assertions.validator_role`. A statement about a plan, not a recorded fact. The corresponding `val_assertion_outcomes.recorded_by_role` is the actor-role fact of who actually recorded the outcome.
+**Required validator**:
+A planned verifier role/evidence obligation for a [[Validation assertion]]. Stored as one or more `validation_assertion_validators` rows, each pairing the assertion with a required validator role and evidence method. A statement about a plan, not a recorded fact. The corresponding `val_assertion_outcomes.recorded_by_role` is the actor-role fact of who actually recorded the outcome.
 
 ### Raised quality signals
 

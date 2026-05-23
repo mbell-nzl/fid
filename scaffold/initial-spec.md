@@ -350,8 +350,9 @@ when that task is unblocked.
 | `qa_plan_steps` | Individual verification steps within a plan. (v0.3+) | Display IDs `QA-NN`; evidence method per step. |
 | `qa_plan_step_assertions` | Many-to-many: step ↔ assertion. (v0.4+) | A step may verify multiple assertions; assertions may have multiple covering steps. |
 | `validation_contracts` | Assertion-level spec for an epic. (v0.4+) | Authored at planning; refined by QA Lead. Optional. |
-| `validation_assertions` | Individual `VAL-NNN` assertions in a contract. (v0.4+) | Single `validator_role`; declared `evidence_method`. |
-| `val_assertion_outcomes` | Append-only outcomes per assertion. (v0.4+) | `pass` / `fail` / `carry_forward`; required evidence or rationale. |
+| `validation_assertions` | Individual `VAL-NNN` assertions in a contract. (v0.4+) | Assertion text; required validators live in `validation_assertion_validators`. |
+| `validation_assertion_validators` | Required verifier-role/evidence obligations per assertion. (v0.4+) | Allows one assertion to require Developer + QA Lead + TL + Human sign-off without duplicating the assertion. |
+| `val_assertion_outcomes` | Append-only outcomes per assertion and validator role. (v0.4+) | `pass` / `fail` / `carry_forward`; required evidence or rationale. |
 | `requirements` | PRD/TRD pointers (not copies). | `last_synced_hash` for drift detection. |
 | `decisions` | `DEC-<hash>` records. | Body in markdown; row holds metadata. |
 | `escalations` | `ESC-<hash>` records. Open or resolved. | Linked to triage / findings / decisions. |
@@ -442,7 +443,8 @@ Natural and composite keys stay natural: `requirements.id`
 `issue_labels(issue_id, label)`, `links(...)`, `claims(ref_type,
 ref_id)`, `workflow_states(...)`, `workflow_transitions(...)`,
 `workflow_transition_requires(...)`, `qa_review_task_window(...)`,
-`qa_plan_step_assertions(...)`, and `role_permissions(...)`.
+`qa_plan_step_assertions(...)`, `validation_assertion_validators(...)`,
+and `role_permissions(...)`.
 
 ```sql
 -- 6.1 Unified issues table
@@ -1217,10 +1219,11 @@ The three layers, from lightest to deepest:
    reviews cite a plan. Adds structured "how we'll verify" alongside
    "what we'll verify".
 3. **Add validation contracts** (v0.4). `validation_contracts` +
-   `validation_assertions` + `val_assertion_outcomes` capture the
-   assertion-level specification independent of task decomposition.
-   Plan steps cite assertions; ACs optionally cite assertions; per-
-   assertion outcomes feed pass/fail/carry-forward traceability.
+   `validation_assertions` + `validation_assertion_validators` +
+   `val_assertion_outcomes` capture the assertion-level specification
+   independent of task decomposition. Plan steps cite assertions; ACs
+   optionally cite assertions; per-assertion, per-validator outcomes
+   feed pass/fail/carry-forward traceability.
 
 **Layers are independently optional.** A project may use ACs only
 (coverage rules inactive); ACs + plans (plans cite ACs directly);
@@ -1274,14 +1277,22 @@ CREATE TABLE validation_assertions (
   ordinal         INTEGER NOT NULL,        -- 1, 2, 3... per contract
   display_id      TEXT NOT NULL,           -- 'VAL-001' (composed, presentation-only)
   statement       TEXT NOT NULL,           -- the assertion text
-  validator_role  TEXT NOT NULL,           -- 'qa_lead' | 'qa_reviewer' | 'tl' | 'human'
-  evidence_method TEXT,                    -- 'widget_test' | 'repository_test' |
-                                           -- 'manual_checklist' | 'screenshot' |
-                                           -- 'command' | 'source_state' | ...
   carry_forward_source TEXT,               -- prior display_id if carried forward
   out_of_scope_note TEXT,
   created_at      DATETIME,
   UNIQUE (contract_id, display_id)
+);
+
+-- Required validator/evidence obligations for an assertion.
+CREATE TABLE validation_assertion_validators (
+  assertion_id    TEXT NOT NULL REFERENCES validation_assertions(id),
+  validator_role  TEXT NOT NULL,           -- 'developer' | 'qa_reviewer' |
+                                           -- 'qa_lead' | 'tl' | 'human'
+  evidence_method TEXT NOT NULL,           -- 'widget_test' | 'repository_test' |
+                                           -- 'manual_checklist' | 'screenshot' |
+                                           -- 'command' | 'source_state' |
+                                           -- 'source_review' | ...
+  PRIMARY KEY (assertion_id, validator_role, evidence_method)
 );
 
 -- QA plan header.
@@ -1301,7 +1312,7 @@ CREATE TABLE qa_plan_steps (
   ordinal         INTEGER NOT NULL,
   display_id      TEXT NOT NULL,           -- 'QA-01' composed
   description     TEXT NOT NULL,
-  evidence_method TEXT,                    -- same enum as assertion
+  evidence_method TEXT,                    -- same enum as required validator rows
   validator_role  TEXT NOT NULL,
   UNIQUE (plan_id, display_id)
 );
@@ -1314,12 +1325,13 @@ CREATE TABLE qa_plan_step_assertions (
   PRIMARY KEY (step_id, assertion_id)
 );
 
--- Append-only outcomes: per-assertion verdict at review or wrap-up time.
+-- Append-only outcomes: per-assertion, per-validator verdict at review or wrap-up time.
 CREATE TABLE val_assertion_outcomes (
   id              TEXT PRIMARY KEY,        -- VAO-<hash> (see §6.0)
   assertion_id    TEXT NOT NULL REFERENCES validation_assertions(id),
   review_id       TEXT REFERENCES qa_reviews(id),
   outcome         TEXT NOT NULL,           -- 'pass' | 'fail' | 'carry_forward'
+  evidence_method TEXT,                    -- actual submitted evidence method
   evidence_ref    TEXT,                    -- path/commit/command-result; required when outcome='pass'
   rationale       TEXT,                    -- required when outcome='carry_forward'
   recorded_by_role TEXT NOT NULL,
@@ -1345,12 +1357,17 @@ fid enforces these invariants at plan-finalisation time
   `implements`) is referenced by at least one assertion.
 - Every assertion has at least one referencing AC OR an explicit
   `out_of_scope_note` for non-implementation-bound assertions.
-- Every assertion has at least one `qa_plan_step` covering it.
-- Every assertion has a single `validator_role`.
+- Every assertion has at least one required validator row.
+- Every required validator row has at least one linked `qa_plan_step`
+  for the same assertion with matching `validator_role` and
+  `evidence_method`.
 
-`PASS` outcomes require non-null `evidence_ref`. `CARRY_FORWARD`
-outcomes require non-null `rationale`. These are trigger-enforced
-on `val_assertion_outcomes` insert (§6.14).
+`PASS` outcomes require non-null `evidence_method` and `evidence_ref`.
+`CARRY_FORWARD` outcomes require non-null `rationale`. A required
+validator row is satisfied by a latest `PASS` outcome whose
+`assertion_id`, `recorded_by_role`, and `evidence_method` match the
+required row. These are trigger-enforced on `val_assertion_outcomes`
+insert (§6.14).
 
 #### 6.15.5 Traceability queries
 
@@ -1359,12 +1376,14 @@ Coverage and trace queries are named reports rather than ad-hoc DSL
 
 - `fid report contract-coverage <epic-id>` — gaps in coverage:
   unreferenced requirements, ACs without assertions, assertions
-  without ACs, assertions without plan steps.
+  without ACs, assertions without required validators, required
+  validators without matching plan steps.
 - `fid report assertion-trace <assertion-id>` — full trace: source
-  requirements → assertion → implementing ACs → covering plan steps
-  → recorded outcomes.
+  requirements → assertion → required validators → implementing ACs
+  → covering plan steps → recorded outcomes.
 - `fid report contract-outcomes <epic-id>` — pass/fail/carry-forward
-  rollup; the §13 step 7 wrap-up signal.
+  rollup by assertion, required validator role, and evidence method;
+  the §13 step 7 wrap-up signal.
 
 ### 6.16 Implementation stack
 
@@ -1668,7 +1687,8 @@ fid qa-plan step list <plan-id>
 fid contract get <epic-id>                           # the active contract for an epic
 fid assertion get VAL-001 --epic <epic-id>
 fid assertion list --epic <epic-id> [--validator-role qa_lead]
-fid assertion list --uncovered --epic <epic-id>      # no AC ref, no plan step, etc.
+fid assertion list --uncovered --epic <epic-id>      # no AC ref, no required validator,
+                                                     # no matching plan step, etc.
 fid outcome list --assertion VAL-001
 fid outcome list --epic <epic-id> --status fail      # epic wrap-up signal
 
@@ -1744,12 +1764,24 @@ fid qa-plan finalise <plan-id>                        # asserts coverage rules p
 fid contract create --epic <id> --by tl --body-md path
 fid contract activate <contract-id>
 fid assertion add <contract-id> \
-    --statement "Logged-in user can see their orders" \
-    --validator-role qa_lead --evidence-method widget_test
+    --statement "Logged-in user can see their orders"
+fid assertion validator add <assertion-id> \
+    --role developer --evidence-method repository_test
+fid assertion validator add <assertion-id> \
+    --role qa_lead --evidence-method widget_test
+fid assertion validator add <assertion-id> \
+    --role tl --evidence-method source_review
+fid assertion validator add <assertion-id> \
+    --role human --evidence-method manual_checklist
 fid assertion link-ac <assertion-id> <ac-id>          # link an AC to the assertion it implements
 fid outcome record <assertion-id> --review <review-id> \
-    --status pass --evidence-ref "test/orders_test.dart::shows_orders" \
+    --status pass --evidence-method widget_test \
+    --evidence-ref "test/orders_test.dart::shows_orders" \
     --by qa_lead
+fid outcome record <assertion-id> --review <review-id> \
+    --status pass --evidence-method source_review \
+    --evidence-ref "reviews/orders-source-review.md" \
+    --by tl
 fid outcome record <assertion-id> --review <review-id> \
     --status carry_forward --rationale "Drift migration needed; deferred to a future epic" \
     --by tl
@@ -1855,9 +1887,9 @@ fid report epic-status [--epic <id>]                # tasks/ACs/gates/findings/e
 fid report open-escalations
 fid report qa-blockers [--epic <id>]
 fid report ac-matrix [--epic <id>]                  # AC × verifier-role grid
-fid report contract-coverage <epic-id>              # v0.4+: gaps in VAL ↔ AC ↔ QA step coverage
-fid report assertion-trace <assertion-id>           # v0.4+: requirement → assertion → ACs → steps → outcomes
-fid report contract-outcomes <epic-id>              # v0.4+: pass/fail/carry-forward rollup
+fid report contract-coverage <epic-id>              # v0.4+: gaps in VAL ↔ validator ↔ AC ↔ QA step coverage
+fid report assertion-trace <assertion-id>           # v0.4+: requirement → assertion → validators → ACs → steps → outcomes
+fid report contract-outcomes <epic-id>              # v0.4+: outcomes by assertion/validator/evidence
 fid report epic-wrapup-pack <epic-id>               # everything TL needs for wrap-up
 fid report task-hygiene <task-id>                   # missing headings, commit refs, AC verifications
 fid report stale-claims                             # past-TTL active claims
@@ -2329,7 +2361,8 @@ with a date and proposer, then moved to §15.2 once resolved.
    `fid report assertion-trace`. Sequencing: `qa_plans` +
    `qa_plan_steps` in v0.3 alongside `qa_reviews`;
    `validation_contracts` + `validation_assertions` +
-   `val_assertion_outcomes` + linkage tables in v0.4.
+   `validation_assertion_validators` + `val_assertion_outcomes` +
+   linkage tables in v0.4.
 
 2. **Concerns heading enforcement on completion notes — template-
    driven in v0.3+.** Workflow Runner continues to perform the check in
@@ -2521,7 +2554,8 @@ file reading.
 
 - Schema and CLI for `retrospectives`, `carry_forward`.
 - Schema and CLI for `validation_contracts`, `validation_assertions`,
-  `qa_plan_step_assertions`, `val_assertion_outcomes` (see §6.15).
+  `validation_assertion_validators`, `qa_plan_step_assertions`,
+  `val_assertion_outcomes` (see §6.15).
   Adds nullable `acceptance_criteria.val_assertion_id` FK. Coverage
   rule enforcement at `fid qa-plan finalise` time.
 - Computed retro signals (token-budget overruns, finding density, AC
