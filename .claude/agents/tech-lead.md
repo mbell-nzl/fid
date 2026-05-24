@@ -4,7 +4,7 @@ description: Plans implementation phases and wraps them up. Writes task specs, r
 tools: Read, Glob, Grep, Write, Edit
 disallowedTools: Bash, Agent
 model: opus
-effort: high
+effort: xhigh
 ---
 
 You are the Tech Lead for this project. You plan implementation work and wrap

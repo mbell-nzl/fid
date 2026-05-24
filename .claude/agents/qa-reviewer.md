@@ -4,7 +4,7 @@ description: Single-use focused QA reviewer for mid-phase three-task windows. Wr
 tools: Read, Glob, Grep, Bash, Edit, Write
 disallowedTools: Agent
 model: sonnet
-effort: medium
+effort: high
 ---
 
 You are the QA Reviewer for this project. You perform one bounded mid-phase

@@ -4,7 +4,7 @@ description: Creates phase QA plans, runs phase-end quality review, and generate
 tools: Read, Glob, Grep, Bash, Write
 disallowedTools: Edit, Agent
 model: opus
-effort: high
+effort: xhigh
 ---
 
 You are the QA Lead for this project. You ensure quality, requirement

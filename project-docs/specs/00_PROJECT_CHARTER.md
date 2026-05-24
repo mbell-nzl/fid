@@ -1,4 +1,4 @@
-# PROJECT CHARTER - <PROJECT_NAME>
+# PROJECT CHARTER - fid
 
 > This document records the durable intent of the project: why it exists, who
 > it serves, what is in and out of scope, and which decisions should survive
@@ -6,29 +6,90 @@
 
 ## 1. Vision
 
-<One to three paragraphs describing the long-term product or system vision.>
+`fid` is a local-first, agent-first issue tracker for AI-assisted software
+development. It provides a structured, queryable knowledge graph over the
+artifacts an agentic coding workflow produces — issues, acceptance criteria,
+completion reports, QA reviews, decisions, escalations, triage events,
+validation contracts, and token telemetry — backed by SQLite and driven
+entirely through a CLI.
+
+The name comes from a tapered hand tool used to open up tightly-laid rope so
+the strands can be worked separately. The metaphor fits: fid opens up
+tightly-coupled project work into separable, trackable parts that agents and
+humans can manipulate independently.
+
+The long-term vision is a single binary that replaces the scattered markdown
+files, grep pipelines, and manual bookkeeping that AI-assisted development
+workflows currently rely on, giving both agents and humans a shared,
+schema-enforced, queryable project state without requiring a server, auth
+layer, or external service.
 
 ## 2. Problem Statement
 
-<Describe the user, business, technical, or operational problem. Include what
-people do today, why it is insufficient, and what meaningful improvement would
-look like.>
+AI-assisted development workflows produce a high volume of structured
+artifacts: task specs, completion reports, QA reviews, decisions, escalations,
+triage records, and retrospectives. Today these live as markdown files in a
+directory tree (e.g. the `whet` project's `project-docs/` layout), queried
+via `grep`, `git log`, and agent reading.
+
+This is insufficient because:
+
+- **Cross-cutting queries are expensive.** "Every decision that touched the
+  data model", "all tasks where actual tokens exceeded 1.5x estimate", or
+  "blocking findings still open across all epics" require multi-file grep
+  plus agent interpretation, burning context window and tokens.
+- **Workflow invariants are unenforced.** Required fields on completion
+  reports, AC verification before transitions, and concern resolution before
+  dev-complete are conventions, not constraints. Violations are caught late
+  (QA review) or not at all.
+- **Non-task entities are second-class.** Decisions, escalations, triage
+  events, and carry-forward items lack identity, status, and relationships.
+  They exist as sections within files, not as queryable rows.
+- **Token and cost telemetry is ad-hoc.** Agent run costs are estimated from
+  conversation length, not measured and recorded per task and per role.
+
+Meaningful improvement looks like: single CLI commands that answer cross-cutting
+questions, schema-enforced workflow transitions, first-class identity for every
+project artifact type, and computed retrospective signals.
 
 ## 3. Target Users / Consumers
 
 | Segment | Description | Primary Needs |
 |---|---|---|
-| Primary | <Who this is mainly for> | <Jobs to be done> |
-| Secondary | <Adjacent users or operators> | <Needs> |
-| Not target | <Explicit non-audience> | <Reason excluded> |
+| Primary | Solo developer or small team running an agentic coding workflow with multi-role agents (TL, Developer, QA, TL-Lite) | Queryable project state, enforced workflow invariants, token/cost telemetry, cross-epic traceability |
+| Secondary | TL agents bootstrapping and managing projects; Workflow Runner agents driving task loops | Machine-readable issue reads (`--format json/toon`), claim-based exclusive access, role-tuned context packs, `fid ready` queue |
+| Secondary | Human product owners reviewing and approving work | Markdown export for human reading, human verification checklists, dashboard (v0.5) |
+| Not target | Teams needing real-time multi-tenant collaboration | fid is local-first, single-project-per-DB, last-write-wins; no auth, no remote sync, no CRDTs |
+| Not target | Users wanting a custom-fields platform or general-purpose project manager | Schema is opinionated; no user-defined fields in v1 |
 
 ## 4. Design Principles
 
 These principles guide tradeoffs when requirements conflict.
 
-1. **<Principle>.** <Implication for product and engineering decisions.>
-2. **<Principle>.** <Implication.>
-3. **<Principle>.** <Implication.>
+1. **Rows hold structure; markdown holds prose.** The schema captures identity,
+   status, relationships, and metadata. Prose stays in markdown files
+   referenced by `*_md_path` columns. Don't shred prose into columns; don't
+   leave structured data in unindexed files.
+2. **Journal is canonical; DB is a derived cache.** The append-only JSONL
+   journal committed to git is the source of truth. The SQLite DB is
+   gitignored and rebuilt from the journal. This gives full SQL query power
+   without binary merge conflicts. (ADR-0001)
+3. **Opinionated defaults; configurable surface.** Ship working out of the box
+   with a default role profile, default workflows, and a three-tier QA model.
+   Make roles, workflows, and permissions per-project configurable so fid
+   supports diverse workflows without dictating one. (ADR-0002, ADR-0003)
+4. **Schema-enforced invariants over convention.** Required fields, workflow
+   transition rules, kind constraints, and permission boundaries are enforced
+   at write time — application-layer primary, SQLite triggers as backstop.
+   Don't rely on agents following instructions.
+5. **Append-only history for audit-grade entities.** Task completions, AC
+   verifications, QA reviews, triage events, and assertion outcomes are
+   append-only. Re-attempts create new rows; they don't edit old ones. The
+   history is the value.
+6. **Agent-friendly by default.** JSON output for universal pipeability, TOON
+   for token efficiency, role-tuned context packs to minimise context window
+   pressure, claim-based exclusive access to prevent concurrent agent
+   conflicts.
 
 ## 5. Scope
 
@@ -40,17 +101,50 @@ a brief concept inventory, not a duplicate glossary.
 
 | Concept | Description |
 |---|---|
-| <Concept> | <Meaning in the product/domain> |
+| Issue | Unified entity for epics, tasks, and subtasks — the trackable work item |
+| Epic | Top-level container of related tasks; sequential or prioritised scheduling |
+| Workflow | Named state machine with states, transitions, and per-transition validation rules |
+| Claim | Short-lived exclusive-access lease on an entity (issue, QA review) |
+| Journal | Append-only JSONL event log; canonical source of truth, committed to git |
+| Concern / Finding / Escalation | Quality signals raised at different workflow stages by different roles |
+| Validation contract | Assertion-level specification for an epic's proof obligations |
+| QA plan | Verification design citing contract assertions; declares evidence methods |
+| Gate | Deterministic CLI command producing pass/fail (tests, linters, etc.) |
+| Role | Workflow position (developer, qa_reviewer, qa_lead, tl_lite, tl, workflow_runner, human) with permission boundaries |
 
 ### 5.2 In Scope
 
-- <Capability or constraint>
-- <Capability or constraint>
+- Unified issue tracker (epic / task / subtask) with configurable workflows
+- Acceptance criteria with multi-role verification
+- Append-only task completions and structured developer concerns
+- QA reviews with findings, QA plans with steps (v0.3)
+- Validation contracts with assertions, required validators, and outcomes (v0.4)
+- Decisions, escalations, triage events, carry-forward items, retrospectives
+- Typed cross-entity links with auto-inverse
+- Claim-based exclusive access with TTL
+- Role-based permission enforcement
+- JSONL journal as source of truth; SQLite as derived query cache
+- Multi-format output: JSON (default), TOON (opt-in), Markdown, YAML
+- Token/cost telemetry per agent run with snapshot pricing
+- Named reports and stats aggregations
+- Markdown export with YAML frontmatter contract (v0.4)
+- TUI kanban board (v0.3)
+- MCP server for agent integration (v0.3)
+- Templates with monotonic versioning (v0.3)
+- Single static Go binary, project-scoped `.fid/` directory
 
 ### 5.3 Out of Scope
 
-- <Explicitly deferred feature, integration, platform, or behavior>
-- <Explicit non-goal>
+- Multi-tenant server, remote sync, auth, or hosting
+- Real-time collaboration or CRDT-based conflict resolution
+- Replacement for git, PRDs/TRDs, or the agent workflow protocol itself
+- User-defined custom fields
+- Multi-project queries across separate databases
+- SLA tracking, burn-down charts, customer requests, OKRs
+- Multiple assignees, subscribers, or watchers per issue
+- Initiatives or hierarchy levels above epics
+- Time tracking in hours (token telemetry replaces this)
+- Bidirectional markdown sync (deferred to v0.5+ pending evidence of use case)
 
 ## 6. Interfaces / Surfaces
 
@@ -58,7 +152,13 @@ List the user-facing or integration surfaces the project will expose.
 
 | Surface | Purpose | Notes |
 |---|---|---|
-| <Surface> | <What it is for> | <Constraints or lifecycle> |
+| `fid` CLI | Primary interface for all reads and writes | Single Go binary; nested command tree via Cobra. Ships v0.1. |
+| JSONL journal | Canonical event store committed to git | `.fid/journal/YYYY-MM-DD.jsonl`; one event per CLI write. Ships v0.1. |
+| SQLite database | Derived query cache for fast reads | `.fid/fid.sqlite`; gitignored; rebuilt from journal. Ships v0.1. |
+| TUI board | Kanban visualisation in the terminal | `fid board`; Bubbletea + Lipgloss. Ships v0.3. |
+| MCP server | Agent integration via Model Context Protocol | `fid mcp start`; resources, prompts, tools. Ships v0.3. |
+| Markdown export | Human-readable project state as a file tree | `fid export`; YAML frontmatter contract. Ships v0.4. |
+| Web dashboard | Browser-based project visualisation | Separate `fid-dashboard` package; reads SQLite. Ships v0.5. |
 
 ## 7. Success Criteria
 
@@ -66,17 +166,17 @@ Define objective or observable outcomes.
 
 | Horizon | Criteria |
 |---|---|
-| Early dogfood | <What must be true before daily internal use> |
-| Public release | <What must be true before external use> |
-| Long-term | <Business, adoption, reliability, or impact target> |
+| Early dogfood | v0.1 core issue layer replaces ~70% of daily interaction with whet's task artifacts. `fid init`, issue CRUD, AC verification, claims, ready queue, link management, and journal/rebuild all work reliably. The author uses fid for real project work. |
+| Public release | v0.3 ships QA reviews, templates, TUI board, and MCP server. The full agentic task loop (TL plan → Developer execute → QA review → TL wrap-up) runs through fid with enforced workflow invariants. Cross-epic queries answer in single commands. |
+| Long-term | fid is the standard storage/query layer for AI-assisted development workflows. Projects adopt it without forking; the configurable workflow engine and role system accommodate diverse team shapes. Token telemetry and retrospective signals drive measurable efficiency improvements across projects. |
 
 ## 8. Constraints
 
-- **Time / staffing:** <Constraints>
-- **Budget:** <Constraints>
-- **Security / privacy / compliance:** <Constraints>
-- **Operational:** <Constraints>
-- **Legal / licensing:** <Constraints>
+- **Time / staffing:** Solo developer building with AI agent assistance. No team; no external contributors initially.
+- **Budget:** Anthropic API costs for agentic development are the primary expense. Snapshot pricing in `agent_runs` tracks this.
+- **Security / privacy / compliance:** Local-first; no data leaves the machine. No auth surface. Journal committed to git inherits the repo's access control.
+- **Operational:** Single static binary; no daemon, no background process, no external service dependencies. SQLite only.
+- **Legal / licensing:** Open source (license TBD). No third-party service integrations that impose licensing constraints. Pure-Go SQLite driver (`modernc.org/sqlite`) avoids CGo.
 
 ## 9. Durable Decisions Log
 
@@ -85,7 +185,12 @@ Keep only project-shaping decisions here. Phase-local decisions belong in
 
 | Decision | Rationale | Date / Reference |
 |---|---|---|
-| <Decision> | <Why> | <DEC-NNN or date> |
+| Journal-canonical, DB-derived, no daemon | Gives full SQL query power without binary merge conflicts or daemon failure modes. Journal committed to git; DB is gitignored and rebuilt. | ADR-0001 |
+| Roles configurable via seeded default profile | Supports diverse workflows without dictating one. Roles table in v0.1; permissions table in v0.2. | ADR-0002 |
+| Three-tier QA model shipped in full | Primary user's workflow requires assertion-level verification. Plans + reviews in v0.3; contracts + assertions + outcomes in v0.4. All layers schema-optional per project. | ADR-0003 |
+| Implementation language: Go | Agentic build pipeline proven on whet transfers directly. Single static binary distribution. Agent error-recovery loop more efficient than Rust during design iteration. | 2026-05-09, spec §6.16 |
+| Application-layer validation primary, triggers as backstop | Rich error messages and parameterised rules need app-layer context. Triggers guard structural invariants for non-CLI write paths (MCP, dashboard, direct SQL). | spec §6.14 |
+| Hash-based IDs, not sequential | Reduces coordination needs for concurrent agent/branch issue creation. Collision risk managed by progressive length scaling (6→8 hex chars). | spec §6.0 |
 
 ## 10. Document Suite
 
@@ -100,4 +205,4 @@ This charter is part of the core specification suite:
 - `05_AI_WORKFLOW.md` - agent roles and orchestration.
 - `06_IMPLEMENTATION_ROADMAP.md` - implementation phases.
 
-*Last updated: <YYYY-MM-DD>*
+*Last updated: 2026-05-24*
