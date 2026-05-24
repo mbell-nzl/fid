@@ -26,10 +26,22 @@ go.work.sum
 
 # env file
 .env
+.env.*
+!.env.example
 
 # Editor/IDE
+.DS_Store
+Thumbs.db
 # .idea/
 # .vscode/
 
+# Build outputs
+dist/
+build/
+out/
+
 # Misc
 tmp/
+
+# Temporary agent output
+project-docs/docs/current/tl_handoff.md

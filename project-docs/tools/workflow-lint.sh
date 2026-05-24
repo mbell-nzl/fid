@@ -1,0 +1,324 @@
+#!/bin/sh
+set -eu
+
+script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
+repo_root=$(CDPATH= cd "$script_dir/../.." && pwd)
+cd "$repo_root"
+
+failures=0
+
+pass() {
+  echo "PASS $1"
+}
+
+fail() {
+  echo "FAIL $1" >&2
+  failures=$((failures + 1))
+}
+
+check_file() {
+  path=$1
+  label=$2
+  if [ -f "$path" ]; then
+    pass "$label: $path"
+  else
+    fail "$label missing: $path"
+  fi
+}
+
+frontmatter_value() {
+  key=$1
+  file=$2
+  awk -v key="$key" '
+    NR == 1 && $0 == "---" {
+      in_frontmatter = 1
+      next
+    }
+    in_frontmatter && $0 == "---" {
+      exit
+    }
+    in_frontmatter {
+      prefix = key ":"
+      if (index($0, prefix) == 1) {
+        value = substr($0, length(prefix) + 1)
+        gsub(/^[ \t]+|[ \t]+$/, "", value)
+        gsub(/^"/, "", value)
+        gsub(/"$/, "", value)
+        print value
+        exit
+      }
+    }
+  ' "$file"
+}
+
+check_contains() {
+  file=$1
+  pattern=$2
+  label=$3
+  if grep -Eq "$pattern" "$file"; then
+    pass "$label: $file"
+  else
+    fail "$label missing in $file"
+  fi
+}
+
+required_skills="validation-contract qa-evidence phase-wrap-up tdd diagnose zoom-out phase-planning task-pack domain-language-grill architecture-review"
+
+for skill in $required_skills; do
+  check_file "project-docs/skills/$skill/SKILL.md" "required canonical skill"
+done
+
+for skill_dir in project-docs/skills/*; do
+  [ -d "$skill_dir" ] || continue
+  skill=$(basename "$skill_dir")
+  skill_file="$skill_dir/SKILL.md"
+  check_file "$skill_file" "canonical skill"
+
+  if [ -f "$skill_file" ]; then
+    name=$(frontmatter_value name "$skill_file")
+    description=$(frontmatter_value description "$skill_file")
+
+    if [ -n "$name" ]; then
+      pass "frontmatter name present: $skill"
+    else
+      fail "frontmatter name missing: $skill_file"
+    fi
+
+    if [ "$name" = "$skill" ]; then
+      pass "frontmatter name matches directory: $skill"
+    else
+      fail "frontmatter name '$name' does not match directory '$skill'"
+    fi
+
+    if [ -n "$description" ]; then
+      pass "frontmatter description present: $skill"
+    else
+      fail "frontmatter description missing: $skill_file"
+    fi
+
+    if grep -Eq '^Provenance: (Workflow-Extracted Skill|External-Adapted Skill)(\.|,|;|$)' "$skill_file"; then
+      pass "provenance line valid: $skill"
+    else
+      fail "valid Provenance line missing: $skill_file"
+    fi
+  fi
+done
+
+if output=$(project-docs/tools/sync-skills.sh --check 2>&1); then
+  printf '%s\n' "$output"
+  pass "generated skill copies match canonical sources"
+else
+  printf '%s\n' "$output" >&2
+  fail "generated skill copies are missing or drifted"
+fi
+
+agent_files="
+AGENTS.md
+CLAUDE.md
+.codex/config.toml
+.codex/agents/tech_lead.toml
+.codex/agents/phase_runner.toml
+.codex/agents/developer.toml
+.codex/agents/qa_lead.toml
+.codex/agents/qa_reviewer.toml
+.codex/agents/tl_lite.toml
+.claude/agents/tech-lead.md
+.claude/agents/phase-runner.md
+.claude/agents/developer.md
+.claude/agents/qa-lead.md
+.claude/agents/qa-reviewer.md
+.claude/agents/tl-lite.md
+"
+
+for path in $agent_files; do
+  check_file "$path" "agent prompt/config"
+done
+
+check_file "project-docs/docs/playbook.md" "operator playbook"
+check_file "project-docs/templates/hooks/claude-settings.example.json" "Claude hook example"
+check_file "project-docs/templates/hooks/codex-hooks-notes.md" "Codex hook notes"
+
+template_files="
+project-docs/templates/validation-contract-template.md
+project-docs/templates/task-spec-template.md
+project-docs/templates/completion-report-template.md
+project-docs/templates/qa-plan-template.md
+project-docs/templates/mid-phase-review-template.md
+project-docs/templates/final-review-template.md
+project-docs/templates/human-checklist-template.md
+project-docs/templates/phase-brief-template.md
+project-docs/templates/phase-decisions-template.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/tl-escalations-template.md
+project-docs/templates/triage-log-template.md
+project-docs/templates/threat-model-template.md
+project-docs/templates/pre-release-checklist.md
+project-docs/templates/held-out-scenario-template.yaml
+project-docs/templates/audits/audit-prompts.md
+"
+
+for path in $template_files; do
+  check_file "$path" "template"
+done
+
+check_contains "project-docs/templates/task-spec-template.md" 'Validation Contract|VAL-NNN|validation-contract' "task template validation-contract reference"
+check_contains "project-docs/templates/completion-report-template.md" 'Validation Contract|VAL-NNN|validation-contract' "completion template validation-contract reference"
+check_contains "project-docs/templates/validation-contract-template.md" 'VAL-NNN|validation contract' "validation contract template reference"
+check_contains "project-docs/templates/qa-plan-template.md" 'Validation Contract|VAL-NNN|validation-contract' "QA plan template validation-contract reference"
+check_contains "project-docs/templates/mid-phase-review-template.md" 'Validation Contract|VAL-NNN|validation-contract' "mid-phase review template validation-contract reference"
+check_contains "project-docs/templates/final-review-template.md" 'Validation Contract|VAL-NNN|validation-contract' "final review template validation-contract reference"
+check_contains "project-docs/templates/human-checklist-template.md" 'VAL-NNN' "human checklist validation assertion reference"
+check_contains "project-docs/templates/phase-brief-template.md" 'Validation Contract|VAL-NNN|validation-contract' "phase brief validation-contract reference"
+check_contains "project-docs/templates/phase-runner-prompt.md" 'validation-contract|VAL-NNN' "phase runner prompt validation-contract reference"
+
+# --- Current-state file line budgets (from 05_AI_WORKFLOW.md section 9) ---
+
+check_line_budget() {
+  file=$1
+  tripwire=$2
+  label=$3
+  if [ ! -f "$file" ]; then
+    pass "line budget (file absent, ok in template state): $label"
+    return
+  fi
+  lines=$(wc -l < "$file")
+  if [ "$lines" -le "$tripwire" ]; then
+    pass "line budget ($lines <= $tripwire): $label"
+  else
+    fail "line budget exceeded ($lines > $tripwire tripwire): $label"
+  fi
+}
+
+check_line_budget "project-docs/docs/current/phase_brief.md" 200 "phase_brief.md"
+check_line_budget "project-docs/docs/current/decisions_active.md" 200 "decisions_active.md"
+check_line_budget "project-docs/docs/current/progress_current.md" 133 "progress_current.md"
+check_line_budget "project-docs/docs/current/tl_escalations_current.md" 107 "tl_escalations_current.md"
+
+# --- TL-Lite verdict and output format concordance ---
+# These literal strings must appear in both provider prompts and the spec.
+
+tl_lite_verdict_literals="VERDICT: RESUME
+VERDICT: BLOCK"
+
+tl_lite_verdict_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/05_AI_WORKFLOW.md"
+
+printf '%s\n' "$tl_lite_verdict_literals" | while IFS= read -r literal; do
+  for file in $tl_lite_verdict_files; do
+    if grep -Fq "$literal" "$file"; then
+      pass "TL-Lite verdict '$literal' present: $file"
+    else
+      fail "TL-Lite verdict '$literal' missing: $file"
+    fi
+  done
+done
+
+tl_lite_output_literals="DECISION (local):
+ESCALATED: ESC-"
+
+tl_lite_prompt_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml"
+
+printf '%s\n' "$tl_lite_output_literals" | while IFS= read -r literal; do
+  for file in $tl_lite_prompt_files; do
+    if grep -Fq "$literal" "$file"; then
+      pass "TL-Lite output format '$literal' present: $file"
+    else
+      fail "TL-Lite output format '$literal' missing: $file"
+    fi
+  done
+done
+
+# --- TL-Lite escalation trigger concordance ---
+# Each trigger phrase must appear in the spec and both provider prompts.
+
+escalation_triggers="Changes a public interface
+Changes the data model or persistence contract
+Affects more than one task or subsystem
+Introduces a dependency, tool, or workflow
+Exposes ambiguity in product intent or acceptance criteria"
+
+escalation_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/05_AI_WORKFLOW.md"
+
+printf '%s\n' "$escalation_triggers" | while IFS= read -r trigger; do
+  for file in $escalation_files; do
+    if grep -Fq "$trigger" "$file"; then
+      pass "escalation trigger present: $file: $trigger"
+    else
+      fail "escalation trigger missing: $file: $trigger"
+    fi
+  done
+done
+
+# --- Role capability mapping concordance ---
+# Each role name from the spec table must appear in at least one provider
+# agent prompt directory. This catches renamed or deleted agent files.
+
+spec_roles="Tech Lead
+QA Lead
+Developer
+QA Reviewer
+TL-Lite
+Phase Runner"
+
+printf '%s\n' "$spec_roles" | while IFS= read -r role; do
+  found_claude=false
+  found_codex=false
+  for f in .claude/agents/*.md; do
+    if grep -Fq "$role" "$f" 2>/dev/null; then
+      found_claude=true
+      break
+    fi
+  done
+  for f in .codex/agents/*.toml; do
+    if grep -Fq "$role" "$f" 2>/dev/null; then
+      found_codex=true
+      break
+    fi
+  done
+  if $found_claude; then
+    pass "role '$role' referenced in Claude agents"
+  else
+    fail "role '$role' not referenced in any Claude agent prompt"
+  fi
+  if $found_codex; then
+    pass "role '$role' referenced in Codex agents"
+  else
+    fail "role '$role' not referenced in any Codex agent prompt"
+  fi
+done
+
+# --- Codex project-local config key restrictions ---
+
+unsupported_keys="openai_base_url chatgpt_base_url model_provider model_providers notify profile profiles experimental_realtime_ws_base_url otel"
+config_keys=$(awk '
+  /^[ \t]*#/ || /^[ \t]*$/ { next }
+  /^[ \t]*\[/ {
+    line = $0
+    gsub(/^[ \t]*\[+/, "", line)
+    gsub(/\]+[ \t]*$/, "", line)
+    split(line, parts, ".")
+    print parts[1]
+    next
+  }
+  /^[ \t]*[A-Za-z0-9_-]+[ \t]*=/ {
+    line = $0
+    sub(/^[ \t]*/, "", line)
+    sub(/[ \t]*=.*/, "", line)
+    print line
+  }
+' .codex/config.toml)
+
+for unsupported in $unsupported_keys; do
+  if printf '%s\n' "$config_keys" | grep -Fxq "$unsupported"; then
+    fail "unsupported project-local Codex config key present: $unsupported"
+  else
+    pass "unsupported Codex config key absent: $unsupported"
+  fi
+done
+
+if [ "$failures" -eq 0 ]; then
+  echo "PASS workflow-lint completed with no failures"
+else
+  echo "FAIL workflow-lint found $failures failure(s)" >&2
+fi
+
+exit "$failures"

@@ -1,0 +1,52 @@
+{
+  "_comment": [
+    "Example Claude Code project settings with workflow-lint hooks.",
+    "To use: copy this file to .claude/settings.json in your project root",
+    "and adjust the paths and permissions for your stack.",
+    "",
+    "These hooks are disabled by default. Enable them by removing the",
+    "DISABLED_ prefix from the hook event keys.",
+    "",
+    "Hook reference: https://code.claude.com/docs/en/hooks"
+  ],
+  "hooks": {
+    "DISABLED_PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-docs/tools/workflow-lint.sh"
+          }
+        ]
+      }
+    ],
+    "DISABLED_PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo 'Post-tool hook placeholder'"
+          }
+        ]
+      }
+    ],
+    "DISABLED_Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "project-docs/tools/workflow-lint.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(project-docs/tools/workflow-lint.sh)",
+      "Bash(project-docs/tools/sync-skills.sh *)"
+    ]
+  }
+}
