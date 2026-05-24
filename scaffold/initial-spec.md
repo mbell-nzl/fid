@@ -242,10 +242,17 @@ This drives what gets committed to git and how branches reconcile.
 
 **Journal event contract:**
 
-- One logical CLI write creates one journal event. A primitive command
-  like `fid issue create` is one event; a composite command like
-  `fid dev finish` is also one event when it should be atomic from the
-  caller's perspective.
+- **One logical CLI write creates one journal event — no exceptions.**
+  A primitive command like `fid issue create` is one event. A composite
+  command like `fid dev finish` is also one event: its `effects` array
+  contains inserts/updates across multiple tables (e.g., `agent_runs`,
+  `task_completions`, `concerns`, `issues` status update,
+  `activity_log` entries), applied atomically in a single SQLite
+  transaction. Half-applied composite state is data corruption the
+  replay engine would faithfully reproduce, so all-or-nothing is
+  mandatory. If any step of a composite fails (e.g., concern parsing
+  rejects the completion report), the entire event is rejected and
+  neither the journal nor the DB is modified.
 - Events use a semantic envelope plus generic ordered row effects. The
   envelope has `event_type` such as `issue.created` or `dev.finished`,
   an `event_schema` version, actor metadata, and command metadata for
@@ -263,6 +270,34 @@ This drives what gets committed to git and how branches reconcile.
   projected, curated timeline table for queries and UI; it is populated
   only by applying journal event effects, never by a standalone write
   API.
+
+**Event schema versioning:**
+
+- Each event carries `event_schema: <n>` (a positive integer). The
+  version increments whenever a schema migration changes the shape of
+  any table that appears in event effects — new columns, renamed
+  columns, removed columns, changed semantics.
+- **Journal files are immutable once written.** Old events stay at the
+  schema version they were created with. The replay engine upgrades
+  them in memory; it never rewrites journal files.
+- The replay engine maintains a chain of registered **upgrader
+  functions**: `upgrade_1_to_2(event) → event`,
+  `upgrade_2_to_3(event) → event`, etc. When replaying an event whose
+  `event_schema` is older than the current version, the engine runs it
+  through the chain before applying effects. Upgraders transform the
+  `effects` array — adding columns with default values, renaming
+  fields, adjusting values — without re-running command logic or
+  reading DB state.
+- Each upgrader is a **pure function**: old event in, new event out.
+  No DB reads, no side effects. Testable with golden-file fixtures
+  per version boundary: capture a real event at version N, run it
+  through `upgrade_N_to_N+1`, assert the output matches the expected
+  version N+1 shape.
+- The upgrader chain grows linearly with schema versions. At fid's
+  scale (single project, hundreds to low thousands of events) the
+  cost is negligible. If it ever matters, a compaction step that
+  rewrites a journal archive to the current schema is a
+  forward-compatible optimisation — but not required for v1.
 
 **Concurrency:**
 
@@ -521,11 +556,10 @@ WITH open_concerns AS (
 latest_triage AS (
   SELECT te.*
   FROM triage_events te
-  WHERE te.source_ref_id IS NOT NULL
-    AND te.created_at = (
+  WHERE te.created_at = (
       SELECT MAX(created_at)
       FROM triage_events
-      WHERE source_ref_id = te.source_ref_id
+      WHERE issue_id = te.issue_id
     )
 )
 SELECT
@@ -539,18 +573,18 @@ SELECT
   END AS triage_status
 FROM issues i
 LEFT JOIN open_concerns oc ON oc.issue_id = i.id
-LEFT JOIN latest_triage  lt ON lt.source_ref_id = i.id;
+LEFT JOIN latest_triage  lt ON lt.issue_id = i.id;
 ```
 
 Filters like `fid issue list --has-concerns` translate to
 `WHERE concerns_raised = 1` on the view. SQLite expands the view inline
 and uses indexes on `concerns(issue_id, status)` and
-`triage_events(source_ref_id, created_at)`, so the cost is two index
+`triage_events(issue_id, created_at)`, so the cost is two index
 lookups per row in the result — not a table scan.
 
 Indexes required for the view to perform well:
 - `idx_concerns_issue_status` on `concerns(issue_id, status)`.
-- `idx_triage_ref_created` on `triage_events(source_ref_id,
+- `idx_triage_issue_created` on `triage_events(issue_id,
   created_at)`.
 
 Because nothing is stored, there is no recompute or drift case. The
@@ -722,6 +756,7 @@ CREATE TABLE requirements (
 CREATE TABLE decisions (
   id              TEXT PRIMARY KEY,            -- DEC-<hash> (see §6.0)
   epic_id         TEXT REFERENCES issues(id),
+  author_role     TEXT NOT NULL,               -- 'tl' | 'human'
   summary         TEXT NOT NULL,
   body_md_path    TEXT NOT NULL,               -- full prose
   area            TEXT,                        -- 'schema' | 'cli' | 'workflow' | ...
@@ -742,8 +777,14 @@ CREATE TABLE escalations (
 CREATE TABLE triage_events (
   id              TEXT PRIMARY KEY,            -- TRG-<hash> (see §6.0)
   epic_id         TEXT NOT NULL REFERENCES issues(id),
+  issue_id        TEXT NOT NULL REFERENCES issues(id),
+                                               -- the issue this triage pertains to;
+                                               -- denormalized for the issues_enriched view
+                                               -- (the join path from source_ref_id varies by
+                                               -- source type, so a direct FK is cleaner)
+  triager_role    TEXT NOT NULL,               -- 'tl_lite' | 'human'
   source          TEXT NOT NULL,               -- 'dev_concern' | 'qa_block' | 'esc_open'
-  source_ref_id  TEXT,                         -- task / finding / esc id
+  source_ref_id   TEXT,                        -- concern / finding / esc id (the specific trigger)
   verdict         TEXT NOT NULL,               -- 'RESUME' | 'BLOCK'
   esc_id          TEXT REFERENCES escalations(id),
   reasoning_md    TEXT,
@@ -1077,7 +1118,7 @@ rename these pairs.
 | qa-finding add | – | ✓ | ✓ | – | – | – | – |
 | concern raise | ✓ | – | – | – | – | – | ✓ |
 | concern address | ✓ | – | – | – | – | – | ✓ |
-| escalation create | – | ✓ | ✓ | ✓ | – | – | ✓ |
+| escalation create | – | ✓ | ✓ | ✓ | ✓ | – | ✓ |
 | escalation resolve | – | – | – | – | ✓ | – | ✓ |
 | triage record | – | – | – | ✓ | – | – | ✓ |
 | decision create | – | – | – | – | ✓ | – | ✓ |
@@ -2428,12 +2469,19 @@ Build order, by value-per-effort:
 ### v0.1 — Core issue layer
 
 - Schema for `issues`, `epic_metadata`, `acceptance_criteria`,
-  `task_completions`, `concerns`, `links`, `claims`, `agent_runs`,
-  `labels`, `issue_labels`, `activity_log`, `roles`.
-- `links` v0.1 scope: issue ↔ issue plus issue → requirement
-  endpoint support once requirements are referenced externally. Other
-  endpoints (`decision`, `escalation`) become useful when those tables
-  ship in v0.2.
+  `ac_verifications`, `task_completions`, `concerns`, `links`,
+  `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`,
+  `roles`.
+- **Stub tables created in v0.1 (schema only, no CLI commands):**
+  `decisions`, `escalations`, `triage_events`, `requirements`. These
+  entities ship CLI surface in v0.2, but their tables must exist in
+  v0.1 so that FK columns on `concerns` (`escalated_to_esc_id`,
+  `triaged_in_event_id`) and `links` (requirement endpoints) are
+  valid from day one. The CLI returns a clear "this entity's commands
+  ship in v0.2" message if a user tries to write to them directly.
+- `links` v0.1 scope: issue ↔ issue and issue → requirement. Other
+  endpoints (`decision`, `escalation`) activate in v0.2 when their
+  CLI surface ships.
 - `roles` table seeded at `fid init` from the built-in `default`
   profile (the seven roles in §6.13). Permissions matrix lives in app
   code in v0.1 (see ADR-0002); unknown roles via `--by` are
@@ -2487,14 +2535,15 @@ artifacts.
   create`, `fid policy set`, `fid policy show`. After migration,
   `--by <unknown-role>` becomes a config issue rather than a hard
   rejection.
-- Schema and CLI for `decisions`, `escalations`, `triage_events`,
-  `requirements`.
+- CLI surface for `decisions`, `escalations`, `triage_events`,
+  `requirements` (tables already exist as v0.1 stubs).
 - `links` endpoint scope expands to `decision` and `escalation` for
   contextual traceability. Escalation resolution remains
   `escalations.resolution_dec`, not a generic link.
 - Drift detection for `requirements.last_synced_hash`.
-- `comments` on issues, QA reviews, decisions, escalations, and
-  requirements.
+- `comments` on issues, decisions, escalations, and requirements.
+  The `qa_review` comment scope activates in v0.3 when QA review
+  tables ship.
 - Named reports (`fid report epic-status`, `open-escalations`,
   `qa-blockers`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`,
   `stale-claims`). Opinionated wrappers over hand-coded SQL.

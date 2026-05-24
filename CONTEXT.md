@@ -60,9 +60,9 @@ A projected, queryable timeline of meaningful project facts (`activity_log` tabl
 The role enum (`developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human`) shows up in four semantically distinct positions. Each has its own term:
 
 **Actor role**:
-The role that performed (or is performing) an action. Stored on per-event `_role` columns in append-only history (`verifier_role`, `reviewer_role`, `developer_role`, `raised_by_role`, `author_role`) and projected as `actor` on [[Activity log]] entries. Passed via `--by <role>` on every write CLI invocation. A fact about the past.
+The role that performed (or is performing) an action. Stored on per-event `_role` columns in append-only history (`verifier_role`, `reviewer_role`, `developer_role`, `raised_by_role`, `author_role`, `triager_role`) and projected as `actor` on [[Activity log]] entries. Passed via `--by <role>` on every write CLI invocation. A fact about the past.
 
-Acceptance-criterion verification is multi-author: the same AC may have independent outcomes recorded by Developer, QA Lead, TL/Tech Lead, Human, or another configured verifier role. Workflow transitions and validation contracts specify which verifier roles are required for a given scope.
+Acceptance-criterion verification is multi-author: the same AC may have independent outcomes recorded by Developer, QA Reviewer, QA Lead, TL/Tech Lead, Human, or another configured verifier role. Workflow transitions and validation contracts specify which verifier roles are required for a given scope.
 
 **Owner role / owner actor**:
 Long-lived accountability for an [[Issue]] across its lifetime. Stored on `issues.owner_role` and `issues.owner_actor`. `owner_actor` is optional — NULL means "any actor of `owner_role`". Set at creation; changes are recorded in the journal and projected into [[Activity log]]. Distinct from [[Claim holder]].
