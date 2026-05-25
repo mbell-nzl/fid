@@ -176,9 +176,25 @@ Define objective or observable outcomes.
 - **Budget:** Anthropic API costs for agentic development are the primary expense. Snapshot pricing in `agent_runs` tracks this.
 - **Security / privacy / compliance:** Local-first; no data leaves the machine. No auth surface. Journal committed to git inherits the repo's access control.
 - **Operational:** Single static binary; no daemon, no background process, no external service dependencies. SQLite only.
-- **Legal / licensing:** Open source (license TBD). No third-party service integrations that impose licensing constraints. Pure-Go SQLite driver (`modernc.org/sqlite`) avoids CGo.
+- **Legal / licensing:** Open source under the MIT licence. No third-party service integrations that impose licensing constraints. Pure-Go SQLite driver (`modernc.org/sqlite`) avoids CGo. No monetisation planned.
 
-## 9. Durable Decisions Log
+## 9. Landscape
+
+fid occupies a narrow niche: a local-first, schema-enforced issue tracker
+designed for AI-assisted development workflows. Nothing else combines
+journal-canonical persistence, role-based agent permissions, and a
+three-tier QA model in a single CLI binary.
+
+| Tool | Overlap | Key Differences |
+|---|---|---|
+| **Linear / Jira / GitHub Issues** | Issue tracking, workflows, labels, priorities | Cloud-hosted, multi-tenant, UI-first. No journal-canonical persistence, no agent role model, no AC verification or QA review workflow. fid borrows lightweight features (labels, inbox, status categories, estimates) but not the collaboration or integration surface. |
+| **Plain markdown + grep** | The status quo fid replaces. Markdown files in a git repo queried by agents reading files. | No schema enforcement, no cross-cutting queries without agent interpretation, no workflow invariants, no structured telemetry. fid keeps prose in markdown but indexes structure in SQLite. |
+| **Beads** | Go CLI, SQLite storage, project-scoped. Similar architectural choices. | General-purpose task tracking without agent-specific concerns. No journal-canonical model, no role-based permissions, no QA layer, no validation contracts. fid's architecture was informed by Beads' Go/SQLite patterns. |
+| **Beans** | Go CLI, local-first, developer-oriented project tracking. | Focused on time tracking and invoicing. Different domain; no workflow enforcement or agent integration. |
+| **Claude Code TaskCreate / built-in tasks** | In-conversation task tracking for AI agents. | Ephemeral, conversation-scoped, no persistence beyond the session. fid provides the durable, queryable, cross-session layer underneath. |
+| **Task Master (various)** | MCP-based task management for AI agents. | Typically exposes the full tool surface to agents, leading to context bloat. fid's MCP server (v0.3) exposes a curated subset. Task Master's lessons informed fid's lean tool design. |
+
+## 10. Durable Decisions Log
 
 Keep only project-shaping decisions here. Phase-local decisions belong in
 `project-docs/docs/phases/phase-N/decisions.md`.
@@ -192,7 +208,7 @@ Keep only project-shaping decisions here. Phase-local decisions belong in
 | Application-layer validation primary, triggers as backstop | Rich error messages and parameterised rules need app-layer context. Triggers guard structural invariants for non-CLI write paths (MCP, dashboard, direct SQL). | spec §6.14 |
 | Hash-based IDs, not sequential | Reduces coordination needs for concurrent agent/branch issue creation. Collision risk managed by progressive length scaling (6→8 hex chars). | spec §6.0 |
 
-## 10. Document Suite
+## 11. Document Suite
 
 This charter is part of the core specification suite:
 

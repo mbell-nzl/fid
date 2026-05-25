@@ -79,6 +79,9 @@ where a requirement is deferred past v0.1.
 | PRD-ISSUE-016 | The system shall support an inbox boolean on issues to mark unsorted incoming items awaiting assignment. | Should | v0.1 |
 | PRD-ISSUE-017 | The system shall support optional cycle assignment on issues. | Could | v0.5 |
 | PRD-ISSUE-018 | When reading an issue, the system shall support on-demand section parsing from the referenced spec markdown file via a `--section` flag. | Must | v0.1 |
+| PRD-ISSUE-019 | When creating an issue, the system shall assign a default owner role: `tl` for epics, `developer` for tasks. The owner role shall be overridable at creation time. | Should | v0.1 |
+| PRD-ISSUE-020 | The system shall support an optional owner actor field on issues to distinguish specific actors within a role. | Should | v0.1 |
+| PRD-ISSUE-021 | The system shall allow owner role and owner actor to be changed via an explicit update command. Owner changes shall be journaled and projected to the activity log. | Should | v0.1 |
 
 ### 3.3 Acceptance Criteria (AC)
 
@@ -113,7 +116,8 @@ where a requirement is deferred past v0.1.
 | PRD-WF-002 | If a requested status transition is not an allowed edge in the workflow, the system shall reject it with an error naming the current state and the requested state. | Must | v0.1 |
 | PRD-WF-003 | When a transition has validation rules, the system shall evaluate all rules before allowing the transition. | Must | v0.1 |
 | PRD-WF-004 | If a transition rule fails, the system shall report which specific conditions are unmet, including entity IDs where applicable (e.g. "ACs not yet verified by developer: AC-a1b2c3, AC-7c3e9f"). | Must | v0.1 |
-| PRD-WF-005 | The system shall ship default workflows for epic, task, subtask, and escalation kinds. | Must | v0.1 |
+| PRD-WF-005 | The system shall ship default workflows for epic, task, and subtask kinds. | Must | v0.1 |
+| PRD-WF-005a | The system shall ship a default workflow for the escalation kind. | Must | v0.2 |
 | PRD-WF-006 | The system shall map every workflow state to a status category (unstarted, started, completed, cancelled) for portable queries. | Must | v0.1 |
 | PRD-WF-007 | The system shall support the `all_acs_verified` transition rule, parameterised by a set of required verifier roles. | Must | v0.1 |
 | PRD-WF-008 | The system shall support the `has_completion_report` transition rule. | Must | v0.1 |
@@ -223,6 +227,7 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-001 | The system shall output JSON by default for all read commands. | Must | v0.1 |
 | PRD-OUT-002 | The system shall support TOON format via `--format toon` for token-efficient agent reads. | Must | v0.1 |
 | PRD-OUT-003 | The system shall support markdown format via `--format markdown` for human inspection. | Must | v0.1 |
+| PRD-OUT-003a | The system shall support YAML format via `--format yaml` for config and template authoring. | Could | v0.1 |
 | PRD-OUT-004 | Every read command shall accept `--format` to override the default output format. | Must | v0.1 |
 | PRD-OUT-005 | Where context packs are available, the system shall return role-tuned bundles of issue data via `--context-pack <role>`. | Should | v0.2 |
 | PRD-OUT-006 | The system shall provide named reports for common cross-cutting queries: epic-status, open-escalations, qa-blockers, ac-matrix, epic-wrapup-pack, task-hygiene, stale-claims. | Should | v0.2 |
@@ -299,7 +304,7 @@ phase planning.
 | PRD ID(s) | Roadmap Version | Task(s) | Verification |
 |---|---|---|---|
 | PRD-INIT-001 – 004 | v0.1 | | |
-| PRD-ISSUE-001 – 018 | v0.1 | | |
+| PRD-ISSUE-001 – 021 | v0.1 | | |
 | PRD-AC-001 – 006 | v0.1 | | |
 | PRD-DEV-001 – 009 | v0.1 | | |
 | PRD-WF-001 – 010, 013 | v0.1 | | |
@@ -307,9 +312,9 @@ phase planning.
 | PRD-ROLE-001 – 005 | v0.1 | | |
 | PRD-LINK-001 – 006, 008 | v0.1 | | |
 | PRD-TELEM-001 – 004 | v0.1 | | |
-| PRD-OUT-001 – 004, 008 | v0.1 | | |
+| PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
-| PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
+| PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
 | PRD-GOV-001 – 008, 012 – 013 | v0.2 | | |
 | PRD-TELEM-005 – 006 | v0.2 | | |
 | PRD-OUT-005 – 007 | v0.2 | | |

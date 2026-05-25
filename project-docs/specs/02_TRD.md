@@ -121,7 +121,7 @@ lists are indicative; refer to the spec for exhaustive definitions.
 
 | Entity | Key Fields | Notes |
 |---|---|---|
-| `decisions` | summary, body_md_path, area, status | FK target for concerns.escalated_to_esc_id and escalations.resolution_dec. |
+| `decisions` | summary, body_md_path, area, status | FK target for escalations.resolution_dec. |
 | `escalations` | status, trigger_class, raised_by_role | FK target for concerns and triage_events. |
 | `triage_events` | verdict (RESUME/BLOCK), source, source_ref_id, reasoning_md | FK target for concerns.triaged_in_event_id. |
 | `requirements` | type (PRD/TRD), summary, source_doc, source_section, last_synced_hash | FK target for links (issue → requirement). |
