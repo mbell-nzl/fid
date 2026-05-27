@@ -369,7 +369,7 @@ Default context:
 - `project-docs/docs/current/decisions_active.md`
 - `project-docs/docs/current/progress_current.md`
 - `project-docs/docs/current/tl_escalations_current.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 - `project-docs/docs/phases/phase-<id>/qa/validation-contract.md`
 - phase task specs and completion reports
 - `qa-plan.md` if present
@@ -436,13 +436,13 @@ Default context:
 - `project-docs/docs/current/decisions_active.md`
 - `project-docs/docs/current/progress_current.md`
 - `project-docs/docs/current/tl_escalations_current.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 - `project-docs/docs/phases/phase-<id>/qa/qa-plan.md`
 - `project-docs/docs/phases/phase-<id>/qa/validation-contract.md`
 - the task specs and completion reports named in the prompt
 
 On-demand:
-- `project-docs/specs/03_DESIGN_PLAN.md` for CLI UX or TUI work.
+- `project-docs/specs/05_DESIGN_PLAN.md` for CLI UX or TUI work.
 - `project-docs/docs/current/decisions_principles.md` for standing rule checks.
 - closed phase archives only when a finding cross-references them.
 - never full PRD/TRD/roadmap by default.
@@ -473,7 +473,7 @@ Responsibilities:
 CLI/TUI review mode:
 - Active when the phase brief identifies CLI UX or TUI work, or task language
   emphasizes consistency, matches, parity, follows, or audit across surfaces.
-- Cite `project-docs/specs/03_DESIGN_PLAN.md` sections per reviewed task.
+- Cite `project-docs/specs/05_DESIGN_PLAN.md` sections per reviewed task.
 - If the phase brief has a Parity Matrix, walk it. Parity discrepancies are
   Blocking by default unless an accepted decision says otherwise.
 - Use focused test output, source-linked behavior proof, CLI invocation
@@ -543,10 +543,14 @@ project-docs/
 |   |-- GLOSSARY.md
 |   |-- 01_PRD.md
 |   |-- 02_TRD.md
-|   |-- 03_DESIGN_PLAN.md
-|   |-- 04_QUALITY_PLAN.md
-|   |-- 05_AI_WORKFLOW.md
-|   `-- 06_IMPLEMENTATION_ROADMAP.md
+|   |-- 03_TRD_SCHEMA.md
+|   |-- 04_TRD_CONFIG.md
+|   |-- 05_DESIGN_PLAN.md
+|   |-- 06_DESIGN_PLAN_CLI.md
+|   |-- 07_DESIGN_PLAN_FLOWS.md
+|   |-- 08_QUALITY_PLAN.md
+|   |-- 09_AI_WORKFLOW.md
+|   `-- 10_IMPLEMENTATION_ROADMAP.md
 |-- docs/
 |   |-- current/                       # default-loaded current state
 |   |   |-- phase_brief.md

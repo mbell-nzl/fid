@@ -21,7 +21,7 @@ Default load:
 - `project-docs/docs/current/decisions_active.md`
 - `project-docs/docs/current/progress_current.md`
 - `project-docs/docs/current/tl_escalations_current.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 - `project-docs/docs/phases/phase-N/qa/validation-contract.md`
 - Relevant task specs and completion reports
 

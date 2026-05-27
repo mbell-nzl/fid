@@ -23,10 +23,14 @@ a positive assertion after review, not the default.
 | `00_PROJECT_CHARTER.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
 | `01_PRD.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
 | `02_TRD.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
-| `03_DESIGN_PLAN.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
-| `04_QUALITY_PLAN.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
-| `05_AI_WORKFLOW.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
-| `06_IMPLEMENTATION_ROADMAP.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `03_TRD_SCHEMA.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `04_TRD_CONFIG.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `05_DESIGN_PLAN.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `06_DESIGN_PLAN_CLI.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `07_DESIGN_PLAN_FLOWS.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `08_QUALITY_PLAN.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `09_AI_WORKFLOW.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched / verified-no-change / N/A | <DEC/task/finding> |
 
 ## Triage-Log Audit
 

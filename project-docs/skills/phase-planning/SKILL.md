@@ -45,8 +45,8 @@ dependency, and workflow changes without an explicit exception.
 
 ## References
 
-- `project-docs/specs/05_AI_WORKFLOW.md`
-- `project-docs/specs/06_IMPLEMENTATION_ROADMAP.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`
+- `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`
 - `project-docs/templates/validation-contract-template.md`
 - `project-docs/templates/task-spec-template.md`
 - `project-docs/templates/phase-brief-template.md`

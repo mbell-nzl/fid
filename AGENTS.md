@@ -114,7 +114,7 @@ record the rationale in the task completion report.
 
 ## Quality And Release Readiness
 
-Use the maturity path in `project-docs/specs/04_QUALITY_PLAN.md`:
+Use the maturity path in `project-docs/specs/08_QUALITY_PLAN.md`:
 
 1. Baseline: specs, TDD, task reports, QA plan, deterministic QA evidence, and
    human checklist.
@@ -176,10 +176,14 @@ See `project-docs/docs/playbook.md` for a concise operator runbook.
 - `project-docs/specs/GLOSSARY.md` - canonical project language.
 - `project-docs/specs/01_PRD.md` - product requirements.
 - `project-docs/specs/02_TRD.md` - technical requirements.
-- `project-docs/specs/03_DESIGN_PLAN.md` - user experience and surfaces.
-- `project-docs/specs/04_QUALITY_PLAN.md` - testing and verification.
-- `project-docs/specs/05_AI_WORKFLOW.md` - agent workflow.
-- `project-docs/specs/06_IMPLEMENTATION_ROADMAP.md` - phase plan.
+- `project-docs/specs/03_TRD_SCHEMA.md` - full SQL schema, triggers, validation.
+- `project-docs/specs/04_TRD_CONFIG.md` - `.fid/` directory structure and config.
+- `project-docs/specs/05_DESIGN_PLAN.md` - user experience and surfaces.
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` - CLI flag specs and output examples.
+- `project-docs/specs/07_DESIGN_PLAN_FLOWS.md` - end-to-end flows, whet mapping, export.
+- `project-docs/specs/08_QUALITY_PLAN.md` - testing and verification.
+- `project-docs/specs/09_AI_WORKFLOW.md` - agent workflow.
+- `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` - phase plan.
 
 ## Agent Working Documents
 

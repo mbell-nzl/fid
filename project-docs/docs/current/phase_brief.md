@@ -12,7 +12,7 @@ No implementation phase is active yet.
 The human is progressively filling the seven spec files from
 `scaffold/initial-spec.md`. Once specs and quality commands are concrete,
 invoke Tech Lead to plan Phase 0 from
-`project-docs/specs/06_IMPLEMENTATION_ROADMAP.md`.
+`project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`.
 
 ## Status
 

@@ -33,6 +33,6 @@ making the skill the source of workflow authority.
 
 - `project-docs/templates/validation-contract-template.md`
 - `project-docs/templates/task-spec-template.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
-- `project-docs/specs/05_AI_WORKFLOW.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`
 - `project-docs/specs/GLOSSARY.md`

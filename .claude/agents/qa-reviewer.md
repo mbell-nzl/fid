@@ -24,7 +24,7 @@ Default load:
 - `project-docs/docs/phases/phase-N/qa/qa-plan.md`
 - `project-docs/docs/phases/phase-N/qa/validation-contract.md`
 - Named task specs and completion reports
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 
 Do not read full PRD, TRD, or roadmap by default. Load excerpts on demand.
 
@@ -62,7 +62,7 @@ audit, or cross-surface work, or when reviewed task specs use language such as
 
 Additional requirements:
 
-- Cite the `03_DESIGN_PLAN.md` sections checked for each task.
+- Cite the `05_DESIGN_PLAN.md` sections checked for each task.
 - Run at least one representative deterministic check per task when available:
   command, test, browser interaction, API request, rendered artifact inspection,
   or equivalent. Include reproducible evidence under that task.

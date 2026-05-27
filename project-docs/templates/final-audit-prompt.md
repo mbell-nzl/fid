@@ -13,11 +13,15 @@ Read these documents in full before analysis:
 3. project-docs/specs/00_PROJECT_CHARTER.md
 4. project-docs/specs/01_PRD.md
 5. project-docs/specs/02_TRD.md
-6. project-docs/specs/03_DESIGN_PLAN.md
-7. project-docs/specs/04_QUALITY_PLAN.md
-8. project-docs/specs/05_AI_WORKFLOW.md
-9. project-docs/specs/06_IMPLEMENTATION_ROADMAP.md
-10. .claude/agents/*.md
+6. project-docs/specs/03_TRD_SCHEMA.md
+7. project-docs/specs/04_TRD_CONFIG.md
+8. project-docs/specs/05_DESIGN_PLAN.md
+9. project-docs/specs/06_DESIGN_PLAN_CLI.md
+10. project-docs/specs/07_DESIGN_PLAN_FLOWS.md
+11. project-docs/specs/08_QUALITY_PLAN.md
+12. project-docs/specs/09_AI_WORKFLOW.md
+13. project-docs/specs/10_IMPLEMENTATION_ROADMAP.md
+14. .claude/agents/*.md
 11. .codex/config.toml
 12. .codex/agents/*.toml
 

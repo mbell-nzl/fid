@@ -66,5 +66,5 @@ Use these terms consistently:
 
 - `project-docs/specs/GLOSSARY.md`
 - `project-docs/specs/02_TRD.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 - `project-docs/templates/phase-decisions-template.md`

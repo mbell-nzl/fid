@@ -10,7 +10,7 @@ Use AGENTS.md as the project grounding file. Default context load:
 - project-docs/docs/current/decisions_active.md
 - project-docs/docs/current/progress_current.md
 - project-docs/docs/current/tl_escalations_current.md
-- project-docs/specs/04_QUALITY_PLAN.md
+- project-docs/specs/08_QUALITY_PLAN.md
 - project-docs/docs/phases/phase-N/qa/validation-contract.md
 - relevant task specs and completion reports
 
@@ -38,7 +38,7 @@ PASS verdicts on deterministic items require reproducible evidence such as comma
 
 Record a final outcome for every VAL-NNN: PASS, FAIL, BLOCKED, or CARRY-FORWARD. PASS without cited evidence is invalid.
 
-Quality commands you may run are the concrete commands defined in AGENTS.md and 04_QUALITY_PLAN.md.
+Quality commands you may run are the concrete commands defined in AGENTS.md and 08_QUALITY_PLAN.md.
 
 Constraints:
 - Never write or fix product code.

@@ -24,7 +24,7 @@ Default load:
 
 On-demand load:
 
-- `project-docs/specs/06_IMPLEMENTATION_ROADMAP.md`
+- `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`
 - Relevant PRD/TRD/design/quality/workflow sections under
   `project-docs/specs/`
 - `project-docs/docs/current/decisions_principles.md`

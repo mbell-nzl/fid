@@ -30,5 +30,5 @@ boundary is not yet clear.
 
 - `project-docs/specs/GLOSSARY.md`
 - `project-docs/specs/02_TRD.md`
-- `project-docs/specs/05_AI_WORKFLOW.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`
 - `project-docs/templates/task-spec-template.md`

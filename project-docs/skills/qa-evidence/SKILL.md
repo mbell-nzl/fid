@@ -36,4 +36,4 @@ Use this skill when evidence quality matters more than prose confidence.
 - `project-docs/templates/final-review-template.md`
 - `project-docs/templates/human-checklist-template.md`
 - `project-docs/templates/completion-report-template.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`

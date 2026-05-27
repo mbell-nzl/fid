@@ -10,7 +10,7 @@
 - QA Lead (`@qa-lead`): QA plans, phase-end review, human checklist.
 
 See `.claude/agents/` for Claude agent definitions,
-`project-docs/specs/05_AI_WORKFLOW.md` for the canonical workflow, and
+`project-docs/specs/09_AI_WORKFLOW.md` for the canonical workflow, and
 `project-docs/docs/playbook.md` for the short operator runbook.
 Phase planning includes `VAL-NNN` validation assertions in
 `project-docs/docs/phases/phase-N/qa/validation-contract.md`; task specs,

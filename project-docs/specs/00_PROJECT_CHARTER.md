@@ -216,9 +216,13 @@ This charter is part of the core specification suite:
 - `GLOSSARY.md` - canonical project language and flagged ambiguities.
 - `01_PRD.md` - product requirements.
 - `02_TRD.md` - technical requirements.
-- `03_DESIGN_PLAN.md` - user experience and interface design.
-- `04_QUALITY_PLAN.md` - testing strategy and quality gates.
-- `05_AI_WORKFLOW.md` - agent roles and orchestration.
-- `06_IMPLEMENTATION_ROADMAP.md` - implementation phases.
+- `03_TRD_SCHEMA.md` - full SQL schema, triggers, and validation.
+- `04_TRD_CONFIG.md` - `.fid/` directory structure and config formats.
+- `05_DESIGN_PLAN.md` - user experience and interface design.
+- `06_DESIGN_PLAN_CLI.md` - CLI flag specs and output examples.
+- `07_DESIGN_PLAN_FLOWS.md` - end-to-end flows, whet mapping, export layout.
+- `08_QUALITY_PLAN.md` - testing strategy and quality gates.
+- `09_AI_WORKFLOW.md` - agent roles and orchestration.
+- `10_IMPLEMENTATION_ROADMAP.md` - implementation phases.
 
-*Last updated: 2026-05-24*
+*Last updated: 2026-05-27*

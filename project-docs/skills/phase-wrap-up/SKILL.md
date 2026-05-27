@@ -32,8 +32,8 @@ verification have produced their artifacts.
 
 ## References
 
-- `project-docs/specs/05_AI_WORKFLOW.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`
 - `project-docs/templates/phase-decisions-template.md`
 - `project-docs/templates/phase-brief-template.md`
 - `project-docs/templates/final-review-template.md`

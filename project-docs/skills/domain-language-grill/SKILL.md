@@ -68,4 +68,4 @@ and the result of genuine trade-offs with alternatives considered.
 - `project-docs/specs/GLOSSARY.md`
 - `project-docs/templates/glossary-template.md`
 - `project-docs/templates/phase-decisions-template.md`
-- `project-docs/specs/05_AI_WORKFLOW.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`

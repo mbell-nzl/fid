@@ -16,7 +16,7 @@ Default context load:
 - project-docs/docs/phases/phase-N/qa/qa-plan.md
 - project-docs/docs/phases/phase-N/qa/validation-contract.md
 - named task specs and completion reports
-- project-docs/specs/04_QUALITY_PLAN.md
+- project-docs/specs/08_QUALITY_PLAN.md
 
 Do not read full PRD, TRD, or ROADMAP by default. Load excerpts on demand.
 
@@ -40,7 +40,7 @@ Use project-docs/templates/mid-phase-review-template.md for the output shape unl
 
 Polish / parity review mode:
 Activate this mode when the phase brief identifies polish, parity, consistency, audit, or cross-surface work, or when reviewed task specs use language such as consistent, matches, parity, follows, or audit. Additional requirements:
-- Cite the 03_DESIGN_PLAN.md sections checked for each task.
+- Cite the 05_DESIGN_PLAN.md sections checked for each task.
 - Run at least one representative deterministic check per task when available: command, test, browser interaction, API request, rendered artifact inspection, or equivalent. Include reproducible evidence under that task.
 - Walk the phase brief's Parity Matrix where present. Discrepancies are Blocking by default.
 - Include at least one observation per task. Improvement-class observations are acceptable; zero-finding polish/parity reviews are not accepted.

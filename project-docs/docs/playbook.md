@@ -1,7 +1,7 @@
 # Workflow Playbook
 
 Use this file as the short operator guide. Canonical workflow rules live in
-`project-docs/specs/05_AI_WORKFLOW.md`.
+`project-docs/specs/09_AI_WORKFLOW.md`.
 
 ## 1. Pick The Mode
 

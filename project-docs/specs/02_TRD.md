@@ -96,9 +96,9 @@ Rules:
 
 ### 4.1 Entities
 
-The full schema is defined in `scaffold/initial-spec.md` §6. This section
+The full SQL schema with DDL is in `03_TRD_SCHEMA.md`. This section
 captures the entity inventory, key relationships, and design rationale. Column
-lists are indicative; refer to the spec for exhaustive definitions.
+lists are indicative; refer to the schema doc for exhaustive definitions.
 
 **Core issue layer (v0.1):**
 

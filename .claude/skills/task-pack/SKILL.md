@@ -57,5 +57,5 @@ Stop and report if any required command is still a placeholder.
 
 - `project-docs/templates/task-spec-template.md`
 - `project-docs/templates/completion-report-template.md`
-- `project-docs/specs/05_AI_WORKFLOW.md`
-- `project-docs/specs/04_QUALITY_PLAN.md`
+- `project-docs/specs/09_AI_WORKFLOW.md`
+- `project-docs/specs/08_QUALITY_PLAN.md`

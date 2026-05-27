@@ -2266,7 +2266,7 @@ For the bootstrap-of-`fid`-on-`whet` case:
 | `tl_handoff.md` | Out of scope for v0.1; remain markdown | Optional handoff between TL sessions. |
 
 Note: `AGENTS.md`, `CLAUDE.md`, golden docs (`01_PRD.md`, `02_TRD.md`,
-etc.), and the workflow doc itself (`05_AI_WORKFLOW.md`) stay as
+etc.), and the workflow doc itself (`09_AI_WORKFLOW.md`) stay as
 markdown. They are not project state — they are project canon.
 
 ---

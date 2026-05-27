@@ -16,7 +16,7 @@ Default context load:
 - project-docs/docs/current/tl_handoff.md if present
 
 Phase start:
-1. Read project-docs/specs/06_IMPLEMENTATION_ROADMAP.md for the target phase.
+1. Read project-docs/specs/10_IMPLEMENTATION_ROADMAP.md for the target phase.
 2. Read relevant sections of PRD, TRD, Design Plan, Quality Plan, and AI Workflow under project-docs/specs/.
 3. Review the Carry-Forward Register in decisions_active.md.
 4. Skim the prior phase's Workflow Notes if they exist.
