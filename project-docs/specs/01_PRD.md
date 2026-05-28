@@ -82,6 +82,8 @@ where a requirement is deferred past v0.1.
 | PRD-ISSUE-019 | When creating an issue, the system shall assign a default owner role: `tl` for epics, `developer` for tasks. The owner role shall be overridable at creation time. | Should | v0.1 |
 | PRD-ISSUE-020 | The system shall support an optional owner actor field on issues to distinguish specific actors within a role. | Should | v0.1 |
 | PRD-ISSUE-021 | The system shall allow owner role and owner actor to be changed via an explicit update command. Owner changes shall be journaled and projected to the activity log. | Should | v0.1 |
+| PRD-ISSUE-022 | The system shall allow an issue's title, priority, labels, spec markdown path, token estimate, and due date to be changed via an explicit update command. Field updates shall be journaled and projected to the activity log. | Should | v0.1 |
+| PRD-ISSUE-023 | The system shall allow labels to be added to or removed from an existing issue without replacing the full label set. Label changes shall be journaled and projected to the activity log. | Should | v0.1 |
 
 ### 3.3 Acceptance Criteria (AC)
 
@@ -106,7 +108,7 @@ where a requirement is deferred past v0.1.
 | PRD-DEV-006 | The system shall track concern lifecycle through statuses: open, addressed, escalated, wontfix. | Must | v0.1 |
 | PRD-DEV-007 | When an issue has one or more open concerns, the system shall surface this as a derived concern flag on issue reads. | Must | v0.1 |
 | PRD-DEV-008 | The system shall support composite developer commands that combine claim acquisition, status transition, agent run recording, and completion creation into a single atomic operation. | Should | v0.1 |
-| PRD-DEV-009 | When a developer records a human intervention during a task attempt, the system shall flag it on the completion record. | Should | v0.1 |
+| PRD-DEV-009 | When a developer records a human intervention during a task attempt, the system shall flag it on the completion record and may store a short intervention note. | Should | v0.1 |
 
 ### 3.5 Workflow Transitions (WF)
 
@@ -139,6 +141,7 @@ where a requirement is deferred past v0.1.
 | PRD-CLAIM-006 | When transitioning an issue out of a started-category state, the system shall automatically release the claim. | Should | v0.1 |
 | PRD-CLAIM-007 | The system shall support listing all live claims and filtering by stale (past-TTL) status. | Must | v0.1 |
 | PRD-CLAIM-008 | The system shall support human claims (`--by human`) to signal agents should not advance the entity. | Should | v0.1 |
+| PRD-CLAIM-008a | The system shall allow the current claim holder to renew a live claim and optionally set a new TTL. Renewal shall be journaled and projected to the activity log. | Should | v0.1 |
 | PRD-CLAIM-009 | Where QA review claims are enabled, the system shall extend claim support to QA review entities. | Should | v0.3 |
 
 ### 3.7 Role-Based Permissions (ROLE)
@@ -162,6 +165,7 @@ where a requirement is deferred past v0.1.
 | PRD-LINK-004 | The system shall support the relations: blocks/blocked_by, relates_to, duplicates/duplicated_by, supersedes/superseded_by, implements/implemented_by, caused_by/causes, discovered_from/discovered. | Must | v0.1 |
 | PRD-LINK-005 | If a link relation is not valid for the given entity type pair, the system shall reject it with an error. | Must | v0.1 |
 | PRD-LINK-006 | The system shall list all links from and to a given entity. | Must | v0.1 |
+| PRD-LINK-006a | The system shall allow an existing link to be removed. Removing a link shall remove its auto-created inverse link and project both removals to the activity log. | Should | v0.1 |
 | PRD-LINK-007 | The system shall extend link endpoints to decisions and escalations when their CLI surface ships. | Should | v0.2 |
 | PRD-LINK-008 | The system shall not allow links to duplicate relationships that have dedicated schema (parent_id, escalated_to_esc_id, resolution_dec, etc.). | Must | v0.1 |
 
@@ -216,6 +220,7 @@ where a requirement is deferred past v0.1.
 | PRD-TELEM-001 | When an agent run completes, the system shall record the role, model, input tokens, output tokens, start/end timestamps, and snapshot pricing. | Must | v0.1 |
 | PRD-TELEM-002 | When an agent run is recorded, the system shall compute USD cost using snapshot pricing at run end. | Must | v0.1 |
 | PRD-TELEM-003 | If the model is not found in the pricing configuration, the system shall leave cost null and emit a warning. | Must | v0.1 |
+| PRD-TELEM-003a | When provider details are available, the system shall optionally record token breakdown, tool-call count, provider run ID, and provider-billed cost without replacing the normalized token and list-price summary fields. | Should | v0.1 |
 | PRD-TELEM-004 | The system shall aggregate token and cost statistics by role, by model, and by epic. | Must | v0.1 |
 | PRD-TELEM-005 | The system shall aggregate task statistics including estimate-vs-actual tokens, rework rate (attempts per task), and gate pass/fail counts. | Should | v0.2 |
 | PRD-TELEM-006 | The system shall aggregate human intervention frequency per epic. | Should | v0.2 |
@@ -241,6 +246,7 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-014 | Where template-driven validation is enabled, the system shall validate artifact structure (required sections) against the template at write time and reject malformed artifacts. | Should | v0.3 |
 | PRD-OUT-015 | The system shall provide a TUI kanban board grouped by status category and filterable by epic, labels, and cycle. | Should | v0.3 |
 | PRD-OUT-016 | The system shall support saved views (named queries) that can be run by name. | Should | v0.4 |
+| PRD-OUT-017 | The system shall provide an entity activity-history command that lists projected activity log entries by entity, event type, and date range. | Should | v0.1 |
 
 ### 3.14 Operations and Maintenance (OPS)
 
@@ -249,13 +255,14 @@ where a requirement is deferred past v0.1.
 | PRD-OPS-001 | The system shall durably persist every write as a single atomic event; no partial writes shall be observable. | Must | v0.1 |
 | PRD-OPS-002 | If a composite write partially fails (e.g. one step of a multi-table operation), the system shall reject the entire operation with no state change. | Must | v0.1 |
 | PRD-OPS-003 | When the query store is missing or stale, the system shall automatically rebuild it from the durable event log before answering any read. | Must | v0.1 |
-| PRD-OPS-004 | The system shall support an explicit rebuild command that reconstructs the query store from scratch. | Must | v0.1 |
+| PRD-OPS-004 | The system shall support an explicit rebuild command that reconstructs the query store from scratch. | Must | v0.1. `fid rebuild`. |
 | PRD-OPS-005 | The system shall provide a consistency audit that checks for kind-hierarchy violations, orphaned polymorphic references, FK integrity, and workflow state validity. | Must | v0.1 |
 | PRD-OPS-006 | When the consistency audit finds errors, the system shall exit non-zero and list each violation. | Must | v0.1 |
 | PRD-OPS-007 | The system shall support `--warn-as-error` on the consistency audit for CI and pre-merge use. | Should | v0.1 |
 | PRD-OPS-008 | The consistency audit shall report warnings for stale claims, started-category issues without a live claim (with a configurable grace window), and telemetry gaps. | Should | v0.1 |
 | PRD-OPS-009 | The system shall distribute as a single binary with no runtime dependencies. | Must | v0.1 |
 | PRD-OPS-010 | The system shall provide an MCP server for agent integration exposing resources, prompts, and a curated tool set. | Should | v0.3 |
+| PRD-OPS-011 | The system shall support replaying a foreign event log into the current project with conflict detection on entity, claim, and status. | Could | v0.2. `fid merge --journal`. Mostly redundant with text-based git merge (PRD-NFR-007); covers the rare case of a journal recovered from outside version control (e.g. a lost worktree). |
 
 ## 4. Non-Functional Product Requirements
 
@@ -326,6 +333,9 @@ phase planning.
 | PRD-ISSUE-017 | v0.5 | | |
 
 ## 7. Open Product Questions
+
+These are product and scope questions. Technical open questions are tracked
+separately in `02_TRD.md` §11.
 
 - [ ] Should the `workflow_runner` role become a deterministic harness rather
   than an LLM role? Deferred from spec §15.1; revisit when routine

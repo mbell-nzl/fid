@@ -282,13 +282,17 @@ Use when: describing the implementation role.
 Avoid: "engineer", "coder".
 
 **Workflow Runner**:
-The mechanical loop driver. Drives an epic's task loop, spawns agents,
-dispatches on completion-report inspection and review findings.
-Intentionally a cheaper model — its decisions are state-machine
-deterministic, not strategic. May later become a deterministic harness.
-Use when: describing the mechanical orchestration loop.
-Avoid: "Phase Runner" (legacy; renamed when "phase" → [[Sequential epic]]).
-"Orchestrator" (misleading; the capable model is the TL).
+The mechanical loop driver — fid's `workflow_runner` role (one of the seven
+seeded roles). Drives an epic's task loop, spawns agents, dispatches on
+completion-report inspection and review findings. Intentionally a cheaper
+model — its decisions are state-machine deterministic, not strategic. May
+later become a deterministic harness.
+Use when: describing fid's mechanical orchestration role (`workflow_runner`).
+Avoid: "Orchestrator" (misleading; the capable model is the TL).
+Distinct from: "Phase Runner" — the Claude Code build agent (`@phase-runner`;
+`09_AI_WORKFLOW.md` §2.4) that corresponds to this role while building fid.
+Current, not a legacy alias. The build pipeline will converge on "Workflow
+Runner" once fid is dogfooded.
 
 **Human**:
 The product/approval role and the escape valve. Approves epic closure, runs
@@ -318,7 +322,7 @@ Avoid: acceptance criterion when referring to the phase-level assertion.
 
 Definition: A per-phase `TRG-NNN` record of TL-Lite's disposition for a
 soft blocker or escalation trigger.
-Use when: Phase Runner routes a soft blocker through TL-Lite.
+Use when: the Workflow Runner routes a soft blocker through TL-Lite.
 Avoid: decision entry when no durable choice was made.
 
 ### Workflow-Lint

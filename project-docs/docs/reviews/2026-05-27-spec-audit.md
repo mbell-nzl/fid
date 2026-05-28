@@ -136,34 +136,38 @@ No single document lists the complete `.fid/` directory structure, what each fil
 
 ### P3 — Inconsistency or moderate gap
 
-#### 10. GLOSSARY "Workflow Runner" vs AI Workflow "Phase Runner" naming collision — OPEN
+#### 10. GLOSSARY "Workflow Runner" vs AI Workflow "Phase Runner" naming collision — DONE
 
 **Files:** `GLOSSARY.md`, `09_AI_WORKFLOW.md`
 **Problem:** The Glossary defines `Workflow Runner` as fid's internal role concept and explicitly says "Avoid: Phase Runner (legacy)." But `09_AI_WORKFLOW.md` uses "Phase Runner" throughout as the name of the agent that orchestrates building fid. These are different concepts (fid's internal role vs the agentic workflow role), but the naming collision will confuse developers implementing fid's `workflow_runner` role.
 **Action:** Add a clarifying note to either the Glossary or the AI Workflow doc distinguishing the two: "Phase Runner (the agent building fid) is distinct from Workflow Runner (the fid role concept)." Alternatively, rename the AI Workflow agent to avoid the collision.
+**Resolution:** Kept both names (they live in different layers: build tooling vs. fid product data model) and documented the mapping as intentional and temporary. The false "legacy" framing was the real defect — "Phase Runner" is the live `@phase-runner` build agent, not a legacy alias. Fixed `GLOSSARY.md` "Workflow Runner" entry to add a "Distinct from: Phase Runner" note (current, not legacy; pipeline converges on "Workflow Runner" once fid is dogfooded), aligned the Triage Entry line to use "Workflow Runner", and added a "Naming" note to `09_AI_WORKFLOW.md` §2.4. Rename of the build agent deferred to fid adoption.
 
-#### 11. PRD missing `fid merge --journal` requirement — OPEN
+#### 11. PRD missing `fid merge --journal` requirement — DONE
 
 **Problem:** Initial spec §16 v0.2 includes `fid merge --journal <path>` (replay foreign journal with conflict detection). The PRD has no requirement for this. The TRD doesn't mention it either.
 **Action:** Add a PRD requirement under OPS (e.g., PRD-OPS-011) or explicitly defer it with rationale.
+**Resolution:** Added `PRD-OPS-011` (Could, v0.2) covering foreign event-log replay with conflict detection on entity/claim/status, noting it is mostly redundant with text-based git merge (PRD-NFR-007) and targets the rare recovered-worktree case. Updated roadmap row (v0.2c) to trace to `PRD-OPS-011` instead of "spec §16 v0.2". Note: the TRD already references `fid merge --journal` as a journal-format consumer (§4, change-impact table).
 
-#### 12. PRD missing explicit `fid rebuild` requirement — OPEN
+#### 12. PRD missing explicit `fid rebuild` requirement — DONE
 
 **Problem:** `fid rebuild` is described in the TRD (§4.3) and is mentioned extensively in the initial spec as a foundational v0.1 primitive. But the PRD has no explicit requirement for it — PRD-OPS-003 and PRD-OPS-004 describe the behavior abstractly ("rebuild the query store") without naming the command.
 **Impact:** Minor — the TRD and Design Plan both show `rebuild`. But the PRD should be the requirements source.
 **Action:** Verify PRD-OPS-004 is sufficient or add explicit `fid rebuild` requirement.
+**Resolution:** `PRD-OPS-004` was judged substantively sufficient — it already requires "an explicit rebuild command that reconstructs the query store from scratch," and roadmap row 61 traces `fid rebuild` to `PRD-OPS-003–004`. Rather than duplicate the requirement, added the command name `fid rebuild` to the `PRD-OPS-004` Notes column so the PRD is greppable by command name, consistent with the PRD's behavioral style (it names flags/commands in Notes, not in the requirement clause).
 
-#### 13. PRD doesn't cover `issue update` comprehensively — OPEN
+#### 13. PRD doesn't cover `issue update` comprehensively — DONE
 
 **Problem:** The Design Plan shows `fid issue update <id> --title --priority --labels --owner-role --owner-actor`. PRD-ISSUE-021 covers owner changes but no PRD requirement covers updating title, priority, or labels on existing issues. PRD-ISSUE-015 covers *creation* with these fields.
 **Action:** Add a PRD requirement for issue field updates (title, priority, labels, spec_md_path, est_tokens, due_date).
+**Resolution:** Added `PRD-ISSUE-022` (Should, v0.1) as a parallel to `PRD-ISSUE-021`, covering update of title, priority, labels, spec markdown path, token estimate, and due date via the explicit update command, journaled and projected to the activity log. Kept the owner-change requirement (021) separate to preserve the owner cluster (019–021). Matches the `fid issue update` flag set in `06_DESIGN_PLAN_CLI.md`.
 
 #### 14. Trigger specification is summary-level in TRD — DONE
 
 **Problem:** The initial spec §6.14 has an exhaustive trigger list (kind-invariant rules per table, polymorphic ref integrity, link scope, claim scope, comment scope, kind immutability, mutually-exclusive qa_review columns). The TRD §4.5 summarizes these as bullets. Without the detailed trigger specification, the developer implementing triggers will miss cases.
 **Action:** Either expand TRD §4.5 to include the full trigger list from §6.14, or explicitly reference initial spec §6.14 for the implementation-level detail.
 
-#### 15. Open questions not synchronized across documents — OPEN
+#### 15. Open questions not synchronized across documents — DONE
 
 **Problem:**
 - PRD §7 has 3 open questions
@@ -171,6 +175,7 @@ No single document lists the complete `.fid/` directory structure, what each fil
 - Initial spec §15.1 has 1 open question
 - These partially overlap (workflow_runner as deterministic harness appears in both PRD and initial spec) but the TRD questions (TOON subset, rebuild checkpoint, MCP SDK choice) don't appear elsewhere.
 **Action:** Consolidate open questions into one location or ensure cross-references.
+**Resolution:** Chose cross-referencing over consolidation — questions are correctly partitioned by domain (PRD §7 = product/scope, TRD §11 = technical), and the one overlap (workflow_runner) was already cross-referenced PRD→spec §15.1. Added a mutual PRD §7 ↔ TRD §11 cross-link, and replaced the stale initial-spec §15.1 instruction ("add new questions here … move to §15.2") with a historical note redirecting new questions to the formal trackers. "Last updated" dates left unchanged since no question content changed.
 
 #### 16. Design Plan missing TOON and markdown output examples — DONE
 
@@ -213,11 +218,12 @@ No single document lists the complete `.fid/` directory structure, what each fil
 **Problem:** The initial spec §16 v0.3 has detailed MCP design (resources list, prompts list, tools list with rationale for each). The Design Plan just has a row in the surfaces table. The TRD has TRD-ARCH-013 (curated subset, not full surface).
 **Action:** No action for v0.1. When v0.3 scope is planned, the MCP design from initial spec §16 should be incorporated into the Design Plan.
 
-#### 23. AI Workflow model guidance references OpenAI models — OPEN (minor)
+#### 23. AI Workflow model guidance references OpenAI models — DONE
 
 **File:** `project-docs/specs/09_AI_WORKFLOW.md` §6
 **Problem:** The model guidance table lists `gpt-5.5` and `gpt-5.4-mini` under a "Codex" column. This is correct for OpenAI Codex agents but may confuse Claude Code users. The CLAUDE.md and `.claude/agents/` are the Claude-side materialization.
 **Action:** Minor — consider adding a note that Claude Code agent model choices are configured separately in `.claude/agents/`.
+**Resolution:** Added a note under the §6 table clarifying it is Codex-specific, that Claude Code model choices are configured per agent in `.claude/agents/*.md` (not duplicated here, to avoid drift), and that the Reasoning column (high/medium) is the tool-agnostic signal to map across toolchains. Chose a note over a parallel Claude column to keep `.claude/agents/` as the single source of truth.
 
 ---
 
@@ -234,7 +240,7 @@ No single document lists the complete `.fid/` directory structure, what each fil
 | QA three-tier model | Consistent | PRD §3.9–3.10, TRD §4.1, ADR-0003 aligned |
 | Output formats | Consistent | Design Plan §5.1, PRD §3.13, initial spec §10 aligned |
 | Charter scope vs PRD requirements | Consistent | Charter §5.2 maps cleanly to PRD §3 sections |
-| Glossary terms vs spec usage | Mostly consistent | #10 naming collision noted |
+| Glossary terms vs spec usage | Consistent | #10 naming collision resolved (Workflow Runner = fid role; Phase Runner = build agent) |
 | Quality Plan vs AI Workflow | Consistent | Both reference same gate commands, templates, and artifacts |
 
 ---
@@ -263,7 +269,7 @@ No single document lists the complete `.fid/` directory structure, what each fil
 | §13 End-to-end flow | `07_DESIGN_PLAN_FLOWS.md` §1 | ~~Gap~~ **Resolved** |
 | §14 Linear/Jira borrows | PRD §3.2 (scattered) | OK |
 | §14.1 Features not included | Charter §5.3 | OK |
-| §15 Open questions | PRD §7, TRD §11 (partial) | **Gap: not synchronized** |
+| §15 Open questions | PRD §7, TRD §11 | ~~Gap: not synchronized~~ **Resolved** (cross-referenced; partitioned product vs technical) |
 | §16 Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md` | ~~Gap~~ **Resolved** |
 | §17 Out of scope | Charter §5.3 | OK |
 
@@ -282,9 +288,9 @@ No single document lists the complete `.fid/` directory structure, what each fil
 4. ~~**Consolidate `.fid/` directory structure** in the TRD.~~ **DONE** — created `04_TRD_CONFIG.md`.
 5. ~~**Add config.toml and pricing.toml format specs** to the TRD.~~ **DONE** — in `04_TRD_CONFIG.md`.
 6. ~~**Add end-to-end user flow** to the Design Plan.~~ **DONE** — created `07_DESIGN_PLAN_FLOWS.md` §1.
-7. **Resolve the naming collision** between Phase Runner (agent workflow) and Workflow Runner (fid role). **OPEN**
-8. **Add `fid issue update` requirement** to the PRD. **OPEN**
-9. **Add `fid merge --journal` requirement** to the PRD or explicitly defer. **OPEN**
+7. ~~**Resolve the naming collision** between Phase Runner (agent workflow) and Workflow Runner (fid role).~~ **DONE** — documented as two distinct concepts; Glossary "legacy" mislabel fixed, build-agent rename deferred to fid adoption.
+8. ~~**Add `fid issue update` requirement** to the PRD.~~ **DONE** — added `PRD-ISSUE-022` for non-owner field updates.
+9. ~~**Add `fid merge --journal` requirement** to the PRD or explicitly defer.~~ **DONE** — added `PRD-OPS-011` (Could, v0.2); roadmap row now traces to it.
 10. ~~**Add TOON output example** to the Design Plan.~~ **DONE** — TOON example in `06_DESIGN_PLAN_CLI.md` §2 (`issue list`). Markdown example in §16.
 
 ### Before v0.2+ phases:

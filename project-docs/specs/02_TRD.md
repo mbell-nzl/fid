@@ -108,14 +108,15 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `epic_metadata` | scheduling, brief_md_path, target_start, target_end | issue_id → issues (1:1, epic only) | Sequential or prioritised scheduling. |
 | `acceptance_criteria` | ordinal, text | issue_id → issues (task/subtask only) | Verification state in `ac_verifications`. |
 | `ac_verifications` | verifier_role, status, evidence_type, evidence_ref, verified_at | ac_id → acceptance_criteria, completion_id → task_completions | Append-only. Multiple per AC per role. |
-| `task_completions` | attempt_number, status, actual_tokens, commit_hashes, files_touched, gate_results | issue_id → issues (task only) | Append-only. Previous attempts marked superseded. |
+| `task_completions` | attempt_number, status, actual_tokens, commit_hashes, files_touched, gate_results, human_intervention | issue_id → issues (task only) | Append-only. Previous attempts marked superseded. |
 | `concerns` | summary, status, body_md_path | issue_id → issues, raised_in_completion_id → task_completions, escalated_to_esc_id → escalations, triaged_in_event_id → triage_events | Status: open → addressed / escalated / wontfix. |
-| `agent_runs` | role, model, tokens_in, tokens_out, cost_usd, price_in/out_per_mtok | issue_id → issues, completion_id → task_completions, review_id → qa_reviews | Snapshot pricing at run end. |
+| `agent_runs` | role, model, tokens_in, tokens_out, cost_usd, price_in/out_per_mtok, token_breakdown_json, tool_call_count, provider_run_id, provider_cost_usd | issue_id → issues, completion_id → task_completions, review_id → qa_reviews | Snapshot pricing at run end plus optional provider reconciliation fields. |
 | `claims` | ref_type, ref_id, claimed_by, claimed_at, ttl_seconds | Polymorphic ref (v0.1: issue; v0.3: qa_review) | At most one live claim per entity. PK enforces exclusivity. |
 | `roles` | name, description, is_human, active | Seeded from default profile | Existence is validity rule for all `_role` columns. |
 | `labels` / `issue_labels` | name, colour; issue_id, label | issue_labels: issue_id → issues, label → labels | Free-form tags. |
 | `links` | from_type, from_id, relation, to_type, to_id | Polymorphic endpoints | v0.1 scope: issue ↔ issue, issue → requirement. Auto-inverse. |
 | `activity_log` | journal_event_id, ref_type, ref_id, event, details, actor | Polymorphic ref, journal_event_id → journal | Projected from journal events. Read-model only. |
+| `projection_meta` | journal_file, journal_offset, last_event_id, last_event_hash, projection_schema_version, replay_status | Single-row DB projection checkpoint | Lets reads detect missing, stale, or inconsistent SQLite state before serving results. |
 
 **Stub tables (v0.1 schema, v0.2 CLI):**
 
@@ -249,6 +250,18 @@ faithfully reproduce.
   sub-second at single-project scale.
 - On every CLI invocation, the DB is checked against the journal tail. If
   behind or missing, it is caught up synchronously before the command answers.
+- The SQLite read model stores one `projection_meta` row recording the last
+  applied journal file, byte offset after the applied line, event ID, event
+  line hash, projection schema version, and replay status.
+- If `projection_meta` is absent, has the wrong projection schema version, or
+  points outside the available journal files, fid rebuilds the DB from
+  scratch before serving a read.
+- If `projection_meta` matches the journal position and last event
+  ID/hash, fid catches up by applying only events after the recorded byte
+  offset.
+- If the recorded event ID/hash does not match the journal at the recorded
+  position, fid stops before answering and reports projection inconsistency.
+  It does not silently skip, truncate, or reorder journal entries.
 
 **Malformed journal:**
 
@@ -295,6 +308,83 @@ dashboard, `fid sql`, direct DB edits):
 What does **not** get a trigger: workflow transition rules, permissions,
 AC verification freshness, template validation. These need rich context or
 runtime state that SQL doesn't have.
+
+### 4.6 Default Workflows (v0.1 Hard-Coded)
+
+v0.1 ships with hard-coded workflow definitions in `internal/workflow/`.
+`issues.workflow_id` is an enum string and `issues.status` is constrained to
+the legal states for that workflow. v0.2 migrates these definitions verbatim
+into the workflow tables before enabling user-defined workflows.
+
+**Task workflow: `task-default`**
+
+| State | Category |
+|---|---|
+| `todo` | `unstarted` |
+| `in_progress` | `started` |
+| `dev_complete` | `started` |
+| `qa_review` | `started` |
+| `qa_block` | `started` |
+| `failed_gate` | `started` |
+| `qa_pass` | `completed` |
+| `done` | `completed` |
+| `cancelled` | `cancelled` |
+
+| From | To | Requirements |
+|---|---|---|
+| `todo` | `in_progress` | - |
+| `in_progress` | `dev_complete` | `all_acs_verified{"roles":["developer"]}`, `has_completion_report` |
+| `in_progress` | `failed_gate` | - |
+| `failed_gate` | `in_progress` | - |
+| `dev_complete` | `qa_review` | - |
+| `qa_review` | `qa_pass` | `all_acs_verified{"roles":["qa_lead"]}` |
+| `qa_review` | `qa_block` | - |
+| `qa_block` | `in_progress` | - |
+| `qa_pass` | `done` | - |
+| any non-`cancelled` state | `cancelled` | - |
+
+**Epic workflow: `epic-default`**
+
+| State | Category |
+|---|---|
+| `todo` | `unstarted` |
+| `in_progress` | `started` |
+| `wrapped` | `started` |
+| `closed` | `completed` |
+| `cancelled` | `cancelled` |
+
+| From | To | Requirements |
+|---|---|---|
+| `todo` | `in_progress` | - |
+| `in_progress` | `wrapped` | `all_child_tasks_done_or_cancelled` |
+| `wrapped` | `closed` | - |
+| any non-`cancelled` state | `cancelled` | - |
+
+**Subtask workflow: `subtask-default`**
+
+| State | Category |
+|---|---|
+| `todo` | `unstarted` |
+| `in_progress` | `started` |
+| `done` | `completed` |
+| `cancelled` | `cancelled` |
+
+| From | To | Requirements |
+|---|---|---|
+| `todo` | `in_progress` | - |
+| `in_progress` | `done` | - |
+| any non-`cancelled` state | `cancelled` | - |
+
+**Escalation workflow: `escalation-default` (v0.2)**
+
+| State | Category |
+|---|---|
+| `open` | `started` |
+| `resolved` | `completed` |
+
+| From | To | Requirements |
+|---|---|---|
+| `open` | `resolved` | `linked_to_decision` |
 
 ## 5. Interfaces and Contracts
 
@@ -399,6 +489,9 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-015 | Template-driven validation shall declare required sections per template kind. `fid dev finish` and similar commands shall validate files against templates and reject malformed artifacts. | v0.3 | Integration test: submit completion report missing `## Concerns` heading; assert rejection. |
 
 ## 11. Open Technical Questions
+
+These are implementation/technical questions. Product and scope questions are
+tracked in `01_PRD.md` §7.
 
 - [ ] Should the TOON marshaller support the full TOON spec or only the
   subset needed for fid's tabular output? Start minimal and extend on demand.

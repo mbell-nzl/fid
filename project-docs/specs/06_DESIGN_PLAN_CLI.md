@@ -123,7 +123,7 @@ fid issue update <id> [flags] --by <role>
 |---|---|---|
 | `--title` | string | New title |
 | `--priority` | int | New priority |
-| `--labels` | string[] | Replace labels (repeatable) |
+| `--labels` | string[] | Replace the full label set (repeatable) |
 | `--owner-role` | string | New owner role |
 | `--owner-actor` | string | New owner actor |
 | `--spec-md` | string | New spec markdown path |
@@ -134,6 +134,34 @@ fid issue update <id> [flags] --by <role>
 **Output (stderr confirmation):**
 ```text
 updated FID-a1b2c3: priority 2 → 1, title "Implement journal append with flush"
+```
+
+### `fid issue label add`
+
+```
+fid issue label add <issue-id> <label> --by <role>
+```
+
+Adds one label to an issue without replacing the rest of the issue's labels.
+The label must already exist; create it with `fid label add` first.
+
+**Output (stderr confirmation):**
+```text
+added label "journal" to FID-a1b2c3
+```
+
+### `fid issue label remove`
+
+```
+fid issue label remove <issue-id> <label> --by <role>
+```
+
+Removes one label from an issue without changing the rest of the issue's
+labels.
+
+**Output (stderr confirmation):**
+```text
+removed label "journal" from FID-a1b2c3
 ```
 
 ### `fid issue transition`
@@ -165,6 +193,8 @@ fid issue complete <id> --by <role> [flags]
 | `--tokens` | int | no | Actual tokens used |
 | `--commits` | string | no | Comma-separated commit hashes |
 | `--files` | string[] | no | Files touched (repeatable) |
+| `--human-intervention` | bool | no | Mark that a human intervened during the attempt |
+| `--intervention-note` | string | no | Short note stored when `--human-intervention` is set |
 
 **Output (stderr confirmation):**
 ```text
@@ -177,13 +207,15 @@ completed FID-a1b2c3 (attempt 1)
 ### `fid issue claim`
 
 ```
-fid issue claim <id> --by <role> [--ttl <duration>]
+fid issue claim <id> --by <role> [--ttl <duration>] [--force] [--renew]
 ```
 
 | Flag | Type | Default | Description |
 |---|---|---|---|
 | `--by` | string (required) | — | Claiming role |
 | `--ttl` | duration | `30m` | Lease duration |
+| `--force` | bool | false | Supersede a live claim when the role is permitted to force-acquire |
+| `--renew` | bool | false | Renew the caller's current live claim |
 | `--note` | string | — | Optional claim context |
 
 **Output (stderr confirmation):**
@@ -191,24 +223,29 @@ fid issue claim <id> --by <role> [--ttl <duration>]
 claimed FID-a1b2c3 by developer (expires 2026-05-27T15:00:00Z)
 ```
 
+**Renew output:**
+```text
+renewed claim on FID-a1b2c3 by developer (expires 2026-05-27T15:30:00Z)
+```
+
+**Force-acquire output:**
+```text
+force-acquired claim on FID-a1b2c3 by tl (previously held by developer until 2026-05-27T15:00:00Z)
+```
+
 ### `fid issue unclaim`
 
 ```
-fid issue unclaim <id> [--force]
+fid issue unclaim <id> --by <role>
 ```
 
 | Flag | Type | Description |
 |---|---|---|
-| `--force` | bool | Take over a live (non-stale) claim |
+| `--by` | string | Acting role releasing its claim |
 
 **Output (stderr confirmation):**
 ```text
-released claim on FID-a1b2c3
-```
-
-**Force output:**
-```text
-force-released claim on FID-a1b2c3 (was held by developer since 2026-05-27T14:30:00Z)
+released claim on FID-a1b2c3 by developer
 ```
 
 ---
@@ -365,6 +402,8 @@ fid dev finish <issue-id> --by developer --completion-md <path>
 | `--tokens` | int | no | Actual tokens used |
 | `--commits` | string | no | Comma-separated commit hashes |
 | `--files` | string[] | no | Files touched (repeatable) |
+| `--human-intervention` | bool | no | Mark that a human intervened during the attempt |
+| `--intervention-note` | string | no | Short note stored when `--human-intervention` is set |
 
 Composes: close agent_run + create task_completion + transition ->
 dev_complete (validates all_acs_verified, has_completion_report).
@@ -476,6 +515,20 @@ linked FID-a1b2c3 blocks FID-7c3e9f
   inverse: FID-7c3e9f blocked_by FID-a1b2c3
 ```
 
+### `fid link remove`
+
+```
+fid link remove <from-id> <relation> <to-id> --by <role>
+```
+
+Removes the declared link and its inverse row in one journal event.
+
+**Output (stderr confirmation):**
+```text
+removed link FID-a1b2c3 blocks FID-7c3e9f
+  inverse removed: FID-7c3e9f blocked_by FID-a1b2c3
+```
+
 ### `fid link list`
 
 ```
@@ -511,7 +564,44 @@ fid link list <id> [--format json|toon|markdown|yaml]
 
 ---
 
-## 8. Label Commands
+## 8. Activity Commands
+
+### `fid activity list`
+
+```
+fid activity list [--on <type>/<id>] [--since <date>] [--event <event>]
+    [--format json|toon|markdown|yaml]
+```
+
+| Flag | Type | Description |
+|---|---|---|
+| `--on` | string | Filter to one entity reference, e.g. `issue/FID-a1b2c3` |
+| `--since` | date/datetime | Include entries on or after this timestamp |
+| `--event` | string | Filter by projected activity event name |
+| `--format` | string | Output format (default: `json`) |
+
+**JSON output:**
+```json
+[
+  {
+    "id": "ACT-a1b2c3",
+    "journal_event_id": "EVT-20260527-000142",
+    "ref_type": "issue",
+    "ref_id": "FID-a1b2c3",
+    "event": "status_changed",
+    "actor": "developer",
+    "occurred_at": "2026-05-27T10:15:00Z",
+    "details": {
+      "from": "todo",
+      "to": "in_progress"
+    }
+  }
+]
+```
+
+---
+
+## 9. Label Commands
 
 ### `fid label add`
 
@@ -541,7 +631,7 @@ fid label list [--format json|toon|markdown|yaml]
 
 ---
 
-## 9. Claim Commands
+## 10. Claim Commands
 
 ### `fid claim list`
 
@@ -573,14 +663,44 @@ fid claim list [--stale] [--by <role>] [--format json|toon|markdown|yaml]
 
 ---
 
-## 10. Run Telemetry
+## 11. Policy Commands
+
+### `fid policy show`
+
+```
+fid policy show [--format json|toon|markdown|yaml]
+```
+
+Displays the active permissions matrix. v0.1 reads the in-code default
+matrix; v0.2 reads the project-configurable `role_permissions` table.
+
+**JSON output:**
+```json
+[
+  {
+    "action": "issue.transition.dev_complete",
+    "developer": true,
+    "qa_reviewer": false,
+    "qa_lead": false,
+    "tl_lite": false,
+    "tl": false,
+    "workflow_runner": false,
+    "human": true
+  }
+]
+```
+
+---
+
+## 12. Run Telemetry
 
 ### `fid run record`
 
 ```
 fid run record --issue <id> --role <role> --model <model>
-    [--tokens-in <n>] [--tokens-out <n>] [--completion <id>] [--review <id>]
-    --by <role>
+    [--tokens-in <n>] [--tokens-out <n>] [--token-breakdown-json <json>]
+    [--tool-call-count <n>] [--provider-run-id <id>] [--provider-cost-usd <amount>]
+    [--completion <id>] [--review <id>] --by <role>
 ```
 
 | Flag | Type | Required | Description |
@@ -590,6 +710,10 @@ fid run record --issue <id> --role <role> --model <model>
 | `--model` | string | yes | Model used (e.g. `claude-opus-4-7`) |
 | `--tokens-in` | int | no | Input tokens |
 | `--tokens-out` | int | no | Output tokens |
+| `--token-breakdown-json` | JSON string | no | Provider-native token categories, if available |
+| `--tool-call-count` | int | no | Number of tool calls made by the run |
+| `--provider-run-id` | string | no | Provider request/run identifier |
+| `--provider-cost-usd` | decimal | no | Provider-billed cost for reconciliation |
 | `--completion` | string | no | Associated completion ID |
 | `--review` | string | no | Associated review ID |
 | `--by` | string | yes | Acting role |
@@ -604,7 +728,7 @@ recorded agent run RUN-f6g7h8 on FID-a1b2c3
 
 ---
 
-## 11. Stats Commands
+## 13. Stats Commands
 
 ### `fid stats tokens`
 
@@ -625,7 +749,7 @@ fid stats tokens [--by role|model] [--epic <id>] [--format json|toon|markdown|ya
 
 See `05_DESIGN_PLAN.md` §6.4 for JSON output example.
 
-### `fid stats tasks`
+### `fid stats tasks` (v0.2+)
 
 ```
 fid stats tasks [--by epic] [--include est-vs-actual] [--format json|toon|markdown|yaml]
@@ -648,7 +772,7 @@ fid stats tasks [--by epic] [--include est-vs-actual] [--format json|toon|markdo
 ]
 ```
 
-### `fid stats attempts`
+### `fid stats attempts` (v0.2+)
 
 ```
 fid stats attempts [--by epic] [--format json|toon|markdown|yaml]
@@ -671,7 +795,7 @@ fid stats attempts [--by epic] [--format json|toon|markdown|yaml]
 
 ---
 
-## 12. SQL Escape Hatch
+## 14. SQL Escape Hatch
 
 ### `fid sql`
 
@@ -698,15 +822,22 @@ error: fid sql accepts only SELECT, EXPLAIN, PRAGMA query, and WITH statements
 
 ---
 
-## 13. Rebuild
+## 15. Rebuild
 
 ### `fid rebuild`
 
 ```
-fid rebuild [--verbose]
+fid rebuild --by <role> [--verbose]
 ```
 
-Replays the full journal into a fresh SQLite database.
+Replays the full journal into a fresh SQLite database. Automatic projection
+catch-up before reads is internal and does not require `--by`; explicit
+operator-invoked rebuild does.
+
+| Flag | Type | Description |
+|---|---|---|
+| `--by` | string | Acting role |
+| `--verbose` | bool | Print per-file replay details |
 
 **Output (stderr):**
 ```text
@@ -727,7 +858,7 @@ error: malformed journal entry at .fid/journal/2026-05-27.jsonl:142
 
 ---
 
-## 14. Maintenance Commands
+## 16. Maintenance Commands
 
 ### `fid maintenance check`
 
@@ -745,11 +876,12 @@ fid maintenance check [--warn-as-error] [--format json|toon|markdown|yaml]
 ### `fid maintenance migrate`
 
 ```
-fid maintenance migrate [--to <version>]
+fid maintenance migrate --by <role> [--to <version>]
 ```
 
 | Flag | Type | Description |
 |---|---|---|
+| `--by` | string | Acting role |
 | `--to` | int | Target migration version (default: latest) |
 
 **Output (stderr):**
@@ -761,8 +893,12 @@ migrated .fid/fid.sqlite: v2 → v3
 ### `fid maintenance vacuum`
 
 ```
-fid maintenance vacuum
+fid maintenance vacuum --by <role>
 ```
+
+| Flag | Type | Description |
+|---|---|---|
+| `--by` | string | Acting role |
 
 **Output (stderr):**
 ```text
@@ -771,7 +907,7 @@ vacuum complete — .fid/fid.sqlite: 2.4 MB → 1.8 MB
 
 ---
 
-## 15. Report Commands (v0.2+)
+## 17. Report Commands (v0.2+)
 
 ### `fid report list`
 
@@ -801,7 +937,7 @@ wrappers over hand-coded SQL.
 
 ---
 
-## 16. Markdown Output Example
+## 18. Markdown Output Example
 
 **`fid issue get FID-a1b2c3 --format markdown`:**
 

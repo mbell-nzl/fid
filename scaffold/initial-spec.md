@@ -2386,8 +2386,10 @@ and the value compounds:
    real failure, or v0.3 MCP server work forces the spawn mechanism
    to be explicit.
 
-New questions surfaced during v0.1 implementation should be added here
-with a date and proposer, then moved to §15.2 once resolved.
+> Historical note: open questions are now tracked in the formal spec suite —
+> product/scope in `project-docs/specs/01_PRD.md` §7, technical in
+> `project-docs/specs/02_TRD.md` §11. New questions go there, not here. This
+> section is retained as the origin record.
 
 ### 15.2 Resolved questions
 

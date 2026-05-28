@@ -222,6 +222,7 @@ CREATE TABLE task_completions (
   gates_failed        INTEGER DEFAULT 0,
   gate_results        TEXT,                    -- JSON array: [{cmd, exit_code, ran_at, output_excerpt}]
   human_intervention  BOOLEAN DEFAULT 0,
+  human_intervention_note TEXT,                -- optional short note when human_intervention=1
   completed_at        DATETIME
 );
 ```
@@ -229,6 +230,10 @@ CREATE TABLE task_completions (
 ---
 
 ## 3. Workflows (v0.2+; v0.1 hard-coded)
+
+The v0.1 hard-coded workflow graphs, status-category mappings, and transition
+requirements are defined in `02_TRD.md` §4.6. The tables below ship in v0.2
+and are seeded from those defaults verbatim.
 
 ```sql
 CREATE TABLE workflows (
@@ -418,6 +423,10 @@ CREATE TABLE agent_runs (
   price_in_per_mtok   REAL,                    -- USD per million input tokens at run end
   price_out_per_mtok  REAL,                    -- USD per million output tokens at run end
   cost_usd        REAL,                        -- computed at run end
+  token_breakdown_json TEXT,                   -- optional provider-native token categories
+  tool_call_count INTEGER,                     -- optional count of tool calls made by the run
+  provider_run_id TEXT,                        -- optional provider request/run identifier
+  provider_cost_usd REAL,                      -- optional provider-billed cost for reconciliation
   started_at      DATETIME,
   ended_at        DATETIME
 );
@@ -427,6 +436,8 @@ CREATE TABLE agent_runs (
 -- If a model is missing from the config at run-close, cost_usd is left NULL
 -- and a warning is logged.
 -- Snapshot pricing on each row preserves audit trail across price changes.
+-- Optional provider fields preserve debugging/billing detail without replacing
+-- the normalized tokens_in/tokens_out/list-price summary used by v0.1 stats.
 ```
 
 ---
@@ -504,7 +515,29 @@ CREATE TABLE activity_log (
   occurred_at     DATETIME
 );
 
--- 9.5 Labels
+-- 9.5 Projection metadata
+
+CREATE TABLE projection_meta (
+  key                     TEXT PRIMARY KEY CHECK (key = 'default'),
+  journal_file            TEXT,
+  journal_offset          INTEGER NOT NULL DEFAULT 0,
+  last_event_id           TEXT,
+  last_event_hash         TEXT,
+  event_schema            INTEGER NOT NULL,
+  projection_schema_version INTEGER NOT NULL,
+  replay_status           TEXT NOT NULL,       -- 'clean' | 'catching_up' | 'rebuilding' | 'error'
+  updated_at              DATETIME NOT NULL,
+  CHECK (journal_offset >= 0),
+  CHECK (replay_status IN ('clean', 'catching_up', 'rebuilding', 'error'))
+);
+
+-- One row (`key='default'`) records the projection checkpoint for
+-- `.fid/fid.sqlite`. Missing metadata, schema-version mismatch, journal
+-- position mismatch, or last-event hash mismatch forces a full rebuild or
+-- a hard error before reads are served. A matching checkpoint allows
+-- catch-up from `journal_offset`.
+
+-- 9.6 Labels
 
 CREATE TABLE labels (
   name            TEXT PRIMARY KEY,
@@ -518,7 +551,7 @@ CREATE TABLE issue_labels (
   PRIMARY KEY (issue_id, label)
 );
 
--- 9.6 Roles
+-- 9.7 Roles
 
 CREATE TABLE roles (
   name            TEXT PRIMARY KEY,
@@ -576,8 +609,11 @@ for hierarchy (`issues.parent_id`), QA review scope, concern/finding
 escalation, escalation resolution, AC-assertion coverage, or QA plan
 step-assertion coverage.
 
-The CLI auto-creates the inverse on every link write so callers only
-declare one direction.
+The CLI auto-creates the inverse on every link add so callers only declare one
+direction. `fid link remove` accepts the same declared direction and removes
+both the declared row and its inverse row in the same journal event. Removing a
+nonexistent link is rejected with an error naming the missing relation and
+entities.
 
 ---
 
@@ -621,6 +657,10 @@ Rules:
   not block re-acquisition; the new caller's `claim acquire --force`
   (or implicit on stale) takes over and the prior holder is recorded
   in the journal and projected into `activity_log` as superseded.
+- The current claim holder may renew a live claim. Renewal updates
+  `claimed_at` to the renewal time and uses the supplied TTL, or keeps
+  the previous TTL when none is supplied. Renewal by any other role is
+  rejected unless it is a force-acquire by a role permitted to force-acquire.
 - Humans can claim entities too (`--by human`) to signal "agent hands
   off while I think about this."
 
@@ -728,29 +768,62 @@ fid enforces these invariants at plan-finalisation time
 
 ## 13. Default Permissions Matrix
 
+Action names below are the canonical v0.1 permission keys. They are matched
+exactly; v0.1 does not support wildcard permission rows. Every CLI write
+command in `06_DESIGN_PLAN_CLI.md` must map to one row here before
+implementation. Composite commands use their composite action key as the
+entry-point permission check and still run the same domain validation as the
+primitive effects they compose.
+
 | Action | developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human |
 |---|---|---|---|---|---|---|---|
-| issue create (task) | ✓ (discovered_from) | ✓ (from finding) | – | – | ✓ | ✓ | ✓ |
-| issue create (epic) | – | – | – | – | ✓ | – | ✓ |
-| issue transition -> in_progress | ✓ | – | – | – | – | ✓ | ✓ |
-| issue transition -> dev_complete | ✓ | – | – | – | – | – | ✓ |
-| issue transition -> qa_pass | – | – | ✓ | – | – | – | ✓ |
-| issue transition -> done | – | – | – | – | ✓ | – | ✓ |
-| issue ac verify --by developer | ✓ | – | – | – | – | – | – |
-| issue ac verify --by qa_reviewer | – | ✓ | – | – | – | – | – |
-| issue ac verify --by qa_lead | – | – | ✓ | – | – | – | – |
-| issue ac verify --by tl | – | – | – | – | ✓ | – | – |
-| issue ac verify --by human | – | – | – | – | – | – | ✓ |
-| qa-review create | – | – | – | – | – | ✓ | ✓ |
-| qa-finding add | – | ✓ | ✓ | – | – | – | – |
-| concern raise | ✓ | – | – | – | – | – | ✓ |
-| concern address | ✓ | – | – | – | – | – | ✓ |
-| escalation create | – | ✓ | ✓ | ✓ | ✓ | – | ✓ |
-| escalation resolve | – | – | – | – | ✓ | – | ✓ |
-| triage record | – | – | – | ✓ | – | – | ✓ |
-| decision create | – | – | – | – | ✓ | – | ✓ |
-| retrospective create | – | – | – | – | ✓ | – | ✓ |
-| comment add | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `issue.create.epic` | – | – | – | – | ✓ | – | ✓ |
+| `issue.create.task` | ✓ (discovered_from) | ✓ (from finding) | ✓ (from finding) | – | ✓ | ✓ | ✓ |
+| `issue.create.subtask` | ✓ | – | – | – | ✓ | ✓ | ✓ |
+| `issue.update` | ✓ | – | – | – | ✓ | ✓ | ✓ |
+| `issue.complete` | ✓ | – | – | – | – | – | ✓ |
+| `issue.ac.add` | ✓ | – | – | – | ✓ | – | ✓ |
+| `issue.ac.verify.developer` | ✓ | – | – | – | – | – | – |
+| `issue.ac.verify.qa_reviewer` | – | ✓ | – | – | – | – | – |
+| `issue.ac.verify.qa_lead` | – | – | ✓ | – | – | – | – |
+| `issue.ac.verify.tl` | – | – | – | – | ✓ | – | – |
+| `issue.ac.verify.human` | – | – | – | – | – | – | ✓ |
+| `issue.label.add` | ✓ | – | – | – | ✓ | ✓ | ✓ |
+| `issue.label.remove` | ✓ | – | – | – | ✓ | ✓ | ✓ |
+| `issue.transition.in_progress` | ✓ | – | – | – | – | ✓ | ✓ |
+| `issue.transition.dev_complete` | ✓ | – | – | – | – | – | ✓ |
+| `issue.transition.failed_gate` | ✓ | – | – | – | – | – | ✓ |
+| `issue.transition.qa_review` | – | ✓ | ✓ | – | – | ✓ | ✓ |
+| `issue.transition.qa_pass` | – | – | ✓ | – | – | – | ✓ |
+| `issue.transition.qa_block` | – | ✓ | ✓ | – | – | – | ✓ |
+| `issue.transition.done` | – | – | – | – | ✓ | – | ✓ |
+| `issue.transition.cancelled` | – | – | – | – | ✓ | – | ✓ |
+| `issue.claim.acquire` | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ |
+| `issue.claim.renew` | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ |
+| `issue.claim.force_acquire` | – | – | – | – | ✓ | ✓ | ✓ |
+| `issue.claim.release` | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ |
+| `concern.raise` | ✓ | – | – | – | – | – | ✓ |
+| `concern.address` | ✓ | – | – | – | – | – | ✓ |
+| `link.add` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `link.remove` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `label.add` | ✓ | – | – | – | ✓ | ✓ | ✓ |
+| `comment.add` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `run.record` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `dev.start` | ✓ | – | – | – | – | – | ✓ |
+| `dev.gate` | ✓ | – | – | – | – | – | ✓ |
+| `dev.finish` | ✓ | – | – | – | – | – | ✓ |
+| `dev.block` | ✓ | – | – | – | – | – | ✓ |
+| `maintenance.rebuild` | – | – | – | – | ✓ | ✓ | ✓ |
+| `maintenance.migrate` | – | – | – | – | ✓ | – | ✓ |
+| `maintenance.vacuum` | – | – | – | – | ✓ | – | ✓ |
+| `qa_review.create` (v0.3) | – | – | – | – | – | ✓ | ✓ |
+| `qa_finding.add` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `escalation.create` (v0.2) | – | ✓ | ✓ | ✓ | ✓ | – | ✓ |
+| `escalation.resolve` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `triage.record` (v0.2) | – | – | – | ✓ | – | – | ✓ |
+| `decision.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `retrospective.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `policy.set` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 
 The `--by` flag is mandatory on every write command.
 

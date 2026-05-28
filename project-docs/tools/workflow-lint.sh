@@ -171,7 +171,7 @@ check_contains "project-docs/templates/human-checklist-template.md" 'VAL-NNN' "h
 check_contains "project-docs/templates/phase-brief-template.md" 'Validation Contract|VAL-NNN|validation-contract' "phase brief validation-contract reference"
 check_contains "project-docs/templates/phase-runner-prompt.md" 'validation-contract|VAL-NNN' "phase runner prompt validation-contract reference"
 
-# --- Current-state file line budgets (from 05_AI_WORKFLOW.md section 9) ---
+# --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 9) ---
 
 check_line_budget() {
   file=$1
@@ -197,12 +197,9 @@ check_line_budget "project-docs/docs/current/tl_escalations_current.md" 107 "tl_
 # --- TL-Lite verdict and output format concordance ---
 # These literal strings must appear in both provider prompts and the spec.
 
-tl_lite_verdict_literals="VERDICT: RESUME
-VERDICT: BLOCK"
+tl_lite_verdict_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/09_AI_WORKFLOW.md"
 
-tl_lite_verdict_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/05_AI_WORKFLOW.md"
-
-printf '%s\n' "$tl_lite_verdict_literals" | while IFS= read -r literal; do
+while IFS= read -r literal; do
   for file in $tl_lite_verdict_files; do
     if grep -Fq "$literal" "$file"; then
       pass "TL-Lite verdict '$literal' present: $file"
@@ -210,14 +207,14 @@ printf '%s\n' "$tl_lite_verdict_literals" | while IFS= read -r literal; do
       fail "TL-Lite verdict '$literal' missing: $file"
     fi
   done
-done
-
-tl_lite_output_literals="DECISION (local):
-ESCALATED: ESC-"
+done <<'EOF'
+VERDICT: RESUME
+VERDICT: BLOCK
+EOF
 
 tl_lite_prompt_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml"
 
-printf '%s\n' "$tl_lite_output_literals" | while IFS= read -r literal; do
+while IFS= read -r literal; do
   for file in $tl_lite_prompt_files; do
     if grep -Fq "$literal" "$file"; then
       pass "TL-Lite output format '$literal' present: $file"
@@ -225,20 +222,17 @@ printf '%s\n' "$tl_lite_output_literals" | while IFS= read -r literal; do
       fail "TL-Lite output format '$literal' missing: $file"
     fi
   done
-done
+done <<'EOF'
+DECISION (local):
+ESCALATED: ESC-
+EOF
 
 # --- TL-Lite escalation trigger concordance ---
 # Each trigger phrase must appear in the spec and both provider prompts.
 
-escalation_triggers="Changes a public interface
-Changes the data model or persistence contract
-Affects more than one task or subsystem
-Introduces a dependency, tool, or workflow
-Exposes ambiguity in product intent or acceptance criteria"
+escalation_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/09_AI_WORKFLOW.md"
 
-escalation_files=".claude/agents/tl-lite.md .codex/agents/tl_lite.toml project-docs/specs/05_AI_WORKFLOW.md"
-
-printf '%s\n' "$escalation_triggers" | while IFS= read -r trigger; do
+while IFS= read -r trigger; do
   for file in $escalation_files; do
     if grep -Fq "$trigger" "$file"; then
       pass "escalation trigger present: $file: $trigger"
@@ -246,20 +240,19 @@ printf '%s\n' "$escalation_triggers" | while IFS= read -r trigger; do
       fail "escalation trigger missing: $file: $trigger"
     fi
   done
-done
+done <<'EOF'
+Changes a public interface
+Changes the data model or persistence contract
+Affects more than one task or subsystem
+Introduces a dependency, tool, or workflow
+Exposes ambiguity in product intent or acceptance criteria
+EOF
 
 # --- Role capability mapping concordance ---
 # Each role name from the spec table must appear in at least one provider
 # agent prompt directory. This catches renamed or deleted agent files.
 
-spec_roles="Tech Lead
-QA Lead
-Developer
-QA Reviewer
-TL-Lite
-Phase Runner"
-
-printf '%s\n' "$spec_roles" | while IFS= read -r role; do
+while IFS= read -r role; do
   found_claude=false
   found_codex=false
   for f in .claude/agents/*.md; do
@@ -284,7 +277,14 @@ printf '%s\n' "$spec_roles" | while IFS= read -r role; do
   else
     fail "role '$role' not referenced in any Codex agent prompt"
   fi
-done
+done <<'EOF'
+Tech Lead
+QA Lead
+Developer
+QA Reviewer
+TL-Lite
+Phase Runner
+EOF
 
 # --- Codex project-local config key restrictions ---
 

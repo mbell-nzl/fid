@@ -172,13 +172,16 @@ On-demand context:
 Must escalate if the issue:
 1. Changes a public interface, CLI command contract, output format, journal
    event schema, or user-visible workflow.
-2. Changes SQLite schema, migrations, journal replay semantics, or data model.
+2. Changes the data model or persistence contract. This includes SQLite
+   schema, migrations, journal replay semantics, and storage invariants.
 3. Contradicts `decisions_active.md`, `decisions_principles.md`, or
    `AGENTS.md`.
 4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, workflow, or quality gate.
+5. Introduces a dependency, tool, or workflow. New quality gates also
+   escalate.
 6. Changes testing strategy or coverage policy.
-7. Exposes product-intent, acceptance-criteria, or design ambiguity.
+7. Exposes ambiguity in product intent or acceptance criteria. Design
+   ambiguity that changes behavior also escalates.
 
 When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
@@ -214,6 +217,13 @@ Write boundaries:
 Purpose:
 - Mechanical orchestrator for one approved phase. Does not write code, tests,
   task specs, QA artifacts, decisions, or product docs.
+
+Naming:
+- "Phase Runner" is this build pipeline's orchestrator agent (`@phase-runner`).
+  It corresponds to fid's `workflow_runner` role (see `GLOSSARY.md`) — the same
+  orchestration responsibility seen from the build-tool side vs. the fid product
+  side. "Phase Runner" is current, not a legacy alias for "Workflow Runner";
+  the pipeline will converge on "Workflow Runner" once fid is dogfooded.
 
 Default context:
 - `AGENTS.md`
@@ -781,6 +791,12 @@ Model guidance:
 | QA Lead | `gpt-5.5` | high | phase-wide QA synthesis |
 | QA Reviewer | `gpt-5.5` | medium | bounded mid-phase review |
 | TL-Lite | `gpt-5.5` | medium | focused tactical triage |
+
+Note: this table is Codex-specific. Claude Code agent model choices are
+configured separately, per agent, in `.claude/agents/*.md`, and are not
+duplicated here to avoid drift. The **Reasoning** column (high / medium) is the
+tool-agnostic signal — map it to the equivalent capability tier in whichever
+toolchain runs the role.
 
 ## 7. Git And Quality Gates
 

@@ -53,7 +53,7 @@ with whet's task artifacts.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | `.fid/` directory structure | Create `.fid/`, `.fid/journal/`, `.fid/.gitignore` (ignores `fid.sqlite`). Store `config.toml` and `pricing.toml`. | PRD-INIT-001, TRD §4.3 |
-| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `roles`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`, `requirements`. | TRD §4.1, spec §6 |
+| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `projection_meta`, `roles`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`, `requirements`. | TRD §4.1, spec §6 |
 | SQLite triggers | Kind-invariant rules, polymorphic ref integrity, link scope validation, claim scope, comment scope, kind immutability, mutually-exclusive qa_review columns. `PRAGMA foreign_keys = ON; PRAGMA recursive_triggers = ON`. | TRD §4.4–4.5, spec §6.14 |
 | `issues_enriched` view | LEFT JOIN open concern count and latest triage status. Indexes on `concerns(issue_id, status)` and `triage_events(issue_id, created_at)`. | TRD-ARCH-008, spec §6.1.1 |
 | Journal writer | Append-only JSONL to `.fid/journal/YYYY-MM-DD.jsonl`. Flush before returning. Event envelope: `event_type`, `event_schema`, actor metadata, command metadata, ordered `effects` array. One logical write = one event. | PRD-OPS-001–002, TRD-ARCH-001–004 |
@@ -67,14 +67,14 @@ with whet's task artifacts.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| `fid issue create` | Create epic/task/subtask. `--kind`, `--title`, `--parent-id`/`--epic`, `--priority`, `--sequence`, `--spec-md`, `--label`, `--est-tokens`, `--due-date`, `--in-inbox`, `--owner-role`, `--owner-actor`. Enforce kind hierarchy (epic: no parent; task: optional epic parent; subtask: required task parent). Assign default workflow per kind. | PRD-ISSUE-001–005, 013–016, 019–020 |
+| `fid issue create` | Create epic/task/subtask. `--kind`, `--title`, `--parent-id`/`--epic`, `--priority`, `--sequence`, `--spec-md`, `--label`, `--est-tokens`, `--due-date`, `--inbox`, `--owner-role`, `--owner-actor`. Enforce kind hierarchy (epic: no parent; task: optional epic parent; subtask: required task parent). Assign default workflow per kind. | PRD-ISSUE-001–005, 013–016, 019–020 |
 | `fid issue get` | Return issue + ACs + latest verifications per role + open concern count + triage status (from `issues_enriched`). Support `--section` for on-demand markdown parsing. Support `--format`. | PRD-ISSUE-006, 018 |
 | `fid issue list` | Filter by kind, status category, epic, label, priority, inbox state. `--order sequence\|priority`. | PRD-ISSUE-007 |
 | `fid issue update` | Update title, priority, labels, spec_md_path, est_tokens, due_date, owner_role, owner_actor on existing issues. Journal and project to activity_log. | PRD-ISSUE-015, 021 |
 | `fid issue transition` | Validate against workflow state machine. Enforce transition rules. `--to <state> --by <role>`. Rich error messages naming unmet conditions and entity IDs. | PRD-WF-001–010, 013 |
 | Epic metadata | `epic_metadata` table with scheduling (sequential/prioritised), brief_md_path, target dates. Created alongside epic-kind issue. | PRD-ISSUE-001, spec §6.1 |
 | `fid ready` | Return next actionable task. Sequential epics: lowest-sequence unfinished, only when unblocked. Prioritised epics: highest-priority unblocked. Cross-project: top task across all. Empty result with explanation when nothing ready. | PRD-ISSUE-008–012 |
-| Hard-coded workflows | Default state machines for epic, task, subtask (§7.2–7.4) implemented in code. `workflow_id` as enum string. Status CHECK-constrained per workflow. Status category mapping for portable queries. | PRD-WF-005–006, TRD-ARCH-009 |
+| Hard-coded workflows | Default state machines for epic, task, subtask from `02_TRD.md` §4.6 implemented in code. `workflow_id` as enum string. Status CHECK-constrained per workflow. Status category mapping for portable queries. | PRD-WF-005–006, TRD-ARCH-009 |
 | Hard-coded transition rules | `all_acs_verified` (parameterised by roles), `has_completion_report`, `concerns_addressed`, `all_child_tasks_done_or_cancelled`. Named Go functions. | PRD-WF-007–010 |
 
 ### v0.1c — ACs, Completions, Concerns
@@ -84,7 +84,7 @@ with whet's task artifacts.
 | `fid issue ac add` | Add ordered acceptance criteria to tasks and subtasks. Reject on epics. `--text`, `--ordinal`. | PRD-AC-001–002 |
 | `fid issue ac verify` | Multi-role verification. `--by <role> --status pass\|fail\|blocked\|not_applicable --evidence-type --evidence-ref`. Append-only records. | PRD-AC-003–005 |
 | `fid issue ac list` | List ACs with latest verification status per verifier role. | PRD-AC-006 |
-| `fid issue complete` | Create append-only `task_completions` row. Attempt number, tokens, commits, files touched, gate results. Mark previous attempts superseded. | PRD-DEV-001–004 |
+| `fid issue complete` | Create append-only `task_completions` row. Attempt number, tokens, commits, files touched, gate results, optional human-intervention flag/note. Mark previous attempts superseded. | PRD-DEV-001–004, PRD-DEV-009 |
 | `fid concern raise` | Create structured concern linked to issue and completion. `--on <issue-id> --by developer --in-completion <id> --summary --body-md`. | PRD-DEV-005 |
 | `fid concern address` | Transition concern to addressed. `--in-completion <id>`. | PRD-DEV-006 |
 | `fid concern list` | List concerns filtered by issue and status. | PRD-DEV-006–007 |
@@ -94,31 +94,31 @@ with whet's task artifacts.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| `fid issue claim` | Atomic acquire with TTL (default 30m). `--by <role> --ttl`. Reject when live claim exists (name holder + expiry). Force-acquire for stale claims. | PRD-CLAIM-001–004, TRD-ARCH-011 |
-| `fid issue unclaim` | Release claim. `--force` to steal a live claim. | PRD-CLAIM-004 |
+| `fid issue claim` | Atomic acquire with TTL (default 30m). `--by <role> --ttl`, optional `--renew` for the current holder, optional `--force` for permitted force-acquire. Reject when live claim exists unless renewing, stale, or force-acquiring. | PRD-CLAIM-001–004, PRD-CLAIM-008a, TRD-ARCH-011 |
+| `fid issue unclaim` | Release caller's current claim. Requires `--by <role>`. Force-acquire is handled by `fid issue claim --force`. | PRD-CLAIM-004 |
 | `fid claim list` | List all live claims. `--stale` for past-TTL. `--by <role>`. | PRD-CLAIM-007 |
 | Claim-transition integration | Transitions into started-category require live claim by caller. Transitions out release claim. | PRD-CLAIM-005–006 |
 | Human claims | `--by human` signals agents should not advance. | PRD-CLAIM-008 |
 | Permissions matrix | In-code constant for v0.1. Enforce `--by <role>` on every write. Reject unknown roles. Reject denied role/action combinations with actionable error. `fid policy show` to display the matrix. | PRD-ROLE-001–005, TRD-ARCH-010 |
-| `fid link add` | Create typed link with auto-inverse. v0.1 scope: issue ↔ issue, issue → requirement. Validate relation/entity-type compatibility. Reject links that duplicate dedicated schema. | PRD-LINK-001–006, 008 |
+| `fid link add/remove` | Create or remove typed links with auto-inverse projection. v0.1 scope: issue ↔ issue, issue → requirement. Validate relation/entity-type compatibility. Reject links that duplicate dedicated schema. | PRD-LINK-001–006a, 008 |
 | `fid link list` | List all links from and to an entity. | PRD-LINK-006 |
-| `fid label add/list` | Create labels and list them. `issue_labels` junction for multi-value. | PRD-ISSUE-015 |
+| `fid label add/list` and `fid issue label add/remove` | Create labels, list labels, and add/remove issue label assignments without replacing the full label set. `fid issue update --labels` remains replace-all. `issue_labels` junction for multi-value. | PRD-ISSUE-015, PRD-ISSUE-023 |
 
 ### v0.1e — Telemetry, Composites, Maintenance
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| `fid run record` | Record `agent_runs` row: role, model, tokens in/out, snapshot pricing, computed cost_usd. Warning when model not in pricing config. | PRD-TELEM-001–003 |
+| `fid run record` | Record `agent_runs` row: role, model, tokens in/out, snapshot pricing, computed cost_usd, and optional provider reconciliation fields. Warning when model not in pricing config. | PRD-TELEM-001–003a |
 | `fid stats cost` | Aggregate cost by role, by model, by epic. | PRD-TELEM-004 |
 | `fid stats tokens` | Aggregate tokens by role, by model. | PRD-TELEM-004 |
 | `fid dev start` | Composite: claim + transition → in_progress + open agent_run. `--by developer`. | PRD-DEV-008, PRD-CLAIM-005 |
 | `fid dev gate` | Record gate result on current attempt. | PRD-DEV-004 |
-| `fid dev finish` | Composite: close agent_run + create task_completion + transition → dev_complete (validates rules). `--by developer`. | PRD-DEV-008 |
+| `fid dev finish` | Composite: close agent_run + create task_completion + transition → dev_complete (validates rules). Supports optional human-intervention flag/note. `--by developer`. | PRD-DEV-008–009 |
 | `fid dev block` | Transition → failed_gate with reason. | PRD-DEV-008 |
 | `fid sql` | Read-only escape hatch. Reject non-SELECT/EXPLAIN/PRAGMA/WITH. | PRD-OUT-008, TRD-SEC-002 |
 | `fid maintenance check` | Consistency audit: kind-hierarchy violations, orphaned polymorphic refs, FK integrity, workflow state validity. Warnings: stale claims, started-without-claim, stale verifications, telemetry gaps. `--warn-as-error` for CI. `--format json\|markdown`. | PRD-OPS-005–008 |
 | `fid maintenance vacuum` | SQLite VACUUM. | — |
-| Activity log | Projected timeline from journal events. Read-model only. Basic `fid activity list` read. | spec §6.8 |
+| Activity log | Projected timeline from journal events. Read-model only. Basic `fid activity list` read with entity, event, and date filters. | PRD-OUT-017 |
 | Pricing config | `.fid/pricing.toml` ships with defaults for current Anthropic, OpenAI, Google models. User-overridable. | PRD-NFR-010 |
 | Stub table CLI guard | Commands targeting v0.2 entities (`decision create`, `escalation create`, etc.) return "commands for <entity> ship in <version>" with non-zero exit code. | PRD-ERR-012 |
 
@@ -175,7 +175,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Named reports | `fid report epic-status`, `open-escalations`, `qa-blockers`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. | PRD-OUT-006–007 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
 | Stats expansion | `fid stats tasks --include est-vs-actual`, `fid stats attempts` (rework rate), `fid stats gates`, `fid stats interventions`. | PRD-TELEM-005–006 |
-| `fid merge --journal` | Replay foreign journal with conflict detection. Useful for recovered worktrees. | spec §16 v0.2 |
+| `fid merge --journal` | Replay foreign journal with conflict detection. Useful for recovered worktrees. | PRD-OPS-011 |
 
 **v0.2 exit criteria:**
 

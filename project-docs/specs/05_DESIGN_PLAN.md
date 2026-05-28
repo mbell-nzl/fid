@@ -51,11 +51,14 @@ fid
 │   ├── create                    # --kind epic|task|subtask
 │   ├── get <id>                  # --section, --context-pack, --format
 │   ├── list                      # --kind, --status-category, --epic, --label, --priority, --inbox
-│   ├── update <id>               # --title, --priority, --labels, --owner-role, --owner-actor
+│   ├── update <id>               # --title, --priority, --labels (replace-all), --owner-role, --owner-actor
 │   ├── transition <id>           # --to <state> --by <role>
 │   ├── complete <id>             # convenience: create task_completion
-│   ├── claim <id>                # acquire exclusive-access lease
-│   ├── unclaim <id>              # release / force-steal
+│   ├── claim <id>                # acquire / renew / force-acquire exclusive-access lease
+│   ├── unclaim <id>              # release current claim
+│   ├── label
+│   │   ├── add <id> <label>      # add one issue label without replacing all labels
+│   │   └── remove <id> <label>   # remove one issue label
 │   └── ac
 │       ├── add <issue-id>        # --text --ordinal
 │       ├── verify <issue-id> <ac-id>  # --by --status --evidence-type --evidence-ref
@@ -88,11 +91,16 @@ fid
 │   └── list                      # --area --status
 ├── link
 │   ├── add <from> <relation> <to>  # auto-creates inverse
+│   ├── remove <from> <relation> <to> # removes declared link + inverse
 │   └── list <id>                   # all links from/to entity
 ├── comment
 │   └── add                       # --on <type>/<id> --body-md
+├── activity
+│   └── list                      # --on, --since, --event, --format
 ├── claim
 │   └── list                      # --stale --by <role>
+├── policy
+│   └── show                      # display active permissions matrix
 ├── run
 │   └── record                    # agent_run telemetry
 ├── report
@@ -101,8 +109,8 @@ fid
 ├── stats
 │   ├── tokens                    # --by role --by model
 │   ├── cost                      # --by role --by model --by epic
-│   ├── tasks                     # --by epic --include est-vs-actual
-│   └── attempts                  # --by epic (rework rate)
+│   ├── tasks                     # v0.2: --by epic --include est-vs-actual
+│   └── attempts                  # v0.2: --by epic (rework rate)
 ├── sql                           # read-only escape hatch
 ├── rebuild                       # reconstruct DB from journal
 ├── export                        # v0.4: markdown tree
@@ -210,7 +218,7 @@ error: cannot transition to "dev_complete": 2 of 4 ACs not verified by developer
 
 error: already claimed by developer until 2026-05-27T15:00:00Z
   issue: FID-a1b2c3
-  to force-acquire: fid issue unclaim FID-a1b2c3 --force
+  to force-acquire: fid issue claim FID-a1b2c3 --by tl --force
 ```
 
 ### 5.5 Empty State Standard
