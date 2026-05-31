@@ -53,11 +53,12 @@ with whet's task artifacts.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | `.fid/` directory structure | Create `.fid/`, `.fid/journal/`, `.fid/.gitignore` (ignores `fid.sqlite`). Store `config.toml` and `pricing.toml`. | PRD-INIT-001, TRD §4.3 |
-| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `projection_meta`, `roles`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`, `requirements`. | TRD §4.1, spec §6 |
+| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `gate_runs`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `projection_meta`, `roles`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`, `requirements`. | TRD §4.1, spec §6 |
 | SQLite triggers | Kind-invariant rules, polymorphic ref integrity, link scope validation, claim scope, comment scope, kind immutability, mutually-exclusive qa_review columns. `PRAGMA foreign_keys = ON; PRAGMA recursive_triggers = ON`. | TRD §4.4–4.5, spec §6.14 |
 | `issues_enriched` view | LEFT JOIN open concern count and latest triage status. Indexes on `concerns(issue_id, status)` and `triage_events(issue_id, created_at)`. | TRD-ARCH-008, spec §6.1.1 |
-| Journal writer | Append-only JSONL to `.fid/journal/YYYY-MM-DD.jsonl`. Flush before returning. Event envelope: `event_type`, `event_schema`, actor metadata, command metadata, ordered `effects` array. One logical write = one event. | PRD-OPS-001–002, TRD-ARCH-001–004 |
-| Journal replayer | Replay journal into SQLite. Event schema versioning with pure upgrader functions. Catch-up on startup when DB is behind or missing. Malformed trailing line = corruption, reported not skipped. | PRD-OPS-003–004, TRD-ARCH-002–003 |
+| Write lock | Checkout-scoped `.fid/write.lock` acquired before freshness checks, validation, event construction, journal append/fsync, and SQLite projection. Lock metadata records PID, hostname, started_at, command, and actor role when available. | PRD-NFR-008, TRD §4.3 |
+| Journal writer | Append-only JSONL to `.fid/journal/YYYY-MM-DD.jsonl`. Flush before returning. Event schema v1 includes `event_id`, `event_schema`, `event_type`, timestamp, actor, sanitized command metadata, and ordered effects. Mutable-state effects include targeted preconditions. One logical write = one event. Runs inside `.fid/write.lock`; journal append is the commit point. | PRD-OPS-001–002, PRD-NFR-008, TRD-ARCH-001–004 |
+| Journal replayer | Replay journal into SQLite. Event schema versioning with pure upgrader functions. Catch-up on startup when DB is behind or missing. Malformed trailing line = corruption, reported not skipped. Failed effect preconditions stop replay with a structured logical-conflict error. | PRD-OPS-003–004, PRD-OPS-012, TRD-ARCH-002–003 |
 | `fid rebuild` | Replay from scratch into fresh DB. Sub-second at single-project scale. Foundational — invoked on startup when DB is stale. | PRD-OPS-003–004, TRD-PERF-002 |
 | `fid init` | Create `.fid/`, seed `roles` table from default profile (7 roles), write initial `config.toml` and `pricing.toml`, create initial journal. Accept `--prefix` for issue ID prefix. Reject re-init. | PRD-INIT-001–004 |
 | ID generation | `<PREFIX>-<hash>` with progressive length scaling (6 → 8 hex). Collision retry on insert. | TRD §4.2, spec §6.0 |
@@ -84,7 +85,7 @@ with whet's task artifacts.
 | `fid issue ac add` | Add ordered acceptance criteria to tasks and subtasks. Reject on epics. `--text`, `--ordinal`. | PRD-AC-001–002 |
 | `fid issue ac verify` | Multi-role verification. `--by <role> --status pass\|fail\|blocked\|not_applicable --evidence-type --evidence-ref`. Append-only records. | PRD-AC-003–005 |
 | `fid issue ac list` | List ACs with latest verification status per verifier role. | PRD-AC-006 |
-| `fid issue complete` | Create append-only `task_completions` row. Attempt number, tokens, commits, files touched, gate results, optional human-intervention flag/note. Mark previous attempts superseded. | PRD-DEV-001–004, PRD-DEV-009 |
+| `fid issue complete` | Create append-only `task_completions` row. Attempt number, tokens, commits, files touched, gate results snapshot from `gate_runs`, optional human-intervention flag/note. Mark previous attempts superseded. | PRD-DEV-001–004, PRD-DEV-009–010 |
 | `fid concern raise` | Create structured concern linked to issue and completion. `--on <issue-id> --by developer --in-completion <id> --summary --body-md`. | PRD-DEV-005 |
 | `fid concern address` | Transition concern to addressed. `--in-completion <id>`. | PRD-DEV-006 |
 | `fid concern list` | List concerns filtered by issue and status. | PRD-DEV-006–007 |
@@ -112,10 +113,11 @@ with whet's task artifacts.
 | `fid stats cost` | Aggregate cost by role, by model, by epic. | PRD-TELEM-004 |
 | `fid stats tokens` | Aggregate tokens by role, by model. | PRD-TELEM-004 |
 | `fid dev start` | Composite: claim + transition → in_progress + open agent_run. `--by developer`. | PRD-DEV-008, PRD-CLAIM-005 |
-| `fid dev gate` | Record gate result on current attempt. | PRD-DEV-004 |
-| `fid dev finish` | Composite: close agent_run + create task_completion + transition → dev_complete (validates rules). Supports optional human-intervention flag/note. `--by developer`. | PRD-DEV-008–009 |
-| `fid dev block` | Transition → failed_gate with reason. | PRD-DEV-008 |
+| `fid dev gate` | Record append-only `gate_runs` row on the derived active attempt before completion exists. | PRD-DEV-004, PRD-DEV-010 |
+| `fid dev finish` | Composite: close agent_run + create task_completion with `gate_runs` snapshot + transition → dev_complete (validates rules). Supports optional human-intervention flag/note. `--by developer`. | PRD-DEV-008–010 |
+| `fid dev block` | Transition → failed_gate with reason and create completion with `gate_runs` snapshot. | PRD-DEV-008, PRD-DEV-010 |
 | `fid sql` | Read-only escape hatch. Reject non-SELECT/EXPLAIN/PRAGMA/WITH. | PRD-OUT-008, TRD-SEC-002 |
+| `fid journal inspect` | Read-only journal event inspection by `event_id`. Shows actor, command metadata, effects, journal location, event hash, and revert eligibility. | PRD-OPS-013 |
 | `fid maintenance check` | Consistency audit: kind-hierarchy violations, orphaned polymorphic refs, FK integrity, workflow state validity. Warnings: stale claims, started-without-claim, stale verifications, telemetry gaps. `--warn-as-error` for CI. `--format json\|markdown`. | PRD-OPS-005–008 |
 | `fid maintenance vacuum` | SQLite VACUUM. | — |
 | Activity log | Projected timeline from journal events. Read-model only. Basic `fid activity list` read with entity, event, and date filters. | PRD-OUT-017 |
@@ -173,9 +175,16 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | Named reports | `fid report epic-status`, `open-escalations`, `qa-blockers`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. | PRD-OUT-006–007 |
+| Lightweight search | `fid search <term>` over structured projected fields with filters for kind, status, label, epic, inbox, and format. Literal/case-insensitive only; no custom DSL. | PRD-OUT-018 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
+| `fid changes` | Entity-grouped change digest: net field changes plus newly-added child facts since an anchor (event ID or timestamp), scoped by `--epic`/`--entity`. Aggregated from `activity_log`; distinct from chronological `fid activity list`. Extensible anchor resolver; role shaping deferred. | PRD-OUT-019 |
+| `--dry-run` (all writes) | Universal write-preview flag: validate and build the would-be event, return the result plus an effect preview, append nothing. Exit code mirrors the simulated outcome. Relies on the v0.1 write-path seam (TRD §4.3) that separates validate/build from append. | PRD-OPS-015 |
+| Run git context | Auto-captured read-only git context (branch, base/head commit, dirty, worktree) on `agent_runs`, with flag override and graceful degradation outside a repo. New `internal/gitctx/`. Additive migration to `agent_runs`. | PRD-OPS-017 |
+| Run lifecycle + `fid run list/show` | `agent_runs.status` (open/closed/abandoned); `fid run list --open\|--abandoned` and `fid run show <run-id>`. | PRD-OPS-018 |
+| `fid dev resume` / `fid dev abandon` | Resume re-acquires the claim, opens a new run linked via `resumed_from_run_id`, returns git resume hints (no git operations). Abandon releases the claim and marks the run abandoned, preserving the row. | PRD-OPS-019 |
 | Stats expansion | `fid stats tasks --include est-vs-actual`, `fid stats attempts` (rework rate), `fid stats gates`, `fid stats interventions`. | PRD-TELEM-005–006 |
-| `fid merge --journal` | Replay foreign journal with conflict detection. Useful for recovered worktrees. | PRD-OPS-011 |
+| `fid merge --journal` | Replay foreign journal with conflict detection using v0.1 event preconditions. Useful for recovered worktrees. | PRD-OPS-011 |
+| `fid event revert` | Append compensating events for explicitly reversible event types. Reject non-eligible events with domain correction guidance. | PRD-OPS-014 |
 
 **v0.2 exit criteria:**
 
@@ -183,16 +192,17 @@ packs, and comments. This is where cross-epic analytical value compounds.
 - Decisions, escalations, triage events, and requirements have full CLI surface.
 - Comments work on all scoped entity types.
 - Named reports answer common cross-cutting questions in single commands.
+- `fid search` handles common discovery without requiring SQL.
 - Context packs reduce agent context window pressure.
 - Role permissions are data-configurable per project.
 - All v0.2 PRD requirements have passing tests.
 
 ---
 
-## v0.3 — QA Layer, Templates, TUI, MCP
+## v0.3 — QA Layer, Templates, TUI
 
 **Goal:** Ship QA reviews and findings, QA plans, the template engine, TUI
-kanban board, and MCP server. Enables the full agentic task loop
+kanban board, and CLI/skill-first agent workflow guidance. Enables the full agentic task loop
 (TL plan → Developer execute → QA review → TL wrap-up) through fid.
 
 ### v0.3a — QA Reviews and Findings
@@ -223,13 +233,13 @@ kanban board, and MCP server. Enables the full agentic task loop
 | Template provenance | Add `created_from_template_{kind,name,version}` columns to `issues`, `task_completions`, `qa_reviews`, `decisions`. Populated when `--from-template` is used. | PRD-OUT-013 |
 | Template-driven validation | Templates declare required sections. `fid dev finish` validates completion reports against the `completion_report` template (e.g., requires `## Concerns` heading). Rejects malformed artifacts. | PRD-OUT-014, TRD-ARCH-015 |
 
-### v0.3d — TUI and MCP
+### v0.3d — TUI and Agent Skills
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | `fid board` | TUI kanban board. Columns grouped by status category. Cards show ID, title, priority, flags. Keyboard navigation, filtering by epic/labels/cycle. Bubbletea + Lipgloss. | PRD-OUT-015 |
-| MCP server | `fid mcp start`. Resources: epic brief, task spec, ready queue, active escalations, open concerns, AC matrix, QA plan. Prompts: start task, run QA review, TL-Lite triage, epic wrap-up. Tools: narrow set (claim, transition, ac verify, gate record, finish, concern raise, finding add, triage record). Localhost only. | PRD-OPS-010, TRD-ARCH-013, TRD-SEC-005 |
-| **Conditional:** `fid query` DSL | Only if v0.2 named reports leave meaningful gaps. Grammar specced based on uncovered queries from real usage. | — |
+| Agent skills | Fid-aware skills and examples for coding agents that use `fid --help`, JSON/TOON output, and shell commands. No MCP server, daemon, or network listener is committed in v0.3. | PRD-OPS-010, TRD-ARCH-013 |
+| **Conditional:** `fid query` DSL | Only if v0.2 search, named reports, and read-only SQL leave meaningful gaps. Grammar specced based on uncovered queries from real usage. | — |
 
 **v0.3 exit criteria:**
 
@@ -237,7 +247,7 @@ kanban board, and MCP server. Enables the full agentic task loop
 - QA plans with ordered steps work for epic-level verification design.
 - Templates with versioning and structural validation prevent malformed artifacts.
 - TUI board provides useful kanban visualisation.
-- MCP server exposes curated tools for agent integration (localhost only).
+- Fid-aware agent skills make CLI-first workflows discoverable to Codex/Claude-style agents.
 - The full agentic task loop runs through fid with enforced invariants.
 - All v0.3 PRD requirements have passing tests.
 
@@ -276,7 +286,7 @@ Validation contract outcomes become the primary wrap-up signal.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | `fid export` | One-way markdown export. Default `whet` layout (docs/current/, docs/epics/<id>/tasks/, docs/epics/<id>/qa/, docs/reviews/). Frontmatter contract with YAML structured fields. "Generated by fid" banner. Config: `.fid/config.toml` `[export]` section. `--to`, `--epic`, `--since` flags. | PRD-OUT-009–010, TRD-ARCH-014 |
-| `views` table and CLI | Saved queries (DSL or SQL). `fid view create/run/list`. | PRD-OUT-016 |
+| `views` table and CLI | Saved read-only queries. Start with SQL-backed views; any DSL-backed view kind requires the conditional query decision to be accepted first. `fid view create/run/list`. | PRD-OUT-016 |
 
 **v0.4 exit criteria:**
 
@@ -300,6 +310,8 @@ and conditional features based on usage evidence.
 | Web dashboard | Separate `fid-dashboard` package. Reads the same SQLite DB. Browser-based project visualisation. | — |
 | Cycles support | `cycles` table opt-in. `fid cycle create/list`. `due_date` UI in board. | PRD-ISSUE-017 |
 | File-scope claims | `expected_files_touched` enforcement on task completions. | spec §6.12 |
+| **Conditional:** MCP adapter evaluation | Only if dogfooding identifies a concrete MCP-only client need. Start from stdio as the default candidate; any HTTP/listener transport requires a separate threat model and product/security decision. | PRD-OPS-010, TRD-ARCH-013 |
+| **Conditional:** Idempotency keys | Caller-supplied keys for retry-safe programmatic writes; a repeated key echoes the original event and result. Only with a concrete programmatic/MCP retry need. Additive to the write-path seam; pairs with the MCP evaluation. | PRD-OPS-016 |
 | **Conditional:** `fid import` + `fid sync` | Bidirectional markdown sync + MD-canonical mode. Only if v0.4 export usage generates evidence of a real use case. Alternative: LLM agent with fid skill. | — |
 | **Conditional:** `fid init --import` | Import from arbitrary whet markdown tree. Depends on import/sync. | — |
 
@@ -325,13 +337,14 @@ and conditional features based on usage evidence.
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | Schema migrations break journal replay | Medium | High | Event schema versioning with pure upgrader functions (TRD-ARCH-003). Golden-file replay tests per version boundary. |
+| Clean textual git merge creates logical journal conflict | Medium | High | v1 journal events include targeted preconditions. Replay stops with structured conflict details; v0.2 `fid merge --journal` builds on the same data. |
 | Pure-Go SQLite driver performance at scale | Low | Medium | Benchmarks at 10k issues / 100k events (TRD-PERF-001–003). Fallback to `mattn/go-sqlite3` if perf is real issue. |
 | TOON spec drift breaks the in-tree marshaller | Low | Low | Subset implementation. JSON is canonical; TOON is secondary. |
-| Journal merge conflicts on high-traffic branches | Medium | Medium | JSONL line-merge is textual and resolvable. `fid rebuild` reconciles after merge. |
+| Journal merge conflicts on high-traffic branches | Medium | Medium | Same-checkout writes are serialized by `.fid/write.lock`; cross-worktree JSONL line-merge is textual and resolvable. `fid rebuild` reconciles after merge. |
 | Trigger backstop misses a corruption path | Low | High | `fid maintenance check` as periodic audit (PRD-OPS-005). Trigger + app-layer defense in depth. |
 | Scope creep from v0.1 into later version features | Medium | Medium | Stub tables with "ships in vN" CLI guard. PRD traceability table enforces version boundaries. |
 | Agent implementation quality degrades for under-designed commands | High | High | Design Plan output examples for every v0.1 command (audit recommendation #2). |
-| MCP Go SDK immaturity at v0.3 implementation time | Medium | Medium | Defer MCP SDK choice to v0.3 planning. Community assessment at implementation time. |
+| Premature MCP adapter duplicates the CLI and weakens no-listener guarantees | Medium | Medium | Keep v0.3 CLI/skill-first. Evaluate MCP only after dogfooding proves a concrete MCP-only client need and a threat model exists. |
 
 ---
 
@@ -350,7 +363,7 @@ v0.1 ──► v0.2a Workflow Engine Migration
 
 v0.2 ──► v0.3a QA Reviews ──► v0.3b QA Plans
          v0.3c Templates (parallel with QA)
-         v0.3d TUI + MCP (parallel, after QA tables exist)
+         v0.3d TUI + Agent Skills (parallel, after QA tables exist)
 
 v0.3 ──► v0.4a Validation Contracts
          v0.4b Retros + Carry-Forward (parallel)
@@ -359,4 +372,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-05-31*

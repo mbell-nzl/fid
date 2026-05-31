@@ -103,9 +103,11 @@ Avoid: duplicating lifecycle fields (owner, status) as links.
 **Gate**:
 A CLI command that produces a deterministic pass/fail signal (test runs,
 linters, coverage thresholds, format checks). Developers run gates during a
-task attempt; results land in `task_completions.gate_results` as JSON
-`(cmd, exit_code, ran_at, output_excerpt)`. A failing gate is a hard stop —
-TL-Lite cannot resolve it; the Developer fixes and re-runs.
+task attempt; standalone `fid dev gate` writes append-only `gate_runs` rows.
+Finish/block commands snapshot the attempt's gate runs into
+`task_completions.gate_results` as JSON `(cmd, exit_code, ran_at,
+output_excerpt)`. A failing gate is a hard stop — TL-Lite cannot resolve it;
+the Developer fixes and re-runs.
 Use when: describing deterministic quality checks during implementation.
 Avoid: "quality gate" when referring to subjective review.
 
@@ -140,6 +142,87 @@ raised, etc. Derived from journal events during projection; not
 independently authoritative.
 Use when: querying what happened and when.
 Avoid: confusing with [[Comment]] (narrative) or journal (raw events).
+
+**Change digest**:
+The aggregated, entity-grouped delta between an anchor point and now
+(`fid changes --since <anchor>`). For each entity changed since the anchor it
+reports net field changes (`from → to`, with intermediate transitions
+collapsed) and newly-added child facts (AC verifications, concerns,
+completions, links, and later findings, comments, and governance facts).
+Derived from [[Activity log]] entries inside the anchor window; not an
+independent source of truth. The anchor is a [[Journal event]] ID or a
+timestamp in v0.2, extensible to review IDs (v0.3) and commits (with run
+state) without changing the output contract.
+Use when: reviewing what changed for a task or epic since a checkpoint — a QA
+reviewer picking up a task window, a human resuming a phase.
+Avoid: confusing with [[Activity log]] (the raw chronological stream this
+aggregates) or treating it as a stored entity (it is a computed read).
+
+**Search**:
+A lightweight read command for literal, case-insensitive discovery across
+structured projected fields such as IDs, titles, labels, owners, summaries,
+and markdown paths. It is not a query language and does not scan full markdown
+body text.
+Use when: finding candidate entities before a focused `get`, `report`, or
+read-only SQL command.
+Avoid: using as a synonym for `fid sql`, saved views, or shell `rg`.
+
+**Journal event**:
+One durable JSON object appended as one line to `.fid/journal/YYYY-MM-DD.jsonl`.
+It is the source-of-truth record for a logical write and contains event
+metadata plus ordered projection effects. Mutable-state effects carry
+preconditions so replay can detect logical conflicts.
+Use when: describing persisted write history, replay, merge conflict
+detection, or activity projection.
+Avoid: using for projected rows in SQLite; those are derived read-model state.
+
+**Effect precondition**:
+An expected current value attached to a mutable journal effect. Replay checks
+it before applying the effect and stops with a logical conflict if the
+projected DB state differs.
+Use when: describing stale-write and cross-branch conflict detection.
+Avoid: using for append-only audit rows that do not depend on prior mutable
+state.
+
+**Compensating event**:
+A new journal event that corrects the effect of an earlier valid-but-wrong
+event while preserving both events in history. Used only for explicitly
+reversible event types; not a mutation of old journal lines.
+Use when: describing first-class correction or future `fid event revert`.
+Avoid: "undo" when it implies deleting or rewriting audit history.
+
+**Write lock**:
+The checkout-scoped exclusive lock at `.fid/write.lock` that serializes fid
+write commands before validation, journal append, and SQLite projection. It
+protects the append-only journal as the source of truth; SQLite transactions
+still protect projection atomicity inside the lock.
+Use when: describing same-checkout write serialization.
+Avoid: treating SQLite's default locking as the write serializer for journal
+commits.
+
+**Dry-run**:
+A simulated write. `--dry-run` on any write command runs validation and builds
+the would-be [[Journal event]], then stops before the append/commit point:
+nothing is persisted. The result reports whether the write would apply, the
+validation outcome, and a preview of the event effects; the exit code mirrors
+the simulated outcome. IDs that are minted only at append render as
+placeholders.
+Use when: previewing or gating a write — especially a composite — before
+committing it.
+Avoid: assuming a dry-run reserves an ID or a claim; it changes no state.
+
+**Agent run**:
+The record of one agent execution against an entity (`agent_runs`,
+`RUN-<hash>`): token/cost telemetry plus, from v0.2, optional git context
+(branch, base/head commit, dirty, worktree, `git_source`) and a lifecycle
+(`open` → `closed` | `abandoned`). Opened by `fid dev start` (or recorded
+post-hoc by `fid run record`), closed by `fid dev finish`/`fid dev block`,
+abandoned by `fid dev abandon`, and continued by `fid dev resume` (which opens
+a new run linked via `resumed_from_run_id`).
+Use when: referring to a single agent execution attempt and its telemetry, git
+context, and lifecycle.
+Avoid: treating it as telemetry only (its role broadened in v0.2), or as a
+[[Claim holder|Claim]] (a run does not itself grant exclusive access).
 
 ## Roles and Who-Does-What
 
@@ -338,4 +421,4 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | | | | |
 
-*Last updated: 2026-05-24*
+*Last updated: 2026-05-31*

@@ -509,3 +509,173 @@ made role-aware and context-pack aware. It directly exploits the journal as a
 product feature. Plain markdown can preserve history through git; fid can turn
 history into targeted, low-token, role-specific review input.
 
+---
+
+## Resolution Log
+
+> Added 2026-05-31. A `/grill-with-docs` session walked these items in the
+> priority order below, resolving design decisions one at a time and updating
+> the spec suite inline. This log records (1) the assessor's original
+> disposition of all twelve items, (2) the decisions reached and specs changed
+> for the items resolved so far, and (3) the items still open. It is the
+> authoritative starting point for continuing the work.
+
+### Assessor's Original Disposition (2026-05-29)
+
+The audit is high quality: well-sourced, scope-aware (it excludes
+out-of-scope features and respects local-first / no-daemon / no-git-replacement
+constraints), and it correctly identifies fid's one defensible edge over
+markdown+grep — the append-only journal. Three caveats temper it:
+
+1. **Several "gaps" are overstated** — already on the roadmap, so the audit's
+   contribution there is refinement, not discovery (`fid event revert` v0.2c
+   for #4; named reports `stale-claims`/`qa-blockers` for #5; `fid ready`
+   empty-explanation for #8).
+2. **Sequencing is optimistic** — almost everything is slotted v0.2, but v0.1
+   is deliberately lean and unbuilt. These belong on the roadmap's existing
+   *conditional / evidence-gated* footing, not pre-committed.
+3. **A few items quietly expand fid's responsibility surface or lock new
+   contracts** in ways the audit under-weights (evidence *capture* makes fid a
+   command executor; handoff subcommands hard-code one workflow; task-pack and
+   idempotency each freeze a new contract).
+
+Tiering (with the adjustment applied during resolution):
+
+| # | Item | Merit | Key adjustment |
+|---|---|---|---|
+| 1 | Journal change review packs | **High** | Ship `fid changes --since` diff-first; role shaping reuses context packs later, not a bespoke `--role` |
+| 2 | Safe write (dry-run + idempotency) | **High (dry-run) / Conditional (idempotency)** | Split: dry-run is universal/cheap; idempotency mainly serves MCP/programmatic, defer |
+| 7 | Git-aware run/resume state | **High** | Strongest on-mission item: moves ephemeral orchestration state into the durable store |
+| 5 | Human attention queue | **Solid** | Essentially one more named report; do it, don't oversell as novel |
+| 8 | Ready-queue explain | **Solid** | Cheap extension of planned `fid ready`; v0.2 |
+| 4 | Corrections/undo | **Real but overstated** | `fid event revert` already roadmapped; reframe as domain-level sugar on top |
+| 9 | Handoff/prompt packs | **Real friction, wrong shape** | Express as templates over context packs, not hard-coded `fid handoff <role>` |
+| 3 | Task-pack apply | **Defer/gate** | Locks a new schema; brushes the deferred-import boundary; gate on proven dogfood pain |
+| 6 | Evidence registry | **Split** | `evidence check` (verify a ref resolves) fits; `evidence capture --cmd` is scope creep (fid as executor) |
+| 11 | Context budget metering | **Low-until-needed** | No value until packs exist and prove heavy; estimate-only |
+| 10 | Formal intake | **Low** | Audit admits it's sugar over `in_inbox`; defer |
+| 12 | Pattern mining | **Low, correctly placed** | v0.4+; agreed |
+
+**Top recommendation, unchanged:** the journal-as-"what-changed-since" surface
+(#1) is the single highest-leverage move; ship the durable diff before the
+role-awareness.
+
+### Resolution Priority Order
+
+1. #1 Change review packs → 2. #2 Safe write (dry-run) → 3. #7 Git-aware
+run/resume → 4. #5 Attention queue → 5. #8 Ready explain → 6. #4 Corrections →
+7. #9 Handoff packs → 8. #3 Task-pack apply → 9. #6 Evidence registry →
+10. #11 Context budget → 11. #10 Intake → 12. #12 Pattern mining.
+
+### Resolved Items
+
+#### Item #1 — Change review packs → `fid changes` (RESOLVED, v0.2c)
+
+Decisions:
+- **Distinct digest command** `fid changes --since <anchor>`, aggregated by
+  entity (net field changes + newly-added child facts) — not a filtered
+  timeline. Derived from `activity_log`; `fid activity list` stays the raw
+  stream. (New glossary term **Change digest**.)
+- **Anchors:** event ID + timestamp in v0.2, via an **extensible resolver**;
+  review-id (v0.3) and commit (with run state) slot in additively without a
+  contract change. `--since last` symbolic anchor deferred as sugar.
+- **Output contract:** type-keyed extensible structure — `field_changes`
+  (net `from→to`, intermediate transitions collapsed) + `added`/`removed`
+  maps keyed by fact type (new fact types = new keys, no break). Net `from`
+  derived from earliest post-anchor `activity_log` entry; current value = `to`.
+- **Entity inclusion:** an entity appears iff it, or an append-only child it
+  directly owns (ACs/verifications, completions, concerns, its own links),
+  changed since the anchor. No implicit parent rollup.
+- **Role shaping deferred** (role-agnostic MVP); when added, reuse context
+  packs rather than a bespoke `--role`.
+- **`fid diff <entity> --from --to` deferred**; single-entity case covered by
+  `fid changes --since … --entity <id>`.
+
+Specs changed: GLOSSARY (Change digest); PRD-OUT-019 + traceability;
+06_DESIGN_PLAN_CLI §8 renamed "Activity and Change Commands" + full `fid
+changes` spec; roadmap v0.2c row; TRD `internal/changes/` package.
+
+#### Item #2 — Safe write protocol → `--dry-run` (RESOLVED, v0.2); idempotency deferred
+
+Decisions:
+- **Split.** Ship `--dry-run`; **defer idempotency keys** to a v0.5 conditional
+  paired with the MCP evaluation (PRD-OPS-016, *Could*). No pre-work needed —
+  additive later via schema versioning + a write-path hook.
+- **Universal `--dry-run`** on every write command, built once at the write
+  boundary (build event + validate + check preconditions, stop before append).
+- **Output:** exit code **mirrors** the would-be outcome (0 apply / non-zero
+  reject) so dry-runs compose with `&&`; body carries `dry_run`, `would_apply`,
+  the `validation` result (same `rule`/`detail`/`entities` vocabulary as a real
+  rejection), and an `event_preview` of effects. IDs minted only at append
+  render as `<minted-on-append>`.
+- **Placement:** assert the prepare/validate-before-append **seam in v0.1**
+  (TRD §4.3); ship the flag in **v0.2** (feature follows its autonomous-agent
+  consumers; keeps v0.1 lean).
+
+Specs changed: PRD-OPS-015 (dry-run) + PRD-OPS-016 (idempotency, deferred) +
+traceability; TRD §4.3 dry-run seam; GLOSSARY (Dry-run); 06_DESIGN_PLAN_CLI new
+`## Conventions` preamble with text+JSON examples; roadmap v0.2c `--dry-run`
+row + v0.5 conditional idempotency row.
+
+#### Item #7 — Git-aware run/resume state (RESOLVED, v0.2c)
+
+Decisions:
+- **Hybrid git capture** (revised from pure recorder during grilling): fid
+  **auto-captures** branch/HEAD/dirty read-only via a new `internal/gitctx/`,
+  with **flag override**, **graceful degradation** outside a repo (null context
+  + warning, never fail), and a self-describing **`git_source`**
+  (`captured`|`provided`|`none`). fid never performs git operations. Rationale:
+  auto-capture removes reliance on an agent remembering to pass git state —
+  which is the whole point of moving run state out of the ephemeral chat
+  ledger; and `dirty` is only meaningful when fid reads it live.
+- **State lives on `agent_runs`** (extend, don't add a table or rename): new
+  columns `status` (open|closed|abandoned), `branch`, `base_commit`,
+  `head_commit`, `dirty`, `worktree_path`, `git_source`, `resumed_from_run_id`,
+  `abandoned_reason_md_path`, `abandoned_at`. Additive v0.2 migration. Glossary
+  term **Agent run** broadened to the unified execution record.
+- **Lifecycle + commands:** `fid run list [--open|--abandoned|--by|--epic]`,
+  `fid run show <run-id>`. `fid dev abandon <run-id> --reason-md --by` releases
+  the claim + marks the run abandoned (row preserved; task left as-is, surfaced
+  by `maintenance check`). `fid dev resume <task-id> --by [--force]` re-acquires
+  the claim, opens a **new** run linked via `resumed_from_run_id` (clean
+  per-session telemetry), carries forward branch/base, abandons any prior open
+  run, returns resume **hints** only.
+- **Capture points:** branch/base at `dev start`; head/dirty refreshed at
+  `dev gate`/`dev finish`; dirty is "as of last recorded command."
+
+Specs changed: PRD-OPS-017/018/019 + traceability; 03_TRD_SCHEMA §7
+`agent_runs` columns; 06_DESIGN_PLAN_CLI `dev start`/`dev finish`/`dev resume`/
+`dev abandon`/`run list`/`run show`; GLOSSARY (Agent run); roadmap v0.2c rows;
+TRD `internal/gitctx/` module + dependency-policy note.
+
+### Open Items (not yet walked)
+
+Walk these next, in order, applying the "Key adjustment" column above:
+
+- **#5 Human attention queue** — frame as a named report aggregating
+  needs-decision / needs-approval / blocked / human-claimed / validation-failed
+  / stale-escalation. Likely a `fid report attention` or `fid attention`
+  decision; small. v0.2.
+- **#8 Ready-queue explain** — `fid ready --explain [--limit N]
+  [--include-blocked]`; ranked candidates + skip reasons; extends planned empty
+  explanation. v0.2.
+- **#4 Corrections/undo** — reframe on top of the already-planned
+  `fid event revert` (v0.2c) + `fid journal inspect`; decide which domain-level
+  conveniences (`ac retract`, `issue restore-status`) are worth a command vs.
+  raw event revert.
+- **#9 Handoff/prompt packs** — express as templates (v0.3) composed over
+  context packs (v0.2c), NOT hard-coded `fid handoff <role>` subcommands;
+  resolve the configurability tension first.
+- **#3 Task-pack apply** — gate on proven dogfood ceremony pain; if accepted,
+  lock the task-pack input schema deliberately. Watch the deferred-import
+  boundary.
+- **#6 Evidence registry** — split: accept read-only `fid evidence check`
+  (verify a ref/commit/file still resolves); treat `fid evidence capture --cmd`
+  (fid as command executor) as a separate, scrutinized decision.
+- **#11 Context budget metering** — estimate-only; gate on context packs
+  existing and proving heavy.
+- **#10 Formal intake** — sugar over `in_inbox`; defer unless dogfooding shows
+  value.
+- **#12 Pattern mining** — v0.4+; deterministic grouping over
+  findings/concerns/gates/retro signals. Lowest priority.
+

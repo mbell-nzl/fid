@@ -20,11 +20,19 @@ The findings below focus on places where the current formal suite would still
 let two implementation agents build incompatible behavior, or where a
 predictable mid-loop user need is not expressible.
 
+### Resolution Status (updated 2026-05-29)
+
+All findings below are marked `DONE` after the spec cleanup pass. The original
+citations, problem statements, and proposed fixes remain for audit context.
+Where a product decision superseded a proposed fix, the formal specs contain
+the accepted direction (notably CLI/skill-first agent integration instead of a
+committed MCP listener).
+
 ---
 
 ## Watertightness Findings
 
-### P0 - Same-checkout concurrency is not actually specified
+### P0 - Same-checkout concurrency is not actually specified - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 4, PRD-NFR-008 (line 275);
 `project-docs/specs/02_TRD.md` section 4.3, write path (lines 198-205) and
@@ -44,7 +52,7 @@ hold it through validation, journal append+fsync, and DB projection; release
 only after projection succeeds or fails safely. Add an integration test with
 two OS processes or goroutines racing the same write target.
 
-### P0 - Prior #5 resolved the hidden initial-spec dependency incompletely: default workflows still live only in historical input
+### P0 - Prior #5 resolved the hidden initial-spec dependency incompletely: default workflows still live only in historical input - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.5, PRD-WF-005 through
 PRD-WF-010 (lines 120-126); `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`
@@ -68,7 +76,7 @@ category mappings, allowed transitions, and transition requirements from
 `scaffold/initial-spec.md` section 7.2-7.4 into `02_TRD.md` or a new formal workflow
 spec. Update the roadmap references away from naked `section 7.2-7.4` references.
 
-### P1 - Journal event contract is too loose for the durable source of truth
+### P1 - Journal event contract is too loose for the durable source of truth - DONE
 
 **Citation:** `project-docs/specs/02_TRD.md` section 4.3, write path (lines 198-202);
 `project-docs/specs/02_TRD.md` section 5, journal contract row (line 304);
@@ -88,7 +96,7 @@ timestamp, actor role/actor, sanitized command metadata, ordered effects,
 primary-key representation, update preconditions/prior values, and
 activity-log effect conventions.
 
-### P1 - Git merge conflict behavior is overclaimed
+### P1 - Git merge conflict behavior is overclaimed - DONE
 
 **Citation:** `project-docs/specs/02_TRD.md` section 4.3, concurrency (lines
 230-234); `project-docs/specs/01_PRD.md` section 4, PRD-NFR-007 (line 274);
@@ -106,7 +114,7 @@ or explicitly state that v0.1 applies merged events in deterministic order and
 `fid maintenance check` reports logical conflicts. If preconditions are chosen,
 define them in the journal event contract.
 
-### P1 - Projection freshness has no metadata home
+### P1 - Projection freshness has no metadata home - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.14, PRD-OPS-003 and
 PRD-OPS-004 (lines 252-253); `project-docs/specs/02_TRD.md` section 4.3, rebuild
@@ -123,7 +131,7 @@ Define the exact freshness comparison and recovery behavior: full rebuild when
 metadata is absent or inconsistent; catch-up when the last applied event/offset
 matches the journal prefix; stop on mismatch.
 
-### P1 - Permissions matrix is not complete enough to enforce PRD-ROLE
+### P1 - Permissions matrix is not complete enough to enforce PRD-ROLE - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.7, PRD-ROLE-001 through
 PRD-ROLE-005 (lines 149-153); `project-docs/specs/02_TRD.md` section 10,
@@ -142,7 +150,7 @@ composites, or explicitly define wildcard/action-family semantics. Add
 `fid policy show [--format json|toon|markdown|yaml]` to
 `05_DESIGN_PLAN.md` and `06_DESIGN_PLAN_CLI.md`.
 
-### P1 - `dev gate` has nowhere to persist before completion exists
+### P1 - `dev gate` has nowhere to persist before completion exists - DONE
 
 **Citation:** `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 5, `fid dev start`,
 `fid dev gate`, and `fid dev finish` (lines 311-378);
@@ -162,7 +170,7 @@ makes the command impossible to implement without inventing storage behavior.
   completion output.
 - Remove standalone `dev gate` until finish-time gate capture is specified.
 
-### P2 - Mandatory `--by` conflicts with write command specs
+### P2 - Mandatory `--by` conflicts with write command specs - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.7, PRD-ROLE-001 (line 149);
 `project-docs/specs/03_TRD_SCHEMA.md` section 13 final note (line 755);
@@ -180,7 +188,7 @@ requirement.
 If force-acquire is really a claim operation rather than an unclaim operation,
 rename it to `fid issue claim <id> --by <role> --force`.
 
-### P2 - Human intervention requirement has no CLI path
+### P2 - Human intervention requirement has no CLI path - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.4, PRD-DEV-009 (line 110);
 `project-docs/specs/03_TRD_SCHEMA.md` section 2.3, `task_completions.human_intervention`
@@ -196,7 +204,7 @@ behavior.
 `--intervention-note` to completion commands, or specify a template section that
 `fid dev finish` parses into this field.
 
-### P2 - Stats versioning contradicts PRD and roadmap
+### P2 - Stats versioning contradicts PRD and roadmap - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.12, PRD-TELEM-004 through
 PRD-TELEM-006 (lines 221-222); `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`
@@ -212,7 +220,7 @@ them early or stub them, depending on which doc it privileges.
 `06_DESIGN_PLAN_CLI.md`, or move those metrics into v0.1 requirements and
 roadmap.
 
-### P2 - MCP violates the absolute "no network listener" requirement
+### P2 - MCP violates the absolute "no network listener" requirement - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.14, PRD-OPS-010 (line 259);
 `project-docs/specs/01_PRD.md` section 4, PRD-NFR-006 (line 273);
@@ -229,7 +237,7 @@ contradiction, not the detailed MCP design.
 localhost-only `fid mcp start`" and cross-reference TRD-SEC-005, or specify MCP
 over stdio rather than a socket.
 
-### P3 - Minor flag/name drift will trip implementation
+### P3 - Minor flag/name drift will trip implementation - DONE
 
 **Citation:** `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 2,
 `fid issue create` flag table (line 66); `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`
@@ -249,7 +257,7 @@ either `fid issue update --labels` replaces all labels, or add
 
 ## Feature-Gap Findings
 
-### P2 - In-scope gap: no entity history command despite activity-log model
+### P2 - In-scope gap: no entity history command despite activity-log model - DONE
 
 **Citation:** `project-docs/specs/GLOSSARY.md` "Activity log" (lines 137-142);
 `project-docs/specs/03_TRD_SCHEMA.md` section 9.4, `activity_log` (lines 496-504);
@@ -264,7 +272,7 @@ design do not specify it. Agents and humans will repeatedly need to answer
 `fid activity list [--on issue/FID-x] [--since <date>] [--event <name>] [--format ...]`.
 Define JSON output with event, actor, occurred_at, ref, and details.
 
-### P2 - In-scope gap: no claim renewal
+### P2 - In-scope gap: no claim renewal - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.6, claim requirements (lines
 132-140); `project-docs/specs/03_TRD_SCHEMA.md` section 11, claim semantics (lines
@@ -279,7 +287,7 @@ their own work. Stale-claim recovery is specified; proactive renewal is not.
 or `fid claim renew <type>/<id> --by <role> [--ttl <duration>]`. Record renewal
 in the journal and activity log.
 
-### P2 - In-scope gap: no compensating correction or undo story
+### P2 - In-scope gap: no compensating correction or undo story - DONE
 
 **Citation:** `project-docs/specs/02_TRD.md` section 4.3, malformed journal handling
 (lines 253-256); `project-docs/specs/02_TRD.md` section 8, rollback process
@@ -294,7 +302,7 @@ wrong link, wrong status, or bad AC verification become manual surgery.
 that writes a compensating event where possible, plus `fid journal inspect`
 for locating event IDs. Scope v0.1 to reversible event types if necessary.
 
-### P3 - In-scope gap: link lifecycle lacks unlink
+### P3 - In-scope gap: link lifecycle lacks unlink - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.8, PRD-LINK-001 through
 PRD-LINK-008 (lines 162-167); `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 7
@@ -309,7 +317,7 @@ manual correction.
 and define whether it removes both inverse rows. Project removal to
 `activity_log`.
 
-### P3 - In-scope gap: telemetry is too coarse for billing analysis
+### P3 - In-scope gap: telemetry is too coarse for billing analysis - DONE
 
 **Citation:** `project-docs/specs/01_PRD.md` section 3.12, telemetry requirements
 (lines 217-222); `project-docs/specs/03_TRD_SCHEMA.md` section 7, `agent_runs`
@@ -325,7 +333,7 @@ debug cost anomalies.
 `provider_run_id`, and `provider_cost_usd` fields. Keep current columns as the
 normalized summary used by v0.1 stats.
 
-### P3 - Later-version gap: search/query remains conditional and underspecified
+### P3 - Later-version gap: search/query remains conditional and underspecified - DONE
 
 **Citation:** `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` section v0.3d,
 conditional `fid query` DSL (line 232); historical source
@@ -343,11 +351,7 @@ tracked PRD item once report gaps are known from dogfooding.
 
 ## Overall Assessment
 
-The suite is much stronger after the first resolution pass, but it is not yet
-implementation-ready for Phase 1. The top three fixes before phase planning
-are: specify the v0.1 workflow graphs in the formal specs; nail down journal
-locking, event schema, and replay/precondition semantics; and complete the
-v0.1 permission/CLI traceability gaps (`--by`, `policy show`, gate
-persistence, activity history). Once those are resolved, the remaining issues
-are mostly lifecycle polish and version-boundary cleanup rather than blockers.
-
+Updated 2026-05-29: the second-pass findings have been resolved in the formal
+spec suite and are marked `DONE` above. The original assessment is retained
+implicitly by the finding text; current phase planning should rely on the
+updated specs plus the normal validation gates.

@@ -52,8 +52,11 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/validation/ Contracts, assertions, outcomes (v0.4)
     ├──► internal/templates/  Template engine + structural validation (v0.3)
     ├──► internal/export/     Markdown export with frontmatter (v0.4)
+    ├──► internal/search/     Lightweight structured search (v0.2+)
     ├──► internal/stats/      Cost, tokens, gates, attempts aggregations
-    └──► internal/report/     Named reports (v0.2+)
+    ├──► internal/report/     Named reports (v0.2+)
+    ├──► internal/changes/    Change digest over activity_log (v0.2+)
+    └──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
 ```
 
 Rules:
@@ -87,8 +90,11 @@ Rules:
 | `internal/validation/` | Domain | Contracts, assertions, required validators, outcomes (v0.4) | QA plan management |
 | `internal/templates/` | Domain | Template CRUD, versioning, structural validation (v0.3) | Issue lifecycle |
 | `internal/export/` | Interface adapter | Markdown tree rendering, frontmatter generation (v0.4) | Business logic |
+| `internal/search/` | Domain | Literal, case-insensitive search over structured read-model fields (v0.2) | Full markdown body indexing, custom query DSL |
 | `internal/stats/` | Domain | Cost, token, gate, attempt aggregations | Output formatting |
 | `internal/report/` | Domain | Named report SQL composition and execution (v0.2) | Output formatting |
+| `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
+| `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
 
@@ -108,6 +114,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `epic_metadata` | scheduling, brief_md_path, target_start, target_end | issue_id → issues (1:1, epic only) | Sequential or prioritised scheduling. |
 | `acceptance_criteria` | ordinal, text | issue_id → issues (task/subtask only) | Verification state in `ac_verifications`. |
 | `ac_verifications` | verifier_role, status, evidence_type, evidence_ref, verified_at | ac_id → acceptance_criteria, completion_id → task_completions | Append-only. Multiple per AC per role. |
+| `gate_runs` | issue_id, attempt_number, command, exit_code, output_excerpt, ran_at | issue_id → issues, agent_run_id → agent_runs | Append-only gate evidence recorded before or during completion. |
 | `task_completions` | attempt_number, status, actual_tokens, commit_hashes, files_touched, gate_results, human_intervention | issue_id → issues (task only) | Append-only. Previous attempts marked superseded. |
 | `concerns` | summary, status, body_md_path | issue_id → issues, raised_in_completion_id → task_completions, escalated_to_esc_id → escalations, triaged_in_event_id → triage_events | Status: open → addressed / escalated / wontfix. |
 | `agent_runs` | role, model, tokens_in, tokens_out, cost_usd, price_in/out_per_mtok, token_breakdown_json, tool_call_count, provider_run_id, provider_cost_usd | issue_id → issues, completion_id → task_completions, review_id → qa_reviews | Snapshot pricing at run end plus optional provider reconciliation fields. |
@@ -165,7 +172,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `carry_forward` | status, scheduled_epic_id, promoted_principle | Multi-epic lifespan. |
 | `retrospectives` | epic_id, type (lightweight/deep), recommendation | Links to epic. |
 | `cycles` | name, start/end_date, status | Optional; off by default. |
-| `views` | name, query_dsl, scope | Saved queries. |
+| `views` | name, query_kind, query_text, scope | Saved read-only queries. `query_kind` starts with `sql`; any future DSL kind requires a separate recorded decision. |
 | `comments` | ref_type, ref_id, author_role, body_md | Polymorphic ref scoped to issue, qa_review, decision, escalation, requirement. |
 
 **Derived views:**
@@ -195,18 +202,31 @@ All generated entity IDs follow the shape `<PREFIX>-<hash>`:
 
 **Write path (every CLI write):**
 
-1. Validate against the current DB state (permissions, workflow rules,
+1. Acquire the checkout-scoped write lock at `.fid/write.lock`.
+2. Catch up or rebuild SQLite if `projection_meta` shows the DB is stale.
+3. Validate against the current DB state (permissions, workflow rules,
    kind constraints, claim state).
-2. Build a fully resolved event: one semantic envelope
+4. Build a fully resolved event: one semantic envelope
    (`event_type`, `event_schema`, actor metadata, command metadata) with an
    ordered `effects` array of row operations (`insert` / `update` / `delete`
    with table name, PK, and resolved values).
-3. Append and flush one JSONL line to
+5. Append and flush one JSONL line to
    `.fid/journal/YYYY-MM-DD.jsonl` — this is the commit point.
-4. Apply the event's effects to SQLite in a single DB transaction.
+6. Apply the event's effects to SQLite in a single DB transaction and update
+   `projection_meta`.
+7. Release `.fid/write.lock`.
 
 If journal append fails, the DB is not modified. If DB projection fails after
 journal append, the next CLI invocation catches the DB up before answering.
+
+**Dry-run simulation:** Because validation (step 3) and event construction
+(step 4) both precede the journal append (step 5, the commit point), a write
+can be simulated by running steps 1–4 and returning the validation result and
+the built event without appending or projecting. The v0.2 `--dry-run` flag
+(PRD-OPS-015) hooks in at this seam; deferred idempotency keys (PRD-OPS-016)
+would add an envelope field plus a write-time key lookup at the same seam.
+Keeping prepare/validate cleanly separable from append is therefore a v0.1
+write-path requirement even though the flag itself ships in v0.2.
 
 **One logical write = one journal event — no exceptions.** Composite commands
 (`fid dev finish`) produce one event with multiple effects applied atomically.
@@ -225,9 +245,171 @@ faithfully reproduce.
 - On replay, events older than the current schema version are upgraded
   in-memory before effects are applied.
 
+**Journal event v1 contract:**
+
+Each JSONL line is one canonical JSON object with these top-level fields:
+
+| Field | Required | Semantics |
+|---|---|---|
+| `event_id` | yes | Stable generated event ID. Used by `activity_log.journal_event_id`, replay diagnostics, and projection metadata. |
+| `event_schema` | yes | Positive integer schema version. v0.1 writes `1`. |
+| `event_type` | yes | Semantic command/event name, e.g. `issue.created`, `issue.transitioned`, `claim.acquired`. |
+| `occurred_at` | yes | UTC ISO 8601 timestamp assigned once before append. |
+| `actor` | yes | Object with `role` and optional `actor` string. `role` is the `--by` role for CLI writes. |
+| `command` | yes | Sanitized command metadata: `argv`, `cwd`, `fid_version`, and no environment variables or sensitive flag values. |
+| `effects` | yes | Ordered array of row-level effects applied atomically during projection. |
+
+Effect objects use a shared shape:
+
+| Field | Required | Semantics |
+|---|---|---|
+| `op` | yes | `insert`, `update`, `delete`, or `activity`. |
+| `table` | yes | Target table name. `activity` effects target `activity_log`. |
+| `pk` | yes | Object containing the complete primary key in schema column order. |
+| `values` | for `insert`/`update`/`activity` | Resolved column values after the effect. |
+| `prior` | for `update`/`delete` when available | Prior values recorded for audit and diagnostics. |
+| `preconditions` | targeted | Expected current values that must match during replay before the effect applies. |
+
+Primary keys are always represented as JSON objects, even for single-column
+keys: `{"id":"FID-a1b2c3"}` rather than a bare string. Composite natural keys
+use the schema column names in primary-key order.
+
+Preconditions are required for mutable-state effects whose correctness depends
+on prior state:
+
+- issue status transitions: expected `issues.status` and `workflow_id`;
+- claim acquire, renew, release, and force-acquire: expected current claim
+  absence or expected holder/expiry metadata;
+- update/delete of current-state rows such as `issues`, `labels`,
+  `issue_labels`, `links`, `comments`, and `projection_meta`;
+- task completion attempt-number allocation: expected latest attempt number
+  for the issue;
+- link or label removal: expected row existence.
+
+Append-only inserts that do not depend on prior mutable state, such as
+`ac_verifications`, `activity_log`, and new `task_completions` rows after
+attempt-number allocation has passed, do not need prior-value preconditions.
+They still rely on primary-key and uniqueness constraints during projection.
+
+During replay, fid applies events in journal order. If an effect precondition
+does not match the projected DB state, replay stops with a logical conflict
+error naming `event_id`, `event_type`, table, primary key, expected value,
+actual value, and the journal file/line. v0.1 does not automatically reconcile
+intent; the human resolves the journal conflict or uses future merge tooling.
+
+`activity_log.journal_event_id` is always the originating `event_id`.
+Projection stores `last_event_id` and a hash of the canonical JSON event line
+in `projection_meta`. Canonical JSON for hashing uses UTF-8, sorted object
+keys, no insignificant whitespace, and preserves array order.
+
+**Example v1 event:**
+
+```json
+{
+  "event_id": "EVT-20260529-000001",
+  "event_schema": 1,
+  "event_type": "issue.transitioned",
+  "occurred_at": "2026-05-29T03:12:45Z",
+  "actor": {"role": "developer", "actor": null},
+  "command": {
+    "argv": ["fid", "issue", "transition", "FID-a1b2c3", "--to", "in_progress", "--by", "developer"],
+    "cwd": ".",
+    "fid_version": "0.1.0"
+  },
+  "effects": [
+    {
+      "op": "update",
+      "table": "issues",
+      "pk": {"id": "FID-a1b2c3"},
+      "preconditions": {"status": "todo", "workflow_id": "task-default"},
+      "prior": {"status": "todo"},
+      "values": {"status": "in_progress", "updated_at": "2026-05-29T03:12:45Z"}
+    },
+    {
+      "op": "activity",
+      "table": "activity_log",
+      "pk": {"id": "ACT-d4e5f6"},
+      "values": {
+        "journal_event_id": "EVT-20260529-000001",
+        "ref_type": "issue",
+        "ref_id": "FID-a1b2c3",
+        "event": "status_changed",
+        "details": {"from": "todo", "to": "in_progress"},
+        "actor": "developer",
+        "occurred_at": "2026-05-29T03:12:45Z"
+      }
+    }
+  ]
+}
+```
+
+**Correction model:**
+
+Journal history is append-only. fid never mutates or deletes a committed event
+as part of normal operation. Routine mistakes are corrected by appending a new
+domain event, not by editing old journal lines.
+
+v0.1 correction paths are domain-specific:
+
+- wrong issue fields: `fid issue update`;
+- wrong label assignment: `fid issue label add/remove`;
+- wrong link: `fid link add/remove`;
+- wrong claim state: `fid issue claim --renew`, `fid issue claim --force`, or
+  `fid issue unclaim`;
+- wrong AC verification: append a later `ac_verifications` row with the
+  corrected status/evidence;
+- wrong status: use `fid issue transition` only if the workflow allows the
+  transition from the current state.
+
+`fid journal inspect <event-id>` is a v0.1 read command that parses the
+matching journal event and reports actor, command metadata, effects, activity
+entries, journal file/line, hash, and revert eligibility. It does not change
+state.
+
+v0.2 adds `fid event revert <event-id> --by <role> --reason <text>` for
+explicitly reversible event types. Revert writes a compensating journal event
+with `event_type: "event.reverted"` and metadata:
+
+```json
+{
+  "reverts_event_id": "EVT-20260529-000001",
+  "reason": "Wrong label applied during triage"
+}
+```
+
+Revert eligibility is intentionally narrow:
+
+| Event/effect type | v0.1 correction | v0.2 `event revert` eligibility |
+|---|---|---|
+| Issue field update | `fid issue update` | Yes, if current values still match the event's `values`. |
+| Issue label add/remove | `fid issue label add/remove` | Yes, if the label relationship is still in the state produced by the event. |
+| Link add/remove | `fid link add/remove` | Yes, if both declared and inverse rows are still in the state produced by the event. |
+| Claim release/renew | Claim command | Yes, only when current claim state still matches the event's `values`. |
+| AC verification | New verification row | No. Append a corrected verification. |
+| Gate run | New gate run or completion note | No. Gate evidence remains audit history. |
+| Task completion | Superseding attempt or concern/comment | No. Completion history remains append-only. |
+| Status transition | `fid issue transition` when allowed | No generic v0.2 revert. Status changes require workflow validation. |
+| Composite developer command | Domain-specific correction | No generic v0.2 revert unless all effects are individually reversible and the command has an explicit reverser. |
+
+If an event is not eligible, `fid event revert` exits non-zero and names the
+preferred domain correction command.
+
 **Concurrency:**
 
-- Single-worktree: safe via SQLite's default locking.
+- Single-worktree: all CLI writes acquire `.fid/write.lock` before freshness
+  checks, validation, event construction, journal append/fsync, and SQLite
+  projection. This serializes validation against a fresh DB state before any
+  journal commit is possible.
+- SQLite transactions remain required inside the write-lock boundary for
+  projection atomicity. SQLite locking alone is not the write serializer,
+  because the journal append is the commit point.
+- `.fid/write.lock` is acquired by atomically creating a lock directory that
+  contains owner metadata: PID, hostname, started_at, command, and actor role
+  when available. If the lock is held, fid waits for the configured short
+  timeout, then exits non-zero with an error naming the lock holder and path.
+- v0.1 does not silently break locks. A lock may be treated as stale only when
+  fid can prove the owner process is dead on the same host; otherwise manual
+  human removal is required.
 - Multi-worktree: produces JSONL line-merge conflicts in the day's journal
   file, resolvable as standard text merge. Next `fid` invocation rebuilds
   the DB from the merged journal.
@@ -291,8 +473,8 @@ Application layer (all writes):
 - Template structural validation (v0.3+).
 - Claim acquire semantics (TTL, stealing).
 
-SQLite triggers (backstop for non-CLI write paths — MCP server, web
-dashboard, `fid sql`, direct DB edits):
+SQLite triggers (backstop for non-CLI write paths — future web dashboard,
+`fid sql`, direct DB edits):
 - Kind-invariant rules: hierarchy enforcement on `issues.parent_id`,
   sequence constraints, kind guards on `acceptance_criteria`,
   `task_completions`, `epic_metadata`, `qa_reviews`, `triage_events`,
@@ -386,29 +568,64 @@ into the workflow tables before enabling user-defined workflows.
 |---|---|---|
 | `open` | `resolved` | `linked_to_decision` |
 
+### 4.7 Gate Run Persistence
+
+`fid dev gate` writes append-only `gate_runs` rows. It does not create or
+mutate `task_completions` directly, because completions represent finalized
+attempts.
+
+In v0.1, the active attempt number for a task is derived as:
+
+```text
+MAX(task_completions.attempt_number WHERE issue_id = <task>) + 1
+```
+
+with `0` treated as the max when no prior completion exists. `fid dev gate`
+may record a gate only when the issue is in a started-category state and the
+caller holds the live claim required to advance the task. The gate run may
+reference the open `agent_runs.id` when one exists, but that reference is
+optional so primitive workflows can still record gate evidence.
+
+At `fid dev finish`, `fid dev block`, or `fid issue complete`, fid collects
+all `gate_runs` for the issue and active attempt number, orders them by
+`ran_at` then `id`, and snapshots them into `task_completions.gate_results`.
+It also stores `gates_passed` and `gates_failed` counts on the completion row.
+The source `gate_runs` rows remain as detailed audit evidence.
+
+If a later attempt starts, it receives the next derived attempt number and
+does not mutate prior `gate_runs` or `task_completions`.
+
 ## 5. Interfaces and Contracts
 
 | Contract | Consumers | Compatibility Policy | Verification |
 |---|---|---|---|
 | CLI command surface (`fid <noun> <verb> [flags]`) | Agents, humans, shell scripts | Stable within a major version. Flag additions are non-breaking; flag removals require a deprecation cycle. | Integration tests per command. |
 | Journal event format (JSONL with semantic envelope + effects) | `fid rebuild`, `fid merge --journal`, future tools | Forward-compatible via `event_schema` versioning and upgrader chain. Old events never rewritten. | Golden-file replay tests per schema version boundary. |
-| SQLite schema (tables, views, indexes, triggers) | CLI queries, `fid sql`, MCP server, web dashboard | Versioned via numbered migrations. | Migration up/down tests. |
+| SQLite schema (tables, views, indexes, triggers) | CLI queries, `fid sql`, future web dashboard | Versioned via numbered migrations. | Migration up/down tests. |
 | JSON output (default for all read commands) | Agents, `jq` pipelines, downstream tools | Field additions are non-breaking; field removals require deprecation. | Snapshot tests per command output. |
 | TOON output (opt-in via `--format toon`) | Agents optimising for token efficiency | Secondary format; shape mirrors JSON. | Parity tests against JSON output. |
+| Search result shape (`fid search`) | Agents, humans | Additive result fields are non-breaking. Matching remains literal/case-insensitive unless a future decision commits to ranking or a query language. | Integration tests for entity filters, empty results, and JSON/TOON parity. |
 | Markdown export with YAML frontmatter (v0.4) | Humans, git diffs, stakeholder review | Frontmatter schema documented; field additions non-breaking. | Export round-trip tests (structured fields survive export/re-parse). |
-| MCP server resources/prompts/tools (v0.3) | AI agents via Model Context Protocol | Experimental until v0.4. | Integration tests against MCP SDK. |
-| `.fid/config.toml` | CLI, export, future MCP server | Additive sections; no removal without migration. | Config parsing tests with missing/extra keys. |
+| `.fid/config.toml` | CLI and export | Additive sections; no removal without migration. | Config parsing tests with missing/extra keys. |
 | `.fid/pricing.toml` | Cost computation in `agent_runs` | Additive model entries; user-overridable. | Test with missing model, custom model, default model. |
+
+`fid search <term>` is a read-only discovery command, not a query language.
+The v0.2 implementation performs literal, case-insensitive matching across
+projected structured fields such as entity IDs, issue titles, labels, owner
+fields, requirement summaries, decision summaries, escalation summaries, and
+markdown path fields where present. It supports filters such as `--kind`,
+`--status`, `--label`, `--epic`, `--inbox`, and `--format`. Full markdown body
+search remains out of scope for fid search; callers should use shell tools such
+as `rg` against markdown files when they need prose-content search.
 
 ## 6. Security and Privacy
 
 | ID | Requirement | Verification |
 |---|---|---|
-| TRD-SEC-001 | The system shall not open any network listener or transmit data externally. All data stays local to the filesystem. | Code review; no `net.Listen` or HTTP client calls outside MCP server (v0.3, localhost only). |
+| TRD-SEC-001 | The system shall not open any network listener or transmit data externally. All data stays local to the filesystem. | Code review; no `net.Listen` or HTTP client calls. Any future MCP or remote adapter requires a new recorded decision and threat model. |
 | TRD-SEC-002 | The `fid sql` escape hatch shall reject any statement other than SELECT, EXPLAIN, PRAGMA query, and WITH (read-only). | Integration test: attempt INSERT/UPDATE/DELETE/DROP via `fid sql`; assert rejection. |
 | TRD-SEC-003 | Journal files shall not contain secrets. CLI shall strip environment variables and sensitive flag values before recording command metadata in events. | Code review; test that event `command_metadata` contains no env vars or `--password`-style values. |
-| TRD-SEC-004 | SQLite triggers shall prevent structural corruption even from non-CLI write paths (MCP, dashboard, direct SQL). | Trigger tests: attempt invalid inserts via raw SQL; assert RAISE fires. |
-| TRD-SEC-005 | The MCP server (v0.3) shall bind to localhost only and shall not expose the full CLI surface. | Config default; integration test that remote connections are refused. |
+| TRD-SEC-004 | SQLite triggers shall prevent structural corruption even from non-CLI write paths (future dashboard, direct SQL). | Trigger tests: attempt invalid inserts via raw SQL; assert RAISE fires. |
 
 ## 7. Performance and Reliability
 
@@ -461,6 +678,13 @@ Runtime dependencies (indicative; finalised during v0.1 implementation):
 | `charmbracelet/bubbletea` | TUI framework (v0.3) | `rivo/tview`, `gdamore/tcell` | MIT | spec §6.16 |
 | `charmbracelet/lipgloss` | TUI styling (v0.3) | — | MIT | spec §6.16 |
 
+The v0.2 git-aware run features (PRD-OPS-017–019) invoke a local `git` binary
+**read-only** (`rev-parse`, `status --porcelain`) through `internal/gitctx/`.
+This is a local CLI tool, not a service/daemon/network dependency, and fid
+already assumes a git repo (the journal is committed to git). Invocations are
+bounded and timed; if `git` is absent or the cwd is not a worktree, the run is
+recorded with no git context rather than failing. fid never mutates git state.
+
 Supply-chain gates to define before release readiness:
 
 - Vulnerability audit: `govulncheck ./...`
@@ -484,7 +708,7 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-010 | The permissions matrix shall be a code constant in v0.1, migrated to `role_permissions` table in v0.2. Unknown roles shall be hard-rejected in v0.1. | v0.1–v0.2 | v0.1: test every CLI write action has a matrix entry; test denied combinations raise errors. v0.2: migration test seeds from v0.1 constant. |
 | TRD-ARCH-011 | Claim acquisition shall be atomic via `INSERT ... ON CONFLICT DO NOTHING`. Zero affected rows indicates an existing claim. | v0.1 | Integration test with concurrent acquire attempts. |
 | TRD-ARCH-012 | The TOON marshaller shall be implemented in-tree with no third-party dependency. | v0.1 | Build with no TOON dependency in go.mod. |
-| TRD-ARCH-013 | The MCP server shall expose a curated subset of CLI tools, not the full surface. Resources, prompts, and tools shall be the three MCP primitives. | v0.3 | Code review; tool inventory test. |
+| TRD-ARCH-013 | Agent integration shall remain CLI/skill-first until dogfooding proves a concrete MCP-only client need. Any future MCP adapter shall require a recorded product/security decision, a threat model, and an explicit transport choice before implementation. | v0.1+ | Roadmap review confirms no MCP implementation task is committed before the decision; security review confirms no listener code exists. |
 | TRD-ARCH-014 | Markdown export shall include YAML frontmatter with structured fields. The frontmatter schema shall be documented and tested for round-trip stability. | v0.4 | Export → parse frontmatter → assert field values match DB. |
 | TRD-ARCH-015 | Template-driven validation shall declare required sections per template kind. `fid dev finish` and similar commands shall validate files against templates and reject malformed artifacts. | v0.3 | Integration test: submit completion report missing `## Concerns` heading; assert rejection. |
 
@@ -499,7 +723,8 @@ tracked in `01_PRD.md` §7.
   checkpoint) or always replay from scratch? Full replay is simpler and
   fast enough at single-project scale; checkpoint is a forward-compatible
   optimisation.
-- [ ] What is the MCP server's Go SDK choice for v0.3? Depends on community
-  maturity at implementation time.
+- [ ] Should fid add a future MCP adapter after dogfooding? Start from the
+  CLI/skill-first assumption; require a concrete MCP-only client need, a
+  product/security decision, and a threat model before adding it to a roadmap.
 
-*Last updated: 2026-05-24*
+*Last updated: 2026-05-31*

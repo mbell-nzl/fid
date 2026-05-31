@@ -129,7 +129,8 @@ a brief concept inventory, not a duplicate glossary.
 - Named reports and stats aggregations
 - Markdown export with YAML frontmatter contract (v0.4)
 - TUI kanban board (v0.3)
-- MCP server for agent integration (v0.3)
+- CLI/skill-first agent integration; MCP adapter deferred until dogfooding
+  proves a concrete MCP-only client need
 - Templates with monotonic versioning (v0.3)
 - Single static Go binary, project-scoped `.fid/` directory
 
@@ -156,7 +157,7 @@ List the user-facing or integration surfaces the project will expose.
 | JSONL journal | Canonical event store committed to git | `.fid/journal/YYYY-MM-DD.jsonl`; one event per CLI write. Ships v0.1. |
 | SQLite database | Derived query cache for fast reads | `.fid/fid.sqlite`; gitignored; rebuilt from journal. Ships v0.1. |
 | TUI board | Kanban visualisation in the terminal | `fid board`; Bubbletea + Lipgloss. Ships v0.3. |
-| MCP server | Agent integration via Model Context Protocol | `fid mcp start`; resources, prompts, tools. Ships v0.3. |
+| Agent skills | Agent workflow guidance layered over the CLI | Repo skills explain fid-aware workflows for Codex/Claude-style agents. CLI remains the primary integration surface. |
 | Markdown export | Human-readable project state as a file tree | `fid export`; YAML frontmatter contract. Ships v0.4. |
 | Web dashboard | Browser-based project visualisation | Separate `fid-dashboard` package; reads SQLite. Ships v0.5. |
 
@@ -167,7 +168,7 @@ Define objective or observable outcomes.
 | Horizon | Criteria |
 |---|---|
 | Early dogfood | v0.1 core issue layer replaces ~70% of daily interaction with whet's task artifacts. `fid init`, issue CRUD, AC verification, claims, ready queue, link management, and journal/rebuild all work reliably. The author uses fid for real project work. |
-| Public release | v0.3 ships QA reviews, templates, TUI board, and MCP server. The full agentic task loop (TL plan → Developer execute → QA review → TL wrap-up) runs through fid with enforced workflow invariants. Cross-epic queries answer in single commands. |
+| Public release | v0.3 ships QA reviews, templates, and TUI board. The full agentic task loop (TL plan → Developer execute → QA review → TL wrap-up) runs through fid's CLI with enforced workflow invariants. Cross-epic queries answer in single commands. |
 | Long-term | fid is the standard storage/query layer for AI-assisted development workflows. Projects adopt it without forking; the configurable workflow engine and role system accommodate diverse team shapes. Token telemetry and retrospective signals drive measurable efficiency improvements across projects. |
 
 ## 8. Constraints
@@ -192,7 +193,7 @@ three-tier QA model in a single CLI binary.
 | **Beads** | Go CLI, SQLite storage, project-scoped. Similar architectural choices. | General-purpose task tracking without agent-specific concerns. No journal-canonical model, no role-based permissions, no QA layer, no validation contracts. fid's architecture was informed by Beads' Go/SQLite patterns. |
 | **Beans** | Go CLI, local-first, developer-oriented project tracking. | Focused on time tracking and invoicing. Different domain; no workflow enforcement or agent integration. |
 | **Claude Code TaskCreate / built-in tasks** | In-conversation task tracking for AI agents. | Ephemeral, conversation-scoped, no persistence beyond the session. fid provides the durable, queryable, cross-session layer underneath. |
-| **Task Master (various)** | MCP-based task management for AI agents. | Typically exposes the full tool surface to agents, leading to context bloat. fid's MCP server (v0.3) exposes a curated subset. Task Master's lessons informed fid's lean tool design. |
+| **Task Master (various)** | MCP-based task management for AI agents. | Typically exposes a broad tool surface to agents, leading to context bloat. fid stays CLI/skill-first until dogfooding proves an MCP-only client need. Task Master's lessons informed fid's lean tool design. |
 
 ## 10. Durable Decisions Log
 
@@ -205,7 +206,8 @@ Keep only project-shaping decisions here. Phase-local decisions belong in
 | Roles configurable via seeded default profile | Supports diverse workflows without dictating one. Roles table in v0.1; permissions table in v0.2. | ADR-0002 |
 | Three-tier QA model shipped in full | Primary user's workflow requires assertion-level verification. Plans + reviews in v0.3; contracts + assertions + outcomes in v0.4. All layers schema-optional per project. | ADR-0003 |
 | Implementation language: Go | Agentic build pipeline proven on whet transfers directly. Single static binary distribution. Agent error-recovery loop more efficient than Rust during design iteration. | 2026-05-09, spec §6.16 |
-| Application-layer validation primary, triggers as backstop | Rich error messages and parameterised rules need app-layer context. Triggers guard structural invariants for non-CLI write paths (MCP, dashboard, direct SQL). | spec §6.14 |
+| Application-layer validation primary, triggers as backstop | Rich error messages and parameterised rules need app-layer context. Triggers guard structural invariants for non-CLI write paths (future dashboard, direct SQL). | spec §6.14 |
+| CLI/skill-first agent integration | Coding agents already use shell commands effectively. `fid --help`, structured output, examples, and repo skills are the primary agent interface. MCP is deferred until a concrete MCP-only client need appears and a product/security decision records the transport and threat model. | 2026-05-29 decision |
 | Hash-based IDs, not sequential | Reduces coordination needs for concurrent agent/branch issue creation. Collision risk managed by progressive length scaling (6→8 hex chars). | spec §6.0 |
 
 ## 11. Document Suite

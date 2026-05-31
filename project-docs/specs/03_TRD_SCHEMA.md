@@ -42,6 +42,7 @@ its same-event references.
 | `<project>` | Issue (`epic`, `task`, `subtask`) |
 | `AC` | Acceptance criterion |
 | `ACV` | Acceptance criterion verification |
+| `GATE` | Gate run |
 | `TC` | Task completion |
 | `CON` | Concern |
 | `QAR` | QA review |
@@ -225,6 +226,24 @@ CREATE TABLE task_completions (
   human_intervention_note TEXT,                -- optional short note when human_intervention=1
   completed_at        DATETIME
 );
+
+CREATE TABLE gate_runs (
+  id                  TEXT PRIMARY KEY,        -- GATE-<hash> (see §1)
+  issue_id            TEXT NOT NULL REFERENCES issues(id),
+  attempt_number      INTEGER NOT NULL,
+  agent_run_id        TEXT REFERENCES agent_runs(id),
+  recorded_by_role    TEXT NOT NULL,
+  command             TEXT NOT NULL,
+  exit_code           INTEGER NOT NULL,
+  output_excerpt      TEXT,
+  ran_at              DATETIME NOT NULL,
+  CHECK (attempt_number > 0)
+);
+
+-- `fid dev gate` writes append-only gate_runs before a completion exists.
+-- `fid dev finish`, `fid dev block`, and `fid issue complete` snapshot the
+-- gate_runs for the same issue and attempt into task_completions.gate_results
+-- and derive gates_passed/gates_failed. Source gate_runs remain as audit rows.
 ```
 
 ---
@@ -428,7 +447,18 @@ CREATE TABLE agent_runs (
   provider_run_id TEXT,                        -- optional provider request/run identifier
   provider_cost_usd REAL,                      -- optional provider-billed cost for reconciliation
   started_at      DATETIME,
-  ended_at        DATETIME
+  ended_at        DATETIME,
+  -- v0.2 run/git/lifecycle extension (additive migration; see PRD-OPS-017–019)
+  status          TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'closed' | 'abandoned'
+  branch          TEXT,                        -- git branch at run start
+  base_commit     TEXT,                        -- commit the run started from
+  head_commit     TEXT,                        -- latest captured HEAD (refreshed at gate/finish)
+  dirty           BOOLEAN,                     -- worktree dirty as of last recorded command (point-in-time)
+  worktree_path   TEXT,
+  git_source      TEXT,                        -- 'captured' | 'provided' | 'none'
+  resumed_from_run_id      TEXT REFERENCES agent_runs(id),
+  abandoned_reason_md_path TEXT,
+  abandoned_at    DATETIME
 );
 
 -- Pricing source: .fid/pricing.toml maps model -> (in_per_mtok, out_per_mtok).
@@ -480,7 +510,8 @@ CREATE TABLE views (
   id              TEXT PRIMARY KEY,            -- VIEW-<hash> (see §1)
   name            TEXT NOT NULL,
   description     TEXT,
-  query_dsl       TEXT NOT NULL,
+  query_kind      TEXT NOT NULL,               -- 'sql'; future DSL kinds require a recorded decision
+  query_text      TEXT NOT NULL,
   scope           TEXT,                        -- 'project' | 'user'
   created_at      DATETIME
 );
@@ -535,7 +566,9 @@ CREATE TABLE projection_meta (
 -- `.fid/fid.sqlite`. Missing metadata, schema-version mismatch, journal
 -- position mismatch, or last-event hash mismatch forces a full rebuild or
 -- a hard error before reads are served. A matching checkpoint allows
--- catch-up from `journal_offset`.
+-- catch-up from `journal_offset`. `last_event_id` is the source event's
+-- `event_id`; `last_event_hash` is computed from the canonical JSON event
+-- line defined in `02_TRD.md` §4.3.
 
 -- 9.6 Labels
 
@@ -833,8 +866,8 @@ The `--by` flag is mandatory on every write command.
 
 **Application-layer primary, SQLite triggers as backstop.** The
 application layer handles all validation on the CLI write path. Triggers
-serve as a backstop for writes that bypass the CLI (MCP server, web
-dashboard, `fid sql`, direct DB edits).
+serve as a backstop for writes that bypass the CLI (future web dashboard,
+`fid sql`, direct DB edits).
 
 ### 14.1 Kind-Invariant Rules
 
@@ -921,4 +954,4 @@ Set on every connection open.
 
 ---
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-05-31*
