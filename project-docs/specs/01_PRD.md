@@ -250,6 +250,7 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-017 | The system shall provide an entity activity-history command that lists projected activity log entries by entity, event type, and date range. | Should | v0.1 |
 | PRD-OUT-018 | The system shall provide a lightweight `fid search <term>` command for literal, case-insensitive discovery across structured projected fields. | Should | v0.2. Search complements named reports and `fid sql`; it does not replace shell `rg` for full markdown body search. |
 | PRD-OUT-019 | The system shall provide a change digest command (`fid changes --since <anchor>`) that returns, grouped by entity, the net field changes and newly-added child facts for entities changed since the anchor, scoped by epic or entity. Anchors are journal event IDs or timestamps in v0.2, resolved by an extensible resolver. | Should | v0.2. Aggregated from `activity_log`; distinct from the chronological `fid activity list` (PRD-OUT-017). Net changes collapse intermediate transitions. Role-tuned shaping deferred to a fast-follow. |
+| PRD-OUT-020 | The system shall provide a human attention report (`fid report attention`) that aggregates, grouped by reason, the items currently needing human judgment: epics awaiting closure approval, open escalations without a resolving decision (flagged stale past a window), issues blocked by a cancelled (dead-end) blocker, and live human-held claims. Each group shall declare its audience; further reasons are added by source-entity availability without changing the contract. Scopable by `--epic`. | Should | v0.2. Pull-based; no notifications or watchers. Read-only aggregation over existing entities; adds no schema. Reasons light up as source entities ship (`blocking_finding_open` v0.3; `validation_failed`/`validation_carried_forward` v0.4). Role filter deferred as an additive fast-follow. Empty result is a zero-exit success state. |
 
 ### 3.14 Operations and Maintenance (OPS)
 
@@ -335,7 +336,7 @@ phase planning.
 | PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
 | PRD-GOV-001 – 008, 012 – 013 | v0.2 | | |
 | PRD-TELEM-005 – 006 | v0.2 | | |
-| PRD-OUT-005 – 007, 018 – 019 | v0.2 | | |
+| PRD-OUT-005 – 007, 018 – 020 | v0.2 | | |
 | PRD-OPS-011, 014 – 015 | v0.2 | | |
 | PRD-OPS-017 – 019 | v0.2 | | |
 | PRD-QA-001 – 006, 008, PRD-CLAIM-009 | v0.3 | | |

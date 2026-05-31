@@ -167,6 +167,23 @@ Use when: finding candidate entities before a focused `get`, `report`, or
 read-only SQL command.
 Avoid: using as a synonym for `fid sql`, saved views, or shell `rg`.
 
+**Attention report**:
+The pull-based, entity-aggregating digest of items currently needing human — or,
+by declared audience, senior — judgment (`fid report attention`). Items are
+grouped by reason: epics awaiting closure approval, open escalations without a
+resolving decision (flagged stale past a window), issues blocked by a cancelled
+(dead-end) blocker, and live human-held claims. Each group declares an
+`audience`; further reasons (blocking findings v0.3, validation outcomes v0.4)
+light up as their source entities ship, keyed by reason without a contract
+change. A computed read, not a stored entity, and intentionally low-noise: an
+empty result is the healthy state. Replaces the human grepping across current
+files; it is not a watcher or notification system (those are out of scope).
+Use when: the human (or, later, a senior role) wants the single low-noise list of
+what needs judgment now before approving, interrupting, or resuming a phase.
+Avoid: confusing with [[Change digest]] (what changed since a checkpoint) or with
+notifications/watchers; treating it as a stored queue (it is recomputed each
+call).
+
 **Journal event**:
 One durable JSON object appended as one line to `.fid/journal/YYYY-MM-DD.jsonl`.
 It is the source-of-truth record for a logical write and contains event

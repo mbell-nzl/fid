@@ -175,6 +175,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | Named reports | `fid report epic-status`, `open-escalations`, `qa-blockers`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. | PRD-OUT-006–007 |
+| Attention report | `fid report attention`: pull-based human-judgment digest grouped by reason (open/stale escalations, epics awaiting approval, dead-end blocked, human claims). Audience-tagged; reasons light up as source entities ship. Read-only, no schema. | PRD-OUT-020 |
 | Lightweight search | `fid search <term>` over structured projected fields with filters for kind, status, label, epic, inbox, and format. Literal/case-insensitive only; no custom DSL. | PRD-OUT-018 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
 | `fid changes` | Entity-grouped change digest: net field changes plus newly-added child facts since an anchor (event ID or timestamp), scoped by `--epic`/`--entity`. Aggregated from `activity_log`; distinct from chronological `fid activity list`. Extensible anchor resolver; role shaping deferred. | PRD-OUT-019 |

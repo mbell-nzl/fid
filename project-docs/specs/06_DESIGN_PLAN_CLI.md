@@ -1261,7 +1261,8 @@ fid report list [--format json|toon|markdown|yaml]
   {"name": "open-escalations", "description": "All open escalations", "version": "v0.2"},
   {"name": "qa-blockers", "description": "Blocking QA findings", "version": "v0.2"},
   {"name": "ac-matrix", "description": "AC × verifier-role grid", "version": "v0.2"},
-  {"name": "stale-claims", "description": "Past-TTL active claims", "version": "v0.2"}
+  {"name": "stale-claims", "description": "Past-TTL active claims", "version": "v0.2"},
+  {"name": "attention", "description": "Items needing human judgment now, grouped by reason", "version": "v0.2"}
 ]
 ```
 
@@ -1273,6 +1274,85 @@ fid report <name> [--epic <id>] [--format json|toon|markdown|yaml]
 
 Output shape is report-specific. Named reports are opinionated
 wrappers over hand-coded SQL.
+
+### `fid report attention`
+
+```
+fid report attention [--epic <id>] [--format json|toon|markdown|yaml]
+```
+
+| Flag | Type | Description |
+|---|---|---|
+| `--epic` | string | Scope to one epic's issues |
+| `--format` | string | Output format (default: `json`) |
+
+The pull-based human attention queue: items needing judgment now, grouped by
+`reason`. v0.2 reasons: `needs_decision` (open escalation with no resolving
+decision; carries `age_hours` and a `stale` flag past a 48h default window),
+`needs_approval` (epic wrapped, awaiting human closure), `blocked` (issue
+`blocked_by` a cancelled, dead-end blocker), and `human_claimed` (live claim
+held `--by human`). Each group declares an `audience`; v0.2 output is
+human-default and a `--role`/`--for` filter is a deferred additive fast-follow.
+Later reasons (`blocking_finding_open` in v0.3; `validation_failed` /
+`validation_carried_forward` in v0.4) appear as additional keys without changing
+the contract. Read-only; adds no schema. Group order is most-actionable first
+(`needs_decision` → `needs_approval` → `blocked` → `human_claimed`); within a
+group, stale and oldest items lead. An empty result is a healthy, zero-exit
+state — not an error.
+
+**JSON output:**
+```json
+{
+  "report": "attention",
+  "scope": {"epic": null},
+  "groups": [
+    {"reason": "needs_decision", "audience": ["tl", "human"], "items": [
+      {"ref_type": "escalation", "ref_id": "ESC-7c3e9f", "title": "Journal merge strategy unresolved",
+       "detail": "open escalation, no resolving decision",
+       "since": "2026-05-29T11:00:00Z", "age_hours": 53, "stale": true}]},
+    {"reason": "needs_approval", "audience": ["human"], "items": [
+      {"ref_type": "issue", "ref_id": "FID-e1f2g3", "title": "Core persistence layer",
+       "detail": "epic wrapped; all 8 tasks done; awaiting human closure approval",
+       "since": "2026-05-30T18:00:00Z"}]},
+    {"reason": "blocked", "audience": ["tl", "human"], "items": [
+      {"ref_type": "issue", "ref_id": "FID-d4e5f6", "title": "Schema migration runner",
+       "detail": "blocked_by FID-a1b2c3 which is cancelled — re-point or cancel",
+       "since": "2026-05-30T09:00:00Z"}]},
+    {"reason": "human_claimed", "audience": ["human"], "items": [
+      {"ref_type": "issue", "ref_id": "FID-9a8b7c", "title": "Pricing config loader",
+       "detail": "claimed --by human; agents will not advance",
+       "since": "2026-05-31T08:00:00Z"}]}
+  ],
+  "summary": {"total": 4, "stale": 1,
+              "by_reason": {"needs_decision": 1, "needs_approval": 1, "blocked": 1, "human_claimed": 1}}
+}
+```
+
+**Markdown output (`--format markdown`):**
+```markdown
+# Attention — 4 items need human judgment (1 stale)
+
+## needs_decision (1)
+- ESC-7c3e9f  Journal merge strategy unresolved
+  open escalation, no resolving decision — since 2026-05-29 (53h, stale)
+
+## needs_approval (1)
+- FID-e1f2g3  Core persistence layer
+  epic wrapped; all 8 tasks done; awaiting human closure approval — since 2026-05-30
+
+## blocked (1)
+- FID-d4e5f6  Schema migration runner
+  blocked_by FID-a1b2c3 (cancelled) — re-point or cancel — since 2026-05-30
+
+## human_claimed (1)
+- FID-9a8b7c  Pricing config loader
+  claimed --by human; agents will not advance — since 2026-05-31
+```
+
+**Empty result (healthy state, zero exit):**
+```text
+note: nothing needs human attention
+```
 
 ---
 

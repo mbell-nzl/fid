@@ -648,14 +648,49 @@ Specs changed: PRD-OPS-017/018/019 + traceability; 03_TRD_SCHEMA §7
 `dev abandon`/`run list`/`run show`; GLOSSARY (Agent run); roadmap v0.2c rows;
 TRD `internal/gitctx/` module + dependency-policy note.
 
+#### Item #5 — Human attention queue → `fid report attention` (RESOLVED, v0.2c)
+
+Decisions:
+- **A named report, not a top-level command.** `fid report attention` joins the
+  `PRD-OUT-006` family (one more opinionated SQL wrapper), adding zero new
+  top-level contract. A `fid attention` alias is a trivial additive promotion
+  later if dogfooding shows the human types it constantly.
+- **Human-default; audience-aware; role filter deferred.** v0.2 output is
+  human-facing with no `--role` flag. Each reason group carries an internal
+  `audience` (e.g. `needs_decision → [tl, human]`), so a later `--role`/`--for`
+  filter is purely additive — never an enumerated `human|tl` freeze. Mirrors the
+  #1 role-shaping deferral.
+- **Open, version-gated reason set keyed by `reason`.** Reasons light up as their
+  source entities ship — the same type-keyed extensibility as `fid changes`.
+  v0.2: `needs_decision` (open escalation, no resolving decision),
+  `needs_approval` (epic wrapped, awaiting human closure), `blocked`,
+  `human_claimed`. v0.3 adds `blocking_finding_open`; v0.4 adds
+  `validation_failed` / `validation_carried_forward` — additively, no contract
+  change.
+- **Three noise-control sharpenings.** (1) `blocked` is narrowed to *dead-end*
+  blockers — an issue `blocked_by` a **cancelled** issue that will never clear
+  without a human (normal blocked-by-in-progress is excluded as self-clearing;
+  broader stall detection deferred). (2) `human_intervention_recorded` is
+  **dropped** — past-tense, already covered by `fid stats interventions`; the
+  queue is open-work-now, not an audit log. (3) `stale_escalation` is **folded
+  into** `needs_decision` as an `age_hours` + `stale` attribute (48h default,
+  hardcoded in v0.2, promotable to a `[reports]` config knob) rather than a
+  double-counting separate group.
+- **Defaults:** group order most-actionable first (`needs_decision` →
+  `needs_approval` → `blocked` → `human_claimed`); within a group stale/oldest
+  lead. **Empty is a healthy zero-exit state** (`note: nothing needs human
+  attention`), never an error — a queue that cries wolf trains the human to
+  ignore it.
+
+Specs changed: PRD-OUT-020 + v0.2 traceability; GLOSSARY (Attention report);
+06_DESIGN_PLAN_CLI §20 `fid report attention` (JSON + markdown + empty state) and
+the `fid report list` example; roadmap v0.2c row. No schema/TRD change — it is a
+hand-coded-SQL named report in the existing `internal/report/` package.
+
 ### Open Items (not yet walked)
 
 Walk these next, in order, applying the "Key adjustment" column above:
 
-- **#5 Human attention queue** — frame as a named report aggregating
-  needs-decision / needs-approval / blocked / human-claimed / validation-failed
-  / stale-escalation. Likely a `fid report attention` or `fid attention`
-  decision; small. v0.2.
 - **#8 Ready-queue explain** — `fid ready --explain [--limit N]
   [--include-blocked]`; ranked candidates + skip reasons; extends planned empty
   explanation. v0.2.
