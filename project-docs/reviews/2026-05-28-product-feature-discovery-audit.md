@@ -513,12 +513,12 @@ history into targeted, low-token, role-specific review input.
 
 ## Resolution Log
 
-> Added 2026-05-31. A `/grill-with-docs` session walked these items in the
-> priority order below, resolving design decisions one at a time and updating
-> the spec suite inline. This log records (1) the assessor's original
-> disposition of all twelve items, (2) the decisions reached and specs changed
-> for the items resolved so far, and (3) the items still open. It is the
-> authoritative starting point for continuing the work.
+> Added 2026-05-31; completed 2026-06-01. Two `/grill-with-docs` sessions walked
+> all twelve items in the priority order below, resolving design decisions one at
+> a time and updating the spec suite inline. This log records (1) the assessor's
+> original disposition of all twelve items and (2) the decisions reached and
+> specs changed for each. **All twelve items are now resolved** — see the
+> per-item RESOLVED blocks below; no items remain open.
 
 ### Assessor's Original Disposition (2026-05-29)
 
@@ -801,20 +801,145 @@ Specs changed: PRD-OUT-021 + v0.3 traceability; GLOSSARY (Handoff pack);
 v0.3d row; TRD `internal/handoff/` module (tree + boundary table). No schema
 change — handoff composes existing read models + templates.
 
-### Open Items (not yet walked)
+#### Item #3 — Task-pack apply (RESOLVED: deferred/gated, conditional v0.3d)
 
-Walk these next, in order, applying the "Key adjustment" column above:
+Disposition matches the assessor's Defer/gate tier — fid is unbuilt, so the
+"dozens of fragile CLI calls" planning pain is asserted, not observed.
 
-- **#3 Task-pack apply** — gate on proven dogfood ceremony pain; if accepted,
-  lock the task-pack input schema deliberately. Watch the deferred-import
-  boundary.
-- **#6 Evidence registry** — split: accept read-only `fid evidence check`
-  (verify a ref/commit/file still resolves); treat `fid evidence capture --cmd`
-  (fid as command executor) as a separate, scrutinized decision.
-- **#11 Context budget metering** — estimate-only; gate on context packs
-  existing and proving heavy.
-- **#10 Formal intake** — sugar over `in_inbox`; defer unless dogfooding shows
-  value.
-- **#12 Pattern mining** — v0.4+; deterministic grouping over
-  findings/concerns/gates/retro signals. Lowest priority.
+Decisions:
+- **Defer to an evidence-gated conditional, not v0.2.** Recorded as a conditional
+  roadmap item evaluated after v0.2 dogfooding; earliest build v0.3+. The input
+  schema is NOT frozen now.
+- **Gate:** build only if v0.1–v0.2 dogfooding shows TL planning ingestion is a
+  measured friction or error source (multi-call planning sequences with real
+  retry/partial-failure rate, or planning mistakes one reviewed transaction would
+  prevent).
+- **Import boundary (the load-bearing guard):** task-pack apply is
+  structured-authoring **bulk-create** — structured input only (YAML/JSON/TOON,
+  never free-prose markdown parsing), **create-only**, one journal event
+  (`task_pack.applied`) with many effects, returning a source-ref→fid-id map. No
+  round-trip, no sync, no markdown-canonical mode, no update-existing. The
+  deferred markdown import (`fid import`/`init --import`, v0.5 conditional) stays
+  separate.
+- **Intent recorded, schema unfrozen:** `fid task-pack validate --from` +
+  `apply --from --dry-run --by tl`; pack schema versioned and locked deliberately
+  at build time.
+- **Footprint kept honest:** PRD conditional line + glossary term + roadmap
+  conditional only — NO CLI command spec and NO TRD module added (adding them
+  would re-freeze the deferred schema).
+
+Specs changed: PRD-OPS-020 (Could, conditional; not in committed traceability);
+GLOSSARY (Task pack, disambiguated from [[Handoff pack]] and markdown import);
+roadmap v0.3d conditional row. No CLI/TRD/schema change by design.
+
+#### Item #6 — Evidence registry → `fid evidence check` (RESOLVED, v0.4a)
+
+Adopts the assessor's split, sharpened to drop the registry table.
+
+Decisions:
+- **Accept read-only `fid evidence check`; reject `fid evidence capture --cmd`.**
+  fid is a verifier, never an executor: making it run `go test` would break
+  local-first / no-side-effects (PRD-NFR-004/005/006) and the single-binary
+  model, and duplicate the gate mechanism. Capture is already met by the agent
+  recording evidence (`fid dev gate`, evidence ref/excerpt on `ac verify`).
+- **No evidence registry table (sharpening).** Evidence stays embedded
+  (ac_verifications, qa_findings, val_assertion_outcomes); check is a derived
+  read. This also dissolves `fid evidence show <evidence-id>` (no evidence-id) —
+  a scoped check is the per-evidence view.
+- **Type-keyed, extensible resolver.** `commit` (local git) and file/source/
+  screenshot (filesystem) are checkable → `resolved`/`missing`; `command`,
+  `manual`, `url` are `unverifiable`. New types added without a contract change.
+- **Two boundary calls.** (1) *Resolution, not re-proof* — verifies the ref
+  exists, never re-runs a test or re-proves a claim. (2) *Existence, not content
+  drift* — no hash comparison in v1 (would need capture-time hashes stored;
+  deferred, additive).
+- **Standalone, not folded into `fid maintenance check`** (QA evidence integrity
+  vs structural DB integrity — different audiences); `--warn-as-error` for CI /
+  wrap-up gating. v0.4 (covers AC v0.1 + finding v0.3 + outcome v0.4 evidence in
+  one pass).
+
+Specs changed: PRD-QA-009 + v0.4 traceability; GLOSSARY (Evidence check);
+06_DESIGN_PLAN_CLI §23 `fid evidence check`; roadmap v0.4a row; TRD
+`internal/evidence/` module (tree + table, execution/hashing forbidden). No
+schema change.
+
+#### Item #11 — Context budget metering (RESOLVED: deferred/gated, estimate-only, conditional v0.5)
+
+Tier Low-until-needed. Disposition mirrors #3.
+
+Decisions:
+- **Defer to a gated conditional.** Context packs ship v0.2c, but default context
+  is deliberately small (workflow principle #4), so "packs heavy enough to
+  overload a session" is unproven. Gate: build only if dogfooding shows packs
+  overload Developer/QA/TL-Lite sessions.
+- **Estimate-only; reject `--budget-tokens` auto-trim.** Metering reports size; it
+  never omits pack sections to fit a budget. Auto-trim would make
+  `--context-pack <role>` lossy and non-deterministic, undermining packs as a
+  stable contract. Over-budget is the operator's call, not fid's.
+- **Heuristic proxy, not a tokenizer.** A model-agnostic chars-per-token
+  approximation reported as an estimate; fid bundles no per-model tokenizers
+  (multi-provider; single static binary).
+- **Intent recorded, shape unfrozen:** `fid context estimate --pack <role>
+  --issue <id>`, tokens by section.
+- **Footprint:** PRD conditional line + roadmap v0.5 conditional only. No
+  GLOSSARY/CLI/TRD.
+
+Specs changed: PRD-OUT-022 (Could, conditional; not in committed traceability);
+roadmap v0.5 conditional row.
+
+#### Item #10 — Formal intake (RESOLVED: verbs deferred, promote primitive closed v0.2c)
+
+Tier Low. The audit calls intake "sugar over `in_inbox`" — but grilling that claim
+exposed that the *promote* half of the primitive was missing.
+
+Decisions:
+- **Defer the `fid intake` verbs** (`add`/`promote`/`close`) — premature sugar.
+- **Close the real gap so the deferral is honest.** Park (`create --inbox`) and
+  list (`list --inbox`) existed, but there was **no way to assign an inbox task to
+  an epic or clear the inbox flag** — `fid issue update` (PRD-ISSUE-022) omits
+  parent/epic and inbox. Without that, the v0.1 inbox is check-in-only and "it's
+  just sugar" is false.
+- **Minimal primitive (v0.2):** extend `fid issue update` with `--epic`
+  (assign/change/clear a *task's* epic parent — null↔epic only, not subtask
+  reparenting; `--sequence` required for a sequential target; kind-hierarchy
+  rules still apply) and `--inbox/--no-inbox`. Now park → list → promote all work
+  on base commands, and the `fid intake` verbs are correctly deferred ergonomics.
+- v0.1's frozen `issue update` field set is left untouched (the addition lands
+  v0.2).
+
+Specs changed: PRD-ISSUE-025 + v0.2 traceability; 06_DESIGN_PLAN_CLI
+`fid issue update` (`--epic`/`--inbox` flags + promote example); roadmap v0.2c
+row. No GLOSSARY change (Inbox term stands); no TRD/schema change (lives in
+`internal/issues/`).
+
+#### Item #12 — Pattern mining → recurring-pattern reports (RESOLVED, v0.4b)
+
+Tier Low, placement agreed (v0.4+). Accepted as deterministic pattern surfacing.
+
+Decisions:
+- **Deterministic grouping only (v0.4b).** `fid report recurring-findings`,
+  `recurring-concerns`, `recurring-patterns` group findings/concerns/gate
+  runs/triage/VAL-outcome failures by structured dimensions (trigger class,
+  label, area, gate command, finding severity, file-path prefix, repeated
+  `VAL-NNN` failures) and rank recurring groups as candidates with counts +
+  exemplars. No ML, embeddings, or semantic theme extraction.
+- **Surface, don't author (the load-bearing boundary).** The audit's
+  `suggest-principles` implied fid generating principle/decision prose — which
+  would make fid an AI service, breaking local-first / no-network / no-executor.
+  Reframed: fid ranks structured patterns; a human/TL turns a pattern into a
+  DEC-NNN or principle. Same analyzer-not-author line as evidence-check and
+  context-estimate.
+- **Report family, not a new `fid insights` namespace.** Deterministic reads
+  belong with `fid report` (where `attention` landed). Read-only; no schema;
+  extends the v0.4b computed retro signals.
+
+Specs changed: PRD-OUT-023 + v0.4 traceability; GLOSSARY (Pattern report);
+06_DESIGN_PLAN_CLI §20 (recurring reports + `report list` entries); roadmap v0.4b
+row. No TRD module — `internal/report/`, like `attention`.
+
+### Open Items
+
+None — all twelve audit items have been walked and resolved. Resolved blocks
+above: #1, #2, #7 (2026-05-31 session); #5, #8, #4, #9, #3, #6, #11, #10, #12
+(2026-06-01 session, in the resolution priority order).
 

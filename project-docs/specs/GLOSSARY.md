@@ -167,6 +167,22 @@ Use when: finding candidate entities before a focused `get`, `report`, or
 read-only SQL command.
 Avoid: using as a synonym for `fid sql`, saved views, or shell `rg`.
 
+**Evidence check**:
+A read-only verification that cited evidence references still resolve
+(`fid evidence check`, v0.4). For each embedded evidence ref on an AC
+verification, QA finding, or validation outcome in scope, it reports `resolved`,
+`missing`, or `unverifiable` by a type-keyed resolver: commits (git ref resolves,
+local) and file paths (file exists) are checkable; `command`, `manual`, and `url`
+evidence are unverifiable. It verifies *resolution/existence* only — never
+re-running a command or re-proving a claim (that would make fid an executor) and
+never comparing content hashes (no capture-time hash is stored). A computed read
+over existing embedded evidence; it adds no registry table.
+Use when: a QA Lead or Reviewer asks whether cited tests, commits, or files still
+exist before trusting a verification or outcome.
+Avoid: treating it as re-execution (it does not run `go test`) or as content
+drift detection (it checks existence, not whether the content still supports the
+claim).
+
 **Attention report**:
 The pull-based, entity-aggregating digest of items currently needing human — or,
 by declared audience, senior — judgment (`fid report attention`). Items are
@@ -184,6 +200,24 @@ Avoid: confusing with [[Change digest]] (what changed since a checkpoint) or wit
 notifications/watchers; treating it as a stored queue (it is recomputed each
 call).
 
+**Pattern report**:
+A deterministic read that groups recurring quality signals — findings, concerns,
+gate runs, triage events, and validation-outcome failures — by structured
+dimensions (trigger class, label, area, gate command, finding severity, affected
+file-path prefix, repeated `VAL-NNN` failures) and ranks the recurring groups as
+candidates with counts and exemplars (`fid report recurring-findings` /
+`recurring-concerns` / `recurring-patterns`, v0.4). It **surfaces** candidates for
+a human or TL to turn into a [[Decision]] or principle; it never authors the
+recommendation itself. Deterministic grouping only — no ML, embeddings, or
+semantic theme extraction (fid is a local-first analyzer, not an AI service). A
+computed read over existing signals; adds no schema.
+Use when: a TL or QA Lead at wrap-up wants recurring failure themes turned into
+candidate principles, refactors, or templates.
+Avoid: expecting fid to write the recommendation prose (it ranks structured
+patterns; a human authors the principle); confusing it with the [[Attention
+report]] (open items needing judgment now) or with single-metric computed retro
+signals (not grouped recurrences).
+
 **Handoff pack**:
 The generated bundle that equips one role to act on one entity (`fid handoff
 --role <role> --issue <id>`): a rendered prompt plus a machine-readable
@@ -199,6 +233,21 @@ and needs the exact prompt plus obligations without hand-authoring them.
 Avoid: confusing the handoff pack (prompt + orchestration manifest for spawning a
 role) with the context pack (the role-tuned *data* bundle it composes over);
 treating it as a write (it is a view and acquires no claim).
+
+**Task pack**:
+A structured authoring artifact — a reviewed phase plan listing an epic and its
+tasks with acceptance criteria, dependencies, labels, estimates, and
+sequence/priority — ingested in one create-only transaction (`fid task-pack
+apply`, deferred/conditional). Apply produces a single [[Journal event]] with
+many effects and returns a source-ref→fid-id mapping. Input is structured
+(YAML/JSON/TOON), create-only, with no round-trip or sync — which is what keeps
+it distinct from markdown import (`fid import`, the separately deferred v0.5
+capability).
+Use when: describing bulk creation of a planned phase from one reviewed
+transaction, if the dogfood gate is met.
+Avoid: confusing a task pack (a create-only authoring *input*) with a
+[[Handoff pack]] (a generated prompt + manifest *output*), or with markdown
+import/sync (round-trip editing of an existing markdown tree).
 
 **Journal event**:
 One durable JSON object appended as one line to `.fid/journal/YYYY-MM-DD.jsonl`.

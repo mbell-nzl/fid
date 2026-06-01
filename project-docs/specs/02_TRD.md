@@ -57,7 +57,8 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/report/     Named reports (v0.2+)
     ├──► internal/changes/    Change digest over activity_log (v0.2+)
     ├──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
-    └──► internal/handoff/    Handoff pack composition over packs/workflow/templates (v0.3+)
+    ├──► internal/handoff/    Handoff pack composition over packs/workflow/templates (v0.3+)
+    └──► internal/evidence/   Read-only evidence-ref resolution check (v0.4+)
 ```
 
 Rules:
@@ -97,6 +98,7 @@ Rules:
 | `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
 | `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |
 | `internal/handoff/` | Domain | Compose a role handoff pack (v0.3): assemble the manifest (required reads, commands, stop conditions, expected writes, live blockers, evidence obligations) from the role's context pack, the configured workflow, role permissions, and live blocker state; render via the handoff template | Output formatting, journal writes, git operations, hard-coding role or workflow policy |
+| `internal/evidence/` | Domain | Resolve cited evidence references read-only (v0.4): commit refs via `internal/gitctx`, file/source/screenshot refs via filesystem existence; classify each `resolved` / `missing` / `unverifiable` by type | Command execution, content hashing, journal writes, evidence storage (operates over existing embedded refs) |
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
 

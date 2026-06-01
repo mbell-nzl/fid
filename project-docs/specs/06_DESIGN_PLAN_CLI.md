@@ -180,11 +180,23 @@ fid issue update <id> [flags] --by <role>
 | `--spec-md` | string | New spec markdown path |
 | `--est-tokens` | int | New estimate |
 | `--due-date` | date | New due date |
+| `--epic` | string | v0.2: assign / change / clear a task's epic parent (null↔epic; `--epic ""` clears). A sequential target epic also requires `--sequence` |
+| `--inbox` / `--no-inbox` | bool | v0.2: set or clear the inbox flag |
 | `--by` | string | Acting role |
 
 **Output (stderr confirmation):**
 ```text
 updated FID-a1b2c3: priority 2 → 1, title "Implement journal append with flush"
+```
+
+**Inbox promote (v0.2):** `fid issue update --epic`/`--no-inbox` completes the
+capture→promote flow for inbox items — park with `fid issue create --inbox`, list
+with `fid issue list --inbox`, then promote. The formal `fid intake` verbs are
+deferred sugar over this primitive.
+
+```text
+$ fid issue update FID-x --epic FID-e1f2g3 --priority 2 --no-inbox --by tl
+updated FID-x: epic → FID-e1f2g3, priority 0 → 2, inbox cleared
 ```
 
 ### `fid issue label add`
@@ -1369,7 +1381,10 @@ fid report list [--format json|toon|markdown|yaml]
   {"name": "qa-blockers", "description": "Blocking QA findings", "version": "v0.2"},
   {"name": "ac-matrix", "description": "AC × verifier-role grid", "version": "v0.2"},
   {"name": "stale-claims", "description": "Past-TTL active claims", "version": "v0.2"},
-  {"name": "attention", "description": "Items needing human judgment now, grouped by reason", "version": "v0.2"}
+  {"name": "attention", "description": "Items needing human judgment now, grouped by reason", "version": "v0.2"},
+  {"name": "recurring-findings", "description": "Findings grouped by recurring structured dimension", "version": "v0.4"},
+  {"name": "recurring-concerns", "description": "Concerns grouped by recurring structured dimension", "version": "v0.4"},
+  {"name": "recurring-patterns", "description": "Cross-signal recurring patterns ranked as principle candidates", "version": "v0.4"}
 ]
 ```
 
@@ -1459,6 +1474,34 @@ state — not an error.
 **Empty result (healthy state, zero exit):**
 ```text
 note: nothing needs human attention
+```
+
+### `fid report recurring-patterns` (v0.4+)
+
+Deterministic pattern surfacing over existing quality signals.
+`recurring-findings` and `recurring-concerns` group a single signal type;
+`recurring-patterns` rolls up across signals. Each entry is a recurring group
+with its `dimension`, `key`, `count`, and `exemplars` — a candidate for a human
+or TL to turn into a decision, principle, refactor, or template. fid ranks
+structured patterns; it never authors the recommendation. No ML/LLM; read-only;
+no schema.
+
+**JSON output (`fid report recurring-patterns --epic FID-e1f2g3`):**
+```json
+{
+  "report": "recurring-patterns",
+  "scope": {"epic": "FID-e1f2g3", "since": null},
+  "patterns": [
+    {"dimension": "file_path_prefix", "key": "internal/journal/", "kind": "concern",
+     "count": 5, "exemplars": ["CON-c3d4e5", "CON-a1b2c3"],
+     "note": "5 concerns touch internal/journal/ — candidate for a principle or refactor"},
+    {"dimension": "val_assertion", "key": "VAL-004", "kind": "outcome_fail",
+     "count": 3, "exemplars": ["VAL-004@task-3", "VAL-004@task-7"]},
+    {"dimension": "finding_severity+area", "key": "blocking/layering", "kind": "finding",
+     "count": 4, "exemplars": ["QF-9a8b7c"]}
+  ],
+  "summary": {"patterns": 3, "candidates_for_principle": 2}
+}
 ```
 
 ---
@@ -1572,6 +1615,55 @@ the manifest's rendering and is also embedded as `prompt_md`.
 
 ## Expected writes
 - completion report · AC verifications · concerns
+```
+
+---
+
+## 23. Evidence Commands (v0.4+)
+
+### `fid evidence check`
+
+```
+fid evidence check [--epic <id>] [--issue <id>] [--warn-as-error]
+    [--format json|toon|markdown|yaml]
+```
+
+| Flag | Type | Description |
+|---|---|---|
+| `--epic` | string | Scope to one epic's issues |
+| `--issue` | string | Scope to one issue |
+| `--warn-as-error` | bool | Exit non-zero if any in-scope evidence is `missing` (CI / wrap-up gating) |
+| `--format` | string | Output format (default: `json`) |
+
+Read-only. For each cited evidence reference on AC verifications, QA findings,
+and validation outcomes in scope, reports whether the reference still resolves. A
+type-keyed resolver decides checkability: `commit` refs resolve via local git;
+`source`/`test`/`screenshot`/file refs via filesystem existence; `command`,
+`manual`, and `url` evidence are `unverifiable`. It verifies resolution/existence
+only — it never re-runs a command (that would make fid an executor) and never
+compares content hashes (no capture-time hash is stored). Adds no schema and no
+evidence registry.
+
+**JSON output:**
+```json
+{
+  "scope": {"epic": "FID-e1f2g3"},
+  "summary": {"checked": 14, "resolved": 11, "missing": 1, "unverifiable": 2},
+  "evidence": [
+    {"source": "val_outcome", "on": "VAL-004", "type": "commit", "ref": "abc123f",
+     "status": "resolved"},
+    {"source": "ac_verification", "on": "AC-e5f6g7", "by": "developer", "type": "test",
+     "ref": "internal/journal/journal_test.go::TestAppendFlush", "status": "missing",
+     "detail": "file not found: internal/journal/journal_test.go"},
+    {"source": "qa_finding", "on": "QF-a1b2c3", "type": "command", "ref": "go test ./...",
+     "status": "unverifiable", "detail": "command evidence is not re-checkable; excerpt captured at record time"}
+  ]
+}
+```
+
+**All-resolved (zero exit):**
+```text
+note: 14 evidence references checked — 11 resolved, 3 unverifiable, 0 missing
 ```
 
 ---

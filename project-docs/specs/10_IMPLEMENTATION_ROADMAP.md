@@ -180,6 +180,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
 | `fid changes` | Entity-grouped change digest: net field changes plus newly-added child facts since an anchor (event ID or timestamp), scoped by `--epic`/`--entity`. Aggregated from `activity_log`; distinct from chronological `fid activity list`. Extensible anchor resolver; role shaping deferred. | PRD-OUT-019 |
 | Ready-queue explain | `fid ready --explain [--limit N] [--include-blocked]`: ranked candidates with deterministic `order_factors` + typed skip reasons (`blocked_by`/`claimed`/`sequence_wait`/`not_actionable`) + stale-claim flags. Default single-task output frozen; surfaces the existing rule, no new ranking semantics. | PRD-ISSUE-024 |
+| Inbox promote primitive | `fid issue update --epic`/`--inbox`: assign/clear a task's epic parent (null↔epic; sequence required for sequential) and toggle the inbox flag, completing the capture→promote flow. Formal `fid intake` verbs deferred. | PRD-ISSUE-025 |
 | `--dry-run` (all writes) | Universal write-preview flag: validate and build the would-be event, return the result plus an effect preview, append nothing. Exit code mirrors the simulated outcome. Relies on the v0.1 write-path seam (TRD §4.3) that separates validate/build from append. | PRD-OPS-015 |
 | Run git context | Auto-captured read-only git context (branch, base/head commit, dirty, worktree) on `agent_runs`, with flag override and graceful degradation outside a repo. New `internal/gitctx/`. Additive migration to `agent_runs`. | PRD-OPS-017 |
 | Run lifecycle + `fid run list/show` | `agent_runs.status` (open/closed/abandoned); `fid run list --open\|--abandoned` and `fid run show <run-id>`. | PRD-OPS-018 |
@@ -243,6 +244,7 @@ kanban board, and CLI/skill-first agent workflow guidance. Enables the full agen
 | Agent skills | Fid-aware skills and examples for coding agents that use `fid --help`, JSON/TOON output, and shell commands. No MCP server, daemon, or network listener is committed in v0.3. | PRD-OPS-010, TRD-ARCH-013 |
 | `fid handoff` | Handoff pack composition: `fid handoff --role <role> --issue <id>` composes context pack + workflow/permission-derived manifest (required reads, commands, stop conditions, expected writes, live blockers) + handoff template into a prompt and a machine-readable manifest. Role is a parameter; read-only. New `internal/handoff/`. | PRD-OUT-021 |
 | **Conditional:** `fid query` DSL | Only if v0.2 search, named reports, and read-only SQL leave meaningful gaps. Grammar specced based on uncovered queries from real usage. | — |
+| **Conditional:** `fid task-pack apply` | Bulk create-only ingestion of a reviewed structured task pack (epic + tasks + ACs + links) as one journal event with a source-ref→fid-id map. Only if v0.1–v0.2 dogfooding proves TL planning ingestion is real friction. Structured input only; not markdown import. Schema locked deliberately at build. | PRD-OPS-020 |
 
 **v0.3 exit criteria:**
 
@@ -275,6 +277,7 @@ Validation contract outcomes become the primary wrap-up signal.
 | `fid outcome record/list` | Append-only outcomes: pass/fail/carry_forward. Pass requires evidence. Carry_forward requires rationale. | PRD-VAL-003–005 |
 | Coverage rule enforcement | At `fid qa-plan finalise`: every requirement has an assertion, every assertion has a validator and a plan step, every pass has evidence. | PRD-VAL-008, PRD-QA-007 |
 | Contract reports | `fid report contract-coverage`, `assertion-trace`, `contract-outcomes`. | PRD-OUT-011 |
+| `fid evidence check` | Read-only evidence-integrity check: resolves cited refs on AC verifications, findings, and validation outcomes (commits via local git, files via filesystem; command/manual/url unverifiable). `--warn-as-error`. Verifier not executor; no schema, no registry. New `internal/evidence/`. | PRD-QA-009 |
 
 ### v0.4b — Retrospectives and Carry-Forward
 
@@ -283,6 +286,7 @@ Validation contract outcomes become the primary wrap-up signal.
 | `carry_forward` table and CLI | Status: open, scheduled, closed, principled. `scheduled_epic_id` for future work. `promoted_principle` flag for principles rendering. | PRD-GOV-009–010 |
 | `retrospectives` table and CLI | Per-epic, lightweight or deep type. Recommendation field. `notes_md_path`. | PRD-GOV-011 |
 | Computed retro signals | Token-budget overruns, finding density, AC verification gap, contract pass-rate, carry-forward count. | spec §16 v0.4 |
+| Recurring-pattern reports | `fid report recurring-findings`/`recurring-concerns`/`recurring-patterns`: deterministic grouping of findings/concerns/gates/triage/VAL failures by structured dimension, ranked as principle candidates. Surfaces candidates only — no ML, no fid-authored prose. | PRD-OUT-023 |
 
 ### v0.4c — Export and Views
 
@@ -315,6 +319,7 @@ and conditional features based on usage evidence.
 | File-scope claims | `expected_files_touched` enforcement on task completions. | spec §6.12 |
 | **Conditional:** MCP adapter evaluation | Only if dogfooding identifies a concrete MCP-only client need. Start from stdio as the default candidate; any HTTP/listener transport requires a separate threat model and product/security decision. | PRD-OPS-010, TRD-ARCH-013 |
 | **Conditional:** Idempotency keys | Caller-supplied keys for retry-safe programmatic writes; a repeated key echoes the original event and result. Only with a concrete programmatic/MCP retry need. Additive to the write-path seam; pairs with the MCP evaluation. | PRD-OPS-016 |
+| **Conditional:** `fid context estimate` | Estimate-only context-pack/handoff token metering, by section, as a model-agnostic heuristic. Only if context packs prove heavy enough to overload sessions. No auto-trim; no per-model tokenizer. | PRD-OUT-022 |
 | **Conditional:** `fid import` + `fid sync` | Bidirectional markdown sync + MD-canonical mode. Only if v0.4 export usage generates evidence of a real use case. Alternative: LLM agent with fid skill. | — |
 | **Conditional:** `fid init --import` | Import from arbitrary whet markdown tree. Depends on import/sync. | — |
 

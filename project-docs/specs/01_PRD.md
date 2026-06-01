@@ -85,6 +85,7 @@ where a requirement is deferred past v0.1.
 | PRD-ISSUE-022 | The system shall allow an issue's title, priority, labels, spec markdown path, token estimate, and due date to be changed via an explicit update command. Field updates shall be journaled and projected to the activity log. | Should | v0.1 |
 | PRD-ISSUE-023 | The system shall allow labels to be added to or removed from an existing issue without replacing the full label set. Label changes shall be journaled and projected to the activity log. | Should | v0.1 |
 | PRD-ISSUE-024 | The system shall provide an opt-in `fid ready --explain` mode that returns ranked candidates with their ordering factors and typed skip reasons (`blocked_by`, `claimed`, `sequence_wait`, `not_actionable`) plus stale-claim flags. `--limit N` caps candidates; `--include-blocked` adds dependency-blocked skips. The default single-task `fid ready` output shall be unchanged, and explain shall surface the existing selection rule without introducing new ranking semantics. | Should | v0.2. Diagnostic mode for the ready queue. An empty queue under `--explain` returns `selected: null` with the populated skip list at zero exit — the canonical "why is nothing ready?" answer. |
+| PRD-ISSUE-025 | The system shall allow a task's epic parent to be assigned, changed, or cleared (null↔epic; not subtask reparenting) and its inbox flag to be toggled via the update command. Assigning a sequential epic shall require a sequence value, and kind-hierarchy rules shall still apply. These changes shall be journaled and projected to the activity log. | Should | v0.2. Completes the inbox capture→promote flow on base commands (`fid issue update --epic`/`--no-inbox`). The formal `fid intake` verbs remain deferred sugar over `in_inbox`, labels, and links. |
 
 ### 3.3 Acceptance Criteria (AC)
 
@@ -183,6 +184,7 @@ where a requirement is deferred past v0.1.
 | PRD-QA-006 | The system shall support QA plans with ordered verification steps, each specifying an evidence method and validator role. | Should | v0.3 |
 | PRD-QA-007 | Where a QA plan cites a validation contract, the system shall enforce coverage rules at plan finalisation. | Should | v0.4 |
 | PRD-QA-008 | The system shall support composite QA commands that combine claim acquisition, review creation, finding addition, and review completion into role-convenient operations. | Should | v0.3 |
+| PRD-QA-009 | The system shall provide a read-only evidence check (`fid evidence check`) that, for each cited evidence reference on AC verifications, QA findings, and validation outcomes in scope, reports whether the reference resolves: `resolved`, `missing`, or `unverifiable` by a type-keyed resolver (commits resolve via local git, file paths via filesystem existence; command/manual/url evidence are unverifiable). It shall verify resolution/existence only — never re-executing a command or comparing content hashes — and shall support `--warn-as-error`. | Should | v0.4. Read-only; adds no schema and no evidence registry (operates over existing embedded refs). fid is a verifier, not an executor. Hash-based content-drift detection deferred (needs capture-time hashes). |
 
 ### 3.10 Validation Contracts (VAL)
 
@@ -253,6 +255,8 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-019 | The system shall provide a change digest command (`fid changes --since <anchor>`) that returns, grouped by entity, the net field changes and newly-added child facts for entities changed since the anchor, scoped by epic or entity. Anchors are journal event IDs or timestamps in v0.2, resolved by an extensible resolver. | Should | v0.2. Aggregated from `activity_log`; distinct from the chronological `fid activity list` (PRD-OUT-017). Net changes collapse intermediate transitions. Role-tuned shaping deferred to a fast-follow. |
 | PRD-OUT-020 | The system shall provide a human attention report (`fid report attention`) that aggregates, grouped by reason, the items currently needing human judgment: epics awaiting closure approval, open escalations without a resolving decision (flagged stale past a window), issues blocked by a cancelled (dead-end) blocker, and live human-held claims. Each group shall declare its audience; further reasons are added by source-entity availability without changing the contract. Scopable by `--epic`. | Should | v0.2. Pull-based; no notifications or watchers. Read-only aggregation over existing entities; adds no schema. Reasons light up as source entities ship (`blocking_finding_open` v0.3; `validation_failed`/`validation_carried_forward` v0.4). Role filter deferred as an additive fast-follow. Empty result is a zero-exit success state. |
 | PRD-OUT-021 | The system shall provide a handoff command (`fid handoff --role <role> --issue <id>`) that composes a role's context pack, a manifest derived from the configured workflow and role permissions (required reads, commands, stop conditions, expected writes, live blockers, and evidence obligations), and a handoff template into a prompt plus a machine-readable manifest for spawning that role. The target role shall be a parameter resolved against configured templates, not a hard-coded subcommand. The command shall be read-only — it shall acquire no claim and append no event. | Should | v0.3. Composes over context packs (PRD-OUT-005) and the template engine. Manifest fields are derived from configurable sources and extend by version (evidence obligations v0.4). JSON manifest by default; rendered prompt via `--format markdown`. |
+| PRD-OUT-022 | The system may provide an estimate-only context metering command (`fid context estimate --pack <role> --issue <id>`) that reports the approximate token size of a context pack or handoff, broken down by section, as a model-agnostic heuristic. It shall not trim or omit pack content to fit a budget. | Could | Deferred/conditional. Gate: build only if dogfooding shows context packs overload sessions (default context is deliberately small). Estimate-only — `--budget-tokens` auto-trimming is rejected (it would make pack output lossy/non-deterministic). Heuristic proxy, not a per-model tokenizer (fid bundles none). |
+| PRD-OUT-023 | The system shall provide deterministic recurring-pattern reports (`fid report recurring-findings`, `recurring-concerns`, `recurring-patterns`) that group findings, concerns, gate runs, triage events, and validation-outcome failures by structured dimensions (trigger class, label, area, gate command, finding severity, affected file-path prefix, repeated `VAL-NNN` failures) and rank recurring groups as candidates with counts and exemplars. The reports shall surface candidates only; fid shall not author principles, decisions, or recommendation prose. | Should | v0.4. Deterministic grouping only — no ML/LLM/semantic theme extraction. Read-only over existing signals; adds no schema. Extends the v0.4b computed retro signals. A human turns a pattern into a DEC-NNN or principle. |
 
 ### 3.14 Operations and Maintenance (OPS)
 
@@ -277,6 +281,7 @@ where a requirement is deferred past v0.1.
 | PRD-OPS-017 | The system shall record git context on agent runs — branch, base commit, head commit, dirty flag, and worktree path — auto-captured read-only from git by default, overridable by flags, and degrading to a recorded null context with a warning outside a git worktree. Each run shall record whether its git context was captured, provided, or absent. | Should | v0.2. Read-only capture via `internal/gitctx/`; fid never performs git operations. Dirty is point-in-time as of the last recorded command. |
 | PRD-OPS-018 | The system shall track an agent-run lifecycle (open, closed, abandoned) and provide commands to list runs filtered by lifecycle, role, and epic, and to show one run's full detail. | Should | v0.2. `fid run list --open\|--abandoned`, `fid run show <run-id>`. |
 | PRD-OPS-019 | The system shall support resuming and abandoning runs. Resume shall re-acquire the claim and return the recorded git resume context, opening a new run linked to the prior; abandon shall release the claim and mark the run abandoned while preserving the run row. | Should | v0.2. `fid dev resume <task-id>`, `fid dev abandon <run-id> --reason-md --by`. Resume returns hints only; no git operations. |
+| PRD-OPS-020 | The system may support a task-pack apply that ingests a structured authoring artifact (a reviewed phase plan: epic metadata, tasks, acceptance criteria, dependencies, labels, estimates, sequence/priority, requirement links) as one create-only journal event with many effects, returning a source-ref→fid-id mapping, with `validate` and `--dry-run` modes. | Could | Deferred/conditional. Gate: build only if v0.1–v0.2 dogfooding shows TL planning ingestion is a measured friction/error source. Structured input only (YAML/JSON/TOON), create-only, no round-trip/sync — distinct from the deferred markdown import (`fid import`/`init --import`). Pack schema versioned and locked deliberately at build time. |
 
 ## 4. Non-Functional Product Requirements
 
@@ -335,7 +340,7 @@ phase planning.
 | PRD-TELEM-001 – 004 | v0.1 | | |
 | PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
-| PRD-ISSUE-024 | v0.2 | | |
+| PRD-ISSUE-024 – 025 | v0.2 | | |
 | PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
 | PRD-GOV-001 – 008, 012 – 013 | v0.2 | | |
 | PRD-TELEM-005 – 006 | v0.2 | | |
@@ -344,9 +349,9 @@ phase planning.
 | PRD-OPS-017 – 019 | v0.2 | | |
 | PRD-QA-001 – 006, 008, PRD-CLAIM-009 | v0.3 | | |
 | PRD-OUT-012 – 015, 021 | v0.3 | | |
-| PRD-QA-007, PRD-VAL-001 – 008 | v0.4 | | |
+| PRD-QA-007, PRD-QA-009, PRD-VAL-001 – 008 | v0.4 | | |
 | PRD-GOV-009 – 011 | v0.4 | | |
-| PRD-OUT-009 – 011, 016 | v0.4 | | |
+| PRD-OUT-009 – 011, 016, 023 | v0.4 | | |
 | PRD-ISSUE-017 | v0.5 | | |
 
 ## 7. Open Product Questions
