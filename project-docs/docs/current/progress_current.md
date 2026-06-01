@@ -15,14 +15,16 @@ Completed:
 - Three pre-scaffold ADRs recorded (`docs/adr/0001-0003`).
 - Detailed design spec written (`scaffold/initial-spec.md`).
 - Workflow scaffolding copied from starter kit.
+- `AGENTS.md` stack choices, conventions, architecture boundaries, and quality
+  commands made concrete from the TRD and Quality Plan.
 
 In progress:
 
-- Splitting `scaffold/initial-spec.md` into the seven spec files
+- Splitting `scaffold/initial-spec.md` into the canonical spec suite
   (done progressively in separate sessions).
-- Filling `<TBD>` stack choices and quality commands in `AGENTS.md`.
+- Resolving remaining final spec audit blockers before Phase 0 planning.
 
 Next action:
 
 - Continue filling specs from initial-spec.md.
-- Once specs and commands are concrete, invoke Tech Lead to plan Phase 0.
+- Once remaining audit blockers are resolved, invoke Tech Lead to plan Phase 0.

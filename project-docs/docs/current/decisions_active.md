@@ -34,8 +34,7 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-001 | Scaffold | Fill remaining `<TBD>` stack choices and quality commands in `AGENTS.md`. | First implementation phase | High |
-| CF-002 | Scaffold | Split `scaffold/initial-spec.md` progressively into the seven spec files under `project-docs/specs/`. | Pre-Phase 0 | High |
+| CF-002 | Scaffold | Split `scaffold/initial-spec.md` progressively into the canonical spec suite under `project-docs/specs/`. | Pre-Phase 0 | High |
 
 ## Scheduled Commitments
 
