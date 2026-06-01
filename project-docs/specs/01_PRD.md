@@ -84,6 +84,7 @@ where a requirement is deferred past v0.1.
 | PRD-ISSUE-021 | The system shall allow owner role and owner actor to be changed via an explicit update command. Owner changes shall be journaled and projected to the activity log. | Should | v0.1 |
 | PRD-ISSUE-022 | The system shall allow an issue's title, priority, labels, spec markdown path, token estimate, and due date to be changed via an explicit update command. Field updates shall be journaled and projected to the activity log. | Should | v0.1 |
 | PRD-ISSUE-023 | The system shall allow labels to be added to or removed from an existing issue without replacing the full label set. Label changes shall be journaled and projected to the activity log. | Should | v0.1 |
+| PRD-ISSUE-024 | The system shall provide an opt-in `fid ready --explain` mode that returns ranked candidates with their ordering factors and typed skip reasons (`blocked_by`, `claimed`, `sequence_wait`, `not_actionable`) plus stale-claim flags. `--limit N` caps candidates; `--include-blocked` adds dependency-blocked skips. The default single-task `fid ready` output shall be unchanged, and explain shall surface the existing selection rule without introducing new ranking semantics. | Should | v0.2. Diagnostic mode for the ready queue. An empty queue under `--explain` returns `selected: null` with the populated skip list at zero exit — the canonical "why is nothing ready?" answer. |
 
 ### 3.3 Acceptance Criteria (AC)
 
@@ -251,6 +252,7 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-018 | The system shall provide a lightweight `fid search <term>` command for literal, case-insensitive discovery across structured projected fields. | Should | v0.2. Search complements named reports and `fid sql`; it does not replace shell `rg` for full markdown body search. |
 | PRD-OUT-019 | The system shall provide a change digest command (`fid changes --since <anchor>`) that returns, grouped by entity, the net field changes and newly-added child facts for entities changed since the anchor, scoped by epic or entity. Anchors are journal event IDs or timestamps in v0.2, resolved by an extensible resolver. | Should | v0.2. Aggregated from `activity_log`; distinct from the chronological `fid activity list` (PRD-OUT-017). Net changes collapse intermediate transitions. Role-tuned shaping deferred to a fast-follow. |
 | PRD-OUT-020 | The system shall provide a human attention report (`fid report attention`) that aggregates, grouped by reason, the items currently needing human judgment: epics awaiting closure approval, open escalations without a resolving decision (flagged stale past a window), issues blocked by a cancelled (dead-end) blocker, and live human-held claims. Each group shall declare its audience; further reasons are added by source-entity availability without changing the contract. Scopable by `--epic`. | Should | v0.2. Pull-based; no notifications or watchers. Read-only aggregation over existing entities; adds no schema. Reasons light up as source entities ship (`blocking_finding_open` v0.3; `validation_failed`/`validation_carried_forward` v0.4). Role filter deferred as an additive fast-follow. Empty result is a zero-exit success state. |
+| PRD-OUT-021 | The system shall provide a handoff command (`fid handoff --role <role> --issue <id>`) that composes a role's context pack, a manifest derived from the configured workflow and role permissions (required reads, commands, stop conditions, expected writes, live blockers, and evidence obligations), and a handoff template into a prompt plus a machine-readable manifest for spawning that role. The target role shall be a parameter resolved against configured templates, not a hard-coded subcommand. The command shall be read-only — it shall acquire no claim and append no event. | Should | v0.3. Composes over context packs (PRD-OUT-005) and the template engine. Manifest fields are derived from configurable sources and extend by version (evidence obligations v0.4). JSON manifest by default; rendered prompt via `--format markdown`. |
 
 ### 3.14 Operations and Maintenance (OPS)
 
@@ -268,8 +270,8 @@ where a requirement is deferred past v0.1.
 | PRD-OPS-010 | The system shall support agent integration through the CLI contract, structured output, and repo skills. MCP integration is deferred until post-dogfood evaluation and requires a recorded product/security decision before entering a roadmap. | Must | v0.1 CLI/skills. MCP uncommitted. |
 | PRD-OPS-011 | The system shall support replaying a foreign event log into the current project with conflict detection on entity, claim, and status. | Could | v0.2. `fid merge --journal`. Builds on v0.1 journal preconditions. |
 | PRD-OPS-012 | When journal replay encounters a failed event precondition, the system shall stop before serving reads and report a structured logical conflict naming the event, entity, expected value, and actual value. | Must | v0.1. No automatic intent reconciliation in v0.1. |
-| PRD-OPS-013 | The system shall provide a journal inspection command that explains a journal event by ID, including actor, command metadata, effects, and whether the event is eligible for compensating revert. | Should | v0.1. Read-only. |
-| PRD-OPS-014 | The system shall support scoped compensating event reverts for explicitly reversible event types. Reverts shall append a new event and preserve the original event. | Should | v0.2. `fid event revert`. |
+| PRD-OPS-013 | The system shall provide a journal inspection command that explains a journal event by ID, including actor, command metadata, effects, and whether the event is eligible for compensating revert — including the compensation mode (inverse or retraction) and its precondition, or the forward domain-correction guidance when not eligible. | Should | v0.1. Read-only. |
+| PRD-OPS-014 | The system shall support scoped compensating-event reverts for reversible event types via one generic command, using inverse compensation for mutable-state effects (restoring the prior value under an effect precondition that the current state still matches what the event produced) and retraction for append-only audit facts (appending a retraction that excludes the original from current-state derivation while preserving its row). Transition events shall be reversible (restore prior status); creations, completions, claims, telemetry, and composite events shall not be, and the command shall return the forward domain-correction path. Eligibility shall be event-type-keyed and extensible. Reverts shall append a new event and never delete or edit the original. | Should | v0.2. `fid event revert`. Generic primitive — no bespoke domain-correction verbs (e.g. `ac retract`, `restore-status`) ship; transition-restore and verification-retraction cover them. |
 | PRD-OPS-015 | Every write command shall accept `--dry-run`, returning the validation result and a preview of the would-be journal event effects without appending an event or modifying state. The command exit code shall mirror the simulated outcome (zero if the write would apply, non-zero if it would be rejected). | Should | v0.2. Hooks the prepare/validate-before-append seam (TRD §4.3). Rejection vocabulary matches the real command. |
 | PRD-OPS-016 | The system may accept a caller-supplied idempotency key on writes such that a repeated key returns the original event and result instead of creating a duplicate. | Could | Deferred. Conditional on a concrete programmatic/MCP retry need, recorded with a product decision. Additive to the write-path seam; pairs with the MCP evaluation. |
 | PRD-OPS-017 | The system shall record git context on agent runs — branch, base commit, head commit, dirty flag, and worktree path — auto-captured read-only from git by default, overridable by flags, and degrading to a recorded null context with a warning outside a git worktree. Each run shall record whether its git context was captured, provided, or absent. | Should | v0.2. Read-only capture via `internal/gitctx/`; fid never performs git operations. Dirty is point-in-time as of the last recorded command. |
@@ -333,6 +335,7 @@ phase planning.
 | PRD-TELEM-001 – 004 | v0.1 | | |
 | PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
+| PRD-ISSUE-024 | v0.2 | | |
 | PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
 | PRD-GOV-001 – 008, 012 – 013 | v0.2 | | |
 | PRD-TELEM-005 – 006 | v0.2 | | |
@@ -340,7 +343,7 @@ phase planning.
 | PRD-OPS-011, 014 – 015 | v0.2 | | |
 | PRD-OPS-017 – 019 | v0.2 | | |
 | PRD-QA-001 – 006, 008, PRD-CLAIM-009 | v0.3 | | |
-| PRD-OUT-012 – 015 | v0.3 | | |
+| PRD-OUT-012 – 015, 021 | v0.3 | | |
 | PRD-QA-007, PRD-VAL-001 – 008 | v0.4 | | |
 | PRD-GOV-009 – 011 | v0.4 | | |
 | PRD-OUT-009 – 011, 016 | v0.4 | | |
@@ -359,4 +362,4 @@ separately in `02_TRD.md` §11.
   pending evidence from v0.4 export usage.
 - [ ] What is the licensing model for open-source release?
 
-*Last updated: 2026-05-31*
+*Last updated: 2026-06-01*

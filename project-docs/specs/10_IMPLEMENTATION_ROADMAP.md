@@ -179,13 +179,14 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Lightweight search | `fid search <term>` over structured projected fields with filters for kind, status, label, epic, inbox, and format. Literal/case-insensitive only; no custom DSL. | PRD-OUT-018 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
 | `fid changes` | Entity-grouped change digest: net field changes plus newly-added child facts since an anchor (event ID or timestamp), scoped by `--epic`/`--entity`. Aggregated from `activity_log`; distinct from chronological `fid activity list`. Extensible anchor resolver; role shaping deferred. | PRD-OUT-019 |
+| Ready-queue explain | `fid ready --explain [--limit N] [--include-blocked]`: ranked candidates with deterministic `order_factors` + typed skip reasons (`blocked_by`/`claimed`/`sequence_wait`/`not_actionable`) + stale-claim flags. Default single-task output frozen; surfaces the existing rule, no new ranking semantics. | PRD-ISSUE-024 |
 | `--dry-run` (all writes) | Universal write-preview flag: validate and build the would-be event, return the result plus an effect preview, append nothing. Exit code mirrors the simulated outcome. Relies on the v0.1 write-path seam (TRD §4.3) that separates validate/build from append. | PRD-OPS-015 |
 | Run git context | Auto-captured read-only git context (branch, base/head commit, dirty, worktree) on `agent_runs`, with flag override and graceful degradation outside a repo. New `internal/gitctx/`. Additive migration to `agent_runs`. | PRD-OPS-017 |
 | Run lifecycle + `fid run list/show` | `agent_runs.status` (open/closed/abandoned); `fid run list --open\|--abandoned` and `fid run show <run-id>`. | PRD-OPS-018 |
 | `fid dev resume` / `fid dev abandon` | Resume re-acquires the claim, opens a new run linked via `resumed_from_run_id`, returns git resume hints (no git operations). Abandon releases the claim and marks the run abandoned, preserving the row. | PRD-OPS-019 |
 | Stats expansion | `fid stats tasks --include est-vs-actual`, `fid stats attempts` (rework rate), `fid stats gates`, `fid stats interventions`. | PRD-TELEM-005–006 |
 | `fid merge --journal` | Replay foreign journal with conflict detection using v0.1 event preconditions. Useful for recovered worktrees. | PRD-OPS-011 |
-| `fid event revert` | Append compensating events for explicitly reversible event types. Reject non-eligible events with domain correction guidance. | PRD-OPS-014 |
+| `fid event revert` | Compensating-event correction: **inverse** mode restores mutable-state effects (transitions, field/label/link changes) under an effect precondition; **retraction** mode withdraws append-only facts (AC verifications, concerns, comments, triage) preserving the row. Creations/completions/claims/composites ineligible → forward domain guidance. Type-keyed, extensible. No bespoke domain-correction verbs. | PRD-OPS-014 |
 
 **v0.2 exit criteria:**
 
@@ -240,6 +241,7 @@ kanban board, and CLI/skill-first agent workflow guidance. Enables the full agen
 |---|---|---|
 | `fid board` | TUI kanban board. Columns grouped by status category. Cards show ID, title, priority, flags. Keyboard navigation, filtering by epic/labels/cycle. Bubbletea + Lipgloss. | PRD-OUT-015 |
 | Agent skills | Fid-aware skills and examples for coding agents that use `fid --help`, JSON/TOON output, and shell commands. No MCP server, daemon, or network listener is committed in v0.3. | PRD-OPS-010, TRD-ARCH-013 |
+| `fid handoff` | Handoff pack composition: `fid handoff --role <role> --issue <id>` composes context pack + workflow/permission-derived manifest (required reads, commands, stop conditions, expected writes, live blockers) + handoff template into a prompt and a machine-readable manifest. Role is a parameter; read-only. New `internal/handoff/`. | PRD-OUT-021 |
 | **Conditional:** `fid query` DSL | Only if v0.2 search, named reports, and read-only SQL leave meaningful gaps. Grammar specced based on uncovered queries from real usage. | — |
 
 **v0.3 exit criteria:**
@@ -373,4 +375,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-05-31*
+*Last updated: 2026-06-01*

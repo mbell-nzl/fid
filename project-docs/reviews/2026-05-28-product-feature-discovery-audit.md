@@ -687,20 +687,124 @@ Specs changed: PRD-OUT-020 + v0.2 traceability; GLOSSARY (Attention report);
 the `fid report list` example; roadmap v0.2c row. No schema/TRD change — it is a
 hand-coded-SQL named report in the existing `internal/report/` package.
 
+#### Item #8 — Ready-queue explain → `fid ready --explain` (RESOLVED, v0.2c)
+
+Decisions:
+- **A flag on `fid ready`, not a subcommand; default output frozen.** `--explain`
+  (with `--limit`, `--include-blocked`) opts into a diagnostic shape; bare
+  `fid ready` keeps its single-task contract verbatim, because the Workflow
+  Runner depends on it (`PRD-ISSUE-008–012`).
+- **Deterministic `order_factors`, not a `score`.** fid's ready queue is
+  deterministic lexicographic ordering (sequence / priority / cross-epic rule),
+  not a weighted engine. Each candidate exposes the actual sort keys the rule
+  applied; explain **surfaces the existing rule and adds no ranking semantics**.
+  A numeric score was rejected as fabricating tunable-weight semantics that are
+  an explicit non-goal.
+- **Typed skip-reason taxonomy** (extensible): `blocked_by`, `claimed`,
+  `sequence_wait`, `not_actionable`, plus a `stale_claim` *flag* on candidates
+  that are still ready but carry a past-TTL claim.
+- **Noise control:** `claimed` / `sequence_wait` skips show under plain
+  `--explain`; the potentially numerous `blocked_by` skips require
+  `--include-blocked`. `--limit` (default 5) caps candidates and the blocked
+  portion of `skipped`.
+- **Empty queue is the prize.** `fid ready --explain --include-blocked` on an
+  empty queue returns `selected: null` with the full skip list at **zero exit** —
+  the canonical "why is nothing ready?" answer, specced as a first-class case.
+
+Specs changed: PRD-ISSUE-024 + v0.2 traceability; 06_DESIGN_PLAN_CLI §4
+(`fid ready --explain`/`--limit`/`--include-blocked`, diagnostic JSON + markdown,
+empty-queue-explain); roadmap v0.2c row. No GLOSSARY change (blocked/claim/
+sequence/stale-claim already defined; factors/skip reasons are output fields). No
+schema/TRD change — it extends the existing ready-queue selection.
+
+#### Item #4 — Corrections/undo → `fid event revert` taxonomy (RESOLVED, v0.2c)
+
+Three of the audit's five proposed commands already ship: `fid event show` =
+`fid journal inspect` (v0.1); `fid link remove` (v0.1); `fid event revert`
+already roadmapped (v0.2c). The work was to lock the correction *mechanism* and
+the *reversibility taxonomy*.
+
+Decisions:
+- **One generic correction primitive — no bespoke domain-correction verbs.**
+  Corrections are compensating events via `fid event revert`, not git-revert and
+  not new verbs. `fid ac retract` and `fid issue restore-status` are **not added**
+  — calls below make them redundant. If dogfooding proves the generic path too
+  clunky on a hot path, a sugar verb is a purely additive follow-up.
+- **Two compensation modes, keyed by event type.** *Inverse* restores a
+  mutable-state effect's prior value (transitions, field/label/link changes),
+  guarded by an effect precondition that current state still equals what the
+  event produced. *Retraction* withdraws an append-only audit fact (AC
+  verification, concern, comment, triage verdict), excluding it from
+  current-state derivation while **preserving its row**.
+- **Transitions ARE revert-eligible (inverse-restore)** — this obviates
+  `restore-status`. Reverting a transition returns the issue to a
+  *previously-valid* prior status under the precondition guard, not an arbitrary
+  workflow jump. **Revised the spec**: `06_DESIGN_PLAN_CLI` §16/§17 previously
+  used `issue.transitioned` as the *not-eligible* example; flipped — transitions
+  are now the eligible case and `issue.created` is the not-eligible exemplar.
+- **Append-only facts revert via retraction** — this obviates `ac retract`. A
+  *wrong-status* verification is still better fixed by re-verifying (latest-wins);
+  retraction is reserved for "this fact should never have counted."
+- **Creations, completions, claims, telemetry, and composites are NOT eligible**
+  — they route to the forward domain path (cancel via transition; new attempt;
+  claim/unclaim; supersede). Deleting a creation/completion would violate the
+  append-only audit principle.
+- **Eligibility is type-keyed and extensible**; `fid journal inspect` reports
+  `revert.eligible` + `mode` (+ precondition) or the forward `correction`.
+
+Specs changed: PRD-OPS-013 (inspect reports mode/precondition or guidance) and
+PRD-OPS-014 (two-mode taxonomy, transition-eligible, generic-only); GLOSSARY
+(Compensating event — inverse/retraction modes); 06_DESIGN_PLAN_CLI §16 revert
+verdict + §17 `fid event revert` (inverse + retraction + not-eligible examples);
+roadmap v0.2c `fid event revert` row. No schema change — retraction reuses the
+append-only journal + projection; no new module.
+
+#### Item #9 — Handoff/prompt packs → `fid handoff` (RESOLVED, v0.3d)
+
+Resolves the configurability tension the open-item note flagged. The friction is
+real (Phase Runner §2.4 #7 and §3.4 force hand-authored child prompts), but the
+audit's hard-coded `fid handoff <role>` subcommands would freeze this project's
+role set and §4 context-loading policy into fid.
+
+Decisions:
+- **A single generic `fid handoff` composite; role is a *parameter*, not a
+  subcommand.** `fid handoff --role <role> --issue <id>` composes three
+  *configurable* inputs into one read-only call: the role's context pack (v0.2c),
+  a derived manifest, and a handoff template (v0.3). Adding a custom role → add
+  its template → it works with no new command. Rejected pure compose-it-yourself
+  (re-imposes the ceremony the feature removes) and hard-coded subcommands
+  (freeze the workflow).
+- **Manifest is derived, not declared.** `stop_conditions` and `expected_writes`
+  are read off the configured workflow graph + role permissions, so they retrack
+  when a project edits its workflow — this is what keeps Option A from smuggling
+  hard-coded workflow back in. `required_reads` reuse the context pack;
+  `blockers` reuse the #8 `fid ready --explain` skip data + open
+  concerns/escalations; `commands` come from the template (fid doesn't own gate
+  commands). Extensible/version-gated: `evidence_obligations` lights up v0.4.
+- **Dual output, read-only.** JSON manifest by default (for the `workflow_runner`
+  to consume) with the rendered prompt embedded as `prompt_md`; `--format
+  markdown` renders the prose prompt. No journal event, no claim — generating a
+  handoff is a view; claiming stays an explicit `fid dev start`.
+- **Sequencing:** v0.3d, composed over v0.2c context packs and the v0.3c template
+  engine. It is the on-ramp for fid's own `workflow_runner` to eventually replace
+  the Phase Runner's hand-authored prompts at dogfood convergence.
+- **Already-shipped overlap:** the audit's `--since` (QA reviewer window) and
+  `--epic` (QA Lead final) are flags on the one command, not separate verbs.
+
+Note: `09_AI_WORKFLOW.md` (§2.4 #7, §3.4) is the cited gap, but it is the current
+markdown build-pipeline workflow and is intentionally **left untouched** — fid
+product features are not threaded into it; fid-aware workflow/agent docs come
+later for projects adopting fid.
+
+Specs changed: PRD-OUT-021 + v0.3 traceability; GLOSSARY (Handoff pack);
+06_DESIGN_PLAN_CLI §22 `fid handoff` (manifest JSON + rendered prompt); roadmap
+v0.3d row; TRD `internal/handoff/` module (tree + boundary table). No schema
+change — handoff composes existing read models + templates.
+
 ### Open Items (not yet walked)
 
 Walk these next, in order, applying the "Key adjustment" column above:
 
-- **#8 Ready-queue explain** — `fid ready --explain [--limit N]
-  [--include-blocked]`; ranked candidates + skip reasons; extends planned empty
-  explanation. v0.2.
-- **#4 Corrections/undo** — reframe on top of the already-planned
-  `fid event revert` (v0.2c) + `fid journal inspect`; decide which domain-level
-  conveniences (`ac retract`, `issue restore-status`) are worth a command vs.
-  raw event revert.
-- **#9 Handoff/prompt packs** — express as templates (v0.3) composed over
-  context packs (v0.2c), NOT hard-coded `fid handoff <role>` subcommands;
-  resolve the configurability tension first.
 - **#3 Task-pack apply** — gate on proven dogfood ceremony pain; if accepted,
   lock the task-pack input schema deliberately. Watch the deferred-import
   boundary.

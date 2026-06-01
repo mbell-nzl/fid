@@ -184,6 +184,22 @@ Avoid: confusing with [[Change digest]] (what changed since a checkpoint) or wit
 notifications/watchers; treating it as a stored queue (it is recomputed each
 call).
 
+**Handoff pack**:
+The generated bundle that equips one role to act on one entity (`fid handoff
+--role <role> --issue <id>`): a rendered prompt plus a machine-readable
+**manifest** of required reads, commands, stop conditions, expected writes, live
+blockers, and (from v0.4) evidence obligations. The manifest is *derived* from
+configurable sources — the role's context pack (the `--context-pack` data
+bundle), the configured workflow, and role permissions — not hard-coded, so it
+retracks when a project changes its workflow. The target role is a parameter,
+never an enumerated subcommand. A read-only computed view: generating a handoff
+claims nothing and writes nothing.
+Use when: a [[Workflow Runner]] (or human) spawns a role against a task or epic
+and needs the exact prompt plus obligations without hand-authoring them.
+Avoid: confusing the handoff pack (prompt + orchestration manifest for spawning a
+role) with the context pack (the role-tuned *data* bundle it composes over);
+treating it as a write (it is a view and acquires no claim).
+
 **Journal event**:
 One durable JSON object appended as one line to `.fid/journal/YYYY-MM-DD.jsonl`.
 It is the source-of-truth record for a logical write and contains event
@@ -203,10 +219,20 @@ state.
 
 **Compensating event**:
 A new journal event that corrects the effect of an earlier valid-but-wrong
-event while preserving both events in history. Used only for explicitly
-reversible event types; not a mutation of old journal lines.
-Use when: describing first-class correction or future `fid event revert`.
-Avoid: "undo" when it implies deleting or rewriting audit history.
+event while preserving both events in history (`fid event revert`). It applies
+one of two modes by the target event's type: **inverse** compensation restores
+the prior value of a mutable-state effect (e.g. a transition's prior status),
+guarded by an effect precondition that the current state still matches what the
+event produced; **retraction** marks an append-only audit fact (an AC
+verification, concern, comment, or triage verdict) as retracted so it drops out
+of current-state derivation while its row is preserved. Eligible only for
+explicitly reversible event types — creations, completions, claims, telemetry,
+and composites are not, and revert returns the forward domain-correction path
+instead. Never a mutation or deletion of old journal lines.
+Use when: describing first-class correction via `fid event revert`, or the
+`revert.eligible`/`mode` verdict on [[Journal event]] inspection.
+Avoid: "undo" when it implies deleting or rewriting audit history; assuming every
+event is reversible (eligibility is event-type-keyed).
 
 **Write lock**:
 The checkout-scoped exclusive lock at `.fid/write.lock` that serializes fid
@@ -438,4 +464,4 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | | | | |
 
-*Last updated: 2026-05-31*
+*Last updated: 2026-06-01*

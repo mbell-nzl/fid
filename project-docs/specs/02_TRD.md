@@ -56,7 +56,8 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/stats/      Cost, tokens, gates, attempts aggregations
     ├──► internal/report/     Named reports (v0.2+)
     ├──► internal/changes/    Change digest over activity_log (v0.2+)
-    └──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
+    ├──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
+    └──► internal/handoff/    Handoff pack composition over packs/workflow/templates (v0.3+)
 ```
 
 Rules:
@@ -95,6 +96,7 @@ Rules:
 | `internal/report/` | Domain | Named report SQL composition and execution (v0.2) | Output formatting |
 | `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
 | `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |
+| `internal/handoff/` | Domain | Compose a role handoff pack (v0.3): assemble the manifest (required reads, commands, stop conditions, expected writes, live blockers, evidence obligations) from the role's context pack, the configured workflow, role permissions, and live blocker state; render via the handoff template | Output formatting, journal writes, git operations, hard-coding role or workflow policy |
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
 
@@ -727,4 +729,4 @@ tracked in `01_PRD.md` §7.
   CLI/skill-first assumption; require a concrete MCP-only client need, a
   product/security decision, and a threat model before adding it to a roadmap.
 
-*Last updated: 2026-05-31*
+*Last updated: 2026-06-01*

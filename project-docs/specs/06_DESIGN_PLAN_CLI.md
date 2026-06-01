@@ -377,19 +377,104 @@ fid issue ac list <issue-id> [--format json|toon|markdown|yaml]
 ### `fid ready`
 
 ```
-fid ready [--epic <id>] [--format json|toon|markdown|yaml]
+fid ready [--epic <id>] [--explain] [--limit <n>] [--include-blocked]
+    [--format json|toon|markdown|yaml]
 ```
 
 | Flag | Type | Description |
 |---|---|---|
 | `--epic` | string | Scope to a single epic |
+| `--explain` | bool | v0.2: opt into diagnostic mode (ranked candidates, ordering factors, skip reasons) |
+| `--limit` | int | v0.2: max ready candidates in `--explain` mode (default 5); also caps the blocked portion of `skipped` |
+| `--include-blocked` | bool | v0.2: in `--explain` mode, add dependency-blocked tasks to `skipped` |
 | `--format` | string | Output format (default: `json`) |
 
-**JSON output:** See `05_DESIGN_PLAN.md` §6.3.
+**JSON output (default, single task):** See `05_DESIGN_PLAN.md` §6.3. The bare
+`fid ready` output shape is frozen — the Workflow Runner depends on it — so the
+diagnostic shape below is reachable only via `--explain`.
 
 **Empty state (stderr):**
 ```text
 note: no ready tasks — all 3 tasks in FID-e1f2g3 are blocked or completed
+```
+
+#### `fid ready --explain` (v0.2)
+
+Diagnostic mode. Returns the ranked ready `candidates` — each with the
+`order_factors` the selection rule applied and any `flags` such as
+`stale_claim` — and a `skipped` list with a typed `reason` per entry:
+`blocked_by`, `claimed`, `sequence_wait`, or `not_actionable`. Explain surfaces
+the existing selection rule (`PRD-ISSUE-009/011/012`); it introduces no new
+ranking semantics and no numeric score. `claimed` and `sequence_wait` skips show
+by default; the potentially numerous `blocked_by` skips require
+`--include-blocked`. `--limit` (default 5) caps `candidates` and the blocked
+portion of `skipped`.
+
+**JSON output (`fid ready --explain --limit 2 --include-blocked`):**
+```json
+{
+  "scope": {"epic": null},
+  "selected": "FID-a1b2c3",
+  "candidates": [
+    {"id": "FID-a1b2c3", "title": "Implement ID generation", "rank": 1, "ready": true,
+     "order_factors": [
+       {"factor": "epic_scheduling", "value": "prioritised"},
+       {"factor": "priority", "value": 1},
+       {"factor": "created_at", "value": "2026-05-25T09:00:00Z"}],
+     "flags": []},
+    {"id": "FID-d4e5f6", "title": "Schema migration runner", "rank": 2, "ready": true,
+     "order_factors": [
+       {"factor": "epic_scheduling", "value": "prioritised"},
+       {"factor": "priority", "value": 2},
+       {"factor": "created_at", "value": "2026-05-25T09:05:00Z"}],
+     "flags": ["stale_claim"]}
+  ],
+  "skipped": [
+    {"id": "FID-9a8b7c", "title": "Pricing config loader", "reason": "claimed",
+     "detail": "live claim held by qa_reviewer until 2026-05-31T15:00:00Z"},
+    {"id": "FID-2b3c4d", "title": "Cycle wiring", "reason": "sequence_wait",
+     "detail": "sequential epic FID-f0a1b2; waiting on earlier FID-1a2b3c (todo)"},
+    {"id": "FID-7c3e9f", "title": "Wire ID into issue create", "reason": "blocked_by",
+     "detail": "blocked_by FID-a1b2c3 (in_progress)", "blockers": ["FID-a1b2c3"]}
+  ],
+  "summary": {"candidates": 2, "skipped": 3, "shown_blocked": true}
+}
+```
+
+**Markdown output (`--format markdown`):**
+```markdown
+# Ready — selected FID-a1b2c3
+
+## Candidates (2)
+1. FID-a1b2c3  Implement ID generation   [prioritised, priority 1]
+2. FID-d4e5f6  Schema migration runner   [prioritised, priority 2]  ⚠ stale_claim
+
+## Skipped (3)
+- FID-9a8b7c  Pricing config loader   claimed by qa_reviewer until 15:00Z
+- FID-2b3c4d  Cycle wiring            sequence_wait — earlier FID-1a2b3c not done
+- FID-7c3e9f  Wire ID into issue create   blocked_by FID-a1b2c3 (in_progress)
+```
+
+**Empty queue under `--explain` (zero exit — the "why is nothing ready?" answer):**
+```json
+{
+  "scope": {"epic": "FID-e1f2g3"},
+  "selected": null,
+  "candidates": [],
+  "skipped": [
+    {"id": "FID-1a2b3c", "title": "Journal writer", "reason": "claimed",
+     "detail": "live claim held by developer until 2026-05-31T15:00:00Z"},
+    {"id": "FID-2b3c4d", "title": "Replayer", "reason": "sequence_wait",
+     "detail": "sequential epic; waiting on earlier FID-1a2b3c (in_progress)"},
+    {"id": "FID-7c3e9f", "title": "Rebuild command", "reason": "blocked_by",
+     "detail": "blocked_by FID-2b3c4d (todo)", "blockers": ["FID-2b3c4d"]}
+  ],
+  "summary": {"candidates": 0, "skipped": 3, "shown_blocked": true}
+}
+```
+```text
+$ fid ready --epic FID-e1f2g3 --explain --include-blocked
+note: no ready tasks — 3 tasks blocked or claimed (see skipped[])
 ```
 
 ---
@@ -1125,12 +1210,20 @@ and whether v0.2 `fid event revert` can generate a compensating event.
     }
   ],
   "revert": {
-    "eligible": false,
-    "reason": "status transitions require workflow validation",
-    "correction": "use fid issue transition if the workflow allows the target state"
+    "eligible": true,
+    "mode": "inverse",
+    "restores": {"status": "todo"},
+    "precondition": {"status": "in_progress"},
+    "note": "reverts this transition to the prior status; blocked if the issue has since moved on"
   }
 }
 ```
+
+The `revert` verdict is event-type-keyed. Mutable-state events report `mode:
+inverse` (restore the prior value under a precondition); append-only audit facts
+report `mode: retraction` (withdraw the fact, preserving its row). Non-reversible
+events (`issue.created`, `task.completed`, `claim.*`, telemetry, composites)
+report `eligible: false` with a `correction` field naming the forward domain path.
 
 ---
 
@@ -1142,21 +1235,35 @@ and whether v0.2 `fid event revert` can generate a compensating event.
 fid event revert <event-id> --by <role> --reason <text>
 ```
 
-Appends a compensating event when the target event is explicitly reversible
-and the current projected state still matches the target event's produced
-state. It never edits or deletes the original journal event.
+Appends a compensating event when the target event is reversible. It uses
+**inverse** compensation for mutable-state effects (restoring the prior value,
+guarded by an effect precondition that the current state still matches what the
+event produced) and **retraction** for append-only audit facts (appending a
+retraction that excludes the original from current-state derivation while
+preserving its row). Eligibility is event-type-keyed — see `fid journal inspect`;
+creations, completions, claims, telemetry, and composites are not eligible and
+the command returns the forward domain-correction path. It never edits or deletes
+the original journal event. There are no bespoke domain-correction verbs:
+correction is this one generic primitive (transition-restore replaces
+`restore-status`; verification-retraction replaces `ac retract`).
 
-**Output (stderr confirmation):**
+**Output — inverse (transition restore):**
 ```text
-reverted event EVT-20260529-000042
-  compensating event: EVT-20260529-000117
+reverted event EVT-20260601-000042
+  compensating event: EVT-20260601-000117 (inverse: status dev_complete → in_progress restored)
+```
+
+**Output — retraction (append-only fact):**
+```text
+reverted event EVT-20260601-000087
+  compensating event: EVT-20260601-000091 (retraction: ACV-d4e5f6 withdrawn, row preserved)
 ```
 
 **Not eligible:**
 ```text
-error: event EVT-20260529-000001 is not eligible for generic revert
-  reason: status transitions require workflow validation
-  correction: use fid issue transition if the workflow allows the target state
+error: event EVT-20260601-000003 (issue.created) is not eligible for revert
+  reason: deleting a creation would violate append-only audit history
+  correction: cancel the issue with fid issue transition <id> --to cancelled --by <role>
 ```
 
 ---
@@ -1390,4 +1497,83 @@ Created: 2026-05-25T09:00:00Z | Updated: 2026-05-27T10:20:00Z
 
 ---
 
-*Last updated: 2026-05-31*
+## 22. Handoff Commands (v0.3+)
+
+### `fid handoff`
+
+```
+fid handoff --role <role> --issue <id> [--since <id>] [--epic <id>]
+    [--format json|toon|markdown|yaml]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--role` | string | yes | Target role to spawn — resolved against the configured handoff templates; a parameter, never a subcommand |
+| `--issue` | string | yes | Entity the handoff is about |
+| `--since` | string | no | Anchor for delta-oriented roles (e.g. a QA reviewer's task window) |
+| `--epic` | string | no | Epic scope for epic-level roles (e.g. QA Lead final review) |
+| `--format` | string | no | Output format (default: `json`) |
+
+Composes the role's context pack, a manifest **derived** from the configured
+workflow and role permissions, and the role's handoff template into a prompt
+plus a machine-readable manifest. Read-only — it acquires no claim and appends no
+journal event. `stop_conditions` and `expected_writes` come from the workflow
+graph + permissions (so they retrack when a project edits its workflow);
+`required_reads` reuse the context pack; `blockers` reuse the
+`fid ready --explain` skip data plus open concerns/escalations. Manifest fields
+grow by version (`evidence_obligations` lights up in v0.4). The prose prompt is
+the manifest's rendering and is also embedded as `prompt_md`.
+
+**JSON output (default):**
+```json
+{
+  "role": "developer",
+  "issue": "FID-a1b2c3",
+  "template": "handoff-developer@3",
+  "manifest": {
+    "required_reads": [
+      {"kind": "task_spec", "path": "project-docs/docs/phases/phase-1/tasks/task-3.md"},
+      {"kind": "validation_contract", "assertions": ["VAL-004", "VAL-005"]},
+      {"kind": "context_pack", "role": "developer", "includes": ["DEC-012"]}
+    ],
+    "commands": [{"source": "template", "cmd": "go test ./... -cover"}],
+    "stop_conditions": [
+      {"reach_state": "dev_complete", "requires": ["has_completion_report", "all_acs_verified{developer}"]},
+      {"reach_state": "failed_gate", "via": "blocker report"}
+    ],
+    "expected_writes": [
+      {"artifact": "completion_report", "from_rule": "has_completion_report"},
+      {"artifact": "ac_verification", "from_rule": "all_acs_verified{developer}"},
+      {"artifact": "concern", "permitted": true}
+    ],
+    "blockers": [],
+    "evidence_obligations": []
+  },
+  "prompt_md": "# Developer handoff — FID-a1b2c3 \"Implement ID generation\" ...",
+  "source": {"workflow": "task-default", "pack": "developer",
+             "derived_from": "workflow + permissions + pack"}
+}
+```
+
+**Markdown output (`--format markdown`) — the rendered prompt:**
+```markdown
+# Developer handoff — FID-a1b2c3 "Implement ID generation"
+
+## Required reads
+- task spec: project-docs/docs/phases/phase-1/tasks/task-3.md
+- validation contract: VAL-004, VAL-005
+- context pack (developer): DEC-012 (hash IDs); blocked_by: none
+
+## Commands
+- go test ./... -cover
+
+## Stop conditions
+- reach `dev_complete` (ACs verified by developer + completion report present), or write a blocker report
+
+## Expected writes
+- completion report · AC verifications · concerns
+```
+
+---
+
+*Last updated: 2026-06-01*
