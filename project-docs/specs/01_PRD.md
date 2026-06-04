@@ -215,7 +215,7 @@ where a requirement is deferred past v0.1.
 | PRD-GOV-010 | When a carry-forward item is promoted to a principle, the system shall flag it for rendering in the active decisions view. | Should | v0.4 |
 | PRD-GOV-011 | The system shall support retrospective records (lightweight and deep types) with a recommendation field. | Should | v0.4 |
 | PRD-GOV-012 | The system shall support composite TL-Lite triage commands that combine source inspection, verdict recording, and optional escalation creation into a single operation. | Should | v0.2 |
-| PRD-GOV-013 | The system shall support a composite TL wrap-up command that generates a retrospective, closes resolved escalations, and transitions the epic. | Should | v0.2 |
+| PRD-GOV-013 | The system shall support a composite TL wrap-up command that captures wrap-up notes, closes already-resolved escalations, and transitions the epic. When retrospective records are enabled, the wrap-up flow shall create or link the retrospective record instead of storing only wrap-up notes. | Should | v0.2 base command; retrospective record creation in v0.4 with PRD-GOV-011. |
 
 ### 3.12 Agent Telemetry (TELEM)
 

@@ -165,7 +165,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | `fid escalation create/get/list` | Escalation records with open/resolved status. `--from-finding`, `--from-concern`, `--trigger-class`. Resolution requires linked decision. | PRD-GOV-002–003, 005 |
 | `fid triage record` | Triage events with RESUME/BLOCK verdict, source classification, reasoning. | PRD-GOV-004 |
 | `fid triage start/verdict` | Composite TL-Lite triage commands. | PRD-GOV-012 |
-| `fid tl wrapup` | Composite: retrospective + close resolved esc + transition → wrapped. | PRD-GOV-013 |
+| `fid tl wrapup` | Composite: capture wrap-up notes, close already-resolved escalations, and transition → wrapped. Retrospective row creation waits for v0.4 retrospective support. | PRD-GOV-013 |
 | `fid requirement get/list/sync` | Requirement pointer records. Drift detection via `last_synced_hash`. | PRD-GOV-006–007 |
 | `fid comment add` | Comments on issues, decisions, escalations, requirements. `--on <type>/<id> --body-md --by <role>`. | PRD-GOV-008 |
 | Links expansion | Link endpoints expand to `decision` and `escalation`. | PRD-LINK-007 |

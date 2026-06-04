@@ -424,7 +424,7 @@ CREATE TABLE triage_events (
 
 ---
 
-## 6. Carry-Forward and Retrospectives
+## 6. Carry-Forward and Retrospectives (v0.4)
 
 ```sql
 CREATE TABLE carry_forward (
@@ -867,7 +867,7 @@ primitive effects they compose.
 | `escalation.resolve` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 | `triage.record` (v0.2) | – | – | – | ✓ | – | – | ✓ |
 | `decision.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
-| `retrospective.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `retrospective.create` (v0.4) | – | – | – | – | ✓ | – | ✓ |
 | `policy.set` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 
 The `--by` flag is mandatory on every write command.

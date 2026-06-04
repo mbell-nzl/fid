@@ -2017,31 +2017,33 @@ triage verdict on FID-a1b2c3: BLOCK
 ### `fid tl wrapup` (v0.2+)
 
 ```
-fid tl wrapup <epic-id> --by <role> [--retro-md <path>]
+fid tl wrapup <epic-id> --by <role> [--wrapup-md <path>]
     [--recommendation <text>] [--no-close-escalations]
 ```
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
-| `--retro-md` | path | no | Retrospective notes path |
+| `--wrapup-md` | path | no | Wrap-up notes path; v0.4 retrospective creation uses the retrospective command surface |
 | `--recommendation` | string | no | Short wrap-up recommendation |
 | `--no-close-escalations` | bool | no | Leave already-resolved escalations untouched |
 
-Composes retrospective creation, closure of already-resolved escalations where
-needed, and epic transition to `wrapped`. It does not perform human approval;
-`wrapped -> closed` remains a separate `fid issue transition ... --by human`.
+Composes wrap-up note capture, closure of already-resolved escalations where
+needed, and epic transition to `wrapped`. It does not create a
+`retrospectives` row until v0.4 retrospective support exists, and it does not
+perform human approval; `wrapped -> closed` remains a separate
+`fid issue transition ... --by human`.
 
 **Output:**
 ```text
 tl wrapup FID-e1f2g3
-  retrospective: RET-g7h8i9
+  wrap-up notes: project-docs/docs/phases/phase-1/wrap-up.md
   closed resolved escalations: 2
   transitioned: in_progress -> wrapped
 ```
 
 **Errors:** child tasks not done/cancelled, open unresolved escalations, missing
-retrospective artifact when policy requires one, or denied `tl.wrapup`
+wrap-up artifact when policy requires one, or denied `tl.wrapup`
 permission.
 
 ### `fid requirement get` (v0.2+)

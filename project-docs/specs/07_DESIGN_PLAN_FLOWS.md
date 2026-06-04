@@ -112,11 +112,11 @@ fid qa finish QAR-final --by qa_lead
 
 **Step 7 — TL Wrap-Up.**
 
-TL queries the epic, closes escalations, writes retrospective:
+TL queries the epic, closes escalations, and records wrap-up notes:
 
 ```
 fid tl wrapup FID-e1f2g3 --by tl
-# → generated retrospective RET-g7h8i9
+# → recorded wrap-up notes
 # → closed 2 resolved escalations
 # → transitioned FID-e1f2g3: in_progress → wrapped
 
@@ -154,8 +154,8 @@ For the bootstrap-of-`fid`-on-`whet` case and the v0.1 dogfood goal
 | `tl_escalations_current.md` | `escalations` rows (status='open') | Rendered on demand; file replaced by query. |
 | `triage-log.md` | `triage_events` rows | Per-epic, queryable across epics. |
 | `progress_current.md` | Computed view over status fields | No primary entity; rendered on read. |
-| Phase decisions (`phases/phase-N/decisions.md`) | `decisions` rows linked to epic + `retrospectives` row (type='lightweight') | Workflow notes become a retrospective row. |
-| Deep retro (`docs/reviews/...`) | `retrospectives` row (type='deep') | |
+| Phase decisions (`phases/phase-N/decisions.md`) | `decisions` rows linked to epic; v0.4 may additionally create a `retrospectives` row (type='lightweight') | Workflow notes stay markdown until retrospective records ship. |
+| Deep retro (`docs/reviews/...`) | v0.4 `retrospectives` row (type='deep') | |
 | `tl_handoff.md` | Out of scope for v0.1; remains markdown | Optional handoff between TL sessions. |
 
 **Not migrated:** `AGENTS.md`, `CLAUDE.md`, golden docs (`01_PRD.md`,
