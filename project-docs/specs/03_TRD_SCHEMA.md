@@ -103,7 +103,6 @@ CREATE TABLE issues (
   in_inbox            BOOLEAN DEFAULT 0,       -- unsorted intake, awaiting assignment
   -- Note: concerns_raised and triage_status are NOT stored here.
   -- They are derived via the issues_enriched view (see §2.2).
-  cycle_id            TEXT REFERENCES cycles(id),  -- optional
   owner_role          TEXT,                    -- long-lived ownership (≠ short-lived claim).
                                                -- Defaults: 'tl' for epics, 'developer' for tasks.
                                                -- Set at creation; mutable only via explicit
@@ -456,7 +455,6 @@ CREATE TABLE agent_runs (
   id              TEXT PRIMARY KEY,            -- RUN-<hash> (see §1)
   issue_id        TEXT REFERENCES issues(id),
   completion_id   TEXT REFERENCES task_completions(id),
-  review_id       TEXT REFERENCES qa_reviews(id),
   role            TEXT NOT NULL,               -- 'developer' | 'qa_reviewer' | 'qa_lead' |
                                                -- 'tl' | 'tl_lite' | 'workflow_runner'
   model           TEXT NOT NULL,
@@ -483,6 +481,10 @@ CREATE TABLE agent_runs (
   abandoned_reason_md_path TEXT,
   abandoned_at    DATETIME
 );
+
+-- v0.3 QA telemetry extension:
+-- ALTER TABLE agent_runs
+--   ADD COLUMN review_id TEXT REFERENCES qa_reviews(id);
 
 -- Pricing source: .fid/pricing.toml maps model -> (in_per_mtok, out_per_mtok).
 -- Ships with defaults for current Anthropic/OpenAI/Google models; user-overridable.
@@ -517,7 +519,7 @@ CREATE TABLE templates (
 ## 9. Supporting Tables
 
 ```sql
--- 9.1 Cycles
+-- 9.1 Cycles (v0.5)
 
 CREATE TABLE cycles (
   id              TEXT PRIMARY KEY,            -- CYC-<hash> (see §1)
@@ -526,6 +528,10 @@ CREATE TABLE cycles (
   end_date        DATE,
   status          TEXT NOT NULL                -- 'planned' | 'active' | 'completed'
 );
+
+-- v0.5 cycle assignment extension:
+-- ALTER TABLE issues
+--   ADD COLUMN cycle_id TEXT REFERENCES cycles(id);
 
 -- 9.2 Saved views
 
