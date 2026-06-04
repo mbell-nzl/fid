@@ -98,9 +98,9 @@ Phase end:
    `project-docs/docs/phases/phase-<id>/decisions.md`.
 4. Spec sync is mandatory. Walk every in-phase DEC-NNN, every Developer
    completion-report deviation, and every QA Lead "do now" recommendation. For
-   all seven specs, record `touched`, `verified-no-change`, or `N/A` in
-   `project-docs/docs/phases/phase-<id>/decisions.md`. `verified-no-change` is
-   a positive assertion after review, not a default.
+   the full canonical spec suite, record `touched`, `verified-no-change`, or
+   `N/A` in `project-docs/docs/phases/phase-<id>/decisions.md`.
+   `verified-no-change` is a positive assertion after review, not a default.
 5. Walk `project-docs/docs/phases/phase-<id>/triage-log.md` if present.
    Confirm each TL-Lite RESUME disposition was correct in hindsight. If any TRG
    should have escalated, record the pattern in phase decisions and tighten
@@ -126,7 +126,7 @@ Phase end:
 
 Compression ritual at every phase end:
 - Record validation contract outcomes (`VAL-NNN` PASS / FAIL / CARRY-FORWARD).
-- Record spec sync verdicts for all seven specs.
+- Record spec sync verdicts for the full canonical spec suite.
 - Audit every TRG-NNN entry.
 - Append workflow notes and deep-retro recommendation.
 - Move resolved CFs out of `decisions_active.md`.

@@ -3,11 +3,10 @@
 Verdict: **NOT-READY** for implementation start.
 
 Follow-up: F-001 and F-002 were marked **DONE** on 2026-06-01. F-003 through
-F-016 were marked **DONE** on 2026-06-04. The verdict remains NOT-READY
-because remaining workflow wording and intentional-evolution trace findings are
-unresolved.
+F-017 were marked **DONE** on 2026-06-04. The verdict remains NOT-READY
+because the remaining intentional-evolution trace finding is unresolved.
 
-The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It remains in NOT-READY status until the remaining audit findings are closed, but the unresolved items are now documentation wording and intentional-evolution trace cleanup rather than first-migration blockers.
+The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It remains in NOT-READY status until the remaining audit finding is closed, but the unresolved item is now intentional-evolution trace cleanup rather than a first-migration blocker.
 
 ## Coverage Matrix
 
@@ -105,6 +104,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-014 | DONE (2026-06-04) | `fid report list` now includes `epic-wrapup-pack`, `task-hygiene`, `contract-coverage`, `assertion-trace`, and `contract-outcomes`; CLI docs include output shapes for the missing v0.2 and v0.4 report contracts. |
 | F-015 | DONE (2026-06-04) | CLI examples now use canonical `QAF-*` IDs for QA findings and an existing `PRD-*` natural requirement ID instead of invented `QF-*` and `REQ-*` prefixes. |
 | F-016 | DONE (2026-06-04) | Link endpoint compatibility is now version-gated in schema and CLI docs: v0.1 supports issue/requirement endpoints with issue ↔ issue and issue → requirement relations; v0.2 adds decision and escalation endpoints. |
+| F-017 | DONE (2026-06-04) | `09_AI_WORKFLOW.md` now refers to the full canonical spec suite instead of the obsolete "all seven specs" count. |
 
 ## Findings
 
@@ -126,7 +126,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-014 | MAJOR | MISSING | Original evidence: Required reports are named in PRD/source/roadmap: `PRD-OUT-006` at `01_PRD.md:242`, contract reports at `01_PRD.md:247`, and roadmap rows at `10_IMPLEMENTATION_ROADMAP.md:177` and `10_IMPLEMENTATION_ROADMAP.md:279`. The CLI report list at `06_DESIGN_PLAN_CLI.md:1379`-`1387` omitted `epic-wrapup-pack`, `task-hygiene`, `contract-coverage`, `assertion-trace`, and `contract-outcomes`. | DONE 2026-06-04: `fid report list` includes all required report names with version gates, and CLI docs define output shapes for the missing v0.2 and v0.4 report contracts. |
 | F-015 | MAJOR | CONTRADICTION | Original evidence: Prefix table says QA findings use `QAF` at `03_TRD_SCHEMA.md:49` and DDL uses `QAF-<hash>` at `03_TRD_SCHEMA.md:317`, but CLI examples used `QF-9a8b7c` at `06_DESIGN_PLAN_CLI.md:1501` and `QF-a1b2c3` at `06_DESIGN_PLAN_CLI.md:1658`. Requirements are natural `PRD-*`/`TRD-*` at `03_TRD_SCHEMA.md:67`-`68`, but search output used `REQ-d4e5f6` at `06_DESIGN_PLAN_CLI.md:1147`. | DONE 2026-06-04: CLI examples now use canonical `QAF-*` QA finding IDs and an existing `PRD-*` natural requirement ID. |
 | F-016 | MAJOR | CONTRADICTION | Original evidence: Schema said v1 link endpoints include `decision` and `escalation` at `03_TRD_SCHEMA.md:608`-`613`, but roadmap says v0.1 link scope is only issue↔issue and issue→requirement at `10_IMPLEMENTATION_ROADMAP.md:104`; expansion to decision/escalation happens at `10_IMPLEMENTATION_ROADMAP.md:171`. | DONE 2026-06-04: schema comments, trigger/backstop prose, and CLI link docs now make endpoint compatibility version-aware: v0.1 supports issue/requirement endpoints for issue ↔ issue and issue → requirement links; v0.2 adds decision and escalation endpoints. |
-| F-017 | MINOR | CONTRADICTION | The workflow doc still says "all seven specs" at `09_AI_WORKFLOW.md:101` and `09_AI_WORKFLOW.md:129`, while the charter lists the expanded document suite from `00_PROJECT_CHARTER.md:213` through `00_PROJECT_CHARTER.md:228` and AGENTS lists the same expanded suite at `AGENTS.md:175`-`186`. | Replace "all seven specs" with "the full canonical spec suite" or list the current files. |
+| F-017 | MINOR | CONTRADICTION | Original evidence: The workflow doc still said "all seven specs" at `09_AI_WORKFLOW.md:101` and `09_AI_WORKFLOW.md:129`, while the charter lists the expanded document suite from `00_PROJECT_CHARTER.md:213` through `00_PROJECT_CHARTER.md:228` and AGENTS lists the same expanded suite at `AGENTS.md:175`-`186`. | DONE 2026-06-04: `09_AI_WORKFLOW.md` now refers to the full canonical spec suite instead of a stale document count. |
 | F-018 | MINOR | INTENTIONAL EVOLUTION NEEDS TRACE | `fid policy show` moved earlier than source: source says the v0.2 model's CLI gains `fid role create`, `fid policy set`, and `fid policy show` at `scaffold/initial-spec.md:1070`-`1072`, while target ships `policy show` in v0.1 at `10_IMPLEMENTATION_ROADMAP.md:103` and details it at `06_DESIGN_PLAN_CLI.md:945`. This is internally coherent, but the evolution is not called out. | Record the earlier `policy show` as a deliberate v0.1 introspection feature, likely in roadmap notes or an intentional-evolution appendix. |
 
 ## Intentional Evolution
