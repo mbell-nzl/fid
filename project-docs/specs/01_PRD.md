@@ -154,7 +154,7 @@ where a requirement is deferred past v0.1.
 | PRD-ROLE-001 | The system shall require a `--by <role>` flag on every write command. | Must | v0.1 |
 | PRD-ROLE-002 | If the specified role is not in the project's role set, the system shall reject the command with a clear error. | Must | v0.1 |
 | PRD-ROLE-003 | If the specified role lacks permission for the requested action, the system shall reject the command with an error naming the role, the action, and that it is not permitted. | Must | v0.1 |
-| PRD-ROLE-004 | The system shall allow the `human` role to perform any action via `--by human`. | Must | v0.1 |
+| PRD-ROLE-004 | The system shall allow the `human` role to invoke any write command via `--by human` as the product-owner escape valve. Role-attributed evidence and history rows shall still record `human` as the acting/verifying role; `--by human` shall not impersonate another verifier role such as `developer` or `qa_lead`. | Must | v0.1 |
 | PRD-ROLE-005 | The system shall provide a command to display the active permissions matrix. | Should | v0.1 |
 | PRD-ROLE-006 | Where configurable permissions are enabled, the system shall allow per-project role creation and permission customisation. | Should | v0.2 |
 

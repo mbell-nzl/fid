@@ -820,6 +820,12 @@ implementation. Composite commands use their composite action key as the
 entry-point permission check and still run the same domain validation as the
 primitive effects they compose.
 
+`human` is the product-owner escape valve: it may invoke any write command.
+For role-attributed evidence facts, `--by human` records `human` in the
+`_role` column; it does not mint another role's evidence. For example, a human
+AC verification maps to `issue.ac.verify.human`, not
+`issue.ac.verify.developer`.
+
 | Action | developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human |
 |---|---|---|---|---|---|---|---|
 | `issue.create.epic` | – | – | – | – | ✓ | – | ✓ |

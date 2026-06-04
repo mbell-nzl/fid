@@ -473,7 +473,8 @@ Runner" once fid is dogfooded.
 The product/approval role and the escape valve. Approves epic closure, runs
 the human verification checklist, invokes [[TL-Lite]] in Question mode,
 owns product-level decisions. Always allowed to override role boundaries via
-`--by human`.
+`--by human`, while role-attributed evidence still records `human` rather than
+impersonating another role.
 Use when: describing the human product owner and approval role.
 Avoid: "user" in workflow context (ambiguous with end-user).
 

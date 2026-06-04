@@ -347,6 +347,10 @@ fid issue ac verify <issue-id> <ac-id> --by <role> --status <status> [flags]
 | `--evidence-ref` | string | no | Path / commit hash / command ID / URL |
 | `--notes` | string | no | Short free-form notes |
 
+The verification role is exactly the `--by` role stored in
+`ac_verifications.verifier_role`. `--by human` records a human verification; it
+does not count as a developer, QA, or TL verification.
+
 **Output (stderr confirmation):**
 ```text
 verified AC-d4e5f6 on FID-a1b2c3 by developer: pass
