@@ -148,6 +148,12 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `workflow_transition_requires` | workflow_id, from/to_state, rule, params_json | E.g. `all_acs_verified` with `{"roles":["developer"]}`. |
 | `role_permissions` | role_name, action, conditions | v0.1: in app-code constant. v0.2: migrated to table. |
 
+**Governance support (v0.2):**
+
+| Entity | Key Fields | Notes |
+|---|---|---|
+| `comments` | ref_type, ref_id, author_role, body_md | v0.2 scope: issue, decision, escalation, requirement. v0.3 adds qa_review when QA reviews ship. |
+
 **QA layer (v0.3):**
 
 | Entity | Key Fields | Notes |
@@ -177,7 +183,6 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `retrospectives` | epic_id, type (lightweight/deep), recommendation | Links to epic. |
 | `cycles` | name, start/end_date, status | Optional; off by default. |
 | `views` | name, query_kind, query_text, scope | Saved read-only queries. `query_kind` starts with `sql`; any future DSL kind requires a separate recorded decision. |
-| `comments` | ref_type, ref_id, author_role, body_md | Polymorphic ref scoped to issue, qa_review, decision, escalation, requirement. |
 
 **Derived views:**
 
@@ -487,7 +492,7 @@ SQLite triggers (backstop for non-CLI write paths — future web dashboard,
   `activity_log`.
 - Link scope and relation compatibility.
 - Claim scope (supported `ref_type` values per schema version).
-- Comment scope (v1 ref_type whitelist).
+- Comment scope (v0.2 base ref_type whitelist; v0.3 adds `qa_review`).
 - Kind immutability (BEFORE UPDATE OF kind on `issues`).
 - Mutually exclusive scope columns on `qa_reviews` (CHECK constraint).
 

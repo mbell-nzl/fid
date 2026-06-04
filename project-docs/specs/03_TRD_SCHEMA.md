@@ -545,20 +545,22 @@ CREATE TABLE views (
   created_at      DATETIME
 );
 
--- 9.3 Comments
+-- 9.3 Comments (v0.2; qa_review scope added in v0.3)
 
 CREATE TABLE comments (
   id              TEXT PRIMARY KEY,            -- COM-<hash> (see §1)
-  ref_type        TEXT NOT NULL,               -- 'issue' | 'qa_review' | 'decision' |
+  ref_type        TEXT NOT NULL,               -- v0.2: 'issue' | 'decision' |
                                                -- 'escalation' | 'requirement'
+                                               -- v0.3: adds 'qa_review'
   ref_id          TEXT NOT NULL,
   author_role     TEXT,
   body_md         TEXT NOT NULL,
   created_at      DATETIME
 );
 
--- v1 comment scope is deliberately narrow: issue, qa_review, decision,
--- escalation, requirement. Low-level child rows (ACs, verifications,
+-- Comment scope is deliberately narrow. v0.2 supports issue, decision,
+-- escalation, and requirement; v0.3 adds qa_review. Low-level child rows
+-- (ACs, verifications,
 -- links, labels, workflow rows, activity-log rows, etc.) use comments
 -- on their parent entity instead.
 
@@ -922,8 +924,8 @@ BEFORE INSERT / UPDATE triggers on `claims` reject unsupported
 ### 14.5 Comment Scope
 
 BEFORE INSERT / UPDATE triggers on `comments` reject `ref_type` values
-outside the v1 comment scope (`issue`, `qa_review`, `decision`,
-`escalation`, `requirement`).
+outside the active schema-version scope. v0.2 supports `issue`,
+`decision`, `escalation`, and `requirement`; v0.3 adds `qa_review`.
 
 ### 14.6 Activity-Log Projection Discipline
 
