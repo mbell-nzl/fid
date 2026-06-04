@@ -100,7 +100,7 @@ with whet's task artifacts.
 | `fid claim list` | List all live claims. `--stale` for past-TTL. `--by <role>`. | PRD-CLAIM-007 |
 | Claim-transition integration | Transitions into started-category require live claim by caller. Transitions out release claim. | PRD-CLAIM-005–006 |
 | Human claims | `--by human` signals agents should not advance. | PRD-CLAIM-008 |
-| Permissions matrix | In-code constant for v0.1. Enforce `--by <role>` on every write. Reject unknown roles. Reject denied role/action combinations with actionable error. `fid policy show` to display the matrix. | PRD-ROLE-001–005, TRD-ARCH-010 |
+| Permissions matrix | In-code constant for v0.1. Enforce `--by <role>` on every write. Reject unknown roles. Reject denied role/action combinations with actionable error. `fid policy show` displays the read-only in-code matrix in v0.1 so agents can inspect permitted actions before v0.2 configurability. | PRD-ROLE-001–005, TRD-ARCH-010 |
 | `fid link add/remove` | Create or remove typed links with auto-inverse projection. v0.1 scope: issue ↔ issue, issue → requirement. Validate relation/entity-type compatibility. Reject links that duplicate dedicated schema. | PRD-LINK-001–006a, 008 |
 | `fid link list` | List all links from and to an entity. | PRD-LINK-006 |
 | `fid label add/list` and `fid issue label add/remove` | Create labels, list labels, and add/remove issue label assignments without replacing the full label set. `fid issue update --labels` remains replace-all. `issue_labels` junction for multi-value. | PRD-ISSUE-015, PRD-ISSUE-023 |
@@ -155,7 +155,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | Workflow tables | Schema migration: `workflows`, `workflow_states`, `workflow_transitions`, `workflow_transition_requires`. Seed with v0.1 defaults verbatim. Migrate `issues.workflow_id` to real FK, `issues.status` to composite FK `(workflow_id, state)`. | PRD-WF-011–012, TRD-ARCH-009 |
 | `fid workflow define/assign/list` | Define custom workflows with states, transitions, and per-transition rules. Assign per kind or per project. | PRD-WF-011–012 |
 | Escalation workflow | Default workflow for escalation kind: open → resolved (requires linked_to_decision). | PRD-WF-005a |
-| Role permissions table | Schema migration: `role_permissions` table. Seed from v0.1 code constant. `fid role create`, `fid policy set`, `fid policy show`. | PRD-ROLE-006, TRD-ARCH-010 |
+| Role permissions table | Schema migration: `role_permissions` table. Seed from v0.1 code constant. Add `fid role create` and `fid policy set`; `fid policy show` keeps the same CLI contract but reads from `role_permissions` after this migration. | PRD-ROLE-006, TRD-ARCH-010 |
 
 ### v0.2b — Governance Entities
 

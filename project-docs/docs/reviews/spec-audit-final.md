@@ -1,18 +1,17 @@
 # Final Spec Audit
 
-Verdict: **NOT-READY** for implementation start.
+Verdict: **READY** for implementation start.
 
 Follow-up: F-001 and F-002 were marked **DONE** on 2026-06-01. F-003 through
-F-017 were marked **DONE** on 2026-06-04. The verdict remains NOT-READY
-because the remaining intentional-evolution trace finding is unresolved.
+F-018 were marked **DONE** on 2026-06-04. No open findings remain.
 
-The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It remains in NOT-READY status until the remaining audit finding is closed, but the unresolved item is now intentional-evolution trace cleanup rather than a first-migration blocker.
+The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. Earlier schema, roadmap, permission, CLI, and documentation conflicts have been resolved or recorded as intentional evolutions.
 
 ## Coverage Matrix
 
 | source section | topic | target file(s):line | status | note |
 |---|---|---|---|---|
-| §0, line 22 | Changes from v0.1 | `00_PROJECT_CHARTER.md:198`, `03_TRD_SCHEMA.md:11`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | Core changes are represented; MCP, query, event, and command scope evolved later. |
+| §0, line 22 | Changes from v0.1 | `00_PROJECT_CHARTER.md:198`, `03_TRD_SCHEMA.md:11`, `10_IMPLEMENTATION_ROADMAP.md:45` | COVERED | Core changes are represented; MCP, query, event, and command-scope evolutions are recorded as intentional evolutions or conditional deferrals. |
 | §1, line 65 | Overview | `00_PROJECT_CHARTER.md:7`, `00_PROJECT_CHARTER.md:55`, `00_PROJECT_CHARTER.md:70` | COVERED | Local-first, agent-first, row/prose split, and role/QA layering represented. |
 | §2.1, line 91 | Goals | `00_PROJECT_CHARTER.md:27`, `01_PRD.md:49`, `02_TRD.md:105`, `08_QUALITY_PLAN.md:10` | COVERED | Converted into charter problem statement, PRD requirements, TRD data model, and quality plan. |
 | §2.2, line 127 | Non-goals | `00_PROJECT_CHARTER.md:137`, `01_PRD.md:286`, `10_IMPLEMENTATION_ROADMAP.md:333` | COVERED | Server/auth/remote sync/custom fields/multi-project limits carried forward. |
@@ -49,7 +48,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §7.6, line 1601 | Workflow customization | `10_IMPLEMENTATION_ROADMAP.md:151`, `10_IMPLEMENTATION_ROADMAP.md:158`, `06_DESIGN_PLAN_CLI.md:1700` | COVERED | Roadmap and detailed CLI specs now cover workflow define/assign/list. |
 | §8, line 1617 | Templates | `03_TRD_SCHEMA.md:475`, `10_IMPLEMENTATION_ROADMAP.md:231`, `06_DESIGN_PLAN_CLI.md:2434` | COVERED | Schema, roadmap, and detailed CLI specs now cover template create/list/show. |
 | §8.1, line 1640 | Template provenance | `10_IMPLEMENTATION_ROADMAP.md:236`, `01_PRD.md:249` | COVERED | Provenance columns and version are represented. |
-| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `06_DESIGN_PLAN_CLI.md:1672`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | v0.1 detail, roadmap command specs, required reports, and link endpoint gates are represented; policy-show evolution trace remains in F-018. |
+| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `06_DESIGN_PLAN_CLI.md:1672`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | COVERED | v0.1 detail, roadmap command specs, required reports, link endpoint gates, and policy-show evolution are represented. |
 | §9.1, line 1690 | Initialisation | `06_DESIGN_PLAN_CLI.md:64`, `04_TRD_CONFIG.md:104` | COVERED | `fid init` flags/output and `.fid/` effects represented. |
 | §9.2, line 1698 | Reads | `06_DESIGN_PLAN_CLI.md:124`, `06_DESIGN_PLAN_CLI.md:139`, `06_DESIGN_PLAN_CLI.md:389`, `06_DESIGN_PLAN_CLI.md:1368`, `06_DESIGN_PLAN_CLI.md:1672` | COVERED | Core reads, roadmap entity reads, and required report reads are covered. |
 | §9.2.1, line 1739 | Context packs | `07_DESIGN_PLAN_FLOWS.md:267`, `06_DESIGN_PLAN_CLI.md:124`, `10_IMPLEMENTATION_ROADMAP.md:180` | COVERED | Role-tuned bundles represented. |
@@ -70,17 +69,17 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §11.3, line 2202 | Frontmatter contract | `07_DESIGN_PLAN_FLOWS.md:211`, `02_TRD.md:716` | COVERED | YAML frontmatter represented. |
 | §12, line 2247 | Mapping whet artifacts | `07_DESIGN_PLAN_FLOWS.md:139` | COVERED | Mapping table reproduced and updated. |
 | §13, line 2274 | End-to-end task flow | `07_DESIGN_PLAN_FLOWS.md:12` | COVERED | Flow represented; QA start examples now match the permission matrix. |
-| §14, line 2329 | Linear/Jira borrows | `00_PROJECT_CHARTER.md:182`, `01_PRD.md:60`, `03_TRD_SCHEMA.md:494`, `10_IMPLEMENTATION_ROADMAP.md:310` | PARTIAL | Borrowed concepts represented; saved views still need version-gate review. |
+| §14, line 2329 | Linear/Jira borrows | `00_PROJECT_CHARTER.md:182`, `01_PRD.md:60`, `03_TRD_SCHEMA.md:494`, `10_IMPLEMENTATION_ROADMAP.md:310` | COVERED | Borrowed concepts are represented; saved views start SQL-only and future DSL support requires a recorded decision. |
 | §14.1, line 2359 | Features not included | `00_PROJECT_CHARTER.md:137`, `10_IMPLEMENTATION_ROADMAP.md:333` | COVERED | Exclusions represented. |
 | §15, line 2373 | Open/resolved questions | `01_PRD.md:357`, `02_TRD.md:719`, `00_PROJECT_CHARTER.md:198` | COVERED | Open questions and resolved decisions moved to PRD/TRD/charter/ADRs. |
 | §15.1, line 2375 | Open question: workflow_runner harness | `01_PRD.md:357`, `02_TRD.md:730` | COVERED | Still tracked as open. |
 | §15.2, line 2394 | Resolved questions | `00_PROJECT_CHARTER.md:198`, `02_TRD.md:8`, `03_TRD_SCHEMA.md:704`, `docs/adr/0003-three-tier-qa-model.md:3` | COVERED | Resolutions represented across TRD/schema/ADRs. |
 | §15.3, line 2444 | Closed by upstream decisions | `10_IMPLEMENTATION_ROADMAP.md:179`, `10_IMPLEMENTATION_ROADMAP.md:246`, `10_IMPLEMENTATION_ROADMAP.md:324` | COVERED | Query DSL and import/sync are deferred/conditional. |
-| §16, line 2467 | Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md:1` | PARTIAL | Roadmap exists and is richer; remaining open item is an intentional-evolution trace for `policy show`. |
+| §16, line 2467 | Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md:1` | COVERED | Roadmap exists, is richer than the source, and records intentional evolutions and conditional deferrals. |
 | §16 v0.1, line 2471 | Core issue layer | `10_IMPLEMENTATION_ROADMAP.md:45` | COVERED | Scope is aligned; future-entity FK columns now move with the migrations where their target tables ship. |
 | §16 v0.2, line 2527 | Workflow/governance/reports | `10_IMPLEMENTATION_ROADMAP.md:145`, `06_DESIGN_PLAN_CLI.md:1700`, `06_DESIGN_PLAN_CLI.md:1819` | COVERED | Scope, detailed CLI specs, reports, permissions, and link expansion are represented. |
-| §16 v0.3, line 2563 | QA/templates/TUI/MCP | `10_IMPLEMENTATION_ROADMAP.md:205`, `10_IMPLEMENTATION_ROADMAP.md:244`, `02_TRD.md:715`, `06_DESIGN_PLAN_CLI.md:2148`, `06_DESIGN_PLAN_CLI.md:2434` | PARTIAL | QA/templates/TUI CLI specs and QA plan schema gates are represented; MCP deferral remains tracked separately. |
-| §16 v0.4, line 2604 | Validation/retros/export | `10_IMPLEMENTATION_ROADMAP.md:261`, `06_DESIGN_PLAN_CLI.md:2493`, `06_DESIGN_PLAN_CLI.md:2630`, `06_DESIGN_PLAN_CLI.md:2658` | PARTIAL | Scope and detailed CLI specs are represented; validation outcome enforcement and reports need fixes. |
+| §16 v0.3, line 2563 | QA/templates/TUI/MCP | `10_IMPLEMENTATION_ROADMAP.md:205`, `10_IMPLEMENTATION_ROADMAP.md:244`, `02_TRD.md:715`, `06_DESIGN_PLAN_CLI.md:2148`, `06_DESIGN_PLAN_CLI.md:2434` | COVERED | QA/templates/TUI CLI specs and QA plan schema gates are represented; MCP deferral is explicitly tracked. |
+| §16 v0.4, line 2604 | Validation/retros/export | `10_IMPLEMENTATION_ROADMAP.md:261`, `06_DESIGN_PLAN_CLI.md:2493`, `06_DESIGN_PLAN_CLI.md:2630`, `06_DESIGN_PLAN_CLI.md:2658` | COVERED | Scope, detailed CLI specs, validation outcome enforcement, and required reports are represented. |
 | §16 v0.5, line 2624 | Polish | `10_IMPLEMENTATION_ROADMAP.md:310` | COVERED | Dashboard/cycles/import/sync represented; `issues.cycle_id` now ships with the v0.5 cycle migration. |
 | §17, line 2639 | Out of scope | `00_PROJECT_CHARTER.md:137`, `10_IMPLEMENTATION_ROADMAP.md:333` | COVERED | v1 exclusions represented. |
 
@@ -105,6 +104,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-015 | DONE (2026-06-04) | CLI examples now use canonical `QAF-*` IDs for QA findings and an existing `PRD-*` natural requirement ID instead of invented `QF-*` and `REQ-*` prefixes. |
 | F-016 | DONE (2026-06-04) | Link endpoint compatibility is now version-gated in schema and CLI docs: v0.1 supports issue/requirement endpoints with issue ↔ issue and issue → requirement relations; v0.2 adds decision and escalation endpoints. |
 | F-017 | DONE (2026-06-04) | `09_AI_WORKFLOW.md` now refers to the full canonical spec suite instead of the obsolete "all seven specs" count. |
+| F-018 | DONE (2026-06-04) | The roadmap now records `fid policy show` as deliberate v0.1 read-only introspection over the in-code matrix, with v0.2 changing the data source to `role_permissions` while keeping the CLI contract. |
 
 ## Findings
 
@@ -127,7 +127,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-015 | MAJOR | CONTRADICTION | Original evidence: Prefix table says QA findings use `QAF` at `03_TRD_SCHEMA.md:49` and DDL uses `QAF-<hash>` at `03_TRD_SCHEMA.md:317`, but CLI examples used `QF-9a8b7c` at `06_DESIGN_PLAN_CLI.md:1501` and `QF-a1b2c3` at `06_DESIGN_PLAN_CLI.md:1658`. Requirements are natural `PRD-*`/`TRD-*` at `03_TRD_SCHEMA.md:67`-`68`, but search output used `REQ-d4e5f6` at `06_DESIGN_PLAN_CLI.md:1147`. | DONE 2026-06-04: CLI examples now use canonical `QAF-*` QA finding IDs and an existing `PRD-*` natural requirement ID. |
 | F-016 | MAJOR | CONTRADICTION | Original evidence: Schema said v1 link endpoints include `decision` and `escalation` at `03_TRD_SCHEMA.md:608`-`613`, but roadmap says v0.1 link scope is only issue↔issue and issue→requirement at `10_IMPLEMENTATION_ROADMAP.md:104`; expansion to decision/escalation happens at `10_IMPLEMENTATION_ROADMAP.md:171`. | DONE 2026-06-04: schema comments, trigger/backstop prose, and CLI link docs now make endpoint compatibility version-aware: v0.1 supports issue/requirement endpoints for issue ↔ issue and issue → requirement links; v0.2 adds decision and escalation endpoints. |
 | F-017 | MINOR | CONTRADICTION | Original evidence: The workflow doc still said "all seven specs" at `09_AI_WORKFLOW.md:101` and `09_AI_WORKFLOW.md:129`, while the charter lists the expanded document suite from `00_PROJECT_CHARTER.md:213` through `00_PROJECT_CHARTER.md:228` and AGENTS lists the same expanded suite at `AGENTS.md:175`-`186`. | DONE 2026-06-04: `09_AI_WORKFLOW.md` now refers to the full canonical spec suite instead of a stale document count. |
-| F-018 | MINOR | INTENTIONAL EVOLUTION NEEDS TRACE | `fid policy show` moved earlier than source: source says the v0.2 model's CLI gains `fid role create`, `fid policy set`, and `fid policy show` at `scaffold/initial-spec.md:1070`-`1072`, while target ships `policy show` in v0.1 at `10_IMPLEMENTATION_ROADMAP.md:103` and details it at `06_DESIGN_PLAN_CLI.md:945`. This is internally coherent, but the evolution is not called out. | Record the earlier `policy show` as a deliberate v0.1 introspection feature, likely in roadmap notes or an intentional-evolution appendix. |
+| F-018 | MINOR | INTENTIONAL EVOLUTION NEEDS TRACE | Original evidence: `fid policy show` moved earlier than source: source says the v0.2 model's CLI gains `fid role create`, `fid policy set`, and `fid policy show` at `scaffold/initial-spec.md:1070`-`1072`, while target ships `policy show` in v0.1 at `10_IMPLEMENTATION_ROADMAP.md:103` and details it at `06_DESIGN_PLAN_CLI.md:945`. This was internally coherent, but the evolution was not called out. | DONE 2026-06-04: the roadmap records earlier `policy show` as deliberate v0.1 read-only introspection over the in-code matrix; v0.2 keeps the command and changes its data source to `role_permissions` when configurability ships. |
 
 ## Intentional Evolution
 
@@ -138,7 +138,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 - Saved views shifted from source `query_dsl` to `query_kind`/`query_text`, with SQL first and future DSL requiring a recorded decision (`03_TRD_SCHEMA.md:510`, `02_TRD.md:179`).
 - `fid ready --explain`, `fid changes`, `fid handoff`, `fid evidence check`, recurring-pattern reports, task-pack apply, and context estimate are target additions or conditional additions after the source (`06_DESIGN_PLAN_CLI.md:413`, `06_DESIGN_PLAN_CLI.md:810`, `06_DESIGN_PLAN_CLI.md:1543`, `06_DESIGN_PLAN_CLI.md:1624`, `10_IMPLEMENTATION_ROADMAP.md:247`, `10_IMPLEMENTATION_ROADMAP.md:322`).
 - "Phase Runner" vs "Workflow Runner" is intentionally distinguished: glossary defines fid's product role and the build pipeline role separately (`GLOSSARY.md:459`, `GLOSSARY.md:467`, `09_AI_WORKFLOW.md:215`-`226`).
-- `policy show` moving to v0.1 appears intentional because agents need to inspect the in-code matrix before v0.2 configurability, but it should be explicitly recorded (see F-018).
+- `policy show` intentionally ships in v0.1 because agents need to inspect the in-code matrix before v0.2 configurability; v0.2 keeps the same command and reads the migrated `role_permissions` table.
 
 ## Top 5 Fixes Before Code
 
