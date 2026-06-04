@@ -1385,8 +1385,13 @@ fid report list [--format json|toon|markdown|yaml]
   {"name": "open-escalations", "description": "All open escalations", "version": "v0.2"},
   {"name": "qa-blockers", "description": "Blocking QA findings", "version": "v0.3"},
   {"name": "ac-matrix", "description": "AC × verifier-role grid", "version": "v0.2"},
+  {"name": "epic-wrapup-pack", "description": "TL wrap-up readiness bundle", "version": "v0.2"},
+  {"name": "task-hygiene", "description": "Task artifact and evidence completeness", "version": "v0.2"},
   {"name": "stale-claims", "description": "Past-TTL active claims", "version": "v0.2"},
   {"name": "attention", "description": "Items needing human judgment now, grouped by reason", "version": "v0.2"},
+  {"name": "contract-coverage", "description": "Validation contract coverage gaps", "version": "v0.4"},
+  {"name": "assertion-trace", "description": "Requirement-to-outcome trace for one assertion", "version": "v0.4"},
+  {"name": "contract-outcomes", "description": "Validation outcomes by assertion and validator", "version": "v0.4"},
   {"name": "recurring-findings", "description": "Findings grouped by recurring structured dimension", "version": "v0.4"},
   {"name": "recurring-concerns", "description": "Concerns grouped by recurring structured dimension", "version": "v0.4"},
   {"name": "recurring-patterns", "description": "Cross-signal recurring patterns ranked as principle candidates", "version": "v0.4"}
@@ -1401,6 +1406,107 @@ fid report <name> [--epic <id>] [--format json|toon|markdown|yaml]
 
 Output shape is report-specific. Named reports are opinionated
 wrappers over hand-coded SQL.
+
+### `fid report epic-wrapup-pack` (v0.2+)
+
+```
+fid report epic-wrapup-pack <epic-id> [--format json|toon|markdown|yaml]
+```
+
+Everything the TL needs before wrap-up: child task state, AC/gate coverage,
+open/resolved escalations, QA signals that exist for the current version, and
+missing inputs.
+
+**JSON shape:**
+```json
+{
+  "epic_id": "FID-e1f2g3",
+  "status": "in_progress",
+  "child_tasks": {"done": 5, "cancelled": 1, "open": 0},
+  "acceptance_criteria": {"total": 18, "verified_by_required_roles": 18, "gaps": []},
+  "gates": {"latest_failures": []},
+  "escalations": {"open": [], "resolved": ["ESC-7c3e9f"]},
+  "qa": {"blocking_findings": [], "latest_review_id": "QAR-7c3e9f"},
+  "missing_inputs": [],
+  "recommended_next_commands": ["fid tl wrapup FID-e1f2g3 --by tl"]
+}
+```
+
+### `fid report task-hygiene` (v0.2+)
+
+```
+fid report task-hygiene <task-id> [--format json|toon|markdown|yaml]
+```
+
+Checks a task's implementation artifacts for missing spec/completion paths,
+unverified ACs, gate gaps, stale claims, and unresolved concerns.
+
+**JSON shape:**
+```json
+{
+  "task_id": "FID-a1b2c3",
+  "status": "dev_complete",
+  "missing_paths": [],
+  "unverified_acceptance_criteria": ["AC-d4e5f6"],
+  "gate_gaps": [{"command": "go test -race ./...", "reason": "not_recorded"}],
+  "open_concerns": [],
+  "stale_claims": [],
+  "ready_for_qa": false
+}
+```
+
+### Validation Contract Reports (v0.4+)
+
+```
+fid report contract-coverage <epic-id> [--format json|toon|markdown|yaml]
+fid report assertion-trace <assertion-id-or-display-id> [--epic <id>|--contract <id>] [--format json|toon|markdown|yaml]
+fid report contract-outcomes <epic-id> [--format json|toon|markdown|yaml]
+```
+
+`contract-coverage` reports gaps across requirement/assertion/AC/validator/plan
+step coverage.
+
+```json
+{
+  "epic_id": "FID-e1f2g3",
+  "contract_id": "VC-a1b2c3",
+  "summary": {"assertions": 12, "covered": 10, "gaps": 2},
+  "gaps": [
+    {"assertion_id": "ASN-d4e5f6", "display_id": "VAL-004", "missing": ["qa_plan_step"]}
+  ]
+}
+```
+
+`assertion-trace` returns the complete chain for one assertion.
+
+```json
+{
+  "assertion": {"id": "ASN-d4e5f6", "display_id": "VAL-004"},
+  "requirements": ["PRD-OUT-011"],
+  "acceptance_criteria": ["AC-a1b2c3"],
+  "plan_steps": ["QAS-9a8b7c"],
+  "validators": [{"role": "qa_lead", "evidence_method": "source_review"}],
+  "outcomes": [{"outcome": "pass", "recorded_by_role": "qa_lead", "evidence_ref": "project-docs/docs/phases/phase-1/qa/final-review.md"}]
+}
+```
+
+`contract-outcomes` groups latest outcomes by assertion and validator.
+
+```json
+{
+  "epic_id": "FID-e1f2g3",
+  "contract_id": "VC-a1b2c3",
+  "summary": {"pass": 10, "fail": 1, "carry_forward": 1, "missing": 0},
+  "assertions": [
+    {
+      "display_id": "VAL-004",
+      "validators": [
+        {"role": "qa_lead", "evidence_method": "source_review", "latest_outcome": "pass"}
+      ]
+    }
+  ]
+}
+```
 
 ### `fid report attention`
 
