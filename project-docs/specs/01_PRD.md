@@ -239,7 +239,7 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-003a | The system shall support YAML format via `--format yaml` for config and template authoring. | Could | v0.1 |
 | PRD-OUT-004 | Every read command shall accept `--format` to override the default output format. | Must | v0.1 |
 | PRD-OUT-005 | Where context packs are available, the system shall return role-tuned bundles of issue data via `--context-pack <role>`. | Should | v0.2 |
-| PRD-OUT-006 | The system shall provide named reports for common cross-cutting queries: epic-status, open-escalations, qa-blockers, ac-matrix, epic-wrapup-pack, task-hygiene, stale-claims. | Should | v0.2 |
+| PRD-OUT-006 | The system shall provide named reports for common cross-cutting queries: epic-status, open-escalations, qa-blockers, ac-matrix, epic-wrapup-pack, task-hygiene, stale-claims. | Should | v0.2 base reports; `qa-blockers` ships in v0.3 with QA findings. |
 | PRD-OUT-007 | The system shall list all available named reports. | Should | v0.2 |
 | PRD-OUT-008 | The system shall support a read-only SQL escape hatch that rejects any non-SELECT statement. | Should | v0.1 |
 | PRD-OUT-009 | The system shall support markdown export with YAML frontmatter to a configurable directory tree. | Should | v0.4 |

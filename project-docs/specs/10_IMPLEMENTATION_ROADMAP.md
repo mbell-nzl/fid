@@ -174,7 +174,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| Named reports | `fid report epic-status`, `open-escalations`, `qa-blockers`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. | PRD-OUT-006–007 |
+| Named reports | `fid report epic-status`, `open-escalations`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. `qa-blockers` waits for v0.3 QA findings. | PRD-OUT-006–007 |
 | Attention report | `fid report attention`: pull-based human-judgment digest grouped by reason (open/stale escalations, epics awaiting approval, dead-end blocked, human claims). Audience-tagged; reasons light up as source entities ship. Read-only, no schema. | PRD-OUT-020 |
 | Lightweight search | `fid search <term>` over structured projected fields with filters for kind, status, label, epic, inbox, and format. Literal/case-insensitive only; no custom DSL. | PRD-OUT-018 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
@@ -215,6 +215,7 @@ kanban board, and CLI/skill-first agent workflow guidance. Enables the full agen
 | QA tables | `qa_reviews`, `qa_findings`, `qa_review_task_window`. | PRD-QA-001–005 |
 | `fid qa-review create/get/list` | Polymorphic scope: epic_window, single_task, epic_full. Record which tasks are covered for window scope. | PRD-QA-001–002 |
 | `fid qa-finding add/list` | Findings with severity, status, task subject, evidence excerpt. Escalation from blocking findings. | PRD-QA-003–005 |
+| `fid report qa-blockers` | Blocking QA findings report; ships with `qa_findings` so it has a first-class source table. | PRD-OUT-006 |
 | QA review claims | Claims expand to `qa_reviews`. `fid qa-review claim/unclaim`. | PRD-CLAIM-009 |
 | QA composites | `fid qa start`, `fid qa finding`, `fid qa verify`, `fid qa finish`. | PRD-QA-008 |
 | Comment scope expansion | Comments on `qa_review` entities. | PRD-GOV-008 |

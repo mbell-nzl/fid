@@ -1383,7 +1383,7 @@ fid report list [--format json|toon|markdown|yaml]
 [
   {"name": "epic-status", "description": "Tasks/ACs/gates/findings/escalations summary", "version": "v0.2"},
   {"name": "open-escalations", "description": "All open escalations", "version": "v0.2"},
-  {"name": "qa-blockers", "description": "Blocking QA findings", "version": "v0.2"},
+  {"name": "qa-blockers", "description": "Blocking QA findings", "version": "v0.3"},
   {"name": "ac-matrix", "description": "AC × verifier-role grid", "version": "v0.2"},
   {"name": "stale-claims", "description": "Past-TTL active claims", "version": "v0.2"},
   {"name": "attention", "description": "Items needing human judgment now, grouped by reason", "version": "v0.2"},
