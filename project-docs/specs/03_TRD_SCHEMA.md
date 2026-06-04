@@ -796,7 +796,10 @@ CREATE TABLE val_assertion_outcomes (
   evidence_ref    TEXT,
   rationale       TEXT,                    -- required when outcome='carry_forward'
   recorded_by_role TEXT NOT NULL,
-  recorded_at     DATETIME NOT NULL
+  recorded_at     DATETIME NOT NULL,
+  CHECK (outcome IN ('pass', 'fail', 'carry_forward')),
+  CHECK (outcome != 'pass' OR (evidence_method IS NOT NULL AND evidence_ref IS NOT NULL)),
+  CHECK (outcome != 'carry_forward' OR rationale IS NOT NULL)
 );
 
 -- v0.4 column additions to existing tables:
@@ -820,7 +823,8 @@ fid enforces these invariants at plan-finalisation time
   `evidence_method`.
 
 `PASS` outcomes require non-null `evidence_method` and `evidence_ref`.
-`CARRY_FORWARD` outcomes require non-null `rationale`.
+`CARRY_FORWARD` outcomes require non-null `rationale`. These row-local
+requirements are CHECK constraints on `val_assertion_outcomes`.
 
 ---
 
@@ -1004,13 +1008,30 @@ CHECK ((scope = 'single_task' AND task_id IS NOT NULL AND epic_id IS NULL)
     OR (scope IN ('epic_window', 'epic_full') AND epic_id IS NOT NULL AND task_id IS NULL))
 ```
 
-### 14.9 What Does Not Get a Trigger
+### 14.9 Validation Outcome Checks
+
+`val_assertion_outcomes` uses row-local CHECK constraints for static outcome
+rules:
+
+```sql
+CHECK (outcome IN ('pass', 'fail', 'carry_forward'))
+CHECK (outcome != 'pass' OR (evidence_method IS NOT NULL AND evidence_ref IS NOT NULL))
+CHECK (outcome != 'carry_forward' OR rationale IS NOT NULL)
+```
+
+Required-validator satisfaction is cross-row: the latest `pass` outcome must
+match `assertion_id`, `recorded_by_role`, and `evidence_method` against a
+`validation_assertion_validators` row. That rule is enforced by application
+validation during outcome recording, plan finalisation, and contract reporting,
+because SQL CHECK constraints cannot express "latest matching row" semantics.
+
+### 14.10 What Does Not Get a Trigger
 
 Workflow transition rules, permissions, AC verification freshness,
-template validation. These all need rich context, multi-table reads, or
-runtime state (calling role) that SQL doesn't have. They live in
-app-layer code exclusively, with `fid maintenance check` as the periodic
-audit.
+required-validator satisfaction, template validation. These all need rich
+context, multi-table reads, ordering, or runtime state (calling role) that SQL
+doesn't have. They live in app-layer code exclusively, with `fid maintenance
+check` as the periodic audit.
 
 ---
 

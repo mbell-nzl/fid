@@ -495,10 +495,13 @@ SQLite triggers (backstop for non-CLI write paths — future web dashboard,
 - Comment scope (v0.2 base ref_type whitelist; v0.3 adds `qa_review`).
 - Kind immutability (BEFORE UPDATE OF kind on `issues`).
 - Mutually exclusive scope columns on `qa_reviews` (CHECK constraint).
+- Validation outcome row-local evidence/rationale requirements
+  (CHECK constraints).
 
 What does **not** get a trigger: workflow transition rules, permissions,
-AC verification freshness, template validation. These need rich context or
-runtime state that SQL doesn't have.
+AC verification freshness, required-validator satisfaction for validation
+outcomes, template validation. These need rich context, ordering,
+multi-table reads, or runtime state that SQL doesn't have.
 
 ### 4.6 Default Workflows (v0.1 Hard-Coded)
 
