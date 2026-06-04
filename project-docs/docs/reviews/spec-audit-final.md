@@ -3,10 +3,11 @@
 Verdict: **NOT-READY** for implementation start.
 
 Follow-up: F-001 and F-002 were marked **DONE** on 2026-06-01. F-003 through
-F-015 were marked **DONE** on 2026-06-04. The verdict remains NOT-READY
-because major schema, roadmap, and permission conflicts remain unresolved.
+F-016 were marked **DONE** on 2026-06-04. The verdict remains NOT-READY
+because remaining workflow wording and intentional-evolution trace findings are
+unresolved.
 
-The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It is not implementation-ready because schema/roadmap/permission version gates disagree in places that would affect first migrations and command handlers.
+The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It remains in NOT-READY status until the remaining audit findings are closed, but the unresolved items are now documentation wording and intentional-evolution trace cleanup rather than first-migration blockers.
 
 ## Coverage Matrix
 
@@ -23,12 +24,12 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §4.2, line 342 | Prioritised epics | `01_PRD.md:74`, `GLOSSARY.md:67`, `10_IMPLEMENTATION_ROADMAP.md:77` | COVERED | Priority-based ready selection represented. |
 | §4.3, line 352 | Declaration and unattached tasks | `06_DESIGN_PLAN_CLI.md:95`, `06_DESIGN_PLAN_CLI.md:389`, `07_DESIGN_PLAN_FLOWS.md:14` | COVERED | Creation flags and global ready behavior represented. |
 | §5, line 371 | Data model entity overview | `02_TRD.md:107`, `03_TRD_SCHEMA.md:78` | COVERED | Entity inventory and version gates are represented in the TRD overview and schema. |
-| §6, line 416 | Schema sketch | `03_TRD_SCHEMA.md:1`, `02_TRD.md:105` | PARTIAL | Most DDL copied or expanded; several enforcement and versioning issues remain. |
+| §6, line 416 | Schema sketch | `03_TRD_SCHEMA.md:1`, `02_TRD.md:105` | COVERED | DDL copied or expanded; accepted additions, enforcement boundaries, and version gates are explicit. |
 | §6.0, line 420 | ID generation and prefix vocabulary | `03_TRD_SCHEMA.md:11`, `03_TRD_SCHEMA.md:38`, `02_TRD.md:188` | COVERED | Prefix table is reproduced, and CLI examples now use canonical `QAF-*` QA finding IDs and natural `PRD-*`/`TRD-*` requirement IDs. |
 | §6.1, line 486 | Issues and epic metadata | `03_TRD_SCHEMA.md:78`, `02_TRD.md:115`, `10_IMPLEMENTATION_ROADMAP.md:67` | COVERED | Columns carried forward; v0.1 kind/workflow/status compatibility and priority range are enforced by DDL CHECKs. |
 | §6.1.1, line 533 | `issues_enriched` view | `03_TRD_SCHEMA.md:129`, `02_TRD.md:181`, `02_TRD.md:641` | COVERED | View shape, indexes, and performance target represented. |
-| §6.1.2, line 596 | ACs, completions, workflows, QA, concerns, governance, telemetry, templates, support tables | `03_TRD_SCHEMA.md:177`, `03_TRD_SCHEMA.md:251`, `03_TRD_SCHEMA.md:296`, `03_TRD_SCHEMA.md:330`, `03_TRD_SCHEMA.md:429`, `03_TRD_SCHEMA.md:475`, `03_TRD_SCHEMA.md:494` | PARTIAL | Tables mostly present; gate_runs/projection_meta are intentional additions; remaining version conflicts are tracked in later findings. |
-| §6.10, line 933 | Link relation enum and inverses | `03_TRD_SCHEMA.md:623`, `01_PRD.md:167`, `06_DESIGN_PLAN_CLI.md:711` | PARTIAL | Relation set and inverse behavior present; active endpoint scope needs version clarification. |
+| §6.1.2, line 596 | ACs, completions, workflows, QA, concerns, governance, telemetry, templates, support tables | `03_TRD_SCHEMA.md:177`, `03_TRD_SCHEMA.md:251`, `03_TRD_SCHEMA.md:296`, `03_TRD_SCHEMA.md:330`, `03_TRD_SCHEMA.md:429`, `03_TRD_SCHEMA.md:475`, `03_TRD_SCHEMA.md:494` | COVERED | Tables are represented; `gate_runs` and `projection_meta` are intentional additions with explicit version placement. |
+| §6.10, line 933 | Link relation enum and inverses | `03_TRD_SCHEMA.md:623`, `01_PRD.md:167`, `06_DESIGN_PLAN_CLI.md:711` | COVERED | Relation set, inverse behavior, and version-gated endpoint scope are represented. |
 | §6.11, line 987 | Claims table | `03_TRD_SCHEMA.md:653`, `06_DESIGN_PLAN_CLI.md:270`, `06_DESIGN_PLAN_CLI.md:913` | COVERED | TTL default and issue/QA-review support represented; renewal is an intentional addition. |
 | §6.12, line 1006 | Claim semantics and ownership distinction | `03_TRD_SCHEMA.md:667`, `GLOSSARY.md:340`, `GLOSSARY.md:349` | COVERED | Claim holder vs owner role is clearly defined. |
 | §6.13, line 1043 | Roles and permissions | `03_TRD_SCHEMA.md:802`, `01_PRD.md:150`, `docs/adr/0002-configurable-roles-default-profile.md:3` | COVERED | Role model, matrix coverage, and human override semantics are documented. |
@@ -49,11 +50,11 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §7.6, line 1601 | Workflow customization | `10_IMPLEMENTATION_ROADMAP.md:151`, `10_IMPLEMENTATION_ROADMAP.md:158`, `06_DESIGN_PLAN_CLI.md:1700` | COVERED | Roadmap and detailed CLI specs now cover workflow define/assign/list. |
 | §8, line 1617 | Templates | `03_TRD_SCHEMA.md:475`, `10_IMPLEMENTATION_ROADMAP.md:231`, `06_DESIGN_PLAN_CLI.md:2434` | COVERED | Schema, roadmap, and detailed CLI specs now cover template create/list/show. |
 | §8.1, line 1640 | Template provenance | `10_IMPLEMENTATION_ROADMAP.md:236`, `01_PRD.md:249` | COVERED | Provenance columns and version are represented. |
-| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `06_DESIGN_PLAN_CLI.md:1672`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | v0.1 detail, roadmap command specs, and required reports are now represented; version conflicts remain in later findings. |
+| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `06_DESIGN_PLAN_CLI.md:1672`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | v0.1 detail, roadmap command specs, required reports, and link endpoint gates are represented; policy-show evolution trace remains in F-018. |
 | §9.1, line 1690 | Initialisation | `06_DESIGN_PLAN_CLI.md:64`, `04_TRD_CONFIG.md:104` | COVERED | `fid init` flags/output and `.fid/` effects represented. |
 | §9.2, line 1698 | Reads | `06_DESIGN_PLAN_CLI.md:124`, `06_DESIGN_PLAN_CLI.md:139`, `06_DESIGN_PLAN_CLI.md:389`, `06_DESIGN_PLAN_CLI.md:1368`, `06_DESIGN_PLAN_CLI.md:1672` | COVERED | Core reads, roadmap entity reads, and required report reads are covered. |
 | §9.2.1, line 1739 | Context packs | `07_DESIGN_PLAN_FLOWS.md:267`, `06_DESIGN_PLAN_CLI.md:124`, `10_IMPLEMENTATION_ROADMAP.md:180` | COVERED | Role-tuned bundles represented. |
-| §9.3, line 1764 | Writes | `06_DESIGN_PLAN_CLI.md:95`, `06_DESIGN_PLAN_CLI.md:318`, `06_DESIGN_PLAN_CLI.md:648`, `06_DESIGN_PLAN_CLI.md:711`, `06_DESIGN_PLAN_CLI.md:1672`, `10_IMPLEMENTATION_ROADMAP.md:164` | PARTIAL | v0.1 and roadmap writes now have CLI specs; schema/version conflicts remain in F-016. |
+| §9.3, line 1764 | Writes | `06_DESIGN_PLAN_CLI.md:95`, `06_DESIGN_PLAN_CLI.md:318`, `06_DESIGN_PLAN_CLI.md:648`, `06_DESIGN_PLAN_CLI.md:711`, `06_DESIGN_PLAN_CLI.md:1672`, `10_IMPLEMENTATION_ROADMAP.md:164` | COVERED | v0.1 and roadmap writes have CLI specs, and link endpoint writes are version-gated. |
 | §9.3a, line 1864 | Role-namespace composites | `06_DESIGN_PLAN_CLI.md:494`, `06_DESIGN_PLAN_CLI.md:1973`, `06_DESIGN_PLAN_CLI.md:2265`, `05_DESIGN_PLAN.md:45`, `07_DESIGN_PLAN_FLOWS.md:12` | COVERED | Developer, QA, TL, and triage composites are detailed and mapped to default-profile permission rows. |
 | §9.5, line 1922 | Reports, stats, query, SQL | `06_DESIGN_PLAN_CLI.md:1053`, `06_DESIGN_PLAN_CLI.md:1120`, `06_DESIGN_PLAN_CLI.md:1162`, `06_DESIGN_PLAN_CLI.md:1368`, `10_IMPLEMENTATION_ROADMAP.md:177` | COVERED | SQL/search/stats base and required named reports are covered. |
 | §9.6, line 1976 | Export/future sync | `07_DESIGN_PLAN_FLOWS.md:252`, `04_TRD_CONFIG.md:34`, `10_IMPLEMENTATION_ROADMAP.md:291` | COVERED | Export covered; import/sync remains conditional v0.5. |
@@ -76,9 +77,9 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §15.1, line 2375 | Open question: workflow_runner harness | `01_PRD.md:357`, `02_TRD.md:730` | COVERED | Still tracked as open. |
 | §15.2, line 2394 | Resolved questions | `00_PROJECT_CHARTER.md:198`, `02_TRD.md:8`, `03_TRD_SCHEMA.md:704`, `docs/adr/0003-three-tier-qa-model.md:3` | COVERED | Resolutions represented across TRD/schema/ADRs. |
 | §15.3, line 2444 | Closed by upstream decisions | `10_IMPLEMENTATION_ROADMAP.md:179`, `10_IMPLEMENTATION_ROADMAP.md:246`, `10_IMPLEMENTATION_ROADMAP.md:324` | COVERED | Query DSL and import/sync are deferred/conditional. |
-| §16, line 2467 | Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md:1` | PARTIAL | Roadmap exists and is richer; internal version conflicts remain. |
+| §16, line 2467 | Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md:1` | PARTIAL | Roadmap exists and is richer; remaining open item is an intentional-evolution trace for `policy show`. |
 | §16 v0.1, line 2471 | Core issue layer | `10_IMPLEMENTATION_ROADMAP.md:45` | COVERED | Scope is aligned; future-entity FK columns now move with the migrations where their target tables ship. |
-| §16 v0.2, line 2527 | Workflow/governance/reports | `10_IMPLEMENTATION_ROADMAP.md:145`, `06_DESIGN_PLAN_CLI.md:1700`, `06_DESIGN_PLAN_CLI.md:1819` | PARTIAL | Scope and detailed CLI specs are represented; report and permission/version conflicts remain. |
+| §16 v0.2, line 2527 | Workflow/governance/reports | `10_IMPLEMENTATION_ROADMAP.md:145`, `06_DESIGN_PLAN_CLI.md:1700`, `06_DESIGN_PLAN_CLI.md:1819` | COVERED | Scope, detailed CLI specs, reports, permissions, and link expansion are represented. |
 | §16 v0.3, line 2563 | QA/templates/TUI/MCP | `10_IMPLEMENTATION_ROADMAP.md:205`, `10_IMPLEMENTATION_ROADMAP.md:244`, `02_TRD.md:715`, `06_DESIGN_PLAN_CLI.md:2148`, `06_DESIGN_PLAN_CLI.md:2434` | PARTIAL | QA/templates/TUI CLI specs and QA plan schema gates are represented; MCP deferral remains tracked separately. |
 | §16 v0.4, line 2604 | Validation/retros/export | `10_IMPLEMENTATION_ROADMAP.md:261`, `06_DESIGN_PLAN_CLI.md:2493`, `06_DESIGN_PLAN_CLI.md:2630`, `06_DESIGN_PLAN_CLI.md:2658` | PARTIAL | Scope and detailed CLI specs are represented; validation outcome enforcement and reports need fixes. |
 | §16 v0.5, line 2624 | Polish | `10_IMPLEMENTATION_ROADMAP.md:310` | COVERED | Dashboard/cycles/import/sync represented; `issues.cycle_id` now ships with the v0.5 cycle migration. |
@@ -103,6 +104,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-013 | DONE (2026-06-04) | `qa-blockers` now ships in v0.3 with `qa_findings`; v0.2 named reports exclude it or list it as a later report. |
 | F-014 | DONE (2026-06-04) | `fid report list` now includes `epic-wrapup-pack`, `task-hygiene`, `contract-coverage`, `assertion-trace`, and `contract-outcomes`; CLI docs include output shapes for the missing v0.2 and v0.4 report contracts. |
 | F-015 | DONE (2026-06-04) | CLI examples now use canonical `QAF-*` IDs for QA findings and an existing `PRD-*` natural requirement ID instead of invented `QF-*` and `REQ-*` prefixes. |
+| F-016 | DONE (2026-06-04) | Link endpoint compatibility is now version-gated in schema and CLI docs: v0.1 supports issue/requirement endpoints with issue ↔ issue and issue → requirement relations; v0.2 adds decision and escalation endpoints. |
 
 ## Findings
 
@@ -123,7 +125,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | F-013 | MAJOR | CONTRADICTION | Original evidence: `10_IMPLEMENTATION_ROADMAP.md:177` ships `qa-blockers` as a v0.2 named report. QA findings, the obvious source table for blockers, ship in v0.3 at `10_IMPLEMENTATION_ROADMAP.md:215` and `10_IMPLEMENTATION_ROADMAP.md:217`. | DONE 2026-06-04: `qa-blockers` is deferred to v0.3 and is listed with QA findings, while v0.2 named reports call it out as waiting for the QA source table. |
 | F-014 | MAJOR | MISSING | Original evidence: Required reports are named in PRD/source/roadmap: `PRD-OUT-006` at `01_PRD.md:242`, contract reports at `01_PRD.md:247`, and roadmap rows at `10_IMPLEMENTATION_ROADMAP.md:177` and `10_IMPLEMENTATION_ROADMAP.md:279`. The CLI report list at `06_DESIGN_PLAN_CLI.md:1379`-`1387` omitted `epic-wrapup-pack`, `task-hygiene`, `contract-coverage`, `assertion-trace`, and `contract-outcomes`. | DONE 2026-06-04: `fid report list` includes all required report names with version gates, and CLI docs define output shapes for the missing v0.2 and v0.4 report contracts. |
 | F-015 | MAJOR | CONTRADICTION | Original evidence: Prefix table says QA findings use `QAF` at `03_TRD_SCHEMA.md:49` and DDL uses `QAF-<hash>` at `03_TRD_SCHEMA.md:317`, but CLI examples used `QF-9a8b7c` at `06_DESIGN_PLAN_CLI.md:1501` and `QF-a1b2c3` at `06_DESIGN_PLAN_CLI.md:1658`. Requirements are natural `PRD-*`/`TRD-*` at `03_TRD_SCHEMA.md:67`-`68`, but search output used `REQ-d4e5f6` at `06_DESIGN_PLAN_CLI.md:1147`. | DONE 2026-06-04: CLI examples now use canonical `QAF-*` QA finding IDs and an existing `PRD-*` natural requirement ID. |
-| F-016 | MAJOR | CONTRADICTION | Schema says v1 link endpoints include `decision` and `escalation` at `03_TRD_SCHEMA.md:608`-`613`, but roadmap says v0.1 link scope is only issue↔issue and issue→requirement at `10_IMPLEMENTATION_ROADMAP.md:104`; expansion to decision/escalation happens at `10_IMPLEMENTATION_ROADMAP.md:171`. | Add version-aware endpoint compatibility rules to schema/triggers, or make decision/escalation endpoints active in v0.1 everywhere. |
+| F-016 | MAJOR | CONTRADICTION | Original evidence: Schema said v1 link endpoints include `decision` and `escalation` at `03_TRD_SCHEMA.md:608`-`613`, but roadmap says v0.1 link scope is only issue↔issue and issue→requirement at `10_IMPLEMENTATION_ROADMAP.md:104`; expansion to decision/escalation happens at `10_IMPLEMENTATION_ROADMAP.md:171`. | DONE 2026-06-04: schema comments, trigger/backstop prose, and CLI link docs now make endpoint compatibility version-aware: v0.1 supports issue/requirement endpoints for issue ↔ issue and issue → requirement links; v0.2 adds decision and escalation endpoints. |
 | F-017 | MINOR | CONTRADICTION | The workflow doc still says "all seven specs" at `09_AI_WORKFLOW.md:101` and `09_AI_WORKFLOW.md:129`, while the charter lists the expanded document suite from `00_PROJECT_CHARTER.md:213` through `00_PROJECT_CHARTER.md:228` and AGENTS lists the same expanded suite at `AGENTS.md:175`-`186`. | Replace "all seven specs" with "the full canonical spec suite" or list the current files. |
 | F-018 | MINOR | INTENTIONAL EVOLUTION NEEDS TRACE | `fid policy show` moved earlier than source: source says the v0.2 model's CLI gains `fid role create`, `fid policy set`, and `fid policy show` at `scaffold/initial-spec.md:1070`-`1072`, while target ships `policy show` in v0.1 at `10_IMPLEMENTATION_ROADMAP.md:103` and details it at `06_DESIGN_PLAN_CLI.md:945`. This is internally coherent, but the evolution is not called out. | Record the earlier `policy show` as a deliberate v0.1 introspection feature, likely in roadmap notes or an intentional-evolution appendix. |
 
@@ -142,6 +144,6 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 
 1. DONE 2026-06-01: Replace AGENTS.md stack, convention, and command placeholders with concrete Go project values.
 2. DONE 2026-06-04: Complete `06_DESIGN_PLAN_CLI.md` for every roadmap command family, or remove/defer commands until they have implementable specs.
-3. Resolve schema version gates for views and link endpoints.
+3. DONE 2026-06-04: Resolve schema version gates for views and link endpoints; saved views start SQL-only with future DSL behind a recorded decision, and link endpoints are version-gated.
 4. DONE 2026-06-04: Rebuild the permissions matrix so every write/composite command has a row and QA/human semantics match PRD, flows, and ADR-0002.
 5. DONE 2026-06-04: Tighten schema enforcement for status, priority, QA review scope, and validation outcome evidence/rationale.

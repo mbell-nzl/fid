@@ -721,6 +721,8 @@ fid link add <from-id> <relation> <to-id> --by <role>
 
 Auto-creates the inverse link. Relations: `blocks`, `relates_to`,
 `duplicates`, `supersedes`, `implements`, `caused_by`, `discovered_from`.
+Endpoint scope is version-gated: v0.1 supports issue ↔ issue and issue →
+requirement links; v0.2 adds decision and escalation endpoints.
 
 **Output (stderr confirmation):**
 ```text

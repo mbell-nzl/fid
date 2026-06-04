@@ -653,11 +653,11 @@ CREATE TABLE role_permissions (
 
 ```sql
 CREATE TABLE links (
-  from_type       TEXT NOT NULL,               -- v1: 'issue' | 'requirement' |
-                                               -- 'decision' | 'escalation'
+  from_type       TEXT NOT NULL,               -- v0.1: 'issue' | 'requirement';
+                                               -- v0.2 adds 'decision' | 'escalation'
   from_id         TEXT NOT NULL,
   relation        TEXT NOT NULL,               -- see relation enum below
-  to_type         TEXT NOT NULL,
+  to_type         TEXT NOT NULL,               -- same version-gated endpoint set as from_type
   to_id           TEXT NOT NULL,
   created_at      DATETIME,
   PRIMARY KEY (from_type, from_id, relation, to_type, to_id)
@@ -676,9 +676,11 @@ CREATE TABLE links (
 | `caused_by` | `causes` | Issue -> Issue. Root-cause post-mortem links. |
 | `discovered_from` | `discovered` | Issue -> Issue. Discovered while working on target. |
 
-v1 link endpoints are deliberately scoped to `issue`, `requirement`,
-`decision`, and `escalation`. `relates_to` is the only relation allowed
-across any two v1 link endpoint types.
+Link endpoint scope is version-gated. v0.1 supports issue/requirement
+endpoints, with relation compatibility limiting declared links to issue ↔ issue
+and issue → requirement. v0.2 adds `decision` and `escalation` endpoints when
+the governance entities and commands ship. `relates_to` is the only relation
+allowed across any two endpoint types supported by the current schema version.
 
 The generic link table is not a second encoding for lifecycle
 relationships that already have dedicated schema. Do not use `links`
@@ -973,10 +975,10 @@ named table.
 
 ### 14.3 Link Scope and Relation Compatibility
 
-BEFORE INSERT triggers on `links` reject endpoint types outside the v1
-link scope (`issue`, `requirement`, `decision`, `escalation`) and reject
-relation/entity combinations that duplicate dedicated schema
-relationships.
+BEFORE INSERT triggers on `links` reject endpoint types outside the active
+schema-version scope: v0.1 accepts `issue` and `requirement`; v0.2 adds
+`decision` and `escalation`. They also reject relation/entity combinations that
+duplicate dedicated schema relationships.
 
 ### 14.4 Claim Scope
 
