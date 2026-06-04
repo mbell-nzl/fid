@@ -1692,9 +1692,9 @@ Write commands fail before validation when the actor is unknown or lacks the
 named action permission:
 
 ```text
-error: role "qa_reviewer" is not permitted to qa_review.create
+error: role "developer" is not permitted to qa_review.create
   action: qa_review.create
-  permitted roles: workflow_runner, human
+  permitted roles: qa_reviewer, qa_lead, workflow_runner, human
 ```
 
 ### `fid workflow define` (v0.2+)

@@ -813,9 +813,9 @@ fid enforces these invariants at plan-finalisation time
 
 ## 13. Default Permissions Matrix
 
-Action names below are the canonical v0.1 permission keys. They are matched
-exactly; v0.1 does not support wildcard permission rows. Every CLI write
-command in `06_DESIGN_PLAN_CLI.md` must map to one row here before
+Action names below are the canonical default-profile permission keys. They are
+matched exactly; v0.1 does not support wildcard permission rows. Every CLI
+write command in `06_DESIGN_PLAN_CLI.md` must map to one row here before
 implementation. Composite commands use their composite action key as the
 entry-point permission check and still run the same domain validation as the
 primitive effects they compose.
@@ -858,17 +858,50 @@ primitive effects they compose.
 | `dev.gate` | ✓ | – | – | – | – | – | ✓ |
 | `dev.finish` | ✓ | – | – | – | – | – | ✓ |
 | `dev.block` | ✓ | – | – | – | – | – | ✓ |
+| `dev.resume` (v0.2) | ✓ | – | – | – | – | – | ✓ |
+| `dev.abandon` (v0.2) | ✓ | – | – | – | – | – | ✓ |
 | `maintenance.rebuild` | – | – | – | – | ✓ | ✓ | ✓ |
 | `maintenance.migrate` | – | – | – | – | ✓ | – | ✓ |
 | `maintenance.vacuum` | – | – | – | – | ✓ | – | ✓ |
-| `qa_review.create` (v0.3) | – | – | – | – | – | ✓ | ✓ |
+| `event.revert` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `merge.journal` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `workflow.define` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `workflow.assign` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `role.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `policy.set` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `requirement.sync` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `triage.start` (v0.2) | – | – | – | ✓ | – | – | ✓ |
+| `triage.verdict` (v0.2) | – | – | – | ✓ | – | – | ✓ |
+| `tl.wrapup` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `qa_review.create` (v0.3) | – | ✓ | ✓ | – | – | ✓ | ✓ |
+| `qa_review.claim.acquire` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa_review.claim.renew` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa_review.claim.force_acquire` (v0.3) | – | – | ✓ | – | – | – | ✓ |
+| `qa_review.claim.release` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
 | `qa_finding.add` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa.start` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa.finding` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa.verify` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa.finish` (v0.3) | – | ✓ | ✓ | – | – | – | ✓ |
+| `qa_plan.create` (v0.3) | – | – | ✓ | – | – | – | ✓ |
+| `qa_plan.step.add` (v0.3) | – | – | ✓ | – | – | – | ✓ |
+| `qa_plan.finalise` (v0.3) | – | – | ✓ | – | – | – | ✓ |
+| `template.create` (v0.3) | – | – | – | – | ✓ | – | ✓ |
+| `qa_plan.step.link` (v0.4) | – | – | ✓ | – | – | – | ✓ |
+| `contract.create` (v0.4) | – | – | ✓ | – | ✓ | – | ✓ |
+| `contract.activate` (v0.4) | – | – | ✓ | – | ✓ | – | ✓ |
+| `assertion.add` (v0.4) | – | – | ✓ | – | ✓ | – | ✓ |
+| `assertion.validator.add` (v0.4) | – | – | ✓ | – | ✓ | – | ✓ |
+| `assertion.link_ac` (v0.4) | – | – | ✓ | – | ✓ | – | ✓ |
+| `outcome.record` (v0.4) | ✓ | ✓ | ✓ | – | ✓ | – | ✓ |
+| `export.write` (v0.4) | – | – | – | – | ✓ | – | ✓ |
+| `view.create` (v0.4) | – | – | – | – | ✓ | – | ✓ |
 | `escalation.create` (v0.2) | – | ✓ | ✓ | ✓ | ✓ | – | ✓ |
 | `escalation.resolve` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 | `triage.record` (v0.2) | – | – | – | ✓ | – | – | ✓ |
 | `decision.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 | `retrospective.create` (v0.4) | – | – | – | – | ✓ | – | ✓ |
-| `policy.set` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `cycle.create` (v0.5) | – | – | – | – | ✓ | – | ✓ |
 
 The `--by` flag is mandatory on every write command.
 
