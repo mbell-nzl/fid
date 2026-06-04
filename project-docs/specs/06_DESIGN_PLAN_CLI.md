@@ -1149,8 +1149,8 @@ markdown files for prose-content search.
   },
   {
     "entity_type": "requirement",
-    "id": "REQ-d4e5f6",
-    "summary": "Durable event log replay",
+    "id": "PRD-OUT-018",
+    "summary": "Literal structured search",
     "source_doc": "project-docs/specs/01_PRD.md",
     "match_fields": ["summary"]
   }
@@ -1609,7 +1609,7 @@ no schema.
     {"dimension": "val_assertion", "key": "VAL-004", "kind": "outcome_fail",
      "count": 3, "exemplars": ["VAL-004@task-3", "VAL-004@task-7"]},
     {"dimension": "finding_severity+area", "key": "blocking/layering", "kind": "finding",
-     "count": 4, "exemplars": ["QF-9a8b7c"]}
+     "count": 4, "exemplars": ["QAF-9a8b7c"]}
   ],
   "summary": {"patterns": 3, "candidates_for_principle": 2}
 }
@@ -1766,7 +1766,7 @@ evidence registry.
     {"source": "ac_verification", "on": "AC-e5f6g7", "by": "developer", "type": "test",
      "ref": "internal/journal/journal_test.go::TestAppendFlush", "status": "missing",
      "detail": "file not found: internal/journal/journal_test.go"},
-    {"source": "qa_finding", "on": "QF-a1b2c3", "type": "command", "ref": "go test ./...",
+    {"source": "qa_finding", "on": "QAF-a1b2c3", "type": "command", "ref": "go test ./...",
      "status": "unverifiable", "detail": "command evidence is not re-checkable; excerpt captured at record time"}
   ]
 }
