@@ -315,7 +315,9 @@ CREATE TABLE qa_reviews (
   reviewer_role   TEXT NOT NULL,               -- 'qa_reviewer' | 'qa_lead'
   model           TEXT,
   body_md_path    TEXT,
-  created_at      DATETIME
+  created_at      DATETIME,
+  CHECK ((scope = 'single_task' AND task_id IS NOT NULL AND epic_id IS NULL)
+      OR (scope IN ('epic_window', 'epic_full') AND epic_id IS NOT NULL AND task_id IS NULL))
 );
 
 CREATE TABLE qa_review_task_window (
@@ -996,7 +998,7 @@ change `kind` after creation.
 
 ### 14.8 Mutually-Exclusive Scope Columns
 
-Expressed as a CHECK constraint on `qa_reviews`:
+Expressed as a CHECK constraint in the `qa_reviews` DDL:
 ```sql
 CHECK ((scope = 'single_task' AND task_id IS NOT NULL AND epic_id IS NULL)
     OR (scope IN ('epic_window', 'epic_full') AND epic_id IS NOT NULL AND task_id IS NULL))
