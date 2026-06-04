@@ -301,6 +301,7 @@ CREATE TABLE qa_reviews (
   scope           TEXT NOT NULL,               -- 'epic_window' | 'single_task' | 'epic_full'
   epic_id         TEXT REFERENCES issues(id),  -- when scope in {'epic_window', 'epic_full'}
   task_id         TEXT REFERENCES issues(id),  -- when scope = 'single_task'
+  plan_id         TEXT REFERENCES qa_plans(id), -- nullable; added with v0.3b QA plans
   reviewer_role   TEXT NOT NULL,               -- 'qa_reviewer' | 'qa_lead'
   model           TEXT,
   body_md_path    TEXT,
@@ -322,6 +323,28 @@ CREATE TABLE qa_findings (
   escalated_to_esc    TEXT REFERENCES escalations(id),
   finding_md          TEXT,
   evidence_excerpt    TEXT
+);
+
+-- v0.3b QA plans. `contract_id` is nullable until validation
+-- contracts ship in v0.4.
+CREATE TABLE qa_plans (
+  id              TEXT PRIMARY KEY,        -- QAP-<hash> (see §1)
+  epic_id         TEXT NOT NULL REFERENCES issues(id),
+  contract_id     TEXT REFERENCES validation_contracts(id),
+  body_md_path    TEXT,
+  status          TEXT NOT NULL,           -- 'draft' | 'active' | 'superseded'
+  created_at      DATETIME
+);
+
+CREATE TABLE qa_plan_steps (
+  id              TEXT PRIMARY KEY,        -- QAS-<hash> (see §1)
+  plan_id         TEXT NOT NULL REFERENCES qa_plans(id),
+  ordinal         INTEGER NOT NULL,
+  display_id      TEXT NOT NULL,           -- 'QA-01' composed
+  description     TEXT NOT NULL,
+  evidence_method TEXT,
+  validator_role  TEXT NOT NULL,
+  UNIQUE (plan_id, display_id)
 );
 ```
 
@@ -703,6 +726,9 @@ Entities supporting claims in v0.1: `issues`. v0.3 adds `qa_reviews`.
 
 ## 12. Validation Layer (v0.4)
 
+The validation layer adds contracts, assertions, validator obligations,
+assertion outcomes, and assertion links to the v0.3 QA plan model.
+
 ```sql
 CREATE TABLE validation_contracts (
   id              TEXT PRIMARY KEY,        -- VC-<hash> (see §1)
@@ -734,26 +760,6 @@ CREATE TABLE validation_assertion_validators (
   PRIMARY KEY (assertion_id, validator_role, evidence_method)
 );
 
-CREATE TABLE qa_plans (
-  id              TEXT PRIMARY KEY,        -- QAP-<hash> (see §1)
-  epic_id         TEXT NOT NULL REFERENCES issues(id),
-  contract_id     TEXT REFERENCES validation_contracts(id),
-  body_md_path    TEXT,
-  status          TEXT NOT NULL,           -- 'draft' | 'active' | 'superseded'
-  created_at      DATETIME
-);
-
-CREATE TABLE qa_plan_steps (
-  id              TEXT PRIMARY KEY,        -- QAS-<hash> (see §1)
-  plan_id         TEXT NOT NULL REFERENCES qa_plans(id),
-  ordinal         INTEGER NOT NULL,
-  display_id      TEXT NOT NULL,           -- 'QA-01' composed
-  description     TEXT NOT NULL,
-  evidence_method TEXT,
-  validator_role  TEXT NOT NULL,
-  UNIQUE (plan_id, display_id)
-);
-
 CREATE TABLE qa_plan_step_assertions (
   step_id         TEXT NOT NULL REFERENCES qa_plan_steps(id),
   assertion_id    TEXT NOT NULL REFERENCES validation_assertions(id),
@@ -775,8 +781,6 @@ CREATE TABLE val_assertion_outcomes (
 -- v0.4 column additions to existing tables:
 -- ALTER TABLE acceptance_criteria
 --   ADD COLUMN val_assertion_id TEXT REFERENCES validation_assertions(id);
--- ALTER TABLE qa_reviews
---   ADD COLUMN plan_id TEXT REFERENCES qa_plans(id);
 ```
 
 ### 12.1 Coverage Rules (enforced when contract+plan present)
