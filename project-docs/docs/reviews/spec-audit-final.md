@@ -2,10 +2,11 @@
 
 Verdict: **NOT-READY** for implementation start.
 
-Follow-up: F-001 and F-002 were marked **DONE** on 2026-06-01. The verdict
-remains NOT-READY because open blockers remain, starting with F-003.
+Follow-up: F-001 and F-002 were marked **DONE** on 2026-06-01. F-003 was marked
+**DONE** on 2026-06-04. The verdict remains NOT-READY because major schema,
+roadmap, and permission conflicts remain unresolved.
 
-The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It is not implementation-ready because several CLI families in the roadmap have no command-level spec, and the schema/roadmap/permission version gates disagree in places that would affect first migrations and command handlers.
+The canonical spec suite broadly extracts the original v0.2 source and has several well-recorded evolutions, especially journal semantics, CLI/skill-first agent integration, and post-source operational commands. It is not implementation-ready because schema/roadmap/permission version gates disagree in places that would affect first migrations and command handlers.
 
 ## Coverage Matrix
 
@@ -45,15 +46,15 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §7.3, line 1559 | Default epic workflow | `02_TRD.md:531` | COVERED | State graph and wrap/close semantics carried forward. |
 | §7.4, line 1576 | Default subtask workflow | `02_TRD.md:547` | COVERED | Simplified workflow represented. |
 | §7.5, line 1593 | Default escalation workflow | `02_TRD.md:561`, `01_PRD.md:116` | COVERED | v0.2 escalation workflow represented. |
-| §7.6, line 1601 | Workflow customization | `10_IMPLEMENTATION_ROADMAP.md:151`, `10_IMPLEMENTATION_ROADMAP.md:158` | PARTIAL | Roadmap covers workflow commands; detailed CLI spec has no workflow command section. |
-| §8, line 1617 | Templates | `03_TRD_SCHEMA.md:475`, `10_IMPLEMENTATION_ROADMAP.md:231` | PARTIAL | Schema/roadmap covered; detailed CLI spec lacks `template create/list/show`. |
+| §7.6, line 1601 | Workflow customization | `10_IMPLEMENTATION_ROADMAP.md:151`, `10_IMPLEMENTATION_ROADMAP.md:158`, `06_DESIGN_PLAN_CLI.md:1700` | COVERED | Roadmap and detailed CLI specs now cover workflow define/assign/list. |
+| §8, line 1617 | Templates | `03_TRD_SCHEMA.md:475`, `10_IMPLEMENTATION_ROADMAP.md:231`, `06_DESIGN_PLAN_CLI.md:2434` | COVERED | Schema, roadmap, and detailed CLI specs now cover template create/list/show. |
 | §8.1, line 1640 | Template provenance | `10_IMPLEMENTATION_ROADMAP.md:236`, `01_PRD.md:249` | COVERED | Provenance columns and version are represented. |
-| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | v0.1 detail is strong; many v0.2+ command families lack per-command detail. |
+| §9, line 1686 | CLI surface | `06_DESIGN_PLAN_CLI.md:1`, `06_DESIGN_PLAN_CLI.md:1672`, `05_DESIGN_PLAN.md:45`, `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | v0.1 detail and roadmap command specs are now represented; report list/detail and version conflicts remain in later findings. |
 | §9.1, line 1690 | Initialisation | `06_DESIGN_PLAN_CLI.md:64`, `04_TRD_CONFIG.md:104` | COVERED | `fid init` flags/output and `.fid/` effects represented. |
-| §9.2, line 1698 | Reads | `06_DESIGN_PLAN_CLI.md:124`, `06_DESIGN_PLAN_CLI.md:139`, `06_DESIGN_PLAN_CLI.md:389`, `06_DESIGN_PLAN_CLI.md:1368` | PARTIAL | Core issue reads covered; requirement/decision/QA/contract/assertion/outcome/view reads are missing or generic only. |
+| §9.2, line 1698 | Reads | `06_DESIGN_PLAN_CLI.md:124`, `06_DESIGN_PLAN_CLI.md:139`, `06_DESIGN_PLAN_CLI.md:389`, `06_DESIGN_PLAN_CLI.md:1368`, `06_DESIGN_PLAN_CLI.md:1672` | PARTIAL | Core and roadmap entity reads are now covered; report-specific omissions remain in F-014. |
 | §9.2.1, line 1739 | Context packs | `07_DESIGN_PLAN_FLOWS.md:267`, `06_DESIGN_PLAN_CLI.md:124`, `10_IMPLEMENTATION_ROADMAP.md:180` | COVERED | Role-tuned bundles represented. |
-| §9.3, line 1764 | Writes | `06_DESIGN_PLAN_CLI.md:95`, `06_DESIGN_PLAN_CLI.md:318`, `06_DESIGN_PLAN_CLI.md:648`, `06_DESIGN_PLAN_CLI.md:711`, `10_IMPLEMENTATION_ROADMAP.md:164` | PARTIAL | v0.1 writes covered; governance, workflow, template, QA plan, validation, view, and cycle writes are missing from detailed CLI. |
-| §9.3a, line 1864 | Role-namespace composites | `06_DESIGN_PLAN_CLI.md:494`, `05_DESIGN_PLAN.md:45`, `07_DESIGN_PLAN_FLOWS.md:12` | PARTIAL | Developer composites detailed; QA/TL/triage composites are mainly examples and conflict with permissions. |
+| §9.3, line 1764 | Writes | `06_DESIGN_PLAN_CLI.md:95`, `06_DESIGN_PLAN_CLI.md:318`, `06_DESIGN_PLAN_CLI.md:648`, `06_DESIGN_PLAN_CLI.md:711`, `06_DESIGN_PLAN_CLI.md:1672`, `10_IMPLEMENTATION_ROADMAP.md:164` | PARTIAL | v0.1 and roadmap writes now have CLI specs; schema/version and permission conflicts remain in F-004-F012 and F-016. |
+| §9.3a, line 1864 | Role-namespace composites | `06_DESIGN_PLAN_CLI.md:494`, `06_DESIGN_PLAN_CLI.md:1973`, `06_DESIGN_PLAN_CLI.md:2265`, `05_DESIGN_PLAN.md:45`, `07_DESIGN_PLAN_FLOWS.md:12` | PARTIAL | Developer, QA, TL, and triage composites are now detailed; permission conflicts remain in F-008. |
 | §9.5, line 1922 | Reports, stats, query, SQL | `06_DESIGN_PLAN_CLI.md:1053`, `06_DESIGN_PLAN_CLI.md:1120`, `06_DESIGN_PLAN_CLI.md:1162`, `06_DESIGN_PLAN_CLI.md:1368`, `10_IMPLEMENTATION_ROADMAP.md:177` | PARTIAL | SQL/search/stats base covered; report list misses required reports and `qa-blockers` ships before QA findings. |
 | §9.6, line 1976 | Export/future sync | `07_DESIGN_PLAN_FLOWS.md:252`, `04_TRD_CONFIG.md:34`, `10_IMPLEMENTATION_ROADMAP.md:291` | COVERED | Export covered; import/sync remains conditional v0.5. |
 | §9.7, line 1989 | Visualisation | `05_DESIGN_PLAN.md:373`, `10_IMPLEMENTATION_ROADMAP.md:239`, `10_IMPLEMENTATION_ROADMAP.md:310` | COVERED | TUI and dashboard represented; dashboard remains v0.5. |
@@ -77,9 +78,9 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 | §15.3, line 2444 | Closed by upstream decisions | `10_IMPLEMENTATION_ROADMAP.md:179`, `10_IMPLEMENTATION_ROADMAP.md:246`, `10_IMPLEMENTATION_ROADMAP.md:324` | COVERED | Query DSL and import/sync are deferred/conditional. |
 | §16, line 2467 | Implementation roadmap | `10_IMPLEMENTATION_ROADMAP.md:1` | PARTIAL | Roadmap exists and is richer; internal version conflicts remain. |
 | §16 v0.1, line 2471 | Core issue layer | `10_IMPLEMENTATION_ROADMAP.md:45` | PARTIAL | Scope mostly aligned; future-table FKs still block start. |
-| §16 v0.2, line 2527 | Workflow/governance/reports | `10_IMPLEMENTATION_ROADMAP.md:145` | PARTIAL | Scope represented; detailed CLI and version gates lag. |
-| §16 v0.3, line 2563 | QA/templates/TUI/MCP | `10_IMPLEMENTATION_ROADMAP.md:205`, `10_IMPLEMENTATION_ROADMAP.md:244`, `02_TRD.md:715` | PARTIAL | QA/templates/TUI represented; MCP server intentionally dropped/deferred. |
-| §16 v0.4, line 2604 | Validation/retros/export | `10_IMPLEMENTATION_ROADMAP.md:261` | PARTIAL | Scope represented; validation/QA plan schema gates and reports need fixes. |
+| §16 v0.2, line 2527 | Workflow/governance/reports | `10_IMPLEMENTATION_ROADMAP.md:145`, `06_DESIGN_PLAN_CLI.md:1700`, `06_DESIGN_PLAN_CLI.md:1819` | PARTIAL | Scope and detailed CLI specs are represented; report and permission/version conflicts remain. |
+| §16 v0.3, line 2563 | QA/templates/TUI/MCP | `10_IMPLEMENTATION_ROADMAP.md:205`, `10_IMPLEMENTATION_ROADMAP.md:244`, `02_TRD.md:715`, `06_DESIGN_PLAN_CLI.md:2148`, `06_DESIGN_PLAN_CLI.md:2434` | PARTIAL | QA/templates/TUI CLI specs are represented; QA plan schema gates and MCP deferral remain tracked separately. |
+| §16 v0.4, line 2604 | Validation/retros/export | `10_IMPLEMENTATION_ROADMAP.md:261`, `06_DESIGN_PLAN_CLI.md:2493`, `06_DESIGN_PLAN_CLI.md:2630`, `06_DESIGN_PLAN_CLI.md:2658` | PARTIAL | Scope and detailed CLI specs are represented; validation/QA plan schema gates and reports need fixes. |
 | §16 v0.5, line 2624 | Polish | `10_IMPLEMENTATION_ROADMAP.md:310` | PARTIAL | Dashboard/cycles/import/sync represented; cycles leak into earlier schema. |
 | §17, line 2639 | Out of scope | `00_PROJECT_CHARTER.md:137`, `10_IMPLEMENTATION_ROADMAP.md:333` | COVERED | v1 exclusions represented. |
 
@@ -89,6 +90,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 |---|---|---|
 | F-001 | DONE (2026-06-01) | `AGENTS.md` now mirrors accepted Go/Cobra/SQLite/testing/build decisions from TRD §1 and records project conventions plus module boundaries. Current state docs no longer carry the AGENTS placeholder item as open. |
 | F-002 | DONE (2026-06-01) | `AGENTS.md` now lists concrete format, lint, unit, coverage, integration, build, phase-gate, and release-readiness commands aligned with `08_QUALITY_PLAN.md` §5.1, §5.2, and §5.8. |
+| F-003 | DONE (2026-06-04) | `06_DESIGN_PLAN_CLI.md` now includes a roadmap command-spec section covering workflow, role/policy customization, governance, QA review/finding, QA plans, templates, validation contracts/assertions/outcomes, export, saved views, stats expansions, cycles, and related roadmap commands, with flags, role requirements, output/error examples, and version gates. |
 
 ## Findings
 
@@ -96,7 +98,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 |---|---|---|---|---|
 | F-001 | BLOCKER | CONTRADICTION | Original evidence: `AGENTS.md:22` said if any stack item remains `<TBD>`, agents must not implement; `AGENTS.md:15`, `AGENTS.md:18`, `AGENTS.md:19`, and `AGENTS.md:71`-`76` still contained `<TBD>`. `02_TRD.md:8`-`26` already accepted Go, Cobra, SQLite, migrations, testing, and build decisions. | DONE 2026-06-01: `AGENTS.md` placeholders were replaced with accepted TRD choices, project conventions, and concrete module boundaries. |
 | F-002 | BLOCKER | CONTRADICTION | Original evidence: `AGENTS.md:132` said command placeholders must be replaced before implementation. `AGENTS.md:137`-`144` listed `<FORMAT_COMMAND>`, `<LINT_COMMAND>`, `<TEST_COMMAND>`, `<COVERAGE_COMMAND>`, and `<CHECK_COMMAND>`. `08_QUALITY_PLAN.md:231` gave concrete Go gates (`gofmt`, `golangci-lint`, `go test`, `go tool cover`). | DONE 2026-06-01: `AGENTS.md` commands were filled with concrete Go project commands aligned with the Quality Plan and Phase 0 exit criteria. |
-| F-003 | BLOCKER | MISSING | `06_DESIGN_PLAN_CLI.md:3` says it has "CLI flag specifications and output examples for all commands." Roadmap commands lack detailed sections: governance (`10_IMPLEMENTATION_ROADMAP.md:164`-`170`), QA review/finding (`10_IMPLEMENTATION_ROADMAP.md:216`-`218`), QA plan (`10_IMPLEMENTATION_ROADMAP.md:227`-`229`), validation (`10_IMPLEMENTATION_ROADMAP.md:272`-`277`), views (`10_IMPLEMENTATION_ROADMAP.md:296`), cycles (`10_IMPLEMENTATION_ROADMAP.md:318`), and role/policy customization (`10_IMPLEMENTATION_ROADMAP.md:158`). The CLI file only has `fid policy show` at `06_DESIGN_PLAN_CLI.md:945`. | Add per-command specs for every roadmap command or explicitly move commands out of scope. Include flags, role requirements, output, errors, and version gates. |
+| F-003 | BLOCKER | MISSING | Original evidence: `06_DESIGN_PLAN_CLI.md:3` said it had "CLI flag specifications and output examples for all commands." Roadmap commands lacked detailed sections: governance (`10_IMPLEMENTATION_ROADMAP.md:164`-`170`), QA review/finding (`10_IMPLEMENTATION_ROADMAP.md:216`-`218`), QA plan (`10_IMPLEMENTATION_ROADMAP.md:227`-`229`), validation (`10_IMPLEMENTATION_ROADMAP.md:272`-`277`), views (`10_IMPLEMENTATION_ROADMAP.md:296`), cycles (`10_IMPLEMENTATION_ROADMAP.md:318`), and role/policy customization (`10_IMPLEMENTATION_ROADMAP.md:158`). The CLI file only had `fid policy show` at `06_DESIGN_PLAN_CLI.md:945`. | DONE 2026-06-04: `06_DESIGN_PLAN_CLI.md` now has per-command specs for roadmap command families, including flags, role requirements, output, errors, and version gates. |
 | F-004 | MAJOR | CONTRADICTION | QA plans are v0.3 in source (`scaffold/initial-spec.md:384`, `scaffold/initial-spec.md:1258`) and roadmap (`10_IMPLEMENTATION_ROADMAP.md:226`-`229`), but `03_TRD_SCHEMA.md:704` puts `qa_plans` under "Validation Layer (v0.4)" and defines them at `03_TRD_SCHEMA.md:737`. `03_TRD_SCHEMA.md:778`-`779` also labels `qa_reviews.plan_id` as a v0.4 column addition; source says v0.3 at `scaffold/initial-spec.md:1386`-`1388`. | Move `qa_plans`, `qa_plan_steps`, and `qa_reviews.plan_id` to the v0.3 QA schema section. Keep only assertion-linking and contract coverage pieces in v0.4. |
 | F-005 | MAJOR | CONTRADICTION | `03_TRD_SCHEMA.md:106` has `issues.cycle_id REFERENCES cycles(id)`, but the v0.1 schema list at `10_IMPLEMENTATION_ROADMAP.md:56` excludes `cycles`, and `10_IMPLEMENTATION_ROADMAP.md:318` puts cycles support in v0.5. Similarly, `03_TRD_SCHEMA.md:436` has `agent_runs.review_id REFERENCES qa_reviews(id)`, while `qa_reviews` ships in v0.3 at `10_IMPLEMENTATION_ROADMAP.md:215`. | Either create stub future tables in v0.1 for referenced FKs or move the FK columns to the version where the target tables ship. Document the chosen migration path. |
 | F-006 | MAJOR | CONTRADICTION | `01_PRD.md:213` says comments on issues, QA reviews, decisions, escalations, and requirements are v0.2. `10_IMPLEMENTATION_ROADMAP.md:170` ships comments on issues/decisions/escalations/requirements in v0.2 and `10_IMPLEMENTATION_ROADMAP.md:220` expands QA-review comments in v0.3. But `02_TRD.md:172` labels comments under "Remaining (v0.4–v0.5)" and `02_TRD.md:180` lists the full comments entity there. | Move comments out of the v0.4-v0.5 bucket in TRD §4.1, or change PRD/roadmap to defer comments consistently. |
@@ -127,7 +129,7 @@ The canonical spec suite broadly extracts the original v0.2 source and has sever
 ## Top 5 Fixes Before Code
 
 1. DONE 2026-06-01: Replace AGENTS.md stack, convention, and command placeholders with concrete Go project values.
-2. Complete `06_DESIGN_PLAN_CLI.md` for every roadmap command family, or remove/defer commands until they have implementable specs.
+2. DONE 2026-06-04: Complete `06_DESIGN_PLAN_CLI.md` for every roadmap command family, or remove/defer commands until they have implementable specs.
 3. Resolve schema version gates for QA plans, comments, retrospectives, cycles, views, link endpoints, and future-table FKs.
 4. Rebuild the permissions matrix so every write/composite command has a row and QA/human semantics match PRD, flows, and ADR-0002.
 5. Tighten schema enforcement: add promised CHECKs/triggers for status, priority, QA review scope, and validation outcome evidence/rationale.

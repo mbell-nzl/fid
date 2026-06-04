@@ -6,7 +6,8 @@
 > the per-command detail that developers implement against.
 >
 > Source: `scaffold/initial-spec.md` §9, §10, plus output examples
-> designed to cover every v0.1-scoped command.
+> designed to cover every v0.1-scoped command and the roadmapped v0.2+
+> command families.
 
 ---
 
@@ -1668,4 +1669,1089 @@ note: 14 evidence references checked — 11 resolved, 3 unverifiable, 0 missing
 
 ---
 
-*Last updated: 2026-06-01*
+## 24. Roadmap Command Specifications
+
+The sections above define the v0.1 command set plus several detailed later
+commands. This section fills the remaining roadmap command families so every
+roadmapped CLI surface has an implementable version gate, flags, role
+requirement, output shape, and error vocabulary. All write commands also accept
+the global v0.2 `--dry-run` flag.
+
+### Common Future-Command Errors
+
+Commands that target an unshipped version return the standard version-gate
+error:
+
+```text
+error: commands for qa-plan ship in v0.3
+  current schema version: v0.2
+  upgrade path: fid maintenance migrate --to 3 --by <role>
+```
+
+Write commands fail before validation when the actor is unknown or lacks the
+named action permission:
+
+```text
+error: role "qa_reviewer" is not permitted to qa_review.create
+  action: qa_review.create
+  permitted roles: workflow_runner, human
+```
+
+### `fid workflow define` (v0.2+)
+
+```
+fid workflow define --name <slug> --applies-to <kind>
+    --states <csv> --categories <csv> --transitions <csv>
+    [--require <edge:rule-json>]... --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--name` | string | yes | Stable workflow slug, e.g. `dev-flow-strict` |
+| `--applies-to` | string | yes | `epic`, `task`, `subtask`, `qa_review`, or `any` |
+| `--states` | csv | yes | Ordered state names |
+| `--categories` | csv | yes | One category per state: `unstarted`, `started`, `completed`, `cancelled` |
+| `--transitions` | csv | yes | Edges as `from->to`; Unicode arrows are accepted but normalised |
+| `--require` | string[] | no | Transition rule binding, e.g. `in_progress->dev_complete:all_acs_verified{"roles":["developer"]}` |
+| `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+
+**Output (stderr confirmation):**
+```text
+defined workflow dev-flow-strict for task
+  states: 7
+  transitions: 8
+  requirements: 2
+```
+
+**Errors:** duplicate workflow slug, mismatched states/categories count,
+transition referencing an unknown state, unknown rule name, or denied
+`workflow.define` permission.
+
+### `fid workflow assign` (v0.2+)
+
+```
+fid workflow assign --name <slug> [--kind <kind>] [--project] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--name` | string | yes | Existing workflow slug |
+| `--kind` | string | no | Assign workflow as default for one issue kind |
+| `--project` | bool | no | Assign as project default where no kind-specific workflow exists |
+| `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+
+Exactly one of `--kind` or `--project` is required.
+
+**Output:**
+```text
+assigned workflow dev-flow-strict to kind task
+```
+
+**Errors:** missing workflow, incompatible `applies_to`, both/neither assignment
+target supplied, or denied `workflow.assign` permission.
+
+### `fid workflow list` (v0.2+)
+
+```
+fid workflow list [--kind <kind>] [--active] [--format json|toon|markdown|yaml]
+```
+
+Read-only. Lists defined workflows and current assignments.
+
+**JSON output:**
+```json
+[
+  {
+    "id": "task-default",
+    "name": "Default task workflow",
+    "applies_to": "task",
+    "active": true,
+    "states": 9,
+    "transitions": 9,
+    "assigned_to": [{"scope": "kind", "kind": "task"}]
+  }
+]
+```
+
+### `fid role create` (v0.2+)
+
+```
+fid role create <name> [--description <text>] [--human] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--description` | string | no | Human-readable role purpose |
+| `--human` | bool | no | Mark role as human-operated |
+| `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+
+**Output:**
+```text
+created role release_manager
+```
+
+**Errors:** invalid role name, duplicate active role, or denied `role.create`
+permission.
+
+### `fid policy set` (v0.2+)
+
+```
+fid policy set --role <role> --action <action> --allow|--deny
+    [--conditions <expr>] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--role` | string | yes | Role being changed |
+| `--action` | string | yes | Canonical action key |
+| `--allow` / `--deny` | bool | yes | Mutually exclusive policy operation |
+| `--conditions` | string | no | Optional condition expression stored verbatim |
+| `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+
+**Output:**
+```text
+allowed release_manager to issue.transition.done
+```
+
+**Errors:** unknown target role, unknown action key, both/neither allow and deny,
+or denied `policy.set` permission.
+
+### `fid decision create` (v0.2+)
+
+```
+fid decision create --summary <text> --body-md <path> --area <area>
+    [--epic <id>] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--summary` | string | yes | One-line decision summary |
+| `--body-md` | path | yes | Markdown body path |
+| `--area` | string | yes | Area such as `schema`, `cli`, `workflow`, `security` |
+| `--epic` | string | no | Epic the decision belongs to |
+| `--by` | string | yes | Acting role; roadmap scope is `tl` or `human` |
+
+**Output:**
+```text
+created decision DEC-a1b2c3: "Use journal as canonical persistence"
+```
+
+**Errors:** missing body file, non-epic `--epic`, duplicate active decision body
+hash for same area, or denied `decision.create` permission.
+
+### `fid decision get` (v0.2+)
+
+```
+fid decision get <decision-id> [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+{
+  "id": "DEC-a1b2c3",
+  "epic_id": "FID-e1f2g3",
+  "author_role": "tl",
+  "summary": "Use journal as canonical persistence",
+  "body_md_path": "project-docs/docs/phases/phase-1/decisions/DEC-a1b2c3.md",
+  "area": "schema",
+  "status": "active",
+  "created_at": "2026-06-01T10:00:00Z"
+}
+```
+
+### `fid decision list` (v0.2+)
+
+```
+fid decision list [--epic <id>] [--area <area>] [--status active|superseded]
+    [--format json|toon|markdown|yaml]
+```
+
+Empty results return `[]` and a stderr note.
+
+### `fid escalation create` (v0.2+)
+
+```
+fid escalation create (--from-finding <id>|--from-concern <id>)
+    --trigger-class <class> [--summary <text>] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--from-finding` | string | one source | Source QA finding ID |
+| `--from-concern` | string | one source | Source developer concern ID |
+| `--trigger-class` | string | yes | Classification such as `arch_violation`, `scope`, `product_decision` |
+| `--summary` | string | no | Short title for display/search |
+| `--by` | string | yes | Acting role permitted for `escalation.create` |
+
+**Output:**
+```text
+created escalation ESC-7c3e9f from concern CON-c3d4e5
+  trigger_class: arch_violation
+```
+
+**Errors:** both/neither source flags, unknown source, finding not blocking
+when policy requires blocking-only escalation, duplicate open escalation for
+same source, or denied permission.
+
+### `fid escalation resolve` (v0.2+)
+
+```
+fid escalation resolve <escalation-id> --decision <decision-id> --by <role>
+```
+
+Resolution requires a linked active decision and transitions the escalation from
+`open` to `resolved`.
+
+**Output:**
+```text
+resolved escalation ESC-7c3e9f with decision DEC-a1b2c3
+```
+
+**Errors:** escalation already resolved, decision not active, decision not linked
+or link cannot be created, or denied `escalation.resolve` permission.
+
+### `fid escalation get` (v0.2+)
+
+```
+fid escalation get <escalation-id> [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+{
+  "id": "ESC-7c3e9f",
+  "status": "open",
+  "trigger_class": "arch_violation",
+  "raised_by_role": "tl_lite",
+  "raised_at": "2026-06-01T11:00:00Z",
+  "resolved_at": null,
+  "resolution_dec": null
+}
+```
+
+### `fid escalation list` (v0.2+)
+
+```
+fid escalation list [--status open|resolved] [--epic <id>] [--trigger-class <class>]
+    [--format json|toon|markdown|yaml]
+```
+
+### `fid triage record` (v0.2+)
+
+```
+fid triage record --epic <id> --issue <id> --source <source>
+    --ref <id> --verdict RESUME|BLOCK --reasoning-md <path>
+    [--escalation-trigger <class>] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--epic` | string | yes | Epic under triage |
+| `--issue` | string | yes | Issue affected by the triage source |
+| `--source` | string | yes | `dev_concern`, `qa_block`, or `esc_open` |
+| `--ref` | string | yes | Source row ID: concern, finding, or escalation |
+| `--verdict` | string | yes | `RESUME` or `BLOCK` |
+| `--reasoning-md` | path | yes | Triage reasoning artifact |
+| `--escalation-trigger` | string | no | Required when `BLOCK` should also create an escalation |
+| `--by` | string | yes | Acting role; default profile permits `tl_lite` and `human` |
+
+**Output:**
+```text
+recorded triage TRG-a1b2c3 on FID-a1b2c3: RESUME
+```
+
+**BLOCK with escalation:**
+```text
+recorded triage TRG-a1b2c3 on FID-a1b2c3: BLOCK
+  escalation: ESC-7c3e9f (arch_violation)
+```
+
+**Errors:** source/ref mismatch, source does not belong to the epic, missing
+reasoning file, `BLOCK` without a valid escalation path when required by policy,
+or denied `triage.record` permission.
+
+### `fid triage start` (v0.2+)
+
+```
+fid triage start <epic-id> --source <source> --ref <id> --by <role>
+    [--format json|toon|markdown|yaml]
+```
+
+Read-only preflight for TL-Lite. It validates the source, resolves the affected
+issue and relevant context, and appends no journal event.
+
+**JSON output:**
+```json
+{
+  "epic_id": "FID-e1f2g3",
+  "source": {"kind": "dev_concern", "id": "CON-c3d4e5"},
+  "issue": {"id": "FID-a1b2c3", "title": "Implement ID generation", "status": "dev_complete"},
+  "open_escalations": [],
+  "suggested_next_commands": [
+    "fid triage verdict --verdict RESUME --reasoning-md <path> --by tl_lite",
+    "fid triage verdict --verdict BLOCK --escalation-trigger <class> --reasoning-md <path> --by tl_lite"
+  ]
+}
+```
+
+### `fid triage verdict` (v0.2+)
+
+```
+fid triage verdict --verdict RESUME|BLOCK --reasoning-md <path>
+    [--epic <id>] [--issue <id>] [--source <source>] [--ref <id>]
+    [--escalation-trigger <class>] --by <role>
+```
+
+Writes the same `triage_events` row as `fid triage record`. When the source
+flags are omitted, fid uses the most recent unresolved `triage start` preflight
+metadata from the current process invocation context only; it does not persist
+triage sessions.
+
+**Output:**
+```text
+triage verdict on FID-a1b2c3: BLOCK
+  triage: TRG-a1b2c3
+  escalation: ESC-7c3e9f
+```
+
+### `fid tl wrapup` (v0.2+)
+
+```
+fid tl wrapup <epic-id> --by <role> [--retro-md <path>]
+    [--recommendation <text>] [--no-close-escalations]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+| `--retro-md` | path | no | Retrospective notes path |
+| `--recommendation` | string | no | Short wrap-up recommendation |
+| `--no-close-escalations` | bool | no | Leave already-resolved escalations untouched |
+
+Composes retrospective creation, closure of already-resolved escalations where
+needed, and epic transition to `wrapped`. It does not perform human approval;
+`wrapped -> closed` remains a separate `fid issue transition ... --by human`.
+
+**Output:**
+```text
+tl wrapup FID-e1f2g3
+  retrospective: RET-g7h8i9
+  closed resolved escalations: 2
+  transitioned: in_progress -> wrapped
+```
+
+**Errors:** child tasks not done/cancelled, open unresolved escalations, missing
+retrospective artifact when policy requires one, or denied `tl.wrapup`
+permission.
+
+### `fid requirement get` (v0.2+)
+
+```
+fid requirement get <requirement-id> [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+{
+  "id": "PRD-ISSUE-001",
+  "type": "PRD",
+  "summary": "Unified polymorphic issue table",
+  "source_doc": "project-docs/specs/01_PRD.md",
+  "source_section": "3.2",
+  "last_synced_hash": "sha256:...",
+  "status": "active",
+  "drift": false
+}
+```
+
+### `fid requirement list` (v0.2+)
+
+```
+fid requirement list [--type PRD|TRD] [--status active|deprecated]
+    [--drifted] [--source-doc <path>] [--format json|toon|markdown|yaml]
+```
+
+### `fid requirement sync` (v0.2+)
+
+```
+fid requirement sync --source-doc <path> [--type PRD|TRD]
+    [--id <requirement-id>] --by <role>
+```
+
+Parses canonical requirement IDs from the source document and upserts pointer
+rows with a `last_synced_hash` for drift detection. It stores source pointers
+and summaries, not copied requirement prose.
+
+**Output:**
+```text
+synced requirements from project-docs/specs/01_PRD.md
+  created: 3
+  updated: 12
+  unchanged: 87
+  drifted: 2
+```
+
+**Errors:** no parseable requirement IDs, duplicate IDs in source, unknown type,
+or denied `requirement.sync` permission.
+
+### `fid comment add` (v0.2+; `qa_review` target v0.3+)
+
+```
+fid comment add --on <type>/<id> --body-md <path> --by <role>
+```
+
+Supported targets are `issue`, `decision`, `escalation`, and `requirement` in
+v0.2; `qa_review` is added in v0.3.
+
+**Output:**
+```text
+added comment COM-a1b2c3 on issue/FID-a1b2c3
+```
+
+**Errors:** unsupported target type for the current version, missing target row,
+missing body file, or denied `comment.add` permission.
+
+### `fid merge --journal` (v0.2+)
+
+```
+fid merge --journal <path> --by <role> [--format json|toon|markdown|yaml]
+```
+
+Replays a foreign journal into the current project using event preconditions for
+conflict detection. It appends accepted events to the local journal; conflicts
+stop the merge and leave later foreign events unapplied.
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--journal` | path | yes | Foreign JSONL journal file or directory |
+| `--by` | string | yes | Acting operator role; default profile permits `tl`, `workflow_runner`, and `human` |
+| `--format` | string | no | Structured merge summary format |
+
+**JSON output:**
+```json
+{
+  "source": "/tmp/recovered/.fid/journal",
+  "applied_events": 14,
+  "skipped_duplicates": 2,
+  "conflict": null
+}
+```
+
+**Conflict error:**
+```text
+error: journal merge conflict at EVT-20260601-000042
+  entity: issue/FID-a1b2c3
+  precondition failed: status expected "todo", found "in_progress"
+  applied before conflict: 14
+```
+
+### `fid qa-review create` (v0.3+)
+
+```
+fid qa-review create --scope epic_window|single_task|epic_full
+    [--epic <id>] [--task <id>] [--tasks <csv>] [--reviewer <role>]
+    [--plan <plan-id>] [--body-md <path>] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--scope` | string | yes | Review scope |
+| `--epic` | string | for `epic_window`, `epic_full` | Epic under review |
+| `--task` | string | for `single_task` | Single task under review |
+| `--tasks` | csv | for `epic_window` | Covered task IDs |
+| `--reviewer` | string | no | Reviewer role stored on the row; defaults from `--by` when compatible |
+| `--plan` | string | no | QA plan ID; nullable until v0.4 contract linking |
+| `--body-md` | path | no | Review artifact path |
+| `--by` | string | yes | Acting role permitted for `qa_review.create` |
+
+**Output:**
+```text
+created QA review QAR-7c3e9f (epic_window)
+  epic: FID-e1f2g3
+  tasks: FID-a1b2c3, FID-d4e5f6, FID-g7h8i9
+```
+
+**Errors:** scope/flag mismatch, window task outside epic, reviewer role not
+`qa_reviewer` or `qa_lead`, plan for another epic, or denied permission.
+
+### `fid qa-review get` (v0.3+)
+
+```
+fid qa-review get <review-id> [--format json|toon|markdown|yaml]
+```
+
+Returns the review, covered tasks for window scope, findings, linked plan, and
+current claim if any.
+
+### `fid qa-review list` (v0.3+)
+
+```
+fid qa-review list [--epic <id>] [--task <id>] [--scope <scope>]
+    [--reviewer <role>] [--format json|toon|markdown|yaml]
+```
+
+### `fid qa-review claim` (v0.3+)
+
+```
+fid qa-review claim <review-id> --by <role> [--ttl <duration>] [--force] [--renew]
+```
+
+Same lease semantics as `fid issue claim`, with `ref_type = qa_review`.
+
+**Output:**
+```text
+claimed QAR-7c3e9f by qa_reviewer (expires 2026-06-01T15:00:00Z)
+```
+
+### `fid qa-review unclaim` (v0.3+)
+
+```
+fid qa-review unclaim <review-id> --by <role>
+```
+
+**Output:**
+```text
+released claim on QAR-7c3e9f by qa_reviewer
+```
+
+### `fid qa-finding add` (v0.3+)
+
+```
+fid qa-finding add <review-id> --severity blocking|improvement
+    [--task <task-id>] --finding-md <path> [--evidence-excerpt <text>]
+    --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--severity` | string | yes | `blocking` or `improvement` |
+| `--task` | string | no | Task subject within review scope |
+| `--finding-md` | path | yes | Finding prose artifact |
+| `--evidence-excerpt` | string | no | Literal evidence excerpt |
+| `--by` | string | yes | Acting role permitted for `qa_finding.add` |
+
+**Output:**
+```text
+added QA finding QAF-9a8b7c to QAR-7c3e9f (blocking)
+```
+
+**Errors:** task outside review scope, missing finding file, invalid severity,
+or denied permission.
+
+### `fid qa-finding list` (v0.3+)
+
+```
+fid qa-finding list [--review <id>] [--epic <id>] [--task <id>]
+    [--severity blocking|improvement] [--status open|resolved|wontfix|escalated]
+    [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+[
+  {
+    "id": "QAF-9a8b7c",
+    "review_id": "QAR-7c3e9f",
+    "severity": "blocking",
+    "task_id_subject": "FID-a1b2c3",
+    "status": "open",
+    "escalated_to_esc": null,
+    "finding_md": "project-docs/docs/phases/phase-1/qa/QAF-9a8b7c.md",
+    "evidence_excerpt": "go test ./... failed in TestJournalReplay"
+  }
+]
+```
+
+### `fid qa start` (v0.3+)
+
+```
+fid qa start <epic-or-task-id> --scope epic_window|single_task|epic_full
+    [--tasks <csv>] [--plan <plan-id>] [--body-md <path>] --by <role>
+```
+
+Composite wrapper over `qa-review create` plus `qa-review claim`. It creates the
+review and acquires the review claim atomically.
+
+**Output:**
+```text
+qa start FID-e1f2g3
+  review: QAR-7c3e9f (epic_window)
+  claimed by qa_reviewer (expires 2026-06-01T15:00:00Z)
+```
+
+### `fid qa finding` (v0.3+)
+
+```
+fid qa finding <review-id> --severity blocking|improvement
+    [--task <task-id>] --finding-md <path> [--evidence-excerpt <text>]
+    --by <role>
+```
+
+Composite alias for `fid qa-finding add`, preserving the same validation and
+output.
+
+### `fid qa verify` (v0.3+)
+
+```
+fid qa verify <issue-id> <ac-id> --by <role> --status <status>
+    [--evidence-type <type>] [--evidence-ref <ref>] [--notes <text>]
+```
+
+Composite alias for `fid issue ac verify` with QA-role defaults. `--by` must be
+a verifier role permitted for the corresponding AC verification action.
+
+### `fid qa finish` (v0.3+)
+
+```
+fid qa finish <review-id> --by <role> [--body-md <path>]
+```
+
+Completes the review artifact, releases the review claim, and leaves task state
+transitions explicit unless the active workflow defines a review-completion
+transition rule.
+
+**Output:**
+```text
+qa finish QAR-7c3e9f
+  findings: 1 blocking, 2 improvement
+  claim released
+```
+
+**Errors:** live claim held by another role, unresolved required review fields,
+or denied permission.
+
+### `fid qa-plan create` (v0.3+)
+
+```
+fid qa-plan create --epic <id> [--body-md <path>] [--contract <id>]
+    --by <role>
+```
+
+`--contract` is accepted only once validation contracts ship in v0.4; before
+that it is rejected with the version-gate error.
+
+**Output:**
+```text
+created QA plan QAP-a1b2c3 for FID-e1f2g3
+```
+
+**Errors:** non-epic target, contract for another epic, duplicate active plan
+for same epic when policy forbids it, or denied `qa_plan.create`.
+
+### `fid qa-plan get` (v0.3+)
+
+```
+fid qa-plan get <plan-id> [--format json|toon|markdown|yaml]
+```
+
+Returns the plan, ordered steps, linked contract if present, and finalisation
+status.
+
+### `fid qa-plan list` (v0.3+)
+
+```
+fid qa-plan list [--epic <id>] [--status draft|active|superseded]
+    [--format json|toon|markdown|yaml]
+```
+
+### `fid qa-plan step add` (v0.3+)
+
+```
+fid qa-plan step add <plan-id> --description <text>
+    --evidence-method <method> --validator-role <role>
+    [--ordinal <n>] --by <role>
+```
+
+**Output:**
+```text
+added QA step QA-01 to QAP-a1b2c3
+```
+
+**Errors:** inactive/superseded plan, duplicate ordinal/display ID, unknown
+validator role, or denied `qa_plan.step.add`.
+
+### `fid qa-plan step list` (v0.3+)
+
+```
+fid qa-plan step list <plan-id> [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+[
+  {
+    "id": "QAS-d4e5f6",
+    "display_id": "QA-01",
+    "ordinal": 1,
+    "description": "Run repository test suite",
+    "evidence_method": "repository_test",
+    "validator_role": "qa_lead",
+    "assertions": []
+  }
+]
+```
+
+### `fid qa-plan step link` (v0.4+)
+
+```
+fid qa-plan step link <step-id> --assertion <assertion-id-or-display-id>
+    --by <role>
+```
+
+Links a QA plan step to a validation assertion for coverage tracking.
+
+**Output:**
+```text
+linked QA-01 to VAL-001
+```
+
+**Errors:** plan and assertion belong to different epics, duplicate link, or
+denied `qa_plan.step.link`.
+
+### `fid qa-plan finalise` (v0.3+; contract rules v0.4+)
+
+```
+fid qa-plan finalise <plan-id> --by <role>
+```
+
+In v0.3 this validates plan structure and marks the plan active. In v0.4, when
+an active contract is linked to the same epic, it also enforces contract
+coverage rules from `03_TRD_SCHEMA.md` §12.1.
+
+**Output:**
+```text
+finalised QA plan QAP-a1b2c3
+  steps: 6
+  contract coverage: not_applicable (contracts ship in v0.4)
+```
+
+**Coverage error (v0.4+):**
+```text
+error: cannot finalise QA plan QAP-a1b2c3: assertion VAL-004 has no covering step
+  rule: every assertion requires a plan step with matching validator role and evidence method
+```
+
+### `fid template create` (v0.3+)
+
+```
+fid template create --kind <kind> --name <name> --from <path> --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--kind` | string | yes | `task_spec`, `subtask_spec`, `qa_plan`, `qa_review`, `human_checklist`, `decision_record`, `completion_report`, `epic_brief`, `triage_log_entry`, or `retro_lightweight` |
+| `--name` | string | yes | Template name unique per kind/version |
+| `--from` | path | yes | Markdown template body |
+| `--by` | string | yes | Acting role permitted for `template.create` |
+
+Creates the next monotonic version for `(kind, name)`.
+
+**Output:**
+```text
+created template task_spec/default-feature-task@1
+```
+
+**Errors:** unknown kind, missing template body, malformed required-section
+metadata, or denied permission.
+
+### `fid template list` (v0.3+)
+
+```
+fid template list [--kind <kind>] [--active] [--format json|toon|markdown|yaml]
+```
+
+### `fid template show` (v0.3+)
+
+```
+fid template show <kind>/<name> [--version <n|latest>]
+    [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+{
+  "kind": "task_spec",
+  "name": "default-feature-task",
+  "version": 1,
+  "active": true,
+  "body_md": "## Context\n..."
+}
+```
+
+### `fid board` (v0.3+)
+
+```
+fid board [--epic <id>] [--label <label>] [--cycle <id>] [--group status-category|workflow]
+```
+
+Launches the read-only TUI kanban board. It groups cards by status category by
+default; `--group workflow` uses concrete workflow states.
+
+**Errors:** non-interactive terminal without TTY support, unknown epic/label/cycle,
+or cycle filter used before v0.5 cycle support.
+
+### `fid contract create` (v0.4+)
+
+```
+fid contract create --epic <id> --body-md <path> --by <role>
+```
+
+Creates a draft validation contract for one epic.
+
+**Output:**
+```text
+created validation contract VC-a1b2c3 for FID-e1f2g3 (draft)
+```
+
+**Errors:** non-epic target, missing body file, duplicate active contract for
+the epic, or denied `contract.create`.
+
+### `fid contract get` (v0.4+)
+
+```
+fid contract get (<contract-id>|--epic <id>) [--format json|toon|markdown|yaml]
+```
+
+`--epic` returns the active contract for the epic unless `--include-drafts` is
+added in a later version.
+
+### `fid contract activate` (v0.4+)
+
+```
+fid contract activate <contract-id> --by <role>
+```
+
+Marks the contract active and supersedes any previous active contract for the
+same epic.
+
+**Output:**
+```text
+activated validation contract VC-a1b2c3 for FID-e1f2g3
+```
+
+**Errors:** contract has no assertions, required validator rows missing, or
+denied `contract.activate`.
+
+### `fid assertion add` (v0.4+)
+
+```
+fid assertion add <contract-id> --statement <text>
+    [--ordinal <n>] [--carry-forward-source <id>] [--out-of-scope-note <text>]
+    --by <role>
+```
+
+Display IDs are assigned as `VAL-NNN` within the contract.
+
+**Output:**
+```text
+added assertion VAL-001 to VC-a1b2c3
+```
+
+### `fid assertion get` (v0.4+)
+
+```
+fid assertion get <assertion-id-or-display-id> [--epic <id>|--contract <id>]
+    [--format json|toon|markdown|yaml]
+```
+
+`--epic` or `--contract` is required when the argument is a display ID such as
+`VAL-001`.
+
+### `fid assertion list` (v0.4+)
+
+```
+fid assertion list [--epic <id>|--contract <id>] [--validator-role <role>]
+    [--uncovered] [--format json|toon|markdown|yaml]
+```
+
+`--uncovered` returns assertions without an AC link, required validator, or
+matching QA plan step under the active contract+plan.
+
+### `fid assertion validator add` (v0.4+)
+
+```
+fid assertion validator add <assertion-id-or-display-id>
+    --role <validator-role> --evidence-method <method>
+    [--epic <id>|--contract <id>] --by <role>
+```
+
+**Output:**
+```text
+added validator qa_lead/widget_test to VAL-001
+```
+
+**Errors:** unknown validator role, duplicate validator row, display ID without
+scope, or denied `assertion.validator.add`.
+
+### `fid assertion link-ac` (v0.4+)
+
+```
+fid assertion link-ac <assertion-id-or-display-id> <ac-id>
+    [--epic <id>|--contract <id>] --by <role>
+```
+
+Links an acceptance criterion to the assertion it helps satisfy.
+
+**Output:**
+```text
+linked AC-d4e5f6 to VAL-001
+```
+
+**Errors:** AC issue is outside the assertion's epic, duplicate link, display ID
+without scope, or denied `assertion.link_ac`.
+
+### `fid outcome record` (v0.4+)
+
+```
+fid outcome record <assertion-id-or-display-id> --status pass|fail|carry_forward
+    [--review <review-id>] [--evidence-method <method>] [--evidence-ref <ref>]
+    [--rationale <text>] [--epic <id>|--contract <id>] --by <role>
+```
+
+`pass` requires `--evidence-method` and `--evidence-ref`.
+`carry_forward` requires `--rationale`.
+
+**Output:**
+```text
+recorded outcome VAO-a1b2c3 on VAL-001: pass
+  evidence: widget_test -> test/orders_test.go::shows_orders
+```
+
+**Errors:** missing required evidence/rationale, review outside epic, display ID
+without scope, or denied `outcome.record`.
+
+### `fid outcome list` (v0.4+)
+
+```
+fid outcome list [--assertion <id-or-display-id>] [--epic <id>]
+    [--status pass|fail|carry_forward] [--format json|toon|markdown|yaml]
+```
+
+### `fid export` (v0.4+)
+
+```
+fid export [--to <path>] [--epic <id>] [--since <anchor>]
+    [--layout whet|flat|custom] [--no-banner] --by <role>
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--to` | path | no | Output root; defaults to `.fid/config.toml` `[export].markdown_root` |
+| `--epic` | string | no | Export one epic subtree |
+| `--since` | string | no | Export entities changed since event ID or timestamp |
+| `--layout` | string | no | Override configured layout |
+| `--no-banner` | bool | no | Suppress generated-file banner for this run |
+| `--by` | string | yes | Acting role permitted for `export.write` |
+
+**Output:**
+```text
+exported fid markdown tree to ./docs/
+  files written: 42
+  unchanged: 18
+  layout: whet
+```
+
+**Errors:** output path outside allowed project area, unsupported custom layout,
+frontmatter generation failure, or denied permission. Export never imports or
+reconciles edits from markdown.
+
+### `fid view create` (v0.4+)
+
+```
+fid view create --name <name> --query-kind sql (--query <sql>|--query-file <path>)
+    [--description <text>] [--scope project|user] --by <role>
+```
+
+Only `query_kind=sql` ships initially. Future DSL-backed views require the
+conditional query decision.
+
+**Output:**
+```text
+created view VIEW-a1b2c3: my-blocking-findings
+```
+
+**Errors:** mutation query, duplicate view name in scope, unknown query kind, or
+denied `view.create`.
+
+### `fid view run` (v0.4+)
+
+```
+fid view run <name-or-id> [--format json|toon|markdown|yaml]
+```
+
+Read-only. Runs the stored query with the same mutation restrictions as
+`fid sql`.
+
+### `fid view list` (v0.4+)
+
+```
+fid view list [--scope project|user] [--format json|toon|markdown|yaml]
+```
+
+### `fid stats gates` (v0.2+)
+
+```
+fid stats gates [--by epic|command] [--epic <id>] [--format json|toon|markdown|yaml]
+```
+
+Read-only aggregation over `gate_runs` and completion gate snapshots.
+
+**JSON output:**
+```json
+[
+  {"gate_command": "go test ./...", "runs": 14, "passed": 13, "failed": 1, "pass_rate": 0.93}
+]
+```
+
+### `fid stats interventions` (v0.2+)
+
+```
+fid stats interventions [--epic <id>] [--format json|toon|markdown|yaml]
+```
+
+Read-only aggregation over completion attempts marked with human intervention.
+
+**JSON output:**
+```json
+[
+  {"epic_id": "FID-e1f2g3", "tasks_with_intervention": 2, "total_interventions": 3}
+]
+```
+
+### `fid cycle create` (v0.5+)
+
+```
+fid cycle create --name <name> [--start <YYYY-MM-DD>] [--end <YYYY-MM-DD>]
+    [--status planned|active|completed] --by <role>
+```
+
+**Output:**
+```text
+created cycle CYC-a1b2c3: "June stabilization"
+```
+
+**Errors:** end before start, duplicate active cycle name, cycle support disabled
+for the project, or denied `cycle.create`.
+
+### `fid cycle list` (v0.5+)
+
+```
+fid cycle list [--status planned|active|completed] [--format json|toon|markdown|yaml]
+```
+
+**JSON output:**
+```json
+[
+  {
+    "id": "CYC-a1b2c3",
+    "name": "June stabilization",
+    "start_date": "2026-06-01",
+    "end_date": "2026-06-30",
+    "status": "active"
+  }
+]
+```
+
+---
+
+*Last updated: 2026-06-04*
