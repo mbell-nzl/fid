@@ -111,6 +111,17 @@ CREATE TABLE issues (
                                                -- NULL means "any actor of owner_role".
   created_at          DATETIME, updated_at DATETIME,
   CHECK (kind IN ('epic', 'task', 'subtask')),
+  CHECK ((kind = 'epic' AND workflow_id = 'epic-default')
+      OR (kind = 'task' AND workflow_id = 'task-default')
+      OR (kind = 'subtask' AND workflow_id = 'subtask-default')),
+  CHECK ((workflow_id = 'task-default' AND status IN (
+          'todo', 'in_progress', 'dev_complete', 'qa_review',
+          'qa_block', 'failed_gate', 'qa_pass', 'done', 'cancelled'))
+      OR (workflow_id = 'epic-default' AND status IN (
+          'todo', 'in_progress', 'wrapped', 'closed', 'cancelled'))
+      OR (workflow_id = 'subtask-default' AND status IN (
+          'todo', 'in_progress', 'done', 'cancelled'))),
+  CHECK (priority IS NULL OR (priority >= 0 AND priority <= 5)),
   CHECK (kind != 'epic' OR est_tokens IS NULL),
   CHECK (sequence IS NULL OR sequence > 0),
   UNIQUE (parent_id, sequence)
@@ -940,6 +951,13 @@ BEFORE INSERT / UPDATE triggers on:
 - **`triage_events.epic_id`** — references an epic.
 - **`decisions.epic_id`** — references an epic when set.
 - **`carry_forward.scheduled_epic_id`** — references an epic when set.
+
+Static issue-column invariants are CHECK constraints in the `issues` DDL:
+v0.1 kind/workflow compatibility, legal status values for the active default
+workflow, priority range, epic estimate nullability, and positive sequence
+values. The application layer still owns transition edge legality and
+transition-rule evaluation because those need rich errors, current actor role,
+and multi-row reads.
 
 ### 14.2 Polymorphic Ref Integrity
 
