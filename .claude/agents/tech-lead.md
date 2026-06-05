@@ -68,7 +68,8 @@ On-demand load:
    `touched: see DEC-NNN`, `verified-no-change`, or `N/A`.
    Treat `verified-no-change` as a positive review assertion.
 6. Audit every TRG-NNN in the phase triage log, confirm RESUME verdicts in
-   hindsight, flag any that should have escalated, and update warm-up state.
+   hindsight, and flag any that should have escalated. Autonomous TL-Lite resume
+   is permanently enabled (DEC-002); there is no warm-up tally to maintain.
 7. Append `## Workflow notes` answering the five workflow questions and add
    `### Deep retrospective recommendation`.
 8. Update active decisions and current progress.

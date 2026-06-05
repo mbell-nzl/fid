@@ -21,8 +21,8 @@ verification have produced their artifacts.
 3. Walk every in-phase decision, Developer deviation, validation-contract
    deviation, and QA recommendation marked for immediate action. For each spec,
    record whether it was touched, verified unchanged, or not applicable.
-4. Audit all `TRG-NNN` entries and update warm-up or autonomous-resume notes
-   according to the workflow spec.
+4. Audit all `TRG-NNN` entries, confirming RESUME verdicts in hindsight.
+   Autonomous TL-Lite resume is permanent (DEC-002); no warm-up tally.
 5. Append workflow notes and a deep-retrospective recommendation to the phase
    decisions file.
 6. Check whether phase work changed project language. Update

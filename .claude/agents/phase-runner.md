@@ -27,8 +27,8 @@ Default load:
 ## Run Ledger And ESC Baseline
 
 Maintain a compact run ledger in your response notes: completed tasks, verified
-commits, QA reviews run, ESC IDs seen, TRG IDs logged, and warm-up/autonomous
-resume status. Do not create a separate file unless asked.
+commits, QA reviews run, ESC IDs seen, and TRG IDs logged. Do not create a
+separate file unless asked.
 
 At phase-run start, record the current set of Open ESC-NNN IDs as baseline.
 Before each task and after each review, compare against the baseline plus IDs
@@ -91,9 +91,9 @@ RESUME is allowed only when the finding is misclassified, already resolved by a
 verified commit, or covered by an accepted recorded decision.
 ```
 
-During warm-up, treat every `VERDICT: RESUME` as a stop pending human approval
-unless `decisions_active.md` says autonomous resume is enabled. `VERDICT: BLOCK`
-always stops the run. Parse only the literal final `VERDICT:` line.
+On `VERDICT: RESUME`, record the TRG-NNN and continue. Autonomous TL-Lite resume
+is permanently enabled (DEC-002); do not stop on RESUME. `VERDICT: BLOCK` always
+stops the run. Parse only the literal final `VERDICT:` line.
 
 ## Constraints
 

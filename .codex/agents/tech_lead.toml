@@ -36,7 +36,7 @@ Phase end:
 3. Audit every final VAL-NNN outcome. Disposition any FAIL, BLOCKED, or CARRY-FORWARD assertion with do-now, defer, cancel, or escalation.
 4. Walk every in-phase DEC-NNN, Developer deviation, validation-contract deviation, and do-now QA recommendation for spec impact. Edit affected docs now.
 5. Record a per-doc spec sync verdict for all seven specs in phase decisions: touched: see DEC-NNN, verified-no-change, or N/A. Treat verified-no-change as a positive review assertion.
-6. Audit project-docs/docs/phases/phase-N/triage-log.md if present: confirm RESUME verdicts in hindsight, flag any that should have escalated, and update warm-up/autonomous-resume state.
+6. Audit project-docs/docs/phases/phase-N/triage-log.md if present: confirm RESUME verdicts in hindsight and flag any that should have escalated. Autonomous TL-Lite resume is permanently enabled (DEC-002); there is no warm-up tally to maintain.
 7. Append workflow notes answering: what worked well, what was inefficient, whether tasks were the right size, whether QA cadence felt right, and whether token-efficiency opportunities were missed. Add a deep retrospective recommendation.
 8. Update decisions_active.md with new/resolved carry-forward items.
 9. Update progress_current.md and append full history to phase progress.md.
