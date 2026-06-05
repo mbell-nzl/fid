@@ -264,7 +264,7 @@ where a requirement is deferred past v0.1.
 |---|---|---|---|
 | PRD-OPS-001 | The system shall durably persist every write as a single atomic event; no partial writes shall be observable. | Must | v0.1 |
 | PRD-OPS-002 | If a composite write partially fails (e.g. one step of a multi-table operation), the system shall reject the entire operation with no state change. | Must | v0.1 |
-| PRD-OPS-003 | When the query store is missing or stale, the system shall automatically rebuild it from the durable event log before answering any read. | Must | v0.1 |
+| PRD-OPS-003 | When the query store is missing or stale, the system shall automatically rebuild it from the durable event log before answering any read. | Must | v0.1. Automatic catch-up/rebuild uses the same checkout-scoped projection lock as writes. |
 | PRD-OPS-004 | The system shall support an explicit rebuild command that reconstructs the query store from scratch. | Must | v0.1. `fid rebuild`. |
 | PRD-OPS-005 | The system shall provide a consistency audit that checks for kind-hierarchy violations, orphaned polymorphic references, FK integrity, and workflow state validity. | Must | v0.1 |
 | PRD-OPS-006 | When the consistency audit finds errors, the system shall exit non-zero and list each violation. | Must | v0.1 |

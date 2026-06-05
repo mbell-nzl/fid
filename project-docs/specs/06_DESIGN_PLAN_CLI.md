@@ -1299,7 +1299,8 @@ fid rebuild --by <role> [--verbose]
 
 Replays the full journal into a fresh SQLite database. Automatic projection
 catch-up before reads is internal and does not require `--by`; explicit
-operator-invoked rebuild does.
+operator-invoked rebuild does. Both explicit rebuild and automatic catch-up
+acquire `.fid/write.lock` before mutating `.fid/fid.sqlite`.
 
 | Flag | Type | Description |
 |---|---|---|

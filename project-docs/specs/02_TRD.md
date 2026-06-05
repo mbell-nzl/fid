@@ -436,6 +436,13 @@ preferred domain correction command.
   checks, validation, event construction, journal append/fsync, and SQLite
   projection. This serializes validation against a fresh DB state before any
   journal commit is possible.
+- Any path that mutates the SQLite projection acquires the same
+  `.fid/write.lock`, including automatic catch-up before a read, explicit
+  `fid rebuild`, and explicit migration/vacuum commands. A read command whose
+  `projection_meta` already matches the journal may serve from SQLite without
+  the lock; a read command that detects a stale or missing projection waits for
+  the lock, catches up or rebuilds, and only then serves output. It never
+  serves stale data while another process is projecting a committed event.
 - SQLite transactions remain required inside the write-lock boundary for
   projection atomicity. SQLite locking alone is not the write serializer,
   because the journal append is the commit point.
