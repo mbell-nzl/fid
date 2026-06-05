@@ -80,6 +80,8 @@ initialized fid project in .fid/
   prefix: FID
   config: .fid/config.toml
   pricing: .fid/pricing.toml
+  journal: .fid/journal/2026-06-05.jsonl
+  event: EVT-20260605-000001 project.initialized
   roles seeded: developer, qa_reviewer, qa_lead, tl_lite, tl, workflow_runner, human
 ```
 

@@ -2,7 +2,7 @@
 
 ## Decision
 
-`.fid/journal/YYYY-MM-DD.jsonl` is committed to git and is the source of truth for all project state. `.fid/fid.sqlite` is gitignored and materialized synchronously from the journal. The journal append is the write commit point; applying the event to SQLite is a synchronous projection step that can be replayed if interrupted. There is no background daemon and no sync window.
+`.fid/journal/YYYY-MM-DD.jsonl` is committed to git and is the source of truth for all fid entity state. `.fid/config.toml` and `.fid/pricing.toml` are committed canonical configuration files, not journal-derived state. `.fid/fid.sqlite` is gitignored and materialized synchronously from the journal plus the current schema. The journal append is the write commit point; applying the event to SQLite is a synchronous projection step that can be replayed if interrupted. There is no background daemon and no sync window.
 
 ## Context
 
@@ -26,6 +26,7 @@ This ADR takes Beads' query power and Beans' git-mergeability, and removes the d
 
 - The DB is a cache. `rm -rf .fid/fid.sqlite` is non-destructive; the next CLI invocation rebuilds it.
 - `fid rebuild` ships in v0.1, not deferred to v0.2. The replay engine is foundational, not optional.
+- `fid init` is the first journaled write. It writes a `project.initialized` event whose effects seed database state such as the default role profile. Config and pricing files are written before the event and remain canonical files.
 - The write path is ordered: validate against the current DB, build a fully resolved event, append and flush the JSONL line, then apply that event to SQLite in a DB transaction. If projection fails after the journal append, the next invocation catches the DB up from the journal before answering. If the journal append fails, the DB is not modified.
 - Events are self-contained pure data: one logical CLI write becomes one semantic event envelope with generic ordered row effects. All generated/external values (hash IDs, timestamps, snapshot pricing, gate output, token counts) are captured at write time. Replay upgrades event schemas, then applies effects verbatim. No "look up X at replay time" and no re-running command/business logic.
 - A malformed trailing JSONL line is journal corruption, not a partial commit. Startup / `fid rebuild` stops and reports the corrupt tail so a human can truncate or repair it.

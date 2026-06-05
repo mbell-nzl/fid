@@ -60,7 +60,7 @@ with whet's task artifacts.
 | Journal writer | Append-only JSONL to `.fid/journal/YYYY-MM-DD.jsonl`. Flush before returning. Event schema v1 includes `event_id`, `event_schema`, `event_type`, timestamp, actor, sanitized command metadata, and ordered effects. Mutable-state effects include targeted preconditions. One logical write = one event. Runs inside `.fid/write.lock`; journal append is the commit point. | PRD-OPS-001–002, PRD-NFR-008, TRD-ARCH-001–004 |
 | Journal replayer | Replay journal into SQLite. Event schema versioning with pure upgrader functions. Catch-up on startup when DB is behind or missing. Malformed trailing line = corruption, reported not skipped. Failed effect preconditions stop replay with a structured logical-conflict error. | PRD-OPS-003–004, PRD-OPS-012, TRD-ARCH-002–003 |
 | `fid rebuild` | Replay from scratch into fresh DB. Sub-second at single-project scale. Foundational — invoked on startup when DB is stale. | PRD-OPS-003–004, TRD-PERF-002 |
-| `fid init` | Create `.fid/`, seed `roles` table from default profile (7 roles), write initial `config.toml` and `pricing.toml`, create initial journal. Accept `--prefix` for issue ID prefix. Reject re-init. | PRD-INIT-001–004 |
+| `fid init` | Create `.fid/`, write canonical `config.toml` and `pricing.toml`, apply schema, append the first `project.initialized` journal event, and project it to seed the `roles` table from the default profile (7 roles) plus initial `projection_meta`. Accept `--prefix` for issue ID prefix. Reject re-init. | PRD-INIT-001–004 |
 | ID generation | `<PREFIX>-<hash>` with progressive length scaling (6 → 8 hex). Collision retry on insert. | TRD §4.2, spec §6.0 |
 | Output format engine | JSON (default), TOON (opt-in), markdown, YAML. `--format` flag on all read commands. | PRD-OUT-001–004, TRD-ARCH-012 |
 
@@ -127,7 +127,8 @@ with whet's task artifacts.
 **v0.1 exit criteria:**
 
 - `fid init` creates a working project. `fid rebuild` reconstructs the DB from
-  journal. Delete-and-rebuild is non-destructive.
+  journal, including the roles seeded by `project.initialized`.
+  Delete-and-rebuild is non-destructive.
 - Full issue lifecycle: create → claim → transition → complete → unclaim works
   with workflow validation and permission enforcement.
 - AC verification, concerns, and claim semantics all enforced.

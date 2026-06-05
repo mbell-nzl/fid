@@ -25,7 +25,7 @@ fid sits between Linear and Jira: roles are workflow positions (developer, qa_re
 
 ## Consequences
 
-- **Schema gains a `roles` table** in v0.1, seeded from the default profile at `fid init`. The columns `responsible_role`, `verifier_role`, `claimed_by`, etc. lose their app-code CHECK constraints; existence in `roles` is the validity rule.
+- **Schema gains a `roles` table** in v0.1, seeded from the default profile by the `project.initialized` journal event written at `fid init`. The columns `responsible_role`, `verifier_role`, `claimed_by`, etc. lose their app-code CHECK constraints; existence in `roles` is the validity rule.
 - **Permissions stay in code in v0.1** but the matrix is the sole source of truth and is documented as "the seeded default" rather than "the only valid set". v0.2 migrates it to a `role_permissions` table alongside the workflow-engine migration. Same pattern, same release.
 - **Composite commands (`fid dev start`) and context packs (`--context-pack developer`) remain hard-coded through v0.2.** Customisation of these is a v0.3+ concern, gated on real demand. Users adding new roles in v0.1 understand that composites/packs cover the default roles only.
 - **Unknown roles hard-reject in v0.1.** The matrix lives in code; it can't reason about roles it doesn't know. Users who need a new role wait for v0.2 or fork. A single CLI error frames this clearly: "role X not in profile; v0.2 will add `fid role create`."

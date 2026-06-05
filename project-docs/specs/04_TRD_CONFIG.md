@@ -110,10 +110,17 @@ out_per_mtok = 4.0
 3. Creates `.fid/config.toml` with `[project] prefix = <PREFIX>`
    (default: project directory name, uppercased).
 4. Creates `.fid/pricing.toml` with default model pricing.
-5. Creates `.fid/journal/` directory (empty).
+5. Creates `.fid/journal/` directory.
 6. Creates `.fid/fid.sqlite` with the current schema applied via
    migrations.
-7. Seeds the `roles` table with the default profile role list.
+7. Appends the initial `project.initialized` journal event to the current UTC
+   `journal/YYYY-MM-DD.jsonl` file.
+8. Projects that event into SQLite, seeding the `roles` table with the default
+   profile role list and writing the initial `projection_meta` row.
+
+`config.toml` and `pricing.toml` are canonical committed configuration files.
+They are not reconstructed by `fid rebuild`; the rebuild path reconstructs only
+the SQLite projection from the journal plus the current schema.
 
 ---
 

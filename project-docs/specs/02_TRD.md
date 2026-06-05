@@ -209,6 +209,24 @@ All generated entity IDs follow the shape `<PREFIX>-<hash>`:
 
 ### 4.3 Persistence Rules
 
+**Bootstrap contract:**
+
+`fid init` is the first journaled write in a workspace. It creates the
+workspace directories, writes canonical `.fid/config.toml` and
+`.fid/pricing.toml`, applies the current SQLite schema, then appends a
+`project.initialized` event to the current UTC journal file. The event's
+effects seed fid entity state that must survive delete-and-rebuild, including
+the seven default `roles` rows. The projection step writes the initial
+`projection_meta` checkpoint for that event. Config and pricing files are
+committed canonical configuration files; they are not reconstructed from the
+journal.
+
+After a successful init, an otherwise empty project has exactly one journal
+event and no issues. `fid rebuild` starts from an empty schema, replays
+`project.initialized`, and must recreate the roles table and projection
+checkpoint without consulting the old SQLite file. A workspace with no
+`project.initialized` event is not a valid v0.1 fid workspace.
+
 **Write path (every CLI write):**
 
 1. Acquire the checkout-scoped write lock at `.fid/write.lock`.
@@ -262,7 +280,7 @@ Each JSONL line is one canonical JSON object with these top-level fields:
 |---|---|---|
 | `event_id` | yes | Stable generated event ID. Used by `activity_log.journal_event_id`, replay diagnostics, and projection metadata. |
 | `event_schema` | yes | Positive integer schema version. v0.1 writes `1`. |
-| `event_type` | yes | Semantic command/event name, e.g. `issue.created`, `issue.transitioned`, `claim.acquired`. |
+| `event_type` | yes | Semantic command/event name, e.g. `project.initialized`, `issue.created`, `issue.transitioned`, `claim.acquired`. |
 | `occurred_at` | yes | UTC ISO 8601 timestamp assigned once before append. |
 | `actor` | yes | Object with `role` and optional `actor` string. `role` is the `--by` role for CLI writes. |
 | `command` | yes | Sanitized command metadata: `argv`, `cwd`, `fid_version`, and no environment variables or sensitive flag values. |
@@ -351,6 +369,15 @@ keys, no insignificant whitespace, and preserves array order.
   ]
 }
 ```
+
+**Bootstrap event example:**
+
+`project.initialized` is the only event type that may be written before a
+workspace already has valid projection metadata. Its effects include the
+default role rows. The projection step writes the initial `projection_meta`
+row for the event after applying its effects. The project prefix is stored in
+`.fid/config.toml`; it may also appear in event metadata for diagnostics, but
+config remains the canonical source for project configuration.
 
 **Correction model:**
 
