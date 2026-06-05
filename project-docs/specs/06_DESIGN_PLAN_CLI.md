@@ -510,22 +510,26 @@ fid dev start <issue-id> --by developer
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--by` | string | yes | Acting role |
-| `--branch` | string | no | Override the auto-captured git branch |
-| `--base-commit` | string | no | Override the auto-captured base commit |
-| `--worktree` | string | no | Override the auto-captured worktree path |
+| `--branch` | string | no | v0.2: override the auto-captured git branch |
+| `--base-commit` | string | no | v0.2: override the auto-captured base commit |
+| `--worktree` | string | no | v0.2: override the auto-captured worktree path |
 
-Composes: claim acquire + transition -> in_progress + open agent_run. Git
-context (branch, base commit, dirty flag, worktree) is auto-captured read-only
-from git (v0.2); any flag overrides capture. Outside a git worktree the run is
-opened with no git context and a warning. The run records `git_source`
-(`captured` | `provided` | `none`).
+Composes: claim acquire + transition -> in_progress + open agent_run. v0.1
+opens a base `agent_runs` row without git context or lifecycle columns; open
+means `ended_at IS NULL`. Git context (branch, base commit, dirty flag,
+worktree), lifecycle status, and the override flags above ship in v0.2.
 
-**Output (stderr confirmation):**
+**Output (stderr confirmation, v0.1):**
 ```text
 dev start FID-a1b2c3
   claimed by developer (expires 2026-05-27T15:00:00Z)
   transitioned: todo → in_progress
-  agent run: RUN-b2c3d4 opened (branch phase-1/core @ 9f2a1c0, clean, git_source=captured)
+  agent run: RUN-b2c3d4 opened
+```
+
+**Output addition (v0.2 git context):**
+```text
+  git context: branch phase-1/core @ 9f2a1c0, clean, git_source=captured
 ```
 
 ### `fid dev gate`

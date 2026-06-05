@@ -517,18 +517,20 @@ Application layer (all writes):
 - Claim acquire semantics (TTL, stealing).
 
 SQLite triggers (backstop for non-CLI write paths — future web dashboard,
-`fid sql`, direct DB edits):
+`fid sql`, direct DB edits) are created only for tables present in the active
+schema migration:
 - Kind-invariant rules: hierarchy enforcement on `issues.parent_id`,
   sequence constraints, kind guards on `acceptance_criteria`,
-  `task_completions`, `epic_metadata`, `qa_reviews`, `triage_events`,
-  `decisions`, `carry_forward`.
+  `task_completions`, `epic_metadata`, `triage_events`, `decisions`,
+  `carry_forward`, and `qa_reviews` when the QA layer ships.
 - Polymorphic ref integrity on `links`, `claims`, `comments`,
   `activity_log`.
 - Link scope and relation compatibility.
 - Claim scope (supported `ref_type` values per schema version).
 - Comment scope (v0.2 base ref_type whitelist; v0.3 adds `qa_review`).
 - Kind immutability (BEFORE UPDATE OF kind on `issues`).
-- Mutually exclusive scope columns on `qa_reviews` (CHECK constraint).
+- Mutually exclusive scope columns on `qa_reviews` when v0.3 ships
+  (CHECK constraint).
 - Validation outcome row-local evidence/rationale requirements
   (CHECK constraints).
 

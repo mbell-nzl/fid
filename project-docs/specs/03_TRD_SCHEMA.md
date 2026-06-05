@@ -73,6 +73,26 @@ ref_id)`, `workflow_states(...)`, `workflow_transitions(...)`,
 `qa_plan_step_assertions(...)`, `validation_assertion_validators(...)`,
 and `role_permissions(...)`.
 
+### 1.2 Migration Placement
+
+This document is the DDL reference for all roadmap versions. Blocks labelled
+with a later version (`v0.2+`, `v0.3`, etc.) are not part of the v0.1 base
+migration. Implement migrations by version:
+
+- **v0.1 base:** core issue layer, concerns, requirements, links, claims,
+  base telemetry, activity log, projection metadata, labels, roles, and stub
+  decision/escalation/triage tables needed by v0.1 FKs/views.
+- **v0.2 additive:** workflow tables, role permissions, comments, governance
+  command support, and agent-run lifecycle/git context columns.
+- **v0.3 additive:** QA reviews/findings/plans, QA review claims, templates,
+  and QA telemetry extension.
+- **v0.4+ additive:** validation contracts/outcomes, carry-forward,
+  retrospectives, saved views, export support, and cycles in v0.5.
+
+Triggers and CHECKs are created only when their target table is present in the
+active migration. For example, v0.1 does not create comment-scope triggers or
+`qa_reviews` checks because those tables ship later.
+
 ---
 
 ## 2. Core Issue Layer (v0.1)
@@ -481,19 +501,20 @@ CREATE TABLE agent_runs (
   provider_run_id TEXT,                        -- optional provider request/run identifier
   provider_cost_usd REAL,                      -- optional provider-billed cost for reconciliation
   started_at      DATETIME,
-  ended_at        DATETIME,
-  -- v0.2 run/git/lifecycle extension (additive migration; see PRD-OPS-017–019)
-  status          TEXT NOT NULL DEFAULT 'open',  -- 'open' | 'closed' | 'abandoned'
-  branch          TEXT,                        -- git branch at run start
-  base_commit     TEXT,                        -- commit the run started from
-  head_commit     TEXT,                        -- latest captured HEAD (refreshed at gate/finish)
-  dirty           BOOLEAN,                     -- worktree dirty as of last recorded command (point-in-time)
-  worktree_path   TEXT,
-  git_source      TEXT,                        -- 'captured' | 'provided' | 'none'
-  resumed_from_run_id      TEXT REFERENCES agent_runs(id),
-  abandoned_reason_md_path TEXT,
-  abandoned_at    DATETIME
+  ended_at        DATETIME
 );
+
+-- v0.2 run/git/lifecycle extension (additive migration; see PRD-OPS-017–019):
+-- ALTER TABLE agent_runs ADD COLUMN status TEXT NOT NULL DEFAULT 'open';
+-- ALTER TABLE agent_runs ADD COLUMN branch TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN base_commit TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN head_commit TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN dirty BOOLEAN;
+-- ALTER TABLE agent_runs ADD COLUMN worktree_path TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN git_source TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN resumed_from_run_id TEXT REFERENCES agent_runs(id);
+-- ALTER TABLE agent_runs ADD COLUMN abandoned_reason_md_path TEXT;
+-- ALTER TABLE agent_runs ADD COLUMN abandoned_at DATETIME;
 
 -- v0.3 QA telemetry extension:
 -- ALTER TABLE agent_runs
@@ -934,10 +955,11 @@ The `--by` flag is mandatory on every write command.
 
 ## 14. Validation Triggers
 
-**Application-layer primary, SQLite triggers as backstop.** The
-application layer handles all validation on the CLI write path. Triggers
-serve as a backstop for writes that bypass the CLI (future web dashboard,
-`fid sql`, direct DB edits).
+**Application-layer primary, SQLite triggers as backstop.** The application
+layer handles all validation on the CLI write path. Triggers serve as a
+backstop for writes that bypass the CLI (future web dashboard, `fid sql`,
+direct DB edits). Each migration creates only the triggers whose target tables
+exist in that schema version.
 
 ### 14.1 Kind-Invariant Rules
 
@@ -953,9 +975,9 @@ BEFORE INSERT / UPDATE triggers on:
   `subtask`.
 - **`task_completions`** — same.
 - **`epic_metadata`** — `issue_id` must reference an `epic`.
-- **`qa_reviews`** — `epic_id` references an epic when set; `task_id`
+- **`qa_reviews`** (v0.3) — `epic_id` references an epic when set; `task_id`
   references a task when set.
-- **`qa_review_task_window.task_id`** — references a task.
+- **`qa_review_task_window.task_id`** (v0.3) — references a task.
 - **`triage_events.epic_id`** — references an epic.
 - **`decisions.epic_id`** — references an epic when set.
 - **`carry_forward.scheduled_epic_id`** — references an epic when set.
@@ -969,9 +991,9 @@ and multi-row reads.
 
 ### 14.2 Polymorphic Ref Integrity
 
-BEFORE INSERT triggers on `links`, `claims`, `comments`, `activity_log`
-validating that `(ref_type, ref_id)` resolves to an existing row in the
-named table.
+BEFORE INSERT triggers on `links`, `claims`, and `activity_log` validate that
+`(ref_type, ref_id)` resolves to an existing row in the named table. The
+equivalent `comments` trigger ships with the v0.2 comments table.
 
 ### 14.3 Link Scope and Relation Compatibility
 
