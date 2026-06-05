@@ -11,6 +11,13 @@ model_verbosity = "medium"
 personality = "pragmatic"
 project_root_markers = [".git"]
 
+# Redirect Go and golangci-lint caches into gitignored in-repo dirs so they are
+# writable under sandbox_mode = "workspace-write". The defaults (~/.cache/...)
+# are read-only in the sandbox and break `golangci-lint run` / `go build`.
+[shell_environment_policy.set]
+GOCACHE = "/home/mark/projects/fid/.gocache"
+GOLANGCI_LINT_CACHE = "/home/mark/projects/fid/.golangci-cache"
+
 [features]
 multi_agent = true
 

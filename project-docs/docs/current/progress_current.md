@@ -7,25 +7,26 @@
 
 ## Project State
 
-**Status:** Phase 0 planning.
+**Status:** Phase 0 executing (branch `phase-0/spec-foundation`).
 
 Completed:
 
 - Project identity and domain glossary populated.
 - Three pre-scaffold ADRs recorded (`docs/adr/0001-0003`).
 - Detailed design spec written (`scaffold/initial-spec.md`).
-- Workflow scaffolding copied from starter kit.
-- `AGENTS.md` stack choices, conventions, architecture boundaries, and quality
-  commands made concrete from the TRD and Quality Plan.
 - Canonical spec suite exists under `project-docs/specs/`.
-- Phase 0 validation contract and task specs drafted.
+- Phase 0 validation contract and task specs drafted; QA plan created
+  (`phase-0/qa/qa-plan.md`).
+- Task 1 verified complete (commit `e65e282`, CLI walking skeleton).
 
 In progress:
 
-- Human review of Phase 0 validation contract and ordered task list.
-- QA plan creation is next after human approval.
+- Task 2 (quality tooling + CI stub) was stopped on a sandbox blocker:
+  `golangci-lint`/`go` caches were read-only outside the workspace. Resolved by
+  DEC-001 (cache redirection via `.codex/config.toml` + `.gitignore`). Task 2
+  must be re-run in a fresh session; `task-2-completion.md` still missing.
 
 Next action:
 
-- Human approves or requests changes to Phase 0 plan.
-- QA Lead creates `project-docs/docs/phases/phase-0/qa/qa-plan.md`.
+- Re-spawn Phase Runner in a fresh session to resume from Task 2 (see TL prompt
+  provided to the human).
