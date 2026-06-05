@@ -38,15 +38,22 @@ On-demand load:
 4. Skim prior phase workflow notes when available.
 5. Create phase directories under `project-docs/docs/phases/phase-N/`.
 6. Draft `project-docs/docs/phases/phase-N/qa/validation-contract.md` from
-   `project-docs/templates/validation-contract-template.md`.
+   `project-docs/templates/validation-contract-template.md`. Each `VAL-NNN`
+   must be one observable; conditional or binary assertions must name both
+   states; parity or "matches reference" assertions need deterministic
+   conformance evidence where possible.
 7. Break the phase into ordered one-session Developer tasks.
 8. Write task specs from `project-docs/templates/task-spec-template.md`.
 9. Ensure each task cites covered `VAL-NNN` assertions or explicitly states why
    no validation assertion applies.
-10. Ensure each task lists documentation updates.
-11. Refresh `project-docs/docs/current/phase_brief.md` under 150 lines,
+10. Ensure each task's `## Exact Commands To Run` section lists the full task
+   gate before task close unless the spec records an explicit exception.
+   Developer does not load the QA plan by default, so include any QA-plan
+   command the Developer must run.
+11. Ensure each task lists documentation updates.
+12. Refresh `project-docs/docs/current/phase_brief.md` under 150 lines,
    including the validation contract index.
-12. Present the validation contract and ordered task list to the human.
+13. Present the validation contract and ordered task list to the human.
 
 ## Phase End
 

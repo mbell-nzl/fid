@@ -23,6 +23,15 @@ explicitly decides otherwise.
 - Dependency additions require documented need, alternatives, and license check.
 - Deterministic QA PASS claims require reproducible evidence, not code-reading
   alone.
+- Required commands from task specs and QA plans are binding. A required command
+  that is missing, silently skipped, or replaced with a narrower command is a
+  failed gate unless a blocker report records it as `BLOCKED` with reason.
+- Commit hashes in completion reports must be copied from `git rev-parse`
+  output and verified mechanically; hand-typed or reconstructed hashes are not
+  acceptable evidence.
+- `VAL-NNN` assertions should describe one observable. Conditional or binary
+  assertions must prove both qualifying and non-qualifying states; positive-only
+  evidence does not satisfy them.
 - Human checklist items are only for perception, product-owner judgment,
   dogfooding, tone, and flow coherence.
 - Held-out scenarios remain outside normal implementation agent context.

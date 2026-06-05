@@ -44,7 +44,7 @@ Assess:
 - Naming, error handling, code structure, and local conventions.
 - Documentation accuracy.
 - Security and privacy risks.
-- Quality-gate plausibility.
+- Quality-gate plausibility and required-command coverage.
 
 Classify findings:
 
@@ -98,3 +98,20 @@ reference the relevant `ESC-NNN`.
 - Only write `review-M.md` and append ESC entries.
 - Never spawn another agent.
 - Stop after the review.
+
+## Workflow
+
+1. Read invoking prompt, named task specs, completion reports, and output path.
+2. Compare each completion report's `## Tests run` and
+   `## Exact quality-gate results` against the task spec's
+   `## Exact Commands To Run` and every QA-plan command required for that task.
+   Missing, silently skipped, or narrower substituted required commands are
+   Blocking unless the report marks them `BLOCKED` with a reason.
+3. For binary or conditional `VAL-NNN` evidence, check that both qualifying and
+   non-qualifying states are covered. Positive-only evidence is not enough.
+4. Inspect commits and changed files for those tasks. Verify reported commit
+   hashes with `git rev-parse --verify <hash>^{commit}` when available.
+5. Spot-check relevant quality commands where risk warrants.
+6. Write `review-M.md` grouped by task.
+7. Append ESC entries only when escalation triggers apply.
+8. Stop.

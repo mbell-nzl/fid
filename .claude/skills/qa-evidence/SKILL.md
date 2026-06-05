@@ -23,12 +23,22 @@ Use this skill when evidence quality matters more than prose confidence.
 3. Prefer reproducible deterministic evidence: exact command output, test logs,
    file-state proof, API traces, screenshots, rendered artifacts, or commit
    references.
-4. Keep human evidence separate for product intent, perception, dogfooding, or
+4. Treat required command coverage as evidence, not ceremony. Every command
+   required by the task spec or QA plan must appear as `PASS`, or `BLOCKED`
+   with a reason in a blocker report. Missing, silently skipped, or narrower
+   substituted commands are failed gates.
+5. For conditional or binary assertions, collect evidence for both the
+   qualifying and non-qualifying states. Positive-only evidence cannot prove
+   the assertion.
+6. Keep human evidence separate for product intent, perception, dogfooding, or
    other judgment calls. Cite the relevant `VAL-NNN` when a human check proves
    a validation assertion.
-5. For every claimed pass, record enough detail that another agent or human can
+7. For commit evidence, copy hashes and subjects from git output; do not
+   reconstruct them from memory. Phase orchestration verifies hashes with
+   `git rev-parse --verify <hash>^{commit}`.
+8. For every claimed pass, record enough detail that another agent or human can
    rerun, inspect, or trace the proof.
-6. If evidence is partial, stale, indirect, or contradicted by another artifact,
+9. If evidence is partial, stale, indirect, or contradicted by another artifact,
    record that status plainly in the review artifact rather than upgrading it
    to a pass.
 

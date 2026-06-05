@@ -23,7 +23,7 @@ Workflow:
 1. Read the task spec and confirm the files in scope.
 2. Read project-docs/docs/phases/phase-N/qa/validation-contract.md and identify the VAL-NNN IDs named by the task spec.
 3. If in-scope partial work already exists, inspect it and continue from that state.
-4. If any required quality command in AGENTS.md is still a placeholder, stop and write a blocker report.
+4. If any required command in AGENTS.md, the task spec, or the QA plan is still a placeholder, stop and write a blocker report.
 5. For each behavior change:
    a. Write or preserve a failing test first.
    b. Run the most specific relevant test command and confirm it fails for the expected reason.
@@ -31,11 +31,13 @@ Workflow:
    d. Run the same test command and confirm it passes.
    e. Refactor only while tests remain green.
 6. Update documentation listed in the task spec.
-7. Run the full task-level quality gate exactly as listed in AGENTS.md, in order.
+7. Run every command listed in the task spec's ## Exact Commands To Run section, in order. The full task gate is required before task close unless the task spec explicitly records an exception.
 8. If a quality-gate step fails, fix the issue and rerun the failed command.
-9. As soon as the gate is green, write project-docs/docs/phases/phase-N/tasks/task-M-done.md, including VAL-NNN evidence or an explicit no-VAL explanation.
-10. Immediately create a Conventional Commit with Refs: phase-N/task-M in body or footer.
-11. Stop after report and commit are complete.
+9. Record every required command from the task spec and any task-applicable QA-plan command as PASS, or BLOCKED with a reason in a blocker report. Focused red/green commands do not substitute for the required gate; missing, silently skipped, or narrower substituted commands are failed gates.
+10. As soon as the gate is green, write project-docs/docs/phases/phase-N/tasks/task-M-done.md, including VAL-NNN evidence or an explicit no-VAL explanation.
+11. Immediately create a Conventional Commit with Refs: phase-N/task-M in body or footer.
+12. Copy the commit hash from git rev-parse --short HEAD or git rev-parse HEAD, and copy the subject from git log -1 --format=%s. Never type, pad, or reconstruct a hash from memory.
+13. Stop after report and commit are complete.
 
 Completion report headings, in order:
 - ## Summary of what was implemented
@@ -55,7 +57,7 @@ If no dependency changed, write exactly "- No dependency changes." under the dep
 
 Blocker behavior:
 - If you cannot complete the task, make the gate pass, produce the commit, or stay inside scope, still write task-M-done.md as a blocker report before stopping.
-- A blocker report must include current state, files changed, commands run, exact blocker, quality-gate status so far, and whether a commit was created.
+- A blocker report must include current state, files changed, commands run, exact blocker, quality-gate status so far, which required commands are PASS/BLOCKED/not run, and whether a commit was created.
 - Never stop silently.
 
 Constraints:
@@ -64,6 +66,7 @@ Constraints:
 - Never modify out-of-scope files except required documentation.
 - Never make architectural or product decisions. Record concerns instead.
 - Do not keep iterating once the required gate is green; write report, commit, stop.
+- Never omit, silently skip, or replace a required command with a narrower substitute unless the blocker report marks it BLOCKED with the reason.
 - Never read held-out scenarios or evaluator prompts unless the task is explicitly scenario validation.
 - If a requirement cannot be satisfied, stop with a blocker report; do not stub, mock, or silently adapt the spec.
 - If a required VAL-NNN cannot be satisfied, stop with a blocker report rather than weakening the assertion or claiming evidence you do not have.

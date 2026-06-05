@@ -28,12 +28,16 @@ phase shape.
    - `project-docs/docs/phases/phase-N/qa/`
 5. Draft `project-docs/docs/phases/phase-N/qa/validation-contract.md` from
    `project-docs/templates/validation-contract-template.md`. Express each
-   in-scope requirement as one observable `VAL-NNN` assertion.
+   in-scope requirement as one observable `VAL-NNN` assertion. Conditional or
+   binary assertions must name both states; parity or "matches reference"
+   assertions need deterministic conformance checks where possible.
 6. Slice work using the one-logic rule: logic/data tasks before UI/wiring,
    schema and dependency changes isolated unless the phase explicitly plans
    the exception.
 7. Write task specs from `project-docs/templates/task-spec-template.md`.
-   Each task must cite covered `VAL-NNN` IDs or state why none apply.
+   Each task must cite covered `VAL-NNN` IDs or state why none apply, and its
+   `## Exact Commands To Run` section must list the full task gate before task
+   close unless the spec records an explicit exception.
 8. Refresh `project-docs/docs/current/phase_brief.md` from the template.
    Keep it as an execution index under 150 lines, not a duplicate of full
    task specs.

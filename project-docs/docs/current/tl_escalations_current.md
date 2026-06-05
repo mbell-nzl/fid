@@ -18,9 +18,12 @@ An issue must be escalated, not decided locally by TL-Lite, if it:
 2. Changes the data model or persistence contract.
 3. Overrides or contradicts a standing decision.
 4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, or workflow.
+5. Introduces a dependency, tool, quality gate, or workflow.
 6. Materially changes testing strategy or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria.
+8. Resumes a context-exhausted or partial task where remaining or completed
+   work spans schema/data model, dependency/platform configuration, public
+   interfaces, canonical docs, or multiple Developer sessions.
 
 ### QA Reviewer Triggers
 
@@ -44,4 +47,3 @@ Add new escalations above this comment using the template at
 project-docs/templates/tl-escalations-template.md. Newest at top.
 Use global ESC-NNN sequential numbering that never resets.
 -->
-

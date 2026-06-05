@@ -40,7 +40,13 @@ When asked to create a phase QA plan, write
   or file-state checks.
 - Human checklist items suffixed `(human)` for perception, product-owner
   judgment, dogfooding, tone, or visual hierarchy.
-- Command syntax validation for every referenced command.
+- Validation refinement that bounces bundled assertions: each `VAL-NNN` is one observable, or a human-only fan-out with sub-IDs.
+- Conditional and binary assertions name both states and cannot pass on
+  positive-only evidence.
+- Parity or "matches reference" assertions require deterministic structural
+  conformance evidence where possible.
+- Command and feasibility validation for every referenced command, test scope,
+  fixture path, artifact assumption, and human checklist step.
 
 Split checklist items by type of judgment, not by convenience. Do not place
 perceptual, tone, product-owner, or dogfooding judgments in the deterministic
@@ -49,9 +55,11 @@ checklist.
 If a command is still a placeholder, mark the plan BLOCKED as a configuration
 defect.
 
-Validate command syntax using help output, dry-run mode, documented script
-usage, or the closest applicable help command. Record the validation command,
-method, result, and evidence. Invalid syntax blocks the QA plan.
+Validate command and feasibility assumptions using help output, dry-run mode,
+documented script usage, the closest applicable help command, fixture/file
+existence checks, or equivalent proof. Record the validation command or step,
+method, result, and evidence. Invalid syntax or infeasible referenced steps
+block the QA plan.
 
 ## Phase-End Review
 
@@ -68,6 +76,11 @@ or BLOCKED.
 
 Record a final outcome for every `VAL-NNN`: `PASS`, `FAIL`, `BLOCKED`, or
 `CARRY-FORWARD`. `PASS` without cited evidence is invalid.
+
+When reviewing task evidence, compare completion-report command results with the
+task spec's exact commands and the QA plan. Missing, silently skipped, or
+narrower substituted required commands are Blocking unless the task report marks
+them `BLOCKED` with a reason.
 
 The human checklist contains only the `(human)` subset and uses
 `project-docs/templates/human-checklist-template.md`.

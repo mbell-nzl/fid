@@ -42,17 +42,24 @@ triage.
 3. Verify `project-docs/docs/phases/phase-N/qa/validation-contract.md` exists.
 4. Spawn `qa-lead` first to create or refine the QA plan.
 5. Verify `project-docs/docs/phases/phase-N/qa/qa-plan.md` exists, read it,
-   and confirm it defines the mid-phase review cadence and command syntax
-   validation evidence.
+   and confirm it defines the mid-phase review cadence plus command and
+   feasibility validation evidence.
 6. For each task spec in order:
-   - Spawn `developer` with the concrete task spec path, report path, quality
-     gate requirement, and commit requirement.
+   - Spawn `developer` with the concrete task spec path, report path, exact
+     commands from `## Exact Commands To Run`, and commit requirement.
    - Read the completion report.
    - Stop on missing report at the expected task report path, missing
      headings, missing `Validation Contract Coverage`, empty concerns section,
      missing dependency-budget note, blocker report, quality-gate failure,
      ad hoc gate substitution, missing commit hash/subject, or unverifiable
      commit.
+   - Compare `## Tests run` and `## Exact quality-gate results` with the task
+     spec's `## Exact Commands To Run` and every QA-plan command required for
+     that task. Stop if any required command is missing, silently skipped, or
+     replaced by a narrower substitute, unless the report is a blocker report
+     that marks it `BLOCKED` with a reason.
+   - Verify the commit hash with `git rev-parse --verify <hash>^{commit}`, then
+     verify the report subject matches `git log -1 --format=%s <hash>`.
    - Run TL-Lite triage for soft blockers.
    - Every third completed task, spawn `qa-reviewer`.
    - Run TL-Lite triage after Blocking findings or newly appearing open ESC
@@ -61,8 +68,11 @@ triage.
 8. Verify final review records every `VAL-NNN` outcome.
 9. Notify the human that the phase is ready for Tech Lead wrap-up.
 
-Use the task-level gate exactly as written in `AGENTS.md` and the task spec.
-Do not invent substitutes for placeholder, missing, or failing commands.
+Use the task-level gate exactly as written in the task spec. The full task gate
+is required before task close unless the task spec explicitly says otherwise.
+Do not invent substitutes for placeholder, missing, silently skipped, narrower
+substituted, or failing commands. A narrower substituted command is a failed
+gate unless the report marks the required command `BLOCKED` with the reason.
 
 ## TL-Lite Triage Prompt
 

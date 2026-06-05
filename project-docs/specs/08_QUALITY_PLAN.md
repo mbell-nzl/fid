@@ -230,7 +230,8 @@ Outdated examples, commands, and file references shall be treated as defects.
 
 ### 5.1 Task-Level Gate (Run by Developer Agent)
 
-Before completing any task, the developer agent shall run:
+Before completing any task, the developer agent shall run the exact commands
+listed in the task spec. If the task spec does not define commands, run:
 
 ```bash
 gofmt -l .
@@ -239,8 +240,11 @@ go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 ```
 
-All commands must pass. If any fail, the developer agent must fix the issue
-before committing. Coverage thresholds must not decrease.
+All required commands must pass, or be recorded as `BLOCKED` with reason in a
+blocker report. If any fail, the developer agent must fix the issue and rerun
+the exact failed command before committing. Missing, silently skipped, or
+narrower substituted commands are failed gates. Coverage thresholds must not
+decrease.
 
 ### 5.2 Phase-Level Gate (Run by QA Lead Agent)
 
@@ -287,8 +291,16 @@ Each phase uses
 Required checks:
 
 - Tech Lead drafts `VAL-NNN` assertions before or alongside task specs.
+- Each assertion states one observable behavior, invariant, or release-readiness
+  claim. Multi-observable human assertions must be split or explicitly marked
+  for one-row-per-observable human checklist fan-out.
+- Conditional or binary assertions must define evidence for both the qualifying
+  and non-qualifying states; positive-only evidence is insufficient.
+- Parity or "matches reference" assertions need a structural conformance or
+  parity proof when the reference can be checked deterministically.
 - QA Lead refines evidence methods, validator roles, and task windows before
-  implementation starts.
+  implementation starts, and bounces under-specified contracts to Tech Lead
+  before finalizing the QA plan.
 - Developer task specs and completion reports cite covered `VAL-NNN` IDs or
   explicitly state why none apply.
 - QA Reviewer verifies relevant `VAL-NNN` IDs for each reviewed task window.
@@ -314,11 +326,12 @@ PASS verdicts on deterministic items require evidence. If evidence cannot be
 shown, mark the item FAIL or BLOCKED. QA Lead must not PASS a perceptual or
 product-owner judgment by reading code.
 
-### 5.6 Command Syntax Validation
+### 5.6 Command And Feasibility Validation
 
-Before a QA plan is finalized, QA Lead validates every command referenced in
-either checklist using help output, dry-run mode, documentation, or equivalent
-proof. Invalid command syntax is a QA-plan defect.
+Before a QA plan is finalized, QA Lead validates every referenced command, test
+scope, fixture setup, artifact assumption, and human-checklist feasibility using
+help output, dry-run mode, documentation, existing file-state checks, or
+equivalent proof. Invalid or unvalidated steps are QA-plan defects.
 
 ### 5.7 Required QA Artifacts
 

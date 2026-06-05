@@ -44,7 +44,7 @@ Escalate if the issue:
 2. Changes the data model or persistence contract.
 3. Overrides or contradicts a standing decision.
 4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, or workflow.
+5. Introduces a dependency, tool, quality gate, or workflow.
 6. Changes testing strategy or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria.
 8. Requires recovery of partial task work after context exhaustion and the

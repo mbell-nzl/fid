@@ -54,6 +54,8 @@ Rules:
 - Tests must assert behavior, not implementation trivia.
 - Do not delete or weaken tests to make a failing gate pass.
 - Keep changes small and scoped to one task.
+- A Developer session implements exactly one task.
+- Use file artifacts as shared memory. Do not rely on chat history.
 - Update impacted documentation in the same task as the code change.
 - Each planned phase uses `VAL-NNN` validation assertions in
   `project-docs/docs/phases/phase-N/qa/validation-contract.md`; task specs and
@@ -159,6 +161,11 @@ Record any deliberate deferral in a task spec, phase decision, or roadmap item.
 
 Replace every placeholder before implementation starts. Agents must stop and
 report a configuration defect if a required command is still a placeholder.
+Use the task-spec command list when it exists; otherwise use these defaults.
+Every required command listed by a task spec or QA plan must be recorded in the
+completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
+A missing, silently skipped, or narrower substituted required command is a
+failed gate, not an acceptable omission.
 
 - Format check: `gofmt -l .`. Apply `gofmt -w` and `goimports` to edited Go
   files before running the check.

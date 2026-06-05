@@ -36,15 +36,21 @@ Use `project-docs/templates/task-spec-template.md`. Each task must include:
 - Files not to modify
 - Dependencies on prior tasks
 - Implementation notes
-- Exact quality gate commands
+- Exact Commands To Run
 - Acceptance criteria
 - Output requirements (completion report path)
 
-## Quality Gate Guidance
+## Exact Command Guidance
 
-Use the project's configured commands from `AGENTS.md`. If the project has
-task-specific commands, prefer the narrowest scope that covers the task.
-Stop and report if any required command is still a placeholder.
+Use the project's configured commands from `AGENTS.md`, plus any task-specific
+commands required by the QA plan. The full task gate is required before task
+close unless the task spec explicitly records an exception. Focused commands
+used during red/green work do not replace the required gate.
+
+Every required command must be reported as `PASS`, or `BLOCKED` with a reason
+in a blocker report. Missing, silently skipped, or narrower substituted
+commands are failed gates. Stop and report if any required command is still a
+placeholder.
 
 ## Output
 

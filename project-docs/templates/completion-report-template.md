@@ -23,9 +23,18 @@
 
 ## Exact quality-gate results
 
-- `<FORMAT_COMMAND>` - PASS/FAIL
-- `<LINT_COMMAND>` - PASS/FAIL
-- `<COVERAGE_COMMAND>` - PASS/FAIL
+Compare this section against the task spec's `## Exact Commands To Run`.
+
+- `gofmt -l .` - PASS/FAIL/BLOCKED
+- `golangci-lint run ./...` - PASS/FAIL/BLOCKED
+- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED
+- `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED
+- `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A
+
+Every required command from the task spec and QA plan must appear here or in
+`## Tests run`. If a command is blocked, record the reason. Do not substitute a
+narrower command for a required gate without a blocker report; silently skipped
+or narrower substituted commands are failed gates.
 
 ## Deviations from spec
 
@@ -41,8 +50,13 @@
 
 ## Commit hash
 
-- `<hash>`
+- `<hash or "No commit created - blocker report">`
+
+Copy the hash verbatim from `git rev-parse --short HEAD` or `git rev-parse
+HEAD`. Never type, pad, complete, or recall a hash from memory.
 
 ## Commit subject
 
-- `<subject>`
+- `<subject or "No commit created - blocker report">`
+
+Copy the subject verbatim from `git log -1 --format=%s`.

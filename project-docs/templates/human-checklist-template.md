@@ -11,10 +11,15 @@
 
 ## <Section Name>
 
+One observable per row. If a `(human)` `VAL-NNN` spans several surfaces,
+affordances, CLI flows, or output formats, split it into one row per discrete
+observable. Use sub-IDs (`HV-01a`, `HV-01b`, ...) that all cite the same parent
+`VAL-NNN`.
+
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| XX-01 | VAL-NNN or no VAL | <Manual step> | <Expected observation> | | |
-| XX-02 | VAL-NNN or no VAL | <Manual step> | <Expected observation> | | |
+| HV-01a | VAL-NNN or no VAL | <single manual observable> | <expected observation> | | |
+| HV-01b | VAL-NNN or no VAL | <next manual observable> | <expected observation> | | |
 
 ## <Section Name>
 
@@ -39,4 +44,6 @@
 Outcome values: pass, fail, partial, blank.
 Overall result: pass if all pass; partial if any partial and no fail; fail if
 any fail.
+Granularity: one observable per row. Dense comma-listed rows are imprecise and
+let items get missed.
 -->

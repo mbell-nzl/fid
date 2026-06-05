@@ -34,21 +34,27 @@ Execution rules:
 - Create or resume the correct phase branch.
 - Spawn qa_lead first to create project-docs/docs/phases/phase-<PHASE_NUMBER>/qa/qa-plan.md.
 - Verify the QA plan exists, read it before task execution, and confirm command
-  syntax validation evidence plus the mid-phase review cadence.
+  and feasibility validation evidence plus the mid-phase review cadence.
 - Execute task specs strictly in order.
 - Spawn exactly one developer per task.
 - Require the developer to follow .codex/agents/developer.toml or the equivalent local agent definition.
-- Require the task quality gate exactly as defined in AGENTS.md.
+- Require the exact commands listed in the task spec. The full task gate is
+  required before task close unless the task spec explicitly says otherwise.
 - Do not substitute ad hoc commands for required gates. Placeholder, missing, or
   failing commands are hard stops.
 - After each developer run, verify the completion report exists at the expected
   path, required headings are present, Validation Contract Coverage is present,
   the concerns section is non-empty, the dependency-budget note is present, and
   commit hash/subject are present.
-- Verify the commit hash and subject in git history.
+- Verify the commit hash with `git rev-parse --verify <hash>^{commit}` and
+  verify the report subject matches `git log -1 --format=%s <hash>`.
+- Compare `## Tests run` and `## Exact quality-gate results` with the task
+  spec's `## Exact Commands To Run` and every QA-plan command required for that
+  task. Every required command must be present as `PASS`, or `BLOCKED` with a
+  reason in a blocker report.
 - Stop immediately on missing report, blocker report, quality-gate failure,
-  placeholder command, ad hoc gate substitution, missing dependency-budget note,
-  or unverifiable commit.
+  placeholder command, missing command, skipped command, narrower substituted
+  command, missing dependency-budget note, or unverifiable commit.
 - Route soft blockers through tl_lite triage.
 - Every third completed task, run qa_reviewer unless the QA plan sets a stricter
   cadence.

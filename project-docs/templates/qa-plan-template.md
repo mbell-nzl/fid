@@ -30,6 +30,12 @@ task execution begins. Gaps are QA-plan defects.
 - Every `VAL-NNN` has one validator role: YES/NO.
 - Every `VAL-NNN` has a concrete evidence method: YES/NO.
 - Every `VAL-NNN` maps to a task/window or phase-end check: YES/NO.
+- Every `VAL-NNN` describes one observable, or human-checklist fan-out is
+  explicitly required: YES/NO.
+- Conditional or binary `VAL-NNN` assertions require both qualifying and
+  non-qualifying states: YES/NO/N/A.
+- Parity or "matches reference" `VAL-NNN` assertions have deterministic
+  conformance proof when available: YES/NO/N/A.
 - Revisions requested from Tech Lead: <none or list>.
 
 ## 3. Task Inventory
@@ -54,24 +60,26 @@ still a placeholder when execution is requested, mark the QA plan BLOCKED.
 
 | Gate | Command | Expected Result | Required When |
 |---|---|---|---|
-| Format | `<FORMAT_COMMAND>` | PASS | Every task |
-| Lint/static analysis | `<LINT_COMMAND>` | PASS | Every task |
-| Unit/default tests | `<TEST_COMMAND>` | PASS | Task-level or focused checks |
-| Coverage/confidence | `<COVERAGE_COMMAND>` | PASS | Task-level gate |
-| Integration | `<INTEGRATION_COMMAND>` | PASS or N/A | Phase-end when applicable |
+| Format | `gofmt -l .` | No files listed | Every task |
+| Lint/static analysis | `golangci-lint run ./...` | PASS | Every task |
+| Coverage/confidence | `go test -race -coverprofile=coverage.out ./...` | PASS | Task-level gate |
+| Coverage report | `go tool cover -func=coverage.out` | PASS and threshold evidence | Task-level gate |
+| Integration | `go test -tags integration -race ./...` | PASS or N/A | Phase-end when applicable |
 | End-to-end | `<E2E_COMMAND>` | PASS or N/A | Surface/user-journey phases |
-| Build/package | `<BUILD_COMMAND>` | PASS | Phase-end or release candidate |
-| Full phase check | `<CHECK_COMMAND>` | PASS | Phase-end gate |
+| Benchmarks | `go test -bench . -benchmem ./...` | PASS | Phase-end or performance-sensitive tasks |
+| Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS | Phase-end or release candidate |
+| Full phase check | `gofmt -l .` + `golangci-lint run ./...` + coverage gate + integration + benchmarks + build | PASS | Phase-end gate |
 
-## 6. Command Syntax Validation
+## 6. Command And Feasibility Validation
 
-Validate every referenced command using help output, dry-run mode, project
-documentation, existing scripts, or equivalent proof. Invalid or unvalidated
-commands block the QA plan.
+Validate every referenced command, test scope, fixture setup, artifact
+assumption, and human-checklist feasibility using help output, dry-run mode,
+project documentation, existing file-state checks, or equivalent proof. Invalid
+or unvalidated steps block the QA plan.
 
-| Command | Validation method | Result | Evidence |
+| Referenced Step | Validation method | Result | Evidence |
 |---|---|---|---|
-| `<FORMAT_COMMAND>` | <help/dry-run/docs/script inspection> | PASS/FAIL/BLOCKED | <output excerpt or file reference> |
+| `gofmt -l .` | <help/dry-run/docs/script inspection> | PASS/FAIL/BLOCKED | <output excerpt or file reference> |
 
 ## 7. Deterministic Checklist
 
@@ -96,11 +104,12 @@ invalid.
 
 Items here require human judgment and must end with `(human)`. Include only
 perception, product-owner judgment, dogfooding, tone, visual hierarchy, or other
-human-only checks.
+human-only checks. Use one observable per row. If a parent `VAL-NNN` spans
+several observables, use sub-IDs that cite the same parent assertion.
 
 | ID | Check | Covers | Human Evidence Expected |
 |---|---|---|---|
-| HUMAN-01 | <manual check> `(human)` | VAL-NNN or no VAL | <observation, decision, screenshot, or notes> |
+| HUMAN-01a | <single observable manual check> `(human)` | VAL-NNN or no VAL | <observation, decision, screenshot, or notes> |
 
 ## 10. Phase-End Decision Rule
 

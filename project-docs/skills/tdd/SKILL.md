@@ -26,8 +26,16 @@ or exploratory tasks may use the task spec's explicit exception instead.
    in the existing core/domain boundary and adapters thin.
 6. Refactor only with tests green, then repeat red/green for remaining
    acceptance criteria.
-7. Run the task-level quality gate exactly as configured for the project.
-8. In the completion report, connect tests and gate evidence to the covered
+7. Run every command in the task spec's `## Exact Commands To Run` section.
+   The full task gate is required before close unless the task spec explicitly
+   records an exception; focused red/green commands are additional evidence,
+   not substitutes.
+8. In the completion report, record each required command as `PASS`, or
+   `BLOCKED` with a reason in a blocker report. Missing, skipped, or narrower
+   substituted commands are failed gates.
+9. Copy commit hashes and subjects from git output when reporting them; never
+   reconstruct hashes from memory.
+10. In the completion report, connect tests and gate evidence to the covered
    `VAL-NNN` IDs or explain why no validation assertion applies.
 
 ## References

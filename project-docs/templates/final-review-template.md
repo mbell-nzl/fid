@@ -22,14 +22,15 @@ PASS / PASS WITH IMPROVEMENTS / BLOCK
 
 | Gate | Command | Result | Evidence |
 |---|---|---|---|
-| Format | `<FORMAT_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Lint/static analysis | `<LINT_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Test/default suite | `<TEST_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Coverage/confidence | `<COVERAGE_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Integration | `<INTEGRATION_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Format | `gofmt -l .` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Lint/static analysis | `golangci-lint run ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Coverage/confidence | `go test -race -coverprofile=coverage.out ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Coverage report | `go tool cover -func=coverage.out` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Integration | `go test -tags integration -race ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | End-to-end | `<E2E_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Build/package | `<BUILD_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
-| Full phase check | `<CHECK_COMMAND>` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Benchmarks | `go test -bench . -benchmem ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Full phase check | <full command list from `AGENTS.md`> | PASS/FAIL/N/A | <output excerpt or reason> |
 
 ## Validation Contract Outcomes
 
@@ -55,10 +56,11 @@ evidence.
 |---|---|---|
 | QA-01 | PASS / FAIL / BLOCKED | <literal output, file-state proof, log, API trace, screenshot, or source reference> |
 
-## Command Syntax Validation Result
+## Command And Feasibility Validation Result
 
-- Command validation completed before implementation: YES/NO.
-- Invalid or unvalidated command syntax found: <none or list>.
+- Command and feasibility validation completed before implementation: YES/NO.
+- Invalid or unvalidated command, test scope, fixture, artifact, or human
+  checklist step found: <none or list>.
 
 ## Mid-Phase Review Disposition
 
@@ -78,8 +80,16 @@ Generated at
 `project-docs/docs/phases/phase-<N>/qa/human-checklist.md`.
 
 - Contains only `(human)` items: YES/NO.
+- Uses one observable per row: YES/NO.
 - Human-only `VAL-NNN` assertions mapped: YES/NO/N/A.
 - Product/perception/dogfooding risks to call out: <none or list>.
+
+## Coverage Caveat
+
+A deterministic PASS proves only the asserted mechanics, data states, command
+outputs, and structural conformance checks. It does not prove unasserted
+appearance, workflow feel, product-owner judgment, or dogfooding quality; those
+remain unconfirmed until the Human checklist records outcomes.
 
 ## Release Maturity Status
 

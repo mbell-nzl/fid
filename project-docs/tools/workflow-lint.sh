@@ -244,9 +244,61 @@ done <<'EOF'
 Changes a public interface
 Changes the data model or persistence contract
 Affects more than one task or subsystem
-Introduces a dependency, tool, or workflow
+Introduces a dependency, tool, quality gate, or workflow
 Exposes ambiguity in product intent or acceptance criteria
 EOF
+
+# --- Workflow guardrail concordance ---
+
+exact_command_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/templates/task-spec-template.md
+project-docs/templates/completion-report-template.md
+project-docs/templates/phase-runner-prompt.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+.codex/agents/qa_reviewer.toml
+.codex/agents/tech_lead.toml
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.claude/agents/qa-reviewer.md
+.claude/agents/tech-lead.md
+"
+
+for file in $exact_command_files; do
+  check_contains "$file" 'Exact Commands To Run' "exact-command task gate guardrail"
+done
+
+command_coverage_files="
+AGENTS.md
+project-docs/specs/08_QUALITY_PLAN.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/templates/task-spec-template.md
+project-docs/templates/completion-report-template.md
+project-docs/templates/mid-phase-review-template.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+.codex/agents/qa_lead.toml
+.codex/agents/qa_reviewer.toml
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.claude/agents/qa-lead.md
+.claude/agents/qa-reviewer.md
+"
+
+for file in $command_coverage_files; do
+  check_contains "$file" 'silently skipped|skipped gates without' "missing-command guardrail"
+  check_contains "$file" 'narrower substituted' "narrower-substitution guardrail"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/templates/phase-runner-prompt.md .codex/agents/phase_runner.toml .claude/agents/phase-runner.md; do
+  check_contains "$file" 'git rev-parse --verify' "commit hash verification guardrail"
+done
+
+for file in project-docs/specs/08_QUALITY_PLAN.md project-docs/templates/validation-contract-template.md project-docs/skills/validation-contract/SKILL.md .codex/agents/qa_lead.toml .claude/agents/qa-lead.md; do
+  check_contains "$file" 'one observable' "one-observable validation guardrail"
+  check_contains "$file" 'positive-only|Positive-only' "conditional evidence guardrail"
+done
 
 # --- Role capability mapping concordance ---
 # Each role name from the spec table must appear in at least one provider

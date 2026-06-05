@@ -21,13 +21,14 @@ Phase start:
 3. Review the Carry-Forward Register in decisions_active.md.
 4. Skim the prior phase's Workflow Notes if they exist.
 5. Create phase directories under project-docs/docs/phases/phase-N/.
-6. Draft project-docs/docs/phases/phase-N/qa/validation-contract.md from project-docs/templates/validation-contract-template.md before or alongside task specs.
+6. Draft project-docs/docs/phases/phase-N/qa/validation-contract.md from project-docs/templates/validation-contract-template.md before or alongside task specs. Each VAL-NNN must be one observable; conditional or binary assertions must name both states; parity or "matches reference" assertions need deterministic conformance evidence where possible.
 7. Break the phase into ordered tasks, each sized for one Developer session.
 8. Write task specs using project-docs/templates/task-spec-template.md.
 9. Ensure each task cites covered VAL-NNN assertions or explicitly states why no validation assertion applies.
-10. Ensure each task lists required documentation updates.
-11. Replace project-docs/docs/current/phase_brief.md with a brief under 150 lines including the validation contract index.
-12. Present the validation contract and ordered task list to the human for review.
+10. Ensure each task's ## Exact Commands To Run section lists the full task gate before task close unless the spec records an explicit exception. Developer does not load the QA plan by default, so include any QA-plan command the Developer must run.
+11. Ensure each task lists required documentation updates.
+12. Replace project-docs/docs/current/phase_brief.md with a brief under 150 lines including the validation contract index.
+13. Present the validation contract and ordered task list to the human for review.
 
 Phase end:
 1. Read project-docs/docs/phases/phase-N/qa/final-review.md and human-checklist outcome.

@@ -41,6 +41,11 @@ window.
 
 ## Gate And Evidence Checks
 
+Compare each reviewed completion report against the task spec's exact commands
+and the QA plan's required commands. Missing required gates, silently skipped
+gates without a `BLOCKED` reason, or narrower substituted commands are Blocking
+findings.
+
 | Check | Command or Evidence | Result | Notes |
 |---|---|---|---|
 | <format/lint/test/source-state/manual artifact> | `<command>` or `<artifact>` | PASS/FAIL/NOT RUN | <reason or output excerpt> |
@@ -66,9 +71,10 @@ direction.
 - None.
 
 If a finding crosses task boundaries, has architecture/product/security
-implications, contradicts a standing decision, or exposes ambiguous acceptance
-criteria, append an `ESC-NNN` entry to
-`project-docs/docs/current/tl_escalations_current.md` and reference it here.
+implications, contradicts a standing decision, exposes ambiguous acceptance
+criteria, or is a quality-gate anomaly not anticipated by the QA plan, append an
+`ESC-NNN` entry to `project-docs/docs/current/tl_escalations_current.md` and
+reference it here.
 
 ## Final Lines
 

@@ -32,7 +32,8 @@ instead of weakening the assertion or silently adapting the spec.
 ## Assertions
 
 Each row is one testable behavior, invariant, or release-readiness assertion.
-Prefer observable behavior over implementation phrasing.
+Prefer observable behavior over implementation phrasing. Do not bundle several
+independent observables into one `VAL-NNN`.
 
 | ID | Source requirement | Behavior or invariant | Evidence method | Validator | Owning task/window | Pass criterion | Fail criterion | Status | Out-of-scope notes |
 |---|---|---|---|---|---|---|---|---|---|
@@ -47,10 +48,14 @@ Prefer observable behavior over implementation phrasing.
 - **Evidence method:** Name the smallest reproducible proof available for the
   assertion. QA Lead turns this into concrete QA-plan steps.
 - **Validator:** Assign exactly one role: `QA Lead`, `QA Reviewer`, or `Human`.
+  Use `Human` only for perception, product-owner judgment, dogfooding, tone, or
+  flow coherence.
 - **Owning task/window:** Name the task or task range expected to satisfy the
   assertion. Use `phase-end` only when no smaller window is honest.
 - **Pass / fail criterion:** Write criteria specific enough that independent
-  reviewers should reach the same result.
+  reviewers should reach the same result. Conditional or binary assertions must
+  name both qualifying and non-qualifying states; positive-only evidence is not
+  sufficient.
 - **Status:** Use `Draft` during planning, `Ready` before execution, and
   `PASS`, `FAIL`, `BLOCKED`, or `CARRY-FORWARD` at final review.
 - **Out-of-scope notes:** Disambiguate adjacent behavior that this phase is not
@@ -70,6 +75,12 @@ Before task execution begins:
   owning task/window.
 - QA plan steps map every `VAL-NNN` to deterministic `(qa-lead)`,
   mid-phase-review, or `(human)` verification.
+- Human `VAL-NNN` assertions are one observable where practical. If one must
+  span several observables, the row notes that QA Lead must fan it out into one
+  human-checklist row per observable, using sub-IDs that cite the parent
+  `VAL-NNN`.
+- Parity or "matches reference" assertions include a structural conformance or
+  parity proof whenever the reference can be checked deterministically.
 
 Gaps are QA-plan defects and block implementation until resolved.
 

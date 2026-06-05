@@ -21,14 +21,17 @@ When asked to create a phase QA plan, write project-docs/docs/phases/phase-N/qa/
 - expected tests
 - deterministic checklist items suffixed (qa-lead), with exact reproducible commands or file-state checks
 - human checklist items suffixed (human), requiring human perception, product-owner judgment, dogfooding, tone judgment, or visual review
-- command syntax validation for every referenced command
-- a Command Syntax Validation section listing command, validation method, and result
+- validation refinement that bounces bundled assertions: each VAL-NNN must be one observable, or a human-only fan-out with sub-IDs
+- conditional and binary assertions must name both states and cannot pass on positive-only evidence
+- parity or "matches reference" assertions must require deterministic structural conformance evidence where possible
+- command and feasibility validation for every referenced command, test scope, fixture path, artifact assumption, and human checklist step
+- a Command And Feasibility Validation section listing command or step, validation method, result, and evidence
 
 Split checklist items by type of judgment, not by convenience. Do not place perceptual, tone, product-owner, or dogfooding judgments in the deterministic checklist.
 
 If a referenced command in AGENTS.md is still a placeholder, mark the QA plan BLOCKED and report it as a configuration defect.
 
-Validate command syntax using help output, dry-run mode, documented script usage, or the closest applicable help command. Record the validation command, method, result, and evidence. Invalid syntax blocks the QA plan.
+Validate command and feasibility assumptions using help output, dry-run mode, documented script usage, the closest applicable help command, fixture/file existence checks, or equivalent proof. Record the validation command or step, method, result, and evidence. Invalid syntax or infeasible referenced steps block the QA plan.
 
 When asked to run phase-end review, execute the deterministic checklist before declaring PASS, then produce:
 1. project-docs/docs/phases/phase-N/qa/final-review.md with findings, gate results, deterministic evidence, requirement compliance, test quality, documentation review, and risk review.
@@ -39,6 +42,8 @@ PASS verdicts on deterministic items require reproducible evidence such as comma
 Record a final outcome for every VAL-NNN: PASS, FAIL, BLOCKED, or CARRY-FORWARD. PASS without cited evidence is invalid.
 
 Quality commands you may run are the concrete commands defined in AGENTS.md and 08_QUALITY_PLAN.md.
+
+When reviewing task evidence, compare completion-report command results with the task spec's exact commands and the QA plan. Missing, silently skipped, or narrower substituted required commands are Blocking unless the task report marks them BLOCKED with a reason.
 
 Constraints:
 - Never write or fix product code.

@@ -74,7 +74,9 @@ Phase start:
    assertions it satisfies in its Acceptance Criteria.
 8. Ensure each task lists required docs, exact commands, acceptance criteria,
    files that are explicitly out of scope, and the `VAL-NNN` assertions it
-   satisfies.
+   satisfies. In `## Exact Commands To Run`, state when the full task gate is
+   required. Unless the task explicitly says otherwise, the full task gate is
+   required before task close because the Developer does not load the QA plan.
 9. Verify coverage rules: every PRD/TRD requirement in scope is referenced by
    at least one `VAL-NNN`; every `VAL-NNN` is referenced by at least one task
    spec acceptance criterion; every `VAL-NNN` has exactly one validator role.
@@ -177,11 +179,13 @@ Must escalate if the issue:
 3. Contradicts `decisions_active.md`, `decisions_principles.md`, or
    `AGENTS.md`.
 4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, or workflow. New quality gates also
-   escalate.
+5. Introduces a dependency, tool, quality gate, or workflow.
 6. Changes testing strategy or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria. Design
    ambiguity that changes behavior also escalates.
+8. Resumes a context-exhausted or partial task where remaining or completed
+   work spans schema/data model, dependency/platform configuration, public
+   interfaces, canonical docs, or multiple Developer sessions.
 
 When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
@@ -255,29 +259,41 @@ Responsibilities:
 8. After each Developer run, read the completion or blocker report.
 9. Verify the report exists, required headings are present, the concerns
    section is non-empty (`- None.` is valid), dependency-budget note exists,
-   commit hash and subject exist, and the recorded commit exists in history.
-10. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
+   and commit hash and subject exist. Resolve the recorded hash by running
+   `git rev-parse --verify <hash>^{commit}`; it must resolve to exactly one
+   commit whose subject matches the report. A hash that does not resolve is a
+   hard stop even when its abbreviated prefix is valid.
+10. Compare the report's `## Tests run` and `## Exact quality-gate results`
+   against the task spec's `## Exact Commands To Run` and any QA-plan required
+   command for that task window. Every required command must be recorded as
+   `PASS`, or as `BLOCKED` with reason in a blocker report. Missing, silently
+   skipped, or narrower substituted required commands are hard stops.
+11. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
     task and after each review.
-11. Maintain a compact run ledger in response notes: completed tasks, verified
+12. Maintain a compact run ledger in response notes: completed tasks, verified
     commits, QA reviews run, ESC IDs seen, TRG IDs logged, and
     warm-up/autonomous state.
-12. Every third completed task, or at the cadence defined by the QA plan,
+13. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths.
-13. Route soft blockers through TL-Lite triage. After TL-Lite returns, read
+14. Route soft blockers through TL-Lite triage. After TL-Lite returns, read
     the triage log to confirm the TRG-NNN entry exists, then parse the literal
     final `VERDICT:` line.
-14. After all tasks complete, spawn QA Lead for final review and human
+15. After all tasks complete, spawn QA Lead for final review and human
     checklist.
-15. Notify the Human with the final review path and current stop/completion
+16. Notify the Human with the final review path and current stop/completion
     state.
 
 Hard stop conditions:
-- Developer quality gate fails. Do not send red tests, analyzer, formatting, or
-  coverage failure to TL-Lite.
+- Developer quality gate fails. Do not send red tests, lint/static-analysis,
+  formatting, or coverage failure to TL-Lite.
+- Developer completion report omits a required task-spec or QA-plan command,
+  records it as skipped without a `BLOCKED` reason, or substitutes a narrower
+  command for a required gate.
 - Developer fails to produce a completion or blocker report.
 - Completion report lacks required headings, commit hash, or commit subject.
-- Recorded commit cannot be verified.
+- Recorded commit hash does not resolve via `git rev-parse --verify
+  <hash>^{commit}` to a single commit matching the report subject.
 - A blocker report says the task could not be completed, the gate cannot pass,
   a commit cannot be produced, or scope conflicts prevent progress.
 - Scope conflict, missing artifact, child-agent unavailability, or branch issue
@@ -323,14 +339,20 @@ Responsibilities:
 3. Write failing tests first for behavior changes.
 4. Implement minimum code to pass, then refactor only while tests stay green.
 5. Update docs named in the task spec.
-6. Run required quality gates in order. If the task spec does not define a
-   gate, use the standard fallback gate from `AGENTS.md`.
+6. Run required quality gates in order. If the task spec lists both a focused
+   loop and a full task gate, the full task gate is required before task close
+   unless the task explicitly says otherwise. The focused loop is the iteration
+   loop and does not substitute for the full gate at close. If the task spec
+   does not define a gate, use the standard fallback gate from `AGENTS.md`.
 7. If any gate fails, fix the issue and rerun the exact failed command. Do not
    substitute ad hoc coverage commands for the required gate.
 8. Create or update the completion report immediately after gate outcome is
    known.
 9. Commit with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
-10. Ensure the final completion report includes commit hash and subject.
+10. Record the commit hash and subject by copying them verbatim from `git`
+    output: `git rev-parse --short HEAD` or `git rev-parse HEAD` for the hash,
+    and `git log -1 --format=%s` for the subject. Never type, pad, complete, or
+    recall a hash from memory.
 11. Stop after report and commit are complete.
 
 Required completion report headings, in order:
@@ -390,6 +412,15 @@ Validation contract refinement (before finalizing the QA plan):
   `VAL-NNN`.
 - Confirm every `VAL-NNN` has a clear validator role and a concrete evidence
   method that can be turned into a `QA-NN` step or `(human)` item.
+- Confirm each `VAL-NNN` describes one observable behavior or invariant. If a
+  human assertion necessarily spans several observables, require one
+  human-checklist row per observable using sub-IDs that cite the parent
+  `VAL-NNN`.
+- Confirm conditional or binary assertions require both qualifying and
+  non-qualifying states. Positive-only evidence and source reads such as "uses
+  flag X" are not sufficient proof.
+- Confirm parity or "matches reference" assertions have a deterministic
+  conformance proof when the reference can be checked mechanically.
 - If gaps exist, return revisions to Tech Lead or raise an ESC. Do not proceed
   with the QA plan until the contract is sufficient.
 
@@ -405,6 +436,9 @@ QA plan must include:
 - Human checklist items suffixed `(human)` only for perception, dogfooding,
   product-owner judgment, tone, or real-device behavior. Each `(human)` item
   cites the `VAL-NNN` it judges.
+- One observable per human checklist row. When a `(human)` `VAL-NNN` covers
+  several surfaces or affordances, fan it out into one row per discrete
+  observable, with sub-IDs that all cite the same parent `VAL-NNN`.
 - `## Command And Feasibility Validation` listing each referenced command,
   test scope, fixture setup, artifact assumption, and human-checklist
   feasibility check. Invalid or unvalidated checklist steps are QA-plan
@@ -466,12 +500,16 @@ Responsibilities:
   `VAL-NNN` and evidence in the per-task section. An assertion that cannot
   be evidenced is a Blocking finding unless the assertion is explicitly
   scheduled for a later task window.
+- Compare each reviewed task's completion report against the task spec's exact
+  commands and the QA plan's required commands. Missing required gates, skipped
+  gates without a `BLOCKED` reason, or narrower substituted commands are
+  Blocking findings.
 - Check architecture, layer boundaries, business logic placement, test quality,
   test-pair compliance, naming, docs, dependency-budget compliance,
   quality-gate reality, and commit/report hygiene.
-- Run targeted commands where useful, such as `go test ./internal/<scope>/...`,
-  `go vet ./...`, or focused linting. Do not run broad mutating or full-gate
-  commands unless explicitly asked.
+- Run targeted commands where useful, such as `go test ./internal/<scope>/...`
+  or package-scoped linting. Do not run broad mutating or full-gate commands
+  unless explicitly asked.
 - Classify findings as Blocking or Improvement.
 - Each finding should include severity, file:line where possible, what is
   wrong, and fix direction.
@@ -723,6 +761,20 @@ Coverage rules (verified before phase execution):
 - Every `VAL-NNN` has at least one QA plan verification step (`QA-NN` or
   `(human)`) and a single validator role.
 
+Authoring rules:
+- Each `VAL-NNN` should describe one observable behavior, invariant, or
+  release-readiness claim.
+- Conditional or binary assertions must name both qualifying and
+  non-qualifying states in their pass/fail criteria. Positive-only evidence is
+  not sufficient.
+- Parity or "matches reference" assertions should include a structural
+  conformance or parity proof whenever the reference can be checked
+  deterministically.
+- Human assertions are reserved for perception, product-owner judgment,
+  dogfooding, tone, or flow coherence. If a human assertion necessarily spans
+  several observables, the contract notes that QA Lead must fan it out into one
+  human-checklist row per observable.
+
 Outcomes (recorded at phase end in `final-review.md`):
 - `PASS` - assertion satisfied with cited evidence.
 - `FAIL` - assertion not satisfied; blocking unless explicitly carried forward.
@@ -804,18 +856,26 @@ Use the task-spec command list when it exists. Otherwise use the `AGENTS.md`
 standard commands.
 
 Quality gate commands are defined in `AGENTS.md`. Replace every placeholder
-before implementation starts. The Go toolchain provides:
+before implementation starts.
 
-- `gofmt` / `goimports` for formatting
-- `go vet ./...` for static analysis
-- `go test ./... -cover` for tests with coverage
-- `staticcheck ./...` or `golangci-lint run` if adopted
+Task-level default gate:
+
+```bash
+gofmt -l .
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+```
 
 Conditional:
 - `go generate ./...` when generated inputs change.
 
 Run codegen when generated inputs change. Run additional linting when requested,
 when lint debt is in scope, or when the phase QA plan enforces it.
+
+Every required command listed by a task spec or QA plan must be recorded in the
+completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
+Missing, silently skipped, or narrower substituted commands are failed gates.
 
 ## 8. Stop And Escalate
 

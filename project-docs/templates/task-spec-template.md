@@ -56,17 +56,35 @@ If this task does not advance a validation assertion, state why explicitly
 - Cross-surface parity impact: <None / Phase Brief Parity Matrix axes to check>
 - Audit or release-readiness impact: <None / template or review to update>
 
-## Quality Gate
+## Exact Commands To Run
 
 Run exactly:
 
 ```text
-<FORMAT_COMMAND>
-<LINT_COMMAND>
-<COVERAGE_COMMAND>
+gofmt -l .
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
 ```
 
-If any command is still a placeholder, stop and report a configuration defect.
+The full task gate above is required before task close unless this task
+explicitly states otherwise here. A focused test command may be used during the
+red/green loop, but it does not substitute for the full task gate at close.
+Every required command must be recorded in the completion report as `PASS`, or
+as `BLOCKED` with reason in a blocker report. Missing, silently skipped, or
+narrower substituted commands are failed gates.
+
+Conditional commands:
+
+```text
+go test -tags integration -race ./...
+go test -bench . -benchmem ./...
+go build -o /tmp/fid ./cmd/fid
+```
+
+List any conditional command required by this task and why:
+
+- None.
 
 ## Notes For Developer
 
