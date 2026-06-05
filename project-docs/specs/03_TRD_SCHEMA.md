@@ -35,6 +35,10 @@ collision appears only after journal merge, `fid rebuild` reports the
 conflicting events and requires a human to rewrite one event's ID plus
 its same-event references.
 
+Journal event IDs are not entity row IDs. They use the
+`EVT-<UTC YYYYMMDD>-<sequence>` shape defined in `02_TRD.md` §4.3 and are
+stored in `activity_log.journal_event_id` and `projection_meta.last_event_id`.
+
 ### 1.1 Generated Prefixes
 
 | Prefix | Entity |

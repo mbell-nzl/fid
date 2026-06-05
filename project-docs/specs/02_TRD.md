@@ -278,13 +278,34 @@ Each JSONL line is one canonical JSON object with these top-level fields:
 
 | Field | Required | Semantics |
 |---|---|---|
-| `event_id` | yes | Stable generated event ID. Used by `activity_log.journal_event_id`, replay diagnostics, and projection metadata. |
+| `event_id` | yes | Stable generated event ID with shape `EVT-<UTC YYYYMMDD>-<sequence>`. Used by `activity_log.journal_event_id`, replay diagnostics, and projection metadata. |
 | `event_schema` | yes | Positive integer schema version. v0.1 writes `1`. |
 | `event_type` | yes | Semantic command/event name, e.g. `project.initialized`, `issue.created`, `issue.transitioned`, `claim.acquired`. |
 | `occurred_at` | yes | UTC ISO 8601 timestamp assigned once before append. |
 | `actor` | yes | Object with `role` and optional `actor` string. `role` is the `--by` role for CLI writes. |
 | `command` | yes | Sanitized command metadata: `argv`, `cwd`, `fid_version`, and no environment variables or sensitive flag values. |
 | `effects` | yes | Ordered array of row-level effects applied atomically during projection. |
+
+**Event ID and journal file allocation:**
+
+The writer reads the UTC clock exactly once while holding `.fid/write.lock`.
+That instant supplies:
+
+- `occurred_at`;
+- the journal file date, `.fid/journal/<UTC YYYY-MM-DD>.jsonl`;
+- the event ID date component, `EVT-<UTC YYYYMMDD>-<sequence>`.
+
+The sequence component is a zero-padded decimal number allocated per UTC journal
+file. Under the lock, fid scans existing events in the target file, takes the
+largest sequence already present for that date, and writes the next sequence
+(`000001` for the first event in that UTC day). If a day exceeds six digits,
+the width may grow; readers treat the suffix as decimal, not fixed-width text.
+
+If the chosen UTC date is earlier than the greatest existing journal file date,
+fid exits non-zero with a clock-skew error and does not append. If the clock
+crosses midnight after the single timestamp read, the event still goes to the
+file chosen from that read. During replay, journal files are processed in
+ascending `YYYY-MM-DD` filename order, then line order within each file.
 
 Effect objects use a shared shape:
 
@@ -473,6 +494,8 @@ preferred domain correction command.
 
 - `fid rebuild` replays the full journal into a fresh DB. Linear scan;
   sub-second at single-project scale.
+- Replay processes `.fid/journal/YYYY-MM-DD.jsonl` files in ascending UTC date
+  filename order, then line order within each file.
 - On every CLI invocation, the DB is checked against the journal tail. If
   behind or missing, it is caught up synchronously before the command answers.
 - The SQLite read model stores one `projection_meta` row recording the last

@@ -320,6 +320,7 @@ ambiguous.
 | PRD-ERR-011 | AC addition or completion creation on an epic-kind issue | Return "acceptance criteria / completions are not valid on epics" with non-zero exit code. |
 | PRD-ERR-012 | Command targeting a v0.2+ entity whose CLI surface has not shipped (e.g. `fid decision create` in v0.1) | Return "commands for <entity> ship in <version>" with non-zero exit code. |
 | PRD-ERR-013 | Export to a directory that does not exist | Create the directory tree rather than failing. |
+| PRD-ERR-014 | Journal append would use a UTC date older than the latest existing journal file | Return "system clock is behind latest journal date <date>; refusing to append out of order" with non-zero exit code. |
 
 ## 6. Traceability
 

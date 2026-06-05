@@ -1328,6 +1328,11 @@ error: malformed journal entry at .fid/journal/2026-05-27.jsonl:142
   rebuild stopped — manual repair required
 ```
 
+**Error (clock skew):**
+```text
+error: system clock is behind latest journal date 2026-06-05; refusing to append out of order
+```
+
 ---
 
 ## 19. Maintenance Commands

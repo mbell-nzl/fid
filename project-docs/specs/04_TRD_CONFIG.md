@@ -14,7 +14,7 @@ following layout:
 ```
 .fid/
 ├── journal/
-│   └── YYYY-MM-DD.jsonl       # append-only journal; one file per day
+│   └── YYYY-MM-DD.jsonl       # append-only journal; one file per UTC day
 ├── config.toml                # project configuration
 ├── pricing.toml               # model pricing data
 ├── fid.sqlite                 # derived query cache (gitignored)
@@ -23,7 +23,7 @@ following layout:
 
 | Path | Purpose | Committed to git? |
 |---|---|---|
-| `journal/YYYY-MM-DD.jsonl` | Source of truth. Append-only event journal. | Yes |
+| `journal/YYYY-MM-DD.jsonl` | Source of truth. Append-only event journal. Filenames use the UTC date from the event writer's single clock read. | Yes |
 | `config.toml` | Project-scoped configuration. | Yes |
 | `pricing.toml` | Model pricing data (ships with defaults, user-overridable). | Yes |
 | `fid.sqlite` | SQLite query cache. Derived projection of the journal. Deletable and rebuilt via `fid rebuild`. | No (gitignored) |
