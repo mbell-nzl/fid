@@ -208,7 +208,7 @@ where a requirement is deferred past v0.1.
 | PRD-GOV-003 | When an escalation is resolved, the system shall require a link to a resolving decision. | Must | v0.2 |
 | PRD-GOV-004 | The system shall support triage event records with RESUME/BLOCK verdict, source classification (dev_concern, qa_block, esc_open), source reference, and reasoning. | Must | v0.2. Stub tables in v0.1. |
 | PRD-GOV-005 | When a triage verdict is BLOCK, the system shall support creating an escalation from the triaged concern or finding. | Must | v0.2 |
-| PRD-GOV-006 | The system shall support requirement pointer records with source document, source section, summary label, and a drift-detection hash. | Must | v0.2. Stub tables in v0.1. |
+| PRD-GOV-006 | The system shall support requirement pointer records with source document, source section, summary label, and a drift-detection hash. | Must | v0.1 minimal sync for valid issue -> requirement links; v0.2 adds requirement get/list and drift reporting. |
 | PRD-GOV-007 | When a requirement's source section content has changed relative to the stored hash, the system shall report the drift. | Should | v0.2 |
 | PRD-GOV-008 | The system shall support comments on issues, QA reviews, decisions, escalations, and requirements. | Should | v0.2 |
 | PRD-GOV-009 | The system shall support carry-forward items with statuses: open, scheduled, closed, principled. | Should | v0.4 |
@@ -337,12 +337,13 @@ phase planning.
 | PRD-CLAIM-001 – 008 | v0.1 | | |
 | PRD-ROLE-001 – 005 | v0.1 | | |
 | PRD-LINK-001 – 006, 008 | v0.1 | | |
+| PRD-GOV-006 | v0.1 | | |
 | PRD-TELEM-001 – 004 | v0.1 | | |
 | PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
 | PRD-ISSUE-024 – 025 | v0.2 | | |
 | PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
-| PRD-GOV-001 – 008, 012 – 013 | v0.2 | | |
+| PRD-GOV-001 – 005, 007 – 008, 012 – 013 | v0.2 | | |
 | PRD-TELEM-005 – 006 | v0.2 | | |
 | PRD-OUT-005 – 007, 018 – 020 | v0.2 | | |
 | PRD-OPS-011, 014 – 015 | v0.2 | | |

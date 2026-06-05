@@ -53,7 +53,7 @@ with whet's task artifacts.
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | `.fid/` directory structure | Create `.fid/`, `.fid/journal/`, `.fid/.gitignore` (ignores `fid.sqlite`). Store `config.toml` and `pricing.toml`. | PRD-INIT-001, TRD §4.3 |
-| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `gate_runs`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `projection_meta`, `roles`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`, `requirements`. | TRD §4.1, spec §6 |
+| SQLite schema and migrations | All v0.1 tables: `issues`, `epic_metadata`, `acceptance_criteria`, `ac_verifications`, `gate_runs`, `task_completions`, `concerns`, `links`, `claims`, `agent_runs`, `labels`, `issue_labels`, `activity_log`, `projection_meta`, `roles`, `requirements`. Stub tables (schema only, no CLI): `decisions`, `escalations`, `triage_events`. | TRD §4.1, spec §6 |
 | SQLite triggers | Kind-invariant rules, polymorphic ref integrity, link scope validation, claim scope, comment scope, kind immutability, mutually-exclusive qa_review columns. `PRAGMA foreign_keys = ON; PRAGMA recursive_triggers = ON`. | TRD §4.4–4.5, spec §6.14 |
 | `issues_enriched` view | LEFT JOIN open concern count and latest triage status. Indexes on `concerns(issue_id, status)` and `triage_events(issue_id, created_at)`. | TRD-ARCH-008, spec §6.1.1 |
 | Write lock | Checkout-scoped `.fid/write.lock` acquired before freshness checks, validation, event construction, journal append/fsync, and SQLite projection. Lock metadata records PID, hostname, started_at, command, and actor role when available. | PRD-NFR-008, TRD §4.3 |
@@ -101,6 +101,7 @@ with whet's task artifacts.
 | Claim-transition integration | Transitions into started-category require live claim by caller. Transitions out release claim. | PRD-CLAIM-005–006 |
 | Human claims | `--by human` signals agents should not advance. | PRD-CLAIM-008 |
 | Permissions matrix | In-code constant for v0.1. Enforce `--by <role>` on every write. Reject unknown roles. Reject denied role/action combinations with actionable error. `fid policy show` displays the read-only in-code matrix in v0.1 so agents can inspect permitted actions before v0.2 configurability. | PRD-ROLE-001–005, TRD-ARCH-010 |
+| `fid requirement sync` (minimal) | Parse canonical PRD/TRD requirement IDs from a source doc and upsert pointer rows (`id`, type, summary, source, hash) so v0.1 issue → requirement links have valid endpoints. No requirement get/list or drift report until v0.2. | PRD-GOV-006, PRD-LINK-002 |
 | `fid link add/remove` | Create or remove typed links with auto-inverse projection. v0.1 scope: issue ↔ issue, issue → requirement. Validate relation/entity-type compatibility. Reject links that duplicate dedicated schema. | PRD-LINK-001–006a, 008 |
 | `fid link list` | List all links from and to an entity. | PRD-LINK-006 |
 | `fid label add/list` and `fid issue label add/remove` | Create labels, list labels, and add/remove issue label assignments without replacing the full label set. `fid issue update --labels` remains replace-all. `issue_labels` junction for multi-value. | PRD-ISSUE-015, PRD-ISSUE-023 |
@@ -167,7 +168,7 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | `fid triage record` | Triage events with RESUME/BLOCK verdict, source classification, reasoning. | PRD-GOV-004 |
 | `fid triage start/verdict` | Composite TL-Lite triage commands. | PRD-GOV-012 |
 | `fid tl wrapup` | Composite: capture wrap-up notes, close already-resolved escalations, and transition → wrapped. Retrospective row creation waits for v0.4 retrospective support. | PRD-GOV-013 |
-| `fid requirement get/list/sync` | Requirement pointer records. Drift detection via `last_synced_hash`. | PRD-GOV-006–007 |
+| `fid requirement get/list` and sync drift reporting | Requirement pointer reads and filters. `fid requirement sync` already exists from v0.1; v0.2 adds drift reporting from `last_synced_hash` and `fid requirement list --drifted`. | PRD-GOV-006–007 |
 | `fid comment add` | Comments on issues, decisions, escalations, requirements. `--on <type>/<id> --body-md --by <role>`. | PRD-GOV-008 |
 | Links expansion | Link endpoints expand to `decision` and `escalation`. | PRD-LINK-007 |
 

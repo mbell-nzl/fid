@@ -2160,6 +2160,30 @@ tl wrapup FID-e1f2g3
 wrap-up artifact when policy requires one, or denied `tl.wrapup`
 permission.
 
+### `fid requirement sync`
+
+```
+fid requirement sync --source-doc <path> [--type PRD|TRD]
+    [--id <requirement-id>] --by <role>
+```
+
+v0.1 ships this minimal ingestion command so `fid link add ... implements
+PRD-*` can validate that the requirement endpoint exists. It parses canonical
+requirement IDs from the source document and upserts pointer rows with
+`last_synced_hash`; it stores source pointers and summaries, not copied
+requirement prose. v0.1 does not provide drift reports beyond storing the hash.
+
+**Output (v0.1):**
+```text
+synced requirements from project-docs/specs/01_PRD.md
+  created: 3
+  updated: 12
+  unchanged: 87
+```
+
+**Errors:** no parseable requirement IDs, duplicate IDs in source, unknown type,
+or denied `requirement.sync` permission.
+
 ### `fid requirement get` (v0.2+)
 
 ```
@@ -2187,18 +2211,12 @@ fid requirement list [--type PRD|TRD] [--status active|deprecated]
     [--drifted] [--source-doc <path>] [--format json|toon|markdown|yaml]
 ```
 
-### `fid requirement sync` (v0.2+)
+### `fid requirement sync` drift reporting (v0.2+)
 
-```
-fid requirement sync --source-doc <path> [--type PRD|TRD]
-    [--id <requirement-id>] --by <role>
-```
+The v0.2 command keeps the v0.1 flags and adds drift reporting against existing
+`last_synced_hash` values.
 
-Parses canonical requirement IDs from the source document and upserts pointer
-rows with a `last_synced_hash` for drift detection. It stores source pointers
-and summaries, not copied requirement prose.
-
-**Output:**
+**Output addition:**
 ```text
 synced requirements from project-docs/specs/01_PRD.md
   created: 3
@@ -2206,9 +2224,6 @@ synced requirements from project-docs/specs/01_PRD.md
   unchanged: 87
   drifted: 2
 ```
-
-**Errors:** no parseable requirement IDs, duplicate IDs in source, unknown type,
-or denied `requirement.sync` permission.
 
 ### `fid comment add` (v0.2+; `qa_review` target v0.3+)
 

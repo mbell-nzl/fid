@@ -129,14 +129,14 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `activity_log` | journal_event_id, ref_type, ref_id, event, details, actor | Polymorphic ref, journal_event_id → journal | Projected from journal events. Read-model only. |
 | `projection_meta` | journal_file, journal_offset, last_event_id, last_event_hash, projection_schema_version, replay_status | Single-row DB projection checkpoint | Lets reads detect missing, stale, or inconsistent SQLite state before serving results. |
 
-**Stub tables (v0.1 schema, v0.2 CLI):**
+**Governance support tables (v0.1 schema, v0.2 CLI unless noted):**
 
 | Entity | Key Fields | Notes |
 |---|---|---|
 | `decisions` | summary, body_md_path, area, status | FK target for escalations.resolution_dec. |
 | `escalations` | status, trigger_class, raised_by_role | FK target for concerns and triage_events. |
 | `triage_events` | verdict (RESUME/BLOCK), source, source_ref_id, reasoning_md | FK target for concerns.triaged_in_event_id. |
-| `requirements` | type (PRD/TRD), summary, source_doc, source_section, last_synced_hash | FK target for links (issue → requirement). |
+| `requirements` | type (PRD/TRD), summary, source_doc, source_section, last_synced_hash | FK target for links (issue → requirement). v0.1 ships minimal `fid requirement sync` so requirement link targets can be created before v0.2 governance reads. |
 
 **Workflow engine (v0.2):**
 

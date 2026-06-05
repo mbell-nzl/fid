@@ -894,7 +894,7 @@ AC verification maps to `issue.ac.verify.human`, not
 | `workflow.assign` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 | `role.create` (v0.2) | – | – | – | – | ✓ | – | ✓ |
 | `policy.set` (v0.2) | – | – | – | – | ✓ | – | ✓ |
-| `requirement.sync` (v0.2) | – | – | – | – | ✓ | – | ✓ |
+| `requirement.sync` | – | – | – | – | ✓ | – | ✓ |
 | `triage.start` (v0.2) | – | – | – | ✓ | – | – | ✓ |
 | `triage.verdict` (v0.2) | – | – | – | ✓ | – | – | ✓ |
 | `tl.wrapup` (v0.2) | – | – | – | – | ✓ | – | ✓ |
