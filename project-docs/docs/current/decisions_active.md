@@ -34,11 +34,11 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-002 | Scaffold | Split `scaffold/initial-spec.md` progressively into the canonical spec suite under `project-docs/specs/`. | Pre-Phase 0 | High |
+| _None open_ | - | CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`. | - | - |
 
 ## Scheduled Commitments
 
-- The first implementation phase must validate that every command in
+- Phase 0 must validate that every command in
   `AGENTS.md` is concrete and executable for the chosen stack.
 - Every planned phase must create
   `project-docs/docs/phases/phase-N/qa/validation-contract.md` with `VAL-NNN`
