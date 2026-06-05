@@ -7,7 +7,7 @@
 
 ## Project State
 
-**Status:** Phase 0 executing (branch `phase-0/spec-foundation`).
+**Status:** Phase 0 executing (branch `phase-0/spec-foundation`; task 3 blocked on the local lint toolchain mismatch).
 
 Completed:
 
@@ -18,6 +18,8 @@ Completed:
 - Phase 0 validation contract and task specs drafted; QA plan created
   (`phase-0/qa/qa-plan.md`).
 - Task 1 verified complete (commit `e65e282`, CLI walking skeleton).
+- Task 3 spec audit drafted, but the task is blocked before the full exact gate
+  can complete because the installed `golangci-lint` rejects `gosimple`.
 
 In progress:
 
@@ -25,8 +27,10 @@ In progress:
   `golangci-lint`/`go` caches were read-only outside the workspace. Resolved by
   DEC-001 (cache redirection via `.codex/config.toml` + `.gitignore`). Task 2
   must be re-run in a fresh session; `task-2-completion.md` still missing.
+- Task 3 remains blocked at the task-gate layer; the spec audit itself found no
+  blocking Phase 0 stack, command, or workflow gap.
 
 Next action:
 
-- Re-spawn Phase Runner in a fresh session to resume from Task 2 (see TL prompt
-  provided to the human).
+- Re-run the task-gate lint command in a toolchain that accepts the current
+  `.golangci.yml`, then resume the phase runner loop.
