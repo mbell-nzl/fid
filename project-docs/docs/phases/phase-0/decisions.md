@@ -58,6 +58,45 @@
   `project-docs/templates/triage-log-template.md`.
 - Spec sync: `09_AI_WORKFLOW.md` touched (WF-10 warm-up text removed).
 
+### DEC-003: Standardize on golangci-lint v2; drop `gosimple` linter name
+
+- Date: 2026-06-06
+- Author: Tech Lead
+- Context: Task 2 and Task 3 lint gates never ran green. Root cause is a
+  three-layer version contradiction, not a local-only environment issue:
+  1. `08_QUALITY_PLAN.md` LINT-002 mandates `gosimple` in the linter set — a
+     golangci-lint **v1** linter name.
+  2. `.golangci.yml` declares `version: "2"` (with a v2-only `formatters:`
+     block) yet enables `gosimple`. In golangci-lint **v2**, `gosimple` no
+     longer exists as a standalone linter (its checks are part of
+     `staticcheck`), so the installed v2.12.2 correctly errors
+     `unknown linters: 'gosimple'`.
+  3. `.github/workflows/ci.yml` pins `golangci-lint@v1.64.8` via the **v1**
+     module path (`.../cmd/golangci-lint`), which cannot correctly read a
+     `version: "2"` config either. CI is mismatched in the opposite direction.
+  TRG-001 RESUME ("local binary mismatch only; CI pins a compatible version")
+  was incorrect in hindsight — this is a committed repo-config defect that
+  blocked every task gate. Flag at wrap-up; see Workflow notes.
+- Decision: Standardize the project on **golangci-lint v2**.
+  1. Spec: amend LINT-002 to drop `gosimple` from the mandated set and note its
+     checks are covered by `staticcheck` under v2. (Done in this wrap action.)
+  2. `.golangci.yml`: remove the `- gosimple` line. Remaining names
+     (`errcheck`, `govet`, `staticcheck`, `unused`, `ineffassign`, `misspell`,
+     + `gofmt`/`goimports` formatters) are all valid v2 names.
+  3. CI: install a v2 binary via the v2 module path, pinned to match the dev
+     toolchain: `go install
+     github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2`.
+- Process: Task 2 is reopened — its gate was never green, so the tooling slice
+  is not actually complete. A Developer applies fixes (2) and (3), runs the full
+  Task 2 gate to green, and rewrites `task-2-completion.md` with real PASS
+  evidence. Phase Runner then re-runs Task 3 (gate now green → `spec-audit.md`
+  produced) and the phase-end QA pass.
+- Spec sync: `08_QUALITY_PLAN.md` touched (LINT-002). Confirm no other spec
+  pins `gosimple` (audit found only LINT-002).
+- Files (TL, now): `project-docs/specs/08_QUALITY_PLAN.md`.
+- Files (Developer, reopened Task 2): `.golangci.yml`,
+  `.github/workflows/ci.yml`, `project-docs/docs/phases/phase-0/tasks/task-2-completion.md`.
+
 ## Carry-Forward Disposition At Kickoff
 
 | ID | Disposition | Rationale | Follow-up |

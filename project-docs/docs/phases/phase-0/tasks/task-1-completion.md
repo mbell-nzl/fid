@@ -63,8 +63,8 @@ Compare this section against the task spec's `## Exact Commands To Run`.
 
 ## Commit hash
 
-- Pending commit.
+- `e65e28215ad1c206b205b3bbabcb809be4edd302`
 
 ## Commit subject
 
-- Pending commit.
+- `feat: add Phase 0 CLI walking skeleton`

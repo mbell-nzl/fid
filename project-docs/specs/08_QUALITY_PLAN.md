@@ -171,9 +171,11 @@ library, external packages, internal packages.
 All Go code shall pass `golangci-lint run` with zero errors before any commit.
 
 **LINT-002** [Ubiquitous]
-The golangci-lint configuration (`.golangci.yml`) shall enable at minimum:
-`errcheck`, `govet`, `staticcheck`, `unused`, `gosimple`, `ineffassign`,
-`misspell`, `gofmt`, `goimports`.
+The project shall target **golangci-lint v2**. The configuration
+(`.golangci.yml`) shall enable at minimum: `errcheck`, `govet`, `staticcheck`,
+`unused`, `ineffassign`, `misspell`, `gofmt`, `goimports`. Under golangci-lint
+v2 the former `gosimple` linter is folded into `staticcheck` and is not a
+separate linter name; its checks remain enforced via `staticcheck`. See DEC-003.
 
 ### 4.3 Coverage
 

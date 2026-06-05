@@ -72,8 +72,8 @@ Compare this section against the task spec's `## Exact Commands To Run`.
 
 ## Commit hash
 
-- Pending commit metadata for this report update.
+- `88be95c31683fb1bd882107509243592fc7eef0b`
 
 ## Commit subject
 
-- Pending commit metadata for this report update.
+- `docs: update Phase 0 task 3 blocker report`
