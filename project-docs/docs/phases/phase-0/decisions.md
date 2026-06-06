@@ -132,6 +132,27 @@
     controls where that write goes.
 - Files touched: `go.mod`, `go.sum`.
 
+### DEC-005: Keep the sandbox cache-redirection rule in AGENTS.md, not in `09_AI_WORKFLOW.md`
+
+- Date: 2026-06-06
+- Author: Tech Lead
+- Context: A Phase 0 scheduled commitment asked, at wrap, whether DEC-001
+  (sandbox cache redirection into gitignored repo-local dirs) also belongs in
+  `09_AI_WORKFLOW.md`. The operational rule already lives in `AGENTS.md`
+  (lines 170-179), which `CLAUDE.md` imports, so every agent session already
+  receives it.
+- Decision: Do **not** copy the cache-redirection rule into
+  `09_AI_WORKFLOW.md`. It is an agent-environment / host-sandbox property, not a
+  workflow-process step. `09_AI_WORKFLOW.md` describes the canonical agent
+  workflow and is consumed as-is by the build pipeline; host caching belongs in
+  the grounding file (`AGENTS.md`). This closes the scheduled commitment.
+- Consequences: The cache convention has a single home (`AGENTS.md` +
+  `.codex/config.toml`, recorded in DEC-001). `09_AI_WORKFLOW.md` spec-sync for
+  this item is `verified-no-change`; the file was still touched separately for
+  DEC-002 (warm-up removal).
+- Files touched: none (decision to make no change; recorded here and in the
+  spec-sync table).
+
 ## Carry-Forward Disposition At Kickoff
 
 | ID | Disposition | Rationale | Follow-up |
@@ -140,26 +161,86 @@
 
 ## Spec Sync Verdict
 
-Pending phase wrap-up.
+Recorded at phase wrap-up (2026-06-06). `verified-no-change` is a positive
+review assertion: the spec was walked against in-phase DEC-NNN, deviations, and
+do-now QA recommendations and confirmed to need no edit.
 
 | Spec | Verdict | Evidence / Reference |
 |---|---|---|
-| `00_PROJECT_CHARTER.md` | pending | Phase wrap-up required |
-| `01_PRD.md` | pending | Phase wrap-up required |
-| `02_TRD.md` | pending | Phase wrap-up required |
-| `03_TRD_SCHEMA.md` | pending | Phase wrap-up required |
-| `04_TRD_CONFIG.md` | pending | Phase wrap-up required |
-| `05_DESIGN_PLAN.md` | pending | Phase wrap-up required |
-| `06_DESIGN_PLAN_CLI.md` | pending | Phase wrap-up required |
-| `07_DESIGN_PLAN_FLOWS.md` | pending | Phase wrap-up required |
-| `08_QUALITY_PLAN.md` | pending | Phase wrap-up required |
-| `09_AI_WORKFLOW.md` | pending | Phase wrap-up required |
-| `10_IMPLEMENTATION_ROADMAP.md` | pending | Phase wrap-up required |
+| `00_PROJECT_CHARTER.md` | verified-no-change | No Phase 0 decision or deviation touched charter scope. |
+| `01_PRD.md` | verified-no-change | VAL-008 spec audit found PRD §7 open questions out of Phase 0 scope; no requirement changed. |
+| `02_TRD.md` | verified-no-change | Stack (Cobra) was accepted, not changed; Proposed frontmatter/TUI deps stay deferred. DEC-004 is a patch bump within the accepted dependency. |
+| `03_TRD_SCHEMA.md` | verified-no-change | No schema work in Phase 0 (scaffold only). |
+| `04_TRD_CONFIG.md` | verified-no-change | No config-surface work in Phase 0. |
+| `05_DESIGN_PLAN.md` | verified-no-change | Root CLI help skeleton matches Design §§2, 3.1; no design change required. |
+| `06_DESIGN_PLAN_CLI.md` | verified-no-change | No v0.1 subcommand surface implemented; CLI design untouched. |
+| `07_DESIGN_PLAN_FLOWS.md` | verified-no-change | No flow implementation in Phase 0. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-003 | LINT-002 amended to drop `gosimple` (folded into `staticcheck` under golangci-lint v2). Verified in spec lines 173-178. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-002 | WF-10 warm-up safeguard removed; autonomous TL-Lite resume documented. DEC-005 confirms the DEC-001 cache rule stays in `AGENTS.md` (no further 09 change). |
+| `10_IMPLEMENTATION_ROADMAP.md` | verified-no-change | Phase 0 met roadmap items and exit criteria as written; no roadmap edit needed. |
 
 ## Workflow Notes
 
-Pending phase wrap-up.
+**What worked well.**
+
+- The validation contract → task spec → completion report → final review chain
+  held: all nine VAL assertions reached `PASS` with reproducible command
+  evidence, and the final review verified all three task commit hashes.
+- Failures were caught and root-caused rather than papered over. The lint gate
+  never going green forced a real diagnosis (DEC-003) instead of a narrowed
+  command.
+- Recovering by reopening Task 2 (rather than bolting fixes onto Task 3) kept
+  the "tooling slice is not done until its gate is green" invariant honest.
+
+**What was inefficient.**
+
+- The golangci-lint v1/v2 contradiction was a committed, three-layer defect
+  (spec LINT-002 + `.golangci.yml` + CI pin) that masqueraded as a local
+  environment mismatch for a full triage cycle before being correctly
+  diagnosed. That cost a reopen and a re-run of Task 3.
+- The sandbox cache blocker (DEC-001) and the cobra pin (DEC-004) were
+  environment papercuts that surfaced mid-phase rather than during scaffold
+  setup.
+
+**Were tasks the right size?**
+
+- Yes. Three ordered tasks (scaffold → tooling → audit) were appropriately
+  one-session each. The Task 2 reopen was caused by a latent repo defect, not
+  by the task being too large.
+
+**Did QA cadence feel right?**
+
+- Adequate for a planning/foundation phase. One mid-phase review (review-1,
+  CONTINUE) plus the phase-end final review was proportionate to three tasks.
+  The mid-phase review did not catch the v1/v2 defect because the gate had not
+  yet been forced green — a deterministic "the gate must actually run green"
+  check earlier would have surfaced it sooner.
+
+**Were token-efficiency opportunities missed?**
+
+- Minor. The validation contract, brief, and decisions stayed within budget.
+  The main avoidable cost was re-triaging TRG-001 instead of treating a
+  persistently red gate as a repo defect on first encounter.
+
+### TRG / Triage Audit
+
+- **TRG-001 (RESUME) — mis-triage in hindsight, flagged.** It treated a
+  committed repo-config defect (golangci-lint v2 rejecting `gosimple`, with a
+  mismatched CI v1 pin) as a local-only installed-binary mismatch. Under the
+  TL-Lite escalation triggers this should have escalated: it ultimately changed
+  a quality gate, spanned multiple files/subsystems (`.golangci.yml`, CI, spec
+  LINT-002), and was a quality-gate anomaly not anticipated by the QA plan
+  (triggers 4, 5, and QA-anomaly). The repo is now green via DEC-003; no
+  carry-forward remains, but the heuristic lesson stands (see deep retro).
+- Autonomous TL-Lite resume confirmed in effect (DEC-002); no warm-up tally to
+  maintain.
 
 ### Deep Retrospective Recommendation
 
-Pending phase wrap-up.
+Recommend a **lightweight** retrospective note rather than a deep retro. Phase 0
+is small and its single substantive lesson is already captured. Carry one
+heuristic into Phase 1 triage guidance: **a quality-gate command that stays red
+across runs should be treated as a candidate repo/config defect (escalate),
+not assumed to be a local environment mismatch (resume), unless the failure is
+demonstrably tied to an unsupported locally-installed tool version.** Consider
+encoding this as a triage check when v0.2 governance tooling formalizes triage.

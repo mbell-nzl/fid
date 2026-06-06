@@ -72,8 +72,8 @@ Compare this section against the task spec's `## Exact Commands To Run`.
 
 ## Commit hash
 
-- `TBD`
+- `11d58f3a0372070c48f61817f7e512b47b16c13e`
 
 ## Commit subject
 
-- `TBD`
+- `docs: add Phase 0 spec audit and readiness report`

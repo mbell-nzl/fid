@@ -641,9 +641,11 @@ project-docs/
   `tl_lite`.
 - Child prompts must be explicit and self-contained. A bare role handoff is not
   enough.
-- `.codex/config.toml` profiles and `.codex/agents/*.toml` must stay
-  behaviorally aligned, including model choices and stop conditions, unless a
-  documented reason says otherwise.
+- Project-scoped Codex agent files live in `.codex/agents/*.toml` and carry
+  each role's model choices, reasoning effort, and stop conditions. Do not add
+  `[profiles.*]` to project-local `.codex/config.toml`; current Codex ignores
+  project-local `profiles` keys. Personal profile files, if needed, live under
+  `~/.codex/` and are selected with `--profile`.
 - Start a fresh Codex session after changing Codex config or agent files.
 
 ### 3.5 Documentation Layout And Size Governance
@@ -822,9 +824,11 @@ The role definitions in section 2 are canonical behavior for all tools.
 
 - Claude Code materializes them in `.claude/agents/*.md`.
 - Codex materializes them in `.codex/agents/*.toml`.
-- Codex profiles in `.codex/config.toml` must stay behaviorally aligned with
-  the matching `.codex/agents/*.toml`, including model choices, role
-  boundaries, stop conditions, and artifact requirements.
+- Codex custom agents in `.codex/agents/*.toml` must stay behaviorally aligned
+  with this workflow, including model choices, role boundaries, stop
+  conditions, and artifact requirements. Project-local `.codex/config.toml`
+  must not define `[profiles.*]`; personal profile files belong under
+  `~/.codex/` when an operator needs a named top-level launch profile.
 - Templates in `project-docs/templates/` must not contradict the workflow.
 - After changing any of these files, start a fresh Codex or Claude session
   before relying on the updated definitions.

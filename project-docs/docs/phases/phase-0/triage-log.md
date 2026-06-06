@@ -21,13 +21,21 @@
 - **Reasoning:** The blocker is specific to the developer's installed binary, not the repository state. The CI workflow already installs `golangci-lint@v1.64.8`, and task 2's acceptance criteria explicitly allow a blocker only for an unsupported installed version. That makes this a local environment mismatch, not a project-level blocker.
 - **Local decisions made:** none
 - **References:** `.github/workflows/ci.yml:20-21`, `project-docs/docs/phases/phase-0/tasks/task-2.md:51-53`, `project-docs/docs/phases/phase-0/tasks/task-2-completion.md:5-6,29-30,54-56`, `project-docs/docs/current/decisions_active.md:61-64`
+- **Wrap-up hindsight verdict (Tech Lead, 2026-06-06): MIS-TRIAGE — should have
+  escalated.** The blocker was a committed repo-config defect (golangci-lint v2
+  rejecting the v1-only `gosimple` name, plus a mismatched CI v1 pin), not a
+  local installed-binary mismatch. It later required spec, `.golangci.yml`, and
+  CI changes (DEC-003), spanning multiple subsystems and changing a quality
+  gate. Resolved; no carry-forward. Lesson recorded in `decisions.md` Workflow
+  Notes / Deep Retrospective Recommendation.
 
 <!--
 Phase wrap-up checklist:
 
-- [ ] Walked every TRG-NNN above.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
+- [x] Walked every TRG-NNN above.
+- [x] Confirmed each RESUME verdict in hindsight. TRG-001 was NOT correct —
+      flagged as mis-triage (see entry above, DEC-003, and Workflow Notes).
+- [x] Flagged any TRG that should have escalated. (TRG-001.)
+- [x] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
 -->
 

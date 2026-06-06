@@ -47,10 +47,6 @@ closes, or cancels each item.
 
 ## Scheduled Commitments
 
-- Phase 0 must validate that every command in
-  `AGENTS.md` is concrete and executable for the chosen stack.
-- At Phase 0 wrap, decide whether DEC-001 (sandbox cache redirection) also
-  belongs in `09_AI_WORKFLOW.md`; the operational rule is now in `AGENTS.md`.
 - Every planned phase must create
   `project-docs/docs/phases/phase-N/qa/validation-contract.md` with `VAL-NNN`
   assertions before task execution begins.

@@ -1,94 +1,65 @@
-# Phase Brief - Phase 0 (Planning)
+# Phase Brief - Phase 0 (CLOSED) → Phase 1 planning pending
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
+>
+> **State:** Phase 0 is wrapped and closed. No Phase 1 brief exists yet. The
+> Tech Lead will replace this file when Phase 1 (v0.1a Persistence Foundation)
+> is planned. Until then, do not start implementation work.
 
-## Phase Goal
+## Phase Goal (Phase 0 - achieved)
 
-Phase 0 makes fid implementable by agents: a Go/Cobra repository scaffold,
+Phase 0 made fid implementable by agents: a Go/Cobra repository scaffold,
 walking CLI binary, concrete quality tooling, and a final spec audit proving
 Phase 1 can be planned without unresolved stack or command choices.
 
 ## Status
 
-**Planning.** Tech Lead has drafted the validation contract and ordered task
-specs. Next action: human review, then QA Lead creates the Phase 0 QA plan
-before any Developer task execution.
+**CLOSED (2026-06-06).** All three tasks complete; VAL-001..VAL-009 all PASS;
+QA final review PASS WITH IMPROVEMENTS (no blocking/major findings); human
+checklist PASS. Wrap recorded in `../phases/phase-0/decisions.md` and
+`../phases/phase-0/progress.md`.
 
-## Task Index
+**Next action:** Tech Lead plans Phase 1 (v0.1a Persistence Foundation) from
+`../../specs/10_IMPLEMENTATION_ROADMAP.md` — new validation contract + ordered
+task specs, then human review before any Developer execution.
 
-Full task specs and completion reports live under
-`../phases/phase-0/tasks/`.
+## Phase 0 Outcome (archived)
 
-| Task | Title | Status | Dependencies |
+Full task specs, completion reports, validation contract, QA plan, reviews, and
+the final review live under `../phases/phase-0/`.
+
+| Task | Title | Status | Commit |
 |---|---|---|---|
-| 1 | Go Module And CLI Walking Skeleton | Pending | None |
-| 2 | Quality Tooling And CI Stub | Pending | Task 1 |
-| 3 | Spec Audit And Phase Readiness Docs | Pending | Tasks 1-2 |
+| 1 | Go Module And CLI Walking Skeleton | Done | `e65e282` |
+| 2 | Quality Tooling And CI Stub | Done | `de1cb24` |
+| 3 | Spec Audit And Phase Readiness Docs | Done | `11d58f3` |
 
-## Validation Contract
+- Validation contract: VAL-001..VAL-009 all **PASS** (see `final-review.md`).
+- QA plan, mid-phase review-1 (CONTINUE), final review (PASS WITH
+  IMPROVEMENTS), and human checklist (PASS) all complete.
 
-Full contract:
-`../phases/phase-0/qa/validation-contract.md`.
+## Exit Criteria (Phase 0 - all met)
 
-| VAL ID | Source | Owning Task/Window | Validator | Status |
-|---|---|---|---|---|
-| VAL-001 | Roadmap Phase 0, TRD §§2-3 | tasks 1-2 | QA Lead | Draft |
-| VAL-002 | PRD-OPS-009, TRD-PERF-007 | task 1 | QA Lead | Draft |
-| VAL-003 | Roadmap Phase 0, Design §§2, 3.1 | task 1 | QA Lead | Draft |
-| VAL-004 | TRD §§1, 9; dependency budget | tasks 1 and 3 | QA Lead | Draft |
-| VAL-005 | QP §§4-6, WF §7, AGENTS commands | task 2 | QA Lead | Draft |
-| VAL-006 | Roadmap exit, QP §5.1, WF §7 | task 2 / phase-end | QA Lead | Draft |
-| VAL-007 | QP §5.4, WF §§2.2, 5.1 | task 3 / phase-start | QA Lead | Draft |
-| VAL-008 | Roadmap spec audit, TRD §1, PRD §7 | task 3 | QA Lead | Draft |
-| VAL-009 | PRD-NFR-005/006, TRD-SEC-001 | tasks 1-3 / phase-end | QA Lead | Draft |
+- [x] All three tasks complete with required command evidence.
+- [x] `/tmp/fid` builds under 30 MB (~3.74 MB) and `/tmp/fid --help` exits 0.
+- [x] Quality gate commands are concrete, documented, and green.
+- [x] Spec audit finds no Phase 1 planning blocker.
+- [x] Final QA review has no unresolved blocking findings.
 
-## QA Artifacts
+## Carry-Into Phase 1 Planning
 
-| Artifact | Path | Status |
-|---|---|---|
-| Validation contract | `../phases/phase-0/qa/validation-contract.md` | Draft |
-| QA plan | `../phases/phase-0/qa/qa-plan.md` | Missing |
-| Mid-phase reviews | `../phases/phase-0/qa/review-M.md` | QA cadence pending |
-| Final review | `../phases/phase-0/qa/final-review.md` | Pending |
-| Human checklist | `../phases/phase-0/qa/human-checklist.md` | Pending |
-
-## Active Constraints
-
-- Do not implement v0.1 `fid init`, journal, SQLite, issue lifecycle, policy,
-  workflow, telemetry, reports, TUI, MCP, or remote sync in Phase 0.
-- Every Developer task must run the exact commands listed in its task spec.
-- Do not add future Proposed dependencies for frontmatter or TUI in Phase 0.
-- Stop with a blocker report if a required command or Phase 0 stack choice is
-  not concrete.
-
-## Interfaces / Subsystems In Scope
-
-- `cmd/fid/` - root CLI skeleton only.
-- `internal/`, `migrations/`, `testdata/` - scaffold directories only.
-- Makefile, `.golangci.yml`, CI stub - concrete quality gate surface.
-- Phase 0 docs under `project-docs/docs/phases/phase-0/`.
-
-## Known Risks
-
-- **Tool availability.** `golangci-lint` may be missing locally; record BLOCKED
-  rather than substituting a narrower lint command.
-- **Scope creep.** The skeleton can easily drift into v0.1 init or storage
-  work; task specs explicitly forbid that.
-
-## Open Questions
-
-- None blocking Phase 0. PRD §7 future product questions remain deferred.
-
-## Success / Exit Criteria
-
-- [ ] All three tasks complete with required command evidence.
-- [ ] `/tmp/fid` builds under 30 MB and `/tmp/fid --help` exits 0.
-- [ ] Quality gate commands are concrete, documented, and green.
-- [ ] Spec audit finds no Phase 1 planning blocker.
-- [ ] Final QA review has no unresolved blocking findings.
+- Branch: a new phase branch should be cut for Phase 1.
+- Stack is locked (Go, Cobra, pure-Go SQLite, golang-migrate, goldmark,
+  testify); golangci-lint v2 is the standard (DEC-003).
+- Sandbox cache redirection rule lives in `AGENTS.md` (DEC-001/DEC-005).
+- Held-out scenario harness placement still owed before release-readiness work
+  (see `decisions_active.md` scheduled commitments).
+- Roadmap source for Phase 1: v0.1a Persistence Foundation in
+  `../../specs/10_IMPLEMENTATION_ROADMAP.md`.
 
 ## Next Planning Checkpoint
 
-After Phase 0 QA and human acceptance, Tech Lead wraps Phase 0 and plans the
-first v0.1 persistence foundation slice.
+Tech Lead phase-start for Phase 1: read the v0.1a roadmap entry + TRD/schema
+sections, review the Carry-Forward Register, draft the Phase 1 validation
+contract and ordered task specs, then present to the human.

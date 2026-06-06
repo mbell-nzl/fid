@@ -7,31 +7,31 @@
 
 ## Project State
 
-**Status:** Phase 0 executing (branch `phase-0/spec-foundation`).
+**Status:** Phase 0 **CLOSED** (branch `phase-0/spec-foundation`). Phase 1
+(v0.1a Persistence Foundation) not yet planned.
 
-Completed:
+Foundation in place:
 
-- Project identity and domain glossary populated.
-- Three pre-scaffold ADRs recorded (`docs/adr/0001-0003`).
-- Detailed design spec written (`scaffold/initial-spec.md`).
-- Canonical spec suite exists under `project-docs/specs/`.
-- Phase 0 validation contract and task specs drafted; QA plan created
-  (`phase-0/qa/qa-plan.md`).
-- Task 1 verified complete (commit `e65e282`, CLI walking skeleton).
-- Sandbox cache blocker resolved (DEC-001); mid-phase review-1 CONTINUE, 0
-  blocking findings.
-- Task 2 reopened and completed after DEC-003: `gosimple` was removed from
-  `.golangci.yml`, CI now installs golangci-lint v2.12.2 via the v2 module
-  path, and the full Task 2 gate passed. Commits: `de1cb24`, `bf49738`.
-- Agent-environment cleanup expanded repo-local Go caches and bumped the
-  incidental Cobra pin to v1.10.2, with dependency rationale recorded in
-  DEC-004.
-- Task 3 completed with a source-backed spec audit and refreshed readiness
-  report; `spec-audit.md` now records the non-blocking Phase 0 match set.
-- TRG-001 RESUME was a hindsight mis-triage (treated a repo defect as a
-  local-only mismatch); flag at phase wrap.
+- Project identity, domain glossary, three pre-scaffold ADRs, the design spec
+  (`scaffold/initial-spec.md`), and the canonical spec suite under
+  `project-docs/specs/`.
+- Go/Cobra repo scaffold + walking skeleton: `/tmp/fid --help` exits 0, binary
+  ~3.74 MB (under 30 MB cap). Concrete quality gate (fmt, golangci-lint v2,
+  race tests, coverage, build) green via Makefile and CI.
+
+Phase 0 outcome (wrapped 2026-06-06):
+
+- All VAL-001..VAL-009 PASS. QA final review PASS WITH IMPROVEMENTS, no
+  blocking/major findings. Human checklist PASS.
+- Key decisions: DEC-001 (sandbox cache redirection), DEC-002 (TL-Lite warm-up
+  retired), DEC-003 (standardize golangci-lint v2 / drop `gosimple`), DEC-004
+  (Cobra v1.10.2), DEC-005 (cache rule stays in `AGENTS.md`). See
+  `../phases/phase-0/decisions.md`.
+- TRG-001 flagged as a hindsight mis-triage (repo defect, not local mismatch),
+  resolved by DEC-003; no carry-forward.
 
 Next action:
 
-- Phase Runner should run the final QA review, human checklist, and phase wrap
-  after verifying Task 3 completion.
+- Tech Lead plans Phase 1 (v0.1a Persistence Foundation) from
+  `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`: validation contract +
+  ordered task specs, then human review before execution.
