@@ -64,6 +64,45 @@ with whet's task artifacts.
 | ID generation | `<PREFIX>-<hash>` with progressive length scaling (6 → 8 hex). Collision retry on insert. | TRD §4.2, spec §6.0 |
 | Output format engine | JSON (default), TOON (opt-in), markdown, YAML. `--format` flag on all read commands. | PRD-OUT-001–004, TRD-ARCH-012 |
 
+> **Phase-slicing note — v0.1a (Tech Lead, 2026-06-06).**
+> v0.1a is **too large and too high-risk to plan as a single phase.** It bundles
+> the system's hardest-to-change contracts (journal event format, full SQLite
+> schema + triggers, output shapes — see Guiding Principle #3). A fresh-context
+> Tech Lead should slice it into multiple phases at phase-start.
+>
+> **Slice as vertical tracer bullets, not horizontal layers.** (Matt Pocock's
+> "vertical tracer bullet" advice: build the thinnest end-to-end path through
+> every layer first so it is *runnable and agent-verifiable with real commands*,
+> then widen. Avoid a "schema-only" phase whose only proof is direct-SQL tests —
+> that is a horizontal layer with no end-to-end signal.) Each phase must exit on
+> a command an agent can actually run and observe, not an internal layer alone.
+>
+> **Candidate slicing (recommendation, not a plan — detailed phase-start owns it):**
+> - **Phase 1 — End-to-end persistence loop (tracer bullet).** Minimum vertical
+>   slice that proves journal → projection → rebuild end-to-end: `.fid/` layout,
+>   golang-migrate harness with a *minimal* schema (`projection_meta`, `roles`,
+>   `issues` only), write/projection lock, ID generation, journal writer (event
+>   schema v1 + effects), replayer (versioned upgraders, corruption handling,
+>   startup catch-up), `fid rebuild`, `fid init` (seeds 7 roles via
+>   `project.initialized`), and JSON `--format` output for read-back. **Exit:**
+>   `fid init` then `fid rebuild` reconstructs the seeded roles from the journal;
+>   delete-and-rebuild is non-destructive; one issue can be created via an event
+>   and read back as JSON.
+> - **Phase 2 — Widen the schema vertically.** Add the remaining v0.1 tables,
+>   stub tables, triggers, and `issues_enriched` view *through the same proven
+>   journal/projection machinery* — each table/trigger group exercised by
+>   appending an event and reading the projection, not by direct SQL only.
+>   **Exit:** full v0.1 schema present; triggers enforce kind hierarchy /
+>   polymorphic ref integrity / scope; `issues_enriched` returns concern count +
+>   triage status; rebuild stays deterministic.
+> - **Phase 3 — Output formats + foundation hardening.** Complete TOON, markdown,
+>   and YAML output and the `--format` surface; verify sub-second rebuild at
+>   single-project scale and conflict/corruption error fidelity. **Exit:** all
+>   four formats work; performance and error-path checks pass.
+>
+> Re-slice freely if dependency analysis at phase-start suggests a different cut;
+> the binding rule is *every phase ships an end-to-end verifiable increment.*
+
 ### v0.1b — Issue Lifecycle
 
 | Item | Description | PRD/TRD Refs |

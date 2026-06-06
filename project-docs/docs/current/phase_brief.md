@@ -57,6 +57,9 @@ the final review live under `../phases/phase-0/`.
   (see `decisions_active.md` scheduled commitments).
 - Roadmap source for Phase 1: v0.1a Persistence Foundation in
   `../../specs/10_IMPLEMENTATION_ROADMAP.md`.
+- **v0.1a is too big for one phase.** See the "Phase-slicing note — v0.1a" in
+  the roadmap (right after the v0.1a table): slice into ~3 vertical
+  tracer-bullet phases (end-to-end runnable increments), not horizontal layers.
 
 ## Next Planning Checkpoint
 
