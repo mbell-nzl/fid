@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `70efac7`
 
 ## Commit subject
 
-- Pending commit creation.
+- `feat(issue): add minimal create and get`

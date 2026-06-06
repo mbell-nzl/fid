@@ -80,8 +80,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `735b2dc`
 
 ## Commit subject
 
-- Pending commit creation.
+- `feat(journal): add canonical event model`

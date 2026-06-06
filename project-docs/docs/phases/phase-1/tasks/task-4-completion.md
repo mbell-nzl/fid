@@ -63,8 +63,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `dc49d3d`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(journal): add replay and rebuild support`

@@ -60,8 +60,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `bdd393a`
 
 ## Commit subject
 
-- Pending commit creation.
+- `feat(init): add workspace bootstrap command`
