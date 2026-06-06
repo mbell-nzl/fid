@@ -1,68 +1,111 @@
-# Phase Brief - Phase 0 (CLOSED) → Phase 1 planning pending
+# Phase Brief - Phase 1: End-to-End Persistence Loop (Tracer Bullet)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 0 is wrapped and closed. No Phase 1 brief exists yet. The
-> Tech Lead will replace this file when Phase 1 (v0.1a Persistence Foundation)
-> is planned. Until then, do not start implementation work.
+> **State:** PLANNED (2026-06-06). Validation contract + 6 ordered task specs
+> drafted. Awaiting QA Lead QA plan and human review before Developer execution.
 
-## Phase Goal (Phase 0 - achieved)
+## Phase Goal
 
-Phase 0 made fid implementable by agents: a Go/Cobra repository scaffold,
-walking CLI binary, concrete quality tooling, and a final spec audit proving
-Phase 1 can be planned without unresolved stack or command choices.
+Build the thinnest **end-to-end** path through fid's persistence machinery —
+journal → projection → rebuild — exercised by real commands. This is the v0.1a
+tracer-bullet slice (Roadmap §v0.1a "Phase-slicing note"). It locks the
+hardest-to-change contracts early (Guiding Principle #3): journal event v1
+format, ID shapes, projection checkpoint, and the write lock.
 
-## Status
+**Vertical, not horizontal.** Each task adds plumbing, but the phase exits on
+commands an agent can actually run: `fid init`, `fid rebuild`,
+`fid issue create`, `fid issue get --format json`.
 
-**CLOSED (2026-06-06).** All three tasks complete; VAL-001..VAL-009 all PASS;
-QA final review PASS WITH IMPROVEMENTS (no blocking/major findings); human
-checklist PASS. Wrap recorded in `../phases/phase-0/decisions.md` and
-`../phases/phase-0/progress.md`.
+## Scope (in)
 
-**Next action:** Tech Lead plans Phase 1 (v0.1a Persistence Foundation) from
-`../../specs/10_IMPLEMENTATION_ROADMAP.md` — new validation contract + ordered
-task specs, then human review before any Developer execution.
+- `.fid/` workspace layout, `config.toml`, `pricing.toml`, `.gitignore`.
+- `golang-migrate` harness + **minimal** schema: `projection_meta`, `roles`,
+  `issues` only. Required pragmas on every connection.
+- Journal event v1 model, canonical JSON + hashing, ID generation, upgrader
+  chain (mechanism + v1 identity).
+- `.fid/write.lock` (lock-dir + owner metadata) and the journal writer
+  (single clock read, per-day sequence, append+flush as commit point,
+  clock-skew detection).
+- Replayer + projection + `projection_meta` checkpoint; clean-read vs catch-up
+  vs full rebuild; corruption + precondition conflict handling; `fid rebuild`.
+- `fid init` (seeds 7 roles via `project.initialized`; rejects re-init).
+- Minimal `fid issue create` / `fid issue get` + JSON `--format` engine seam.
+- `--by <role>` with role-existence validation on writes.
 
-## Phase 0 Outcome (archived)
+## Scope (out — deferred)
 
-Full task specs, completion reports, validation contract, QA plan, reviews, and
-the final review live under `../phases/phase-0/`.
+- Remaining v0.1 tables, stub tables, triggers, `issues_enriched` view → Phase 2.
+- TOON / markdown / YAML output + perf/error-path hardening → Phase 3.
+- Full v0.1b issue lifecycle (kinds hierarchy, workflows, transitions, claims,
+  ACs, list filters) → v0.1b+.
+- Full role×action permission matrix (PRD-ROLE-003) → v0.1d. Phase 1 checks
+  role existence only; `fid init` is the bootstrap exception (no `--by`).
 
-| Task | Title | Status | Commit |
-|---|---|---|---|
-| 1 | Go Module And CLI Walking Skeleton | Done | `e65e282` |
-| 2 | Quality Tooling And CI Stub | Done | `de1cb24` |
-| 3 | Spec Audit And Phase Readiness Docs | Done | `11d58f3` |
+## Validation Contract Index
 
-- Validation contract: VAL-001..VAL-009 all **PASS** (see `final-review.md`).
-- QA plan, mid-phase review-1 (CONTINUE), final review (PASS WITH
-  IMPROVEMENTS), and human checklist (PASS) all complete.
+Contract: `../phases/phase-1/qa/validation-contract.md` (VAL-001..VAL-017).
 
-## Exit Criteria (Phase 0 - all met)
+| VAL | Behavior | Owner |
+|---|---|---|
+| VAL-001 | `fid init` creates `.fid/` workspace + config files | task 5 |
+| VAL-002 | `--prefix` sets prefix; default = uppercased dir name | task 5 |
+| VAL-003 | One `project.initialized` event seeds 7 roles | task 5 |
+| VAL-004 | Re-init rejected, no changes | task 5 |
+| VAL-005 | Delete DB + rebuild reconstructs roles + checkpoint | task 5 |
+| VAL-006 | Issue created via event, read back as JSON | task 6 |
+| VAL-007 | One logical write = one v1 event line | tasks 3, 6 |
+| VAL-008 | Replay pure data; rebuild yields identical state | task 4 |
+| VAL-009 | Replay routes via upgrader chain (golden v1) | task 4 |
+| VAL-010 | Malformed trailing line reported as corruption | task 4 |
+| VAL-011 | Precondition mismatch → structured conflict error | task 4 |
+| VAL-012 | `projection_meta` drives clean/catch-up/rebuild | task 4 |
+| VAL-013 | `.fid/write.lock` serializes writes; holder-named error | task 3 |
+| VAL-014 | Pragmas ON on every connection | task 1 |
+| VAL-015 | ID shapes + per-day event sequence + collision retry | tasks 2, 3 |
+| VAL-016 | Writes require `--by`; unknown roles rejected | task 6 |
+| VAL-017 | `internal/` never imports `cmd/fid/`; thin adapters | phase-end |
 
-- [x] All three tasks complete with required command evidence.
-- [x] `/tmp/fid` builds under 30 MB (~3.74 MB) and `/tmp/fid --help` exits 0.
-- [x] Quality gate commands are concrete, documented, and green.
-- [x] Spec audit finds no Phase 1 planning blocker.
-- [x] Final QA review has no unresolved blocking findings.
+## Ordered Tasks
 
-## Carry-Into Phase 1 Planning
+1. **SQLite connection, pragmas, minimal migration harness** — `internal/db/`,
+   migration `0001` (projection_meta, roles, issues). (VAL-014)
+2. **Journal event v1 model, ID gen, canonical JSON, upgrader chain** — pure
+   data, no I/O. (VAL-007, VAL-009, VAL-015)
+3. **Write lock + journal writer (append+flush)** — `.fid/write.lock`, sequence
+   allocation, clock-skew. (VAL-007, VAL-013, VAL-015)
+4. **Replayer, projection, checkpoint, catch-up, `fid rebuild`** — corruption +
+   precondition errors, freshness logic. (VAL-008..012)
+5. **`fid init` bootstrap** — workspace + `project.initialized` + 7 roles;
+   reject re-init. (VAL-001..005)
+6. **Minimal `fid issue create` / `get` + JSON format engine** — closes the
+   tracer bullet; `--by` role check. (VAL-006, 007, 008, 016)
 
-- Branch: a new phase branch should be cut for Phase 1.
-- Stack is locked (Go, Cobra, pure-Go SQLite, golang-migrate, goldmark,
-  testify); golangci-lint v2 is the standard (DEC-003).
-- Sandbox cache redirection rule lives in `AGENTS.md` (DEC-001/DEC-005).
-- Held-out scenario harness placement still owed before release-readiness work
-  (see `decisions_active.md` scheduled commitments).
-- Roadmap source for Phase 1: v0.1a Persistence Foundation in
-  `../../specs/10_IMPLEMENTATION_ROADMAP.md`.
-- **v0.1a is too big for one phase.** See the "Phase-slicing note — v0.1a" in
-  the roadmap (right after the v0.1a table): slice into ~3 vertical
-  tracer-bullet phases (end-to-end runnable increments), not horizontal layers.
+## Exit Criteria
 
-## Next Planning Checkpoint
+- `fid init` then `fid rebuild` reconstructs the seeded roles from the journal;
+  delete-and-rebuild is non-destructive.
+- One issue can be created via an event and read back as JSON.
+- One logical write = exactly one v1 journal event; replay is pure data.
+- Corruption and precondition conflicts stop replay with structured errors.
+- Writes require `--by`; unknown roles rejected.
+- All VAL-001..VAL-017 PASS with deterministic evidence; QA final review has no
+  unresolved blocking findings; human checklist PASS.
 
-Tech Lead phase-start for Phase 1: read the v0.1a roadmap entry + TRD/schema
-sections, review the Carry-Forward Register, draft the Phase 1 validation
-contract and ordered task specs, then present to the human.
+## Planning Notes / Carry-In
+
+- Stack locked (Go, Cobra, modernc.org/sqlite, golang-migrate, testify);
+  golangci-lint v2 (DEC-003). Sandbox cache redirection in `AGENTS.md`
+  (DEC-001/005). Use `gofmt -l cmd internal`, not `gofmt -l .`.
+- Cut a new phase branch for Phase 1.
+- Carry-Forward Register: no open items at Phase 1 start.
+- Roadmap source: `../../specs/10_IMPLEMENTATION_ROADMAP.md` v0.1a +
+  slicing note. Re-slice freely if dependency analysis warrants, but every
+  phase must ship an end-to-end verifiable increment.
+
+## Next Checkpoint
+
+QA Lead writes `../phases/phase-1/qa/qa-plan.md` mapping every VAL to
+deterministic verification; Tech Lead presents contract + tasks to the human;
+Developer execution begins only after the human approves.
