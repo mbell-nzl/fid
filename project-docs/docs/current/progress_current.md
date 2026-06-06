@@ -26,10 +26,12 @@ Completed:
 - Agent-environment cleanup expanded repo-local Go caches and bumped the
   incidental Cobra pin to v1.10.2, with dependency rationale recorded in
   DEC-004.
+- Task 3 completed with a source-backed spec audit and refreshed readiness
+  report; `spec-audit.md` now records the non-blocking Phase 0 match set.
 - TRG-001 RESUME was a hindsight mis-triage (treated a repo defect as a
   local-only mismatch); flag at phase wrap.
 
 Next action:
 
-- Re-spawn Phase Runner in a fresh session so the expanded cache env takes
-  effect, verify Task 2 completion, then re-run Task 3 and phase-end QA.
+- Phase Runner should run the final QA review, human checklist, and phase wrap
+  after verifying Task 3 completion.

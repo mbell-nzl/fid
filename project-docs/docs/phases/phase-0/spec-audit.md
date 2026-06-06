@@ -1,53 +1,35 @@
 # Phase 0 Spec Audit
 
-> Task 3 output: classify in-scope placeholder, Proposed, and open-question
-> matches with source references.
+## Verdict
 
-## Conclusion
+Phase 1 can be planned. The required searches found no unresolved Phase 0
+stack choice, command placeholder, daemon/listener, remote-sync, or MCP
+blocker.
 
-No blocking Phase 0 stack, command, workflow, data-model, or public-interface
-gap was found. Phase 1 can be planned without unresolved Phase 0 stack choices
-or command placeholders.
+## Match Classification
 
-## Audit Scope
-
-Audited sources:
-
-- `AGENTS.md`
-- `project-docs/specs/01_PRD.md` §7
-- `project-docs/specs/02_TRD.md` §§1, 9, 11
-- `project-docs/docs/current/phase_brief.md`
-- `project-docs/docs/current/decisions_active.md`
-- `project-docs/docs/current/progress_current.md`
-- `project-docs/docs/current/tl_escalations_current.md`
-
-## Findings
-
-| Source | Match | Classification | Why it is or is not blocking |
+| Match | Source | Classification | Reason |
 |---|---|---|---|
-| `AGENTS.md:162-168` | `placeholder` command rule | Non-blocking | This is a standing policy that requires placeholder commands to be treated as defects. It does not describe an unresolved project command. |
-| `AGENTS.md:264-270` | Required command still a placeholder | Non-blocking | Same policy surface as above. It reinforces the hard-stop rule for future tasks, but it is not itself an open blocker. |
-| `project-docs/specs/02_TRD.md:19-26` | Proposed frontmatter and TUI stack decisions | Non-blocking | These are future v0.4/v0.3 implementation choices already marked Proposed and explicitly deferred from Phase 0. They do not block Phase 1 planning. |
-| `project-docs/docs/current/phase_brief.md:61-63` | Do not add future Proposed dependencies in Phase 0; stop if a required command or Phase 0 stack choice is not concrete | Non-blocking | This is a phase guardrail, not an unresolved decision. The audited Phase 0 stack and commands are concrete. |
-| `project-docs/specs/01_PRD.md:359-370` | Open product questions | Non-blocking | The workflow_runner, markdown sync, and licensing questions are explicitly deferred product decisions. They are not Phase 0 blockers. |
-| `project-docs/specs/02_TRD.md:786-799` | Open technical questions | Non-blocking | The TOON breadth, rebuild strategy, and future MCP adapter questions are deferred technical choices. Existing PRD/TRD constraints already keep Phase 0 listener-free and CLI/skill-first. |
-| `project-docs/docs/current/phase_brief.md:79-81` | `None blocking Phase 0. PRD §7 future product questions remain deferred.` | Non-blocking | The current phase brief already records the PRD §7 questions as deferred, so they do not block this phase or Phase 1 planning. |
+| `<TBD>` | `AGENTS.md:27` | Non-blocking | Policy text: unresolved items must not drive implementation. No live Phase 0 stack decision remains `<TBD>`. |
+| `placeholder` | `AGENTS.md:162-163` | Non-blocking | Policy text: placeholder commands are forbidden and must be reported if ever encountered. |
+| `placeholder` | `AGENTS.md:278` | Non-blocking | Same hard-stop policy, not a live command placeholder. |
+| `Proposed` | `project-docs/specs/02_TRD.md:19-20` | Non-blocking | Deferred future dependencies for frontmatter and TUI (`v0.4` / `v0.3`), not Phase 0 blockers. |
+| `<TBD>` / `Proposed` | `project-docs/specs/02_TRD.md:26` | Non-blocking | General guardrail against starting work on unresolved future stack choices. |
+| `Proposed` | `project-docs/docs/current/phase_brief.md:61` | Non-blocking | Same Phase 0 guardrail repeated in the current brief. |
+| `placeholders` | `project-docs/specs/GLOSSARY.md:301` | Non-blocking | Generic dry-run wording for minted IDs, not an unresolved requirement. |
+| `placeholder` | `project-docs/specs/09_AI_WORKFLOW.md:854` | Non-blocking | Workflow policy: required commands must be concrete before implementation starts. |
+| Open product questions | `project-docs/specs/01_PRD.md:359-365` | Non-blocking / out of scope | `workflow_runner` harness, bidirectional markdown sync, and licensing are deferred product questions. |
+| Open technical questions | `project-docs/specs/02_TRD.md:786-792` | Non-blocking / out of scope | TOON scope, rebuild strategy, and future MCP adapter are deferred technical questions. |
 
-## Cross-Surface Command Check
+## Runtime Surface Check
 
-- `AGENTS.md` lists concrete command gates, including format, lint, tests,
-  coverage, build, and phase-level checks.
-- `project-docs/specs/08_QUALITY_PLAN.md` and
-  `project-docs/specs/09_AI_WORKFLOW.md` align on the same required gate
-  surface.
-- `.github/workflows/ci.yml` and `Makefile` expose concrete wrappers for the
-  phase-2 tooling surface.
-- No placeholder-only command remained unresolved in the audited Phase 0
-  surfaces.
+- `rg -n "net.Listen|http.ListenAndServe|grpc|mcp|remote sync|daemon" cmd internal .github Makefile` returned no matches.
+- That supports PRD-NFR-005, PRD-NFR-006, TRD-SEC-001, and TRD-ARCH-013: no external transmit path, daemon, listener, remote sync, or MCP adapter exists in the Phase 0 scaffold.
 
-## Phase Readiness Note
+## Gate Summary
 
-Phase 1 planning can proceed. The only unresolved items found are future-phase
-product or technical questions, and they are explicitly deferred by the
-current spec set.
-
+- `gofmt -l cmd internal`: no files listed.
+- `golangci-lint run ./...`: `0 issues.`
+- `go test -race -coverprofile=coverage.out ./...`: PASS.
+- `go tool cover -func=coverage.out`: total coverage `0.0%`.
+- `go build -o /tmp/fid ./cmd/fid`: PASS.
