@@ -1,0 +1,27 @@
+package main
+
+import (
+	"os"
+
+	"github.com/spf13/cobra"
+)
+
+func execute() error {
+	return newRootCommand().Execute()
+}
+
+func newRootCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "fid",
+		Short: "Local-first, agent-first issue tracker for AI-assisted software development.",
+		Long:  "fid is a local-first, agent-first issue tracker for AI-assisted software development.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return cmd.Help()
+		},
+	}
+
+	cmd.SetOut(os.Stdout)
+	cmd.SetErr(os.Stderr)
+
+	return cmd
+}

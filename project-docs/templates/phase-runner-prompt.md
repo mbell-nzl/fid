@@ -26,7 +26,7 @@ Execution rules:
 - Verify that all quality commands in AGENTS.md are concrete, not placeholders.
 - Verify that the validation contract exists before task execution.
 - Maintain a compact run ledger: completed tasks, verified commits, QA reviews,
-  ESC IDs seen, TRG IDs logged, and warm-up/autonomous-resume state.
+  ESC IDs seen, and TRG IDs logged.
 - Record the current Open ESC-NNN IDs before task execution; only newly appearing
   Open ESC IDs trigger TL-Lite triage. If the source is already an ESC, do not
   create a duplicate; reference the existing escalation unless the issue is

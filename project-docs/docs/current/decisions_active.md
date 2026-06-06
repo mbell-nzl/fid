@@ -34,24 +34,32 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-002 | Scaffold | Split `scaffold/initial-spec.md` progressively into the canonical spec suite under `project-docs/specs/`. | Pre-Phase 0 | High |
+| _None open_ | - | CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`. | - | - |
+
+## Environment Constraints
+
+- Go, module, and golangci-lint caches are redirected into gitignored in-repo
+  dirs (`.gocache/`, `.gomodcache/`, `.gopath/`, `.golangci-cache/`, `.cache/`)
+  via `[shell_environment_policy.set]` in `.codex/config.toml` so quality gates
+  work under the workspace-write sandbox. See DEC-001 in
+  `../phases/phase-0/decisions.md`. The env policy applies at session start, so
+  a fresh agent session is required for it to take effect.
 
 ## Scheduled Commitments
 
-- The first implementation phase must validate that every command in
-  `AGENTS.md` is concrete and executable for the chosen stack.
 - Every planned phase must create
   `project-docs/docs/phases/phase-N/qa/validation-contract.md` with `VAL-NNN`
   assertions before task execution begins.
 - Before release-readiness work, decide where held-out scenarios live and how
   implementation agents are prevented from loading them.
 
-## TL-Lite Warm-Up State
+## TL-Lite Resume Policy
 
-- Autonomous TL-Lite resume enabled: No.
-- Warm-up phases completed: 0 of 2.
-- During warm-up, Phase Runner stops for human approval on every
-  `VERDICT: RESUME`.
+- Autonomous TL-Lite resume: **ENABLED (permanent)**. The warm-up safeguard is
+  retired — see DEC-002 in `../phases/phase-0/decisions.md`.
+- Phase Runner does not stop on `VERDICT: RESUME`; it records the TRG-NNN and
+  continues. `VERDICT: BLOCK` always stops the run.
+- No warm-up tally to maintain at phase wrap.
 
 ## Size Tripwire
 

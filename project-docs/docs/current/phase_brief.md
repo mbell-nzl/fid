@@ -1,44 +1,65 @@
-# Phase Brief - No Active Phase
+# Phase Brief - Phase 0 (CLOSED) → Phase 1 planning pending
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
-> agent session. Replaced at each phase kickoff by the incoming Tech Lead.
+> agent session. Keep under 150 lines.
 >
-> **Size target:** under 150 lines.
+> **State:** Phase 0 is wrapped and closed. No Phase 1 brief exists yet. The
+> Tech Lead will replace this file when Phase 1 (v0.1a Persistence Foundation)
+> is planned. Until then, do not start implementation work.
 
-## Phase Goal
+## Phase Goal (Phase 0 - achieved)
 
-No implementation phase is active yet.
-
-The human is progressively filling the canonical spec suite from
-`scaffold/initial-spec.md`. Once remaining final spec audit blockers are
-resolved, invoke Tech Lead to plan Phase 0 from
-`project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`.
+Phase 0 made fid implementable by agents: a Go/Cobra repository scaffold,
+walking CLI binary, concrete quality tooling, and a final spec audit proving
+Phase 1 can be planned without unresolved stack or command choices.
 
 ## Status
 
-Pre-phase scaffolding. Specs are being filled progressively.
+**CLOSED (2026-06-06).** All three tasks complete; VAL-001..VAL-009 all PASS;
+QA final review PASS WITH IMPROVEMENTS (no blocking/major findings); human
+checklist PASS. Wrap recorded in `../phases/phase-0/decisions.md` and
+`../phases/phase-0/progress.md`.
 
-## Pre-Scaffold Material
+**Next action:** Tech Lead plans Phase 1 (v0.1a Persistence Foundation) from
+`../../specs/10_IMPLEMENTATION_ROADMAP.md` — new validation contract + ordered
+task specs, then human review before any Developer execution.
 
-- `scaffold/initial-spec.md` — 2600-line design spec; the input for filling
-  the canonical spec suite.
-- `docs/adr/0001-0003` — three binding design decisions predating the phase
-  system.
-- `project-docs/specs/GLOSSARY.md` — domain language already populated from
-  earlier design work.
+## Phase 0 Outcome (archived)
 
-## Active Constraints
+Full task specs, completion reports, validation contract, QA plan, reviews, and
+the final review live under `../phases/phase-0/`.
 
-- Do not start implementation while the final spec audit has open BLOCKER
-  findings.
-- Preserve the artifact workflow unless a recorded decision changes it.
+| Task | Title | Status | Commit |
+|---|---|---|---|
+| 1 | Go Module And CLI Walking Skeleton | Done | `e65e282` |
+| 2 | Quality Tooling And CI Stub | Done | `de1cb24` |
+| 3 | Spec Audit And Phase Readiness Docs | Done | `11d58f3` |
 
-## Open Questions
+- Validation contract: VAL-001..VAL-009 all **PASS** (see `final-review.md`).
+- QA plan, mid-phase review-1 (CONTINUE), final review (PASS WITH
+  IMPROVEMENTS), and human checklist (PASS) all complete.
 
-- [ ] Resolve remaining final spec audit blockers.
-- [ ] Split `scaffold/initial-spec.md` into the canonical spec suite.
-- [ ] Plan Phase 0 with Tech Lead.
+## Exit Criteria (Phase 0 - all met)
+
+- [x] All three tasks complete with required command evidence.
+- [x] `/tmp/fid` builds under 30 MB (~3.74 MB) and `/tmp/fid --help` exits 0.
+- [x] Quality gate commands are concrete, documented, and green.
+- [x] Spec audit finds no Phase 1 planning blocker.
+- [x] Final QA review has no unresolved blocking findings.
+
+## Carry-Into Phase 1 Planning
+
+- Branch: a new phase branch should be cut for Phase 1.
+- Stack is locked (Go, Cobra, pure-Go SQLite, golang-migrate, goldmark,
+  testify); golangci-lint v2 is the standard (DEC-003).
+- Sandbox cache redirection rule lives in `AGENTS.md` (DEC-001/DEC-005).
+- Held-out scenario harness placement still owed before release-readiness work
+  (see `decisions_active.md` scheduled commitments).
+- Roadmap source for Phase 1: v0.1a Persistence Foundation in
+  `../../specs/10_IMPLEMENTATION_ROADMAP.md`.
 
 ## Next Planning Checkpoint
 
-Phase 0 planning begins after remaining final spec audit blockers are resolved.
+Tech Lead phase-start for Phase 1: read the v0.1a roadmap entry + TRD/schema
+sections, review the Carry-Forward Register, draft the Phase 1 validation
+contract and ordered task specs, then present to the human.

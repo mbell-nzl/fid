@@ -61,7 +61,7 @@ If this task does not advance a validation assertion, state why explicitly
 Run exactly:
 
 ```text
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out

@@ -11,6 +11,17 @@ model_verbosity = "medium"
 personality = "pragmatic"
 project_root_markers = [".git"]
 
+# Redirect Go and related tool caches into gitignored in-repo dirs so they are
+# writable under sandbox_mode = "workspace-write". The defaults (~/.cache/...,
+# ~/go/pkg/mod, ~/go/bin) sit outside the workspace and can break ordinary
+# gates or make agents request escalation for cache writes and tool installs.
+[shell_environment_policy.set]
+GOCACHE = "/home/mark/projects/fid/.gocache"
+GOMODCACHE = "/home/mark/projects/fid/.gomodcache"
+GOPATH = "/home/mark/projects/fid/.gopath"
+GOLANGCI_LINT_CACHE = "/home/mark/projects/fid/.golangci-cache"
+XDG_CACHE_HOME = "/home/mark/projects/fid/.cache"
+
 [features]
 multi_agent = true
 

@@ -37,7 +37,7 @@ a positive assertion after review, not the default.
 - [ ] Walked every TRG-NNN in `triage-log.md`.
 - [ ] Confirmed each RESUME verdict was correct in hindsight.
 - [ ] Flagged any TRG that should have escalated.
-- [ ] Updated TL-Lite warm-up/autonomous-resume state in `decisions_active.md`.
+- [ ] Confirmed autonomous TL-Lite resume remains in effect (DEC-002; no warm-up tally).
 
 ## Workflow Notes
 

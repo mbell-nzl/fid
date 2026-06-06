@@ -108,10 +108,10 @@ Phase end:
    should have escalated, record the pattern in phase decisions and tighten
    `decisions_active.md`, `decisions_principles.md`, or `AGENTS.md` before the
    next phase.
-6. Update the WF-10 warm-up state in
-   `project-docs/docs/current/decisions_active.md`: current warm-up phase
-   count or Human-accepted completion, whether all RESUME verdicts were
-   confirmed correct, and whether autonomous TL-Lite resumption is enabled.
+6. Confirm each TL-Lite RESUME verdict in the triage log was correct in
+   hindsight and flag any that should have escalated (the audit in step 5).
+   Autonomous TL-Lite resumption is permanently enabled (DEC-002); there is no
+   warm-up tally to maintain.
 7. Append lightweight `## Workflow notes` to this phase's decisions archive.
    Answer the section 9 calibration questions in 1-3 sentences each, compare
    with the prior phase when available, and end with
@@ -271,8 +271,7 @@ Responsibilities:
 11. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
     task and after each review.
 12. Maintain a compact run ledger in response notes: completed tasks, verified
-    commits, QA reviews run, ESC IDs seen, TRG IDs logged, and
-    warm-up/autonomous state.
+    commits, QA reviews run, ESC IDs seen, and TRG IDs logged.
 13. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths.
@@ -299,7 +298,6 @@ Hard stop conditions:
 - Scope conflict, missing artifact, child-agent unavailability, or branch issue
   prevents safe execution.
 - TL-Lite returns `VERDICT: BLOCK`.
-- During TL-Lite warm-up, TL-Lite returns `VERDICT: RESUME`.
 
 Soft blocker conditions:
 - Developer report contains concerns, technical debt, or notes for Tech Lead.
@@ -308,13 +306,11 @@ Soft blocker conditions:
   `project-docs/docs/current/tl_escalations_current.md` after the run-start
   baseline or after the last triage.
 
-Warm-up:
-- While `decisions_active.md` marks TL-Lite warm-up active, every RESUME stops
-  pending Human approval.
-- Autonomous resumption begins after Tech Lead records the required clean
-  wrap-up audits in `decisions_active.md`, or earlier if the Human explicitly
-  accepts the workflow as ready and `decisions_active.md` records that
-  completion.
+TL-Lite resume:
+- Autonomous TL-Lite resumption is permanently enabled (DEC-002). On
+  `VERDICT: RESUME`, Phase Runner records the TRG-NNN and continues without a
+  Human stop. `VERDICT: BLOCK` still always stops the run.
+- The former WF-10 warm-up safeguard is retired; no warm-up tally is maintained.
 
 ### 2.5 Developer
 
@@ -645,9 +641,11 @@ project-docs/
   `tl_lite`.
 - Child prompts must be explicit and self-contained. A bare role handoff is not
   enough.
-- `.codex/config.toml` profiles and `.codex/agents/*.toml` must stay
-  behaviorally aligned, including model choices and stop conditions, unless a
-  documented reason says otherwise.
+- Project-scoped Codex agent files live in `.codex/agents/*.toml` and carry
+  each role's model choices, reasoning effort, and stop conditions. Do not add
+  `[profiles.*]` to project-local `.codex/config.toml`; current Codex ignores
+  project-local `profiles` keys. Personal profile files, if needed, live under
+  `~/.codex/` and are selected with `--profile`.
 - Start a fresh Codex session after changing Codex config or agent files.
 
 ### 3.5 Documentation Layout And Size Governance
@@ -826,9 +824,11 @@ The role definitions in section 2 are canonical behavior for all tools.
 
 - Claude Code materializes them in `.claude/agents/*.md`.
 - Codex materializes them in `.codex/agents/*.toml`.
-- Codex profiles in `.codex/config.toml` must stay behaviorally aligned with
-  the matching `.codex/agents/*.toml`, including model choices, role
-  boundaries, stop conditions, and artifact requirements.
+- Codex custom agents in `.codex/agents/*.toml` must stay behaviorally aligned
+  with this workflow, including model choices, role boundaries, stop
+  conditions, and artifact requirements. Project-local `.codex/config.toml`
+  must not define `[profiles.*]`; personal profile files belong under
+  `~/.codex/` when an operator needs a named top-level launch profile.
 - Templates in `project-docs/templates/` must not contradict the workflow.
 - After changing any of these files, start a fresh Codex or Claude session
   before relying on the updated definitions.
@@ -861,7 +861,7 @@ before implementation starts.
 Task-level default gate:
 
 ```bash
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out

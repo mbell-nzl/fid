@@ -30,6 +30,6 @@ Phase wrap-up checklist:
 - [ ] Walked every TRG-NNN above.
 - [ ] Confirmed each RESUME verdict was correct in hindsight.
 - [ ] Flagged any TRG that should have escalated.
-- [ ] Updated warm-up tally in decisions_active.md.
+- [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
 -->
 

@@ -36,7 +36,7 @@ scaffold, quality commands, walking skeleton, and validated specs.
 
 - `go build ./cmd/fid` produces a static binary under 30 MB.
 - `go test ./...` passes with zero test files (no false failures).
-- `gofmt -l .` and `golangci-lint run ./...` are green.
+- `gofmt -l cmd internal` and `golangci-lint run ./...` are green.
 - Quality gate commands are concrete and documented in `AGENTS.md`.
 - Phase 1 can be planned without unresolved stack choices.
 
