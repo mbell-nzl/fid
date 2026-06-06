@@ -1,7 +1,7 @@
 .PHONY: fmt-check lint test coverage build
 
 fmt-check:
-	gofmt -l .
+	gofmt -l cmd internal
 
 lint:
 	golangci-lint run ./...

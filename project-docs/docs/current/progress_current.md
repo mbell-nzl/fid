@@ -7,7 +7,7 @@
 
 ## Project State
 
-**Status:** Phase 0 executing (branch `phase-0/spec-foundation`; lint gate blocked by a repo-config defect, fix decided in DEC-003).
+**Status:** Phase 0 executing (branch `phase-0/spec-foundation`).
 
 Completed:
 
@@ -20,19 +20,16 @@ Completed:
 - Task 1 verified complete (commit `e65e282`, CLI walking skeleton).
 - Sandbox cache blocker resolved (DEC-001); mid-phase review-1 CONTINUE, 0
   blocking findings.
-
-In progress:
-
-- Lint gate blocked by a repo-config defect (DEC-003): `.golangci.yml` declares
-  `version: "2"` but enables `gosimple`, which golangci-lint v2 rejected; CI
-  also pins a v1 binary. Decision: standardize on golangci-lint **v2**, drop
-  `gosimple` (covered by `staticcheck`), align CI to the v2 module path.
-- LINT-002 in `08_QUALITY_PLAN.md` amended accordingly (spec sync done).
+- Task 2 reopened and completed after DEC-003: `gosimple` was removed from
+  `.golangci.yml`, CI now installs golangci-lint v2.12.2 via the v2 module
+  path, and the full Task 2 gate passed. Commits: `de1cb24`, `bf49738`.
+- Agent-environment cleanup expanded repo-local Go caches and bumped the
+  incidental Cobra pin to v1.10.2, with dependency rationale recorded in
+  DEC-004.
 - TRG-001 RESUME was a hindsight mis-triage (treated a repo defect as a
   local-only mismatch); flag at phase wrap.
 
 Next action:
 
-- Reopen Task 2: Developer applies the `.golangci.yml` + CI fixes from DEC-003,
-  runs the full Task 2 gate to green, rewrites `task-2-completion.md` with PASS
-  evidence, commits. Then Phase Runner re-runs Task 3 and the phase-end QA pass.
+- Re-spawn Phase Runner in a fresh session so the expanded cache env takes
+  effect, verify Task 2 completion, then re-run Task 3 and phase-end QA.

@@ -25,7 +25,7 @@
 
 Compare this section against the task spec's `## Exact Commands To Run`.
 
-- `gofmt -l .` - PASS/FAIL/BLOCKED
+- `gofmt -l cmd internal` - PASS/FAIL/BLOCKED
 - `golangci-lint run ./...` - PASS/FAIL/BLOCKED
 - `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED
 - `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED

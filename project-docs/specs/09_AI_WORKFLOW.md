@@ -857,7 +857,7 @@ before implementation starts.
 Task-level default gate:
 
 ```bash
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out

@@ -236,7 +236,7 @@ Before completing any task, the developer agent shall run the exact commands
 listed in the task spec. If the task spec does not define commands, run:
 
 ```bash
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out

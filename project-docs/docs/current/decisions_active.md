@@ -38,18 +38,19 @@ closes, or cancels each item.
 
 ## Environment Constraints
 
-- Go/golangci-lint caches are redirected into gitignored in-repo dirs
-  (`.gocache/`, `.golangci-cache/`) via `[shell_environment_policy.set]` in
-  `.codex/config.toml` so quality gates work under the workspace-write sandbox.
-  See DEC-001 in `../phases/phase-0/decisions.md`. The env policy applies at
-  session start, so a fresh agent session is required for it to take effect.
+- Go, module, and golangci-lint caches are redirected into gitignored in-repo
+  dirs (`.gocache/`, `.gomodcache/`, `.gopath/`, `.golangci-cache/`, `.cache/`)
+  via `[shell_environment_policy.set]` in `.codex/config.toml` so quality gates
+  work under the workspace-write sandbox. See DEC-001 in
+  `../phases/phase-0/decisions.md`. The env policy applies at session start, so
+  a fresh agent session is required for it to take effect.
 
 ## Scheduled Commitments
 
 - Phase 0 must validate that every command in
   `AGENTS.md` is concrete and executable for the chosen stack.
-- At Phase 0 wrap, decide whether DEC-001 (sandbox cache redirection) belongs
-  in `09_AI_WORKFLOW.md` and/or `AGENTS.md`.
+- At Phase 0 wrap, decide whether DEC-001 (sandbox cache redirection) also
+  belongs in `09_AI_WORKFLOW.md`; the operational rule is now in `AGENTS.md`.
 - Every planned phase must create
   `project-docs/docs/phases/phase-N/qa/validation-contract.md` with `VAL-NNN`
   assertions before task execution begins.

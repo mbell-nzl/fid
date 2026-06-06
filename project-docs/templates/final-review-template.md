@@ -22,7 +22,7 @@ PASS / PASS WITH IMPROVEMENTS / BLOCK
 
 | Gate | Command | Result | Evidence |
 |---|---|---|---|
-| Format | `gofmt -l .` | PASS/FAIL/N/A | <output excerpt or reason> |
+| Format | `gofmt -l cmd internal` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Lint/static analysis | `golangci-lint run ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Coverage/confidence | `go test -race -coverprofile=coverage.out ./...` | PASS/FAIL/N/A | <output excerpt or reason> |
 | Coverage report | `go tool cover -func=coverage.out` | PASS/FAIL/N/A | <output excerpt or reason> |

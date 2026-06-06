@@ -11,16 +11,20 @@
 - Author: Tech Lead
 - Context: Task 2 Developer hit a hard blocker — `golangci-lint run ./...`
   (and `go build`/`go test`) write to caches outside the repo (`GOCACHE`
-  default `~/.cache/go-build`, `GOLANGCI_LINT_CACHE` default
-  `~/.cache/golangci-lint`), which are read-only under Codex
-  `sandbox_mode = "workspace-write"`. Phase Runner correctly stopped (blocker
-  + missing `task-2-completion.md`).
+  default `~/.cache/go-build`, `GOMODCACHE` default `~/go/pkg/mod`,
+  `GOLANGCI_LINT_CACHE` default `~/.cache/golangci-lint`), which are read-only
+  under Codex `sandbox_mode = "workspace-write"`. Phase Runner correctly
+  stopped (blocker + missing `task-2-completion.md`).
 - Decision: Fix at the **environment/harness layer**, not in the Task 2
   deliverables. Added `[shell_environment_policy.set]` to `.codex/config.toml`
-  pointing `GOCACHE` → `/home/mark/projects/fid/.gocache` and
-  `GOLANGCI_LINT_CACHE` → `/home/mark/projects/fid/.golangci-cache`, and
-  gitignored `/.gocache/`, `/.golangci-cache/`, `/.tmp/`. Mirrors the proven
-  workaround in the sibling `whet` project.
+  pointing `GOCACHE` -> `/home/mark/projects/fid/.gocache`,
+  `GOMODCACHE` -> `/home/mark/projects/fid/.gomodcache`, `GOPATH` ->
+  `/home/mark/projects/fid/.gopath`, `GOLANGCI_LINT_CACHE` ->
+  `/home/mark/projects/fid/.golangci-cache`, and `XDG_CACHE_HOME` ->
+  `/home/mark/projects/fid/.cache`. The directories are gitignored, including
+  `/.tmp/`. Mirrors the proven cache-directory workaround in the sibling
+  `whet` project and extends it for module/cache paths that Go uses during
+  dependency fetches or tool installs.
 - Rationale: The sandbox cache restriction is an agent-environment property,
   not a project tooling concern. Baking cache paths into `Makefile`/CI/
   `.golangci.yml` would pollute portable deliverables and contradicts Task 2's
@@ -31,9 +35,13 @@
     must be **re-spawned in a fresh session** for the vars to take effect.
   - Cache path is hardcoded absolute (Codex does not expand `$PWD` inside
     `set`); needs updating if the repo moves.
-  - At phase wrap, assess whether `09_AI_WORKFLOW.md` and/or `AGENTS.md` should
-    document this sandbox requirement so future phases do not re-hit it.
-- Files touched: `.codex/config.toml`, `.gitignore`.
+  - `go install` still needs normal approval when it downloads from the network
+    or changes tool dependencies; this decision only makes the resulting caches
+    and module writes sandbox-writable.
+  - `AGENTS.md` now documents the operational rule. At phase wrap, assess
+    whether `09_AI_WORKFLOW.md` should also carry the project-local cache
+    convention.
+- Files touched: `.codex/config.toml`, `.gitignore`, `AGENTS.md`.
 
 ### DEC-002: Retire TL-Lite warm-up; enable autonomous resume permanently
 
@@ -96,6 +104,33 @@
 - Files (TL, now): `project-docs/specs/08_QUALITY_PLAN.md`.
 - Files (Developer, reopened Task 2): `.golangci.yml`,
   `.github/workflows/ci.yml`, `project-docs/docs/phases/phase-0/tasks/task-2-completion.md`.
+
+### DEC-004: Bump Cobra patch version to avoid a stale pin
+
+- Date: 2026-06-06
+- Author: Tech Lead
+- Context: The scaffolded direct dependency `github.com/spf13/cobra v1.10.1`
+  was an incidental Phase 0 pin, not a project requirement. The local tool
+  environment already had Cobra `v1.10.2` available, and there was no recorded
+  reason to keep the older patch version.
+- Decision: Upgrade the accepted Cobra runtime dependency from `v1.10.1` to
+  `v1.10.2`, keeping the same framework and the same CLI surface. This is a
+  patch-level dependency update, not a new runtime dependency.
+- Dependency-budget rationale:
+  - Need: avoid carrying an unnecessary older patch pin while staying on the
+    already accepted Cobra framework from TRD §1/§9.
+  - Alternatives considered: keep `v1.10.1` and require an initial networked
+    `go mod download` into `.gomodcache/`; vendor dependencies; or allow
+    agents to use `~/go/pkg/mod`. The patch bump is narrower than vendoring and
+    the cache policy still keeps writes inside the workspace.
+  - License check: Cobra `v1.10.2` includes an Apache-2.0 license, which is
+    compatible with the default dependency policy.
+- Consequences / caveats:
+  - `go.mod` and `go.sum` now record Cobra `v1.10.2`.
+  - No product behavior, CLI contract, or dependency family changes.
+  - A clean workspace still needs to populate `.gomodcache/` once; DEC-001
+    controls where that write goes.
+- Files touched: `go.mod`, `go.sum`.
 
 ## Carry-Forward Disposition At Kickoff
 

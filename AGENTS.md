@@ -167,8 +167,16 @@ completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
 A missing, silently skipped, or narrower substituted required command is a
 failed gate, not an acceptable omission.
 
-- Format check: `gofmt -l .`. Apply `gofmt -w` and `goimports` to edited Go
-  files before running the check.
+Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
+into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
+`.gopath/`, `.golangci-cache/`, `.cache/`). Do not request unsandboxed
+execution just to write Go build, module, or lint caches. A fresh agent session
+is required after changing that config. Network downloads and dependency
+installs still require the normal dependency-budget and approval path.
+
+- Format check: `gofmt -l cmd internal`. Apply `gofmt -w` and `goimports` to
+  edited Go files before running the check. Do not use `gofmt -l .`; it walks
+  ignored repo-local tool caches.
 - Lint: `golangci-lint run ./...`.
 - Default unit test suite: `go test -race ./...`.
 - Coverage gate:
@@ -185,7 +193,7 @@ failed gate, not an acceptable omission.
 - Full phase-level command gate:
 
   ```bash
-  gofmt -l .
+  gofmt -l cmd internal
   golangci-lint run ./...
   go test -race -coverprofile=coverage.out ./...
   go tool cover -func=coverage.out
@@ -212,7 +220,7 @@ project, but must be concrete before a public or user-impacting release:
 Recommended task-level gate:
 
 ```bash
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
@@ -221,7 +229,7 @@ go tool cover -func=coverage.out
 Recommended phase-level gate:
 
 ```bash
-gofmt -l .
+gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out

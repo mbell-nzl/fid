@@ -47,6 +47,9 @@ tmp/
 project-docs/docs/current/tl_handoff.md
 
 # Agent working dirs (sandbox-writable caches, see .codex/config.toml)
+/.cache/
 /.gocache/
+/.gomodcache/
+/.gopath/
 /.golangci-cache/
 /.tmp/
