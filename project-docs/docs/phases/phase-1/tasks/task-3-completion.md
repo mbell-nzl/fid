@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `b0f3653`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(journal): add write lock and append writer`
