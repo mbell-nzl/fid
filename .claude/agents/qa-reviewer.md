@@ -97,6 +97,8 @@ reference the relevant `ESC-NNN`.
 - Never modify task specs, completion reports, or QA plan.
 - Only write `review-M.md` and append ESC entries.
 - Never spawn another agent.
+- Commit your own review and ESC edits under your own authorship; never leave
+  them uncommitted for another agent or the human to commit.
 - Stop after the review.
 
 ## Workflow
@@ -114,4 +116,8 @@ reference the relevant `ESC-NNN`.
 5. Spot-check relevant quality commands where risk warrants.
 6. Write `review-M.md` grouped by task.
 7. Append ESC entries only when escalation triggers apply.
-8. Stop.
+8. Commit `review-M.md` (and any ESC edits you made) under your own authorship
+   with a `docs(qa): ...` Conventional Commit subject and `Refs: phase-N`
+   before stopping. Never hand off or stop with an uncommitted review, and
+   never leave your review to be committed by another agent or the human.
+9. Stop.

@@ -85,9 +85,17 @@ them `BLOCKED` with a reason.
 The human checklist contains only the `(human)` subset and uses
 `project-docs/templates/human-checklist-template.md`.
 
+Commit the artifacts you author (`qa-plan.md`, `final-review.md`,
+`human-checklist.md`) under your own authorship with a `docs(qa): ...`
+Conventional Commit subject and `Refs: phase-N` before stopping. Never hand off
+or stop with an uncommitted QA artifact, and never leave your artifacts to be
+committed by another agent or the human.
+
 ## Constraints
 
 - Never write or fix product code.
 - Report bugs with reproduction steps and evidence.
 - Distinguish blocking issues from improvements.
 - Reference files, commands, requirement IDs, and doc sections precisely.
+- Commit your own QA artifacts under your own authorship; never leave them
+  uncommitted for another agent or the human to commit.

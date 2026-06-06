@@ -273,6 +273,11 @@ At the end of each implementation phase, the QA Lead shall:
     is FAIL or BLOCKED.
 11. Generate the **human verification checklist** (the `(human)` subset —
     perceptual, dogfooding, and product-owner judgment items).
+12. Commit the QA artifacts authored in this gate (`final-review.md`,
+    `human-checklist.md`) under the QA Lead's own authorship before stopping.
+    Mid-phase `review-M.md` files are likewise committed by their authoring QA
+    Reviewer. QA artifacts must not be left uncommitted for another agent or
+    the human to commit.
 
 ### 5.3 Human Verification Gate
 
@@ -500,7 +505,9 @@ A task is done when:
 - [ ] Task-level quality gate passed (`gofmt`, `golangci-lint`, `go test` with
       coverage).
 - [ ] Dependency-budget note is present if new dependencies were added.
-- [ ] Completion report was written.
+- [ ] Completion report was written **and committed by its author** in the
+      task commit or an immediately following `docs(task): ...` commit. A task
+      is not done while its completion report is uncommitted.
 - [ ] Conventional Commit created with phase/task reference.
 
 A phase is done when:
