@@ -1,9 +1,13 @@
 package db
 
 import (
+	"context"
 	"database/sql"
+	"fmt"
 	"path/filepath"
+	"reflect"
 	"runtime"
+	"sync"
 	"testing"
 )
 
@@ -20,6 +24,70 @@ func TestOpenEnablesRequiredPragmas(t *testing.T) {
 
 	assertPragmaValue(t, conn, "foreign_keys", 1)
 	assertPragmaValue(t, conn, "recursive_triggers", 1)
+}
+
+func TestOpenEnablesRequiredPragmasOnEveryPhysicalConnection(t *testing.T) {
+	t.Parallel()
+
+	const connectionCount = 3
+
+	dbPath := t.TempDir() + "/fid.sqlite"
+
+	conn, err := Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeDB(t, conn)
+
+	conn.SetMaxOpenConns(connectionCount)
+
+	ctx := context.Background()
+	heldConns := make(chan *sql.Conn, connectionCount)
+	errs := make(chan error, connectionCount)
+
+	var wg sync.WaitGroup
+	for i := 0; i < connectionCount; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			heldConn, err := conn.Conn(ctx)
+			if err != nil {
+				errs <- fmt.Errorf("Conn() error: %w", err)
+				return
+			}
+
+			heldConns <- heldConn
+		}()
+	}
+
+	wg.Wait()
+	close(errs)
+	close(heldConns)
+
+	for err := range errs {
+		if err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	var physicalConnections []*sql.Conn
+	for heldConn := range heldConns {
+		physicalConnections = append(physicalConnections, heldConn)
+	}
+	defer closeSQLConns(t, physicalConnections)
+
+	seenPhysicalConnections := make(map[uintptr]struct{}, len(physicalConnections))
+	for _, heldConn := range physicalConnections {
+		physicalConnectionID := physicalConnectionPointer(t, heldConn)
+		seenPhysicalConnections[physicalConnectionID] = struct{}{}
+		assertConnPragmaValue(t, heldConn, "foreign_keys", 1)
+		assertConnPragmaValue(t, heldConn, "recursive_triggers", 1)
+	}
+
+	if len(seenPhysicalConnections) < 2 {
+		t.Fatalf("distinct physical connections = %d, want >= 2", len(seenPhysicalConnections))
+	}
 }
 
 func TestMigrateUpCreatesMinimalSchema(t *testing.T) {
@@ -147,6 +215,38 @@ func assertPragmaValue(t *testing.T, conn *sql.DB, pragma string, want int) {
 	}
 }
 
+func assertConnPragmaValue(t *testing.T, conn *sql.Conn, pragma string, want int) {
+	t.Helper()
+
+	var got int
+	if err := conn.QueryRowContext(context.Background(), "PRAGMA "+pragma+";").Scan(&got); err != nil {
+		t.Fatalf("query pragma %q: %v", pragma, err)
+	}
+
+	if got != want {
+		t.Fatalf("pragma %q = %d, want %d", pragma, got, want)
+	}
+}
+
+func physicalConnectionPointer(t *testing.T, conn *sql.Conn) uintptr {
+	t.Helper()
+
+	var pointer uintptr
+	if err := conn.Raw(func(driverConn any) error {
+		value := reflect.ValueOf(driverConn)
+		if value.Kind() != reflect.Pointer {
+			return fmt.Errorf("driver connection kind = %s, want pointer", value.Kind())
+		}
+
+		pointer = value.Pointer()
+		return nil
+	}); err != nil {
+		t.Fatalf("Raw() error = %v", err)
+	}
+
+	return pointer
+}
+
 func assertTableExists(t *testing.T, conn *sql.DB, tableName string) {
 	t.Helper()
 
@@ -194,5 +294,15 @@ func closeDB(t *testing.T, conn *sql.DB) {
 
 	if err := conn.Close(); err != nil {
 		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func closeSQLConns(t *testing.T, conns []*sql.Conn) {
+	t.Helper()
+
+	for _, conn := range conns {
+		if err := conn.Close(); err != nil {
+			t.Fatalf("Conn.Close() error = %v", err)
+		}
 	}
 }

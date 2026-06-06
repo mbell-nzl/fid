@@ -3,6 +3,9 @@ package db
 import (
 	"database/sql"
 	"fmt"
+	"net/url"
+	"path/filepath"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -10,21 +13,19 @@ import (
 const driverName = "sqlite"
 
 var requiredPragmas = []string{
-	"PRAGMA foreign_keys = ON;",
-	"PRAGMA recursive_triggers = ON;",
+	"foreign_keys(1)",
+	"recursive_triggers(1)",
 }
 
 func Open(path string) (*sql.DB, error) {
-	conn, err := sql.Open(driverName, path)
+	dsn, err := sqliteDSN(path)
 	if err != nil {
-		return nil, fmt.Errorf("open sqlite database: %w", err)
+		return nil, err
 	}
 
-	for _, pragma := range requiredPragmas {
-		if _, err := conn.Exec(pragma); err != nil {
-			_ = conn.Close()
-			return nil, fmt.Errorf("apply pragma %q: %w", pragma, err)
-		}
+	conn, err := sql.Open(driverName, dsn)
+	if err != nil {
+		return nil, fmt.Errorf("open sqlite database: %w", err)
 	}
 
 	if err := conn.Ping(); err != nil {
@@ -33,4 +34,27 @@ func Open(path string) (*sql.DB, error) {
 	}
 
 	return conn, nil
+}
+
+func sqliteDSN(path string) (string, error) {
+	absolutePath, err := filepath.Abs(path)
+	if err != nil {
+		return "", fmt.Errorf("resolve sqlite database path: %w", err)
+	}
+
+	dsnPath := filepath.ToSlash(absolutePath)
+	if !strings.HasPrefix(dsnPath, "/") {
+		dsnPath = "/" + dsnPath
+	}
+
+	query := url.Values{}
+	for _, pragma := range requiredPragmas {
+		query.Add("_pragma", pragma)
+	}
+
+	return (&url.URL{
+		Scheme:   "file",
+		Path:     dsnPath,
+		RawQuery: query.Encode(),
+	}).String(), nil
 }
