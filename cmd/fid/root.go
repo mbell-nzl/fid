@@ -12,9 +12,11 @@ func execute() error {
 
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "fid",
-		Short: "Local-first, agent-first issue tracker for AI-assisted software development.",
-		Long:  "fid is a local-first, agent-first issue tracker for AI-assisted software development.",
+		Use:           "fid",
+		Short:         "Local-first, agent-first issue tracker for AI-assisted software development.",
+		Long:          "fid is a local-first, agent-first issue tracker for AI-assisted software development.",
+		SilenceUsage:  true,
+		SilenceErrors: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return cmd.Help()
 		},
@@ -22,6 +24,7 @@ func newRootCommand() *cobra.Command {
 
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
+	cmd.AddCommand(newRebuildCommand())
 
 	return cmd
 }
