@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
 )
 
@@ -24,6 +25,13 @@ func newRebuildCommand() *cobra.Command {
 			workspaceRoot, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			if err := policy.RequireKnownRole(workspaceRoot, actorRole); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
 			}
 
 			startedAt := time.Now()
@@ -62,7 +70,6 @@ func newRebuildCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	cmd.Flags().BoolVar(&verbose, "verbose", false, "Print per-file replay details")
-	_ = cmd.MarkFlagRequired("by")
 
 	return cmd
 }
