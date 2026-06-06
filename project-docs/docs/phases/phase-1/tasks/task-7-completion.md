@@ -61,8 +61,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- Implementation commit: `232a7f3`
 
 ## Commit subject
 
-- Pending commit.
+- Implementation subject: `fix(db): enforce sqlite pragmas per connection`
