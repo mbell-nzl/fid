@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"testing"
@@ -87,6 +88,450 @@ func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
 	}
 	if got.AcceptanceCriteria == nil || len(got.AcceptanceCriteria) != 0 {
 		t.Fatalf("acceptance_criteria = %#v, want empty array", got.AcceptanceCriteria)
+	}
+}
+
+func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	issueID := parseCreatedIssueID(t, stderr)
+
+	if !strings.Contains(stderr, fmt.Sprintf("created issue %s (epic) %q", issueID, "Phase 4 authoring")) {
+		t.Fatalf("stderr = %q, want create confirmation", stderr)
+	}
+
+	stdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	if getStderr != "" {
+		t.Fatalf("issue get stderr = %q, want empty", getStderr)
+	}
+
+	var got struct {
+		ID             string   `json:"id"`
+		Kind           string   `json:"kind"`
+		Title          string   `json:"title"`
+		Status         string   `json:"status"`
+		StatusCategory string   `json:"status_category"`
+		WorkflowID     string   `json:"workflow_id"`
+		ParentID       *string  `json:"parent_id"`
+		OwnerRole      *string  `json:"owner_role"`
+		Labels         []string `json:"labels"`
+		InInbox        bool     `json:"in_inbox"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+
+	if got.ID != issueID {
+		t.Fatalf("id = %q, want %q", got.ID, issueID)
+	}
+	if got.Kind != "epic" {
+		t.Fatalf("kind = %q, want epic", got.Kind)
+	}
+	if got.Title != "Phase 4 authoring" {
+		t.Fatalf("title = %q, want %q", got.Title, "Phase 4 authoring")
+	}
+	if got.Status != "todo" {
+		t.Fatalf("status = %q, want todo", got.Status)
+	}
+	if got.StatusCategory != "unstarted" {
+		t.Fatalf("status_category = %q, want unstarted", got.StatusCategory)
+	}
+	if got.WorkflowID != "epic-default" {
+		t.Fatalf("workflow_id = %q, want epic-default", got.WorkflowID)
+	}
+	if got.ParentID != nil {
+		t.Fatalf("parent_id = %#v, want nil", got.ParentID)
+	}
+	if got.OwnerRole == nil || *got.OwnerRole != "tl" {
+		t.Fatalf("owner_role = %#v, want tl", got.OwnerRole)
+	}
+	if got.Labels == nil || len(got.Labels) != 0 {
+		t.Fatalf("labels = %#v, want empty array", got.Labels)
+	}
+	if got.InInbox {
+		t.Fatal("in_inbox = true, want false")
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	var scheduling string
+	if err := conn.QueryRow(`SELECT scheduling FROM epic_metadata WHERE issue_id = ?`, issueID).Scan(&scheduling); err != nil {
+		t.Fatalf("query epic_metadata: %v", err)
+	}
+	if scheduling != "sequential" {
+		t.Fatalf("epic_metadata scheduling = %q, want sequential", scheduling)
+	}
+}
+
+func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	if _, err := conn.Exec(`INSERT INTO labels (name) VALUES (?), (?)`, "core", "phase-4"); err != nil {
+		t.Fatalf("insert labels: %v", err)
+	}
+
+	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	epicID := parseCreatedIssueID(t, epicStderr)
+
+	_, taskStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "task",
+		"--title", "Implement authoring domain",
+		"--epic", epicID,
+		"--priority", "1",
+		"--sequence", "1",
+		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
+		"--est-tokens", "2100",
+		"--due-date", "2026-06-30",
+		"--label", "phase-4",
+		"--label", "core",
+		"--inbox",
+		"--owner-role", "qa_lead",
+		"--owner-actor", "human:mark",
+		"--by", "tl",
+	)
+	taskID := parseCreatedIssueID(t, taskStderr)
+
+	_, unattachedStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Inbox capture", "--by", "developer")
+	unattachedTaskID := parseCreatedIssueID(t, unattachedStderr)
+
+	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--by", "developer")
+	subtaskID := parseCreatedIssueID(t, subtaskStderr)
+
+	type issueJSON struct {
+		ID             string   `json:"id"`
+		Kind           string   `json:"kind"`
+		Title          string   `json:"title"`
+		Status         string   `json:"status"`
+		StatusCategory string   `json:"status_category"`
+		WorkflowID     string   `json:"workflow_id"`
+		ParentID       *string  `json:"parent_id"`
+		Priority       *int     `json:"priority"`
+		Sequence       *int     `json:"sequence"`
+		SpecMDPath     *string  `json:"spec_md_path"`
+		EstTokens      *int     `json:"est_tokens"`
+		OwnerRole      *string  `json:"owner_role"`
+		OwnerActor     *string  `json:"owner_actor"`
+		Labels         []string `json:"labels"`
+		InInbox        bool     `json:"in_inbox"`
+	}
+
+	readIssue := func(issueID string) issueJSON {
+		t.Helper()
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("issue get %s stderr = %q, want empty", issueID, stderr)
+		}
+
+		var got issueJSON
+		if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+			t.Fatalf("Unmarshal(%s) error = %v", issueID, err)
+		}
+		return got
+	}
+
+	epic := readIssue(epicID)
+	if epic.Kind != "epic" || epic.WorkflowID != "epic-default" || epic.Status != "todo" || epic.StatusCategory != "unstarted" {
+		t.Fatalf("epic read-back = %+v, want epic defaults", epic)
+	}
+	if epic.ParentID != nil {
+		t.Fatalf("epic parent_id = %#v, want nil", epic.ParentID)
+	}
+	if epic.OwnerRole == nil || *epic.OwnerRole != "tl" {
+		t.Fatalf("epic owner_role = %#v, want tl", epic.OwnerRole)
+	}
+
+	task := readIssue(taskID)
+	if task.Kind != "task" || task.WorkflowID != "task-default" {
+		t.Fatalf("task read-back = %+v, want task defaults", task)
+	}
+	if task.ParentID == nil || *task.ParentID != epicID {
+		t.Fatalf("task parent_id = %#v, want %q", task.ParentID, epicID)
+	}
+	if task.Priority == nil || *task.Priority != 1 {
+		t.Fatalf("task priority = %#v, want 1", task.Priority)
+	}
+	if task.Sequence == nil || *task.Sequence != 1 {
+		t.Fatalf("task sequence = %#v, want 1", task.Sequence)
+	}
+	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
+		t.Fatalf("task spec_md_path = %#v", task.SpecMDPath)
+	}
+	if task.EstTokens == nil || *task.EstTokens != 2100 {
+		t.Fatalf("task est_tokens = %#v, want 2100", task.EstTokens)
+	}
+	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
+		t.Fatalf("task owner_role = %#v, want qa_lead", task.OwnerRole)
+	}
+	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
+		t.Fatalf("task owner_actor = %#v, want human:mark", task.OwnerActor)
+	}
+	if !task.InInbox {
+		t.Fatal("task in_inbox = false, want true")
+	}
+	if want := []string{"core", "phase-4"}; !reflect.DeepEqual(task.Labels, want) {
+		t.Fatalf("task labels = %#v, want %#v", task.Labels, want)
+	}
+
+	unattachedTask := readIssue(unattachedTaskID)
+	if unattachedTask.ParentID != nil {
+		t.Fatalf("unattached task parent_id = %#v, want nil", unattachedTask.ParentID)
+	}
+	if unattachedTask.OwnerRole == nil || *unattachedTask.OwnerRole != "developer" {
+		t.Fatalf("unattached task owner_role = %#v, want developer", unattachedTask.OwnerRole)
+	}
+
+	subtask := readIssue(subtaskID)
+	if subtask.Kind != "subtask" || subtask.WorkflowID != "subtask-default" {
+		t.Fatalf("subtask read-back = %+v, want subtask defaults", subtask)
+	}
+	if subtask.ParentID == nil || *subtask.ParentID != taskID {
+		t.Fatalf("subtask parent_id = %#v, want %q", subtask.ParentID, taskID)
+	}
+	if subtask.OwnerRole == nil || *subtask.OwnerRole != "developer" {
+		t.Fatalf("subtask owner_role = %#v, want developer", subtask.OwnerRole)
+	}
+
+	var dueDate string
+	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskID).Scan(&dueDate); err != nil {
+		t.Fatalf("query task due_date: %v", err)
+	}
+	if dueDate != "2026-06-30" {
+		t.Fatalf("task due_date = %q, want 2026-06-30", dueDate)
+	}
+}
+
+func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    func(t *testing.T, workspace string) []string
+		wantErr string
+		verify  func(t *testing.T, workspace string)
+	}{
+		{
+			name: "task rejects subtask parent flag",
+			args: func(t *testing.T, workspace string) []string {
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Parent task", "--by", "developer")
+				taskID := parseCreatedIssueID(t, stderr)
+				return []string{"issue", "create", "--kind", "task", "--title", "Wrong flag", "--parent", taskID, "--by", "developer"}
+			},
+			wantErr: "create issue: --parent is only valid for subtasks",
+		},
+		{
+			name: "subtask rejects task epic flag",
+			args: func(t *testing.T, workspace string) []string {
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--by", "tl")
+				epicID := parseCreatedIssueID(t, stderr)
+				return []string{"issue", "create", "--kind", "subtask", "--title", "Wrong flag", "--epic", epicID, "--by", "developer"}
+			},
+			wantErr: "create issue: --epic is only valid for tasks",
+		},
+		{
+			name: "task under sequential epic requires sequence",
+			args: func(t *testing.T, workspace string) []string {
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--by", "tl")
+				epicID := parseCreatedIssueID(t, stderr)
+				return []string{"issue", "create", "--kind", "task", "--title", "Missing sequence", "--epic", epicID, "--by", "developer"}
+			},
+			wantErr: "issues: task under sequential epic requires sequence",
+		},
+		{
+			name: "task under prioritised epic must not set sequence",
+			args: func(t *testing.T, workspace string) []string {
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Prioritised parent", "--scheduling", "prioritised", "--by", "tl")
+				epicID := parseCreatedIssueID(t, stderr)
+				return []string{"issue", "create", "--kind", "task", "--title", "Prioritised sequence", "--epic", epicID, "--sequence", "1", "--by", "developer"}
+			},
+			wantErr: "issues: task under prioritised epic must not have sequence",
+		},
+		{
+			name: "unattached task must not set sequence",
+			args: func(t *testing.T, workspace string) []string {
+				return []string{"issue", "create", "--kind", "task", "--title", "Unattached sequence", "--sequence", "1", "--by", "developer"}
+			},
+			wantErr: "issues: unattached task must not have sequence",
+		},
+		{
+			name: "task under epic without metadata is rejected",
+			args: func(t *testing.T, workspace string) []string {
+				conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+				if err != nil {
+					t.Fatalf("Open() error = %v", err)
+				}
+				defer closeCommandDB(t, conn)
+				if _, err := conn.Exec(`
+					INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+				`,
+					"FID-nometa",
+					"epic",
+					"Metadata missing epic",
+					"todo",
+					"epic-default",
+					"tl",
+					"2026-06-07T14:00:00Z",
+					"2026-06-07T14:00:00Z",
+				); err != nil {
+					t.Fatalf("insert metadata-less epic: %v", err)
+				}
+				return []string{"issue", "create", "--kind", "task", "--title", "No metadata", "--epic", "FID-nometa", "--sequence", "1", "--by", "developer"}
+			},
+			wantErr: "issues: task parent epic must have epic_metadata",
+		},
+		{
+			name: "unknown label rejected without auto-create",
+			args: func(t *testing.T, workspace string) []string {
+				seedCommandLabels(t, workspace, "known")
+				return []string{"issue", "create", "--kind", "task", "--title", "Unknown label", "--label", "known", "--label", "missing", "--by", "developer"}
+			},
+			wantErr: `create issue: label "missing" does not exist`,
+			verify: func(t *testing.T, workspace string) {
+				conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+				if err != nil {
+					t.Fatalf("Open() error = %v", err)
+				}
+				defer closeCommandDB(t, conn)
+
+				var missingLabelCount int
+				if err := conn.QueryRow(`SELECT COUNT(*) FROM labels WHERE name = ?`, "missing").Scan(&missingLabelCount); err != nil {
+					t.Fatalf("count missing label rows: %v", err)
+				}
+				if missingLabelCount != 0 {
+					t.Fatalf("missing label rows = %d, want 0", missingLabelCount)
+				}
+
+				var unknownLabelIssueCount int
+				if err := conn.QueryRow(`SELECT COUNT(*) FROM issues WHERE title = ?`, "Unknown label").Scan(&unknownLabelIssueCount); err != nil {
+					t.Fatalf("count unknown label issues: %v", err)
+				}
+				if unknownLabelIssueCount != 0 {
+					t.Fatalf("unknown label issues = %d, want 0", unknownLabelIssueCount)
+				}
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			runInitCommand(t, workspace, "init")
+
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, tt.args(t, workspace)...)
+			if err == nil {
+				t.Fatalf("Execute() error = nil, want rejection")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			if !strings.Contains(stderr, tt.wantErr) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantErr)
+			}
+			if tt.verify != nil {
+				tt.verify(t, workspace)
+			}
+		})
+	}
+}
+
+func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierarchy(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	seedCommandLabels(t, workspace, "core", "phase-4")
+
+	journalPath := mustJournalPath(t, workspace)
+	beforePayload, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+	beforeLines := splitJournalLines(beforePayload)
+
+	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	epicID := parseCreatedIssueID(t, epicStderr)
+	afterEpicLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	if len(afterEpicLines) != len(beforeLines)+1 {
+		t.Fatalf("journal lines after epic = %d, want %d", len(afterEpicLines), len(beforeLines)+1)
+	}
+
+	_, taskStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "task",
+		"--title", "Implement authoring domain",
+		"--epic", epicID,
+		"--priority", "1",
+		"--sequence", "1",
+		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
+		"--est-tokens", "2100",
+		"--due-date", "2026-06-30",
+		"--label", "phase-4",
+		"--label", "core",
+		"--inbox",
+		"--owner-role", "qa_lead",
+		"--owner-actor", "human:mark",
+		"--by", "tl",
+	)
+	taskID := parseCreatedIssueID(t, taskStderr)
+	afterTaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	if len(afterTaskLines) != len(afterEpicLines)+1 {
+		t.Fatalf("journal lines after task = %d, want %d", len(afterTaskLines), len(afterEpicLines)+1)
+	}
+
+	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--by", "developer")
+	subtaskID := parseCreatedIssueID(t, subtaskStderr)
+	afterSubtaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
+	if len(afterSubtaskLines) != len(afterTaskLines)+1 {
+		t.Fatalf("journal lines after subtask = %d, want %d", len(afterSubtaskLines), len(afterTaskLines)+1)
+	}
+
+	var latestEvent journal.Event
+	if err := json.Unmarshal([]byte(afterSubtaskLines[len(afterSubtaskLines)-1]), &latestEvent); err != nil {
+		t.Fatalf("Unmarshal(last event) error = %v", err)
+	}
+	if latestEvent.EventType != "issue.created" {
+		t.Fatalf("last event type = %q, want issue.created", latestEvent.EventType)
+	}
+
+	beforeRebuild := map[string]string{
+		epicID:    mustGetIssueJSON(t, workspace, epicID),
+		taskID:    mustGetIssueJSON(t, workspace, taskID),
+		subtaskID: mustGetIssueJSON(t, workspace, subtaskID),
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+
+	for issueID, want := range beforeRebuild {
+		if got := mustGetIssueJSON(t, workspace, issueID); got != want {
+			t.Fatalf("issue %s JSON after rebuild = %q, want %q", issueID, got, want)
+		}
 	}
 }
 
@@ -854,6 +1299,56 @@ func parseCreatedIssueID(t *testing.T, stderr string) string {
 	}
 	t.Fatalf("stderr = %q, want created issue line with id", stderr)
 	return ""
+}
+
+func mustReadCommandFile(t *testing.T, path string) []byte {
+	t.Helper()
+
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", path, err)
+	}
+	return payload
+}
+
+func mustGetIssueJSON(t *testing.T, workspace, issueID string) string {
+	t.Helper()
+
+	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	if stderr != "" {
+		t.Fatalf("issue get %s stderr = %q, want empty", issueID, stderr)
+	}
+	return stdout
+}
+
+func seedCommandLabels(t *testing.T, workspace string, labels ...string) {
+	t.Helper()
+
+	effects := make([]journal.Effect, 0, len(labels))
+	for _, label := range labels {
+		effects = append(effects, journal.Effect{
+			Op:    "insert",
+			Table: "labels",
+			PK:    map[string]any{"name": label},
+			Values: map[string]any{
+				"description": label + " label",
+			},
+		})
+	}
+
+	appendCommandIssueEvent(t, workspace, journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "label.seeded",
+		Actor: journal.Actor{
+			Role: "tl",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: effects,
+	})
 }
 
 func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event) {

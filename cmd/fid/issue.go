@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -32,6 +33,18 @@ func newIssueCreateCommand() *cobra.Command {
 	var kind string
 	var title string
 	var actorRole string
+	var epicID string
+	var parentID string
+	var priority int
+	var sequence int
+	var specMDPath string
+	var estTokens int
+	var dueDate string
+	var labels []string
+	var inbox bool
+	var ownerRole string
+	var ownerActor string
+	var scheduling string
 
 	cmd := &cobra.Command{
 		Use:   "create",
@@ -42,12 +55,31 @@ func newIssueCreateCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
+			issueParentID, err := issueCreateParentID(kind, epicID, parentID)
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
 			result, err := issues.Create(issues.CreateOptions{
 				WorkspaceRoot: workspaceRoot,
 				MigrationsDir: issueMigrationsDir(),
 				Kind:          kind,
 				Title:         title,
 				ActorRole:     actorRole,
+				ParentID:      issueParentID,
+				Priority:      issueCreateOptionalInt(cmd, "priority", priority),
+				Sequence:      issueCreateOptionalInt(cmd, "sequence", sequence),
+				SpecMDPath:    issueCreateOptionalString(cmd, "spec-md", specMDPath),
+				EstTokens:     issueCreateOptionalInt(cmd, "est-tokens", estTokens),
+				DueDate:       issueCreateOptionalString(cmd, "due-date", dueDate),
+				Labels:        labels,
+				InInbox:       inbox,
+				OwnerRole:     issueCreateOptionalString(cmd, "owner-role", ownerRole),
+				OwnerActor:    issueCreateOptionalString(cmd, "owner-actor", ownerActor),
+				Scheduling:    scheduling,
 			})
 			if err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
@@ -62,7 +94,19 @@ func newIssueCreateCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind")
 	cmd.Flags().StringVar(&title, "title", "", "Issue title")
+	cmd.Flags().StringVar(&epicID, "epic", "", "Parent epic ID")
+	cmd.Flags().StringVar(&parentID, "parent", "", "Parent task ID")
+	cmd.Flags().IntVar(&priority, "priority", 0, "Issue priority")
+	cmd.Flags().IntVar(&sequence, "sequence", 0, "Issue sequence")
+	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "Spec markdown path")
+	cmd.Flags().IntVar(&estTokens, "est-tokens", 0, "Estimated tokens")
+	cmd.Flags().StringVar(&dueDate, "due-date", "", "Due date")
+	cmd.Flags().StringSliceVar(&labels, "label", nil, "Issue label")
+	cmd.Flags().BoolVar(&inbox, "inbox", false, "Add issue to inbox")
+	cmd.Flags().StringVar(&ownerRole, "owner-role", "", "Owner role")
+	cmd.Flags().StringVar(&ownerActor, "owner-actor", "", "Owner actor")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&scheduling, "scheduling", "", "Epic scheduling")
 	return cmd
 }
 
@@ -181,6 +225,57 @@ func joinCommaSeparated(values []string) string {
 		result += ", " + value
 	}
 	return result
+}
+
+func issueCreateParentID(kind, epicID, parentID string) (*string, error) {
+	trimmedEpicID := strings.TrimSpace(epicID)
+	trimmedParentID := strings.TrimSpace(parentID)
+
+	if trimmedEpicID != "" && trimmedParentID != "" {
+		return nil, fmt.Errorf("create issue: --epic and --parent are mutually exclusive")
+	}
+
+	switch strings.TrimSpace(kind) {
+	case "task":
+		if trimmedParentID != "" {
+			return nil, fmt.Errorf("create issue: --parent is only valid for subtasks")
+		}
+		if trimmedEpicID == "" {
+			return nil, nil
+		}
+		return &trimmedEpicID, nil
+	case "subtask":
+		if trimmedEpicID != "" {
+			return nil, fmt.Errorf("create issue: --epic is only valid for tasks")
+		}
+		if trimmedParentID == "" {
+			return nil, nil
+		}
+		return &trimmedParentID, nil
+	default:
+		if trimmedEpicID != "" {
+			return nil, fmt.Errorf("create issue: --epic is only valid for tasks")
+		}
+		if trimmedParentID != "" {
+			return nil, fmt.Errorf("create issue: --parent is only valid for subtasks")
+		}
+		return nil, nil
+	}
+}
+
+func issueCreateOptionalInt(cmd *cobra.Command, flagName string, value int) *int {
+	if !cmd.Flags().Changed(flagName) {
+		return nil
+	}
+	result := value
+	return &result
+}
+
+func issueCreateOptionalString(cmd *cobra.Command, flagName, value string) *string {
+	if !cmd.Flags().Changed(flagName) {
+		return nil
+	}
+	return &value
 }
 
 func loadIssueMarkdownView(workspaceRoot string, issue issues.Issue) (fidformat.IssueMarkdownView, error) {
