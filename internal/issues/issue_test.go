@@ -1,0 +1,457 @@
+package issues
+
+import (
+	"database/sql"
+	"errors"
+	"os"
+	"path/filepath"
+	"runtime"
+	"testing"
+
+	"github.com/mbell-nzl/fid/internal/bootstrap"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
+)
+
+func TestGetReturnsNotFoundErrorForMissingIssue(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	_, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            "FID-missing",
+	})
+	if err == nil {
+		t.Fatal("Get() error = nil, want not found")
+	}
+
+	var notFoundErr *NotFoundError
+	if !errors.As(err, &notFoundErr) {
+		t.Fatalf("Get() error = %T, want *NotFoundError", err)
+	}
+	if notFoundErr.IssueID != "FID-missing" {
+		t.Fatalf("NotFoundError.IssueID = %q, want %q", notFoundErr.IssueID, "FID-missing")
+	}
+	if notFoundErr.Error() != `issue "FID-missing" not found` {
+		t.Fatalf("NotFoundError.Error() = %q, want %q", notFoundErr.Error(), `issue "FID-missing" not found`)
+	}
+}
+
+func TestCreateAndGetValidateInputGuards(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		call    func() error
+		wantErr string
+	}{
+		{
+			name: "create requires workspace root",
+			call: func() error {
+				_, err := Create(CreateOptions{
+					MigrationsDir: testIssueMigrationsDir(t),
+					Kind:          "task",
+					Title:         "Implement coverage",
+					ActorRole:     "developer",
+				})
+				return err
+			},
+			wantErr: "create issue: workspace root is required",
+		},
+		{
+			name: "create requires migrations dir",
+			call: func() error {
+				_, err := Create(CreateOptions{
+					WorkspaceRoot: t.TempDir(),
+					Kind:          "task",
+					Title:         "Implement coverage",
+					ActorRole:     "developer",
+				})
+				return err
+			},
+			wantErr: "create issue: migrations dir is required",
+		},
+		{
+			name: "create requires title",
+			call: func() error {
+				workspace := newIssueWorkspace(t)
+				_, err := Create(CreateOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					Kind:          "task",
+					Title:         "  ",
+					ActorRole:     "developer",
+				})
+				return err
+			},
+			wantErr: "create issue: title is required",
+		},
+		{
+			name: "get requires workspace root",
+			call: func() error {
+				_, err := Get(GetOptions{
+					MigrationsDir: testIssueMigrationsDir(t),
+					ID:            "FID-123456",
+				})
+				return err
+			},
+			wantErr: "get issue: workspace root is required",
+		},
+		{
+			name: "get requires migrations dir",
+			call: func() error {
+				_, err := Get(GetOptions{
+					WorkspaceRoot: t.TempDir(),
+					ID:            "FID-123456",
+				})
+				return err
+			},
+			wantErr: "get issue: migrations dir is required",
+		},
+		{
+			name: "get requires issue id",
+			call: func() error {
+				workspace := newIssueWorkspace(t)
+				_, err := Get(GetOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					ID:            "   ",
+				})
+				return err
+			},
+			wantErr: "get issue: issue id is required",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.call()
+			if err == nil {
+				t.Fatalf("error = nil, want %q", tt.wantErr)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("error = %q, want %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCreateRejectsUnsupportedKind(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	_, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "bug",
+		Title:         "Unsupported kind",
+		ActorRole:     "developer",
+	})
+	if err == nil {
+		t.Fatal("Create() error = nil, want unsupported kind")
+	}
+
+	var unsupportedErr *UnsupportedKindError
+	if !errors.As(err, &unsupportedErr) {
+		t.Fatalf("Create() error = %T, want *UnsupportedKindError", err)
+	}
+	if unsupportedErr.Kind != "bug" {
+		t.Fatalf("UnsupportedKindError.Kind = %q, want %q", unsupportedErr.Kind, "bug")
+	}
+	if unsupportedErr.Error() != `kind "bug" is not yet supported in Phase 1; use --kind task` {
+		t.Fatalf("UnsupportedKindError.Error() = %q", unsupportedErr.Error())
+	}
+}
+
+func TestCreateAndGetRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Implement coverage remediation",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	if created.ID == "" {
+		t.Fatal("Create() ID = empty, want generated id")
+	}
+	if created.Kind != "task" {
+		t.Fatalf("Create() kind = %q, want %q", created.Kind, "task")
+	}
+	if created.Title != "Implement coverage remediation" {
+		t.Fatalf("Create() title = %q, want %q", created.Title, "Implement coverage remediation")
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if got.ID != created.ID {
+		t.Fatalf("Get() id = %q, want %q", got.ID, created.ID)
+	}
+	if got.Status != "todo" {
+		t.Fatalf("Get() status = %q, want %q", got.Status, "todo")
+	}
+	if got.StatusCategory != "unstarted" {
+		t.Fatalf("Get() status_category = %q, want %q", got.StatusCategory, "unstarted")
+	}
+	if got.OwnerRole == nil || *got.OwnerRole != "developer" {
+		t.Fatalf("Get() owner_role = %#v, want developer", got.OwnerRole)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	exists, err := issueIDExists(conn, created.ID)
+	if err != nil {
+		t.Fatalf("issueIDExists(existing) error = %v", err)
+	}
+	if !exists {
+		t.Fatal("issueIDExists(existing) = false, want true")
+	}
+
+	exists, err = issueIDExists(conn, "FID-does-not-exist")
+	if err != nil {
+		t.Fatalf("issueIDExists(missing) error = %v", err)
+	}
+	if exists {
+		t.Fatal("issueIDExists(missing) = true, want false")
+	}
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	if got := countJournalLines(journalPath); got != 2 {
+		t.Fatalf("countJournalLines(%q) = %d, want 2", journalPath, got)
+	}
+}
+
+func TestGetMapsPopulatedNullableFields(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	_, err := conn.Exec(`
+		INSERT INTO issues (id, kind, title, status, workflow_id, owner_role)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`,
+		"FID-parent",
+		"task",
+		"Parent issue",
+		"todo",
+		"task-default",
+		"developer",
+	)
+	if err != nil {
+		t.Fatalf("insert parent issue: %v", err)
+	}
+
+	_, err = conn.Exec(`
+		INSERT INTO issues (
+			id, kind, title, status, workflow_id, parent_id, priority, sequence,
+			spec_md_path, est_tokens, owner_role, owner_actor, in_inbox, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		"FID-populated",
+		"task",
+		"Populated values",
+		"qa_pass",
+		"task-default",
+		"FID-parent",
+		5,
+		42,
+		"docs/spec.md",
+		99,
+		"qa_lead",
+		"human",
+		true,
+		"2026-06-07T10:00:00Z",
+		"2026-06-07T11:00:00Z",
+	)
+	if err != nil {
+		t.Fatalf("insert populated issue: %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            "FID-populated",
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+
+	if got.StatusCategory != "completed" {
+		t.Fatalf("Get() status_category = %q, want %q", got.StatusCategory, "completed")
+	}
+	if got.ParentID == nil || *got.ParentID != "FID-parent" {
+		t.Fatalf("Get() parent_id = %#v, want FID-parent", got.ParentID)
+	}
+	if got.Priority == nil || *got.Priority != 5 {
+		t.Fatalf("Get() priority = %#v, want 5", got.Priority)
+	}
+	if got.Sequence == nil || *got.Sequence != 42 {
+		t.Fatalf("Get() sequence = %#v, want 42", got.Sequence)
+	}
+	if got.SpecMDPath == nil || *got.SpecMDPath != "docs/spec.md" {
+		t.Fatalf("Get() spec_md_path = %#v, want docs/spec.md", got.SpecMDPath)
+	}
+	if got.EstTokens == nil || *got.EstTokens != 99 {
+		t.Fatalf("Get() est_tokens = %#v, want 99", got.EstTokens)
+	}
+	if got.OwnerRole == nil || *got.OwnerRole != "qa_lead" {
+		t.Fatalf("Get() owner_role = %#v, want qa_lead", got.OwnerRole)
+	}
+	if got.OwnerActor == nil || *got.OwnerActor != "human" {
+		t.Fatalf("Get() owner_actor = %#v, want human", got.OwnerActor)
+	}
+	if got.CreatedAt == nil || *got.CreatedAt != "2026-06-07T10:00:00Z" {
+		t.Fatalf("Get() created_at = %#v, want 2026-06-07T10:00:00Z", got.CreatedAt)
+	}
+	if got.UpdatedAt == nil || *got.UpdatedAt != "2026-06-07T11:00:00Z" {
+		t.Fatalf("Get() updated_at = %#v, want 2026-06-07T11:00:00Z", got.UpdatedAt)
+	}
+}
+
+func TestIssueHelpersCoverStatusAndNullHandling(t *testing.T) {
+	t.Parallel()
+
+	t.Run("status category mapping", func(t *testing.T) {
+		t.Parallel()
+
+		tests := []struct {
+			status string
+			want   string
+		}{
+			{status: "todo", want: "unstarted"},
+			{status: "in_progress", want: "started"},
+			{status: "dev_complete", want: "started"},
+			{status: "qa_review", want: "started"},
+			{status: "qa_block", want: "started"},
+			{status: "failed_gate", want: "started"},
+			{status: "wrapped", want: "started"},
+			{status: "qa_pass", want: "completed"},
+			{status: "done", want: "completed"},
+			{status: "closed", want: "completed"},
+			{status: "cancelled", want: "cancelled"},
+			{status: "unknown", want: "unstarted"},
+		}
+
+		for _, tt := range tests {
+			if got := statusCategory(tt.status); got != tt.want {
+				t.Fatalf("statusCategory(%q) = %q, want %q", tt.status, got, tt.want)
+			}
+		}
+	})
+
+	t.Run("null pointer helpers", func(t *testing.T) {
+		t.Parallel()
+
+		if nullStringPointer(sql.NullString{}) != nil {
+			t.Fatal("nullStringPointer(invalid) = non-nil, want nil")
+		}
+		if nullIntPointer(sql.NullInt64{}) != nil {
+			t.Fatal("nullIntPointer(invalid) = non-nil, want nil")
+		}
+
+		stringValue := nullStringPointer(sql.NullString{String: "developer", Valid: true})
+		if stringValue == nil || *stringValue != "developer" {
+			t.Fatalf("nullStringPointer(valid) = %#v, want developer", stringValue)
+		}
+
+		intValue := nullIntPointer(sql.NullInt64{Int64: 13, Valid: true})
+		if intValue == nil || *intValue != 13 {
+			t.Fatalf("nullIntPointer(valid) = %#v, want 13", intValue)
+		}
+	})
+
+	t.Run("count journal lines", func(t *testing.T) {
+		t.Parallel()
+
+		if got := countJournalLines(filepath.Join(t.TempDir(), "missing.jsonl")); got != 1 {
+			t.Fatalf("countJournalLines(missing) = %d, want 1", got)
+		}
+
+		path := filepath.Join(t.TempDir(), "journal.jsonl")
+		if err := os.WriteFile(path, []byte("line1\nline2\n"), 0o644); err != nil {
+			t.Fatalf("WriteFile() error = %v", err)
+		}
+		if got := countJournalLines(path); got != 2 {
+			t.Fatalf("countJournalLines(%q) = %d, want 2", path, got)
+		}
+	})
+}
+
+func testIssueMigrationsDir(t *testing.T) string {
+	t.Helper()
+
+	_, currentFile, _, ok := runtime.Caller(0)
+	if !ok {
+		t.Fatal("runtime.Caller(0) failed")
+	}
+
+	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+}
+
+func newIssueWorkspace(t *testing.T) string {
+	t.Helper()
+
+	workspace := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+	}); err != nil {
+		t.Fatalf("InitializeWorkspace() error = %v", err)
+	}
+
+	return workspace
+}
+
+func openIssueDB(t *testing.T, dbPath string) *sql.DB {
+	t.Helper()
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open(%q) error = %v", dbPath, err)
+	}
+
+	return conn
+}
+
+func closeIssueTestDB(t *testing.T, conn interface{ Close() error }) {
+	t.Helper()
+
+	if err := conn.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func journalPathForWorkspace(t *testing.T, workspace string) string {
+	t.Helper()
+
+	journalDir := filepath.Join(workspace, ".fid", "journal")
+	entries, err := os.ReadDir(journalDir)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", journalDir, err)
+	}
+	if len(entries) != 1 {
+		t.Fatalf("journal entries = %d, want 1", len(entries))
+	}
+	if entries[0].IsDir() {
+		t.Fatalf("journal entry %q is a directory, want file", entries[0].Name())
+	}
+
+	return filepath.Join(journalDir, entries[0].Name())
+}

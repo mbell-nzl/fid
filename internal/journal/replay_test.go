@@ -6,11 +6,25 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
+
+func TestReplayJournalRejectsNilConnection(t *testing.T) {
+	t.Parallel()
+
+	_, err := ReplayJournal(nil, filepath.Join(t.TempDir(), ".fid", "journal"), nil)
+	if err == nil {
+		t.Fatal("ReplayJournal() error = nil, want nil connection rejection")
+	}
+	if err.Error() != "replay journal: connection is nil" {
+		t.Fatalf("ReplayJournal() error = %q, want %q", err.Error(), "replay journal: connection is nil")
+	}
+}
 
 func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 	t.Parallel()
@@ -121,6 +135,12 @@ func TestReplayJournalReportsMalformedTrailingLine(t *testing.T) {
 	if corruptErr.Line != 2 {
 		t.Fatalf("corrupt line = %d, want %d", corruptErr.Line, 2)
 	}
+	if !strings.Contains(corruptErr.Error(), ".fid/journal/2026-06-05.jsonl:2") {
+		t.Fatalf("CorruptJournalError.Error() = %q, want file:line context", corruptErr.Error())
+	}
+	if corruptErr.Unwrap() == nil {
+		t.Fatal("CorruptJournalError.Unwrap() = nil, want underlying decode error")
+	}
 }
 
 func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
@@ -193,6 +213,25 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("delete projection_meta: %v", err)
 		}
 		closeProjectDB(t, conn)
+
+		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
+		if err != nil {
+			t.Fatalf("EnsureProjectionFresh() error = %v", err)
+		}
+
+		if result.Decision != fiddb.ProjectionRebuild {
+			t.Fatalf("freshness decision = %q, want %q", result.Decision, fiddb.ProjectionRebuild)
+		}
+		if result.ReplayStats.EventsReplayed != 2 {
+			t.Fatalf("rebuilt events = %d, want %d", result.ReplayStats.EventsReplayed, 2)
+		}
+	})
+
+	t.Run("missing database rebuilds", func(t *testing.T) {
+		t.Parallel()
+
+		workspace := newReplayWorkspace(t)
+		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
 		result, err := EnsureProjectionFresh(workspace, testProjectMigrationsDir(t))
 		if err != nil {
@@ -311,6 +350,77 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 	})
 }
 
+func TestOrderedJournalFilesSkipsNonJournalEntries(t *testing.T) {
+	t.Parallel()
+
+	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	mustMkdirAll(t, journalDir)
+
+	files := []string{
+		"2026-06-07.jsonl",
+		"2026-06-06.jsonl",
+		"2026-06-07.txt",
+		"not-a-date.jsonl",
+	}
+	for _, name := range files {
+		path := filepath.Join(journalDir, name)
+		if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+			t.Fatalf("WriteFile(%q) error = %v", path, err)
+		}
+	}
+	if err := os.Mkdir(filepath.Join(journalDir, "nested"), 0o755); err != nil {
+		t.Fatalf("Mkdir(nested) error = %v", err)
+	}
+
+	got, err := orderedJournalFiles(journalDir)
+	if err != nil {
+		t.Fatalf("orderedJournalFiles() error = %v", err)
+	}
+
+	want := []string{"2026-06-06.jsonl", "2026-06-07.jsonl"}
+	if !equalReplayStrings(got, want) {
+		t.Fatalf("orderedJournalFiles() = %#v, want %#v", got, want)
+	}
+}
+
+func TestReplayJournalHonorsStartOffset(t *testing.T) {
+	t.Parallel()
+
+	workspace := newReplayWorkspace(t)
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	first := replayRoleEvent("EVT-20260605-000001", "developer")
+	second := replayRoleEvent("EVT-20260605-000002", "qa_lead")
+	writeReplayEvents(t, journalPath, first, second)
+
+	firstLine, err := marshalReplayEvent(first)
+	if err != nil {
+		t.Fatalf("marshalReplayEvent(first) error = %v", err)
+	}
+
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
+	defer closeProjectDB(t, conn)
+
+	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), &ReplayOptions{
+		StartFile:   "2026-06-05.jsonl",
+		StartOffset: int64(len(firstLine) + 1),
+	})
+	if err != nil {
+		t.Fatalf("ReplayJournal() error = %v", err)
+	}
+
+	if stats.EventsReplayed != 1 {
+		t.Fatalf("replayed events = %d, want %d", stats.EventsReplayed, 1)
+	}
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles`).Scan(&count); err != nil {
+		t.Fatalf("count roles: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("projected role count = %d, want %d", count, 1)
+	}
+}
+
 func newReplayWorkspace(t *testing.T) string {
 	t.Helper()
 
@@ -408,4 +518,74 @@ func snapshotReplayState(t *testing.T, conn *sql.DB) string {
 		meta.LastEventHash,
 		meta.ReplayStatus,
 	}, "|")
+}
+
+func replayRoleEvent(eventID, roleName string) Event {
+	return Event{
+		EventID:     eventID,
+		EventSchema: EventSchemaV1,
+		EventType:   "project.initialized",
+		OccurredAt:  time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC),
+		Actor: Actor{
+			Role: "human",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "init"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			{
+				Op:    "insert",
+				Table: "roles",
+				PK: map[string]any{
+					"name": roleName,
+				},
+				Values: map[string]any{
+					"description": roleName,
+					"active":      true,
+				},
+			},
+		},
+	}
+}
+
+func writeReplayEvents(t *testing.T, path string, events ...Event) {
+	t.Helper()
+
+	var payload []byte
+	for _, event := range events {
+		line, err := marshalReplayEvent(event)
+		if err != nil {
+			t.Fatalf("marshalReplayEvent() error = %v", err)
+		}
+		payload = append(payload, line...)
+		payload = append(payload, '\n')
+	}
+
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", path, err)
+	}
+}
+
+func marshalReplayEvent(event Event) ([]byte, error) {
+	return MarshalCanonicalJSON(event)
+}
+
+func equalReplayStrings(got, want []string) bool {
+	if len(got) != len(want) {
+		return false
+	}
+
+	sortedGot := append([]string(nil), got...)
+	sortedWant := append([]string(nil), want...)
+	sort.Strings(sortedGot)
+	sort.Strings(sortedWant)
+	for index := range sortedGot {
+		if sortedGot[index] != sortedWant[index] {
+			return false
+		}
+	}
+
+	return true
 }

@@ -93,6 +93,30 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 	}
 }
 
+func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
+	workspace := t.TempDir()
+	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
+
+	var appended Event
+	err := withLockOptions(workspace, LockOwner{
+		Command:   "fid issue create --by developer",
+		ActorRole: "developer",
+	}, defaultLockOptions(), func(lock *WriteLock) error {
+		var appendErr error
+		appended, appendErr = AppendEvent(lock, testAppendEvent("Append wrapper"))
+		return appendErr
+	})
+	if err != nil {
+		t.Fatalf("AppendEvent() error = %v", err)
+	}
+	if appended.EventID == "" {
+		t.Fatal("AppendEvent() event id = empty, want generated id")
+	}
+	if appended.OccurredAt.IsZero() {
+		t.Fatal("AppendEvent() occurred_at = zero, want current timestamp")
+	}
+}
+
 func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
@@ -227,6 +251,87 @@ func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T
 	}
 }
 
+func TestWriterHelpersParseEventIDsAndDates(t *testing.T) {
+	tests := []struct {
+		name    string
+		eventID string
+		want    int
+		wantErr string
+	}{
+		{name: "valid event id", eventID: "EVT-20260605-000123", want: 123},
+		{name: "wrong parts", eventID: "EVT-20260605", wantErr: `parse event id "EVT-20260605": want EVT-<date>-<sequence>`},
+		{name: "wrong prefix", eventID: "BAD-20260605-000123", wantErr: `parse event id "BAD-20260605-000123": want EVT prefix`},
+		{name: "bad date", eventID: "EVT-20261305-000123", wantErr: `parse event id "EVT-20261305-000123" date:`},
+		{name: "bad sequence", eventID: "EVT-20260605-nope", wantErr: `parse event id "EVT-20260605-nope" sequence:`},
+		{name: "non-positive sequence", eventID: "EVT-20260605-000000", wantErr: `parse event id "EVT-20260605-000000" sequence: must be positive`},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseEventSequence(tt.eventID)
+			if tt.wantErr == "" {
+				if err != nil {
+					t.Fatalf("parseEventSequence() error = %v", err)
+				}
+				if got != tt.want {
+					t.Fatalf("parseEventSequence() = %d, want %d", got, tt.want)
+				}
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("parseEventSequence() error = nil, want %q", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("parseEventSequence() error = %q, want substring %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestWriterHelpersDetermineLatestDateAndNextSequence(t *testing.T) {
+	journalDir := filepath.Join(t.TempDir(), ".fid", "journal")
+	mustMkdirAll(t, journalDir)
+
+	for _, name := range []string{"2026-06-04.jsonl", "2026-06-05.jsonl", "notes.txt", "invalid.jsonl"} {
+		path := filepath.Join(journalDir, name)
+		if err := os.WriteFile(path, []byte{}, 0o644); err != nil {
+			t.Fatalf("WriteFile(%q) error = %v", path, err)
+		}
+	}
+
+	latest, found, err := greatestJournalDate(journalDir)
+	if err != nil {
+		t.Fatalf("greatestJournalDate() error = %v", err)
+	}
+	if !found {
+		t.Fatal("greatestJournalDate() found = false, want true")
+	}
+	if latest != "2026-06-05" {
+		t.Fatalf("greatestJournalDate() latest = %q, want %q", latest, "2026-06-05")
+	}
+
+	if next, err := nextSequence(filepath.Join(journalDir, "2026-06-06.jsonl")); err != nil {
+		t.Fatalf("nextSequence(missing) error = %v", err)
+	} else if next != 1 {
+		t.Fatalf("nextSequence(missing) = %d, want 1", next)
+	}
+
+	path := filepath.Join(journalDir, "2026-06-05.jsonl")
+	writeWriterEvents(t, path,
+		writerRoleEvent("EVT-20260605-000001"),
+		writerRoleEvent("EVT-20260605-000002"),
+	)
+
+	next, err := nextSequence(path)
+	if err != nil {
+		t.Fatalf("nextSequence(existing) error = %v", err)
+	}
+	if next != 3 {
+		t.Fatalf("nextSequence(existing) = %d, want 3", next)
+	}
+}
+
 func appendTestEvent(workspace string, fixedNow time.Time, title string) (Event, error) {
 	var appended Event
 	err := withLockOptions(workspace, LockOwner{
@@ -291,6 +396,54 @@ func readStoredEvents(path string) ([]Event, error) {
 	}
 
 	return events, nil
+}
+
+func writeWriterEvents(t *testing.T, path string, events ...Event) {
+	t.Helper()
+
+	var payload []byte
+	for _, event := range events {
+		line, err := MarshalCanonicalJSON(event)
+		if err != nil {
+			t.Fatalf("MarshalCanonicalJSON() error = %v", err)
+		}
+		payload = append(payload, line...)
+		payload = append(payload, '\n')
+	}
+
+	if err := os.WriteFile(path, payload, 0o644); err != nil {
+		t.Fatalf("WriteFile(%q) error = %v", path, err)
+	}
+}
+
+func writerRoleEvent(eventID string) Event {
+	return Event{
+		EventID:     eventID,
+		EventSchema: EventSchemaV1,
+		EventType:   "project.initialized",
+		OccurredAt:  time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC),
+		Actor: Actor{
+			Role: "human",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "init"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			{
+				Op:    "insert",
+				Table: "roles",
+				PK: map[string]any{
+					"name": eventID,
+				},
+				Values: map[string]any{
+					"description": eventID,
+					"active":      true,
+				},
+			},
+		},
+	}
 }
 
 func mustMkdirAll(t *testing.T, path string) {
