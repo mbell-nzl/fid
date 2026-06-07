@@ -90,7 +90,7 @@ func TestOpenEnablesRequiredPragmasOnEveryPhysicalConnection(t *testing.T) {
 	}
 }
 
-func TestMigrateUpCreatesMinimalSchema(t *testing.T) {
+func TestMigrateUpCreatesBaseSchema(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
@@ -108,7 +108,9 @@ func TestMigrateUpCreatesMinimalSchema(t *testing.T) {
 	assertTableExists(t, conn, "projection_meta")
 	assertTableExists(t, conn, "roles")
 	assertTableExists(t, conn, "issues")
-	assertTableDoesNotExist(t, conn, "epic_metadata")
+	assertTableExists(t, conn, "epic_metadata")
+	assertTableExists(t, conn, "concerns")
+	assertTableExists(t, conn, "activity_log")
 }
 
 func TestMigrateDownDropsMinimalSchema(t *testing.T) {
@@ -136,7 +138,7 @@ func TestMigrateDownDropsMinimalSchema(t *testing.T) {
 	assertTableDoesNotExist(t, conn, "issues")
 }
 
-func TestMigrateRoundTripRestoresMinimalSchema(t *testing.T) {
+func TestMigrateRoundTripRestoresBaseSchema(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
@@ -161,6 +163,9 @@ func TestMigrateRoundTripRestoresMinimalSchema(t *testing.T) {
 	assertTableExists(t, conn, "projection_meta")
 	assertTableExists(t, conn, "roles")
 	assertTableExists(t, conn, "issues")
+	assertTableExists(t, conn, "epic_metadata")
+	assertTableExists(t, conn, "concerns")
+	assertTableExists(t, conn, "activity_log")
 }
 
 func TestMigrateUpIsIdempotentOnReopen(t *testing.T) {

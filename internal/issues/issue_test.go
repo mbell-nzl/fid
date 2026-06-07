@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestGetReturnsNotFoundErrorForMissingIssue(t *testing.T) {
@@ -210,6 +211,9 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 	if got.OwnerRole == nil || *got.OwnerRole != "developer" {
 		t.Fatalf("Get() owner_role = %#v, want developer", got.OwnerRole)
 	}
+	if got.TriageStatus != nil {
+		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
+	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
@@ -236,6 +240,322 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 	}
 }
 
+func TestGetReturnsEnrichedConcernFields(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Surface open concerns",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	event := journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "issue.concerned",
+		Actor: journal.Actor{
+			Role: "developer",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []journal.Effect{
+			{
+				Op:    "insert",
+				Table: "task_completions",
+				PK: map[string]any{
+					"id": "TC-000201",
+				},
+				Values: map[string]any{
+					"issue_id":           created.ID,
+					"attempt_number":     1,
+					"developer_role":     "developer",
+					"model":              "gpt-5",
+					"status":             "dev_complete",
+					"gate_results":       `["go test ./..."]`,
+					"human_intervention": false,
+					"completed_at":       "2026-06-07T12:00:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "concerns",
+				PK: map[string]any{
+					"id": "CON-000201",
+				},
+				Values: map[string]any{
+					"issue_id":                created.ID,
+					"raised_in_completion_id": "TC-000201",
+					"raised_by_role":          "developer",
+					"summary":                 "Need triage before closing",
+					"body_md_path":            "project-docs/concerns/CON-000201.md",
+					"status":                  "open",
+					"created_at":              "2026-06-07T12:01:00Z",
+					"updated_at":              "2026-06-07T12:01:00Z",
+				},
+			},
+		},
+	}
+
+	if err := journal.WithLock(workspace, journal.LockOwner{
+		Command:   "fid maintenance seed",
+		ActorRole: "developer",
+	}, func(lock *journal.WriteLock) error {
+		_, err := journal.AppendEvent(lock, event)
+		return err
+	}); err != nil {
+		t.Fatalf("AppendEvent() error = %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+
+	if !got.ConcernsRaised {
+		t.Fatal("Get() concerns_raised = false, want true")
+	}
+	if got.OpenConcernsCount != 1 {
+		t.Fatalf("Get() open_concerns_count = %d, want 1", got.OpenConcernsCount)
+	}
+	if got.TriageStatus != nil {
+		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
+	}
+}
+
+func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Ignore addressed concerns",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	appendIssueJournalEvent(t, workspace, journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "issue.concern_triaged",
+		Actor: journal.Actor{
+			Role: "developer",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []journal.Effect{
+			{
+				Op:    "insert",
+				Table: "task_completions",
+				PK: map[string]any{
+					"id": "TC-000301",
+				},
+				Values: map[string]any{
+					"issue_id":           created.ID,
+					"attempt_number":     1,
+					"developer_role":     "developer",
+					"model":              "gpt-5",
+					"status":             "dev_complete",
+					"gate_results":       `["go test ./..."]`,
+					"human_intervention": false,
+					"completed_at":       "2026-06-07T12:10:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "task_completions",
+				PK: map[string]any{
+					"id": "TC-000302",
+				},
+				Values: map[string]any{
+					"issue_id":           created.ID,
+					"attempt_number":     2,
+					"developer_role":     "developer",
+					"model":              "gpt-5",
+					"status":             "qa_pass",
+					"gate_results":       `["go test ./..."]`,
+					"human_intervention": false,
+					"completed_at":       "2026-06-07T12:20:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "concerns",
+				PK: map[string]any{
+					"id": "CON-000301",
+				},
+				Values: map[string]any{
+					"issue_id":                   created.ID,
+					"raised_in_completion_id":    "TC-000301",
+					"raised_by_role":             "developer",
+					"summary":                    "Resolved concern",
+					"body_md_path":               "project-docs/concerns/CON-000301.md",
+					"status":                     "addressed",
+					"addressed_in_completion_id": "TC-000302",
+					"created_at":                 "2026-06-07T12:11:00Z",
+					"updated_at":                 "2026-06-07T12:21:00Z",
+				},
+			},
+		},
+	})
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+
+	if got.ConcernsRaised {
+		t.Fatal("Get() concerns_raised = true, want false")
+	}
+	if got.OpenConcernsCount != 0 {
+		t.Fatalf("Get() open_concerns_count = %d, want 0", got.OpenConcernsCount)
+	}
+}
+
+func TestGetReturnsLatestTriageStatus(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		eventIDs   []string
+		verdicts   []string
+		createdAts []string
+		want       string
+	}{
+		{
+			name:       "latest resume wins",
+			eventIDs:   []string{"TRG-000401", "TRG-000402"},
+			verdicts:   []string{"BLOCK", "RESUME"},
+			createdAts: []string{"2026-06-07T12:30:00Z", "2026-06-07T12:40:00Z"},
+			want:       "resumed",
+		},
+		{
+			name:       "latest block wins",
+			eventIDs:   []string{"TRG-000403", "TRG-000404"},
+			verdicts:   []string{"RESUME", "BLOCK"},
+			createdAts: []string{"2026-06-07T12:30:00Z", "2026-06-07T12:40:00Z"},
+			want:       "blocked",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := newIssueWorkspace(t)
+
+			created, err := Create(CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "task",
+				Title:         "Map latest triage verdict",
+				ActorRole:     "developer",
+			})
+			if err != nil {
+				t.Fatalf("Create() error = %v", err)
+			}
+
+			appendIssueJournalEvent(t, workspace, journal.Event{
+				EventSchema: journal.EventSchemaV1,
+				EventType:   "issue.triaged",
+				Actor: journal.Actor{
+					Role: "qa_lead",
+				},
+				Command: journal.Command{
+					Argv:       []string{"fid", "maintenance", "seed"},
+					CWD:        ".",
+					FIDVersion: "0.1.0",
+				},
+				Effects: []journal.Effect{
+					{
+						Op:    "insert",
+						Table: "issues",
+						PK: map[string]any{
+							"id": "FID-epictriage",
+						},
+						Values: map[string]any{
+							"kind":        "epic",
+							"title":       "Phase 2 triage epic",
+							"workflow_id": "epic-default",
+							"status":      "todo",
+							"created_at":  "2026-06-07T12:25:00Z",
+							"updated_at":  "2026-06-07T12:25:00Z",
+						},
+					},
+					{
+						Op:    "insert",
+						Table: "triage_events",
+						PK: map[string]any{
+							"id": tt.eventIDs[0],
+						},
+						Values: map[string]any{
+							"epic_id":       "FID-epictriage",
+							"issue_id":      created.ID,
+							"triager_role":  "qa_lead",
+							"source":        "task_completion",
+							"source_ref_id": "TC-triage-1",
+							"verdict":       tt.verdicts[0],
+							"reasoning_md":  "project-docs/triage/TRG-1.md",
+							"created_at":    tt.createdAts[0],
+						},
+					},
+					{
+						Op:    "insert",
+						Table: "triage_events",
+						PK: map[string]any{
+							"id": tt.eventIDs[1],
+						},
+						Values: map[string]any{
+							"epic_id":       "FID-epictriage",
+							"issue_id":      created.ID,
+							"triager_role":  "qa_lead",
+							"source":        "task_completion",
+							"source_ref_id": "TC-triage-2",
+							"verdict":       tt.verdicts[1],
+							"reasoning_md":  "project-docs/triage/TRG-2.md",
+							"created_at":    tt.createdAts[1],
+						},
+					},
+				},
+			})
+
+			got, err := Get(GetOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				ID:            created.ID,
+			})
+			if err != nil {
+				t.Fatalf("Get() error = %v", err)
+			}
+
+			if got.TriageStatus == nil || *got.TriageStatus != tt.want {
+				t.Fatalf("Get() triage_status = %#v, want %q", got.TriageStatus, tt.want)
+			}
+		})
+	}
+}
+
 func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	t.Parallel()
 
@@ -248,10 +568,10 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?)
 	`,
 		"FID-parent",
-		"task",
+		"epic",
 		"Parent issue",
 		"todo",
-		"task-default",
+		"epic-default",
 		"developer",
 	)
 	if err != nil {
@@ -454,4 +774,18 @@ func journalPathForWorkspace(t *testing.T, workspace string) string {
 	}
 
 	return filepath.Join(journalDir, entries[0].Name())
+}
+
+func appendIssueJournalEvent(t *testing.T, workspace string, event journal.Event) {
+	t.Helper()
+
+	if err := journal.WithLock(workspace, journal.LockOwner{
+		Command:   "fid maintenance seed",
+		ActorRole: event.Actor.Role,
+	}, func(lock *journal.WriteLock) error {
+		_, err := journal.AppendEvent(lock, event)
+		return err
+	}); err != nil {
+		t.Fatalf("AppendEvent() error = %v", err)
+	}
 }

@@ -38,6 +38,7 @@ func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
 		InInbox            bool     `json:"in_inbox"`
 		ConcernsRaised     bool     `json:"concerns_raised"`
 		OpenConcernsCount  int      `json:"open_concerns_count"`
+		TriageStatus       *string  `json:"triage_status"`
 		AcceptanceCriteria []any    `json:"acceptance_criteria"`
 	}
 	if err := json.Unmarshal([]byte(defaultStdout), &got); err != nil {
@@ -77,8 +78,149 @@ func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
 	if got.OpenConcernsCount != 0 {
 		t.Fatalf("open_concerns_count = %d, want 0", got.OpenConcernsCount)
 	}
+	if got.TriageStatus != nil {
+		t.Fatalf("triage_status = %#v, want nil", got.TriageStatus)
+	}
 	if got.AcceptanceCriteria == nil || len(got.AcceptanceCriteria) != 0 {
 		t.Fatalf("acceptance_criteria = %#v, want empty array", got.AcceptanceCriteria)
+	}
+}
+
+func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Surface enriched issue state", "--by", "developer")
+	issueID := parseCreatedIssueID(t, stderr)
+
+	appendCommandIssueEvent(t, workspace, journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "issue.enriched_state_seeded",
+		Actor: journal.Actor{
+			Role: "qa_lead",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []journal.Effect{
+			{
+				Op:    "insert",
+				Table: "issues",
+				PK: map[string]any{
+					"id": "FID-epiccmd",
+				},
+				Values: map[string]any{
+					"kind":        "epic",
+					"title":       "CLI enriched epic",
+					"workflow_id": "epic-default",
+					"status":      "todo",
+					"created_at":  "2026-06-07T14:00:00Z",
+					"updated_at":  "2026-06-07T14:00:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "task_completions",
+				PK: map[string]any{
+					"id": "TC-CMD-001",
+				},
+				Values: map[string]any{
+					"issue_id":           issueID,
+					"attempt_number":     1,
+					"developer_role":     "developer",
+					"model":              "gpt-5",
+					"status":             "dev_complete",
+					"gate_results":       `["go test ./..."]`,
+					"human_intervention": false,
+					"completed_at":       "2026-06-07T14:01:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "concerns",
+				PK: map[string]any{
+					"id": "CON-CMD-001",
+				},
+				Values: map[string]any{
+					"issue_id":                issueID,
+					"raised_in_completion_id": "TC-CMD-001",
+					"raised_by_role":          "developer",
+					"summary":                 "CLI concern",
+					"body_md_path":            "project-docs/concerns/CON-CMD-001.md",
+					"status":                  "open",
+					"created_at":              "2026-06-07T14:01:30Z",
+					"updated_at":              "2026-06-07T14:01:30Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "triage_events",
+				PK: map[string]any{
+					"id": "TRG-CMD-001",
+				},
+				Values: map[string]any{
+					"epic_id":       "FID-epiccmd",
+					"issue_id":      issueID,
+					"triager_role":  "qa_lead",
+					"source":        "task_completion",
+					"source_ref_id": "TC-CMD-001",
+					"verdict":       "RESUME",
+					"reasoning_md":  "project-docs/triage/TRG-CMD-001.md",
+					"created_at":    "2026-06-07T14:02:00Z",
+				},
+			},
+			{
+				Op:    "insert",
+				Table: "triage_events",
+				PK: map[string]any{
+					"id": "TRG-CMD-002",
+				},
+				Values: map[string]any{
+					"epic_id":       "FID-epiccmd",
+					"issue_id":      issueID,
+					"triager_role":  "qa_lead",
+					"source":        "task_completion",
+					"source_ref_id": "TC-CMD-001",
+					"verdict":       "BLOCK",
+					"reasoning_md":  "project-docs/triage/TRG-CMD-002.md",
+					"created_at":    "2026-06-07T14:03:00Z",
+				},
+			},
+		},
+	})
+
+	beforeStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+
+	var before struct {
+		ConcernsRaised    bool    `json:"concerns_raised"`
+		OpenConcernsCount int     `json:"open_concerns_count"`
+		TriageStatus      *string `json:"triage_status"`
+	}
+	if err := json.Unmarshal([]byte(beforeStdout), &before); err != nil {
+		t.Fatalf("Unmarshal(before) error = %v", err)
+	}
+	if !before.ConcernsRaised {
+		t.Fatal("before concerns_raised = false, want true")
+	}
+	if before.OpenConcernsCount != 1 {
+		t.Fatalf("before open_concerns_count = %d, want 1", before.OpenConcernsCount)
+	}
+	if before.TriageStatus == nil || *before.TriageStatus != "blocked" {
+		t.Fatalf("before triage_status = %#v, want blocked", before.TriageStatus)
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+
+	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	if beforeStdout != afterStdout {
+		t.Fatalf("issue JSON after rebuild = %q, want %q", afterStdout, beforeStdout)
 	}
 }
 
@@ -291,4 +433,18 @@ func parseCreatedIssueID(t *testing.T, stderr string) string {
 	}
 	t.Fatalf("stderr = %q, want created issue line with id", stderr)
 	return ""
+}
+
+func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event) {
+	t.Helper()
+
+	if err := journal.WithLock(workspace, journal.LockOwner{
+		Command:   "fid maintenance seed",
+		ActorRole: event.Actor.Role,
+	}, func(lock *journal.WriteLock) error {
+		_, err := journal.AppendEvent(lock, event)
+		return err
+	}); err != nil {
+		t.Fatalf("AppendEvent() error = %v", err)
+	}
 }
