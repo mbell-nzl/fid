@@ -137,8 +137,8 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	if err := migrator.Steps(-1); err != nil {
-		t.Fatalf("Steps(-1) error = %v", err)
+	if err := migrator.Steps(-2); err != nil {
+		t.Fatalf("Steps(-2) error = %v", err)
 	}
 
 	assertTableExists(t, conn, "projection_meta")
@@ -160,14 +160,14 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 func TestDecideProjectionFreshnessRequiresPhaseTwoSchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 2 {
-		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 2)
+	if ProjectionSchemaVersion != 3 {
+		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 3)
 	}
 
 	stale := DecideProjectionFreshness(ProjectionFreshnessInput{
 		MetaExists:                    true,
 		ReplayStatus:                  ReplayStatusClean,
-		StoredProjectionSchemaVersion: 1,
+		StoredProjectionSchemaVersion: 2,
 		CurrentProjectionSchema:       ProjectionSchemaVersion,
 		CheckpointExists:              true,
 		CheckpointMatches:             true,

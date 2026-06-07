@@ -233,16 +233,17 @@ func Get(options GetOptions) (Issue, error) {
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
-		       spec_md_path, est_tokens, owner_role, owner_actor, in_inbox, created_at, updated_at
-		FROM issues
+		       spec_md_path, est_tokens, owner_role, owner_actor, in_inbox,
+		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
+		FROM issues_enriched
 		WHERE id = ?
 	`, options.ID)
 
 	var (
-		record                           Issue
-		parentID, specMDPath, ownerRole  sql.NullString
-		ownerActor, createdAt, updatedAt sql.NullString
-		priority, sequence, estTokens    sql.NullInt64
+		record                                         Issue
+		parentID, specMDPath, ownerRole                sql.NullString
+		ownerActor, triageStatus, createdAt, updatedAt sql.NullString
+		priority, sequence, estTokens                  sql.NullInt64
 	)
 	if err := row.Scan(
 		&record.ID,
@@ -258,6 +259,9 @@ func Get(options GetOptions) (Issue, error) {
 		&ownerRole,
 		&ownerActor,
 		&record.InInbox,
+		&record.ConcernsRaised,
+		&record.OpenConcernsCount,
+		&triageStatus,
 		&createdAt,
 		&updatedAt,
 	); err != nil {
@@ -270,12 +274,11 @@ func Get(options GetOptions) (Issue, error) {
 	record.StatusCategory = statusCategory(record.Status)
 	record.Labels = []string{}
 	record.AcceptanceCriteria = []AcceptanceCriterion{}
-	record.ConcernsRaised = false
-	record.OpenConcernsCount = 0
 	record.ParentID = nullStringPointer(parentID)
 	record.SpecMDPath = nullStringPointer(specMDPath)
 	record.OwnerRole = nullStringPointer(ownerRole)
 	record.OwnerActor = nullStringPointer(ownerActor)
+	record.TriageStatus = nullStringPointer(triageStatus)
 	record.CreatedAt = nullStringPointer(createdAt)
 	record.UpdatedAt = nullStringPointer(updatedAt)
 	record.Priority = nullIntPointer(priority)
