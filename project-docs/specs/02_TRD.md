@@ -508,8 +508,12 @@ preferred domain correction command.
   ID/hash, fid catches up by applying only events after the recorded byte
   offset.
 - If the recorded event ID/hash does not match the journal at the recorded
-  position, fid stops before answering and reports projection inconsistency.
-  It does not silently skip, truncate, or reorder journal entries.
+  position, the projection checkpoint is treated as diverged from the canonical
+  journal: fid rebuilds the read model from the journal before serving the read
+  rather than trusting the stale projection. (Malformed or
+  precondition-conflicting journal entries encountered during that replay still
+  stop before answering — see Malformed journal below.) fid never silently
+  skips, truncates, or reorders journal entries.
 
 **Malformed journal:**
 

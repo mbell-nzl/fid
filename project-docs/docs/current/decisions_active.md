@@ -34,7 +34,9 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| _None open_ | - | CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`. | - | - |
+| CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
+
+CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`.
 
 ## Environment Constraints
 
