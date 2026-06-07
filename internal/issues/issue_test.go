@@ -568,10 +568,10 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?)
 	`,
 		"FID-parent",
-		"task",
+		"epic",
 		"Parent issue",
 		"todo",
-		"task-default",
+		"epic-default",
 		"developer",
 	)
 	if err != nil {

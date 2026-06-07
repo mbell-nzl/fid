@@ -137,8 +137,8 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 		t.Fatalf("Up() error = %v", err)
 	}
 
-	if err := migrator.Steps(-2); err != nil {
-		t.Fatalf("Steps(-2) error = %v", err)
+	if err := migrator.Migrate(1); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Migrate(1) error = %v", err)
 	}
 
 	assertTableExists(t, conn, "projection_meta")
