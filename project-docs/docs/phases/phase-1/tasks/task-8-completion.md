@@ -84,8 +84,8 @@ Package coverage from the final `coverage.out` profile used by `go tool cover -f
 
 ## Commit hash
 
-- To be recorded from `git rev-parse --short HEAD` immediately after commit creation in the session close-out.
+- `f851b6a`
 
 ## Commit subject
 
-- Planned implementation subject: `test(phase-1): remediate task 8 domain coverage`
+- `test(phase-1): remediate task 8 domain coverage`
