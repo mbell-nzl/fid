@@ -56,8 +56,8 @@ Implemented Phase 2 Task 1 by adding migration `0002` for the remaining v0.1 bas
 
 ## Commit hash
 
-- PENDING
+- `5b1467f`
 
 ## Commit subject
 
-- PENDING
+- `feat(db): add v0.1 phase 2 schema tables`

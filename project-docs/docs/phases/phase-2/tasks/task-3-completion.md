@@ -109,8 +109,8 @@ Coverage notes from `go tool cover -func=coverage.out`:
 
 ## Commit hash
 
-- Pending commit creation.
+- `e38ae45`
 
 ## Commit subject
 
-- Pending commit creation.
+- `feat(db): add kind backstop triggers`

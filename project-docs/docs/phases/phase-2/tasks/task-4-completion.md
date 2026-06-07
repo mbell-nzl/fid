@@ -39,7 +39,7 @@ Kept `internal/db.ProjectionSchemaVersion` at `3`. I did not bump it because `00
 - PASS `gofmt -l cmd internal`
 - PASS `golangci-lint run ./...`
 - PASS `go test -race -coverprofile=coverage.out ./...`
-- PASS `go tool cover -func=coverage.out`
+- PASS `go tool cover -func=coverage.out` (`internal/journal` 80.6%, `internal/issues` 85.1%, `cmd/fid` 70.5%, total 72.6%)
 - PASS `go test -tags integration -race ./...`
 - PASS `go test -bench . -benchmem ./...`
 - PASS `go build -o /tmp/fid ./cmd/fid`
@@ -58,8 +58,8 @@ Kept `internal/db.ProjectionSchemaVersion` at `3`. I did not bump it because `00
 
 ## Commit hash
 
-- Pending commit.
+- `457f480`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(db): add ref backstop triggers`

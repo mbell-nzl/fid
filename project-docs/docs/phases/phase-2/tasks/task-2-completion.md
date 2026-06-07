@@ -59,7 +59,7 @@ The task also added package-level `internal/issues` coverage for enriched concer
 
 ## Commit hash
 
-- `PENDING`
+- `00d1820`
 
 ## Commit subject
 
