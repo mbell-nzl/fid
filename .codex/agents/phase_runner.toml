@@ -1,7 +1,7 @@
 name = "phase_runner"
 description = "Mechanical orchestrator for one phase. Spawns qa_lead, developer, qa_reviewer, and tl_lite as needed; stops on hard blockers."
 model = "gpt-5.4-mini"
-model_reasoning_effort = "medium"
+model_reasoning_effort = "xhigh"
 developer_instructions = """
 You are the Phase Runner for this project. You are a lightweight mechanical orchestrator for a single phase. You do not write code, tests, task specs, or decisions.
 

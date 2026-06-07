@@ -1,76 +1,109 @@
-# Phase Brief - Between Phases (Phase 3 CLOSED → Phase 4 planning)
+# Phase Brief - Phase 4 Planning
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 3 (v0.1a Output formats + foundation hardening) is **CLOSED**
-> and wrapped (2026-06-07, branch `phase-3/output-formats-hardening`). Phase 4
-> (v0.1b Issue Lifecycle) is **NOT YET PLANNED**. There is no active execution
-> phase until the Tech Lead drafts the Phase 4 validation contract and task
-> specs and the human approves them.
+> **State:** Phase 4 (v0.1b Issue authoring and discovery) is **PLANNED -
+> PENDING REVIEW**. Implementation must not begin until the human approves this
+> validation contract/task list and QA Lead writes `qa/qa-plan.md`.
 
-## What Just Shipped (Phase 3)
+## Phase Goal
 
-The `--format` engine is complete for `fid issue get`: JSON, TOON, markdown, and
-YAML from one code path. Persistence hardening landed: rebuild is within budget
-at scale and deterministic; corruption (malformed tail) and precondition
-conflicts render structurally on both `fid rebuild` and the read catch-up path.
+Phase 4 is the first v0.1b slice. It makes issue authoring and discovery usable
+end to end: create epics/tasks/subtasks with scheduling and owner metadata,
+enforce the sequence scheduling backstop, centralise enriched issue reads, add
+structured `fid issue get --section`, and add `fid issue list` filters/order
+with all read formats.
 
-- All VAL-001..VAL-010 **PASS**. QA final **PASS** (0 blocking/major/improvement).
-  Human checklist **PASS** (2/2). Archive: `../phases/phase-3/`.
-- Decisions: DEC-012 (`gopkg.in/yaml.v3`, MIT, for `--format yaml`), DEC-013
-  (generic render pipeline + typed markdown seam). `02_TRD.md` §9 gained a
-  `gopkg.in/yaml.v3` dependency row at wrap.
+## Task Index
 
-## Next: Plan Phase 4 (v0.1b Issue Lifecycle)
+Task specs live under `../phases/phase-4/tasks/`.
 
-Roadmap `10_IMPLEMENTATION_ROADMAP.md` → "v0.1b — Issue Lifecycle". Candidate
-scope (Tech Lead owns the final slice):
+| Task | Title | Status | Dependencies |
+|---|---|---|---|
+| 1 | Sequence Scheduling Backstop | Pending | None |
+| 2 | Issue Authoring Domain Service | Pending | Task 1 |
+| 3 | `fid issue create` CLI Surface | Pending | Tasks 1-2 |
+| 4 | Centralised Issue Detail Read Model + Sections | Pending | Tasks 1-3 |
+| 5 | `fid issue list` Filters, Ordering, And Formats | Pending | Tasks 1-4 |
 
-- `fid issue create` (epic/task/subtask; kind hierarchy; default workflow per
-  kind), `fid issue get` (enrich + `--section`), `fid issue list`,
-  `fid issue update`, `fid issue transition` (workflow state machine).
-- `epic_metadata` scheduling (sequential/prioritised), `fid ready`.
-- Hard-coded workflows + transition rules (`02_TRD.md` §4.6, TRD-ARCH-009).
+## Validation Contract
 
-v0.1b is large; consider slicing into more than one phase, each exiting on an
-agent-runnable command (roadmap Guiding Principle #4, tracer-bullet rule).
+Full contract: `../phases/phase-4/qa/validation-contract.md`.
 
-## Phase-Start Checklist (Tech Lead)
+| VAL ID | Source | Owning Task/Window | Validator | Status |
+|---|---|---|---|---|
+| VAL-001 | CF-004; PRD-ISSUE-013/014; schema 14.1 | task-1, task-3 | QA Lead | Draft |
+| VAL-002 | PRD-ISSUE-001..004; PRD-WF-005/006 | tasks 2-3 | QA Lead | Draft |
+| VAL-003 | PRD-ISSUE-015/016/019/020 | tasks 2-3 | QA Lead | Draft |
+| VAL-004 | Epic metadata; schema 2.1 | tasks 2-3 | QA Lead | Draft |
+| VAL-005 | PRD-OPS-001/003/004; TRD-ARCH-001/002 | tasks 2-3 | QA Lead | Draft |
+| VAL-006 | CF-006; PRD-ISSUE-006; TRD-ARCH-005 | task-4 | QA Lead | Draft |
+| VAL-007 | PRD-ISSUE-018; CLI `--section` | task-4 | QA Lead | Draft |
+| VAL-008 | PRD-ISSUE-007 list filters | task-5 | QA Lead | Draft |
+| VAL-009 | PRD-ISSUE-007; PRD-OUT-004 list formats/order | task-5 | QA Lead | Draft |
+| VAL-010 | Human dogfood authoring/discovery loop | phase-end | Human | Draft |
 
-1. Read the roadmap v0.1b entry and relevant PRD/TRD/design sections.
-2. Review the Carry-Forward Register in `decisions_active.md` — several items
-   target v0.1b (see below); schedule, re-defer, or fold each into a task.
-3. Create `../phases/phase-4/` dirs; draft `qa/validation-contract.md`.
-4. Break into ordered one-session tasks; cite VAL IDs; list the task gate and
-   any QA-plan command per task; list doc updates.
-5. Refresh this brief with the Phase 4 validation contract index and present to
-   the human for approval before execution.
+## QA Artifacts
 
-## Carry-In Register (open items to weigh at Phase 4 planning)
+| Artifact | Path | Status |
+|---|---|---|
+| Validation contract | `../phases/phase-4/qa/validation-contract.md` | Draft |
+| QA plan | `../phases/phase-4/qa/qa-plan.md` | Missing |
+| Mid-phase review | `../phases/phase-4/qa/review-3.md` | Recommended after Task 3 |
+| Final review | `../phases/phase-4/qa/final-review.md` | Pending |
+| Human checklist | `../phases/phase-4/qa/human-checklist.md` | Pending |
 
-- **CF-004 (v0.1b):** sequence-vs-scheduling backstop trigger — add the
-  cross-table rule when `epic_metadata` population, tasks-under-epics, and
-  `fid ready` land. Exactly this phase's scope.
-- **CF-005 (v0.1b):** `activity_log` projection-only guard + `activity` effect op
-  — add when `activity_log` population ships (issue lifecycle writes).
-- **CF-006 (v0.1b):** centralise the enriched issue read-model in
-  `internal/issues` before `fid issue list` / `fid issue get --section` reuse the
-  markdown-only read shape now living in `cmd/fid/issue.go` (TRD-ARCH-005).
-- **CF-003 (later, v0.1d):** policy bootstrap corrupt-tail tolerance — not v0.1b
-  scope unless mutable role events appear; otherwise re-defer.
-- **COV carry-in (DEC-007):** name package-level tests in COV-001 packages
+## Active Constraints
+
+- Do not implement `fid issue update`, `fid issue transition`, `fid ready`,
+  activity-log population, workflow transition rules, `--context-pack`, label
+  CRUD, `fid ready --explain`, or task reparenting/inbox promotion in Phase 4.
+- Label assignment/filtering uses existing `labels` rows only. Do not silently
+  add label auto-create semantics.
+- Epic metadata is scheduling-only in Phase 4; brief path and target dates need
+  a recorded CLI/update surface before implementation.
+- A task under an epic missing `epic_metadata` is invalid in Phase 4; create
+  epics with scheduling metadata first.
+- `fid issue get --section` means named structured sections for this phase:
+  `acceptance`, `concerns`, `completions`, `links`, `claims`.
+- Full markdown-body heading extraction from `spec_md_path` is out of scope
+  unless the human requests a spec update before execution.
+- Apply DEC-007 carry-in: package-level tests for COV-001 packages
   (`internal/issues`, `internal/journal`, `internal/policy`); hold COV-002
-  `cmd/fid` ≥ 70%.
+  `cmd/fid` >= 70%.
 
-## Current Code State (planning facts)
+## Interfaces / Subsystems In Scope
 
-- `internal/format/` ships JSON/TOON/markdown/YAML; `fid issue get` is still the
-  only read command with `--format`. Adding a read command means wiring it
-  through `fidformat.Write` (generic) or a typed renderer (markdown-style).
-- `internal/journal` replayer renders `CorruptJournalError` and
-  `PreconditionConflictError` structurally on rebuild and read catch-up.
-- Full v0.1 base schema + triggers exist (Phase 2); `issues_enriched` view is
-  live. No `fid issue create`/lifecycle commands yet — issues are created via
-  raw journal events in tests only.
-- No `integration` build tag in use; CLI tests run under `go test -race ./...`.
+- `migrations/` and `internal/db/` - sequence scheduling backstop.
+- `internal/issues/` - issue authoring, detail read model, list query.
+- `internal/workflow/` - default workflow/status/category constants only if
+  useful; transition validation waits for Phase 5.
+- `internal/format/` - markdown list renderer if needed; reuse generic
+  JSON/TOON/YAML format path.
+- `cmd/fid/issue.go` - thin Cobra adapter for create/get/list.
+
+## Known Risks
+
+- **`--section` ambiguity.** PRD wording mentions markdown parsing while CLI
+  names structured sections. Phase 4 implements structured sections only; if
+  that is rejected, Task 4 must be re-scoped before execution.
+- **Label semantics.** Label CRUD is later roadmap scope. Phase 4 may test
+  label assignment/filtering with seeded existing labels but must not invent
+  auto-create behavior.
+- **Task 2 size.** Domain authoring spans several fields. Keep transition,
+  update, ready, and label CRUD out to preserve one-session sizing.
+
+## Success / Exit Criteria
+
+- [ ] All five tasks complete with green required task gates.
+- [ ] Phase-level QA final review has no unresolved blocking findings.
+- [ ] VAL-001..VAL-010 have evidenced outcomes or accepted dispositions.
+- [ ] Human checklist accepts the create/get/section/list dogfood loop or records
+      follow-up work.
+
+## Next Planning Checkpoint
+
+Phase 5 should plan v0.1b mutation and workflow transitions: `fid issue update`,
+activity-log projection discipline / activity effects (CF-005), hard-coded
+workflow graphs/rules, and `fid issue transition`.

@@ -117,6 +117,41 @@ with whet's task artifacts.
 | Hard-coded workflows | Default state machines for epic, task, subtask from `02_TRD.md` §4.6 implemented in code. `workflow_id` as enum string. Status CHECK-constrained per workflow. Status category mapping for portable queries. | PRD-WF-005–006, TRD-ARCH-009 |
 | Hard-coded transition rules | `all_acs_verified` (parameterised by roles), `has_completion_report`, `concerns_addressed`, `all_child_tasks_done_or_cancelled`. Named Go functions. | PRD-WF-007–010 |
 
+> **Phase-slicing note — v0.1b (Tech Lead, 2026-06-07).**
+> v0.1b is large enough to slice into **three phases**. The binding rule remains
+> vertical, agent-runnable increments: each phase exits on commands a Developer
+> or QA Lead can run against a real `.fid/` workspace, not on internal library
+> completion alone.
+>
+> - **Phase 4 — Issue authoring + discovery.** Implement `fid issue create` for
+>   epic/task/subtask, epic scheduling metadata, default workflow/status
+>   assignment, owner/default field support, inbox/priority/sequence/spec/estimate
+>   fields, the sequence-vs-scheduling backstop, enriched read-model
+>   centralisation, `fid issue get --section`, and `fid issue list` filters/order
+>   with all read formats. **Exit:** an agent can create an epic with tasks and
+>   subtasks, then inspect and list them with correct hierarchy, scheduling,
+>   status category, enriched fields, section output, and format dispatch.
+> - **Phase 5 — Mutation + workflow transitions.** Implement `fid issue update`,
+>   `activity_log` projection discipline / activity effects, `internal/workflow`
+>   hard-coded graphs and rule functions, and `fid issue transition` with rich
+>   errors for invalid edges and unmet rules. Transition-rule evidence may seed
+>   AC/completion/concern rows through journal fixtures until the v0.1c write
+>   commands ship. **Exit:** an agent can mutate issue fields, observe audited
+>   changes, move through allowed workflow edges, and see deterministic rejection
+>   details for invalid transitions.
+> - **Phase 6 — Ready queue + v0.1b closure.** Implement `fid ready` default mode
+>   for sequential epics, prioritised epics, unattached tasks, cross-project
+>   selection, empty-result explanations, and format dispatch; run an end-to-end
+>   v0.1b smoke over create/list/get/update/transition/ready. **Exit:** the
+>   workflow runner can ask for the next actionable task and receive the same
+>   scheduling answer a human expects.
+>
+> Explicit deferrals: `fid ready --explain` remains v0.2 (PRD-ISSUE-024);
+> task reparenting / inbox promotion remains v0.2 (PRD-ISSUE-025). Label CRUD
+> remains in the later label/links slice; v0.1b label assignment/filtering should
+> use existing `labels` rows unless a future decision records auto-create
+> semantics.
+
 ### v0.1c — ACs, Completions, Concerns
 
 | Item | Description | PRD/TRD Refs |
