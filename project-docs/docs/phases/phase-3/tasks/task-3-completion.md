@@ -60,8 +60,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `4ef2b9a`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(format): add yaml issue renderer`

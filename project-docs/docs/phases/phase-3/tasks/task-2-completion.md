@@ -56,8 +56,8 @@
 
 ## Commit hash
 
-- `PENDING`
+- `5ff796b`
 
 ## Commit subject
 
-- `PENDING`
+- `feat(format): add markdown issue renderer`

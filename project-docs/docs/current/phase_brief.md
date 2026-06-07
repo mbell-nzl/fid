@@ -1,100 +1,76 @@
-# Phase Brief - Phase 3: Output Formats + Foundation Hardening
+# Phase Brief - Between Phases (Phase 3 CLOSED → Phase 4 planning)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** PLANNED — validation contract, ordered tasks, and the three planning
-> decisions are human-approved (2026-06-07; DEC-012, DEC-013). Next: QA Lead
-> authors `../phases/phase-3/qa/qa-plan.md`, then Developer execution begins on a
-> new `phase-3/...` branch. Phase 2 is CLOSED (`../phases/phase-2/`).
+> **State:** Phase 3 (v0.1a Output formats + foundation hardening) is **CLOSED**
+> and wrapped (2026-06-07, branch `phase-3/output-formats-hardening`). Phase 4
+> (v0.1b Issue Lifecycle) is **NOT YET PLANNED**. There is no active execution
+> phase until the Tech Lead drafts the Phase 4 validation contract and task
+> specs and the human approves them.
 
-## Phase Goal
+## What Just Shipped (Phase 3)
 
-Complete the `--format` output engine across the one shipped read command
-(`fid issue get`) — TOON, markdown, YAML alongside Phase-1 JSON — and harden the
-persistence foundation (rebuild performance + conflict/corruption error
-fidelity). Roadmap "Phase 3 — Output formats + foundation hardening";
-PRD-OUT-002/003/003a/004, TRD-ARCH-012; PRD-OPS-003/004/012, TRD-PERF-002,
-TRD-ARCH-002/003.
+The `--format` engine is complete for `fid issue get`: JSON, TOON, markdown, and
+YAML from one code path. Persistence hardening landed: rebuild is within budget
+at scale and deterministic; corruption (malformed tail) and precondition
+conflicts render structurally on both `fid rebuild` and the read catch-up path.
 
-**Headline increment:** `fid issue get` returns coherent output in all four
-formats from one code path, and deterministic perf + error-fidelity checks pass
-on rebuild and read catch-up.
+- All VAL-001..VAL-010 **PASS**. QA final **PASS** (0 blocking/major/improvement).
+  Human checklist **PASS** (2/2). Archive: `../phases/phase-3/`.
+- Decisions: DEC-012 (`gopkg.in/yaml.v3`, MIT, for `--format yaml`), DEC-013
+  (generic render pipeline + typed markdown seam). `02_TRD.md` §9 gained a
+  `gopkg.in/yaml.v3` dependency row at wrap.
 
-## Validation Contract Index
+## Next: Plan Phase 4 (v0.1b Issue Lifecycle)
 
-Full contract: `../phases/phase-3/qa/validation-contract.md` (VAL-001..010).
+Roadmap `10_IMPLEMENTATION_ROADMAP.md` → "v0.1b — Issue Lifecycle". Candidate
+scope (Tech Lead owns the final slice):
 
-- VAL-001 — `--format toon` is structurally at parity with JSON (empty + nested). [task-1]
-- VAL-002 — TOON marshaller is in-tree; no third-party TOON dependency. [task-1]
-- VAL-003 — `--format markdown` renders per `06_DESIGN_PLAN_CLI` §21 (both states). [task-2]
-- VAL-004 — `--format yaml` decodes equal to JSON (both states); uses `gopkg.in/yaml.v3` (DEC-012). [task-3]
-- VAL-005 — every read command accepts `--format`; unknown format rejected, no silent fallback. [tasks 1-3]
-- VAL-006 — `fid rebuild` within TRD-PERF-002 (10k<5s) and sub-second at ~1k (benchmark). [task-4]
-- VAL-007 — rebuild at scale is deterministic + non-destructive. [task-4]
-- VAL-008 — malformed trailing line reported as corruption on rebuild **and** read catch-up. [task-5]
-- VAL-009 — failed precondition → structured logical conflict on both paths; stop before reads. [task-5]
-- VAL-010 — adapter boundary holds; render logic in `internal/format`. [phase-end]
+- `fid issue create` (epic/task/subtask; kind hierarchy; default workflow per
+  kind), `fid issue get` (enrich + `--section`), `fid issue list`,
+  `fid issue update`, `fid issue transition` (workflow state machine).
+- `epic_metadata` scheduling (sequential/prioritised), `fid ready`.
+- Hard-coded workflows + transition rules (`02_TRD.md` §4.6, TRD-ARCH-009).
 
-## Ordered Tasks
+v0.1b is large; consider slicing into more than one phase, each exiting on an
+agent-runnable command (roadmap Guiding Principle #4, tracer-bullet rule).
 
-1. **task-1 — Generic render pipeline + in-tree TOON marshaller.** JSON→`any`
-   structure seam; in-tree TOON; wire `fid issue get --format toon`. (VAL-001/002/005)
-2. **task-2 — Markdown renderer for `fid issue get`.** Typed renderer seam in
-   `internal/format` per §21. (VAL-003/005)
-3. **task-3 — YAML output.** YAML over the generic pipeline via `gopkg.in/yaml.v3`
-   (DEC-012). (VAL-004/005)
-4. **task-4 — Rebuild performance verification at scale.** Seeded-journal
-   benchmark (~1k + 10k) + deterministic scale-rebuild test. (VAL-006/007)
-5. **task-5 — Conflict/corruption error fidelity.** Structured corruption +
-   precondition-conflict rendering on rebuild and read catch-up. (VAL-008/009)
+## Phase-Start Checklist (Tech Lead)
 
-Tasks 1→2→3 are sequential (each plugs into the format seam). Tasks 4 and 5 are
-independent of the format track and of each other.
+1. Read the roadmap v0.1b entry and relevant PRD/TRD/design sections.
+2. Review the Carry-Forward Register in `decisions_active.md` — several items
+   target v0.1b (see below); schedule, re-defer, or fold each into a task.
+3. Create `../phases/phase-4/` dirs; draft `qa/validation-contract.md`.
+4. Break into ordered one-session tasks; cite VAL IDs; list the task gate and
+   any QA-plan command per task; list doc updates.
+5. Refresh this brief with the Phase 4 validation contract index and present to
+   the human for approval before execution.
 
-## Planning Decisions — RESOLVED (human-approved 2026-06-07)
+## Carry-In Register (open items to weigh at Phase 4 planning)
 
-See `../phases/phase-3/decisions.md`.
-
-1. **YAML approach (DEC-012):** adopt `gopkg.in/yaml.v3` (MIT) for the YAML
-   renderer + parity decode. The in-tree-emitter option was rejected (the TOON
-   in-tree mandate is driven by TOON's instability and does not transfer to
-   mature YAML; VAL-004 parity needs a YAML decoder in tests regardless).
-   Dependency-budget rationale in DEC-012.
-2. **Markdown rendering architecture (DEC-013):** typed renderer seam in
-   `internal/format`; JSON/TOON/YAML stay on the generic pipeline.
-3. **Generic render pipeline (DEC-013):** TOON/YAML render a generic structure
-   from value→JSON→`any`, so the engine generalises to future read commands.
-
-## Carry-In Notes
-
-- **COV carry-in (DEC-007, reaffirmed Phase 2):** hardening VALs (007/008/009)
-  live in `internal/journal` (COV-001 ≥ 80%) — name package-level tests.
-  `internal/format` is **not** COV-001 but needs deterministic evidence (parity
-  tests, golden fixtures, module-graph check). Hold COV-002 `cmd/fid` ≥ 70%.
-- **Carry-Forward Register (still open):** CF-003 (policy bootstrap corrupt-tail
-  tolerance) — task-5 hardens the *replay/rebuild/read* corruption path only; the
-  `internal/policy` bootstrap path is a separate code path, unchanged. Re-defer
-  CF-003 (target v0.1d). CF-004 (sequence-vs-scheduling trigger) and CF-005
-  (activity_log projection guard / `activity` op) are not exercised this phase;
-  re-defer.
-- **No `integration` build tag** is in use; integration-style CLI tests run under
-  `go test -race ./...`. The phase-level gate adds `go test -bench . -benchmem`
-  (required by task-4) and `go build`.
+- **CF-004 (v0.1b):** sequence-vs-scheduling backstop trigger — add the
+  cross-table rule when `epic_metadata` population, tasks-under-epics, and
+  `fid ready` land. Exactly this phase's scope.
+- **CF-005 (v0.1b):** `activity_log` projection-only guard + `activity` effect op
+  — add when `activity_log` population ships (issue lifecycle writes).
+- **CF-006 (v0.1b):** centralise the enriched issue read-model in
+  `internal/issues` before `fid issue list` / `fid issue get --section` reuse the
+  markdown-only read shape now living in `cmd/fid/issue.go` (TRD-ARCH-005).
+- **CF-003 (later, v0.1d):** policy bootstrap corrupt-tail tolerance — not v0.1b
+  scope unless mutable role events appear; otherwise re-defer.
+- **COV carry-in (DEC-007):** name package-level tests in COV-001 packages
+  (`internal/issues`, `internal/journal`, `internal/policy`); hold COV-002
+  `cmd/fid` ≥ 70%.
 
 ## Current Code State (planning facts)
 
-- `internal/format/format.go` ships JSON; TOON/markdown/YAML return
-  `UnsupportedFormatError`. `fid issue get` is the only read command with
-  `--format`.
-- Replayer returns `CorruptJournalError` (rendered by `fid rebuild`) and
-  `PreconditionConflictError` (NOT yet rendered by `fid rebuild`; read path
-  renders neither). No benchmarks exist yet.
-
-## Next Checkpoint
-
-Contract, tasks, and decisions are approved. QA Lead authors
-`../phases/phase-3/qa/qa-plan.md` (mapping every VAL-001..010 to deterministic
-`(qa-lead)`/mid-phase-review/`(human)` steps; confirm the VAL-006 benchmark
-threshold and the VAL-008/009 both-paths rendering). Then Developer execution
-begins on a new `phase-3/...` branch, starting at task-1.
+- `internal/format/` ships JSON/TOON/markdown/YAML; `fid issue get` is still the
+  only read command with `--format`. Adding a read command means wiring it
+  through `fidformat.Write` (generic) or a typed renderer (markdown-style).
+- `internal/journal` replayer renders `CorruptJournalError` and
+  `PreconditionConflictError` structurally on rebuild and read catch-up.
+- Full v0.1 base schema + triggers exist (Phase 2); `issues_enriched` view is
+  live. No `fid issue create`/lifecycle commands yet — issues are created via
+  raw journal events in tests only.
+- No `integration` build tag in use; CLI tests run under `go test -race ./...`.

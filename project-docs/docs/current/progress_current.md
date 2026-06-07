@@ -7,38 +7,43 @@
 
 ## Project State
 
-**Status:** Phase 2 (v0.1 Widen the schema vertically) **CLOSED** (branch
-`phase-2/schema-widening`, wrapped 2026-06-07). Phase 3 (Output formats +
-foundation hardening) **NOT YET PLANNED**.
+**Status:** Phase 3 (v0.1a Output formats + foundation hardening) **CLOSED**
+(branch `phase-3/output-formats-hardening`, wrapped 2026-06-07). Phase 4
+(v0.1b Issue Lifecycle) **NOT YET PLANNED**.
 
-The full v0.1 base SQLite schema now exists and is exercised through the proven
-journal → projection → rebuild machinery: migrations `0002`-`0005` added the
-remaining v0.1 base/stub tables, the `issues_enriched` view + concern/triage
-indexes, and the kind / polymorphic-ref / link-scope / claim-scope / kind-
-immutability backstop triggers. `fid issue get --format json` now surfaces real
-derived `concerns_raised` / `open_concerns_count` / `triage_status` from
-`issues_enriched`, identical before and after rebuild.
+The `--format` engine is now complete for the one shipped read command:
+`fid issue get` renders JSON, TOON, markdown, and YAML from one code path. TOON
+is an in-tree marshaller (no third-party dep); YAML uses `gopkg.in/yaml.v3`
+(DEC-012). TOON/YAML ride a generic `value→JSON→any` pipeline so they inherit
+JSON parity; markdown is a typed renderer seam in `internal/format` (DEC-013).
+The persistence foundation is hardened: rebuild is within budget at scale (~1k
+348.6 ms, 10k 3431 ms) and deterministic/non-destructive, and malformed-tail
+corruption + failed-precondition conflicts now render structurally on **both**
+`fid rebuild` and the `fid issue get` read catch-up path.
 
-Phase 2 outcome:
+Phase 3 outcome:
 
-- All VAL-001..VAL-017 **PASS** with deterministic evidence. QA final review
+- All VAL-001..VAL-010 **PASS** with deterministic evidence. QA final review
   **PASS** (0 blocking / 0 major / 0 improvement, no escalations). Human
-  checklist **PASS** (5/5: evidence review 2/2, dogfooding 3/3).
-- Clean run: no in-phase blockers, no escalations, no triage entries; mid-phase
-  review-3 CONTINUE with zero findings. Coverage held: `internal/journal`
-  80.6%, `internal/issues` 85.1%, `cmd/fid` 70.5%.
-- Key decisions: DEC-010 (ProjectionSchemaVersion bumps only for projected-shape
-  changes, not trigger-only migrations), DEC-011 (`task_completions` kind guard
-  is task-or-subtask per §14.1; `02_TRD.md` §4.1 reconciled). See
-  `../phases/phase-2/decisions.md`.
+  checklist **PASS** (2/2: dogfooding + error-message judgment).
+- Clean run: no in-phase blockers, no escalations; one triage entry (TRG-001
+  RESUME, now CF-006); mid-phase review-3 CONTINUE with 3 non-blocking
+  improvements. Coverage held: `cmd/fid` 74.3%, `internal/journal` 80.6%,
+  total 75.2%.
+- Key decisions: DEC-012 (adopt `gopkg.in/yaml.v3`, MIT, for `--format yaml`),
+  DEC-013 (generic render pipeline + typed markdown seam). See
+  `../phases/phase-3/decisions.md`. Do-now spec sync: `02_TRD.md` §9 gained a
+  `gopkg.in/yaml.v3` dependency row.
 - Carry-forward still open: CF-003 (role-validation corrupt-tail tolerance),
   CF-004 (sequence-vs-scheduling backstop trigger), CF-005 (`activity_log`
-  projection-only guard / `activity` op). No new escalations.
+  projection-only guard / `activity` op), CF-006 (enriched issue read-model
+  centralisation). No new escalations.
 
 Next action:
 
-- Tech Lead plans Phase 3 from the roadmap v0.1a slicing note (TOON / markdown /
-  YAML output formats + `--format` surface; sub-second rebuild verification;
-  conflict/corruption error fidelity). Draft the Phase 3 validation contract and
-  ordered task specs, then present to the human for approval before execution.
-  Re-slice freely if dependency analysis suggests a different cut.
+- Tech Lead plans Phase 4 (v0.1b Issue Lifecycle) from the roadmap: `fid issue
+  create/get/list/update/transition`, epic metadata + scheduling, `fid ready`,
+  hard-coded workflows and transition rules. Review the Carry-Forward Register
+  first — CF-004/CF-005 (scheduling/activity_log triggers) and CF-006 (enriched
+  read-model) all target v0.1b. Draft the Phase 4 validation contract and ordered
+  task specs, then present to the human for approval before execution.

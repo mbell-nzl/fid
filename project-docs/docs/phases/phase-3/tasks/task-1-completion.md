@@ -55,8 +55,8 @@
 
 ## Commit hash
 
-- `<pending>`
+- `858270f`
 
 ## Commit subject
 
-- `<pending>`
+- `feat(format): add in-tree toon renderer`

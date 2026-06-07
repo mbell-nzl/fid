@@ -49,8 +49,8 @@
 
 ## Commit hash
 
-- `TBD`
+- `6a68b1e`
 
 ## Commit subject
 
-- `TBD`
+- `test(journal): add scale rebuild verification`

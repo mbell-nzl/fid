@@ -749,6 +749,7 @@ Runtime dependencies (indicative; finalised during v0.1 implementation):
 | `spf13/pflag` | POSIX-style flags | stdlib `flag` | BSD-3 | spec §6.16 |
 | `golang-migrate/migrate` | SQL migrations | `pressly/goose`, hand-rolled | MIT | spec §6.16 |
 | `yuin/goldmark` | Markdown parsing | `gomarkdown/markdown` | MIT | spec §6.16 |
+| `gopkg.in/yaml.v3` | `fid issue get --format yaml` output and JSON-parity decode in tests (v0.1) | In-tree YAML emitter (more correctness/maintenance burden, still needs a decoder for parity tests); defer YAML | MIT | DEC-012 |
 | `stretchr/testify` | Test assertions | stdlib only | MIT | spec §6.16 |
 | `charmbracelet/bubbletea` | TUI framework (v0.3) | `rivo/tview`, `gdamore/tcell` | MIT | spec §6.16 |
 | `charmbracelet/lipgloss` | TUI styling (v0.3) | — | MIT | spec §6.16 |

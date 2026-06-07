@@ -54,8 +54,8 @@
 
 ## Commit hash
 
-- `TBD`
+- `f1b18fb`
 
 ## Commit subject
 
-- `TBD`
+- `fix(fid): render replay errors structurally`
