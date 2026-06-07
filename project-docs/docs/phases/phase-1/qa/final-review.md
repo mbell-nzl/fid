@@ -5,19 +5,20 @@ Date: 2026-06-07
 
 ## Verdict
 
-BLOCK
+PASS
 
 All Phase 1 validation assertions VAL-001 through VAL-017 have reproducible
 deterministic PASS evidence, including Task 7 closure of VAL-014 / ESC-001.
-The phase cannot be signed off as a clean PASS because QA-11 found the coverage
-profile violates the Quality Plan coverage thresholds for domain packages.
+Task 8 remediation closes the QA-11 / Quality Plan COV-001 blocker. This review
+was updated by bounded QA re-check only for that finding; no phase wrap-up,
+human checklist regeneration, or fresh full phase-end audit was performed.
 
 ## Scope And Evidence
 
 - Validation contract: `project-docs/docs/phases/phase-1/qa/validation-contract.md`
 - QA plan: `project-docs/docs/phases/phase-1/qa/qa-plan.md`
 - Reviews: `project-docs/docs/phases/phase-1/qa/review-1.md`; `project-docs/docs/phases/phase-1/qa/review-2.md`
-- Completion reports: `project-docs/docs/phases/phase-1/tasks/task-1-completion.md` through `task-7-completion.md`
+- Completion reports: `project-docs/docs/phases/phase-1/tasks/task-1-completion.md` through `task-8-completion.md`
 - Escalation and decisions: `project-docs/docs/current/tl_escalations_current.md`; `project-docs/docs/phases/phase-1/decisions.md`
 - Triage: `project-docs/docs/phases/phase-1/triage-log.md`
 - QA smoke workspace: `/tmp/fid-phase1-qa-lt0BUk`
@@ -29,8 +30,8 @@ profile violates the Quality Plan coverage thresholds for domain packages.
 | Format | `gofmt -l cmd internal` | PASS | Exit 0, no output. |
 | Lint/static analysis | `golangci-lint run ./...` | PASS | `0 issues.` |
 | Unit/race | `go test -race ./...` | PASS | `ok github.com/mbell-nzl/fid/cmd/fid 1.522s`; `ok .../internal/config`; `ok .../internal/db`; `ok .../internal/journal`; no failures. |
-| Coverage profile | `go test -race -coverprofile=coverage.out ./...` | PASS COMMAND | Exit 0; produced `coverage.out`. Package excerpts: `cmd/fid coverage: 70.5%`; `internal/config 80.7%`; `internal/db 36.2%`; `internal/journal 68.3%`; `internal/issues 0.0%`; `internal/policy 0.0%`. |
-| Coverage report | `go tool cover -func=coverage.out` | FAIL THRESHOLD | Command exit 0 and `total: (statements) 52.7%`; `ls -l coverage.out` showed `65744` bytes. Quality Plan COV-001 requires 80% across domain packages, but Phase 1 domain packages include below-threshold `internal/journal`, `internal/issues`, and `internal/policy`. COV-002 CLI threshold is met by `cmd/fid` at 70.5%. |
+| Coverage profile | `go test -count=1 -race -coverprofile=coverage.out ./...` | PASS | Exit 0; produced `coverage.out`. Package excerpts: `cmd/fid coverage: 70.5%`; `internal/config 80.7%`; `internal/db 36.2%`; `internal/journal 80.6%`; `internal/issues 85.2%`; `internal/policy 85.0%`. |
+| Coverage report | `go tool cover -func=coverage.out` | PASS | Command exit 0 and `total: (statements) 71.4%`; `wc -c coverage.out` returned `65772 coverage.out`. Bounded profile aggregation verified Quality Plan COV-001 and COV-002 thresholds: `internal/issues 85.2% (98/115 statements)`, `internal/policy 85.0% (68/80 statements)`, `internal/journal 80.6% (556/690 statements)`, and `cmd/fid 70.5% (117/166 statements)`. |
 | Integration | `go test -tags integration -race ./...` | PASS | `ok github.com/mbell-nzl/fid/cmd/fid 1.524s`; `ok .../internal/config`; `ok .../internal/db`; `ok .../internal/journal`; no failures. |
 | Benchmarks | `go test -bench . -benchmem ./...` | PASS | Packages reported `PASS`; no benchmark functions emitted measurements in Phase 1 packages. |
 | Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS | Exit 0; `/tmp/fid` exists: `-rwxr-xr-x ... 11169677 Jun 7 08:54 /tmp/fid`. |
@@ -68,7 +69,7 @@ profile violates the Quality Plan coverage thresholds for domain packages.
 | PRD-NFR-008 / TRD-PERF-006 | MET FOR PHASE 1 | VAL-013 PASS under race-focused concurrency tests; benchmark command passed but no benchmark functions exist yet. |
 | PRD-OUT-001 / PRD-OUT-004 | MET | VAL-006 PASS; JSON default and `--format json` matched in smoke. |
 | TRD-ARCH-001..005, TRD-ARCH-007, TRD-ARCH-012 | MET | VAL-006..VAL-009, VAL-014, and VAL-017 PASS. |
-| Quality Plan COV-001 | NOT MET | `internal/journal` 68.3%, `internal/issues` 0.0%, and `internal/policy` 0.0% are below the 80% domain-package threshold. |
+| Quality Plan COV-001 | MET | Task 8 remediation raised bounded package coverage above the domain-package threshold: `internal/issues` 85.2%, `internal/policy` 85.0%, and `internal/journal` 80.6%. |
 | Quality Plan COV-002 | MET | `cmd/fid` coverage reported 70.5%, meeting the 70% CLI threshold. |
 
 ## Deterministic Checklist Execution
@@ -84,8 +85,8 @@ profile violates the Quality Plan coverage thresholds for domain packages.
 | QA-07 | PASS | `gofmt -l cmd internal` exited 0 with no output. |
 | QA-08 | PASS | `golangci-lint run ./...` output: `0 issues.` |
 | QA-09 | PASS | `go test -race ./...` exited 0 across `cmd/fid`, `internal/config`, `internal/db`, and `internal/journal`; no failures. |
-| QA-10 | PASS | `go test -race -coverprofile=coverage.out ./...` exited 0 and `coverage.out` exists with size `65744` bytes. |
-| QA-11 | FAIL | `go tool cover -func=coverage.out` exited 0 but coverage violates Quality Plan thresholds: `total 52.7%`; `internal/journal 68.3%`; `internal/issues 0.0%`; `internal/policy 0.0%`. |
+| QA-10 | PASS | Bounded re-check `go test -count=1 -race -coverprofile=coverage.out ./...` exited 0 and `coverage.out` exists with size `65772` bytes. |
+| QA-11 | PASS | `go tool cover -func=coverage.out` exited 0 with `total: (statements) 71.4%`. Package aggregation from the refreshed profile verified `internal/issues 85.2%`, `internal/policy 85.0%`, `internal/journal 80.6%`, and `cmd/fid 70.5%`. Task 8 commit `f851b6a` changed only tests plus its completion report; metadata fix `f37afa2` changed only the completion report, so no production behavior changed. |
 | QA-12 | PASS | `go test -tags integration -race ./...` exited 0; packages reported `ok` or `[no test files]`. |
 | QA-13 | PASS | `go test -bench . -benchmem ./...` exited 0; packages reported `PASS`; no Phase 1 benchmark functions emitted measurements. |
 | QA-14 | PASS | `go build -o /tmp/fid ./cmd/fid` exited 0; `/tmp/fid` exists and is executable. |
@@ -115,7 +116,7 @@ not edit escalation or decision files.
 
 ## Documentation Review
 
-- Completion reports present for all tasks: YES, task-1 through task-7 completion reports exist.
+- Completion reports present for all tasks: YES, task-1 through task-8 completion reports exist.
 - Impacted task documentation updated: YES, each task report records files, VAL coverage, quality gates, deviations, and dependency notes.
 - Required QA artifacts generated in this closeout: `final-review.md` and `human-checklist.md`.
 - Spec sync needed at phase wrap-up: YES. Task 4 / TRG-001 records a TRD wording mismatch for last-event-hash freshness behavior. Task 6 / TRG-002 records role-validation corrupt-tail tolerance to revisit before mutable role events. DEC-006 / ESC-001 should be archived from current escalations.
@@ -139,8 +140,8 @@ Generated at `project-docs/docs/phases/phase-1/qa/human-checklist.md`.
 
 | Maturity area | Status | Evidence or deferral |
 |---|---|---|
-| Baseline artifacts | BLOCKED | Required artifacts exist, but final phase sign-off is blocked by QA-11 coverage threshold failure. |
-| Automated gates | BLOCKED | Format, lint, tests, integration, benchmark command, and build passed; coverage threshold failed. |
+| Baseline artifacts | PASS | Required artifacts exist; Task 8 completion report and bounded QA re-check close QA-11 / COV-001. |
+| Automated gates | PASS | Format, lint, tests, integration, benchmark command, and build passed in the original final review; bounded coverage re-check now passes COV-001 and COV-002 thresholds. |
 | Held-out scenarios | DEFERRED | Release-readiness scenario harness remains `N/A` by AGENTS.md and Quality Plan for early phase work. No held-out material was read. |
 | Release readiness | DEFERRED | SAST/license/secret/release readiness gates are deferred before external release per AGENTS.md. |
 
@@ -148,13 +149,11 @@ Generated at `project-docs/docs/phases/phase-1/qa/human-checklist.md`.
 
 ### Blocking
 
-- QA-11 / Quality Plan COV-001: Phase-end coverage does not meet the stated
-  80% domain-package threshold. Evidence: `internal/journal` reports 68.3%,
-  `internal/issues` reports 0.0%, and `internal/policy` reports 0.0% in
-  `go test -race -coverprofile=coverage.out ./...`; `go tool cover -func`
-  reports total 52.7%. Some behavior is covered through `cmd/fid` integration
-  tests, but the quality model defines package-level domain thresholds and has
-  no recorded Phase 1 deferral.
+- None. QA-11 / Quality Plan COV-001 is closed by Task 8 bounded re-check
+  evidence: `go test -count=1 -race -coverprofile=coverage.out ./...` passed,
+  `go tool cover -func=coverage.out` exited 0, and refreshed package coverage is
+  `internal/issues 85.2%`, `internal/policy 85.0%`, `internal/journal 80.6%`,
+  and `cmd/fid 70.5%`.
 
 ### Major
 
@@ -171,8 +170,6 @@ Generated at `project-docs/docs/phases/phase-1/qa/human-checklist.md`.
 
 ## Unresolved Risks And Carry-Forward Candidates
 
-- Coverage threshold remediation or an explicit Tech Lead/human deferral is
-  required before Phase 1 can be marked complete under the current Quality Plan.
 - Human verification remains unrun; deterministic VAL PASS results do not prove
   dogfooding fit, wording clarity, or product-owner acceptance of JSON-only
   output.
