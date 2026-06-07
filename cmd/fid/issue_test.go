@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -359,7 +361,22 @@ func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unsupported format", "--by", "developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
-	for _, formatName := range []string{"toon", "markdown", "yaml"} {
+	t.Run("toon", func(t *testing.T) {
+		jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		toonStdout, toonStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "toon")
+
+		if toonStderr != "" {
+			t.Fatalf("stderr = %q, want empty", toonStderr)
+		}
+
+		want := decodeCommandJSONStructure(t, jsonStdout)
+		got := decodeCommandTOONStructure(t, toonStdout)
+		if !commandStructuresEqual(want, got) {
+			t.Fatalf("TOON structure = %#v, want %#v", got, want)
+		}
+	})
+
+	for _, formatName := range []string{"markdown", "yaml"} {
 		t.Run(formatName, func(t *testing.T) {
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", formatName)
 			if err == nil {
@@ -373,6 +390,19 @@ func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("xml", func(t *testing.T) {
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "xml")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want unsupported format rejection")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		if !strings.Contains(stderr, `unsupported format "xml"; known formats: json, toon, markdown, yaml`) {
+			t.Fatalf("stderr = %q, want actionable unknown format error", stderr)
+		}
+	})
 }
 
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {
@@ -447,4 +477,250 @@ func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event
 	}); err != nil {
 		t.Fatalf("AppendEvent() error = %v", err)
 	}
+}
+
+func decodeCommandJSONStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.UseNumber()
+
+	var result any
+	if err := decoder.Decode(&result); err != nil {
+		t.Fatalf("Decode JSON structure error = %v", err)
+	}
+	return result
+}
+
+func decodeCommandTOONStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	parser := commandTOONParser{input: strings.TrimSpace(value)}
+	result, err := parser.parseValue()
+	if err != nil {
+		t.Fatalf("parse TOON structure error = %v", err)
+	}
+	parser.skipWhitespace()
+	if parser.position != len(parser.input) {
+		t.Fatalf("parse TOON structure stopped at %d of %d", parser.position, len(parser.input))
+	}
+	return result
+}
+
+func commandStructuresEqual(left any, right any) bool {
+	switch leftValue := left.(type) {
+	case map[string]any:
+		rightValue, ok := right.(map[string]any)
+		if !ok || len(leftValue) != len(rightValue) {
+			return false
+		}
+		for key, nestedLeft := range leftValue {
+			nestedRight, ok := rightValue[key]
+			if !ok || !commandStructuresEqual(nestedLeft, nestedRight) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		rightValue, ok := right.([]any)
+		if !ok || len(leftValue) != len(rightValue) {
+			return false
+		}
+		for index := range leftValue {
+			if !commandStructuresEqual(leftValue[index], rightValue[index]) {
+				return false
+			}
+		}
+		return true
+	case json.Number:
+		rightValue, ok := right.(json.Number)
+		return ok && leftValue.String() == rightValue.String()
+	default:
+		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right)
+	}
+}
+
+type commandTOONParser struct {
+	input    string
+	position int
+}
+
+func (parser *commandTOONParser) parseValue() (any, error) {
+	parser.skipWhitespace()
+	if parser.position >= len(parser.input) {
+		return nil, fmt.Errorf("unexpected end of input")
+	}
+
+	switch parser.input[parser.position] {
+	case '{':
+		return parser.parseObject()
+	case '[':
+		return parser.parseArray()
+	case '"':
+		return parser.parseString()
+	default:
+		return parser.parseScalar()
+	}
+}
+
+func (parser *commandTOONParser) parseObject() (map[string]any, error) {
+	parser.position++
+	result := map[string]any{}
+
+	parser.skipWhitespace()
+	if parser.consumeIf('}') {
+		return result, nil
+	}
+
+	for {
+		key, err := parser.parseKey()
+		if err != nil {
+			return nil, err
+		}
+		if !parser.consumeIf(':') {
+			return nil, fmt.Errorf("expected ':' after key %q", key)
+		}
+		value, err := parser.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		result[key] = value
+
+		parser.skipWhitespace()
+		if parser.consumeIf('}') {
+			return result, nil
+		}
+		if !parser.consumeIf(',') {
+			return nil, fmt.Errorf("expected ',' or '}' after key %q", key)
+		}
+	}
+}
+
+func (parser *commandTOONParser) parseArray() ([]any, error) {
+	parser.position++
+	var result []any
+
+	parser.skipWhitespace()
+	if parser.consumeIf(']') {
+		return result, nil
+	}
+
+	for {
+		value, err := parser.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+
+		parser.skipWhitespace()
+		if parser.consumeIf(']') {
+			return result, nil
+		}
+		if !parser.consumeIf(',') {
+			return nil, fmt.Errorf("expected ',' or ']' in array")
+		}
+	}
+}
+
+func (parser *commandTOONParser) parseKey() (string, error) {
+	parser.skipWhitespace()
+	if parser.position >= len(parser.input) {
+		return "", fmt.Errorf("unexpected end of input")
+	}
+	if parser.input[parser.position] == '"' {
+		return parser.parseString()
+	}
+
+	start := parser.position
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ':', ' ', '\n', '\t', '\r':
+			return parser.input[start:parser.position], nil
+		default:
+			parser.position++
+		}
+	}
+	return parser.input[start:parser.position], nil
+}
+
+func (parser *commandTOONParser) parseString() (string, error) {
+	start := parser.position
+	parser.position++
+	escaped := false
+	for parser.position < len(parser.input) {
+		current := parser.input[parser.position]
+		if escaped {
+			escaped = false
+			parser.position++
+			continue
+		}
+		if current == '\\' {
+			escaped = true
+			parser.position++
+			continue
+		}
+		if current == '"' {
+			parser.position++
+			var result string
+			if err := json.Unmarshal([]byte(parser.input[start:parser.position]), &result); err != nil {
+				return "", err
+			}
+			return result, nil
+		}
+		parser.position++
+	}
+	return "", fmt.Errorf("unterminated string")
+}
+
+func (parser *commandTOONParser) parseScalar() (any, error) {
+	start := parser.position
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ',', '}', ']', ' ', '\n', '\t', '\r':
+			token := parser.input[start:parser.position]
+			return parseCommandTOONScalar(token)
+		default:
+			parser.position++
+		}
+	}
+	return parseCommandTOONScalar(parser.input[start:parser.position])
+}
+
+func (parser *commandTOONParser) skipWhitespace() {
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ' ', '\n', '\t', '\r':
+			parser.position++
+		default:
+			return
+		}
+	}
+}
+
+func (parser *commandTOONParser) consumeIf(expected byte) bool {
+	parser.skipWhitespace()
+	if parser.position < len(parser.input) && parser.input[parser.position] == expected {
+		parser.position++
+		return true
+	}
+	return false
+}
+
+func parseCommandTOONScalar(token string) (any, error) {
+	switch token {
+	case "null":
+		return nil, nil
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	}
+
+	if _, err := strconv.ParseInt(token, 10, 64); err == nil {
+		return json.Number(token), nil
+	}
+	if _, err := strconv.ParseFloat(token, 64); err == nil {
+		return json.Number(token), nil
+	}
+	return token, nil
 }
