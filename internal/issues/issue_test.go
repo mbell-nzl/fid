@@ -2,10 +2,12 @@ package issues
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
@@ -161,8 +163,399 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 	if unsupportedErr.Kind != "bug" {
 		t.Fatalf("UnsupportedKindError.Kind = %q, want %q", unsupportedErr.Kind, "bug")
 	}
-	if unsupportedErr.Error() != `kind "bug" is not yet supported in Phase 1; use --kind task` {
+	if unsupportedErr.Error() != `kind "bug" must be epic, task, or subtask` {
 		t.Fatalf("UnsupportedKindError.Error() = %q", unsupportedErr.Error())
+	}
+}
+
+func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	seedIssueLabels(t, workspace, "core", "phase-4")
+
+	epicCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "epic",
+		Title:         "Phase 4 authoring",
+		ActorRole:     "tl",
+		Scheduling:    "sequential",
+	})
+	if err != nil {
+		t.Fatalf("Create(epic) error = %v", err)
+	}
+
+	epic, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            epicCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(epic) error = %v", err)
+	}
+	if epic.Kind != "epic" {
+		t.Fatalf("Get(epic) kind = %q, want epic", epic.Kind)
+	}
+	if epic.WorkflowID != "epic-default" {
+		t.Fatalf("Get(epic) workflow_id = %q, want epic-default", epic.WorkflowID)
+	}
+	if epic.Status != "todo" {
+		t.Fatalf("Get(epic) status = %q, want todo", epic.Status)
+	}
+	if epic.StatusCategory != "unstarted" {
+		t.Fatalf("Get(epic) status_category = %q, want unstarted", epic.StatusCategory)
+	}
+	if epic.ParentID != nil {
+		t.Fatalf("Get(epic) parent_id = %#v, want nil", epic.ParentID)
+	}
+	if epic.OwnerRole == nil || *epic.OwnerRole != "tl" {
+		t.Fatalf("Get(epic) owner_role = %#v, want tl", epic.OwnerRole)
+	}
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Implement authoring domain",
+		ActorRole:     "tl",
+		ParentID:      stringPointer(epicCreated.ID),
+		Priority:      intPointer(1),
+		Sequence:      intPointer(1),
+		SpecMDPath:    stringPointer("project-docs/docs/phases/phase-4/tasks/task-2.md"),
+		EstTokens:     intPointer(2100),
+		DueDate:       stringPointer("2026-06-30"),
+		Labels:        []string{"phase-4", "core"},
+		InInbox:       true,
+		OwnerRole:     stringPointer("qa_lead"),
+		OwnerActor:    stringPointer("human:mark"),
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	task, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(task) error = %v", err)
+	}
+	if task.Kind != "task" {
+		t.Fatalf("Get(task) kind = %q, want task", task.Kind)
+	}
+	if task.WorkflowID != "task-default" {
+		t.Fatalf("Get(task) workflow_id = %q, want task-default", task.WorkflowID)
+	}
+	if task.ParentID == nil || *task.ParentID != epicCreated.ID {
+		t.Fatalf("Get(task) parent_id = %#v, want %q", task.ParentID, epicCreated.ID)
+	}
+	if task.Priority == nil || *task.Priority != 1 {
+		t.Fatalf("Get(task) priority = %#v, want 1", task.Priority)
+	}
+	if task.Sequence == nil || *task.Sequence != 1 {
+		t.Fatalf("Get(task) sequence = %#v, want 1", task.Sequence)
+	}
+	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
+		t.Fatalf("Get(task) spec_md_path = %#v", task.SpecMDPath)
+	}
+	if task.EstTokens == nil || *task.EstTokens != 2100 {
+		t.Fatalf("Get(task) est_tokens = %#v, want 2100", task.EstTokens)
+	}
+	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
+		t.Fatalf("Get(task) owner_role = %#v, want qa_lead", task.OwnerRole)
+	}
+	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
+		t.Fatalf("Get(task) owner_actor = %#v, want human:mark", task.OwnerActor)
+	}
+	if !task.InInbox {
+		t.Fatal("Get(task) in_inbox = false, want true")
+	}
+	if want := []string{"core", "phase-4"}; !equalStrings(task.Labels, want) {
+		t.Fatalf("Get(task) labels = %#v, want %#v", task.Labels, want)
+	}
+
+	subtaskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "subtask",
+		Title:         "Cover rebuild parity",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(taskCreated.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(subtask) error = %v", err)
+	}
+
+	subtask, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtaskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(subtask) error = %v", err)
+	}
+	if subtask.Kind != "subtask" {
+		t.Fatalf("Get(subtask) kind = %q, want subtask", subtask.Kind)
+	}
+	if subtask.WorkflowID != "subtask-default" {
+		t.Fatalf("Get(subtask) workflow_id = %q, want subtask-default", subtask.WorkflowID)
+	}
+	if subtask.ParentID == nil || *subtask.ParentID != taskCreated.ID {
+		t.Fatalf("Get(subtask) parent_id = %#v, want %q", subtask.ParentID, taskCreated.ID)
+	}
+	if subtask.OwnerRole == nil || *subtask.OwnerRole != "developer" {
+		t.Fatalf("Get(subtask) owner_role = %#v, want developer", subtask.OwnerRole)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	var scheduling string
+	if err := conn.QueryRow(`SELECT scheduling FROM epic_metadata WHERE issue_id = ?`, epicCreated.ID).Scan(&scheduling); err != nil {
+		t.Fatalf("query epic_metadata: %v", err)
+	}
+	if scheduling != "sequential" {
+		t.Fatalf("epic_metadata scheduling = %q, want sequential", scheduling)
+	}
+
+	var dueDate string
+	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskCreated.ID).Scan(&dueDate); err != nil {
+		t.Fatalf("query task due_date: %v", err)
+	}
+	if dueDate != "2026-06-30" {
+		t.Fatalf("task due_date = %q, want 2026-06-30", dueDate)
+	}
+
+	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	if len(stored) != 5 {
+		t.Fatalf("stored events = %d, want 5", len(stored))
+	}
+	for _, event := range stored[2:] {
+		if event.EventType != "issue.created" {
+			t.Fatalf("stored event type = %q, want issue.created", event.EventType)
+		}
+	}
+}
+
+func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	seedIssueLabels(t, workspace, "known")
+
+	epicCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "epic",
+		Title:         "Parent epic",
+		ActorRole:     "tl",
+		Scheduling:    "prioritised",
+	})
+	if err != nil {
+		t.Fatalf("Create(parent epic) error = %v", err)
+	}
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Parent task",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(parent task) error = %v", err)
+	}
+
+	subtaskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "subtask",
+		Title:         "Existing subtask",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(taskCreated.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(parent subtask) error = %v", err)
+	}
+
+	tests := []struct {
+		name    string
+		options CreateOptions
+		wantErr string
+	}{
+		{
+			name: "epic cannot have parent",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "epic",
+				Title:         "Invalid epic",
+				ActorRole:     "tl",
+				ParentID:      stringPointer(epicCreated.ID),
+				Scheduling:    "sequential",
+			},
+			wantErr: "issues: epic parent_id must be NULL",
+		},
+		{
+			name: "subtask requires task parent",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "subtask",
+				Title:         "Missing subtask parent",
+				ActorRole:     "developer",
+			},
+			wantErr: "issues: subtask parent_id must reference a task",
+		},
+		{
+			name: "task parent must be epic",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "task",
+				Title:         "Task under subtask",
+				ActorRole:     "developer",
+				ParentID:      stringPointer(subtaskCreated.ID),
+			},
+			wantErr: "issues: task parent_id must reference an epic or be NULL",
+		},
+		{
+			name: "subtask parent cannot be epic",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "subtask",
+				Title:         "Subtask under epic",
+				ActorRole:     "developer",
+				ParentID:      stringPointer(epicCreated.ID),
+			},
+			wantErr: "issues: subtask parent_id must reference a task",
+		},
+		{
+			name: "non-epic metadata rejected",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "task",
+				Title:         "Task with scheduling",
+				ActorRole:     "developer",
+				Scheduling:    "sequential",
+			},
+			wantErr: "create issue: scheduling is only valid for epics",
+		},
+		{
+			name: "unknown labels rejected",
+			options: CreateOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testIssueMigrationsDir(t),
+				Kind:          "task",
+				Title:         "Unknown label",
+				ActorRole:     "developer",
+				Labels:        []string{"known", "missing"},
+			},
+			wantErr: `create issue: label "missing" does not exist`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := Create(tt.options)
+			if err == nil {
+				t.Fatalf("Create() error = nil, want %q", tt.wantErr)
+			}
+			if err.Error() != tt.wantErr {
+				t.Fatalf("Create() error = %q, want %q", err.Error(), tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	seedIssueLabels(t, workspace, "phase-4", "ready")
+
+	epicCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "epic",
+		Title:         "Rebuild parent",
+		ActorRole:     "tl",
+		Scheduling:    "sequential",
+	})
+	if err != nil {
+		t.Fatalf("Create(epic) error = %v", err)
+	}
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Rebuild task",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(epicCreated.ID),
+		Priority:      intPointer(2),
+		Sequence:      intPointer(1),
+		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
+		EstTokens:     intPointer(1440),
+		DueDate:       stringPointer("2026-07-01"),
+		Labels:        []string{"ready", "phase-4"},
+		InInbox:       true,
+		OwnerActor:    stringPointer("agent"),
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	before, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(before rebuild) error = %v", err)
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+		t.Fatalf("RebuildWorkspace() error = %v", err)
+	}
+
+	after, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after rebuild) error = %v", err)
+	}
+
+	assertIssuesEqual(t, after, before)
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	var dueDate string
+	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskCreated.ID).Scan(&dueDate); err != nil {
+		t.Fatalf("query rebuilt due_date: %v", err)
+	}
+	if dueDate != "2026-07-01" {
+		t.Fatalf("rebuilt due_date = %q, want 2026-07-01", dueDate)
+	}
+
+	var issueID, scheduling string
+	if err := conn.QueryRow(`SELECT issue_id, scheduling FROM epic_metadata WHERE issue_id = ?`, epicCreated.ID).Scan(&issueID, &scheduling); err != nil {
+		t.Fatalf("query rebuilt epic_metadata: %v", err)
+	}
+	if issueID != epicCreated.ID || scheduling != "sequential" {
+		t.Fatalf("rebuilt epic_metadata = (%q, %q), want (%q, %q)", issueID, scheduling, epicCreated.ID, "sequential")
 	}
 }
 
@@ -799,4 +1192,122 @@ func appendIssueJournalEvent(t *testing.T, workspace string, event journal.Event
 	}); err != nil {
 		t.Fatalf("AppendEvent() error = %v", err)
 	}
+}
+
+func seedIssueLabels(t *testing.T, workspace string, labels ...string) {
+	t.Helper()
+
+	effects := make([]journal.Effect, 0, len(labels))
+	for _, label := range labels {
+		effects = append(effects, journal.Effect{
+			Op:    "insert",
+			Table: "labels",
+			PK:    map[string]any{"name": label},
+			Values: map[string]any{
+				"description": label + " label",
+			},
+		})
+	}
+
+	appendIssueJournalEvent(t, workspace, journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "label.seeded",
+		Actor: journal.Actor{
+			Role: "tl",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: effects,
+	})
+}
+
+func readIssueStoredEvents(t *testing.T, path string) []journal.Event {
+	t.Helper()
+
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", path, err)
+	}
+
+	lines := strings.Split(strings.TrimSpace(string(payload)), "\n")
+	events := make([]journal.Event, 0, len(lines))
+	for _, line := range lines {
+		if strings.TrimSpace(line) == "" {
+			continue
+		}
+
+		var event journal.Event
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			t.Fatalf("UnmarshalCanonicalJSON() error = %v", err)
+		}
+		events = append(events, event)
+	}
+
+	return events
+}
+
+func assertIssuesEqual(t *testing.T, got, want Issue) {
+	t.Helper()
+
+	if got.ID != want.ID ||
+		got.Kind != want.Kind ||
+		got.Title != want.Title ||
+		got.Status != want.Status ||
+		got.StatusCategory != want.StatusCategory ||
+		got.WorkflowID != want.WorkflowID ||
+		got.InInbox != want.InInbox ||
+		got.ConcernsRaised != want.ConcernsRaised ||
+		got.OpenConcernsCount != want.OpenConcernsCount {
+		t.Fatalf("issue mismatch = %#v, want %#v", got, want)
+	}
+	if !equalStringPointers(got.ParentID, want.ParentID) ||
+		!equalIntPointers(got.Priority, want.Priority) ||
+		!equalIntPointers(got.Sequence, want.Sequence) ||
+		!equalStringPointers(got.SpecMDPath, want.SpecMDPath) ||
+		!equalIntPointers(got.EstTokens, want.EstTokens) ||
+		!equalStringPointers(got.OwnerRole, want.OwnerRole) ||
+		!equalStringPointers(got.OwnerActor, want.OwnerActor) ||
+		!equalStringPointers(got.TriageStatus, want.TriageStatus) ||
+		!equalStringPointers(got.CreatedAt, want.CreatedAt) ||
+		!equalStringPointers(got.UpdatedAt, want.UpdatedAt) ||
+		!equalStrings(got.Labels, want.Labels) {
+		t.Fatalf("issue pointer/slice mismatch = %#v, want %#v", got, want)
+	}
+}
+
+func equalStringPointers(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
+func equalIntPointers(left, right *int) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
+func equalStrings(left, right []string) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if left[index] != right[index] {
+			return false
+		}
+	}
+	return true
+}
+
+func stringPointer(value string) *string {
+	return &value
+}
+
+func intPointer(value int) *int {
+	return &value
 }
