@@ -35,6 +35,8 @@ closes, or cancels each item.
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
 | CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
+| CF-004 | Phase 2 planning (TL) | Sequence-vs-scheduling backstop trigger (TRD SCHEMA §14.1 `issues.sequence`) was deferred: the cross-table rule (tasks under sequential epics require a sequence; prioritised/standalone must not) is coupled to v0.1b scheduling semantics and has an ambiguous missing-`epic_metadata` case. Static positive-`sequence` CHECK + `UNIQUE(parent_id, sequence)` already ship. Add the cross-table backstop when `epic_metadata` population, tasks-under-epics, and `fid ready` land. | v0.1b Issue Lifecycle | Medium |
+| CF-005 | Phase 2 planning (TL) | TRD SCHEMA §14.6 activity_log "inserts only during projection" guard trigger and the §4.3 `activity` effect op were deferred: no activity_log population path exists until v0.1b, and a SQL session-scoped projection guard is unreliable under the pooled multi-connection model (DEC-006). Phase 2 ships the §14.2 polymorphic-ref backstop on `activity_log` and exercises it via `insert` effects. Add the projection-only guard + `activity` op when activity_log population ships. | v0.1b (activity_log population) | Medium |
 
 CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`.
 

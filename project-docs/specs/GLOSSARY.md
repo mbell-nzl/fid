@@ -512,6 +512,6 @@ Avoid: quality gate when referring to product code checks.
 
 | Term or phrase | Why it is ambiguous | Owner | Resolution status |
 |---|---|---|---|
-| | | | |
+| `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-06-01*
+*Last updated: 2026-06-07*

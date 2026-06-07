@@ -8,8 +8,11 @@
 ## Project State
 
 **Status:** Phase 1 (v0.1a End-to-End Persistence Loop / tracer bullet)
-**CLOSED** (branch `phase-1/persistence-loop`, wrapped 2026-06-07). Phase 2 not
-yet planned.
+**CLOSED** (branch `phase-1/persistence-loop`, wrapped 2026-06-07). Phase 2
+(Widen the schema vertically) **PLANNED** (2026-06-07): validation contract
+(VAL-001..017) + four ordered task specs drafted under
+`../phases/phase-2/`; awaiting QA Lead QA plan and human approval before
+execution.
 
 Tracer bullet in place — the full journal → projection → rebuild loop runs from
 real commands: `fid init`, `fid rebuild`, `fid issue create`,
@@ -34,7 +37,6 @@ Phase 1 outcome:
 
 Next action:
 
-- Tech Lead plans Phase 2 (remaining v0.1 tables, stub tables, triggers,
-  `issues_enriched` view) from
-  `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`: validation contract +
-  ordered task specs, then human review before execution.
+- Human reviews the Phase 2 validation contract + ordered task list. On
+  approval, QA Lead authors `../phases/phase-2/qa/qa-plan.md` and Developer
+  execution begins on a new `phase-2/schema-widening` branch.

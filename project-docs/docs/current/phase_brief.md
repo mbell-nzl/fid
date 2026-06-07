@@ -1,113 +1,123 @@
-# Phase Brief - Phase 1: End-to-End Persistence Loop (Tracer Bullet)
+# Phase Brief - Phase 2: Widen The Schema Vertically
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** CLOSED (wrapped 2026-06-07). All VAL-001..VAL-017 PASS; QA final
-> review PASS; human checklist accepted. Two blockers remediated (Task 7 pragmas,
-> Task 8 coverage). See `../phases/phase-1/decisions.md` and `progress_current.md`.
-> Superseded when Tech Lead plans Phase 2.
+> **State:** PLANNED (drafted 2026-06-07). Validation contract + ordered task
+> specs drafted; awaiting QA Lead QA plan and human approval before execution.
+> Phase 1 is CLOSED (see `../phases/phase-1/`).
 
 ## Phase Goal
 
-Build the thinnest **end-to-end** path through fid's persistence machinery —
-journal → projection → rebuild — exercised by real commands. This is the v0.1a
-tracer-bullet slice (Roadmap §v0.1a "Phase-slicing note"). It locks the
-hardest-to-change contracts early (Guiding Principle #3): journal event v1
-format, ID shapes, projection checkpoint, and the write lock.
+Complete the **v0.1 base SQLite schema** — the remaining v0.1 tables, the stub
+tables, the v0.1 triggers, and the `issues_enriched` view — *through the same
+journal → projection → rebuild machinery proven in Phase 1* (Roadmap "Phase 2 —
+Widen the schema vertically"). Each new table/trigger group is exercised by
+appending a journal event and reading the projection (or, for triggers, by a
+backstop-violating raw write), **not by direct-SQL happy-path tests only**.
 
-**Vertical, not horizontal.** Each task adds plumbing, but the phase exits on
-commands an agent can actually run: `fid init`, `fid rebuild`,
-`fid issue create`, `fid issue get --format json`.
+**Headline end-to-end increment:** `fid issue get` stops returning hard-coded
+zeros and surfaces real derived `concerns_raised` / `open_concerns_count` /
+`triage_status` from `issues_enriched`.
 
 ## Scope (in)
 
-- `.fid/` workspace layout, `config.toml`, `pricing.toml`, `.gitignore`.
-- `golang-migrate` harness + **minimal** schema: `projection_meta`, `roles`,
-  `issues` only. Required pragmas on every connection.
-- Journal event v1 model, canonical JSON + hashing, ID generation, upgrader
-  chain (mechanism + v1 identity).
-- `.fid/write.lock` (lock-dir + owner metadata) and the journal writer
-  (single clock read, per-day sequence, append+flush as commit point,
-  clock-skew detection).
-- Replayer + projection + `projection_meta` checkpoint; clean-read vs catch-up
-  vs full rebuild; corruption + precondition conflict handling; `fid rebuild`.
-- `fid init` (seeds 7 roles via `project.initialized`; rejects re-init).
-- Minimal `fid issue create` / `fid issue get` + JSON `--format` engine seam.
-- `--by <role>` with role-existence validation on writes.
+- Migration `0002`: remaining v0.1 base tables (`epic_metadata`,
+  `acceptance_criteria`, `ac_verifications`, `gate_runs`, `task_completions`,
+  `concerns`, `requirements`, `agent_runs`, `labels`, `issue_labels`, `links`,
+  `claims`, `activity_log`) + stub tables (`decisions`, `escalations`,
+  `triage_events`). DDL only; verified through journal effects.
+- Migration `0003`: `issues_enriched` view + `idx_concerns_issue_status` +
+  `idx_triage_issue_created`; wire `fid issue get` to read the view.
+- Migration `0004`: kind-invariant + kind-immutability backstop triggers.
+- Migration `0005`: polymorphic ref integrity + link scope/relation + claim
+  scope backstop triggers.
+- `ProjectionSchemaVersion` bump so existing derived DBs rebuild on upgrade.
 
 ## Scope (out — deferred)
 
-- Remaining v0.1 tables, stub tables, triggers, `issues_enriched` view → Phase 2.
-- TOON / markdown / YAML output + perf/error-path hardening → Phase 3.
-- Full v0.1b issue lifecycle (kinds hierarchy, workflows, transitions, claims,
-  ACs, list filters) → v0.1b+.
-- Full role×action permission matrix (PRD-ROLE-003) → v0.1d. Phase 1 checks
-  role existence only; `fid init` is the bootstrap exception (no `--by`).
+- v0.2+ tables (workflows, role_permissions, comments), v0.3 QA/templates,
+  v0.4+ validation/carry_forward/retros/cycles/views.
+- Lifecycle commands (`issue create` kinds hierarchy, transitions, claims, ACs,
+  list filters, `--has-concerns`) → v0.1b+.
+- TOON/markdown/YAML renderers, `--section`, perf tuning → Phase 3 / v0.1b.
+- **Sequence-vs-scheduling backstop trigger** (§14.1 `issues.sequence`) →
+  v0.1b (coupled to scheduling semantics; static positive-`sequence` CHECK +
+  `UNIQUE(parent_id, sequence)` already ship).
+- **§14.6 activity_log "projection-only" guard trigger** and the **`activity`
+  effect op** → v0.1b (no population path yet; pooled-connection model makes a
+  SQL session guard unreliable). `activity_log` is exercised via `insert`
+  effects + the §14.2 polymorphic ref backstop now.
 
 ## Validation Contract Index
 
-Contract: `../phases/phase-1/qa/validation-contract.md` (VAL-001..VAL-017).
+Contract: `../phases/phase-2/qa/validation-contract.md` (VAL-001..VAL-017).
 
 | VAL | Behavior | Owner |
 |---|---|---|
-| VAL-001 | `fid init` creates `.fid/` workspace + config files | task 5 |
-| VAL-002 | `--prefix` sets prefix; default = uppercased dir name | task 5 |
-| VAL-003 | One `project.initialized` event seeds 7 roles | task 5 |
-| VAL-004 | Re-init rejected, no changes | task 5 |
-| VAL-005 | Delete DB + rebuild reconstructs roles + checkpoint | task 5 |
-| VAL-006 | Issue created via event, read back as JSON | task 6 |
-| VAL-007 | One logical write = one v1 event line | tasks 3, 6 |
-| VAL-008 | Replay pure data; rebuild yields identical state | task 4 |
-| VAL-009 | Replay routes via upgrader chain (golden v1) | task 4 |
-| VAL-010 | Malformed trailing line reported as corruption | task 4 |
-| VAL-011 | Precondition mismatch → structured conflict error | task 4 |
-| VAL-012 | `projection_meta` drives clean/catch-up/rebuild | task 4 |
-| VAL-013 | `.fid/write.lock` serializes writes; holder-named error | task 3 |
-| VAL-014 | Pragmas ON on every connection | task 1 |
-| VAL-015 | ID shapes + per-day event sequence + collision retry | tasks 2, 3 |
-| VAL-016 | Writes require `--by`; unknown roles rejected | task 6 |
+| VAL-001 | Migration 0002 creates all remaining v0.1 + stub tables | task 1 |
+| VAL-002 | Migration 0002 down clean; up→down→up round-trips | task 1 |
+| VAL-003 | New tables reachable via journal effects (not direct SQL) | task 1 |
+| VAL-004 | `ProjectionSchemaVersion` bump forces stale-DB rebuild | task 1 |
+| VAL-005 | `issues_enriched` open-concern count + `concerns_raised` | task 2 |
+| VAL-006 | `issues_enriched.triage_status` from latest verdict | task 2 |
+| VAL-007 | `fid issue get` returns enriched cols; survives rebuild | task 2 |
+| VAL-008 | Enriched joins use concern/triage indexes (no scan) | task 2 |
+| VAL-009 | `issues.parent_id` kind-hierarchy backstop trigger | task 3 |
+| VAL-010 | Kind guards: ac/completion (task\|subtask), epic_metadata (epic) | task 3 |
+| VAL-011 | `epic_id` kind guards: triage_events, decisions | task 3 |
+| VAL-012 | Kind immutability (BEFORE UPDATE OF kind) | task 3 |
+| VAL-013 | Polymorphic ref integrity: links, claims, activity_log | task 4 |
+| VAL-014 | Link endpoint scope + relation compatibility (§10.1) | task 4 |
+| VAL-015 | Claim scope (`ref_type='issue'` only) | task 4 |
+| VAL-016 | Deterministic full-schema rebuild with triggers active | phase-end |
 | VAL-017 | `internal/` never imports `cmd/fid/`; thin adapters | phase-end |
 
 ## Ordered Tasks
 
-1. **SQLite connection, pragmas, minimal migration harness** — `internal/db/`,
-   migration `0001` (projection_meta, roles, issues). (VAL-014)
-2. **Journal event v1 model, ID gen, canonical JSON, upgrader chain** — pure
-   data, no I/O. (VAL-007, VAL-009, VAL-015)
-3. **Write lock + journal writer (append+flush)** — `.fid/write.lock`, sequence
-   allocation, clock-skew. (VAL-007, VAL-013, VAL-015)
-4. **Replayer, projection, checkpoint, catch-up, `fid rebuild`** — corruption +
-   precondition errors, freshness logic. (VAL-008..012)
-5. **`fid init` bootstrap** — workspace + `project.initialized` + 7 roles;
-   reject re-init. (VAL-001..005)
-6. **Minimal `fid issue create` / `get` + JSON format engine** — closes the
-   tracer bullet; `--by` role check. (VAL-006, 007, 008, 016)
+1. **Complete the v0.1 base schema (migration 0002)** — remaining v0.1 + stub
+   tables; exercise via journal effects; bump projection schema version.
+   (VAL-001..004)
+2. **`issues_enriched` view + indexes + enriched `fid issue get` (0003)** —
+   headline end-to-end increment. (VAL-005..008)
+3. **Kind-invariant + kind-immutability backstop triggers (0004)** — raw-SQL
+   backstop verification. (VAL-009..012)
+4. **Polymorphic ref + link/claim scope triggers (0005) + phase-end** —
+   determinism + adapter boundary. (VAL-013..017)
 
 ## Exit Criteria
 
-- `fid init` then `fid rebuild` reconstructs the seeded roles from the journal;
-  delete-and-rebuild is non-destructive.
-- One issue can be created via an event and read back as JSON.
-- One logical write = exactly one v1 journal event; replay is pure data.
-- Corruption and precondition conflicts stop replay with structured errors.
-- Writes require `--by`; unknown roles rejected.
+- Full v0.1 base schema present; migrations up/down round-trip cleanly.
+- `issues_enriched` returns concern count + triage status; `fid issue get`
+  surfaces them, identical after rebuild.
+- Triggers enforce kind hierarchy, kind immutability, polymorphic ref integrity,
+  link scope, and claim scope (raw-SQL RAISE evidence).
+- `fid rebuild` over a journal touching every new table is deterministic and
+  non-destructive with all triggers active.
 - All VAL-001..VAL-017 PASS with deterministic evidence; QA final review has no
   unresolved blocking findings; human checklist PASS.
 
 ## Planning Notes / Carry-In
 
-- Stack locked (Go, Cobra, modernc.org/sqlite, golang-migrate, testify);
-  golangci-lint v2 (DEC-003). Sandbox cache redirection in `AGENTS.md`
-  (DEC-001/005). Use `gofmt -l cmd internal`, not `gofmt -l .`.
-- Cut a new phase branch for Phase 1.
-- Carry-Forward Register: no open items at Phase 1 start.
-- Roadmap source: `../../specs/10_IMPLEMENTATION_ROADMAP.md` v0.1a +
-  slicing note. Re-slice freely if dependency analysis warrants, but every
-  phase must ship an end-to-end verifiable increment.
+- Cut a new phase branch (e.g. `phase-2/schema-widening`).
+- Apply Phase-1 DEC-007 carry-in: VALs whose behavior lives in COV-001 domain
+  packages name **package-level** tests — VAL-003 (`internal/journal`), VAL-007
+  (`internal/issues`). Hold COV-001 ≥ 80% (issues/journal) and COV-002 ≥ 70%
+  (cmd/fid).
+- The generic projection engine already inserts into arbitrary tables, so the
+  "exercise via journal" requirement needs no engine change — only well-formed
+  events.
+- **Spec ambiguity to resolve at execution:** `task_completions` kind guard
+  follows §14.1 (task **or** subtask); §4.1's "(task only)" is the indicative
+  entity note. Record the resolution in the Task 3 completion report; revisit at
+  spec sync.
+- Carry-Forward Register: CF-003 (role-validation corrupt-tail tolerance)
+  remains open but is not exercised by Phase 2. Two new deferrals
+  (sequence-scheduling trigger; §14.6 guard / `activity` op) to be formalized as
+  carry-forward at wrap if still open.
 
 ## Next Checkpoint
 
-QA Lead writes `../phases/phase-1/qa/qa-plan.md` mapping every VAL to
+QA Lead writes `../phases/phase-2/qa/qa-plan.md` mapping every VAL to
 deterministic verification; Tech Lead presents contract + tasks to the human;
 Developer execution begins only after the human approves.
