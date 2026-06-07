@@ -140,6 +140,13 @@ func renderIssueError(writer io.Writer, err error) error {
 		return writeIssueLine(writer, "  known roles: %s\n", joinCommaSeparated(unknownRoleErr.KnownRoles))
 	}
 
+	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
+		return writeIssueLine(writer, format, args...)
+	}, err, "read stopped - manual repair required")
+	if handled {
+		return renderErr
+	}
+
 	var unsupportedFormatErr *fidformat.UnsupportedFormatError
 	if errors.As(err, &unsupportedFormatErr) {
 		return writeIssueLine(writer, "error: %s\n", unsupportedFormatErr.Error())

@@ -443,6 +443,108 @@ func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
 	})
 }
 
+func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
+	t.Run("malformed trailing line", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("stderr before corruption = %q, want empty", stderr)
+		}
+		if !strings.Contains(stdout, issueID) {
+			t.Fatalf("stdout before corruption = %q, want issue payload", stdout)
+		}
+
+		appendRawJournalLine(t, mustJournalPath(t, workspace), `{"event_id":"EVT-20260607-999999"`)
+
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want corruption error")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		for _, want := range []string{
+			"error: malformed journal entry at .fid/journal/",
+			"parse error: unexpected end of JSON input",
+			"read stopped - manual repair required",
+		} {
+			if !strings.Contains(stderr, want) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			}
+		}
+	})
+
+	t.Run("precondition conflict", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("stderr before conflict = %q, want empty", stderr)
+		}
+		if !strings.Contains(stdout, issueID) {
+			t.Fatalf("stdout before conflict = %q, want issue payload", stdout)
+		}
+
+		appendCommandIssueEvent(t, workspace, journal.Event{
+			EventSchema: journal.EventSchemaV1,
+			EventType:   "issue.transitioned",
+			Actor: journal.Actor{
+				Role: "developer",
+			},
+			Command: journal.Command{
+				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--by", "developer"},
+				CWD:        ".",
+				FIDVersion: "0.1.0",
+			},
+			Effects: []journal.Effect{
+				{
+					Op:    "update",
+					Table: "issues",
+					PK: map[string]any{
+						"id": issueID,
+					},
+					Preconditions: map[string]any{
+						"status": "in_progress",
+					},
+					Values: map[string]any{
+						"status": "done",
+					},
+				},
+			},
+		})
+
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want precondition conflict")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		for _, want := range []string{
+			"error: replay precondition conflict at .fid/journal/",
+			"event: EVT-",
+			"issue.transitioned",
+			"entity: issues pk={id:",
+			"expected: {status:in_progress}",
+			"actual: {status:todo}",
+			"read stopped - manual repair required",
+		} {
+			if !strings.Contains(stderr, want) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			}
+		}
+	})
+}
+
 func TestIssueGetReturnsYAMLForEmptyAndPopulatedIssues(t *testing.T) {
 	t.Run("empty issue", func(t *testing.T) {
 		workspace := t.TempDir()
@@ -758,6 +860,23 @@ func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event
 	}
 }
 
+func appendRawJournalLine(t *testing.T, path, line string) {
+	t.Helper()
+
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatalf("OpenFile(%q) error = %v", path, err)
+	}
+	defer closeCommandFile(t, file)
+
+	if _, err := file.WriteString(line); err != nil {
+		t.Fatalf("WriteString(%q) error = %v", path, err)
+	}
+	if err := file.Sync(); err != nil {
+		t.Fatalf("Sync(%q) error = %v", path, err)
+	}
+}
+
 func decodeCommandJSONStructure(t *testing.T, value string) any {
 	t.Helper()
 
@@ -825,6 +944,14 @@ func commandStructuresEqual(left any, right any) bool {
 		return commandNumericStructuresEqual(leftValue, right)
 	default:
 		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right)
+	}
+}
+
+func closeCommandFile(t *testing.T, file *os.File) {
+	t.Helper()
+
+	if err := file.Close(); err != nil {
+		t.Fatalf("Close(%q) error = %v", file.Name(), err)
 	}
 }
 

@@ -85,6 +85,49 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	}
 }
 
+func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	writeCommandFixture(t, workspace, "conflicting-precondition.jsonl", "2026-06-05.jsonl")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+
+	cmd := newRootCommand()
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"rebuild", "--by", "developer"})
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd() error = %v", err)
+	}
+	defer mustChdir(t, cwd)
+	mustChdir(t, workspace)
+
+	err = cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want precondition conflict")
+	}
+
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+
+	got := stderr.String()
+	for _, want := range []string{
+		"error: replay precondition conflict at .fid/journal/2026-06-05.jsonl:2",
+		"event: EVT-20260605-000002 (issue.transitioned)",
+		"entity: issues pk={id:FID-a1b2c3}",
+		"expected: {status:in_progress}",
+		"actual: {status:todo}",
+	} {
+		if !strings.Contains(got, want) {
+			t.Fatalf("stderr = %q, want substring %q", got, want)
+		}
+	}
+}
+
 func newRebuildWorkspace(t *testing.T) string {
 	t.Helper()
 
