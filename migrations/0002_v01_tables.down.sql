@@ -1,0 +1,16 @@
+DROP TABLE IF EXISTS activity_log;
+DROP TABLE IF EXISTS claims;
+DROP TABLE IF EXISTS links;
+DROP TABLE IF EXISTS issue_labels;
+DROP TABLE IF EXISTS labels;
+DROP TABLE IF EXISTS concerns;
+DROP TABLE IF EXISTS gate_runs;
+DROP TABLE IF EXISTS agent_runs;
+DROP TABLE IF EXISTS ac_verifications;
+DROP TABLE IF EXISTS acceptance_criteria;
+DROP TABLE IF EXISTS task_completions;
+DROP TABLE IF EXISTS triage_events;
+DROP TABLE IF EXISTS escalations;
+DROP TABLE IF EXISTS decisions;
+DROP TABLE IF EXISTS requirements;
+DROP TABLE IF EXISTS epic_metadata;
