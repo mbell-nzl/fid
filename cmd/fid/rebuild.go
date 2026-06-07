@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -84,15 +83,11 @@ func rebuildMigrationsDir() string {
 }
 
 func renderRebuildError(cmd *cobra.Command, err error) error {
-	var corruptErr *journal.CorruptJournalError
-	if errors.As(err, &corruptErr) {
-		if writeErr := writeRebuildLine(cmd.ErrOrStderr(), "error: malformed journal entry at %s:%d\n", corruptErr.File, corruptErr.Line); writeErr != nil {
-			return writeErr
-		}
-		if writeErr := writeRebuildLine(cmd.ErrOrStderr(), "  parse error: %v\n", corruptErr.Err); writeErr != nil {
-			return writeErr
-		}
-		return writeRebuildLine(cmd.ErrOrStderr(), "  rebuild stopped - manual repair required\n")
+	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
+		return writeRebuildLine(cmd.ErrOrStderr(), format, args...)
+	}, err, "rebuild stopped - manual repair required")
+	if handled {
+		return renderErr
 	}
 
 	return writeRebuildLine(cmd.ErrOrStderr(), "error: %v\n", err)

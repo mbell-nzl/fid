@@ -2,14 +2,18 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"gopkg.in/yaml.v3"
 )
 
 func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
@@ -224,6 +228,93 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	}
 }
 
+func TestIssueGetReturnsMarkdownForEmptyAndPopulatedIssues(t *testing.T) {
+	t.Run("empty issue omits empty sections", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		if _, err := conn.Exec(`
+			INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`,
+			"FID-emptymd",
+			"task",
+			"Render empty issue",
+			"todo",
+			"task-default",
+			"developer",
+			"2026-06-07T14:00:00Z",
+			"2026-06-07T14:00:00Z",
+		); err != nil {
+			t.Fatalf("insert empty markdown issue: %v", err)
+		}
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-emptymd", "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+
+		want := "" +
+			"# FID-emptymd: Render empty issue\n\n" +
+			"**Kind:** task | **Status:** todo | **Priority:** (none)\n" +
+			"**Owner:** developer\n\n" +
+			"---\n" +
+			"Created: 2026-06-07T14:00:00Z | Updated: 2026-06-07T14:00:00Z\n"
+		if stdout != want {
+			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
+		}
+		if strings.Contains(stdout, "## Acceptance Criteria") || strings.Contains(stdout, "## Labels") || strings.Contains(stdout, "## Links") {
+			t.Fatalf("markdown stdout = %q, want empty sections omitted", stdout)
+		}
+	})
+
+	t.Run("populated issue matches markdown layout", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		seedMarkdownPopulatedIssue(t, conn)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+
+		want := "" +
+			"# FID-a1b2c3: Implement journal append with flush\n\n" +
+			"**Kind:** task | **Status:** in_progress | **Priority:** P1\n" +
+			"**Epic:** FID-e1f2g3 (Core persistence layer)\n" +
+			"**Owner:** developer | **Sequence:** 3\n" +
+			"**Spec:** project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md\n\n" +
+			"## Acceptance Criteria\n\n" +
+			"- [x] AC-d4e5f6: Journal file is flushed to disk before returning success\n" +
+			"  - developer: pass (2026-05-27T10:15:00Z)\n" +
+			"- [ ] AC-e5f6g7: Partial write leaves journal intact\n" +
+			"  - developer: (not verified)\n\n" +
+			"## Labels\n\n" +
+			"core, journal\n\n" +
+			"## Links\n\n" +
+			"- blocks FID-7c3e9f (Schema migration runner)\n" +
+			"- implements PRD-ISSUE-001\n\n" +
+			"---\n" +
+			"Created: 2026-05-25T09:00:00Z | Updated: 2026-05-27T10:20:00Z\n"
+		if stdout != want {
+			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
+		}
+	})
+}
+
 func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
@@ -352,26 +443,346 @@ func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
 	})
 }
 
-func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
+func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
+	t.Run("malformed trailing line", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("stderr before corruption = %q, want empty", stderr)
+		}
+		if !strings.Contains(stdout, issueID) {
+			t.Fatalf("stdout before corruption = %q, want issue payload", stdout)
+		}
+
+		appendRawJournalLine(t, mustJournalPath(t, workspace), `{"event_id":"EVT-20260607-999999"`)
+
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want corruption error")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		for _, want := range []string{
+			"error: malformed journal entry at .fid/journal/",
+			"parse error: unexpected end of JSON input",
+			"read stopped - manual repair required",
+		} {
+			if !strings.Contains(stderr, want) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			}
+		}
+	})
+
+	t.Run("precondition conflict", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("stderr before conflict = %q, want empty", stderr)
+		}
+		if !strings.Contains(stdout, issueID) {
+			t.Fatalf("stdout before conflict = %q, want issue payload", stdout)
+		}
+
+		appendCommandIssueEvent(t, workspace, journal.Event{
+			EventSchema: journal.EventSchemaV1,
+			EventType:   "issue.transitioned",
+			Actor: journal.Actor{
+				Role: "developer",
+			},
+			Command: journal.Command{
+				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--by", "developer"},
+				CWD:        ".",
+				FIDVersion: "0.1.0",
+			},
+			Effects: []journal.Effect{
+				{
+					Op:    "update",
+					Table: "issues",
+					PK: map[string]any{
+						"id": issueID,
+					},
+					Preconditions: map[string]any{
+						"status": "in_progress",
+					},
+					Values: map[string]any{
+						"status": "done",
+					},
+				},
+			},
+		})
+
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want precondition conflict")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		for _, want := range []string{
+			"error: replay precondition conflict at .fid/journal/",
+			"event: EVT-",
+			"issue.transitioned",
+			"entity: issues pk={id:",
+			"expected: {status:in_progress}",
+			"actual: {status:todo}",
+			"read stopped - manual repair required",
+		} {
+			if !strings.Contains(stderr, want) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			}
+		}
+	})
+}
+
+func TestIssueGetReturnsYAMLForEmptyAndPopulatedIssues(t *testing.T) {
+	t.Run("empty issue", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "YAML empty issue", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "yaml")
+
+		if jsonStderr != "" {
+			t.Fatalf("json stderr = %q, want empty", jsonStderr)
+		}
+		if yamlStderr != "" {
+			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
+		}
+
+		want := decodeCommandJSONStructure(t, jsonStdout)
+		got := decodeCommandYAMLStructure(t, yamlStdout)
+		if !commandStructuresEqual(want, got) {
+			t.Fatalf("YAML structure = %#v, want %#v", got, want)
+		}
+	})
+
+	t.Run("populated issue", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		seedMarkdownPopulatedIssue(t, conn)
+
+		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "json")
+		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "yaml")
+
+		if jsonStderr != "" {
+			t.Fatalf("json stderr = %q, want empty", jsonStderr)
+		}
+		if yamlStderr != "" {
+			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
+		}
+
+		want := decodeCommandJSONStructure(t, jsonStdout)
+		got := decodeCommandYAMLStructure(t, yamlStdout)
+		if !commandStructuresEqual(want, got) {
+			t.Fatalf("YAML structure = %#v, want %#v", got, want)
+		}
+	})
+}
+
+func TestIssueGetDispatchesStructuredFormatsAndRejectsUnknownFormats(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unsupported format", "--by", "developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
-	for _, formatName := range []string{"toon", "markdown", "yaml"} {
+	for _, formatName := range []string{"toon", "yaml"} {
 		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", formatName)
-			if err == nil {
-				t.Fatal("Execute() error = nil, want unsupported format rejection")
+			jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+			formattedStdout, formattedStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", formatName)
+
+			if formattedStderr != "" {
+				t.Fatalf("stderr = %q, want empty", formattedStderr)
 			}
-			if stdout != "" {
-				t.Fatalf("stdout = %q, want empty", stdout)
+
+			want := decodeCommandJSONStructure(t, jsonStdout)
+			var got any
+			switch formatName {
+			case "toon":
+				got = decodeCommandTOONStructure(t, formattedStdout)
+			case "yaml":
+				got = decodeCommandYAMLStructure(t, formattedStdout)
+			default:
+				t.Fatalf("unexpected format %q", formatName)
 			}
-			if !strings.Contains(stderr, `not yet supported`) {
-				t.Fatalf("stderr = %q, want not yet supported error", stderr)
+
+			if !commandStructuresEqual(want, got) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
 			}
 		})
+	}
+
+	t.Run("xml", func(t *testing.T) {
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "xml")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want unsupported format rejection")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		if !strings.Contains(stderr, `unsupported format "xml"; known formats: json, toon, markdown, yaml`) {
+			t.Fatalf("stderr = %q, want actionable unknown format error", stderr)
+		}
+	})
+}
+
+func seedMarkdownPopulatedIssue(t *testing.T, conn *sql.DB) {
+	t.Helper()
+
+	statements := []struct {
+		query string
+		args  []any
+	}{
+		{
+			query: `
+				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-e1f2g3",
+				"epic",
+				"Core persistence layer",
+				"todo",
+				"epic-default",
+				"developer",
+				"2026-05-25T08:00:00Z",
+				"2026-05-25T08:00:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, spec_md_path, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-a1b2c3",
+				"task",
+				"FID-e1f2g3",
+				"Implement journal append with flush",
+				"task-default",
+				"in_progress",
+				1,
+				3,
+				"project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md",
+				"developer",
+				"2026-05-25T09:00:00Z",
+				"2026-05-27T10:20:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-7c3e9f",
+				"task",
+				"Schema migration runner",
+				"todo",
+				"task-default",
+				"developer",
+				"2026-05-25T09:05:00Z",
+				"2026-05-25T09:05:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"PRD-ISSUE-001",
+				"PRD",
+				"Implement journal append with flush",
+				"01_PRD.md",
+				"ISSUE",
+				"active",
+			},
+		},
+		{
+			query: `INSERT INTO labels (name) VALUES (?), (?)`,
+			args:  []any{"core", "journal"},
+		},
+		{
+			query: `INSERT INTO issue_labels (issue_id, label) VALUES (?, ?), (?, ?)`,
+			args:  []any{"FID-a1b2c3", "core", "FID-a1b2c3", "journal"},
+		},
+		{
+			query: `
+				INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
+				VALUES (?, ?, ?, ?), (?, ?, ?, ?)
+			`,
+			args: []any{
+				"AC-d4e5f6",
+				"FID-a1b2c3",
+				1,
+				"Journal file is flushed to disk before returning success",
+				"AC-e5f6g7",
+				"FID-a1b2c3",
+				2,
+				"Partial write leaves journal intact",
+			},
+		},
+		{
+			query: `
+				INSERT INTO ac_verifications (id, ac_id, verifier_role, status, verified_at)
+				VALUES (?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"ACV-d4e5f6-dev",
+				"AC-d4e5f6",
+				"developer",
+				"pass",
+				"2026-05-27T10:15:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
+				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"issue",
+				"FID-a1b2c3",
+				"blocks",
+				"issue",
+				"FID-7c3e9f",
+				"2026-05-27T10:18:00Z",
+				"issue",
+				"FID-a1b2c3",
+				"implements",
+				"requirement",
+				"PRD-ISSUE-001",
+				"2026-05-27T10:19:00Z",
+			},
+		},
+	}
+
+	for _, statement := range statements {
+		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
+			t.Fatalf("Exec(%q) error = %v", statement.query, err)
+		}
 	}
 }
 
@@ -447,4 +858,317 @@ func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event
 	}); err != nil {
 		t.Fatalf("AppendEvent() error = %v", err)
 	}
+}
+
+func appendRawJournalLine(t *testing.T, path, line string) {
+	t.Helper()
+
+	file, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		t.Fatalf("OpenFile(%q) error = %v", path, err)
+	}
+	defer closeCommandFile(t, file)
+
+	if _, err := file.WriteString(line); err != nil {
+		t.Fatalf("WriteString(%q) error = %v", path, err)
+	}
+	if err := file.Sync(); err != nil {
+		t.Fatalf("Sync(%q) error = %v", path, err)
+	}
+}
+
+func decodeCommandJSONStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	decoder := json.NewDecoder(strings.NewReader(value))
+	decoder.UseNumber()
+
+	var result any
+	if err := decoder.Decode(&result); err != nil {
+		t.Fatalf("Decode JSON structure error = %v", err)
+	}
+	return result
+}
+
+func decodeCommandTOONStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	parser := commandTOONParser{input: strings.TrimSpace(value)}
+	result, err := parser.parseValue()
+	if err != nil {
+		t.Fatalf("parse TOON structure error = %v", err)
+	}
+	parser.skipWhitespace()
+	if parser.position != len(parser.input) {
+		t.Fatalf("parse TOON structure stopped at %d of %d", parser.position, len(parser.input))
+	}
+	return result
+}
+
+func decodeCommandYAMLStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	var result any
+	if err := yaml.Unmarshal([]byte(value), &result); err != nil {
+		t.Fatalf("Unmarshal YAML structure error = %v", err)
+	}
+	return result
+}
+
+func commandStructuresEqual(left any, right any) bool {
+	switch leftValue := left.(type) {
+	case map[string]any:
+		rightValue, ok := right.(map[string]any)
+		if !ok || len(leftValue) != len(rightValue) {
+			return false
+		}
+		for key, nestedLeft := range leftValue {
+			nestedRight, ok := rightValue[key]
+			if !ok || !commandStructuresEqual(nestedLeft, nestedRight) {
+				return false
+			}
+		}
+		return true
+	case []any:
+		rightValue, ok := right.([]any)
+		if !ok || len(leftValue) != len(rightValue) {
+			return false
+		}
+		for index := range leftValue {
+			if !commandStructuresEqual(leftValue[index], rightValue[index]) {
+				return false
+			}
+		}
+		return true
+	case json.Number:
+		return commandNumericStructuresEqual(leftValue, right)
+	default:
+		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right)
+	}
+}
+
+func closeCommandFile(t *testing.T, file *os.File) {
+	t.Helper()
+
+	if err := file.Close(); err != nil {
+		t.Fatalf("Close(%q) error = %v", file.Name(), err)
+	}
+}
+
+func commandNumericStructuresEqual(left json.Number, right any) bool {
+	switch rightValue := right.(type) {
+	case json.Number:
+		return left.String() == rightValue.String()
+	case int:
+		return left.String() == strconv.Itoa(rightValue)
+	case int8:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int16:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int32:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int64:
+		return left.String() == strconv.FormatInt(rightValue, 10)
+	case uint:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint8:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint16:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint32:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint64:
+		return left.String() == strconv.FormatUint(rightValue, 10)
+	case float32:
+		return left.String() == strconv.FormatFloat(float64(rightValue), 'f', -1, 32)
+	case float64:
+		return left.String() == strconv.FormatFloat(rightValue, 'f', -1, 64)
+	default:
+		return false
+	}
+}
+
+type commandTOONParser struct {
+	input    string
+	position int
+}
+
+func (parser *commandTOONParser) parseValue() (any, error) {
+	parser.skipWhitespace()
+	if parser.position >= len(parser.input) {
+		return nil, fmt.Errorf("unexpected end of input")
+	}
+
+	switch parser.input[parser.position] {
+	case '{':
+		return parser.parseObject()
+	case '[':
+		return parser.parseArray()
+	case '"':
+		return parser.parseString()
+	default:
+		return parser.parseScalar()
+	}
+}
+
+func (parser *commandTOONParser) parseObject() (map[string]any, error) {
+	parser.position++
+	result := map[string]any{}
+
+	parser.skipWhitespace()
+	if parser.consumeIf('}') {
+		return result, nil
+	}
+
+	for {
+		key, err := parser.parseKey()
+		if err != nil {
+			return nil, err
+		}
+		if !parser.consumeIf(':') {
+			return nil, fmt.Errorf("expected ':' after key %q", key)
+		}
+		value, err := parser.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		result[key] = value
+
+		parser.skipWhitespace()
+		if parser.consumeIf('}') {
+			return result, nil
+		}
+		if !parser.consumeIf(',') {
+			return nil, fmt.Errorf("expected ',' or '}' after key %q", key)
+		}
+	}
+}
+
+func (parser *commandTOONParser) parseArray() ([]any, error) {
+	parser.position++
+	var result []any
+
+	parser.skipWhitespace()
+	if parser.consumeIf(']') {
+		return result, nil
+	}
+
+	for {
+		value, err := parser.parseValue()
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, value)
+
+		parser.skipWhitespace()
+		if parser.consumeIf(']') {
+			return result, nil
+		}
+		if !parser.consumeIf(',') {
+			return nil, fmt.Errorf("expected ',' or ']' in array")
+		}
+	}
+}
+
+func (parser *commandTOONParser) parseKey() (string, error) {
+	parser.skipWhitespace()
+	if parser.position >= len(parser.input) {
+		return "", fmt.Errorf("unexpected end of input")
+	}
+	if parser.input[parser.position] == '"' {
+		return parser.parseString()
+	}
+
+	start := parser.position
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ':', ' ', '\n', '\t', '\r':
+			return parser.input[start:parser.position], nil
+		default:
+			parser.position++
+		}
+	}
+	return parser.input[start:parser.position], nil
+}
+
+func (parser *commandTOONParser) parseString() (string, error) {
+	start := parser.position
+	parser.position++
+	escaped := false
+	for parser.position < len(parser.input) {
+		current := parser.input[parser.position]
+		if escaped {
+			escaped = false
+			parser.position++
+			continue
+		}
+		if current == '\\' {
+			escaped = true
+			parser.position++
+			continue
+		}
+		if current == '"' {
+			parser.position++
+			var result string
+			if err := json.Unmarshal([]byte(parser.input[start:parser.position]), &result); err != nil {
+				return "", err
+			}
+			return result, nil
+		}
+		parser.position++
+	}
+	return "", fmt.Errorf("unterminated string")
+}
+
+func (parser *commandTOONParser) parseScalar() (any, error) {
+	start := parser.position
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ',', '}', ']', ' ', '\n', '\t', '\r':
+			token := parser.input[start:parser.position]
+			return parseCommandTOONScalar(token)
+		default:
+			parser.position++
+		}
+	}
+	return parseCommandTOONScalar(parser.input[start:parser.position])
+}
+
+func (parser *commandTOONParser) skipWhitespace() {
+	for parser.position < len(parser.input) {
+		switch parser.input[parser.position] {
+		case ' ', '\n', '\t', '\r':
+			parser.position++
+		default:
+			return
+		}
+	}
+}
+
+func (parser *commandTOONParser) consumeIf(expected byte) bool {
+	parser.skipWhitespace()
+	if parser.position < len(parser.input) && parser.input[parser.position] == expected {
+		parser.position++
+		return true
+	}
+	return false
+}
+
+func parseCommandTOONScalar(token string) (any, error) {
+	switch token {
+	case "null":
+		return nil, nil
+	case "true":
+		return true, nil
+	case "false":
+		return false, nil
+	}
+
+	if _, err := strconv.ParseInt(token, 10, 64); err == nil {
+		return json.Number(token), nil
+	}
+	if _, err := strconv.ParseFloat(token, 64); err == nil {
+		return json.Number(token), nil
+	}
+	return token, nil
 }
