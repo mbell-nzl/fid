@@ -579,6 +579,17 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	}
 
 	_, err = conn.Exec(`
+		INSERT INTO epic_metadata (issue_id, scheduling)
+		VALUES (?, ?)
+	`,
+		"FID-parent",
+		"sequential",
+	)
+	if err != nil {
+		t.Fatalf("insert parent epic metadata: %v", err)
+	}
+
+	_, err = conn.Exec(`
 		INSERT INTO issues (
 			id, kind, title, status, workflow_id, parent_id, priority, sequence,
 			spec_md_path, est_tokens, owner_role, owner_actor, in_inbox, created_at, updated_at

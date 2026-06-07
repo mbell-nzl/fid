@@ -1,0 +1,3 @@
+DROP TRIGGER IF EXISTS issues_sequence_scheduling_guard_update;
+
+DROP TRIGGER IF EXISTS issues_sequence_scheduling_guard_insert;

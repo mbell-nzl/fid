@@ -91,11 +91,23 @@ func phaseTwoFullSchemaEvent() Event {
 			},
 			{
 				Op:    "insert",
+				Table: "epic_metadata",
+				PK:    map[string]any{"issue_id": "FID-p2-epic"},
+				Values: map[string]any{
+					"scheduling":    "sequential",
+					"brief_md_path": "project-docs/epics/phase-2.md",
+					"target_start":  "2026-06-07",
+					"target_end":    "2026-06-21",
+				},
+			},
+			{
+				Op:    "insert",
 				Table: "issues",
 				PK:    map[string]any{"id": "FID-p2-task-a"},
 				Values: map[string]any{
 					"kind":        "task",
 					"parent_id":   "FID-p2-epic",
+					"sequence":    1,
 					"title":       "Phase 2 task A",
 					"workflow_id": "task-default",
 					"status":      "todo",
@@ -110,22 +122,12 @@ func phaseTwoFullSchemaEvent() Event {
 				Values: map[string]any{
 					"kind":        "task",
 					"parent_id":   "FID-p2-epic",
+					"sequence":    2,
 					"title":       "Phase 2 task B",
 					"workflow_id": "task-default",
 					"status":      "todo",
 					"created_at":  "2026-06-07T15:42:00Z",
 					"updated_at":  "2026-06-07T15:42:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "epic_metadata",
-				PK:    map[string]any{"issue_id": "FID-p2-epic"},
-				Values: map[string]any{
-					"scheduling":    "sequential",
-					"brief_md_path": "project-docs/epics/phase-2.md",
-					"target_start":  "2026-06-07",
-					"target_end":    "2026-06-21",
 				},
 			},
 			{

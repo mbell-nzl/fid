@@ -262,6 +262,159 @@ func TestProjectEventAppliesUpdateDeleteAndReplayStatus(t *testing.T) {
 	}
 }
 
+func TestProjectEventHonoursSequenceSchedulingBackstop(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		event   Event
+		wantErr string
+	}{
+		{
+			name: "accepts sequential epic task with sequence when metadata is projected first",
+			event: Event{
+				EventID:     "EVT-20260607-000710",
+				EventSchema: EventSchemaV1,
+				EventType:   "issue.created",
+				OccurredAt:  time.Date(2026, time.June, 7, 15, 10, 0, 0, time.UTC),
+				Actor: Actor{
+					Role: "developer",
+				},
+				Command: Command{
+					Argv:       []string{"fid", "maintenance", "replay"},
+					CWD:        ".",
+					FIDVersion: "0.1.0",
+				},
+				Effects: []Effect{
+					projectIssueEffect("FID-project-epic", map[string]any{
+						"kind":        "epic",
+						"title":       "Projected epic",
+						"workflow_id": "epic-default",
+						"status":      "todo",
+						"created_at":  "2026-06-07T15:10:00Z",
+						"updated_at":  "2026-06-07T15:10:00Z",
+					}),
+					{
+						Op:    "insert",
+						Table: "epic_metadata",
+						PK: map[string]any{
+							"issue_id": "FID-project-epic",
+						},
+						Values: map[string]any{
+							"scheduling": "sequential",
+						},
+					},
+					projectIssueEffect("FID-project-task", map[string]any{
+						"kind":        "task",
+						"parent_id":   "FID-project-epic",
+						"sequence":    1,
+						"title":       "Projected task",
+						"workflow_id": "task-default",
+						"status":      "todo",
+						"created_at":  "2026-06-07T15:11:00Z",
+						"updated_at":  "2026-06-07T15:11:00Z",
+					}),
+				},
+			},
+		},
+		{
+			name: "rejects sequential epic task without sequence during projection",
+			event: Event{
+				EventID:     "EVT-20260607-000711",
+				EventSchema: EventSchemaV1,
+				EventType:   "issue.created",
+				OccurredAt:  time.Date(2026, time.June, 7, 15, 11, 0, 0, time.UTC),
+				Actor: Actor{
+					Role: "developer",
+				},
+				Command: Command{
+					Argv:       []string{"fid", "maintenance", "replay"},
+					CWD:        ".",
+					FIDVersion: "0.1.0",
+				},
+				Effects: []Effect{
+					projectIssueEffect("FID-project-epic-invalid", map[string]any{
+						"kind":        "epic",
+						"title":       "Projected epic invalid",
+						"workflow_id": "epic-default",
+						"status":      "todo",
+						"created_at":  "2026-06-07T15:12:00Z",
+						"updated_at":  "2026-06-07T15:12:00Z",
+					}),
+					{
+						Op:    "insert",
+						Table: "epic_metadata",
+						PK: map[string]any{
+							"issue_id": "FID-project-epic-invalid",
+						},
+						Values: map[string]any{
+							"scheduling": "sequential",
+						},
+					},
+					projectIssueEffect("FID-project-task-invalid", map[string]any{
+						"kind":        "task",
+						"parent_id":   "FID-project-epic-invalid",
+						"title":       "Projected task invalid",
+						"workflow_id": "task-default",
+						"status":      "todo",
+						"created_at":  "2026-06-07T15:13:00Z",
+						"updated_at":  "2026-06-07T15:13:00Z",
+					}),
+				},
+			},
+			wantErr: "issues: task under sequential epic requires sequence",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+				t.Fatalf("MigrateUp() error = %v", err)
+			}
+
+			conn, err := fiddb.Open(dbPath)
+			if err != nil {
+				t.Fatalf("Open() error = %v", err)
+			}
+			defer closeProjectDB(t, conn)
+
+			eventHash, err := HashEvent(tt.event)
+			if err != nil {
+				t.Fatalf("HashEvent() error = %v", err)
+			}
+
+			err = ProjectEvent(conn, ProjectionInput{
+				Event:     tt.event,
+				EventHash: eventHash,
+				File:      "2026-06-07.jsonl",
+				Line:      1,
+				Offset:    2048,
+			})
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("ProjectEvent() error = nil, want substring %q", tt.wantErr)
+				}
+				if !strings.Contains(err.Error(), tt.wantErr) {
+					t.Fatalf("ProjectEvent() error = %q, want substring %q", err.Error(), tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ProjectEvent() error = %v", err)
+			}
+
+			var sequence int
+			if err := conn.QueryRow(`SELECT sequence FROM issues WHERE id = ?`, "FID-project-task").Scan(&sequence); err != nil {
+				t.Fatalf("query projected task sequence: %v", err)
+			}
+			if sequence != 1 {
+				t.Fatalf("projected task sequence = %d, want %d", sequence, 1)
+			}
+		})
+	}
+}
+
 func TestProjectHelpersValidateEffectsAndResults(t *testing.T) {
 	t.Parallel()
 
@@ -392,6 +545,17 @@ func projectRoleEvent(eventID, op string, values, preconditions map[string]any) 
 				Preconditions: preconditions,
 			},
 		},
+	}
+}
+
+func projectIssueEffect(id string, values map[string]any) Effect {
+	return Effect{
+		Op:    "insert",
+		Table: "issues",
+		PK: map[string]any{
+			"id": id,
+		},
+		Values: values,
 	}
 }
 

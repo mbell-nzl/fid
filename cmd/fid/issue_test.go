@@ -672,6 +672,16 @@ func seedMarkdownPopulatedIssue(t *testing.T, conn *sql.DB) {
 		},
 		{
 			query: `
+				INSERT INTO epic_metadata (issue_id, scheduling)
+				VALUES (?, ?)
+			`,
+			args: []any{
+				"FID-e1f2g3",
+				"sequential",
+			},
+		},
+		{
+			query: `
 				INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, spec_md_path, owner_role, created_at, updated_at)
 				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`,

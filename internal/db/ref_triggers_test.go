@@ -100,6 +100,7 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 		status:     "todo",
 		title:      "Link epic",
 	})
+	insertEpicMetadataRow(t, conn, "FID-link-epic", "prioritised")
 	insertRefTriggerIssue(t, conn, issueRow{
 		id:         "FID-link-task-a",
 		kind:       "task",
