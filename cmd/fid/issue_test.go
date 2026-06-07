@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -226,6 +227,93 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	}
 }
 
+func TestIssueGetReturnsMarkdownForEmptyAndPopulatedIssues(t *testing.T) {
+	t.Run("empty issue omits empty sections", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		if _, err := conn.Exec(`
+			INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`,
+			"FID-emptymd",
+			"task",
+			"Render empty issue",
+			"todo",
+			"task-default",
+			"developer",
+			"2026-06-07T14:00:00Z",
+			"2026-06-07T14:00:00Z",
+		); err != nil {
+			t.Fatalf("insert empty markdown issue: %v", err)
+		}
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-emptymd", "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+
+		want := "" +
+			"# FID-emptymd: Render empty issue\n\n" +
+			"**Kind:** task | **Status:** todo | **Priority:** (none)\n" +
+			"**Owner:** developer\n\n" +
+			"---\n" +
+			"Created: 2026-06-07T14:00:00Z | Updated: 2026-06-07T14:00:00Z\n"
+		if stdout != want {
+			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
+		}
+		if strings.Contains(stdout, "## Acceptance Criteria") || strings.Contains(stdout, "## Labels") || strings.Contains(stdout, "## Links") {
+			t.Fatalf("markdown stdout = %q, want empty sections omitted", stdout)
+		}
+	})
+
+	t.Run("populated issue matches markdown layout", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		seedMarkdownPopulatedIssue(t, conn)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+
+		want := "" +
+			"# FID-a1b2c3: Implement journal append with flush\n\n" +
+			"**Kind:** task | **Status:** in_progress | **Priority:** P1\n" +
+			"**Epic:** FID-e1f2g3 (Core persistence layer)\n" +
+			"**Owner:** developer | **Sequence:** 3\n" +
+			"**Spec:** project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md\n\n" +
+			"## Acceptance Criteria\n\n" +
+			"- [x] AC-d4e5f6: Journal file is flushed to disk before returning success\n" +
+			"  - developer: pass (2026-05-27T10:15:00Z)\n" +
+			"- [ ] AC-e5f6g7: Partial write leaves journal intact\n" +
+			"  - developer: (not verified)\n\n" +
+			"## Labels\n\n" +
+			"core, journal\n\n" +
+			"## Links\n\n" +
+			"- blocks FID-7c3e9f (Schema migration runner)\n" +
+			"- implements PRD-ISSUE-001\n\n" +
+			"---\n" +
+			"Created: 2026-05-25T09:00:00Z | Updated: 2026-05-27T10:20:00Z\n"
+		if stdout != want {
+			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
+		}
+	})
+}
+
 func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
@@ -376,7 +464,7 @@ func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
 		}
 	})
 
-	for _, formatName := range []string{"markdown", "yaml"} {
+	for _, formatName := range []string{"yaml"} {
 		t.Run(formatName, func(t *testing.T) {
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", formatName)
 			if err == nil {
@@ -403,6 +491,145 @@ func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
 			t.Fatalf("stderr = %q, want actionable unknown format error", stderr)
 		}
 	})
+}
+
+func seedMarkdownPopulatedIssue(t *testing.T, conn *sql.DB) {
+	t.Helper()
+
+	statements := []struct {
+		query string
+		args  []any
+	}{
+		{
+			query: `
+				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-e1f2g3",
+				"epic",
+				"Core persistence layer",
+				"todo",
+				"epic-default",
+				"developer",
+				"2026-05-25T08:00:00Z",
+				"2026-05-25T08:00:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, spec_md_path, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-a1b2c3",
+				"task",
+				"FID-e1f2g3",
+				"Implement journal append with flush",
+				"task-default",
+				"in_progress",
+				1,
+				3,
+				"project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md",
+				"developer",
+				"2026-05-25T09:00:00Z",
+				"2026-05-27T10:20:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"FID-7c3e9f",
+				"task",
+				"Schema migration runner",
+				"todo",
+				"task-default",
+				"developer",
+				"2026-05-25T09:05:00Z",
+				"2026-05-25T09:05:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
+				VALUES (?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"PRD-ISSUE-001",
+				"PRD",
+				"Implement journal append with flush",
+				"01_PRD.md",
+				"ISSUE",
+				"active",
+			},
+		},
+		{
+			query: `INSERT INTO labels (name) VALUES (?), (?)`,
+			args:  []any{"core", "journal"},
+		},
+		{
+			query: `INSERT INTO issue_labels (issue_id, label) VALUES (?, ?), (?, ?)`,
+			args:  []any{"FID-a1b2c3", "core", "FID-a1b2c3", "journal"},
+		},
+		{
+			query: `
+				INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
+				VALUES (?, ?, ?, ?), (?, ?, ?, ?)
+			`,
+			args: []any{
+				"AC-d4e5f6",
+				"FID-a1b2c3",
+				1,
+				"Journal file is flushed to disk before returning success",
+				"AC-e5f6g7",
+				"FID-a1b2c3",
+				2,
+				"Partial write leaves journal intact",
+			},
+		},
+		{
+			query: `
+				INSERT INTO ac_verifications (id, ac_id, verifier_role, status, verified_at)
+				VALUES (?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"ACV-d4e5f6-dev",
+				"AC-d4e5f6",
+				"developer",
+				"pass",
+				"2026-05-27T10:15:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
+				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"issue",
+				"FID-a1b2c3",
+				"blocks",
+				"issue",
+				"FID-7c3e9f",
+				"2026-05-27T10:18:00Z",
+				"issue",
+				"FID-a1b2c3",
+				"implements",
+				"requirement",
+				"PRD-ISSUE-001",
+				"2026-05-27T10:19:00Z",
+			},
+		},
+	}
+
+	for _, statement := range statements {
+		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
+			t.Fatalf("Exec(%q) error = %v", statement.query, err)
+		}
+	}
 }
 
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {

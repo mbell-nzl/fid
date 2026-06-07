@@ -61,7 +61,12 @@ func Write(writer io.Writer, formatName string, value any) error {
 			return fmt.Errorf("encode toon output: %w", err)
 		}
 		return nil
-	case Markdown, YAML:
+	case Markdown:
+		if err := writeMarkdown(writer, value); err != nil {
+			return fmt.Errorf("encode markdown output: %w", err)
+		}
+		return nil
+	case YAML:
 		return &UnsupportedFormatError{
 			Format:          normalized,
 			NotYetSupported: true,

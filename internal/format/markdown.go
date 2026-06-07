@@ -1,0 +1,250 @@
+package format
+
+import (
+	"fmt"
+	"io"
+	"slices"
+	"sort"
+	"strings"
+
+	"github.com/mbell-nzl/fid/internal/issues"
+)
+
+type IssueMarkdownView struct {
+	Issue       issues.Issue
+	ParentTitle *string
+	Links       []IssueMarkdownLink
+}
+
+type IssueMarkdownLink struct {
+	Relation    string
+	TargetID    string
+	TargetTitle string
+}
+
+func writeMarkdown(writer io.Writer, value any) error {
+	switch typed := value.(type) {
+	case IssueMarkdownView:
+		return writeIssueMarkdown(writer, typed)
+	case *IssueMarkdownView:
+		if typed == nil {
+			return fmt.Errorf("markdown issue view is nil")
+		}
+		return writeIssueMarkdown(writer, *typed)
+	case issues.Issue:
+		return writeIssueMarkdown(writer, IssueMarkdownView{Issue: typed})
+	case *issues.Issue:
+		if typed == nil {
+			return fmt.Errorf("markdown issue is nil")
+		}
+		return writeIssueMarkdown(writer, IssueMarkdownView{Issue: *typed})
+	default:
+		return fmt.Errorf("unsupported markdown value type %T", value)
+	}
+}
+
+func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
+	var builder strings.Builder
+
+	builder.WriteString("# ")
+	builder.WriteString(view.Issue.ID)
+	builder.WriteString(": ")
+	builder.WriteString(view.Issue.Title)
+	builder.WriteString("\n\n")
+
+	builder.WriteString("**Kind:** ")
+	builder.WriteString(view.Issue.Kind)
+	builder.WriteString(" | **Status:** ")
+	builder.WriteString(view.Issue.Status)
+	builder.WriteString(" | **Priority:** ")
+	builder.WriteString(markdownPriority(view.Issue.Priority))
+	builder.WriteString("\n")
+
+	if line := markdownEpicLine(view); line != "" {
+		builder.WriteString(line)
+		builder.WriteString("\n")
+	}
+	if line := markdownOwnerSequenceLine(view.Issue); line != "" {
+		builder.WriteString(line)
+		builder.WriteString("\n")
+	}
+	if view.Issue.SpecMDPath != nil && strings.TrimSpace(*view.Issue.SpecMDPath) != "" {
+		builder.WriteString("**Spec:** ")
+		builder.WriteString(*view.Issue.SpecMDPath)
+		builder.WriteString("\n")
+	}
+
+	writeAcceptanceCriteriaMarkdown(&builder, view.Issue.AcceptanceCriteria)
+	writeLabelsMarkdown(&builder, view.Issue.Labels)
+	writeLinksMarkdown(&builder, view.Links)
+	writeFooterMarkdown(&builder, view.Issue)
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func markdownPriority(priority *int) string {
+	if priority == nil {
+		return "(none)"
+	}
+	return fmt.Sprintf("P%d", *priority)
+}
+
+func markdownEpicLine(view IssueMarkdownView) string {
+	if view.Issue.ParentID == nil || strings.TrimSpace(*view.Issue.ParentID) == "" {
+		return ""
+	}
+
+	line := "**Epic:** " + *view.Issue.ParentID
+	if view.ParentTitle != nil && strings.TrimSpace(*view.ParentTitle) != "" {
+		line += " (" + *view.ParentTitle + ")"
+	}
+	return line
+}
+
+func markdownOwnerSequenceLine(issue issues.Issue) string {
+	parts := make([]string, 0, 2)
+	if issue.OwnerRole != nil && strings.TrimSpace(*issue.OwnerRole) != "" {
+		parts = append(parts, "**Owner:** "+*issue.OwnerRole)
+	}
+	if issue.Sequence != nil {
+		parts = append(parts, fmt.Sprintf("**Sequence:** %d", *issue.Sequence))
+	}
+	return strings.Join(parts, " | ")
+}
+
+func writeAcceptanceCriteriaMarkdown(builder *strings.Builder, criteria []issues.AcceptanceCriterion) {
+	if len(criteria) == 0 {
+		return
+	}
+
+	sorted := slices.Clone(criteria)
+	sort.Slice(sorted, func(left, right int) bool {
+		if sorted[left].Ordinal != sorted[right].Ordinal {
+			return sorted[left].Ordinal < sorted[right].Ordinal
+		}
+		return sorted[left].ID < sorted[right].ID
+	})
+
+	builder.WriteString("\n## Acceptance Criteria\n\n")
+	for _, criterion := range sorted {
+		builder.WriteString("- [")
+		if criterionChecked(criterion.LatestVerifications) {
+			builder.WriteString("x")
+		} else {
+			builder.WriteString(" ")
+		}
+		builder.WriteString("] ")
+		builder.WriteString(criterion.ID)
+		builder.WriteString(": ")
+		builder.WriteString(criterion.Text)
+		builder.WriteString("\n")
+
+		for _, line := range markdownVerificationLines(criterion.LatestVerifications) {
+			builder.WriteString("  - ")
+			builder.WriteString(line)
+			builder.WriteString("\n")
+		}
+	}
+}
+
+func criterionChecked(latest map[string]any) bool {
+	for _, line := range markdownVerificationLines(latest) {
+		if strings.Contains(line, ": pass") {
+			return true
+		}
+	}
+	return false
+}
+
+func markdownVerificationLines(latest map[string]any) []string {
+	if len(latest) == 0 {
+		return nil
+	}
+
+	roles := make([]string, 0, len(latest))
+	for role := range latest {
+		roles = append(roles, role)
+	}
+	sort.Strings(roles)
+
+	lines := make([]string, 0, len(roles))
+	for _, role := range roles {
+		line := role + ": "
+		entry := latest[role]
+		if entry == nil {
+			lines = append(lines, line+"(not verified)")
+			continue
+		}
+
+		typed, ok := entry.(map[string]any)
+		if !ok {
+			lines = append(lines, line+fmt.Sprintf("%v", entry))
+			continue
+		}
+
+		status := strings.TrimSpace(fmt.Sprintf("%v", typed["status"]))
+		if status == "" || status == "<nil>" {
+			lines = append(lines, line+"(not verified)")
+			continue
+		}
+
+		verifiedAt := strings.TrimSpace(fmt.Sprintf("%v", typed["verified_at"]))
+		if verifiedAt != "" && verifiedAt != "<nil>" {
+			lines = append(lines, line+status+" ("+verifiedAt+")")
+			continue
+		}
+		lines = append(lines, line+status)
+	}
+	return lines
+}
+
+func writeLabelsMarkdown(builder *strings.Builder, labels []string) {
+	if len(labels) == 0 {
+		return
+	}
+
+	builder.WriteString("\n## Labels\n\n")
+	builder.WriteString(strings.Join(labels, ", "))
+	builder.WriteString("\n")
+}
+
+func writeLinksMarkdown(builder *strings.Builder, links []IssueMarkdownLink) {
+	if len(links) == 0 {
+		return
+	}
+
+	builder.WriteString("\n## Links\n\n")
+	for _, link := range links {
+		builder.WriteString("- ")
+		builder.WriteString(link.Relation)
+		builder.WriteString(" ")
+		builder.WriteString(link.TargetID)
+		if strings.TrimSpace(link.TargetTitle) != "" {
+			builder.WriteString(" (")
+			builder.WriteString(link.TargetTitle)
+			builder.WriteString(")")
+		}
+		builder.WriteString("\n")
+	}
+}
+
+func writeFooterMarkdown(builder *strings.Builder, issue issues.Issue) {
+	createdAt := ""
+	updatedAt := ""
+	if issue.CreatedAt != nil {
+		createdAt = *issue.CreatedAt
+	}
+	if issue.UpdatedAt != nil {
+		updatedAt = *issue.UpdatedAt
+	}
+
+	builder.WriteString("\n---\n")
+	builder.WriteString("Created: ")
+	builder.WriteString(createdAt)
+	builder.WriteString(" | Updated: ")
+	builder.WriteString(updatedAt)
+	builder.WriteString("\n")
+}

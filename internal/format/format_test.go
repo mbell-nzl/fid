@@ -25,17 +25,22 @@ func TestWriteDispatchesJSONAndTOON(t *testing.T) {
 	}
 }
 
+func TestWriteDispatchesMarkdown(t *testing.T) {
+	var output bytes.Buffer
+	if err := Write(&output, Markdown, populatedIssueMarkdownFixture()); err != nil {
+		t.Fatalf("Write(%s) error = %v", Markdown, err)
+	}
+	if output.Len() == 0 {
+		t.Fatalf("Write(%s) produced empty output", Markdown)
+	}
+}
+
 func TestWriteRejectsUnsupportedFormats(t *testing.T) {
 	testCases := []struct {
 		name       string
 		formatName string
 		want       string
 	}{
-		{
-			name:       "markdown not yet supported",
-			formatName: Markdown,
-			want:       `format "markdown" is not yet supported`,
-		},
 		{
 			name:       "yaml not yet supported",
 			formatName: YAML,
