@@ -6,13 +6,13 @@ import (
 	"testing"
 )
 
-func TestWriteDispatchesJSONAndTOON(t *testing.T) {
+func TestWriteDispatchesStructuredFormats(t *testing.T) {
 	value := map[string]any{
 		"id":     "FID-a1b2c3",
 		"labels": []any{},
 	}
 
-	for _, formatName := range []string{JSON, TOON} {
+	for _, formatName := range []string{JSON, TOON, YAML} {
 		t.Run(formatName, func(t *testing.T) {
 			var output bytes.Buffer
 			if err := Write(&output, formatName, value); err != nil {
@@ -41,11 +41,6 @@ func TestWriteRejectsUnsupportedFormats(t *testing.T) {
 		formatName string
 		want       string
 	}{
-		{
-			name:       "yaml not yet supported",
-			formatName: YAML,
-			want:       `format "yaml" is not yet supported`,
-		},
 		{
 			name:       "unknown format names known formats",
 			formatName: "xml",

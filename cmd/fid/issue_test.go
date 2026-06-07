@@ -13,6 +13,7 @@ import (
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"gopkg.in/yaml.v3"
 )
 
 func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
@@ -442,39 +443,90 @@ func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
 	})
 }
 
-func TestIssueGetRejectsUnsupportedFormats(t *testing.T) {
+func TestIssueGetReturnsYAMLForEmptyAndPopulatedIssues(t *testing.T) {
+	t.Run("empty issue", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "YAML empty issue", "--by", "developer")
+		issueID := parseCreatedIssueID(t, stderr)
+
+		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "yaml")
+
+		if jsonStderr != "" {
+			t.Fatalf("json stderr = %q, want empty", jsonStderr)
+		}
+		if yamlStderr != "" {
+			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
+		}
+
+		want := decodeCommandJSONStructure(t, jsonStdout)
+		got := decodeCommandYAMLStructure(t, yamlStdout)
+		if !commandStructuresEqual(want, got) {
+			t.Fatalf("YAML structure = %#v, want %#v", got, want)
+		}
+	})
+
+	t.Run("populated issue", func(t *testing.T) {
+		workspace := t.TempDir()
+		runInitCommand(t, workspace, "init")
+
+		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+		if err != nil {
+			t.Fatalf("Open() error = %v", err)
+		}
+		defer closeCommandDB(t, conn)
+
+		seedMarkdownPopulatedIssue(t, conn)
+
+		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "json")
+		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "yaml")
+
+		if jsonStderr != "" {
+			t.Fatalf("json stderr = %q, want empty", jsonStderr)
+		}
+		if yamlStderr != "" {
+			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
+		}
+
+		want := decodeCommandJSONStructure(t, jsonStdout)
+		got := decodeCommandYAMLStructure(t, yamlStdout)
+		if !commandStructuresEqual(want, got) {
+			t.Fatalf("YAML structure = %#v, want %#v", got, want)
+		}
+	})
+}
+
+func TestIssueGetDispatchesStructuredFormatsAndRejectsUnknownFormats(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unsupported format", "--by", "developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
-	t.Run("toon", func(t *testing.T) {
-		jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-		toonStdout, toonStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "toon")
-
-		if toonStderr != "" {
-			t.Fatalf("stderr = %q, want empty", toonStderr)
-		}
-
-		want := decodeCommandJSONStructure(t, jsonStdout)
-		got := decodeCommandTOONStructure(t, toonStdout)
-		if !commandStructuresEqual(want, got) {
-			t.Fatalf("TOON structure = %#v, want %#v", got, want)
-		}
-	})
-
-	for _, formatName := range []string{"yaml"} {
+	for _, formatName := range []string{"toon", "yaml"} {
 		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", formatName)
-			if err == nil {
-				t.Fatal("Execute() error = nil, want unsupported format rejection")
+			jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+			formattedStdout, formattedStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", formatName)
+
+			if formattedStderr != "" {
+				t.Fatalf("stderr = %q, want empty", formattedStderr)
 			}
-			if stdout != "" {
-				t.Fatalf("stdout = %q, want empty", stdout)
+
+			want := decodeCommandJSONStructure(t, jsonStdout)
+			var got any
+			switch formatName {
+			case "toon":
+				got = decodeCommandTOONStructure(t, formattedStdout)
+			case "yaml":
+				got = decodeCommandYAMLStructure(t, formattedStdout)
+			default:
+				t.Fatalf("unexpected format %q", formatName)
 			}
-			if !strings.Contains(stderr, `not yet supported`) {
-				t.Fatalf("stderr = %q, want not yet supported error", stderr)
+
+			if !commandStructuresEqual(want, got) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
 			}
 		})
 	}
@@ -734,6 +786,16 @@ func decodeCommandTOONStructure(t *testing.T, value string) any {
 	return result
 }
 
+func decodeCommandYAMLStructure(t *testing.T, value string) any {
+	t.Helper()
+
+	var result any
+	if err := yaml.Unmarshal([]byte(value), &result); err != nil {
+		t.Fatalf("Unmarshal YAML structure error = %v", err)
+	}
+	return result
+}
+
 func commandStructuresEqual(left any, right any) bool {
 	switch leftValue := left.(type) {
 	case map[string]any:
@@ -760,10 +822,42 @@ func commandStructuresEqual(left any, right any) bool {
 		}
 		return true
 	case json.Number:
-		rightValue, ok := right.(json.Number)
-		return ok && leftValue.String() == rightValue.String()
+		return commandNumericStructuresEqual(leftValue, right)
 	default:
 		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right)
+	}
+}
+
+func commandNumericStructuresEqual(left json.Number, right any) bool {
+	switch rightValue := right.(type) {
+	case json.Number:
+		return left.String() == rightValue.String()
+	case int:
+		return left.String() == strconv.Itoa(rightValue)
+	case int8:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int16:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int32:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int64:
+		return left.String() == strconv.FormatInt(rightValue, 10)
+	case uint:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint8:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint16:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint32:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint64:
+		return left.String() == strconv.FormatUint(rightValue, 10)
+	case float32:
+		return left.String() == strconv.FormatFloat(float64(rightValue), 'f', -1, 32)
+	case float64:
+		return left.String() == strconv.FormatFloat(rightValue, 'f', -1, 64)
+	default:
+		return false
 	}
 }
 

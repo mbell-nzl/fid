@@ -67,10 +67,10 @@ func Write(writer io.Writer, formatName string, value any) error {
 		}
 		return nil
 	case YAML:
-		return &UnsupportedFormatError{
-			Format:          normalized,
-			NotYetSupported: true,
+		if err := writeYAML(writer, value); err != nil {
+			return fmt.Errorf("encode yaml output: %w", err)
 		}
+		return nil
 	default:
 		return &UnsupportedFormatError{
 			Format:       normalized,

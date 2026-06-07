@@ -128,10 +128,42 @@ func structuresEqual(left any, right any) bool {
 		}
 		return true
 	case json.Number:
-		rightValue, ok := right.(json.Number)
-		return ok && leftValue.String() == rightValue.String()
+		return numericStructuresEqual(leftValue, right)
 	default:
 		return fmt.Sprintf("%v", left) == fmt.Sprintf("%v", right)
+	}
+}
+
+func numericStructuresEqual(left json.Number, right any) bool {
+	switch rightValue := right.(type) {
+	case json.Number:
+		return left.String() == rightValue.String()
+	case int:
+		return left.String() == strconv.Itoa(rightValue)
+	case int8:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int16:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int32:
+		return left.String() == strconv.FormatInt(int64(rightValue), 10)
+	case int64:
+		return left.String() == strconv.FormatInt(rightValue, 10)
+	case uint:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint8:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint16:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint32:
+		return left.String() == strconv.FormatUint(uint64(rightValue), 10)
+	case uint64:
+		return left.String() == strconv.FormatUint(rightValue, 10)
+	case float32:
+		return left.String() == strconv.FormatFloat(float64(rightValue), 'f', -1, 32)
+	case float64:
+		return left.String() == strconv.FormatFloat(rightValue, 'f', -1, 64)
+	default:
+		return false
 	}
 }
 
