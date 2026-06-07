@@ -3,8 +3,10 @@
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** PLANNED (2026-06-06). Validation contract + 6 ordered task specs
-> drafted. Awaiting QA Lead QA plan and human review before Developer execution.
+> **State:** CLOSED (wrapped 2026-06-07). All VAL-001..VAL-017 PASS; QA final
+> review PASS; human checklist accepted. Two blockers remediated (Task 7 pragmas,
+> Task 8 coverage). See `../phases/phase-1/decisions.md` and `progress_current.md`.
+> Superseded when Tech Lead plans Phase 2.
 
 ## Phase Goal
 

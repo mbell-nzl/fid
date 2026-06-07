@@ -51,7 +51,12 @@ On-demand load:
     silently skipped, or narrower substituted commands are failed gates.
 13. Write the completion report immediately after a green gate, including
     `VAL-NNN` evidence or an explicit no-VAL explanation.
-14. Commit with a Conventional Commit subject and `Refs: phase-N/task-M`.
+14. Commit with a Conventional Commit subject and `Refs: phase-N/task-M`. The
+    commit must include your completion report. If the report is finalized
+    after the code commit, add it in an immediately following
+    `docs(task): ...` commit before you stop. Never hand off or stop with an
+    uncommitted completion report, and never leave your report to be committed
+    by another agent or the human.
 15. Copy the commit hash from `git rev-parse --short HEAD` or `git rev-parse
     HEAD`, and copy the subject from `git log -1 --format=%s`. Never type, pad,
     or reconstruct a hash from memory.
@@ -93,6 +98,8 @@ run, and whether a commit was created.
 - Never make architectural or product decisions.
 - Never modify out-of-scope files except required docs.
 - Never stop silently.
+- Never leave the completion report (or any required doc you authored)
+  uncommitted; you commit your own artifacts under your own authorship.
 - Never omit, silently skip, or replace a required command with a narrower
   substitute unless the blocker report marks it `BLOCKED` with the reason.
 - Never read held-out scenarios or evaluator prompts unless the task is

@@ -40,7 +40,9 @@ finding:
 
 ## Open Escalations
 
-_None open._
+_None open._ ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 /
+Task 7 and archived at Phase 1 wrap-up to
+`project-docs/docs/phases/phase-1/tl-escalations.md`.
 
 <!--
 Add new escalations above this comment using the template at
