@@ -167,6 +167,16 @@ task	FID-a1b2c3	Implement journal append with flush	in_progress	started	FID-e1f2
 task	FID-d4e5f6	Schema migration runner	todo	unstarted	FID-e1f2g3	2	false	0
 ```
 
+**Markdown output example (`fid issue list --kind task --order sequence --format markdown`):**
+```text
+# Issues
+
+- FID-a1b2c3 | task | in_progress | started | epic FID-e1f2g3 | P1 | concerns: 0
+  Implement journal append with flush
+- FID-d4e5f6 | task | todo | unstarted | epic FID-e1f2g3 | P2 | inbox | concerns: 1
+  Schema migration runner
+```
+
 ### `fid issue update`
 
 ```

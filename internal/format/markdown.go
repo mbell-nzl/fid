@@ -5,6 +5,7 @@ import (
 	"io"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -12,6 +13,10 @@ import (
 
 type IssueMarkdownView struct {
 	Issue issues.Issue
+}
+
+type IssueListMarkdownView struct {
+	Items []issues.ListItem
 }
 
 func writeMarkdown(writer io.Writer, value any) error {
@@ -30,6 +35,15 @@ func writeMarkdown(writer io.Writer, value any) error {
 			return fmt.Errorf("markdown issue is nil")
 		}
 		return writeIssueMarkdown(writer, IssueMarkdownView{Issue: *typed})
+	case IssueListMarkdownView:
+		return writeIssueListMarkdown(writer, typed)
+	case *IssueListMarkdownView:
+		if typed == nil {
+			return fmt.Errorf("markdown issue list view is nil")
+		}
+		return writeIssueListMarkdown(writer, *typed)
+	case []issues.ListItem:
+		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
@@ -239,4 +253,45 @@ func writeFooterMarkdown(builder *strings.Builder, issue issues.Issue) {
 	builder.WriteString(" | Updated: ")
 	builder.WriteString(updatedAt)
 	builder.WriteString("\n")
+}
+
+func writeIssueListMarkdown(writer io.Writer, view IssueListMarkdownView) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Issues\n\n")
+	for _, item := range view.Items {
+		builder.WriteString("- ")
+		builder.WriteString(item.ID)
+		builder.WriteString(" | ")
+		builder.WriteString(item.Kind)
+		builder.WriteString(" | ")
+		builder.WriteString(item.Status)
+		builder.WriteString(" | ")
+		builder.WriteString(item.StatusCategory)
+		builder.WriteString(" | ")
+		builder.WriteString(markdownListEpic(item.ParentID))
+		builder.WriteString(" | ")
+		builder.WriteString(markdownPriority(item.Priority))
+		if item.InInbox {
+			builder.WriteString(" | inbox")
+		}
+		builder.WriteString(" | concerns: ")
+		builder.WriteString(strconv.Itoa(item.OpenConcernsCount))
+		builder.WriteString("\n")
+		builder.WriteString("  ")
+		builder.WriteString(item.Title)
+		builder.WriteString("\n")
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func markdownListEpic(parentID *string) string {
+	if parentID == nil || strings.TrimSpace(*parentID) == "" {
+		return "no epic"
+	}
+	return "epic " + *parentID
 }
