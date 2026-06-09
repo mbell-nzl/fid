@@ -2,7 +2,9 @@ package issues
 
 import (
 	"database/sql"
+	"errors"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -137,6 +139,179 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			t.Fatalf("Get() claims = %#v, want one live developer claim", got.Claims)
 		}
 	})
+}
+
+func TestSectionValue(t *testing.T) {
+	t.Parallel()
+
+	issue := Issue{
+		AcceptanceCriteria: []AcceptanceCriterion{{ID: "AC-1"}},
+		Concerns:           []IssueConcern{{ID: "CON-1"}},
+		Completions:        []IssueCompletion{{ID: "TC-1"}},
+		Links:              []IssueLink{{Relation: "blocks", TargetID: "FID-2"}},
+		Claims:             []IssueClaim{{RefID: "REQ-1", ClaimedBy: "developer"}},
+	}
+
+	tests := []struct {
+		name    string
+		section string
+		want    any
+		wantErr string
+	}{
+		{
+			name:    "acceptance section",
+			section: "acceptance",
+			want:    issue.AcceptanceCriteria,
+		},
+		{
+			name:    "concerns section",
+			section: "concerns",
+			want:    issue.Concerns,
+		},
+		{
+			name:    "completions section",
+			section: "completions",
+			want:    issue.Completions,
+		},
+		{
+			name:    "links section",
+			section: "links",
+			want:    issue.Links,
+		},
+		{
+			name:    "claims section",
+			section: "claims",
+			want:    issue.Claims,
+		},
+		{
+			name:    "unknown section is rejected with supported names",
+			section: " timeline ",
+			wantErr: `unsupported issue section "timeline"; supported sections: acceptance, concerns, completions, links, claims`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := SectionValue(issue, tt.section)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("SectionValue() error = nil, want %q", tt.wantErr)
+				}
+				var unsupportedErr *UnsupportedSectionError
+				if !errors.As(err, &unsupportedErr) {
+					t.Fatalf("SectionValue() error = %T, want *UnsupportedSectionError", err)
+				}
+				if unsupportedErr.Section != "timeline" {
+					t.Fatalf("UnsupportedSectionError.Section = %q, want timeline", unsupportedErr.Section)
+				}
+				if err.Error() != tt.wantErr {
+					t.Fatalf("SectionValue() error = %q, want %q", err.Error(), tt.wantErr)
+				}
+				if !equalStrings(SupportedSections(), []string{"acceptance", "concerns", "completions", "links", "claims"}) {
+					t.Fatalf("SupportedSections() = %#v", SupportedSections())
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("SectionValue() error = %v", err)
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Fatalf("SectionValue() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIssueParentTitle(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	if got, err := issueParentTitle(conn, nil); err != nil {
+		t.Fatalf("issueParentTitle(nil) error = %v", err)
+	} else if got != nil {
+		t.Fatalf("issueParentTitle(nil) = %#v, want nil", got)
+	}
+
+	missingID := "FID-missing"
+	if got, err := issueParentTitle(conn, &missingID); err != nil {
+		t.Fatalf("issueParentTitle(missing) error = %v", err)
+	} else if got != nil {
+		t.Fatalf("issueParentTitle(missing) = %#v, want nil", got)
+	}
+
+	if _, err := conn.Exec(`
+		INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+	`, "FID-parent01", "epic", "Parent title", "todo", "epic-default", "tl", "2026-06-09T09:00:00Z", "2026-06-09T09:00:00Z"); err != nil {
+		t.Fatalf("insert parent issue error = %v", err)
+	}
+
+	parentID := "FID-parent01"
+	got, err := issueParentTitle(conn, &parentID)
+	if err != nil {
+		t.Fatalf("issueParentTitle(existing) error = %v", err)
+	}
+	if got == nil || *got != "Parent title" {
+		t.Fatalf("issueParentTitle(existing) = %#v, want Parent title", got)
+	}
+}
+
+func TestNormalizeDateOnlyPointer(t *testing.T) {
+	t.Parallel()
+
+	validDateOnly := " 2026-06-30 "
+	validRFC3339 := "2026-06-30T15:04:05Z"
+	blank := "   "
+	malformed := "tomorrow"
+
+	tests := []struct {
+		name  string
+		input *string
+		want  *string
+	}{
+		{
+			name:  "nil stays nil",
+			input: nil,
+			want:  nil,
+		},
+		{
+			name:  "blank string becomes nil",
+			input: &blank,
+			want:  nil,
+		},
+		{
+			name:  "date only trims whitespace",
+			input: &validDateOnly,
+			want:  stringPointer("2026-06-30"),
+		},
+		{
+			name:  "rfc3339 value is normalized to date only",
+			input: &validRFC3339,
+			want:  stringPointer("2026-06-30"),
+		},
+		{
+			name:  "malformed value is preserved after trimming",
+			input: &malformed,
+			want:  stringPointer("tomorrow"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := normalizeDateOnlyPointer(tt.input)
+			switch {
+			case tt.want == nil && got != nil:
+				t.Fatalf("normalizeDateOnlyPointer() = %#v, want nil", got)
+			case tt.want != nil && got == nil:
+				t.Fatal("normalizeDateOnlyPointer() = nil, want value")
+			case tt.want != nil && *got != *tt.want:
+				t.Fatalf("normalizeDateOnlyPointer() = %q, want %q", *got, *tt.want)
+			}
+		})
+	}
 }
 
 func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {

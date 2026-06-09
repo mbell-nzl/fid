@@ -49,7 +49,9 @@ for `sequence`, `priority`, `created`, and `updated`; a thin Cobra adapter in
   `go test -race -coverprofile=coverage.out ./...` and
   `go tool cover -func=coverage.out`
   reported `cmd/fid` coverage at `79.5%` and `internal/issues` coverage at
-  `79.5%`, satisfying the task's COV references.
+  `79.5%`. That satisfied COV-002 (`cmd/fid >= 70%`) but did not satisfy
+  COV-001 (`internal/issues >= 80%`); Task 6 corrects that coverage gap and
+  records the closeout evidence.
 
 ## Tests run
 
@@ -80,8 +82,8 @@ for `sequence`, `priority`, `created`, and `updated`; a thin Cobra adapter in
 
 ## Commit hash
 
-- Pending commit.
+- `2a281f0`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(issue): add issue list filters and formats`

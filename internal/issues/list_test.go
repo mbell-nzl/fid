@@ -2,6 +2,7 @@ package issues
 
 import (
 	"database/sql"
+	"errors"
 	"path/filepath"
 	"testing"
 )
@@ -216,6 +217,134 @@ func TestListFiltersAndOrdering(t *testing.T) {
 	})
 }
 
+func TestParsePriorityFilter(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		input   string
+		want    []int
+		wantErr string
+		wantNil bool
+	}{
+		{
+			name:    "blank input returns nil",
+			input:   "   ",
+			wantNil: true,
+		},
+		{
+			name:  "comma separated priorities are parsed",
+			input: "1, 3,5",
+			want:  []int{1, 3, 5},
+		},
+		{
+			name:    "embedded empty value is rejected",
+			input:   "1, ,5",
+			wantErr: "priority filter contains an empty value",
+		},
+		{
+			name:    "non integer value is rejected",
+			input:   "1,high,5",
+			wantErr: `priority filter "high" is not an integer`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ParsePriorityFilter(tt.input)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("ParsePriorityFilter() error = nil, want %q", tt.wantErr)
+				}
+				if err.Error() != tt.wantErr {
+					t.Fatalf("ParsePriorityFilter() error = %q, want %q", err.Error(), tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParsePriorityFilter() error = %v", err)
+			}
+			if tt.wantNil {
+				if got != nil {
+					t.Fatalf("ParsePriorityFilter() = %#v, want nil", got)
+				}
+				return
+			}
+			if !equalInts(got, tt.want) {
+				t.Fatalf("ParsePriorityFilter() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestIssueListOrderClause(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		order      string
+		wantClause string
+		wantErr    string
+	}{
+		{
+			name:       "blank order defaults to created",
+			order:      "   ",
+			wantClause: "ie.created_at ASC, ie.id ASC",
+		},
+		{
+			name:       "updated order",
+			order:      "updated",
+			wantClause: "ie.updated_at ASC, ie.id ASC",
+		},
+		{
+			name:       "priority order",
+			order:      "priority",
+			wantClause: "ie.priority IS NULL ASC, ie.priority ASC, ie.created_at ASC, ie.id ASC",
+		},
+		{
+			name:       "sequence order",
+			order:      "sequence",
+			wantClause: "ie.sequence IS NULL ASC, ie.sequence ASC, ie.created_at ASC, ie.id ASC",
+		},
+		{
+			name:    "unsupported order is rejected with supported list",
+			order:   "rank",
+			wantErr: `unsupported issue list order "rank"; supported orders: sequence, priority, created, updated`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := issueListOrderClause(tt.order)
+			if tt.wantErr != "" {
+				if err == nil {
+					t.Fatalf("issueListOrderClause() error = nil, want %q", tt.wantErr)
+				}
+				var unsupportedErr *UnsupportedListOrderError
+				if !errors.As(err, &unsupportedErr) {
+					t.Fatalf("issueListOrderClause() error = %T, want *UnsupportedListOrderError", err)
+				}
+				if unsupportedErr.Order != "rank" {
+					t.Fatalf("UnsupportedListOrderError.Order = %q, want rank", unsupportedErr.Order)
+				}
+				if !equalStrings(unsupportedErr.SupportedOrder, []string{"sequence", "priority", "created", "updated"}) {
+					t.Fatalf("UnsupportedListOrderError.SupportedOrder = %#v", unsupportedErr.SupportedOrder)
+				}
+				if err.Error() != tt.wantErr {
+					t.Fatalf("issueListOrderClause() error = %q, want %q", err.Error(), tt.wantErr)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("issueListOrderClause() error = %v", err)
+			}
+			if got != tt.wantClause {
+				t.Fatalf("issueListOrderClause() = %q, want %q", got, tt.wantClause)
+			}
+		})
+	}
+}
+
 func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 	t.Helper()
 
@@ -415,6 +544,18 @@ func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 			t.Fatalf("seed issue list fixture exec error = %v\nquery=%s", err, statement.query)
 		}
 	}
+}
+
+func equalInts(got, want []int) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func issueListIDs(items []ListItem) []string {
