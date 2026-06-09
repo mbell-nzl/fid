@@ -90,6 +90,7 @@ func populatedIssueMarkdownFixture() IssueMarkdownView {
 			Status:         "in_progress",
 			StatusCategory: "started",
 			ParentID:       &parentID,
+			ParentTitle:    &parentTitle,
 			Priority:       &priority,
 			Sequence:       &sequence,
 			SpecMDPath:     &specMDPath,
@@ -116,20 +117,23 @@ func populatedIssueMarkdownFixture() IssueMarkdownView {
 					},
 				},
 			},
+			Links: []issues.IssueLink{
+				{
+					Relation:    "blocks",
+					TargetID:    "FID-7c3e9f",
+					TargetTitle: stringPointer("Schema migration runner"),
+				},
+				{
+					Relation: "implements",
+					TargetID: "PRD-ISSUE-001",
+				},
+			},
 			CreatedAt: &createdAt,
 			UpdatedAt: &updatedAt,
 		},
-		ParentTitle: &parentTitle,
-		Links: []IssueMarkdownLink{
-			{
-				Relation:    "blocks",
-				TargetID:    "FID-7c3e9f",
-				TargetTitle: "Schema migration runner",
-			},
-			{
-				Relation: "implements",
-				TargetID: "PRD-ISSUE-001",
-			},
-		},
 	}
+}
+
+func stringPointer(value string) *string {
+	return &value
 }

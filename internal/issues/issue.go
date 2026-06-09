@@ -82,6 +82,7 @@ type Issue struct {
 	Sequence           *int                  `json:"sequence"`
 	SpecMDPath         *string               `json:"spec_md_path"`
 	EstTokens          *int                  `json:"est_tokens"`
+	DueDate            *string               `json:"due_date"`
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
@@ -92,6 +93,11 @@ type Issue struct {
 	AcceptanceCriteria []AcceptanceCriterion `json:"acceptance_criteria"`
 	CreatedAt          *string               `json:"created_at"`
 	UpdatedAt          *string               `json:"updated_at"`
+	ParentTitle        *string               `json:"-"`
+	Concerns           []IssueConcern        `json:"-"`
+	Completions        []IssueCompletion     `json:"-"`
+	Links              []IssueLink           `json:"-"`
+	Claims             []IssueClaim          `json:"-"`
 }
 
 type AcceptanceCriterion struct {
@@ -320,7 +326,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
-		       spec_md_path, est_tokens, owner_role, owner_actor, in_inbox,
+		       spec_md_path, est_tokens, due_date, owner_role, owner_actor, in_inbox,
 		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
 		FROM issues_enriched
 		WHERE id = ?
@@ -328,7 +334,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	var (
 		record                                         Issue
-		parentID, specMDPath, ownerRole                sql.NullString
+		parentID, specMDPath, dueDate, ownerRole       sql.NullString
 		ownerActor, triageStatus, createdAt, updatedAt sql.NullString
 		priority, sequence, estTokens                  sql.NullInt64
 	)
@@ -343,6 +349,7 @@ func Get(options GetOptions) (Issue, error) {
 		&sequence,
 		&specMDPath,
 		&estTokens,
+		&dueDate,
 		&ownerRole,
 		&ownerActor,
 		&record.InInbox,
@@ -366,6 +373,7 @@ func Get(options GetOptions) (Issue, error) {
 	record.AcceptanceCriteria = []AcceptanceCriterion{}
 	record.ParentID = nullStringPointer(parentID)
 	record.SpecMDPath = nullStringPointer(specMDPath)
+	record.DueDate = normalizeDateOnlyPointer(nullStringPointer(dueDate))
 	record.OwnerRole = nullStringPointer(ownerRole)
 	record.OwnerActor = nullStringPointer(ownerActor)
 	record.TriageStatus = nullStringPointer(triageStatus)
@@ -374,6 +382,30 @@ func Get(options GetOptions) (Issue, error) {
 	record.Priority = nullIntPointer(priority)
 	record.Sequence = nullIntPointer(sequence)
 	record.EstTokens = nullIntPointer(estTokens)
+	record.ParentTitle, err = issueParentTitle(conn, record.ParentID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.AcceptanceCriteria, err = issueAcceptanceCriteria(conn, record.ID, record.OwnerRole)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Concerns, err = issueConcerns(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Completions, err = issueCompletions(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Links, err = issueLinks(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Claims, err = issueClaims(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
 
 	return record, nil
 }
@@ -525,29 +557,6 @@ func requireExistingLabels(conn *sql.DB, labels []string) error {
 		return fmt.Errorf("query label %q: %w", label, err)
 	}
 	return nil
-}
-
-func issueLabels(conn *sql.DB, issueID string) ([]string, error) {
-	rows, err := conn.Query(`SELECT label FROM issue_labels WHERE issue_id = ? ORDER BY label`, issueID)
-	if err != nil {
-		return nil, fmt.Errorf("query issue labels for %q: %w", issueID, err)
-	}
-	defer func() {
-		_ = rows.Close()
-	}()
-
-	labels := []string{}
-	for rows.Next() {
-		var label string
-		if err := rows.Scan(&label); err != nil {
-			return nil, fmt.Errorf("scan issue label for %q: %w", issueID, err)
-		}
-		labels = append(labels, label)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate issue labels for %q: %w", issueID, err)
-	}
-	return labels, nil
 }
 
 func normalizedLabels(input []string) ([]string, error) {

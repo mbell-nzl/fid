@@ -11,15 +11,7 @@ import (
 )
 
 type IssueMarkdownView struct {
-	Issue       issues.Issue
-	ParentTitle *string
-	Links       []IssueMarkdownLink
-}
-
-type IssueMarkdownLink struct {
-	Relation    string
-	TargetID    string
-	TargetTitle string
+	Issue issues.Issue
 }
 
 func writeMarkdown(writer io.Writer, value any) error {
@@ -60,7 +52,7 @@ func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
 	builder.WriteString(markdownPriority(view.Issue.Priority))
 	builder.WriteString("\n")
 
-	if line := markdownEpicLine(view); line != "" {
+	if line := markdownEpicLine(view.Issue); line != "" {
 		builder.WriteString(line)
 		builder.WriteString("\n")
 	}
@@ -76,7 +68,7 @@ func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
 
 	writeAcceptanceCriteriaMarkdown(&builder, view.Issue.AcceptanceCriteria)
 	writeLabelsMarkdown(&builder, view.Issue.Labels)
-	writeLinksMarkdown(&builder, view.Links)
+	writeLinksMarkdown(&builder, view.Issue.Links)
 	writeFooterMarkdown(&builder, view.Issue)
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {
@@ -92,14 +84,14 @@ func markdownPriority(priority *int) string {
 	return fmt.Sprintf("P%d", *priority)
 }
 
-func markdownEpicLine(view IssueMarkdownView) string {
-	if view.Issue.ParentID == nil || strings.TrimSpace(*view.Issue.ParentID) == "" {
+func markdownEpicLine(issue issues.Issue) string {
+	if issue.ParentID == nil || strings.TrimSpace(*issue.ParentID) == "" {
 		return ""
 	}
 
-	line := "**Epic:** " + *view.Issue.ParentID
-	if view.ParentTitle != nil && strings.TrimSpace(*view.ParentTitle) != "" {
-		line += " (" + *view.ParentTitle + ")"
+	line := "**Epic:** " + *issue.ParentID
+	if issue.ParentTitle != nil && strings.TrimSpace(*issue.ParentTitle) != "" {
+		line += " (" + *issue.ParentTitle + ")"
 	}
 	return line
 }
@@ -211,7 +203,7 @@ func writeLabelsMarkdown(builder *strings.Builder, labels []string) {
 	builder.WriteString("\n")
 }
 
-func writeLinksMarkdown(builder *strings.Builder, links []IssueMarkdownLink) {
+func writeLinksMarkdown(builder *strings.Builder, links []issues.IssueLink) {
 	if len(links) == 0 {
 		return
 	}
@@ -222,9 +214,9 @@ func writeLinksMarkdown(builder *strings.Builder, links []IssueMarkdownLink) {
 		builder.WriteString(link.Relation)
 		builder.WriteString(" ")
 		builder.WriteString(link.TargetID)
-		if strings.TrimSpace(link.TargetTitle) != "" {
+		if link.TargetTitle != nil && strings.TrimSpace(*link.TargetTitle) != "" {
 			builder.WriteString(" (")
-			builder.WriteString(link.TargetTitle)
+			builder.WriteString(*link.TargetTitle)
 			builder.WriteString(")")
 		}
 		builder.WriteString("\n")
