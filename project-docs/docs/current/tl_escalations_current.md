@@ -40,16 +40,9 @@ finding:
 
 ## Open Escalations
 
-### ESC-003: Task 1 VAL-005 rebuild recovery evidence gap
-
-- **Raised:** 2026-06-13
-- **By:** Tech Lead Lite triage (`TRG-001`, Phase 5)
-- **Trigger:** QA blocking triage found an uncovered acceptance criterion / validation-evidence gap.
-- **Context:** Phase 5 Task 1 completion claims VAL-005 PASS for rejected-create journal hygiene. Review-1 found the cited evidence proves zero journal append, later `Get`, dry-run rollback, and unchanged `projection_meta`, but does not prove rebuild succeeds after the rejected-create repro.
-- **Question / proposed direction:** Require Task 1 follow-up evidence that the rejected-create fixture can rebuild successfully after the failed write, and explicitly cite accepted-create one-line append evidence before VAL-005 is treated as on track.
-- **TL resolution (2026-06-13):** Confirmed evidence gap, not an implementation defect — the seam is correct (reviewer re-ran focused tests PASS). Directed a do-now, test-and-report-only remediation: `project-docs/docs/phases/phase-5/tasks/task-1b.md`. Cannot defer (VAL-005 is a hard contract assertion and Tasks 3/5 build on the seam) and must not weaken. After Task 1b closes, Phase Runner re-runs Review 1 (or a review-1 addendum) to clear the BLOCK before Task 2.
-- **Links:** `project-docs/docs/phases/phase-5/qa/review-1.md`; `project-docs/docs/phases/phase-5/tasks/task-1.md`; `project-docs/docs/phases/phase-5/tasks/task-1-done.md`; `project-docs/docs/phases/phase-5/tasks/task-1b.md`; `project-docs/docs/phases/phase-5/qa/validation-contract.md`
-- **Status:** Open — resolution directed; closes when Task 1b lands and Review 1 re-passes.
+None. ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
+resolved by Task 1b + `review-1-addendum.md` and archived to
+`project-docs/docs/phases/phase-5/tl-escalations.md` at the Phase 5 wrap.
 
 ---
 
