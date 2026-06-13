@@ -1,0 +1,15 @@
+# Default model pricing in USD per million tokens.
+# cost_usd = (tokens_in * in_per_mtok + tokens_out * out_per_mtok) / 1e6
+
+[models.claude-opus-4-7]
+in_per_mtok = 15.00
+out_per_mtok = 75.00
+
+[models.claude-sonnet-4-6]
+in_per_mtok = 3.00
+out_per_mtok = 15.00
+
+[models.claude-haiku-4-5]
+in_per_mtok = 0.80
+out_per_mtok = 4.00
+

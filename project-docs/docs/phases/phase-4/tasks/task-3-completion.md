@@ -51,8 +51,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `2bfe94f`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(cli): wire issue create authoring flags`

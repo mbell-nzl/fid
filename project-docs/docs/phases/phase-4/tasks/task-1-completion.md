@@ -74,8 +74,8 @@
 
 ## Commit hash
 
-- TBD
+- `bce37eb`
 
 ## Commit subject
 
-- TBD
+- `feat(db): enforce issue sequence scheduling`

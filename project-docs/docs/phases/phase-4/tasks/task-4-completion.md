@@ -63,8 +63,8 @@
 
 ## Commit hash
 
-- Pending until commit is created.
+- `c62c6aa`
 
 ## Commit subject
 
-- Pending until commit is created.
+- `feat(issue): centralize detail reads`

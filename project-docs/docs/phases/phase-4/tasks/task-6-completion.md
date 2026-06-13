@@ -128,8 +128,8 @@ remained at `79.5%`, so COV-002 stayed green.
 
 ## Commit hash
 
-- Pending post-commit verification.
+- `e14087b`
 
 ## Commit subject
 
-- Pending post-commit verification.
+- `test(issue): close internal issues coverage gap`

@@ -25,6 +25,12 @@ Assertions live in
 - VAL-006: enriched issue detail read model is centralised in `internal/issues`.
 - VAL-007: `fid issue get --section` returns named structured sections and
   rejects unknown sections.
+- VAL-003 (read-back closeout, ESC-002): the centralised read model exposes
+  `due_date` through `internal/issues.Get` and `fid issue get --format json`.
+  Tasks 2-3 proved due-date persistence via direct SQLite query only; this task
+  closes the public read-back clause of VAL-003. No schema change is required:
+  `issues_enriched` already projects `i.*` (migration 0003) and `issues.due_date`
+  exists (migration 0001).
 
 ## Scope
 
@@ -71,6 +77,10 @@ Assertions live in
   (VAL-007)
 - [ ] `fid issue get <id> --section unknown` exits non-zero and names supported
   sections. (VAL-007)
+- [ ] The centralised read model carries `due_date`, and a populated due date set
+  via `fid issue create --due-date` reads back through both `internal/issues.Get`
+  and `fid issue get --format json`; an omitted due date reads back as null.
+  (VAL-003, closes ESC-002)
 
 ## TDD Plan
 
@@ -78,8 +88,15 @@ Assertions live in
   AC latest verification by role, and links without helper SQL in `cmd/fid`.
 - Additional tests: empty detail state; section outputs for all supported names;
   unknown section rejection; markdown renderer still receives the data it needs.
+- Due-date read-back (VAL-003 / ESC-002): a failing `internal/issues` test
+  asserting populated `due_date` returns through `Get`, plus a `cmd/fid` test
+  asserting `fid issue get --format json` exposes `due_date` after
+  `fid issue create --due-date`; omitted due date reads back as null. These
+  replace the direct-SQLite due-date checks from Tasks 2-3 as the VAL-003
+  read-back evidence.
 - Regression risks: latest-verification tie-breaking, markdown renderer drift,
-  `cmd/fid` retaining SQL helpers, and ambiguous `--section` semantics.
+  `cmd/fid` retaining SQL helpers, ambiguous `--section` semantics, and the new
+  `due_date` field drifting between JSON and markdown read shapes.
 
 ## Documentation Updates
 
@@ -127,7 +144,8 @@ List any conditional command required by this task and why:
 ## Output Requirements
 
 - Write `project-docs/docs/phases/phase-4/tasks/task-4-completion.md`.
-- Completion report must cite VAL-006 and VAL-007.
+- Completion report must cite VAL-006, VAL-007, and VAL-003 (due-date read-back,
+  closing ESC-002).
 
 ## Notes For Developer
 

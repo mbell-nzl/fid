@@ -78,8 +78,8 @@
 
 ## Commit hash
 
-- Pending commit creation at report-write time; copied from `git rev-parse` after the required Task 2 commit.
+- `397cb77`
 
 ## Commit subject
 
-- Pending commit creation at report-write time; copied from `git log -1 --format=%s` after the required Task 2 commit.
+- `feat(issues): support phase 4 issue authoring`
