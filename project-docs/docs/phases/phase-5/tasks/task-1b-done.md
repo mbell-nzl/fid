@@ -51,8 +51,8 @@
 
 ## Commit hash
 
-- `TBD-after-commit`
+- `c082152`
 
 ## Commit subject
 
-- `test(journal): close val-005 evidence gap`
+- `test(journal): close VAL-005 evidence gap`
