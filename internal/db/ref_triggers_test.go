@@ -279,7 +279,7 @@ func TestValidJournalProjectedRowsStillApplyWithRefTriggersActive(t *testing.T) 
 				},
 			},
 			{
-				Op:    "insert",
+				Op:    "activity",
 				Table: "activity_log",
 				PK: map[string]any{
 					"id": "ACT-journal-ref-001",

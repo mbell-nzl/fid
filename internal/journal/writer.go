@@ -16,7 +16,44 @@ func AppendEvent(lock *WriteLock, event Event) (Event, error) {
 	return appendEventWithClock(lock, event, time.Now)
 }
 
+func PrepareEvent(lock *WriteLock, event Event) (Event, error) {
+	return prepareEventWithClock(lock, event, time.Now)
+}
+
 func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (Event, error) {
+	prepared, err := prepareEventWithClock(lock, event, now)
+	if err != nil {
+		return Event{}, err
+	}
+
+	payload, err := MarshalCanonicalJSON(prepared)
+	if err != nil {
+		return Event{}, err
+	}
+	payload = append(payload, '\n')
+
+	journalPath := filepath.Join(lock.workspaceRoot, ".fid", "journal", prepared.OccurredAt.UTC().Format("2006-01-02")+".jsonl")
+	file, err := os.OpenFile(journalPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return Event{}, fmt.Errorf("open journal file %q: %w", journalPath, err)
+	}
+
+	if _, err := file.Write(payload); err != nil {
+		_ = file.Close()
+		return Event{}, fmt.Errorf("append journal file %q: %w", journalPath, err)
+	}
+	if err := file.Sync(); err != nil {
+		_ = file.Close()
+		return Event{}, fmt.Errorf("sync journal file %q: %w", journalPath, err)
+	}
+	if err := file.Close(); err != nil {
+		return Event{}, fmt.Errorf("close journal file %q: %w", journalPath, err)
+	}
+
+	return prepared, nil
+}
+
+func prepareEventWithClock(lock *WriteLock, event Event, now func() time.Time) (Event, error) {
 	if lock == nil {
 		return Event{}, fmt.Errorf("append event: lock is nil")
 	}
@@ -28,6 +65,9 @@ func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (E
 	}
 
 	occurredAt := now().UTC()
+	if !event.OccurredAt.IsZero() {
+		occurredAt = event.OccurredAt.UTC()
+	}
 	journalDir := filepath.Join(lock.workspaceRoot, ".fid", "journal")
 	latestDate, hasLatest, err := greatestJournalDate(journalDir)
 	if err != nil {
@@ -45,33 +85,14 @@ func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (E
 		return Event{}, err
 	}
 
-	event.OccurredAt = occurredAt
-	event.EventID, err = FormatEventID(occurredAt, sequence)
-	if err != nil {
-		return Event{}, err
+	if event.OccurredAt.IsZero() {
+		event.OccurredAt = occurredAt
 	}
-
-	payload, err := MarshalCanonicalJSON(event)
-	if err != nil {
-		return Event{}, err
-	}
-	payload = append(payload, '\n')
-
-	file, err := os.OpenFile(journalPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
-	if err != nil {
-		return Event{}, fmt.Errorf("open journal file %q: %w", journalPath, err)
-	}
-
-	if _, err := file.Write(payload); err != nil {
-		_ = file.Close()
-		return Event{}, fmt.Errorf("append journal file %q: %w", journalPath, err)
-	}
-	if err := file.Sync(); err != nil {
-		_ = file.Close()
-		return Event{}, fmt.Errorf("sync journal file %q: %w", journalPath, err)
-	}
-	if err := file.Close(); err != nil {
-		return Event{}, fmt.Errorf("close journal file %q: %w", journalPath, err)
+	if event.EventID == "" {
+		event.EventID, err = FormatEventID(event.OccurredAt, sequence)
+		if err != nil {
+			return Event{}, err
+		}
 	}
 
 	return event, nil

@@ -35,16 +35,24 @@ closes, or cancels each item.
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
 | CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
-| CF-005 | Phase 2 planning (TL) | TRD SCHEMA §14.6 activity_log "inserts only during projection" guard trigger and the §4.3 `activity` effect op were deferred: no activity_log population path exists until mutable issue lifecycle writes ship, and a SQL session-scoped projection guard is unreliable under the pooled multi-connection model (DEC-006). Phase 2 ships the §14.2 polymorphic-ref backstop on `activity_log` and exercises it via `insert` effects. **Scheduled Phase 5: Task 2 (add `activity` op + app-layer discipline; SQL session guard stays deferred per DEC-006), Tasks 3/5 emit activity effects; closes at Task 5.** | Phase 5 (Tasks 2/3/5) | Medium |
-| CF-007 | Phase 4 VAL-010 / DEC-014 | Rejected `fid issue create` poisons the journal tail: `internal/issues.Create` appends the event before projecting it, so a create that the Task 1 sequence backstop trigger rejects still commits to the journal and breaks all later reads (`fid issue get` replays the invalid tail and fails) until the line is removed. Implementation conformance gap against TRD §4.3 (validate before append; append is the commit point). Fix: validate scheduling/sequence before append or add a pre-append projection-dry-run; add a regression test that a rejected create leaves the journal line count unchanged plus a poisoned-tail read-recovery test, and a VAL assertion for rejected-write journal hygiene. **Scheduled Phase 5: Task 1 (validate-before-append seam); VAL-005 + VAL-007 assert rejected-write journal hygiene. Human confirmed High / Phase 5 Task 1 on 2026-06-13.** | Phase 5 (Task 1) | High (confirmed) |
+| CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. Closing a redundant backlog task already works via `todo → cancelled` (PRD-WF-013); the enhancement is a new resolution-reason field + cancel `--reason` flag (touches data model + `activity_log` audit), **not** a new workflow edge. Product-owner decision; do not widen v0.1 default graphs. | v0.2 (with configurable workflows PRD-WF-011/012) | Low (product) |
+| CF-009 | Phase 5 DEC-016 (human HUMAN-013a) | `fid issue update` confirmation renders all changed fields as one long comma-separated line; render one updated field per line for readability. Non-blocking CLI polish; touches `06_DESIGN_PLAN_CLI.md` + `cmd/fid` update presenter. Fold into the next `fid issue update`-adjacent change. | Next update-adjacent change | Low |
+| CF-010 | Phase 5 QA final review (review-4) | Non-test file size above `08_QUALITY_PLAN.md` §4.4 400-line target: `internal/issues/transition.go` (426), `internal/issues/update.go` (551), `internal/journal/project.go` (524). Split event assembly from append/project orchestration; reduce size rather than adding behavior. Behaviour/contract correct — improvement only. | Next transition/update/projection-adjacent change | Low |
 
 CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`.
 CF-004 (sequence-vs-scheduling backstop) closed at Phase 4 wrap — delivered by
 Phase 4 Task 1 with CLI evidence in Task 3 (VAL-001 PASS); see
 `../phases/phase-4/decisions.md`.
+CF-005 (`activity` effect op + `activity_log` projection discipline) closed at
+Phase 5 wrap — delivered by Task 2 (op + sole-writer discipline, SQL session
+guard still deferred per DEC-006) and the Task 3/5 emitters (VAL-004 PASS); see
+`../phases/phase-5/decisions.md`.
 CF-006 (enriched read-model centralisation) closed at Phase 4 wrap — delivered by
 Phase 4 Task 4 (VAL-006 PASS, `cmd/fid` adapter-boundary scan clean); see
 `../phases/phase-4/decisions.md`.
+CF-007 (rejected-write journal poisoning) closed at Phase 5 wrap — delivered by
+Task 1/1b validate-before-append seam (VAL-005 PASS, reinforced by VAL-007); see
+`../phases/phase-5/decisions.md`.
 
 ## Environment Constraints
 

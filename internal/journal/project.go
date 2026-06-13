@@ -2,11 +2,13 @@ package journal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -51,15 +53,16 @@ func (err *PreconditionConflictError) Error() string {
 	)
 }
 
-func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
-	if conn == nil {
-		return fmt.Errorf("project event: connection is nil")
+func DryRunProjectEvent(conn *sql.DB, event Event) error {
+	if err := validateProjectionConnection(conn); err != nil {
+		return err
+	}
+
+	input := ProjectionInput{
+		Event: event,
 	}
 	if input.Event.EventID == "" {
-		return fmt.Errorf("project event: event_id is required")
-	}
-	if input.EventHash == "" {
-		return fmt.Errorf("project event %q: event hash is required", input.Event.EventID)
+		input.Event.EventID = "EVT-dry-run"
 	}
 
 	tx, err := conn.Begin()
@@ -67,11 +70,33 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
 	}
 
-	for _, effect := range input.Event.Effects {
-		if err := applyEffect(tx, input, effect); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
+	if err := applyEventEffects(tx, input); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Rollback(); err != nil {
+		return fmt.Errorf("project event %q: rollback transaction: %w", input.Event.EventID, err)
+	}
+
+	return nil
+}
+
+func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
+	if err := validateProjectionConnection(conn); err != nil {
+		return err
+	}
+	if err := validateProjectionInput(input); err != nil {
+		return err
+	}
+
+	tx, err := conn.Begin()
+	if err != nil {
+		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
+	}
+
+	if err := applyEventEffects(tx, input); err != nil {
+		_ = tx.Rollback()
+		return err
 	}
 
 	replayStatus := input.ReplayMode
@@ -99,10 +124,40 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 	return nil
 }
 
+func validateProjectionConnection(conn *sql.DB) error {
+	if conn == nil {
+		return fmt.Errorf("project event: connection is nil")
+	}
+	return nil
+}
+
+func validateProjectionInput(input ProjectionInput) error {
+	if input.Event.EventID == "" {
+		return fmt.Errorf("project event: event_id is required")
+	}
+	if input.EventHash == "" {
+		return fmt.Errorf("project event %q: event hash is required", input.Event.EventID)
+	}
+	return nil
+}
+
+func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
+	for _, effect := range input.Event.Effects {
+		if err := applyEffect(tx, input, effect); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 	table, err := validatedIdentifier(effect.Table)
 	if err != nil {
 		return fmt.Errorf("project event %q: %w", input.Event.EventID, err)
+	}
+
+	if table == "activity_log" && effect.Op != "activity" {
+		return fmt.Errorf("project event %q: activity_log writes require effect op %q", input.Event.EventID, "activity")
 	}
 
 	switch effect.Op {
@@ -112,9 +167,27 @@ func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 		return applyUpdate(tx, input, table, effect)
 	case "delete":
 		return applyDelete(tx, input, table, effect)
+	case "activity":
+		return applyActivity(tx, input.Event.EventID, table, effect)
 	default:
 		return fmt.Errorf("project event %q: unsupported effect op %q", input.Event.EventID, effect.Op)
 	}
+}
+
+func applyActivity(tx *sql.Tx, eventID, table string, effect Effect) error {
+	if table != "activity_log" {
+		return fmt.Errorf("project event %q: activity effect must target %q, got %q", eventID, "activity_log", table)
+	}
+
+	normalizedValues, err := normalizeActivityValues(effect.Values)
+	if err != nil {
+		return fmt.Errorf("project event %q: activity %s: %w", eventID, table, err)
+	}
+
+	return applyInsert(tx, eventID, table, Effect{
+		PK:     cloneMap(effect.PK),
+		Values: normalizedValues,
+	})
 }
 
 func applyInsert(tx *sql.Tx, eventID, table string, effect Effect) error {
@@ -302,6 +375,40 @@ func mergeEffectValues(pk, values map[string]any) (map[string]any, error) {
 	return merged, nil
 }
 
+func normalizeActivityValues(values map[string]any) (map[string]any, error) {
+	normalized := cloneMap(values)
+
+	details, ok := normalized["details"]
+	if !ok {
+		return normalized, nil
+	}
+
+	serialized, err := serializeActivityDetails(details)
+	if err != nil {
+		return nil, err
+	}
+	normalized["details"] = serialized
+
+	return normalized, nil
+}
+
+func serializeActivityDetails(details any) (any, error) {
+	switch typed := details.(type) {
+	case nil:
+		return nil, nil
+	case string:
+		return typed, nil
+	case []byte:
+		return string(typed), nil
+	default:
+		payload, err := json.Marshal(typed)
+		if err != nil {
+			return nil, fmt.Errorf("serialize details: %w", err)
+		}
+		return string(payload), nil
+	}
+}
+
 func ensureSingleRowAffected(result sql.Result, eventID, op, table string) error {
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
@@ -363,6 +470,11 @@ func normalizeValue(value any) any {
 			return int64(1)
 		}
 		return int64(0)
+	case time.Time:
+		if typed.Hour() == 0 && typed.Minute() == 0 && typed.Second() == 0 && typed.Nanosecond() == 0 {
+			return typed.UTC().Format("2006-01-02")
+		}
+		return typed.UTC().Format(time.RFC3339)
 	default:
 		return value
 	}

@@ -197,9 +197,12 @@ fid issue update <id> [flags] --by <role>
 | `--inbox` / `--no-inbox` | bool | v0.2: set or clear the inbox flag |
 | `--by` | string | Acting role |
 
+At least one field must change. A no-op update is rejected and appends no
+journal event.
+
 **Output (stderr confirmation):**
 ```text
-updated FID-a1b2c3: priority 2 → 1, title "Implement journal append with flush"
+updated FID-a1b2c3: title "Implement journal append with flush" -> "Implement journal append with fsync", priority 2 -> 1
 ```
 
 **Inbox promote (v0.2):** `fid issue update --epic`/`--no-inbox` completes the

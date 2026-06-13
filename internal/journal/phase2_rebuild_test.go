@@ -332,7 +332,7 @@ func phaseTwoFullSchemaEvent() Event {
 				},
 			},
 			{
-				Op:    "insert",
+				Op:    "activity",
 				Table: "activity_log",
 				PK:    map[string]any{"id": "ACT-p2-001"},
 				Values: map[string]any{

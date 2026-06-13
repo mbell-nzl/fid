@@ -472,6 +472,92 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 	}
 }
 
+func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	epicCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "epic",
+		Title:         "Prioritised parent",
+		ActorRole:     "tl",
+		Scheduling:    "prioritised",
+	})
+	if err != nil {
+		t.Fatalf("Create(epic) error = %v", err)
+	}
+
+	validTask, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Valid sibling",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(epicCreated.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(valid task) error = %v", err)
+	}
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	linesBefore := countJournalLines(journalPath)
+
+	_, err = Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Invalid sequenced task",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(epicCreated.ID),
+		Sequence:      intPointer(1),
+	})
+	if err == nil {
+		t.Fatal("Create(invalid task) error = nil, want projection failure")
+	}
+	if !strings.Contains(err.Error(), "issues: task under prioritised epic must not have sequence") {
+		t.Fatalf("Create(invalid task) error = %q, want prioritised-epic sequence rejection", err.Error())
+	}
+
+	if got := countJournalLines(journalPath); got != linesBefore {
+		t.Fatalf("journal lines after rejected create = %d, want unchanged %d", got, linesBefore)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            validTask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(valid task after rejected create) error = %v", err)
+	}
+	if got.ID != validTask.ID {
+		t.Fatalf("Get(valid task after rejected create) id = %q, want %q", got.ID, validTask.ID)
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+		t.Fatalf("RebuildWorkspace() after rejected create error = %v", err)
+	}
+
+	rebuilt, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            validTask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(valid task after rejected create rebuild) error = %v", err)
+	}
+	if rebuilt.ID != validTask.ID {
+		t.Fatalf("Get(valid task after rejected create rebuild) id = %q, want %q", rebuilt.ID, validTask.ID)
+	}
+}
+
 func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 	t.Parallel()
 
@@ -563,6 +649,8 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
+	journalPath := journalPathForWorkspace(t, workspace)
+	linesBefore := countJournalLines(journalPath)
 
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -627,7 +715,9 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 		t.Fatal("issueIDExists(missing) = true, want false")
 	}
 
-	journalPath := journalPathForWorkspace(t, workspace)
+	if got := countJournalLines(journalPath); got-linesBefore != 1 {
+		t.Fatalf("journal line delta after accepted create = %d, want 1", got-linesBefore)
+	}
 	if got := countJournalLines(journalPath); got != 2 {
 		t.Fatalf("countJournalLines(%q) = %d, want 2", journalPath, got)
 	}

@@ -42,6 +42,7 @@ out/
 
 # Misc
 tmp/
+/.fid/
 
 # Temporary agent output
 project-docs/docs/current/tl_handoff.md

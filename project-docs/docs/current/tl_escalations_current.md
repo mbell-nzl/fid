@@ -40,7 +40,11 @@ finding:
 
 ## Open Escalations
 
-None open.
+None. ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
+resolved by Task 1b + `review-1-addendum.md` and archived to
+`project-docs/docs/phases/phase-5/tl-escalations.md` at the Phase 5 wrap.
+
+---
 
 The Phase 4 journal-poisoning defect (rejected `fid issue create` appends to the
 journal and poisons the tail) is tracked as carry-forward **CF-007**
