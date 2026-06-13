@@ -24,6 +24,7 @@ func newIssueCommand() *cobra.Command {
 
 	cmd.AddCommand(newIssueCreateCommand())
 	cmd.AddCommand(newIssueUpdateCommand())
+	cmd.AddCommand(newIssueTransitionCommand())
 	cmd.AddCommand(newIssueGetCommand())
 	cmd.AddCommand(newIssueListCommand())
 	return cmd
@@ -218,6 +219,45 @@ func newIssueUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "New spec markdown path")
 	cmd.Flags().IntVar(&estTokens, "est-tokens", 0, "New estimated tokens")
 	cmd.Flags().StringVar(&dueDate, "due-date", "", "New due date")
+	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	return cmd
+}
+
+func newIssueTransitionCommand() *cobra.Command {
+	var (
+		toState   string
+		actorRole string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "transition <id>",
+		Short: "Transition an issue.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			result, err := issues.Transition(issues.TransitionOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				ID:            args[0],
+				ToState:       toState,
+				ActorRole:     actorRole,
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			return writeIssueLine(cmd.ErrOrStderr(), "transitioned %s: %s \u2192 %s\n", result.ID, result.FromState, result.ToState)
+		},
+	}
+
+	cmd.Flags().StringVar(&toState, "to", "", "Target state")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	return cmd
 }
