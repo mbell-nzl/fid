@@ -38,6 +38,22 @@
   unchanged, then validate scheduling/sequence before append or add an
   equivalent pre-append projection validation path.
 
+### TL Wrap-Up Disposition
+
+- **All checklist items passed (5/5), but testing surfaced an issue that needs
+  human attention.** The HV-01e invalid-create probe revealed that a *rejected*
+  `fid issue create` still appends its event to the canonical journal, poisoning
+  the tail and breaking later reads (`fid issue get`) until the bad line is
+  removed. This is a journal-integrity / data-availability defect.
+- Recorded as **carry-forward CF-007** (target Phase 5) and **DEC-014**
+  (`project-docs/docs/phases/phase-4/decisions.md`). Likely a fixup: validate
+  scheduling/sequence before the journal append (or add a pre-append
+  projection-dry-run), and add a regression test that a rejected create leaves
+  the journal line count unchanged.
+- Phase 4 still closes as **PASS** on its validation contract; CF-007 is the
+  one open thread carried into Phase 5. Please confirm CF-007 priority before
+  Phase 5 planning closes.
+
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |

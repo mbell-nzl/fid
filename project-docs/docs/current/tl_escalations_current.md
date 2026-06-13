@@ -40,28 +40,18 @@ finding:
 
 ## Open Escalations
 
-### ESC-002: Phase 4 due-date create field lacks read-back surface
+None open.
 
-- **Raised:** 2026-06-07
-- **By:** qa-reviewer / Phase 4 mid-phase review 3
-- **Trigger:** QA Reviewer trigger 5 and 6 - spans Tasks 2-3 and is a plausible material spec deviation.
-- **Context:** Task 2 and Task 3 completion reports claim VAL-003 PASS for due-date persistence, but both prove `due_date` by direct SQLite query. `internal/issues.Issue` has no `due_date` field, `internal/issues.Get` does not select it from `issues_enriched`, and `fid issue get --format json` therefore cannot read it back through the public read path.
-- **Question / proposed direction:** Decide whether Phase 4 read-back requires `due_date` in `internal/issues.Get` / CLI JSON now, or whether VAL-003 and the CLI acceptance criteria should be narrowed with an explicit recorded carry-forward.
-- **Links:** `project-docs/docs/phases/phase-4/qa/review-3.md`; `project-docs/docs/phases/phase-4/qa/validation-contract.md` VAL-003; `project-docs/docs/phases/phase-4/tasks/task-2-completion.md`; `project-docs/docs/phases/phase-4/tasks/task-3-completion.md`; `internal/issues/issue.go`
-- **TL disposition (2026-06-09):** DO-NOW, do not narrow VAL-003. The contract
-  names `due_date` from PRD-ISSUE-015/016/019/020 and the read-back clause stands.
-  Fix is additive and folded into Task 4 (centralised read model): add `DueDate`
-  to `internal/issues.Issue`, select `due_date` in `Get`, surface it in
-  `fid issue get --format json`, and assert read-back in `internal/issues` and
-  `cmd/fid` tests. No schema/journal change (`issues_enriched` projects `i.*`;
-  `issues.due_date` exists). Tasks 2-3 stand; their VAL-003 claim is persistence
-  only, with read-back closed by Task 4.
-- **Status:** Resolved-pending — closes when Task 4 lands due-date read-back
-  evidence; flip to Resolved at phase wrap-up and archive.
+The Phase 4 journal-poisoning defect (rejected `fid issue create` appends to the
+journal and poisons the tail) is tracked as carry-forward **CF-007**
+(`decisions_active.md`) / **DEC-014** (`phases/phase-4/decisions.md`), not as an
+open escalation — it is a well-diagnosed, scheduled Phase 5 fixup.
 
-ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 / Task 7 and
-archived at Phase 1 wrap-up to
-`project-docs/docs/phases/phase-1/tl-escalations.md`.
+ESC-002 (Phase 4 due-date read-back gap) was resolved by Task 4 and archived to
+`project-docs/docs/phases/phase-4/tl-escalations.md`.
+
+ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 / Phase 1
+Task 7 and archived to `project-docs/docs/phases/phase-1/tl-escalations.md`.
 
 <!--
 Add new escalations above this comment using the template at
