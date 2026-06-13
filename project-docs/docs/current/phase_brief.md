@@ -1,64 +1,105 @@
-# Phase Brief - Phase 4 Closed / Phase 5 Pending Planning
+# Phase Brief - Phase 5 (Mutation + Workflow Transitions)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 4 (v0.1b Issue authoring and discovery) is **CLOSED** (QA
-> PASS, human checklist 5/5 PASS). Phase 5 is **NOT YET PLANNED** — a fresh Tech
-> Lead planning pass owns the Phase 5 validation contract and task list before
-> any implementation begins.
+> **State:** Phase 5 is **PLANNED** (Tech Lead). Validation contract and five
+> ordered tasks are drafted; QA Lead refines evidence before execution. Phase 4
+> is CLOSED (QA PASS, human 5/5). Archives under `../phases/phase-4/`.
 
-## Phase 4 Outcome (for reference)
+## Phase 5 Goal
 
-Phase 4 made issue authoring and discovery usable end to end: sequence
-scheduling backstop, issue authoring domain service, `fid issue create`,
-centralised enriched `fid issue get` + `--section`, and `fid issue list`
-filters/order/formats. VAL-001..VAL-010 all PASS. Archives under
-`../phases/phase-4/` (`decisions.md`, `progress.md`, `qa/final-review.md`,
-`qa/human-checklist.md`, `tl-escalations.md`).
+v0.1b mutation + workflow transitions (roadmap §v0.1b slicing note, Phase 5
+cut). Exit: an agent can mutate issue fields, observe audited changes, move an
+issue through allowed workflow edges, and see deterministic rejection details
+for invalid transitions. Delivered as agent-runnable CLI increments.
 
-Closed at wrap: CF-004 (sequence backstop), CF-006 (read-model centralisation),
-ESC-002 (due-date read-back).
-
-## Phase 5 Scope (roadmap, to be sliced at planning)
-
-Per `10_IMPLEMENTATION_ROADMAP.md` v0.1b slicing note, Phase 5 is
-**mutation + workflow transitions**:
+Scope:
 
 - `fid issue update` (title, priority, labels, spec_md, est_tokens, due_date,
   owner role/actor) with `activity_log` projection.
-- `activity_log` projection discipline / `activity` effect op (**CF-005**).
-- `internal/workflow` hard-coded graphs and rule functions
+- `activity` effect op + `activity_log` projection discipline (**CF-005**).
+- CF-007 write-path fixup: validate-before-append seam (**High**).
+- `internal/workflow` hard-coded graphs (task/epic/subtask) + rule functions
   (`all_acs_verified`, `has_completion_report`, `concerns_addressed`,
   `all_child_tasks_done_or_cancelled`).
 - `fid issue transition --to <state> --by <role>` with rich rejection errors.
-- **CF-007 write-path fixup** (see below).
+
+Explicit deferrals (do not implement this phase): `fid activity list` read
+command (v0.1e, PRD-OUT-017); `--epic`/`--inbox` reparent/promote (v0.2);
+claim-gated transitions (v0.1d); AC/completion/concern write commands (v0.1c);
+configurable workflows + escalation workflow (v0.2). Permission matrix stays
+v0.1d — `--by` only needs `RequireKnownRole` this phase.
+
+## Validation Contract Index
+
+`../phases/phase-5/qa/validation-contract.md` (VAL-001..VAL-013):
+
+- VAL-001 `fid issue update` mutates fields; invalid update leaves issue
+  unchanged. (task-3)
+- VAL-002 one update = one event with documented effects; rebuild parity.
+  (task-3)
+- VAL-003 owner role/actor change journaled + projected to `activity_log`.
+  (task-3)
+- VAL-004 `activity` op projects one row per change; sole writer; ref backstop
+  holds. (tasks-2-3)
+- VAL-005 rejected write appends zero journal lines + reads still succeed; CF-007
+  closure. (task-1)
+- VAL-006 allowed transition edge advances status + category for all kinds.
+  (task-5)
+- VAL-007 invalid edge rejected naming both states; zero journal lines. (task-5)
+- VAL-008 `in_progress→dev_complete` enforces `all_acs_verified{developer}` +
+  `has_completion_report`; unmet names conditions + AC IDs. (task-5)
+- VAL-009 `qa_review→qa_pass` enforces `all_acs_verified{qa_lead}`. (task-5)
+- VAL-010 epic `in_progress→wrapped` enforces `all_child_tasks_done_or_cancelled`;
+  unmet names child IDs. (task-5)
+- VAL-011 cancel from any non-cancelled state; rejected from cancelled. (task-5)
+- VAL-012 `concerns_addressed` rule both states by unit test (no wired edge).
+  (task-4)
+- VAL-013 human dogfood: rich errors actionable + journal stays clean. (phase-end)
+
+PRD-OUT-017 has **no Phase 5 assertion by design** — the activity read command
+is v0.1e; Phase 5 proves only the projection write-side (VAL-004).
+
+## Ordered Tasks
+
+1. **Validate-before-append seam (CF-007)** — pre-append projection-dry-run in
+   `internal/journal`; route `internal/issues.Create` through it. VAL-005.
+   *Foundational: Tasks 3 and 5 build update/transition on this seam.*
+2. **`activity` effect op + projection discipline (CF-005 half)** — add the
+   `activity` op to projection; §14.6 enforced app-layer (sole writer; §14.2
+   backstop holds; SQL guard stays deferred per DEC-006). VAL-004.
+3. **`fid issue update`** — mutate scalar fields + labels; emit update + activity
+   effects; first real activity emitter. VAL-001/002/003 (+005).
+4. **`internal/workflow` package** — hard-coded graphs + 4 rule functions, pure
+   and unit-tested. VAL-012 (+ advances 006/008/009/010).
+5. **`fid issue transition`** — wire workflow to projection; rich rejection
+   errors; status+workflow_id preconditions + activity effect; rule evidence via
+   journal fixtures. Closes CF-005. VAL-006..011 (+005).
+
+## Planning Reminders
+
+- DEC-007 carry-in: package-level tests for COV-001 packages
+  (`internal/issues`, `internal/journal`, `internal/policy`, **new
+  `internal/workflow`** ≥ 80%); hold COV-002 `cmd/fid` ≥ 70%.
+- Phase 4 deep-retro lesson (now baked into VAL-005/VAL-007): every write path
+  rejectable by a projection-time trigger must assert journal hygiene
+  (line-count-unchanged + read-recovery), not only an actionable CLI error.
+- Transition-rule evidence seeds AC/verification/completion/concern/child rows
+  via journal fixtures until the v0.1c write commands ship.
 
 ## Carry-Forward Into Phase 5
 
-| ID | Item | Priority |
+| ID | Item | Disposition |
 |---|---|---|
-| CF-005 | `activity_log` projection guard trigger + `activity` effect op; belongs with `fid issue update`. | Medium |
-| CF-007 | Rejected `fid issue create` poisons the journal tail — `internal/issues.Create` appends before projecting, so a trigger-rejected create still commits and breaks later reads. Conformance gap vs TRD §4.3 (validate before append). Fix: validate (or projection-dry-run) before append; add a rejected-write journal-hygiene VAL assertion + regression test (line-count unchanged) + poisoned-tail read-recovery test. **Needs human priority confirmation.** | High |
+| CF-005 | `activity` effect op + `activity_log` projection discipline | Scheduled: Task 2 (op) + Tasks 3/5 (emitters); closes at Task 5. |
+| CF-007 | Rejected write poisons journal tail (validate-before-append) | Scheduled: Task 1. **High — human-confirmed 2026-06-13.** |
 
-CF-003 (role corrupt-tail tolerance) remains targeted before v0.1d.
+CF-003 (role corrupt-tail tolerance) stays targeted before v0.1d.
 
-## Planning Reminders For Phase 5
+## Next Checkpoint
 
-- Apply DEC-007 carry-in: package-level tests for COV-001 packages
-  (`internal/issues`, `internal/journal`, `internal/policy`); hold COV-002
-  `cmd/fid` >= 70%.
-- Phase 4 deep-retro lesson (`../phases/phase-4/decisions.md`): when a write
-  path can be rejected by a projection-time trigger, the validation contract
-  must assert journal hygiene (line-count-unchanged + read-recovery) for the
-  rejected state, not only an actionable CLI error. Bake this into the CF-007
-  and transition-rejection assertions.
-- Transition-rule evidence may seed AC/completion/concern rows via journal
-  fixtures until the v0.1c write commands ship.
-
-## Next Planning Checkpoint
-
-Tech Lead opens Phase 5 planning: read the roadmap entry and spec sections,
-review the Carry-Forward Register, create `../phases/phase-5/` directories,
-draft `qa/validation-contract.md`, slice ordered tasks, and present the contract
-and task list to the human. Confirm CF-007 priority with the human first.
+QA Lead drafts `../phases/phase-5/qa/qa-plan.md` mapping every VAL-NNN to
+deterministic `(qa-lead)` / mid-phase-review / `(human)` verification and fans
+VAL-013 into per-observable human-checklist rows. Then Phase Runner starts the
+Task 1 → Task 5 dev/QA loop.
