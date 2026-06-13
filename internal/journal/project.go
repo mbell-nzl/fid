@@ -2,6 +2,7 @@ package journal
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -154,6 +155,10 @@ func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 		return fmt.Errorf("project event %q: %w", input.Event.EventID, err)
 	}
 
+	if table == "activity_log" && effect.Op != "activity" {
+		return fmt.Errorf("project event %q: activity_log writes require effect op %q", input.Event.EventID, "activity")
+	}
+
 	switch effect.Op {
 	case "insert":
 		return applyInsert(tx, input.Event.EventID, table, effect)
@@ -161,9 +166,27 @@ func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 		return applyUpdate(tx, input, table, effect)
 	case "delete":
 		return applyDelete(tx, input, table, effect)
+	case "activity":
+		return applyActivity(tx, input.Event.EventID, table, effect)
 	default:
 		return fmt.Errorf("project event %q: unsupported effect op %q", input.Event.EventID, effect.Op)
 	}
+}
+
+func applyActivity(tx *sql.Tx, eventID, table string, effect Effect) error {
+	if table != "activity_log" {
+		return fmt.Errorf("project event %q: activity effect must target %q, got %q", eventID, "activity_log", table)
+	}
+
+	normalizedValues, err := normalizeActivityValues(effect.Values)
+	if err != nil {
+		return fmt.Errorf("project event %q: activity %s: %w", eventID, table, err)
+	}
+
+	return applyInsert(tx, eventID, table, Effect{
+		PK:     cloneMap(effect.PK),
+		Values: normalizedValues,
+	})
 }
 
 func applyInsert(tx *sql.Tx, eventID, table string, effect Effect) error {
@@ -349,6 +372,40 @@ func mergeEffectValues(pk, values map[string]any) (map[string]any, error) {
 		merged[key] = value
 	}
 	return merged, nil
+}
+
+func normalizeActivityValues(values map[string]any) (map[string]any, error) {
+	normalized := cloneMap(values)
+
+	details, ok := normalized["details"]
+	if !ok {
+		return normalized, nil
+	}
+
+	serialized, err := serializeActivityDetails(details)
+	if err != nil {
+		return nil, err
+	}
+	normalized["details"] = serialized
+
+	return normalized, nil
+}
+
+func serializeActivityDetails(details any) (any, error) {
+	switch typed := details.(type) {
+	case nil:
+		return nil, nil
+	case string:
+		return typed, nil
+	case []byte:
+		return string(typed), nil
+	default:
+		payload, err := json.Marshal(typed)
+		if err != nil {
+			return nil, fmt.Errorf("serialize details: %w", err)
+		}
+		return string(payload), nil
+	}
 }
 
 func ensureSingleRowAffected(result sql.Result, eventID, op, table string) error {

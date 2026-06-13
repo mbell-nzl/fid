@@ -1,7 +1,9 @@
 package journal
 
 import (
+	"database/sql"
 	"errors"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -259,6 +261,382 @@ func TestProjectEventAppliesUpdateDeleteAndReplayStatus(t *testing.T) {
 	}
 	if meta.ReplayStatus != fiddb.ReplayStatusClean {
 		t.Fatalf("final replay status = %q, want %q", meta.ReplayStatus, fiddb.ReplayStatusClean)
+	}
+}
+
+func TestProjectEventProjectsActivityEffectIntoActivityLog(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+		t.Fatalf("MigrateUp() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	event := Event{
+		EventID:     "EVT-20260613-000101",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.transitioned",
+		OccurredAt:  time.Date(2026, time.June, 13, 9, 30, 0, 0, time.UTC),
+		Actor: Actor{
+			Role: "developer",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "issue", "transition", "FID-activity-issue", "--to", "in_progress", "--by", "developer"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			projectIssueEffect("FID-activity-issue", map[string]any{
+				"kind":        "task",
+				"title":       "Activity issue",
+				"workflow_id": "task-default",
+				"status":      "in_progress",
+				"created_at":  "2026-06-13T09:29:00Z",
+				"updated_at":  "2026-06-13T09:30:00Z",
+			}),
+			{
+				Op:    "activity",
+				Table: "activity_log",
+				PK: map[string]any{
+					"id": "ACT-activity-001",
+				},
+				Values: map[string]any{
+					"journal_event_id": "EVT-20260613-000101",
+					"ref_type":         "issue",
+					"ref_id":           "FID-activity-issue",
+					"event":            "status_changed",
+					"details": map[string]any{
+						"from": "todo",
+						"to":   "in_progress",
+					},
+					"actor":       "developer",
+					"occurred_at": "2026-06-13T09:30:00Z",
+				},
+			},
+		},
+	}
+	eventHash, err := HashEvent(event)
+	if err != nil {
+		t.Fatalf("HashEvent() error = %v", err)
+	}
+
+	if err := ProjectEvent(conn, ProjectionInput{
+		Event:     event,
+		EventHash: eventHash,
+		File:      "2026-06-13.jsonl",
+		Line:      1,
+		Offset:    200,
+	}); err != nil {
+		t.Fatalf("ProjectEvent() error = %v", err)
+	}
+
+	var (
+		journalEventID string
+		refType        string
+		refID          string
+		eventName      string
+		details        string
+		actor          string
+		occurredAt     string
+	)
+	if err := conn.QueryRow(`
+		SELECT journal_event_id, ref_type, ref_id, event, details, actor, occurred_at
+		FROM activity_log
+		WHERE id = ?
+	`, "ACT-activity-001").Scan(&journalEventID, &refType, &refID, &eventName, &details, &actor, &occurredAt); err != nil {
+		t.Fatalf("query activity_log: %v", err)
+	}
+
+	if journalEventID != "EVT-20260613-000101" {
+		t.Fatalf("journal_event_id = %q, want %q", journalEventID, "EVT-20260613-000101")
+	}
+	if refType != "issue" || refID != "FID-activity-issue" {
+		t.Fatalf("ref = (%q, %q), want (%q, %q)", refType, refID, "issue", "FID-activity-issue")
+	}
+	if eventName != "status_changed" {
+		t.Fatalf("event = %q, want %q", eventName, "status_changed")
+	}
+	if details != `{"from":"todo","to":"in_progress"}` {
+		t.Fatalf("details = %q, want %q", details, `{"from":"todo","to":"in_progress"}`)
+	}
+	if actor != "developer" {
+		t.Fatalf("actor = %q, want %q", actor, "developer")
+	}
+	if occurredAt != "2026-06-13T09:30:00Z" {
+		t.Fatalf("occurred_at = %q, want %q", occurredAt, "2026-06-13T09:30:00Z")
+	}
+}
+
+func TestProjectEventProjectsEachActivityEffectIntoOneRow(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+		t.Fatalf("MigrateUp() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	event := projectActivityEvent(
+		"EVT-20260613-000102",
+		"FID-activity-many",
+		[]Effect{
+			projectActivityEffect("EVT-20260613-000102", "ACT-activity-002", "FID-activity-many", "status_changed", map[string]any{
+				"to":   "in_progress",
+				"from": "todo",
+			}),
+			projectActivityEffect("EVT-20260613-000102", "ACT-activity-003", "FID-activity-many", "owner_changed", map[string]any{
+				"from": "developer",
+				"to":   "qa_lead",
+			}),
+		},
+	)
+	eventHash, err := HashEvent(event)
+	if err != nil {
+		t.Fatalf("HashEvent() error = %v", err)
+	}
+
+	if err := ProjectEvent(conn, ProjectionInput{
+		Event:     event,
+		EventHash: eventHash,
+		File:      "2026-06-13.jsonl",
+		Line:      1,
+		Offset:    220,
+	}); err != nil {
+		t.Fatalf("ProjectEvent() error = %v", err)
+	}
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log WHERE ref_id = ?`, "FID-activity-many").Scan(&count); err != nil {
+		t.Fatalf("count activity_log rows: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("activity_log rows = %d, want %d", count, 2)
+	}
+}
+
+func TestProjectEventRejectsActivityEffectWithUnresolvedRef(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+		t.Fatalf("MigrateUp() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	event := Event{
+		EventID:     "EVT-20260613-000103",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.transitioned",
+		OccurredAt:  time.Date(2026, time.June, 13, 9, 32, 0, 0, time.UTC),
+		Actor: Actor{
+			Role: "developer",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "issue", "transition", "FID-missing-issue", "--to", "in_progress", "--by", "developer"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			projectActivityEffect("EVT-20260613-000103", "ACT-activity-missing", "FID-missing-issue", "status_changed", map[string]any{
+				"from": "todo",
+				"to":   "in_progress",
+			}),
+		},
+	}
+	eventHash, err := HashEvent(event)
+	if err != nil {
+		t.Fatalf("HashEvent() error = %v", err)
+	}
+
+	err = ProjectEvent(conn, ProjectionInput{
+		Event:     event,
+		EventHash: eventHash,
+		File:      "2026-06-13.jsonl",
+		Line:      1,
+		Offset:    240,
+	})
+	if err == nil {
+		t.Fatal("ProjectEvent() error = nil, want unresolved ref rejection")
+	}
+	if !strings.Contains(err.Error(), "activity_log: ref_type/ref_id must resolve to an existing row") {
+		t.Fatalf("ProjectEvent() error = %q, want ref trigger rejection", err.Error())
+	}
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&count); err != nil {
+		t.Fatalf("count activity_log rows: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("activity_log rows after rejected projection = %d, want %d", count, 0)
+	}
+}
+
+func TestProjectEventRejectsGenericWritesToActivityLog(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name   string
+		op     string
+		values map[string]any
+	}{
+		{
+			name: "insert",
+			op:   "insert",
+			values: map[string]any{
+				"journal_event_id": "EVT-20260613-000104",
+				"ref_type":         "issue",
+				"ref_id":           "FID-generic-write",
+				"event":            "status_changed",
+			},
+		},
+		{
+			name: "update",
+			op:   "update",
+			values: map[string]any{
+				"event": "status_changed",
+			},
+		},
+		{
+			name:   "delete",
+			op:     "delete",
+			values: map[string]any{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+			if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+				t.Fatalf("MigrateUp() error = %v", err)
+			}
+
+			conn, err := fiddb.Open(dbPath)
+			if err != nil {
+				t.Fatalf("Open() error = %v", err)
+			}
+			defer closeProjectDB(t, conn)
+
+			event := Event{
+				EventID:     "EVT-20260613-000104",
+				EventSchema: EventSchemaV1,
+				EventType:   "issue.transitioned",
+				OccurredAt:  time.Date(2026, time.June, 13, 9, 33, 0, 0, time.UTC),
+				Actor: Actor{
+					Role: "developer",
+				},
+				Command: Command{
+					Argv:       []string{"fid", "maintenance", "replay"},
+					CWD:        ".",
+					FIDVersion: "0.1.0",
+				},
+				Effects: []Effect{
+					{
+						Op:    tt.op,
+						Table: "activity_log",
+						PK: map[string]any{
+							"id": "ACT-generic-write",
+						},
+						Values: tt.values,
+					},
+				},
+			}
+			eventHash, err := HashEvent(event)
+			if err != nil {
+				t.Fatalf("HashEvent() error = %v", err)
+			}
+
+			err = ProjectEvent(conn, ProjectionInput{
+				Event:     event,
+				EventHash: eventHash,
+				File:      "2026-06-13.jsonl",
+				Line:      1,
+				Offset:    260,
+			})
+			if err == nil {
+				t.Fatal("ProjectEvent() error = nil, want activity_log discipline rejection")
+			}
+			if !strings.Contains(err.Error(), `activity_log writes require effect op "activity"`) {
+				t.Fatalf("ProjectEvent() error = %q, want activity_log discipline rejection", err.Error())
+			}
+		})
+	}
+}
+
+func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
+	t.Parallel()
+
+	workspace := newReplayWorkspace(t)
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-13.jsonl")
+	writeReplayEvents(
+		t,
+		journalPath,
+		replayRoleEvent("EVT-20260613-000200", "developer"),
+		projectActivityEvent(
+			"EVT-20260613-000201",
+			"FID-rebuild-activity",
+			[]Effect{
+				projectActivityEffect("EVT-20260613-000201", "ACT-rebuild-001", "FID-rebuild-activity", "status_changed", map[string]any{
+					"to":   "in_progress",
+					"from": "todo",
+				}),
+				projectActivityEffect("EVT-20260613-000201", "ACT-rebuild-002", "FID-rebuild-activity", "comment_added", map[string]any{
+					"text": "Ready for review",
+				}),
+			},
+		),
+	)
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	conn := openReplayDB(t, dbPath)
+
+	stats, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	if err != nil {
+		t.Fatalf("ReplayJournal() error = %v", err)
+	}
+	if stats.EventsReplayed != 2 {
+		t.Fatalf("initial replayed events = %d, want %d", stats.EventsReplayed, 2)
+	}
+
+	before := snapshotActivityLogState(t, conn)
+	closeProjectDB(t, conn)
+
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	if err != nil {
+		t.Fatalf("RebuildWorkspace() error = %v", err)
+	}
+	if rebuildStats.EventsReplayed != 2 {
+		t.Fatalf("rebuilt events = %d, want %d", rebuildStats.EventsReplayed, 2)
+	}
+
+	rebuiltConn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() rebuilt error = %v", err)
+	}
+	defer closeProjectDB(t, rebuiltConn)
+
+	after := snapshotActivityLogState(t, rebuiltConn)
+	if after != before {
+		t.Fatalf("rebuilt activity_log state = %q, want %q", after, before)
 	}
 }
 
@@ -757,6 +1135,55 @@ func projectIssueEffect(id string, values map[string]any) Effect {
 	}
 }
 
+func projectActivityEvent(eventID, issueID string, activityEffects []Effect) Event {
+	effects := []Effect{
+		projectIssueEffect(issueID, map[string]any{
+			"kind":        "task",
+			"title":       "Activity replay issue",
+			"workflow_id": "task-default",
+			"status":      "in_progress",
+			"created_at":  "2026-06-13T09:29:00Z",
+			"updated_at":  "2026-06-13T09:30:00Z",
+		}),
+	}
+	effects = append(effects, activityEffects...)
+
+	return Event{
+		EventID:     eventID,
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.transitioned",
+		OccurredAt:  time.Date(2026, time.June, 13, 9, 30, 0, 0, time.UTC),
+		Actor: Actor{
+			Role: "developer",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "issue", "transition", issueID, "--to", "in_progress", "--by", "developer"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: effects,
+	}
+}
+
+func projectActivityEffect(journalEventID, id, issueID, eventName string, details any) Effect {
+	return Effect{
+		Op:    "activity",
+		Table: "activity_log",
+		PK: map[string]any{
+			"id": id,
+		},
+		Values: map[string]any{
+			"journal_event_id": journalEventID,
+			"ref_type":         "issue",
+			"ref_id":           issueID,
+			"event":            eventName,
+			"details":          details,
+			"actor":            "developer",
+			"occurred_at":      "2026-06-13T09:30:00Z",
+		},
+	}
+}
+
 type fakeSQLResult struct {
 	rowsAffected    int64
 	rowsAffectedErr error
@@ -780,4 +1207,66 @@ func stringsContainsAll(value string, fragments []string) bool {
 		}
 	}
 	return true
+}
+
+func snapshotActivityLogState(t *testing.T, conn *sql.DB) string {
+	t.Helper()
+
+	rows, err := conn.Query(`
+		SELECT id, journal_event_id, ref_type, ref_id, event, COALESCE(details, 'NULL'), COALESCE(actor, 'NULL'), COALESCE(occurred_at, 'NULL')
+		FROM activity_log
+		ORDER BY id
+	`)
+	if err != nil {
+		t.Fatalf("query activity_log snapshot: %v", err)
+	}
+	defer closeProjectDB(t, rows)
+
+	var snapshots []string
+	for rows.Next() {
+		var (
+			id             string
+			journalEventID string
+			refType        string
+			refID          string
+			eventName      string
+			details        string
+			actor          string
+			occurredAt     string
+		)
+		if err := rows.Scan(&id, &journalEventID, &refType, &refID, &eventName, &details, &actor, &occurredAt); err != nil {
+			t.Fatalf("scan activity_log snapshot: %v", err)
+		}
+
+		snapshots = append(snapshots, strings.Join([]string{
+			id,
+			journalEventID,
+			refType,
+			refID,
+			eventName,
+			details,
+			actor,
+			occurredAt,
+		}, "|"))
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate activity_log snapshot: %v", err)
+	}
+
+	meta, found, err := fiddb.ReadProjectionMeta(conn)
+	if err != nil {
+		t.Fatalf("ReadProjectionMeta() error = %v", err)
+	}
+	if !found {
+		t.Fatal("ReadProjectionMeta() found = false, want true")
+	}
+
+	snapshots = append(snapshots, strings.Join([]string{
+		meta.JournalFile,
+		meta.LastEventID,
+		meta.LastEventHash,
+		meta.ReplayStatus,
+	}, "|"))
+
+	return strings.Join(snapshots, ";")
 }
