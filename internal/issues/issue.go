@@ -23,6 +23,17 @@ type CreateOptions struct {
 	Kind          string
 	Title         string
 	ActorRole     string
+	ParentID      *string
+	Priority      *int
+	Sequence      *int
+	SpecMDPath    *string
+	EstTokens     *int
+	DueDate       *string
+	Labels        []string
+	InInbox       bool
+	OwnerRole     *string
+	OwnerActor    *string
+	Scheduling    string
 }
 
 type CreateResult struct {
@@ -45,7 +56,7 @@ func (err *UnsupportedKindError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("kind %q is not yet supported in Phase 1; use --kind task", err.Kind)
+	return fmt.Sprintf("kind %q must be epic, task, or subtask", err.Kind)
 }
 
 type NotFoundError struct {
@@ -71,6 +82,7 @@ type Issue struct {
 	Sequence           *int                  `json:"sequence"`
 	SpecMDPath         *string               `json:"spec_md_path"`
 	EstTokens          *int                  `json:"est_tokens"`
+	DueDate            *string               `json:"due_date"`
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
@@ -81,6 +93,11 @@ type Issue struct {
 	AcceptanceCriteria []AcceptanceCriterion `json:"acceptance_criteria"`
 	CreatedAt          *string               `json:"created_at"`
 	UpdatedAt          *string               `json:"updated_at"`
+	ParentTitle        *string               `json:"-"`
+	Concerns           []IssueConcern        `json:"-"`
+	Completions        []IssueCompletion     `json:"-"`
+	Links              []IssueLink           `json:"-"`
+	Claims             []IssueClaim          `json:"-"`
 }
 
 type AcceptanceCriterion struct {
@@ -105,8 +122,20 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	kind := strings.TrimSpace(options.Kind)
-	if kind != "task" {
+	if !supportedIssueKind(kind) {
 		return CreateResult{}, &UnsupportedKindError{Kind: kind}
+	}
+	parentID := trimmedOptionalString(options.ParentID)
+	specMDPath := trimmedOptionalString(options.SpecMDPath)
+	dueDate := trimmedOptionalString(options.DueDate)
+	ownerRole := trimmedOptionalString(options.OwnerRole)
+	ownerActor := trimmedOptionalString(options.OwnerActor)
+	labels, err := normalizedLabels(options.Labels)
+	if err != nil {
+		return CreateResult{}, err
+	}
+	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, options.EstTokens, dueDate, ownerRole, strings.TrimSpace(options.Scheduling), options.WorkspaceRoot); err != nil {
+		return CreateResult{}, err
 	}
 
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
@@ -119,8 +148,9 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	var result CreateResult
+	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, options.EstTokens, dueDate, labels, ownerRole, ownerActor, strings.TrimSpace(options.Scheduling), options.InInbox)
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   fmt.Sprintf("fid issue create --kind %s --title %s --by %s", kind, options.Title, options.ActorRole),
+		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
@@ -137,7 +167,87 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 
+		if err := validateParentConstraint(conn, kind, parentID); err != nil {
+			return err
+		}
+		if err := requireExistingLabels(conn, labels); err != nil {
+			return err
+		}
+
+		workflowID := defaultWorkflowID(kind)
+		defaultOwnerRole := defaultIssueOwnerRole(kind)
+		if ownerRole != nil {
+			defaultOwnerRole = *ownerRole
+		}
 		timestamp := time.Now().UTC().Format(time.RFC3339)
+		issueValues := map[string]any{
+			"kind":        kind,
+			"title":       options.Title,
+			"workflow_id": workflowID,
+			"status":      "todo",
+			"owner_role":  defaultOwnerRole,
+			"created_at":  timestamp,
+			"updated_at":  timestamp,
+		}
+		if parentID != nil {
+			issueValues["parent_id"] = *parentID
+		}
+		if options.Priority != nil {
+			issueValues["priority"] = *options.Priority
+		}
+		if options.Sequence != nil {
+			issueValues["sequence"] = *options.Sequence
+		}
+		if specMDPath != nil {
+			issueValues["spec_md_path"] = *specMDPath
+		}
+		if options.EstTokens != nil {
+			issueValues["est_tokens"] = *options.EstTokens
+		}
+		if dueDate != nil {
+			issueValues["due_date"] = *dueDate
+		}
+		if options.InInbox {
+			issueValues["in_inbox"] = true
+		}
+		if ownerActor != nil {
+			issueValues["owner_actor"] = *ownerActor
+		}
+
+		effects := []journal.Effect{
+			{
+				Op:    "insert",
+				Table: "issues",
+				PK: map[string]any{
+					"id": issueID,
+				},
+				Values: issueValues,
+			},
+		}
+		if kind == "epic" {
+			effects = append(effects, journal.Effect{
+				Op:    "insert",
+				Table: "epic_metadata",
+				PK: map[string]any{
+					"issue_id": issueID,
+				},
+				Values: map[string]any{
+					"scheduling": strings.TrimSpace(options.Scheduling),
+				},
+			})
+		}
+		for _, label := range labels {
+			effects = append(effects, journal.Effect{
+				Op:    "insert",
+				Table: "issue_labels",
+				PK: map[string]any{
+					"issue_id": issueID,
+					"label":    label,
+				},
+				Values: map[string]any{},
+			})
+		}
+
 		event := journal.Event{
 			EventSchema: journal.CurrentEventSchema,
 			EventType:   "issue.created",
@@ -145,28 +255,11 @@ func Create(options CreateOptions) (CreateResult, error) {
 				Role: options.ActorRole,
 			},
 			Command: journal.Command{
-				Argv:       []string{"fid", "issue", "create", "--kind", kind, "--title", options.Title, "--by", options.ActorRole},
+				Argv:       commandArgv,
 				CWD:        ".",
 				FIDVersion: fidVersion,
 			},
-			Effects: []journal.Effect{
-				{
-					Op:    "insert",
-					Table: "issues",
-					PK: map[string]any{
-						"id": issueID,
-					},
-					Values: map[string]any{
-						"kind":        kind,
-						"title":       options.Title,
-						"workflow_id": "task-default",
-						"status":      "todo",
-						"owner_role":  "developer",
-						"created_at":  timestamp,
-						"updated_at":  timestamp,
-					},
-				},
-			},
+			Effects: effects,
 		}
 
 		appended, err := journal.AppendEvent(lock, event)
@@ -233,7 +326,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
-		       spec_md_path, est_tokens, owner_role, owner_actor, in_inbox,
+		       spec_md_path, est_tokens, due_date, owner_role, owner_actor, in_inbox,
 		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
 		FROM issues_enriched
 		WHERE id = ?
@@ -241,7 +334,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	var (
 		record                                         Issue
-		parentID, specMDPath, ownerRole                sql.NullString
+		parentID, specMDPath, dueDate, ownerRole       sql.NullString
 		ownerActor, triageStatus, createdAt, updatedAt sql.NullString
 		priority, sequence, estTokens                  sql.NullInt64
 	)
@@ -256,6 +349,7 @@ func Get(options GetOptions) (Issue, error) {
 		&sequence,
 		&specMDPath,
 		&estTokens,
+		&dueDate,
 		&ownerRole,
 		&ownerActor,
 		&record.InInbox,
@@ -272,10 +366,14 @@ func Get(options GetOptions) (Issue, error) {
 	}
 
 	record.StatusCategory = statusCategory(record.Status)
-	record.Labels = []string{}
+	record.Labels, err = issueLabels(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
 	record.AcceptanceCriteria = []AcceptanceCriterion{}
 	record.ParentID = nullStringPointer(parentID)
 	record.SpecMDPath = nullStringPointer(specMDPath)
+	record.DueDate = normalizeDateOnlyPointer(nullStringPointer(dueDate))
 	record.OwnerRole = nullStringPointer(ownerRole)
 	record.OwnerActor = nullStringPointer(ownerActor)
 	record.TriageStatus = nullStringPointer(triageStatus)
@@ -284,6 +382,30 @@ func Get(options GetOptions) (Issue, error) {
 	record.Priority = nullIntPointer(priority)
 	record.Sequence = nullIntPointer(sequence)
 	record.EstTokens = nullIntPointer(estTokens)
+	record.ParentTitle, err = issueParentTitle(conn, record.ParentID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.AcceptanceCriteria, err = issueAcceptanceCriteria(conn, record.ID, record.OwnerRole)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Concerns, err = issueConcerns(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Completions, err = issueCompletions(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Links, err = issueLinks(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
+	record.Claims, err = issueClaims(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
 
 	return record, nil
 }
@@ -310,6 +432,209 @@ func countJournalLines(path string) int {
 		return 0
 	}
 	return len(strings.Split(trimmed, "\n"))
+}
+
+func supportedIssueKind(kind string) bool {
+	switch kind {
+	case "epic", "task", "subtask":
+		return true
+	default:
+		return false
+	}
+}
+
+func defaultWorkflowID(kind string) string {
+	switch kind {
+	case "epic":
+		return "epic-default"
+	case "subtask":
+		return "subtask-default"
+	default:
+		return "task-default"
+	}
+}
+
+func defaultIssueOwnerRole(kind string) string {
+	if kind == "epic" {
+		return "tl"
+	}
+	return "developer"
+}
+
+func validateCreateOptions(kind string, parentID *string, priority, sequence, estTokens *int, dueDate, ownerRole *string, scheduling, workspaceRoot string) error {
+	switch kind {
+	case "epic":
+		if parentID != nil {
+			return fmt.Errorf("issues: epic parent_id must be NULL")
+		}
+		if scheduling == "" {
+			return fmt.Errorf("create issue: epic scheduling is required")
+		}
+	case "task":
+		if scheduling != "" {
+			return fmt.Errorf("create issue: scheduling is only valid for epics")
+		}
+	case "subtask":
+		if scheduling != "" {
+			return fmt.Errorf("create issue: scheduling is only valid for epics")
+		}
+	}
+
+	if priority != nil && (*priority < 0 || *priority > 5) {
+		return fmt.Errorf("create issue: priority must be between 0 and 5")
+	}
+	if sequence != nil && *sequence <= 0 {
+		return fmt.Errorf("create issue: sequence must be positive")
+	}
+	if kind == "epic" && estTokens != nil {
+		return fmt.Errorf("create issue: est_tokens is only valid for tasks and subtasks")
+	}
+	if dueDate != nil {
+		if _, err := time.Parse("2006-01-02", *dueDate); err != nil {
+			return fmt.Errorf("create issue: due_date must use YYYY-MM-DD")
+		}
+	}
+	if ownerRole != nil {
+		if err := policy.RequireKnownRole(workspaceRoot, *ownerRole); err != nil {
+			return err
+		}
+	}
+	if scheduling != "" && scheduling != "sequential" && scheduling != "prioritised" {
+		return fmt.Errorf("create issue: scheduling must be sequential or prioritised")
+	}
+	return nil
+}
+
+func validateParentConstraint(conn *sql.DB, kind string, parentID *string) error {
+	if parentID == nil {
+		if kind == "subtask" {
+			return fmt.Errorf("issues: subtask parent_id must reference a task")
+		}
+		return nil
+	}
+
+	parentKind, found, err := issueKindForID(conn, *parentID)
+	if err != nil {
+		return err
+	}
+	switch kind {
+	case "epic":
+		return fmt.Errorf("issues: epic parent_id must be NULL")
+	case "task":
+		if !found || parentKind != "epic" {
+			return fmt.Errorf("issues: task parent_id must reference an epic or be NULL")
+		}
+	case "subtask":
+		if !found || parentKind != "task" {
+			return fmt.Errorf("issues: subtask parent_id must reference a task")
+		}
+	}
+	return nil
+}
+
+func issueKindForID(conn *sql.DB, issueID string) (string, bool, error) {
+	var kind string
+	err := conn.QueryRow(`SELECT kind FROM issues WHERE id = ? LIMIT 1`, issueID).Scan(&kind)
+	if err == nil {
+		return kind, true, nil
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	return "", false, fmt.Errorf("query parent issue %q: %w", issueID, err)
+}
+
+func requireExistingLabels(conn *sql.DB, labels []string) error {
+	for _, label := range labels {
+		var existing string
+		err := conn.QueryRow(`SELECT name FROM labels WHERE name = ? LIMIT 1`, label).Scan(&existing)
+		if err == nil {
+			continue
+		}
+		if errors.Is(err, sql.ErrNoRows) {
+			return fmt.Errorf("create issue: label %q does not exist", label)
+		}
+		return fmt.Errorf("query label %q: %w", label, err)
+	}
+	return nil
+}
+
+func normalizedLabels(input []string) ([]string, error) {
+	if len(input) == 0 {
+		return nil, nil
+	}
+
+	seen := make(map[string]bool, len(input))
+	labels := make([]string, 0, len(input))
+	for _, raw := range input {
+		label := strings.TrimSpace(raw)
+		if label == "" {
+			return nil, fmt.Errorf("create issue: label must not be blank")
+		}
+		if seen[label] {
+			continue
+		}
+		seen[label] = true
+		labels = append(labels, label)
+	}
+	return labels, nil
+}
+
+func trimmedOptionalString(value *string) *string {
+	if value == nil {
+		return nil
+	}
+	trimmed := strings.TrimSpace(*value)
+	if trimmed == "" {
+		return nil
+	}
+	return &trimmed
+}
+
+func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, estTokens *int, dueDate *string, labels []string, ownerRole, ownerActor *string, scheduling string, inInbox bool) []string {
+	argv := []string{"fid", "issue", "create", "--kind", kind, "--title", title}
+	switch kind {
+	case "task":
+		if parentID != nil {
+			argv = append(argv, "--epic", *parentID)
+		}
+	case "subtask":
+		if parentID != nil {
+			argv = append(argv, "--parent", *parentID)
+		}
+	}
+	if priority != nil {
+		argv = append(argv, "--priority", fmt.Sprintf("%d", *priority))
+	}
+	if sequence != nil {
+		argv = append(argv, "--sequence", fmt.Sprintf("%d", *sequence))
+	}
+	if specMDPath != nil {
+		argv = append(argv, "--spec-md", *specMDPath)
+	}
+	if estTokens != nil {
+		argv = append(argv, "--est-tokens", fmt.Sprintf("%d", *estTokens))
+	}
+	if dueDate != nil {
+		argv = append(argv, "--due-date", *dueDate)
+	}
+	for _, label := range labels {
+		argv = append(argv, "--label", label)
+	}
+	if ownerRole != nil {
+		argv = append(argv, "--owner-role", *ownerRole)
+	}
+	if ownerActor != nil {
+		argv = append(argv, "--owner-actor", *ownerActor)
+	}
+	if scheduling != "" {
+		argv = append(argv, "--scheduling", scheduling)
+	}
+	if inInbox {
+		argv = append(argv, "--inbox")
+	}
+	argv = append(argv, "--by", actorRole)
+	return argv
 }
 
 func statusCategory(status string) string {

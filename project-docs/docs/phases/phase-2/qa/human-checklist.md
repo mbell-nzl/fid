@@ -14,8 +14,8 @@
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HV-01 | no VAL | Review `project-docs/docs/phases/phase-2/qa/final-review.md` phase-level gate table and confirm the represented Task 4 command evidence is sufficient for phase sign-off. `(human)` | Human accepts that the visible phase-end commands are represented clearly enough to support wrap-up. | pass | Reviewed `final-review.md` phase-level gate table against Task 4 completion evidence. Format, lint, race coverage, coverage report, integration, benchmark, build, rebuild smoke, and adapter-boundary evidence are represented clearly enough for wrap-up sign-off. |
-| HV-02 | no VAL | Review the final VAL outcome table and unresolved risks in `final-review.md`. `(human)` | Human sees no unexpected blocker, untriaged ESC, or unacceptable carry-forward risk. | pass | Reviewed final VAL outcomes and unresolved risks. VAL-001..VAL-017 are PASS; final review records no blockers, no major findings, no open escalations, and only expected carry-forward/pending dogfooding items. |
+| HV-01 | no VAL | Review `project-docs/docs/phases/phase-2/qa/final-review.md` phase-level gate table and confirm the represented Task 4 command evidence is sufficient for phase sign-off. `(human)` | Human accepts that the visible phase-end commands are represented clearly enough to support wrap-up. | PASS | Reviewed `final-review.md` phase-level gate table against Task 4 completion evidence. Format, lint, race coverage, coverage report, integration, benchmark, build, rebuild smoke, and adapter-boundary evidence are represented clearly enough for wrap-up sign-off. |
+| HV-02 | no VAL | Review the final VAL outcome table and unresolved risks in `final-review.md`. `(human)` | Human sees no unexpected blocker, untriaged ESC, or unacceptable carry-forward risk. | PASS | Reviewed final VAL outcomes and unresolved risks. VAL-001..VAL-017 are PASS; final review records no blockers, no major findings, no open escalations, and only expected carry-forward/pending dogfooding items. |
 
 ## Dogfooding
 

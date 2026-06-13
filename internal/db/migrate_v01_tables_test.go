@@ -157,6 +157,81 @@ func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *tes
 	assertTableExists(t, conn, "triage_events")
 }
 
+func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	migrationsDir := testMigrationsDir(t)
+
+	migrator, conn := newTestMigrator(t, dbPath, migrationsDir)
+	defer closeMigrator(t, migrator, conn)
+
+	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Up() error = %v", err)
+	}
+
+	if err := execIssueInsert(conn, map[string]any{
+		"id":          "FID-parent-epic",
+		"kind":        "epic",
+		"title":       "Parent epic",
+		"workflow_id": "epic-default",
+		"status":      "todo",
+	}); err != nil {
+		t.Fatalf("insert epic before down migration: %v", err)
+	}
+	if _, err := conn.Exec(`INSERT INTO epic_metadata (issue_id, scheduling) VALUES (?, ?)`, "FID-parent-epic", "sequential"); err != nil {
+		t.Fatalf("insert epic_metadata before down migration: %v", err)
+	}
+
+	if err := execIssueInsert(conn, map[string]any{
+		"id":          "FID-seq-invalid-before-down",
+		"kind":        "task",
+		"parent_id":   "FID-parent-epic",
+		"title":       "Missing sequence",
+		"workflow_id": "task-default",
+		"status":      "todo",
+	}); err == nil || !strings.Contains(err.Error(), "issues: task under sequential epic requires sequence") {
+		t.Fatalf("sequence backstop before down = %v, want sequence trigger failure", err)
+	}
+
+	if err := migrator.Migrate(5); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Migrate(5) error = %v", err)
+	}
+
+	if err := execIssueInsert(conn, map[string]any{
+		"id":          "FID-child-task",
+		"kind":        "task",
+		"parent_id":   "FID-parent-epic",
+		"title":       "Missing sequence allowed after down",
+		"workflow_id": "task-default",
+		"status":      "todo",
+	}); err != nil {
+		t.Fatalf("insert task after down migration: %v", err)
+	}
+
+	if err := execIssueInsert(conn, map[string]any{
+		"id":          "FID-parent-task",
+		"kind":        "task",
+		"title":       "Task parent",
+		"workflow_id": "task-default",
+		"status":      "todo",
+	}); err != nil {
+		t.Fatalf("insert task parent after down migration: %v", err)
+	}
+
+	err := execIssueInsert(conn, map[string]any{
+		"id":          "FID-invalid-child-task",
+		"kind":        "task",
+		"parent_id":   "FID-parent-task",
+		"title":       "Task under task",
+		"workflow_id": "task-default",
+		"status":      "todo",
+	})
+	if err == nil || !strings.Contains(err.Error(), "issues: task parent_id must reference an epic or be NULL") {
+		t.Fatalf("kind trigger after down = %v, want parent kind trigger failure", err)
+	}
+}
+
 func TestDecideProjectionFreshnessRequiresPhaseTwoSchemaVersion(t *testing.T) {
 	t.Parallel()
 
@@ -343,4 +418,22 @@ func containsString(values []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func execIssueInsert(conn *sql.DB, values map[string]any) error {
+	_, err := conn.Exec(`
+		INSERT INTO issues (id, kind, parent_id, sequence, title, workflow_id, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+	`,
+		values["id"],
+		values["kind"],
+		values["parent_id"],
+		values["sequence"],
+		values["title"],
+		values["workflow_id"],
+		values["status"],
+		"2026-06-07T15:00:00Z",
+		"2026-06-07T15:00:00Z",
+	)
+	return err
 }

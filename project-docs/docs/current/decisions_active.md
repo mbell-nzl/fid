@@ -35,11 +35,16 @@ closes, or cancels each item.
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
 | CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
-| CF-004 | Phase 2 planning (TL) | Sequence-vs-scheduling backstop trigger (TRD SCHEMA §14.1 `issues.sequence`) was deferred: the cross-table rule (tasks under sequential epics require a sequence; prioritised/standalone must not) is coupled to v0.1b scheduling semantics. Static positive-`sequence` CHECK + `UNIQUE(parent_id, sequence)` already ship. Scheduled in Phase 4 task 1 with CLI evidence in task 3; a task under an epic missing `epic_metadata` is invalid. | Phase 4 | Medium |
 | CF-005 | Phase 2 planning (TL) | TRD SCHEMA §14.6 activity_log "inserts only during projection" guard trigger and the §4.3 `activity` effect op were deferred: no activity_log population path exists until mutable issue lifecycle writes ship, and a SQL session-scoped projection guard is unreliable under the pooled multi-connection model (DEC-006). Phase 2 ships the §14.2 polymorphic-ref backstop on `activity_log` and exercises it via `insert` effects. Re-deferred to the v0.1b mutation/workflow slice. | Phase 5 | Medium |
-| CF-006 | Phase 3 TRG-001 / review-3 | Enriched issue read-model centralisation: `fid issue get --format markdown` assembles parent title, labels, acceptance criteria, latest verifications, and links inside `cmd/fid/issue.go` because `internal/issues.Get` does not yet expose that full enriched view. Acceptable for one read command, but it brushes TRD-ARCH-005 (`cmd/fid` stays thin) if a second read command reuses the shape. Scheduled before `fid issue list` reuses the shape. | Phase 4 task 4 | Medium |
+| CF-007 | Phase 4 VAL-010 / DEC-014 | Rejected `fid issue create` poisons the journal tail: `internal/issues.Create` appends the event before projecting it, so a create that the Task 1 sequence backstop trigger rejects still commits to the journal and breaks all later reads (`fid issue get` replays the invalid tail and fails) until the line is removed. Implementation conformance gap against TRD §4.3 (validate before append; append is the commit point). Fix: validate scheduling/sequence before append or add a pre-append projection-dry-run; add a regression test that a rejected create leaves the journal line count unchanged plus a poisoned-tail read-recovery test, and a VAL assertion for rejected-write journal hygiene. | Phase 5 | High |
 
 CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`.
+CF-004 (sequence-vs-scheduling backstop) closed at Phase 4 wrap — delivered by
+Phase 4 Task 1 with CLI evidence in Task 3 (VAL-001 PASS); see
+`../phases/phase-4/decisions.md`.
+CF-006 (enriched read-model centralisation) closed at Phase 4 wrap — delivered by
+Phase 4 Task 4 (VAL-006 PASS, `cmd/fid` adapter-boundary scan clean); see
+`../phases/phase-4/decisions.md`.
 
 ## Environment Constraints
 

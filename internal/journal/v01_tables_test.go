@@ -54,6 +54,19 @@ func TestProjectEventPopulatesPhaseTwoRepresentativeTablesViaJournalEffects(t *t
 			},
 			{
 				Op:    "insert",
+				Table: "epic_metadata",
+				PK: map[string]any{
+					"issue_id": "FID-epic01",
+				},
+				Values: map[string]any{
+					"scheduling":    "sequential",
+					"brief_md_path": "project-docs/epics/phase-2.md",
+					"target_start":  "2026-06-07",
+					"target_end":    "2026-06-21",
+				},
+			},
+			{
+				Op:    "insert",
 				Table: "issues",
 				PK: map[string]any{
 					"id": "FID-task01",
@@ -61,6 +74,7 @@ func TestProjectEventPopulatesPhaseTwoRepresentativeTablesViaJournalEffects(t *t
 				Values: map[string]any{
 					"kind":        "task",
 					"parent_id":   "FID-epic01",
+					"sequence":    1,
 					"title":       "Implement migration 0002",
 					"workflow_id": "task-default",
 					"status":      "todo",
@@ -92,19 +106,6 @@ func TestProjectEventPopulatesPhaseTwoRepresentativeTablesViaJournalEffects(t *t
 				Values: map[string]any{
 					"colour":      "#005f73",
 					"description": "Schema work",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "epic_metadata",
-				PK: map[string]any{
-					"issue_id": "FID-epic01",
-				},
-				Values: map[string]any{
-					"scheduling":    "sequential",
-					"brief_md_path": "project-docs/epics/phase-2.md",
-					"target_start":  "2026-06-07",
-					"target_end":    "2026-06-21",
 				},
 			},
 			{

@@ -5,21 +5,18 @@ import (
 	"io"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/issues"
 )
 
 type IssueMarkdownView struct {
-	Issue       issues.Issue
-	ParentTitle *string
-	Links       []IssueMarkdownLink
+	Issue issues.Issue
 }
 
-type IssueMarkdownLink struct {
-	Relation    string
-	TargetID    string
-	TargetTitle string
+type IssueListMarkdownView struct {
+	Items []issues.ListItem
 }
 
 func writeMarkdown(writer io.Writer, value any) error {
@@ -38,6 +35,15 @@ func writeMarkdown(writer io.Writer, value any) error {
 			return fmt.Errorf("markdown issue is nil")
 		}
 		return writeIssueMarkdown(writer, IssueMarkdownView{Issue: *typed})
+	case IssueListMarkdownView:
+		return writeIssueListMarkdown(writer, typed)
+	case *IssueListMarkdownView:
+		if typed == nil {
+			return fmt.Errorf("markdown issue list view is nil")
+		}
+		return writeIssueListMarkdown(writer, *typed)
+	case []issues.ListItem:
+		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
@@ -60,7 +66,7 @@ func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
 	builder.WriteString(markdownPriority(view.Issue.Priority))
 	builder.WriteString("\n")
 
-	if line := markdownEpicLine(view); line != "" {
+	if line := markdownEpicLine(view.Issue); line != "" {
 		builder.WriteString(line)
 		builder.WriteString("\n")
 	}
@@ -76,7 +82,7 @@ func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
 
 	writeAcceptanceCriteriaMarkdown(&builder, view.Issue.AcceptanceCriteria)
 	writeLabelsMarkdown(&builder, view.Issue.Labels)
-	writeLinksMarkdown(&builder, view.Links)
+	writeLinksMarkdown(&builder, view.Issue.Links)
 	writeFooterMarkdown(&builder, view.Issue)
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {
@@ -92,14 +98,14 @@ func markdownPriority(priority *int) string {
 	return fmt.Sprintf("P%d", *priority)
 }
 
-func markdownEpicLine(view IssueMarkdownView) string {
-	if view.Issue.ParentID == nil || strings.TrimSpace(*view.Issue.ParentID) == "" {
+func markdownEpicLine(issue issues.Issue) string {
+	if issue.ParentID == nil || strings.TrimSpace(*issue.ParentID) == "" {
 		return ""
 	}
 
-	line := "**Epic:** " + *view.Issue.ParentID
-	if view.ParentTitle != nil && strings.TrimSpace(*view.ParentTitle) != "" {
-		line += " (" + *view.ParentTitle + ")"
+	line := "**Epic:** " + *issue.ParentID
+	if issue.ParentTitle != nil && strings.TrimSpace(*issue.ParentTitle) != "" {
+		line += " (" + *issue.ParentTitle + ")"
 	}
 	return line
 }
@@ -211,7 +217,7 @@ func writeLabelsMarkdown(builder *strings.Builder, labels []string) {
 	builder.WriteString("\n")
 }
 
-func writeLinksMarkdown(builder *strings.Builder, links []IssueMarkdownLink) {
+func writeLinksMarkdown(builder *strings.Builder, links []issues.IssueLink) {
 	if len(links) == 0 {
 		return
 	}
@@ -222,9 +228,9 @@ func writeLinksMarkdown(builder *strings.Builder, links []IssueMarkdownLink) {
 		builder.WriteString(link.Relation)
 		builder.WriteString(" ")
 		builder.WriteString(link.TargetID)
-		if strings.TrimSpace(link.TargetTitle) != "" {
+		if link.TargetTitle != nil && strings.TrimSpace(*link.TargetTitle) != "" {
 			builder.WriteString(" (")
-			builder.WriteString(link.TargetTitle)
+			builder.WriteString(*link.TargetTitle)
 			builder.WriteString(")")
 		}
 		builder.WriteString("\n")
@@ -247,4 +253,45 @@ func writeFooterMarkdown(builder *strings.Builder, issue issues.Issue) {
 	builder.WriteString(" | Updated: ")
 	builder.WriteString(updatedAt)
 	builder.WriteString("\n")
+}
+
+func writeIssueListMarkdown(writer io.Writer, view IssueListMarkdownView) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Issues\n\n")
+	for _, item := range view.Items {
+		builder.WriteString("- ")
+		builder.WriteString(item.ID)
+		builder.WriteString(" | ")
+		builder.WriteString(item.Kind)
+		builder.WriteString(" | ")
+		builder.WriteString(item.Status)
+		builder.WriteString(" | ")
+		builder.WriteString(item.StatusCategory)
+		builder.WriteString(" | ")
+		builder.WriteString(markdownListEpic(item.ParentID))
+		builder.WriteString(" | ")
+		builder.WriteString(markdownPriority(item.Priority))
+		if item.InInbox {
+			builder.WriteString(" | inbox")
+		}
+		builder.WriteString(" | concerns: ")
+		builder.WriteString(strconv.Itoa(item.OpenConcernsCount))
+		builder.WriteString("\n")
+		builder.WriteString("  ")
+		builder.WriteString(item.Title)
+		builder.WriteString("\n")
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func markdownListEpic(parentID *string) string {
+	if parentID == nil || strings.TrimSpace(*parentID) == "" {
+		return "no epic"
+	}
+	return "epic " + *parentID
 }

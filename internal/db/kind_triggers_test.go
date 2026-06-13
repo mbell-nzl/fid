@@ -25,6 +25,7 @@ func TestIssueParentKindTriggerRejectsInvalidHierarchiesAndAllowsValidRows(t *te
 		status:     "todo",
 		title:      "Parent epic",
 	})
+	insertEpicMetadataRow(t, conn, "FID-parent-epic", "prioritised")
 	insertIssueRow(t, conn, issueRow{
 		id:         "FID-parent-task",
 		kind:       "task",
@@ -142,6 +143,139 @@ func TestIssueParentKindTriggerRejectsInvalidHierarchiesAndAllowsValidRows(t *te
 			}
 		})
 	}
+}
+
+func TestIssueSequenceSchedulingTriggerRejectsInvalidTaskStatesAndAllowsValidRows(t *testing.T) {
+	t.Parallel()
+
+	conn := openKindTriggerDB(t)
+	defer closeKindTriggerDB(t, conn)
+
+	insertIssueRow(t, conn, issueRow{
+		id:         "FID-seq-epic",
+		kind:       "epic",
+		workflowID: "epic-default",
+		status:     "todo",
+		title:      "Sequential epic",
+	})
+	insertEpicMetadataRow(t, conn, "FID-seq-epic", "sequential")
+	insertIssueRow(t, conn, issueRow{
+		id:         "FID-pri-epic",
+		kind:       "epic",
+		workflowID: "epic-default",
+		status:     "todo",
+		title:      "Prioritised epic",
+	})
+	insertEpicMetadataRow(t, conn, "FID-pri-epic", "prioritised")
+	insertIssueRow(t, conn, issueRow{
+		id:         "FID-metadata-missing-epic",
+		kind:       "epic",
+		workflowID: "epic-default",
+		status:     "todo",
+		title:      "Epic without metadata",
+	})
+
+	tests := []struct {
+		name    string
+		row     issueRow
+		wantErr string
+	}{
+		{
+			name: "rejects sequential epic task without sequence",
+			row: issueRow{
+				id:         "FID-seq-task-missing",
+				kind:       "task",
+				parentID:   sql.NullString{String: "FID-seq-epic", Valid: true},
+				workflowID: "task-default",
+				status:     "todo",
+				title:      "Missing sequence",
+			},
+			wantErr: "issues: task under sequential epic requires sequence",
+		},
+		{
+			name: "rejects prioritised epic task with sequence",
+			row: issueRow{
+				id:         "FID-pri-task-with-seq",
+				kind:       "task",
+				parentID:   sql.NullString{String: "FID-pri-epic", Valid: true},
+				workflowID: "task-default",
+				status:     "todo",
+				title:      "Priority task with sequence",
+				sequence:   sql.NullInt64{Int64: 1, Valid: true},
+			},
+			wantErr: "issues: task under prioritised epic must not have sequence",
+		},
+		{
+			name: "rejects unattached task with sequence",
+			row: issueRow{
+				id:         "FID-standalone-with-seq",
+				kind:       "task",
+				workflowID: "task-default",
+				status:     "todo",
+				title:      "Standalone task with sequence",
+				sequence:   sql.NullInt64{Int64: 1, Valid: true},
+			},
+			wantErr: "issues: unattached task must not have sequence",
+		},
+		{
+			name: "rejects task under epic missing metadata",
+			row: issueRow{
+				id:         "FID-metadata-missing-task",
+				kind:       "task",
+				parentID:   sql.NullString{String: "FID-metadata-missing-epic", Valid: true},
+				workflowID: "task-default",
+				status:     "todo",
+				title:      "Task under metadata-less epic",
+			},
+			wantErr: "issues: task parent epic must have epic_metadata",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := execInsertIssue(conn, tt.row)
+			assertSQLErrorContains(t, err, tt.wantErr)
+		})
+	}
+
+	validRows := []issueRow{
+		{
+			id:         "FID-seq-task-valid",
+			kind:       "task",
+			parentID:   sql.NullString{String: "FID-seq-epic", Valid: true},
+			workflowID: "task-default",
+			status:     "todo",
+			title:      "Sequenced task",
+			sequence:   sql.NullInt64{Int64: 1, Valid: true},
+		},
+		{
+			id:         "FID-pri-task-valid",
+			kind:       "task",
+			parentID:   sql.NullString{String: "FID-pri-epic", Valid: true},
+			workflowID: "task-default",
+			status:     "todo",
+			title:      "Prioritised task",
+		},
+	}
+
+	for _, row := range validRows {
+		t.Run("accepts "+row.id, func(t *testing.T) {
+			if err := execInsertIssue(conn, row); err != nil {
+				t.Fatalf("execInsertIssue(%q) error = %v", row.id, err)
+			}
+		})
+	}
+
+	err := execInsertIssue(conn, issueRow{
+		id:         "FID-seq-task-duplicate",
+		kind:       "task",
+		parentID:   sql.NullString{String: "FID-seq-epic", Valid: true},
+		workflowID: "task-default",
+		status:     "todo",
+		title:      "Duplicate sequence",
+		sequence:   sql.NullInt64{Int64: 1, Valid: true},
+	})
+	assertSQLErrorContains(t, err, "UNIQUE constraint failed: issues.parent_id, issues.sequence")
 }
 
 func TestIssueKindGuardTriggersRejectWrongKindsAndAllowValidRows(t *testing.T) {
@@ -393,6 +527,16 @@ func TestValidJournalProjectedIssueStillAppliesWithKindTriggersActive(t *testing
 			},
 			{
 				Op:    "insert",
+				Table: "epic_metadata",
+				PK: map[string]any{
+					"issue_id": "FID-journal-epic",
+				},
+				Values: map[string]any{
+					"scheduling": "sequential",
+				},
+			},
+			{
+				Op:    "insert",
 				Table: "issues",
 				PK: map[string]any{
 					"id": "FID-journal-task",
@@ -400,6 +544,7 @@ func TestValidJournalProjectedIssueStillAppliesWithKindTriggersActive(t *testing
 				Values: map[string]any{
 					"kind":        "task",
 					"parent_id":   "FID-journal-epic",
+					"sequence":    1,
 					"title":       "Journal task",
 					"workflow_id": "task-default",
 					"status":      "todo",
@@ -429,6 +574,7 @@ type issueRow struct {
 	id         string
 	kind       string
 	parentID   sql.NullString
+	sequence   sql.NullInt64
 	title      string
 	workflowID string
 	status     string
@@ -457,14 +603,26 @@ func insertIssueRow(t *testing.T, conn *sql.DB, row issueRow) {
 	}
 }
 
+func insertEpicMetadataRow(t *testing.T, conn *sql.DB, issueID, scheduling string) {
+	t.Helper()
+
+	if _, err := conn.Exec(`
+		INSERT INTO epic_metadata (issue_id, scheduling)
+		VALUES (?, ?)
+	`, issueID, scheduling); err != nil {
+		t.Fatalf("insert epic_metadata(%q) error = %v", issueID, err)
+	}
+}
+
 func execInsertIssue(conn *sql.DB, row issueRow) error {
 	_, err := conn.Exec(`
-		INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		INSERT INTO issues (id, kind, parent_id, sequence, title, workflow_id, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`,
 		row.id,
 		row.kind,
 		nullStringValue(row.parentID),
+		nullInt64Value(row.sequence),
 		row.title,
 		row.workflowID,
 		row.status,
@@ -509,4 +667,11 @@ func nullStringValue(value sql.NullString) any {
 		return nil
 	}
 	return value.String
+}
+
+func nullInt64Value(value sql.NullInt64) any {
+	if !value.Valid {
+		return nil
+	}
+	return value.Int64
 }

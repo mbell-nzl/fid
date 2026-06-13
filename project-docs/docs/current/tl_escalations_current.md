@@ -40,9 +40,18 @@ finding:
 
 ## Open Escalations
 
-_None open._ ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 /
-Task 7 and archived at Phase 1 wrap-up to
-`project-docs/docs/phases/phase-1/tl-escalations.md`.
+None open.
+
+The Phase 4 journal-poisoning defect (rejected `fid issue create` appends to the
+journal and poisons the tail) is tracked as carry-forward **CF-007**
+(`decisions_active.md`) / **DEC-014** (`phases/phase-4/decisions.md`), not as an
+open escalation — it is a well-diagnosed, scheduled Phase 5 fixup.
+
+ESC-002 (Phase 4 due-date read-back gap) was resolved by Task 4 and archived to
+`project-docs/docs/phases/phase-4/tl-escalations.md`.
+
+ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 / Phase 1
+Task 7 and archived to `project-docs/docs/phases/phase-1/tl-escalations.md`.
 
 <!--
 Add new escalations above this comment using the template at
