@@ -60,7 +60,7 @@
 
 ## Commit hash
 
-- `27a2350`
+- `3db4c0d`
 
 ## Commit subject
 
