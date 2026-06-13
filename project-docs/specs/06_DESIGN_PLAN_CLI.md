@@ -202,7 +202,9 @@ journal event.
 
 **Output (stderr confirmation):**
 ```text
-updated FID-a1b2c3: title "Implement journal append with flush" -> "Implement journal append with fsync", priority 2 -> 1
+updated FID-a1b2c3:
+title "Implement journal append with flush" -> "Implement journal append with fsync"
+priority 2 -> 1
 ```
 
 **Inbox promote (v0.2):** `fid issue update --epic`/`--no-inbox` completes the
@@ -212,7 +214,10 @@ deferred sugar over this primitive.
 
 ```text
 $ fid issue update FID-x --epic FID-e1f2g3 --priority 2 --no-inbox --by tl
-updated FID-x: epic → FID-e1f2g3, priority 0 → 2, inbox cleared
+updated FID-x:
+epic (none) -> FID-e1f2g3
+priority 0 -> 2
+inbox true -> false
 ```
 
 ### `fid issue label add`

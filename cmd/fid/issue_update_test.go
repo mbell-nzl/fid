@@ -21,14 +21,19 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 		"--priority", "1",
 		"--by", "developer",
 	)
-	if !strings.Contains(updateStderr, "updated "+issueID+":") {
-		t.Fatalf("stderr = %q, want update confirmation", updateStderr)
+	gotLines := strings.Split(strings.TrimSpace(updateStderr), "\n")
+	wantLines := []string{
+		"updated " + issueID + ":",
+		`title "Implement issue update" -> "Ship issue update"`,
+		"priority 2 -> 1",
 	}
-	if !strings.Contains(updateStderr, `title "Implement issue update" -> "Ship issue update"`) {
-		t.Fatalf("stderr = %q, want title change summary", updateStderr)
+	if len(gotLines) != len(wantLines) {
+		t.Fatalf("stderr lines = %#v, want %#v", gotLines, wantLines)
 	}
-	if !strings.Contains(updateStderr, "priority 2 -> 1") {
-		t.Fatalf("stderr = %q, want priority change summary", updateStderr)
+	for index, wantLine := range wantLines {
+		if gotLines[index] != wantLine {
+			t.Fatalf("stderr lines = %#v, want %#v", gotLines, wantLines)
+		}
 	}
 
 	stdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
@@ -48,6 +53,36 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 	}
 	if got.Priority == nil || *got.Priority != 1 {
 		t.Fatalf("priority = %#v, want 1", got.Priority)
+	}
+}
+
+func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Single field update", "--priority", "2", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	_, updateStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "update", issueID,
+		"--priority", "1",
+		"--by", "developer",
+	)
+
+	gotLines := strings.Split(strings.TrimSpace(updateStderr), "\n")
+	wantLines := []string{
+		"updated " + issueID + ":",
+		"priority 2 -> 1",
+	}
+	if len(gotLines) != len(wantLines) {
+		t.Fatalf("stderr lines = %#v, want %#v", gotLines, wantLines)
+	}
+	for index, wantLine := range wantLines {
+		if gotLines[index] != wantLine {
+			t.Fatalf("stderr lines = %#v, want %#v", gotLines, wantLines)
+		}
 	}
 }
 

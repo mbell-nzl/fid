@@ -207,7 +207,7 @@ func newIssueUpdateCommand() *cobra.Command {
 				return err
 			}
 
-			return writeIssueLine(cmd.ErrOrStderr(), "updated %s: %s\n", result.ID, issueUpdateSummary(result.Changes))
+			return writeIssueLine(cmd.ErrOrStderr(), "updated %s:\n%s\n", result.ID, issueUpdateSummary(result.Changes))
 		},
 	}
 
@@ -477,7 +477,7 @@ func issueUpdateSummary(changes []issues.FieldChange) string {
 	for _, change := range changes {
 		parts = append(parts, fmt.Sprintf("%s %s -> %s", issueUpdateFieldLabel(change.Field), issueUpdateValue(change.From), issueUpdateValue(change.To)))
 	}
-	return strings.Join(parts, ", ")
+	return strings.Join(parts, "\n")
 }
 
 func issueUpdateFieldLabel(field string) string {
