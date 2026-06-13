@@ -51,8 +51,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `263d523`
 
 ## Commit subject
 
-- Pending commit creation.
+- `fix(journal): validate issue creates before append`
