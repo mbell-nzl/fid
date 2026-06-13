@@ -472,6 +472,71 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 	}
 }
 
+func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	epicCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "epic",
+		Title:         "Prioritised parent",
+		ActorRole:     "tl",
+		Scheduling:    "prioritised",
+	})
+	if err != nil {
+		t.Fatalf("Create(epic) error = %v", err)
+	}
+
+	validTask, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Valid sibling",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(epicCreated.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(valid task) error = %v", err)
+	}
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	linesBefore := countJournalLines(journalPath)
+
+	_, err = Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Invalid sequenced task",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(epicCreated.ID),
+		Sequence:      intPointer(1),
+	})
+	if err == nil {
+		t.Fatal("Create(invalid task) error = nil, want projection failure")
+	}
+	if !strings.Contains(err.Error(), "issues: task under prioritised epic must not have sequence") {
+		t.Fatalf("Create(invalid task) error = %q, want prioritised-epic sequence rejection", err.Error())
+	}
+
+	if got := countJournalLines(journalPath); got != linesBefore {
+		t.Fatalf("journal lines after rejected create = %d, want unchanged %d", got, linesBefore)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            validTask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(valid task after rejected create) error = %v", err)
+	}
+	if got.ID != validTask.ID {
+		t.Fatalf("Get(valid task after rejected create) id = %q, want %q", got.ID, validTask.ID)
+	}
+}
+
 func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 	t.Parallel()
 

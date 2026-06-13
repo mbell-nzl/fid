@@ -51,15 +51,16 @@ func (err *PreconditionConflictError) Error() string {
 	)
 }
 
-func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
-	if conn == nil {
-		return fmt.Errorf("project event: connection is nil")
+func DryRunProjectEvent(conn *sql.DB, event Event) error {
+	if err := validateProjectionConnection(conn); err != nil {
+		return err
+	}
+
+	input := ProjectionInput{
+		Event: event,
 	}
 	if input.Event.EventID == "" {
-		return fmt.Errorf("project event: event_id is required")
-	}
-	if input.EventHash == "" {
-		return fmt.Errorf("project event %q: event hash is required", input.Event.EventID)
+		input.Event.EventID = "EVT-dry-run"
 	}
 
 	tx, err := conn.Begin()
@@ -67,11 +68,33 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
 	}
 
-	for _, effect := range input.Event.Effects {
-		if err := applyEffect(tx, input, effect); err != nil {
-			_ = tx.Rollback()
-			return err
-		}
+	if err := applyEventEffects(tx, input); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	if err := tx.Rollback(); err != nil {
+		return fmt.Errorf("project event %q: rollback transaction: %w", input.Event.EventID, err)
+	}
+
+	return nil
+}
+
+func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
+	if err := validateProjectionConnection(conn); err != nil {
+		return err
+	}
+	if err := validateProjectionInput(input); err != nil {
+		return err
+	}
+
+	tx, err := conn.Begin()
+	if err != nil {
+		return fmt.Errorf("project event %q: begin transaction: %w", input.Event.EventID, err)
+	}
+
+	if err := applyEventEffects(tx, input); err != nil {
+		_ = tx.Rollback()
+		return err
 	}
 
 	replayStatus := input.ReplayMode
@@ -96,6 +119,32 @@ func ProjectEvent(conn *sql.DB, input ProjectionInput) error {
 		return fmt.Errorf("project event %q: commit transaction: %w", input.Event.EventID, err)
 	}
 
+	return nil
+}
+
+func validateProjectionConnection(conn *sql.DB) error {
+	if conn == nil {
+		return fmt.Errorf("project event: connection is nil")
+	}
+	return nil
+}
+
+func validateProjectionInput(input ProjectionInput) error {
+	if input.Event.EventID == "" {
+		return fmt.Errorf("project event: event_id is required")
+	}
+	if input.EventHash == "" {
+		return fmt.Errorf("project event %q: event hash is required", input.Event.EventID)
+	}
+	return nil
+}
+
+func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
+	for _, effect := range input.Event.Effects {
+		if err := applyEffect(tx, input, effect); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 

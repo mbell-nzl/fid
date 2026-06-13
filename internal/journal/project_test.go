@@ -415,6 +415,204 @@ func TestProjectEventHonoursSequenceSchedulingBackstop(t *testing.T) {
 	}
 }
 
+func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+		t.Fatalf("MigrateUp() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	baseEvent := projectRoleEvent("EVT-20260613-000001", "insert", map[string]any{
+		"description": "Developer",
+		"active":      true,
+	}, nil)
+	baseHash, err := HashEvent(baseEvent)
+	if err != nil {
+		t.Fatalf("HashEvent(base) error = %v", err)
+	}
+	if err := ProjectEvent(conn, ProjectionInput{
+		Event:     baseEvent,
+		EventHash: baseHash,
+		File:      "2026-06-13.jsonl",
+		Line:      1,
+		Offset:    100,
+	}); err != nil {
+		t.Fatalf("ProjectEvent(base) error = %v", err)
+	}
+
+	metaBefore, found, err := fiddb.ReadProjectionMeta(conn)
+	if err != nil {
+		t.Fatalf("ReadProjectionMeta(before) error = %v", err)
+	}
+	if !found {
+		t.Fatal("ReadProjectionMeta(before) found = false, want true")
+	}
+
+	err = DryRunProjectEvent(conn, Event{
+		EventType: "issue.created",
+		Actor: Actor{
+			Role: "developer",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "issue", "create"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			{
+				Op:    "insert",
+				Table: "roles",
+				PK: map[string]any{
+					"name": "qa_lead",
+				},
+				Values: map[string]any{
+					"description": "QA Lead",
+					"active":      true,
+					"is_human":    true,
+					"created_at":  "2026-06-13T10:00:00Z",
+				},
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("DryRunProjectEvent() error = %v", err)
+	}
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles WHERE name = ?`, "qa_lead").Scan(&count); err != nil {
+		t.Fatalf("count dry-run role: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("dry-run inserted roles = %d, want 0", count)
+	}
+
+	metaAfter, found, err := fiddb.ReadProjectionMeta(conn)
+	if err != nil {
+		t.Fatalf("ReadProjectionMeta(after) error = %v", err)
+	}
+	if !found {
+		t.Fatal("ReadProjectionMeta(after) found = false, want true")
+	}
+	if metaAfter != metaBefore {
+		t.Fatalf("projection_meta after dry run = %#v, want unchanged %#v", metaAfter, metaBefore)
+	}
+}
+
+func TestDryRunProjectEventRollsBackOnProjectionFailure(t *testing.T) {
+	t.Parallel()
+
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	if err := fiddb.MigrateUp(dbPath, testProjectMigrationsDir(t)); err != nil {
+		t.Fatalf("MigrateUp() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	baseEvent := projectRoleEvent("EVT-20260613-000001", "insert", map[string]any{
+		"description": "Developer",
+		"active":      true,
+	}, nil)
+	baseHash, err := HashEvent(baseEvent)
+	if err != nil {
+		t.Fatalf("HashEvent(base) error = %v", err)
+	}
+	if err := ProjectEvent(conn, ProjectionInput{
+		Event:     baseEvent,
+		EventHash: baseHash,
+		File:      "2026-06-13.jsonl",
+		Line:      1,
+		Offset:    100,
+	}); err != nil {
+		t.Fatalf("ProjectEvent(base) error = %v", err)
+	}
+
+	metaBefore, found, err := fiddb.ReadProjectionMeta(conn)
+	if err != nil {
+		t.Fatalf("ReadProjectionMeta(before) error = %v", err)
+	}
+	if !found {
+		t.Fatal("ReadProjectionMeta(before) found = false, want true")
+	}
+
+	err = DryRunProjectEvent(conn, Event{
+		EventType: "issue.created",
+		Actor: Actor{
+			Role: "developer",
+		},
+		Command: Command{
+			Argv:       []string{"fid", "issue", "create"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []Effect{
+			projectIssueEffect("FID-priority-epic", map[string]any{
+				"kind":        "epic",
+				"title":       "Prioritised epic",
+				"workflow_id": "epic-default",
+				"status":      "todo",
+				"created_at":  "2026-06-13T10:00:00Z",
+				"updated_at":  "2026-06-13T10:00:00Z",
+			}),
+			{
+				Op:    "insert",
+				Table: "epic_metadata",
+				PK: map[string]any{
+					"issue_id": "FID-priority-epic",
+				},
+				Values: map[string]any{
+					"scheduling": "prioritised",
+				},
+			},
+			projectIssueEffect("FID-invalid-task", map[string]any{
+				"kind":        "task",
+				"parent_id":   "FID-priority-epic",
+				"sequence":    1,
+				"title":       "Invalid task",
+				"workflow_id": "task-default",
+				"status":      "todo",
+				"created_at":  "2026-06-13T10:01:00Z",
+				"updated_at":  "2026-06-13T10:01:00Z",
+			}),
+		},
+	})
+	if err == nil {
+		t.Fatal("DryRunProjectEvent() error = nil, want projection rejection")
+	}
+	if !strings.Contains(err.Error(), "issues: task under prioritised epic must not have sequence") {
+		t.Fatalf("DryRunProjectEvent() error = %q, want prioritised-epic sequence rejection", err.Error())
+	}
+
+	var issueCount int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM issues WHERE id IN (?, ?)`, "FID-priority-epic", "FID-invalid-task").Scan(&issueCount); err != nil {
+		t.Fatalf("count dry-run issues: %v", err)
+	}
+	if issueCount != 0 {
+		t.Fatalf("dry-run projected issues = %d, want 0", issueCount)
+	}
+
+	metaAfter, found, err := fiddb.ReadProjectionMeta(conn)
+	if err != nil {
+		t.Fatalf("ReadProjectionMeta(after) error = %v", err)
+	}
+	if !found {
+		t.Fatal("ReadProjectionMeta(after) found = false, want true")
+	}
+	if metaAfter != metaBefore {
+		t.Fatalf("projection_meta after failed dry run = %#v, want unchanged %#v", metaAfter, metaBefore)
+	}
+}
+
 func TestProjectHelpersValidateEffectsAndResults(t *testing.T) {
 	t.Parallel()
 

@@ -262,6 +262,10 @@ func Create(options CreateOptions) (CreateResult, error) {
 			Effects: effects,
 		}
 
+		if err := journal.DryRunProjectEvent(conn, event); err != nil {
+			return err
+		}
+
 		appended, err := journal.AppendEvent(lock, event)
 		if err != nil {
 			return err
