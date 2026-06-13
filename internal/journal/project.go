@@ -8,6 +8,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -469,6 +470,11 @@ func normalizeValue(value any) any {
 			return int64(1)
 		}
 		return int64(0)
+	case time.Time:
+		if typed.Hour() == 0 && typed.Minute() == 0 && typed.Second() == 0 && typed.Nanosecond() == 0 {
+			return typed.UTC().Format("2006-01-02")
+		}
+		return typed.UTC().Format(time.RFC3339)
 	default:
 		return value
 	}
