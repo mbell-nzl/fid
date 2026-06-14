@@ -38,10 +38,13 @@ Open carry-forward register: CF-003 (role corrupt-tail, before v0.1d), CF-008
 
 ## Next Action
 
-- Plan **Phase 7** (roadmap §v0.1c — ACs, Completions, Concerns): `fid issue ac
-  add/verify/list`, `fid issue complete`, `fid concern raise/address/list`, and
-  the `issues_enriched` derived concern flags (PRD-AC-001..006, PRD-DEV-001..010).
-  Draft `../phases/phase-7/qa/validation-contract.md` and the ordered task list.
+- **Phase 7 is PLANNED** (roadmap §v0.1c, first slice — acceptance-criteria
+  surface only). Validation contract (VAL-001..010) and 4 ordered Developer tasks
+  drafted under `../phases/phase-7/`; brief refreshed. v0.1c is split into Phase 7
+  (ACs), Phase 8 (completions), Phase 9 (concerns + derived flag) per the roadmap
+  §v0.1c slicing note. Proposed **DEC-020** (AC writes don't emit `activity_log`,
+  consistent with `fid issue create`) awaits human confirmation.
+- Next: QA Lead refines the Phase 7 QA plan and runs the dev/QA loop from Task 1.
 - Standing commitment before release-readiness: decide where held-out scenarios
   live and how implementation agents are prevented from loading them
   (`held-out-recommendation.md` recommends the v0.1b smoke as the seed).

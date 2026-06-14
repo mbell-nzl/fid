@@ -1,60 +1,87 @@
-# Phase Brief - Between Phases (Phase 6 CLOSED → Phase 7 to plan)
+# Phase Brief - Phase 7 (Acceptance Criteria Surface, v0.1c)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 6 (Ready Queue + v0.1b Closure) is **CLOSED** — QA
-> DETERMINISTIC PASS; human dogfood 3/3; VAL-001..012 all PASS; **v0.1b complete**.
-> Archives under `../phases/phase-6/`. **Phase 7 is not yet planned** — the Tech
-> Lead must draft the validation contract and ordered task list before execution.
+> **State:** Phase 7 is **PLANNED** — validation contract + 4 ordered Developer
+> tasks drafted; awaiting QA Lead QA-plan refinement and execution. Phase 6
+> (v0.1b) is CLOSED; archives under `../phases/phase-6/`.
 
-## Phase 6 outcome (closed)
+## Phase 7 goal (roadmap §v0.1c — first slice)
 
-`fid ready` + v0.1b closure shipped. CF-009 and CF-010 closed. DEC-017
-(status-category readiness), DEC-018 (frozen `{"task": null}` empty state), and
-DEC-019 (`priority ASC` nil-last → `created_at` → `id` selection order) are
-recorded in `../phases/phase-6/decisions.md`. Coverage held (COV-001/002).
+Ship the **acceptance-criteria write surface** on the existing
+`acceptance_criteria` / `ac_verifications` schema and read path, and replace the
+Phase 5 journal-fixture evidence for the `all_acs_verified` transition rule with
+real write commands:
 
-## Next phase target (roadmap §v0.1c — ACs, Completions, Concerns)
+- `fid issue ac add` — ordered ACs on tasks/subtasks; reject on epics (PRD-AC-001/002).
+- `fid issue ac verify` — multi-role, append-only verification with evidence/status (PRD-AC-003/004/005).
+- `fid issue ac list` — latest verification status per role, all read formats (PRD-AC-006, PRD-OUT-001–004).
+- End-to-end: real AC verification drives `all_acs_verified`-gated transition + rebuild parity (PRD-WF-007, ADR-0001).
 
-Phase 7 implements the v0.1c write surface:
+Out of scope (later v0.1c phases): `fid issue complete` + `task_completions`
+(Phase 8); `fid concern raise/address/list` + derived concern flag (Phase 9).
 
-- `fid issue ac add` / `ac verify` / `ac list` (PRD-AC-001..006) — ordered
-  acceptance criteria, multi-role append-only verification, latest-status list.
-- `fid issue complete` (PRD-DEV-001..004, 009..010) — append-only
-  `task_completions` row with attempt number, tokens, commits, files touched,
-  `gate_runs` snapshot, human-intervention flag; supersede prior attempts.
-- `fid concern raise` / `address` / `list` (PRD-DEV-005..007).
-- `issues_enriched` derived `concerns_raised` / `open_concerns_count` (PRD-DEV-007).
+## Ordered task list
+
+| Task | Title | VAL coverage | Notes |
+|---|---|---|---|
+| 1 | `fid issue ac add` | VAL-001, VAL-002 | New write path; epic rejection before append (CF-007). |
+| 2 | `fid issue ac verify` | VAL-003, VAL-004, VAL-005 | Append-only multi-role; status/evidence enums; completion_id NULL. |
+| 3 | `fid issue ac list` | VAL-006, VAL-007 | Read-only; reuse latest-per-role helpers; format dispatch. |
+| 4 | `all_acs_verified` real-data + rebuild parity (closure) | VAL-008, VAL-009 | E2E reject→verify→pass; delete-DB + `fid rebuild` parity. |
+| — | Human dogfood | VAL-010 | phase-end checklist; QA Lead fans into per-observable rows. |
+
+## Validation contract index
+
+`../phases/phase-7/qa/validation-contract.md` (VAL-001..010):
+
+- VAL-001 ordered `ac add`; VAL-002 epic rejection (both states).
+- VAL-003 multi-role independence; VAL-004 append-only history; VAL-005 field recording + invalid-status rejection.
+- VAL-006 latest-per-role `ac list`; VAL-007 four-format dispatch + JSON default.
+- VAL-008 real-data `all_acs_verified` gating (reject→pass); VAL-009 rebuild parity.
+- VAL-010 human AC-lifecycle dogfood.
+
+## Planning decision (DEC-020, confirmed by human)
+
+AC writes (`ac add`, `ac verify`) **do not emit `activity_log`** in Phase 7 —
+consistent with `fid issue create` (creations don't log to the derived timeline
+table; only `update`/`transition` mutations do, per Phase 5 CF-005). The journal
+still records every AC write (rebuild is unaffected; VAL-009 proves it). Broad,
+consistent `activity_log` timeline population is deferred to v0.1e via **CF-011**
+(reconcile create + AC writes + any other unlogged creations when `fid activity
+list` / PRD-OUT-017 is designed). No activity VAL in Phase 7.
 
 ## Carry-Forward Register (open)
 
 | ID | Item | Disposition |
 |---|---|---|
-| CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work. |
+| CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work (not Phase 7). |
 | CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
+| CF-011 | Consistent `activity_log` timeline population across all writes (DEC-020) | v0.1e (with `fid activity list`). |
 
-CF-009 and CF-010 closed at Phase 6 wrap.
+CF-003 and CF-008 are not in Phase 7 scope; CF-011 is opened by Phase 7 DEC-020
+and targets v0.1e (not Phase 7 work).
 
-## Standing commitments to honor at Phase 7 planning
+## Standing commitments to honor
 
-- Create `../phases/phase-7/qa/validation-contract.md` with `VAL-NNN` assertions
-  before task execution begins (one observable each; binary/conditional
-  assertions name both states; parity/"matches reference" needs deterministic
-  conformance evidence).
-- DEC-007 carry-in: COV-001 (`internal/issues`, `internal/journal`,
-  `internal/policy`, `internal/workflow` ≥ 80%); COV-002 `cmd/fid` ≥ 70%.
-  Phase 6 ended: `cmd/fid` 78.3%, `internal/issues` 82.5%, `internal/journal`
-  80.3%, `internal/policy` 85.0%, `internal/workflow` 95.5%.
-- Before release-readiness work, decide where held-out scenarios live and how
+- Coverage (DEC-007): COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
+  COV-002 `cmd/fid` ≥ 70%. Phase 6 ended `cmd/fid` 78.3%, `internal/issues`
+  82.5%, `internal/journal` 80.3%, `internal/policy` 85.0%, `internal/workflow`
+  95.5%.
+- Validate-before-append (CF-007): all AC rejections occur before journal append
+  (non-zero exit, clear error, zero new lines/rows).
+- Before release-readiness: decide where held-out scenarios live and how
   implementation agents are prevented from loading them
-  (`../phases/phase-6/held-out-recommendation.md` recommends the v0.1b smoke seed).
-- Process nudge (Phase 6 workflow note): require pasted exact command transcripts
-  for any public-output change in completion reports — fold into task specs to
-  avoid repeat evidence-format findings.
+  (`../phases/phase-6/held-out-recommendation.md` recommends the v0.1b smoke seed;
+  Task 4's AC smoke may extend it — recommend only).
+- Process nudge (Phase 6): require pasted exact command transcripts for any
+  public-output change in completion reports — folded into each task spec.
 
 ## Next Checkpoint
 
-Tech Lead: read the roadmap §v0.1c entry and relevant PRD/TRD/design sections,
-review the carry-forward register, then draft the Phase 7 validation contract
-and ordered Developer task list. Present both to the human before execution.
+QA Lead: refine `../phases/phase-7/qa/validation-contract.md` into a QA plan
+mapping every VAL to deterministic `(qa-lead)` / mid-phase-review / `(human)`
+evidence, fan VAL-010 into per-observable human rows, then start the dev/QA loop
+on Task 1.
+</content>

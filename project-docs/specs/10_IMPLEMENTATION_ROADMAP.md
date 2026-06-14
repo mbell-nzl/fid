@@ -165,6 +165,57 @@ with whet's task artifacts.
 | `fid concern list` | List concerns filtered by issue and status. | PRD-DEV-006–007 |
 | Derived concern flag | `issues_enriched` view exposes `concerns_raised` and `open_concerns_count`. | PRD-DEV-007 |
 
+> **Phase-slicing note — v0.1c (Tech Lead, 2026-06-14).**
+> v0.1c is smaller than v0.1a/v0.1b but is contract-heavy: it adds the
+> append-only fact tables (`ac_verifications`, `task_completions`, `concerns`)
+> that later versions extend, and it replaces the Phase 5 journal-fixture
+> evidence for the `all_acs_verified` / `has_completion_report` /
+> `concerns_addressed` transition rules with real write commands. The schema and
+> the `issues_enriched` view already exist (v0.1a schema-widening); v0.1c only
+> adds the CLI write surface and read-back. Slice into **three phases**, each
+> exiting on commands an agent can run against a real `.fid/` workspace.
+>
+> - **Phase 7 — Acceptance criteria surface.** Implement `fid issue ac add`
+>   (ordered, reject on epics), `fid issue ac verify` (multi-role, append-only,
+>   evidence type/ref, history-preserving), and `fid issue ac list` (latest
+>   verification status per verifier role, all read formats). Wire real AC
+>   verifications into the existing `all_acs_verified` transition rule, replacing
+>   the Phase 5 fixtures. Self-contained: depends only on issues (Phase 4) and
+>   the workflow rules (Phase 5). **Exit:** an agent can add ordered ACs to a
+>   task/subtask, reject AC-on-epic, record independent multi-role pass/fail/
+>   blocked/not_applicable verifications that preserve history, list latest
+>   status per role, and drive a real `all_acs_verified`-gated transition.
+> - **Phase 8 — Task completions.** Implement `fid issue complete`: append-only
+>   `task_completions` row with attempt number, tokens, commits, files touched,
+>   human-intervention flag/note, prior-attempt supersession, and the
+>   `gate_runs`→`gate_results` snapshot mechanism. Wire real completions into the
+>   existing `has_completion_report` transition rule. `fid dev gate` ships in
+>   v0.1e, so `gate_runs` rows are seeded via journal fixtures (Phase 5 pattern)
+>   to exercise the snapshot until the write command exists. **Exit:** an agent
+>   can record a completion attempt, observe attempt numbering and supersession
+>   of prior attempts, see the gate snapshot rolled into the completion, flag a
+>   human intervention, and satisfy a real `has_completion_report`-gated
+>   transition.
+> - **Phase 9 — Concerns + derived flag + v0.1c closure.** Implement
+>   `fid concern raise` (linked to issue + `--in-completion`), `fid concern
+>   address` (lifecycle to addressed), and `fid concern list` (filter by issue/
+>   status). Surface the `issues_enriched` derived `concerns_raised` /
+>   `open_concerns_count` on issue reads and wire real concerns into the existing
+>   `concerns_addressed` transition rule. Run an end-to-end v0.1c smoke over
+>   ac add/verify/list → complete → concern raise/address/list. Depends on
+>   completions (Phase 8) for the required `--in-completion` endpoint. **Exit:**
+>   an agent can raise a concern against a completion, see open concerns light up
+>   the derived flag on issue reads, address it and watch the flag clear, and
+>   close out the v0.1c lifecycle end-to-end.
+>
+> Ordering rationale: ACs are self-contained and listed first; concerns require a
+> real `completion_id`, so completions must precede them. The only forward
+> wrinkle is the optional `ac_verifications.completion_id` FK — exercise it with a
+> journal fixture in Phase 7 if needed; real-completion linkage is re-verifiable
+> once Phase 8 ships. Explicit deferrals: composite `fid dev start/gate/finish/
+> block` and concern `escalated`/`wontfix` lifecycle wiring beyond raise/address
+> remain v0.1e / later; only the statuses named in PRD-DEV-006 are modelled here.
+
 ### v0.1d — Claims, Permissions, Links
 
 | Item | Description | PRD/TRD Refs |
@@ -457,4 +508,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-06-01*
+*Last updated: 2026-06-14*
