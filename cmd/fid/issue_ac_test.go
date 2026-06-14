@@ -1,10 +1,12 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -171,4 +173,317 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC verify", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+	_, addStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "add", issueID,
+		"--text", "Verification persists all fields",
+		"--ordinal", "1",
+		"--by", "developer",
+	)
+	criterionID := parseAddedAcceptanceCriterionID(t, addStderr)
+
+	stdout, stderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "developer",
+		"--status", "pass",
+		"--evidence-type", "test",
+		"--evidence-ref", "cmd/fid/issue_ac_test.go::TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation",
+		"--notes", "CLI verification path",
+	)
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	if !strings.Contains(stderr, "verified "+criterionID+" on "+issueID+" by developer: pass") {
+		t.Fatalf("stderr = %q, want verification confirmation", stderr)
+	}
+	if !strings.Contains(stderr, "evidence: test → cmd/fid/issue_ac_test.go::TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation") {
+		t.Fatalf("stderr = %q, want evidence line", stderr)
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	var (
+		verifierRole string
+		status       string
+		evidenceType sql.NullString
+		evidenceRef  sql.NullString
+		notes        sql.NullString
+		completionID sql.NullString
+	)
+	if err := conn.QueryRow(`
+		SELECT verifier_role, status, evidence_type, evidence_ref, notes, completion_id
+		FROM ac_verifications
+		WHERE ac_id = ?
+	`, criterionID).Scan(&verifierRole, &status, &evidenceType, &evidenceRef, &notes, &completionID); err != nil {
+		t.Fatalf("query ac_verifications: %v", err)
+	}
+	if verifierRole != "developer" || status != "pass" {
+		t.Fatalf("stored verification = (%q, %q), want (developer, pass)", verifierRole, status)
+	}
+	if !evidenceType.Valid || evidenceType.String != "test" {
+		t.Fatalf("stored evidence_type = %#v, want test", evidenceType)
+	}
+	if !evidenceRef.Valid || evidenceRef.String != "cmd/fid/issue_ac_test.go::TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation" {
+		t.Fatalf("stored evidence_ref = %#v, want targeted test ref", evidenceRef)
+	}
+	if !notes.Valid || notes.String != "CLI verification path" {
+		t.Fatalf("stored notes = %#v, want CLI verification path", notes)
+	}
+	if completionID.Valid {
+		t.Fatalf("stored completion_id = %#v, want NULL", completionID)
+	}
+}
+
+func TestIssueACVerifyCommandKeepsLatestPerRoleIndependent(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI multi-role verify")
+
+	if _, stderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "developer",
+		"--status", "pass",
+	); !strings.Contains(stderr, "verified "+criterionID+" on "+issueID+" by developer: pass") {
+		t.Fatalf("developer verify stderr = %q, want developer pass confirmation", stderr)
+	}
+	if _, stderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "qa_lead",
+		"--status", "fail",
+	); !strings.Contains(stderr, "verified "+criterionID+" on "+issueID+" by qa_lead: fail") {
+		t.Fatalf("qa_lead verify stderr = %q, want qa_lead fail confirmation", stderr)
+	}
+
+	got := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if len(got) != 1 {
+		t.Fatalf("acceptance criteria len = %d, want 1", len(got))
+	}
+	if got[0].LatestVerifications["developer"]["status"] != "pass" {
+		t.Fatalf("developer latest verification = %#v, want pass", got[0].LatestVerifications["developer"])
+	}
+	if got[0].LatestVerifications["qa_lead"]["status"] != "fail" {
+		t.Fatalf("qa_lead latest verification = %#v, want fail", got[0].LatestVerifications["qa_lead"])
+	}
+}
+
+func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI fail then pass")
+
+	if _, stderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "developer",
+		"--status", "fail",
+	); !strings.Contains(stderr, "verified "+criterionID+" on "+issueID+" by developer: fail") {
+		t.Fatalf("developer fail stderr = %q, want fail confirmation", stderr)
+	}
+
+	afterFail := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if afterFail[0].LatestVerifications["developer"]["status"] != "fail" {
+		t.Fatalf("developer latest verification after fail = %#v, want fail", afterFail[0].LatestVerifications["developer"])
+	}
+
+	time.Sleep(1100 * time.Millisecond)
+
+	if _, stderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "developer",
+		"--status", "pass",
+	); !strings.Contains(stderr, "verified "+criterionID+" on "+issueID+" by developer: pass") {
+		t.Fatalf("developer pass stderr = %q, want pass confirmation", stderr)
+	}
+
+	afterPass := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if afterPass[0].LatestVerifications["developer"]["status"] != "pass" {
+		t.Fatalf("developer latest verification after pass = %#v, want pass", afterPass[0].LatestVerifications["developer"])
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	var count int
+	if err := conn.QueryRow(`
+		SELECT COUNT(*)
+		FROM ac_verifications
+		WHERE ac_id = ? AND verifier_role = ?
+	`, criterionID, "developer").Scan(&count); err != nil {
+		t.Fatalf("count ac_verifications: %v", err)
+	}
+	if count != 2 {
+		t.Fatalf("developer ac_verifications rows = %d, want 2", count)
+	}
+}
+
+func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
+	tests := []struct {
+		name    string
+		args    func(t *testing.T, workspace string) []string
+		wantErr string
+		verify  func(t *testing.T, workspace string)
+	}{
+		{
+			name: "missing by flag",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Missing by")
+				return []string{"issue", "ac", "verify", issueID, criterionID, "--status", "pass"}
+			},
+			wantErr: "error: --by is required",
+		},
+		{
+			name: "missing status flag",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Missing status")
+				return []string{"issue", "ac", "verify", issueID, criterionID, "--by", "developer"}
+			},
+			wantErr: "error: --status is required",
+		},
+		{
+			name: "invalid status",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Invalid status")
+				return []string{"issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "bogus"}
+			},
+			wantErr: `error: verify acceptance criterion: status "bogus" must be one of pass, fail, blocked, not_applicable`,
+		},
+		{
+			name: "invalid evidence type",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Invalid evidence type")
+				return []string{"issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "pass", "--evidence-type", "pdf"}
+			},
+			wantErr: `error: verify acceptance criterion: evidence type "pdf" must be one of test, source, screenshot, manual, command, commit`,
+		},
+		{
+			name: "unknown role",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Unknown role")
+				return []string{"issue", "ac", "verify", issueID, criterionID, "--by", "intern", "--status", "pass"}
+			},
+			wantErr: `error: role "intern" not in project profile`,
+		},
+		{
+			name: "missing acceptance criterion",
+			args: func(t *testing.T, workspace string) []string {
+				issueID, _ := seedIssueAcceptanceCriterion(t, workspace, "Missing AC")
+				return []string{"issue", "ac", "verify", issueID, "AC-missing", "--by", "developer", "--status", "pass"}
+			},
+			wantErr: `error: verify acceptance criterion: acceptance criterion "AC-missing" not found`,
+		},
+		{
+			name: "acceptance criterion belongs to different issue",
+			args: func(t *testing.T, workspace string) []string {
+				_, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Criterion issue")
+				otherIssueID, _ := seedIssueAcceptanceCriterion(t, workspace, "Other issue")
+				return []string{"issue", "ac", "verify", otherIssueID, criterionID, "--by", "developer", "--status", "pass"}
+			},
+			wantErr: `error: verify acceptance criterion: acceptance criterion "`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			runInitCommand(t, workspace, "init")
+
+			args := tt.args(t, workspace)
+			journalPath := mustJournalPath(t, workspace)
+			linesBefore := splitJournalLines(mustReadCommandFile(t, journalPath))
+
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, args...)
+			if err == nil {
+				t.Fatal("Execute() error = nil, want rejection")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			if !strings.Contains(stderr, tt.wantErr) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantErr)
+			}
+			linesAfter := splitJournalLines(mustReadCommandFile(t, journalPath))
+			if len(linesAfter) != len(linesBefore) {
+				t.Fatalf("journal lines after rejection = %d, want unchanged %d", len(linesAfter), len(linesBefore))
+			}
+			if tt.verify != nil {
+				tt.verify(t, workspace)
+			}
+		})
+	}
+}
+
+func parseAddedAcceptanceCriterionID(t *testing.T, stderr string) string {
+	t.Helper()
+
+	fields := strings.Fields(stderr)
+	for index := range fields {
+		if fields[index] == "AC" && index+1 < len(fields) {
+			return fields[index+1]
+		}
+	}
+	t.Fatalf("stderr = %q, want added AC line with id", stderr)
+	return ""
+}
+
+func seedIssueAcceptanceCriterion(t *testing.T, workspace string, title string) (string, string) {
+	t.Helper()
+
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+	_, addStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "add", issueID,
+		"--text", "Criterion for "+title,
+		"--ordinal", "1",
+		"--by", "developer",
+	)
+	return issueID, parseAddedAcceptanceCriterionID(t, addStderr)
+}
+
+type commandAcceptanceCriterion struct {
+	ID                  string                    `json:"id"`
+	LatestVerifications map[string]map[string]any `json:"latest_verifications"`
+}
+
+func mustGetAcceptanceCriteria(t *testing.T, workspace, issueID string) []commandAcceptanceCriterion {
+	t.Helper()
+
+	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	if stderr != "" {
+		t.Fatalf("issue get acceptance stderr = %q, want empty", stderr)
+	}
+
+	var got []commandAcceptanceCriterion
+	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
+		t.Fatalf("Unmarshal() error = %v", err)
+	}
+	return got
 }

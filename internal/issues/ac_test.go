@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) {
@@ -444,6 +445,480 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	}
 }
 
+func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Implement AC verify",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	criterion, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "Acceptance criterion can be verified",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
+	}
+
+	linesBefore := countJournalLines(journalPathForWorkspace(t, workspace))
+
+	result, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "developer",
+		Status:        "pass",
+		EvidenceType:  acStringPointer("test"),
+		EvidenceRef:   acStringPointer("internal/issues/ac_test.go::TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent"),
+		Notes:         acStringPointer("Verified by targeted engine test"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion() error = %v", err)
+	}
+	if !strings.HasPrefix(result.ID, "ACV-") {
+		t.Fatalf("VerifyAcceptanceCriterion() ID = %q, want ACV- prefix", result.ID)
+	}
+	if result.IssueID != taskCreated.ID {
+		t.Fatalf("VerifyAcceptanceCriterion() IssueID = %q, want %q", result.IssueID, taskCreated.ID)
+	}
+	if result.CriterionID != criterion.ID {
+		t.Fatalf("VerifyAcceptanceCriterion() CriterionID = %q, want %q", result.CriterionID, criterion.ID)
+	}
+	if result.Status != "pass" {
+		t.Fatalf("VerifyAcceptanceCriterion() Status = %q, want pass", result.Status)
+	}
+	if result.EvidenceType == nil || *result.EvidenceType != "test" {
+		t.Fatalf("VerifyAcceptanceCriterion() EvidenceType = %#v, want test", result.EvidenceType)
+	}
+	if result.EvidenceRef == nil || *result.EvidenceRef != "internal/issues/ac_test.go::TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent" {
+		t.Fatalf("VerifyAcceptanceCriterion() EvidenceRef = %#v, want targeted test ref", result.EvidenceRef)
+	}
+	if result.Notes == nil || *result.Notes != "Verified by targeted engine test" {
+		t.Fatalf("VerifyAcceptanceCriterion() Notes = %#v, want targeted note", result.Notes)
+	}
+	if strings.TrimSpace(result.VerifiedAt) == "" {
+		t.Fatal("VerifyAcceptanceCriterion() VerifiedAt = empty, want timestamp")
+	}
+
+	if got := countJournalLines(journalPathForWorkspace(t, workspace)); got != linesBefore+1 {
+		t.Fatalf("journal line count = %d, want %d", got, linesBefore+1)
+	}
+
+	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	if len(stored) < 3 {
+		t.Fatalf("stored events len = %d, want at least 3", len(stored))
+	}
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.ac_verified" {
+		t.Fatalf("last event type = %q, want issue.ac_verified", last.EventType)
+	}
+	if len(last.Effects) != 1 {
+		t.Fatalf("last event effects len = %d, want 1", len(last.Effects))
+	}
+	if last.Effects[0].Table != "ac_verifications" || last.Effects[0].Op != "insert" {
+		t.Fatalf("last event effect = %#v, want ac_verifications insert", last.Effects[0])
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	var (
+		acID         string
+		verifierRole string
+		status       string
+		evidenceType sql.NullString
+		evidenceRef  sql.NullString
+		notes        sql.NullString
+		completionID sql.NullString
+		verifiedAt   string
+	)
+	if err := conn.QueryRow(`
+		SELECT ac_id, verifier_role, status, evidence_type, evidence_ref, notes, completion_id, verified_at
+		FROM ac_verifications
+		WHERE id = ?
+	`, result.ID).Scan(&acID, &verifierRole, &status, &evidenceType, &evidenceRef, &notes, &completionID, &verifiedAt); err != nil {
+		t.Fatalf("query ac_verifications: %v", err)
+	}
+	if acID != criterion.ID || verifierRole != "developer" || status != "pass" {
+		t.Fatalf("stored verification = (%q, %q, %q), want (%q, developer, pass)", acID, verifierRole, status, criterion.ID)
+	}
+	if !evidenceType.Valid || evidenceType.String != "test" {
+		t.Fatalf("stored evidence_type = %#v, want test", evidenceType)
+	}
+	if !evidenceRef.Valid || evidenceRef.String != "internal/issues/ac_test.go::TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent" {
+		t.Fatalf("stored evidence_ref = %#v, want targeted test ref", evidenceRef)
+	}
+	if !notes.Valid || notes.String != "Verified by targeted engine test" {
+		t.Fatalf("stored notes = %#v, want targeted note", notes)
+	}
+	if completionID.Valid {
+		t.Fatalf("stored completion_id = %#v, want NULL", completionID)
+	}
+	if verifiedAt != result.VerifiedAt {
+		t.Fatalf("stored verified_at = %q, want %q", verifiedAt, result.VerifiedAt)
+	}
+
+	var activityRows int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityRows); err != nil {
+		t.Fatalf("count activity_log: %v", err)
+	}
+	if activityRows != 0 {
+		t.Fatalf("activity_log rows = %d, want 0", activityRows)
+	}
+}
+
+func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Append-only AC verification history",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	criterion, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "History is append only",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
+	}
+
+	developerFail, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "developer",
+		Status:        "fail",
+		Notes:         acStringPointer("Initial developer failure"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(developer fail) error = %v", err)
+	}
+
+	afterFail, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after fail) error = %v", err)
+	}
+	developerLatest, ok := afterFail.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
+	if !ok {
+		t.Fatalf("developer latest after fail = %#v, want map", afterFail.AcceptanceCriteria[0].LatestVerifications["developer"])
+	}
+	if developerLatest["status"] != "fail" {
+		t.Fatalf("developer latest after fail = %#v, want fail", developerLatest)
+	}
+
+	qaLeadFail, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "qa_lead",
+		Status:        "fail",
+		Notes:         acStringPointer("Independent QA lead failure"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(qa_lead fail) error = %v", err)
+	}
+
+	time.Sleep(1100 * time.Millisecond)
+
+	developerPass, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "developer",
+		Status:        "pass",
+		Notes:         acStringPointer("Developer fixed the failure"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(developer pass) error = %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after pass) error = %v", err)
+	}
+	if len(got.AcceptanceCriteria) != 1 {
+		t.Fatalf("Get() acceptance_criteria len = %d, want 1", len(got.AcceptanceCriteria))
+	}
+
+	developerLatest, ok = got.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
+	if !ok {
+		t.Fatalf("developer latest after pass = %#v, want map", got.AcceptanceCriteria[0].LatestVerifications["developer"])
+	}
+	if developerLatest["status"] != "pass" || developerLatest["verified_at"] != developerPass.VerifiedAt {
+		t.Fatalf("developer latest after pass = %#v, want latest pass at %q", developerLatest, developerPass.VerifiedAt)
+	}
+
+	qaLeadLatest, ok := got.AcceptanceCriteria[0].LatestVerifications["qa_lead"].(map[string]any)
+	if !ok {
+		t.Fatalf("qa_lead latest after pass = %#v, want map", got.AcceptanceCriteria[0].LatestVerifications["qa_lead"])
+	}
+	if qaLeadLatest["status"] != "fail" || qaLeadLatest["verified_at"] != qaLeadFail.VerifiedAt {
+		t.Fatalf("qa_lead latest after pass = %#v, want independent fail at %q", qaLeadLatest, qaLeadFail.VerifiedAt)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	assertAcceptanceVerificationCount(t, conn, criterion.ID, 3)
+
+	var developerRows int
+	if err := conn.QueryRow(`
+		SELECT COUNT(*)
+		FROM ac_verifications
+		WHERE ac_id = ? AND verifier_role = ?
+	`, criterion.ID, "developer").Scan(&developerRows); err != nil {
+		t.Fatalf("count developer ac_verifications: %v", err)
+	}
+	if developerRows != 2 {
+		t.Fatalf("developer ac_verifications rows = %d, want 2", developerRows)
+	}
+
+	var developerStatuses []string
+	rows, err := conn.Query(`
+		SELECT status
+		FROM ac_verifications
+		WHERE ac_id = ? AND verifier_role = ?
+		ORDER BY verified_at, id
+	`, criterion.ID, "developer")
+	if err != nil {
+		t.Fatalf("query developer verification history: %v", err)
+	}
+	defer closeIssueRows(rows)
+	for rows.Next() {
+		var status string
+		if err := rows.Scan(&status); err != nil {
+			t.Fatalf("scan developer verification history: %v", err)
+		}
+		developerStatuses = append(developerStatuses, status)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate developer verification history: %v", err)
+	}
+	if want := []string{"fail", "pass"}; !equalStrings(developerStatuses, want) {
+		t.Fatalf("developer verification history = %#v, want %#v", developerStatuses, want)
+	}
+
+	if developerFail.ID == developerPass.ID {
+		t.Fatalf("developer verification ids = %q and %q, want distinct rows", developerFail.ID, developerPass.ID)
+	}
+}
+
+func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		prepare func(t *testing.T, workspace string) (issueID string, criterionID string)
+		options func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions
+		wantErr string
+		verify  func(t *testing.T, workspace, issueID, criterionID string)
+	}{
+		{
+			name: "invalid status rejected before append",
+			prepare: func(t *testing.T, workspace string) (string, string) {
+				return seedAcceptanceCriterionForVerification(t, workspace)
+			},
+			options: func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions {
+				return VerifyAcceptanceCriterionOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					IssueID:       issueID,
+					CriterionID:   criterionID,
+					ActorRole:     "developer",
+					Status:        "bogus",
+				}
+			},
+			wantErr: `verify acceptance criterion: status "bogus" must be one of pass, fail, blocked, not_applicable`,
+		},
+		{
+			name: "invalid evidence type rejected before append",
+			prepare: func(t *testing.T, workspace string) (string, string) {
+				return seedAcceptanceCriterionForVerification(t, workspace)
+			},
+			options: func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions {
+				return VerifyAcceptanceCriterionOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					IssueID:       issueID,
+					CriterionID:   criterionID,
+					ActorRole:     "developer",
+					Status:        "pass",
+					EvidenceType:  acStringPointer("pdf"),
+				}
+			},
+			wantErr: `verify acceptance criterion: evidence type "pdf" must be one of test, source, screenshot, manual, command, commit`,
+		},
+		{
+			name: "missing acceptance criterion rejected before append",
+			prepare: func(t *testing.T, workspace string) (string, string) {
+				issueID, _ := seedAcceptanceCriterionForVerification(t, workspace)
+				return issueID, "AC-missing"
+			},
+			options: func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions {
+				return VerifyAcceptanceCriterionOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					IssueID:       issueID,
+					CriterionID:   criterionID,
+					ActorRole:     "developer",
+					Status:        "pass",
+				}
+			},
+			wantErr: `verify acceptance criterion: acceptance criterion "AC-missing" not found`,
+		},
+		{
+			name: "issue and acceptance criterion mismatch rejected before append",
+			prepare: func(t *testing.T, workspace string) (string, string) {
+				_, criterionID := seedAcceptanceCriterionForVerification(t, workspace)
+				otherCreated, err := Create(CreateOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					Kind:          "task",
+					Title:         "Other issue",
+					ActorRole:     "developer",
+				})
+				if err != nil {
+					t.Fatalf("Create(other task) error = %v", err)
+				}
+				return otherCreated.ID, criterionID
+			},
+			options: func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions {
+				return VerifyAcceptanceCriterionOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					IssueID:       issueID,
+					CriterionID:   criterionID,
+					ActorRole:     "developer",
+					Status:        "pass",
+				}
+			},
+			wantErr: `verify acceptance criterion: acceptance criterion "`,
+			verify: func(t *testing.T, workspace, issueID, criterionID string) {
+				t.Helper()
+				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+				defer closeIssueTestDB(t, conn)
+				assertAcceptanceVerificationCount(t, conn, criterionID, 0)
+			},
+		},
+		{
+			name: "unknown role rejected before append",
+			prepare: func(t *testing.T, workspace string) (string, string) {
+				return seedAcceptanceCriterionForVerification(t, workspace)
+			},
+			options: func(workspace, issueID, criterionID string) VerifyAcceptanceCriterionOptions {
+				return VerifyAcceptanceCriterionOptions{
+					WorkspaceRoot: workspace,
+					MigrationsDir: testIssueMigrationsDir(t),
+					IssueID:       issueID,
+					CriterionID:   criterionID,
+					ActorRole:     "intern",
+					Status:        "pass",
+				}
+			},
+			wantErr: `role "intern" not in project profile`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := newIssueWorkspace(t)
+			issueID, criterionID := tt.prepare(t, workspace)
+			journalPath := journalPathForWorkspace(t, workspace)
+			linesBefore := countJournalLines(journalPath)
+
+			_, err := VerifyAcceptanceCriterion(tt.options(workspace, issueID, criterionID))
+			if err == nil {
+				t.Fatalf("VerifyAcceptanceCriterion() error = nil, want %q", tt.wantErr)
+			}
+			if !strings.Contains(err.Error(), tt.wantErr) {
+				t.Fatalf("VerifyAcceptanceCriterion() error = %q, want substring %q", err.Error(), tt.wantErr)
+			}
+			if got := countJournalLines(journalPath); got != linesBefore {
+				t.Fatalf("journal line count after rejection = %d, want unchanged %d", got, linesBefore)
+			}
+
+			conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+			defer closeIssueTestDB(t, conn)
+			assertAcceptanceVerificationCount(t, conn, criterionID, 0)
+
+			if tt.verify != nil {
+				tt.verify(t, workspace, issueID, criterionID)
+			}
+		})
+	}
+}
+
+func acStringPointer(value string) *string {
+	return &value
+}
+
+func seedAcceptanceCriterionForVerification(t *testing.T, workspace string) (string, string) {
+	t.Helper()
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Verification task",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	criterion, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "Criterion for verification",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
+	}
+
+	return taskCreated.ID, criterion.ID
+}
+
 func assertAcceptanceCriterionCount(t *testing.T, conn *sql.DB, issueID string, want int) {
 	t.Helper()
 
@@ -453,6 +928,18 @@ func assertAcceptanceCriterionCount(t *testing.T, conn *sql.DB, issueID string, 
 	}
 	if got != want {
 		t.Fatalf("acceptance_criteria count for %q = %d, want %d", issueID, got, want)
+	}
+}
+
+func assertAcceptanceVerificationCount(t *testing.T, conn *sql.DB, criterionID string, want int) {
+	t.Helper()
+
+	var got int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM ac_verifications WHERE ac_id = ?`, criterionID).Scan(&got); err != nil {
+		t.Fatalf("count ac_verifications(%q): %v", criterionID, err)
+	}
+	if got != want {
+		t.Fatalf("ac_verifications count for %q = %d, want %d", criterionID, got, want)
 	}
 }
 
