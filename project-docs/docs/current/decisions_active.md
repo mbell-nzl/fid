@@ -36,9 +36,13 @@ closes, or cancels each item.
 |---|---|---|---|---|
 | CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
 | CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. Closing a redundant backlog task already works via `todo → cancelled` (PRD-WF-013); the enhancement is a new resolution-reason field + cancel `--reason` flag (touches data model + `activity_log` audit), **not** a new workflow edge. Product-owner decision; do not widen v0.1 default graphs. | v0.2 (with configurable workflows PRD-WF-011/012) | Low (product) |
-| CF-009 | Phase 5 DEC-016 (human HUMAN-013a) | `fid issue update` confirmation renders all changed fields as one long comma-separated line; render one updated field per line for readability. Non-blocking CLI polish; touches `06_DESIGN_PLAN_CLI.md` + `cmd/fid` update presenter. Fold into the next `fid issue update`-adjacent change. | Next update-adjacent change | Low |
-| CF-010 | Phase 5 QA final review (review-4) | Non-test file size above `08_QUALITY_PLAN.md` §4.4 400-line target: `internal/issues/transition.go` (426), `internal/issues/update.go` (551), `internal/journal/project.go` (524). Split event assembly from append/project orchestration; reduce size rather than adding behavior. Behaviour/contract correct — improvement only. | Next transition/update/projection-adjacent change | Low |
 
+CF-009 closed at Phase 6 wrap — `fid issue update` one-field-per-line output
+delivered by Task 1 (VAL-009 PASS), `06_DESIGN_PLAN_CLI.md` §`fid issue update`
+updated; see `../phases/phase-6/decisions.md`.
+CF-010 closed at Phase 6 wrap — `transition.go` (262), `update.go` (260),
+`project.go` (137) all ≤400 lines after behavior-preserving split (Task 2,
+VAL-010 PASS); see `../phases/phase-6/decisions.md`.
 CF-002 closed as satisfied at Phase 0 kickoff; see `../phases/phase-0/decisions.md`.
 CF-004 (sequence-vs-scheduling backstop) closed at Phase 4 wrap — delivered by
 Phase 4 Task 1 with CLI evidence in Task 3 (VAL-001 PASS); see

@@ -43,11 +43,8 @@ finding:
 (None open.)
 
 ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
-DEC-019 (human-confirmed 2026-06-14, option A): the order is `priority ASC`
-(nil last) → `created_at ASC` → `id ASC`, matching Task 3's implementation and
-now pinned in `06_DESIGN_PLAN_CLI.md` §`fid ready`. TRG-001 closed; Task 4
-unblocked. Archives to `project-docs/docs/phases/phase-6/tl-escalations.md` at
-wrap.
+DEC-019 (human-confirmed 2026-06-14) and archived to
+`project-docs/docs/phases/phase-6/tl-escalations.md` at the Phase 6 wrap.
 
 ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
 resolved by Task 1b + `review-1-addendum.md` and archived to
