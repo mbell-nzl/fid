@@ -22,11 +22,93 @@ func newIssueCommand() *cobra.Command {
 		Short: "Manage issues.",
 	}
 
+	cmd.AddCommand(newIssueACCommand())
 	cmd.AddCommand(newIssueCreateCommand())
 	cmd.AddCommand(newIssueUpdateCommand())
 	cmd.AddCommand(newIssueTransitionCommand())
 	cmd.AddCommand(newIssueGetCommand())
 	cmd.AddCommand(newIssueListCommand())
+	return cmd
+}
+
+func newIssueACCommand() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "ac",
+		Short: "Manage issue acceptance criteria.",
+	}
+
+	cmd.AddCommand(newIssueACAddCommand())
+	return cmd
+}
+
+func newIssueACAddCommand() *cobra.Command {
+	var (
+		text      string
+		ordinal   int
+		actorRole string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "add <issue-id>",
+		Short: "Add an acceptance criterion to a task or subtask.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if !cmd.Flags().Changed("text") {
+				err := fmt.Errorf("--text is required")
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			if !cmd.Flags().Changed("ordinal") {
+				err := fmt.Errorf("--ordinal is required")
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			if !cmd.Flags().Changed("by") {
+				err := fmt.Errorf("--by is required")
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			result, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				IssueID:       args[0],
+				Text:          text,
+				Ordinal:       ordinal,
+				ActorRole:     actorRole,
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			return writeIssueLine(
+				cmd.ErrOrStderr(),
+				"added AC %s on %s (ordinal %d): %q\n",
+				result.ID,
+				result.IssueID,
+				result.Ordinal,
+				result.Text,
+			)
+		},
+	}
+
+	cmd.Flags().StringVar(&text, "text", "", "Acceptance criterion text")
+	cmd.Flags().IntVar(&ordinal, "ordinal", 0, "Acceptance criterion display order")
+	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	return cmd
 }
 
