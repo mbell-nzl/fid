@@ -6,6 +6,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -1140,6 +1141,172 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 	var notFoundErr *NotFoundError
 	if !errors.As(err, &notFoundErr) {
 		t.Fatalf("AddAcceptanceCriterion() error = %T, want *NotFoundError", err)
+	}
+	if notFoundErr.IssueID != "FID-missing" {
+		t.Fatalf("NotFoundError.IssueID = %q, want FID-missing", notFoundErr.IssueID)
+	}
+}
+
+func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "List acceptance criteria",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	second, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "Second criterion",
+		Ordinal:       2,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion(second) error = %v", err)
+	}
+
+	first, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "First criterion",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion(first) error = %v", err)
+	}
+
+	if _, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   first.ID,
+		ActorRole:     "developer",
+		Status:        "fail",
+	}); err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(fail) error = %v", err)
+	}
+	if _, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   first.ID,
+		ActorRole:     "developer",
+		Status:        "pass",
+		EvidenceType:  acStringPointer("test"),
+		EvidenceRef:   acStringPointer("internal/issues/ac_test.go::TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet"),
+	}); err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(pass) error = %v", err)
+	}
+	if _, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   first.ID,
+		ActorRole:     "qa_lead",
+		Status:        "blocked",
+	}); err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(qa_lead blocked) error = %v", err)
+	}
+
+	got, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("ListAcceptanceCriteria() error = %v", err)
+	}
+
+	if len(got.Criteria) != 2 {
+		t.Fatalf("ListAcceptanceCriteria() len = %d, want 2", len(got.Criteria))
+	}
+	if got.Criteria[0].ID != first.ID || got.Criteria[0].Ordinal != 1 || got.Criteria[0].Text != "First criterion" {
+		t.Fatalf("first list row = %#v, want first ordinal/text/id", got.Criteria[0])
+	}
+	if got.Criteria[1].ID != second.ID || got.Criteria[1].Ordinal != 2 || got.Criteria[1].Text != "Second criterion" {
+		t.Fatalf("second list row = %#v, want second ordinal/text/id", got.Criteria[1])
+	}
+
+	developerLatest, ok := got.Criteria[0].LatestVerifications["developer"].(map[string]any)
+	if !ok {
+		t.Fatalf("developer latest verification = %#v, want map", got.Criteria[0].LatestVerifications["developer"])
+	}
+	if developerLatest["status"] != "pass" {
+		t.Fatalf("developer latest verification status = %#v, want pass", developerLatest["status"])
+	}
+	qaLatest, ok := got.Criteria[0].LatestVerifications["qa_lead"].(map[string]any)
+	if !ok {
+		t.Fatalf("qa_lead latest verification = %#v, want map", got.Criteria[0].LatestVerifications["qa_lead"])
+	}
+	if qaLatest["status"] != "blocked" {
+		t.Fatalf("qa_lead latest verification status = %#v, want blocked", qaLatest["status"])
+	}
+
+	issue, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if !reflect.DeepEqual(got.Criteria, issue.AcceptanceCriteria) {
+		t.Fatalf("ListAcceptanceCriteria() criteria = %#v, want issue acceptance %#v", got.Criteria, issue.AcceptanceCriteria)
+	}
+}
+
+func TestListAcceptanceCriteriaEmptyAndNotFound(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Empty acceptance criteria",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	got, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("ListAcceptanceCriteria(empty) error = %v", err)
+	}
+	if len(got.Criteria) != 0 {
+		t.Fatalf("ListAcceptanceCriteria(empty) len = %d, want 0", len(got.Criteria))
+	}
+
+	_, err = ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       "FID-missing",
+	})
+	if err == nil {
+		t.Fatal("ListAcceptanceCriteria(missing) error = nil, want not found")
+	}
+
+	var notFoundErr *NotFoundError
+	if !errors.As(err, &notFoundErr) {
+		t.Fatalf("ListAcceptanceCriteria(missing) error = %T, want *NotFoundError", err)
 	}
 	if notFoundErr.IssueID != "FID-missing" {
 		t.Fatalf("NotFoundError.IssueID = %q, want FID-missing", notFoundErr.IssueID)

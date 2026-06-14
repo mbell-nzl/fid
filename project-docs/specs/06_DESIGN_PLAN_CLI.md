@@ -391,8 +391,7 @@ fid issue ac list <issue-id> [--format json|toon|markdown|yaml]
     "ordinal": 1,
     "text": "Journal file is flushed to disk before returning success",
     "latest_verifications": {
-      "developer": {"status": "pass", "verified_at": "2026-05-27T10:15:00Z", "evidence_type": "test", "evidence_ref": "test/journal_test.go::TestAppendFlush"},
-      "qa_lead": null
+      "developer": {"status": "pass", "verified_at": "2026-05-27T10:15:00Z"}
     }
   },
   {
@@ -400,8 +399,7 @@ fid issue ac list <issue-id> [--format json|toon|markdown|yaml]
     "ordinal": 2,
     "text": "Partial write leaves journal intact",
     "latest_verifications": {
-      "developer": {"status": "pass", "verified_at": "2026-05-27T10:20:00Z", "evidence_type": "test", "evidence_ref": "test/journal_test.go::TestPartialWrite"},
-      "qa_lead": null
+      "developer": null
     }
   }
 ]

@@ -483,6 +483,150 @@ func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
 	}
 }
 
+func TestIssueACListCommandDefaultsToJSONAndMatchesIssueGetAcceptance(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC list")
+	_, secondCriterionStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "add", issueID,
+		"--text", "Second criterion for CLI AC list",
+		"--ordinal", "2",
+		"--by", "developer",
+	)
+	secondCriterionID := parseAddedAcceptanceCriterionID(t, secondCriterionStderr)
+
+	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "fail")
+	runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "developer",
+		"--status", "pass",
+		"--evidence-type", "test",
+		"--evidence-ref", "cmd/fid/issue_ac_test.go::TestIssueACListCommandDefaultsToJSONAndMatchesIssueGetAcceptance",
+	)
+	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "qa_lead", "--status", "blocked")
+
+	defaultStdout, defaultStderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID)
+	if defaultStderr != "" {
+		t.Fatalf("default stderr = %q, want empty", defaultStderr)
+	}
+
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
+	if jsonStderr != "" {
+		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	}
+	if defaultStdout != jsonStdout {
+		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
+	}
+
+	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	if getStderr != "" {
+		t.Fatalf("issue get stderr = %q, want empty", getStderr)
+	}
+
+	listStructure := decodeCommandJSONStructure(t, jsonStdout)
+	getStructure := decodeCommandJSONStructure(t, getStdout)
+	if !commandStructuresEqual(listStructure, getStructure) {
+		t.Fatalf("ac list structure = %#v, want issue get acceptance structure %#v", listStructure, getStructure)
+	}
+
+	rows, ok := listStructure.([]any)
+	if !ok {
+		t.Fatalf("ac list structure = %T, want []any", listStructure)
+	}
+	if len(rows) != 2 {
+		t.Fatalf("ac list rows len = %d, want 2", len(rows))
+	}
+	firstRow := rows[0].(map[string]any)
+	if firstRow["id"] != criterionID {
+		t.Fatalf("first row id = %#v, want %q", firstRow["id"], criterionID)
+	}
+	secondRow := rows[1].(map[string]any)
+	if secondRow["id"] != secondCriterionID {
+		t.Fatalf("second row id = %#v, want %q", secondRow["id"], secondCriterionID)
+	}
+}
+
+func TestIssueACListCommandDispatchesFormatsAndHandlesEmptyAndMissingIssues(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC format dispatch")
+	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "pass")
+
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
+	if jsonStderr != "" {
+		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	}
+	want := decodeCommandJSONStructure(t, jsonStdout)
+
+	for _, formatName := range []string{"toon", "yaml"} {
+		t.Run(formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", formatName)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+
+			var got any
+			switch formatName {
+			case "toon":
+				got = decodeCommandTOONStructure(t, stdout)
+			case "yaml":
+				got = decodeCommandYAMLStructure(t, stdout)
+			}
+			if !commandStructuresEqual(want, got) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
+			}
+		})
+	}
+
+	t.Run("markdown", func(t *testing.T) {
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+		if !strings.Contains(stdout, "# Acceptance Criteria") {
+			t.Fatalf("markdown stdout = %q, want heading", stdout)
+		}
+		if !strings.Contains(stdout, criterionID) {
+			t.Fatalf("markdown stdout = %q, want criterion id", stdout)
+		}
+		if !strings.Contains(stdout, "developer: pass") {
+			t.Fatalf("markdown stdout = %q, want latest verification status", stdout)
+		}
+	})
+
+	t.Run("empty list", func(t *testing.T) {
+		_, emptyIssueStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Empty AC list", "--by", "developer")
+		emptyIssueID := parseCreatedIssueID(t, emptyIssueStderr)
+
+		stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", emptyIssueID, "--format", "json")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+		if got := decodeCommandJSONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
+			t.Fatalf("empty json structure = %#v, want empty list", got)
+		}
+	})
+
+	t.Run("missing issue", func(t *testing.T) {
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "ac", "list", "FID-missing", "--format", "json")
+		if err == nil {
+			t.Fatal("Execute() error = nil, want missing issue rejection")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		if !strings.Contains(stderr, `error: issue "FID-missing" not found`) {
+			t.Fatalf("stderr = %q, want missing issue error", stderr)
+		}
+	})
+}
+
 func parseAddedAcceptanceCriterionID(t *testing.T, stderr string) string {
 	t.Helper()
 

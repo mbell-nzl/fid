@@ -38,6 +38,7 @@ func newIssueACCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(newIssueACAddCommand())
+	cmd.AddCommand(newIssueACListCommand())
 	cmd.AddCommand(newIssueACVerifyCommand())
 	return cmd
 }
@@ -193,6 +194,45 @@ func newIssueACVerifyCommand() *cobra.Command {
 	cmd.Flags().StringVar(&evidenceType, "evidence-type", "", "Evidence type")
 	cmd.Flags().StringVar(&evidenceRef, "evidence-ref", "", "Evidence reference")
 	cmd.Flags().StringVar(&notes, "notes", "", "Verification notes")
+	return cmd
+}
+
+func newIssueACListCommand() *cobra.Command {
+	var formatName string
+
+	cmd := &cobra.Command{
+		Use:   "list <issue-id>",
+		Short: "List acceptance criteria for an issue.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			result, err := issues.ListAcceptanceCriteria(issues.ListAcceptanceCriteriaOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				IssueID:       args[0],
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			if err := fidformat.Write(cmd.OutOrStdout(), formatName, result); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }
 
