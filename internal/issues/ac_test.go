@@ -4,10 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) {
@@ -581,6 +583,73 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 	}
 }
 
+func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Deterministic AC latest ordering",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	criterion, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "Latest-per-role follows append order",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	if _, err := conn.Exec(`
+		INSERT INTO ac_verifications (id, ac_id, verifier_role, status, verified_at)
+		VALUES (?, ?, ?, ?, ?), (?, ?, ?, ?, ?)
+	`,
+		"ACV-z-fail",
+		criterion.ID,
+		"developer",
+		"fail",
+		"2026-06-14T00:00:00Z",
+		"ACV-a-pass",
+		criterion.ID,
+		"developer",
+		"pass",
+		"2026-06-14T00:00:00Z",
+	); err != nil {
+		t.Fatalf("insert ac_verifications: %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+
+	developerLatest, ok := got.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
+	if !ok {
+		t.Fatalf("developer latest verification = %#v, want map", got.AcceptanceCriteria[0].LatestVerifications["developer"])
+	}
+	if developerLatest["status"] != "pass" {
+		t.Fatalf("developer latest verification = %#v, want pass from later append", developerLatest)
+	}
+}
+
 func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T) {
 	t.Parallel()
 
@@ -651,8 +720,6 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		t.Fatalf("VerifyAcceptanceCriterion(qa_lead fail) error = %v", err)
 	}
 
-	time.Sleep(1100 * time.Millisecond)
-
 	developerPass, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
@@ -716,7 +783,7 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		SELECT status
 		FROM ac_verifications
 		WHERE ac_id = ? AND verifier_role = ?
-		ORDER BY verified_at, id
+		ORDER BY rowid
 	`, criterion.ID, "developer")
 	if err != nil {
 		t.Fatalf("query developer verification history: %v", err)
@@ -738,6 +805,116 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 
 	if developerFail.ID == developerPass.ID {
 		t.Fatalf("developer verification ids = %q and %q, want distinct rows", developerFail.ID, developerPass.ID)
+	}
+}
+
+func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	taskCreated, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Rebuild AC latest-per-role parity",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(task) error = %v", err)
+	}
+
+	criterion, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		Text:          "Rebuild keeps latest verification",
+		Ordinal:       1,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
+	}
+
+	if _, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "developer",
+		Status:        "fail",
+		Notes:         acStringPointer("Initial failure before immediate pass"),
+	}); err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(developer fail) error = %v", err)
+	}
+	developerPass, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "developer",
+		Status:        "pass",
+		Notes:         acStringPointer("Immediate pass before rebuild"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(developer pass) error = %v", err)
+	}
+	qaLeadFail, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       taskCreated.ID,
+		CriterionID:   criterion.ID,
+		ActorRole:     "qa_lead",
+		Status:        "fail",
+		Notes:         acStringPointer("Independent QA lead failure"),
+	})
+	if err != nil {
+		t.Fatalf("VerifyAcceptanceCriterion(qa_lead fail) error = %v", err)
+	}
+
+	before, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(before rebuild) error = %v", err)
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+		t.Fatalf("RebuildWorkspace() error = %v", err)
+	}
+
+	after, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            taskCreated.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after rebuild) error = %v", err)
+	}
+
+	beforeDeveloper := before.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
+	afterDeveloper := after.AcceptanceCriteria[0].LatestVerifications["developer"].(map[string]any)
+	if afterDeveloper["status"] != "pass" || afterDeveloper["verified_at"] != developerPass.VerifiedAt {
+		t.Fatalf("developer latest after rebuild = %#v, want pass at %q", afterDeveloper, developerPass.VerifiedAt)
+	}
+	if beforeDeveloper["status"] != afterDeveloper["status"] || beforeDeveloper["verified_at"] != afterDeveloper["verified_at"] {
+		t.Fatalf("developer latest before/after rebuild = %#v / %#v, want identical", beforeDeveloper, afterDeveloper)
+	}
+
+	beforeQALead := before.AcceptanceCriteria[0].LatestVerifications["qa_lead"].(map[string]any)
+	afterQALead := after.AcceptanceCriteria[0].LatestVerifications["qa_lead"].(map[string]any)
+	if afterQALead["status"] != "fail" || afterQALead["verified_at"] != qaLeadFail.VerifiedAt {
+		t.Fatalf("qa_lead latest after rebuild = %#v, want fail at %q", afterQALead, qaLeadFail.VerifiedAt)
+	}
+	if beforeQALead["status"] != afterQALead["status"] || beforeQALead["verified_at"] != afterQALead["verified_at"] {
+		t.Fatalf("qa_lead latest before/after rebuild = %#v / %#v, want identical", beforeQALead, afterQALead)
 	}
 }
 

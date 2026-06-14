@@ -60,6 +60,8 @@ Resolve the Review 1 blockers on the `fid issue ac verify` slice:
   unsuitable — if so, stop and escalate before adding a migration (DEC-021
   treats this as the persistence contract).
 - `ac list` (Task 3) and transition gating (Task 4) behavior.
+- `internal/issues/issue.go` (677 lines, pre-existing tripwire debt) — do **not**
+  split it in this task; tracked as CF-012 / DEC-022.
 
 ## Acceptance Criteria
 
@@ -77,8 +79,14 @@ Resolve the Review 1 blockers on the `fid issue ac verify` slice:
 - [ ] The committed `task-1-done.md` contains the verified Task 1 commit hash
       and subject (no `Pending git commit`); confirm via
       `git show HEAD:project-docs/docs/phases/phase-7/tasks/task-1-done.md`.
-- [ ] Every non-test file under `internal/issues` is ≤ 400 lines; the ac.go
-      split is behavior-preserving (full gate green, coverage holds).
+- [ ] The `ac.go` split is behavior-preserving and brings the AC write-path
+      files ≤ 400 lines (`internal/issues/ac.go` and the new
+      `internal/issues/ac_verify.go`); full gate green, coverage holds.
+      NOTE (DEC-022): `internal/issues/issue.go` (677 lines) is a **pre-existing**
+      400-line tripwire violation, untouched by Phase 7 and **outside** this
+      task's write set. It is **out of scope** here and tracked as **CF-012**
+      for a dedicated behavior-preserving split (mirrors Phase 6 CF-010). Do not
+      edit `issue.go` to satisfy this criterion.
 
 ## TDD Plan
 

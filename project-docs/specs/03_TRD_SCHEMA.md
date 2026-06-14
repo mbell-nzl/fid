@@ -236,7 +236,9 @@ CREATE TABLE ac_verifications (
 
 -- Append-only by convention; UI never overwrites. A failed verification
 -- followed by a passing one from the same role results in two rows.
--- Latest-per-role queries use (ac_id, verifier_role, MAX(verified_at)).
+-- Latest-per-role resolves by journal append order for each
+-- (ac_id, verifier_role), using the most recently replayed/appended row.
+-- `verified_at` is recorded/displayed but is not the ordering key.
 -- Queries that need "verified by every required role" (e.g.
 -- all_acs_verified with params_json roles) require at least one 'pass'
 -- from each required role since the last completion attempt.

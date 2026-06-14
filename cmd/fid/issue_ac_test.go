@@ -3,10 +3,10 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -307,8 +307,6 @@ func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
 		t.Fatalf("developer latest verification after fail = %#v, want fail", afterFail[0].LatestVerifications["developer"])
 	}
 
-	time.Sleep(1100 * time.Millisecond)
-
 	if _, stderr := runFIDCommand(
 		t,
 		workspace,
@@ -340,6 +338,52 @@ func TestIssueACVerifyCommandPreservesFailToPassHistory(t *testing.T) {
 	}
 	if count != 2 {
 		t.Fatalf("developer ac_verifications rows = %d, want 2", count)
+	}
+}
+
+func TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI rebuild AC parity")
+
+	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "fail")
+	_, developerPassStderr := runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "pass")
+	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "qa_lead", "--status", "fail")
+
+	before := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if before[0].LatestVerifications["developer"]["status"] != "pass" {
+		t.Fatalf("developer latest verification before rebuild = %#v, want pass", before[0].LatestVerifications["developer"])
+	}
+	if before[0].LatestVerifications["qa_lead"]["status"] != "fail" {
+		t.Fatalf("qa_lead latest verification before rebuild = %#v, want fail", before[0].LatestVerifications["qa_lead"])
+	}
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	if !strings.Contains(rebuildStderr, "rebuild complete") {
+		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	}
+
+	after := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if after[0].LatestVerifications["developer"]["status"] != "pass" {
+		t.Fatalf("developer latest verification after rebuild = %#v, want pass", after[0].LatestVerifications["developer"])
+	}
+	if after[0].LatestVerifications["qa_lead"]["status"] != "fail" {
+		t.Fatalf("qa_lead latest verification after rebuild = %#v, want fail", after[0].LatestVerifications["qa_lead"])
+	}
+	if gotBefore, gotAfter := before[0].LatestVerifications["developer"]["verified_at"], after[0].LatestVerifications["developer"]["verified_at"]; gotBefore != gotAfter {
+		t.Fatalf("developer verified_at before/after rebuild = %q / %q, want identical", gotBefore, gotAfter)
+	}
+	if gotBefore, gotAfter := before[0].LatestVerifications["qa_lead"]["verified_at"], after[0].LatestVerifications["qa_lead"]["verified_at"]; gotBefore != gotAfter {
+		t.Fatalf("qa_lead verified_at before/after rebuild = %q / %q, want identical", gotBefore, gotAfter)
+	}
+	if !strings.Contains(developerPassStderr, "verified "+criterionID+" on "+issueID+" by developer: pass") {
+		t.Fatalf("developer pass stderr = %q, want pass confirmation", developerPassStderr)
 	}
 }
 
