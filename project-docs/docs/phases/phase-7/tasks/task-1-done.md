@@ -93,8 +93,8 @@ $ wc -l /tmp/tmp.WqnDUDLWzh/.fid/journal/2026-06-14.jsonl
 
 ## Commit hash
 
-- Pending git commit.
+- `59f02df`
 
 ## Commit subject
 
-- Pending git commit.
+- `feat(issue): add acceptance criteria command`

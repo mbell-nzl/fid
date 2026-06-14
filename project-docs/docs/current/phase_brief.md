@@ -3,9 +3,11 @@
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 7 is **PLANNED** — validation contract + 4 ordered Developer
-> tasks drafted; awaiting QA Lead QA-plan refinement and execution. Phase 6
-> (v0.1b) is CLOSED; archives under `../phases/phase-6/`.
+> **State:** Phase 7 is **IN PROGRESS** — Tasks 1-2 implemented; Review 1 was
+> **BLOCK** (ESC-005 + Task 1 report finalization). Way forward decided:
+> **DEC-021** (append-order latest-per-role) + fixup **Task 2b**; ESC-005 awaits
+> human confirmation of the persistence-contract semantics. Phase 6 (v0.1b) is
+> CLOSED; archives under `../phases/phase-6/`.
 
 ## Phase 7 goal (roadmap §v0.1c — first slice)
 
@@ -28,6 +30,7 @@ Out of scope (later v0.1c phases): `fid issue complete` + `task_completions`
 |---|---|---|---|
 | 1 | `fid issue ac add` | VAL-001, VAL-002 | New write path; epic rejection before append (CF-007). |
 | 2 | `fid issue ac verify` | VAL-003, VAL-004, VAL-005 | Append-only multi-role; status/evidence enums; completion_id NULL. |
+| 2b | Deterministic latest-per-role fixup (ESC-005/DEC-021) | VAL-004, VAL-009 | Append-order (`rowid`) latest; de-sleep tests; commit Task 1 report finalization; split 431-line ac.go. |
 | 3 | `fid issue ac list` | VAL-006, VAL-007 | Read-only; reuse latest-per-role helpers; format dispatch. |
 | 4 | `all_acs_verified` real-data + rebuild parity (closure) | VAL-008, VAL-009 | E2E reject→verify→pass; delete-DB + `fid rebuild` parity. |
 | — | Human dogfood | VAL-010 | phase-end checklist; QA Lead fans into per-observable rows. |
