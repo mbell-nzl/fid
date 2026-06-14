@@ -112,8 +112,8 @@ error: verify acceptance criterion: status "bogus" must be one of pass, fail, bl
 
 ## Commit hash
 
-- Pending commit.
+- `437d093`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(issue): add ac verify command`
