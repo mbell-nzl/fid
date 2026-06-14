@@ -26,6 +26,7 @@ func newRootCommand() *cobra.Command {
 	cmd.SetErr(os.Stderr)
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newIssueCommand())
+	cmd.AddCommand(newReadyCommand())
 	cmd.AddCommand(newRebuildCommand())
 
 	return cmd

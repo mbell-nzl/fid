@@ -40,7 +40,13 @@ finding:
 
 ## Open Escalations
 
-None. ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
+(None open.)
+
+ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
+DEC-019 (human-confirmed 2026-06-14) and archived to
+`project-docs/docs/phases/phase-6/tl-escalations.md` at the Phase 6 wrap.
+
+ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
 resolved by Task 1b + `review-1-addendum.md` and archived to
 `project-docs/docs/phases/phase-5/tl-escalations.md` at the Phase 5 wrap.
 

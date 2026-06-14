@@ -21,6 +21,13 @@ type IssueListMarkdownView struct {
 
 func writeMarkdown(writer io.Writer, value any) error {
 	switch typed := value.(type) {
+	case ReadyView:
+		return writeReadyMarkdown(writer, typed)
+	case *ReadyView:
+		if typed == nil {
+			return fmt.Errorf("markdown ready view is nil")
+		}
+		return writeReadyMarkdown(writer, *typed)
 	case IssueMarkdownView:
 		return writeIssueMarkdown(writer, typed)
 	case *IssueMarkdownView:
@@ -47,6 +54,42 @@ func writeMarkdown(writer io.Writer, value any) error {
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
+}
+
+func writeReadyMarkdown(writer io.Writer, view ReadyView) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Ready Task\n\n")
+	if view.Task == nil {
+		builder.WriteString("(no ready task)\n")
+	} else {
+		builder.WriteString("- ID: ")
+		builder.WriteString(view.Task.ID)
+		builder.WriteString("\n")
+		builder.WriteString("- Title: ")
+		builder.WriteString(view.Task.Title)
+		builder.WriteString("\n")
+		builder.WriteString("- Status: ")
+		builder.WriteString(view.Task.Status)
+		builder.WriteString("\n")
+		builder.WriteString("- Epic: ")
+		builder.WriteString(markdownReadyEpic(view.Task))
+		builder.WriteString("\n")
+		builder.WriteString("- Sequence: ")
+		builder.WriteString(markdownReadyOptionalInt(view.Task.Sequence))
+		builder.WriteString("\n")
+		builder.WriteString("- Priority: ")
+		builder.WriteString(markdownPriority(view.Task.Priority))
+		builder.WriteString("\n")
+		builder.WriteString("- Est. tokens: ")
+		builder.WriteString(markdownReadyOptionalInt(view.Task.EstTokens))
+		builder.WriteString("\n")
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
 }
 
 func writeIssueMarkdown(writer io.Writer, view IssueMarkdownView) error {
@@ -108,6 +151,25 @@ func markdownEpicLine(issue issues.Issue) string {
 		line += " (" + *issue.ParentTitle + ")"
 	}
 	return line
+}
+
+func markdownReadyEpic(task *issues.ReadyTask) string {
+	if task == nil || task.EpicID == nil || strings.TrimSpace(*task.EpicID) == "" {
+		return "(none)"
+	}
+
+	line := *task.EpicID
+	if task.EpicTitle != nil && strings.TrimSpace(*task.EpicTitle) != "" {
+		line += " (" + *task.EpicTitle + ")"
+	}
+	return line
+}
+
+func markdownReadyOptionalInt(value *int) string {
+	if value == nil {
+		return "(none)"
+	}
+	return strconv.Itoa(*value)
 }
 
 func markdownOwnerSequenceLine(issue issues.Issue) string {

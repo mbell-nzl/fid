@@ -202,7 +202,9 @@ journal event.
 
 **Output (stderr confirmation):**
 ```text
-updated FID-a1b2c3: title "Implement journal append with flush" -> "Implement journal append with fsync", priority 2 -> 1
+updated FID-a1b2c3:
+title "Implement journal append with flush" -> "Implement journal append with fsync"
+priority 2 -> 1
 ```
 
 **Inbox promote (v0.2):** `fid issue update --epic`/`--no-inbox` completes the
@@ -212,7 +214,10 @@ deferred sugar over this primitive.
 
 ```text
 $ fid issue update FID-x --epic FID-e1f2g3 --priority 2 --no-inbox --by tl
-updated FID-x: epic → FID-e1f2g3, priority 0 → 2, inbox cleared
+updated FID-x:
+epic (none) -> FID-e1f2g3
+priority 0 -> 2
+inbox true -> false
 ```
 
 ### `fid issue label add`
@@ -421,14 +426,37 @@ fid ready [--epic <id>] [--explain] [--limit <n>] [--include-blocked]
 | `--include-blocked` | bool | v0.2: in `--explain` mode, add dependency-blocked tasks to `skipped` |
 | `--format` | string | Output format (default: `json`) |
 
+In **v0.1b**, the bare command implements only `--epic` and `--format`. The
+diagnostic flags above remain **v0.2-only**.
+
 **JSON output (default, single task):** See `05_DESIGN_PLAN.md` §6.3. The bare
 `fid ready` output shape is frozen — the Workflow Runner depends on it — so the
 diagnostic shape below is reachable only via `--explain`.
 
-**Empty state (stderr):**
+**Empty state (exit 0, stdout + stderr):**
+```json
+{"task": null}
+```
+
 ```text
 note: no ready tasks — all 3 tasks in FID-e1f2g3 are blocked or completed
 ```
+
+**Selection order (bare `fid ready`).** Within a prioritised epic and across the
+project-wide pool (prioritised-epic candidates + unattached tasks; sequential
+epics contribute only their current actionable task), candidates are ordered
+deterministically by:
+
+1. `priority` ascending (PRD-ISSUE-015: `0` is critical, so lowest number wins);
+   a task with **no priority is ranked last**.
+2. `created_at` ascending (older first).
+3. `id` ascending — final deterministic tie-break only.
+
+This is the existing selection rule (`PRD-ISSUE-011/012`); `id` carries no
+product meaning beyond guaranteeing a single deterministic winner
+(PRD-ISSUE-008). Sequential epics order their tasks by `sequence`
+(`PRD-ISSUE-009`), not by this tuple. The v0.2 `--explain` `order_factors` below
+surface these same factors.
 
 #### `fid ready --explain` (v0.2)
 
