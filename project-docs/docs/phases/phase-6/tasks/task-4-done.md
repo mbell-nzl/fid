@@ -76,8 +76,8 @@
 
 ## Commit hash
 
-- Pending.
+- `8094f71`
 
 ## Commit subject
 
-- Pending.
+- `feat(cmd): add fid ready command`

@@ -57,8 +57,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `8575853`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(issues): add ready selection engine`

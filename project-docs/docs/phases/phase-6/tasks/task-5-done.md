@@ -63,8 +63,8 @@
 
 ## Commit hash
 
-- `PENDING`
+- `0356d2e`
 
 ## Commit subject
 
-- `PENDING`
+- `test(cmd): add v0.1b smoke coverage`

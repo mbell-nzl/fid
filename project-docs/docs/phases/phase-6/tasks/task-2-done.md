@@ -57,8 +57,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `8b28cf7`
 
 ## Commit subject
 
-- Pending commit creation.
+- `refactor: split oversized issue and journal files`
