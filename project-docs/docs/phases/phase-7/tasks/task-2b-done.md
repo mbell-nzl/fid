@@ -32,46 +32,41 @@
 - Deterministic CLI transcript evidence for DEC-021 / ESC-005:
 
 ```text
-$ /tmp/fid issue ac verify TMP-cf4df0 AC-e63c89 --by developer --status fail
-verified AC-e63c89 on TMP-cf4df0 by developer: fail
+$ /tmp/fid issue ac verify TMP.4UNHD1UEBF-6a96f0 AC-d2968f --by developer --status fail
+verified AC-d2968f on TMP.4UNHD1UEBF-6a96f0 by developer: fail
 
-$ /tmp/fid issue get TMP-cf4df0 --section acceptance --format json
-[{"id":"AC-e63c89","ordinal":1,"text":"Latest verification follows append order","latest_verifications":{"developer":{"status":"fail","verified_at":"2026-06-14T07:41:02Z"}}}]
+$ /tmp/fid issue get TMP.4UNHD1UEBF-6a96f0 --section acceptance --format json
+[{"id":"AC-d2968f","ordinal":1,"text":"Journal file is flushed to disk before returning success","latest_verifications":{"developer":{"status":"fail","verified_at":"2026-06-14T07:43:03Z"}}}]
 
-$ /tmp/fid issue ac verify TMP-cf4df0 AC-e63c89 --by developer --status pass
-verified AC-e63c89 on TMP-cf4df0 by developer: pass
+$ /tmp/fid issue ac verify TMP.4UNHD1UEBF-6a96f0 AC-d2968f --by developer --status pass
+verified AC-d2968f on TMP.4UNHD1UEBF-6a96f0 by developer: pass
 
-$ /tmp/fid issue ac verify TMP-cf4df0 AC-e63c89 --by qa_lead --status fail
-verified AC-e63c89 on TMP-cf4df0 by qa_lead: fail
-
-$ /tmp/fid issue get TMP-cf4df0 --section acceptance --format json
-[{"id":"AC-e63c89","ordinal":1,"text":"Latest verification follows append order","latest_verifications":{"developer":{"status":"pass","verified_at":"2026-06-14T07:41:02Z"},"qa_lead":{"status":"fail","verified_at":"2026-06-14T07:41:02Z"}}}]
+$ /tmp/fid issue get TMP.4UNHD1UEBF-6a96f0 --section acceptance --format json
+[{"id":"AC-d2968f","ordinal":1,"text":"Journal file is flushed to disk before returning success","latest_verifications":{"developer":{"status":"pass","verified_at":"2026-06-14T07:43:03Z"}}}]
 ```
 
 - Rebuild parity transcript evidence:
 
 ```text
-$ rm /tmp/tmp.5nQ7YVwzD8/.fid/fid.sqlite
+$ rm /tmp/tmp.4unhd1uebF/.fid/fid.sqlite
 
 $ /tmp/fid rebuild --by developer
 rebuilding .fid/fid.sqlite from journal...
-  replayed 6 events from 1 journal files
+  replayed 5 events from 1 journal files
   schema version: 1
   elapsed: 12ms
 rebuild complete
 
-$ /tmp/fid issue get TMP-cf4df0 --section acceptance --format json
-[{"id":"AC-e63c89","ordinal":1,"text":"Latest verification follows append order","latest_verifications":{"developer":{"status":"pass","verified_at":"2026-06-14T07:41:02Z"},"qa_lead":{"status":"fail","verified_at":"2026-06-14T07:41:02Z"}}}]
-
-$ test before_rebuild = after_rebuild
-before_after_rebuild_match
+$ /tmp/fid issue get TMP.4UNHD1UEBF-6a96f0 --section acceptance --format json
+[{"id":"AC-d2968f","ordinal":1,"text":"Journal file is flushed to disk before returning success","latest_verifications":{"developer":{"status":"pass","verified_at":"2026-06-14T07:43:03Z"}}}]
 ```
 
 ## Tests run
 
-- `go test ./internal/issues -run 'TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie|TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole|TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild'`
-  PASS.
-- `go test ./cmd/fid -run 'TestIssueACVerifyCommandPreservesFailToPassHistory|TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild|TestIssueACVerifyCommandKeepsLatestPerRoleIndependent'`
+- Preserved red evidence from the earlier blocked Task 2b run:
+  `go test ./internal/issues ./cmd/fid -run 'TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie|TestIssueACVerifyCommandPreservesFailToPassHistory|TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild|TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole|TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild'`
+  failed first with latest-per-role returning `fail` after the later `pass`, which was the expected pre-fix red state recorded in the blocker report this completion report replaces.
+- `go test ./internal/issues ./cmd/fid -run 'TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie|TestIssueACVerifyCommandPreservesFailToPassHistory|TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild|TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole|TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild'`
   PASS.
 - `wc -l internal/issues/ac.go internal/issues/ac_verify.go`
   PASS.
@@ -113,8 +108,8 @@ before_after_rebuild_match
 
 ## Commit hash
 
-- Pending git commit.
+- `69e761d`
 
 ## Commit subject
 
-- Pending git commit subject.
+- `fix(issue): make AC verification latest deterministic`
