@@ -49,7 +49,7 @@ finding:
 - **Question / proposed direction:** Decide the canonical ordering for same-timestamp AC verifications and require implementation/tests that prove append-only latest-per-role semantics without sleeping past a timestamp boundary.
 - **Resolution direction (DEC-021):** Latest-per-role is the verification appended last in journal order (per ADR-0001), resolved by SQLite implicit `rowid` DESC — deterministic and rebuild-stable, independent of `verified_at` second resolution and the random `ACV-` id. `verified_at` stays display-only. No schema migration. Implementation + de-sleep tests scheduled as **Task 2b**; VAL-004 strengthened to forbid timestamp-boundary proof.
 - **Links:** `project-docs/docs/phases/phase-7/qa/review-1.md`; `project-docs/docs/phases/phase-7/decisions.md` (DEC-021); `project-docs/docs/phases/phase-7/tasks/task-2b.md`; `internal/issues/ac.go`; `internal/issues/detail.go`; VAL-004, VAL-006, VAL-008.
-- **Status:** Decided (DEC-021) — awaiting human confirmation of the persistence-contract semantics; closes when Task 2b lands and re-review clears VAL-004.
+- **Status:** Decided (DEC-021, human-confirmed 2026-06-14) — closes when Task 2b lands and re-review clears VAL-004.
 
 ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
 DEC-019 (human-confirmed 2026-06-14) and archived to

@@ -4,10 +4,13 @@
 > agent session. Keep under 150 lines.
 >
 > **State:** Phase 7 is **IN PROGRESS** — Tasks 1-2 implemented; Review 1 was
-> **BLOCK** (ESC-005 + Task 1 report finalization). Way forward decided:
-> **DEC-021** (append-order latest-per-role) + fixup **Task 2b**; ESC-005 awaits
-> human confirmation of the persistence-contract semantics. Phase 6 (v0.1b) is
-> CLOSED; archives under `../phases/phase-6/`.
+> **BLOCK** (ESC-005 + Task 1 report finalization). Way forward: **DEC-021**
+> (append-order latest-per-role) implemented via fixup **Task 2b**. Task 2b hit a
+> scope BLOCK (over-worded file-size criterion swept in pre-existing
+> `issue.go`); resolved by **DEC-022** — criterion scoped to the ac.go split,
+> `issue.go` deferred to **CF-012**. Task 2b is unblocked: Developer runs the
+> full gate for the in-scope split + Task 1 report finalization commit. Phase 6
+> (v0.1b) is CLOSED; archives under `../phases/phase-6/`.
 
 ## Phase 7 goal (roadmap §v0.1c — first slice)
 
@@ -62,9 +65,11 @@ list` / PRD-OUT-017 is designed). No activity VAL in Phase 7.
 | CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work (not Phase 7). |
 | CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
 | CF-011 | Consistent `activity_log` timeline population across all writes (DEC-020) | v0.1e (with `fid activity list`). |
+| CF-012 | `internal/issues/issue.go` 677-line tripwire split (DEC-022) | Next v0.1c slot; behavior-preserving (à la CF-010). |
 
 CF-003 and CF-008 are not in Phase 7 scope; CF-011 is opened by Phase 7 DEC-020
-and targets v0.1e (not Phase 7 work).
+and targets v0.1e. CF-012 is opened by Phase 7 DEC-022 (Task 2b scope correction)
+and is **not** Task 2b work — `issue.go` is pre-existing debt, out of scope here.
 
 ## Standing commitments to honor
 
