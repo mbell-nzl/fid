@@ -49,6 +49,13 @@ func writeMarkdown(writer io.Writer, value any) error {
 			return fmt.Errorf("markdown issue list view is nil")
 		}
 		return writeIssueListMarkdown(writer, *typed)
+	case issues.AcceptanceCriteriaList:
+		return writeAcceptanceCriteriaListMarkdown(writer, typed)
+	case *issues.AcceptanceCriteriaList:
+		if typed == nil {
+			return fmt.Errorf("markdown acceptance criteria list is nil")
+		}
+		return writeAcceptanceCriteriaListMarkdown(writer, *typed)
 	case []issues.ListItem:
 		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
 	default:
@@ -197,7 +204,11 @@ func writeAcceptanceCriteriaMarkdown(builder *strings.Builder, criteria []issues
 	})
 
 	builder.WriteString("\n## Acceptance Criteria\n\n")
-	for _, criterion := range sorted {
+	writeAcceptanceCriteriaMarkdownItems(builder, sorted)
+}
+
+func writeAcceptanceCriteriaMarkdownItems(builder *strings.Builder, criteria []issues.AcceptanceCriterion) {
+	for _, criterion := range criteria {
 		builder.WriteString("- [")
 		if criterionChecked(criterion.LatestVerifications) {
 			builder.WriteString("x")
@@ -216,6 +227,22 @@ func writeAcceptanceCriteriaMarkdown(builder *strings.Builder, criteria []issues
 			builder.WriteString("\n")
 		}
 	}
+}
+
+func writeAcceptanceCriteriaListMarkdown(writer io.Writer, list issues.AcceptanceCriteriaList) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Acceptance Criteria\n\n")
+	if len(list.Criteria) == 0 {
+		builder.WriteString("(no acceptance criteria)\n")
+	} else {
+		writeAcceptanceCriteriaMarkdownItems(&builder, list.Criteria)
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
 }
 
 func criterionChecked(latest map[string]any) bool {

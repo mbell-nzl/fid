@@ -158,11 +158,11 @@ func latestVerificationsByRole(conn *sql.DB, criterionID string) (map[string]any
 		SELECT verifier_role, status, verified_at
 		FROM ac_verifications av
 		WHERE av.ac_id = ?
-		  AND av.id = (
-		    SELECT inner_av.id
+		  AND av.rowid = (
+		    SELECT inner_av.rowid
 		    FROM ac_verifications inner_av
 		    WHERE inner_av.ac_id = av.ac_id AND inner_av.verifier_role = av.verifier_role
-		    ORDER BY inner_av.verified_at DESC, inner_av.id DESC
+		    ORDER BY inner_av.rowid DESC
 		    LIMIT 1
 		  )
 		ORDER BY verifier_role

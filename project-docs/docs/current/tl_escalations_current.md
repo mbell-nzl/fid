@@ -40,7 +40,12 @@ finding:
 
 ## Open Escalations
 
-(None open.)
+None.
+
+ESC-005 (Phase 7 AC verification latest-ordering nondeterminism) was resolved by
+DEC-021 (human-confirmed 2026-06-14); Task 2b implemented `rowid`-DESC
+append-order latest-per-role and the Review 1 fixup cleared VAL-004. Archived to
+`project-docs/docs/phases/phase-7/tl-escalations.md` at the Phase 7 wrap.
 
 ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
 DEC-019 (human-confirmed 2026-06-14) and archived to

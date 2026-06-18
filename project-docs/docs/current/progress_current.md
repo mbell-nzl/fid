@@ -7,44 +7,44 @@
 
 ## Project State
 
-**Status:** Phase 6 (Ready Queue + v0.1b Closure) is **CLOSED** on branch
-`phase-6`. QA final review: **DETERMINISTIC PASS** (0 blocking / 0 major / 1
-improvement); human dogfood checklist 3/3 PASS (HV-012a/b/c). VAL-001..VAL-012
-all **PASS**. This closes **v0.1b**. Phase 5 and earlier are archived under
-`../phases/phase-N/`.
+**Status:** Phase 7 (Acceptance Criteria Surface, v0.1c first slice) is
+**CLOSED** on branch `phase-7`. QA final review: **PASS WITH IMPROVEMENTS**
+(0 blocking / 0 major / 3 improvement); human dogfood checklist 3/3 PASS
+(HV-010a/b/c). VAL-001..VAL-010 all **PASS** (VAL-010 resolved by human
+dogfood). Phase 6 closed v0.1b; phases 0-6 archived under `../phases/phase-N/`.
 
-Phase 6 delivered:
+Phase 7 delivered:
 
-- `fid issue update` one-field-per-line confirmation output (Task 1, **CF-009
-  closed**, VAL-009).
-- File-size split: `transition.go` 262, `update.go` 260, `project.go` 137 lines,
-  behavior-preserving + rebuild parity (Task 2, **CF-010 closed**, VAL-010).
-- `internal/issues` ready selection engine — sequential/prioritised/unattached/
-  project-wide with status-category readiness (Task 3, DEC-017, VAL-002..006).
-- `fid ready` CLI: `--epic`, `--format` dispatch, frozen `{"task": null}` empty
-  state + stderr `note:` (Task 4, DEC-018/DEC-019, VAL-001/007/008).
-- End-to-end v0.1b smoke over create→list→get→update→transition→ready with
-  delete-DB + `fid rebuild` parity (Task 5, VAL-011) + held-out scenario seed
-  recommendation.
+- `fid issue ac add` — ordered ACs on tasks/subtasks, epic rejection before
+  append (Task 1, VAL-001/002).
+- `fid issue ac verify` — multi-role append-only verification with evidence/
+  status enums, `completion_id` NULL (Task 2, VAL-003/005).
+- Deterministic latest-per-role by journal append order (`rowid` DESC) +
+  `ac.go` 190 / `ac_verify.go` 255 split (Task 2b, DEC-021/DEC-022, VAL-004/009).
+- `fid issue ac list` — latest-per-role, four-format dispatch + JSON default
+  (Task 3, VAL-006/007).
+- Real-data `all_acs_verified` reject→verify→pass + delete-DB `fid rebuild`
+  parity (Task 4, VAL-008/009).
 
-Five tasks, one BLOCK→resolved (TRG-001/ESC-004 → DEC-019), zero spec
-deviations, zero dependency changes. DEC-017/DEC-018 formally recorded at wrap.
+Five task units, one BLOCK→resolved (TRG-001/ESC-005 → DEC-021), one scope
+correction (DEC-022 → CF-012), zero dependency changes. DEC-020/021/022 recorded
+at wrap.
 
-Coverage held: `cmd/fid` 78.3%, `internal/issues` 82.5%, `internal/journal`
+Coverage held: `cmd/fid` 78.9%, `internal/issues` 82.0%, `internal/journal`
 80.3%, `internal/policy` 85.0%, `internal/workflow` 95.5% (COV-001/002 satisfied).
 
 Open carry-forward register: CF-003 (role corrupt-tail, before v0.1d), CF-008
-(resolution type/reason, v0.2). CF-009/CF-010 closed this phase.
+(resolution type/reason, v0.2), CF-011 (consistent `activity_log`, v0.1e),
+CF-012 (`issue.go` 677-line split, next v0.1c slot).
 
 ## Next Action
 
-- **Phase 7 is PLANNED** (roadmap §v0.1c, first slice — acceptance-criteria
-  surface only). Validation contract (VAL-001..010) and 4 ordered Developer tasks
-  drafted under `../phases/phase-7/`; brief refreshed. v0.1c is split into Phase 7
-  (ACs), Phase 8 (completions), Phase 9 (concerns + derived flag) per the roadmap
-  §v0.1c slicing note. Proposed **DEC-020** (AC writes don't emit `activity_log`,
-  consistent with `fid issue create`) awaits human confirmation.
-- Next: QA Lead refines the Phase 7 QA plan and runs the dev/QA loop from Task 1.
+- **Phase 8 is the next planned cut** (roadmap §v0.1c — task completions:
+  `fid issue complete`, append-only `task_completions`, attempt numbering +
+  supersession, `gate_runs`→`gate_results` snapshot via journal fixtures, real
+  `has_completion_report`-gated transition). Not yet planned — Tech Lead phase
+  start creates the validation contract and task list.
+- Consider folding **CF-012** (`internal/issues/issue.go` behavior-preserving
+  split) into the Phase 8 slot per its disposition.
 - Standing commitment before release-readiness: decide where held-out scenarios
-  live and how implementation agents are prevented from loading them
-  (`held-out-recommendation.md` recommends the v0.1b smoke as the seed).
+  live and how implementation agents are prevented from loading them.

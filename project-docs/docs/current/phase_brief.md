@@ -1,87 +1,84 @@
-# Phase Brief - Phase 7 (Acceptance Criteria Surface, v0.1c)
+# Phase Brief - Between phases (Phase 7 CLOSED, Phase 8 to plan)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 7 is **PLANNED** — validation contract + 4 ordered Developer
-> tasks drafted; awaiting QA Lead QA-plan refinement and execution. Phase 6
-> (v0.1b) is CLOSED; archives under `../phases/phase-6/`.
+> **State:** Phase 7 (Acceptance Criteria Surface, v0.1c first slice) is
+> **CLOSED** on branch `phase-7`. QA final review **PASS WITH IMPROVEMENTS**
+> (0 blocking / 0 major / 3 improvement); human dogfood 3/3 PASS. VAL-001..010
+> all PASS. Phase 8 is **not yet planned** — the next action is a Tech Lead
+> phase start. No active task work is in flight.
 
-## Phase 7 goal (roadmap §v0.1c — first slice)
+## Phase 7 outcome (closed)
 
-Ship the **acceptance-criteria write surface** on the existing
-`acceptance_criteria` / `ac_verifications` schema and read path, and replace the
-Phase 5 journal-fixture evidence for the `all_acs_verified` transition rule with
-real write commands:
+Shipped the acceptance-criteria write surface on the existing
+`acceptance_criteria` / `ac_verifications` schema and replaced the Phase 5
+journal-fixture evidence for `all_acs_verified` with real write commands:
 
-- `fid issue ac add` — ordered ACs on tasks/subtasks; reject on epics (PRD-AC-001/002).
-- `fid issue ac verify` — multi-role, append-only verification with evidence/status (PRD-AC-003/004/005).
-- `fid issue ac list` — latest verification status per role, all read formats (PRD-AC-006, PRD-OUT-001–004).
-- End-to-end: real AC verification drives `all_acs_verified`-gated transition + rebuild parity (PRD-WF-007, ADR-0001).
+- `fid issue ac add` — ordered ACs on tasks/subtasks; epic rejection before
+  append (VAL-001/002).
+- `fid issue ac verify` — multi-role, append-only, evidence/status enums;
+  `completion_id` NULL (VAL-003/005).
+- `fid issue ac list` — latest-per-role, four-format dispatch + JSON default
+  (VAL-006/007).
+- Real-data `all_acs_verified` reject→verify→pass + delete-DB `fid rebuild`
+  parity (VAL-008/009).
+- Latest-per-role resolved by journal append order (`rowid` DESC), `verified_at`
+  display-only (DEC-021).
 
-Out of scope (later v0.1c phases): `fid issue complete` + `task_completions`
-(Phase 8); `fid concern raise/address/list` + derived concern flag (Phase 9).
+Archives: `../phases/phase-7/` (`decisions.md`, `progress.md`, `triage-log.md`,
+`tl-escalations.md`, `qa/`).
 
-## Ordered task list
+## Next phase (Phase 8 — Task completions, roadmap §v0.1c)
 
-| Task | Title | VAL coverage | Notes |
-|---|---|---|---|
-| 1 | `fid issue ac add` | VAL-001, VAL-002 | New write path; epic rejection before append (CF-007). |
-| 2 | `fid issue ac verify` | VAL-003, VAL-004, VAL-005 | Append-only multi-role; status/evidence enums; completion_id NULL. |
-| 3 | `fid issue ac list` | VAL-006, VAL-007 | Read-only; reuse latest-per-role helpers; format dispatch. |
-| 4 | `all_acs_verified` real-data + rebuild parity (closure) | VAL-008, VAL-009 | E2E reject→verify→pass; delete-DB + `fid rebuild` parity. |
-| — | Human dogfood | VAL-010 | phase-end checklist; QA Lead fans into per-observable rows. |
+To be planned at Tech Lead phase start. Scope per roadmap:
 
-## Validation contract index
+- `fid issue complete` — append-only `task_completions` row: attempt number,
+  tokens, commits, files touched, human-intervention flag/note, prior-attempt
+  supersession, and the `gate_runs`→`gate_results` snapshot mechanism.
+- `fid dev gate` ships in v0.1e, so `gate_runs` rows are seeded via journal
+  fixtures (Phase 5 pattern) to exercise the snapshot until the write exists.
+- Wire real completions into the existing `has_completion_report` transition
+  rule (replace Phase 5 fixtures). **Exit:** an agent can record a completion
+  attempt, observe attempt numbering + supersession, see the gate snapshot
+  rolled into the completion, flag a human intervention, and satisfy a real
+  `has_completion_report`-gated transition.
 
-`../phases/phase-7/qa/validation-contract.md` (VAL-001..010):
-
-- VAL-001 ordered `ac add`; VAL-002 epic rejection (both states).
-- VAL-003 multi-role independence; VAL-004 append-only history; VAL-005 field recording + invalid-status rejection.
-- VAL-006 latest-per-role `ac list`; VAL-007 four-format dispatch + JSON default.
-- VAL-008 real-data `all_acs_verified` gating (reject→pass); VAL-009 rebuild parity.
-- VAL-010 human AC-lifecycle dogfood.
-
-## Planning decision (DEC-020, confirmed by human)
-
-AC writes (`ac add`, `ac verify`) **do not emit `activity_log`** in Phase 7 —
-consistent with `fid issue create` (creations don't log to the derived timeline
-table; only `update`/`transition` mutations do, per Phase 5 CF-005). The journal
-still records every AC write (rebuild is unaffected; VAL-009 proves it). Broad,
-consistent `activity_log` timeline population is deferred to v0.1e via **CF-011**
-(reconcile create + AC writes + any other unlogged creations when `fid activity
-list` / PRD-OUT-017 is designed). No activity VAL in Phase 7.
+At phase start: draft `../phases/phase-8/qa/validation-contract.md`, break into
+ordered one-session tasks, and consider folding CF-012 into this slot.
 
 ## Carry-Forward Register (open)
 
 | ID | Item | Disposition |
 |---|---|---|
-| CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work (not Phase 7). |
+| CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work. |
 | CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
-| CF-011 | Consistent `activity_log` timeline population across all writes (DEC-020) | v0.1e (with `fid activity list`). |
-
-CF-003 and CF-008 are not in Phase 7 scope; CF-011 is opened by Phase 7 DEC-020
-and targets v0.1e (not Phase 7 work).
+| CF-011 | Consistent `activity_log` timeline population (DEC-020) | v0.1e (with `fid activity list`). |
+| CF-012 | `internal/issues/issue.go` 677-line tripwire split (DEC-022) | Next v0.1c slot; behavior-preserving (à la CF-010). |
 
 ## Standing commitments to honor
 
 - Coverage (DEC-007): COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
-  COV-002 `cmd/fid` ≥ 70%. Phase 6 ended `cmd/fid` 78.3%, `internal/issues`
-  82.5%, `internal/journal` 80.3%, `internal/policy` 85.0%, `internal/workflow`
+  COV-002 `cmd/fid` ≥ 70%. Phase 7 ended `cmd/fid` 78.9%, `internal/issues`
+  82.0%, `internal/journal` 80.3%, `internal/policy` 85.0%, `internal/workflow`
   95.5%.
-- Validate-before-append (CF-007): all AC rejections occur before journal append
+- Validate-before-append (CF-007): all rejections occur before journal append
   (non-zero exit, clear error, zero new lines/rows).
+- DEC-020: AC writes (and `fid issue create`) do not emit `activity_log`;
+  completions follow the same precedent unless a phase decision says otherwise —
+  consistent timeline population is CF-011 (v0.1e).
 - Before release-readiness: decide where held-out scenarios live and how
   implementation agents are prevented from loading them
-  (`../phases/phase-6/held-out-recommendation.md` recommends the v0.1b smoke seed;
-  Task 4's AC smoke may extend it — recommend only).
-- Process nudge (Phase 6): require pasted exact command transcripts for any
-  public-output change in completion reports — folded into each task spec.
+  (`../phases/phase-6/held-out-recommendation.md` recommends the v0.1b smoke
+  seed; Phase 7's AC gating smoke may extend it — recommend only).
+- Process nudge: require pasted exact command transcripts for any public-output
+  change in completion reports — fold into each task spec.
+- Task-spec authoring nudge (Phase 7 lesson): scope file-size acceptance criteria
+  to the task's allowed write set, not the whole package (avoids DEC-022-style
+  scope BLOCKs).
 
 ## Next Checkpoint
 
-QA Lead: refine `../phases/phase-7/qa/validation-contract.md` into a QA plan
-mapping every VAL to deterministic `(qa-lead)` / mid-phase-review / `(human)`
-evidence, fan VAL-010 into per-observable human rows, then start the dev/QA loop
-on Task 1.
-</content>
+Tech Lead: start Phase 8 — read roadmap §v0.1c, draft the validation contract,
+break into ordered Developer tasks, refresh this brief, and present the contract
+and task list to the human.
