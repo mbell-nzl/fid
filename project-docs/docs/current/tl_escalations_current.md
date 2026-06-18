@@ -40,16 +40,12 @@ finding:
 
 ## Open Escalations
 
-### ESC-005: AC verification latest ordering can be nondeterministic within one second
+None.
 
-- **Raised:** 2026-06-14
-- **By:** QA Reviewer / Phase 7 Review 1
-- **Trigger:** QA Reviewer trigger 5 and 6 — spans later `ac list` / workflow consumers and is a plausible material spec deviation.
-- **Context:** Task 2 stores `ac_verifications.verified_at` with `time.RFC3339` second precision while `latestVerificationsByRole` selects latest by `verified_at DESC, id DESC`. Two same-role verifications inside the same second can therefore select by random `ACV-` id rather than append order, so fail→pass may not reliably produce latest=pass.
-- **Question / proposed direction:** Decide the canonical ordering for same-timestamp AC verifications and require implementation/tests that prove append-only latest-per-role semantics without sleeping past a timestamp boundary.
-- **Resolution direction (DEC-021):** Latest-per-role is the verification appended last in journal order (per ADR-0001), resolved by SQLite implicit `rowid` DESC — deterministic and rebuild-stable, independent of `verified_at` second resolution and the random `ACV-` id. `verified_at` stays display-only. No schema migration. Implementation + de-sleep tests scheduled as **Task 2b**; VAL-004 strengthened to forbid timestamp-boundary proof.
-- **Links:** `project-docs/docs/phases/phase-7/qa/review-1.md`; `project-docs/docs/phases/phase-7/decisions.md` (DEC-021); `project-docs/docs/phases/phase-7/tasks/task-2b.md`; `internal/issues/ac.go`; `internal/issues/detail.go`; VAL-004, VAL-006, VAL-008.
-- **Status:** Decided (DEC-021, human-confirmed 2026-06-14) — closes when Task 2b lands and re-review clears VAL-004.
+ESC-005 (Phase 7 AC verification latest-ordering nondeterminism) was resolved by
+DEC-021 (human-confirmed 2026-06-14); Task 2b implemented `rowid`-DESC
+append-order latest-per-role and the Review 1 fixup cleared VAL-004. Archived to
+`project-docs/docs/phases/phase-7/tl-escalations.md` at the Phase 7 wrap.
 
 ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
 DEC-019 (human-confirmed 2026-06-14) and archived to
