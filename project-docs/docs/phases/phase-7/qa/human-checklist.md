@@ -2,7 +2,7 @@
 
 > Phase: 7 - Acceptance Criteria Surface
 > Date: 2026-06-14
-> Tester: _______________
+> Tester: MBEL
 >
 > Include only `(human)` items here: perception, product-owner judgment,
 > dogfooding, tone, and flow coherence. Deterministic `(qa-lead)` checks belong
@@ -16,9 +16,9 @@ in a real `.fid/` workspace and records outcomes.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HV-010a | VAL-010 | In a real `.fid/` workspace, add at least two ordered ACs to a task and list/read them back; judge whether the add confirmation and ordered list are clear and behave as expected `(human)`. | Human confirms the add confirmation is clear, the ACs read back in expected order, and any friction is recorded. | | |
-| HV-010b | VAL-010 | In the same real workspace, verify one AC from at least two roles and list latest-per-role; judge whether the multi-role latest status is understandable and matches expectation `(human)`. | Human confirms role labels and latest statuses are understandable, and any ambiguity is recorded. | | |
-| HV-010c | VAL-010 | In the same real workspace, attempt to add an AC to an epic; judge whether the rejection is clear, actionable, and matches the product expectation that epics cannot hold ACs `(human)`. | Human confirms the rejection is clear and actionable, or records the confusing text/friction. | | |
+| HV-010a | VAL-010 | In a real `.fid/` workspace, add at least two ordered ACs to a task and list/read them back; judge whether the add confirmation and ordered list are clear and behave as expected `(human)`. | Human confirms the add confirmation is clear, the ACs read back in expected order, and any friction is recorded. | PASS | n/a |
+| HV-010b | VAL-010 | In the same real workspace, verify one AC from at least two roles and list latest-per-role; judge whether the multi-role latest status is understandable and matches expectation `(human)`. | Human confirms role labels and latest statuses are understandable, and any ambiguity is recorded. | PASS | n/a |
+| HV-010c | VAL-010 | In the same real workspace, attempt to add an AC to an epic; judge whether the rejection is clear, actionable, and matches the product expectation that epics cannot hold ACs `(human)`. | Human confirms the rejection is clear and actionable, or records the confusing text/friction. | PASS | n/a |
 
 ## Summary
 
