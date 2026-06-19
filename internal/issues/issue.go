@@ -95,7 +95,7 @@ type Issue struct {
 	UpdatedAt          *string               `json:"updated_at"`
 	ParentTitle        *string               `json:"-"`
 	Concerns           []IssueConcern        `json:"-"`
-	Completions        []IssueCompletion     `json:"-"`
+	Completions        []IssueCompletion     `json:"completions"`
 	Links              []IssueLink           `json:"-"`
 	Claims             []IssueClaim          `json:"-"`
 }
