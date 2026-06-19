@@ -109,6 +109,10 @@ func Complete(options CompleteOptions) (CompleteResult, error) {
 		if err != nil {
 			return err
 		}
+		gateResultsJSON, gatesPassed, gatesFailed, err := completionGateSnapshot(conn, issueID, attemptNumber)
+		if err != nil {
+			return err
+		}
 
 		commitHashesJSON, err := marshalStringSlice(commitHashes)
 		if err != nil {
@@ -125,9 +129,9 @@ func Complete(options CompleteOptions) (CompleteResult, error) {
 			"attempt_number":     attemptNumber,
 			"developer_role":     options.ActorRole,
 			"status":             "dev_complete",
-			"gates_passed":       0,
-			"gates_failed":       0,
-			"gate_results":       "[]",
+			"gates_passed":       gatesPassed,
+			"gates_failed":       gatesFailed,
+			"gate_results":       gateResultsJSON,
 			"human_intervention": options.HumanIntervention,
 			"completed_at":       completedAt,
 		}
@@ -294,6 +298,46 @@ func priorCompletionIDs(conn *sql.DB, issueID string) ([]string, error) {
 		return nil, fmt.Errorf("iterate prior completions for %q: %w", issueID, err)
 	}
 	return result, nil
+}
+
+func completionGateSnapshot(conn *sql.DB, issueID string, attemptNumber int) (string, int, int, error) {
+	rows, err := conn.Query(`
+		SELECT command, exit_code, ran_at, output_excerpt
+		FROM gate_runs
+		WHERE issue_id = ? AND attempt_number = ?
+		ORDER BY ran_at, id
+	`, issueID, attemptNumber)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("query gate runs for %q attempt %d: %w", issueID, attemptNumber, err)
+	}
+	defer closeIssueRows(rows)
+
+	gateResults := []CompletionGateResult{}
+	gatesPassed := 0
+	gatesFailed := 0
+	for rows.Next() {
+		var gateResult CompletionGateResult
+		var outputExcerpt sql.NullString
+		if err := rows.Scan(&gateResult.Cmd, &gateResult.ExitCode, &gateResult.RanAt, &outputExcerpt); err != nil {
+			return "", 0, 0, fmt.Errorf("scan gate run for %q attempt %d: %w", issueID, attemptNumber, err)
+		}
+		gateResult.OutputExcerpt = nullStringPointer(outputExcerpt)
+		if gateResult.ExitCode == 0 {
+			gatesPassed++
+		} else {
+			gatesFailed++
+		}
+		gateResults = append(gateResults, gateResult)
+	}
+	if err := rows.Err(); err != nil {
+		return "", 0, 0, fmt.Errorf("iterate gate runs for %q attempt %d: %w", issueID, attemptNumber, err)
+	}
+
+	gateResultsJSON, err := json.Marshal(gateResults)
+	if err != nil {
+		return "", 0, 0, fmt.Errorf("marshal gate results for %q attempt %d: %w", issueID, attemptNumber, err)
+	}
+	return string(gateResultsJSON), gatesPassed, gatesFailed, nil
 }
 
 func marshalStringSlice(values []string) (string, error) {

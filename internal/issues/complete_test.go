@@ -1,9 +1,14 @@
 package issues
 
 import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestCompleteCreatesAttemptOneAndPersistsCompletionFields(t *testing.T) {
@@ -261,6 +266,297 @@ func TestCompleteStoresHumanInterventionStateWithoutActivityLogRows(t *testing.T
 	if activityAfter != activityBefore {
 		t.Fatalf("activity_log rows = %d after completions, want unchanged %d", activityAfter, activityBefore)
 	}
+}
+
+func TestCompleteSnapshotsMatchingGateRunsAndPreservesSourceRows(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Snapshot gate runs",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	seedCompletionGateRuns(t, workspace, created.ID, []completionGateRunSeed{
+		{
+			ID:             "GATE-000101",
+			AttemptNumber:  1,
+			RecordedByRole: "developer",
+			Command:        "go test ./...",
+			ExitCode:       0,
+			OutputExcerpt:  stringPointer("ok\tgithub.com/mbell-nzl/fid/internal/issues\t0.321s"),
+			RanAt:          "2026-06-20T09:00:00Z",
+		},
+		{
+			ID:             "GATE-000102",
+			AttemptNumber:  1,
+			RecordedByRole: "developer",
+			Command:        "golangci-lint run ./...",
+			ExitCode:       1,
+			OutputExcerpt:  stringPointer("internal/issues/complete.go:128: line is 61 chars"),
+			RanAt:          "2026-06-20T09:01:00Z",
+		},
+		{
+			ID:             "GATE-000103",
+			AttemptNumber:  2,
+			RecordedByRole: "developer",
+			Command:        "go test ./... -run TestFutureAttempt",
+			ExitCode:       0,
+			OutputExcerpt:  stringPointer("ok"),
+			RanAt:          "2026-06-20T09:02:00Z",
+		},
+	})
+
+	result, err := Complete(CompleteOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Complete() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	var gatesPassed, gatesFailed int
+	var gateResultsJSON string
+	if err := conn.QueryRow(`
+		SELECT gates_passed, gates_failed, gate_results
+		FROM task_completions
+		WHERE id = ?
+	`, result.ID).Scan(&gatesPassed, &gatesFailed, &gateResultsJSON); err != nil {
+		t.Fatalf("query completion gate snapshot: %v", err)
+	}
+	if gatesPassed != 1 {
+		t.Fatalf("gates_passed = %d, want 1", gatesPassed)
+	}
+	if gatesFailed != 1 {
+		t.Fatalf("gates_failed = %d, want 1", gatesFailed)
+	}
+
+	var gateResults []map[string]any
+	if err := json.Unmarshal([]byte(gateResultsJSON), &gateResults); err != nil {
+		t.Fatalf("Unmarshal(gate_results) error = %v", err)
+	}
+	wantGateResults := []map[string]any{
+		{
+			"cmd":            "go test ./...",
+			"exit_code":      float64(0),
+			"ran_at":         "2026-06-20T09:00:00Z",
+			"output_excerpt": "ok\tgithub.com/mbell-nzl/fid/internal/issues\t0.321s",
+		},
+		{
+			"cmd":            "golangci-lint run ./...",
+			"exit_code":      float64(1),
+			"ran_at":         "2026-06-20T09:01:00Z",
+			"output_excerpt": "internal/issues/complete.go:128: line is 61 chars",
+		},
+	}
+	if !equalGateResultMaps(gateResults, wantGateResults) {
+		t.Fatalf("gate_results = %#v, want %#v", gateResults, wantGateResults)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if len(got.Completions) != 1 {
+		t.Fatalf("Get().Completions len = %d, want 1", len(got.Completions))
+	}
+	if got.Completions[0].GatesPassed != 1 {
+		t.Fatalf("Get().Completions[0].GatesPassed = %d, want 1", got.Completions[0].GatesPassed)
+	}
+	if got.Completions[0].GatesFailed != 1 {
+		t.Fatalf("Get().Completions[0].GatesFailed = %d, want 1", got.Completions[0].GatesFailed)
+	}
+	if len(got.Completions[0].GateResults) != 2 {
+		t.Fatalf("Get().Completions[0].GateResults len = %d, want 2", len(got.Completions[0].GateResults))
+	}
+	if got.Completions[0].GateResults[0].Cmd != "go test ./..." || got.Completions[0].GateResults[0].ExitCode != 0 {
+		t.Fatalf("Get().Completions[0].GateResults[0] = %#v, want go test pass", got.Completions[0].GateResults[0])
+	}
+	if got.Completions[0].GateResults[1].Cmd != "golangci-lint run ./..." || got.Completions[0].GateResults[1].ExitCode != 1 {
+		t.Fatalf("Get().Completions[0].GateResults[1] = %#v, want lint fail", got.Completions[0].GateResults[1])
+	}
+
+	rows, err := conn.Query(`
+		SELECT id, attempt_number, command, exit_code, output_excerpt, ran_at
+		FROM gate_runs
+		WHERE issue_id = ?
+		ORDER BY attempt_number, ran_at, id
+	`, created.ID)
+	if err != nil {
+		t.Fatalf("query gate_runs: %v", err)
+	}
+	defer closeIssueRows(rows)
+
+	var preserved []string
+	for rows.Next() {
+		var id string
+		var attemptNumber int
+		var command string
+		var exitCode int
+		var outputExcerpt sql.NullString
+		var ranAt string
+		if err := rows.Scan(&id, &attemptNumber, &command, &exitCode, &outputExcerpt, &ranAt); err != nil {
+			t.Fatalf("scan gate_runs: %v", err)
+		}
+		excerpt := "<nil>"
+		if outputExcerpt.Valid {
+			excerpt = outputExcerpt.String
+		}
+		preserved = append(preserved, fmt.Sprintf("%s|%s|%s|%s:%d:%d", id, command, ranAt, excerpt, attemptNumber, exitCode))
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate gate_runs: %v", err)
+	}
+	wantPreserved := []string{
+		"GATE-000101|go test ./...|2026-06-20T09:00:00Z|ok\tgithub.com/mbell-nzl/fid/internal/issues\t0.321s:1:0",
+		"GATE-000102|golangci-lint run ./...|2026-06-20T09:01:00Z|internal/issues/complete.go:128: line is 61 chars:1:1",
+		"GATE-000103|go test ./... -run TestFutureAttempt|2026-06-20T09:02:00Z|ok:2:0",
+	}
+	if !equalStrings(preserved, wantPreserved) {
+		t.Fatalf("preserved gate_runs = %#v, want %#v", preserved, wantPreserved)
+	}
+}
+
+func TestCompleteLeavesGateSnapshotEmptyWhenNoMatchingGateRunsExist(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "No matching gates",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	seedCompletionGateRuns(t, workspace, created.ID, []completionGateRunSeed{
+		{
+			ID:             "GATE-000201",
+			AttemptNumber:  2,
+			RecordedByRole: "developer",
+			Command:        "go test ./... -run TestAttemptTwo",
+			ExitCode:       0,
+			RanAt:          "2026-06-20T10:00:00Z",
+		},
+	})
+
+	if _, err := Complete(CompleteOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	}); err != nil {
+		t.Fatalf("Complete() error = %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if len(got.Completions) != 1 {
+		t.Fatalf("Get().Completions len = %d, want 1", len(got.Completions))
+	}
+	if len(got.Completions[0].GateResults) != 0 {
+		t.Fatalf("Get().Completions[0].GateResults = %#v, want empty", got.Completions[0].GateResults)
+	}
+	if got.Completions[0].GatesPassed != 0 {
+		t.Fatalf("Get().Completions[0].GatesPassed = %d, want 0", got.Completions[0].GatesPassed)
+	}
+	if got.Completions[0].GatesFailed != 0 {
+		t.Fatalf("Get().Completions[0].GatesFailed = %d, want 0", got.Completions[0].GatesFailed)
+	}
+}
+
+type completionGateRunSeed struct {
+	ID             string
+	AttemptNumber  int
+	RecordedByRole string
+	Command        string
+	ExitCode       int
+	OutputExcerpt  *string
+	RanAt          string
+}
+
+func seedCompletionGateRuns(t *testing.T, workspace, issueID string, runs []completionGateRunSeed) {
+	t.Helper()
+
+	effects := make([]journal.Effect, 0, len(runs))
+	for _, run := range runs {
+		values := map[string]any{
+			"issue_id":         issueID,
+			"attempt_number":   run.AttemptNumber,
+			"recorded_by_role": run.RecordedByRole,
+			"command":          run.Command,
+			"exit_code":        run.ExitCode,
+			"ran_at":           run.RanAt,
+		}
+		if run.OutputExcerpt != nil {
+			values["output_excerpt"] = *run.OutputExcerpt
+		}
+		effects = append(effects, journal.Effect{
+			Op:    "insert",
+			Table: "gate_runs",
+			PK: map[string]any{
+				"id": run.ID,
+			},
+			Values: values,
+		})
+	}
+
+	appendIssueJournalEvent(t, workspace, journal.Event{
+		EventSchema: journal.EventSchemaV1,
+		EventType:   "gate.seeded",
+		Actor: journal.Actor{
+			Role: "developer",
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: effects,
+	})
+}
+
+func equalGateResultMaps(left, right []map[string]any) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for index := range left {
+		if len(left[index]) != len(right[index]) {
+			return false
+		}
+		for key, rightValue := range right[index] {
+			if left[index][key] != rightValue {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func TestCompleteRejectsEpicBeforeAppend(t *testing.T) {
