@@ -883,7 +883,9 @@ AC verification maps to `issue.ac.verify.human`, not
 | `issue.ac.verify.developer` | ✓ | – | – | – | – | – | – |
 | `issue.ac.verify.qa_reviewer` | – | ✓ | – | – | – | – | – |
 | `issue.ac.verify.qa_lead` | – | – | ✓ | – | – | – | – |
+| `issue.ac.verify.tl_lite` | – | – | – | – | – | – | – |
 | `issue.ac.verify.tl` | – | – | – | – | ✓ | – | – |
+| `issue.ac.verify.workflow_runner` | – | – | – | – | – | – | – |
 | `issue.ac.verify.human` | – | – | – | – | – | – | ✓ |
 | `issue.label.add` | ✓ | – | – | – | ✓ | ✓ | ✓ |
 | `issue.label.remove` | ✓ | – | – | – | ✓ | ✓ | ✓ |
@@ -893,6 +895,8 @@ AC verification maps to `issue.ac.verify.human`, not
 | `issue.transition.qa_review` | – | ✓ | ✓ | – | – | ✓ | ✓ |
 | `issue.transition.qa_pass` | – | – | ✓ | – | – | – | ✓ |
 | `issue.transition.qa_block` | – | ✓ | ✓ | – | – | – | ✓ |
+| `issue.transition.wrapped` | – | – | – | – | ✓ | – | ✓ |
+| `issue.transition.closed` | – | – | – | – | – | – | ✓ |
 | `issue.transition.done` | – | – | – | – | ✓ | – | ✓ |
 | `issue.transition.cancelled` | – | – | – | – | ✓ | – | ✓ |
 | `issue.claim.acquire` | ✓ | ✓ | ✓ | – | ✓ | ✓ | ✓ |

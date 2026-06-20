@@ -526,7 +526,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
 	for issueID, want := range beforeRebuild {
 		if got := mustGetIssueJSON(t, workspace, issueID); got != want {
@@ -665,7 +665,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
 	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
 	if beforeStdout != afterStdout {
@@ -823,7 +823,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
 	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
 	if beforeStdout != afterStdout {
@@ -858,6 +858,40 @@ func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
 		}
 		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
 			t.Fatalf("stderr = %q, want unknown role error", stderr)
+		}
+	})
+
+	t.Run("issue create denied role leaves journal unchanged", func(t *testing.T) {
+		journalPath := mustJournalPath(t, workspace)
+		linesBefore := splitJournalLines(mustReadCommandFile(t, journalPath))
+
+		stdout, stderr, err := runFIDCommandExpectError(
+			t,
+			workspace,
+			"issue", "create",
+			"--kind", "epic",
+			"--title", "Denied epic create",
+			"--scheduling", "sequential",
+			"--by", "developer",
+		)
+		if err == nil {
+			t.Fatal("Execute() error = nil, want permission rejection")
+		}
+		if stdout != "" {
+			t.Fatalf("stdout = %q, want empty", stdout)
+		}
+		for _, want := range []string{
+			`error: role "developer" not permitted for action "issue.create.epic"`,
+			"check `fid policy show` for permitted role/action combinations",
+		} {
+			if !strings.Contains(stderr, want) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			}
+		}
+
+		linesAfter := splitJournalLines(mustReadCommandFile(t, journalPath))
+		if len(linesAfter) != len(linesBefore) {
+			t.Fatalf("journal lines after rejection = %d, want unchanged %d", len(linesAfter), len(linesBefore))
 		}
 	})
 
@@ -943,10 +977,10 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 			EventSchema: journal.EventSchemaV1,
 			EventType:   "issue.transitioned",
 			Actor: journal.Actor{
-				Role: "developer",
+				Role: "tl",
 			},
 			Command: journal.Command{
-				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--by", "developer"},
+				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--by", "tl"},
 				CWD:        ".",
 				FIDVersion: "0.1.0",
 			},

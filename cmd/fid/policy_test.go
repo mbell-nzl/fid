@@ -129,6 +129,59 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	}
 }
 
+func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	if stderr != "" {
+		t.Fatalf("policy show stderr = %q, want empty", stderr)
+	}
+
+	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "developer"); got {
+		t.Fatal("policy show developer/issue.create.epic = true, want false")
+	}
+	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "tl"); !got {
+		t.Fatal("policy show tl/issue.create.epic = false, want true")
+	}
+
+	deniedStdout, deniedStderr, err := runFIDCommandExpectError(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "epic",
+		"--title", "Denied parity epic",
+		"--scheduling", "sequential",
+		"--by", "developer",
+	)
+	if err == nil {
+		t.Fatal("developer epic create error = nil, want permission denial")
+	}
+	if deniedStdout != "" {
+		t.Fatalf("developer epic create stdout = %q, want empty", deniedStdout)
+	}
+	if !strings.Contains(deniedStderr, `error: role "developer" not permitted for action "issue.create.epic"`) {
+		t.Fatalf("developer epic create stderr = %q, want permission denial", deniedStderr)
+	}
+
+	allowedStdout, allowedStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "epic",
+		"--title", "Permitted parity epic",
+		"--scheduling", "sequential",
+		"--by", "tl",
+	)
+	if allowedStdout != "" {
+		t.Fatalf("tl epic create stdout = %q, want empty", allowedStdout)
+	}
+	if !strings.Contains(allowedStderr, "created issue ") || !strings.Contains(allowedStderr, "(epic)") {
+		t.Fatalf("tl epic create stderr = %q, want create confirmation", allowedStderr)
+	}
+}
+
 func mustMarshalPolicyRowsJSON(t *testing.T, rows []internalpolicy.MatrixRow) string {
 	t.Helper()
 
@@ -193,4 +246,26 @@ func countActivityLogRows(t *testing.T, conn *sql.DB) int {
 		t.Fatalf("count activity_log rows: %v", err)
 	}
 	return count
+}
+
+func commandPolicyCellAllowed(t *testing.T, rows []any, action, role string) bool {
+	t.Helper()
+
+	for _, row := range rows {
+		fields, ok := row.(map[string]any)
+		if !ok {
+			continue
+		}
+		if fields["action"] != action {
+			continue
+		}
+		value, ok := fields[role].(bool)
+		if !ok {
+			t.Fatalf("policy row %q missing boolean role %q: %#v", action, role, fields)
+		}
+		return value
+	}
+
+	t.Fatalf("policy row %q not found", action)
+	return false
 }

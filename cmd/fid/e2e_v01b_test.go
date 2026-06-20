@@ -211,7 +211,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		workspace,
 		"issue", "transition", seqCurrentID,
 		"--to", "cancelled",
-		"--by", "developer",
+		"--by", "tl",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+seqCurrentID+": todo → cancelled") {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
@@ -296,7 +296,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
 	for issueID, wantJSON := range beforeIssueJSON {
 		if gotJSON := mustGetIssueJSON(t, workspace, issueID); gotJSON != wantJSON {
@@ -377,7 +377,7 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "cancelled",
-		"--by", "developer",
+		"--by", "tl",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → cancelled") {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)

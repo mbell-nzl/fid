@@ -51,7 +51,7 @@ func AddressConcern(options AddressConcernOptions) (AddressConcernResult, error)
 	if completionID == "" {
 		return AddressConcernResult{}, fmt.Errorf("address concern: completion id is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionConcernAddress); err != nil {
 		return AddressConcernResult{}, err
 	}
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {

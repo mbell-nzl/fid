@@ -364,7 +364,7 @@ func TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 	if !strings.Contains(rebuildStderr, "rebuild complete") {
 		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
 	}
@@ -480,6 +480,79 @@ func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
 				tt.verify(t, workspace)
 			}
 		})
+	}
+}
+
+func TestIssueACVerifyCommandUsesRoleSpecificPermissionsAndHumanAttribution(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI verifier permissions")
+	journalPath := mustJournalPath(t, workspace)
+	linesBeforeDenied := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	stdout, stderr, err := runFIDCommandExpectError(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "workflow_runner",
+		"--status", "pass",
+	)
+	if err == nil {
+		t.Fatal("workflow_runner verify error = nil, want permission denial")
+	}
+	if stdout != "" {
+		t.Fatalf("workflow_runner stdout = %q, want empty", stdout)
+	}
+	for _, want := range []string{
+		`error: role "workflow_runner" not permitted for action "issue.ac.verify.workflow_runner"`,
+		"check `fid policy show` for permitted role/action combinations",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("workflow_runner stderr = %q, want substring %q", stderr, want)
+		}
+	}
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforeDenied {
+		t.Fatalf("journal lines after workflow_runner denial = %d, want %d", got, linesBeforeDenied)
+	}
+
+	qaReviewerStdout, qaReviewerStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "qa_reviewer",
+		"--status", "fail",
+	)
+	if qaReviewerStdout != "" {
+		t.Fatalf("qa_reviewer stdout = %q, want empty", qaReviewerStdout)
+	}
+	if !strings.Contains(qaReviewerStderr, "verified "+criterionID+" on "+issueID+" by qa_reviewer: fail") {
+		t.Fatalf("qa_reviewer stderr = %q, want reviewer confirmation", qaReviewerStderr)
+	}
+
+	humanStdout, humanStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "ac", "verify", issueID, criterionID,
+		"--by", "human",
+		"--status", "pass",
+	)
+	if humanStdout != "" {
+		t.Fatalf("human stdout = %q, want empty", humanStdout)
+	}
+	if !strings.Contains(humanStderr, "verified "+criterionID+" on "+issueID+" by human: pass") {
+		t.Fatalf("human stderr = %q, want human confirmation", humanStderr)
+	}
+
+	got := mustGetAcceptanceCriteria(t, workspace, issueID)
+	if len(got) != 1 {
+		t.Fatalf("acceptance criteria len = %d, want 1", len(got))
+	}
+	if got[0].LatestVerifications["qa_reviewer"]["status"] != "fail" {
+		t.Fatalf("qa_reviewer latest verification = %#v, want fail", got[0].LatestVerifications["qa_reviewer"])
+	}
+	if got[0].LatestVerifications["human"]["status"] != "pass" {
+		t.Fatalf("human latest verification = %#v, want pass", got[0].LatestVerifications["human"])
 	}
 }
 

@@ -139,7 +139,7 @@ func TestV01CHasCompletionReportGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "developer")
+	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 	if !strings.Contains(rebuildStderr, "rebuild complete") {
 		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
 	}

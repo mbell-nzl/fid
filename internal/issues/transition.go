@@ -102,13 +102,13 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: issue id is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
-		return TransitionResult{}, err
-	}
 
 	toState := strings.TrimSpace(options.ToState)
 	if toState == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: target state is required")
+	}
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
+		return TransitionResult{}, err
 	}
 
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {

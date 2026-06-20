@@ -63,7 +63,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: issue id is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueUpdate); err != nil {
 		return UpdateResult{}, err
 	}
 

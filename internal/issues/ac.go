@@ -47,7 +47,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if options.Ordinal <= 0 {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: ordinal must be a positive integer")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueACAdd); err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
 

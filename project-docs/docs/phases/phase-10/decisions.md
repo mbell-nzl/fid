@@ -3,6 +3,38 @@
 > In-phase decisions (DEC-NNN / DEC-A..E). Per-doc spec-sync verdicts and the
 > full decision history are finalized at phase wrap. Newest at top.
 
+## Task 3 execution note (2026-06-21)
+
+- **DEC-E executed as planned for permission retrofit fixtures.** Existing tests
+  that exercised now-denied write combinations were moved to permitted roles
+  without changing the behaviors under test:
+  - `maintenance.rebuild`: `developer` -> `workflow_runner` in
+    `cmd/fid/e2e_v01b_test.go`, `cmd/fid/e2e_v01c_ac_test.go`,
+    `cmd/fid/e2e_v01c_complete_test.go`, `cmd/fid/e2e_v01c_concern_test.go`,
+    `cmd/fid/init_test.go`, `cmd/fid/issue_ac_test.go`, `cmd/fid/issue_test.go`
+    (all rebuild parity callers), and `cmd/fid/rebuild_test.go`.
+  - Raw rebuild journal fixtures gained a seeded `workflow_runner` role so the
+    permitted rebuild actor exists in the replay-only workspaces:
+    `testdata/journal/replay-v1.golden.jsonl`,
+    `testdata/journal/corrupt-tail.jsonl`.
+  - `issue.transition.done` invalid-edge fixtures: `developer` -> `tl` in
+    `cmd/fid/issue_transition_test.go`, `internal/issues/transition_test.go`,
+    the synthetic precondition-conflict event in `cmd/fid/issue_test.go`, and
+    `testdata/journal/conflicting-precondition.jsonl`.
+  - `issue.transition.qa_review` setup fixture: `developer` -> `qa_reviewer` in
+    `internal/issues/transition_test.go`.
+  - Epic `issue.transition.in_progress` setup fixture: `tl` ->
+    `workflow_runner` in `internal/issues/transition_test.go`.
+  - `issue.transition.cancelled` task/subtask fixtures: `developer` -> `tl` in
+    `internal/issues/transition_test.go`.
+- **Direct-prerequisite matrix rows were added to finish enforcement coverage for
+  already-implemented derived actions.** Phase 10 Task 2's initial matrix missed
+  the epic transition states `issue.transition.wrapped` and
+  `issue.transition.closed`, plus the denied AC-verifier roles
+  `issue.ac.verify.tl_lite` and `issue.ac.verify.workflow_runner`. Task 3 added
+  those rows so every existing derived write action resolves to a matrix cell and
+  denied writes surface `PermissionDeniedError` instead of a missing-entry error.
+
 ## Task 1 execution note (2026-06-21)
 
 - **DEC-D executed as planned for CF-003.** `internal/policy` role discovery no
