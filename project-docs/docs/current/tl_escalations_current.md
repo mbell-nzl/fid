@@ -40,46 +40,13 @@ finding:
 
 ## Open Escalations
 
-### ESC-006 - Phase 9 final review blockers: benchmark gate failure and concern address read-back gap
-
-Status: DIRECTION ISSUED (fixup scheduled — Task 4); closes at Phase 9 wrap once
-QA verifies Task 4.
-Source: Phase 9 final review / TL-Lite TRG-002
-Raised: 2026-06-20
-Resolved-by (direction): Tech Lead 2026-06-20
-
-Summary:
-- The required phase benchmark gate `go test -bench . -benchmem ./...` failed in
-  `cmd/fid` at `TestConcernListFiltersByIssueAndStatus/all_concerns`.
-- VAL-004 / QA-12 failed because after `fid concern address`, public read-back
-  showed `status="addressed"` but neither `fid concern list` nor
-  `fid issue get --section concerns` exposed `addressed_in_completion_id`.
-
-Tech Lead diagnosis:
-- Read-back gap: the write path (`concern_address.go`) persists
-  `addressed_in_completion_id`, but `ConcernListItem` (`concern_list.go`) and
-  `IssueConcern` (`detail.go`) never select/expose it.
-- Benchmark flake: both concern read queries `ORDER BY created_at DESC, id DESC`;
-  `created_at` second-ties fall back to the content-hash `id`, ordering rows
-  nondeterministically vs creation order (same class as DEC-021 for AC verifs).
-
-Resolution direction (issued):
-- **DEC-023** — expose `addressed_in_completion_id` (nullable) on both concern
-  read models.
-- **DEC-024** — order concern reads by journal append order (`rowid DESC`,
-  rebuild-stable; mirrors DEC-021).
-- **Task 4** (`project-docs/docs/phases/phase-9/tasks/task-4.md`) implements both
-  under TDD; required benchmark gate must exit 0 and VAL-004 must PASS while
-  VAL-008/009 stay PASS. See `phases/phase-9/decisions.md` (DEC-023/DEC-024) and
-  the validation-contract revision log.
-- VAL-011 (human dogfood) remains BLOCKED pending the human checklist; it is not
-  a Task 4 deliverable.
-
-Next action: Phase Runner executes Task 4 via Developer → QA Reviewer; Tech Lead
-closes ESC-006 and wraps Phase 9 after QA verifies the gate and VAL-004.
+None. ESC-006 (Phase 9) resolved at Phase 9 wrap.
 
 ## Resolved (archived in their phase `tl-escalations.md`)
 
+- ESC-006 (Phase 9 final-review blockers: benchmark gate failure + concern
+  address read-back gap) → DEC-023 / DEC-024 / Task 4 fixup; QA Review 2 verified,
+  all eleven VALs PASS at wrap.
 - Phase 8: no escalations raised (both reviews CONTINUE, zero BLOCKs/triage).
 - ESC-005 (Phase 7 AC verify ordering nondeterminism) → DEC-021 / Task 2b.
 - ESC-004 (Phase 6 `fid ready` tie-break order) → DEC-019.
