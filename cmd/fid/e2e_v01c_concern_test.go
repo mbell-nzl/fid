@@ -281,6 +281,27 @@ func TestV01CClosureSmoke(t *testing.T) {
 	if got := addressedConcerns[0].(map[string]any)["status"]; got != "addressed" {
 		t.Fatalf("addressed concern status = %v, want addressed", got)
 	}
+	if got := addressedConcerns[0].(map[string]any)["addressed_in_completion_id"]; got != secondCompletionID {
+		t.Fatalf("addressed concern addressed_in_completion_id = %v, want %q", got, secondCompletionID)
+	}
+
+	issueConcernsStdout, issueConcernsStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "get", issueID,
+		"--section", "concerns",
+		"--format", "json",
+	)
+	if issueConcernsStderr != "" {
+		t.Fatalf("issue concerns stderr = %q, want empty", issueConcernsStderr)
+	}
+	issueConcerns := decodeCommandJSONStructure(t, issueConcernsStdout).([]any)
+	if len(issueConcerns) != 1 {
+		t.Fatalf("issue concerns len = %d, want 1", len(issueConcerns))
+	}
+	if got := issueConcerns[0].(map[string]any)["addressed_in_completion_id"]; got != secondCompletionID {
+		t.Fatalf("issue concern addressed_in_completion_id = %v, want %q", got, secondCompletionID)
+	}
 }
 
 type concernParityRow struct {

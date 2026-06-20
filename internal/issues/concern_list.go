@@ -19,15 +19,16 @@ type ConcernListOptions struct {
 }
 
 type ConcernListItem struct {
-	ID                   string  `json:"id"`
-	IssueID              string  `json:"issue_id"`
-	Summary              string  `json:"summary"`
-	Status               string  `json:"status"`
-	RaisedByRole         string  `json:"raised_by_role"`
-	RaisedInCompletionID string  `json:"raised_in_completion_id"`
-	BodyMDPath           *string `json:"body_md_path"`
-	CreatedAt            *string `json:"created_at"`
-	UpdatedAt            *string `json:"updated_at"`
+	ID                      string  `json:"id"`
+	IssueID                 string  `json:"issue_id"`
+	Summary                 string  `json:"summary"`
+	Status                  string  `json:"status"`
+	RaisedByRole            string  `json:"raised_by_role"`
+	RaisedInCompletionID    string  `json:"raised_in_completion_id"`
+	AddressedInCompletionID *string `json:"addressed_in_completion_id"`
+	BodyMDPath              *string `json:"body_md_path"`
+	CreatedAt               *string `json:"created_at"`
+	UpdatedAt               *string `json:"updated_at"`
 }
 
 func ListConcerns(options ConcernListOptions) ([]ConcernListItem, error) {
@@ -58,7 +59,7 @@ func ListConcerns(options ConcernListOptions) ([]ConcernListItem, error) {
 	items := []ConcernListItem{}
 	for rows.Next() {
 		var item ConcernListItem
-		var bodyMDPath, createdAt, updatedAt sql.NullString
+		var addressedInCompletionID, bodyMDPath, createdAt, updatedAt sql.NullString
 		if err := rows.Scan(
 			&item.ID,
 			&item.IssueID,
@@ -66,12 +67,14 @@ func ListConcerns(options ConcernListOptions) ([]ConcernListItem, error) {
 			&item.Status,
 			&item.RaisedByRole,
 			&item.RaisedInCompletionID,
+			&addressedInCompletionID,
 			&bodyMDPath,
 			&createdAt,
 			&updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan concern list row: %w", err)
 		}
+		item.AddressedInCompletionID = nullStringPointer(addressedInCompletionID)
 		item.BodyMDPath = nullStringPointer(bodyMDPath)
 		item.CreatedAt = nullStringPointer(createdAt)
 		item.UpdatedAt = nullStringPointer(updatedAt)
@@ -106,6 +109,7 @@ func concernListQuery(options ConcernListOptions) (string, []any) {
 			status,
 			raised_by_role,
 			raised_in_completion_id,
+			addressed_in_completion_id,
 			body_md_path,
 			created_at,
 			updated_at
@@ -115,7 +119,7 @@ func concernListQuery(options ConcernListOptions) (string, []any) {
 		query.WriteString("\nWHERE ")
 		query.WriteString(strings.Join(whereParts, "\n  AND "))
 	}
-	query.WriteString("\nORDER BY created_at DESC, id DESC")
+	query.WriteString("\nORDER BY rowid DESC")
 
 	return query.String(), args
 }

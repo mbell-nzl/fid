@@ -64,6 +64,9 @@ func TestListConcernsFiltersByIssueAndStatus(t *testing.T) {
 	if len(all) != 2 {
 		t.Fatalf("ListConcerns(all) len = %d, want 2", len(all))
 	}
+	if all[0].ID != secondConcern.ID || all[1].ID != firstConcern.ID {
+		t.Fatalf("ListConcerns(all) order = [%q %q], want [%q %q]", all[0].ID, all[1].ID, secondConcern.ID, firstConcern.ID)
+	}
 	secondConcernItem := concernListItemByID(t, all, secondConcern.ID)
 	if secondConcernItem.IssueID != secondIssueID {
 		t.Fatalf("ListConcerns(second).IssueID = %q, want %q", secondConcernItem.IssueID, secondIssueID)
@@ -74,12 +77,18 @@ func TestListConcernsFiltersByIssueAndStatus(t *testing.T) {
 	if secondConcernItem.BodyMDPath == nil || *secondConcernItem.BodyMDPath != "project-docs/concerns/CON-second.md" {
 		t.Fatalf("ListConcerns(second).BodyMDPath = %#v, want body path", secondConcernItem.BodyMDPath)
 	}
+	if secondConcernItem.AddressedInCompletionID != nil {
+		t.Fatalf("ListConcerns(second).AddressedInCompletionID = %#v, want nil", secondConcernItem.AddressedInCompletionID)
+	}
 	firstConcernItem := concernListItemByID(t, all, firstConcern.ID)
 	if firstConcernItem.IssueID != firstIssueID {
 		t.Fatalf("ListConcerns(first).IssueID = %q, want %q", firstConcernItem.IssueID, firstIssueID)
 	}
 	if firstConcernItem.Status != "addressed" {
 		t.Fatalf("ListConcerns(first).Status = %q, want addressed", firstConcernItem.Status)
+	}
+	if firstConcernItem.AddressedInCompletionID == nil || *firstConcernItem.AddressedInCompletionID != addressCompletion.ID {
+		t.Fatalf("ListConcerns(first).AddressedInCompletionID = %#v, want %q", firstConcernItem.AddressedInCompletionID, addressCompletion.ID)
 	}
 
 	byIssue, err := ListConcerns(ConcernListOptions{
@@ -130,6 +139,45 @@ func TestListConcernsFiltersByIssueAndStatus(t *testing.T) {
 	}
 	if len(empty) != 0 {
 		t.Fatalf("ListConcerns(empty) len = %d, want 0", len(empty))
+	}
+}
+
+func TestListConcernsOrdersSameSecondRowsByAppendOrder(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	issueID, completionID := seedConcernRaiseIssueAndCompletion(t, workspace)
+
+	conn := openIssueDB(t, workspace+"/.fid/fid.sqlite")
+	defer closeIssueTestDB(t, conn)
+
+	const createdAt = "2026-06-20T12:00:00Z"
+	if _, err := conn.Exec(`
+		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
+		VALUES (?, ?, ?, 'developer', 'Older append', 'open', ?, ?)
+	`, "CON-zzzzzz", issueID, completionID, createdAt, createdAt); err != nil {
+		t.Fatalf("insert older concern: %v", err)
+	}
+	if _, err := conn.Exec(`
+		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
+		VALUES (?, ?, ?, 'developer', 'Newer append', 'open', ?, ?)
+	`, "CON-aaaaaa", issueID, completionID, createdAt, createdAt); err != nil {
+		t.Fatalf("insert newer concern: %v", err)
+	}
+
+	items, err := ListConcerns(ConcernListOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		IssueID:       issueID,
+	})
+	if err != nil {
+		t.Fatalf("ListConcerns() error = %v", err)
+	}
+	if len(items) != 2 {
+		t.Fatalf("ListConcerns() len = %d, want 2", len(items))
+	}
+	if items[0].ID != "CON-aaaaaa" || items[1].ID != "CON-zzzzzz" {
+		t.Fatalf("ListConcerns() order = [%q %q], want [CON-aaaaaa CON-zzzzzz]", items[0].ID, items[1].ID)
 	}
 }
 

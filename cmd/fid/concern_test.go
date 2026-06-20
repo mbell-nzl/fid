@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 )
@@ -215,10 +214,11 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 	}
 
 	var concerns []struct {
-		ID                   string `json:"id"`
-		Status               string `json:"status"`
-		UpdatedAt            string `json:"updated_at"`
-		RaisedInCompletionID string `json:"raised_in_completion_id"`
+		ID                      string  `json:"id"`
+		Status                  string  `json:"status"`
+		UpdatedAt               string  `json:"updated_at"`
+		RaisedInCompletionID    string  `json:"raised_in_completion_id"`
+		AddressedInCompletionID *string `json:"addressed_in_completion_id"`
 	}
 	if err := json.Unmarshal([]byte(concernsStdout), &concerns); err != nil {
 		t.Fatalf("Unmarshal(concerns) error = %v", err)
@@ -231,6 +231,41 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 	}
 	if concerns[0].Status != "addressed" {
 		t.Fatalf("status = %q, want addressed", concerns[0].Status)
+	}
+	if concerns[0].AddressedInCompletionID == nil || *concerns[0].AddressedInCompletionID != addressCompletionID {
+		t.Fatalf("addressed_in_completion_id = %#v, want %q", concerns[0].AddressedInCompletionID, addressCompletionID)
+	}
+
+	listStdout, listStderr := runFIDCommand(
+		t,
+		workspace,
+		"concern", "list",
+		"--issue", issueID,
+		"--format", "json",
+	)
+	if listStderr != "" {
+		t.Fatalf("concern list stderr = %q, want empty", listStderr)
+	}
+
+	var listedConcerns []struct {
+		ID                      string  `json:"id"`
+		Status                  string  `json:"status"`
+		AddressedInCompletionID *string `json:"addressed_in_completion_id"`
+	}
+	if err := json.Unmarshal([]byte(listStdout), &listedConcerns); err != nil {
+		t.Fatalf("Unmarshal(concern list) error = %v", err)
+	}
+	if len(listedConcerns) != 1 {
+		t.Fatalf("listed concerns len = %d, want 1", len(listedConcerns))
+	}
+	if listedConcerns[0].ID != concernID {
+		t.Fatalf("listed concern id = %q, want %q", listedConcerns[0].ID, concernID)
+	}
+	if listedConcerns[0].Status != "addressed" {
+		t.Fatalf("listed concern status = %q, want addressed", listedConcerns[0].Status)
+	}
+	if listedConcerns[0].AddressedInCompletionID == nil || *listedConcerns[0].AddressedInCompletionID != addressCompletionID {
+		t.Fatalf("listed addressed_in_completion_id = %#v, want %q", listedConcerns[0].AddressedInCompletionID, addressCompletionID)
 	}
 
 	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
@@ -321,7 +356,7 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 			}
 
 			rows := decodeCommandJSONStructure(t, stdout).([]any)
-			if gotIDs := sortedConcernIDs(rows); !equalIssueIDs(gotIDs, sortedStrings(tt.wantIDs)) {
+			if gotIDs := commandConcernListIDs(rows); !equalIssueIDs(gotIDs, tt.wantIDs) {
 				t.Fatalf("stdout ids = %#v, want %#v", gotIDs, tt.wantIDs)
 			}
 
@@ -518,18 +553,6 @@ func commandConcernListIDs(rows []any) []string {
 		}
 	}
 	return ids
-}
-
-func sortedConcernIDs(rows []any) []string {
-	ids := commandConcernListIDs(rows)
-	slices.Sort(ids)
-	return ids
-}
-
-func sortedStrings(values []string) []string {
-	result := append([]string(nil), values...)
-	slices.Sort(result)
-	return result
 }
 
 func concernListMarkdownExpectation(t *testing.T, rows []any) string {

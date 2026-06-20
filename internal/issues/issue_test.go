@@ -813,6 +813,15 @@ func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 	if got.OpenConcernsCount != 1 {
 		t.Fatalf("Get() open_concerns_count = %d, want 1", got.OpenConcernsCount)
 	}
+	if len(got.Concerns) != 1 {
+		t.Fatalf("Get() concerns len = %d, want 1", len(got.Concerns))
+	}
+	if got.Concerns[0].ID != "CON-000201" {
+		t.Fatalf("Get() concern id = %q, want CON-000201", got.Concerns[0].ID)
+	}
+	if got.Concerns[0].AddressedInCompletionID != nil {
+		t.Fatalf("Get() concern addressed_in_completion_id = %#v, want nil", got.Concerns[0].AddressedInCompletionID)
+	}
 	if got.TriageStatus != nil {
 		t.Fatalf("Get() triage_status = %#v, want nil", got.TriageStatus)
 	}
@@ -915,6 +924,54 @@ func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
 	}
 	if got.OpenConcernsCount != 0 {
 		t.Fatalf("Get() open_concerns_count = %d, want 0", got.OpenConcernsCount)
+	}
+	if len(got.Concerns) != 1 {
+		t.Fatalf("Get() concerns len = %d, want 1", len(got.Concerns))
+	}
+	if got.Concerns[0].ID != "CON-000301" {
+		t.Fatalf("Get() concern id = %q, want CON-000301", got.Concerns[0].ID)
+	}
+	if got.Concerns[0].AddressedInCompletionID == nil || *got.Concerns[0].AddressedInCompletionID != "TC-000302" {
+		t.Fatalf("Get() concern addressed_in_completion_id = %#v, want TC-000302", got.Concerns[0].AddressedInCompletionID)
+	}
+}
+
+func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	issueID, completionID := seedConcernRaiseIssueAndCompletion(t, workspace)
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	const createdAt = "2026-06-20T12:00:00Z"
+	if _, err := conn.Exec(`
+		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
+		VALUES (?, ?, ?, 'developer', 'Older append', 'open', ?, ?)
+	`, "CON-zzzzzz", issueID, completionID, createdAt, createdAt); err != nil {
+		t.Fatalf("insert older concern: %v", err)
+	}
+	if _, err := conn.Exec(`
+		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, created_at, updated_at)
+		VALUES (?, ?, ?, 'developer', 'Newer append', 'open', ?, ?)
+	`, "CON-aaaaaa", issueID, completionID, createdAt, createdAt); err != nil {
+		t.Fatalf("insert newer concern: %v", err)
+	}
+
+	got, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            issueID,
+	})
+	if err != nil {
+		t.Fatalf("Get() error = %v", err)
+	}
+	if len(got.Concerns) != 2 {
+		t.Fatalf("Get() concerns len = %d, want 2", len(got.Concerns))
+	}
+	if got.Concerns[0].ID != "CON-aaaaaa" || got.Concerns[1].ID != "CON-zzzzzz" {
+		t.Fatalf("Get() concerns order = [%q %q], want [CON-aaaaaa CON-zzzzzz]", got.Concerns[0].ID, got.Concerns[1].ID)
 	}
 }
 
