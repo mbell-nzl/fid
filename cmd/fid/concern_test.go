@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -273,6 +274,154 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	}
 }
 
+func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	firstIssueID, firstConcernID := seedConcernListIssueAndConcern(t, workspace, "First concern", true)
+	secondIssueID, secondConcernID := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
+
+	tests := []struct {
+		name    string
+		args    []string
+		wantIDs []string
+	}{
+		{
+			name:    "all concerns",
+			args:    []string{"concern", "list", "--format", "json"},
+			wantIDs: []string{secondConcernID, firstConcernID},
+		},
+		{
+			name:    "filter by issue",
+			args:    []string{"concern", "list", "--issue", firstIssueID, "--format", "json"},
+			wantIDs: []string{firstConcernID},
+		},
+		{
+			name:    "filter by status",
+			args:    []string{"concern", "list", "--status", "open", "--format", "json"},
+			wantIDs: []string{secondConcernID},
+		},
+		{
+			name:    "combined filters",
+			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "open", "--format", "json"},
+			wantIDs: []string{secondConcernID},
+		},
+		{
+			name:    "empty result",
+			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "addressed", "--format", "json"},
+			wantIDs: []string{},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, tt.args...)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+
+			rows := decodeCommandJSONStructure(t, stdout).([]any)
+			if gotIDs := sortedConcernIDs(rows); !equalIssueIDs(gotIDs, sortedStrings(tt.wantIDs)) {
+				t.Fatalf("stdout ids = %#v, want %#v", gotIDs, tt.wantIDs)
+			}
+
+			if tt.name == "all concerns" {
+				first := rows[0].(map[string]any)
+				if got := first["issue_id"]; got != secondIssueID {
+					t.Fatalf("first concern issue_id = %v, want %q", got, secondIssueID)
+				}
+				if got := first["status"]; got != "open" {
+					t.Fatalf("first concern status = %v, want open", got)
+				}
+			}
+		})
+	}
+}
+
+func TestConcernListDispatchesFormats(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, _ = seedConcernListIssueAndConcern(t, workspace, "First concern", true)
+	secondIssueID, _ := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
+
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "concern", "list", "--format", "json")
+	if jsonStderr != "" {
+		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	}
+	want := decodeCommandJSONStructure(t, jsonStdout)
+
+	for _, formatName := range []string{"toon", "yaml"} {
+		t.Run(formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--format", formatName)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+
+			var got any
+			switch formatName {
+			case "toon":
+				got = decodeCommandTOONStructure(t, stdout)
+			case "yaml":
+				got = decodeCommandYAMLStructure(t, stdout)
+			}
+
+			if !commandStructuresEqual(want, got) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
+			}
+		})
+	}
+
+	t.Run("markdown", func(t *testing.T) {
+		stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--format", "markdown")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
+		}
+
+		rows := want.([]any)
+		expected := concernListMarkdownExpectation(t, rows)
+		if stdout != expected {
+			t.Fatalf("markdown stdout = %q, want %q", stdout, expected)
+		}
+	})
+
+	for _, formatName := range []string{"json", "toon", "yaml", "markdown"} {
+		t.Run("empty_"+formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(
+				t,
+				workspace,
+				"concern", "list",
+				"--issue", secondIssueID,
+				"--status", "addressed",
+				"--format", formatName,
+			)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+
+			switch formatName {
+			case "json":
+				if got := decodeCommandJSONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
+					t.Fatalf("empty json structure = %#v, want empty list", got)
+				}
+			case "toon":
+				if got := decodeCommandTOONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
+					t.Fatalf("empty toon structure = %#v, want empty list", got)
+				}
+			case "yaml":
+				if got := decodeCommandYAMLStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
+					t.Fatalf("empty yaml structure = %#v, want empty list", got)
+				}
+			case "markdown":
+				expected := concernListMarkdownExpectation(t, nil)
+				if stdout != expected {
+					t.Fatalf("empty markdown stdout = %q, want %q", stdout, expected)
+				}
+			}
+		})
+	}
+}
+
 func parseCompletionID(t *testing.T, stderr string) string {
 	t.Helper()
 
@@ -297,4 +446,126 @@ func parseConcernID(t *testing.T, stderr string) string {
 	}
 	t.Fatalf("stderr = %q, want concern line", stderr)
 	return ""
+}
+
+func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, address bool) (string, string) {
+	t.Helper()
+
+	_, createStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "task",
+		"--title", summary,
+		"--by", "developer",
+	)
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	_, firstCompleteStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "complete",
+		issueID,
+		"--by", "developer",
+	)
+	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
+
+	_, raiseStderr := runFIDCommand(
+		t,
+		workspace,
+		"concern", "raise",
+		"--on", issueID,
+		"--by", "developer",
+		"--in-completion", firstCompletionID,
+		"--summary", summary,
+	)
+	concernID := parseConcernID(t, raiseStderr)
+
+	if !address {
+		return issueID, concernID
+	}
+
+	_, secondCompleteStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "complete",
+		issueID,
+		"--by", "developer",
+	)
+	addressCompletionID := parseCompletionID(t, secondCompleteStderr)
+
+	_, _ = runFIDCommand(
+		t,
+		workspace,
+		"concern", "address", concernID,
+		"--in-completion", addressCompletionID,
+		"--by", "developer",
+	)
+
+	return issueID, concernID
+}
+
+func commandConcernListIDs(rows []any) []string {
+	ids := make([]string, 0, len(rows))
+	for _, row := range rows {
+		object, ok := row.(map[string]any)
+		if !ok {
+			continue
+		}
+		id, ok := object["id"].(string)
+		if ok {
+			ids = append(ids, id)
+		}
+	}
+	return ids
+}
+
+func sortedConcernIDs(rows []any) []string {
+	ids := commandConcernListIDs(rows)
+	slices.Sort(ids)
+	return ids
+}
+
+func sortedStrings(values []string) []string {
+	result := append([]string(nil), values...)
+	slices.Sort(result)
+	return result
+}
+
+func concernListMarkdownExpectation(t *testing.T, rows []any) string {
+	t.Helper()
+
+	var builder strings.Builder
+	builder.WriteString("# Concerns\n\n")
+	if len(rows) == 0 {
+		builder.WriteString("(no concerns)\n")
+		return builder.String()
+	}
+
+	for _, row := range rows {
+		item, ok := row.(map[string]any)
+		if !ok {
+			t.Fatalf("row = %#v, want object", row)
+		}
+		builder.WriteString("- ")
+		builder.WriteString(item["id"].(string))
+		builder.WriteString(" | issue ")
+		builder.WriteString(item["issue_id"].(string))
+		builder.WriteString(" | ")
+		builder.WriteString(item["status"].(string))
+		builder.WriteString(" | by ")
+		builder.WriteString(item["raised_by_role"].(string))
+		builder.WriteString(" | completion ")
+		builder.WriteString(item["raised_in_completion_id"].(string))
+		builder.WriteString("\n")
+		builder.WriteString("  ")
+		builder.WriteString(item["summary"].(string))
+		builder.WriteString("\n")
+		if bodyMDPath, ok := item["body_md_path"].(string); ok && bodyMDPath != "" {
+			builder.WriteString("  Body: ")
+			builder.WriteString(bodyMDPath)
+			builder.WriteString("\n")
+		}
+	}
+	return builder.String()
 }

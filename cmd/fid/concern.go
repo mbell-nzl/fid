@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
@@ -15,7 +16,54 @@ func newConcernCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(newConcernAddressCommand())
+	cmd.AddCommand(newConcernListCommand())
 	cmd.AddCommand(newConcernRaiseCommand())
+	return cmd
+}
+
+func newConcernListCommand() *cobra.Command {
+	var (
+		issueID    string
+		status     string
+		formatName string
+	)
+
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List concerns.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			items, err := issues.ListConcerns(issues.ConcernListOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				IssueID:       issueID,
+				Status:        status,
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&issueID, "issue", "", "Filter by issue ID")
+	cmd.Flags().StringVar(&status, "status", "", "Filter by concern status")
+	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }
 

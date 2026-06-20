@@ -753,6 +753,9 @@ fid concern list [--issue <id>] [--status <status>] [--format json|toon|markdown
 | `--status` | string | `open`, `addressed`, `escalated`, `wontfix` |
 | `--format` | string | Output format (default: `json`) |
 
+Filters compose when both `--issue` and `--status` are supplied. A matchless
+filter returns an empty collection with exit 0.
+
 **JSON output:**
 ```json
 [
@@ -764,10 +767,13 @@ fid concern list [--issue <id>] [--status <status>] [--format json|toon|markdown
     "raised_by_role": "developer",
     "raised_in_completion_id": "TC-7c3e9f",
     "body_md_path": "project-docs/docs/phases/phase-1/concerns/CON-c3d4e5.md",
-    "created_at": "2026-05-27T10:30:00Z"
+    "created_at": "2026-05-27T10:30:00Z",
+    "updated_at": "2026-05-27T10:45:00Z"
   }
 ]
 ```
+
+The row shape mirrors `fid issue get --section concerns` plus `issue_id`.
 
 ---
 

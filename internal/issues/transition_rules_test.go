@@ -4,6 +4,7 @@ package issues
 
 import (
 	"path/filepath"
+	"slices"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -74,8 +75,10 @@ func TestEvaluateTransitionRuleConcernsAddressedUsesRealConcernWrites(t *testing
 	if got := openResult.Unmet[0].Rule; got != workflow.RuleConcernsAddressed {
 		t.Fatalf("evaluateTransitionRule(open).Unmet[0].Rule = %q, want %q", got, workflow.RuleConcernsAddressed)
 	}
-	if got := openResult.Unmet[0].EntityIDs; len(got) != 2 || got[0] != firstConcern.ID || got[1] != secondConcern.ID {
-		t.Fatalf("evaluateTransitionRule(open).Unmet[0].EntityIDs = %#v, want [%q %q]", got, firstConcern.ID, secondConcern.ID)
+	wantOpenConcernIDs := []string{firstConcern.ID, secondConcern.ID}
+	slices.Sort(wantOpenConcernIDs)
+	if got := openResult.Unmet[0].EntityIDs; !slices.Equal(got, wantOpenConcernIDs) {
+		t.Fatalf("evaluateTransitionRule(open).Unmet[0].EntityIDs = %#v, want %#v", got, wantOpenConcernIDs)
 	}
 
 	addressCompletion, err := Complete(CompleteOptions{
