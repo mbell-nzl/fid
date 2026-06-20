@@ -1,0 +1,196 @@
+package main
+
+import (
+	"database/sql"
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
+	internalpolicy "github.com/mbell-nzl/fid/internal/policy"
+)
+
+func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	defaultStdout, defaultStderr := runFIDCommand(t, workspace, "policy", "show")
+	if defaultStderr != "" {
+		t.Fatalf("default stderr = %q, want empty", defaultStderr)
+	}
+
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	if jsonStderr != "" {
+		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	}
+
+	if defaultStdout != jsonStdout {
+		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
+	}
+
+	want := decodeCommandJSONStructure(t, mustMarshalPolicyRowsJSON(t, internalpolicy.MatrixRows()))
+	got := decodeCommandJSONStructure(t, jsonStdout)
+	if !commandStructuresEqual(want, got) {
+		t.Fatalf("json structure = %#v, want %#v", got, want)
+	}
+
+	if gotActions := commandPolicyActions(got.([]any)); !equalIssueIDs(gotActions, expectedPolicyActions()) {
+		t.Fatalf("policy actions = %#v, want %#v", gotActions, expectedPolicyActions())
+	}
+
+	for _, formatName := range []string{"toon", "yaml"} {
+		t.Run(formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", formatName)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+
+			var structured any
+			switch formatName {
+			case "toon":
+				structured = decodeCommandTOONStructure(t, stdout)
+			case "yaml":
+				structured = decodeCommandYAMLStructure(t, stdout)
+			}
+
+			if !commandStructuresEqual(want, structured) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, structured, want)
+			}
+		})
+	}
+
+	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "policy", "show", "--format", "markdown")
+	if markdownStderr != "" {
+		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
+	}
+
+	wantMarkdown := expectedPolicyMarkdown(internalpolicy.MatrixRows())
+	if markdownStdout != wantMarkdown {
+		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, wantMarkdown)
+	}
+}
+
+func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	journalPath := mustJournalPath(t, workspace)
+	beforePayload, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+	beforeLines := splitJournalLines(beforePayload)
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	activityBefore := countActivityLogRows(t, conn)
+
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	if strings.TrimSpace(stdout) == "" {
+		t.Fatal("stdout = empty, want policy matrix output")
+	}
+
+	afterPayload, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after show error = %v", journalPath, err)
+	}
+	afterLines := splitJournalLines(afterPayload)
+	if len(afterLines) != len(beforeLines) {
+		t.Fatalf("journal lines after policy show = %d, want unchanged %d", len(afterLines), len(beforeLines))
+	}
+
+	activityAfter := countActivityLogRows(t, conn)
+	if activityAfter != activityBefore {
+		t.Fatalf("activity_log rows after policy show = %d, want unchanged %d", activityAfter, activityBefore)
+	}
+
+	stdout, stderr, err = runFIDCommandExpectError(t, workspace, "policy", "show", "--by", "developer")
+	if err == nil {
+		t.Fatal("Execute(--by) error = nil, want unknown flag rejection")
+	}
+	if stdout != "" {
+		t.Fatalf("stdout with --by = %q, want empty", stdout)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr with --by = %q, want empty", stderr)
+	}
+	if !strings.Contains(err.Error(), "unknown flag: --by") {
+		t.Fatalf("Execute(--by) error = %q, want unknown flag rejection", err.Error())
+	}
+}
+
+func mustMarshalPolicyRowsJSON(t *testing.T, rows []internalpolicy.MatrixRow) string {
+	t.Helper()
+
+	payload, err := json.Marshal(rows)
+	if err != nil {
+		t.Fatalf("Marshal() error = %v", err)
+	}
+	return string(payload)
+}
+
+func expectedPolicyActions() []string {
+	rows := internalpolicy.MatrixRows()
+	actions := make([]string, 0, len(rows))
+	for _, row := range rows {
+		actions = append(actions, row.Action)
+	}
+	return actions
+}
+
+func commandPolicyActions(rows []any) []string {
+	actions := make([]string, 0, len(rows))
+	for _, row := range rows {
+		fields, ok := row.(map[string]any)
+		if !ok {
+			continue
+		}
+		action, _ := fields["action"].(string)
+		actions = append(actions, action)
+	}
+	return actions
+}
+
+func expectedPolicyMarkdown(rows []internalpolicy.MatrixRow) string {
+	var builder strings.Builder
+
+	builder.WriteString("# Policy\n\n")
+	builder.WriteString("| action | developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human |\n")
+	builder.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+
+	for _, row := range rows {
+		_, _ = fmt.Fprintf(&builder,
+			"| %s | %t | %t | %t | %t | %t | %t | %t |\n",
+			row.Action,
+			row.Developer,
+			row.QAReviewer,
+			row.QALead,
+			row.TLLite,
+			row.TL,
+			row.WorkflowRunner,
+			row.Human,
+		)
+	}
+
+	return builder.String()
+}
+
+func countActivityLogRows(t *testing.T, conn *sql.DB) int {
+	t.Helper()
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&count); err != nil {
+		t.Fatalf("count activity_log rows: %v", err)
+	}
+	return count
+}

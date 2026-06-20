@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 type IssueMarkdownView struct {
@@ -60,6 +61,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
 	case []issues.ConcernListItem:
 		return writeConcernListMarkdown(writer, typed)
+	case []policy.MatrixRow:
+		return writePolicyMatrixMarkdown(writer, typed)
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
@@ -275,6 +278,33 @@ func writeConcernListMarkdown(writer io.Writer, items []issues.ConcernListItem) 
 				builder.WriteString("\n")
 			}
 		}
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writePolicyMatrixMarkdown(writer io.Writer, rows []policy.MatrixRow) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Policy\n\n")
+	builder.WriteString("| action | developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human |\n")
+	builder.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
+
+	for _, row := range rows {
+		_, _ = fmt.Fprintf(&builder,
+			"| %s | %t | %t | %t | %t | %t | %t | %t |\n",
+			row.Action,
+			row.Developer,
+			row.QAReviewer,
+			row.QALead,
+			row.TLLite,
+			row.TL,
+			row.WorkflowRunner,
+			row.Human,
+		)
 	}
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {

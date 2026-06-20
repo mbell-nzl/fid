@@ -27,6 +27,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())
 	cmd.AddCommand(newIssueCommand())
+	cmd.AddCommand(newPolicyCommand())
 	cmd.AddCommand(newReadyCommand())
 	cmd.AddCommand(newRebuildCommand())
 
