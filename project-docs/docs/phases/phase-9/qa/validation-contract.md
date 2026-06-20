@@ -144,3 +144,5 @@ Phase-end final review records every `VAL-NNN` outcome: `PASS`, `FAIL`,
 |---|---|---|---|---|
 | 2026-06-20 | VAL-001..011 | created | Phase 9 planning draft | phase brief; roadmap §v0.1c; PRD-DEV-005..007; PRD-WF-009; ADR-0001; CF-007 |
 | 2026-06-20 | n/a | DEC-A..E confirmed | Human accepted Tech Lead recommendations pre-execution | this contract §Phase scoping notes |
+| 2026-06-20 | VAL-004 | no wording change; fixup scheduled (Task 4) | Final review FAIL: public read-back omitted `addressed_in_completion_id`. Assertion stands as written; resolved by exposing the field on both read surfaces. | ESC-006; DEC-023; `tasks/task-4.md` |
+| 2026-06-20 | VAL-008/009 | no wording change; ordering made deterministic | Phase benchmark gate flaked on nondeterministic concern ordering. Read ordering moves to `rowid DESC` (append order); filters/formats/empty-match (VAL-008) and rebuild parity (VAL-009) evidence must re-confirm under the new ordering. | ESC-006; DEC-024 (mirrors DEC-021); `tasks/task-4.md` |

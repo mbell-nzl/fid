@@ -58,6 +58,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeAcceptanceCriteriaListMarkdown(writer, *typed)
 	case []issues.ListItem:
 		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
+	case []issues.ConcernListItem:
+		return writeConcernListMarkdown(writer, typed)
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
@@ -237,6 +239,42 @@ func writeAcceptanceCriteriaListMarkdown(writer io.Writer, list issues.Acceptanc
 		builder.WriteString("(no acceptance criteria)\n")
 	} else {
 		writeAcceptanceCriteriaMarkdownItems(&builder, list.Criteria)
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writeConcernListMarkdown(writer io.Writer, items []issues.ConcernListItem) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Concerns\n\n")
+	if len(items) == 0 {
+		builder.WriteString("(no concerns)\n")
+	} else {
+		for _, item := range items {
+			builder.WriteString("- ")
+			builder.WriteString(item.ID)
+			builder.WriteString(" | issue ")
+			builder.WriteString(item.IssueID)
+			builder.WriteString(" | ")
+			builder.WriteString(item.Status)
+			builder.WriteString(" | by ")
+			builder.WriteString(item.RaisedByRole)
+			builder.WriteString(" | completion ")
+			builder.WriteString(item.RaisedInCompletionID)
+			builder.WriteString("\n")
+			builder.WriteString("  ")
+			builder.WriteString(item.Summary)
+			builder.WriteString("\n")
+			if item.BodyMDPath != nil && strings.TrimSpace(*item.BodyMDPath) != "" {
+				builder.WriteString("  Body: ")
+				builder.WriteString(*item.BodyMDPath)
+				builder.WriteString("\n")
+			}
+		}
 	}
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {

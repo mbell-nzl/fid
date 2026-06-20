@@ -23,14 +23,15 @@ func (err *UnsupportedSectionError) Error() string {
 }
 
 type IssueConcern struct {
-	ID                   string  `json:"id"`
-	RaisedInCompletionID string  `json:"raised_in_completion_id"`
-	RaisedByRole         string  `json:"raised_by_role"`
-	Summary              string  `json:"summary"`
-	BodyMDPath           *string `json:"body_md_path"`
-	Status               string  `json:"status"`
-	CreatedAt            *string `json:"created_at"`
-	UpdatedAt            *string `json:"updated_at"`
+	ID                      string  `json:"id"`
+	RaisedInCompletionID    string  `json:"raised_in_completion_id"`
+	RaisedByRole            string  `json:"raised_by_role"`
+	Summary                 string  `json:"summary"`
+	BodyMDPath              *string `json:"body_md_path"`
+	Status                  string  `json:"status"`
+	AddressedInCompletionID *string `json:"addressed_in_completion_id"`
+	CreatedAt               *string `json:"created_at"`
+	UpdatedAt               *string `json:"updated_at"`
 }
 
 type IssueCompletion struct {
@@ -206,10 +207,10 @@ func latestVerificationsByRole(conn *sql.DB, criterionID string) (map[string]any
 
 func issueConcerns(conn *sql.DB, issueID string) ([]IssueConcern, error) {
 	rows, err := conn.Query(`
-		SELECT id, raised_in_completion_id, raised_by_role, summary, body_md_path, status, created_at, updated_at
+		SELECT id, raised_in_completion_id, raised_by_role, summary, body_md_path, status, addressed_in_completion_id, created_at, updated_at
 		FROM concerns
 		WHERE issue_id = ?
-		ORDER BY created_at DESC, id DESC
+		ORDER BY rowid DESC
 	`, issueID)
 	if err != nil {
 		return nil, fmt.Errorf("query concerns for %q: %w", issueID, err)
@@ -219,7 +220,7 @@ func issueConcerns(conn *sql.DB, issueID string) ([]IssueConcern, error) {
 	concerns := []IssueConcern{}
 	for rows.Next() {
 		var concern IssueConcern
-		var bodyMDPath, createdAt, updatedAt sql.NullString
+		var bodyMDPath, addressedInCompletionID, createdAt, updatedAt sql.NullString
 		if err := rows.Scan(
 			&concern.ID,
 			&concern.RaisedInCompletionID,
@@ -227,12 +228,14 @@ func issueConcerns(conn *sql.DB, issueID string) ([]IssueConcern, error) {
 			&concern.Summary,
 			&bodyMDPath,
 			&concern.Status,
+			&addressedInCompletionID,
 			&createdAt,
 			&updatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan concern for %q: %w", issueID, err)
 		}
 		concern.BodyMDPath = nullStringPointer(bodyMDPath)
+		concern.AddressedInCompletionID = nullStringPointer(addressedInCompletionID)
 		concern.CreatedAt = nullStringPointer(createdAt)
 		concern.UpdatedAt = nullStringPointer(updatedAt)
 		concerns = append(concerns, concern)

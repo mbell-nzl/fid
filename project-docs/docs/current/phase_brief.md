@@ -1,110 +1,94 @@
-# Phase Brief - Phase 9 (Concerns + v0.1c closure)
+# Phase Brief - Phase 10 (Claims, Permissions, Links — v0.1d)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 9 (Concerns + derived flag + v0.1c closure, roadmap §v0.1c)
-> is **PLANNED — APPROVED** (validation contract + task list + DEC-A..E
-> human-confirmed 2026-06-20). Phase 8 is CLOSED (VAL-001..009 PASS, human
-> dogfood 5/5). Phase Runner may start Task 1.
+> **State:** Phase 9 (Concerns + derived flag + v0.1c closure) is **CLOSED**
+> (VAL-001..011 all PASS; human dogfood 5/5; ESC-006 resolved by DEC-023/DEC-024 +
+> Task 4). **v0.1c is complete.** Phase 10 (roadmap §v0.1d) is **NOT YET
+> PLANNED** — Tech Lead phase start owns the slice, validation contract, and task
+> list before any execution.
 
-## Phase 9 goal (roadmap §v0.1c — Concerns + v0.1c closure)
+## Phase 10 goal (roadmap §v0.1d — Claims, Permissions, Links)
 
-Ship the **concern write surface** (`fid concern raise`/`address`/`list`) on top
-of the already-shipped concern schema, derived flags, and read path; prove the
-derived flag + the `concerns_addressed` rule with real writes; and run the
-end-to-end v0.1c closure smoke.
+Ship the **claims layer**, the **permissions matrix**, and the **links/labels
+surface** so the full issue lifecycle (create → claim → transition → complete →
+unclaim) works with workflow validation and permission enforcement. v0.1d is the
+first phase whose writes are gated by the permission matrix rather than
+`RequireKnownRole` only.
 
-**Exit (roadmap):** an agent can raise a concern against a completion, see open
-concerns light up the `issues_enriched` derived flag on issue reads, address it
-and watch the flag clear, and close out the v0.1c lifecycle end-to-end over
-ac add/verify/list → complete → concern raise/address/list.
+**Roadmap §v0.1d items (TL slices these into coherent phases at phase start):**
 
-## Key planning finding (what already exists vs Phase 9 work)
+- `fid issue claim` — atomic acquire with TTL (default 30m); `--by <role>
+  --ttl`, `--renew` for the holder, `--force` for permitted force-acquire; reject
+  on live claim unless renewing/stale/force. (PRD-CLAIM-001–004, 008a)
+- `fid issue unclaim` — release caller's claim, `--by <role>`. (PRD-CLAIM-004)
+- `fid claim list` — live claims; `--stale`, `--by <role>`. (PRD-CLAIM-007)
+- Claim-transition integration — started-category transitions require a live
+  claim by the caller; transitions out release it. (PRD-CLAIM-005–006)
+- Human claims — `--by human` signals agents should not advance. (PRD-CLAIM-008)
+- Permissions matrix — in-code constant for v0.1; enforce `--by <role>` on every
+  write; reject unknown/denied role/action with actionable error; `fid policy
+  show` displays the read-only matrix. (PRD-ROLE-001–005, TRD-ARCH-010)
+- `fid requirement sync` (minimal) — parse PRD/TRD requirement IDs and upsert
+  pointer rows so issue→requirement links have valid endpoints. (PRD-GOV-006,
+  PRD-LINK-002)
+- `fid link add/remove/list` — typed links with auto-inverse projection; v0.1
+  scope issue↔issue and issue→requirement; relation/entity-type validation;
+  reject links that duplicate dedicated schema. (PRD-LINK-001–006a, 008)
+- `fid label add/list` + `fid issue label add/remove` — additive label CRUD and
+  per-issue assignment without replacing the full set (`fid issue update --labels`
+  stays replace-all). (PRD-ISSUE-015, 023)
 
-- **Already shipped:** the `concerns` table + index + `issues_enriched`
-  `concerns_raised`/`open_concerns_count` (Phase 2); those derived columns
-  already surface on `fid issue get` and `fid issue list` (incl. `--has-concerns`)
-  and `fid issue get --section concerns` reads concern rows (Phase 4); the
-  `concerns_addressed` rule function + `loadConcernStatus` DB loader exist.
-- **Phase 9 adds only:** the CLI write/read commands (`fid concern
-  raise/address/list`) and proves the existing read path + rule with **real
-  writes**. Mirrors Phase 7 (ACs) and Phase 8 (completions).
+**No pre-baked roadmap slice for v0.1d** — unlike v0.1a/b/c there is no
+phase-slicing note. The Tech Lead must produce a vertical, agent-runnable slice at
+phase start (candidate cut: claims → permissions/policy → requirement-sync + links
++ labels), each phase exiting on real CLI commands.
 
-## Planning decisions (human-confirmed 2026-06-20)
+## Phase start checklist (Tech Lead — do before execution)
 
-- **DEC-A — PRD-WF-009 proven at the rule-evaluation seam; no default edge.**
-  No v0.1 default workflow edge gates on `concerns_addressed` (TRD §4.6;
-  `internal/workflow/workflow.go` matches). The rule is supported but unreachable
-  via `fid issue transition`. Phase 9 proves it via `evaluateTransitionRule` →
-  `loadConcernStatus` → `ConcernsAddressed` with real concern data. Attaching a
-  workflow edge is **out of scope** (changes the TRD §4.6 default graph; v0.2
-  configurable workflows).
-- **DEC-B — concern domain lives in `internal/issues`; no new boundary.**
-  New files (`concern_raise.go`/`concern_address.go`/`concern_list.go`) +
-  `cmd/fid/concern*.go`. The concern read model + rule loader already live in
-  `internal/issues`, so no architecture-boundary decision is needed.
-- **DEC-C — validate-before-append linkage (CF-007).** raise rejects (before any
-  append) on unknown role, nonexistent `--on`, nonexistent `--in-completion`, or
-  completion-not-on-issue. address rejects on unknown role, nonexistent concern,
-  concern-not-`open`, or nonexistent `--in-completion`. Every rejection = non-zero
-  exit + clear error + zero new journal lines/rows.
-- **DEC-D — address is an in-place status mutation; raise→address only.**
-  `open`→`addressed` updates the same row. `escalated`/`wontfix` (PRD-DEV-006
-  statuses) have no Phase 9 writer (deferred v0.1e+).
-- **DEC-E — no `activity_log` for concern writes (DEC-020/CF-011 precedent).**
-  Matches create/AC/completion; consistent timeline population is v0.1e (CF-011).
+1. Read roadmap §v0.1d and the PRD-CLAIM / PRD-ROLE / PRD-LINK / PRD-ISSUE refs
+   plus `03_TRD_SCHEMA.md` for `claims`, `links`, `labels`, `issue_labels`,
+   `requirements`, and the claim/link/scope triggers.
+2. **Schedule CF-003** — role-validation corrupt-tail tolerance is explicitly
+   targeted "before v0.1d role/permission work"; decide do-now vs early-phase task.
+3. Slice v0.1d into coherent phases; draft the validation contract first.
+4. Carry the two Phase 9 standing QA checks into the QA plan (below).
 
-## Validation contract index
+## Carried-forward planning inputs (from prior wraps)
 
-`project-docs/docs/phases/phase-9/qa/validation-contract.md` (VAL-001..011):
-
-- VAL-001 raise creates `CON-<hash>` open concern w/ all fields (task-1)
-- VAL-002 raise validate-before-append rejections + valid append (task-1)
-- VAL-003 raise lights derived flag false→true on get + list (task-1)
-- VAL-004 address open→addressed in place, records completion (task-2)
-- VAL-005 address validate-before-append rejections + valid mutation (task-2)
-- VAL-006 addressing last open concern clears flag; partial keeps it (task-2)
-- VAL-007 `concerns_addressed` rule seam: unsatisfied(named)→satisfied (task-2)
-- VAL-008 `fid concern list` issue/status filters, all formats, empty=`[]` (task-3)
-- VAL-009 delete-DB + `fid rebuild` parity for concerns + flags (task-3)
-- VAL-010 end-to-end v0.1c closure smoke (task-3)
-- VAL-011 human dogfood of concern lifecycle (phase-end; fan per-observable)
-
-## Ordered task list (one session each)
-
-1. **Task 1 — `fid concern raise`** (VAL-001/002/003). Write command +
-   validate-before-append + derived-flag round-trip; read back via
-   `fid issue get --section concerns`.
-2. **Task 2 — `fid concern address` + rule proof** (VAL-004/005/006/007).
-   In-place status mutation + flag clearing + `concerns_addressed` rule-seam proof.
-3. **Task 3 — `fid concern list`, rebuild parity, v0.1c smoke** (VAL-008/009/010).
-   Top-level list command + rebuild parity + end-to-end closure; closes v0.1c.
-
-## Planning inputs honored
-
-- CF-007 validate-before-append on every reject path (VAL-002/005).
-- `RequireKnownRole` permissions only (matrix is v0.1d), matching Phase 7/8.
-- ADR-0001 rebuild parity for concerns + derived flags (VAL-009).
-- Human dogfood VAL for the concern lifecycle feel, per observable (VAL-011).
-- Coverage (DEC-007): COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
-  COV-002 `cmd/fid` ≥ 70% — enforced at the gate each task (Phase 8 ended
-  `cmd/fid` 78.7%, `internal/issues` 81.9%).
-- Task-spec nudges (carried): scope file-size acceptance to the task's write set;
-  require finalized self-contained report evidence in the code-behavior commit.
-- Keep concern logic out of `internal/issues/detail.go` (near the 400-line budget).
+- **CF-003 (DUE)** — role-validation corrupt-tail tolerance, before v0.1d
+  role/permission work. Schedule at Phase 10 planning.
+- **Standing QA checks (Phase 9 deep-retro rec):** every write-surface phase QA
+  plan must include (a) a cross-surface read-back parity check (a persisted field
+  must be exposed on every read surface that should carry it) and (b) a read
+  ordering determinism check (journal append order / `rowid DESC`, not
+  `created_at`). These caught ESC-006 late in Phase 9.
+- **Validate-before-append (CF-007)** on every reject path — claims, links, and
+  label writes must reject before any journal append (non-zero exit, clear error,
+  zero new journal lines/rows).
+- **Permission enforcement is new this version** — v0.1a–v0.1c used
+  `RequireKnownRole` only. v0.1d introduces the matrix; expect public-interface
+  and testing-strategy implications (escalation triggers) — plan accordingly.
+- **Coverage (DEC-007):** COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
+  COV-002 `cmd/fid` ≥ 70% — enforced at the gate each task. Phase 9 ended
+  `cmd/fid` 77.8%, `internal/issues` 81.8%.
+- **Read ordering principle candidate** — DEC-019/DEC-021/DEC-024 are three
+  append-order fixes; promote toward a standing principle in
+  `decisions_principles.md` during Phase 10 (deep-retro rec).
 
 ## Carry-Forward Register (open)
 
 | ID | Item | Disposition |
 |---|---|---|
-| CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work. |
+| CF-003 | Role-validation corrupt-tail tolerance | **DUE** — schedule at Phase 10 / v0.1d role/permission planning. |
 | CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
 | CF-011 | Consistent `activity_log` timeline population (DEC-020) | v0.1e (with `fid activity list`). |
 | CF-013 | `internal/issues/complete.go` `Complete` orchestration size | v0.1e, alongside `fid dev finish`/`block`. |
 
 ## Next Checkpoint
 
-Plan approved and DEC-A..E confirmed. Phase Runner starts Task 1
-(`fid concern raise`, VAL-001/002/003). QA Lead refines the evidence strategy in
-`qa/qa-plan.md` before execution.
+Tech Lead opens Phase 10 planning: read roadmap §v0.1d + refs, decide the slice,
+schedule CF-003, and draft `project-docs/docs/phases/phase-10/qa/
+validation-contract.md` before any task execution. Present the slice + contract +
+task list to the human for approval.

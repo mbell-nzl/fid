@@ -715,16 +715,31 @@ fid concern raise --on <issue-id> --by <role> --in-completion <completion-id>
 raised concern CON-c3d4e5 on FID-a1b2c3: "Possible race condition in concurrent journal writes"
 ```
 
+Validation happens before any journal append. Reject with a non-zero exit and a
+clear error when the role is unknown, the issue does not exist, the completion
+does not exist, or the completion does not belong to `--on`.
+
 ### `fid concern address`
 
 ```
 fid concern address <concern-id> --in-completion <completion-id> --by <role>
 ```
 
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<concern-id>` | string | yes | Concern ID |
+| `--in-completion` | string | yes | Completion ID that addressed the concern |
+| `--by` | string | yes | Addressing role |
+
 **Output (stderr confirmation):**
 ```text
 addressed concern CON-c3d4e5 in completion TC-9e5f6g
 ```
+
+Validation happens before any journal append. Reject with a non-zero exit and a
+clear error when the role is unknown, the concern does not exist, the concern is
+not `open`, the completion does not exist, or the completion does not belong to
+the concern's issue.
 
 ### `fid concern list`
 
@@ -738,6 +753,9 @@ fid concern list [--issue <id>] [--status <status>] [--format json|toon|markdown
 | `--status` | string | `open`, `addressed`, `escalated`, `wontfix` |
 | `--format` | string | Output format (default: `json`) |
 
+Filters compose when both `--issue` and `--status` are supplied. A matchless
+filter returns an empty collection with exit 0.
+
 **JSON output:**
 ```json
 [
@@ -748,11 +766,20 @@ fid concern list [--issue <id>] [--status <status>] [--format json|toon|markdown
     "status": "open",
     "raised_by_role": "developer",
     "raised_in_completion_id": "TC-7c3e9f",
+    "addressed_in_completion_id": null,
     "body_md_path": "project-docs/docs/phases/phase-1/concerns/CON-c3d4e5.md",
-    "created_at": "2026-05-27T10:30:00Z"
+    "created_at": "2026-05-27T10:30:00Z",
+    "updated_at": "2026-05-27T10:45:00Z"
   }
 ]
 ```
+
+The row shape mirrors `fid issue get --section concerns` plus `issue_id`.
+`addressed_in_completion_id` is `null` while the concern is `open` and carries the
+addressing completion ID once `fid concern address` has run.
+
+Rows are ordered by journal append order, newest first (deterministic and
+rebuild-stable; the ordering key is append order, not `created_at`).
 
 ---
 

@@ -40,37 +40,21 @@ finding:
 
 ## Open Escalations
 
-None.
+None. ESC-006 (Phase 9) resolved at Phase 9 wrap.
 
-Phase 8 (Task Completions) raised **no escalations**: both mid-phase reviews
-returned CONTINUE, with zero Developer BLOCKs and zero TL-Lite triage events. See
-`project-docs/docs/phases/phase-8/tl-escalations.md`.
+## Resolved (archived in their phase `tl-escalations.md`)
 
-ESC-005 (Phase 7 AC verification latest-ordering nondeterminism) was resolved by
-DEC-021 (human-confirmed 2026-06-14); Task 2b implemented `rowid`-DESC
-append-order latest-per-role and the Review 1 fixup cleared VAL-004. Archived to
-`project-docs/docs/phases/phase-7/tl-escalations.md` at the Phase 7 wrap.
-
-ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
-DEC-019 (human-confirmed 2026-06-14) and archived to
-`project-docs/docs/phases/phase-6/tl-escalations.md` at the Phase 6 wrap.
-
-ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
-resolved by Task 1b + `review-1-addendum.md` and archived to
-`project-docs/docs/phases/phase-5/tl-escalations.md` at the Phase 5 wrap.
-
----
-
-The Phase 4 journal-poisoning defect (rejected `fid issue create` appends to the
-journal and poisons the tail) is tracked as carry-forward **CF-007**
-(`decisions_active.md`) / **DEC-014** (`phases/phase-4/decisions.md`), not as an
-open escalation — it is a well-diagnosed, scheduled Phase 5 fixup.
-
-ESC-002 (Phase 4 due-date read-back gap) was resolved by Task 4 and archived to
-`project-docs/docs/phases/phase-4/tl-escalations.md`.
-
-ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 / Phase 1
-Task 7 and archived to `project-docs/docs/phases/phase-1/tl-escalations.md`.
+- ESC-006 (Phase 9 final-review blockers: benchmark gate failure + concern
+  address read-back gap) → DEC-023 / DEC-024 / Task 4 fixup; QA Review 2 verified,
+  all eleven VALs PASS at wrap.
+- Phase 8: no escalations raised (both reviews CONTINUE, zero BLOCKs/triage).
+- ESC-005 (Phase 7 AC verify ordering nondeterminism) → DEC-021 / Task 2b.
+- ESC-004 (Phase 6 `fid ready` tie-break order) → DEC-019.
+- ESC-003 (Phase 5 VAL-005 rebuild-recovery evidence gap) → Task 1b.
+- ESC-002 (Phase 4 due-date read-back gap) → Task 4.
+- ESC-001 (SQLite pooled-connection pragmas) → DEC-006 / Phase 1 Task 7.
+- Phase 4 journal-poisoning defect tracked as CF-007 / DEC-014 (scheduled
+  fixup), not an open escalation.
 
 <!--
 Add new escalations above this comment using the template at
