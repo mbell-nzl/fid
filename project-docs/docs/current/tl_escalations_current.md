@@ -42,6 +42,10 @@ finding:
 
 None.
 
+Phase 8 (Task Completions) raised **no escalations**: both mid-phase reviews
+returned CONTINUE, with zero Developer BLOCKs and zero TL-Lite triage events. See
+`project-docs/docs/phases/phase-8/tl-escalations.md`.
+
 ESC-005 (Phase 7 AC verification latest-ordering nondeterminism) was resolved by
 DEC-021 (human-confirmed 2026-06-14); Task 2b implemented `rowid`-DESC
 append-order latest-per-role and the Review 1 fixup cleared VAL-004. Archived to

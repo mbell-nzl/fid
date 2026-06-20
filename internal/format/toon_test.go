@@ -365,6 +365,7 @@ func emptyIssueFixture() issues.Issue {
 		ConcernsRaised:     false,
 		OpenConcernsCount:  0,
 		AcceptanceCriteria: []issues.AcceptanceCriterion{},
+		Completions:        []issues.IssueCompletion{},
 	}
 }
 
@@ -399,6 +400,7 @@ func populatedIssueFixture() issues.Issue {
 		ConcernsRaised:    true,
 		OpenConcernsCount: 2,
 		TriageStatus:      &triageStatus,
+		Completions:       []issues.IssueCompletion{},
 		AcceptanceCriteria: []issues.AcceptanceCriterion{
 			{
 				ID:      "AC-001",

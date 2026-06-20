@@ -1,70 +1,62 @@
-# Phase Brief - Phase 8 (Task completions, v0.1c)
+# Phase Brief - Phase 9 (Concerns + v0.1c closure)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
 >
-> **State:** Phase 8 (Task completions, roadmap §v0.1c) is **PLANNED AND
-> APPROVED** — validation contract + task list + DEC-A..E confirmed by human
-> (2026-06-20). Ready for Phase Runner to start Task 1. Phase 7 (Acceptance
-> Criteria Surface) is CLOSED (VAL-001..010 all PASS). No task work is in flight.
+> **State:** Phase 8 (Task completions) is **CLOSED** — VAL-001..009 all PASS,
+> human dogfood 5/5, zero BLOCKs/escalations. Phase 9 (Concerns + derived flag +
+> v0.1c closure, roadmap §v0.1c) is **NOT YET PLANNED**. Tech Lead phase start
+> owns the validation contract + task list before any task work begins.
 
-## Phase 8 goal (roadmap §v0.1c — Task completions)
+## Phase 9 goal (roadmap §v0.1c — Concerns + v0.1c closure)
 
-Ship the **task-completion write surface** (`fid issue complete`) on the existing
-`task_completions` / `gate_runs` schema and read path, and replace the Phase 5
-journal-fixture evidence for `has_completion_report` with real write commands.
+Ship the **concern write surface** linked to completions, surface the derived
+concern flags on issue reads, wire real concerns into the existing
+`concerns_addressed` transition rule, and run the end-to-end v0.1c smoke that
+closes the slice.
 
-**Exit:** an agent can record a completion attempt, observe attempt numbering +
-supersession of prior attempts, see the gate snapshot rolled into the completion,
-flag a human intervention, and satisfy a real `has_completion_report`-gated
-transition.
+**Exit (from roadmap):** an agent can raise a concern against a completion, see
+open concerns light up the `issues_enriched` derived flag on issue reads, address
+it and watch the flag clear, and close out the v0.1c lifecycle end-to-end over
+ac add/verify/list → complete → concern raise/address/list.
 
-## Confirmed decisions (human, 2026-06-20)
+## Scope (roadmap items)
 
-- **DEC-A — new-attempt status.** `fid issue complete` records the new attempt as
-  `status = 'dev_complete'`; prior attempts move to `'superseded'`. `failed_gate`
-  + the paired transition are the v0.1e `fid dev finish`/`block` composites' job.
-- **DEC-B — attempt numbering.** Derived `MAX(attempt_number)+1` (1 when none)
-  under `.fid/write.lock`; not user-supplied.
-- **DEC-C — gate snapshot is fixture-seeded.** `fid dev gate` (the `gate_runs`
-  writer) is v0.1e, so VAL-005 seeds `gate_runs` via a journal fixture. Real
-  `fid issue complete` with no gate writer yet snapshots an empty set (correct);
-  real-write linkage re-verified in v0.1e.
-- **DEC-D — no `activity_log` for completions** (DEC-020 precedent; matches
-  `create`/AC). Consistent timeline population deferred to v0.1e via CF-011.
-- **DEC-E — completions reject on epics** before any journal append (CF-007;
-  trigger is backstop only). Permissions = `RequireKnownRole` (matrix is v0.1d).
-  Epics never need a completion: epic closure runs through the **epic workflow**
-  (`todo→in_progress→wrapped→closed`, `in_progress→wrapped` gated by
-  `all_child_tasks_done_or_cancelled`), not `task_completions`, so the rejection
-  cannot strand an epic. The epic `wrapped`/`closed` path is verified in a later
-  slice, not Phase 8.
+- `fid concern raise` — structured concern linked to issue + completion.
+  `--on <issue-id> --by developer --in-completion <id> --summary --body-md`
+  (PRD-DEV-005). Depends on Phase 8 completions for a real `--in-completion`
+  endpoint.
+- `fid concern address` — transition concern to addressed `--in-completion <id>`
+  (PRD-DEV-006).
+- `fid concern list` — filter by issue and status (PRD-DEV-006/007).
+- Derived concern flag — `issues_enriched` exposes `concerns_raised` and
+  `open_concerns_count` on issue reads (PRD-DEV-007).
+- Real `concerns_addressed` transition-rule wiring, replacing Phase 5 fixtures.
+- End-to-end v0.1c smoke across the whole slice.
 
-## Validation contract index (`../phases/phase-8/qa/validation-contract.md`)
+Explicit roadmap deferrals: concern `escalated`/`wontfix` lifecycle beyond
+raise/address remains v0.1e/later; only the PRD-DEV-006 statuses are modelled.
 
-| VAL | Behavior | Owning task |
-|---|---|---|
-| VAL-001 | `fid issue complete` creates `TC-<hash>` row with tokens/commits/files/notes/role | task-1 |
-| VAL-002 | Attempt 1→2 numbering; prior attempt retained as `superseded` | task-1 |
-| VAL-003 | `--human-intervention`/`--intervention-note` both states | task-1 |
-| VAL-004 | Epic target rejected before append; task/subtask succeeds | task-1 |
-| VAL-005 | Gate snapshot `gate_runs`→`gate_results` + derived counts (fixture-seeded); no-gate = empty 0/0 | task-2 |
-| VAL-006 | Real `has_completion_report` gating reject→pass (no fixtures) | task-3 |
-| VAL-007 | Delete-DB + `fid rebuild` parity for completions + gate snapshot | task-3 |
-| VAL-008 | Human dogfood: completion lifecycle reads/behaves as expected | phase-end |
-| VAL-009 | CF-012: `issue.go` split into ≤400-line cohesive files, no behavior change | task-4 |
+## Planning inputs the Tech Lead must honor
 
-## Ordered tasks
-
-1. **Task 1 — `fid issue complete` core write.** Attempt numbering, supersession,
-   fields (tokens/commits/files/notes), human-intervention, epic rejection.
-   (VAL-001/002/003/004)
-2. **Task 2 — Gate snapshot.** `gate_runs`→`gate_results` JSON + `gates_passed`/
-   `gates_failed`, fixture-seeded; no-gate = empty/0/0. (VAL-005)
-3. **Task 3 — `has_completion_report` real-data gating + rebuild parity.**
-   Replace Phase 5 fixtures with real commands; delete-DB rebuild parity. (VAL-006/007)
-4. **Task 4 — CF-012 `issue.go` split.** Behavior-preserving split into ≤400-line
-   files (à la Phase 6 CF-010). Do last, after the feature lands. (VAL-009)
+- Validate-before-append (CF-007): all rejections (e.g. concern on a bad target,
+  unknown role, missing completion) occur before any journal append — non-zero
+  exit, clear error, zero new lines/rows.
+- `RequireKnownRole` permissions only (matrix is v0.1d), matching Phase 7/8.
+- DEC-D / CF-011 precedent: decide the `activity_log` stance for concern writes
+  (the create/AC/completion precedent is no `activity_log`; consistent timeline
+  population is the v0.1e CF-011 job). State it explicitly in the contract.
+- ADR-0001 rebuild parity: include a delete-DB + `fid rebuild` parity assertion
+  for concerns + derived flags.
+- Human dogfood VAL for the concern lifecycle feel (per-observable rows).
+- Coverage (DEC-007): COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
+  COV-002 `cmd/fid` ≥ 70%. Phase 8 ended `cmd/fid` 78.7%, `internal/issues`
+  81.9%, `internal/journal` 80.3%, `internal/policy` 85.0%, `internal/workflow`
+  95.5%.
+- Task-spec authoring nudges (carried): scope any file-size acceptance to the
+  task's allowed write set, not the whole package; and require finalized,
+  self-contained report evidence (literal transcripts/metadata) in the
+  code-behavior commit, not a later docs commit.
 
 ## Carry-Forward Register (open)
 
@@ -73,26 +65,16 @@ transition.
 | CF-003 | Role-validation corrupt-tail tolerance | Before v0.1d role/permission work. |
 | CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
 | CF-011 | Consistent `activity_log` timeline population (DEC-020) | v0.1e (with `fid activity list`). |
-| CF-012 | `internal/issues/issue.go` 677-line split (DEC-022) | **Folded into Phase 8 Task 4.** |
+| CF-013 | `internal/issues/complete.go` `Complete` orchestration size | v0.1e, alongside `fid dev finish`/`block`. |
 
-## Standing commitments to honor
-
-- Coverage (DEC-007): COV-001 `internal/issues|journal|policy|workflow` ≥ 80%;
-  COV-002 `cmd/fid` ≥ 70%. Phase 7 ended `cmd/fid` 78.9%, `internal/issues`
-  82.0%, `internal/journal` 80.3%, `internal/policy` 85.0%, `internal/workflow`
-  95.5%.
-- Validate-before-append (CF-007): all rejections occur before journal append
-  (non-zero exit, clear error, zero new lines/rows).
-- DEC-020/DEC-D: completions do not emit `activity_log` (CF-011 reconciles in v0.1e).
-- Before release-readiness: decide where held-out scenarios live and how
-  implementation agents are prevented from loading them (recommend only).
-- Process nudge: paste exact command transcripts for any public-output change in
-  completion reports — folded into each task spec.
-- Task-spec authoring nudge (Phase 7): scope file-size acceptance to the task's
-  allowed write set, not the whole package (avoids DEC-022-style scope BLOCKs).
+CF-012 closed at Phase 8 wrap (Task 4 / VAL-009): `issue.go` split into
+`create.go` 387 / `get.go` 120 / residual `issue.go` 192.
 
 ## Next Checkpoint
 
-Human: review and approve the Phase 8 validation contract + ordered task list
-(and the five proposed decisions DEC-A..E). On approval, Phase Runner starts
-Task 1.
+Tech Lead: run Phase 9 phase-start — read the roadmap §v0.1c Phase 9 entry +
+relevant PRD-DEV-005..007 / PRD-WF-009 spec sections, draft
+`project-docs/docs/phases/phase-9/qa/validation-contract.md`, break into ordered
+one-session tasks, and present the contract + task list to the human for
+approval before Phase Runner starts Task 1.
+</content>

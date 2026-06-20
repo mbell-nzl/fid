@@ -34,15 +34,28 @@ type IssueConcern struct {
 }
 
 type IssueCompletion struct {
-	ID                string   `json:"id"`
-	AttemptNumber     int      `json:"attempt_number"`
-	DeveloperRole     *string  `json:"developer_role"`
-	Model             *string  `json:"model"`
-	Status            *string  `json:"status"`
-	ActualTokens      *int     `json:"actual_tokens"`
-	GateResults       []string `json:"gate_results"`
-	HumanIntervention bool     `json:"human_intervention"`
-	CompletedAt       *string  `json:"completed_at"`
+	ID                    string                 `json:"id"`
+	AttemptNumber         int                    `json:"attempt_number"`
+	DeveloperRole         *string                `json:"developer_role"`
+	Model                 *string                `json:"model"`
+	Status                *string                `json:"status"`
+	NotesMDPath           *string                `json:"notes_md_path"`
+	ActualTokens          *int                   `json:"actual_tokens"`
+	CommitHashes          []string               `json:"commit_hashes"`
+	FilesTouched          []string               `json:"files_touched"`
+	GatesPassed           int                    `json:"gates_passed"`
+	GatesFailed           int                    `json:"gates_failed"`
+	GateResults           []CompletionGateResult `json:"gate_results"`
+	HumanIntervention     bool                   `json:"human_intervention"`
+	HumanInterventionNote *string                `json:"human_intervention_note"`
+	CompletedAt           *string                `json:"completed_at"`
+}
+
+type CompletionGateResult struct {
+	Cmd           string  `json:"cmd"`
+	ExitCode      int     `json:"exit_code"`
+	RanAt         string  `json:"ran_at"`
+	OutputExcerpt *string `json:"output_excerpt"`
 }
 
 type IssueLink struct {
@@ -232,7 +245,7 @@ func issueConcerns(conn *sql.DB, issueID string) ([]IssueConcern, error) {
 
 func issueCompletions(conn *sql.DB, issueID string) ([]IssueCompletion, error) {
 	rows, err := conn.Query(`
-		SELECT id, attempt_number, developer_role, model, status, actual_tokens, gate_results, human_intervention, completed_at
+		SELECT id, attempt_number, developer_role, model, status, notes_md_path, actual_tokens, commit_hashes, files_touched, gates_passed, gates_failed, gate_results, human_intervention, human_intervention_note, completed_at
 		FROM task_completions
 		WHERE issue_id = ?
 		ORDER BY attempt_number DESC, id DESC
@@ -245,7 +258,7 @@ func issueCompletions(conn *sql.DB, issueID string) ([]IssueCompletion, error) {
 	completions := []IssueCompletion{}
 	for rows.Next() {
 		var completion IssueCompletion
-		var developerRole, model, status, gateResultsJSON, completedAt sql.NullString
+		var developerRole, model, status, notesMDPath, commitHashesJSON, filesTouchedJSON, gateResultsJSON, humanInterventionNote, completedAt sql.NullString
 		var actualTokens sql.NullInt64
 		if err := rows.Scan(
 			&completion.ID,
@@ -253,9 +266,15 @@ func issueCompletions(conn *sql.DB, issueID string) ([]IssueCompletion, error) {
 			&developerRole,
 			&model,
 			&status,
+			&notesMDPath,
 			&actualTokens,
+			&commitHashesJSON,
+			&filesTouchedJSON,
+			&completion.GatesPassed,
+			&completion.GatesFailed,
 			&gateResultsJSON,
 			&completion.HumanIntervention,
+			&humanInterventionNote,
 			&completedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan completion for %q: %w", issueID, err)
@@ -263,20 +282,54 @@ func issueCompletions(conn *sql.DB, issueID string) ([]IssueCompletion, error) {
 		completion.DeveloperRole = nullStringPointer(developerRole)
 		completion.Model = nullStringPointer(model)
 		completion.Status = nullStringPointer(status)
+		completion.NotesMDPath = nullStringPointer(notesMDPath)
 		completion.ActualTokens = nullIntPointer(actualTokens)
-		completion.CompletedAt = nullStringPointer(completedAt)
-		completion.GateResults = []string{}
-		if gateResultsJSON.Valid && strings.TrimSpace(gateResultsJSON.String) != "" {
-			if err := json.Unmarshal([]byte(gateResultsJSON.String), &completion.GateResults); err != nil {
-				return nil, fmt.Errorf("decode completion gate results for %q: %w", completion.ID, err)
+		completion.CommitHashes = []string{}
+		if commitHashesJSON.Valid && strings.TrimSpace(commitHashesJSON.String) != "" {
+			if err := json.Unmarshal([]byte(commitHashesJSON.String), &completion.CommitHashes); err != nil {
+				return nil, fmt.Errorf("decode completion commit hashes for %q: %w", completion.ID, err)
 			}
 		}
+		completion.FilesTouched = []string{}
+		if filesTouchedJSON.Valid && strings.TrimSpace(filesTouchedJSON.String) != "" {
+			if err := json.Unmarshal([]byte(filesTouchedJSON.String), &completion.FilesTouched); err != nil {
+				return nil, fmt.Errorf("decode completion files touched for %q: %w", completion.ID, err)
+			}
+		}
+		completion.CompletedAt = nullStringPointer(completedAt)
+		completion.GateResults = []CompletionGateResult{}
+		if gateResultsJSON.Valid && strings.TrimSpace(gateResultsJSON.String) != "" {
+			gateResults, err := decodeCompletionGateResults(gateResultsJSON.String)
+			if err != nil {
+				return nil, fmt.Errorf("decode completion gate results for %q: %w", completion.ID, err)
+			}
+			completion.GateResults = gateResults
+		}
+		completion.HumanInterventionNote = nullStringPointer(humanInterventionNote)
 		completions = append(completions, completion)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate completions for %q: %w", issueID, err)
 	}
 	return completions, nil
+}
+
+func decodeCompletionGateResults(value string) ([]CompletionGateResult, error) {
+	var gateResults []CompletionGateResult
+	if err := json.Unmarshal([]byte(value), &gateResults); err == nil {
+		return gateResults, nil
+	}
+
+	var legacyCommands []string
+	if err := json.Unmarshal([]byte(value), &legacyCommands); err != nil {
+		return nil, err
+	}
+
+	gateResults = make([]CompletionGateResult, 0, len(legacyCommands))
+	for _, command := range legacyCommands {
+		gateResults = append(gateResults, CompletionGateResult{Cmd: command})
+	}
+	return gateResults, nil
 }
 
 func issueLinks(conn *sql.DB, issueID string) ([]IssueLink, error) {
