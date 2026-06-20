@@ -57,8 +57,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `6bf1bf3`
 
 ## Commit subject
 
-- Pending commit creation.
+- `refactor: split issues issue file`

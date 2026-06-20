@@ -125,8 +125,8 @@ Rebuild parity snapshot covered:
 
 ## Commit hash
 
-- Pending commit.
+- `d0bbb83`
 
 ## Commit subject
 
-- Pending commit.
+- `test: add completion gate rebuild parity e2e`

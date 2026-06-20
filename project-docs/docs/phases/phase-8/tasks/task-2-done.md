@@ -96,8 +96,8 @@ Implemented Phase 8 Task 2 gate snapshotting on `fid issue complete`.
 
 ## Commit hash
 
-- Recorded after commit creation in the terminal handoff. The tracked report intentionally does not embed the final hash because doing so would make the committed file self-referential and require a forbidden amend.
+- `d381f4f`
 
 ## Commit subject
 
-- Recorded after commit creation in the terminal handoff.
+- `feat(issue): snapshot gate runs into completions`

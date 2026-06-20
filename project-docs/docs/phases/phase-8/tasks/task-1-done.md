@@ -127,8 +127,8 @@ error: complete issue: issue "FID-TASK1-QRMECS-66d056" is kind "epic"; task comp
 
 ## Commit hash
 
-- TBD
+- `cc03c59`
 
 ## Commit subject
 
-- TBD
+- `feat(issue): add issue completion write path`
