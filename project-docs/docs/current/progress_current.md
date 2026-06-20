@@ -42,18 +42,21 @@ v0.1e).
 
 ## Next Action
 
-- **Phase 10 is the next planned cut** (roadmap §v0.1d — Claims, Permissions,
-  Links: `fid issue claim`/`unclaim`/`claim list` with TTL + atomic acquire +
-  human claims, claim-transition integration, the in-code permissions matrix +
-  `fid policy show`, `fid requirement sync` minimal, `fid link add/remove/list`
-  with auto-inverse, and label CRUD). Not yet planned — Tech Lead phase start
-  creates the validation contract and task list, and **slices v0.1d into coherent
-  phases** (it is large; roadmap has no pre-baked slice for it).
-- **At Phase 10 planning, schedule CF-003** (role-validation corrupt-tail
-  tolerance) — it is explicitly targeted "before v0.1d role/permission work."
-- Carry into the next QA plan the two standing checks Phase 9 surfaced
-  (`decisions.md` deep-retro rec): cross-surface read-back parity and read
-  ordering determinism (journal append order, not `created_at`).
+- **v0.1d sliced into 4 phases** (roadmap §v0.1d phase-slicing note, 2026-06-21):
+  **10 permissions → 11 claims → 12 requirements+links → 13 labels+closure.**
+- **Phase 10 is PLANNED, awaiting human confirmation of DEC-A..E.** Permissions
+  matrix + `policy.Authorize` seam + `fid policy show` + retrofit enforcement on
+  every existing write + CF-003. Artifacts under
+  `project-docs/docs/phases/phase-10/`: validation contract (VAL-001..009) and 3
+  ordered task specs (T1 CF-003, T2 matrix/policy-show, T3 retrofit). No schema
+  migration. On confirmation, QA Lead refines evidence + writes the QA plan, then
+  the dev/QA loop runs T1→T2→T3.
+- **CF-003 scheduled into Phase 10 Task 1** (DEC-D: align role discovery with the
+  journal corruption contract). CF-008/CF-011/CF-013 stay deferred.
+- QA plan must carry the Phase 9 standing checks: show-vs-enforce cross-surface
+  parity (VAL-008) and validate-before-append on every permission denial
+  (VAL-004/005). Wrap should promote the append-order read-ordering rule toward a
+  standing principle (Phase 9 deep-retro rec).
 - Standing commitment before release-readiness: decide where held-out scenarios
   live and how implementation agents are prevented from loading them.
 </content>

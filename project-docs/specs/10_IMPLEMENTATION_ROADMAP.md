@@ -231,6 +231,81 @@ with whet's task artifacts.
 | `fid link list` | List all links from and to an entity. | PRD-LINK-006 |
 | `fid label add/list` and `fid issue label add/remove` | Create labels, list labels, and add/remove issue label assignments without replacing the full label set. `fid issue update --labels` remains replace-all. `issue_labels` junction for multi-value. | PRD-ISSUE-015, PRD-ISSUE-023 |
 
+> **Phase-slicing note — v0.1d (Tech Lead, 2026-06-21).**
+> v0.1d introduces the **permissions matrix as a cross-cutting gate on every
+> write command** — the first version whose writes are gated by role/action and
+> not `RequireKnownRole` alone. That makes it both large and contract-heavy: the
+> matrix retrofits enforcement onto every existing v0.1a–v0.1c write surface
+> (public-interface + testing-strategy impact), and force-acquire claim
+> semantics (PRD-CLAIM-004) depend on the matrix to know which roles may force.
+> Slice into **four phases**, permissions first, each exiting on commands an
+> agent can run against a real `.fid/` workspace. The schema and triggers for
+> `claims`, `links`, `labels`, `issue_labels`, and `requirements` already exist
+> (v0.1a schema-widening); v0.1d only adds the CLI write/read surface and the
+> in-code matrix.
+>
+> - **Phase 10 — Permissions matrix + policy (foundational).** Reconcile the
+>   role-validation corrupt-tail tolerance first (**CF-003**, explicitly due
+>   "before v0.1d role/permission work"), then build the in-code permissions
+>   matrix (TRD §13 default profile), the enforcement seam, and retrofit
+>   role/action enforcement onto every existing write command (issue create/
+>   update/transition/complete, ac add/verify, concern raise/address) — including
+>   the role-keyed `issue.ac.verify.<role>` and target-state-keyed
+>   `issue.transition.<state>` action derivation and the `--by human` escape
+>   valve. Ship `fid policy show` (all four formats). **Exit:** every write
+>   command rejects a denied role/action with an actionable error naming role +
+>   action (non-zero exit, validate-before-append, zero new journal lines),
+>   unknown roles are hard-rejected, the `human` escape valve works without
+>   minting another verifier role, and `fid policy show` displays the matrix.
+>   (PRD-ROLE-001–005, TRD-ARCH-010, CF-003)
+> - **Phase 11 — Claims layer.** `fid issue claim` (atomic acquire via
+>   `INSERT ... ON CONFLICT DO NOTHING`, default 30m TTL, `--ttl`, `--renew` for
+>   the holder, `--force` gated by `issue.claim.force_acquire`, `--note`),
+>   `fid issue unclaim`, `fid claim list` (`--stale`, `--by`, all formats),
+>   claim-transition integration (started-category transitions require a live
+>   caller claim; transitions out auto-release), and human claims (`--by human`
+>   as a do-not-advance signal). All gated by the Phase 10 matrix. **Exit:** an
+>   agent can claim/renew/force/release with correct TTL and atomic conflict
+>   rejection, list live and stale claims, drive a started-category transition
+>   only with a live claim, and see the claim auto-released on the way out.
+>   (PRD-CLAIM-001–008a, TRD-ARCH-011)
+> - **Phase 12 — Requirements + links.** `fid requirement sync` (minimal: parse
+>   canonical PRD/TRD IDs from a source doc, upsert pointer rows with
+>   `last_synced_hash`; no get/list/drift), then `fid link add` (auto-inverse
+>   projection, relation/endpoint compatibility validation, reject links that
+>   duplicate dedicated schema), `fid link remove` (removes declared + inverse in
+>   one event), and `fid link list` (outgoing/incoming, all formats).
+>   Requirements first so issue → requirement `implements` links have valid
+>   endpoints. **Exit:** an agent can sync requirement pointers, create an
+>   issue ↔ issue or issue → requirement link and see the auto-created inverse,
+>   list links in both directions, remove a link and its inverse, and watch
+>   invalid relation/endpoint or dedicated-schema-duplicating links rejected
+>   before append. (PRD-LINK-001–006a, 008, PRD-GOV-006)
+> - **Phase 13 — Labels + v0.1d closure.** `fid label add` / `fid label list`
+>   (additive label CRUD), `fid issue label add` / `fid issue label remove`
+>   (per-issue assignment that does not replace the full set; `fid issue update
+>   --labels` stays replace-all), then an end-to-end v0.1d closure smoke over the
+>   full lifecycle: create → claim → transition → complete → unclaim with
+>   permission enforcement, links, and labels. **Exit:** an agent can create and
+>   list labels, add/remove a single label on an issue without disturbing the
+>   rest, and run the full gated issue lifecycle end-to-end (the v0.1 headline
+>   exit criterion). (PRD-ISSUE-015, 023)
+>
+> Ordering rationale: permissions are foundational (claim force-acquire and all
+> writes depend on the matrix), so they lead; claims follow because the lifecycle
+> closure needs them; links need requirement endpoints; labels are independent
+> and small, so they close the version with the lifecycle smoke. Re-slice freely
+> if phase-start dependency analysis supports a different cut (e.g. merging labels
+> into Phase 12) — the binding rule is every phase ships an end-to-end verifiable
+> increment. Explicit deferrals: configurable `role_permissions` table +
+> `fid role create` / `fid policy set` remain v0.2 (PRD-ROLE-006); requirement
+> get/list and drift reporting remain v0.2 (PRD-GOV-007); link endpoints to
+> decisions/escalations remain v0.2 (PRD-LINK-007); QA-review claims remain v0.3
+> (PRD-CLAIM-009). New v0.1d write commands the spec says project to
+> `activity_log` (claim renewal PRD-CLAIM-008a, link removal PRD-LINK-006a, label
+> changes PRD-ISSUE-023) follow the existing CF-011 activity-log discipline;
+> CF-011's broader consistency reconciliation stays v0.1e.
+
 ### v0.1e — Telemetry, Composites, Maintenance
 
 | Item | Description | PRD/TRD Refs |
@@ -508,4 +583,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-06-14*
+*Last updated: 2026-06-21*
