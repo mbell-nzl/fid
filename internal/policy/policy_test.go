@@ -135,7 +135,7 @@ func TestKnownRolesCollectsInsertUpdateDeleteAndActiveFalse(t *testing.T) {
 func TestKnownRolesTRG002CorruptTailTolerance(t *testing.T) {
 	t.Parallel()
 
-	t.Run("valid role before malformed trailing line is tolerated", func(t *testing.T) {
+	t.Run("valid role before malformed trailing line reports corruption", func(t *testing.T) {
 		t.Parallel()
 
 		workspace := newPolicyJournalWorkspace(t)
@@ -151,13 +151,12 @@ func TestKnownRolesTRG002CorruptTailTolerance(t *testing.T) {
 		)
 		appendMalformedPolicyLine(t, workspace, "2026-06-07.jsonl", "{broken-json")
 
-		got, err := KnownRoles(workspace)
-		if err != nil {
-			t.Fatalf("KnownRoles() error = %v, want tolerated corrupt tail", err)
+		_, err := KnownRoles(workspace)
+		if err == nil {
+			t.Fatal("KnownRoles() error = nil, want corrupt journal error")
 		}
-		if !equalStrings(got, []string{"developer"}) {
-			t.Fatalf("KnownRoles() = %#v, want %#v", got, []string{"developer"})
-		}
+
+		assertPolicyCorruptJournalError(t, err, "2026-06-07.jsonl", 2)
 	})
 
 	t.Run("malformed first line surfaces an error", func(t *testing.T) {
@@ -170,10 +169,100 @@ func TestKnownRolesTRG002CorruptTailTolerance(t *testing.T) {
 		if err == nil {
 			t.Fatal("KnownRoles() error = nil, want corrupt journal error")
 		}
-		if want := filepath.ToSlash(filepath.Join(workspace, ".fid", "journal", "2026-06-07.jsonl")); !containsNormalizedPath(err.Error(), want) {
+
+		assertPolicyCorruptJournalError(t, err, "2026-06-07.jsonl", 1)
+	})
+
+	t.Run("valid role before un-upgradeable trailing event reports corruption", func(t *testing.T) {
+		t.Parallel()
+
+		workspace := newPolicyJournalWorkspace(t)
+		writePolicyJournalFile(t, workspace, "2026-06-07.jsonl",
+			policyRoleEvent("EVT-20260607-000001", journal.Effect{
+				Op:    "insert",
+				Table: "roles",
+				PK:    map[string]any{"name": "developer"},
+				Values: map[string]any{
+					"active": true,
+				},
+			}),
+			journal.Event{
+				EventID:     "EVT-20260607-000002",
+				EventSchema: 2,
+				EventType:   "project.initialized",
+				OccurredAt:  time.Date(2026, time.June, 7, 9, 1, 0, 0, time.UTC),
+				Actor: journal.Actor{
+					Role: "human",
+				},
+				Command: journal.Command{
+					Argv:       []string{"fid", "init"},
+					CWD:        ".",
+					FIDVersion: "0.1.0",
+				},
+			},
+		)
+
+		_, err := KnownRoles(workspace)
+		if err == nil {
+			t.Fatal("KnownRoles() error = nil, want upgrade error")
+		}
+		if !strings.Contains(err.Error(), `upgrade event "EVT-20260607-000002"`) {
+			t.Fatalf("KnownRoles() error = %q, want upgrade event context", err.Error())
+		}
+		if want := filepath.ToSlash(filepath.Join(".fid", "journal", "2026-06-07.jsonl")) + ":2"; !strings.Contains(filepath.ToSlash(err.Error()), want) {
 			t.Fatalf("KnownRoles() error = %q, want path %q", err.Error(), want)
 		}
 	})
+}
+
+func TestKnownRolesCollectsCleanRolesAcrossFilesAndLines(t *testing.T) {
+	t.Parallel()
+
+	workspace := newPolicyJournalWorkspace(t)
+	writePolicyJournalFile(t, workspace, "2026-06-07.jsonl",
+		policyRoleEvent("EVT-20260607-000001", journal.Effect{
+			Op:    "insert",
+			Table: "roles",
+			PK:    map[string]any{"name": "developer"},
+			Values: map[string]any{
+				"active": true,
+			},
+		}),
+		policyRoleEvent("EVT-20260607-000002", journal.Effect{
+			Op:    "insert",
+			Table: "roles",
+			PK:    map[string]any{"name": "qa_reviewer"},
+			Values: map[string]any{
+				"active": true,
+			},
+		}),
+	)
+	writePolicyJournalFile(t, workspace, "2026-06-08.jsonl",
+		policyRoleEvent("EVT-20260608-000001", journal.Effect{
+			Op:    "update",
+			Table: "roles",
+			PK:    map[string]any{"name": "qa_reviewer"},
+			Values: map[string]any{
+				"active": false,
+			},
+		}),
+		policyRoleEvent("EVT-20260608-000002", journal.Effect{
+			Op:    "insert",
+			Table: "roles",
+			PK:    map[string]any{"name": "qa_lead"},
+			Values: map[string]any{
+				"active": true,
+			},
+		}),
+	)
+
+	got, err := KnownRoles(workspace)
+	if err != nil {
+		t.Fatalf("KnownRoles() error = %v", err)
+	}
+	if !equalStrings(got, []string{"developer", "qa_lead"}) {
+		t.Fatalf("KnownRoles() = %#v, want %#v", got, []string{"developer", "qa_lead"})
+	}
 }
 
 func TestPolicyHelpersCoverActiveValueDefaults(t *testing.T) {
@@ -317,6 +406,26 @@ func closePolicyFile(t *testing.T, file interface{ Close() error }) {
 
 	if err := file.Close(); err != nil {
 		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func assertPolicyCorruptJournalError(t *testing.T, err error, fileName string, line int) {
+	t.Helper()
+
+	var corruptErr *journal.CorruptJournalError
+	if !errors.As(err, &corruptErr) {
+		t.Fatalf("KnownRoles() error = %T, want *journal.CorruptJournalError", err)
+	}
+
+	wantFile := filepath.ToSlash(filepath.Join(".fid", "journal", fileName))
+	if corruptErr.File != wantFile {
+		t.Fatalf("corrupt file = %q, want %q", corruptErr.File, wantFile)
+	}
+	if corruptErr.Line != line {
+		t.Fatalf("corrupt line = %d, want %d", corruptErr.Line, line)
+	}
+	if !strings.Contains(corruptErr.Error(), wantFile) {
+		t.Fatalf("CorruptJournalError.Error() = %q, want path %q", corruptErr.Error(), wantFile)
 	}
 }
 

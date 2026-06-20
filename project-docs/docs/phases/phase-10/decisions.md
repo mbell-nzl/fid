@@ -3,6 +3,18 @@
 > In-phase decisions (DEC-NNN / DEC-A..E). Per-doc spec-sync verdicts and the
 > full decision history are finalized at phase wrap. Newest at top.
 
+## Task 1 execution note (2026-06-21)
+
+- **DEC-D executed as planned for CF-003.** `internal/policy` role discovery no
+  longer tolerates malformed or un-upgradeable trailing journal lines after
+  seeded roles are found; `KnownRoles` now reports them with the same journal
+  file/line context the replay path uses, so the upcoming permission matrix
+  builds on a sound role set instead of a partially scanned one.
+- **The TRG-002 test rewrite is intentional and decision-backed.**
+  `TestKnownRolesTRG002CorruptTailTolerance` now asserts reported corruption for
+  a valid role followed by malformed/un-upgradeable tail input. This closes the
+  acknowledged Phase 1 debt rather than weakening coverage.
+
 ## Phase 10 planning decisions (DEC-A..E, human-confirmed 2026-06-21)
 
 Recorded in the validation contract §Phase scoping notes and the phase brief.
