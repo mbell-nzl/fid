@@ -725,10 +725,21 @@ does not exist, or the completion does not belong to `--on`.
 fid concern address <concern-id> --in-completion <completion-id> --by <role>
 ```
 
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `<concern-id>` | string | yes | Concern ID |
+| `--in-completion` | string | yes | Completion ID that addressed the concern |
+| `--by` | string | yes | Addressing role |
+
 **Output (stderr confirmation):**
 ```text
 addressed concern CON-c3d4e5 in completion TC-9e5f6g
 ```
+
+Validation happens before any journal append. Reject with a non-zero exit and a
+clear error when the role is unknown, the concern does not exist, the concern is
+not `open`, the completion does not exist, or the completion does not belong to
+the concern's issue.
 
 ### `fid concern list`
 

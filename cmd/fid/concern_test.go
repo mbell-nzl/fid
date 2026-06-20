@@ -144,6 +144,135 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 	}
 }
 
+func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, createStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "create",
+		"--kind", "task",
+		"--title", "Address CLI concern",
+		"--by", "developer",
+	)
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	_, firstCompleteStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "complete",
+		issueID,
+		"--by", "developer",
+	)
+	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
+
+	_, raiseStderr := runFIDCommand(
+		t,
+		workspace,
+		"concern", "raise",
+		"--on", issueID,
+		"--by", "developer",
+		"--in-completion", firstCompletionID,
+		"--summary", "Needs follow-up",
+	)
+	concernID := parseConcernID(t, raiseStderr)
+
+	_, secondCompleteStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "complete",
+		issueID,
+		"--by", "developer",
+	)
+	addressCompletionID := parseCompletionID(t, secondCompleteStderr)
+
+	_, addressStderr := runFIDCommand(
+		t,
+		workspace,
+		"concern", "address", concernID,
+		"--in-completion", addressCompletionID,
+		"--by", "developer",
+	)
+
+	if !strings.Contains(addressStderr, "addressed concern "+concernID) {
+		t.Fatalf("stderr = %q, want addressed concern confirmation", addressStderr)
+	}
+	if !strings.Contains(addressStderr, addressCompletionID) {
+		t.Fatalf("stderr = %q, want addressing completion id", addressStderr)
+	}
+
+	concernsStdout, concernsStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "get", issueID,
+		"--section", "concerns",
+		"--format", "json",
+	)
+	if concernsStderr != "" {
+		t.Fatalf("issue get concerns stderr = %q, want empty", concernsStderr)
+	}
+
+	var concerns []struct {
+		ID                   string `json:"id"`
+		Status               string `json:"status"`
+		UpdatedAt            string `json:"updated_at"`
+		RaisedInCompletionID string `json:"raised_in_completion_id"`
+	}
+	if err := json.Unmarshal([]byte(concernsStdout), &concerns); err != nil {
+		t.Fatalf("Unmarshal(concerns) error = %v", err)
+	}
+	if len(concerns) != 1 {
+		t.Fatalf("concerns len = %d, want 1", len(concerns))
+	}
+	if concerns[0].ID != concernID {
+		t.Fatalf("concern id = %q, want %q", concerns[0].ID, concernID)
+	}
+	if concerns[0].Status != "addressed" {
+		t.Fatalf("status = %q, want addressed", concerns[0].Status)
+	}
+
+	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	if issueStderr != "" {
+		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
+	}
+
+	var issue struct {
+		ConcernsRaised    bool `json:"concerns_raised"`
+		OpenConcernsCount int  `json:"open_concerns_count"`
+	}
+	if err := json.Unmarshal([]byte(issueStdout), &issue); err != nil {
+		t.Fatalf("Unmarshal(issue) error = %v", err)
+	}
+	if issue.ConcernsRaised {
+		t.Fatal("concerns_raised = true, want false")
+	}
+	if issue.OpenConcernsCount != 0 {
+		t.Fatalf("open_concerns_count = %d, want 0", issue.OpenConcernsCount)
+	}
+}
+
+func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	stdout, stderr, err := runFIDCommandExpectError(
+		t,
+		workspace,
+		"concern", "address", "CON-test",
+		"--by", "developer",
+	)
+	if err == nil {
+		t.Fatal("Execute() error = nil, want missing completion rejection")
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	if !strings.Contains(stderr, "error: --in-completion is required") {
+		t.Fatalf("stderr = %q, want missing completion error", stderr)
+	}
+}
+
 func parseCompletionID(t *testing.T, stderr string) string {
 	t.Helper()
 
@@ -154,5 +283,18 @@ func parseCompletionID(t *testing.T, stderr string) string {
 		}
 	}
 	t.Fatalf("stderr = %q, want completion line", stderr)
+	return ""
+}
+
+func parseConcernID(t *testing.T, stderr string) string {
+	t.Helper()
+
+	fields := strings.Fields(stderr)
+	for index := range fields {
+		if fields[index] == "concern" && index+1 < len(fields) {
+			return strings.TrimSpace(fields[index+1])
+		}
+	}
+	t.Fatalf("stderr = %q, want concern line", stderr)
 	return ""
 }
