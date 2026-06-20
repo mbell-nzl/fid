@@ -715,6 +715,10 @@ fid concern raise --on <issue-id> --by <role> --in-completion <completion-id>
 raised concern CON-c3d4e5 on FID-a1b2c3: "Possible race condition in concurrent journal writes"
 ```
 
+Validation happens before any journal append. Reject with a non-zero exit and a
+clear error when the role is unknown, the issue does not exist, the completion
+does not exist, or the completion does not belong to `--on`.
+
 ### `fid concern address`
 
 ```
