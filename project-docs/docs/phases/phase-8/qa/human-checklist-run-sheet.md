@@ -39,8 +39,6 @@ Expected: command exits zero and `/tmp/fid` exists.
 ## 2. Create A Fresh Test Workspace
 
 ```bash
-set -euo pipefail
-
 export FID_HV8_WORKSPACE="$(mktemp -d /tmp/fid-phase8-human-XXXXXX)"
 cd "$FID_HV8_WORKSPACE"
 printf 'workspace=%s\n' "$FID_HV8_WORKSPACE"
@@ -72,12 +70,10 @@ JOURNAL=$(ls .fid/journal/*.jsonl | sort | tail -n 1)
 JOURNAL_LINES_BEFORE_REJECT=$(wc -l < "$JOURNAL")
 ISSUE_BEFORE_REJECT=$("$FID" issue get "$TASK_ID" --format json)
 
-set +e
+REJECT_EXIT=0
 REJECT_OUTPUT=$("$FID" issue transition "$TASK_ID" \
   --to dev_complete \
-  --by developer 2>&1)
-REJECT_EXIT=$?
-set -e
+  --by developer 2>&1) || REJECT_EXIT=$?
 
 JOURNAL_LINES_AFTER_REJECT=$(wc -l < "$JOURNAL")
 ISSUE_AFTER_REJECT=$("$FID" issue get "$TASK_ID" --format json)
