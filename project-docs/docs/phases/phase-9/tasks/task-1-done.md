@@ -84,8 +84,8 @@ Implemented Phase 9 Task 1: `fid concern raise`.
 
 ## Commit hash
 
-- `PENDING_COMMIT_HASH`
+- `f35b3fe`
 
 ## Commit subject
 
-- `PENDING_COMMIT_SUBJECT`
+- `feat(concern): add concern raise command`

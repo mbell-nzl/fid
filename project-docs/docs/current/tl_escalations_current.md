@@ -40,37 +40,54 @@ finding:
 
 ## Open Escalations
 
-None.
+### ESC-006 - Phase 9 final review blockers: benchmark gate failure and concern address read-back gap
 
-Phase 8 (Task Completions) raised **no escalations**: both mid-phase reviews
-returned CONTINUE, with zero Developer BLOCKs and zero TL-Lite triage events. See
-`project-docs/docs/phases/phase-8/tl-escalations.md`.
+Status: DIRECTION ISSUED (fixup scheduled — Task 4); closes at Phase 9 wrap once
+QA verifies Task 4.
+Source: Phase 9 final review / TL-Lite TRG-002
+Raised: 2026-06-20
+Resolved-by (direction): Tech Lead 2026-06-20
 
-ESC-005 (Phase 7 AC verification latest-ordering nondeterminism) was resolved by
-DEC-021 (human-confirmed 2026-06-14); Task 2b implemented `rowid`-DESC
-append-order latest-per-role and the Review 1 fixup cleared VAL-004. Archived to
-`project-docs/docs/phases/phase-7/tl-escalations.md` at the Phase 7 wrap.
+Summary:
+- The required phase benchmark gate `go test -bench . -benchmem ./...` failed in
+  `cmd/fid` at `TestConcernListFiltersByIssueAndStatus/all_concerns`.
+- VAL-004 / QA-12 failed because after `fid concern address`, public read-back
+  showed `status="addressed"` but neither `fid concern list` nor
+  `fid issue get --section concerns` exposed `addressed_in_completion_id`.
 
-ESC-004 (Phase 6 `fid ready` project-wide tie-break order) was resolved by
-DEC-019 (human-confirmed 2026-06-14) and archived to
-`project-docs/docs/phases/phase-6/tl-escalations.md` at the Phase 6 wrap.
+Tech Lead diagnosis:
+- Read-back gap: the write path (`concern_address.go`) persists
+  `addressed_in_completion_id`, but `ConcernListItem` (`concern_list.go`) and
+  `IssueConcern` (`detail.go`) never select/expose it.
+- Benchmark flake: both concern read queries `ORDER BY created_at DESC, id DESC`;
+  `created_at` second-ties fall back to the content-hash `id`, ordering rows
+  nondeterministically vs creation order (same class as DEC-021 for AC verifs).
 
-ESC-003 (Phase 5 Task 1 VAL-005 rebuild-recovery evidence gap) was
-resolved by Task 1b + `review-1-addendum.md` and archived to
-`project-docs/docs/phases/phase-5/tl-escalations.md` at the Phase 5 wrap.
+Resolution direction (issued):
+- **DEC-023** — expose `addressed_in_completion_id` (nullable) on both concern
+  read models.
+- **DEC-024** — order concern reads by journal append order (`rowid DESC`,
+  rebuild-stable; mirrors DEC-021).
+- **Task 4** (`project-docs/docs/phases/phase-9/tasks/task-4.md`) implements both
+  under TDD; required benchmark gate must exit 0 and VAL-004 must PASS while
+  VAL-008/009 stay PASS. See `phases/phase-9/decisions.md` (DEC-023/DEC-024) and
+  the validation-contract revision log.
+- VAL-011 (human dogfood) remains BLOCKED pending the human checklist; it is not
+  a Task 4 deliverable.
 
----
+Next action: Phase Runner executes Task 4 via Developer → QA Reviewer; Tech Lead
+closes ESC-006 and wraps Phase 9 after QA verifies the gate and VAL-004.
 
-The Phase 4 journal-poisoning defect (rejected `fid issue create` appends to the
-journal and poisons the tail) is tracked as carry-forward **CF-007**
-(`decisions_active.md`) / **DEC-014** (`phases/phase-4/decisions.md`), not as an
-open escalation — it is a well-diagnosed, scheduled Phase 5 fixup.
+## Resolved (archived in their phase `tl-escalations.md`)
 
-ESC-002 (Phase 4 due-date read-back gap) was resolved by Task 4 and archived to
-`project-docs/docs/phases/phase-4/tl-escalations.md`.
-
-ESC-001 (SQLite pooled-connection pragmas) was resolved by DEC-006 / Phase 1
-Task 7 and archived to `project-docs/docs/phases/phase-1/tl-escalations.md`.
+- Phase 8: no escalations raised (both reviews CONTINUE, zero BLOCKs/triage).
+- ESC-005 (Phase 7 AC verify ordering nondeterminism) → DEC-021 / Task 2b.
+- ESC-004 (Phase 6 `fid ready` tie-break order) → DEC-019.
+- ESC-003 (Phase 5 VAL-005 rebuild-recovery evidence gap) → Task 1b.
+- ESC-002 (Phase 4 due-date read-back gap) → Task 4.
+- ESC-001 (SQLite pooled-connection pragmas) → DEC-006 / Phase 1 Task 7.
+- Phase 4 journal-poisoning defect tracked as CF-007 / DEC-014 (scheduled
+  fixup), not an open escalation.
 
 <!--
 Add new escalations above this comment using the template at

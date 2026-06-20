@@ -766,6 +766,7 @@ filter returns an empty collection with exit 0.
     "status": "open",
     "raised_by_role": "developer",
     "raised_in_completion_id": "TC-7c3e9f",
+    "addressed_in_completion_id": null,
     "body_md_path": "project-docs/docs/phases/phase-1/concerns/CON-c3d4e5.md",
     "created_at": "2026-05-27T10:30:00Z",
     "updated_at": "2026-05-27T10:45:00Z"
@@ -774,6 +775,11 @@ filter returns an empty collection with exit 0.
 ```
 
 The row shape mirrors `fid issue get --section concerns` plus `issue_id`.
+`addressed_in_completion_id` is `null` while the concern is `open` and carries the
+addressing completion ID once `fid concern address` has run.
+
+Rows are ordered by journal append order, newest first (deterministic and
+rebuild-stable; the ordering key is append order, not `created_at`).
 
 ---
 

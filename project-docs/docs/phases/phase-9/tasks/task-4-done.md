@@ -125,8 +125,8 @@
 
 ## Commit hash
 
-- `PENDING_POST_COMMIT`
+- `c927de0`
 
 ## Commit subject
 
-- `PENDING_POST_COMMIT`
+- `fix: expose concern address read-back deterministically`

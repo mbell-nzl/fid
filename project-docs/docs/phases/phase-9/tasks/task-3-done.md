@@ -118,8 +118,8 @@
 
 ## Commit hash
 
-- Pending commit creation.
+- `a172634`
 
 ## Commit subject
 
-- Pending commit creation.
+- `feat: add concern list and v0.1c closure tests`
