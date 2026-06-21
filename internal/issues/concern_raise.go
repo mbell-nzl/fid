@@ -55,7 +55,7 @@ func RaiseConcern(options RaiseConcernOptions) (RaiseConcernResult, error) {
 	if summary == "" {
 		return RaiseConcernResult{}, fmt.Errorf("raise concern: summary is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionConcernRaise); err != nil {
 		return RaiseConcernResult{}, err
 	}
 

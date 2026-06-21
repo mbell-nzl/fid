@@ -239,7 +239,7 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runInitCommand(t, workspace, "rebuild", "--by", "developer")
+	runInitCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
 	rebuiltConn, err := fiddb.Open(dbPath)
 	if err != nil {

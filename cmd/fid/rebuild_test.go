@@ -22,7 +22,7 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	cmd := newRootCommand()
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "developer"})
+	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -67,7 +67,7 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	cmd := newRootCommand()
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "developer"})
+	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -96,7 +96,7 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	cmd := newRootCommand()
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "developer"})
+	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
 	cwd, err := os.Getwd()
 	if err != nil {

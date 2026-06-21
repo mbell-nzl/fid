@@ -53,7 +53,7 @@ func Complete(options CompleteOptions) (CompleteResult, error) {
 	if issueID == "" {
 		return CompleteResult{}, fmt.Errorf("complete issue: issue id is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueComplete); err != nil {
 		return CompleteResult{}, err
 	}
 

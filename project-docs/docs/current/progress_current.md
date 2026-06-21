@@ -7,56 +7,56 @@
 
 ## Project State
 
-**Status:** Phase 9 (Concerns + derived flag + v0.1c closure) is **CLOSED** on
-branch `phase-9`. **v0.1c is complete.** QA final review: **BLOCK** (2 blocking /
-0 major / 3 improvement); both blocking findings fixed by the Task 4 fixup and
-re-verified by QA Review 2 (**CONTINUE**). Human dogfood 5/5 PASS (HUMAN-011a..e).
-**VAL-001..VAL-011 all PASS** at wrap. Phases 0-8 archived under
+**Status:** Phase 10 (Permissions matrix + policy + CF-003) is **CLOSED** on branch
+`phase-10`. **v0.1d slice 1 of 4 complete.** QA final review: **PASS for
+deterministic QA** (0 blocking / 0 major / 0 improvement). Human dogfood **4/4 PASS**
+(HUMAN-09a..d). **VAL-001..009 all PASS** at wrap. Phases 0-9 archived under
 `../phases/phase-N/`.
 
-Phase 9 delivered:
+Phase 10 delivered:
 
-- `fid concern raise` — validate-before-append (unknown role / missing issue /
-  missing completion / cross-issue completion) + derived-flag round-trip; read
-  back via `fid issue get --section concerns` (Task 1, VAL-001/002/003).
-- `fid concern address` — in-place `open`→`addressed`, flag clearing, and the
-  `concerns_addressed` rule-evaluation-seam proof with real writes (Task 2,
-  VAL-004/005/006/007).
-- `fid concern list` — issue/status filters, all four formats, empty=`[]`;
-  delete-DB + `fid rebuild` parity; end-to-end v0.1c closure smoke (Task 3,
-  VAL-008/009/010).
-- Task 4 fixup (ESC-006): `addressed_in_completion_id` exposed on both concern
-  read surfaces (DEC-023) + deterministic `rowid DESC` ordering (DEC-024); cleared
-  the benchmark gate and resolved VAL-004.
+- **Task 1 — CF-003 corrupt-tail reconciliation** (`716329c`): `KnownRoles`/
+  `collectRoles` report a malformed/un-upgradeable trailing journal line as
+  corruption with journal file/line context (DEC-D, VAL-001). **CF-003 closed.**
+- **Task 2 — matrix + `Authorize` + `fid policy show`** (`6f4ce6b`): in-code
+  single-source matrix, `policy.Authorize` + `PermissionDeniedError`, read-only
+  `fid policy show` (json/toon/markdown/yaml) (VAL-002/003).
+- **Task 3 — retrofit enforcement onto every write command** (`5293fd2`):
+  `Authorize` on create/update/transition/complete, ac add/verify, concern
+  raise/address, rebuild; domain-layer action derivation; `--by human` escape valve;
+  DEC-E fixture moves; 4 direct-prerequisite matrix rows (VAL-004..008).
+- **Commit-field reconciliation** (`eeaf9fa`): cleared the Review 3 blocker
+  (ESC-007 / DEC-025).
 
-Planning decisions DEC-A..E (human-confirmed pre-execution) all honoured. In-phase
-DEC-023/DEC-024 issued to resolve ESC-006. See `../phases/phase-9/decisions.md`.
+Planning decisions DEC-A..E (human-confirmed pre-execution) all honoured; in-phase
+DEC-025 resolved ESC-007. Spec sync: `03_TRD_SCHEMA.md` §13 touched (4 matrix rows);
+all other specs verified-no-change or N/A. Read-ordering rule promoted to
+`decisions_principles.md`. See `../phases/phase-10/decisions.md`.
 
-Coverage held: `cmd/fid` 77.8%, `internal/issues` 81.8%, `internal/journal`
-80.3%, `internal/policy` 85.0%, `internal/workflow` 95.5% (COV-001/002 satisfied).
+Coverage held: `cmd/fid` 77.8%, `internal/issues` 81.9%, `internal/journal` 80.3%,
+`internal/policy` 81.2%, `internal/workflow` 95.5% (COV-001/002 satisfied).
 
-Open carry-forward register: CF-003 (role corrupt-tail, **now due — schedule at
-Phase 10 / v0.1d planning**), CF-008 (resolution type/reason, v0.2), CF-011
+Open carry-forward register: CF-008 (resolution type/reason, v0.2), CF-011
 (consistent `activity_log`, v0.1e), CF-013 (`complete.go` orchestration size,
-v0.1e).
+v0.1e). CF-003 closed this phase.
 
 ## Next Action
 
-- **v0.1d sliced into 4 phases** (roadmap §v0.1d phase-slicing note, 2026-06-21):
-  **10 permissions → 11 claims → 12 requirements+links → 13 labels+closure.**
-- **Phase 10 is PLANNED, awaiting human confirmation of DEC-A..E.** Permissions
-  matrix + `policy.Authorize` seam + `fid policy show` + retrofit enforcement on
-  every existing write + CF-003. Artifacts under
-  `project-docs/docs/phases/phase-10/`: validation contract (VAL-001..009) and 3
-  ordered task specs (T1 CF-003, T2 matrix/policy-show, T3 retrofit). No schema
-  migration. On confirmation, QA Lead refines evidence + writes the QA plan, then
-  the dev/QA loop runs T1→T2→T3.
-- **CF-003 scheduled into Phase 10 Task 1** (DEC-D: align role discovery with the
-  journal corruption contract). CF-008/CF-011/CF-013 stay deferred.
-- QA plan must carry the Phase 9 standing checks: show-vs-enforce cross-surface
-  parity (VAL-008) and validate-before-append on every permission denial
-  (VAL-004/005). Wrap should promote the append-order read-ordering rule toward a
-  standing principle (Phase 9 deep-retro rec).
-- Standing commitment before release-readiness: decide where held-out scenarios
-  live and how implementation agents are prevented from loading them.
-</content>
+- **Plan Phase 11 — Claims layer** (roadmap §v0.1d slice 2 of 4: 10 permissions →
+  **11 claims** → 12 requirements+links → 13 labels+closure). `fid issue claim`
+  (atomic acquire, 30m TTL, `--renew`/`--force`/`--note`), `fid issue unclaim`,
+  `fid claim list` (`--stale`/`--by`/all formats), claim–transition integration,
+  and human claims — all gated by the Phase 10 matrix. `claims` table/triggers
+  already exist (v0.1a); no schema migration expected. (PRD-CLAIM-001–008a,
+  TRD-ARCH-011)
+- **Phase 11 appends its `issue.claim.*` matrix rows** to the in-code matrix and
+  `03_TRD_SCHEMA.md` §13 (DEC-B: matrix grows per phase).
+- **Carry the standing QA-plan checks:** show-vs-enforce cross-surface parity for
+  new claim actions, and validate-before-append on every claim rejection
+  (conflict / force-denied / missing / unknown role). `fid claim list` ordering
+  defaults to journal append order (now a standing principle).
+- **Commit-field hygiene (Phase 10 retro):** pair completion-report commit-hash fill
+  with an immediate reconciliation commit so commit-field drift does not resurface as
+  a phase-end blocker (DEC-025 recurrence note).
+- Standing commitment before release-readiness: decide where held-out scenarios live
+  and how implementation agents are prevented from loading them.

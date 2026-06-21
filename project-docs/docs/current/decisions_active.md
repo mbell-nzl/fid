@@ -34,11 +34,15 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-003 | Phase 1 TRG-002 | Revisit role-validation corrupt-tail tolerance: the bootstrap role-discovery scan in `internal/policy` tolerates a malformed trailing journal line after seeded roles are found. Acceptable Phase 1 debt; reconcile before mutable role events or richer policy semantics ship. | Before v0.1d role permission matrix / mutable role events | Medium |
 | CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. Closing a redundant backlog task already works via `todo → cancelled` (PRD-WF-013); the enhancement is a new resolution-reason field + cancel `--reason` flag (touches data model + `activity_log` audit), **not** a new workflow edge. Product-owner decision; do not widen v0.1 default graphs. | v0.2 (with configurable workflows PRD-WF-011/012) | Low (product) |
 | CF-011 | Phase 7 DEC-020 | Reconcile `activity_log` (derived timeline projection) population **consistently** across all write commands. Today `fid issue update`/`transition` emit an `activity` effect but `fid issue create` does not; Phase 7 AC writes and Phase 8 completions (DEC-D) intentionally match `create` (no `activity_log` row) and defer. The journal already records every write — this is about the human-facing timeline table only (no rebuild risk). When `fid activity list` is designed (PRD-OUT-017), decide which write commands populate `activity_log` and backfill the gap (create + AC writes + completions + any other unlogged creations). | v0.1e (with `fid activity list` / activity-log work) | Medium |
 | CF-013 | Phase 8 final review / Review 1 | `internal/issues/complete.go` `Complete` is a large orchestration function (~194 lines; file is 391, under the 400-line tripwire). Not a blocker — behavior and gates passed. Candidate for a function-level structure cleanup (extract narrow helpers for completion-event construction and append/project result assembly). | v0.1e, alongside the `fid dev finish`/`block` composites that also touch this path | Low |
 
+CF-003 closed at Phase 10 wrap — role-discovery corrupt-tail tolerance reconciled
+by Phase 10 Task 1 (DEC-D, VAL-001 PASS): `KnownRoles`/`collectRoles` now report a
+malformed or un-upgradeable trailing journal line as corruption with journal
+file/line context, matching the replayer (TRD-ARCH-002) and ADR-0001; the TRG-002
+test rewrite is decision-backed, not weakening; see `../phases/phase-10/decisions.md`.
 CF-012 closed at Phase 8 wrap — behavior-preserving split of
 `internal/issues/issue.go` delivered by Phase 8 Task 4 (VAL-009 PASS):
 `create.go` 387, `get.go` 120, residual `issue.go` 192, no exported-surface or

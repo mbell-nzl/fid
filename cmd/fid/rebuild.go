@@ -26,7 +26,7 @@ func newRebuildCommand() *cobra.Command {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
-			if err := policy.RequireKnownRole(workspaceRoot, actorRole); err != nil {
+			if err := policy.Authorize(workspaceRoot, actorRole, "maintenance.rebuild"); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}

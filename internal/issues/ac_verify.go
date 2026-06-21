@@ -68,7 +68,7 @@ func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (Verify
 			strings.Join(acceptanceVerificationStatuses, ", "),
 		)
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueACVerifyAction(options.ActorRole)); err != nil {
 		return VerifyAcceptanceCriterionResult{}, err
 	}
 

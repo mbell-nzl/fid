@@ -25,13 +25,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 	if strings.TrimSpace(options.Title) == "" {
 		return CreateResult{}, fmt.Errorf("create issue: title is required")
 	}
-	if err := policy.RequireKnownRole(options.WorkspaceRoot, options.ActorRole); err != nil {
-		return CreateResult{}, err
-	}
 
 	kind := strings.TrimSpace(options.Kind)
 	if !supportedIssueKind(kind) {
 		return CreateResult{}, &UnsupportedKindError{Kind: kind}
+	}
+	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueCreateAction(kind)); err != nil {
+		return CreateResult{}, err
 	}
 	parentID := trimmedOptionalString(options.ParentID)
 	specMDPath := trimmedOptionalString(options.SpecMDPath)

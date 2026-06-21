@@ -651,6 +651,14 @@ func renderIssueError(writer io.Writer, err error) error {
 		return writeIssueLine(writer, "  known roles: %s\n", joinCommaSeparated(unknownRoleErr.KnownRoles))
 	}
 
+	var permissionDeniedErr *policy.PermissionDeniedError
+	if errors.As(err, &permissionDeniedErr) {
+		if err := writeIssueLine(writer, "error: %s\n", permissionDeniedErr.Error()); err != nil {
+			return err
+		}
+		return writeIssueLine(writer, "  check `fid policy show` for permitted role/action combinations\n")
+	}
+
 	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
 		return writeIssueLine(writer, format, args...)
 	}, err, "read stopped - manual repair required")

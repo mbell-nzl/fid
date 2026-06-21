@@ -55,7 +55,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "done", "--by", "developer")
+	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "done", "--by", "tl")
 	if err == nil {
 		t.Fatal("Execute() error = nil, want invalid transition rejection")
 	}
@@ -183,4 +183,59 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 			t.Fatalf("stderr = %q, want unknown role error", stderr)
 		}
 	})
+}
+
+func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI state permissions", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	_, startStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "developer")
+	if !strings.Contains(startStderr, "transitioned "+issueID+": todo → in_progress") {
+		t.Fatalf("in_progress stderr = %q, want start confirmation", startStderr)
+	}
+
+	_, completeStderr := runFIDCommand(
+		t,
+		workspace,
+		"issue", "complete", issueID,
+		"--by", "developer",
+		"--notes-md", "project-docs/docs/phases/phase-10/tasks/task-3-done.md",
+		"--tokens", "1200",
+	)
+	if !strings.Contains(completeStderr, "completed "+issueID+" (attempt 1)") {
+		t.Fatalf("complete stderr = %q, want completion confirmation", completeStderr)
+	}
+
+	journalPath := mustJournalPath(t, workspace)
+	linesBeforeDenied := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--by", "qa_reviewer")
+	if err == nil {
+		t.Fatal("qa_reviewer dev_complete error = nil, want permission denial")
+	}
+	if stdout != "" {
+		t.Fatalf("qa_reviewer stdout = %q, want empty", stdout)
+	}
+	for _, want := range []string{
+		`error: role "qa_reviewer" not permitted for action "issue.transition.dev_complete"`,
+		"check `fid policy show` for permitted role/action combinations",
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("qa_reviewer stderr = %q, want substring %q", stderr, want)
+		}
+	}
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforeDenied {
+		t.Fatalf("journal lines after qa_reviewer denial = %d, want %d", got, linesBeforeDenied)
+	}
+
+	allowedStdout, allowedStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--by", "developer")
+	if allowedStdout != "" {
+		t.Fatalf("developer stdout = %q, want empty", allowedStdout)
+	}
+	if !strings.Contains(allowedStderr, "transitioned "+issueID+": in_progress → dev_complete") {
+		t.Fatalf("developer stderr = %q, want dev_complete confirmation", allowedStderr)
+	}
 }

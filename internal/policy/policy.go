@@ -103,7 +103,9 @@ func collectRoles(path string, roles map[string]bool) error {
 
 	scanner := bufio.NewScanner(file)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+	lineNumber := 0
 	for scanner.Scan() {
+		lineNumber++
 		line := strings.TrimSpace(scanner.Text())
 		if line == "" {
 			continue
@@ -111,18 +113,16 @@ func collectRoles(path string, roles map[string]bool) error {
 
 		var stored journal.Event
 		if err := json.Unmarshal([]byte(line), &stored); err != nil {
-			if len(roles) > 0 {
-				break
+			return &journal.CorruptJournalError{
+				File: roleJournalErrorPath(path),
+				Line: lineNumber,
+				Err:  err,
 			}
-			return fmt.Errorf("decode journal file %q: %w", path, err)
 		}
 
 		upgraded, err := journal.UpgradeToCurrent(stored)
 		if err != nil {
-			if len(roles) > 0 {
-				break
-			}
-			return fmt.Errorf("upgrade journal event %q from %q: %w", stored.EventID, path, err)
+			return fmt.Errorf("upgrade event %q from %s:%d: %w", stored.EventID, roleJournalErrorPath(path), lineNumber, err)
 		}
 
 		for _, effect := range upgraded.Effects {
@@ -150,6 +150,10 @@ func collectRoles(path string, roles map[string]bool) error {
 	}
 
 	return nil
+}
+
+func roleJournalErrorPath(path string) string {
+	return filepath.ToSlash(filepath.Join(".fid", "journal", filepath.Base(path)))
 }
 
 func activeValue(values map[string]any) bool {

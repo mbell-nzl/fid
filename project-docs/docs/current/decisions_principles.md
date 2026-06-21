@@ -32,6 +32,13 @@ explicitly decides otherwise.
 - `VAL-NNN` assertions should describe one observable. Conditional or binary
   assertions must prove both qualifying and non-qualifying states; positive-only
   evidence does not satisfy them.
+- Deterministic read ordering follows **journal append order** (`ORDER BY rowid`),
+  not `created_at`. `created_at` has second resolution, so same-second ties fall
+  back to a content hash and order nondeterministically; `rowid` is monotonic,
+  append-ordered, and rebuild-stable. Promoted at Phase 10 wrap after three
+  append-order fixes across phases (DEC-019 Phase 6, DEC-021 Phase 7, DEC-024
+  Phase 9). New read surfaces must default to append order unless a spec names a
+  different ordering.
 - Human checklist items are only for perception, product-owner judgment,
   dogfooding, tone, and flow coherence.
 - Held-out scenarios remain outside normal implementation agent context.

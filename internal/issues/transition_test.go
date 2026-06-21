@@ -192,7 +192,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "done",
-		ActorRole:     "developer",
+		ActorRole:     "tl",
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want rejection")
@@ -352,15 +352,31 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 	)
 	seedTransitionCompletionReport(t, workspace, created.ID, "TC-qa-001")
 
-	for _, toState := range []string{"in_progress", "dev_complete", "qa_review"} {
-		if _, err := Transition(TransitionOptions{
+	for _, options := range []TransitionOptions{
+		{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
-			ToState:       toState,
+			ToState:       "in_progress",
 			ActorRole:     "developer",
-		}); err != nil {
-			t.Fatalf("Transition(%s) error = %v", toState, err)
+		},
+		{
+			WorkspaceRoot: workspace,
+			MigrationsDir: testIssueMigrationsDir(t),
+			ID:            created.ID,
+			ToState:       "dev_complete",
+			ActorRole:     "developer",
+		},
+		{
+			WorkspaceRoot: workspace,
+			MigrationsDir: testIssueMigrationsDir(t),
+			ID:            created.ID,
+			ToState:       "qa_review",
+			ActorRole:     "qa_reviewer",
+		},
+	} {
+		if _, err := Transition(options); err != nil {
+			t.Fatalf("Transition(%s) error = %v", options.ToState, err)
 		}
 	}
 
@@ -467,7 +483,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "in_progress",
-		ActorRole:     "tl",
+		ActorRole:     "workflow_runner",
 	}); err != nil {
 		t.Fatalf("Transition(epic todo->in_progress) error = %v", err)
 	}
@@ -594,7 +610,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            task.ID,
 		ToState:       "cancelled",
-		ActorRole:     "developer",
+		ActorRole:     "tl",
 	}); err != nil {
 		t.Fatalf("Transition(task todo->cancelled) error = %v", err)
 	}
@@ -603,7 +619,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "developer",
+		ActorRole:     "tl",
 	}); err != nil {
 		t.Fatalf("Transition(subtask in_progress->cancelled) error = %v", err)
 	}
@@ -616,7 +632,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "developer",
+		ActorRole:     "tl",
 	})
 	if err == nil {
 		t.Fatal("Transition(cancelled->cancelled) error = nil, want rejection")

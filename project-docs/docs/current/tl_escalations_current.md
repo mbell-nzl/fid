@@ -40,10 +40,15 @@ finding:
 
 ## Open Escalations
 
-None. ESC-006 (Phase 9) resolved at Phase 9 wrap.
+None.
+
+---
 
 ## Resolved (archived in their phase `tl-escalations.md`)
 
+- ESC-007 (Phase 10 task reports had uncommitted commit-field evidence; Review 3
+  BLOCK / TRG-001) → DEC-025; reconciliation commit `eeaf9fa`; Review 3 addendum
+  verified; all nine VALs PASS at wrap.
 - ESC-006 (Phase 9 final-review blockers: benchmark gate failure + concern
   address read-back gap) → DEC-023 / DEC-024 / Task 4 fixup; QA Review 2 verified,
   all eleven VALs PASS at wrap.
