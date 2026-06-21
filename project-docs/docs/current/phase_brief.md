@@ -1,90 +1,103 @@
-# Phase Brief - Phase 10 CLOSED → Phase 11 next (v0.1d slice 2/4)
+# Phase Brief - Phase 11 PLANNED (v0.1d slice 2/4)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session. Keep under 150 lines.
->
-> **State:** Phase 10 (Permissions matrix + policy + CF-003) is **CLOSED** on
-> branch `phase-10`, 2026-06-21. **v0.1d slice 1 of 4 complete.** Phase 11
-> (Claims layer) is the next target and is **not yet planned** — no validation
-> contract or task specs exist yet. The Tech Lead plans Phase 11 next.
 
-## Phase 10 outcome (closed)
+## Phase Goal
 
-Introduced the **permissions matrix as a cross-cutting gate on every write
-command** — the first version gated by role/action, not `RequireKnownRole` alone.
-Delivered the in-code matrix (TRD §13), `policy.Authorize` + `PermissionDeniedError`,
-read-only `fid policy show` (json/toon/markdown/yaml), retrofit enforcement onto
-every existing v0.1a–c write surface, and the CF-003 corrupt-tail reconciliation.
-No schema migration.
+Phase 11 delivers the **claims layer**: issue claim acquire/renew/force/release,
+claim listing, and transition integration. Success means an agent can acquire an
+exclusive issue claim with correct TTL behavior, reject conflicts atomically,
+list live/stale claims, enter started states only while holding a live claim,
+and see the claim auto-released when leaving started work.
 
-- QA final review: **PASS for deterministic QA** (0 blocking / 0 major / 0
-  improvement). Human dogfood **4/4 PASS** (HUMAN-09a..d). **VAL-001..009 all PASS.**
-- Coverage at close: `cmd/fid` 77.8%, `internal/issues` 81.9%, `internal/journal`
-  80.3%, `internal/policy` 81.2%, `internal/workflow` 95.5% (COV-001/COV-002 met).
-- DEC-A..E (planning, human-confirmed) honoured; DEC-025 resolved ESC-007.
-- **CF-003 CLOSED** (Task 1). `03_TRD_SCHEMA.md` §13 touched (4 direct-prerequisite
-  matrix rows); all other specs verified-no-change or N/A.
-- Read-ordering rule promoted to `decisions_principles.md` (Phase 9 deep-retro item
-  discharged).
+Scope refs: PRD-CLAIM-001..008a, PRD-ERR-003, TRD-ARCH-010..011,
+`03_TRD_SCHEMA.md` section 11.1, `06_DESIGN_PLAN_CLI.md` claim commands.
+The `claims` table/triggers already exist; no schema migration is planned.
 
-Archive: `project-docs/docs/phases/phase-10/` (decisions, progress, tl-escalations,
-triage-log, qa/, tasks/).
+## Status
 
-## Phase 11 goal (to plan)
+**Planned, awaiting human review.** Current branch: `main`. Phase 11 validation
+contract and task specs are drafted under
+`project-docs/docs/phases/phase-11/`. Next action: human reviews the ordered task
+list and contract, then QA Lead creates the QA plan before Developer work starts.
 
-**Claims layer**, all gated by the Phase 10 matrix (roadmap §v0.1d slice 2):
+## Task Index
 
-- `fid issue claim` — atomic acquire via `INSERT ... ON CONFLICT DO NOTHING`,
-  default 30m TTL, `--ttl`, `--renew` for the holder, `--force` gated by
-  `issue.claim.force_acquire`, `--note`.
-- `fid issue unclaim` — release caller's current claim (`--by` required).
-- `fid claim list` — live claims; `--stale` for past-TTL; `--by`; all four formats.
-- Claim–transition integration — started-category transitions require a live caller
-  claim; transitions out auto-release.
-- Human claims — `--by human` as a do-not-advance signal.
+| Task | Title | Status | Dependencies |
+|---|---|---|---|
+| 1 | Claim matrix rows and domain claim semantics | Pending | None |
+| 2 | `fid issue claim` and `fid issue unclaim` | Pending | Task 1 |
+| 3 | `fid claim list` | Pending | Tasks 1-2 |
+| 4 | Claim and transition integration | Pending | Tasks 1-2 |
 
-Scope refs: PRD-CLAIM-001–008a, TRD-ARCH-011. The `claims` table + triggers already
-exist (v0.1a schema-widening); no schema migration expected.
+## Validation Contract
 
-**Exit (roadmap):** an agent can claim/renew/force/release with correct TTL and
-atomic conflict rejection, list live and stale claims, drive a started-category
-transition only with a live claim, and see the claim auto-released on the way out.
+Full contract:
+`../phases/phase-11/qa/validation-contract.md`.
 
-## Planning inputs the Phase 11 Tech Lead must carry
+| VAL ID | Source | Owning Task/Window | Validator | Status |
+|---|---|---|---|---|
+| VAL-001 | TRD-ARCH-010; schema section 13 | task-1 | QA Lead | Draft |
+| VAL-002 | PRD-CLAIM-001 | tasks-1-2 | QA Lead | Draft |
+| VAL-003 | PRD-CLAIM-002; PRD-ERR-003 | tasks-1-2 | QA Lead | Draft |
+| VAL-004 | PRD-CLAIM-003 | tasks-1-2 | QA Lead | Draft |
+| VAL-005 | PRD-CLAIM-004 | tasks-1-2 | QA Lead | Draft |
+| VAL-006 | PRD-CLAIM-008a; CF-011 | tasks-1-2 | QA Lead | Draft |
+| VAL-007 | roadmap issue unclaim | task-2 | QA Lead | Draft |
+| VAL-008 | PRD-CLAIM-007 | task-3 | QA Lead | Draft |
+| VAL-009 | PRD-CLAIM-007; read-ordering principle | task-3 | QA Lead | Draft |
+| VAL-010 | PRD-CLAIM-008 | tasks-2-4 | QA Lead | Draft |
+| VAL-011 | PRD-CLAIM-005 | task-4 | QA Lead | Draft |
+| VAL-012 | PRD-CLAIM-006 | task-4 | QA Lead | Draft |
+| VAL-013 | TRD-ARCH-011 | task-1 | QA Lead | Draft |
+| VAL-014 | Quality plan human dogfood | phase-end | Human | Draft |
 
-- **New matrix actions.** Phase 11 appends its `issue.claim.*` /
-  `issue.claim.force_acquire` action rows to the in-code matrix (DEC-B: matrix lists
-  only implemented write actions and grows per phase) and to `03_TRD_SCHEMA.md` §13;
-  TRD-ARCH-010 completeness is tested against the implemented set.
-- **Standing QA-plan checks** (carry forward): show-vs-enforce cross-surface parity
-  for the new claim actions, and validate-before-append on every claim rejection
-  (claim conflict, force denied, missing/unknown role) — non-zero exit, role/action
-  named, zero new journal lines/rows.
-- **Append-order read ordering** is now a standing principle
-  (`decisions_principles.md`): `fid claim list` ordering defaults to journal append
-  order (`rowid`) unless the spec names another order.
-- **CF-011 discipline.** Claim renewal (PRD-CLAIM-008a) projects to `activity_log`;
-  follow the existing per-command discipline. CF-011's broader reconciliation stays
-  v0.1e.
-- **Commit-field hygiene (Phase 10 retro).** Pair each task's completion-report
-  commit-hash fill with an immediate reconciliation commit (or a deferred-hash
-  placeholder reconciled in the task commit) so commit-field drift does not resurface
-  as a phase-end blocker (DEC-025 recurrence note).
+## QA Artifacts
 
-## Carry-Forward Register (open)
-
-| ID | Item | Disposition |
+| Artifact | Path | Status |
 |---|---|---|
-| CF-008 | Resolution type / cancellation reason (DEC-015) | v0.2 (product). |
-| CF-011 | Consistent `activity_log` timeline population (DEC-020) | v0.1e. v0.1d writes that project to `activity_log` (claim renewal in Phase 11, link removal, label changes) follow the existing per-command discipline; CF-011's reconciliation stays v0.1e. |
-| CF-013 | `complete.go` `Complete` orchestration size | v0.1e (with `fid dev finish`/`block`). |
+| Validation contract | `../phases/phase-11/qa/validation-contract.md` | Draft |
+| QA plan | `../phases/phase-11/qa/qa-plan.md` | Missing |
+| Mid-phase reviews | `../phases/phase-11/qa/review-M.md` | Pending; recommend review after each task |
+| Final review | `../phases/phase-11/qa/final-review.md` | Pending |
+| Human checklist | `../phases/phase-11/qa/human-checklist.md` | Pending |
 
-CF-003 closed at Phase 10 wrap (Task 1, VAL-001 PASS).
+## Active Constraints
 
-## Next Checkpoint
+- All claim writes are gated by the Phase 10 matrix; Task 1 appends only the
+  implemented claim action rows to the in-code matrix.
+- `fid claim list --by` is a read filter, not an actor flag (DEC-027).
+- Claim renewal must project to `activity_log` now; broader CF-011 remains v0.1e.
+- `fid claim list` default ordering uses `claims.rowid` unless a spec changes.
+- Each task must reconcile completion-report commit hash/subject in the task
+  commit or an immediate `docs(task): reconcile ...` commit.
 
-Tech Lead plans Phase 11 (Claims): read the roadmap §v0.1d Phase 11 entry and
-relevant PRD-CLAIM/TRD-ARCH-011 sections, draft the Phase 11 validation contract
-(VAL-NNN) and ordered task specs under
-`project-docs/docs/phases/phase-11/`, and present the contract + task list to the
-human before the dev/QA loop runs.
+## Interfaces / Subsystems In Scope
+
+- `internal/claims/` - new domain package for claim semantics.
+- `internal/policy/` - claim action rows in the in-code matrix.
+- `cmd/fid/issue.go` - `issue claim` and `issue unclaim`.
+- `cmd/fid/claim.go` - root `claim list`.
+- `internal/issues/transition.go` - live-claim gate and auto-release.
+
+## Known Risks
+
+- **Error precedence.** If claim-gate and workflow-rule failures conflict in
+  transition tests, Developer must escalate before freezing public behavior.
+- **Validate-before-append.** Every reject path must prove zero new journal
+  lines/rows; QA plan should make this explicit.
+- **Activity-log scope.** Renewal is in scope per PRD-CLAIM-008a; broad CF-011
+  reconciliation stays deferred.
+
+## Success / Exit Criteria
+
+- [ ] All four tasks complete with required gates recorded.
+- [ ] VAL-001..014 have PASS or Tech Lead-dispositioned outcomes.
+- [ ] Final QA review has no unresolved blocking findings.
+- [ ] Human dogfood checklist is complete.
+- [ ] Phase sign-off and spec sync verdicts are recorded.
+
+## Next Planning Checkpoint
+
+Phase 12 plans requirements sync plus links after Phase 11 wrap.
