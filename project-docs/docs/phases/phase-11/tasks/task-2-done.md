@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending until task commit is created.
+- `fbb8c2f`
 
 ## Commit subject
 
-- Pending until task commit is created.
+- `feat(issue): add claim and unclaim commands`
