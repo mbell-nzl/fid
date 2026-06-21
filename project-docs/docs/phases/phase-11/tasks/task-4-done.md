@@ -67,8 +67,8 @@
 
 ## Commit hash
 
-- TBC after commit.
+- `75826699ce423fe3bd5dc99ce5cd0164aeb928fd` (`7582669`)
 
 ## Commit subject
 
-- TBC after commit.
+- `feat(issue): enforce claim-gated started transitions`
