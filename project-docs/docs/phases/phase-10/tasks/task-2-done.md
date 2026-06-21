@@ -60,8 +60,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `6f4ce6b03b823b40f7f3b4ea7d6c0f3a59167df3`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(policy): add permissions matrix and show command`

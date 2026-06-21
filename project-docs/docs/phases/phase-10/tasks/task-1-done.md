@@ -100,8 +100,8 @@
 
 ## Commit hash
 
-- PENDING
+- `716329cc4cbeda174ce97dcb4e6f3192720dc3b9`
 
 ## Commit subject
 
-- PENDING
+- `fix(policy): report corrupt tails during role discovery`

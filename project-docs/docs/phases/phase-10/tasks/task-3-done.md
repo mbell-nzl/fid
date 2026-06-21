@@ -68,8 +68,8 @@
 
 ## Commit hash
 
-- Pending commit; update after `git rev-parse HEAD`.
+- `5293fd2674b0afdc902feb2f7079d12b45e82551`
 
 ## Commit subject
 
-- Pending commit; update after `git log -1 --format=%s`.
+- `feat(policy): enforce write permissions on commands`
