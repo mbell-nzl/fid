@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending reconciliation after task commit.
+- `47c0f86`
 
 ## Commit subject
 
-- Pending reconciliation after task commit.
+- `feat(claims): add claim list command`
