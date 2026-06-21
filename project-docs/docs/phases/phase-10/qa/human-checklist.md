@@ -17,8 +17,8 @@ these rows ask for human readability and actionability judgment only.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-09a | VAL-009 | Run `fid policy show --format markdown` or the preferred human-readable format and inspect the role x action matrix `(human)`. | You can find a specific action and compare allowed roles without ambiguity. | | |
-| HUMAN-09b | VAL-009 | Run `fid policy show --format json` and inspect action names plus role booleans for scanability `(human)`. | The JSON is understandable enough for an operator or agent to locate an action and read true/false role cells. | | |
+| HUMAN-09a | VAL-009 | Run `fid policy show --format markdown` or the preferred human-readable format and inspect the role x action matrix `(human)`. | You can find a specific action and compare allowed roles without ambiguity. | PASS | n/a |
+| HUMAN-09b | VAL-009 | Run `fid policy show --format json` and inspect action names plus role booleans for scanability `(human)`. | The JSON is understandable enough for an operator or agent to locate an action and read true/false role cells. | PASS | n/a |
 
 ## Denial Error Dogfood
 
@@ -27,22 +27,22 @@ Use a denied write in the same real `.fid/` workspace, for example
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-09c | VAL-009 | Trigger a permission-denied write and judge whether the error names the role, names the action, and says the role is not permitted `(human)`. | The message clearly identifies the denied role and action and includes not-permitted language. | | |
-| HUMAN-09d | VAL-009 | Judge whether the denied-write error gives enough signal to choose a next step, such as using a permitted role, checking `fid policy show`, or escalating a permission mismatch `(human)`. | The message is actionable enough that the operator knows what to try or where to look next. | | |
+| HUMAN-09c | VAL-009 | Trigger a permission-denied write and judge whether the error names the role, names the action, and says the role is not permitted `(human)`. | The message clearly identifies the denied role and action and includes not-permitted language. | PASS | n/a |
+| HUMAN-09d | VAL-009 | Judge whether the denied-write error gives enough signal to choose a next step, such as using a permitted role, checking `fid policy show`, or escalating a permission mismatch `(human)`. | The message is actionable enough that the operator knows what to try or where to look next. | PASS | n/a |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Policy Matrix Dogfood | 2 | | | | 2 |
-| Denial Error Dogfood | 2 | | | | 2 |
-| **Total** | 4 | | | | 4 |
+| Policy Matrix Dogfood | 2 | 2 | 0 | 0 | 0 |
+| Denial Error Dogfood | 2 | 2 | 0 | 0 | 0 |
+| **Total** | 4 | 4 | 0 | 0 | 0 |
 
 | | |
 |---|---|
-| **Overall result** | |
-| **Date completed** | |
-| **Notes** | |
+| **Overall result** | PASS |
+| **Date completed** | 2026-06-21 |
+| **Notes** | n/a |
 
 <!--
 Outcome values: pass, fail, partial, blank.
