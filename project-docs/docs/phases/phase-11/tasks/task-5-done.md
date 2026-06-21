@@ -74,8 +74,8 @@
 
 ## Commit hash
 
-- Pending post-commit reconciliation.
+- `de6a73c90c8051624ae8f69ad1d7f88268a34369` (`de6a73c`)
 
 ## Commit subject
 
-- Pending post-commit reconciliation.
+- `fix(claims): refresh stale projections under lock`
