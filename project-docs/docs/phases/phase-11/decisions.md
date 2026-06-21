@@ -5,6 +5,27 @@
 
 ## Decisions
 
+### DEC-028: Claim writes must refresh stale projections without nested locks
+
+- **Date:** 2026-06-21
+- **Context:** ESC-008 / TRG-001 found that `internal/claims.Acquire`,
+  `Renew`, and `Release` call `journal.EnsureProjectionFresh` from inside their
+  claim write-lock callback. When the journal is ahead of SQLite, that helper
+  can catch up or rebuild by trying to acquire `.fid/write.lock` again, which
+  produced nested-lock failures in Task 4 fixture work.
+- **Decision:** The current lock ordering is not acceptable for Phase 11 final
+  QA. Add do-now Task 5 before final review. Claim write paths must validate
+  against a fresh projection while avoiding nested acquisition of the same
+  checkout-scoped write lock. A lock-aware journal helper or equivalent narrow
+  refactor is acceptable; public claim CLI flags/output and claim semantics must
+  not change.
+- **Consequences:** Validation contract gains VAL-015 and QA plan gains
+  corresponding evidence. QA review may resume after Task 5 is complete and
+  reviewed. No schema migration or spec change is planned because this enforces
+  the existing TRD write-path/concurrency contract.
+- **Refs:** ESC-008; phase-11/task-5; PRD-NFR-008; `02_TRD.md` §4.3 and §4.9;
+  ADR-0001; VAL-015.
+
 ### DEC-027: `fid claim list --by` is a read filter, not an actor flag
 
 - **Date:** 2026-06-21
