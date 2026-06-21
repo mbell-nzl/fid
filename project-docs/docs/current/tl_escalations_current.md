@@ -40,7 +40,38 @@ finding:
 
 ## Open Escalations
 
-None. ESC-006 (Phase 9) resolved at Phase 9 wrap.
+### ESC-007: Phase 10 task reports have uncommitted commit-field evidence
+
+- **Raised:** 2026-06-21
+- **By:** qa-reviewer / Phase 10 Task 3 review
+- **Trigger:** QA Reviewer trigger 7 - quality-gate anomaly not anticipated by
+  the QA plan.
+- **Context:** Task 3's reviewed completion report now lists commit
+  `5293fd2674b0afdc902feb2f7079d12b45e82551`, but that update is only in the
+  working tree. The committed Task 3 report still says "Pending commit"; `git
+  diff --name-status` also shows Task 1 and Task 2 reports with the same
+  commit-field-only drift. This conflicts with the Definition of Done that
+  completion reports are committed by the task author or an immediate docs
+  commit.
+- **Question / proposed direction:** Phase runner should commit or otherwise
+  reconcile the task report commit-field updates before phase-end QA treats the
+  task evidence as closed.
+- **Resolution (DEC-025, 2026-06-21):** TL verified the three working-tree commit
+  fields are accurate (task-1 `716329c`, task-2 `6f4ce6b`, task-3 `5293fd2` — each
+  matches git history by short hash and subject); no report content change needed.
+  Do-now fix is the §10-sanctioned single follow-up `docs(task): reconcile phase-10
+  task report commit fields` commit staging `task-1-done.md`, `task-2-done.md`,
+  `task-3-done.md`. This is a mechanical git action for the Phase Runner / human
+  (TL does not run git). On that commit, QA re-verifies Review 3's blocking finding
+  and VAL-004..008 close.
+- **Links:** `project-docs/docs/phases/phase-10/tasks/task-3-done.md`;
+  `project-docs/docs/phases/phase-10/qa/review-3.md`; `project-docs/specs/08_QUALITY_PLAN.md`
+  §10; `project-docs/docs/phases/phase-10/decisions.md` DEC-025.
+- **Status:** Resolved (DEC-025) — direction decided + content verified; awaiting
+  the mechanical reconciliation commit, then QA re-verify. Archive to phase
+  `tl-escalations.md` at wrap once the commit lands.
+
+---
 
 ## Resolved (archived in their phase `tl-escalations.md`)
 

@@ -3,6 +3,37 @@
 > In-phase decisions (DEC-NNN / DEC-A..E). Per-doc spec-sync verdicts and the
 > full decision history are finalized at phase wrap. Newest at top.
 
+## DEC-025 — ESC-007 resolution: reconcile uncommitted task-report commit fields (2026-06-21)
+
+- **Context.** QA Review 3 raised ESC-007 (TRG-001 BLOCK): the Task 1/2/3
+  completion reports carry filled commit-hash/subject fields in the working tree
+  but are **uncommitted**, so the committed reports still read "Pending commit".
+  `08_QUALITY_PLAN.md` §10 requires the completion report to be committed by its
+  author in the task commit or an immediately-following `docs(task): ...` commit;
+  a task is not done while its report is uncommitted.
+- **Verification (TL).** The working-tree commit fields are **accurate** — each
+  matches git history by short hash and subject:
+  - `task-1-done.md` → `716329c` `fix(policy): report corrupt tails during role discovery`
+  - `task-2-done.md` → `6f4ce6b` `feat(policy): add permissions matrix and show command`
+  - `task-3-done.md` → `5293fd2` `feat(policy): enforce write permissions on commands`
+  No report content changes are needed; the only defect is that the three docs
+  are unstaged/uncommitted.
+- **Decision (do-now).** Reconcile via the §10-sanctioned alternative: a single
+  immediately-following `docs(task): reconcile phase-10 task report commit fields`
+  commit staging `task-1-done.md`, `task-2-done.md`, and `task-3-done.md`. This is
+  a mechanical git action; the Phase Runner (or human) executes it — the Tech Lead
+  does not run git. Once it lands, QA re-verifies Review 3's single blocking
+  finding (committed report no longer says "Pending commit"); VAL-004..008 then
+  close on evidence already gathered in Review 3.
+- **Spec impact.** None. §10 already prescribes the committed-report rule; this is
+  a compliance gap, not a spec change. No spec edits.
+- **Recurrence note (for wrap deep-retro).** The drift recurred across all three
+  tasks: the loop fills the commit-hash field in the working tree but skipped the
+  follow-up `docs(task):` reconciliation commit each time. Flag at wrap whether the
+  Phase Runner should always pair "fill commit hash" with an immediate
+  reconciliation commit (or adopt a deferred-hash placeholder convention inside the
+  task commit), so this stops surfacing as a phase-end blocker.
+
 ## Task 3 execution note (2026-06-21)
 
 - **DEC-E executed as planned for permission retrofit fixtures.** Existing tests
