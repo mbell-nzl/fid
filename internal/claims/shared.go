@@ -158,3 +158,7 @@ func claimNotHeldError(issueID, actorRole string, current *currentClaim) error {
 func closeClaimsConn(conn *sql.DB) {
 	_ = conn.Close()
 }
+
+func closeClaimsRows(rows *sql.Rows) {
+	_ = rows.Close()
+}
