@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,7 +15,6 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -940,18 +940,26 @@ func newClaimsWorkspace(t *testing.T) string {
 	return workspace
 }
 
-func createClaimIssue(t *testing.T, workspace, title string) issues.CreateResult {
+type claimIssueFixture struct {
+	ID string
+}
+
+func createClaimIssue(t *testing.T, workspace, title string) claimIssueFixture {
 	t.Helper()
 
-	created, err := issues.Create(issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testClaimsMigrationsDir(t),
-		Kind:          "task",
-		Title:         title,
-		ActorRole:     "developer",
-	})
+	conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeClaimsDB(t, conn)
+
+	created := claimIssueFixture{
+		ID: fmt.Sprintf("FID-claim-%d", time.Now().UTC().UnixNano()),
+	}
+	timestamp := time.Now().UTC().Format(time.RFC3339)
+	_, err := conn.Exec(`
+		INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
+		VALUES (?, 'task', ?, 'todo', 'task-default', 'developer', ?, ?)
+	`, created.ID, title, timestamp, timestamp)
 	if err != nil {
-		t.Fatalf("Create() error = %v", err)
+		t.Fatalf("insert issue fixture: %v", err)
 	}
 
 	return created

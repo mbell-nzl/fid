@@ -1,10 +1,14 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -14,6 +18,7 @@ func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI transition", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
+	claimIssueForTransitionCLI(t, workspace, issueID, "developer")
 
 	_, transitionStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "developer")
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → in_progress") {
@@ -118,6 +123,7 @@ func TestIssueTransitionRendersRuleFailures(t *testing.T) {
 		},
 	})
 
+	claimIssueForTransitionCLI(t, workspace, issueID, "developer")
 	runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "developer")
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--by", "developer")
@@ -185,12 +191,100 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 	})
 }
 
+func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
+	tests := []struct {
+		name           string
+		claimRole      string
+		transitionRole string
+		expireClaim    bool
+		wantParts      []string
+	}{
+		{
+			name:           "no claim",
+			transitionRole: "developer",
+			wantParts:      []string{"error: issue", "has no live claim held by \"developer\""},
+		},
+		{
+			name:           "wrong holder",
+			claimRole:      "qa_reviewer",
+			transitionRole: "developer",
+			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"qa_reviewer\""},
+		},
+		{
+			name:           "stale caller claim",
+			claimRole:      "developer",
+			transitionRole: "developer",
+			expireClaim:    true,
+			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"developer\""},
+		},
+		{
+			name:           "human holder blocks developer",
+			claimRole:      "human",
+			transitionRole: "developer",
+			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"human\""},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			runInitCommand(t, workspace, "init")
+
+			_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", tt.name, "--by", "developer")
+			issueID := parseCreatedIssueID(t, createStderr)
+
+			if tt.claimRole != "" {
+				claimIssueForTransitionCLI(t, workspace, issueID, tt.claimRole)
+			}
+			if tt.expireClaim {
+				if got := len(mustReadIssueClaimsSection(t, workspace, issueID)); got != 1 {
+					t.Fatalf("claims before expiry = %d, want 1", got)
+				}
+				expireTransitionClaimCLI(t, workspace, issueID, 2*time.Hour)
+			}
+
+			beforeStdout, beforeStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+			if beforeStderr != "" {
+				t.Fatalf("issue get before stderr = %q, want empty", beforeStderr)
+			}
+
+			journalPath := mustJournalPath(t, workspace)
+			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", tt.transitionRole)
+			if err == nil {
+				t.Fatal("Execute() error = nil, want claim-gate rejection")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			for _, want := range tt.wantParts {
+				if !strings.Contains(stderr, want) {
+					t.Fatalf("stderr = %q, want substring %q", stderr, want)
+				}
+			}
+
+			afterStdout, afterStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+			if afterStderr != "" {
+				t.Fatalf("issue get after stderr = %q, want empty", afterStderr)
+			}
+			if afterStdout != beforeStdout {
+				t.Fatalf("issue JSON after rejected transition = %q, want %q", afterStdout, beforeStdout)
+			}
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
+				t.Fatalf("journal lines after rejected transition = %d, want %d", got, linesBefore)
+			}
+		})
+	}
+}
+
 func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI state permissions", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
+	claimIssueForTransitionCLI(t, workspace, issueID, "developer")
 
 	_, startStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "developer")
 	if !strings.Contains(startStderr, "transitioned "+issueID+": todo → in_progress") {
@@ -237,5 +331,87 @@ func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 	}
 	if !strings.Contains(allowedStderr, "transitioned "+issueID+": in_progress → dev_complete") {
 		t.Fatalf("developer stderr = %q, want dev_complete confirmation", allowedStderr)
+	}
+}
+
+func TestIssueTransitionReleasesCallerClaimWhenLeavingStartedState(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	_, parentStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI parent", "--by", "developer")
+	parentID := parseCreatedIssueID(t, parentStderr)
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "CLI release claim", "--parent", parentID, "--by", "human")
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	claimIssueForTransitionCLI(t, workspace, issueID, "human")
+	_, startStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "human")
+	if !strings.Contains(startStderr, "transitioned "+issueID+": todo → in_progress") {
+		t.Fatalf("start stderr = %q, want start confirmation", startStderr)
+	}
+
+	_, doneStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "done", "--by", "human")
+	if !strings.Contains(doneStderr, "transitioned "+issueID+": in_progress → done") {
+		t.Fatalf("done stderr = %q, want done confirmation", doneStderr)
+	}
+
+	claims := mustReadIssueClaimsSection(t, workspace, issueID)
+	if len(claims) != 0 {
+		t.Fatalf("claims after started exit = %#v, want empty", claims)
+	}
+}
+
+func claimIssueForTransitionCLI(t *testing.T, workspace, issueID, actorRole string) {
+	t.Helper()
+
+	appendCommandIssueEvent(t, workspace, journal.Event{
+		EventSchema: journal.CurrentEventSchema,
+		EventType:   "issue.claim.seeded",
+		Actor: journal.Actor{
+			Role: actorRole,
+		},
+		Command: journal.Command{
+			Argv:       []string{"fid", "maintenance", "seed"},
+			CWD:        ".",
+			FIDVersion: "0.1.0",
+		},
+		Effects: []journal.Effect{{
+			Op:    "insert",
+			Table: "claims",
+			PK: map[string]any{
+				"ref_type": "issue",
+				"ref_id":   issueID,
+			},
+			Values: map[string]any{
+				"claimed_by":  actorRole,
+				"claimed_at":  time.Now().UTC().Format(time.RFC3339),
+				"ttl_seconds": 1800,
+			},
+		}},
+	})
+}
+
+func expireTransitionClaimCLI(t *testing.T, workspace, issueID string, age time.Duration) {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open db: %v", err)
+	}
+	defer closeTransitionCommandDB(t, conn)
+
+	staleClaimedAt := time.Now().UTC().Add(-age).Format(time.RFC3339)
+	if _, err := conn.Exec(`
+		UPDATE claims
+		SET claimed_at = ?
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, staleClaimedAt, issueID); err != nil {
+		t.Fatalf("expire claim for %s: %v", issueID, err)
+	}
+}
+
+func closeTransitionCommandDB(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	if err := conn.Close(); err != nil {
+		t.Fatalf("close db: %v", err)
 	}
 }

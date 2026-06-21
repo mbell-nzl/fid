@@ -72,12 +72,9 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 	if err := assertIssueExists(conn, options.IssueID); err != nil {
 		return journal.Event{}, ReleaseResult{}, err
 	}
-	current, err := loadCurrentClaim(conn, options.IssueID)
+	releaseEffect, err := BuildIssueReleaseEffect(conn, options.IssueID, options.ActorRole)
 	if err != nil {
 		return journal.Event{}, ReleaseResult{}, err
-	}
-	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != options.ActorRole {
-		return journal.Event{}, ReleaseResult{}, claimNotHeldError(options.IssueID, options.ActorRole, current)
 	}
 
 	event, err := journal.PrepareEvent(lock, journal.Event{
@@ -96,12 +93,42 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 		return journal.Event{}, ReleaseResult{}, err
 	}
 
-	event.Effects = []journal.Effect{{
+	event.Effects = []journal.Effect{releaseEffect}
+
+	return event, ReleaseResult{
+		RefType:    "issue",
+		RefID:      options.IssueID,
+		ReleasedBy: options.ActorRole,
+	}, nil
+}
+
+func BuildIssueReleaseEffect(conn *sql.DB, issueID, actorRole string) (journal.Effect, error) {
+	current, err := requireLiveIssueClaimHeld(conn, issueID, actorRole)
+	if err != nil {
+		return journal.Effect{}, err
+	}
+	return buildIssueReleaseEffect(issueID, current), nil
+}
+
+func MaybeBuildIssueReleaseEffect(conn *sql.DB, issueID, actorRole string) (*journal.Effect, error) {
+	current, err := loadCurrentClaim(conn, issueID)
+	if err != nil {
+		return nil, err
+	}
+	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != actorRole {
+		return nil, nil
+	}
+	effect := buildIssueReleaseEffect(issueID, current)
+	return &effect, nil
+}
+
+func buildIssueReleaseEffect(issueID string, current *currentClaim) journal.Effect {
+	return journal.Effect{
 		Op:    "delete",
 		Table: "claims",
 		PK: map[string]any{
 			"ref_type": "issue",
-			"ref_id":   options.IssueID,
+			"ref_id":   issueID,
 		},
 		Prior: map[string]any{
 			"claimed_by":  current.ClaimedBy,
@@ -115,13 +142,7 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 			"ttl_seconds": current.TTLSeconds,
 			"note":        dereferenceString(current.Note),
 		},
-	}}
-
-	return event, ReleaseResult{
-		RefType:    "issue",
-		RefID:      options.IssueID,
-		ReleasedBy: options.ActorRole,
-	}, nil
+	}
 }
 
 func issueClaimReleaseArgv(options ReleaseOptions) []string {

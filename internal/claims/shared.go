@@ -12,6 +12,22 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+func RequireLiveIssueClaimHeld(conn *sql.DB, issueID, actorRole string) error {
+	_, err := requireLiveIssueClaimHeld(conn, issueID, actorRole)
+	return err
+}
+
+func requireLiveIssueClaimHeld(conn *sql.DB, issueID, actorRole string) (*currentClaim, error) {
+	current, err := loadCurrentClaim(conn, issueID)
+	if err != nil {
+		return nil, err
+	}
+	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != actorRole {
+		return nil, claimNotHeldError(issueID, actorRole, current)
+	}
+	return current, nil
+}
+
 func nextClaimTime(currentClaimedAt, now time.Time) time.Time {
 	candidate := now.UTC()
 	if candidate.Format(time.RFC3339) <= currentClaimedAt.UTC().Format(time.RFC3339) {
