@@ -26,15 +26,16 @@ func Renew(options RenewOptions) (Claim, error) {
 	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueRenew); err != nil {
 		return Claim{}, err
 	}
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
-		return Claim{}, err
-	}
 
 	var result Claim
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(issueClaimRenewArgv(options), " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
+		if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+			return err
+		}
+
 		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
 		if err != nil {
 			return err

@@ -26,15 +26,16 @@ func Acquire(options AcquireOptions) (Claim, error) {
 	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, acquireAction(options)); err != nil {
 		return Claim{}, err
 	}
-	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
-		return Claim{}, err
-	}
 
 	var result Claim
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(issueClaimArgv(options), " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
+		if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+			return err
+		}
+
 		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
 		if err != nil {
 			return err
@@ -135,6 +136,11 @@ func buildAcquireEvent(lock *journal.WriteLock, conn *sql.DB, options AcquireOpt
 			Values: values,
 		}}
 		return event, claim, nil
+	}
+
+	claim.Previous = &ClaimPrevious{
+		ClaimedBy: current.ClaimedBy,
+		ExpiresAt: current.expiresAt().Format(time.RFC3339),
 	}
 
 	activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {

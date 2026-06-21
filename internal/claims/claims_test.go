@@ -104,6 +104,127 @@ func TestAcquireCreatesLiveIssueClaimWithDefaultTTL(t *testing.T) {
 	}
 }
 
+func TestClaimErrorsFormatAndValidateRequiredOptions(t *testing.T) {
+	t.Parallel()
+
+	if got := (*LiveClaimConflictError)(nil).Error(); got != "<nil>" {
+		t.Fatalf("(*LiveClaimConflictError)(nil).Error() = %q, want <nil>", got)
+	}
+	if got := (&LiveClaimConflictError{
+		RefID:     "FID-123",
+		ClaimedBy: "developer",
+		ExpiresAt: "2026-06-21T10:00:00Z",
+	}).Error(); got != `issue "FID-123" already claimed by "developer" until 2026-06-21T10:00:00Z` {
+		t.Fatalf("LiveClaimConflictError.Error() = %q, want formatted conflict", got)
+	}
+
+	if got := (*ClaimNotHeldError)(nil).Error(); got != "<nil>" {
+		t.Fatalf("(*ClaimNotHeldError)(nil).Error() = %q, want <nil>", got)
+	}
+	if got := (&ClaimNotHeldError{
+		RefID:       "FID-456",
+		RequestedBy: "developer",
+	}).Error(); got != `issue "FID-456" has no live claim held by "developer"` {
+		t.Fatalf("ClaimNotHeldError(no holder).Error() = %q, want no-holder message", got)
+	}
+	if got := (&ClaimNotHeldError{
+		RefID:       "FID-456",
+		RequestedBy: "developer",
+		ClaimedBy:   "qa_reviewer",
+		ExpiresAt:   "2026-06-21T10:05:00Z",
+	}).Error(); got != `issue "FID-456" live claim not held by "developer"; held by "qa_reviewer" until 2026-06-21T10:05:00Z` {
+		t.Fatalf("ClaimNotHeldError(holder).Error() = %q, want held-by message", got)
+	}
+
+	tests := []struct {
+		name    string
+		err     error
+		wantErr string
+	}{
+		{
+			name: "acquire workspace",
+			err: func() error {
+				_, err := Acquire(AcquireOptions{})
+				return err
+			}(),
+			wantErr: "acquire claim: workspace root is required",
+		},
+		{
+			name: "acquire migrations",
+			err: func() error {
+				_, err := Acquire(AcquireOptions{WorkspaceRoot: "/tmp"})
+				return err
+			}(),
+			wantErr: "acquire claim: migrations dir is required",
+		},
+		{
+			name: "acquire issue id",
+			err: func() error {
+				_, err := Acquire(AcquireOptions{WorkspaceRoot: "/tmp", MigrationsDir: "/tmp"})
+				return err
+			}(),
+			wantErr: "acquire claim: issue id is required",
+		},
+		{
+			name: "renew workspace",
+			err: func() error {
+				_, err := Renew(RenewOptions{})
+				return err
+			}(),
+			wantErr: "renew claim: workspace root is required",
+		},
+		{
+			name: "renew migrations",
+			err: func() error {
+				_, err := Renew(RenewOptions{WorkspaceRoot: "/tmp"})
+				return err
+			}(),
+			wantErr: "renew claim: migrations dir is required",
+		},
+		{
+			name: "renew issue id",
+			err: func() error {
+				_, err := Renew(RenewOptions{WorkspaceRoot: "/tmp", MigrationsDir: "/tmp"})
+				return err
+			}(),
+			wantErr: "renew claim: issue id is required",
+		},
+		{
+			name: "release workspace",
+			err: func() error {
+				_, err := Release(ReleaseOptions{})
+				return err
+			}(),
+			wantErr: "release claim: workspace root is required",
+		},
+		{
+			name: "release migrations",
+			err: func() error {
+				_, err := Release(ReleaseOptions{WorkspaceRoot: "/tmp"})
+				return err
+			}(),
+			wantErr: "release claim: migrations dir is required",
+		},
+		{
+			name: "release issue id",
+			err: func() error {
+				_, err := Release(ReleaseOptions{WorkspaceRoot: "/tmp", MigrationsDir: "/tmp"})
+				return err
+			}(),
+			wantErr: "release claim: issue id is required",
+		},
+	}
+
+	for _, tt := range tests {
+		if tt.err == nil {
+			t.Fatalf("%s: error = nil, want %q", tt.name, tt.wantErr)
+		}
+		if tt.err.Error() != tt.wantErr {
+			t.Fatalf("%s: error = %q, want %q", tt.name, tt.err.Error(), tt.wantErr)
+		}
+	}
+}
+
 func TestAcquireSupportsCustomTTLAndNote(t *testing.T) {
 	t.Parallel()
 
@@ -592,6 +713,115 @@ func TestRenewRejectsNonHolderBeforeAppend(t *testing.T) {
 
 	if got := countClaimsJournalLines(t, journalPath); got != linesBefore {
 		t.Fatalf("journal lines after rejected renew = %d, want unchanged %d", got, linesBefore)
+	}
+}
+
+func TestReleaseDeletesHolderClaim(t *testing.T) {
+	t.Parallel()
+
+	workspace := newClaimsWorkspace(t)
+	created := createClaimIssue(t, workspace, "Release claim target")
+
+	_, err := Acquire(AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Acquire(initial) error = %v", err)
+	}
+
+	journalPath := claimsJournalPathForWorkspace(t, workspace)
+	linesBefore := countClaimsJournalLines(t, journalPath)
+
+	result, err := Release(ReleaseOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Release() error = %v", err)
+	}
+	if result.RefType != "issue" {
+		t.Fatalf("Release().RefType = %q, want issue", result.RefType)
+	}
+	if result.RefID != created.ID {
+		t.Fatalf("Release().RefID = %q, want %q", result.RefID, created.ID)
+	}
+	if result.ReleasedBy != "developer" {
+		t.Fatalf("Release().ReleasedBy = %q, want developer", result.ReleasedBy)
+	}
+
+	if got := countClaimsJournalLines(t, journalPath); got != linesBefore+1 {
+		t.Fatalf("journal lines after release = %d, want %d", got, linesBefore+1)
+	}
+
+	stored := readClaimStoredEvents(t, journalPath)
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.claim.released" {
+		t.Fatalf("last event type = %q, want issue.claim.released", last.EventType)
+	}
+
+	conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeClaimsDB(t, conn)
+
+	var count int
+	if err := conn.QueryRow(`
+		SELECT COUNT(*)
+		FROM claims
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, created.ID).Scan(&count); err != nil {
+		t.Fatalf("count released claims rows: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("claims row count after release = %d, want 0", count)
+	}
+}
+
+func TestReleaseRejectsNonHolderBeforeAppend(t *testing.T) {
+	t.Parallel()
+
+	workspace := newClaimsWorkspace(t)
+	created := createClaimIssue(t, workspace, "Release wrong holder target")
+
+	_, err := Acquire(AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Acquire(initial) error = %v", err)
+	}
+
+	journalPath := claimsJournalPathForWorkspace(t, workspace)
+	linesBefore := countClaimsJournalLines(t, journalPath)
+
+	_, err = Release(ReleaseOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "qa_reviewer",
+	})
+	if err == nil {
+		t.Fatal("Release(non-holder) error = nil, want rejection")
+	}
+
+	var notHeldErr *ClaimNotHeldError
+	if !errors.As(err, &notHeldErr) {
+		t.Fatalf("Release(non-holder) error = %T, want *ClaimNotHeldError", err)
+	}
+	if notHeldErr.RefID != created.ID {
+		t.Fatalf("ClaimNotHeldError.RefID = %q, want %q", notHeldErr.RefID, created.ID)
+	}
+	if notHeldErr.ClaimedBy != "developer" {
+		t.Fatalf("ClaimNotHeldError.ClaimedBy = %q, want developer", notHeldErr.ClaimedBy)
+	}
+
+	if got := countClaimsJournalLines(t, journalPath); got != linesBefore {
+		t.Fatalf("journal lines after rejected release = %d, want unchanged %d", got, linesBefore)
 	}
 }
 

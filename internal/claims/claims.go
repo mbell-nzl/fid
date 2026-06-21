@@ -10,6 +10,7 @@ const (
 	actionIssueAcquire      = "issue.claim.acquire"
 	actionIssueRenew        = "issue.claim.renew"
 	actionIssueForceAcquire = "issue.claim.force_acquire"
+	actionIssueRelease      = "issue.claim.release"
 	fidVersion              = "0.1.0"
 )
 
@@ -31,6 +32,12 @@ type Claim struct {
 	TTLSeconds int     `json:"ttl_seconds"`
 	ExpiresAt  string  `json:"expires_at"`
 	Note       *string `json:"note"`
+	Previous   *ClaimPrevious
+}
+
+type ClaimPrevious struct {
+	ClaimedBy string
+	ExpiresAt string
 }
 
 type RenewOptions struct {
@@ -39,6 +46,19 @@ type RenewOptions struct {
 	IssueID       string
 	ActorRole     string
 	TTLSeconds    *int
+}
+
+type ReleaseOptions struct {
+	WorkspaceRoot string
+	MigrationsDir string
+	IssueID       string
+	ActorRole     string
+}
+
+type ReleaseResult struct {
+	RefType    string
+	RefID      string
+	ReleasedBy string
 }
 
 type LiveClaimConflictError struct {
