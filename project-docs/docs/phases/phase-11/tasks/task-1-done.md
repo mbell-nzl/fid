@@ -138,8 +138,8 @@
 
 ## Commit hash
 
-- `PENDING - reconcile after task commit`
+- `2a8a3aacb6a3a845df890539ab4d9173d8623119`
 
 ## Commit subject
 
-- `PENDING - reconcile after task commit`
+- `feat(claims): implement issue claim domain semantics`
