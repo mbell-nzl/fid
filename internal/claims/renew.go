@@ -32,7 +32,7 @@ func Renew(options RenewOptions) (Claim, error) {
 		Command:   strings.Join(issueClaimRenewArgv(options), " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
 		}
 

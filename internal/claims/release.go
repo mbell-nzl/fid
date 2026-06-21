@@ -32,7 +32,7 @@ func Release(options ReleaseOptions) (ReleaseResult, error) {
 		Command:   strings.Join(issueClaimReleaseArgv(options), " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
-		if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
 		}
 

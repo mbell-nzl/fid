@@ -340,6 +340,69 @@ func TestAcquireRejectsLiveConflictBeforeAppend(t *testing.T) {
 	}
 }
 
+func TestAcquireRejectsLiveConflictWhenJournalIsAheadOfProjection(t *testing.T) {
+	t.Parallel()
+
+	workspace := newClaimsWorkspace(t)
+	created := createClaimIssue(t, workspace, "Journal-ahead claim conflict target")
+
+	initial := appendUnprojectedAcquireEvent(t, workspace, AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+
+	journalPath := claimsJournalPathForWorkspace(t, workspace)
+	linesBefore := countClaimsJournalLines(t, journalPath)
+
+	_, err := Acquire(AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "qa_reviewer",
+	})
+	if err == nil {
+		t.Fatal("Acquire(journal-ahead conflict) error = nil, want live conflict")
+	}
+
+	var conflictErr *LiveClaimConflictError
+	if !errors.As(err, &conflictErr) {
+		t.Fatalf("Acquire(journal-ahead conflict) error = %T, want *LiveClaimConflictError", err)
+	}
+	if conflictErr.ClaimedBy != "developer" {
+		t.Fatalf("LiveClaimConflictError.ClaimedBy = %q, want developer", conflictErr.ClaimedBy)
+	}
+	if conflictErr.ExpiresAt != initial.ExpiresAt {
+		t.Fatalf("LiveClaimConflictError.ExpiresAt = %q, want %q", conflictErr.ExpiresAt, initial.ExpiresAt)
+	}
+
+	if got := countClaimsJournalLines(t, journalPath); got != linesBefore {
+		t.Fatalf("journal lines after journal-ahead reject = %d, want unchanged %d", got, linesBefore)
+	}
+
+	conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeClaimsDB(t, conn)
+
+	var (
+		count     int
+		claimedBy string
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), COALESCE(MIN(claimed_by), '')
+		FROM claims
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, created.ID).Scan(&count, &claimedBy); err != nil {
+		t.Fatalf("query caught-up claim state: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("caught-up claim row count = %d, want 1", count)
+	}
+	if claimedBy != "developer" {
+		t.Fatalf("caught-up claim holder = %q, want developer", claimedBy)
+	}
+}
+
 func TestAcquireTakesOverStaleClaimWithoutForcePermission(t *testing.T) {
 	t.Parallel()
 
@@ -671,6 +734,97 @@ func TestRenewUpdatesClaimTimePreservesOrOverridesTTLAndProjectsActivity(t *test
 	}
 }
 
+func TestRenewCatchesUpJournalAheadClaimBeforeValidation(t *testing.T) {
+	t.Parallel()
+
+	workspace := newClaimsWorkspace(t)
+	created := createClaimIssue(t, workspace, "Journal-ahead renew target")
+
+	initial := appendUnprojectedAcquireEvent(t, workspace, AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+		TTLSeconds:    intPointer(900),
+		Note:          stringPointer("focus mode"),
+	})
+
+	journalPath := claimsJournalPathForWorkspace(t, workspace)
+	linesBefore := countClaimsJournalLines(t, journalPath)
+
+	renewed, err := Renew(RenewOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Renew(journal-ahead) error = %v", err)
+	}
+	if renewed.ClaimedBy != "developer" {
+		t.Fatalf("Renew(journal-ahead).ClaimedBy = %q, want developer", renewed.ClaimedBy)
+	}
+	if renewed.TTLSeconds != 900 {
+		t.Fatalf("Renew(journal-ahead).TTLSeconds = %d, want 900", renewed.TTLSeconds)
+	}
+	if renewed.Note == nil || *renewed.Note != "focus mode" {
+		t.Fatalf("Renew(journal-ahead).Note = %#v, want focus mode", renewed.Note)
+	}
+	if renewed.ClaimedAt == initial.ClaimedAt {
+		t.Fatalf("Renew(journal-ahead).ClaimedAt = %q, want change from %q", renewed.ClaimedAt, initial.ClaimedAt)
+	}
+
+	if got := countClaimsJournalLines(t, journalPath); got != linesBefore+1 {
+		t.Fatalf("journal lines after journal-ahead renew = %d, want %d", got, linesBefore+1)
+	}
+
+	stored := readClaimStoredEvents(t, journalPath)
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.claim.renewed" {
+		t.Fatalf("last event type after journal-ahead renew = %q, want issue.claim.renewed", last.EventType)
+	}
+
+	conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeClaimsDB(t, conn)
+
+	var (
+		claimedBy string
+		claimedAt string
+		ttl       int
+		note      sql.NullString
+		count     int
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*)
+		FROM claims
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, created.ID).Scan(&count); err != nil {
+		t.Fatalf("count journal-ahead renewed claims rows: %v", err)
+	}
+	if count != 1 {
+		t.Fatalf("journal-ahead renewed claim row count = %d, want 1", count)
+	}
+	if err := conn.QueryRow(`
+		SELECT claimed_by, claimed_at, ttl_seconds, note
+		FROM claims
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, created.ID).Scan(&claimedBy, &claimedAt, &ttl, &note); err != nil {
+		t.Fatalf("query journal-ahead renewed claim row: %v", err)
+	}
+	if claimedBy != "developer" {
+		t.Fatalf("journal-ahead renewed claim holder = %q, want developer", claimedBy)
+	}
+	if claimedAt != renewed.ClaimedAt {
+		t.Fatalf("journal-ahead renewed claimed_at = %q, want %q", claimedAt, renewed.ClaimedAt)
+	}
+	if ttl != 900 {
+		t.Fatalf("journal-ahead renewed ttl_seconds = %d, want 900", ttl)
+	}
+	if !note.Valid || note.String != "focus mode" {
+		t.Fatalf("journal-ahead renewed note = %#v, want focus mode", note)
+	}
+}
+
 func TestRenewRejectsNonHolderBeforeAppend(t *testing.T) {
 	t.Parallel()
 
@@ -822,6 +976,61 @@ func TestReleaseRejectsNonHolderBeforeAppend(t *testing.T) {
 
 	if got := countClaimsJournalLines(t, journalPath); got != linesBefore {
 		t.Fatalf("journal lines after rejected release = %d, want unchanged %d", got, linesBefore)
+	}
+}
+
+func TestReleaseCatchesUpJournalAheadClaimBeforeValidation(t *testing.T) {
+	t.Parallel()
+
+	workspace := newClaimsWorkspace(t)
+	created := createClaimIssue(t, workspace, "Journal-ahead release target")
+
+	appendUnprojectedAcquireEvent(t, workspace, AcquireOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+
+	journalPath := claimsJournalPathForWorkspace(t, workspace)
+	linesBefore := countClaimsJournalLines(t, journalPath)
+
+	result, err := Release(ReleaseOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testClaimsMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Release(journal-ahead) error = %v", err)
+	}
+	if result.ReleasedBy != "developer" {
+		t.Fatalf("Release(journal-ahead).ReleasedBy = %q, want developer", result.ReleasedBy)
+	}
+
+	if got := countClaimsJournalLines(t, journalPath); got != linesBefore+1 {
+		t.Fatalf("journal lines after journal-ahead release = %d, want %d", got, linesBefore+1)
+	}
+
+	stored := readClaimStoredEvents(t, journalPath)
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.claim.released" {
+		t.Fatalf("last event type after journal-ahead release = %q, want issue.claim.released", last.EventType)
+	}
+
+	conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeClaimsDB(t, conn)
+
+	var count int
+	if err := conn.QueryRow(`
+		SELECT COUNT(*)
+		FROM claims
+		WHERE ref_type = 'issue' AND ref_id = ?
+	`, created.ID).Scan(&count); err != nil {
+		t.Fatalf("count journal-ahead released claims rows: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("journal-ahead released claim row count = %d, want 0", count)
 	}
 }
 
@@ -1042,4 +1251,36 @@ func stringPointer(value string) *string {
 
 func intPointer(value int) *int {
 	return &value
+}
+
+func appendUnprojectedAcquireEvent(t *testing.T, workspace string, options AcquireOptions) Claim {
+	t.Helper()
+
+	var result Claim
+	err := journal.WithLock(workspace, journal.LockOwner{
+		Command:   strings.Join(issueClaimArgv(options), " "),
+		ActorRole: options.ActorRole,
+	}, func(lock *journal.WriteLock) error {
+		conn := openClaimsDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+		defer closeClaimsDB(t, conn)
+
+		event, claim, err := buildAcquireEvent(lock, conn, options)
+		if err != nil {
+			return err
+		}
+		if err := journal.DryRunProjectEvent(conn, event); err != nil {
+			return err
+		}
+		if _, err := journal.AppendEvent(lock, event); err != nil {
+			return err
+		}
+
+		result = claim
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("appendUnprojectedAcquireEvent() error = %v", err)
+	}
+
+	return result
 }
