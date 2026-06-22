@@ -39,9 +39,9 @@ None.
 
 ## Recent Resolutions
 
-- ESC-008 (Phase 11 claim-write projection refresh lock ordering) resolved by
-  DEC-028: do-now Task 5 and VAL-015 before final QA. Archive:
-  `../phases/phase-11/tl-escalations.md`.
+- None open. ESC-008 (Phase 11 claim-write projection refresh lock ordering)
+  resolved by DEC-028 and Task 5/VAL-015, and archived in
+  `../phases/phase-11/tl-escalations.md` at Phase 11 wrap.
 
 <!--
 Add new escalations above this comment using the template at

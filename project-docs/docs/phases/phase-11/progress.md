@@ -1,7 +1,8 @@
 # Phase 11 Progress
 
 > Phase: 11 - Claims layer (roadmap v0.1d, slice 2 of 4)
-> Status: IN PROGRESS, Task 5 pending after ESC-008 resolution.
+> Status: COMPLETE - PASS. All 5 tasks done; final review PASS; human checklist
+> PASS; wrapped 2026-06-22.
 
 ## Plan
 
@@ -26,8 +27,8 @@ No schema migration is planned; the `claims` table/triggers already exist.
 | 1 | Claim matrix rows and domain claim semantics | Complete; Review 1 CONTINUE |
 | 2 | `fid issue claim` and `fid issue unclaim` | Complete; Review 2 CONTINUE |
 | 3 | `fid claim list` | Complete; Review 3 CONTINUE |
-| 4 | Claim and transition integration | Complete; review pending |
-| 5 | Claim write projection freshness lock ordering | Pending |
+| 4 | Claim and transition integration | Complete; Review 4 CONTINUE |
+| 5 | Claim write projection freshness lock ordering | Complete; Review 5 CONTINUE |
 
 ## Validation
 
@@ -51,6 +52,15 @@ QA.
 - TRG-001/ESC-008: Task 4 report surfaced claim-write projection refresh lock
   ordering risk.
 - DEC-028: Tech Lead resolved ESC-008 as do-now Task 5 with VAL-015.
+- Task 5 complete: lock-aware journal freshness helper; acquire/renew/release
+  catch up under the held write lock; concurrent acquire atomicity preserved.
+- Review 4 (Task 4) and Review 5 (Task 5): CONTINUE, improvement notes only.
+- Final review: PASS WITH HUMAN CHECKLIST PENDING. VAL-001..013 + VAL-015 PASS;
+  VAL-014 CARRY-FORWARD to human checklist.
+- Human checklist (HV-01a..e): complete, overall PASS (2026-06-22) -> VAL-014
+  final outcome PASS.
+- Wrap (2026-06-22): spec-sync verdicts recorded, TRG-001 audited, CF-014 added
+  for file-size cleanup, workflow notes captured. Phase COMPLETE.
 
 ## Carry-Forward
 
@@ -58,7 +68,10 @@ QA.
 - CF-011 broad reconciliation re-deferred to v0.1e; Phase 11 claim renewal still
   projects to `activity_log` per PRD-CLAIM-008a.
 - CF-013 re-deferred to v0.1e.
+- CF-014 opened (v0.1e): split `cmd/fid/issue.go` (984) and
+  `internal/journal/replay.go` (485) under the 400-line file target.
 
 ## Escalations
 
-- ESC-008 resolved by DEC-028; Task 5 is pending before final QA.
+- ESC-008 resolved by DEC-028 and Task 5/VAL-015; archived in
+  `tl-escalations.md`. No open escalations at wrap.
