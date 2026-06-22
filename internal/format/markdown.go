@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -61,6 +62,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeIssueListMarkdown(writer, IssueListMarkdownView{Items: typed})
 	case []issues.ConcernListItem:
 		return writeConcernListMarkdown(writer, typed)
+	case []claims.ListItem:
+		return writeClaimListMarkdown(writer, typed)
 	case []policy.MatrixRow:
 		return writePolicyMatrixMarkdown(writer, typed)
 	default:
@@ -305,6 +308,39 @@ func writePolicyMatrixMarkdown(writer io.Writer, rows []policy.MatrixRow) error 
 			row.WorkflowRunner,
 			row.Human,
 		)
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writeClaimListMarkdown(writer io.Writer, items []claims.ListItem) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Claims\n\n")
+	for _, item := range items {
+		builder.WriteString("- ")
+		builder.WriteString(item.RefType)
+		builder.WriteString(" ")
+		builder.WriteString(item.RefID)
+		builder.WriteString(" | ")
+		builder.WriteString(item.ClaimedBy)
+		builder.WriteString(" | claimed ")
+		builder.WriteString(item.ClaimedAt)
+		builder.WriteString(" | ttl ")
+		builder.WriteString(strconv.Itoa(item.TTLSeconds))
+		builder.WriteString("s | expires ")
+		builder.WriteString(item.ExpiresAt)
+		builder.WriteString(" | stale: ")
+		builder.WriteString(strconv.FormatBool(item.IsStale))
+		builder.WriteString("\n")
+		if item.Note != nil && strings.TrimSpace(*item.Note) != "" {
+			builder.WriteString("  ")
+			builder.WriteString(*item.Note)
+			builder.WriteString("\n")
+		}
 	}
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {

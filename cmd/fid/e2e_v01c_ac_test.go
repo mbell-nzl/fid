@@ -27,6 +27,10 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"--by", "developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
+	_, claimStderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
+	if !strings.Contains(claimStderr, "claimed "+issueID+" by developer (expires ") {
+		t.Fatalf("claim stderr = %q, want confirmation", claimStderr)
+	}
 
 	_, transitionStderr := runFIDCommand(
 		t,

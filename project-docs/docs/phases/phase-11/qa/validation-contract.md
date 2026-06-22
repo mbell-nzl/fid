@@ -2,7 +2,7 @@
 
 > Phase: 11 - Claims layer (roadmap v0.1d, slice 2 of 4)
 > Author: Tech Lead (draft)
-> Last refined: 2026-06-21 by Tech Lead (awaiting QA Lead evidence refinement)
+> Last refined: 2026-06-21 by Tech Lead (ESC-008 resolution / VAL-015)
 >
 > Location: `project-docs/docs/phases/phase-11/qa/validation-contract.md`.
 
@@ -59,29 +59,32 @@ Carry-forward review at kickoff:
 | VAL-012 | PRD-CLAIM-006; roadmap v0.1d Phase 11 | A transition out of a started-category state automatically releases the caller's live claim in the same journal event/transaction; after projection, the issue status changes and no current claim remains. | Domain + CLI: claim issue, transition into started, then transition out; inspect last event effects and DB/read-back claim absence. | QA Lead | task-4 | Out-of-started transition appends one event containing status change plus claim release, projects atomically, and leaves no current claim. | Claim remains current, release happens in a separate event, status changes without release, or projection is non-atomic. | Draft | Composite `fid dev finish` is v0.1e. |
 | VAL-013 | TRD-ARCH-011 | Concurrent claim acquisition is atomic: simultaneous acquire attempts for the same issue produce exactly one winner; losers see the existing live claim rather than duplicate rows or projection corruption. | Integration test: concurrent acquire attempts against a temp SQLite-backed workspace; assert one successful append/current row and loser errors identify holder/expiry. | QA Lead | task-1 | Exactly one attempt succeeds and exactly one current claim row exists; every loser sees conflict with holder/expiry. | Multiple attempts succeed, duplicate rows occur, loser error is ambiguous, or DB/journal projection corrupts. | Draft | Cross-process locking implementation detail is not prescribed beyond observable atomicity. |
 | VAL-014 | `08_QUALITY_PLAN.md` sections 5.2, 5.6; phase goal | Human dogfoods a real `.fid` workspace claim lifecycle and can tell from CLI output who holds a claim, when it expires, when it was released, and why an agent cannot advance a human-held claim. | Human checklist with one row per observable; QA Lead generates from this VAL after deterministic QA passes. | Human | phase-end | Human confirms the claim lifecycle messages and human-held claim behavior are understandable without reading implementation details. | Human cannot identify holder/expiry/release/block reason from CLI output, or checklist is not run. | Draft | QA Lead must fan this into per-observable human checklist rows. |
+| VAL-015 | PRD-NFR-008; PRD-OPS-003; `02_TRD.md` §4.3 and §4.9; ADR-0001; ESC-008 | Claim write paths (`fid issue claim`, `fid issue claim --renew`, and `fid issue unclaim`) validate against a fresh projection without nested `.fid/write.lock` acquisition: stale-projection fixtures catch up before validation, and already-fresh fixtures preserve existing claim behavior. | Domain + CLI or integration: create journal-ahead-of-projection fixtures for acquire, renew, and release; assert no nested-lock/held-by-current-command error, correct conflict/success behavior after catch-up, one journal event for successful writes, and fresh-projection regression tests remain green. | QA Lead | task-5 | Stale projection is caught up or rebuilt before claim validation for acquire, renew, and release; no nested-lock timeout appears; successful writes append/project exactly one event; conflict reject paths append nothing; existing concurrent acquire proof remains green. | Any claim write fails with nested lock contention, validates against stale DB state, appends on a stale-state rejection, changes public claim semantics, or regresses concurrent acquire atomicity. | Draft | Broader write-path normalization outside claim writes remains out of scope unless Task 5 proves the shared journal helper must be generalized. |
 
 ## Coverage Rules
 
-Confirmed before task execution begins:
+Confirmed for Phase 11 execution, including the ESC-008 Task 5 update:
 
 - Phase-scope requirements each map to at least one `VAL-NNN`: PRD-CLAIM-001
   to VAL-002; PRD-CLAIM-002 and PRD-ERR-003 to VAL-003; PRD-CLAIM-003 to
   VAL-004; PRD-CLAIM-004 to VAL-005/007; PRD-CLAIM-005 to VAL-011;
   PRD-CLAIM-006 to VAL-012; PRD-CLAIM-007 to VAL-008/009; PRD-CLAIM-008 to
-  VAL-010/014; PRD-CLAIM-008a to VAL-006; TRD-ARCH-010 to VAL-001/005;
-  TRD-ARCH-011 to VAL-013.
+  VAL-010/014; PRD-CLAIM-008a to VAL-006; PRD-OPS-003 and PRD-NFR-008 to
+  VAL-015; TRD-ARCH-010 to VAL-001/005; TRD-ARCH-011 to VAL-013/015.
 - Every `VAL-NNN` is referenced by a task spec or explicitly marked
   `phase-end` (VAL-014).
 - Binary/conditional assertions name both states where applicable:
-  VAL-003, VAL-005, VAL-006, VAL-007, VAL-009, VAL-011, and VAL-012.
+  VAL-003, VAL-005, VAL-006, VAL-007, VAL-009, VAL-011, VAL-012, and
+  VAL-015.
 - Coverage is enforced at the gate, not as a `VAL-NNN`: COV-001 domain package
   coverage and COV-002 `cmd/fid` coverage must stay above thresholds. Each task
   runs the required coverage gate and records package percentages.
 - QA Lead maps each `VAL-NNN` to deterministic `(qa-lead)`, mid-phase review,
   or `(human)` verification, and fans VAL-014 into per-observable human rows.
 - Standing QA-plan checks carry forward: show-vs-enforce parity for the new claim
-  matrix rows (VAL-001) and validate-before-append on every claim rejection
-  (VAL-003/005/006/007/011).
+  matrix rows (VAL-001), validate-before-append on every claim rejection
+  (VAL-003/005/006/007/011/015), and no stale-projection nested-lock failure
+  on claim write paths (VAL-015).
 
 ## Outcomes
 
@@ -92,4 +95,5 @@ Phase-end final review records every `VAL-NNN` outcome: `PASS`, `FAIL`,
 
 | Date | Assertion | Change | Reason | Decision reference |
 |---|---|---|---|---|
+| 2026-06-21 | VAL-015 | added | Resolve ESC-008 claim-write projection refresh lock ordering blocker | DEC-028 |
 | 2026-06-21 | VAL-001..014 | created | Phase 11 planning draft | roadmap v0.1d Phase 11; PRD-CLAIM-001..008a; TRD-ARCH-010..011 |

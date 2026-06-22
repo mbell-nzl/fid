@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -154,6 +155,11 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				Unmet:          unmet,
 			}
 		}
+		if entersStartedCategory(current.WorkflowID, current.Status, toState) {
+			if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, options.ActorRole); err != nil {
+				return err
+			}
+		}
 
 		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
 			return activityIDExists(conn, candidate)
@@ -197,7 +203,18 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 					"workflow_id": current.WorkflowID,
 				},
 			},
-			{
+		}
+		if leavesStartedCategory(current.WorkflowID, current.Status, toState) {
+			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, options.ActorRole)
+			if err != nil {
+				return err
+			}
+			if releaseEffect != nil {
+				event.Effects = append(event.Effects, *releaseEffect)
+			}
+		}
+		event.Effects = append(event.Effects,
+			journal.Effect{
 				Op:    "activity",
 				Table: "activity_log",
 				PK:    map[string]any{"id": activityID},
@@ -214,7 +231,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 					"occurred_at": timestamp,
 				},
 			},
-		}
+		)
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
 			return err
@@ -259,4 +276,32 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	}
 
 	return result, nil
+}
+
+func entersStartedCategory(workflowID, fromState, toState string) bool {
+	fromCategory, toCategory, ok := transitionCategories(workflowID, fromState, toState)
+	if !ok {
+		return false
+	}
+	return fromCategory != "started" && toCategory == "started"
+}
+
+func leavesStartedCategory(workflowID, fromState, toState string) bool {
+	fromCategory, toCategory, ok := transitionCategories(workflowID, fromState, toState)
+	if !ok {
+		return false
+	}
+	return fromCategory == "started" && toCategory != "started"
+}
+
+func transitionCategories(workflowID, fromState, toState string) (string, string, bool) {
+	fromCategory, ok := workflow.CategoryForState(workflowID, fromState)
+	if !ok {
+		return "", "", false
+	}
+	toCategory, ok := workflow.CategoryForState(workflowID, toState)
+	if !ok {
+		return "", "", false
+	}
+	return fromCategory, toCategory, true
 }
