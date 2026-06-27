@@ -15,23 +15,23 @@ One observable per row. Outcome values: `pass`, `fail`, `partial`, or `blank`.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HV-12a | VAL-012 | In a real `.fid` workspace, dogfood `fid requirement sync` against a PRD/TRD-style source document and judge whether the CLI output makes the recorded pointer counts understandable without reading implementation `(human)` | The tester can identify created, updated, and unchanged counts from the output and can explain what happened to requirement pointers. | | |
-| HV-12b | VAL-012 | In the same workspace, dogfood `fid link add` for a valid link and judge whether the CLI output makes the auto-created inverse understandable `(human)` | The tester can identify both the declared direction and the inverse direction from the output. | | |
-| HV-12c | VAL-012 | Dogfood `fid link list` for both linked endpoints and judge whether outgoing and incoming directions are understandable in normal CLI use `(human)` | The tester can identify direction, relation, linked entity ID/type, and title for links from both endpoint perspectives. | | |
-| HV-12d | VAL-012 | Dogfood `fid link remove` for the declared link and judge whether the CLI output makes removal of both directions understandable `(human)` | The tester can identify that both the declared link and inverse link were removed. | | |
+| HV-12a | VAL-012 | In a real `.fid` workspace, dogfood `fid requirement sync` against a PRD/TRD-style source document and judge whether the CLI output makes the recorded pointer counts understandable without reading implementation `(human)` | The tester can identify created, updated, and unchanged counts from the output and can explain what happened to requirement pointers. | PASS | n/a |
+| HV-12b | VAL-012 | In the same workspace, dogfood `fid link add` for a valid link and judge whether the CLI output makes the auto-created inverse understandable `(human)` | The tester can identify both the declared direction and the inverse direction from the output. | PASS | n/a |
+| HV-12c | VAL-012 | Dogfood `fid link list` for both linked endpoints and judge whether outgoing and incoming directions are understandable in normal CLI use `(human)` | The tester can identify direction, relation, linked entity ID/type, and title for links from both endpoint perspectives. | PASS | n/a |
+| HV-12d | VAL-012 | Dogfood `fid link remove` for the declared link and judge whether the CLI output makes removal of both directions understandable `(human)` | The tester can identify that both the declared link and inverse link were removed. | PASS | n/a |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Requirements And Link Dogfood | 4 | | | | |
-| **Total** | 4 | | | | |
+| Requirements And Link Dogfood | 4 | 4 | 0 | 0 | 0 |
+| **Total** | 4 | 4 | 0 | 0 | 0 |
 
 | | |
 |---|---|
-| **Overall result** | |
-| **Date completed** | |
-| **Notes** | |
+| **Overall result** | PASS |
+| **Date completed** | 2026-06-27 |
+| **Notes** | n/a |
 
 <!--
 Outcome values: pass, fail, partial, blank.
