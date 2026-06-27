@@ -3,11 +3,13 @@ package issues
 import "strings"
 
 const (
-	actionIssueUpdate    = "issue.update"
-	actionIssueComplete  = "issue.complete"
-	actionIssueACAdd     = "issue.ac.add"
-	actionConcernRaise   = "concern.raise"
-	actionConcernAddress = "concern.address"
+	actionIssueUpdate      = "issue.update"
+	actionIssueComplete    = "issue.complete"
+	actionIssueLabelAdd    = "issue.label.add"
+	actionIssueLabelRemove = "issue.label.remove"
+	actionIssueACAdd       = "issue.ac.add"
+	actionConcernRaise     = "concern.raise"
+	actionConcernAddress   = "concern.address"
 )
 
 func issueCreateAction(kind string) string {
