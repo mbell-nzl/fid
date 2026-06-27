@@ -11,7 +11,7 @@ import (
 const (
 	lockDirectoryName      = "write.lock"
 	lockMetadataFileName   = "owner.json"
-	defaultLockWaitTimeout = 250 * time.Millisecond
+	defaultLockWaitTimeout = 5 * time.Second
 	defaultLockRetryDelay  = 10 * time.Millisecond
 )
 
