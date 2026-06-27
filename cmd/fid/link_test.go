@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -400,6 +401,128 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	}
 }
 
+func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParity(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")
+	outgoingIssueID := createCommandIssue(t, workspace, "Schema migration runner")
+	incomingIssueID := createCommandIssue(t, workspace, "Add index on concerns(issue_id, status)")
+	syncCommandRequirementWithSummary(t, workspace, "PRD-LINK-002", "Unified polymorphic issue table")
+
+	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "blocks", outgoingIssueID, "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", incomingIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", "json")
+	if jsonStderr != "" {
+		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	}
+
+	want := decodeCommandJSONStructure(t, jsonStdout)
+	if got := decodeCommandLinkMarkdownRows(t, mustLinkListMarkdown(t, workspace, primaryIssueID)); !commandStructuresEqual(want, got) {
+		t.Fatalf("markdown structure = %#v, want %#v", got, want)
+	}
+
+	for _, formatName := range []string{"toon", "yaml"} {
+		formatName := formatName
+		t.Run(formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", formatName)
+			if stderr != "" {
+				t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
+			}
+
+			var got any
+			switch formatName {
+			case "toon":
+				got = decodeCommandTOONStructure(t, stdout)
+			case "yaml":
+				got = decodeCommandYAMLStructure(t, stdout)
+			default:
+				t.Fatalf("unsupported format test %q", formatName)
+			}
+			if !commandStructuresEqual(want, got) {
+				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
+			}
+		})
+	}
+
+	rows := want.([]any)
+	if len(rows) != 3 {
+		t.Fatalf("link list rows = %#v, want 3 rows", rows)
+	}
+
+	wantRows := []map[string]any{
+		{
+			"direction":    "outgoing",
+			"relation":     "blocks",
+			"entity_type":  "issue",
+			"entity_id":    outgoingIssueID,
+			"entity_title": "Schema migration runner",
+		},
+		{
+			"direction":    "outgoing",
+			"relation":     "implements",
+			"entity_type":  "requirement",
+			"entity_id":    "PRD-LINK-002",
+			"entity_title": "Unified polymorphic issue table",
+		},
+		{
+			"direction":    "incoming",
+			"relation":     "discovered_from",
+			"entity_type":  "issue",
+			"entity_id":    incomingIssueID,
+			"entity_title": "Add index on concerns(issue_id, status)",
+		},
+	}
+	for index, wantRow := range wantRows {
+		gotRow, ok := rows[index].(map[string]any)
+		if !ok {
+			t.Fatalf("row %d = %#v, want object", index, rows[index])
+		}
+		for key, wantValue := range wantRow {
+			if gotValue := fmt.Sprintf("%v", gotRow[key]); gotValue != fmt.Sprintf("%v", wantValue) {
+				t.Fatalf("row %d field %s = %v, want %v", index, key, gotRow[key], wantValue)
+			}
+		}
+	}
+}
+
+func TestLinkListEmptyResult(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	issueID := createCommandIssue(t, workspace, "Unlinked issue")
+
+	for _, formatName := range []string{"json", "toon", "yaml"} {
+		stdout, stderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", formatName)
+		if stderr != "" {
+			t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
+		}
+
+		var got any
+		switch formatName {
+		case "json":
+			got = decodeCommandJSONStructure(t, stdout)
+		case "toon":
+			got = decodeCommandTOONStructure(t, stdout)
+		case "yaml":
+			got = decodeCommandYAMLStructure(t, stdout)
+		}
+		if !commandStructuresEqual([]any{}, got) {
+			t.Fatalf("%s structure = %#v, want empty array", formatName, got)
+		}
+	}
+
+	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", "markdown")
+	if markdownStderr != "" {
+		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
+	}
+	if got := decodeCommandLinkMarkdownRows(t, markdownStdout); !commandStructuresEqual([]any{}, got) {
+		t.Fatalf("markdown structure = %#v, want empty array", got)
+	}
+}
+
 type commandLinkRow struct {
 	FromType string
 	FromID   string
@@ -461,17 +584,72 @@ func createCommandIssue(t *testing.T, workspace, title string) string {
 func syncCommandRequirement(t *testing.T, workspace, requirementID string) {
 	t.Helper()
 
-	writeRequirementFixture(t, workspace, "project-docs/specs/link_requirements.md", `# Requirements
+	syncCommandRequirementWithSummary(t, workspace, requirementID, "The system shall support links from issues to requirements.")
+}
 
-## 3.8 Cross-Entity Links
+func syncCommandRequirementWithSummary(t *testing.T, workspace, requirementID, summary string) {
+	t.Helper()
 
-| ID | Requirement | Priority | Notes |
-|---|---|---|---|
-| PRD-LINK-002 | The system shall support links from issues to requirements. | Must | v0.1 |
-`)
+	writeRequirementFixture(t, workspace, "project-docs/specs/link_requirements.md", "# Requirements\n\n## 3.8 Cross-Entity Links\n\n| ID | Requirement | Priority | Notes |\n|---|---|---|---|\n| PRD-LINK-002 | "+summary+" | Must | v0.1 |\n")
 
 	_, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/link_requirements.md", "--id", requirementID, "--by", "tl")
 	if !strings.Contains(stderr, "synced requirements from project-docs/specs/link_requirements.md") {
 		t.Fatalf("stderr = %q, want requirement sync confirmation", stderr)
 	}
+}
+
+func mustLinkListMarkdown(t *testing.T, workspace, issueID string) string {
+	t.Helper()
+
+	stdout, stderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", "markdown")
+	if stderr != "" {
+		t.Fatalf("markdown stderr = %q, want empty", stderr)
+	}
+	return stdout
+}
+
+func decodeCommandLinkMarkdownRows(t *testing.T, value string) any {
+	t.Helper()
+
+	lines := strings.Split(strings.TrimSpace(value), "\n")
+	if len(lines) == 0 || lines[0] != "# Links" {
+		t.Fatalf("markdown output = %q, want # Links header", value)
+	}
+	if len(lines) >= 3 && strings.TrimSpace(lines[2]) == "(no links)" {
+		return []any{}
+	}
+	if len(lines) < 5 {
+		t.Fatalf("markdown output = %q, want links table", value)
+	}
+
+	rows := []any{}
+	for _, line := range lines[4:] {
+		trimmed := strings.TrimSpace(line)
+		if trimmed == "" {
+			continue
+		}
+		cells := splitMarkdownTableRow(trimmed)
+		if len(cells) != 5 {
+			t.Fatalf("markdown row = %q, want 5 cells", line)
+		}
+		rows = append(rows, map[string]any{
+			"direction":    cells[0],
+			"relation":     cells[1],
+			"entity_type":  cells[2],
+			"entity_id":    cells[3],
+			"entity_title": cells[4],
+		})
+	}
+	return rows
+}
+
+func splitMarkdownTableRow(line string) []string {
+	trimmed := strings.TrimSpace(line)
+	trimmed = strings.TrimPrefix(trimmed, "|")
+	trimmed = strings.TrimSuffix(trimmed, "|")
+	parts := strings.Split(trimmed, "|")
+	for index := range parts {
+		parts[index] = strings.TrimSpace(parts[index])
+	}
+	return parts
 }

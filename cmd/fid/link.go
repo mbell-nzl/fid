@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/links"
 	"github.com/spf13/cobra"
 )
@@ -15,6 +16,7 @@ func newLinkCommand() *cobra.Command {
 	}
 
 	cmd.AddCommand(newLinkAddCommand())
+	cmd.AddCommand(newLinkListCommand())
 	cmd.AddCommand(newLinkRemoveCommand())
 	return cmd
 }
@@ -112,5 +114,44 @@ func newLinkRemoveCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	return cmd
+}
+
+func newLinkListCommand() *cobra.Command {
+	var formatName string
+
+	cmd := &cobra.Command{
+		Use:   "list <id>",
+		Short: "List outgoing and incoming links for an entity.",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			items, err := links.List(links.ListOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				EntityID:      args[0],
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+
+			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }

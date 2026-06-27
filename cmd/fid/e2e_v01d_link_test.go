@@ -1,0 +1,208 @@
+//go:build integration
+
+package main
+
+import (
+	"database/sql"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
+)
+
+func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")
+	peerIssueID := createCommandIssue(t, workspace, "Add index on concerns(issue_id, status)")
+	syncCommandRequirementWithSummary(t, workspace, "PRD-LINK-002", "Unified polymorphic issue table")
+
+	journalPath := mustJournalPath(t, workspace)
+	linesBeforePhase12Writes := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	_, linkIssueStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	assertNoNestedLockFailure(t, linkIssueStderr)
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+1 {
+		t.Fatalf("journal lines after issue link add = %d, want %d", got, linesBeforePhase12Writes+1)
+	}
+
+	_, linkRequirementStderr := runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--by", "developer")
+	assertNoNestedLockFailure(t, linkRequirementStderr)
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+2 {
+		t.Fatalf("journal lines after requirement link add = %d, want %d", got, linesBeforePhase12Writes+2)
+	}
+
+	primaryListStdout, primaryListStderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", "json")
+	if primaryListStderr != "" {
+		t.Fatalf("primary list stderr = %q, want empty", primaryListStderr)
+	}
+	primaryList := decodeCommandJSONStructure(t, primaryListStdout).([]any)
+	if len(primaryList) != 2 {
+		t.Fatalf("primary link list = %#v, want 2 rows", primaryList)
+	}
+	assertCommandLinkListRow(t, primaryList[0], "outgoing", "implements", "requirement", "PRD-LINK-002", "Unified polymorphic issue table")
+	assertCommandLinkListRow(t, primaryList[1], "incoming", "discovered_from", "issue", peerIssueID, "Add index on concerns(issue_id, status)")
+
+	requirementListStdout, requirementListStderr := runFIDCommand(t, workspace, "link", "list", "PRD-LINK-002", "--format", "json")
+	if requirementListStderr != "" {
+		t.Fatalf("requirement list stderr = %q, want empty", requirementListStderr)
+	}
+	requirementList := decodeCommandJSONStructure(t, requirementListStdout).([]any)
+	if len(requirementList) != 1 {
+		t.Fatalf("requirement link list = %#v, want 1 row", requirementList)
+	}
+	assertCommandLinkListRow(t, requirementList[0], "incoming", "implements", "issue", primaryIssueID, "Primary issue")
+
+	_, removeStderr := runFIDCommand(t, workspace, "link", "remove", peerIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	assertNoNestedLockFailure(t, removeStderr)
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+3 {
+		t.Fatalf("journal lines after link remove = %d, want %d", got, linesBeforePhase12Writes+3)
+	}
+
+	beforeLinks := mustSnapshotE2ELinks(t, workspace)
+	beforeRequirements := mustSnapshotE2ERequirements(t, workspace)
+
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := os.Remove(dbPath); err != nil {
+		t.Fatalf("Remove(%q) error = %v", dbPath, err)
+	}
+
+	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	if !strings.Contains(rebuildStderr, "rebuild complete") {
+		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	}
+
+	if got := mustSnapshotE2ELinks(t, workspace); !reflect.DeepEqual(got, beforeLinks) {
+		t.Fatalf("links after rebuild = %#v, want %#v", got, beforeLinks)
+	}
+	if got := mustSnapshotE2ERequirements(t, workspace); !reflect.DeepEqual(got, beforeRequirements) {
+		t.Fatalf("requirements after rebuild = %#v, want %#v", got, beforeRequirements)
+	}
+}
+
+type e2eLinkRow struct {
+	FromType string
+	FromID   string
+	Relation string
+	ToType   string
+	ToID     string
+}
+
+type e2eRequirementRow struct {
+	ID             string
+	Type           string
+	Summary        string
+	SourceDoc      string
+	SourceSection  string
+	LastSyncedHash string
+	Status         string
+}
+
+func assertNoNestedLockFailure(t *testing.T, stderr string) {
+	t.Helper()
+
+	lower := strings.ToLower(stderr)
+	for _, blocked := range []string{"write.lock", "nested lock"} {
+		if strings.Contains(lower, blocked) {
+			t.Fatalf("stderr = %q, want no nested-lock failure", stderr)
+		}
+	}
+}
+
+func assertCommandLinkListRow(t *testing.T, value any, direction, relation, entityType, entityID, entityTitle string) {
+	t.Helper()
+
+	row, ok := value.(map[string]any)
+	if !ok {
+		t.Fatalf("row = %#v, want object", value)
+	}
+	want := map[string]string{
+		"direction":    direction,
+		"relation":     relation,
+		"entity_type":  entityType,
+		"entity_id":    entityID,
+		"entity_title": entityTitle,
+	}
+	for key, wantValue := range want {
+		if gotValue := strings.TrimSpace(row[key].(string)); gotValue != wantValue {
+			t.Fatalf("row[%s] = %q, want %q", key, gotValue, wantValue)
+		}
+	}
+}
+
+func mustSnapshotE2ELinks(t *testing.T, workspace string) []e2eLinkRow {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	rows, err := conn.Query(`
+		SELECT from_type, from_id, relation, to_type, to_id
+		FROM links
+		ORDER BY from_type, from_id, relation, to_type, to_id
+	`)
+	if err != nil {
+		t.Fatalf("query links snapshot: %v", err)
+	}
+	defer closeE2ERows(t, rows)
+
+	var snapshot []e2eLinkRow
+	for rows.Next() {
+		var row e2eLinkRow
+		if err := rows.Scan(&row.FromType, &row.FromID, &row.Relation, &row.ToType, &row.ToID); err != nil {
+			t.Fatalf("scan links snapshot: %v", err)
+		}
+		snapshot = append(snapshot, row)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate links snapshot: %v", err)
+	}
+	return snapshot
+}
+
+func mustSnapshotE2ERequirements(t *testing.T, workspace string) []e2eRequirementRow {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	rows, err := conn.Query(`
+		SELECT id, type, summary, source_doc, COALESCE(source_section, ''), COALESCE(last_synced_hash, ''), COALESCE(status, '')
+		FROM requirements
+		ORDER BY id
+	`)
+	if err != nil {
+		t.Fatalf("query requirements snapshot: %v", err)
+	}
+	defer closeE2ERows(t, rows)
+
+	var snapshot []e2eRequirementRow
+	for rows.Next() {
+		var row e2eRequirementRow
+		if err := rows.Scan(&row.ID, &row.Type, &row.Summary, &row.SourceDoc, &row.SourceSection, &row.LastSyncedHash, &row.Status); err != nil {
+			t.Fatalf("scan requirements snapshot: %v", err)
+		}
+		snapshot = append(snapshot, row)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate requirements snapshot: %v", err)
+	}
+	return snapshot
+}
+
+func closeE2ERows(t *testing.T, rows *sql.Rows) {
+	t.Helper()
+	if err := rows.Close(); err != nil {
+		t.Fatalf("Rows.Close() error = %v", err)
+	}
+}

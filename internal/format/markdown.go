@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/links"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
 
@@ -64,6 +65,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeConcernListMarkdown(writer, typed)
 	case []claims.ListItem:
 		return writeClaimListMarkdown(writer, typed)
+	case []links.ListItem:
+		return writeLinkListMarkdown(writer, typed)
 	case []policy.MatrixRow:
 		return writePolicyMatrixMarkdown(writer, typed)
 	default:
@@ -349,6 +352,36 @@ func writeClaimListMarkdown(writer io.Writer, items []claims.ListItem) error {
 	return nil
 }
 
+func writeLinkListMarkdown(writer io.Writer, items []links.ListItem) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Links\n\n")
+	if len(items) == 0 {
+		builder.WriteString("(no links)\n")
+	} else {
+		builder.WriteString("| direction | relation | entity_type | entity_id | entity_title |\n")
+		builder.WriteString("| --- | --- | --- | --- | --- |\n")
+		for _, item := range items {
+			builder.WriteString("| ")
+			builder.WriteString(markdownTableCell(item.Direction))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.Relation))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.EntityType))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.EntityID))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(dereferenceMarkdownString(item.EntityTitle)))
+			builder.WriteString(" |\n")
+		}
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
 func criterionChecked(latest map[string]any) bool {
 	for _, line := range markdownVerificationLines(latest) {
 		if strings.Contains(line, ": pass") {
@@ -487,4 +520,15 @@ func markdownListEpic(parentID *string) string {
 		return "no epic"
 	}
 	return "epic " + *parentID
+}
+
+func markdownTableCell(value string) string {
+	return strings.ReplaceAll(value, "|", `\|`)
+}
+
+func dereferenceMarkdownString(value *string) string {
+	if value == nil {
+		return ""
+	}
+	return *value
 }
