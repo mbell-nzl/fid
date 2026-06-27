@@ -92,8 +92,8 @@
 
 ## Commit hash
 
-- Pending post-commit.
+- `e30e40ee96c2089607dd9f3a4847406874e32a8e` (`e30e40e`)
 
 ## Commit subject
 
-- Pending post-commit.
+- `feat(links): add link list command`

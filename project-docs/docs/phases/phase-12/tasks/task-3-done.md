@@ -81,8 +81,8 @@
 
 ## Commit hash
 
-- Pending final task commit.
+- `66392c4c8d4356dd435b1ca37e30e3626aa1d2f5`
 
 ## Commit subject
 
-- Pending final task commit.
+- `feat(links): add link remove command`

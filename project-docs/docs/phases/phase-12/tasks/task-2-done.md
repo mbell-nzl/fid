@@ -98,9 +98,9 @@
 
 ## Deviations from spec
 
-- The committed report cannot embed its own final commit hash/subject without a
-  follow-up amend. Per the one-commit / no-amend constraint, the exact hash and
-  subject are supplied in the task close-out after commit creation.
+- The committed report was finalized before the task commit existed. Per the
+  one-commit / no-amend constraint, the exact hash and subject were added here
+  after commit creation without amending the commit.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -112,8 +112,8 @@
 
 ## Commit hash
 
-- Recorded in the task close-out after commit creation.
+- `0abe93edc2d98f1adda4cd5b1bec4e15f64ae06d`
 
 ## Commit subject
 
-- Recorded in the task close-out after commit creation.
+- `feat(links): add link add command`
