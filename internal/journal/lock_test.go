@@ -91,3 +91,40 @@ func TestWithLockTimesOutWithHolderNamedError(t *testing.T) {
 		t.Fatalf("timeout error = %q, want holder role", err)
 	}
 }
+
+func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
+	workspace := t.TempDir()
+	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+
+	heldLock, err := acquireLock(workspace, LockOwner{
+		Command:   "fid issue claim FID-123 --by developer",
+		ActorRole: "developer",
+	}, defaultLockOptions())
+	if err != nil {
+		t.Fatalf("acquireLock() error = %v", err)
+	}
+
+	releaseErrs := make(chan error, 1)
+	go func() {
+		time.Sleep(300 * time.Millisecond)
+		releaseErrs <- heldLock.release()
+	}()
+
+	acquired := false
+	err = withLockOptions(workspace, LockOwner{
+		Command:   "fid issue claim FID-123 --by qa_reviewer",
+		ActorRole: "qa_reviewer",
+	}, defaultLockOptions(), func(lock *WriteLock) error {
+		acquired = true
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("withLockOptions() error = %v", err)
+	}
+	if !acquired {
+		t.Fatal("withLockOptions() callback was not called")
+	}
+	if err := <-releaseErrs; err != nil {
+		t.Fatalf("heldLock.release() error = %v", err)
+	}
+}
