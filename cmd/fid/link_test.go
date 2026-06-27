@@ -207,6 +207,160 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 	})
 }
 
+func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	firstIssueID := createCommandIssue(t, workspace, "First issue")
+	secondIssueID := createCommandIssue(t, workspace, "Second issue")
+	runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+
+	journalPath := mustJournalPath(t, workspace)
+	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	activityBefore := countActivityLogRows(t, conn)
+
+	stdout, stderr := runFIDCommand(t, workspace, "link", "remove", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	for _, want := range []string{
+		"removed link " + firstIssueID + " blocks " + secondIssueID,
+		"inverse removed: " + secondIssueID + " blocked_by " + firstIssueID,
+	} {
+		if !strings.Contains(stderr, want) {
+			t.Fatalf("stderr = %q, want substring %q", stderr, want)
+		}
+	}
+
+	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	if linesAfter != linesBefore+1 {
+		t.Fatalf("journal lines after link remove = %d, want %d", linesAfter, linesBefore+1)
+	}
+
+	if rows := loadCommandLinks(t, conn); len(rows) != 0 {
+		t.Fatalf("links rows after remove = %#v, want none", rows)
+	}
+	if got := countActivityLogRows(t, conn); got != activityBefore+1 {
+		t.Fatalf("activity_log rows after remove = %d, want %d", got, activityBefore+1)
+	}
+
+	event := mustReadLastJournalEvent(t, journalPath)
+	if len(event.Effects) != 3 {
+		t.Fatalf("effect count = %d, want 3", len(event.Effects))
+	}
+
+	deleteEffects := 0
+	activityEffects := 0
+	for _, effect := range event.Effects {
+		switch {
+		case effect.Op == "delete" && effect.Table == "links":
+			deleteEffects++
+		case effect.Op == "activity" && effect.Table == "activity_log":
+			activityEffects++
+		default:
+			t.Fatalf("unexpected effect = %#v", effect)
+		}
+	}
+	if deleteEffects != 2 || activityEffects != 1 {
+		t.Fatalf("effect counts = %d deletes / %d activity, want 2 / 1", deleteEffects, activityEffects)
+	}
+
+	var (
+		activityEvent string
+		actor         string
+		details       string
+	)
+	if err := conn.QueryRow(`
+		SELECT event, COALESCE(actor, ''), COALESCE(details, '')
+		FROM activity_log
+		WHERE journal_event_id = ?
+	`, event.EventID).Scan(&activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityEvent != "link_removed" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "link_removed")
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
+	}
+	for _, want := range []string{
+		`"relation":"blocks"`,
+		`"to_id":"` + secondIssueID + `"`,
+		`"inverse_relation":"blocked_by"`,
+	} {
+		if !strings.Contains(details, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details, want)
+		}
+	}
+}
+
+func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
+	tests := []struct {
+		name          string
+		setup         func(t *testing.T, workspace string) []string
+		command       []string
+		wantSubstring string
+	}{
+		{
+			name: "missing link",
+			setup: func(t *testing.T, workspace string) []string {
+				return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
+			},
+			command:       []string{"link", "remove", "", "blocks", "", "--by", "developer"},
+			wantSubstring: "error: link remove: link does not exist:",
+		},
+		{
+			name: "unknown role",
+			setup: func(t *testing.T, workspace string) []string {
+				firstIssueID := createCommandIssue(t, workspace, "First issue")
+				secondIssueID := createCommandIssue(t, workspace, "Second issue")
+				runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+				return []string{firstIssueID, secondIssueID}
+			},
+			command:       []string{"link", "remove", "", "blocks", "", "--by", "intern"},
+			wantSubstring: `error: role "intern" not in project profile`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace := t.TempDir()
+			runInitCommand(t, workspace, "init")
+			ids := tt.setup(t, workspace)
+
+			command := append([]string(nil), tt.command...)
+			command[2] = ids[0]
+			command[4] = ids[1]
+
+			journalPath := mustJournalPath(t, workspace)
+			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, command...)
+			if err == nil {
+				t.Fatal("Execute() error = nil, want rejection")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			if !strings.Contains(stderr, tt.wantSubstring) {
+				t.Fatalf("stderr = %q, want substring %q", stderr, tt.wantSubstring)
+			}
+
+			linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			if linesAfter != linesBefore {
+				t.Fatalf("journal lines after rejection = %d, want %d", linesAfter, linesBefore)
+			}
+		})
+	}
+}
+
 func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")

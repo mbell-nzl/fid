@@ -3,30 +3,33 @@ package links
 import "fmt"
 
 type UnknownRelationError struct {
-	Relation string
+	Operation string
+	Relation  string
 }
 
 func (err *UnknownRelationError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("link add: unknown relation %q", err.Relation)
+	return fmt.Sprintf("%s: unknown relation %q", linkOperationName(err.Operation), err.Relation)
 }
 
 type SelfLinkError struct {
-	FromID   string
-	Relation string
-	ToID     string
+	Operation string
+	FromID    string
+	Relation  string
+	ToID      string
 }
 
 func (err *SelfLinkError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("link add: self link is not allowed: %s %s %s", err.FromID, err.Relation, err.ToID)
+	return fmt.Sprintf("%s: self link is not allowed: %s %s %s", linkOperationName(err.Operation), err.FromID, err.Relation, err.ToID)
 }
 
 type EndpointNotFoundError struct {
+	Operation    string
 	EndpointType string
 	EndpointID   string
 	Relation     string
@@ -39,7 +42,8 @@ func (err *EndpointNotFoundError) Error() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"link add: %s %q does not resolve for relation %q between %s %q and %s %q",
+		"%s: %s %q does not resolve for relation %q between %s %q and %s %q",
+		linkOperationName(err.Operation),
 		err.EndpointType,
 		err.EndpointID,
 		err.Relation,
@@ -51,11 +55,12 @@ func (err *EndpointNotFoundError) Error() string {
 }
 
 type IncompatibleRelationError struct {
-	Relation string
-	FromType string
-	FromID   string
-	ToType   string
-	ToID     string
+	Operation string
+	Relation  string
+	FromType  string
+	FromID    string
+	ToType    string
+	ToID      string
 }
 
 func (err *IncompatibleRelationError) Error() string {
@@ -63,7 +68,8 @@ func (err *IncompatibleRelationError) Error() string {
 		return "<nil>"
 	}
 	return fmt.Sprintf(
-		"link add: relation %q is not valid between %s %q and %s %q",
+		"%s: relation %q is not valid between %s %q and %s %q",
+		linkOperationName(err.Operation),
 		err.Relation,
 		err.FromType,
 		err.FromID,
@@ -73,14 +79,36 @@ func (err *IncompatibleRelationError) Error() string {
 }
 
 type DuplicateLinkError struct {
-	FromID   string
-	Relation string
-	ToID     string
+	Operation string
+	FromID    string
+	Relation  string
+	ToID      string
 }
 
 func (err *DuplicateLinkError) Error() string {
 	if err == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("link add: link already exists: %s %s %s", err.FromID, err.Relation, err.ToID)
+	return fmt.Sprintf("%s: link already exists: %s %s %s", linkOperationName(err.Operation), err.FromID, err.Relation, err.ToID)
+}
+
+type MissingLinkError struct {
+	Operation string
+	FromID    string
+	Relation  string
+	ToID      string
+}
+
+func (err *MissingLinkError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%s: link does not exist: %s %s %s", linkOperationName(err.Operation), err.FromID, err.Relation, err.ToID)
+}
+
+func linkOperationName(operation string) string {
+	if operation == "" {
+		return "link add"
+	}
+	return operation
 }

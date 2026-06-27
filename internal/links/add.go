@@ -34,13 +34,13 @@ func Add(options AddOptions) (AddResult, error) {
 
 	declaredRelation := strings.TrimSpace(options.Relation)
 	if _, ok := inverseRelation(declaredRelation); !ok {
-		return AddResult{}, &UnknownRelationError{Relation: declaredRelation}
+		return AddResult{}, &UnknownRelationError{Operation: "link add", Relation: declaredRelation}
 	}
 
 	fromID := strings.TrimSpace(options.FromID)
 	toID := strings.TrimSpace(options.ToID)
 	if fromID == toID {
-		return AddResult{}, &SelfLinkError{FromID: fromID, Relation: declaredRelation, ToID: toID}
+		return AddResult{}, &SelfLinkError{Operation: "link add", FromID: fromID, Relation: declaredRelation, ToID: toID}
 	}
 
 	var result AddResult
@@ -121,17 +121,18 @@ func plannedLinks(conn *sql.DB, fromID, relation, toID string) (Link, Link, erro
 	}
 	if !relationAllowedForTypes(declared.Relation, declared.FromType, declared.ToType) {
 		return Link{}, Link{}, &IncompatibleRelationError{
-			Relation: relation,
-			FromType: declared.FromType,
-			FromID:   declared.FromID,
-			ToType:   declared.ToType,
-			ToID:     declared.ToID,
+			Operation: "link add",
+			Relation:  relation,
+			FromType:  declared.FromType,
+			FromID:    declared.FromID,
+			ToType:    declared.ToType,
+			ToID:      declared.ToID,
 		}
 	}
 	if exists, err := linkExists(conn, declared); err != nil {
 		return Link{}, Link{}, err
 	} else if exists {
-		return Link{}, Link{}, &DuplicateLinkError{FromID: declared.FromID, Relation: declared.Relation, ToID: declared.ToID}
+		return Link{}, Link{}, &DuplicateLinkError{Operation: "link add", FromID: declared.FromID, Relation: declared.Relation, ToID: declared.ToID}
 	}
 
 	inverseRelationName, _ := inverseRelation(relation)
@@ -175,6 +176,7 @@ func assertEndpointExists(conn *sql.DB, endpointType, endpointID, relation, othe
 		return nil
 	}
 	return &EndpointNotFoundError{
+		Operation:    "link add",
 		EndpointType: endpointType,
 		EndpointID:   endpointID,
 		Relation:     relation,

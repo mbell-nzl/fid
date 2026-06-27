@@ -47,6 +47,16 @@ func TestLinkErrorsRenderActionableMessages(t *testing.T) {
 			err:  (&DuplicateLinkError{FromID: "FID-1", Relation: "blocks", ToID: "FID-2"}),
 			want: `link add: link already exists: FID-1 blocks FID-2`,
 		},
+		{
+			name: "missing link",
+			err: (&MissingLinkError{
+				Operation: "link remove",
+				FromID:    "FID-1",
+				Relation:  "blocks",
+				ToID:      "FID-2",
+			}),
+			want: `link remove: link does not exist: FID-1 blocks FID-2`,
+		},
 	}
 
 	for _, tt := range tests {
