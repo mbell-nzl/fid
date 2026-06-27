@@ -59,6 +59,8 @@ var defaultMatrixRows = []MatrixRow{
 	{Action: "concern.address", Developer: true, Human: true},
 	{Action: "maintenance.rebuild", TL: true, WorkflowRunner: true, Human: true},
 	{Action: "requirement.sync", TL: true, Human: true},
+	{Action: "link.add", Developer: true, QAReviewer: true, QALead: true, TLLite: true, TL: true, WorkflowRunner: true, Human: true},
+	{Action: "link.remove", Developer: true, QAReviewer: true, QALead: true, TLLite: true, TL: true, WorkflowRunner: true, Human: true},
 }
 
 var matrixByAction = buildMatrixByAction(defaultMatrixRows)

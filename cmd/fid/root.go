@@ -28,6 +28,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())
 	cmd.AddCommand(newIssueCommand())
+	cmd.AddCommand(newLinkCommand())
 	cmd.AddCommand(newPolicyCommand())
 	cmd.AddCommand(newReadyCommand())
 	cmd.AddCommand(newRequirementCommand())
