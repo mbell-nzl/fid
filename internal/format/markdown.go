@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/labels"
 	"github.com/mbell-nzl/fid/internal/links"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -65,6 +66,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeConcernListMarkdown(writer, typed)
 	case []claims.ListItem:
 		return writeClaimListMarkdown(writer, typed)
+	case []labels.Label:
+		return writeLabelListMarkdown(writer, typed)
 	case []links.ListItem:
 		return writeLinkListMarkdown(writer, typed)
 	case []policy.MatrixRow:
@@ -343,6 +346,32 @@ func writeClaimListMarkdown(writer io.Writer, items []claims.ListItem) error {
 			builder.WriteString("  ")
 			builder.WriteString(*item.Note)
 			builder.WriteString("\n")
+		}
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writeLabelListMarkdown(writer io.Writer, items []labels.Label) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Labels\n\n")
+	if len(items) == 0 {
+		builder.WriteString("(no labels)\n")
+	} else {
+		builder.WriteString("| name | colour | description |\n")
+		builder.WriteString("| --- | --- | --- |\n")
+		for _, item := range items {
+			builder.WriteString("| ")
+			builder.WriteString(markdownTableCell(item.Name))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(dereferenceMarkdownString(item.Colour)))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(dereferenceMarkdownString(item.Description)))
+			builder.WriteString(" |\n")
 		}
 	}
 

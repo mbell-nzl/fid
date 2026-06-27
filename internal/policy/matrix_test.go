@@ -39,6 +39,7 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		"requirement.sync",
 		"link.add",
 		"link.remove",
+		"label.add",
 	}
 
 	rows := MatrixRows()
@@ -200,6 +201,26 @@ func TestMatrixLinkRowsMatchSchemaSection13(t *testing.T) {
 				t.Fatalf("MatrixEntry(%q) = %#v, want %#v", tt.action, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestMatrixLabelAddRowMatchesSchemaSection13(t *testing.T) {
+	t.Parallel()
+
+	got, ok := MatrixEntry("label.add")
+	if !ok {
+		t.Fatal(`MatrixEntry("label.add") found = false, want true`)
+	}
+
+	want := MatrixRow{
+		Action:         "label.add",
+		Developer:      true,
+		TL:             true,
+		WorkflowRunner: true,
+		Human:          true,
+	}
+	if got != want {
+		t.Fatalf("MatrixEntry(%q) = %#v, want %#v", "label.add", got, want)
 	}
 }
 
