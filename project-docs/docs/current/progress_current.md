@@ -7,11 +7,20 @@
 
 ## Project State
 
-**Status:** Phase 13 (Labels + v0.1d closure, v0.1d slice 4/4) is
-**COMPLETE - PASS**, wrapped 2026-06-28 on branch `phase-13`. **v0.1d is closed**
-and the v0.1 headline lifecycle exit criterion is proven end-to-end. No phase is
-currently active; **v0.1e (Telemetry, Composites, Maintenance)** is the next
-planning target.
+**Status:** **Phase 14 (Telemetry + pricing, v0.1e slice 1/4) is PLANNED** and
+ready for execution. v0.1e is sliced into four phases (14-17); see the roadmap
+v0.1e slicing note. v0.1d closed 2026-06-28 with the v0.1 headline lifecycle
+exit criterion proven end-to-end.
+
+Phase 14 plan:
+
+- Validation contract `phase-14/qa/validation-contract.md` drafted (VAL-001..009).
+- Three ordered tasks: (1) pricing defaults for Anthropic/OpenAI/Google +
+  precision; (2) `fid run record` (new `internal/runs`, `run.record` matrix row,
+  cost + unknown-model warning); (3) `fid stats tokens`/`cost` (new
+  `internal/stats`, by role/model/epic, four formats).
+- Five planning interpretations (PI-1..PI-5) surfaced for kickoff confirmation;
+  none block planning. No carry-forward items land in Phase 14.
 
 Phase 13 outcome:
 
@@ -41,11 +50,7 @@ Phase 13 outcome:
 
 ## Next Action
 
-- Tech Lead slices **v0.1e — Telemetry, Composites, Maintenance** into phases.
-  Candidate scope (roadmap v0.1e): `fid run record` + pricing config, `fid stats
-  cost`/`tokens`, the `fid dev start/gate/finish/block` composites, `fid sql`,
-  `fid journal inspect`, `fid maintenance check`/`vacuum`, `fid activity list`
-  (the CF-011 broad-reconciliation home), and the stub-table CLI guard. CF-013,
-  CF-014, and CF-015 cleanups batch with the `fid dev *` composites.
-- The first v0.1e phase planning creates its
-  `../phases/phase-N/qa/validation-contract.md` before task execution begins.
+- Execute Phase 14 via Phase Runner: Task 1 → Task 2 → Task 3, with mid-phase
+  QA review per the runner cadence, then QA Lead final review + human checklist.
+- Confirm PI-1..PI-5 during execution and record them as phase decisions.
+- After Phase 14: plan Phase 15 (`fid dev *` composites + CF-013/14/15 cleanup).
