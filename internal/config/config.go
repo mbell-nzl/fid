@@ -31,6 +31,16 @@ type PricingConfig struct {
 	Models map[string]ModelPricing
 }
 
+var defaultPricingModelOrder = []string{
+	"claude-opus-4-7",
+	"claude-sonnet-4-6",
+	"claude-haiku-4-5",
+	"gpt-5.4-mini",
+	"gpt-5.4-nano",
+	"gemini-2.5-flash",
+	"gemini-2.5-flash-lite",
+}
+
 type WorkspacePaths struct {
 	WorkspaceDir string
 	JournalDir   string
@@ -58,6 +68,22 @@ func DefaultPricingConfig() PricingConfig {
 			"claude-haiku-4-5": {
 				InPerMTok:  0.80,
 				OutPerMTok: 4.0,
+			},
+			"gpt-5.4-mini": {
+				InPerMTok:  0.375,
+				OutPerMTok: 2.25,
+			},
+			"gpt-5.4-nano": {
+				InPerMTok:  0.10,
+				OutPerMTok: 0.625,
+			},
+			"gemini-2.5-flash": {
+				InPerMTok:  0.30,
+				OutPerMTok: 2.50,
+			},
+			"gemini-2.5-flash-lite": {
+				InPerMTok:  0.10,
+				OutPerMTok: 0.40,
 			},
 		},
 	}
@@ -207,22 +233,21 @@ func pricingConfigContents(pricing PricingConfig) string {
 	builder.WriteString("# Default model pricing in USD per million tokens.\n")
 	builder.WriteString("# cost_usd = (tokens_in * in_per_mtok + tokens_out * out_per_mtok) / 1e6\n\n")
 
-	order := []string{
-		"claude-opus-4-7",
-		"claude-sonnet-4-6",
-		"claude-haiku-4-5",
-	}
-	for _, name := range order {
+	for _, name := range defaultPricingModelOrder {
 		model, ok := pricing.Models[name]
 		if !ok {
 			continue
 		}
 		_, _ = fmt.Fprintf(&builder, "[models.%s]\n", name)
-		_, _ = fmt.Fprintf(&builder, "in_per_mtok = %.2f\n", model.InPerMTok)
-		_, _ = fmt.Fprintf(&builder, "out_per_mtok = %.2f\n\n", model.OutPerMTok)
+		_, _ = fmt.Fprintf(&builder, "in_per_mtok = %s\n", formatPricingValue(model.InPerMTok))
+		_, _ = fmt.Fprintf(&builder, "out_per_mtok = %s\n\n", formatPricingValue(model.OutPerMTok))
 	}
 
 	return builder.String()
+}
+
+func formatPricingValue(value float64) string {
+	return strconv.FormatFloat(value, 'f', -1, 64)
 }
 
 func gitIgnoreContents() string {

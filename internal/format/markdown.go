@@ -13,6 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/labels"
 	"github.com/mbell-nzl/fid/internal/links"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/stats"
 )
 
 type IssueMarkdownView struct {
@@ -72,6 +73,10 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeLinkListMarkdown(writer, typed)
 	case []policy.MatrixRow:
 		return writePolicyMatrixMarkdown(writer, typed)
+	case []stats.TokensRow:
+		return writeTokensStatsMarkdown(writer, typed)
+	case []stats.CostRow:
+		return writeCostStatsMarkdown(writer, typed)
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}
@@ -202,6 +207,61 @@ func markdownOwnerSequenceLine(issue issues.Issue) string {
 		parts = append(parts, fmt.Sprintf("**Sequence:** %d", *issue.Sequence))
 	}
 	return strings.Join(parts, " | ")
+}
+
+func writeTokensStatsMarkdown(writer io.Writer, rows []stats.TokensRow) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Token Stats\n\n")
+	builder.WriteString("| Group | Total Tokens In | Total Tokens Out | Run Count |\n")
+	builder.WriteString("| --- | ---: | ---: | ---: |\n")
+	for _, row := range rows {
+		fmt.Fprintf(&builder, "| %s | %d | %d | %d |\n", markdownStatsGroupLabel(row.Role, row.Model, row.EpicID), row.TotalTokensIn, row.TotalTokensOut, row.RunCount)
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writeCostStatsMarkdown(writer io.Writer, rows []stats.CostRow) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Cost Stats\n\n")
+	builder.WriteString("| Group | Total Cost (USD) | Total Tokens In | Total Tokens Out | Run Count |\n")
+	builder.WriteString("| --- | ---: | ---: | ---: | ---: |\n")
+	for _, row := range rows {
+		fmt.Fprintf(&builder, "| %s | %s | %d | %d | %d |\n", markdownStatsGroupLabel(row.Role, row.Model, row.EpicID), markdownStatsCost(row.TotalCostUSD), row.TotalTokensIn, row.TotalTokensOut, row.RunCount)
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func markdownStatsGroupLabel(role, model, epicID *string) string {
+	switch {
+	case role != nil && strings.TrimSpace(*role) != "":
+		return *role
+	case model != nil && strings.TrimSpace(*model) != "":
+		return *model
+	case epicID != nil && strings.TrimSpace(*epicID) != "":
+		return *epicID
+	default:
+		return "(none)"
+	}
+}
+
+func markdownStatsCost(value float64) string {
+	text := strconv.FormatFloat(value, 'f', 6, 64)
+	text = strings.TrimRight(text, "0")
+	text = strings.TrimRight(text, ".")
+	if text == "" {
+		return "0"
+	}
+	return text
 }
 
 func writeAcceptanceCriteriaMarkdown(builder *strings.Builder, criteria []issues.AcceptanceCriterion) {

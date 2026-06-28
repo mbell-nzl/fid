@@ -67,7 +67,9 @@ migration path.
 
 Model pricing data used to compute `agent_runs.cost_usd` at run
 close. Ships with defaults for current Anthropic/OpenAI/Google models;
-user-overridable.
+user-overridable. The built-in set spans all three providers, and
+`fid init` emits decimal prices with exact round-trip-safe precision so
+fractional-dollar list prices survive `ReadPricingConfig` unchanged.
 
 ```toml
 # Each model entry maps to (in_per_mtok, out_per_mtok) in USD.
@@ -85,6 +87,22 @@ out_per_mtok = 15.0
 in_per_mtok = 0.80
 out_per_mtok = 4.0
 
+[models.gpt-5.4-mini]
+in_per_mtok = 0.375
+out_per_mtok = 2.25
+
+[models.gpt-5.4-nano]
+in_per_mtok = 0.10
+out_per_mtok = 0.625
+
+[models.gemini-2.5-flash]
+in_per_mtok = 0.30
+out_per_mtok = 2.50
+
+[models.gemini-2.5-flash-lite]
+in_per_mtok = 0.10
+out_per_mtok = 0.40
+
 # Add custom models as needed:
 # [models.my-custom-model]
 # in_per_mtok = 5.0
@@ -95,6 +113,9 @@ out_per_mtok = 4.0
 
 - Pricing is **snapshot** on each `agent_runs` row at run end. This
   preserves audit trail across price changes.
+- `fid init` emits numeric prices with enough decimal precision to
+  round-trip every shipped default entry through `ReadPricingConfig`
+  without losing fractional-dollar precision.
 - If a model is missing from `pricing.toml` at run close, `cost_usd`
   is left NULL and a warning is logged. No silent guessing.
 - Users can add or override any model entry.
@@ -124,4 +145,4 @@ the SQLite projection from the journal plus the current schema.
 
 ---
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-06-28*

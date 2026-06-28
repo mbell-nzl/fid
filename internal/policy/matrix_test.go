@@ -35,6 +35,7 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		"issue.claim.release",
 		"concern.raise",
 		"concern.address",
+		"run.record",
 		"maintenance.rebuild",
 		"requirement.sync",
 		"link.add",
@@ -155,6 +156,29 @@ func TestMatrixRequirementSyncRowMatchesSchemaSection13(t *testing.T) {
 	}
 	if got != want {
 		t.Fatalf("MatrixEntry(%q) = %#v, want %#v", "requirement.sync", got, want)
+	}
+}
+
+func TestMatrixRunRecordRowMatchesSchemaSection13(t *testing.T) {
+	t.Parallel()
+
+	got, ok := MatrixEntry("run.record")
+	if !ok {
+		t.Fatal(`MatrixEntry("run.record") found = false, want true`)
+	}
+
+	want := MatrixRow{
+		Action:         "run.record",
+		Developer:      true,
+		QAReviewer:     true,
+		QALead:         true,
+		TLLite:         true,
+		TL:             true,
+		WorkflowRunner: true,
+		Human:          true,
+	}
+	if got != want {
+		t.Fatalf("MatrixEntry(%q) = %#v, want %#v", "run.record", got, want)
 	}
 }
 

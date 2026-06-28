@@ -39,14 +39,15 @@ None.
 
 ## Recent Resolutions
 
-- None open. Phase 13 (Labels + v0.1d closure) raised no escalations and recorded
+- ESC-001 (Phase 14 Task 2 missing integration-gate evidence) resolved 2026-06-28
+  by the Tech Lead as do-now remediation; remediation commit `0cba161` recorded
+  the gate PASS and QA cleared the block. Archived at Phase 14 wrap in
+  `../phases/phase-14/tl-escalations.md` (TRG-002/TRG-003 RESOLVED).
+- Phase 13 (Labels + v0.1d closure) raised no escalations and recorded
   no TL-Lite triage events; the two final-review improvement findings were
   deferred to v0.1e via CF-015 (see `../phases/phase-13/tl-escalations.md`).
 - Phase 12 (Requirements + links) raised no escalations; TRG-001 and TRG-002
   both resolved locally as RESUME (see `../phases/phase-12/tl-escalations.md`).
-- ESC-008 (Phase 11 claim-write projection refresh lock ordering) resolved by
-  DEC-028 and Task 5/VAL-015, and archived in
-  `../phases/phase-11/tl-escalations.md` at Phase 11 wrap.
 
 <!--
 Add new escalations above this comment using the template at

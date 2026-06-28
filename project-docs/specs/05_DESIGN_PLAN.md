@@ -112,7 +112,7 @@ fid
 │   ├── list                      # all available reports
 │   └── <name>                    # epic-status, open-escalations, qa-blockers, etc.
 ├── stats
-│   ├── tokens                    # --by role --by model
+│   ├── tokens                    # --by role --by model --by epic
 │   ├── cost                      # --by role --by model --by epic
 │   ├── tasks                     # v0.2: --by epic --include est-vs-actual
 │   └── attempts                  # v0.2: --by epic (rework rate)

@@ -118,7 +118,11 @@ go build -o /tmp/fid ./cmd/fid
 
 List any conditional command required by this task and why:
 
-- `go test -tags integration -race ./...` if any test is integration-tagged.
+- `go test -tags integration -race ./...` is required whenever the package set
+  under test contains integration-tagged tests, which it does (`cmd/fid`
+  already has integration-tagged tests). Run it and record `PASS` or `BLOCKED`
+  even when this task adds no new integration-tagged tests; "not run" is not a
+  valid disposition for a required conditional command. (See ESC-001.)
 - `go build -o /tmp/fid ./cmd/fid` for the CLI build used by command tests.
 
 ## Notes For Developer
