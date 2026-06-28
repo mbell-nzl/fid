@@ -312,7 +312,7 @@ with whet's task artifacts.
 |---|---|---|
 | `fid run record` | Record `agent_runs` row: role, model, tokens in/out, snapshot pricing, computed cost_usd, and optional provider reconciliation fields. Warning when model not in pricing config. | PRD-TELEM-001–003a |
 | `fid stats cost` | Aggregate cost by role, by model, by epic. | PRD-TELEM-004 |
-| `fid stats tokens` | Aggregate tokens by role, by model. | PRD-TELEM-004 |
+| `fid stats tokens` | Aggregate tokens by role, by model, by epic. | PRD-TELEM-004 |
 | `fid dev start` | Composite: claim + transition → in_progress + open agent_run. `--by developer`. | PRD-DEV-008, PRD-CLAIM-005 |
 | `fid dev gate` | Record append-only `gate_runs` row on the derived active attempt before completion exists. | PRD-DEV-004, PRD-DEV-010 |
 | `fid dev finish` | Composite: close agent_run + create task_completion with `gate_runs` snapshot + transition → dev_complete (validates rules). Supports optional human-intervention flag/note. `--by developer`. | PRD-DEV-008–010 |
