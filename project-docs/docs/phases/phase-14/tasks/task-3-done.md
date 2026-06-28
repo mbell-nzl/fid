@@ -71,8 +71,8 @@
 
 ## Commit hash
 
-- Pending follow-up metadata commit.
+- `25d3c0688ac8f6b0a79336e5ad35dbc22ebaf633` (`25d3c06`)
 
 ## Commit subject
 
-- Pending follow-up metadata commit.
+- `feat(stats): add token and cost aggregates`
