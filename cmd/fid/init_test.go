@@ -77,8 +77,8 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadPricingConfig() error = %v", err)
 	}
-	if len(pricingConfig.Models) != 3 {
-		t.Fatalf("pricing models = %d, want %d", len(pricingConfig.Models), 3)
+	if len(pricingConfig.Models) != len(config.DefaultPricingConfig().Models) {
+		t.Fatalf("pricing models = %d, want %d", len(pricingConfig.Models), len(config.DefaultPricingConfig().Models))
 	}
 	if got := stderr.String(); !strings.Contains(got, "initialized fid project in .fid/") {
 		t.Fatalf("stderr = %q, want init confirmation", got)
