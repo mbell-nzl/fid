@@ -1136,7 +1136,7 @@ and the linked completion if any.
 ### `fid stats tokens`
 
 ```
-fid stats tokens [--by role|model] [--epic <id>] [--format json|toon|markdown|yaml]
+fid stats tokens [--by role|model|epic] [--epic <id>] [--format json|toon|markdown|yaml]
 ```
 
 **JSON output (`fid stats tokens --by role`):**
