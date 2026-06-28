@@ -325,6 +325,101 @@ with whet's task artifacts.
 | Pricing config | `.fid/pricing.toml` ships with defaults for current Anthropic, OpenAI, Google models. User-overridable. | PRD-NFR-010 |
 | Stub table CLI guard | Commands targeting v0.2 entities (`decision create`, `escalation create`, etc.) return "commands for <entity> ship in <version>" with non-zero exit code. | PRD-ERR-012 |
 
+> **Phase-slicing note — v0.1e (Tech Lead, 2026-06-28).**
+> v0.1e is the **final v0.1 version** and the **largest by surface count** — 14
+> roadmap items spanning telemetry, the `fid dev *` composites, read-only escape
+> hatches, maintenance, the activity timeline, and the stub-table guard, plus
+> four scheduled carry-forward cleanups (**CF-011, CF-013, CF-014, CF-015**). It
+> adds **no new hard-to-change persistence contracts** — the `agent_runs`,
+> `gate_runs`, `task_completions`, `claims`, and `activity_log` tables and their
+> triggers all exist from v0.1a schema-widening — but it introduces the first
+> telemetry/pricing surface and the **composite write commands** that orchestrate
+> several existing single-effect writes inside one event. Slice into **four
+> phases (Phases 14–17)**, each exiting on commands an agent can run against a
+> real `.fid/` workspace. Because the version closes v0.1, the final phase must
+> also prove the v0.1 exit criteria end-to-end.
+>
+> - **Phase 14 — Telemetry + pricing (self-contained first slice).** Ship
+>   `.fid/pricing.toml` defaults (current Anthropic/OpenAI/Google models,
+>   user-overridable), `fid run record` (append an `agent_runs` row with role,
+>   model, tokens in/out, snapshot pricing, computed `cost_usd`, optional provider
+>   reconciliation fields, and a warning when the model is absent from pricing
+>   config), and `fid stats cost` / `fid stats tokens` (cost aggregated by role/
+>   model/epic; tokens by role/model; all read formats). Self-contained: depends
+>   only on the existing journal/projection machinery and issue/epic rows. Leads
+>   the version because the `fid dev *` composites open and close the `agent_runs`
+>   rows this phase introduces. **Exit:** an agent can record an agent run with a
+>   snapshot price and computed USD cost, see an unknown-model warning, and
+>   aggregate cost and tokens by role/model/epic. (PRD-TELEM-001–004, PRD-NFR-010)
+> - **Phase 15 — `fid dev *` composites + orchestration cleanup.** Implement the
+>   composite developer commands on top of the existing claim, transition,
+>   completion, and (Phase 14) agent_run surfaces: `fid dev start` (claim +
+>   transition into the started category → in_progress + open agent_run),
+>   `fid dev gate` (append-only `gate_runs` row on the derived active attempt
+>   before a completion exists), `fid dev finish` (close agent_run + create
+>   `task_completion` with `gate_runs` snapshot + transition → dev_complete,
+>   validating rules, optional human-intervention flag/note), and `fid dev block`
+>   (transition → failed_gate with reason + completion with `gate_runs` snapshot).
+>   Each composite is one logical write = one event, gated by the Phase 10
+>   permissions matrix, validate-before-append. This is the scheduled home for the
+>   function/file-size cleanups on the same paths: **CF-013**
+>   (`internal/issues/complete.go` `Complete` orchestration), **CF-014** (split
+>   `cmd/fid/issue.go` (984) and `internal/journal/replay.go` (485) under the
+>   400-line file target), and **CF-015** (`internal/labels/add.go` `Add` and the
+>   `internal/issues/label.go` add/remove flows). **Exit:** an agent can run
+>   `fid dev start → gate → finish` to drive a task from claim through
+>   dev_complete in composite steps, `fid dev block` to record a failed gate with
+>   reason, and each composite emits a single auditable event with the correct
+>   claim/transition/completion/gate effects. (PRD-DEV-004, 008–010, PRD-CLAIM-005)
+> - **Phase 16 — Activity timeline + read-only escape hatches.** Implement
+>   `fid activity list` (projected timeline read with entity, event, and date
+>   filters, all read formats) and carry the **CF-011** broad `activity_log`
+>   reconciliation: decide which write commands populate `activity_log` and
+>   backfill the unlogged writers (issue create, AC writes, completions, and any
+>   other write that does not yet emit a row) so the timeline is consistent across
+>   every write — derived-projection only, no rebuild risk. Add the read-only
+>   escape hatches `fid sql` (reject anything that is not SELECT/EXPLAIN/PRAGMA/
+>   WITH) and `fid journal inspect <event_id>` (actor, command metadata, effects,
+>   journal location, event hash, revert eligibility). **Exit:** an agent can list
+>   a consistent activity timeline across every write command with entity/event/
+>   date filters, run a read-only `fid sql` query while non-read statements are
+>   rejected, and inspect a journal event by ID. (PRD-OUT-017, PRD-OUT-008,
+>   TRD-SEC-002, PRD-OPS-013)
+> - **Phase 17 — Maintenance + stub guard + v0.1 closure.** Implement
+>   `fid maintenance check` (consistency audit: kind-hierarchy violations,
+>   orphaned polymorphic refs, FK integrity, workflow state validity; warnings for
+>   stale claims, started-without-claim, stale verifications, telemetry gaps;
+>   `--warn-as-error` for CI; `--format json|markdown`), `fid maintenance vacuum`
+>   (SQLite VACUUM), and the stub-table CLI guard (`decision create`,
+>   `escalation create`, etc. return "commands for <entity> ship in <version>"
+>   with non-zero exit). Close the version with an end-to-end v0.1 exit-criteria
+>   smoke proving create → claim → transition → complete → unclaim under
+>   permissions, exercising the ready queue, links, labels, telemetry, and
+>   maintenance, plus a delete-and-rebuild non-destructive check. **Exit:**
+>   `fid maintenance check` catches a seeded structural violation and exits
+>   non-zero under `--warn-as-error`, stub-table commands are guarded, and the
+>   v0.1 exit criteria are demonstrably met (v0.1 done). (PRD-OPS-005–008,
+>   PRD-ERR-012, v0.1 exit criteria)
+>
+> Ordering rationale: telemetry leads because the `fid dev *` composites open and
+> close the `agent_runs` rows it introduces; the composites follow because they
+> orchestrate the existing claim/transition/completion surfaces (and are the
+> scheduled home for the CF-013/CF-014/CF-015 cleanups on those same files); the
+> activity timeline + reconciliation comes after every write command (including
+> the composites) exists so the backfill is complete in one pass; maintenance and
+> the v0.1 closure smoke land last so the audit and exit-criteria proof run over
+> the full surface. Re-slice freely if phase-start dependency analysis supports a
+> different cut — e.g. moving the `internal/journal/replay.go` portion of CF-014
+> into Phase 16 alongside the activity-projection work, or batching `fid sql` /
+> `fid journal inspect` into Phase 17. The binding rule is every phase ships an
+> end-to-end verifiable increment, and Phase 17 must prove the v0.1 exit criteria.
+> Explicit deferrals stay as recorded: CF-008 resolution-reason field + cancel
+> `--reason` flag remains v0.2; `fid changes`, `fid ready --explain`, run git
+> context / run lifecycle / `fid run list`/`show`, `fid dev resume`/`abandon`,
+> stats expansion (`fid stats tasks/attempts/gates/interventions`), and
+> `fid event revert` remain v0.2c; all governance-entity write CLIs beyond the
+> stub guard remain v0.2b.
+
 **v0.1 exit criteria:**
 
 - `fid init` creates a working project. `fid rebuild` reconstructs the DB from
@@ -583,4 +678,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-06-21*
+*Last updated: 2026-06-28*
