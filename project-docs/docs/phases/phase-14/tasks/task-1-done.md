@@ -94,6 +94,10 @@
   still hardcoded the pre-Task-1 three-model default count. The change was
   limited to that stale expectation and kept `fid init` coverage aligned with
   Task 1 behavior.
+- The report metadata was committed in a narrow follow-up docs commit because a
+  committed file cannot contain its own final Git object ID without a second
+  write. The hash and subject recorded below point to the implementation commit
+  for this task.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -110,8 +114,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `2931031e0e4481f683f816cc411175ee24aaa526` (`2931031`)
 
 ## Commit subject
 
-- Pending commit.
+- `feat(config): expand pricing defaults and preserve precision`
