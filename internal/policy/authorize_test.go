@@ -62,3 +62,30 @@ func TestAuthorizePreservesMissingAndUnknownRoleErrors(t *testing.T) {
 		t.Fatalf("UnknownRoleError.Role = %q, want %q", unknownErr.Role, "intern")
 	}
 }
+
+func TestAuthorizeIssueLabelActionsMatchMatrixExpectations(t *testing.T) {
+	t.Parallel()
+
+	workspace := newPolicyWorkspace(t)
+
+	for _, action := range []string{"issue.label.add", "issue.label.remove"} {
+		for _, role := range []string{"developer", "tl", "workflow_runner", "human"} {
+			if err := Authorize(workspace, role, action); err != nil {
+				t.Fatalf("Authorize(%q, %q) error = %v, want allowed", role, action, err)
+			}
+		}
+
+		err := Authorize(workspace, "qa_reviewer", action)
+		if err == nil {
+			t.Fatalf("Authorize(qa_reviewer, %q) error = nil, want permission denied", action)
+		}
+
+		var deniedErr *PermissionDeniedError
+		if !errors.As(err, &deniedErr) {
+			t.Fatalf("Authorize(qa_reviewer, %q) error = %T, want *PermissionDeniedError", action, err)
+		}
+		if deniedErr.Role != "qa_reviewer" || deniedErr.Action != action {
+			t.Fatalf("PermissionDeniedError = %#v, want role qa_reviewer action %q", deniedErr, action)
+		}
+	}
+}
