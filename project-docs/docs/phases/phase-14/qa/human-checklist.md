@@ -2,7 +2,7 @@
 
 > Phase: 14 - Telemetry + Pricing
 > Date: 2026-06-28
-> Tester: _______________
+> Tester: MBEL
 >
 > Include only `(human)` items here: perception, product-owner judgment,
 > dogfooding, tone, and flow coherence. Deterministic `(qa-lead)` checks belong
@@ -13,22 +13,22 @@
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-14a | VAL-009 | In a real `.fid` workspace, record an agent run with a known priced model and inspect the CLI output `(human)`. | The output makes it clear that an agent run was recorded and shows a computed USD cost. | | |
-| HUMAN-14b | VAL-009 | In a real `.fid` workspace, record an agent run with an unknown model and inspect the CLI output and stderr warning `(human)`. | The command succeeds, records the run, and the warning names the unknown model without implying a guessed price. | | |
-| HUMAN-14c | VAL-009 | In a real `.fid` workspace with recorded runs, inspect `fid stats tokens` and `fid stats cost` grouped by role, model, and epic `(human)`. | The aggregate output is understandable from the CLI alone and communicates token totals, cost totals, and run counts by role, model, and epic. | | |
+| HUMAN-14a | VAL-009 | In a real `.fid` workspace, record an agent run with a known priced model and inspect the CLI output `(human)`. | The output makes it clear that an agent run was recorded and shows a computed USD cost. | PASS | n/a |
+| HUMAN-14b | VAL-009 | In a real `.fid` workspace, record an agent run with an unknown model and inspect the CLI output and stderr warning `(human)`. | The command succeeds, records the run, and the warning names the unknown model without implying a guessed price. | PASS | n/a |
+| HUMAN-14c | VAL-009 | In a real `.fid` workspace with recorded runs, inspect `fid stats tokens` and `fid stats cost` grouped by role, model, and epic `(human)`. | The aggregate output is understandable from the CLI alone and communicates token totals, cost totals, and run counts by role, model, and epic. | PASS | n/a |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Dogfood Observables | 3 | 0 | 0 | 0 | 3 |
-| **Total** | 3 | 0 | 0 | 0 | 3 |
+| Dogfood Observables | 3 | 3 | 0 | 0 | 0 |
+| **Total** | 3 | 3 | 0 | 0 | 0 |
 
 | | |
 |---|---|
-| **Overall result** | |
-| **Date completed** | |
-| **Notes** | |
+| **Overall result** | PASS |
+| **Date completed** | 2026-06-28 |
+| **Notes** | n/a |
 
 <!--
 Outcome values: pass, fail, partial, blank.
