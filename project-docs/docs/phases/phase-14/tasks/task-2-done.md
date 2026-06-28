@@ -51,7 +51,7 @@
 - PASS `go test -race -coverprofile=coverage.out ./...`
 - PASS `go tool cover -func=coverage.out`
 - PASS `go build -o /tmp/fid ./cmd/fid`
-- Conditional command not run: `go test -tags integration -race ./...` (no integration-tagged tests added in Task 2)
+- PASS `go test -tags integration -race ./...`
 - Coverage: `internal/runs` 75.1%, `internal/policy` 84.6%, `cmd/fid` 77.8%
 - Total statement coverage from `go tool cover -func=coverage.out`: 76.1%
 - Built-binary evidence: `/tmp/fid` recorded `RUN-bb9ab2` on `FID-dc4c61` in temp workspace `/tmp/tmp.z9oSMVzOsg` with stderr confirmation:
@@ -71,8 +71,8 @@
 
 ## Commit hash
 
-- TBD
+- `3f8f8f1`
 
 ## Commit subject
 
-- TBD
+- `feat(run): add fid run record`
