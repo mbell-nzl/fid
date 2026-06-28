@@ -2,7 +2,7 @@
 
 > Phase: 13 - Labels + v0.1d Closure
 > Date: 2026-06-27
-> Tester: _______________
+> Tester: MBEL
 >
 > Include only `(human)` items here: perception, product-owner judgment,
 > dogfooding, tone, and flow coherence. Deterministic `(qa-lead)` checks belong
@@ -16,23 +16,23 @@ understood from CLI output, not implementation files.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HV-13a | VAL-010 | Confirm from real CLI output that a label was created and listed with its name, colour, and description visible. | The output makes the created label and its metadata visible enough for a user to identify them. | | |
-| HV-13b | VAL-010 | Confirm from real CLI output that adding one label to an issue left the issue's existing labels in place. | Before/after output shows the new label plus the pre-existing labels; the command does not look like a replace-all operation. | | |
-| HV-13c | VAL-010 | Confirm from real CLI output that removing one label from an issue left the remaining labels in place. | Before/after output shows only the selected label removed while the other labels remain visible. | | |
-| HV-13d | VAL-010 | Confirm from real CLI output that create -> claim -> transition -> complete -> unclaim ran end-to-end with a link and label on the issue. | The transcript is understandable as one complete lifecycle and shows the issue retained its link and label through the flow. | | |
+| HV-13a | VAL-010 | Confirm from real CLI output that a label was created and listed with its name, colour, and description visible. | The output makes the created label and its metadata visible enough for a user to identify them. | PASS | n/a |
+| HV-13b | VAL-010 | Confirm from real CLI output that adding one label to an issue left the issue's existing labels in place. | Before/after output shows the new label plus the pre-existing labels; the command does not look like a replace-all operation. | PASS | n/a |
+| HV-13c | VAL-010 | Confirm from real CLI output that removing one label from an issue left the remaining labels in place. | Before/after output shows only the selected label removed while the other labels remain visible. | PASS | n/a |
+| HV-13d | VAL-010 | Confirm from real CLI output that create -> claim -> transition -> complete -> unclaim ran end-to-end with a link and label on the issue. | The transcript is understandable as one complete lifecycle and shows the issue retained its link and label through the flow. | PASS | n/a |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Dogfood Observables | 4 | | | | 4 |
-| **Total** | 4 | | | | 4 |
+| Dogfood Observables | 4 | 4 | 0 | 0 | 0 |
+| **Total** | 4 | 4 | 0 | 0 | 0 |
 
 | | |
 |---|---|
-| **Overall result** | |
-| **Date completed** | |
-| **Notes** | |
+| **Overall result** | PASS |
+| **Date completed** | 2026-06-28 |
+| **Notes** | n/a |
 
 <!--
 Outcome values: pass, fail, partial, blank.
