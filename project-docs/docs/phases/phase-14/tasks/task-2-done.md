@@ -71,8 +71,8 @@
 
 ## Commit hash
 
-- `3f8f8f1`
+- `0cba161`
 
 ## Commit subject
 
-- `feat(run): add fid run record`
+- `docs(phase-14): record task-2 integration gate`
