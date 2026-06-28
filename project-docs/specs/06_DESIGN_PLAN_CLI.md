@@ -1056,7 +1056,7 @@ matrix; v0.2 reads the project-configurable `role_permissions` table.
 fid run record --issue <id> --role <role> --model <model>
     [--tokens-in <n>] [--tokens-out <n>] [--token-breakdown-json <json>]
     [--tool-call-count <n>] [--provider-run-id <id>] [--provider-cost-usd <amount>]
-    [--completion <id>] [--review <id>] --by <role>
+    [--completion <id>] --by <role>
 ```
 
 | Flag | Type | Required | Description |
@@ -1071,7 +1071,6 @@ fid run record --issue <id> --role <role> --model <model>
 | `--provider-run-id` | string | no | Provider request/run identifier |
 | `--provider-cost-usd` | decimal | no | Provider-billed cost for reconciliation |
 | `--completion` | string | no | Associated completion ID |
-| `--review` | string | no | Associated review ID |
 | `--by` | string | yes | Acting role |
 
 **Output (stderr confirmation):**
@@ -1079,8 +1078,11 @@ fid run record --issue <id> --role <role> --model <model>
 recorded agent run RUN-f6g7h8 on FID-a1b2c3
   role: developer, model: claude-sonnet-4-6
   tokens: 14823 in, 3847 out
-  cost: $0.28
+  cost: $0.102174
 ```
+
+If the model is missing from `.fid/pricing.toml`, the command still records the
+run, prints a warning naming the model on stderr, and shows `cost: unknown`.
 
 ### `fid run list`
 
@@ -2961,4 +2963,4 @@ fid cycle list [--status planned|active|completed] [--format json|toon|markdown|
 
 ---
 
-*Last updated: 2026-06-04*
+*Last updated: 2026-06-28*
