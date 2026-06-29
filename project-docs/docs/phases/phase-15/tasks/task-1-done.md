@@ -101,8 +101,9 @@ Implemented the Phase 15 Task 1 behavior-preserving cleanup for CF-014 and CF-01
 
 ## Commit hash
 
-- Pending implementation commit metadata; updated in follow-up docs commit.
+- `0906428`
+- Full hash: `0906428adf9bb4d89b41dc94ad5b147b1b7c538f`
 
 ## Commit subject
 
-- Pending implementation commit metadata; updated in follow-up docs commit.
+- `refactor: split issue and replay cleanup paths`
