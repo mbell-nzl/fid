@@ -128,10 +128,7 @@ Package coverage percentages required by Task 2:
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- `internal/dev/start.go` is over the 60-line non-test function target at
-  `201` lines for the full file. The task met the functional gate, but the new
-  package will benefit from the same kind of orchestration extraction already
-  scheduled elsewhere in Phase 15 if this path grows further.
+- None.
 
 ## Dependency-budget note
 
@@ -139,8 +136,8 @@ Package coverage percentages required by Task 2:
 
 ## Commit hash
 
-- PENDING-IMPLEMENTATION-COMMIT
+- `07ac0ae`
 
 ## Commit subject
 
-- PENDING-IMPLEMENTATION-COMMIT-SUBJECT
+- `feat(dev): add dev start and gate composites`
