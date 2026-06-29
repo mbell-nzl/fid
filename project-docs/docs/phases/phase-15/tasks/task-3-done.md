@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending implementation commit.
+- `b9e650d`
 
 ## Commit subject
 
-- Pending implementation commit.
+- `feat(dev): add finish and block composites`
