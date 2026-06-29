@@ -287,6 +287,44 @@ func openRunID(conn *sql.DB, issueID string) (*string, error) {
 	return &runID.String, nil
 }
 
+func buildIssueTransitionEffects(current issueState, toState, actorRole, eventID, activityID, timestamp string) []journal.Effect {
+	return []journal.Effect{
+		{
+			Op:    "update",
+			Table: "issues",
+			PK:    map[string]any{"id": current.ID},
+			Values: map[string]any{
+				"status":     toState,
+				"updated_at": timestamp,
+			},
+			Prior: map[string]any{
+				"status": current.Status,
+			},
+			Preconditions: map[string]any{
+				"status":      current.Status,
+				"workflow_id": current.WorkflowID,
+			},
+		},
+		{
+			Op:    "activity",
+			Table: "activity_log",
+			PK:    map[string]any{"id": activityID},
+			Values: map[string]any{
+				"journal_event_id": eventID,
+				"ref_type":         "issue",
+				"ref_id":           current.ID,
+				"event":            "status_changed",
+				"details": map[string]any{
+					"from": current.Status,
+					"to":   toState,
+				},
+				"actor":       actorRole,
+				"occurred_at": timestamp,
+			},
+		},
+	}
+}
+
 func issueStatusCategory(workflowID, state string) (string, error) {
 	category, ok := workflow.CategoryForState(workflowID, state)
 	if !ok {
