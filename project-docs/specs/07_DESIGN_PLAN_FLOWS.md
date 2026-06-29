@@ -45,11 +45,11 @@ fid ready --epic FID-e1f2g3
 
 **Step 3 — Developer Execution.**
 
-Developer claims, works, verifies ACs, and finishes:
+Developer claims, works, verifies ACs, records gate results, and finishes:
 
 ```
-fid dev start FID-a1b2c3 --by developer
-# → claimed, transitioned todo → in_progress, opened RUN-b2c3d4
+fid dev start FID-a1b2c3 --model claude-sonnet-4-6 --by developer
+# → claimed by developer, transitioned todo → in_progress, opened RUN-b2c3d4
 
 fid issue get FID-a1b2c3
 # → full issue detail with ACs
@@ -60,12 +60,14 @@ fid issue ac verify FID-a1b2c3 AC-d4e5f6 --by developer \
     --status pass --evidence-type test \
     --evidence-ref "test/idgen_test.go::TestIDShape"
 
-fid dev gate FID-a1b2c3 --cmd "go test ./..." --by developer
+fid dev gate FID-a1b2c3 --cmd "go test ./..." --exit-code 0 \
+    --output-excerpt "ok" --by developer
+# → recorded reported gate result for attempt 1
 
 fid dev finish FID-a1b2c3 --by developer \
     --completion-md project-docs/docs/phases/phase-1/tasks/FID-a1b2c3-done.md \
     --tokens 14823 --commits abc123
-# → closed run, created completion TC-7c3e9f, transitioned → dev_complete
+# → closed run, created completion TC-7c3e9f, transitioned → dev_complete, released claim
 ```
 
 **Step 4 — Workflow Runner Inspection.**
