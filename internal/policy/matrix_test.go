@@ -36,6 +36,10 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		"concern.raise",
 		"concern.address",
 		"run.record",
+		"dev.start",
+		"dev.gate",
+		"dev.finish",
+		"dev.block",
 		"maintenance.rebuild",
 		"requirement.sync",
 		"link.add",
@@ -179,6 +183,60 @@ func TestMatrixRunRecordRowMatchesSchemaSection13(t *testing.T) {
 	}
 	if got != want {
 		t.Fatalf("MatrixEntry(%q) = %#v, want %#v", "run.record", got, want)
+	}
+}
+
+func TestMatrixDevRowsMatchSchemaSection13(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		action string
+		want   MatrixRow
+	}{
+		{
+			action: "dev.start",
+			want: MatrixRow{
+				Action:    "dev.start",
+				Developer: true,
+				Human:     true,
+			},
+		},
+		{
+			action: "dev.gate",
+			want: MatrixRow{
+				Action:    "dev.gate",
+				Developer: true,
+				Human:     true,
+			},
+		},
+		{
+			action: "dev.finish",
+			want: MatrixRow{
+				Action:    "dev.finish",
+				Developer: true,
+				Human:     true,
+			},
+		},
+		{
+			action: "dev.block",
+			want: MatrixRow{
+				Action:    "dev.block",
+				Developer: true,
+				Human:     true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.action, func(t *testing.T) {
+			got, ok := MatrixEntry(tt.action)
+			if !ok {
+				t.Fatalf("MatrixEntry(%q) found = false, want true", tt.action)
+			}
+			if got != tt.want {
+				t.Fatalf("MatrixEntry(%q) = %#v, want %#v", tt.action, got, tt.want)
+			}
+		})
 	}
 }
 

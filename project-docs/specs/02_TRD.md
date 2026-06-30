@@ -48,6 +48,7 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/claims/     Claim acquire/release/steal
     ├──► internal/workflow/   State machines + transition rules (v0.1 hard-coded)
     ├──► internal/policy/     Role × action permissions matrix
+    ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
     ├──► internal/runs/       Agent run recording with snapshot pricing
     ├──► internal/qa/         QA reviews, findings (v0.3)
     ├──► internal/validation/ Contracts, assertions, outcomes (v0.4)
@@ -88,6 +89,7 @@ Rules:
 | `internal/claims/` | Domain | Claim acquire, release, force-steal, TTL enforcement | Workflow transition logic |
 | `internal/workflow/` | Domain | State machine definitions, transition validation, rule evaluation | Issue creation, AC verification |
 | `internal/policy/` | Domain | Role validation, permission matrix lookups, action authorization | Workflow state logic |
+| `internal/dev/` | Domain | Compose developer write workflows (`dev start`, `dev gate`, later `dev finish`/`dev block`) into one validated journal event by orchestrating existing claim, workflow, run, and gate effect shapes | CLI flag parsing, output formatting, direct schema/migration ownership |
 | `internal/runs/` | Domain | Record `agent_runs` rows with snapshot pricing, computed cost, and provider reconciliation fields | Output formatting, CLI flag parsing, read aggregations |
 | `internal/format/` | Interface adapter | JSON, TOON, Markdown, YAML serialisation | Business logic, DB access |
 | `internal/qa/` | Domain | QA reviews, findings, plans, plan steps (v0.3) | Issue lifecycle, claim management |
@@ -805,4 +807,4 @@ tracked in `01_PRD.md` §7.
   CLI/skill-first assumption; require a concrete MCP-only client need, a
   product/security decision, and a threat model before adding it to a roadmap.
 
-*Last updated: 2026-06-28*
+*Last updated: 2026-06-29*

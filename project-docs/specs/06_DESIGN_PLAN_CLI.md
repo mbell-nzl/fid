@@ -542,12 +542,13 @@ note: no ready tasks — 3 tasks blocked or claimed (see skipped[])
 ### `fid dev start`
 
 ```
-fid dev start <issue-id> --by developer
+fid dev start <issue-id> --model <model> --by developer
     [--branch <name>] [--base-commit <sha>] [--worktree <path>]
 ```
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
+| `--model` | string | yes | Model recorded on the opened base `agent_runs` row |
 | `--by` | string | yes | Acting role |
 | `--branch` | string | no | v0.2: override the auto-captured git branch |
 | `--base-commit` | string | no | v0.2: override the auto-captured base commit |
@@ -574,24 +575,27 @@ dev start FID-a1b2c3
 ### `fid dev gate`
 
 ```
-fid dev gate <issue-id> --cmd <command> --by developer
+fid dev gate <issue-id> --cmd <command> --exit-code <n> --by developer
 ```
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--cmd` | string | yes | Gate command to record |
+| `--exit-code` | int | yes | Reported exit code for the recorded gate run |
+| `--output-excerpt` | string | no | Optional reported output excerpt stored on the gate row |
 | `--by` | string | yes | Acting role |
 
-Records an append-only `gate_runs` row for the active attempt. v0.1 derives
-the active attempt number from prior completions for the issue; finish/block
-commands snapshot matching gate runs into `task_completions.gate_results`.
+Records, but does not execute, an append-only `gate_runs` row for the active
+attempt. v0.1 derives the active attempt number from prior completions for the
+issue; finish/block commands snapshot matching gate runs into
+`task_completions.gate_results`.
 
 **Output (stderr confirmation):**
 ```text
 gate recorded on FID-a1b2c3 (attempt 1)
   cmd: go test ./...
   exit_code: 0
-  gates_passed: 3, gates_failed: 0
+  gates_passed: 1, gates_failed: 0
 ```
 
 **Gate failure:**
@@ -599,7 +603,7 @@ gate recorded on FID-a1b2c3 (attempt 1)
 gate recorded on FID-a1b2c3 (attempt 1)
   cmd: golangci-lint run ./...
   exit_code: 1
-  gates_passed: 2, gates_failed: 1
+  gates_passed: 0, gates_failed: 1
 ```
 
 ### `fid dev finish`
@@ -2963,4 +2967,4 @@ fid cycle list [--status planned|active|completed] [--format json|toon|markdown|
 
 ---
 
-*Last updated: 2026-06-28*
+*Last updated: 2026-06-29*
