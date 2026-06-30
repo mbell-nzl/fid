@@ -39,6 +39,11 @@ None.
 
 ## Recent Resolutions
 
+- Phase 15 (`fid dev *` composites + cleanup) raised **no escalations**. Two
+  TL-Lite triage events resolved locally as RESUME: TRG-001 (Review-1 artifact/
+  structure improvements) and TRG-002 (`internal/dev` `Finish`/`Block`
+  function-size debt, folded into CF-017). See
+  `../phases/phase-15/tl-escalations.md`.
 - ESC-001 (Phase 14 Task 2 missing integration-gate evidence) resolved 2026-06-28
   by the Tech Lead as do-now remediation; remediation commit `0cba161` recorded
   the gate PASS and QA cleared the block. Archived at Phase 14 wrap in
