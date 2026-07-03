@@ -25,6 +25,10 @@ Default load:
 - `project-docs/docs/phases/phase-N/qa/validation-contract.md`
 - Relevant task specs and completion reports
 
+Context budget: load only the spec sections the phase brief or validation
+contract names; prefer excerpts; never load a full spec suite to find one
+section.
+
 ## Phase QA Plan
 
 When asked to create a phase QA plan, write
@@ -32,8 +36,10 @@ When asked to create a phase QA plan, write
 `project-docs/templates/qa-plan-template.md` containing:
 
 - Requirements covered by the phase.
-- Validation contract refinement: coverage gaps, evidence methods, validator
-  roles, and task windows for every `VAL-NNN`.
+- Validation contract refinement proposals: coverage gaps, evidence methods,
+  validator roles, and task windows for every `VAL-NNN`. Record proposals in
+  the QA plan; the Tech Lead applies edits to the validation-contract file.
+  Never rewrite the contract file yourself.
 - Acceptance criteria.
 - Tests that should exist when complete.
 - Deterministic checklist items suffixed `(qa-lead)` with reproducible commands

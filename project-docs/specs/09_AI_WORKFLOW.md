@@ -205,6 +205,11 @@ Triage rules:
 - For QA Reviewer Blocking findings, RESUME is allowed only when the finding is
   demonstrably misclassified, already resolved by a verified commit, or covered
   by an accepted decision. Otherwise BLOCK.
+- TL-Lite cannot run commands and never verifies commits itself. A commit
+  counts as verified only when the invoking prompt attaches
+  commit-verification evidence (hash, `git rev-parse --verify` result, and
+  subject match, or report-lint output). Without attached evidence, do not
+  RESUME on the already-resolved-by-a-verified-commit ground.
 - The final line in triage mode must be exactly `VERDICT: RESUME` or
   `VERDICT: BLOCK (escalated as ESC-NNN)`.
 
@@ -256,36 +261,51 @@ Responsibilities:
 7. Use explicit child prompts. Each prompt must restate the required reads,
    task path, report path, exact gate commands, stop conditions, and
    commit/report requirements.
-8. After each Developer run, read the completion or blocker report.
-9. Verify the report exists, required headings are present, the concerns
-   section is non-empty (`- None.` is valid), dependency-budget note exists,
-   and commit hash and subject exist. Resolve the recorded hash by running
-   `git rev-parse --verify <hash>^{commit}`; it must resolve to exactly one
-   commit whose subject matches the report. A hash that does not resolve is a
-   hard stop even when its abbreviated prefix is valid.
-10. Compare the report's `## Tests run` and `## Exact quality-gate results`
-   against the task spec's `## Exact Commands To Run` and any QA-plan required
-   command for that task window. Every required command must be recorded as
-   `PASS`, or as `BLOCKED` with reason in a blocker report. Missing, silently
-   skipped, or narrower substituted required commands are hard stops.
+8. After each Developer run, run
+   `project-docs/tools/report-lint.sh <report> <task spec>`. It
+   deterministically verifies required headings, sentinel sections, task-spec
+   command coverage, commit hash validity via `git rev-parse --verify
+   <hash>^{commit}`, and commit subject match against `git log -1 --format=%s`.
+   A nonzero exit is a hard stop; do not re-derive these checks by prose
+   parsing. A hash that does not resolve is a hard stop even when its
+   abbreviated prefix is valid.
+9. Read the report for the judgment items report-lint cannot check: blocker
+   semantics, deviation content, concerns needing triage, and QA-plan commands
+   required for that task window beyond the task spec. Every QA-plan required
+   command must be recorded as `PASS`, or as `BLOCKED` with reason in a
+   blocker report. Missing, silently skipped, or narrower substituted required
+   commands are hard stops.
+10. Append the TASK entry to the run ledger after each verified task: report
+    path, report-lint result, verified commit.
 11. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
     task and after each review.
-12. Maintain a compact run ledger in response notes: completed tasks, verified
-    commits, QA reviews run, ESC IDs seen, and TRG IDs logged.
+12. Maintain the append-only run ledger at
+    `project-docs/docs/phases/phase-<id>/run-ledger.md` using
+    `project-docs/templates/run-ledger-template.md`: one appended entry per
+    event (RUN-START, TASK complete, REVIEW, TRIAGE, STOP, RUN-END). The
+    ledger, not chat notes, is the durable run state; a resumed runner reads
+    it first and reconciles it against completion reports and git history. It
+    is the only file the Phase Runner writes.
 13. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
-    output paths.
-14. Route soft blockers through TL-Lite triage. After TL-Lite returns, read
-    the triage log to confirm the TRG-NNN entry exists, then parse the literal
-    final `VERDICT:` line.
+    output paths, then append the REVIEW entry to the run ledger.
+14. Route soft blockers through TL-Lite triage. When a triage may turn on
+    "already resolved by a verified commit", verify the commit first and
+    attach the commit-verification evidence (hash, `git rev-parse --verify`
+    result, subject match) to the triage trigger; TL-Lite judges evidence and
+    never verifies commits itself. After TL-Lite returns, read the triage log
+    to confirm the TRG-NNN entry exists, then parse the literal final
+    `VERDICT:` line and append a TRIAGE entry to the run ledger.
 15. After all tasks complete, spawn QA Lead for final review and human
     checklist.
-16. Notify the Human with the final review path and current stop/completion
-    state.
+16. Append the RUN-END entry to the run ledger and notify the Human with the
+    final review path and current stop/completion state. When stopping early,
+    append a STOP entry naming the trigger and the next human action.
 
 Hard stop conditions:
 - Developer quality gate fails. Do not send red tests, lint/static-analysis,
   formatting, or coverage failure to TL-Lite.
+- Completion report fails `project-docs/tools/report-lint.sh`.
 - Developer completion report omits a required task-spec or QA-plan command,
   records it as skipped without a `BLOCKED` reason, or substitutes a narrower
   command for a required gate.
@@ -342,14 +362,19 @@ Responsibilities:
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
 7. If any gate fails, fix the issue and rerun the exact failed command. Do not
    substitute ad hoc coverage commands for the required gate.
-8. Create or update the completion report immediately after gate outcome is
+8. Where the task changes behavior with a runtime surface, exercise the
+   changed behavior once through the real entrypoint (the `fid` CLI or other
+   real interface) before writing the report, and record the command or
+   interaction and its observed result. Tests alone do not prove the
+   entrypoint works.
+9. Create or update the completion report immediately after gate outcome is
    known.
-9. Commit with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
-10. Record the commit hash and subject by copying them verbatim from `git`
+10. Commit with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
+11. Record the commit hash and subject by copying them verbatim from `git`
     output: `git rev-parse --short HEAD` or `git rev-parse HEAD` for the hash,
     and `git log -1 --format=%s` for the subject. Never type, pad, complete, or
     recall a hash from memory.
-11. Stop after report and commit are complete.
+12. Stop after report and commit are complete.
 
 Required completion report headings, in order:
 - `## Summary of what was implemented`
@@ -419,6 +444,9 @@ Validation contract refinement (before finalizing the QA plan):
   conformance proof when the reference can be checked mechanically.
 - If gaps exist, return revisions to Tech Lead or raise an ESC. Do not proceed
   with the QA plan until the contract is sufficient.
+- Refinements are proposals recorded in the QA plan; the Tech Lead applies all
+  edits to the validation-contract file. QA Lead never rewrites the contract
+  file itself.
 
 QA plan must include:
 - Source list including `validation-contract.md`.
@@ -503,9 +531,14 @@ Responsibilities:
 - Check architecture, layer boundaries, business logic placement, test quality,
   test-pair compliance, naming, docs, dependency-budget compliance,
   quality-gate reality, and commit/report hygiene.
-- Run targeted commands where useful, such as `go test ./internal/<scope>/...`
-  or package-scoped linting. Do not run broad mutating or full-gate commands
-  unless explicitly asked.
+- Rerun at least one representative required command from the window's task
+  specs and record its result in the review as reproduced evidence; expand
+  where risk warrants. This is the only independent command execution between
+  the Developer and phase end. Targeted commands such as
+  `go test ./internal/<scope>/...` or package-scoped linting are appropriate;
+  do not run broad mutating or full-gate commands unless explicitly asked.
+  `project-docs/tools/report-lint.sh <report> <task spec>` may be run per task
+  as independent mechanical evidence.
 - Classify findings as Blocking or Improvement.
 - Each finding should include severity, file:line where possible, what is
   wrong, and fix direction.
@@ -664,6 +697,12 @@ If a file exceeds its tripwire, Tech Lead prunes it at the next phase boundary.
 When a phase completes, full history moves to
 `project-docs/docs/phases/phase-<id>/`.
 
+Per-phase run state:
+- `project-docs/docs/phases/phase-<id>/run-ledger.md` is the Phase Runner's
+  append-only run ledger (see 2.4), created from
+  `project-docs/templates/run-ledger-template.md`. It stays in the phase
+  archive; it is never loaded as default context.
+
 Escalations:
 - `tl_escalations_current.md` carries unresolved escalations only; it is not a
   running log.
@@ -780,43 +819,48 @@ Outcomes (recorded at phase end in `final-review.md`):
 
 `PASS` without evidence is invalid.
 
-Template:
+Template: use `project-docs/templates/task-spec-template.md`, whose headings
+are (exactly as written there):
 
 ```markdown
-# Phase <id> - Task <n>: <Title>
+# Phase <N> - Task <M>: <Title>
 
 ## Objective
 
-## PRD Requirements
+## Requirements
 
-## TRD Requirements
-
-## Validation Contract Assertions
+## Validation Contract Coverage
 
 - VAL-NNN: <one-line restatement>
 
-## Carry-Forward Items Closed
-
 ## Scope
 
-### Files to create or modify
+### Files To Create Or Modify
 
-### Docs to update
+### Files To Read For Context
 
-### Files NOT to modify
-
-## Dependencies
-
-## Implementation Notes
-
-## Exact Commands To Run
+### Out Of Scope
 
 ## Acceptance Criteria
 
-- [ ] <criterion> (VAL-NNN)
+- [ ] <criterion> (VAL-NNN or no VAL)
 
-## Output Requirements
+## TDD Plan
+
+## Documentation Updates
+
+## Scenario / Parity / Audit Notes
+
+## Exact Commands To Run
+
+## Notes For Developer
 ```
+
+Carry-forward items closed by the task, dependencies on prior tasks, and
+output requirements (completion report path when it deviates from
+`task-<n>-done.md`) are recorded under `## Requirements`, `## Objective`, or
+`## Notes For Developer` as appropriate. `workflow-lint.sh` checks the
+`task-pack` skill's heading list against the template.
 
 ## 6. Agent Prompt Materialization
 
@@ -876,6 +920,21 @@ when lint debt is in scope, or when the phase QA plan enforces it.
 Every required command listed by a task spec or QA plan must be recorded in the
 completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
 Missing, silently skipped, or narrower substituted commands are failed gates.
+
+`project-docs/tools/report-lint.sh <report> <task spec>` performs the
+mechanical subset of completion-report verification deterministically:
+required headings, sentinel sections, task-spec command coverage, hash
+validity, and subject match. Orchestrators (Phase Runner or human) run it
+instead of prose-parsing those checks; reviewers may run it as independent
+evidence. Judgment checks - QA-plan command applicability, deviation content,
+blocker acceptability - remain with agents and humans.
+
+`project-docs/tools/drills/run-drills.sh` runs the evidence-chain drills:
+seeded-defect fixtures that verify the QA chain itself still catches
+fabricated hashes, wrong hash prefixes, skipped or narrower substituted
+commands, weakened tests, unrecorded deviations, stale doc claims, and
+positive-only `VAL` passes. Run quarterly, after any agent prompt change, and
+before trusting a new model in an orchestrator or QA role.
 
 ## 8. Stop And Escalate
 

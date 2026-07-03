@@ -25,12 +25,16 @@ Current state:
 Execution rules:
 - Verify that all quality commands in AGENTS.md are concrete, not placeholders.
 - Verify that the validation contract exists before task execution.
-- Maintain a compact run ledger: completed tasks, verified commits, QA reviews,
-  ESC IDs seen, and TRG IDs logged.
-- Record the current Open ESC-NNN IDs before task execution; only newly appearing
-  Open ESC IDs trigger TL-Lite triage. If the source is already an ESC, do not
-  create a duplicate; reference the existing escalation unless the issue is
-  clearly unrelated.
+- Maintain the append-only run ledger at
+  project-docs/docs/phases/phase-<PHASE_NUMBER>/run-ledger.md using
+  project-docs/templates/run-ledger-template.md. Append one entry per event
+  (RUN-START, TASK complete, REVIEW, TRIAGE, STOP, RUN-END); never edit or
+  delete prior entries. The ledger is the only file you write and it, not chat
+  notes, is the durable run state.
+- Append a RUN-START entry recording the current Open ESC-NNN IDs before task
+  execution; only newly appearing Open ESC IDs trigger TL-Lite triage. If the
+  source is already an ESC, do not create a duplicate; reference the existing
+  escalation unless the issue is clearly unrelated.
 - Create or resume the correct phase branch.
 - Spawn qa_lead first to create project-docs/docs/phases/phase-<PHASE_NUMBER>/qa/qa-plan.md.
 - Verify the QA plan exists, read it before task execution, and confirm command
@@ -38,26 +42,32 @@ Execution rules:
 - Execute task specs strictly in order.
 - Spawn exactly one developer per task.
 - Require the developer to follow .codex/agents/developer.toml or the equivalent local agent definition.
-- Require the exact commands listed in the task spec. The full task gate is
-  required before task close unless the task spec explicitly says otherwise.
+- Require the exact commands listed in the task spec's
+  `## Exact Commands To Run` section. The full task gate is required before
+  task close unless the task spec explicitly says otherwise.
 - Do not substitute ad hoc commands for required gates. Placeholder, missing, or
   failing commands are hard stops.
-- After each developer run, verify the completion report exists at the expected
-  path, required headings are present, Validation Contract Coverage is present,
-  the concerns section is non-empty, the dependency-budget note is present, and
-  commit hash/subject are present.
-- Verify the commit hash with `git rev-parse --verify <hash>^{commit}` and
-  verify the report subject matches `git log -1 --format=%s <hash>`.
-- Compare `## Tests run` and `## Exact quality-gate results` with the task
-  spec's `## Exact Commands To Run` and every QA-plan command required for that
-  task. Every required command must be present as `PASS`, or `BLOCKED` with a
-  reason in a blocker report.
-- Stop immediately on missing report, blocker report, quality-gate failure,
-  placeholder command, missing command, skipped command, narrower substituted
-  command, missing dependency-budget note, or unverifiable commit.
-- Route soft blockers through tl_lite triage.
+- After each developer run, run
+  project-docs/tools/report-lint.sh <report path> <task spec path>.
+  It deterministically verifies required headings, sentinel sections, task-spec
+  command coverage, the commit hash via `git rev-parse --verify
+  <hash>^{commit}`, and the subject against `git log -1 --format=%s`. A nonzero
+  exit is a hard stop. Do not re-derive these checks by prose parsing.
+- Read the report for judgment items report-lint cannot check: blocker
+  semantics, deviation content, concerns needing triage, and QA-plan commands
+  required for that task beyond the task spec. Every QA-plan required command
+  must be present as `PASS`, or `BLOCKED` with a reason in a blocker report.
+- Stop immediately on report-lint failure, missing report, blocker report,
+  quality-gate failure, placeholder command, missing command, skipped command,
+  or narrower substituted command.
+- Append a TASK entry to the run ledger after each verified task.
+- Route soft blockers through tl_lite triage. When a triage may turn on
+  "already resolved by a verified commit", verify the commit yourself first and
+  attach the commit-verification evidence (hash, git rev-parse --verify result,
+  subject match) to the triage trigger; TL-Lite judges evidence and never
+  verifies commits itself.
 - Every third completed task, run qa_reviewer unless the QA plan sets a stricter
-  cadence.
+  cadence, then append a REVIEW entry to the run ledger.
 - For QA Blocking findings, TL-Lite may RESUME only when the finding was
   misclassified, already resolved by a verified commit, or accepted by a
   recorded decision.
@@ -65,6 +75,9 @@ Execution rules:
   VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-NNN).
 - After all tasks complete, run qa_lead final review and human checklist generation.
 - Verify final-review.md records every VAL-NNN outcome.
+- Append the RUN-END entry to the run ledger.
+- When stopping early, append a STOP entry naming the trigger and the next
+  human action.
 - Do not do developer, QA, or TL-Lite work yourself.
 ```
 
@@ -79,6 +92,8 @@ Read:
 - project-docs/docs/current/decisions_active.md
 - project-docs/docs/current/progress_current.md
 - project-docs/docs/current/tl_escalations_current.md
+- project-docs/docs/phases/phase-<PHASE_NUMBER>/run-ledger.md (authoritative
+  run state; read before anything below)
 - project-docs/docs/phases/phase-<PHASE_NUMBER>/qa/qa-plan.md
 - project-docs/docs/phases/phase-<PHASE_NUMBER>/qa/validation-contract.md
 - project-docs/docs/phases/phase-<PHASE_NUMBER>/triage-log.md if it exists
@@ -91,11 +106,17 @@ Current state:
 - Start at Task <START_TASK>
 
 Execution rules:
+- Reconcile the run ledger against completion reports and git history before
+  executing anything. If the ledger and reports disagree, stop and report the
+  discrepancy. If the ledger is missing for an in-progress phase, reconstruct
+  a RUN-START entry from task reports and git history and note the gap.
 - Do not recreate the branch.
 - Do not rerun completed tasks.
 - Verify completed-task commits are present in current history.
 - Resume strictly from Task <START_TASK>.
 - For a QA Blocking resume, continue only when the issue was misclassified,
-  already resolved by a verified commit, or accepted by a recorded decision.
-- Apply all start-of-phase execution rules from this template.
+  already resolved by a verified commit, or accepted by a recorded decision,
+  with commit-verification evidence attached to the triage trigger.
+- Apply all start-of-phase execution rules from this template, including
+  run-ledger appends and report-lint verification.
 ```

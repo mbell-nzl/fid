@@ -53,6 +53,7 @@ Existing ESC handling:
 
 QA Blocking triage:
 - RESUME is allowed only when the finding is misclassified, already resolved by a verified commit, or covered by an existing accepted decision. Otherwise BLOCK.
+- You cannot run commands, so you never verify commits yourself. Treat a commit as verified only when the invoking prompt attaches commit-verification evidence (hash, git rev-parse --verify result, and subject match, or report-lint output). Without attached evidence, do not RESUME on the already-resolved-by-a-verified-commit ground.
 
 Constraints:
 - Never write product code or tests.

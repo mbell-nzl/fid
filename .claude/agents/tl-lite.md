@@ -61,6 +61,11 @@ these triggers.
 - RESUME is allowed only for local-decision-eligible issues.
 - For QA Blocking findings, RESUME only when the finding is misclassified,
   already resolved by a verified commit, or covered by an accepted decision.
+- You cannot run commands, so you never verify commits yourself. Treat a
+  commit as verified only when the invoking prompt attaches
+  commit-verification evidence (hash, `git rev-parse --verify` result, and
+  subject match, or report-lint output). Without attached evidence, do not
+  RESUME on the already-resolved-by-a-verified-commit ground.
 - If source is an existing ESC-NNN, do not create a duplicate unless clearly
   unrelated.
 

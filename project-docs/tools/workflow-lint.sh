@@ -149,6 +149,7 @@ project-docs/templates/human-checklist-template.md
 project-docs/templates/phase-brief-template.md
 project-docs/templates/phase-decisions-template.md
 project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
 project-docs/templates/tl-escalations-template.md
 project-docs/templates/triage-log-template.md
 project-docs/templates/threat-model-template.md
@@ -170,6 +171,107 @@ check_contains "project-docs/templates/final-review-template.md" 'Validation Con
 check_contains "project-docs/templates/human-checklist-template.md" 'VAL-NNN' "human checklist validation assertion reference"
 check_contains "project-docs/templates/phase-brief-template.md" 'Validation Contract|VAL-NNN|validation-contract' "phase brief validation-contract reference"
 check_contains "project-docs/templates/phase-runner-prompt.md" 'validation-contract|VAL-NNN' "phase runner prompt validation-contract reference"
+
+# --- Deterministic verification tooling ---
+
+check_file "project-docs/tools/report-lint.sh" "report-lint tool"
+if [ -x "project-docs/tools/report-lint.sh" ]; then
+  pass "report-lint.sh is executable"
+else
+  fail "report-lint.sh is not executable"
+fi
+
+if output=$(project-docs/tools/report-lint.sh --self-test 2>&1); then
+  pass "report-lint self-test green"
+else
+  printf '%s\n' "$output" >&2
+  fail "report-lint self-test failed"
+fi
+
+check_file "project-docs/tools/drills/run-drills.sh" "evidence-chain drills harness"
+if [ -x "project-docs/tools/drills/run-drills.sh" ]; then
+  pass "run-drills.sh is executable"
+else
+  fail "run-drills.sh is not executable"
+fi
+
+# Phase Runner surfaces must reference report-lint and the run ledger instead
+# of prose-parsing/chat-state equivalents.
+
+runner_surfaces="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/templates/phase-runner-prompt.md
+.codex/agents/phase_runner.toml
+.claude/agents/phase-runner.md
+"
+
+for file in $runner_surfaces; do
+  check_contains "$file" 'report-lint\.sh' "report-lint reference"
+  check_contains "$file" 'run-ledger' "run-ledger reference"
+done
+
+# --- Skill-declared task headings must exist in the task spec template ---
+# Catches heading drift between the task-pack skill and the template.
+
+task_pack_headings=$(awk '
+  $0 == "## Required Task Headings" { in_section = 1; next }
+  in_section && /^## / { exit }
+  in_section {
+    line = $0
+    while (match(line, /`#[^`]*`/)) {
+      print substr(line, RSTART + 1, RLENGTH - 2)
+      line = substr(line, RSTART + RLENGTH)
+    }
+  }
+' project-docs/skills/task-pack/SKILL.md)
+
+if [ -z "$task_pack_headings" ]; then
+  fail "task-pack skill: no backticked headings under '## Required Task Headings'"
+else
+  while IFS= read -r heading; do
+    [ -n "$heading" ] || continue
+    if grep -Fxq "$heading" project-docs/templates/task-spec-template.md; then
+      pass "task-pack heading exists in task-spec template: $heading"
+    else
+      fail "task-pack heading missing from task-spec template: $heading"
+    fi
+  done <<EOF
+$task_pack_headings
+EOF
+fi
+
+# --- Completion-report heading concordance ---
+# The 11 required headings must appear in the template, the workflow spec,
+# and both Developer prompts.
+
+completion_heading_files="
+project-docs/templates/completion-report-template.md
+project-docs/specs/09_AI_WORKFLOW.md
+.claude/agents/developer.md
+.codex/agents/developer.toml
+"
+
+while IFS= read -r heading; do
+  for file in $completion_heading_files; do
+    if grep -Fq "$heading" "$file"; then
+      pass "completion-report heading present: $file: $heading"
+    else
+      fail "completion-report heading missing: $file: $heading"
+    fi
+  done
+done <<'EOF'
+## Summary of what was implemented
+## Files created or modified
+## Documentation updated
+## Validation Contract Coverage
+## Tests run
+## Exact quality-gate results
+## Deviations from spec
+## Concerns, technical debt, or notes for the Tech Lead
+## Dependency-budget note
+## Commit hash
+## Commit subject
+EOF
 
 # --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 9) ---
 

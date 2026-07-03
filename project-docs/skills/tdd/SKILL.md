@@ -30,12 +30,16 @@ or exploratory tasks may use the task spec's explicit exception instead.
    The full task gate is required before close unless the task spec explicitly
    records an exception; focused red/green commands are additional evidence,
    not substitutes.
-8. In the completion report, record each required command as `PASS`, or
+8. Where the task changes behavior with a runtime surface, exercise the
+   changed behavior once through the real entrypoint (CLI, app, service, or
+   UI) and record the interaction and observed result as evidence. Tests
+   alone do not prove the entrypoint works.
+9. In the completion report, record each required command as `PASS`, or
    `BLOCKED` with a reason in a blocker report. Missing, skipped, or narrower
    substituted commands are failed gates.
-9. Copy commit hashes and subjects from git output when reporting them; never
+10. Copy commit hashes and subjects from git output when reporting them; never
    reconstruct hashes from memory.
-10. In the completion report, connect tests and gate evidence to the covered
+11. In the completion report, connect tests and gate evidence to the covered
    `VAL-NNN` IDs or explain why no validation assertion applies.
 
 ## References

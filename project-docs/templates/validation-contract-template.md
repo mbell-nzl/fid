@@ -2,7 +2,7 @@
 
 > Phase: <N> - <Phase Title>
 > Author: Tech Lead (draft)
-> Last refined: <YYYY-MM-DD> by QA Lead
+> Last refined: <YYYY-MM-DD> by Tech Lead (applying QA Lead proposals)
 >
 > Create this file at
 > `project-docs/docs/phases/phase-<N>/qa/validation-contract.md`.
@@ -13,10 +13,11 @@ This file is the finite set of validation assertions that must be true when
 the phase is complete. The validation contract is the specification of **what
 must be proven**; the QA plan is the strategy for **how to prove it**.
 
-Tech Lead drafts this contract before or alongside task specs. QA Lead refines
-the evidence strategy before implementation starts. Developers cite the
-`VAL-NNN` IDs their task advances, QA Reviewer verifies the IDs in its task
-window, and QA Lead records final outcomes at phase end.
+Tech Lead drafts this contract before or alongside task specs. QA Lead
+proposes evidence-strategy and assertion refinements in the QA plan before
+implementation starts; the Tech Lead applies all edits to this contract file.
+Developers cite the `VAL-NNN` IDs their task advances, QA Reviewer verifies
+the IDs in its task window, and QA Lead records final outcomes at phase end.
 
 If a required validation assertion cannot be satisfied, stop and escalate
 instead of weakening the assertion or silently adapting the spec.

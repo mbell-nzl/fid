@@ -49,18 +49,23 @@ On-demand load:
     QA-plan command as `PASS`, or `BLOCKED` with a reason in a blocker report.
     Focused red/green commands do not substitute for the required gate; missing,
     silently skipped, or narrower substituted commands are failed gates.
-13. Write the completion report immediately after a green gate, including
+13. Where the task changes behavior with a runtime surface, exercise the
+    changed behavior once through the real entrypoint (the `fid` CLI or other
+    real interface) before writing the report, and record the command or
+    interaction and its observed result under `## Tests run`. Tests alone do
+    not prove the entrypoint works.
+14. Write the completion report immediately after a green gate, including
     `VAL-NNN` evidence or an explicit no-VAL explanation.
-14. Commit with a Conventional Commit subject and `Refs: phase-N/task-M`. The
+15. Commit with a Conventional Commit subject and `Refs: phase-N/task-M`. The
     commit must include your completion report. If the report is finalized
     after the code commit, add it in an immediately following
     `docs(task): ...` commit before you stop. Never hand off or stop with an
     uncommitted completion report, and never leave your report to be committed
     by another agent or the human.
-15. Copy the commit hash from `git rev-parse --short HEAD` or `git rev-parse
+16. Copy the commit hash from `git rev-parse --short HEAD` or `git rev-parse
     HEAD`, and copy the subject from `git log -1 --format=%s`. Never type, pad,
     or reconstruct a hash from memory.
-16. Stop.
+17. Stop.
 
 ## Completion Report
 
@@ -96,6 +101,8 @@ run, and whether a commit was created.
 - Never skip TDD unless the task is explicitly documentation-only or exploratory.
 - Never delete or weaken tests to pass.
 - Never make architectural or product decisions.
+- Do not keep iterating once the required gate is green; write the report,
+  commit, and stop.
 - Never modify out-of-scope files except required docs.
 - Never stop silently.
 - Never leave the completion report (or any required doc you authored)

@@ -26,8 +26,8 @@ Canonical project language lives in `project-docs/specs/GLOSSARY.md`; root
 - `project-docs/docs/phases/phase-N/` - per-phase archives:
   `tasks/`, `qa/validation-contract.md`, `qa/qa-plan.md`, `qa/review-M.md`,
   `qa/final-review.md`, `qa/human-checklist.md`, `decisions.md`,
-  `progress.md`, `triage-log.md`, `tl-escalations.md`, and handoffs when
-  needed.
+  `progress.md`, `run-ledger.md`, `triage-log.md`, `tl-escalations.md`, and
+  handoffs when needed.
 - `project-docs/docs/reviews/` - retrospectives, audits, and external reviews.
 - `project-docs/templates/` - reusable workflow templates.
 - `project-docs/specs/GLOSSARY.md` - canonical language and flagged

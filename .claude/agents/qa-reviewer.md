@@ -112,8 +112,13 @@ reference the relevant `ESC-NNN`.
 3. For binary or conditional `VAL-NNN` evidence, check that both qualifying and
    non-qualifying states are covered. Positive-only evidence is not enough.
 4. Inspect commits and changed files for those tasks. Verify reported commit
-   hashes with `git rev-parse --verify <hash>^{commit}` when available.
-5. Spot-check relevant quality commands where risk warrants.
+   hashes with `git rev-parse --verify <hash>^{commit}` when available. You
+   may run `project-docs/tools/report-lint.sh <report> <task spec>` per task
+   as independent mechanical evidence.
+5. Rerun at least one representative required command from the window's task
+   specs and record its result in the review as reproduced evidence. Expand
+   the rerun set where risk warrants. This is the only independent command
+   execution between the Developer and phase end; do not skip it.
 6. Write `review-M.md` grouped by task.
 7. Append ESC entries only when escalation triggers apply.
 8. Commit `review-M.md` (and any ESC edits you made) under your own authorship

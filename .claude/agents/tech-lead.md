@@ -30,6 +30,9 @@ On-demand load:
 - `project-docs/docs/current/decisions_principles.md`
 - Prior phase archives when referenced
 
+Context budget: load only the spec sections the roadmap entry or phase brief
+names; prefer excerpts; never load a full spec suite to find one section.
+
 ## Phase Start
 
 1. Read the roadmap entry for the target phase.

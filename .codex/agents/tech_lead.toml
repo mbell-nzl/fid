@@ -15,6 +15,8 @@ Default context load:
 - project-docs/docs/current/tl_escalations_current.md
 - project-docs/docs/current/tl_handoff.md if present
 
+Context budget: load only the spec sections the roadmap entry or phase brief names; prefer excerpts; never load a full spec suite to find one section.
+
 Phase start:
 1. Read project-docs/specs/10_IMPLEMENTATION_ROADMAP.md for the target phase.
 2. Read relevant sections of PRD, TRD, Design Plan, Quality Plan, and AI Workflow under project-docs/specs/.

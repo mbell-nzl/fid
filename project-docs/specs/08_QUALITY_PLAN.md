@@ -305,9 +305,10 @@ Required checks:
   and non-qualifying states; positive-only evidence is insufficient.
 - Parity or "matches reference" assertions need a structural conformance or
   parity proof when the reference can be checked deterministically.
-- QA Lead refines evidence methods, validator roles, and task windows before
-  implementation starts, and bounces under-specified contracts to Tech Lead
-  before finalizing the QA plan.
+- QA Lead proposes evidence-method, validator-role, and task-window
+  refinements in the QA plan before implementation starts, and bounces
+  under-specified contracts to Tech Lead before finalizing the QA plan; the
+  Tech Lead applies edits to the validation-contract file.
 - Developer task specs and completion reports cite covered `VAL-NNN` IDs or
   explicitly state why none apply.
 - QA Reviewer verifies relevant `VAL-NNN` IDs for each reviewed task window.

@@ -22,23 +22,31 @@ is the primary user during phase planning.
 - Schema, dependency, platform config, and public interface changes stay
   isolated unless the phase spec explicitly plans the exception.
 - Every behavior change needs paired test work.
-- Every task must list files not to modify.
+- Every task must state explicit non-goals under `### Out Of Scope`.
 
 ## Required Task Headings
 
-Use `project-docs/templates/task-spec-template.md`. Each task must include:
+Use `project-docs/templates/task-spec-template.md`. Each task must include the
+template's headings exactly as written there:
 
-- Objective
-- Requirements (PRD/TRD references)
-- Validation Contract Coverage (`VAL-NNN` IDs or explicit no-VAL rationale)
-- Files to create or modify
-- Documentation to update
-- Files not to modify
-- Dependencies on prior tasks
-- Implementation notes
-- Exact Commands To Run
-- Acceptance criteria
-- Output requirements (completion report path)
+- `## Objective`
+- `## Requirements` (PRD/TRD/design/quality references)
+- `## Validation Contract Coverage` (`VAL-NNN` IDs or explicit no-VAL rationale)
+- `## Scope`, containing:
+  - `### Files To Create Or Modify`
+  - `### Files To Read For Context`
+  - `### Out Of Scope`
+- `## Acceptance Criteria`
+- `## TDD Plan`
+- `## Documentation Updates`
+- `## Scenario / Parity / Audit Notes`
+- `## Exact Commands To Run`
+- `## Notes For Developer` (constraints, ordering, dependencies on prior
+  tasks, and the completion report path when it deviates from the
+  `task-M-done.md` convention)
+
+If a heading here stops matching the template, fix the template or this list
+in the same change; `workflow-lint.sh` checks this list against the template.
 
 ## Exact Command Guidance
 

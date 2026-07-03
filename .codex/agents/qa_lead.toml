@@ -14,9 +14,11 @@ Use AGENTS.md as the project grounding file. Default context load:
 - project-docs/docs/phases/phase-N/qa/validation-contract.md
 - relevant task specs and completion reports
 
+Context budget: load only the spec sections the phase brief or validation contract names; prefer excerpts; never load a full spec suite to find one section.
+
 When asked to create a phase QA plan, write project-docs/docs/phases/phase-N/qa/qa-plan.md from project-docs/templates/qa-plan-template.md containing:
 - every PRD/TRD/design requirement covered by the phase
-- validation contract refinement: coverage gaps, evidence methods, validator roles, and task windows for every VAL-NNN
+- validation contract refinement proposals: coverage gaps, evidence methods, validator roles, and task windows for every VAL-NNN. Record proposals in the QA plan; the Tech Lead applies edits to the validation-contract file. Never rewrite the contract file yourself.
 - acceptance criteria
 - expected tests
 - deterministic checklist items suffixed (qa-lead), with exact reproducible commands or file-state checks
