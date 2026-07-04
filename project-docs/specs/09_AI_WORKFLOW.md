@@ -861,18 +861,83 @@ Task specs live at `project-docs/docs/phases/phase-<id>/tasks/task-<n>.md` and
 include:
 
 - Objective
-- PRD requirements
-- TRD requirements
 - Validation contract assertions satisfied (`VAL-NNN` list)
-- Carry-forward items closed
-- Files to create or modify
-- Docs to update
-- Files not to modify
-- Dependencies
-- Implementation notes
-- Exact commands to run
+- Binding constraints
+- Scope: files to create/modify, files to read, and out of scope
 - Acceptance criteria (each criterion cites the `VAL-NNN` it advances)
-- Output requirements
+- First failing test
+- Documentation updates
+- Exact commands to run
+- Notes for Developer
+
+Requirement references live in the validation contract rows; task specs cite
+`VAL-NNN` instead of duplicating PRD/TRD reference lists. Carry-forward items
+closed by the task, dependencies on prior tasks, interpretation decisions, and
+output requirements are recorded under `## Binding Constraints`,
+`## Objective`, or `## Notes For Developer` as appropriate.
+
+Older task specs may contain expanded sections. New task specs use the slim
+template unless the phase brief explicitly requires an additional section for
+parity, audit, or release-readiness work.
+
+Template: use `project-docs/templates/task-spec-template.md`, whose headings
+are (exactly as written there):
+
+```markdown
+# Phase <N> - Task <M>: <Title>
+
+## Objective
+
+<2-3 sentences: what changes and why.>
+
+## Validation Contract Coverage
+
+- VAL-NNN: <one-line assertion this task advances>
+- <If none apply, state why explicitly.>
+
+## Binding Constraints
+
+- <interpretation decisions, ordering rules, contract semantics that bind
+  this implementation>
+
+## Scope
+
+### Files To Create Or Modify
+
+### Files To Read For Context
+
+### Out Of Scope
+
+## Acceptance Criteria
+
+- [ ] <observable/testable criterion> (VAL-NNN or no VAL)
+
+## First Failing Test
+
+<one line; non-obvious regression risks only>
+
+## Documentation Updates
+
+- <doc path or "None expected">
+
+## Exact Commands To Run
+
+- <FORMAT_COMMAND>
+- <LINT_COMMAND>
+- <TEST_COMMAND>
+- <COVERAGE_COMMAND>
+
+## Notes For Developer
+
+- <constraints, ordering, known pitfalls, escalation tripwires>
+```
+
+Required-command rules are stated once in `AGENTS.md` (Commands); the task
+spec's `## Exact Commands To Run` section points there rather than restating
+them at length. Scenario, parity, and audit obligations are phase-level
+concerns declared in the phase brief (Parity Matrix) and QA plan; parity or
+heavy-mode phases may add task-spec sections for them when the phase brief
+requires it.
 
 ### 6.1 Validation Contract
 
@@ -915,49 +980,6 @@ Outcomes (recorded at phase end in `final-review.md`):
 - `CARRY-FORWARD` - assertion deferred with Tech Lead rationale at wrap-up.
 
 `PASS` without evidence is invalid.
-
-Template: use `project-docs/templates/task-spec-template.md`, whose headings
-are (exactly as written there):
-
-```markdown
-# Phase <N> - Task <M>: <Title>
-
-## Objective
-
-## Requirements
-
-## Validation Contract Coverage
-
-- VAL-NNN: <one-line restatement>
-
-## Scope
-
-### Files To Create Or Modify
-
-### Files To Read For Context
-
-### Out Of Scope
-
-## Acceptance Criteria
-
-- [ ] <criterion> (VAL-NNN or no VAL)
-
-## TDD Plan
-
-## Documentation Updates
-
-## Scenario / Parity / Audit Notes
-
-## Exact Commands To Run
-
-## Notes For Developer
-```
-
-Carry-forward items closed by the task, dependencies on prior tasks, and
-output requirements (completion report path when it deviates from
-`task-<n>-done.md`) are recorded under `## Requirements`, `## Objective`, or
-`## Notes For Developer` as appropriate. `workflow-lint.sh` checks the
-`task-pack` skill's heading list against the template.
 
 ## 7. Agent Prompt Materialization
 

@@ -30,20 +30,26 @@ Use `project-docs/templates/task-spec-template.md`. Each task must include the
 template's headings exactly as written there:
 
 - `## Objective`
-- `## Requirements` (PRD/TRD/design/quality references)
-- `## Validation Contract Coverage` (`VAL-NNN` IDs or explicit no-VAL rationale)
+- `## Validation Contract Coverage` (`VAL-NNN` IDs or explicit no-VAL
+  rationale; contract rows carry the source requirement references)
+- `## Binding Constraints` (interpretation decisions, ordering rules, and
+  contract semantics that bind the implementation; omit only for trivial
+  tasks)
 - `## Scope`, containing:
   - `### Files To Create Or Modify`
   - `### Files To Read For Context`
   - `### Out Of Scope`
 - `## Acceptance Criteria`
-- `## TDD Plan`
+- `## First Failing Test`
 - `## Documentation Updates`
-- `## Scenario / Parity / Audit Notes`
 - `## Exact Commands To Run`
 - `## Notes For Developer` (constraints, ordering, dependencies on prior
-  tasks, and the completion report path when it deviates from the
-  `task-M-done.md` convention)
+  tasks, escalation tripwires, and the completion report path when it deviates
+  from the `task-M-done.md` convention)
+
+Scenario, parity, and audit obligations are declared in the phase brief and
+QA plan; add task-spec sections for them only when the phase brief requires it
+(parity or heavy-mode phases).
 
 If a heading here stops matching the template, fix the template or this list
 in the same change; `workflow-lint.sh` checks this list against the template.
