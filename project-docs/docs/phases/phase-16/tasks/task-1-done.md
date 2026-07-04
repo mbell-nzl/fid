@@ -75,7 +75,7 @@
 - No dependency changes.
 
 ## Commit hash
-- Pending commit.
+- `977974c`
 
 ## Commit subject
-- Pending commit.
+- `feat: add activity timeline read command`

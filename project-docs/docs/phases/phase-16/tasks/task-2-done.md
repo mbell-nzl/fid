@@ -87,8 +87,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `931d83a`
 
 ## Commit subject
 
-- Pending commit.
+- `feat(activity): backfill issue lifecycle writers`
