@@ -56,6 +56,7 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/export/     Markdown export with frontmatter (v0.4)
     ├──► internal/search/     Lightweight structured search (v0.2+)
     ├──► internal/stats/      Cost, tokens, gates, attempts aggregations
+    ├──► internal/activity/   Projected activity timeline reads over activity_log
     ├──► internal/report/     Named reports (v0.2+)
     ├──► internal/changes/    Change digest over activity_log (v0.2+)
     ├──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
@@ -98,6 +99,7 @@ Rules:
 | `internal/export/` | Interface adapter | Markdown tree rendering, frontmatter generation (v0.4) | Business logic |
 | `internal/search/` | Domain | Literal, case-insensitive search over structured read-model fields (v0.2) | Full markdown body indexing, custom query DSL |
 | `internal/stats/` | Domain | Cost, token, gate, attempt aggregations | Output formatting |
+| `internal/activity/` | Domain | Projected activity timeline reads over the `activity_log` read model: chronological listing, entity/date/event filtering, and details deserialisation | Output formatting, journal writes, new persisted tables |
 | `internal/report/` | Domain | Named report SQL composition and execution (v0.2) | Output formatting |
 | `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
 | `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |
@@ -807,4 +809,4 @@ tracked in `01_PRD.md` §7.
   CLI/skill-first assumption; require a concrete MCP-only client need, a
   product/security decision, and a threat model before adding it to a roadmap.
 
-*Last updated: 2026-06-29*
+*Last updated: 2026-07-05*
