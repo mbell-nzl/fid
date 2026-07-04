@@ -222,8 +222,9 @@ EOF
 Do not show this file to the agent under test. Point the reviewer at `repo/`
 only.
 
-Seeded defect: the task spec binds the flag name `--shout` (Out Of Scope:
-"do not rename it"), but the implementation and tests use `--loud`. Docs and
+Seeded defect: the task spec binds the flag name `--shout` (Binding
+Constraints: "do not rename it"), but the implementation and tests use
+`--loud`. Docs and
 the completion report still say `--shout`, and `## Deviations from spec` says
 "- None."
 
