@@ -161,11 +161,7 @@ func appendCompletionEvent(
 	eventType string,
 	buildOptions CompletionBuildOptions,
 ) (CompleteResult, error) {
-	effects, completionResult, err := BuildCompletionEffects(conn, buildOptions)
-	if err != nil {
-		return CompleteResult{}, err
-	}
-	event := journal.Event{
+	event, err := journal.PrepareEvent(lock, journal.Event{
 		EventSchema: journal.CurrentEventSchema,
 		EventType:   eventType,
 		Actor:       journal.Actor{Role: actorRole},
@@ -174,8 +170,17 @@ func appendCompletionEvent(
 			CWD:        ".",
 			FIDVersion: fidVersion,
 		},
-		Effects: effects,
+	})
+	if err != nil {
+		return CompleteResult{}, err
 	}
+
+	timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+	effects, completionResult, err := BuildCompletionEffects(conn, buildOptions, event.EventID, timestamp)
+	if err != nil {
+		return CompleteResult{}, err
+	}
+	event.Effects = effects
 	if err := journal.DryRunProjectEvent(conn, event); err != nil {
 		return CompleteResult{}, err
 	}
@@ -206,7 +211,12 @@ func projectCompletionEvent(workspaceRoot string, conn *sql.DB, appended journal
 	})
 }
 
-func BuildCompletionEffects(conn *sql.DB, options CompletionBuildOptions) ([]journal.Effect, CompleteResult, error) {
+func BuildCompletionEffects(
+	conn *sql.DB,
+	options CompletionBuildOptions,
+	eventID string,
+	completedAt string,
+) ([]journal.Effect, CompleteResult, error) {
 	status := strings.TrimSpace(options.Status)
 	if status == "" {
 		return nil, CompleteResult{}, fmt.Errorf("build completion effects: status is required")
@@ -215,7 +225,7 @@ func BuildCompletionEffects(conn *sql.DB, options CompletionBuildOptions) ([]jou
 		return nil, CompleteResult{}, err
 	}
 
-	data, err := loadCompletionBuildData(conn, options.IssueID)
+	data, err := loadCompletionBuildData(conn, options.IssueID, completedAt)
 	if err != nil {
 		return nil, CompleteResult{}, err
 	}
@@ -223,12 +233,13 @@ func BuildCompletionEffects(conn *sql.DB, options CompletionBuildOptions) ([]jou
 	if err != nil {
 		return nil, CompleteResult{}, err
 	}
-	return completionEffects(data.CompletionID, data.PriorCompletionIDs, values),
+	return completionEffects(data, options, eventID, values),
 		completeResult(options, data),
 		nil
 }
 
 type completionBuildData struct {
+	ActivityID         string
 	CompletionID       string
 	AttemptNumber      int
 	PriorCompletionIDs []string
@@ -238,7 +249,11 @@ type completionBuildData struct {
 	CompletedAt        string
 }
 
-func loadCompletionBuildData(conn *sql.DB, issueID string) (completionBuildData, error) {
+func loadCompletionBuildData(conn *sql.DB, issueID, completedAt string) (completionBuildData, error) {
+	activityID, err := nextIssueActivityID(conn)
+	if err != nil {
+		return completionBuildData{}, err
+	}
 	completionID, err := journal.GenerateID("TC", func(candidate string) (bool, error) {
 		return completionIDExists(conn, candidate)
 	})
@@ -258,13 +273,14 @@ func loadCompletionBuildData(conn *sql.DB, issueID string) (completionBuildData,
 		return completionBuildData{}, err
 	}
 	return completionBuildData{
+		ActivityID:         activityID,
 		CompletionID:       completionID,
 		AttemptNumber:      attemptNumber,
 		PriorCompletionIDs: priorIDs,
 		GateResultsJSON:    gateResultsJSON,
 		GatesPassed:        gatesPassed,
 		GatesFailed:        gatesFailed,
-		CompletedAt:        time.Now().UTC().Format(time.RFC3339),
+		CompletedAt:        completedAt,
 	}, nil
 }
 
@@ -313,14 +329,31 @@ func addOptionalCompletionValues(values map[string]any, options CompletionBuildO
 	return nil
 }
 
-func completionEffects(completionID string, priorCompletionIDs []string, values map[string]any) []journal.Effect {
+func completionEffects(
+	data completionBuildData,
+	options CompletionBuildOptions,
+	eventID string,
+	values map[string]any,
+) []journal.Effect {
 	effects := []journal.Effect{{
 		Op:     "insert",
 		Table:  "task_completions",
-		PK:     map[string]any{"id": completionID},
+		PK:     map[string]any{"id": data.CompletionID},
 		Values: values,
-	}}
-	for _, priorID := range priorCompletionIDs {
+	}, issueActivityEffect(
+		data.ActivityID,
+		eventID,
+		options.ActorRole,
+		data.CompletedAt,
+		options.IssueID,
+		"task_completed",
+		map[string]any{
+			"completion_id":  data.CompletionID,
+			"status":         options.Status,
+			"attempt_number": data.AttemptNumber,
+		},
+	)}
+	for _, priorID := range data.PriorCompletionIDs {
 		effects = append(effects, journal.Effect{
 			Op:    "update",
 			Table: "task_completions",

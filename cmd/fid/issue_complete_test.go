@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"path/filepath"
 	"strings"
@@ -98,6 +99,49 @@ func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *
 	}
 	if completion.HumanInterventionNote != nil {
 		t.Fatalf("completion human_intervention_note = %#v, want nil", completion.HumanInterventionNote)
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	event := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
+	if event.EventType != "issue.completed" {
+		t.Fatalf("event type = %q, want issue.completed", event.EventType)
+	}
+	if got := countActivityLogRows(t, conn); got != 2 {
+		t.Fatalf("activity_log rows after completion = %d, want 2", got)
+	}
+
+	var (
+		activityCount int
+		activityEvent string
+		actor         string
+		details       sql.NullString
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), details
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, event.EventID).Scan(&activityCount, &activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if activityEvent != "task_completed" {
+		t.Fatalf("activity_log event = %q, want task_completed", activityEvent)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{completion.ID, `"status":"dev_complete"`, `"attempt_number":1`} {
+		if !strings.Contains(details.String, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details.String, want)
+		}
 	}
 }
 

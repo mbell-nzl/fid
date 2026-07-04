@@ -131,8 +131,8 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	if err := conn.QueryRow(`
 		SELECT COUNT(*), MIN(actor), MIN(event)
 		FROM activity_log
-		WHERE ref_type = 'issue' AND ref_id = ?
-	`, created.ID).Scan(&activityCount, &actor, &eventName); err != nil {
+		WHERE journal_event_id = ?
+	`, last.EventID).Scan(&activityCount, &actor, &eventName); err != nil {
 		t.Fatalf("query activity_log row: %v", err)
 	}
 	if activityCount != 1 {

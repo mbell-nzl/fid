@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"database/sql"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -8,6 +9,7 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -245,6 +247,19 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 		t.Fatalf("Create() error = %v", err)
 	}
 
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeActivityDB(t, conn)
+
+	if _, err := conn.Exec(`
+		DELETE FROM activity_log
+		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue_created'
+	`, result.ID); err != nil {
+		t.Fatalf("delete create activity row: %v", err)
+	}
+
 	return result.ID
 }
 
@@ -309,4 +324,12 @@ func testActivityMigrationsDir(t *testing.T) string {
 	}
 
 	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+}
+
+func closeActivityDB(t *testing.T, conn *sql.DB) {
+	t.Helper()
+
+	if err := conn.Close(); err != nil {
+		t.Fatalf("Close() error = %v", err)
+	}
 }

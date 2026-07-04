@@ -790,8 +790,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	if event.EventType != "issue.created" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "issue.created")
 	}
-	if event.EventID == "" || event.EventSchema != journal.EventSchemaV1 || event.Actor.Role != "developer" || len(event.Command.Argv) == 0 || len(event.Effects) != 1 {
-		t.Fatalf("event envelope = %+v, want populated v1 envelope with one effect", event)
+	if event.EventID == "" || event.EventSchema != journal.EventSchemaV1 || event.Actor.Role != "developer" || len(event.Command.Argv) == 0 {
+		t.Fatalf("event envelope = %+v, want populated v1 envelope", event)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -806,6 +806,39 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	}
 	if projectedTitle != "Append one event" {
 		t.Fatalf("projected title = %q, want %q", projectedTitle, "Append one event")
+	}
+
+	if got := countActivityLogRows(t, conn); got != 1 {
+		t.Fatalf("activity_log rows after create = %d, want 1", got)
+	}
+
+	var (
+		activityCount int
+		activityEvent string
+		actor         string
+		details       sql.NullString
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), details
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, event.EventID).Scan(&activityCount, &activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if activityEvent != "issue_created" {
+		t.Fatalf("activity_log event = %q, want issue_created", activityEvent)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{`"kind":"task"`, `"title":"Append one event"`} {
+		if !strings.Contains(details.String, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details.String, want)
+		}
 	}
 }
 

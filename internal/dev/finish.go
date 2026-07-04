@@ -65,20 +65,6 @@ func Finish(options FinishOptions) (FinishResult, error) {
 			return err
 		}
 
-		completionEffects, completionResult, err := issues.BuildCompletionEffects(conn, issues.CompletionBuildOptions{
-			IssueID:               issueID,
-			ActorRole:             options.ActorRole,
-			Status:                "dev_complete",
-			NotesMDPath:           &completionMDPath,
-			ActualTokens:          options.ActualTokens,
-			CommitHashes:          options.CommitHashes,
-			FilesTouched:          options.FilesTouched,
-			HumanIntervention:     options.HumanIntervention,
-			HumanInterventionNote: trimmedOptionalString(options.HumanInterventionNote),
-		})
-		if err != nil {
-			return err
-		}
 		if err := validateFinishTransition(conn, current); err != nil {
 			return err
 		}
@@ -116,6 +102,20 @@ func Finish(options FinishOptions) (FinishResult, error) {
 		}
 
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+		completionEffects, completionResult, err := issues.BuildCompletionEffects(conn, issues.CompletionBuildOptions{
+			IssueID:               issueID,
+			ActorRole:             options.ActorRole,
+			Status:                "dev_complete",
+			NotesMDPath:           &completionMDPath,
+			ActualTokens:          options.ActualTokens,
+			CommitHashes:          options.CommitHashes,
+			FilesTouched:          options.FilesTouched,
+			HumanIntervention:     options.HumanIntervention,
+			HumanInterventionNote: trimmedOptionalString(options.HumanInterventionNote),
+		}, event.EventID, timestamp)
+		if err != nil {
+			return err
+		}
 		effects := make([]journal.Effect, 0, len(completionEffects)+4)
 		if runID != nil {
 			effects = append(effects, closeRunEffect(*runID, issueID, timestamp))

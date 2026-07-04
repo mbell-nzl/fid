@@ -611,7 +611,10 @@ CREATE TABLE activity_log (
   journal_event_id TEXT NOT NULL,
   ref_type        TEXT NOT NULL,
   ref_id          TEXT NOT NULL,
-  event           TEXT NOT NULL,               -- 'status_changed' | 'ac_verified' | 'comment_added' | ...
+  event           TEXT NOT NULL,               -- 'issue_created' | 'status_changed' |
+                                               -- 'issue_updated' | 'issue_label_added' |
+                                               -- 'issue_label_removed' | 'ac_added' |
+                                               -- 'ac_verified' | 'task_completed' | ...
   details         TEXT,                        -- JSON of before/after, or freeform
   actor           TEXT,
   occurred_at     DATETIME
@@ -1080,4 +1083,4 @@ Set on every connection open.
 
 ---
 
-*Last updated: 2026-05-31*
+*Last updated: 2026-07-05*

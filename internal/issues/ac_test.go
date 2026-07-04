@@ -91,11 +91,28 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 	if last.EventType != "issue.ac_added" {
 		t.Fatalf("last event type = %q, want issue.ac_added", last.EventType)
 	}
-	if len(last.Effects) != 1 {
-		t.Fatalf("last event effects len = %d, want 1", len(last.Effects))
+
+	var (
+		insertEffect   *journal.Effect
+		activityEffect *journal.Effect
+	)
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		switch {
+		case effect.Table == "acceptance_criteria" && effect.Op == "insert":
+			insertEffect = effect
+		case effect.Table == "activity_log" && effect.Op == "activity":
+			activityEffect = effect
+		}
 	}
-	if last.Effects[0].Table != "acceptance_criteria" || last.Effects[0].Op != "insert" {
-		t.Fatalf("last event effect = %#v, want acceptance_criteria insert", last.Effects[0])
+	if insertEffect == nil {
+		t.Fatal("missing acceptance_criteria insert effect")
+	}
+	if activityEffect == nil {
+		t.Fatal("missing ac_added activity effect")
+	}
+	if got := activityEffect.Values["event"]; got != "ac_added" {
+		t.Fatalf("activity event = %#v, want ac_added", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -111,13 +128,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("stored row = (%q, %d, %q), want (%q, 1, %q)", issueID, ordinal, text, taskCreated.ID, "First acceptance criterion")
 	}
 
-	var activityRows int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityRows); err != nil {
-		t.Fatalf("count activity_log: %v", err)
-	}
-	if activityRows != 0 {
-		t.Fatalf("activity_log rows = %d, want 0", activityRows)
-	}
+	assertIssueLabelActivity(t, conn, last.EventID, "ac_added", "developer", first.ID, `"ordinal":1`)
 }
 
 func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
@@ -443,8 +454,14 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	if roundTripped.EventType != "issue.ac_added" {
 		t.Fatalf("round-tripped event type = %q, want issue.ac_added", roundTripped.EventType)
 	}
-	if len(roundTripped.Effects) != 1 || roundTripped.Effects[0].PK["id"] != result.ID {
-		t.Fatalf("round-tripped event effects = %#v, want one effect keyed by %q", roundTripped.Effects, result.ID)
+	if len(roundTripped.Effects) != 2 {
+		t.Fatalf("round-tripped event effects = %#v, want insert plus activity", roundTripped.Effects)
+	}
+	if roundTripped.Effects[0].PK["id"] != result.ID {
+		t.Fatalf("round-tripped insert effect PK = %#v, want %q", roundTripped.Effects[0].PK, result.ID)
+	}
+	if roundTripped.Effects[1].Table != "activity_log" || roundTripped.Effects[1].Op != "activity" {
+		t.Fatalf("round-tripped activity effect = %#v, want activity_log activity", roundTripped.Effects[1])
 	}
 }
 
@@ -529,11 +546,28 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 	if last.EventType != "issue.ac_verified" {
 		t.Fatalf("last event type = %q, want issue.ac_verified", last.EventType)
 	}
-	if len(last.Effects) != 1 {
-		t.Fatalf("last event effects len = %d, want 1", len(last.Effects))
+
+	var (
+		insertEffect   *journal.Effect
+		activityEffect *journal.Effect
+	)
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		switch {
+		case effect.Table == "ac_verifications" && effect.Op == "insert":
+			insertEffect = effect
+		case effect.Table == "activity_log" && effect.Op == "activity":
+			activityEffect = effect
+		}
 	}
-	if last.Effects[0].Table != "ac_verifications" || last.Effects[0].Op != "insert" {
-		t.Fatalf("last event effect = %#v, want ac_verifications insert", last.Effects[0])
+	if insertEffect == nil {
+		t.Fatal("missing ac_verifications insert effect")
+	}
+	if activityEffect == nil {
+		t.Fatal("missing ac_verified activity effect")
+	}
+	if got := activityEffect.Values["event"]; got != "ac_verified" {
+		t.Fatalf("activity event = %#v, want ac_verified", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -575,13 +609,7 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 		t.Fatalf("stored verified_at = %q, want %q", verifiedAt, result.VerifiedAt)
 	}
 
-	var activityRows int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityRows); err != nil {
-		t.Fatalf("count activity_log: %v", err)
-	}
-	if activityRows != 0 {
-		t.Fatalf("activity_log rows = %d, want 0", activityRows)
-	}
+	assertIssueLabelActivity(t, conn, last.EventID, "ac_verified", "developer", criterion.ID, `"verifier_role":"developer"`, `"status":"pass"`)
 }
 
 func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *testing.T) {

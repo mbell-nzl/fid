@@ -65,15 +65,6 @@ func Block(options BlockOptions) (BlockResult, error) {
 			}
 		}
 
-		completionEffects, completionResult, err := issues.BuildCompletionEffects(conn, issues.CompletionBuildOptions{
-			IssueID:     issueID,
-			ActorRole:   options.ActorRole,
-			Status:      "failed_gate",
-			NotesMDPath: &reasonMDPath,
-		})
-		if err != nil {
-			return err
-		}
 		releaseEffect, err := claims.BuildIssueReleaseEffect(conn, issueID, options.ActorRole)
 		if err != nil {
 			return err
@@ -103,6 +94,15 @@ func Block(options BlockOptions) (BlockResult, error) {
 		}
 
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+		completionEffects, completionResult, err := issues.BuildCompletionEffects(conn, issues.CompletionBuildOptions{
+			IssueID:     issueID,
+			ActorRole:   options.ActorRole,
+			Status:      "failed_gate",
+			NotesMDPath: &reasonMDPath,
+		}, event.EventID, timestamp)
+		if err != nil {
+			return err
+		}
 		event.Effects = append(event.Effects, completionEffects...)
 		event.Effects = append(event.Effects, buildIssueTransitionEffects(current, "failed_gate", options.ActorRole, event.EventID, activityID, timestamp)...)
 		event.Effects = append(event.Effects, releaseEffect)

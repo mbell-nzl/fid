@@ -2,11 +2,13 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	internalactivity "github.com/mbell-nzl/fid/internal/activity"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -181,6 +183,19 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	if _, err := conn.Exec(`
+		DELETE FROM activity_log
+		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue_created'
+	`, created.ID); err != nil {
+		t.Fatalf("delete create activity row: %v", err)
 	}
 
 	return created.ID

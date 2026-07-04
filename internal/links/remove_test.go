@@ -147,21 +147,18 @@ func loadSingleActivityByRef(t *testing.T, conn *sql.DB, refType, refID string) 
 	t.Helper()
 
 	var (
-		count   int
 		event   string
 		actor   string
 		details string
 	)
 	if err := conn.QueryRow(`
-		SELECT COUNT(*), event, COALESCE(actor, ''), COALESCE(details, '')
+		SELECT event, COALESCE(actor, ''), COALESCE(details, '')
 		FROM activity_log
 		WHERE ref_type = ? AND ref_id = ?
-		GROUP BY event, actor, details
-	`, refType, refID).Scan(&count, &event, &actor, &details); err != nil {
+		ORDER BY occurred_at DESC, id DESC
+		LIMIT 1
+	`, refType, refID).Scan(&event, &actor, &details); err != nil {
 		t.Fatalf("query activity_log row: %v", err)
-	}
-	if count != 1 {
-		t.Fatalf("activity_log grouped row count = %d, want 1", count)
 	}
 	return event, actor, details
 }
