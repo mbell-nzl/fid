@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestGateRecordsReportedResultOnActiveAttempt(t *testing.T) {
@@ -40,6 +41,9 @@ func TestGateRecordsReportedResultOnActiveAttempt(t *testing.T) {
 
 	journalPath := journalPathForDevWorkspace(t, workspace)
 	linesBefore := countDevJournalLines(journalPath)
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	activityBefore := countDevActivityRows(t, conn)
+	closeDevDB(t, conn)
 
 	result, err := Gate(GateOptions{
 		WorkspaceRoot: workspace,
@@ -85,16 +89,64 @@ func TestGateRecordsReportedResultOnActiveAttempt(t *testing.T) {
 	if last.EventType != "dev.gate.recorded" {
 		t.Fatalf("last event type = %q, want dev.gate.recorded", last.EventType)
 	}
-	if len(last.Effects) != 1 {
-		t.Fatalf("len(last.Effects) = %d, want 1", len(last.Effects))
+
+	var (
+		gateEffect     *journal.Effect
+		activityEffect *journal.Effect
+	)
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		switch {
+		case effect.Table == "gate_runs" && effect.Op == "insert":
+			gateEffect = effect
+		case effect.Table == "activity_log" && effect.Op == "activity":
+			activityEffect = effect
+		}
 	}
-	effect := last.Effects[0]
-	if effect.Table != "gate_runs" || effect.Op != "insert" {
-		t.Fatalf("gate effect = (%s, %s), want (gate_runs, insert)", effect.Table, effect.Op)
+	if gateEffect == nil {
+		t.Fatal("missing gate_runs insert effect")
+	}
+	if activityEffect == nil {
+		t.Fatal("missing gate_recorded activity effect")
+	}
+	if got := activityEffect.Values["event"]; got != "gate_recorded" {
+		t.Fatalf("activity event = %#v, want gate_recorded", got)
+	}
+	if got := activityEffect.Values["ref_type"]; got != "issue" {
+		t.Fatalf("activity ref_type = %#v, want issue", got)
+	}
+	if got := activityEffect.Values["ref_id"]; got != created.ID {
+		t.Fatalf("activity ref_id = %#v, want %q", got, created.ID)
+	}
+	if got := activityEffect.Values["actor"]; got != "developer" {
+		t.Fatalf("activity actor = %#v, want developer", got)
+	}
+	details, ok := activityEffect.Values["details"].(map[string]any)
+	if !ok {
+		t.Fatalf("activity details = %#v, want map", activityEffect.Values["details"])
+	}
+	for key, want := range map[string]string{
+		"gate_run_id":  result.GateID,
+		"command":      "go test ./...",
+		"agent_run_id": started.RunID,
+	} {
+		if got := details[key]; got != want {
+			t.Fatalf("activity details[%q] = %#v, want %#v", key, got, want)
+		}
+	}
+	if got := details["attempt_number"]; got != float64(1) {
+		t.Fatalf("activity details[attempt_number] = %#v, want 1", got)
+	}
+	if got := details["exit_code"]; got != float64(0) {
+		t.Fatalf("activity details[exit_code] = %#v, want 0", got)
 	}
 
-	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	conn = openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeDevDB(t, conn)
+
+	if got := countDevActivityRows(t, conn); got != activityBefore+1 {
+		t.Fatalf("activity_log rows after Gate() = %d, want %d", got, activityBefore+1)
+	}
 
 	var (
 		attemptNumber int
@@ -140,6 +192,41 @@ func TestGateRecordsReportedResultOnActiveAttempt(t *testing.T) {
 	}
 	if ranAt == "" {
 		t.Fatal("gate_runs.ran_at = empty, want timestamp")
+	}
+
+	var (
+		activityCount int
+		eventName     string
+		actor         string
+		activityJSON  string
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), COALESCE(details, '')
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, last.EventID).Scan(&activityCount, &eventName, &actor, &activityJSON); err != nil {
+		t.Fatalf("query gate activity row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if eventName != "gate_recorded" {
+		t.Fatalf("activity_log event = %q, want gate_recorded", eventName)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{
+		`"gate_run_id":"` + result.GateID + `"`,
+		`"attempt_number":1`,
+		`"command":"go test ./..."`,
+		`"exit_code":0`,
+		`"agent_run_id":"` + started.RunID + `"`,
+	} {
+		if !strings.Contains(activityJSON, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", activityJSON, want)
+		}
 	}
 }
 
@@ -271,6 +358,9 @@ func TestGateRejectsWithoutLiveClaimBeforeAppend(t *testing.T) {
 
 	journalPath := journalPathForDevWorkspace(t, workspace)
 	linesBefore := countDevJournalLines(journalPath)
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	activityBefore := countDevActivityRows(t, conn)
+	closeDevDB(t, conn)
 
 	_, err = Gate(GateOptions{
 		WorkspaceRoot: workspace,
@@ -292,8 +382,24 @@ func TestGateRejectsWithoutLiveClaimBeforeAppend(t *testing.T) {
 	if got := countDevJournalLines(journalPath); got != linesBefore {
 		t.Fatalf("journal lines after rejected Gate() = %d, want unchanged %d", got, linesBefore)
 	}
+
+	conn = openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeDevDB(t, conn)
+	if got := countDevActivityRows(t, conn); got != activityBefore {
+		t.Fatalf("activity_log rows after rejected Gate() = %d, want unchanged %d", got, activityBefore)
+	}
 }
 
 func stringPointer(value string) *string {
 	return &value
+}
+
+func countDevActivityRows(t *testing.T, conn *sql.DB) int {
+	t.Helper()
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&count); err != nil {
+		t.Fatalf("count activity_log rows: %v", err)
+	}
+	return count
 }

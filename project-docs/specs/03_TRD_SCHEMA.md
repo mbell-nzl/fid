@@ -614,7 +614,11 @@ CREATE TABLE activity_log (
   event           TEXT NOT NULL,               -- 'issue_created' | 'status_changed' |
                                                -- 'issue_updated' | 'issue_label_added' |
                                                -- 'issue_label_removed' | 'ac_added' |
-                                               -- 'ac_verified' | 'task_completed' | ...
+                                               -- 'ac_verified' | 'task_completed' |
+                                               -- 'concern_raised' |
+                                               -- 'concern_addressed' |
+                                               -- 'claim_released' | 'link_added' |
+                                               -- 'gate_recorded' | ...
   details         TEXT,                        -- JSON of before/after, or freeform
   actor           TEXT,
   occurred_at     DATETIME

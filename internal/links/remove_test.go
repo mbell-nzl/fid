@@ -1,8 +1,8 @@
 package links
 
 import (
-	"database/sql"
 	"errors"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -55,7 +55,9 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		t.Fatalf("links rows after Remove() = %#v, want none", rows)
 	}
 
-	eventName, actor, details := loadSingleActivityByRef(t, conn, "issue", firstIssueID)
+	stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
+	last := stored[len(stored)-1]
+	eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
 	if eventName != "link_removed" {
 		t.Fatalf("activity_log event = %q, want %q", eventName, "link_removed")
 	}
@@ -141,24 +143,4 @@ func TestRemoveSupportsRequirementInverse(t *testing.T) {
 	if rows := loadLinkRows(t, conn); len(rows) != 0 {
 		t.Fatalf("links rows after Remove(implements) = %#v, want none", rows)
 	}
-}
-
-func loadSingleActivityByRef(t *testing.T, conn *sql.DB, refType, refID string) (string, string, string) {
-	t.Helper()
-
-	var (
-		event   string
-		actor   string
-		details string
-	)
-	if err := conn.QueryRow(`
-		SELECT event, COALESCE(actor, ''), COALESCE(details, '')
-		FROM activity_log
-		WHERE ref_type = ? AND ref_id = ?
-		ORDER BY occurred_at DESC, id DESC
-		LIMIT 1
-	`, refType, refID).Scan(&event, &actor, &details); err != nil {
-		t.Fatalf("query activity_log row: %v", err)
-	}
-	return event, actor, details
 }

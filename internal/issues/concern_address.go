@@ -95,9 +95,40 @@ func addressConcernLocked(
 	if err := requireAddressCompletionBelongsToIssue(conn, completionID, current.IssueID); err != nil {
 		return err
 	}
+	activityID, err := nextIssueActivityID(conn)
+	if err != nil {
+		return err
+	}
 
-	updatedAt := nextIssueUpdateTime(current.UpdatedAt, time.Now().UTC()).Format(time.RFC3339)
-	event := issueConcernAddressEvent(concernID, completionID, options.ActorRole, current.Status, current.UpdatedAt, updatedAt, commandArgv)
+	event, err := journal.PrepareEvent(lock, journal.Event{
+		EventSchema: journal.CurrentEventSchema,
+		EventType:   "issue.concern_addressed",
+		OccurredAt:  nextIssueUpdateTime(current.UpdatedAt, time.Now().UTC()),
+		Actor: journal.Actor{
+			Role: options.ActorRole,
+		},
+		Command: journal.Command{
+			Argv:       commandArgv,
+			CWD:        ".",
+			FIDVersion: fidVersion,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	updatedAt := event.OccurredAt.UTC().Format(time.RFC3339)
+	event.Effects = issueConcernAddressEffects(
+		concernID,
+		activityID,
+		event.EventID,
+		current.IssueID,
+		completionID,
+		options.ActorRole,
+		current.Status,
+		current.UpdatedAt,
+		updatedAt,
+	)
 	if err := journal.DryRunProjectEvent(conn, event); err != nil {
 		return err
 	}
@@ -155,40 +186,41 @@ func requireAddressCompletionBelongsToIssue(conn *sql.DB, completionID, issueID 
 	return fmt.Errorf("query completion %q: %w", completionID, err)
 }
 
-func issueConcernAddressEvent(
-	concernID, completionID, actorRole, priorStatus, priorUpdatedAt, updatedAt string,
-	commandArgv []string,
-) journal.Event {
-	return journal.Event{
-		EventSchema: journal.CurrentEventSchema,
-		EventType:   "issue.concern_addressed",
-		Actor: journal.Actor{
-			Role: actorRole,
+func issueConcernAddressEffects(
+	concernID, activityID, eventID, issueID, completionID, actorRole, priorStatus, priorUpdatedAt, updatedAt string,
+) []journal.Effect {
+	effects := []journal.Effect{{
+		Op:    "update",
+		Table: "concerns",
+		PK:    map[string]any{"id": concernID},
+		Values: map[string]any{
+			"status":                     "addressed",
+			"addressed_in_completion_id": completionID,
+			"updated_at":                 updatedAt,
 		},
-		Command: journal.Command{
-			Argv:       commandArgv,
-			CWD:        ".",
-			FIDVersion: fidVersion,
+		Prior: map[string]any{
+			"status":     priorStatus,
+			"updated_at": priorUpdatedAt,
 		},
-		Effects: []journal.Effect{{
-			Op:    "update",
-			Table: "concerns",
-			PK:    map[string]any{"id": concernID},
-			Values: map[string]any{
-				"status":                     "addressed",
-				"addressed_in_completion_id": completionID,
-				"updated_at":                 updatedAt,
+		Preconditions: map[string]any{
+			"status":     priorStatus,
+			"updated_at": priorUpdatedAt,
+		},
+	}}
+	if activityID != "" && eventID != "" {
+		effects = append(effects, issueActivityEffect(
+			activityID,
+			eventID,
+			actorRole,
+			updatedAt,
+			issueID,
+			"concern_addressed",
+			map[string]any{
+				"concern_id": concernID,
 			},
-			Prior: map[string]any{
-				"status":     priorStatus,
-				"updated_at": priorUpdatedAt,
-			},
-			Preconditions: map[string]any{
-				"status":     priorStatus,
-				"updated_at": priorUpdatedAt,
-			},
-		}},
+		))
 	}
+	return effects
 }
 
 func issueConcernAddressArgv(concernID, completionID, actorRole string) []string {
