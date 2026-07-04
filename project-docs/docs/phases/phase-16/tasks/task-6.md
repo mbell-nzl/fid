@@ -1,8 +1,7 @@
 # Phase 16 - Task 6: CF-016 - `fid issue get --section gates`
 
-> **Conditional task.** Runs only if the human confirms DC-B (CF-016 scheduling)
-> at kickoff. If deferred, this task and VAL-012 are cut; the interim read path
-> stays `fid sql` over `gate_runs` + `fid journal inspect` of `dev.gate.recorded`.
+> **Confirmed task.** The human confirmed DC-B at kickoff on 2026-07-05
+> (workspace timezone), so CF-016 is scheduled in Phase 16.
 
 ## Objective
 
@@ -131,8 +130,8 @@ List any conditional command required by this task and why:
 
 ## Notes For Developer
 
-- This task runs only if the human confirmed DC-B at kickoff; if not confirmed,
-  do not start — escalate to the Tech Lead.
+- DC-B is human-confirmed for Phase 16; do not reopen it unless implementation
+  reveals a new product or public-interface contradiction.
 - Mirror an existing section helper (`issueConcerns`/`issueClaims`) for the query
   + assembly so the read shape and freshness contract match.
 - Keep the raw `gate_runs` history distinct from `task_completions.gate_results`

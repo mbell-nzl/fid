@@ -2,7 +2,8 @@
 
 ## Objective
 
-Begin the CF-011 broad `activity_log` reconciliation (DC-A): backfill the four
+Begin the CF-011 broad `activity_log` reconciliation (DC-A, approved at kickoff):
+backfill the four
 issue-lifecycle write commands that mutate or append an issue fact but do not yet
 project an `activity_log` row, so the timeline (`fid activity list`, Task 1) is
 consistent across them.
@@ -85,7 +86,7 @@ Assertions live in
 - `internal/issues/complete.go` + the `BuildCompletionEffects` builder (CF-013)
 - `internal/issues/ac.go`, `internal/issues/ac_verify.go`, `internal/issues/create.go`
 - `internal/dev/finish.go`, `internal/dev/block.go` (consume the shared builder)
-- DC-A and PI-2/PI-6 in the validation contract
+- DC-A (approved) and PI-2/PI-6 in the validation contract
 
 ### Out Of Scope
 
@@ -177,5 +178,5 @@ List any conditional command required by this task and why:
   weakening — cite DC-A/VAL-005 in the test and the completion report.
 - Reuse `journal.GenerateID("ACT", ...)` + `activityIDExists` and the
   `transition.go` activity `Values` shape so rebuild stays deterministic.
-- If DC-A (CF-011 scope/vocabulary) is not yet human-confirmed at task start,
-  stop and escalate rather than guessing.
+- DC-A (CF-011 scope/vocabulary) is human-confirmed for Phase 16; do not reopen
+  it unless implementation reveals a new spec contradiction.

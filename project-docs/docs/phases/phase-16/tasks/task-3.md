@@ -2,8 +2,8 @@
 
 ## Objective
 
-Finish the CF-011 reconciliation (DC-A) and prove the headline: the activity
-timeline is consistent across **every** write command.
+Finish the CF-011 reconciliation (DC-A, approved at kickoff) and prove the
+headline: the activity timeline is consistent across **every** write command.
 
 1. Backfill the remaining four unlogged writers, each gaining one `activity`
    effect inside its existing single event (PI-2), mirroring the existing
@@ -174,4 +174,5 @@ List any conditional command required by this task and why:
 - The VAL-007 rebuild-equality check is the determinism gate: capture
   `activity_log` before deleting `fid.sqlite`, rebuild from the journal, and
   assert equality.
-- If DC-A is not yet human-confirmed at task start, stop and escalate.
+- DC-A is human-confirmed for Phase 16; do not reopen it unless implementation
+  reveals a new spec contradiction.
