@@ -480,6 +480,20 @@ Avoid: "user" in workflow context (ambiguous with end-user).
 
 ## Workflow Terms
 
+### Operating Mode
+
+Definition: The per-phase declaration - light, normal, or heavy - of which
+workflow artifacts the phase must produce. Modes vary the artifact set, never
+the evidence standard: exact-command gates, evidence rules, commit discipline,
+and hard stops apply in every mode.
+Use when: Planning a phase, choosing orchestration, or deciding whether a
+phase artifact is required.
+Avoid: Process level, rigor tier; TL-Lite warm-up mode, which is a
+trust-calibration state, not an operating mode.
+Related: Phase Brief, Validation Contract, QA Plan.
+Examples: "This config-only phase runs in light mode." "The migration phase
+is heavy mode, so command feasibility is revalidated, not carried forward."
+
 ### Validation Contract
 
 Definition: A per-phase artifact that lists the `VAL-NNN` assertions that
@@ -514,4 +528,4 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-06-07*
+*Last updated: 2026-07-05*

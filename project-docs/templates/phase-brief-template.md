@@ -15,6 +15,12 @@ looks like in user-visible or operator-visible terms.
 **<Planning | Active | Closing | Approved>.** One paragraph: current branch,
 current state, and next concrete action.
 
+## Operating Mode
+
+**<Light | Normal | Heavy>.** Entry criteria and artifact matrix:
+`project-docs/specs/09_AI_WORKFLOW.md` section 4. Record any mid-phase
+promotion here and in phase decisions.
+
 ## Task Index
 
 Full task specs and completion reports live under

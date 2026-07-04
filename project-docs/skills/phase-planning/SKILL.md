@@ -1,6 +1,6 @@
 ---
 name: phase-planning
-description: Use for Tech Lead phase kickoff including carry-forward disposition, validation contract drafting, task slicing, and phase brief refresh.
+description: Use for Tech Lead phase kickoff including operating-mode selection, carry-forward disposition, validation contract drafting, task slicing, and phase brief refresh.
 ---
 
 # Phase Planning
@@ -20,25 +20,32 @@ phase shape.
    satisfied/obsolete.
 3. Skim prior phase workflow notes when available. Treat as calibration only
    unless promoted to a current decision.
-4. Create phase directories:
+4. Propose the phase operating mode (light, normal, or heavy) per
+   `project-docs/specs/09_AI_WORKFLOW.md` section 4. Record it in the phase
+   brief; light mode skips the validation contract and QA plan per the
+   artifact matrix.
+5. Create phase directories:
    - `project-docs/docs/phases/phase-N/tasks/`
    - `project-docs/docs/phases/phase-N/qa/`
-5. Draft `project-docs/docs/phases/phase-N/qa/validation-contract.md` from
+6. For normal and heavy modes, draft
+   `project-docs/docs/phases/phase-N/qa/validation-contract.md` from
    `project-docs/templates/validation-contract-template.md`. Express each
    in-scope requirement as one observable `VAL-NNN` assertion. Conditional or
    binary assertions must name both states; parity or "matches reference"
    assertions need deterministic conformance checks where possible.
-6. Slice work using the one-logic rule: logic/data tasks before UI/wiring,
+7. Slice work using the one-logic rule: logic/data tasks before UI/wiring,
    schema and dependency changes isolated unless the phase explicitly plans
    the exception.
-7. Write task specs from `project-docs/templates/task-spec-template.md`.
+8. Write task specs from `project-docs/templates/task-spec-template.md`.
    Each task must cite covered `VAL-NNN` IDs or state why none apply, and its
    `## Exact Commands To Run` section must list the full task gate before task
    close unless the spec records an explicit exception.
-8. Refresh `project-docs/docs/current/phase_brief.md` from the template.
+9. Refresh `project-docs/docs/current/phase_brief.md` from the template.
    Keep it as an execution index under 150 lines, not a duplicate of full
-   task specs.
-9. Present the validation contract and ordered task list to the human.
+   task specs. Include the operating mode and validation contract index when
+   required.
+10. Present the operating mode, validation contract when required, and ordered
+    task list to the human.
 
 ## Stop Conditions
 

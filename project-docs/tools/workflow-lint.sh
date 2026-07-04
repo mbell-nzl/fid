@@ -273,7 +273,7 @@ done <<'EOF'
 ## Commit subject
 EOF
 
-# --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 9) ---
+# --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 3.5) ---
 
 check_line_budget() {
   file=$1
@@ -400,6 +400,28 @@ done
 for file in project-docs/specs/08_QUALITY_PLAN.md project-docs/templates/validation-contract-template.md project-docs/skills/validation-contract/SKILL.md .codex/agents/qa_lead.toml .claude/agents/qa-lead.md; do
   check_contains "$file" 'one observable' "one-observable validation guardrail"
   check_contains "$file" 'positive-only|Positive-only' "conditional evidence guardrail"
+done
+
+# --- Operating-mode concordance ---
+# The mode policy must exist in the spec, the operator playbook, the phase
+# brief template, glossary, Tech Lead prompts, and canonical planning skill.
+
+mode_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/docs/playbook.md
+project-docs/templates/phase-brief-template.md
+project-docs/specs/GLOSSARY.md
+project-docs/skills/phase-planning/SKILL.md
+.claude/agents/tech-lead.md
+.codex/agents/tech_lead.toml
+"
+
+for file in $mode_files; do
+  check_contains "$file" '[Oo]perating [Mm]ode' "operating-mode reference"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/docs/playbook.md; do
+  check_contains "$file" 'promote the phase one mode' "mode promotion rule"
 done
 
 # --- Role capability mapping concordance ---

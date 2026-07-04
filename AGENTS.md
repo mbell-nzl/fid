@@ -57,7 +57,7 @@ Rules:
 - A Developer session implements exactly one task.
 - Use file artifacts as shared memory. Do not rely on chat history.
 - Update impacted documentation in the same task as the code change.
-- Each planned phase uses `VAL-NNN` validation assertions in
+- Normal and heavy planned phases use `VAL-NNN` validation assertions in
   `project-docs/docs/phases/phase-N/qa/validation-contract.md`; task specs and
   completion reports must cite covered assertions or state why none apply.
 - Use Conventional Commits for commit subjects.
@@ -156,6 +156,10 @@ Use the maturity path in `project-docs/specs/08_QUALITY_PLAN.md`:
    notes where applicable, backup/rollback path, and periodic independent audits.
 
 Record any deliberate deferral in a task spec, phase decision, or roadmap item.
+
+Each phase declares an operating mode (light, normal, or heavy) in the phase
+brief. Modes vary required artifacts, never evidence rules or hard stops. See
+`project-docs/specs/09_AI_WORKFLOW.md` section 4.
 
 ## Commands
 

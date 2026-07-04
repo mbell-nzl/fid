@@ -3,15 +3,29 @@
 Use this file as the short operator guide. Canonical workflow rules live in
 `project-docs/specs/09_AI_WORKFLOW.md`.
 
-## 1. Pick The Mode
+## 1. Pick The Operating Mode
 
-- Use **Phase Runner** when task specs are stable and execution can follow the
-  artifacts mechanically.
-- Use **direct human orchestration** when the phase is exploratory,
-  design-heavy, or you want tighter control.
+Every phase declares an operating mode, recorded in the phase brief. Entry
+criteria and the artifact matrix live in
+`project-docs/specs/09_AI_WORKFLOW.md` section 4.
 
-Both modes use the same task specs, completion reports, QA artifacts, and
-closeout records.
+| Question | If yes -> |
+|---|---|
+| Schema, public interface, dependency, or security/privacy change? | HEAVY |
+| Release readiness, first 2-3 phases of a new project, or new domain? | HEAVY |
+| Multi-task phase, AFK execution, or product-intent behavior change? | NORMAL (minimum) |
+| Docs/tooling/config only, half-day scope, single subsystem, Human present? | LIGHT |
+
+Mode-invariant in all modes: exact-command gates, evidence rules, commit
+`Refs:`, glossary discipline, hard stops. If a hard-stop condition appears
+mid-phase, promote the phase one mode and re-plan; never push through.
+
+Orchestration: light mode is Human-orchestrated. In normal mode, use **Phase
+Runner** when task specs are stable and execution can follow the artifacts
+mechanically, or **direct human orchestration** when the phase is exploratory
+or design-heavy. Heavy mode uses Phase Runner. All modes use the same
+completion-report, QA, and closeout conventions for the artifacts they
+produce.
 
 ## 2. Prepare The Project
 
@@ -32,18 +46,22 @@ unresolved.
 ## 3. Start A Phase
 
 1. Confirm the relevant specs are current enough for the phase.
-2. Have Tech Lead draft `project-docs/docs/phases/phase-N/qa/validation-contract.md`
+2. Pick the operating mode per section 1 and record it in the phase brief.
+   Light mode skips the remaining validation-contract and QA-plan artifact
+   steps; the Human orchestrates directly.
+3. Have Tech Lead draft `project-docs/docs/phases/phase-N/qa/validation-contract.md`
    from the template.
-3. Have Tech Lead write task specs in
+4. Have Tech Lead write task specs in
    `project-docs/docs/phases/phase-N/tasks/`.
-4. Ensure every task spec cites covered `VAL-NNN` assertions or states why
+5. Ensure every task spec cites covered `VAL-NNN` assertions or states why
    none apply.
-5. Have QA Lead write `project-docs/docs/phases/phase-N/qa/qa-plan.md`.
-6. Have Tech Lead refresh `project-docs/docs/current/phase_brief.md`.
-7. Confirm tasks respect TDD, one-logic slicing, and smallest viable change.
+6. Have QA Lead write `project-docs/docs/phases/phase-N/qa/qa-plan.md`.
+7. Have Tech Lead refresh `project-docs/docs/current/phase_brief.md`.
+8. Confirm tasks respect TDD, one-logic slicing, and smallest viable change.
 
-Do not start Developer work before the validation contract, task specs, and
-QA plan exist unless the human records a phase-specific exception.
+In normal and heavy modes, do not start Developer work before the validation
+contract, task specs, and QA plan exist unless the Human records a
+phase-specific exception.
 
 ## 4. Run The Tasks
 

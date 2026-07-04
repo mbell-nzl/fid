@@ -57,34 +57,41 @@ Phase start:
    `project-docs/docs/phases/phase-<previous-id>/decisions.md` if present. Use
    it for calibration signals such as task sizing, QA cadence, or model
    selection; it binds nothing unless promoted to carry-forward.
-4. Create `project-docs/docs/phases/phase-<id>/tasks/` and
+4. Propose the phase operating mode (light, normal, or heavy) per section 4
+   and record it in the phase brief; the Human approves it with the task list.
+   Light mode skips the validation contract and QA plan per the artifact
+   matrix.
+5. Create `project-docs/docs/phases/phase-<id>/tasks/` and
    `project-docs/docs/phases/phase-<id>/qa/`.
-5. Draft `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` using
+6. For normal and heavy modes, draft
+   `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` using
    `project-docs/templates/validation-contract-template.md`. The contract is a
    finite checklist of testable behavioral assertions, written before or
    alongside task specs. Each assertion has a per-phase sequential `VAL-NNN` ID
    (resets each phase), requirement source, user-visible behavior, evidence
    method, validator role, task window, pass and fail criteria, and an
    out-of-scope note. The contract is the **spec**; the QA plan is the
-   **test plan**. See section 5.1.
-6. Break the phase into ordered tasks that each fit one Developer session and
-   each satisfy a subset of `VAL-NNN` assertions.
-7. Write task specs to `project-docs/docs/phases/phase-<id>/tasks/task-<n>.md`
-   using the task contract in section 5. Each task spec lists the `VAL-NNN`
+   **test plan**. See section 6.1.
+7. Break the phase into ordered tasks that each fit one Developer session and
+   either satisfy a subset of `VAL-NNN` assertions or explicitly state why no
+   validation assertion applies.
+8. Write task specs to `project-docs/docs/phases/phase-<id>/tasks/task-<n>.md`
+   using the task contract in section 6. Each task spec lists the `VAL-NNN`
    assertions it satisfies in its Acceptance Criteria.
-8. Ensure each task lists required docs, exact commands, acceptance criteria,
+9. Ensure each task lists required docs, exact commands, acceptance criteria,
    files that are explicitly out of scope, and the `VAL-NNN` assertions it
    satisfies. In `## Exact Commands To Run`, state when the full task gate is
    required. Unless the task explicitly says otherwise, the full task gate is
    required before task close because the Developer does not load the QA plan.
-9. Verify coverage rules: every PRD/TRD requirement in scope is referenced by
+10. Verify coverage rules: every PRD/TRD requirement in scope is referenced by
    at least one `VAL-NNN`; every `VAL-NNN` is referenced by at least one task
    spec acceptance criterion; every `VAL-NNN` has exactly one validator role.
-10. Refresh `project-docs/docs/current/phase_brief.md` using the phase brief
+11. Refresh `project-docs/docs/current/phase_brief.md` using the phase brief
     template. Keep it as an index and execution brief, not a duplicate of full
-    task specs. Reference the validation contract path in the brief.
-11. Present the ordered task list and the validation contract to the Human
-    before execution.
+    task specs. Record the operating mode and reference the validation
+    contract path when the mode requires one.
+12. Present the ordered task list, operating mode, and validation contract when
+    required to the Human before execution.
 
 Phase end:
 1. Read `project-docs/docs/phases/phase-<id>/qa/final-review.md` and the
@@ -113,7 +120,7 @@ Phase end:
    Autonomous TL-Lite resumption is permanently enabled (DEC-002); there is no
    warm-up tally to maintain.
 7. Append lightweight `## Workflow notes` to this phase's decisions archive.
-   Answer the section 9 calibration questions in 1-3 sentences each, compare
+   Answer the section 10 calibration questions in 1-3 sentences each, compare
    with the prior phase when available, and end with
    `### Deep retrospective recommendation`.
 8. Move resolved carry-forward items and resolved escalations out of current
@@ -589,8 +596,8 @@ specs, QA plan, Design Plan, or review artifacts.
 ### 3.1 Phase Lifecycle
 
 ```text
-Human selects phase and execution mode
-  -> Tech Lead plans phase and writes task specs
+Human selects phase
+  -> Tech Lead proposes operating mode, plans phase, and writes task specs
   -> Human reviews and approves task pack
   -> Phase Runner starts or resumes the approved phase
   -> Phase Runner spawns QA Lead for QA plan
@@ -713,6 +720,7 @@ Escalations:
 Phase brief required sections:
 - Goal
 - Phase status
+- Operating mode
 - Task index pointing to full specs
 - Active constraints
 - Interfaces in scope
@@ -744,7 +752,96 @@ On-demand loading:
 - Phase archives are not loaded by default. Read them only when a task, review,
   decision, or escalation points there.
 
-## 4. Context Loading
+## 4. Operating Modes
+
+Every phase declares one operating mode - light, normal, or heavy - proposed
+by the Tech Lead at planning time, approved by the Human with the task list,
+and recorded in the phase brief. Modes vary the required artifact set, never
+the evidence standard.
+
+Mode-invariant rules never turn off:
+- Exact-command gates and failed-gate semantics.
+- Evidence rules (`PASS`/`BLOCKED` recording, both-states proof for
+  conditional assertions).
+- Commit discipline (Conventional Commits, `Refs:`, hashes copied from git
+  output).
+- Glossary discipline.
+- Every hard stop.
+
+Promotion rule: if a hard-stop condition or a violated entry criterion
+surfaces mid-phase, promote the phase one mode and re-plan the remainder;
+never push through in the lower mode. Record the promotion in the phase brief
+and phase decisions.
+
+### 4.1 Light Mode - Supervised Session
+
+Entry criteria (all must hold):
+- Documentation, tooling, or configuration change only. This is a deliberate
+  initial restriction: widen to other half-day, single-subsystem work only by
+  recorded decision after observed clean light-mode usage.
+- Scope fits in about half a day and touches a single subsystem.
+- No schema, public-interface, dependency, or security/privacy change.
+- The Human is present and orchestrating directly, not AFK.
+
+Required: a task list in `phase_brief.md`, or task specs for non-trivial
+items; one completion note per task with summary, files changed, commands run
+with results, and commit hash plus subject; commits with `Refs:`. The full
+task gate still runs, and the Human reviews the diff or dogfoods immediately.
+Specs affected by the change are updated with the change itself.
+
+Skipped: validation contract, QA plan, mid-phase reviews, final review, and
+Phase Runner.
+
+### 4.2 Normal Mode - Default For Feature Phases
+
+Entry criteria (any): multi-task phase; behavior changes carrying product
+intent; the Human intends AFK execution for some tasks.
+
+Required: validation contract; one task spec per task; QA plan - command and
+feasibility validation results may carry forward from the prior phase when the
+commands are unchanged, and changed or new commands must be revalidated;
+completion reports in the full format; final review with `VAL-NNN` outcomes;
+human checklist before wrap-up. Mid-phase review when the phase exceeds four
+tasks or touches shared surfaces; otherwise the QA plan may record a lighter
+cadence.
+
+Per-phase spec sync stays full-scope in normal mode: at wrap-up, Tech Lead
+records `touched`, `verified-no-change`, or `N/A` for the full canonical spec
+suite.
+
+### 4.3 Heavy Mode - Release-Adjacent, Security-Sensitive, Novel-Domain
+
+Entry criteria (any):
+- Data migration, public-interface, or persistence-contract change.
+- Security or privacy surface.
+- Release readiness.
+- The first 2-3 phases of a new project, or the first phase in a new domain.
+  Command and feasibility validation earns most of its value here, so results
+  never carry forward in heavy mode.
+- Anything the threat model flags.
+
+Required: the full workflow - validation contract, QA plan with fresh command
+and feasibility validation, mid-phase cadence per the QA plan, final review,
+human checklist, spec sync across all seven specs, plus the maturity-level
+artifacts (threat model, held-out scenarios, independent audits) that the
+quality plan schedules. Include at least one Mode B human scenario run where
+held-out scenarios exist.
+
+### 4.4 Artifact Matrix
+
+| Artifact | Light | Normal | Heavy |
+|---|---|---|---|
+| Validation contract | - | required | required |
+| QA plan | - | required; feasibility may carry forward when commands unchanged | required; fresh feasibility validation |
+| Task specs | task list in phase brief, or per-task specs | one spec per task | one spec per task, full detail |
+| Completion reports | trimmed note | full format | full format |
+| Mid-phase review | - | if more than 4 tasks or shared surfaces | per QA plan |
+| Final review | - | required | required |
+| Human checklist | immediate diff review or dogfood | required | required, plus Mode B scenario run |
+| Spec sync | with the change itself | all seven specs at wrap-up | all seven specs at wrap-up |
+| Orchestration | Human direct | Phase Runner or Human | Phase Runner |
+
+## 5. Context Loading
 
 Every agent starts with `AGENTS.md` or `CLAUDE.md` in Claude Code. Additional
 loads:
@@ -758,7 +855,7 @@ loads:
 | QA Lead | `project-docs/docs/current/*`, quality plan, validation contract, phase tasks/reports | PRD/TRD sections, principles, archives | QA plan (refines contract), final review (records VAL outcomes), human checklist |
 | QA Reviewer | `project-docs/docs/current/*`, QA plan, validation contract, named tasks/reports, quality plan | Design Plan, principles, archives | review artifact, ESC append |
 
-## 5. Task Specification Contract
+## 6. Task Specification Contract
 
 Task specs live at `project-docs/docs/phases/phase-<id>/tasks/task-<n>.md` and
 include:
@@ -777,7 +874,7 @@ include:
 - Acceptance criteria (each criterion cites the `VAL-NNN` it advances)
 - Output requirements
 
-### 5.1 Validation Contract
+### 6.1 Validation Contract
 
 `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` is a sibling
 artifact to task specs and the QA plan. The contract is the **spec** (what must
@@ -862,7 +959,7 @@ output requirements (completion report path when it deviates from
 `## Notes For Developer` as appropriate. `workflow-lint.sh` checks the
 `task-pack` skill's heading list against the template.
 
-## 6. Agent Prompt Materialization
+## 7. Agent Prompt Materialization
 
 The role definitions in section 2 are canonical behavior for all tools.
 
@@ -894,7 +991,7 @@ duplicated here to avoid drift. The **Reasoning** column (high / medium) is the
 tool-agnostic signal — map it to the equivalent capability tier in whichever
 toolchain runs the role.
 
-## 7. Git And Quality Gates
+## 8. Git And Quality Gates
 
 Use the task-spec command list when it exists. Otherwise use the `AGENTS.md`
 standard commands.
@@ -936,7 +1033,7 @@ commands, weakened tests, unrecorded deviations, stale doc claims, and
 positive-only `VAL` passes. Run quarterly, after any agent prompt change, and
 before trusting a new model in an orchestrator or QA role.
 
-## 8. Stop And Escalate
+## 9. Stop And Escalate
 
 Stop and surface the issue instead of guessing when:
 
@@ -953,12 +1050,12 @@ Hard failures such as red tests, vet failures, missing reports, and scope
 conflicts stop immediately. Soft blockers route through TL-Lite only in Phase
 Runner mode.
 
-## 9. Continuous Improvement
+## 10. Continuous Improvement
 
 Workflow improvement runs on a two-tier cadence: lightweight every phase, deep
 on trigger.
 
-### 9.1 Lightweight Workflow Notes
+### 10.1 Lightweight Workflow Notes
 
 At phase wrap-up, Tech Lead appends `## Workflow notes` to
 `project-docs/docs/phases/phase-<id>/decisions.md`. Answer each question in
@@ -980,7 +1077,7 @@ commitments. If a note must bind future work, promote it to
 `project-docs/docs/current/decisions_active.md`,
 `project-docs/docs/current/decisions_principles.md`, or `AGENTS.md`.
 
-### 9.2 Deep Retrospective Recommendation
+### 10.2 Deep Retrospective Recommendation
 
 End the workflow notes with:
 
@@ -1007,10 +1104,10 @@ The Tech Lead only recommends. The Human decides whether to run the deep
 retrospective and who participates. Deep retrospective artifacts live under
 `project-docs/docs/reviews/YYYY-MM-DD-phase-<id>-retrospective.md`.
 
-### 9.3 Why Two Tiers
+### 10.3 Why Two Tiers
 
 A deep retrospective on every phase produces rote output and trains readers to
 skim past real signal. Lightweight notes every phase generate data; deep
 retrospectives happen only when there is something concrete to learn from.
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-05*

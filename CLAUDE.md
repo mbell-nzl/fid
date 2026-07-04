@@ -12,9 +12,11 @@
 See `.claude/agents/` for Claude agent definitions,
 `project-docs/specs/09_AI_WORKFLOW.md` for the canonical workflow, and
 `project-docs/docs/playbook.md` for the short operator runbook.
-Phase planning includes `VAL-NNN` validation assertions in
+Normal and heavy phase planning includes `VAL-NNN` validation assertions in
 `project-docs/docs/phases/phase-N/qa/validation-contract.md`; task specs,
 completion reports, QA reviews, and final review should cite those IDs.
+Each phase declares an operating mode (light / normal / heavy) in the phase
+brief; see `project-docs/specs/09_AI_WORKFLOW.md` section 4.
 Canonical project language lives in `project-docs/specs/GLOSSARY.md`; root
 `CONTEXT.md` is only a compatibility pointer.
 

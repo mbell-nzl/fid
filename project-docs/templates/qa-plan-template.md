@@ -77,6 +77,11 @@ assumption, and human-checklist feasibility using help output, dry-run mode,
 project documentation, existing file-state checks, or equivalent proof. Invalid
 or unvalidated steps block the QA plan.
 
+In a normal-mode phase, results may carry forward from the prior phase's QA
+plan for commands that are unchanged; cite the prior plan as evidence and
+revalidate any changed or new command. Heavy-mode phases validate fresh with no
+carry-forward (`09_AI_WORKFLOW.md` section 4).
+
 | Referenced Step | Validation method | Result | Evidence |
 |---|---|---|---|
 | `gofmt -l cmd internal` | <help/dry-run/docs/script inspection> | PASS/FAIL/BLOCKED | <output excerpt or file reference> |
