@@ -47,7 +47,8 @@ Open ESC IDs trigger TL-Lite triage.
 
 ## Workflow
 
-1. Stop if required quality commands in `AGENTS.md` are placeholders.
+1. If required quality commands in `AGENTS.md` are placeholders, apply the
+   TL-Lite first-step triage gate before any STOP entry.
 2. Create or resume the phase branch.
 3. Verify `project-docs/docs/phases/phase-N/qa/validation-contract.md` exists.
 4. Spawn `qa-lead` first to create or refine the QA plan.
@@ -73,12 +74,13 @@ Open ESC IDs trigger TL-Lite triage.
      check: blocker semantics, deviation content, concerns needing triage, and
      QA-plan commands required for this task beyond the task spec.
    - Before appending a final STOP for report-lint failure, missing report at
-     the expected task report path, blocker report, quality-gate failure, ad hoc
-     gate substitution, or any QA-plan required command that is missing,
-     silently skipped, or replaced by a narrower substitute, spawn `tl-lite` as
-     the first-step triager. Append a TRIAGE entry for its verdict. Continue
-     only on `VERDICT: RESUME`; stop on `VERDICT: BLOCK` and reference the
-     TRG/ESC in the STOP entry.
+     the expected task report path, blocker report, quality-gate failure,
+     placeholder command, ad hoc gate substitution, or any QA-plan required
+     command that is missing, silently skipped, or replaced by a narrower
+     substitute, spawn `tl-lite` as the first-step triager. Append a TRIAGE
+     entry for its verdict. Continue only on `VERDICT: RESUME`; stop on
+     `VERDICT: BLOCK` and reference the TRG/ESC in the STOP entry. Never
+     record a STOP for these causes without a TRIAGE entry for it.
    - Append the TASK entry to the run ledger: report path, report-lint result,
      verified commit.
    - Run TL-Lite triage for soft blockers.
@@ -136,7 +138,12 @@ stops the run. Parse only the literal final `VERDICT:` line.
   the only file you write, and only by appending.
 - Never reorder tasks or change scope.
 - Never spawn another phase-runner.
-- Never continue past hard stops or BLOCK verdicts.
+- Never continue past immediate hard stops (missing validation contract,
+  missing QA plan, child-agent configuration failure) or BLOCK verdicts.
+- Never record a STOP for a triage-gated cause (report-lint failure, missing
+  report, blocker report, gate failure, placeholder/missing/skipped/narrower
+  /ad hoc command) without a TRIAGE entry for it; TL-Lite is the first-step
+  triager for those causes.
 - Never substitute or skip required quality gates.
 - If a required child agent cannot be spawned, stop and report configuration failure.
 - When stopping, append a STOP entry to the run ledger and state the task,
@@ -165,7 +172,7 @@ Maintain the run ledger at project-docs/docs/phases/phase-N/run-ledger.md using 
 At phase-run start, append a RUN-START entry recording the current set of Open ESC-NNN IDs as baseline. Before each task and after each review, compare against the baseline plus IDs already triaged in this run. Only newly appearing Open ESC IDs trigger TL-Lite triage.
 
 Workflow:
-1. Stop immediately if any required command in AGENTS.md is still a placeholder.
+1. If any required command in AGENTS.md is still a placeholder, spawn tl_lite with agent_type = "tl_lite" as the first-step triager before any STOP entry.
 2. Create or resume the phase branch.
 3. Verify project-docs/docs/phases/phase-N/qa/validation-contract.md exists before task execution.
 4. Spawn qa_lead first with agent_type = "qa_lead" to create or refine the Phase N QA plan at project-docs/docs/phases/phase-N/qa/qa-plan.md.
@@ -175,7 +182,7 @@ Workflow:
    a. Spawn developer with agent_type = "developer", the concrete task spec path, required reads, exact commands from ## Exact Commands To Run, completion report path, and commit requirement.
    b. Run project-docs/tools/report-lint.sh <report path> <task spec path>. It deterministically verifies required headings, sentinel sections, task-spec command coverage, the commit hash via git rev-parse --verify <hash>^{commit}, the subject against git log -1 --format=%s, and that the report file itself is committed with no uncommitted modifications. A nonzero exit is a hard stop. Do not re-derive these checks by prose parsing.
    c. Read the completion report for judgment items report-lint cannot check: blocker semantics, deviation content, concerns needing triage, and QA-plan commands required for this task beyond the task spec.
-   d. Before appending a final STOP for report-lint failure, missing report at the expected task report path, blocker report, quality-gate failure, ad hoc gate substitution, or any QA-plan required command that is missing, silently skipped, or replaced by a narrower substitute, spawn tl_lite with agent_type = "tl_lite" as the first-step triager. Append a TRIAGE entry for its verdict. Continue only on VERDICT: RESUME; stop on VERDICT: BLOCK and reference the TRG/ESC in the STOP entry.
+   d. Before appending a final STOP for report-lint failure, missing report at the expected task report path, blocker report, quality-gate failure, placeholder command, ad hoc gate substitution, or any QA-plan required command that is missing, silently skipped, or replaced by a narrower substitute, spawn tl_lite with agent_type = "tl_lite" as the first-step triager. Append a TRIAGE entry for its verdict. Continue only on VERDICT: RESUME; stop on VERDICT: BLOCK and reference the TRG/ESC in the STOP entry. Never record a STOP for these causes without a TRIAGE entry for it.
    e. Treat missing, skipped, narrower, substituted, or failed required commands as blockers until TL-Lite classifies them; do not silently accept them.
    f. Append the TASK entry to the run ledger: report path, report-lint result, verified commit.
    g. Re-read tl_escalations_current.md. If a new Open ESC appeared, run TL-Lite triage.
@@ -204,7 +211,8 @@ Resume rule:
 Constraints:
 - Never write implementation code, tests, task specs, or decisions. The run ledger is the only file you write, and only by appending.
 - Never reorder tasks or change scope.
-- Never continue past a hard stop or a BLOCK verdict without human approval.
-- Never substitute or skip required quality gates; placeholder, missing, silently skipped, narrower substituted, or failing commands are hard stops.
+- Never continue past an immediate hard stop (missing validation contract, missing QA plan, child-agent configuration failure) or a BLOCK verdict without human approval.
+- Never record a STOP for a triage-gated cause (report-lint failure, missing report, blocker report, gate failure, placeholder/missing/skipped/narrower/ad hoc command) without a TRIAGE entry for it; tl_lite is the first-step triager for those causes.
+- Never substitute or skip required quality gates; placeholder, missing, silently skipped, narrower substituted, or failing commands enter the triage gate.
 - If a child agent cannot be spawned, stop and report configuration failure.
 - When stopping, append a STOP entry to the run ledger and state the task, review, TRG, or ESC that triggered the stop and the next human action.

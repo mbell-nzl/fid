@@ -212,6 +212,13 @@ Triage rules:
 - For QA Reviewer Blocking findings, RESUME is allowed only when the finding is
   demonstrably misclassified, already resolved by a verified commit, or covered
   by an accepted decision. Otherwise BLOCK.
+- TL-Lite is also the first-step triager for Phase Runner hard stops:
+  report-lint failure, missing report, blocker report, quality-gate failure,
+  placeholder command, missing command, silently skipped command, narrower
+  substituted command, or ad hoc gate substitution. RESUME is allowed only when
+  the failure is misclassified, already resolved by a verified commit with
+  attached evidence, or covered by an accepted decision. A genuine unresolved
+  failure is always BLOCK.
 - TL-Lite cannot run commands and never verifies commits itself. A commit
   counts as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and
@@ -301,34 +308,48 @@ Responsibilities:
 13. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths, then append the REVIEW entry to the run ledger.
-14. Route soft blockers through TL-Lite triage. When a triage may turn on
-    "already resolved by a verified commit", verify the commit first and
-    attach the commit-verification evidence (hash, `git rev-parse --verify`
-    result, subject match) to the triage trigger; TL-Lite judges evidence and
-    never verifies commits itself. After TL-Lite returns, read the triage log
-    to confirm the TRG-NNN entry exists, then parse the literal final
-    `VERDICT:` line and append a TRIAGE entry to the run ledger.
+14. Route soft blockers and triage-gated hard stops through TL-Lite triage.
+    When a triage may turn on "already resolved by a verified commit", verify
+    the commit first and attach the commit-verification evidence (hash,
+    `git rev-parse --verify` result, subject match) to the triage trigger;
+    TL-Lite judges evidence and never verifies commits itself. After TL-Lite
+    returns, read the triage log to confirm the TRG-NNN entry exists, then
+    parse the literal final `VERDICT:` line and append a TRIAGE entry to the
+    run ledger.
 15. After all tasks complete, spawn QA Lead for final review and human
     checklist.
 16. Append the RUN-END entry to the run ledger and notify the Human with the
     final review path and current stop/completion state. When stopping early,
     append a STOP entry naming the trigger and the next human action.
 
-Hard stop conditions:
-- Developer quality gate fails. Do not send red tests, lint/static-analysis,
-  formatting, or coverage failure to TL-Lite.
+Hard stop conditions, triage-gated through TL-Lite first:
+
+Before appending a final STOP for any of these causes, spawn TL-Lite as the
+first-step triager with the failure evidence attached, append a TRIAGE entry
+for its verdict, and continue only on `VERDICT: RESUME`. On
+`VERDICT: BLOCK`, append the STOP entry referencing the TRG and ESC. Never
+record a STOP for these causes without a TRIAGE entry for it.
+
 - Completion report fails `project-docs/tools/report-lint.sh`.
-- Developer completion report omits a required task-spec or QA-plan command,
-  records it as skipped without a `BLOCKED` reason, or substitutes a narrower
-  command for a required gate.
 - Developer fails to produce a completion or blocker report.
+- A blocker report says the task could not be completed, the gate cannot pass,
+  a commit cannot be produced, or scope conflicts prevent progress.
+- Developer quality gate fails.
+- A required command is still a placeholder.
+- Developer completion report omits a required task-spec or QA-plan command,
+  records it as skipped without a `BLOCKED` reason, substitutes a narrower
+  command for a required gate, or uses an ad hoc gate substitution.
 - Completion report lacks required headings, commit hash, or commit subject.
 - Recorded commit hash does not resolve via `git rev-parse --verify
   <hash>^{commit}` to a single commit matching the report subject.
-- A blocker report says the task could not be completed, the gate cannot pass,
-  a commit cannot be produced, or scope conflicts prevent progress.
-- Scope conflict, missing artifact, child-agent unavailability, or branch issue
-  prevents safe execution.
+
+Hard stop conditions, immediate:
+
+- Missing validation contract.
+- Missing QA plan.
+- Required child agent cannot be spawned or reports the wrong role/model.
+- Branch issue or missing artifact prevents safe execution before task triage
+  can be constructed.
 - TL-Lite returns `VERDICT: BLOCK`.
 
 Soft blocker conditions:
@@ -342,6 +363,9 @@ TL-Lite resume:
 - Autonomous TL-Lite resumption is permanently enabled (DEC-002). On
   `VERDICT: RESUME`, Phase Runner records the TRG-NNN and continues without a
   Human stop. `VERDICT: BLOCK` still always stops the run.
+- If resuming from an existing STOP caused by a task blocker or failed
+  required gate and no TRIAGE entry exists for that STOP, spawn TL-Lite first,
+  append the TRIAGE entry, and continue only on `VERDICT: RESUME`.
 - The former WF-10 warm-up safeguard is retired; no warm-up tally is maintained.
 
 ### 2.5 Developer

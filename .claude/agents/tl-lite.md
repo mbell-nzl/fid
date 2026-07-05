@@ -64,6 +64,11 @@ these triggers.
 - RESUME is allowed only for local-decision-eligible issues.
 - For QA Blocking findings, RESUME only when the finding is misclassified,
   already resolved by a verified commit, or covered by an accepted decision.
+- You are also the first-step triager for Phase Runner hard stops:
+  report-lint failure, missing report, blocker report, quality-gate failure,
+  placeholder command, missing command, silently skipped command, narrower
+  substituted command, or ad hoc gate substitution. The same three RESUME
+  grounds apply; a genuine unresolved failure is always BLOCK.
 - You cannot run commands, so you never verify commits yourself. Treat a
   commit as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and

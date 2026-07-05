@@ -222,6 +222,8 @@ project-docs/templates/phase-runner-prompt.md
 for file in $runner_surfaces; do
   check_contains "$file" 'report-lint\.sh' "report-lint reference"
   check_contains "$file" 'run-ledger' "run-ledger reference"
+  check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"
+  check_contains "$file" 'no TRIAGE entry exists' "untriaged-STOP resume rule"
 done
 
 report_lint_check_surfaces="
@@ -235,6 +237,8 @@ project-docs/tools/README.md
 for file in $report_lint_check_surfaces; do
   check_contains "$file" 'uncommitted modifications|committed and clean' "report-lint committed-report check"
 done
+
+check_contains "project-docs/templates/run-ledger-template.md" '^- Triage:' "run-ledger STOP triage field"
 
 codex_runner_surfaces="
 project-docs/specs/09_AI_WORKFLOW.md

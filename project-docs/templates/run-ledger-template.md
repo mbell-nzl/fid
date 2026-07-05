@@ -39,6 +39,11 @@ Entry types, in the order they typically occur. Timestamps are
 ### <YYYY-MM-DD HH:MM> STOP
 
 - Cause: <task/review/TRG/ESC reference and one-line reason>
+- Triage: <TRG-NNN (BLOCK, escalated as ESC-NNN) | "immediate stop - no
+  triage required">. Triage-gated causes (report-lint failure, missing report,
+  blocker report, gate failure, placeholder/missing/skipped/narrower/ad hoc
+  command) must carry a TRG reference; a STOP for those causes without one
+  means TL-Lite was skipped.
 - Next human action: <one line>
 
 ### <YYYY-MM-DD HH:MM> RUN-END
