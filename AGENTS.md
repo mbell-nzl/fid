@@ -107,7 +107,10 @@ Project-specific conventions:
 
 Canonical repo skills live under `project-docs/skills/`. Provider-discoverable
 copies are generated from canonical skills into `.agents/skills/` for Codex and
-`.claude/skills/` for Claude.
+`.claude/skills/` for Claude. Codex discovers `.agents/skills/` natively and
+invokes a skill implicitly when the task matches its description or explicitly
+via `$skill-name`; Claude discovers `.claude/skills/` through its skill
+surface.
 
 Rules:
 

@@ -696,7 +696,55 @@ project-docs/
   `~/.codex/` and are selected with `--profile`.
 - Start a fresh Codex session after changing Codex config or agent files.
 
-### 3.5 Documentation Layout And Size Governance
+### 3.5 Repo Skills
+
+Repo skills are reusable procedural helpers, not workflow authority.
+`09_AI_WORKFLOW.md`, role prompts, templates, specs, and recorded decisions
+remain the source of truth for role boundaries, hard stops, required artifacts,
+and validation gates.
+
+Skill authoring and distribution:
+
+- Canonical skills live under `project-docs/skills/<skill-name>/SKILL.md`.
+- Codex-discoverable generated copies live under
+  `.agents/skills/<skill-name>/SKILL.md`. This is not a courtesy copy: Codex
+  natively discovers `.agents/skills/` by searching the working directory and
+  parent directories up to the repo root, then `$HOME/.agents/skills`, then
+  `/etc/codex/skills` with symlinks followed. The generated tree is the live
+  Codex skill surface.
+- Claude-discoverable generated copies live under
+  `.claude/skills/<skill-name>/SKILL.md`.
+- Generated skill copies are derived files and must not be edited directly.
+- Workflow-lint must fail when generated copies are missing or drift from the
+  canonical skill source.
+
+Skill invocation:
+
+- Codex invokes a skill implicitly when the task matches the skill
+  description, or explicitly via `$skill-name` or the `/skills` picker. Codex
+  budgets the in-context skill list, name plus description per skill, at 2% of
+  the context window or 8,000 characters, so descriptions must front-load
+  trigger language.
+- Claude invokes skills through its skill surface, matching on the same
+  descriptions.
+- Per-skill disabling for Codex is user-level `~/.codex/config.toml`
+  `[[skills.config]]`, never repository config.
+
+Skill file rules:
+
+- Canonical skills should follow the Agent Skills format: a skill directory
+  with `SKILL.md`, required `name`, required `description`, and Markdown body.
+- Keep `SKILL.md` focused on one coherent job. Move long references into
+  supporting files only when the skill genuinely needs them.
+- Descriptions must say what the skill does and when to use it, with clear
+  trigger language and boundaries.
+- Put `Provenance:` in the Markdown body, not custom frontmatter. Use
+  `Workflow-Extracted Skill`, `External-Adapted Skill`, or
+  `Reference-Only Pattern` terminology from `GLOSSARY.md`.
+- First versions should be instruction-only. Add scripts only when deterministic
+  and safe to run non-interactively.
+
+### 3.6 Documentation Layout And Size Governance
 
 Default-loaded current files:
 

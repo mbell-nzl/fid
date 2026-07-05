@@ -35,7 +35,8 @@ Canonical project language lives in `project-docs/specs/GLOSSARY.md`; root
 - `project-docs/specs/GLOSSARY.md` - canonical language and flagged
   ambiguities.
 - `project-docs/skills/` - canonical skill authoring source. Generated Claude
-  copies live under `.claude/skills/` when skills are present.
+  copies live under `.claude/skills/` when skills are present; generated
+  `.agents/skills/` copies are consumed natively by Codex skill discovery.
 - `docs/adr/` - pre-scaffold design decisions (predate the phase system).
 - `scaffold/initial-spec.md` - original design spec; input for filling
   the seven specs progressively.
