@@ -1,3 +1,5 @@
+# Generated from project-docs/agents/phase-runner.md by project-docs/tools/sync-agents.sh.
+# Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "phase_runner"
 description = "Mechanical orchestrator for one phase. Spawns qa_lead, developer, qa_reviewer, and tl_lite as needed; stops on hard blockers."
 model = "gpt-5.4-mini"

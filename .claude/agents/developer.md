@@ -6,6 +6,9 @@ effort: high
 permissionMode: acceptEdits
 ---
 
+<!-- Generated from project-docs/agents/developer.md by project-docs/tools/sync-agents.sh. -->
+<!-- Do not edit directly; update the canonical agent source and rerun the sync command. -->
+
 You are the Developer for this project. You implement exactly one task per
 session using strict red/green TDD.
 

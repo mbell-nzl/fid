@@ -678,6 +678,10 @@ project-docs/
 ### 3.4 Codex Subagent Triggering
 
 - Codex subagents are explicit; Human or parent agent must request delegation.
+- Canonical role prompt sources live in `project-docs/agents/<role>.md`.
+  `.claude/agents/` and `.codex/agents/` are generated provider files. Edit the
+  canonical source and run `project-docs/tools/sync-agents.sh`; workflow-lint
+  fails when generated prompts drift.
 - Project Codex agents live in `.codex/agents/`.
 - `.codex/config.toml` must set `[features].multi_agent = true`.
 - `.codex/config.toml` must set `[agents].max_depth = 3`.

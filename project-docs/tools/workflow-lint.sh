@@ -112,6 +112,20 @@ else
   fail "generated skill copies are missing or drifted"
 fi
 
+required_agent_sources="tech-lead phase-runner developer qa-lead qa-reviewer tl-lite"
+
+for role in $required_agent_sources; do
+  check_file "project-docs/agents/$role.md" "canonical agent source"
+done
+
+if output=$(project-docs/tools/sync-agents.sh --check 2>&1); then
+  printf '%s\n' "$output"
+  pass "generated agent prompts match canonical sources"
+else
+  printf '%s\n' "$output" >&2
+  fail "generated agent prompts are missing or drifted"
+fi
+
 agent_files="
 AGENTS.md
 CLAUDE.md

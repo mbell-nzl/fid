@@ -1,3 +1,5 @@
+# Generated from project-docs/agents/developer.md by project-docs/tools/sync-agents.sh.
+# Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "developer"
 description = "Implements exactly one task per session using strict red/green TDD, updates docs, runs the quality gate, commits, and writes a completion report."
 model = "gpt-5.4"

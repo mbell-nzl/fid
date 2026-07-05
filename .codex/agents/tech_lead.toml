@@ -1,3 +1,5 @@
+# Generated from project-docs/agents/tech-lead.md by project-docs/tools/sync-agents.sh.
+# Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "tech_lead"
 description = "Plans an implementation phase and wraps it up at phase end. Writes task specs, records decisions, and never writes product code."
 model = "gpt-5.5"

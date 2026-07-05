@@ -1,3 +1,5 @@
+# Generated from project-docs/agents/qa-lead.md by project-docs/tools/sync-agents.sh.
+# Do not edit directly; update the canonical agent source and rerun the sync command.
 name = "qa_lead"
 description = "Creates phase QA plans, runs phase-end quality review, and generates human verification checklists. Does not write product code."
 model = "gpt-5.5"

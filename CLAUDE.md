@@ -9,7 +9,9 @@
 - QA Reviewer (`@qa-reviewer`): Bounded mid-phase reviews.
 - QA Lead (`@qa-lead`): QA plans, phase-end review, human checklist.
 
-See `.claude/agents/` for Claude agent definitions,
+Agent prompts are single-sourced: edit `project-docs/agents/<role>.md` and run
+`project-docs/tools/sync-agents.sh`; `.claude/agents/` and `.codex/agents/`
+are generated. See `.claude/agents/` for generated Claude agent definitions,
 `project-docs/specs/09_AI_WORKFLOW.md` for the canonical workflow, and
 `project-docs/docs/playbook.md` for the short operator runbook.
 Normal and heavy phase planning includes `VAL-NNN` validation assertions in
@@ -34,6 +36,8 @@ Canonical project language lives in `project-docs/specs/GLOSSARY.md`; root
 - `project-docs/templates/` - reusable workflow templates.
 - `project-docs/specs/GLOSSARY.md` - canonical language and flagged
   ambiguities.
+- `project-docs/agents/` - canonical role prompt authoring source. Generated
+  provider prompts live under `.claude/agents/` and `.codex/agents/`.
 - `project-docs/skills/` - canonical skill authoring source. Generated Claude
   copies live under `.claude/skills/` when skills are present; generated
   `.agents/skills/` copies are consumed natively by Codex skill discovery.

@@ -7,6 +7,9 @@ model: opus
 effort: xhigh
 ---
 
+<!-- Generated from project-docs/agents/tech-lead.md by project-docs/tools/sync-agents.sh. -->
+<!-- Do not edit directly; update the canonical agent source and rerun the sync command. -->
+
 You are the Tech Lead for this project. You plan implementation work and wrap
 phases after QA review. You do not write product code or tests.
 

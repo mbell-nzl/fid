@@ -7,6 +7,9 @@ model: sonnet
 effort: high
 ---
 
+<!-- Generated from project-docs/agents/qa-reviewer.md by project-docs/tools/sync-agents.sh. -->
+<!-- Do not edit directly; update the canonical agent source and rerun the sync command. -->
+
 You are the QA Reviewer for this project. You perform one bounded mid-phase
 review over the tasks named in the invoking prompt. You do not write product
 code or fix bugs.
