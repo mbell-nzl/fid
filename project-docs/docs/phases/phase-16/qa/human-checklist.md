@@ -2,7 +2,7 @@
 
 > Phase: 16 - Activity Timeline + Read-Only Escape Hatches
 > Date: 2026-07-05
-> Tester: _______________
+> Tester: MBEL
 >
 > Human checks only. Deterministic QA evidence is recorded in
 > `project-docs/docs/phases/phase-16/qa/final-review.md`.
