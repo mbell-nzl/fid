@@ -115,6 +115,10 @@ func Get(options GetOptions) (Issue, error) {
 	if err != nil {
 		return Issue{}, err
 	}
+	record.Gates, err = issueGates(conn, record.ID)
+	if err != nil {
+		return Issue{}, err
+	}
 
 	return record, nil
 }

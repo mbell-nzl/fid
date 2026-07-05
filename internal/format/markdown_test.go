@@ -51,6 +51,45 @@ func TestWriteMarkdownOmitsEmptySectionsForEmptyIssue(t *testing.T) {
 	}
 }
 
+func TestWriteMarkdownRendersIssueGateLists(t *testing.T) {
+	t.Run("populated gate list", func(t *testing.T) {
+		var markdownOutput bytes.Buffer
+		if err := Write(&markdownOutput, Markdown, []issues.IssueGate{
+			{
+				ID:             "GATE-000401",
+				AttemptNumber:  1,
+				AgentRunID:     stringPointer("RUN-000401"),
+				RecordedByRole: "developer",
+				Command:        "go test ./...",
+				ExitCode:       0,
+				OutputExcerpt:  stringPointer("ok"),
+				RanAt:          "2026-05-27T09:20:00Z",
+			},
+		}); err != nil {
+			t.Fatalf("Write(Markdown) error = %v", err)
+		}
+
+		output := markdownOutput.String()
+		for _, want := range []string{"# Gates", "GATE-000401", "go test ./...", "RUN-000401", "ok"} {
+			if !strings.Contains(output, want) {
+				t.Fatalf("markdown output = %q, want substring %q", output, want)
+			}
+		}
+	})
+
+	t.Run("empty gate list", func(t *testing.T) {
+		var markdownOutput bytes.Buffer
+		if err := Write(&markdownOutput, Markdown, []issues.IssueGate{}); err != nil {
+			t.Fatalf("Write(Markdown) error = %v", err)
+		}
+
+		want := "# Gates\n\n(no gates)\n"
+		if markdownOutput.String() != want {
+			t.Fatalf("markdown output = %q, want %q", markdownOutput.String(), want)
+		}
+	})
+}
+
 func emptyIssueMarkdownFixture() IssueMarkdownView {
 	ownerRole := "developer"
 	createdAt := "2026-06-07T14:00:00Z"

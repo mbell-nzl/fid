@@ -138,6 +138,30 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if len(got.Claims) != 1 || got.Claims[0].ClaimedBy != "developer" {
 			t.Fatalf("Get() claims = %#v, want one live developer claim", got.Claims)
 		}
+		if len(got.Gates) != 2 {
+			t.Fatalf("Get() gates = %#v, want two gate runs", got.Gates)
+		}
+		if got.Gates[0].ID != "GATE-000401" || got.Gates[0].AttemptNumber != 1 || got.Gates[0].Command != "go test ./..." {
+			t.Fatalf("Get() first gate = %#v, want attempt 1 go test gate", got.Gates[0])
+		}
+		if got.Gates[0].AgentRunID == nil || *got.Gates[0].AgentRunID != "RUN-000401" {
+			t.Fatalf("Get() first gate agent_run_id = %#v, want RUN-000401", got.Gates[0].AgentRunID)
+		}
+		if got.Gates[0].OutputExcerpt == nil || *got.Gates[0].OutputExcerpt != "ok" {
+			t.Fatalf("Get() first gate output_excerpt = %#v, want ok", got.Gates[0].OutputExcerpt)
+		}
+		if got.Gates[1].ID != "GATE-000402" || got.Gates[1].AttemptNumber != 2 || got.Gates[1].Command != "golangci-lint run ./..." {
+			t.Fatalf("Get() second gate = %#v, want attempt 2 golangci-lint gate", got.Gates[1])
+		}
+		if got.Gates[1].AgentRunID != nil {
+			t.Fatalf("Get() second gate agent_run_id = %#v, want nil", got.Gates[1].AgentRunID)
+		}
+		if got.Gates[1].OutputExcerpt != nil {
+			t.Fatalf("Get() second gate output_excerpt = %#v, want nil", got.Gates[1].OutputExcerpt)
+		}
+		if len(got.Completions) == 0 || len(got.Completions[0].GateResults) != 2 {
+			t.Fatalf("Get() completions gate_results = %#v, want completion snapshot preserved separately", got.Completions)
+		}
 	})
 }
 
@@ -150,6 +174,7 @@ func TestSectionValue(t *testing.T) {
 		Completions:        []IssueCompletion{{ID: "TC-1"}},
 		Links:              []IssueLink{{Relation: "blocks", TargetID: "FID-2"}},
 		Claims:             []IssueClaim{{RefID: "REQ-1", ClaimedBy: "developer"}},
+		Gates:              []IssueGate{{ID: "GATE-1", Command: "go test ./..."}},
 	}
 
 	tests := []struct {
@@ -184,9 +209,14 @@ func TestSectionValue(t *testing.T) {
 			want:    issue.Claims,
 		},
 		{
+			name:    "gates section",
+			section: "gates",
+			want:    issue.Gates,
+		},
+		{
 			name:    "unknown section is rejected with supported names",
 			section: " timeline ",
-			wantErr: `unsupported issue section "timeline"; supported sections: acceptance, concerns, completions, links, claims`,
+			wantErr: `unsupported issue section "timeline"; supported sections: acceptance, concerns, completions, links, claims, gates`,
 		},
 	}
 
@@ -207,7 +237,7 @@ func TestSectionValue(t *testing.T) {
 				if err.Error() != tt.wantErr {
 					t.Fatalf("SectionValue() error = %q, want %q", err.Error(), tt.wantErr)
 				}
-				if !equalStrings(SupportedSections(), []string{"acceptance", "concerns", "completions", "links", "claims"}) {
+				if !equalStrings(SupportedSections(), []string{"acceptance", "concerns", "completions", "links", "claims", "gates"}) {
 					t.Fatalf("SupportedSections() = %#v", SupportedSections())
 				}
 				return
@@ -445,9 +475,49 @@ func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 				"gpt-5",
 				"qa_pass",
 				1550,
-				`["go test ./...", "golangci-lint run ./..."]`,
+				`[{"cmd":"go test ./...","exit_code":0,"ran_at":"2026-05-27T10:10:00Z","output_excerpt":"ok"},{"cmd":"go test -race ./...","exit_code":0,"ran_at":"2026-05-27T10:12:00Z","output_excerpt":"race ok"}]`,
 				false,
 				"2026-05-27T10:20:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO agent_runs (id, issue_id, role, model, started_at)
+				VALUES (?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"RUN-000401",
+				"FID-a1b2c3",
+				"developer",
+				"gpt-5",
+				"2026-05-27T09:00:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO gate_runs (
+					id, issue_id, attempt_number, agent_run_id, recorded_by_role, command, exit_code, output_excerpt, ran_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"GATE-000401",
+				"FID-a1b2c3",
+				1,
+				"RUN-000401",
+				"developer",
+				"go test ./...",
+				0,
+				"ok",
+				"2026-05-27T09:20:00Z",
+				"GATE-000402",
+				"FID-a1b2c3",
+				2,
+				nil,
+				"developer",
+				"golangci-lint run ./...",
+				1,
+				nil,
+				"2026-05-27T10:25:00Z",
 			},
 		},
 		{

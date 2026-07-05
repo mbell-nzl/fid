@@ -147,10 +147,65 @@ func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
 			t.Fatalf("claims = %#v, want one developer claim with expires_at", claims)
 		}
 
+		wantGates := []any{
+			map[string]any{
+				"id":               "GATE-000401",
+				"attempt_number":   1,
+				"agent_run_id":     "RUN-000401",
+				"recorded_by_role": "developer",
+				"command":          "go test ./...",
+				"exit_code":        0,
+				"output_excerpt":   "ok",
+				"ran_at":           "2026-05-27T09:20:00Z",
+			},
+			map[string]any{
+				"id":               "GATE-000402",
+				"attempt_number":   2,
+				"agent_run_id":     nil,
+				"recorded_by_role": "developer",
+				"command":          "golangci-lint run ./...",
+				"exit_code":        1,
+				"output_excerpt":   nil,
+				"ran_at":           "2026-05-27T10:25:00Z",
+			},
+		}
+
+		for _, formatName := range []string{"json", "toon", "yaml"} {
+			t.Run("gates_"+formatName, func(t *testing.T) {
+				stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--section", "gates", "--format", formatName)
+				if stderr != "" {
+					t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
+				}
+
+				var got any
+				switch formatName {
+				case "json":
+					got = decodeCommandJSONStructure(t, stdout)
+				case "toon":
+					got = decodeCommandTOONStructure(t, stdout)
+				case "yaml":
+					got = decodeCommandYAMLStructure(t, stdout)
+				}
+				if !commandStructuresEqual(wantGates, got) {
+					t.Fatalf("%s gates structure = %#v, want %#v", formatName, got, wantGates)
+				}
+			})
+		}
+
+		markdownStdout, markdownStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--section", "gates", "--format", "markdown")
+		if markdownStderr != "" {
+			t.Fatalf("gates markdown stderr = %q, want empty", markdownStderr)
+		}
+		for _, wantSubstring := range []string{"# Gates", "GATE-000401", "go test ./...", "golangci-lint run ./...", "RUN-000401"} {
+			if !strings.Contains(markdownStdout, wantSubstring) {
+				t.Fatalf("gates markdown stdout = %q, want substring %q", markdownStdout, wantSubstring)
+			}
+		}
+
 		_, emptyIssueStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Empty sections", "--by", "developer")
 		emptyIssueID := parseCreatedIssueID(t, emptyIssueStderr)
 
-		for _, section := range []string{"acceptance", "concerns", "completions", "links", "claims"} {
+		for _, section := range []string{"acceptance", "concerns", "completions", "links", "claims", "gates"} {
 			section := section
 			t.Run("empty "+section, func(t *testing.T) {
 				stdout, stderr := runFIDCommand(t, workspace, "issue", "get", emptyIssueID, "--section", section, "--format", "json")
@@ -170,7 +225,7 @@ func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `supported sections: acceptance, concerns, completions, links, claims`) {
+		if !strings.Contains(stderr, `supported sections: acceptance, concerns, completions, links, claims, gates`) {
 			t.Fatalf("stderr = %q, want supported section list", stderr)
 		}
 	})
@@ -209,9 +264,49 @@ func seedIssueGetSectionFixture(t *testing.T, conn *sql.DB) {
 				"gpt-5",
 				"qa_pass",
 				1550,
-				`["go test ./...", "golangci-lint run ./..."]`,
+				`[{"cmd":"go test ./...","exit_code":0,"ran_at":"2026-05-27T10:10:00Z","output_excerpt":"ok"},{"cmd":"go test -race ./...","exit_code":0,"ran_at":"2026-05-27T10:12:00Z","output_excerpt":"race ok"}]`,
 				false,
 				"2026-05-27T10:20:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO agent_runs (id, issue_id, role, model, started_at)
+				VALUES (?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"RUN-000401",
+				"FID-a1b2c3",
+				"developer",
+				"gpt-5",
+				"2026-05-27T09:00:00Z",
+			},
+		},
+		{
+			query: `
+				INSERT INTO gate_runs (
+					id, issue_id, attempt_number, agent_run_id, recorded_by_role, command, exit_code, output_excerpt, ran_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?)
+			`,
+			args: []any{
+				"GATE-000401",
+				"FID-a1b2c3",
+				1,
+				"RUN-000401",
+				"developer",
+				"go test ./...",
+				0,
+				"ok",
+				"2026-05-27T09:20:00Z",
+				"GATE-000402",
+				"FID-a1b2c3",
+				2,
+				nil,
+				"developer",
+				"golangci-lint run ./...",
+				1,
+				nil,
+				"2026-05-27T10:25:00Z",
 			},
 		},
 		{

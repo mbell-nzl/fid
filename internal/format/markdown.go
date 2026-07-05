@@ -67,6 +67,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeConcernListMarkdown(writer, typed)
 	case []claims.ListItem:
 		return writeClaimListMarkdown(writer, typed)
+	case []issues.IssueGate:
+		return writeIssueGateListMarkdown(writer, typed)
 	case []labels.Label:
 		return writeLabelListMarkdown(writer, typed)
 	case []links.ListItem:
@@ -406,6 +408,42 @@ func writeClaimListMarkdown(writer io.Writer, items []claims.ListItem) error {
 			builder.WriteString("  ")
 			builder.WriteString(*item.Note)
 			builder.WriteString("\n")
+		}
+	}
+
+	if _, err := io.WriteString(writer, builder.String()); err != nil {
+		return fmt.Errorf("write markdown output: %w", err)
+	}
+	return nil
+}
+
+func writeIssueGateListMarkdown(writer io.Writer, items []issues.IssueGate) error {
+	var builder strings.Builder
+
+	builder.WriteString("# Gates\n\n")
+	if len(items) == 0 {
+		builder.WriteString("(no gates)\n")
+	} else {
+		builder.WriteString("| id | attempt | role | command | exit_code | agent_run_id | ran_at | output_excerpt |\n")
+		builder.WriteString("| --- | ---: | --- | --- | ---: | --- | --- | --- |\n")
+		for _, item := range items {
+			builder.WriteString("| ")
+			builder.WriteString(markdownTableCell(item.ID))
+			builder.WriteString(" | ")
+			builder.WriteString(strconv.Itoa(item.AttemptNumber))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.RecordedByRole))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.Command))
+			builder.WriteString(" | ")
+			builder.WriteString(strconv.Itoa(item.ExitCode))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(dereferenceMarkdownString(item.AgentRunID)))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(item.RanAt))
+			builder.WriteString(" | ")
+			builder.WriteString(markdownTableCell(dereferenceMarkdownString(item.OutputExcerpt)))
+			builder.WriteString(" |\n")
 		}
 	}
 
