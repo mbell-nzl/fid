@@ -268,6 +268,10 @@ Responsibilities:
 7. Use explicit child prompts. Each prompt must restate the required reads,
    task path, report path, exact gate commands, stop conditions, and
    commit/report requirements.
+   Codex child spawns must set `spawn_agent.agent_type` exactly to the intended
+   project custom agent (`qa_lead`, `developer`, `qa_reviewer`, or `tl_lite`).
+   Do not omit `agent_type`, do not use `default`, `worker`, or `explorer`, and
+   do not set model overrides for these project roles.
 8. After each Developer run, run
    `project-docs/tools/report-lint.sh <report> <task spec>`. It
    deterministically verifies required headings, sentinel sections, task-spec
@@ -679,6 +683,10 @@ project-docs/
 - `.codex/config.toml` must set `[agents].max_depth = 3`.
 - Phase Runner delegates only to `qa_lead`, `qa_reviewer`, `developer`, and
   `tl_lite`.
+- In Codex, Phase Runner must call `spawn_agent` with `agent_type` set exactly
+  to that role name. An omitted `agent_type` spawns the default agent, which
+  inherits the parent runtime instead of the project custom agent's model and
+  reasoning settings.
 - Child prompts must be explicit and self-contained. A bare role handoff is not
   enough.
 - Project-scoped Codex agent files live in `.codex/agents/*.toml` and carry
