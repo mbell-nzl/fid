@@ -30,17 +30,11 @@ Final review: `project-docs/docs/phases/phase-16/qa/final-review.md`
 | Range | Outcome | Notes |
 |---|---|---|
 | VAL-001..012 | PASS | Deterministic QA and phase-level gates passed. |
-| VAL-013 | CARRY-FORWARD | Human dogfood outcomes are not recorded in `qa/human-checklist.md`; see CF-020 / DEC-048. |
-
-Human checklist support exists at
-`project-docs/docs/phases/phase-16/qa/human-checklist-run-sheet.md`, but the
-checklist rows and summary totals remain blank. Do not mark VAL-013 PASS without
-file-backed human outcomes.
+| VAL-013 | PASS | Human checklist records HUMAN-16a..d PASS and overall PASS. |
 
 ## Phase 16 Wrap Decisions
 
-- DEC-048 archives Phase 16 as deterministic-QA complete while carrying
-  VAL-013 forward as CF-020.
+- DEC-048 archives Phase 16 with VAL-001..013 terminal PASS.
 - CF-011 and CF-016 are closed.
 - CF-018 and CF-019 capture non-blocking file-size follow-ups for
   `internal/sqlquery/sqlquery.go` and `internal/format/markdown.go`.
@@ -55,8 +49,7 @@ Roadmap Phase 17 is "Maintenance + stub guard + v0.1 closure":
 - stub-table CLI guards for governance entities not shipping until later
 - v0.1 exit-criteria smoke over the full implemented surface
 
-Phase 17 must account for CF-020 before v0.1 is declared closed. It may also
-carry CF-018/CF-019 only if it reopens the relevant packages.
+Phase 17 may carry CF-018/CF-019 only if it reopens the relevant packages.
 
 ## Next Action
 
@@ -65,6 +58,6 @@ Start Phase 17 kickoff only after reading:
 1. `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` Phase 17 entry.
 2. Relevant sections named by that entry in PRD, TRD, schema, design, quality,
    and workflow specs.
-3. `project-docs/docs/current/decisions_active.md`, especially CF-020.
+3. `project-docs/docs/current/decisions_active.md`.
 4. Phase 16 wrap artifacts: `decisions.md`, `progress.md`,
    `qa/final-review.md`, and `qa/human-checklist.md`.

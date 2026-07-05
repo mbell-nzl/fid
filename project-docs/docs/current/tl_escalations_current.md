@@ -16,8 +16,8 @@ None.
 - Phase 16 raised no `ESC-NNN` items. Local unblock and workflow decisions
   DEC-043..048 plus TRG-046 are archived in
   `../phases/phase-16/tl-escalations.md` and `../phases/phase-16/decisions.md`.
-- Phase 16 VAL-013 is not an escalation; it is an explicit carry-forward item
-  CF-020 because the human checklist outcomes are blank.
+- Phase 16 VAL-013 is not an escalation; the completed human checklist records
+  PASS for HUMAN-16a..d.
 
 ## Standing Escalation Triggers
 

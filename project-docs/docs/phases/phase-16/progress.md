@@ -2,9 +2,8 @@
 
 > Phase: 16 - Activity Timeline + Read-Only Escape Hatches (roadmap v0.1e,
 > slice 3 of 4)
-> Status: WRAPPED. Tasks 1-6, Reviews 1-2, final review, and Tech Lead wrap are
-> complete. Deterministic validation is PASS for VAL-001..012. VAL-013 remains
-> CARRY-FORWARD as CF-020 because the human checklist outcomes are not recorded.
+> Status: WRAPPED. Tasks 1-6, Reviews 1-2, final review, human checklist, and
+> Tech Lead wrap are complete. VAL-001..013 are terminal PASS.
 
 ## Plan
 
@@ -38,9 +37,9 @@ No schema migration is planned. CF-011 is additive: new events carry extra
 ## Validation
 
 Validation contract at `qa/validation-contract.md` includes VAL-001..013 and is
-terminal except for the human-only carry-forward item. Final review records
-VAL-001..012 PASS and VAL-013 CARRY-FORWARD. Tech Lead wrap records the
-VAL-013 disposition as CF-020 instead of converting it to an evidence-free PASS.
+terminal. Final review records VAL-001..012 PASS and generated the human
+checklist for VAL-013; the completed human checklist records VAL-013 PASS via
+HUMAN-16a..d.
 
 ## Progress History
 
@@ -79,14 +78,14 @@ VAL-013 disposition as CF-020 instead of converting it to an evidence-free PASS.
 - Task 6 complete (2026-07-05): `fid issue get --section gates` shipped with
   VAL-012 evidence and commits `31fb3dd` / `56ab49f`.
 - Final review complete (2026-07-05): PASS WITH IMPROVEMENTS. VAL-001..012
-  PASS; VAL-013 CARRY-FORWARD to human checklist. Phase-level format, lint,
-  coverage, integration, benchmark, and build gates passed in QA.
-- Human run sheet prepared (2026-07-05): commit `89e014d` added
-  `qa/human-checklist-run-sheet.md` and tester name, but checklist outcomes and
-  summary totals remain blank.
-- Tech Lead wrap (2026-07-05): DEC-048 records deterministic wrap, closes
-  CF-011/CF-016, opens CF-018/CF-019/CF-020, records spec-sync verdicts, and
-  audits TRG-046.
+  PASS; VAL-013 carried forward to the human checklist. Phase-level format,
+  lint, coverage, integration, benchmark, and build gates passed in QA.
+- Human checklist complete (2026-07-05): `qa/human-checklist.md` records
+  HUMAN-16a..d PASS, 4/4 total pass, and overall PASS. The run sheet remains at
+  `qa/human-checklist-run-sheet.md`.
+- Tech Lead wrap (2026-07-05): DEC-048 records all VAL assertions terminal
+  PASS, closes CF-011/CF-016, opens CF-018/CF-019, records spec-sync verdicts,
+  and audits TRG-046.
 
 ## Carry-Forward
 
@@ -98,9 +97,6 @@ VAL-013 disposition as CF-020 instead of converting it to an evidence-free PASS.
   SQL package next reopens.
 - CF-019 opened at Phase 16 wrap: split `internal/format/markdown.go` when
   formatter-heavy work next reopens.
-- CF-020 opened at Phase 16 wrap: complete or replace Phase 16 human dogfood
-  evidence for VAL-013 before v0.1 closure.
-
 ## Escalations
 
 - No ESC-NNN escalations were raised. TRG-046 RESUME was audited correct at wrap.

@@ -13,11 +13,7 @@ kickoff is next.
 Phase 16 outcome:
 
 - Deterministic final review returned PASS WITH IMPROVEMENTS.
-- VAL-001..012 PASS.
-- VAL-013 remains CARRY-FORWARD because
-  `project-docs/docs/phases/phase-16/qa/human-checklist.md` has blank outcomes
-  and summary totals. `qa/human-checklist-run-sheet.md` exists as execution
-  support only.
+- VAL-001..013 PASS after human checklist completion.
 - CF-011 and CF-016 closed.
 - No `ESC-NNN` items are open; TRG-046 RESUME was audited correct at wrap.
 
@@ -30,14 +26,11 @@ Phase 16 outcome:
   reopens.
 - CF-019: split `internal/format/markdown.go` when formatter-heavy work next
   reopens.
-- CF-020: complete or replace Phase 16 human dogfood evidence for VAL-013 before
-  v0.1 closure.
 
 ## Next Action
 
 Tech Lead should kick off Phase 17 from the roadmap entry "Maintenance + stub
-guard + v0.1 closure." Carry CF-020 into the Phase 17 brief unless the human
-checklist outcomes are recorded before kickoff.
+guard + v0.1 closure."
 
 Do not resume Phase 16 Developer work. Use the archive for Phase 16 details:
 

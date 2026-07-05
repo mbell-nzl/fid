@@ -28,7 +28,6 @@ closes, or cancels each item.
 | CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Reopen with the next `internal/dev` work. | v0.2c (`fid dev resume`/`abandon`) | Low |
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. | Next SQL package reopen | Low |
 | CF-019 | Phase 16 final review | Behavior-preserving split of `internal/format/markdown.go` (661 lines) under the 400-line non-test file target. | Next formatter-heavy task | Low |
-| CF-020 | Phase 16 DEC-048 / VAL-013 | Complete or replace Phase 16 human dogfood evidence for `fid activity list`, `fid sql` read/reject, and `fid journal inspect`. `qa/human-checklist-run-sheet.md` exists, but `qa/human-checklist.md` outcomes are blank, so VAL-013 is not PASS. | Before v0.1 closure | Medium |
 
 ## Recently Closed
 
@@ -37,6 +36,8 @@ closes, or cancels each item.
   unclaim, link add, and `dev gate` / `gate_recorded`; VAL-005/006/007 PASS.
 - **CF-016** closed at Phase 16 wrap — `fid issue get --section gates`
   delivered as a raw `gate_runs` read surface; VAL-012 PASS.
+- **VAL-013** closed at Phase 16 wrap — human checklist records HUMAN-16a..d
+  PASS, 4/4 total pass, and overall PASS.
 - Earlier closed carry-forward items are archived in their phase decisions:
   CF-013/014/015 (Phase 15), CF-003 (Phase 10), CF-012 (Phase 8), CF-009/010
   (Phase 6), CF-004/006 (Phase 4), CF-005/007 (Phase 5), CF-002 (Phase 0).
@@ -57,8 +58,6 @@ closes, or cancels each item.
   assertions before task execution begins.
 - Before release-readiness work, decide where held-out scenarios live and how
   implementation agents are prevented from loading them.
-- Phase 17 must carry CF-020 in its phase brief unless the human checklist is
-  completed before kickoff.
 
 ## TL-Lite Resume Policy
 

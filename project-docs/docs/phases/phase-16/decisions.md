@@ -187,24 +187,21 @@
   `project-docs/templates/phase-runner-prompt.md`;
   `.codex/agents/phase_runner.toml`; `.claude/agents/phase-runner.md`.
 
-### DEC-048: Phase 16 deterministic scope wraps with VAL-013 carried forward
+### DEC-048: Phase 16 wraps with all validation assertions terminal
 
 - **Date:** 2026-07-05
 - **Context:** Final review returned PASS WITH IMPROVEMENTS with VAL-001..012
-  PASS. VAL-013 remained CARRY-FORWARD because the human-only dogfood checklist
-  had no recorded outcomes. Commit `89e014d` added
-  `qa/human-checklist-run-sheet.md` and the tester name, but
-  `qa/human-checklist.md` still has blank HUMAN-16a..d outcomes and blank
-  summary totals.
-- **Decision:** Archive Phase 16 as deterministic-QA complete, but do not mark
-  VAL-013 PASS. Carry the missing human dogfood outcome forward as **CF-020**,
-  targeted before v0.1 closure. Close **CF-011** and **CF-016** because their
-  deterministic validation assertions passed. Defer the non-blocking file-size
-  findings as **CF-018** (`internal/sqlquery/sqlquery.go`) and **CF-019**
+  PASS and VAL-013 carried forward to the human checklist. The human checklist
+  now records HUMAN-16a..d PASS, summary totals 4/4 pass, and overall result
+  PASS on 2026-07-05.
+- **Decision:** Archive Phase 16 with VAL-001..013 terminal PASS. Close
+  **CF-011** and **CF-016** because their deterministic validation assertions
+  passed. Defer the non-blocking file-size findings as **CF-018**
+  (`internal/sqlquery/sqlquery.go`) and **CF-019**
   (`internal/format/markdown.go`).
-- **Consequences:** Phase 17 kickoff must surface CF-020 explicitly and either
-  get the Phase 16 human checklist completed or schedule equivalent human
-  dogfood before v0.1 closure. No evidence-free PASS is recorded for VAL-013.
+- **Consequences:** Phase 17 does not need a Phase 16 human-dogfood
+  carry-forward item. Keep the retrospective lesson: a run sheet is not enough;
+  the checklist outcomes themselves must be filled before wrap closes.
 - **Refs:** `qa/final-review.md`; `qa/human-checklist.md`;
   `qa/human-checklist-run-sheet.md`; VAL-013; `08_QUALITY_PLAN.md` §5.3;
   `09_AI_WORKFLOW.md` §4.3.
@@ -228,7 +225,7 @@
 | VAL-008..009 | PASS | Accepted. Task 4, Review 2, and final SQL reruns cover read forms, mutation rejection, and the read-only connection backstop. |
 | VAL-010..011 | PASS | Accepted. Task 5 and final journal-focused reruns cover inspect fields, `HashEvent` parity, not-found behavior, and revert verdicts. |
 | VAL-012 | PASS | Accepted. Task 6 and final reruns cover raw `gate_runs` history, empty state, formats, and separation from completion snapshots. |
-| VAL-013 | CARRY-FORWARD | Deferred as CF-020. The run sheet exists, but `human-checklist.md` has no recorded outcomes or summary totals, so the human dogfood assertion remains unproven. |
+| VAL-013 | PASS | Accepted. `human-checklist.md` records HUMAN-16a..d PASS, 4/4 total pass, and overall result PASS on 2026-07-05. |
 
 ## QA Recommendation Disposition
 
@@ -238,7 +235,7 @@
 | Review 1 | Future CF-011 reports should enumerate each rejection fixture explicitly. | Cancel as no-op | Final review confirmed VAL-005 evidence and report-lint passed; keep as a reviewer lesson, not carry-forward debt. |
 | Review 2 / Final review | Split `internal/sqlquery/sqlquery.go` (595 lines) when reopened. | Defer as CF-018 | Non-blocking quality-budget follow-up; behavior and gates passed. |
 | Final review | Split `internal/format/markdown.go` (661 lines) when formatter work reopens it. | Defer as CF-019 | Non-blocking quality-budget follow-up; behavior and gates passed. |
-| Final review | Record human dogfood outcomes for VAL-013. | Defer as CF-020 | Human-only evidence is not in the file artifacts; do not mark PASS without recorded outcomes. |
+| Final review | Record human dogfood outcomes for VAL-013. | Do now, complete | `human-checklist.md` now records all four HUMAN-16 rows PASS and overall PASS. |
 
 ## Carry-Forward Review At Wrap
 
@@ -250,7 +247,6 @@
 | CF-017 | Re-defer to v0.2c | `internal/dev` `Finish`/`Block` function-size cleanup remains tied to the next `internal/dev` reopen. |
 | CF-018 | Open, target next SQL package reopen | Behavior-preserving split of `internal/sqlquery/sqlquery.go` under the 400-line file target. |
 | CF-019 | Open, target next formatter-heavy task | Behavior-preserving split of `internal/format/markdown.go` under the 400-line file target. |
-| CF-020 | Open, target before v0.1 closure | Complete or replace Phase 16 human dogfood evidence for VAL-013 before v0.1 is declared closed. |
 
 ## Spec Sync Verdict
 
