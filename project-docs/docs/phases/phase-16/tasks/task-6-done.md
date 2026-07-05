@@ -105,8 +105,8 @@
 
 ## Commit hash
 
-- `pending implementation commit`
+- `31fb3dd`
 
 ## Commit subject
 
-- `pending implementation commit`
+- `feat: add issue gates section`
