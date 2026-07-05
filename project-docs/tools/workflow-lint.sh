@@ -224,6 +224,18 @@ for file in $runner_surfaces; do
   check_contains "$file" 'run-ledger' "run-ledger reference"
 done
 
+report_lint_check_surfaces="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/tools/README.md
+.codex/agents/phase_runner.toml
+.claude/agents/phase-runner.md
+"
+
+for file in $report_lint_check_surfaces; do
+  check_contains "$file" 'uncommitted modifications|committed and clean' "report-lint committed-report check"
+done
+
 codex_runner_surfaces="
 project-docs/specs/09_AI_WORKFLOW.md
 project-docs/templates/phase-runner-prompt.md

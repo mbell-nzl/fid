@@ -52,11 +52,19 @@ or narrower substituted commands are failed gates.
 
 - `<hash or "No commit created - blocker report">`
 
-Copy the hash verbatim from `git rev-parse --short HEAD` or `git rev-parse
-HEAD`. Never type, pad, complete, or recall a hash from memory.
+Draft this section as `- Pending commit` until the task commit exists. Then,
+while `HEAD` is still the task commit, copy the hash verbatim from
+`git rev-parse --short HEAD` or `git rev-parse HEAD`. Never type, pad,
+complete, or recall a hash from memory.
 
 ## Commit subject
 
 - `<subject or "No commit created - blocker report">`
 
 Copy the subject verbatim from `git log -1 --format=%s`.
+
+After filling in the hash and subject, commit the finalized report in an
+immediately following `docs(task): finalize completion report for phase-N
+task-M` commit. The hash above is the task commit's, never that docs commit's.
+The report counts as evidence only once committed; report-lint fails a report
+file with uncommitted modifications.

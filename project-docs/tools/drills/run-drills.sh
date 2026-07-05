@@ -139,6 +139,8 @@ run_mechanical() {
 }
 
 render_report "$good_hash" "$good_subject" > "$report"
+git -C "$base" add "$phase_dir/tasks/task-1-done.md"
+git_fixture "$base" commit "docs(task): finalize completion report fixture"
 run_mechanical "drill-00 control: clean report passes" zero ""
 
 render_report "0123456789abcdef0123456789abcdef01234567" "$good_subject" > "$report"

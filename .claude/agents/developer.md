@@ -58,17 +58,21 @@ On-demand load:
     interaction and its observed result under `## Tests run`. Tests alone do
     not prove the entrypoint works.
 14. Write the completion report immediately after a green gate, including
-    `VAL-NNN` evidence or an explicit no-VAL explanation.
-15. Commit with a Conventional Commit subject and `Refs: phase-N/task-M`. The
-    commit must include your completion report. If the report is finalized
-    after the code commit, add it in an immediately following
-    `docs(task): ...` commit before you stop. Never hand off or stop with an
-    uncommitted completion report, and never leave your report to be committed
-    by another agent or the human.
-16. Copy the commit hash from `git rev-parse --short HEAD` or `git rev-parse
-    HEAD`, and copy the subject from `git log -1 --format=%s`. Never type, pad,
-    or reconstruct a hash from memory.
-17. Stop.
+    `VAL-NNN` evidence or an explicit no-VAL explanation. Leave
+    `## Commit hash` and `## Commit subject` as `- Pending commit`.
+15. Create the task commit (implementation, tests, docs, and the report draft)
+    with a Conventional Commit subject and `Refs: phase-N/task-M`.
+16. While `HEAD` is still the task commit, copy the hash from `git rev-parse
+    --short HEAD` or `git rev-parse HEAD` and the subject from
+    `git log -1 --format=%s` into the report, replacing the placeholders.
+    Never type, pad, or reconstruct a hash from memory.
+17. Commit the finalized report in an immediately following
+    `docs(task): finalize completion report for phase-N task-M` commit. The
+    hash in the report is the task commit's, never this docs commit's; a
+    report cannot carry the hash of the same commit that introduces its final
+    content, so this two-step pattern is mandatory.
+18. Verify the report path is committed and clean:
+    `git status --porcelain -- <report path>` prints nothing. Then stop.
 
 ## Completion Report
 

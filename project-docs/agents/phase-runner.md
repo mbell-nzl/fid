@@ -65,9 +65,10 @@ Open ESC IDs trigger TL-Lite triage.
    - Run `project-docs/tools/report-lint.sh <report path> <task spec path>`.
      It deterministically verifies required headings, sentinel sections,
      task-spec command coverage, the commit hash via
-     `git rev-parse --verify <hash>^{commit}`, and the subject against
-     `git log -1 --format=%s`. A nonzero exit is a hard stop. Do not re-derive
-     these checks by prose parsing.
+     `git rev-parse --verify <hash>^{commit}`, the subject against
+     `git log -1 --format=%s`, and that the report file itself is committed
+     with no uncommitted modifications. A nonzero exit is a hard stop. Do not
+     re-derive these checks by prose parsing.
    - Read the completion report for the judgment items report-lint cannot
      check: blocker semantics, deviation content, concerns needing triage, and
      QA-plan commands required for this task beyond the task spec.
@@ -172,7 +173,7 @@ Workflow:
 5a. Before spawning any Developer, audit the QA plan's review cadence against the run ledger and existing QA review artifacts. If a scheduled review is due or overdue, spawn qa_reviewer with agent_type = "qa_reviewer" for that review first, append a REVIEW entry, and apply the normal TL-Lite/STOP rules before continuing implementation.
 6. For each task spec in order:
    a. Spawn developer with agent_type = "developer", the concrete task spec path, required reads, exact commands from ## Exact Commands To Run, completion report path, and commit requirement.
-   b. Run project-docs/tools/report-lint.sh <report path> <task spec path>. It deterministically verifies required headings, sentinel sections, task-spec command coverage, the commit hash via git rev-parse --verify <hash>^{commit}, and the subject against git log -1 --format=%s. A nonzero exit is a hard stop. Do not re-derive these checks by prose parsing.
+   b. Run project-docs/tools/report-lint.sh <report path> <task spec path>. It deterministically verifies required headings, sentinel sections, task-spec command coverage, the commit hash via git rev-parse --verify <hash>^{commit}, the subject against git log -1 --format=%s, and that the report file itself is committed with no uncommitted modifications. A nonzero exit is a hard stop. Do not re-derive these checks by prose parsing.
    c. Read the completion report for judgment items report-lint cannot check: blocker semantics, deviation content, concerns needing triage, and QA-plan commands required for this task beyond the task spec.
    d. Before appending a final STOP for report-lint failure, missing report at the expected task report path, blocker report, quality-gate failure, ad hoc gate substitution, or any QA-plan required command that is missing, silently skipped, or replaced by a narrower substitute, spawn tl_lite with agent_type = "tl_lite" as the first-step triager. Append a TRIAGE entry for its verdict. Continue only on VERDICT: RESUME; stop on VERDICT: BLOCK and reference the TRG/ESC in the STOP entry.
    e. Treat missing, skipped, narrower, substituted, or failed required commands as blockers until TL-Lite classifies them; do not silently accept them.

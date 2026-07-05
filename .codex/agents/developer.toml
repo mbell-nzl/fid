@@ -37,10 +37,11 @@ Workflow:
 8. If a quality-gate step fails, fix the issue and rerun the failed command.
 9. Record every required command from the task spec and any task-applicable QA-plan command as PASS, or BLOCKED with a reason in a blocker report. Focused red/green commands do not substitute for the required gate; missing, silently skipped, or narrower substituted commands are failed gates.
 10. Where the task changes behavior with a runtime surface, exercise the changed behavior once through the real entrypoint (the fid CLI or other real interface) before writing the report, and record the command or interaction and its observed result under ## Tests run. Tests alone do not prove the entrypoint works.
-11. As soon as the gate is green, write project-docs/docs/phases/phase-N/tasks/task-M-done.md, including VAL-NNN evidence or an explicit no-VAL explanation.
-12. Immediately create a Conventional Commit with Refs: phase-N/task-M in body or footer.
-13. Copy the commit hash from git rev-parse --short HEAD or git rev-parse HEAD, and copy the subject from git log -1 --format=%s. Never type, pad, or reconstruct a hash from memory.
-14. Stop after report and commit are complete.
+11. As soon as the gate is green, write project-docs/docs/phases/phase-N/tasks/task-M-done.md, including VAL-NNN evidence or an explicit no-VAL explanation. Leave ## Commit hash and ## Commit subject as "- Pending commit".
+12. Create the task commit (implementation, tests, docs, and the report draft) as a Conventional Commit with Refs: phase-N/task-M in body or footer.
+13. While HEAD is still the task commit, copy the hash from git rev-parse --short HEAD or git rev-parse HEAD and the subject from git log -1 --format=%s into the report, replacing the placeholders. Never type, pad, or reconstruct a hash from memory.
+14. Commit the finalized report in an immediately following commit with subject "docs(task): finalize completion report for phase-N task-M". The hash in the report is the task commit's, never this docs commit's; a report cannot carry the hash of the same commit that introduces its final content, so this two-step pattern is mandatory.
+15. Verify the report path is committed and clean - git status --porcelain -- <report path> prints nothing - then stop.
 
 Completion report headings, in order:
 - ## Summary of what was implemented

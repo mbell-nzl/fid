@@ -276,9 +276,10 @@ Responsibilities:
    `project-docs/tools/report-lint.sh <report> <task spec>`. It
    deterministically verifies required headings, sentinel sections, task-spec
    command coverage, commit hash validity via `git rev-parse --verify
-   <hash>^{commit}`, and commit subject match against `git log -1 --format=%s`.
-   A nonzero exit is a hard stop; do not re-derive these checks by prose
-   parsing. A hash that does not resolve is a hard stop even when its
+   <hash>^{commit}`, commit subject match against `git log -1 --format=%s`,
+   and that the report file itself is committed with no uncommitted
+   modifications. A nonzero exit is a hard stop; do not re-derive these checks
+   by prose parsing. A hash that does not resolve is a hard stop even when its
    abbreviated prefix is valid.
 9. Read the report for the judgment items report-lint cannot check: blocker
    semantics, deviation content, concerns needing triage, and QA-plan commands
@@ -379,13 +380,22 @@ Responsibilities:
    interaction and its observed result. Tests alone do not prove the
    entrypoint works.
 9. Create or update the completion report immediately after gate outcome is
-   known.
-10. Commit with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
-11. Record the commit hash and subject by copying them verbatim from `git`
-    output: `git rev-parse --short HEAD` or `git rev-parse HEAD` for the hash,
-    and `git log -1 --format=%s` for the subject. Never type, pad, complete, or
-    recall a hash from memory.
-12. Stop after report and commit are complete.
+   known, leaving `## Commit hash` and `## Commit subject` as
+   `- Pending commit`.
+10. Create the task commit (implementation, tests, docs, and the report draft)
+    with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
+11. While `HEAD` is still the task commit, record the commit hash and subject
+    by copying them verbatim from `git` output: `git rev-parse --short HEAD` or
+    `git rev-parse HEAD` for the hash, and `git log -1 --format=%s` for the
+    subject. Replace the report placeholders with those values. Never type,
+    pad, complete, or recall a hash from memory.
+12. Commit the finalized report in an immediately following
+    `docs(task): finalize completion report for phase-<id> task-<n>` commit.
+    The hash in the report is the task commit's, never this docs commit's; a
+    report cannot carry the hash of the same commit that introduces its final
+    content, so this two-step pattern is mandatory.
+13. Verify the report path is committed and clean:
+    `git status --porcelain -- <report path>` prints nothing. Then stop.
 
 Required completion report headings, in order:
 - `## Summary of what was implemented`
@@ -1103,10 +1113,21 @@ Missing, silently skipped, or narrower substituted commands are failed gates.
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:
 required headings, sentinel sections, task-spec command coverage, hash
-validity, and subject match. Orchestrators (Phase Runner or human) run it
-instead of prose-parsing those checks; reviewers may run it as independent
-evidence. Judgment checks - QA-plan command applicability, deviation content,
-blocker acceptability - remain with agents and humans.
+validity, and subject match.
+
+A completion report cannot contain the hash of the exact commit that
+introduces the report's final content - changing the report changes the hash.
+The finalized, hash-bearing report is therefore committed in an immediately
+following `docs(task): ...` commit after the task commit it describes. A report
+is evidence only once committed; lint verdicts recorded against an uncommitted
+worktree file do not count toward the Definition of Done.
+
+`project-docs/tools/report-lint.sh <report> <task spec>` also verifies that
+the linted report file is committed with no uncommitted modifications.
+Orchestrators (Phase Runner or human) run report-lint instead of prose-parsing
+these checks; reviewers may run it as independent evidence. Judgment checks -
+QA-plan command applicability, deviation content, blocker acceptability -
+remain with agents and humans.
 
 `project-docs/tools/drills/run-drills.sh` runs the evidence-chain drills:
 seeded-defect fixtures that verify the QA chain itself still catches

@@ -12,6 +12,11 @@
 #   4. Commit hash resolves via `git rev-parse --verify <hash>^{commit}`.
 #   5. Commit subject matches `git log -1 --format=%s <hash>` exactly, which
 #      also catches plausible-but-wrong hash prefixes.
+#   6. The report file itself is committed with no uncommitted modifications.
+#      A report is evidence only once committed; the finalized hash-bearing
+#      report lands in a `docs(task): ...` commit immediately after the task
+#      commit, because a report cannot carry the hash of the same commit that
+#      introduces its final content.
 #
 # Judgment items stay with agents and humans: QA-plan commands beyond the task
 # spec, conditional-command applicability, deviation content, and whether a
@@ -183,7 +188,7 @@ EOF
 
   # --- 5 & 6. Commit hash validity and subject match ---
   if $blocker; then
-    note "commit hash/subject checks skipped for blocker report"
+    note "commit hash/subject and report-committed checks skipped for blocker report"
     return
   fi
 
@@ -221,6 +226,16 @@ EOF
     pass "commit subject matches: $reported_subject"
   else
     fail "commit subject mismatch (wrong commit or wrong hash prefix): report '$reported_subject' vs git '$actual_subject'"
+  fi
+
+  # --- 7. Report file committed and clean ---
+  report_abs=$(CDPATH= cd "$(dirname "$report")" && pwd)/$(basename "$report")
+  if ! git -C "$repo" ls-files --error-unmatch -- "$report_abs" >/dev/null 2>&1; then
+    fail "report file is not committed (a report is evidence only once committed): $report"
+  elif [ -n "$(git -C "$repo" status --porcelain -- "$report_abs")" ]; then
+    fail "report file has uncommitted modifications (post-commit edits invalidate lint evidence): $report"
+  else
+    pass "report file committed and clean"
   fi
 }
 
@@ -343,8 +358,12 @@ EOF
     fi
   }
 
-  # Clean report must pass.
+  # Clean report must pass. Committed in a follow-up docs commit, mirroring
+  # the required two-step pattern (task commit, then finalized report commit).
   write_report "$tmp/clean.md" "$good_hash" "$good_subject"
+  git -C "$tmp" add clean.md task-spec.md
+  git -C "$tmp" -c user.name=fixture -c user.email=fixture@example.invalid \
+    commit -q -m "docs(task): finalize completion report fixture"
   expect "clean report passes" zero "" "$tmp/clean.md"
 
   # Missing required heading.
@@ -390,6 +409,15 @@ EOF
       -e 's|`echo lint-fixture` - PASS|`echo lint-fixture` - BLOCKED|' \
       "$tmp/blocker.md" > "$tmp/blocker-final.md"
   expect "well-formed blocker report passes lint" zero "blocker report detected" "$tmp/blocker-final.md"
+
+  # Finalized report never committed.
+  cp "$tmp/clean.md" "$tmp/uncommitted.md"
+  expect "uncommitted report fails" nonzero "report file is not committed" "$tmp/uncommitted.md"
+
+  # Committed report modified in the worktree afterwards (post-commit edit).
+  printf -- '- Post-commit edit.\n' >> "$tmp/clean.md"
+  expect "post-commit edited report fails" nonzero "uncommitted modifications" "$tmp/clean.md"
+  git -C "$tmp" checkout -q -- clean.md
 
   if [ "$st_failures" -eq 0 ]; then
     echo "SELF-TEST PASS report-lint self-test completed with no failures"

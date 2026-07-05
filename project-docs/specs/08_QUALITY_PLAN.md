@@ -506,9 +506,12 @@ A task is done when:
 - [ ] Task-level quality gate passed (`gofmt`, `golangci-lint`, `go test` with
       coverage).
 - [ ] Dependency-budget note is present if new dependencies were added.
-- [ ] Completion report was written **and committed by its author** in the
-      task commit or an immediately following `docs(task): ...` commit. A task
-      is not done while its completion report is uncommitted.
+- [ ] Completion report was written **and committed by its author**: drafted in
+      the task commit with `- Pending commit`, then finalized with the task
+      commit's hash/subject in an immediately following `docs(task): ...`
+      commit. The report path has no uncommitted modifications. A task is not
+      done, and the report is not evidence, while its completion report is
+      uncommitted or dirty in the worktree.
 - [ ] Conventional Commit created with phase/task reference.
 
 A phase is done when:
