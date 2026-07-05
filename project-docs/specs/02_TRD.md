@@ -57,6 +57,7 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/search/     Lightweight structured search (v0.2+)
     ├──► internal/stats/      Cost, tokens, gates, attempts aggregations
     ├──► internal/activity/   Projected activity timeline reads over activity_log
+    ├──► internal/sqlquery/   Read-only SQL escape hatch over the projected DB
     ├──► internal/report/     Named reports (v0.2+)
     ├──► internal/changes/    Change digest over activity_log (v0.2+)
     ├──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
@@ -100,6 +101,7 @@ Rules:
 | `internal/search/` | Domain | Literal, case-insensitive search over structured read-model fields (v0.2) | Full markdown body indexing, custom query DSL |
 | `internal/stats/` | Domain | Cost, token, gate, attempt aggregations | Output formatting |
 | `internal/activity/` | Domain | Projected activity timeline reads over the `activity_log` read model: chronological listing, entity/date/event filtering, and details deserialisation | Output formatting, journal writes, new persisted tables |
+| `internal/sqlquery/` | Domain | Read-only SQL escape hatch over the projected SQLite read model: statement classification, mutation rejection, read-only connection opening, and generic row scanning for `fid sql` | Output formatting, journal writes, schema ownership, arbitrary write access |
 | `internal/report/` | Domain | Named report SQL composition and execution (v0.2) | Output formatting |
 | `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
 | `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |

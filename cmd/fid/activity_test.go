@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -20,31 +21,34 @@ func TestActivityListAppliesFilters(t *testing.T) {
 	primaryIssueID := createActivityCommandIssue(t, workspace, "Primary issue")
 	secondaryIssueID := createActivityCommandIssue(t, workspace, "Secondary issue")
 
+	firstEntry := newActivityCommandSeedIdentity(t, workspace, 99, 23*time.Hour+59*time.Minute+59*time.Second)
 	seedActivityCommandEntry(t, workspace, activityCommandSeed{
-		eventID:    "EVT-20260704-000099",
-		activityID: "ACT-20260704-000099",
+		eventID:    firstEntry.eventID,
+		activityID: firstEntry.activityID,
 		refID:      primaryIssueID,
 		eventName:  "status_changed",
 		actor:      "developer",
-		occurredAt: "2026-07-04T23:59:59Z",
+		occurredAt: firstEntry.occurredAt,
 		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
+	secondEntry := newActivityCommandSeedIdentity(t, workspace, 100, 24*time.Hour)
 	seedActivityCommandEntry(t, workspace, activityCommandSeed{
-		eventID:    "EVT-20260705-000100",
-		activityID: "ACT-20260705-000100",
+		eventID:    secondEntry.eventID,
+		activityID: secondEntry.activityID,
 		refID:      primaryIssueID,
 		eventName:  "status_changed",
 		actor:      "developer",
-		occurredAt: "2026-07-05T00:00:00Z",
+		occurredAt: secondEntry.occurredAt,
 		details:    map[string]any{"from": "in_progress", "to": "qa_review"},
 	})
+	thirdEntry := newActivityCommandSeedIdentity(t, workspace, 101, 32*time.Hour)
 	seedActivityCommandEntry(t, workspace, activityCommandSeed{
-		eventID:    "EVT-20260705-000101",
-		activityID: "ACT-20260705-000101",
+		eventID:    thirdEntry.eventID,
+		activityID: thirdEntry.activityID,
 		refID:      secondaryIssueID,
 		eventName:  "issue_updated",
 		actor:      "qa_reviewer",
-		occurredAt: "2026-07-05T08:00:00Z",
+		occurredAt: thirdEntry.occurredAt,
 		details:    map[string]any{"field": "title", "to": "Evidence review"},
 	})
 
@@ -56,17 +60,17 @@ func TestActivityListAppliesFilters(t *testing.T) {
 		{
 			name:    "on filter",
 			args:    []string{"activity", "list", "--on", "issue/" + primaryIssueID, "--format", "json"},
-			wantIDs: []string{"ACT-20260704-000099", "ACT-20260705-000100"},
+			wantIDs: []string{firstEntry.activityID, secondEntry.activityID},
 		},
 		{
 			name:    "since filter",
-			args:    []string{"activity", "list", "--since", "2026-07-05T00:00:00Z", "--format", "json"},
-			wantIDs: []string{"ACT-20260705-000100", "ACT-20260705-000101"},
+			args:    []string{"activity", "list", "--since", secondEntry.occurredAt, "--format", "json"},
+			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
 		},
 		{
 			name:    "event filter",
 			args:    []string{"activity", "list", "--event", "issue_updated", "--format", "json"},
-			wantIDs: []string{"ACT-20260705-000101"},
+			wantIDs: []string{thirdEntry.activityID},
 		},
 	}
 
@@ -94,13 +98,14 @@ func TestActivityListDispatchesFormats(t *testing.T) {
 	runInitCommand(t, workspace, "init")
 
 	issueID := createActivityCommandIssue(t, workspace, "Primary issue")
+	entry := newActivityCommandSeedIdentity(t, workspace, 100, 33*time.Hour)
 	seedActivityCommandEntry(t, workspace, activityCommandSeed{
-		eventID:    "EVT-20260705-000100",
-		activityID: "ACT-20260705-000100",
+		eventID:    entry.eventID,
+		activityID: entry.activityID,
 		refID:      issueID,
 		eventName:  "status_changed",
 		actor:      "developer",
-		occurredAt: "2026-07-05T09:00:00Z",
+		occurredAt: entry.occurredAt,
 		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
 
@@ -111,13 +116,13 @@ func TestActivityListDispatchesFormats(t *testing.T) {
 
 	want := expectedCommandStructure(t, []internalactivity.Entry{
 		{
-			ID:             "ACT-20260705-000100",
-			JournalEventID: "EVT-20260705-000100",
+			ID:             entry.activityID,
+			JournalEventID: entry.eventID,
 			RefType:        "issue",
 			RefID:          issueID,
 			Event:          "status_changed",
 			Actor:          "developer",
-			OccurredAt:     "2026-07-05T09:00:00Z",
+			OccurredAt:     entry.occurredAt,
 			Details:        map[string]any{"from": "todo", "to": "in_progress"},
 		},
 	})
@@ -155,7 +160,7 @@ func TestActivityListDispatchesFormats(t *testing.T) {
 		"# Activity\n\n" +
 		"| Occurred At | Event | Ref | Actor | ID | Details |\n" +
 		"| --- | --- | --- | --- | --- | --- |\n" +
-		fmt.Sprintf("| 2026-07-05T09:00:00Z | status_changed | issue/%s | developer | ACT-20260705-000100 | {\"from\":\"todo\",\"to\":\"in_progress\"} |\n", issueID)
+		fmt.Sprintf("| %s | status_changed | issue/%s | developer | %s | {\"from\":\"todo\",\"to\":\"in_progress\"} |\n", entry.occurredAt, issueID, entry.activityID)
 	if markdownStdout != wantMarkdown {
 		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, wantMarkdown)
 	}
@@ -169,6 +174,12 @@ type activityCommandSeed struct {
 	actor      string
 	occurredAt string
 	details    map[string]any
+}
+
+type activityCommandSeedIdentity struct {
+	eventID    string
+	activityID string
+	occurredAt string
 }
 
 func createActivityCommandIssue(t *testing.T, workspace, title string) string {
@@ -199,6 +210,58 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 	}
 
 	return created.ID
+}
+
+func newActivityCommandSeedIdentity(t *testing.T, workspace string, sequence int, offset time.Duration) activityCommandSeedIdentity {
+	t.Helper()
+
+	baseDate := latestActivityCommandJournalDate(t, workspace)
+	occurredAt := baseDate.Add(offset).UTC()
+
+	return activityCommandSeedIdentity{
+		eventID:    fmt.Sprintf("EVT-%s-%06d", occurredAt.Format("20060102"), sequence),
+		activityID: fmt.Sprintf("ACT-%s-%06d", occurredAt.Format("20060102"), sequence),
+		occurredAt: occurredAt.Format(time.RFC3339),
+	}
+}
+
+func latestActivityCommandJournalDate(t *testing.T, workspace string) time.Time {
+	t.Helper()
+
+	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	if err != nil {
+		t.Fatalf("ReadDir(journal) error = %v", err)
+	}
+
+	var latest string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		if filepath.Ext(name) != ".jsonl" {
+			continue
+		}
+
+		dateText := name[:len(name)-len(".jsonl")]
+		if _, err := time.Parse("2006-01-02", dateText); err != nil {
+			continue
+		}
+		if dateText > latest {
+			latest = dateText
+		}
+	}
+
+	if latest == "" {
+		t.Fatal("latest journal date = empty")
+	}
+
+	date, err := time.Parse("2006-01-02", latest)
+	if err != nil {
+		t.Fatalf("Parse(%q) error = %v", latest, err)
+	}
+	return date.UTC()
 }
 
 func seedActivityCommandEntry(t *testing.T, workspace string, seed activityCommandSeed) {
