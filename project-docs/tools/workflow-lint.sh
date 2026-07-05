@@ -251,6 +251,37 @@ for file in $codex_runner_surfaces; do
   check_contains "$file" 'default.*worker.*explorer|default.*explorer.*worker' "Codex generic-agent guardrail"
 done
 
+# --- Spec section references must resolve ---
+# Any "§N (Heading)" or "§N.M (Heading)" reference in canonical agent
+# sources, generated prompts, or skills must match a real heading in
+# 09_AI_WORKFLOW.md. This keeps slim-prompt pointers from dangling when the
+# spec is renumbered.
+
+section_ref_files=$(find project-docs/agents project-docs/skills .agents/skills .claude/agents .claude/skills .codex/agents -type f \( -name '*.md' -o -name '*.toml' \) 2>/dev/null | sort)
+section_refs=$(grep -hoE "§[0-9]+(\.[0-9]+)* \([^)]+\)" $section_ref_files 2>/dev/null | sort -u || true)
+
+if [ -n "$section_refs" ]; then
+  while IFS= read -r ref; do
+    [ -n "$ref" ] || continue
+    num=${ref%% *}
+    num=${num#§}
+    heading=${ref#*\(}
+    heading=${heading%\)}
+    num_esc=$(printf '%s' "$num" | sed 's/\./\\./g')
+    case "$num" in
+      *.*) pattern="^#{3,4} $num_esc $heading\$" ;;
+      *) pattern="^## $num_esc\\. $heading\$" ;;
+    esac
+    if grep -Eq "$pattern" project-docs/specs/09_AI_WORKFLOW.md; then
+      pass "spec section reference resolves: §$num ($heading)"
+    else
+      fail "spec section reference does not resolve in 09_AI_WORKFLOW.md: §$num ($heading)"
+    fi
+  done <<EOF
+$section_refs
+EOF
+fi
+
 # --- Skill-declared task headings must exist in the task spec template ---
 # Catches heading drift between the task-pack skill and the template.
 
