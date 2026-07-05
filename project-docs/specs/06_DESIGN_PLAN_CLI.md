@@ -1321,6 +1321,15 @@ inverse` (restore the prior value under a precondition); append-only audit facts
 report `mode: retraction` (withdraw the fact, preserving its row). Non-reversible
 events (`issue.created`, `task.completed`, `claim.*`, telemetry, composites)
 report `eligible: false` with a `correction` field naming the forward domain path.
+In v0.1, the implemented buckets are:
+
+- `issue.transitioned`, `issue.updated`, `issue.concern_addressed`,
+  `link.added`, `link.removed` => `mode: inverse`
+- `issue.ac_added`, `issue.ac_verified`, `issue.concern_raised`,
+  `dev.gate.recorded` => `mode: retraction`
+- `project.initialized`, `issue.created`, `label.added`, `issue.completed`,
+  `issue.claim.*`, `run.recorded`, `requirement.synced`,
+  `dev.started` / `dev.finished` / `dev.blocked` => `eligible: false`
 
 ---
 

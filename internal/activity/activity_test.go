@@ -2,6 +2,8 @@ package activity
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -20,36 +22,39 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 	workspace := newActivityWorkspace(t)
 	primaryIssueID := createActivityIssue(t, workspace, "Primary issue")
 	secondaryIssueID := createActivityIssue(t, workspace, "Secondary issue")
+	firstEntry := newActivitySeedIdentity(t, workspace, 100, 33*time.Hour)
+	secondEntry := newActivitySeedIdentity(t, workspace, 101, 35*time.Hour)
+	thirdEntry := newActivitySeedIdentity(t, workspace, 102, 35*time.Hour)
 
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260705-000101",
-		activityID:     "ACT-20260705-000101",
+		eventID:        secondEntry.eventID,
+		activityID:     secondEntry.activityID,
 		refID:          secondaryIssueID,
 		eventName:      "comment_added",
 		actor:          "qa_reviewer",
-		occurredAt:     "2026-07-05T09:02:00Z",
+		occurredAt:     secondEntry.occurredAt,
 		details:        map[string]any{"text": "Needs evidence"},
-		journalEventID: "EVT-20260705-000101",
+		journalEventID: secondEntry.eventID,
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260705-000100",
-		activityID:     "ACT-20260705-000100",
+		eventID:        firstEntry.eventID,
+		activityID:     firstEntry.activityID,
 		refID:          primaryIssueID,
 		eventName:      "status_changed",
 		actor:          "developer",
-		occurredAt:     "2026-07-05T09:00:00Z",
+		occurredAt:     firstEntry.occurredAt,
 		details:        map[string]any{"from": "todo", "to": "in_progress"},
-		journalEventID: "EVT-20260705-000100",
+		journalEventID: firstEntry.eventID,
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260705-000102",
-		activityID:     "ACT-20260705-000102",
+		eventID:        thirdEntry.eventID,
+		activityID:     thirdEntry.activityID,
 		refID:          primaryIssueID,
 		eventName:      "issue_updated",
 		actor:          "developer",
-		occurredAt:     "2026-07-05T09:02:00Z",
+		occurredAt:     thirdEntry.occurredAt,
 		details:        map[string]any{"field": "title", "to": "Refined title"},
-		journalEventID: "EVT-20260705-000102",
+		journalEventID: thirdEntry.eventID,
 	})
 
 	got, err := List(ListOptions{
@@ -62,33 +67,33 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 
 	want := []Entry{
 		{
-			ID:             "ACT-20260705-000100",
-			JournalEventID: "EVT-20260705-000100",
+			ID:             firstEntry.activityID,
+			JournalEventID: firstEntry.eventID,
 			RefType:        "issue",
 			RefID:          primaryIssueID,
 			Event:          "status_changed",
 			Actor:          "developer",
-			OccurredAt:     "2026-07-05T09:00:00Z",
+			OccurredAt:     firstEntry.occurredAt,
 			Details:        map[string]any{"from": "todo", "to": "in_progress"},
 		},
 		{
-			ID:             "ACT-20260705-000101",
-			JournalEventID: "EVT-20260705-000101",
+			ID:             secondEntry.activityID,
+			JournalEventID: secondEntry.eventID,
 			RefType:        "issue",
 			RefID:          secondaryIssueID,
 			Event:          "comment_added",
 			Actor:          "qa_reviewer",
-			OccurredAt:     "2026-07-05T09:02:00Z",
+			OccurredAt:     secondEntry.occurredAt,
 			Details:        map[string]any{"text": "Needs evidence"},
 		},
 		{
-			ID:             "ACT-20260705-000102",
-			JournalEventID: "EVT-20260705-000102",
+			ID:             thirdEntry.activityID,
+			JournalEventID: thirdEntry.eventID,
 			RefType:        "issue",
 			RefID:          primaryIssueID,
 			Event:          "issue_updated",
 			Actor:          "developer",
-			OccurredAt:     "2026-07-05T09:02:00Z",
+			OccurredAt:     thirdEntry.occurredAt,
 			Details:        map[string]any{"field": "title", "to": "Refined title"},
 		},
 	}
@@ -103,36 +108,43 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 	workspace := newActivityWorkspace(t)
 	primaryIssueID := createActivityIssue(t, workspace, "Primary issue")
 	secondaryIssueID := createActivityIssue(t, workspace, "Secondary issue")
+	firstEntry := newActivitySeedIdentity(t, workspace, 99, 23*time.Hour+59*time.Minute+59*time.Second)
+	secondEntry := newActivitySeedIdentity(t, workspace, 100, 24*time.Hour)
+	thirdEntry := newActivitySeedIdentity(t, workspace, 101, 32*time.Hour)
+	secondOccurredAt, err := time.Parse(time.RFC3339, secondEntry.occurredAt)
+	if err != nil {
+		t.Fatalf("Parse(%q) error = %v", secondEntry.occurredAt, err)
+	}
 
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260704-000099",
-		activityID:     "ACT-20260704-000099",
+		eventID:        firstEntry.eventID,
+		activityID:     firstEntry.activityID,
 		refID:          primaryIssueID,
 		eventName:      "status_changed",
 		actor:          "developer",
-		occurredAt:     "2026-07-04T23:59:59Z",
+		occurredAt:     firstEntry.occurredAt,
 		details:        map[string]any{"from": "todo", "to": "in_progress"},
-		journalEventID: "EVT-20260704-000099",
+		journalEventID: firstEntry.eventID,
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260705-000100",
-		activityID:     "ACT-20260705-000100",
+		eventID:        secondEntry.eventID,
+		activityID:     secondEntry.activityID,
 		refID:          primaryIssueID,
 		eventName:      "status_changed",
 		actor:          "developer",
-		occurredAt:     "2026-07-05T00:00:00Z",
+		occurredAt:     secondEntry.occurredAt,
 		details:        map[string]any{"from": "in_progress", "to": "qa_review"},
-		journalEventID: "EVT-20260705-000100",
+		journalEventID: secondEntry.eventID,
 	})
 	appendActivityEvent(t, workspace, activitySeedEvent{
-		eventID:        "EVT-20260705-000101",
-		activityID:     "ACT-20260705-000101",
+		eventID:        thirdEntry.eventID,
+		activityID:     thirdEntry.activityID,
 		refID:          secondaryIssueID,
 		eventName:      "issue_updated",
 		actor:          "qa_reviewer",
-		occurredAt:     "2026-07-05T08:00:00Z",
+		occurredAt:     thirdEntry.occurredAt,
 		details:        map[string]any{"field": "title", "to": "Evidence review"},
-		journalEventID: "EVT-20260705-000101",
+		journalEventID: thirdEntry.eventID,
 	})
 
 	tests := []struct {
@@ -147,25 +159,25 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 				MigrationsDir: testActivityMigrationsDir(t),
 				On:            "issue/" + primaryIssueID,
 			},
-			wantIDs: []string{"ACT-20260704-000099", "ACT-20260705-000100"},
+			wantIDs: []string{firstEntry.activityID, secondEntry.activityID},
 		},
 		{
 			name: "since boundary includes exact match",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
 				MigrationsDir: testActivityMigrationsDir(t),
-				Since:         "2026-07-05T00:00:00Z",
+				Since:         secondEntry.occurredAt,
 			},
-			wantIDs: []string{"ACT-20260705-000100", "ACT-20260705-000101"},
+			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
 		},
 		{
 			name: "since date only",
 			options: ListOptions{
 				WorkspaceRoot: workspace,
 				MigrationsDir: testActivityMigrationsDir(t),
-				Since:         "2026-07-05",
+				Since:         secondOccurredAt.Format("2006-01-02"),
 			},
-			wantIDs: []string{"ACT-20260705-000100", "ACT-20260705-000101"},
+			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
 		},
 		{
 			name: "event filter",
@@ -174,7 +186,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 				MigrationsDir: testActivityMigrationsDir(t),
 				Event:         "issue_updated",
 			},
-			wantIDs: []string{"ACT-20260705-000101"},
+			wantIDs: []string{thirdEntry.activityID},
 		},
 		{
 			name: "empty result is non nil slice",
@@ -219,6 +231,12 @@ type activitySeedEvent struct {
 	journalEventID string
 }
 
+type activitySeedIdentity struct {
+	eventID    string
+	activityID string
+	occurredAt string
+}
+
 func newActivityWorkspace(t *testing.T) string {
 	t.Helper()
 
@@ -261,6 +279,18 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 	}
 
 	return result.ID
+}
+
+func newActivitySeedIdentity(t *testing.T, workspace string, sequence int, offset time.Duration) activitySeedIdentity {
+	t.Helper()
+
+	occurredAt := latestActivityJournalDate(t, workspace).Add(offset).UTC()
+
+	return activitySeedIdentity{
+		eventID:    fmt.Sprintf("EVT-%s-%06d", occurredAt.Format("20060102"), sequence),
+		activityID: fmt.Sprintf("ACT-%s-%06d", occurredAt.Format("20060102"), sequence),
+		occurredAt: occurredAt.Format(time.RFC3339),
+	}
 }
 
 func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent) {
@@ -324,6 +354,45 @@ func testActivityMigrationsDir(t *testing.T) string {
 	}
 
 	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
+}
+
+func latestActivityJournalDate(t *testing.T, workspace string) time.Time {
+	t.Helper()
+
+	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	if err != nil {
+		t.Fatalf("ReadDir(journal) error = %v", err)
+	}
+
+	var latest string
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		if filepath.Ext(name) != ".jsonl" {
+			continue
+		}
+
+		dateText := name[:len(name)-len(".jsonl")]
+		if _, err := time.Parse("2006-01-02", dateText); err != nil {
+			continue
+		}
+		if dateText > latest {
+			latest = dateText
+		}
+	}
+
+	if latest == "" {
+		t.Fatal("latest journal date = empty")
+	}
+
+	date, err := time.Parse("2006-01-02", latest)
+	if err != nil {
+		t.Fatalf("Parse(%q) error = %v", latest, err)
+	}
+	return date.UTC()
 }
 
 func closeActivityDB(t *testing.T, conn *sql.DB) {

@@ -30,6 +30,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newConcernCommand())
 	cmd.AddCommand(newDevCommand())
 	cmd.AddCommand(newIssueCommand())
+	cmd.AddCommand(newJournalCommand())
 	cmd.AddCommand(newLabelCommand())
 	cmd.AddCommand(newLinkCommand())
 	cmd.AddCommand(newPolicyCommand())
