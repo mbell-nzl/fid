@@ -105,8 +105,8 @@
 
 ## Commit hash
 
-- Pending commit.
+- `9cae372`
 
 ## Commit subject
 
-- Pending commit.
+- `feat: add read-only fid sql command`
