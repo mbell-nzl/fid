@@ -63,15 +63,50 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	}
 
 	event := mustReadLastJournalEvent(t, journalPath)
-	if len(event.Effects) != 2 {
-		t.Fatalf("effect count = %d, want 2", len(event.Effects))
+	if len(event.Effects) != 3 {
+		t.Fatalf("effect count = %d, want 3", len(event.Effects))
 	}
+	insertEffects := 0
+	activityEffects := 0
 	for _, effect := range event.Effects {
-		if effect.Op != "insert" {
-			t.Fatalf("effect op = %q, want insert", effect.Op)
+		switch {
+		case effect.Op == "insert" && effect.Table == "links":
+			insertEffects++
+		case effect.Op == "activity" && effect.Table == "activity_log":
+			activityEffects++
+		default:
+			t.Fatalf("unexpected effect = %#v", effect)
 		}
-		if effect.Table != "links" {
-			t.Fatalf("effect table = %q, want links", effect.Table)
+	}
+	if insertEffects != 2 || activityEffects != 1 {
+		t.Fatalf("effect counts = %d inserts / %d activity, want 2 / 1", insertEffects, activityEffects)
+	}
+
+	var (
+		activityEvent string
+		actor         string
+		details       string
+	)
+	if err := conn.QueryRow(`
+		SELECT event, COALESCE(actor, ''), COALESCE(details, '')
+		FROM activity_log
+		WHERE journal_event_id = ?
+	`, event.EventID).Scan(&activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityEvent != "link_added" {
+		t.Fatalf("activity_log event = %q, want link_added", activityEvent)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{
+		`"relation":"blocks"`,
+		`"to_id":"` + secondIssueID + `"`,
+		`"inverse_relation":"blocked_by"`,
+	} {
+		if !strings.Contains(details, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details, want)
 		}
 	}
 }

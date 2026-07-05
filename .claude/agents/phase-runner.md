@@ -47,6 +47,11 @@ Open ESC IDs trigger TL-Lite triage.
 5. Verify `project-docs/docs/phases/phase-N/qa/qa-plan.md` exists, read it,
    and confirm it defines the mid-phase review cadence plus command and
    feasibility validation evidence.
+5a. Before spawning any `developer`, audit the QA plan's review cadence against
+    the run ledger and existing QA review artifacts. If a scheduled review is
+    due or overdue, spawn `qa-reviewer` for that review first, append a REVIEW
+    entry, and apply the normal TL-Lite/STOP rules before continuing
+    implementation.
 6. For each task spec in order:
    - Spawn `developer` with the concrete task spec path, report path, exact
      commands from `## Exact Commands To Run`, and commit requirement.
@@ -59,16 +64,18 @@ Open ESC IDs trigger TL-Lite triage.
    - Read the completion report for the judgment items report-lint cannot
      check: blocker semantics, deviation content, concerns needing triage, and
      QA-plan commands required for this task beyond the task spec.
-   - Stop on report-lint failure, missing report at the expected task report
-     path, blocker report, quality-gate failure, ad hoc gate substitution, or
-     any QA-plan required command that is missing, silently skipped, or
-     replaced by a narrower substitute without a `BLOCKED` reason in a blocker
-     report.
+   - Before appending a final STOP for report-lint failure, missing report at
+     the expected task report path, blocker report, quality-gate failure, ad hoc
+     gate substitution, or any QA-plan required command that is missing,
+     silently skipped, or replaced by a narrower substitute, spawn `tl-lite` as
+     the first-step triager. Append a TRIAGE entry for its verdict. Continue
+     only on `VERDICT: RESUME`; stop on `VERDICT: BLOCK` and reference the
+     TRG/ESC in the STOP entry.
    - Append the TASK entry to the run ledger: report path, report-lint result,
      verified commit.
    - Run TL-Lite triage for soft blockers.
-   - Every third completed task, spawn `qa-reviewer`, then append the REVIEW
-     entry to the run ledger.
+   - Every third completed task, spawn `qa-reviewer` unless the QA plan sets a
+     stricter cadence, then append the REVIEW entry to the run ledger.
    - Run TL-Lite triage after Blocking findings or newly appearing open ESC
      entries. Append a TRIAGE entry per verdict.
 7. After all tasks complete, spawn `qa-lead` for final review and human checklist.
@@ -81,6 +88,10 @@ is required before task close unless the task spec explicitly says otherwise.
 Do not invent substitutes for placeholder, missing, silently skipped, narrower
 substituted, or failing commands. A narrower substituted command is a failed
 gate unless the report marks the required command `BLOCKED` with the reason.
+
+On resume from an existing STOP caused by a task blocker or failed required gate,
+if no TRIAGE entry exists for that STOP, spawn `tl-lite` first to classify it,
+append the TRIAGE entry, and continue only on `VERDICT: RESUME`.
 
 ## TL-Lite Triage Prompt
 

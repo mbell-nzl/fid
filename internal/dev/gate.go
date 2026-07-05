@@ -95,10 +95,17 @@ func Gate(options GateOptions) (GateResult, error) {
 		if err != nil {
 			return err
 		}
+		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
+			return activityIDExists(conn, candidate)
+		})
+		if err != nil {
+			return err
+		}
 
 		event, err := journal.PrepareEvent(lock, journal.Event{
 			EventSchema: journal.CurrentEventSchema,
 			EventType:   "dev.gate.recorded",
+			OccurredAt:  nextIssueUpdateTime(current.UpdatedAt, time.Now().UTC()),
 			Actor: journal.Actor{
 				Role: options.ActorRole,
 			},
@@ -126,12 +133,15 @@ func Gate(options GateOptions) (GateResult, error) {
 		if outputExcerpt := trimmedOptionalString(options.OutputExcerpt); outputExcerpt != nil {
 			values["output_excerpt"] = *outputExcerpt
 		}
-		event.Effects = []journal.Effect{{
-			Op:     "insert",
-			Table:  "gate_runs",
-			PK:     map[string]any{"id": gateID},
-			Values: values,
-		}}
+		event.Effects = []journal.Effect{
+			{
+				Op:     "insert",
+				Table:  "gate_runs",
+				PK:     map[string]any{"id": gateID},
+				Values: values,
+			},
+			gateActivityEffect(activityID, event.EventID, issueID, gateID, options.ActorRole, agentRunID, command, options.ExitCode, attemptNumber, event.OccurredAt.UTC().Format(time.RFC3339)),
+		}
 
 		if err := appendAndProjectEvent(options.WorkspaceRoot, conn, lock, event); err != nil {
 			return err
@@ -178,4 +188,37 @@ func trimmedOptionalString(value *string) *string {
 		return nil
 	}
 	return &trimmed
+}
+
+func gateActivityEffect(
+	activityID, eventID, issueID, gateID, actorRole string,
+	agentRunID *string,
+	command string,
+	exitCode, attemptNumber int,
+	occurredAt string,
+) journal.Effect {
+	details := map[string]any{
+		"gate_run_id":    gateID,
+		"attempt_number": attemptNumber,
+		"command":        command,
+		"exit_code":      exitCode,
+	}
+	if agentRunID != nil {
+		details["agent_run_id"] = *agentRunID
+	}
+
+	return journal.Effect{
+		Op:    "activity",
+		Table: "activity_log",
+		PK:    map[string]any{"id": activityID},
+		Values: map[string]any{
+			"journal_event_id": eventID,
+			"ref_type":         "issue",
+			"ref_id":           issueID,
+			"event":            "gate_recorded",
+			"details":          details,
+			"actor":            actorRole,
+			"occurred_at":      occurredAt,
+		},
+	}
 }

@@ -108,9 +108,39 @@ func raiseConcernLocked(
 	if err != nil {
 		return err
 	}
+	activityID, err := nextIssueActivityID(conn)
+	if err != nil {
+		return err
+	}
 
-	timestamp := time.Now().UTC().Format(time.RFC3339)
-	event := issueConcernRaiseEvent(concernID, issueID, completionID, options.ActorRole, summary, bodyMDPath, timestamp, commandArgv)
+	event, err := journal.PrepareEvent(lock, journal.Event{
+		EventSchema: journal.CurrentEventSchema,
+		EventType:   "issue.concern_raised",
+		Actor: journal.Actor{
+			Role: options.ActorRole,
+		},
+		Command: journal.Command{
+			Argv:       commandArgv,
+			CWD:        ".",
+			FIDVersion: fidVersion,
+		},
+	})
+	if err != nil {
+		return err
+	}
+
+	timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+	event.Effects = issueConcernRaiseEffects(
+		concernID,
+		activityID,
+		event.EventID,
+		issueID,
+		completionID,
+		options.ActorRole,
+		summary,
+		bodyMDPath,
+		timestamp,
+	)
 	if err := journal.DryRunProjectEvent(conn, event); err != nil {
 		return err
 	}
@@ -168,12 +198,11 @@ func concernIDExists(conn *sql.DB, concernID string) (bool, error) {
 	return false, fmt.Errorf("query concern id %q: %w", concernID, err)
 }
 
-func issueConcernRaiseEvent(
-	concernID, issueID, completionID, actorRole, summary string,
+func issueConcernRaiseEffects(
+	concernID, activityID, eventID, issueID, completionID, actorRole, summary string,
 	bodyMDPath *string,
 	timestamp string,
-	commandArgv []string,
-) journal.Event {
+) []journal.Effect {
 	values := map[string]any{
 		"issue_id":                issueID,
 		"raised_in_completion_id": completionID,
@@ -187,26 +216,27 @@ func issueConcernRaiseEvent(
 		values["body_md_path"] = *bodyMDPath
 	}
 
-	return journal.Event{
-		EventSchema: journal.CurrentEventSchema,
-		EventType:   "issue.concern_raised",
-		Actor: journal.Actor{
-			Role: actorRole,
-		},
-		Command: journal.Command{
-			Argv:       commandArgv,
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{
-			{
-				Op:     "insert",
-				Table:  "concerns",
-				PK:     map[string]any{"id": concernID},
-				Values: values,
+	effects := []journal.Effect{{
+		Op:     "insert",
+		Table:  "concerns",
+		PK:     map[string]any{"id": concernID},
+		Values: values,
+	}}
+	if activityID != "" && eventID != "" {
+		effects = append(effects, issueActivityEffect(
+			activityID,
+			eventID,
+			actorRole,
+			timestamp,
+			issueID,
+			"concern_raised",
+			map[string]any{
+				"concern_id": concernID,
+				"summary":    summary,
 			},
-		},
+		))
 	}
+	return effects
 }
 
 func projectIssueEvent(conn *sql.DB, workspaceRoot string, appended journal.Event) error {

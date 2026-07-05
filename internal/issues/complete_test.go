@@ -54,6 +54,27 @@ func TestCompleteCreatesAttemptOneAndPersistsCompletionFields(t *testing.T) {
 		t.Fatalf("Complete().Status = %q, want dev_complete", result.Status)
 	}
 
+	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.completed" {
+		t.Fatalf("last event type = %q, want issue.completed", last.EventType)
+	}
+
+	var activityEffect *journal.Effect
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		if effect.Table == "activity_log" && effect.Op == "activity" {
+			activityEffect = effect
+			break
+		}
+	}
+	if activityEffect == nil {
+		t.Fatal("missing task_completed activity effect")
+	}
+	if got := activityEffect.Values["event"]; got != "task_completed" {
+		t.Fatalf("activity event = %#v, want task_completed", got)
+	}
+
 	got, err := Get(GetOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
@@ -98,6 +119,10 @@ func TestCompleteCreatesAttemptOneAndPersistsCompletionFields(t *testing.T) {
 	if completion.HumanInterventionNote != nil {
 		t.Fatalf("Get().Completions[0].HumanInterventionNote = %#v, want nil", completion.HumanInterventionNote)
 	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+	assertIssueLabelActivity(t, conn, last.EventID, "task_completed", "developer", result.ID, `"status":"dev_complete"`, `"attempt_number":1`)
 }
 
 func TestCompleteSupersedesPriorAttemptAndRetainsHistory(t *testing.T) {
@@ -169,7 +194,7 @@ func TestCompleteSupersedesPriorAttemptAndRetainsHistory(t *testing.T) {
 	}
 }
 
-func TestCompleteStoresHumanInterventionStateWithoutActivityLogRows(t *testing.T) {
+func TestCompleteStoresHumanInterventionStateAndProjectsActivity(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -187,11 +212,6 @@ func TestCompleteStoresHumanInterventionStateWithoutActivityLogRows(t *testing.T
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
-
-	var activityBefore int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityBefore); err != nil {
-		t.Fatalf("count activity_log before: %v", err)
-	}
 
 	if _, err := Complete(CompleteOptions{
 		WorkspaceRoot:         workspace,
@@ -259,12 +279,42 @@ func TestCompleteStoresHumanInterventionStateWithoutActivityLogRows(t *testing.T
 		t.Fatalf("unflagged completion note = %#v, want nil", unflagged.Completions[0].HumanInterventionNote)
 	}
 
-	var activityAfter int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityAfter); err != nil {
-		t.Fatalf("count activity_log after: %v", err)
+	rows, err := conn.Query(`
+		SELECT event, COALESCE(details, '')
+		FROM activity_log
+		WHERE ref_type = 'issue' AND ref_id IN (?, ?)
+		ORDER BY occurred_at, id
+	`, created.ID, unflaggedCreated.ID)
+	if err != nil {
+		t.Fatalf("query completion activity rows: %v", err)
 	}
-	if activityAfter != activityBefore {
-		t.Fatalf("activity_log rows = %d after completions, want unchanged %d", activityAfter, activityBefore)
+	defer closeIssueRows(rows)
+
+	type completionActivity struct {
+		event   string
+		details string
+	}
+	var completionActivities []completionActivity
+	for rows.Next() {
+		var activity completionActivity
+		if err := rows.Scan(&activity.event, &activity.details); err != nil {
+			t.Fatalf("scan completion activity row: %v", err)
+		}
+		if activity.event == "task_completed" {
+			completionActivities = append(completionActivities, activity)
+		}
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate completion activity rows: %v", err)
+	}
+	if len(completionActivities) != 2 {
+		t.Fatalf("task_completed activity rows = %d, want 2", len(completionActivities))
+	}
+	if !strings.Contains(completionActivities[0].details, `"attempt_number":1`) {
+		t.Fatalf("flagged completion activity = %#v, want attempt 1", completionActivities[0])
+	}
+	if !strings.Contains(completionActivities[1].details, `"attempt_number":1`) {
+		t.Fatalf("unflagged completion activity = %#v, want attempt 1", completionActivities[1])
 	}
 }
 

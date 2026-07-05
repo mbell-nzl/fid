@@ -1,11 +1,11 @@
-# Phase 16 - Task 3: CF-011 backfill part 2 (concerns / unclaim / link add) + timeline-consistency e2e
+# Phase 16 - Task 3: CF-011 backfill part 2 (concerns / unclaim / link add / dev gate) + timeline-consistency e2e
 
 ## Objective
 
 Finish the CF-011 reconciliation (DC-A, approved at kickoff) and prove the
 headline: the activity timeline is consistent across **every** write command.
 
-1. Backfill the remaining four unlogged writers, each gaining one `activity`
+1. Backfill the remaining unlogged writers, each gaining one `activity`
    effect inside its existing single event (PI-2), mirroring the existing
    emitters in shape:
 
@@ -15,10 +15,13 @@ headline: the activity timeline is consistent across **every** write command.
    | `concern address` | `issue.concern_addressed` | `concern_addressed` | `issue` |
    | `unclaim` | `issue.claim.released` | `claim_released` | `issue` |
    | `link add` | `link.added` | `link_added` | `issue` |
+   | `dev gate` | `dev.gate.recorded` | `gate_recorded` | `issue` |
 
    `link add` mirrors the existing `link_removed` projection
    (`internal/links/remove.go`, DEC-031) — one row recording the declared link;
    an issue→requirement link logs an `issue`-scoped row.
+   `dev gate` is in this task by DEC-043 because it appends an issue-scoped
+   `gate_runs` fact and is required by the VAL-007 lifecycle proof.
 
 2. Add a phase-end consistency e2e proving `fid activity list` reflects every
    write across a full lifecycle with no silent gaps, and that delete-and-rebuild
@@ -26,10 +29,10 @@ headline: the activity timeline is consistent across **every** write command.
 
 ## Requirements
 
-- PRD refs: PRD-OUT-017; PRD-DEV-005..006 (concerns), PRD-CLAIM-004 (unclaim),
-  PRD-LINK-001..006a (link add)
+- PRD refs: PRD-OUT-017; PRD-DEV-004/010 (`dev gate`), PRD-DEV-005..006
+  (concerns), PRD-CLAIM-004 (unclaim), PRD-LINK-001..006a (link add)
 - TRD refs: `03_TRD_SCHEMA.md` §9, §14.2, §14.6; ADR-0001 (journal-canonical,
-  deterministic rebuild)
+  deterministic rebuild); `02_TRD.md` §4.7 (`gate_runs`)
 - Design refs: `06_DESIGN_PLAN_CLI.md` §8
 - Quality refs: `08_QUALITY_PLAN.md` §5.2 (e2e + rebuild determinism)
 
@@ -38,9 +41,9 @@ headline: the activity timeline is consistent across **every** write command.
 Assertions live in
 `project-docs/docs/phases/phase-16/qa/validation-contract.md`.
 
-- VAL-006: `concern raise`, `concern address`, `unclaim`, `link add` each append
-  one named `activity_log` row inside their single event; `link add` mirrors
-  `link_removed`.
+- VAL-006: `concern raise`, `concern address`, `unclaim`, `link add`, and
+  `dev gate` each append one named `activity_log` row inside their single event;
+  `link add` mirrors `link_removed`.
 - VAL-007: full-lifecycle `fid activity list` covers every write with no gaps;
   delete-and-rebuild reproduces an identical `activity_log`.
 
@@ -61,9 +64,14 @@ Assertions live in
   `ref_type=issue`, `ref_id`=from issue, `details` = relation/to_type/to_id)
   mirroring `internal/links/remove.go`'s `link_removed` shape (DEC-031). Add the
   `activityIDExists` helper to `internal/links` if absent (mirror claims/issues).
+- `internal/dev/gate.go` - append one `activity` effect (`gate_recorded`,
+  `ref_type=issue`, `ref_id`=issue, `details` = gate_run_id/attempt_number/
+  command/exit_code/agent_run_id when present) to the `dev.gate.recorded` event;
+  reuse `internal/dev` `activityIDExists`.
 - `internal/issues/*_test.go`, `internal/claims/release_test.go`,
-  `internal/links/add_test.go` - one event + one named activity row each; reject
-  paths add zero rows; issue↔issue and issue→requirement link add both covered.
+  `internal/links/add_test.go`, `internal/dev/gate_test.go` - one event + one
+  named activity row each; reject paths add zero rows; issue↔issue and
+  issue→requirement link add both covered.
 - `cmd/fid/e2e_v01e_activity_test.go` (new) - integration/e2e: drive a full
   lifecycle (create → `dev start` (claim) → ac add/verify → `dev gate` →
   `dev finish` → `link add`, plus an `unclaim` path and a `concern raise`/
@@ -78,6 +86,8 @@ Assertions live in
   `internal/claims/shared.go` (claim activity emitter + `activityIDExists`)
 - `internal/issues/concern_raise.go`, `internal/issues/concern_address.go`
 - `internal/issues/transition.go` (activity `Values` shape)
+- `internal/dev/gate.go`, `internal/dev/gate_test.go`,
+  `internal/dev/dev.go` (`activityIDExists`)
 - `cmd/fid/e2e_v01e_dev_test.go` (existing e2e + delete-and-rebuild pattern)
 - `internal/journal/rebuild` helpers / `cmd/fid/rebuild.go` (rebuild invocation)
 - Task 1 `internal/activity` (the read used to assert timeline coverage)
@@ -94,6 +104,9 @@ Assertions live in
 - [ ] `concern raise`, `concern address`, `unclaim`, `link add` each append
   exactly one event with one named `activity_log` row (`ref_type=issue`); a
   rejected attempt of each adds zero rows. (VAL-006)
+- [ ] `dev gate` appends exactly one `dev.gate.recorded` event with one
+  `gate_runs` row and one `gate_recorded` activity row (`ref_type=issue`);
+  rejected gate attempts add zero rows. (VAL-006, DEC-043)
 - [ ] `link add` activity mirrors the `link_removed` shape (DEC-031); an
   issue→requirement link add logs an `issue`-scoped `link_added` row. (VAL-006)
 - [ ] A full-lifecycle e2e shows `fid activity list` with one entry per write and
@@ -105,11 +118,12 @@ Assertions live in
 
 ## TDD Plan
 
-- First failing test: `unclaim` now writes one `claim_released` activity row —
-  fails red against current behavior (today zero rows).
+- First failing test from the resumed point: `dev gate` now writes one
+  `gate_recorded` activity row in the same event as the `gate_runs` row — fails
+  red against current behavior (today zero rows).
 - Additional tests: concern raise/address and link add named rows; reject paths
-  add zero rows; issue→requirement link add; the e2e timeline-coverage +
-  rebuild-equality assertions.
+  add zero rows; issue→requirement link add; gate rejection adds zero rows; the
+  e2e timeline-coverage + rebuild-equality assertions.
 - Regression risks: one event per writer (PI-2); validate-before-append; mirror
   the `link_removed`/claim/transition shapes byte-for-byte so rebuild stays
   deterministic; the rebuild-equality check must compare a stable projection of
@@ -120,10 +134,10 @@ Assertions live in
 
 - `project-docs/specs/03_TRD_SCHEMA.md` - extend the `activity_log.event`
   vocabulary comment with `concern_raised`/`concern_addressed`/`claim_released`/
-  `link_added` (combine with Task 2's edit if sequenced after it). Bump
-  "Last updated".
-- Completion report: confirm the full DC-A writer set is now consistent and the
-  CF-011 carry-forward can close.
+  `link_added`/`gate_recorded` (combine with Task 2's edit if sequenced after
+  it). Bump "Last updated".
+- Completion report: confirm the full DC-A/DEC-043 writer set is now consistent
+  and the CF-011 carry-forward can close.
 
 ## Scenario / Parity / Audit Notes
 
@@ -171,6 +185,9 @@ List any conditional command required by this task and why:
   event.
 - `link add` must mirror `internal/links/remove.go` exactly (DEC-031) so add/
   remove are symmetric in the timeline.
+- `dev gate` is included by DEC-043. Add `gate_recorded` without changing the
+  gate persistence contract: the event still remains one `dev.gate.recorded`
+  journal line, now with one `gate_runs` insert and one `activity_log` effect.
 - The VAL-007 rebuild-equality check is the determinism gate: capture
   `activity_log` before deleting `fid.sqlite`, rebuild from the journal, and
   assert equality.

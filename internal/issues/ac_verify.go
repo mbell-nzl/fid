@@ -115,6 +115,10 @@ func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (Verify
 		if err != nil {
 			return err
 		}
+		activityID, err := nextIssueActivityID(conn)
+		if err != nil {
+			return err
+		}
 
 		verifiedAt := time.Now().UTC().Format(time.RFC3339)
 		values := map[string]any{
@@ -133,7 +137,7 @@ func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (Verify
 			values["notes"] = *notes
 		}
 
-		event := journal.Event{
+		event, err := journal.PrepareEvent(lock, journal.Event{
 			EventSchema: journal.CurrentEventSchema,
 			EventType:   "issue.ac_verified",
 			Actor: journal.Actor{
@@ -144,14 +148,32 @@ func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (Verify
 				CWD:        ".",
 				FIDVersion: fidVersion,
 			},
-			Effects: []journal.Effect{
-				{
-					Op:     "insert",
-					Table:  "ac_verifications",
-					PK:     map[string]any{"id": verificationID},
-					Values: values,
-				},
+		})
+		if err != nil {
+			return err
+		}
+
+		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+		event.Effects = []journal.Effect{
+			{
+				Op:     "insert",
+				Table:  "ac_verifications",
+				PK:     map[string]any{"id": verificationID},
+				Values: values,
 			},
+			issueActivityEffect(
+				activityID,
+				event.EventID,
+				options.ActorRole,
+				timestamp,
+				issueID,
+				"ac_verified",
+				map[string]any{
+					"ac_id":         criterionID,
+					"verifier_role": options.ActorRole,
+					"status":        status,
+				},
+			),
 		}
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {

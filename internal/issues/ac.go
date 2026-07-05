@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -78,8 +79,12 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		if err != nil {
 			return err
 		}
+		activityID, err := nextIssueActivityID(conn)
+		if err != nil {
+			return err
+		}
 
-		event := journal.Event{
+		event, err := journal.PrepareEvent(lock, journal.Event{
 			EventSchema: journal.CurrentEventSchema,
 			EventType:   "issue.ac_added",
 			Actor: journal.Actor{
@@ -90,18 +95,35 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 				CWD:        ".",
 				FIDVersion: fidVersion,
 			},
-			Effects: []journal.Effect{
-				{
-					Op:    "insert",
-					Table: "acceptance_criteria",
-					PK:    map[string]any{"id": criterionID},
-					Values: map[string]any{
-						"issue_id": issueID,
-						"ordinal":  options.Ordinal,
-						"text":     text,
-					},
+		})
+		if err != nil {
+			return err
+		}
+
+		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+		event.Effects = []journal.Effect{
+			{
+				Op:    "insert",
+				Table: "acceptance_criteria",
+				PK:    map[string]any{"id": criterionID},
+				Values: map[string]any{
+					"issue_id": issueID,
+					"ordinal":  options.Ordinal,
+					"text":     text,
 				},
 			},
+			issueActivityEffect(
+				activityID,
+				event.EventID,
+				options.ActorRole,
+				timestamp,
+				issueID,
+				"ac_added",
+				map[string]any{
+					"ac_id":   criterionID,
+					"ordinal": options.Ordinal,
+				},
+			),
 		}
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {

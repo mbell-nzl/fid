@@ -67,8 +67,57 @@ func TestFinishClosesRunCompletesTransitionsAndReleasesClaimInOneEvent(t *testin
 		t.Fatalf("last event type = %q, want dev.finished", last.EventType)
 	}
 
+	var (
+		statusChangedEffects int
+		taskCompletedEffects int
+	)
+	for _, effect := range last.Effects {
+		if effect.Table != "activity_log" || effect.Op != "activity" {
+			continue
+		}
+		switch effect.Values["event"] {
+		case "status_changed":
+			statusChangedEffects++
+		case "task_completed":
+			taskCompletedEffects++
+		}
+	}
+	if statusChangedEffects != 1 || taskCompletedEffects != 1 {
+		t.Fatalf("finish activity effects = status_changed:%d task_completed:%d, want 1 each", statusChangedEffects, taskCompletedEffects)
+	}
+
 	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeDevDB(t, conn)
+
+	rows, err := conn.Query(`
+		SELECT event, COALESCE(details, '')
+		FROM activity_log
+		WHERE journal_event_id = ?
+		ORDER BY event
+	`, last.EventID)
+	if err != nil {
+		t.Fatalf("query finish activity rows: %v", err)
+	}
+	defer closeDevRows(rows)
+
+	activityDetails := map[string]string{}
+	for rows.Next() {
+		var eventName string
+		var details string
+		if err := rows.Scan(&eventName, &details); err != nil {
+			t.Fatalf("scan finish activity row: %v", err)
+		}
+		activityDetails[eventName] = details
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate finish activity rows: %v", err)
+	}
+	if len(activityDetails) != 2 {
+		t.Fatalf("finish activity row count = %d, want 2", len(activityDetails))
+	}
+	if !strings.Contains(activityDetails["task_completed"], `"attempt_number":1`) {
+		t.Fatalf("task_completed details = %q, want attempt_number", activityDetails["task_completed"])
+	}
 
 	var (
 		status     string

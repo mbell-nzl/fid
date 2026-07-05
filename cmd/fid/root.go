@@ -24,11 +24,13 @@ func newRootCommand() *cobra.Command {
 
 	cmd.SetOut(os.Stdout)
 	cmd.SetErr(os.Stderr)
+	cmd.AddCommand(newActivityCommand())
 	cmd.AddCommand(newClaimCommand())
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())
 	cmd.AddCommand(newDevCommand())
 	cmd.AddCommand(newIssueCommand())
+	cmd.AddCommand(newJournalCommand())
 	cmd.AddCommand(newLabelCommand())
 	cmd.AddCommand(newLinkCommand())
 	cmd.AddCommand(newPolicyCommand())
@@ -36,6 +38,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newRequirementCommand())
 	cmd.AddCommand(newRebuildCommand())
 	cmd.AddCommand(newRunCommand())
+	cmd.AddCommand(newSQLCommand())
 	cmd.AddCommand(newStatsCommand())
 
 	return cmd

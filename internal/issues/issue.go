@@ -91,6 +91,7 @@ type Issue struct {
 	Completions        []IssueCompletion     `json:"completions"`
 	Links              []IssueLink           `json:"-"`
 	Claims             []IssueClaim          `json:"-"`
+	Gates              []IssueGate           `json:"-"`
 }
 
 type AcceptanceCriterion struct {

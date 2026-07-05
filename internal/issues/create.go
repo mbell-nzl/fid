@@ -82,6 +82,11 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 
+		activityID, err := nextIssueActivityID(conn)
+		if err != nil {
+			return err
+		}
+
 		workflowID := defaultWorkflowID(kind)
 		defaultOwnerRole := defaultIssueOwnerRole(kind)
 		if ownerRole != nil {
@@ -156,7 +161,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 			})
 		}
 
-		event := journal.Event{
+		event, err := journal.PrepareEvent(lock, journal.Event{
 			EventSchema: journal.CurrentEventSchema,
 			EventType:   "issue.created",
 			Actor: journal.Actor{
@@ -167,8 +172,28 @@ func Create(options CreateOptions) (CreateResult, error) {
 				CWD:        ".",
 				FIDVersion: fidVersion,
 			},
-			Effects: effects,
+		})
+		if err != nil {
+			return err
 		}
+
+		timestamp = event.OccurredAt.UTC().Format(time.RFC3339)
+		issueValues["created_at"] = timestamp
+		issueValues["updated_at"] = timestamp
+		effects = append(effects, issueActivityEffect(
+			activityID,
+			event.EventID,
+			options.ActorRole,
+			timestamp,
+			issueID,
+			"issue_created",
+			map[string]any{
+				"kind":      kind,
+				"title":     options.Title,
+				"parent_id": parentIDValue(parentID),
+			},
+		))
+		event.Effects = effects
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
 			return err
@@ -213,6 +238,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	return result, nil
+}
+
+func parentIDValue(parentID *string) any {
+	if parentID == nil {
+		return nil
+	}
+	return *parentID
 }
 
 func issueIDExists(conn *sql.DB, issueID string) (bool, error) {

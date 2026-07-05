@@ -723,6 +723,82 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 	}
 }
 
+func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	journalPath := journalPathForWorkspace(t, workspace)
+	linesBefore := countJournalLines(journalPath)
+
+	_, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Record create activity",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	if got := countJournalLines(journalPath); got != linesBefore+1 {
+		t.Fatalf("journal lines after create = %d, want %d", got, linesBefore+1)
+	}
+
+	stored := readIssueStoredEvents(t, journalPath)
+	last := stored[len(stored)-1]
+	if last.EventType != "issue.created" {
+		t.Fatalf("last event type = %q, want issue.created", last.EventType)
+	}
+
+	var activityEffect *journal.Effect
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		if effect.Table == "activity_log" && effect.Op == "activity" {
+			activityEffect = effect
+			break
+		}
+	}
+	if activityEffect == nil {
+		t.Fatal("missing issue_created activity effect")
+	}
+	if got := activityEffect.Values["event"]; got != "issue_created" {
+		t.Fatalf("activity event = %#v, want issue_created", got)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	var (
+		activityCount int
+		eventName     string
+		actor         string
+		detailsRaw    string
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), COALESCE(details, '')
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, last.EventID).Scan(&activityCount, &eventName, &actor, &detailsRaw); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if eventName != "issue_created" {
+		t.Fatalf("activity_log event = %q, want issue_created", eventName)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{`"kind":"task"`, `"title":"Record create activity"`, `"parent_id":null`} {
+		if !strings.Contains(detailsRaw, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", detailsRaw, want)
+		}
+	}
+}
+
 func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 	t.Parallel()
 

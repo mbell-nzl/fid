@@ -93,7 +93,33 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 		return journal.Event{}, ReleaseResult{}, err
 	}
 
-	event.Effects = []journal.Effect{releaseEffect}
+	releasedAt := event.OccurredAt.UTC().Format(time.RFC3339)
+	activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
+		return activityIDExists(conn, candidate)
+	})
+	if err != nil {
+		return journal.Event{}, ReleaseResult{}, err
+	}
+
+	event.Effects = []journal.Effect{
+		releaseEffect,
+		{
+			Op:    "activity",
+			Table: "activity_log",
+			PK:    map[string]any{"id": activityID},
+			Values: map[string]any{
+				"journal_event_id": event.EventID,
+				"ref_type":         "issue",
+				"ref_id":           options.IssueID,
+				"event":            "claim_released",
+				"details": map[string]any{
+					"released_by": options.ActorRole,
+				},
+				"actor":       options.ActorRole,
+				"occurred_at": releasedAt,
+			},
+		},
+	}
 
 	return event, ReleaseResult{
 		RefType:    "issue",

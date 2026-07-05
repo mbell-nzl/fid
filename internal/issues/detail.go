@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var supportedIssueSections = []string{"acceptance", "concerns", "completions", "links", "claims"}
+var supportedIssueSections = []string{"acceptance", "concerns", "completions", "links", "claims", "gates"}
 
 type UnsupportedSectionError struct {
 	Section string
@@ -76,6 +76,17 @@ type IssueClaim struct {
 	Note       *string `json:"note"`
 }
 
+type IssueGate struct {
+	ID             string  `json:"id"`
+	AttemptNumber  int     `json:"attempt_number"`
+	AgentRunID     *string `json:"agent_run_id"`
+	RecordedByRole string  `json:"recorded_by_role"`
+	Command        string  `json:"command"`
+	ExitCode       int     `json:"exit_code"`
+	OutputExcerpt  *string `json:"output_excerpt"`
+	RanAt          string  `json:"ran_at"`
+}
+
 func SupportedSections() []string {
 	return append([]string(nil), supportedIssueSections...)
 }
@@ -92,6 +103,8 @@ func SectionValue(issue Issue, section string) (any, error) {
 		return issue.Links, nil
 	case "claims":
 		return issue.Claims, nil
+	case "gates":
+		return issue.Gates, nil
 	default:
 		return nil, &UnsupportedSectionError{Section: strings.TrimSpace(section)}
 	}
@@ -395,6 +408,35 @@ func issueClaims(conn *sql.DB, issueID string) ([]IssueClaim, error) {
 		return nil, fmt.Errorf("iterate claims for %q: %w", issueID, err)
 	}
 	return claims, nil
+}
+
+func issueGates(conn *sql.DB, issueID string) ([]IssueGate, error) {
+	rows, err := conn.Query(`
+		SELECT id, attempt_number, agent_run_id, recorded_by_role, command, exit_code, output_excerpt, ran_at
+		FROM gate_runs
+		WHERE issue_id = ?
+		ORDER BY attempt_number, ran_at, id
+	`, issueID)
+	if err != nil {
+		return nil, fmt.Errorf("query gates for %q: %w", issueID, err)
+	}
+	defer closeIssueRows(rows)
+
+	gates := []IssueGate{}
+	for rows.Next() {
+		var gate IssueGate
+		var agentRunID, outputExcerpt sql.NullString
+		if err := rows.Scan(&gate.ID, &gate.AttemptNumber, &agentRunID, &gate.RecordedByRole, &gate.Command, &gate.ExitCode, &outputExcerpt, &gate.RanAt); err != nil {
+			return nil, fmt.Errorf("scan gate for %q: %w", issueID, err)
+		}
+		gate.AgentRunID = nullStringPointer(agentRunID)
+		gate.OutputExcerpt = nullStringPointer(outputExcerpt)
+		gates = append(gates, gate)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate gates for %q: %w", issueID, err)
+	}
+	return gates, nil
 }
 
 func closeIssueRows(rows *sql.Rows) {

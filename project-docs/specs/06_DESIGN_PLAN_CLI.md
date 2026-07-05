@@ -133,11 +133,30 @@ fid issue get <id> [--section <name>] [--format json|toon|markdown|yaml]
 
 | Flag | Type | Default | Description |
 |---|---|---|---|
-| `--section` | string | — | `acceptance`, `concerns`, `completions`, `links`, `claims` |
+| `--section` | string | — | `acceptance`, `concerns`, `completions`, `links`, `claims`, `gates` |
 | `--format` | string | `json` | Output format |
 | `--context-pack` | string | — | v0.2+: role-tuned bundle (`developer`, `qa_reviewer`, `qa_lead`, `tl_lite`, `tl`) |
 
 **JSON output:** See `05_DESIGN_PLAN.md` §6.1.
+
+**`--section gates` row shape (raw `gate_runs` history, distinct from
+`task_completions.gate_results`):**
+```json
+[
+  {
+    "id": "GATE-000401",
+    "attempt_number": 1,
+    "agent_run_id": "RUN-000401",
+    "recorded_by_role": "developer",
+    "command": "go test ./...",
+    "exit_code": 0,
+    "output_excerpt": "ok",
+    "ran_at": "2026-05-27T09:20:00Z"
+  }
+]
+```
+
+When an issue has no recorded gates, the section returns an empty list.
 
 ### `fid issue list`
 
@@ -1321,6 +1340,15 @@ inverse` (restore the prior value under a precondition); append-only audit facts
 report `mode: retraction` (withdraw the fact, preserving its row). Non-reversible
 events (`issue.created`, `task.completed`, `claim.*`, telemetry, composites)
 report `eligible: false` with a `correction` field naming the forward domain path.
+In v0.1, the implemented buckets are:
+
+- `issue.transitioned`, `issue.updated`, `issue.concern_addressed`,
+  `link.added`, `link.removed` => `mode: inverse`
+- `issue.ac_added`, `issue.ac_verified`, `issue.concern_raised`,
+  `dev.gate.recorded` => `mode: retraction`
+- `project.initialized`, `issue.created`, `label.added`, `issue.completed`,
+  `issue.claim.*`, `run.recorded`, `requirement.synced`,
+  `dev.started` / `dev.finished` / `dev.blocked` => `eligible: false`
 
 ---
 

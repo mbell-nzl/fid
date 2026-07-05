@@ -14,6 +14,7 @@ import (
 func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
+	journalPath := mustJournalPath(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC add", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -57,6 +58,49 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 	}
 	if !strings.HasPrefix(got[0].ID, "AC-") || got[0].Ordinal != 1 || got[0].Text != "Journal file is flushed to disk before returning success" {
 		t.Fatalf("acceptance criterion = %#v, want id prefix/text/ordinal", got[0])
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	event := mustReadLastJournalEvent(t, journalPath)
+	if event.EventType != "issue.ac_added" {
+		t.Fatalf("event type = %q, want issue.ac_added", event.EventType)
+	}
+	if got := countActivityLogRows(t, conn); got != 2 {
+		t.Fatalf("activity_log rows after AC add = %d, want 2", got)
+	}
+
+	var (
+		activityCount int
+		activityEvent string
+		actor         string
+		details       sql.NullString
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), details
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, event.EventID).Scan(&activityCount, &activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if activityEvent != "ac_added" {
+		t.Fatalf("activity_log event = %q, want ac_added", activityEvent)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{got[0].ID, `"ordinal":1`} {
+		if !strings.Contains(details.String, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details.String, want)
+		}
 	}
 }
 
@@ -246,6 +290,43 @@ func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testin
 	}
 	if completionID.Valid {
 		t.Fatalf("stored completion_id = %#v, want NULL", completionID)
+	}
+
+	event := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
+	if event.EventType != "issue.ac_verified" {
+		t.Fatalf("event type = %q, want issue.ac_verified", event.EventType)
+	}
+	if got := countActivityLogRows(t, conn); got != 3 {
+		t.Fatalf("activity_log rows after AC verify = %d, want 3", got)
+	}
+
+	var (
+		activityCount int
+		activityEvent string
+		actor         string
+		details       sql.NullString
+	)
+	if err := conn.QueryRow(`
+		SELECT COUNT(*), event, COALESCE(actor, ''), details
+		FROM activity_log
+		WHERE journal_event_id = ?
+		GROUP BY event, actor, details
+	`, event.EventID).Scan(&activityCount, &activityEvent, &actor, &details); err != nil {
+		t.Fatalf("query activity_log row: %v", err)
+	}
+	if activityCount != 1 {
+		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
+	}
+	if activityEvent != "ac_verified" {
+		t.Fatalf("activity_log event = %q, want ac_verified", activityEvent)
+	}
+	if actor != "developer" {
+		t.Fatalf("activity_log actor = %q, want developer", actor)
+	}
+	for _, want := range []string{criterionID, `"verifier_role":"developer"`, `"status":"pass"`} {
+		if !strings.Contains(details.String, want) {
+			t.Fatalf("activity_log details = %q, want substring %q", details.String, want)
+		}
 	}
 }
 

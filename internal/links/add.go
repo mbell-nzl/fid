@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -77,10 +78,20 @@ func Add(options AddOptions) (AddResult, error) {
 		if err != nil {
 			return err
 		}
+
+		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
+			return linkActivityIDExists(conn, candidate)
+		})
+		if err != nil {
+			return err
+		}
+
+		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
 		createdAt := event.OccurredAt.UTC().Format("2006-01-02T15:04:05Z07:00")
 		event.Effects = []journal.Effect{
 			linkInsertEffect(declared, createdAt),
 			linkInsertEffect(inverse, createdAt),
+			linkAddActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse),
 		}
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
@@ -163,6 +174,34 @@ func linkInsertEffect(link Link, createdAt string) journal.Effect {
 		},
 		Values: map[string]any{
 			"created_at": createdAt,
+		},
+	}
+}
+
+func linkAddActivityEffect(activityID, eventID, actorRole, occurredAt string, declared, inverse Link) journal.Effect {
+	return journal.Effect{
+		Op:    "activity",
+		Table: "activity_log",
+		PK:    map[string]any{"id": activityID},
+		Values: map[string]any{
+			"journal_event_id": eventID,
+			"ref_type":         declared.FromType,
+			"ref_id":           declared.FromID,
+			"event":            "link_added",
+			"details": map[string]any{
+				"from_type":         declared.FromType,
+				"from_id":           declared.FromID,
+				"relation":          declared.Relation,
+				"to_type":           declared.ToType,
+				"to_id":             declared.ToID,
+				"inverse_relation":  inverse.Relation,
+				"inverse_from_type": inverse.FromType,
+				"inverse_from_id":   inverse.FromID,
+				"inverse_to_type":   inverse.ToType,
+				"inverse_to_id":     inverse.ToID,
+			},
+			"actor":       actorRole,
+			"occurred_at": occurredAt,
 		},
 	}
 }

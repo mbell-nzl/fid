@@ -36,6 +36,25 @@ Assertions live in
 
 ## Scope
 
+### Blocker Addendum: Activity CLI Fixture Monotonicity (DEC-044)
+
+Task 4 is resumed from the blocker report in `task-4-done.md`. Before closing
+Task 4, fix the existing `cmd/fid/activity_test.go` failure that seeds a
+`2026-07-04` journal event after `fid init` has created a later journal file.
+That failure is out of the `fid sql` feature scope, but it blocks the required
+global gates and violates `08_QUALITY_PLAN.md` TDD-006.
+
+Allowed remediation scope:
+
+- Edit only `cmd/fid/activity_test.go` and any directly local test helper needed
+  to keep the Task 1 CLI activity fixture monotonic with the workspace journal.
+- Preserve VAL-001..004 behavior: filter include/exclude semantics, chronological
+  ordering, structured `details`, and all-format rendering.
+- Preserve PRD-ERR-014 behavior. Do not weaken the journal out-of-order guard,
+  bypass production append paths, or narrow the Task 4 gate.
+- Record the remediation in the final Task 4 completion report as a
+  DEC-044-backed deviation from the original Task 4 file list.
+
 ### Files To Create Or Modify
 
 - `internal/sqlquery/sqlquery.go` (new package; PI-4) - `Classify(query)`:
@@ -92,6 +111,9 @@ Assertions live in
 - [ ] Integration test (TRD-SEC-002) attempts INSERT/UPDATE/DELETE/DROP and
   asserts rejection + unchanged DB. (VAL-009)
 - [ ] `02_TRD.md` records the `internal/sqlquery` boundary. (doc)
+- [ ] DEC-044 remediation complete: `cmd/fid/activity_test.go` no longer seeds
+  backdated journal events after `fid init`, while Task 1 VAL-001..004 behavior
+  remains covered. (quality blocker)
 
 ## TDD Plan
 
@@ -111,6 +133,8 @@ Assertions live in
 - `project-docs/specs/02_TRD.md` - add `internal/sqlquery` (§§2-3).
 - Completion report: record the read-only enforcement mechanism (classifier +
   read-only connection) under the security note (PI-3).
+- Completion report: record the DEC-044 activity-test fixture remediation and
+  the exact file(s) touched for it.
 
 ## Scenario / Parity / Audit Notes
 
