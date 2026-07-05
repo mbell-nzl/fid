@@ -187,6 +187,28 @@
   `project-docs/templates/phase-runner-prompt.md`;
   `.codex/agents/phase_runner.toml`; `.claude/agents/phase-runner.md`.
 
+### DEC-048: Phase 16 deterministic scope wraps with VAL-013 carried forward
+
+- **Date:** 2026-07-05
+- **Context:** Final review returned PASS WITH IMPROVEMENTS with VAL-001..012
+  PASS. VAL-013 remained CARRY-FORWARD because the human-only dogfood checklist
+  had no recorded outcomes. Commit `89e014d` added
+  `qa/human-checklist-run-sheet.md` and the tester name, but
+  `qa/human-checklist.md` still has blank HUMAN-16a..d outcomes and blank
+  summary totals.
+- **Decision:** Archive Phase 16 as deterministic-QA complete, but do not mark
+  VAL-013 PASS. Carry the missing human dogfood outcome forward as **CF-020**,
+  targeted before v0.1 closure. Close **CF-011** and **CF-016** because their
+  deterministic validation assertions passed. Defer the non-blocking file-size
+  findings as **CF-018** (`internal/sqlquery/sqlquery.go`) and **CF-019**
+  (`internal/format/markdown.go`).
+- **Consequences:** Phase 17 kickoff must surface CF-020 explicitly and either
+  get the Phase 16 human checklist completed or schedule equivalent human
+  dogfood before v0.1 closure. No evidence-free PASS is recorded for VAL-013.
+- **Refs:** `qa/final-review.md`; `qa/human-checklist.md`;
+  `qa/human-checklist-run-sheet.md`; VAL-013; `08_QUALITY_PLAN.md` §5.3;
+  `09_AI_WORKFLOW.md` §4.3.
+
 ## Carry-Forward Review At Kickoff
 
 | ID | Disposition | Rationale |
@@ -196,6 +218,40 @@
 | CF-016 | Schedule in Phase 16 | Addressed by Task 6 after DEC-042. Remains open until VAL-012 passes. |
 | CF-017 | Re-defer to v0.2c | Behavior-preserving `internal/dev` function-size cleanup belongs with the next `internal/dev` work. |
 
+## Phase-End Validation Audit
+
+| VAL ID | Final outcome | Tech Lead disposition |
+|---|---|---|
+| VAL-001..004 | PASS | Accepted. Task 1, Review 1, and final phase gate cover `fid activity list` shape, filters, ordering, and formats. |
+| VAL-005 | PASS | Accepted. Task 2 and Review 1 cover create/ac add/ac verify/complete activity rows and rejection zero-append behavior. |
+| VAL-006..007 | PASS | Accepted. Task 3, Review 2, and final lifecycle rerun cover remaining CF-011 writers, `gate_recorded`, and rebuild parity. |
+| VAL-008..009 | PASS | Accepted. Task 4, Review 2, and final SQL reruns cover read forms, mutation rejection, and the read-only connection backstop. |
+| VAL-010..011 | PASS | Accepted. Task 5 and final journal-focused reruns cover inspect fields, `HashEvent` parity, not-found behavior, and revert verdicts. |
+| VAL-012 | PASS | Accepted. Task 6 and final reruns cover raw `gate_runs` history, empty state, formats, and separation from completion snapshots. |
+| VAL-013 | CARRY-FORWARD | Deferred as CF-020. The run sheet exists, but `human-checklist.md` has no recorded outcomes or summary totals, so the human dogfood assertion remains unproven. |
+
+## QA Recommendation Disposition
+
+| Source | Recommendation | Disposition | Rationale |
+|---|---|---|---|
+| Review 1 | Fix `cmd/fid/activity_test.go` monotonic-date fixture issue. | Do now, complete | DEC-044 authorized the narrow fixture remediation; Task 4 report and Review 2 record the rerun PASS. |
+| Review 1 | Future CF-011 reports should enumerate each rejection fixture explicitly. | Cancel as no-op | Final review confirmed VAL-005 evidence and report-lint passed; keep as a reviewer lesson, not carry-forward debt. |
+| Review 2 / Final review | Split `internal/sqlquery/sqlquery.go` (595 lines) when reopened. | Defer as CF-018 | Non-blocking quality-budget follow-up; behavior and gates passed. |
+| Final review | Split `internal/format/markdown.go` (661 lines) when formatter work reopens it. | Defer as CF-019 | Non-blocking quality-budget follow-up; behavior and gates passed. |
+| Final review | Record human dogfood outcomes for VAL-013. | Defer as CF-020 | Human-only evidence is not in the file artifacts; do not mark PASS without recorded outcomes. |
+
+## Carry-Forward Review At Wrap
+
+| ID | Disposition | Rationale |
+|---|---|---|
+| CF-008 | Re-defer to v0.2 | Resolution-reason field remains a product/data-model enhancement outside Phase 16. |
+| CF-011 | Closed | VAL-005/006/007 PASS; final review marks the broad `activity_log` reconciliation MET. |
+| CF-016 | Closed | VAL-012 PASS; `fid issue get --section gates` shipped with raw `gate_runs` evidence. |
+| CF-017 | Re-defer to v0.2c | `internal/dev` `Finish`/`Block` function-size cleanup remains tied to the next `internal/dev` reopen. |
+| CF-018 | Open, target next SQL package reopen | Behavior-preserving split of `internal/sqlquery/sqlquery.go` under the 400-line file target. |
+| CF-019 | Open, target next formatter-heavy task | Behavior-preserving split of `internal/format/markdown.go` under the 400-line file target. |
+| CF-020 | Open, target before v0.1 closure | Complete or replace Phase 16 human dogfood evidence for VAL-013 before v0.1 is declared closed. |
+
 ## Spec Sync Verdict
 
 Record a verdict for every spec at phase wrap-up. `verified-no-change` is a
@@ -203,36 +259,56 @@ positive assertion after review, not the default.
 
 | Spec | Verdict | Evidence / Reference |
 |---|---|---|
-| `00_PROJECT_CHARTER.md` | pending | phase wrap |
-| `01_PRD.md` | pending | phase wrap |
-| `02_TRD.md` | pending | phase wrap |
-| `03_TRD_SCHEMA.md` | pending | phase wrap |
-| `04_TRD_CONFIG.md` | pending | phase wrap |
-| `05_DESIGN_PLAN.md` | pending | phase wrap |
-| `06_DESIGN_PLAN_CLI.md` | pending | phase wrap |
-| `07_DESIGN_PLAN_FLOWS.md` | pending | phase wrap |
-| `08_QUALITY_PLAN.md` | pending | phase wrap |
-| `09_AI_WORKFLOW.md` | pending | phase wrap |
-| `10_IMPLEMENTATION_ROADMAP.md` | pending | phase wrap |
-| `GLOSSARY.md` | pending | phase wrap |
+| `00_PROJECT_CHARTER.md` | verified-no-change | Phase 16 shipped planned local-first CLI read surfaces and did not alter vision, scope, or constraints. |
+| `01_PRD.md` | verified-no-change | Existing PRD-OUT-017, PRD-OUT-008, PRD-OPS-013, PRD-DEV-004/010, and PRD-ERR-014 covered the delivered behavior. |
+| `02_TRD.md` | touched: see DEC-048 | Added `internal/activity/` and `internal/sqlquery/` package boundaries; existing journal inspect and gate-run sections remained consistent. |
+| `03_TRD_SCHEMA.md` | touched: see DEC-041 / DEC-043 / DEC-048 | Updated `activity_log.event` vocabulary for the CF-011 backfill, including `gate_recorded`; no migration or event-schema bump. |
+| `04_TRD_CONFIG.md` | verified-no-change | Phase 16 did not change `.fid/` layout, config files, pricing config, or config loading. |
+| `05_DESIGN_PLAN.md` | verified-no-change | Command-tree and SQL escape-hatch interaction pattern already matched the delivered read surfaces. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-042 / DEC-048 | Updated `fid journal inspect` verdict buckets and `fid issue get --section gates` contract. |
+| `07_DESIGN_PLAN_FLOWS.md` | verified-no-change | No end-to-end flow contract changed; Phase 16 added read surfaces and projection coverage. |
+| `08_QUALITY_PLAN.md` | verified-no-change | TDD-006, phase gates, validation-outcome rules, and human checklist rules already covered the fixture and VAL-013 outcomes. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-047 | Workflow correction restored TL-Lite triage before final STOP/resume for task-level blockers and report-lint/gate failures. |
+| `10_IMPLEMENTATION_ROADMAP.md` | verified-no-change | Phase 16 implementation matched the roadmap item; Phase 17 remains the v0.1 closure phase. |
+| `GLOSSARY.md` | verified-no-change | No new ambiguous project language surfaced; existing read-model, journal, validation, and SQL terms were sufficient. |
 
 ## Triage-Log Audit
 
-- [ ] Walked every TRG-NNN in `triage-log.md`.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed autonomous TL-Lite resume remains in effect (DEC-002; no warm-up tally).
+- Walked every TRG-NNN in `triage-log.md`: **complete**.
+- TRG-046 RESUME was correct in hindsight. DEC-046 already authorized the
+  narrow `internal/activity/activity_test.go` fixture remediation, and Task 5
+  later recorded the full required gate PASS.
+- No TRG should have escalated. The blocker was a deterministic test-fixture
+  monotonicity issue, not a product, persistence, or public-interface decision.
+- Autonomous TL-Lite resume remains in effect per DEC-002; no warm-up tally is
+  maintained.
 
 ## Workflow Notes
 
 Answer in 1-3 sentences each at wrap.
 
-- **What worked well?** pending
-- **What was inefficient?** pending
-- **Were tasks the right size?** pending
-- **Did the QA review cadence feel right?** pending
-- **Were there token-efficiency opportunities missed?** pending
+- **What worked well?** The validation contract kept the large read-surface
+  phase testable: each public command had focused VAL coverage, and final review
+  could rerun narrow representative tests before the full gate. DEC-043 also
+  showed the contract doing its job by exposing the missing `dev gate` timeline
+  row before the phase closed.
+- **What was inefficient?** The fixed-date activity fixtures caused two
+  cross-task blockers after they collided with PRD-ERR-014. The fixture pattern
+  should have been audited once when the first monotonicity failure appeared.
+- **Were tasks the right size?** Mostly yes. Task 3 was near the upper bound
+  because it combined several writer backfills with lifecycle rebuild parity,
+  but the DEC-043 split point kept the resume narrow.
+- **Did the QA review cadence feel right?** The cadence was right after DEC-045
+  repaired the missed Review 1 checkpoint. Reviews after Tasks 2 and 4 caught
+  the highest-risk windows without delaying the lower-risk read tasks.
+- **Were there token-efficiency opportunities missed?** Yes. Current docs stayed
+  stale after Task 5/6 completion, so later agents had to reconcile the archive
+  against default-loaded context. Phase Runner should refresh `current/` as soon
+  as a STOP is resolved, not only at wrap.
 
 ### Deep Retrospective Recommendation
 
-Pending phase wrap.
+Make human checklist completion a ledger-gated phase-end event. A run sheet is
+useful, but the phase should not reach `RUN-END` or Tech Lead wrap without either
+recorded human outcomes in `human-checklist.md` or an explicit DEC/CF
+disposition that says the human-only VAL remains carried forward.

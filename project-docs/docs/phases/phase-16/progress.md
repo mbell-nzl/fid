@@ -2,9 +2,9 @@
 
 > Phase: 16 - Activity Timeline + Read-Only Escape Hatches (roadmap v0.1e,
 > slice 3 of 4)
-> Status: RUNNING. Tasks 1-4 and Reviews 1-2 complete. Task 5 implementation is
-> blocked from close until DEC-046 internal-activity fixture remediation lets the
-> required repo-wide gate pass. DEC-047 requires TL-Lite triage before resume.
+> Status: WRAPPED. Tasks 1-6, Reviews 1-2, final review, and Tech Lead wrap are
+> complete. Deterministic validation is PASS for VAL-001..012. VAL-013 remains
+> CARRY-FORWARD as CF-020 because the human checklist outcomes are not recorded.
 
 ## Plan
 
@@ -32,14 +32,15 @@ No schema migration is planned. CF-011 is additive: new events carry extra
 | 2 | CF-011 backfill part 1 - create / ac add / ac verify / complete | Complete |
 | 3 | CF-011 backfill part 2 + timeline-consistency e2e | Complete |
 | 4 | `fid sql` read-only escape hatch | Complete |
-| 5 | `fid journal inspect <event-id>` | Blocked; DEC-046 fixture remediation required before close |
-| 6 | CF-016 `fid issue get --section gates` | Pending |
+| 5 | `fid journal inspect <event-id>` | Complete |
+| 6 | CF-016 `fid issue get --section gates` | Complete |
 
 ## Validation
 
 Validation contract at `qa/validation-contract.md` includes VAL-001..013 and is
-READY. QA plan at `qa/qa-plan.md` is READY. Heavy Mode cadence plans mid-phase
-reviews after Tasks 2 and 4, then final review after Task 6.
+terminal except for the human-only carry-forward item. Final review records
+VAL-001..012 PASS and VAL-013 CARRY-FORWARD. Tech Lead wrap records the
+VAL-013 disposition as CF-020 instead of converting it to an evidence-free PASS.
 
 ## Progress History
 
@@ -72,15 +73,34 @@ reviews after Tasks 2 and 4, then final review after Task 6.
 - Workflow correction (2026-07-05): Ledger review found no TRIAGE entries and no
   `triage-log.md` despite multiple task-level STOPs. DEC-047 restores TL-Lite as
   first-step triager for task blockers before STOP/resume.
+- TRG-046 and Task 5 complete (2026-07-05): TL-Lite returned RESUME because
+  DEC-046 already authorized the fixture remediation. Task 5 closed with commits
+  `12c5107` and `91ee35b`.
+- Task 6 complete (2026-07-05): `fid issue get --section gates` shipped with
+  VAL-012 evidence and commits `31fb3dd` / `56ab49f`.
+- Final review complete (2026-07-05): PASS WITH IMPROVEMENTS. VAL-001..012
+  PASS; VAL-013 CARRY-FORWARD to human checklist. Phase-level format, lint,
+  coverage, integration, benchmark, and build gates passed in QA.
+- Human run sheet prepared (2026-07-05): commit `89e014d` added
+  `qa/human-checklist-run-sheet.md` and tester name, but checklist outcomes and
+  summary totals remain blank.
+- Tech Lead wrap (2026-07-05): DEC-048 records deterministic wrap, closes
+  CF-011/CF-016, opens CF-018/CF-019/CF-020, records spec-sync verdicts, and
+  audits TRG-046.
 
 ## Carry-Forward
 
 - CF-008 re-deferred to v0.2 (resolution-reason field).
-- CF-011 scheduled for Phase 16 Tasks 2-3; remains open until VAL-005/006/007
-  pass.
-- CF-016 scheduled for Phase 16 Task 6; remains open until VAL-012 passes.
+- CF-011 closed at Phase 16 wrap (VAL-005/006/007 PASS).
+- CF-016 closed at Phase 16 wrap (VAL-012 PASS).
 - CF-017 re-deferred to v0.2c (`internal/dev` function-size cleanup).
+- CF-018 opened at Phase 16 wrap: split `internal/sqlquery/sqlquery.go` when the
+  SQL package next reopens.
+- CF-019 opened at Phase 16 wrap: split `internal/format/markdown.go` when
+  formatter-heavy work next reopens.
+- CF-020 opened at Phase 16 wrap: complete or replace Phase 16 human dogfood
+  evidence for VAL-013 before v0.1 closure.
 
 ## Escalations
 
-- No open escalations at kickoff.
+- No ESC-NNN escalations were raised. TRG-046 RESUME was audited correct at wrap.
