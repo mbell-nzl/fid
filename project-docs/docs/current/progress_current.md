@@ -8,9 +8,11 @@
 ## Project State
 
 **Status:** **Phase 16 (`fid activity list` + CF-011 reconciliation +
-read-only escape hatches, v0.1e slice 3/4) is READY FOR PHASE RUNNER**.
-Human confirmed at kickoff on 2026-07-05 (workspace timezone): DC-A CF-011 scope
-approved, DC-B CF-016 scheduled as Task 6, and Heavy Mode selected (DEC-040..042).
+read-only escape hatches, v0.1e slice 3/4) is RUNNING**. Tasks 1-4 and Reviews
+1-2 are complete. Task 5 implementation is present but blocked from close
+because the required repo-wide gate fails in `internal/activity/activity_test.go`;
+DEC-046 authorizes narrow fixture remediation. DEC-047 restores TL-Lite as the
+first-step triager for task-level blockers before a STOP is finalized/resumed.
 
 Phase 15 outcome:
 
@@ -36,8 +38,8 @@ Phase 15 outcome:
 
 - CF-008 (v0.2): resolution-reason field/flag.
 - CF-011 (Phase 16 Tasks 2-3): broad `activity_log` reconciliation with
-  `fid activity list`; scope/vocabulary approved in DEC-041. Remains open until
-  VAL-005/006/007 pass.
+  `fid activity list`; Developer evidence records VAL-005/006/007 PASS.
+  Remains open until QA final-review disposition is terminal.
 - CF-016 (Phase 16 Task 6): first-class issue-scoped gate read surface via
   `fid issue get --section gates`; scheduled in DEC-042. Remains open until
   VAL-012 passes.
@@ -46,9 +48,12 @@ Phase 15 outcome:
 
 ## Next Action
 
-- Start Phase Runner on Phase 16. Task 1 is the natural first task; Tasks 4 and 5
-  are independent of CF-011 and can also run before Tasks 2-3 if scheduling
-  needs it.
+- Hand back to Phase Runner. First spawn `tl_lite` for the existing Task 5 STOP
+  under DEC-047; include DEC-046 as the accepted recorded decision authorizing
+  narrow `internal/activity/activity_test.go` fixture remediation. If TL-Lite
+  returns `VERDICT: RESUME`, resume Task 5 from the blocker point, rerun the
+  exact Task 5 gate, replace the blocker report with a normal completion report,
+  then continue to Task 6. If TL-Lite returns `BLOCK`, stop with the TRG/ESC.
 - Carry the workflow lessons: pin recurring improvement notes (e.g. function-size
   debt) to a carry-forward ID on first appearance, not at wrap; keep the template
   H1 in developer completion reports; continue recording the integration gate

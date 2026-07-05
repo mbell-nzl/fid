@@ -5,17 +5,10 @@
 >
 > **Size target:** under 150 lines.
 >
-> **State:** Phase 16 **READY FOR PHASE RUNNER**. Human confirmed at kickoff
-> (2026-07-05, workspace timezone): DC-A approved as written, DC-B included in
-> Phase 16, and Heavy Mode selected. Validation contract (`VAL-001..013`), QA
-> plan, and the six ordered task specs are ready.
-
-## Where We Are
-
-Phase 15 (`fid dev *` composites + CF-013/014/015 cleanup) is CLOSED — PASS
-(wrapped 2026-06-29). v0.1e (Telemetry, Composites, Maintenance) is the final
-v0.1 version, sliced into four phases (14-17). Phases 14-15 done; **Phase 16 is
-ready to run**, Phase 17 closes v0.1.
+> **State:** Phase 16 **RUNNING**. Tasks 1-4 complete; Reviews 1-2 complete.
+> Task 5 is blocked on `internal/activity/activity_test.go` journal-date fixture
+> failure. DEC-046 authorizes narrow do-now remediation before Task 5 closes.
+> DEC-047 requires TL-Lite triage before resuming from task blockers.
 
 ## Operating Mode
 
@@ -37,7 +30,8 @@ new persistence contract; read-heavy. The only write-path change (CF-011) is
 - **CF-011 reconciliation** — backfill the unlogged entity-state writers so the
   timeline is consistent across every write (T2-T3). Already projected:
   transition/update/issue-label/link-remove/claim. Backfill: issue create, ac
-  add, ac verify, complete (T2); concern raise/address, unclaim, link add (T3).
+  add, ac verify, complete (T2); concern raise/address, unclaim, link add, dev
+  gate (T3; DEC-043).
 - **`fid sql`** (PRD-OUT-008, TRD-SEC-002) — read-only escape hatch; reject
   non-SELECT/EXPLAIN/PRAGMA/WITH before execution + read-only connection (T4).
 - **`fid journal inspect <event-id>`** (PRD-OPS-013) — read-only event
@@ -45,7 +39,7 @@ new persistence contract; read-heavy. The only write-path change (CF-011) is
   (T5).
 - **CF-016** (T6) — `fid issue get --section gates` read over `gate_runs`.
 
-## Kickoff Decisions Confirmed
+## Scope Decisions
 
 - **DC-A — CF-011 timeline scope approved.** Every write that mutates/appends an **issue**
   fact (or its issue→requirement link) emits one `activity_log` row in its single
@@ -56,11 +50,12 @@ new persistence contract; read-heavy. The only write-path change (CF-011) is
   `fid stats`), `fid requirement sync` (bulk upsert, noisy; requirement reads are
   v0.2). Event names: `issue_created`/`ac_added`/`ac_verified`/`task_completed`/
   `concern_raised`/`concern_addressed`/`claim_released`/`link_added`.
+- **DEC-043 — `dev gate` included in Task 3 CF-011.** `dev.gate.recorded` now
+  needs one issue-scoped `gate_recorded` activity row in the same event as its
+  `gate_runs` insert; rejected gate attempts still append zero rows.
 - **DC-B — CF-016 scheduled now.** `fid issue get --section gates` is included as
   Task 6 in Phase 16. Public-interface addition; no schema change.
 - **Mode — Heavy Mode approved.** See operating mode above and DEC-040.
-
-These are recorded in `phase-16/decisions.md` as DEC-040..042.
 
 ## Validation Contract Index (`phase-16/qa/validation-contract.md`)
 
@@ -71,7 +66,7 @@ These are recorded in `phase-16/decisions.md` as DEC-040..042.
 | VAL-003 | T1 | `--since` boundary include/exclude |
 | VAL-004 | T1 | `--event` includes only matching event |
 | VAL-005 | T2 | create/ac add/ac verify/complete each emit one activity row; reject→zero |
-| VAL-006 | T3 | concern raise/address/unclaim/link add each emit one row; link add mirrors link remove |
+| VAL-006 | T3 | concern raise/address/unclaim/link add/dev gate each emit one row; link add mirrors link remove |
 | VAL-007 | T3 | full-lifecycle timeline has no gaps; delete-and-rebuild reproduces `activity_log` |
 | VAL-008 | T4 | `fid sql` accepts SELECT/EXPLAIN/PRAGMA/WITH, all formats |
 | VAL-009 | T4 | `fid sql` rejects non-read before execution + read-only connection (TRD-SEC-002) |
@@ -82,19 +77,15 @@ These are recorded in `phase-16/decisions.md` as DEC-040..042.
 
 ## Ordered Task List
 
-1. **T1 — `fid activity list`** (`internal/activity` + cmd). VAL-001..004.
-2. **T2 — CF-011 backfill part 1** (create/ac add/ac verify/complete). VAL-005.
-3. **T3 — CF-011 backfill part 2 + consistency e2e** (concern/unclaim/link add).
-   VAL-006, VAL-007.
+1. **T1 — `fid activity list`** (`internal/activity` + cmd). VAL-001..004. Complete.
+2. **T2 — CF-011 backfill part 1** (create/ac add/ac verify/complete). VAL-005. Complete.
+3. **T3 — CF-011 backfill part 2 + consistency e2e** (concern/unclaim/link
+   add/dev gate). VAL-006, VAL-007. Complete.
 4. **T4 — `fid sql`** (`internal/sqlquery` + cmd + TRD-SEC-002 integration test).
-   VAL-008, VAL-009.
+   VAL-008, VAL-009. Complete.
 5. **T5 — `fid journal inspect`** (`internal/journal` reader + revert classifier
-   + cmd). VAL-010, VAL-011.
+   + cmd). VAL-010, VAL-011. Blocked; DEC-046 fixture remediation required.
 6. **T6 — CF-016 `--section gates`**. VAL-012.
-
-T1 and T4/T5 are independent and can run first. T2-T3 deliver the CF-011
-headline; T6 closes CF-016 if VAL-012 passes. VAL-013 (human dogfood) is
-generated by QA Lead at phase end.
 
 ## QA Artifacts
 
@@ -102,7 +93,7 @@ generated by QA Lead at phase end.
 |---|---|---|
 | Validation contract | `../phases/phase-16/qa/validation-contract.md` | Ready |
 | QA plan | `../phases/phase-16/qa/qa-plan.md` | Ready |
-| Mid-phase reviews | `../phases/phase-16/qa/review-1.md`, `review-2.md` | Planned after T2/T4 |
+| Mid-phase reviews | `../phases/phase-16/qa/review-1.md`, `review-2.md` | Complete |
 | Final review | `../phases/phase-16/qa/final-review.md` | Pending |
 | Human checklist | `../phases/phase-16/qa/human-checklist.md` | Pending |
 
@@ -131,14 +122,18 @@ generated by QA Lead at phase end.
 | ID | Item | Target |
 |---|---|---|
 | CF-008 | Resolution-reason field / cancel `--reason` flag | v0.2 |
-| CF-011 | Broad `activity_log` reconciliation (this phase, T2-T3) | **Phase 16** |
+| CF-011 | Broad `activity_log` reconciliation (this phase, T2-T3 + DEC-043) | **Phase 16** |
 | CF-016 | First-class gate read surface (`--section gates`, T6) | **Phase 16** |
 | CF-017 | `internal/dev` `Finish`/`Block` function-size cleanup | v0.2c |
 
-CF-013/CF-014/CF-015 closed at Phase 15 wrap.
+## Next Action
 
-## Next Planning Checkpoint
+Hand back to Phase Runner with this order:
 
-**Phase 17** — `fid maintenance check` / `vacuum` + stub-table CLI guard + the
-v0.1 closure exit-criteria smoke (closes v0.1). The Phase 16 VAL-007 rebuild
-determinism proof feeds that closure smoke.
+1. Before Developer work, spawn `tl_lite` for the Task 5 STOP under DEC-047.
+   Include DEC-046 as the accepted recorded decision for the fixture remediation.
+2. If TL-Lite returns `VERDICT: RESUME`, resume Task 5 from the blocker point:
+   fix only `internal/activity/activity_test.go` / local helper fixture
+   monotonicity, preserve VAL-001..004 and PRD-ERR-014, rerun the exact Task 5
+   gate, and replace `tasks/task-5-done.md` with a normal completion report.
+3. If Task 5 closes, continue to Task 6. Final review follows Task 6 per QA plan.

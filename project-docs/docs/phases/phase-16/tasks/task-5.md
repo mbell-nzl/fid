@@ -37,6 +37,28 @@ Assertions live in
 
 ## Scope
 
+### Blocker Addendum: Internal Activity Fixture Monotonicity (DEC-046)
+
+Task 5 is resumed from the blocker report in `task-5-done.md`. Before closing
+Task 5, fix the existing `internal/activity/activity_test.go` failure that
+seeds a `2026-07-04` journal event after workspace initialization has created a
+later journal file. That failure is out of the `fid journal inspect` feature
+scope, but it blocks the required repo-wide gate and violates
+`08_QUALITY_PLAN.md` TDD-006.
+
+Allowed remediation scope:
+
+- Edit only `internal/activity/activity_test.go` and directly local test helper
+  code needed to keep seeded activity events monotonic with the workspace
+  journal.
+- Preserve VAL-001..004 behavior: filter include/exclude semantics,
+  chronological ordering, structured `details`, date/RFC3339 boundary handling,
+  and non-nil empty result behavior.
+- Preserve PRD-ERR-014 behavior. Do not weaken the journal out-of-order guard,
+  bypass production append paths, or narrow the Task 5 gate.
+- Record the remediation in the final Task 5 completion report as a
+  DEC-046-backed deviation from the original Task 5 file list.
+
 ### Files To Create Or Modify
 
 - `internal/journal/inspect.go` (new) - `FindEvent(journalDir, eventID)`:
@@ -89,6 +111,9 @@ Assertions live in
   mode:inverse` with `restores` + `precondition`. (VAL-011)
 - [ ] A non-reversible event (`issue.created` / `issue.claim.acquired` / a
   `dev.*` composite) reports `eligible:false` with a forward `correction`. (VAL-011)
+- [ ] DEC-046 remediation complete: `internal/activity/activity_test.go` no
+  longer seeds backdated journal events after workspace initialization, while
+  Task 1 VAL-001..004 behavior remains covered. (quality blocker)
 
 ## TDD Plan
 
@@ -110,6 +135,8 @@ Assertions live in
   the doc's enumeration (note any change in the completion report).
 - Completion report: record the event-type → verdict table (PI-5) for the v0.2
   `fid event revert` follow-on.
+- Completion report: record the DEC-046 activity-test fixture remediation and
+  the exact file(s) touched for it.
 
 ## Scenario / Parity / Audit Notes
 
