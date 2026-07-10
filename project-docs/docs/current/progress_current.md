@@ -1,40 +1,49 @@
 # Progress - Current
 
-> **Purpose.** In-flight phase status only. Historical phase progress lives under
+> **Purpose.** In-flight phase status only. Historical progress lives under
 > `../phases/phase-N/progress.md`.
 >
 > **Size target:** under 100 lines.
 
 ## Project State
 
-**Status:** Phase 16 is **WRAPPED**; no implementation task is active. Phase 17
-kickoff is next.
+**Status:** Phase 17 is **PLANNING / AWAITING HUMAN APPROVAL**. Phase 16 remains
+wrapped and no implementation task is active.
 
-Phase 16 outcome:
+Tech Lead planning draft created 2026-07-10:
 
-- Deterministic final review returned PASS WITH IMPROVEMENTS.
-- VAL-001..013 PASS after human checklist completion.
-- CF-011 and CF-016 closed.
-- No `ESC-NNN` items are open; TRG-046 RESUME was audited correct at wrap.
+- Proposed Heavy Mode for public CLI/config, persistence maintenance, and v0.1
+  closure scope.
+- Drafted VAL-001..025 in
+  `../phases/phase-17/qa/validation-contract.md`.
+- Drafted nine ordered one-session task specs under
+  `../phases/phase-17/tasks/`.
+- Marked DC-A (maintenance details), DC-B (result/exit semantics), and DC-C
+  (exact governance guard set) as Human approval blockers.
+
+## Proposed Task Order
+
+1. CF-019 formatter split.
+2. Maintenance grace config.
+3. Structural error checks.
+4. Warning/info checks.
+5. `maintenance check` CLI/formats.
+6. `maintenance vacuum`.
+7. Governance stub guards.
+8. Read-format conformance.
+9. Full v0.1 closure journey.
 
 ## Carry-Forward
 
-- CF-008 (v0.2): resolution-reason field/flag.
-- CF-017 (v0.2c): behavior-preserving `internal/dev` `Finish`/`Block`
-  function-size extraction.
-- CF-018: split `internal/sqlquery/sqlquery.go` when SQL package work next
-  reopens.
-- CF-019: split `internal/format/markdown.go` when formatter-heavy work next
-  reopens.
+- CF-019 is proposed for Task 1 because markdown rendering reopens.
+- CF-008 remains v0.2.
+- CF-017 remains v0.2c.
+- CF-018 remains at the next SQL package modification; Phase 17 only exercises
+  SQL conformance. A required SQL-package fix stops for CF-018 re-planning.
 
 ## Next Action
 
-Tech Lead should kick off Phase 17 from the roadmap entry "Maintenance + stub
-guard + v0.1 closure."
-
-Do not resume Phase 16 Developer work. Use the archive for Phase 16 details:
-
-- `project-docs/docs/phases/phase-16/decisions.md`
-- `project-docs/docs/phases/phase-16/progress.md`
-- `project-docs/docs/phases/phase-16/qa/final-review.md`
-- `project-docs/docs/phases/phase-16/qa/human-checklist.md`
+Human approves or edits Heavy Mode and DC-A/DC-B/DC-C. After approval, Tech
+Lead records the decisions and marks the validation contract Ready. QA Lead then
+authors `phase-17/qa/qa-plan.md` with fresh feasibility validation before Phase
+Runner starts Task 1.

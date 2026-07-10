@@ -1,63 +1,136 @@
-# Phase Brief - Between Phases After Phase 16
+# Phase Brief - Phase 17 (Planning)
 
-> **Purpose.** Default execution brief for the current project state. Replaced
-> at each phase kickoff by the incoming Tech Lead.
+> **Purpose.** Default execution brief for the current phase. Full task and
+> validation detail lives in the Phase 17 archive.
 >
 > **Size target:** under 150 lines.
->
-> **State:** Phase 16 is **WRAPPED**. No Developer task is active. Phase 17
-> kickoff is the next Tech Lead action.
 
-## Phase 16 Outcome
+## Phase Goal
 
-Phase 16 shipped the v0.1e activity timeline and read-only escape hatches:
+Close v0.1 early dogfood with a trustworthy maintenance audit, locked SQLite
+VACUUM, explicit version guards for schema-only governance entities, and
+deterministic proof of the full implemented surface. Success means structural
+violations and operational warnings are actionable, future commands fail with
+honest version guidance, and the v0.1 journey/rebuild/format/telemetry criteria
+are evidenced rather than inferred.
 
-- `fid activity list` over projected `activity_log` with `--on`, `--since`, and
-  `--event` filters in all read formats.
-- CF-011 broad activity reconciliation for the approved issue-scoped writers:
-  create, AC add/verify, complete, concern raise/address, unclaim, link add, and
-  `dev gate` / `gate_recorded`.
-- `fid sql` read-only escape hatch with classifier rejection and read-only
-  SQLite backstop for TRD-SEC-002.
-- `fid journal inspect <event-id>` with event location, hash parity, effects,
-  actor/command metadata, and revert verdict.
-- CF-016 `fid issue get --section gates` over raw append-only `gate_runs`.
+## Status
 
-## Validation Status
+**Planning; awaiting Human approval.** No Developer task may start. The Human
+must approve Heavy Mode and DC-A/DC-B/DC-C below. After approval, Tech Lead
+records phase decisions and promotes VAL-001..025 to Ready; QA Lead then creates
+the QA plan with fresh command/fixture feasibility validation.
 
-Final review: `project-docs/docs/phases/phase-16/qa/final-review.md`
+## Operating Mode
 
-| Range | Outcome | Notes |
+**Heavy (proposed).** Phase 17 adds public CLI/config contracts, mutates the
+derived persistence file under lock, and closes a version. Required workflow:
+validation contract, nine task specs, fresh QA-plan feasibility validation,
+mid-phase reviews after Tasks 2, 5, and 7, final review, human dogfood, and
+full-scope spec sync. This is v0.1 early-dogfood closure, not the charter's v0.3
+public release; public-release threat model/scans/pre-release checklist and
+held-out scenarios remain deferred under `08_QUALITY_PLAN.md` sections 5.8/7/9.
+
+## Task Index
+
+Full specs: `../phases/phase-17/tasks/`.
+
+| Task | Title | Status | Dependencies |
+|---|---|---|---|
+| 1 | CF-019 markdown formatter split | Pending approval | None |
+| 2 | Maintenance grace config contract | Pending approval | DC-A |
+| 3 | Maintenance structural errors | Pending approval | Mode approval |
+| 4 | Maintenance warnings and info | Pending approval | Tasks 2-3 |
+| 5 | `fid maintenance check` CLI + formats | Pending approval | Tasks 1, 3-4 |
+| 6 | `fid maintenance vacuum` | Pending approval | Task 5 parent command |
+| 7 | Governance stub-table guards | Pending approval | DC-C |
+| 8 | v0.1 read-format conformance | Pending approval | Task 5 |
+| 9 | Full v0.1 closure journey | Pending approval | Tasks 2-8 |
+
+## Validation Contract
+
+Full contract: `../phases/phase-17/qa/validation-contract.md`.
+
+| VAL range | Scope | Owner | Status |
+|---|---|---|---|
+| VAL-001..002 | CF-019 + config compatibility | Review 1 | Draft |
+| VAL-003..014 | maintenance errors/warnings/check CLI | Review 2 | Draft |
+| VAL-015..016 | vacuum + governance guards | Review 3 | Draft |
+| VAL-017..023 | read parity + closure journey | QA Lead | Draft |
+| VAL-024 | v0.1 PRD traceability + full/static gates | QA Lead, phase-end | Draft |
+| VAL-025 | real-work v0.1 dogfood | Human, phase-end | Draft |
+
+## QA Artifacts
+
+| Artifact | Path | Status |
 |---|---|---|
-| VAL-001..012 | PASS | Deterministic QA and phase-level gates passed. |
-| VAL-013 | PASS | Human checklist records HUMAN-16a..d PASS and overall PASS. |
+| Validation contract | `../phases/phase-17/qa/validation-contract.md` | Draft |
+| QA plan | `../phases/phase-17/qa/qa-plan.md` | Missing; QA Lead after approval |
+| Mid-phase reviews | `../phases/phase-17/qa/review-1.md` etc. | After Tasks 2, 5, 7 |
+| Final review | `../phases/phase-17/qa/final-review.md` | Pending |
+| Human checklist | `../phases/phase-17/qa/human-checklist.md` | Pending |
 
-## Phase 16 Wrap Decisions
+## Approval Decisions
 
-- DEC-048 archives Phase 16 with VAL-001..013 terminal PASS.
-- CF-011 and CF-016 are closed.
-- CF-018 and CF-019 capture non-blocking file-size follow-ups for
-  `internal/sqlquery/sqlquery.go` and `internal/format/markdown.go`.
-- TRG-046 RESUME was audited correct in hindsight. No `ESC-NNN` items are open.
+- **DC-A:** `[maintenance].started_without_claim_grace_seconds`, default 300,
+  zero allowed, negative/malformed rejected; age from latest append-ordered
+  `status_changed`, fallback `issues.created_at`. Stale verification means a
+  superseded completion reference; telemetry gap requires completion linkage.
+- **DC-B:** maintenance status is `pass|warn|fail`; warning promotion changes
+  exit/status only; deterministic finding order; all four read formats.
+- **DC-C:** guard `decision create/get/list`, `escalation
+  create/resolve/get/list`, and `triage record/start/verdict` with
+  `commands for <entity> ship in v0.2`; leave `requirement sync` shipped.
 
-## Next Phase Candidate
+## Carry-Forward Disposition
 
-Roadmap Phase 17 is "Maintenance + stub guard + v0.1 closure":
+- CF-019: schedule in Task 1 because Task 5 reopens markdown rendering.
+- CF-008: re-defer to v0.2; unrelated product/data-model enhancement.
+- CF-017: re-defer to v0.2c; Phase 17 does not modify `internal/dev`.
+- CF-018: re-defer to next SQL package reopen; Task 8 exercises but does not
+  modify `internal/sqlquery`. A required SQL-package fix stops for re-planning
+  and schedules CF-018 first.
 
-- `fid maintenance check`
-- `fid maintenance vacuum`
-- stub-table CLI guards for governance entities not shipping until later
-- v0.1 exit-criteria smoke over the full implemented surface
+## Parity Matrix
 
-Phase 17 may carry CF-018/CF-019 only if it reopens the relevant packages.
+| Axis | Maintenance | Other v0.1 reads | Evidence |
+|---|---|---|---|
+| Formats | json/toon/markdown/yaml | json/toon/markdown/yaml | VAL-012/017 |
+| Ordering | check/entity/message | established command order | VAL-011/017 |
+| Mutation | check none; vacuum DB-only | reads none | VAL-014/015/023 |
+| Failure | structured result + non-zero | documented command error | VAL-012/013/016 |
 
-## Next Action
+## Interfaces / Subsystems In Scope
 
-Start Phase 17 kickoff only after reading:
+- `internal/maintenance/`, `cmd/fid/maintenance.go` - audit and VACUUM.
+- `internal/config/` - additive grace-window config.
+- `internal/format/` - CF-019 split and maintenance markdown.
+- `cmd/fid/governance_stubs.go` - v0.2 entity guards.
+- `cmd/fid/e2e_v01*_test.go` - conformance and closure evidence.
 
-1. `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` Phase 17 entry.
-2. Relevant sections named by that entry in PRD, TRD, schema, design, quality,
-   and workflow specs.
-3. `project-docs/docs/current/decisions_active.md`.
-4. Phase 16 wrap artifacts: `decisions.md`, `progress.md`,
-   `qa/final-review.md`, and `qa/human-checklist.md`.
+## Known Risks
+
+- Corrupt-state fixtures must bypass triggers only in tests; production pragmas
+  and trigger defenses remain enabled.
+- Warning-only non-zero promotion must retain structured stdout for CI.
+- Task 9 is audit-only: any product defect stops for triage instead of expanding
+  the final task across subsystem boundaries.
+
+## Open Questions
+
+- [ ] Human approves Heavy Mode.
+- [ ] Human approves DC-A, DC-B, and DC-C as written.
+
+## Success / Exit Criteria
+
+- [ ] Tasks 1-9 complete with exact required gates.
+- [ ] VAL-001..024 have deterministic terminal outcomes; VAL-025 dogfood is
+  completed and accepted or explicitly dispositioned.
+- [ ] QA final review has no unresolved blocking finding.
+- [ ] Every v0.1 PRD row maps to passing evidence; static binary is <30 MB.
+- [ ] Tech Lead wrap records spec sync, triage audit, and v0.1 closure decision.
+
+## Next Planning Checkpoint
+
+After Phase 17 wrap, slice roadmap v0.2a workflow-engine migration into a new
+approved phase; do not start v0.2 work inside this closure phase.
