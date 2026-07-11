@@ -1450,6 +1450,21 @@ fid maintenance check [--warn-as-error] [--format json|toon|markdown|yaml]
 | `--warn-as-error` | bool | Promote warnings to errors (CI mode) |
 | `--format` | string | Output format (default: `json`) |
 
+Result and exit contract:
+
+| Findings | `--warn-as-error` | `status` | Exit |
+|---|---:|---|---:|
+| none | either | `pass` | zero |
+| warnings only | false | `warn` | zero |
+| warnings only | true | `fail` | non-zero |
+| one or more errors | either | `fail` | non-zero |
+
+Promotion does not reclassify warning rows into `errors`; it changes only the
+top-level status and process exit. Audit results, including non-zero results, are
+written completely to stdout in the selected format. Fatal failures before an
+audit result exists use the normal structured stderr path. Findings order by
+`check`, `entity_id`, then `message`.
+
 ### `fid maintenance migrate`
 
 ```
@@ -1900,6 +1915,27 @@ commands. This section fills the remaining roadmap command families so every
 roadmapped CLI surface has an implementable version gate, flags, role
 requirement, output shape, and error vocabulary. All write commands also accept
 the global v0.2 `--dry-run` flag.
+
+### v0.1 Governance Stub Guard
+
+The v0.1 schema pre-creates `decisions`, `escalations`, and `triage_events` as
+reference/view support, but their CLI behavior ships in v0.2. v0.1 registers and
+guards exactly these documented commands:
+
+- `fid decision create|get|list`
+- `fid escalation create|resolve|get|list`
+- `fid triage record|start|verdict`
+
+Each returns only the entity-specific first line and exits non-zero:
+
+```text
+error: commands for decision ship in v0.2
+```
+
+The version gate runs before argument, flag, role, workspace, DB, or journal
+handling, and appends nothing. `fid requirement sync` remains a shipped v0.1
+command and is not part of this guard. `v0.2` is the public version; internal
+roadmap slice names such as `v0.2b` do not appear in the error.
 
 ### Common Future-Command Errors
 
@@ -2995,4 +3031,4 @@ fid cycle list [--status planned|active|completed] [--format json|toon|markdown|
 
 ---
 
-*Last updated: 2026-06-29*
+*Last updated: 2026-07-11*

@@ -7,19 +7,18 @@
 
 ## Project State
 
-**Status:** Phase 17 is **PLANNING / AWAITING HUMAN APPROVAL**. Phase 16 remains
-wrapped and no implementation task is active.
+**Status:** Phase 17 is **APPROVED / AWAITING QA PLAN**. Phase 16 remains wrapped
+and no implementation task is active.
 
-Tech Lead planning draft created 2026-07-10:
+Phase 17 kickoff state:
 
-- Proposed Heavy Mode for public CLI/config, persistence maintenance, and v0.1
-  closure scope.
-- Drafted VAL-001..025 in
+- Heavy Mode approved by the Human on 2026-07-11 (DEC-049).
+- DC-A/DC-B/DC-C approved and recorded as DEC-050..052; affected canonical
+  specs synchronized.
+- VAL-001..025 are Ready in
   `../phases/phase-17/qa/validation-contract.md`.
-- Drafted nine ordered one-session task specs under
+- Nine ordered one-session task specs are ready under
   `../phases/phase-17/tasks/`.
-- Marked DC-A (maintenance details), DC-B (result/exit semantics), and DC-C
-  (exact governance guard set) as Human approval blockers.
 
 ## Proposed Task Order
 
@@ -35,7 +34,7 @@ Tech Lead planning draft created 2026-07-10:
 
 ## Carry-Forward
 
-- CF-019 is proposed for Task 1 because markdown rendering reopens.
+- CF-019 is scheduled for Task 1 because markdown rendering reopens.
 - CF-008 remains v0.2.
 - CF-017 remains v0.2c.
 - CF-018 remains at the next SQL package modification; Phase 17 only exercises
@@ -43,7 +42,6 @@ Tech Lead planning draft created 2026-07-10:
 
 ## Next Action
 
-Human approves or edits Heavy Mode and DC-A/DC-B/DC-C. After approval, Tech
-Lead records the decisions and marks the validation contract Ready. QA Lead then
-authors `phase-17/qa/qa-plan.md` with fresh feasibility validation before Phase
-Runner starts Task 1.
+QA Lead authors `phase-17/qa/qa-plan.md` with fresh command, fixture, artifact,
+and human-check feasibility validation. Phase Runner may start Task 1 only after
+that plan is Ready.

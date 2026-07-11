@@ -14,7 +14,7 @@ v0.1 `config.toml` that contains only `[project]`.
 
 ## Binding Constraints
 
-- DC-A must be Human-approved before implementation.
+- DEC-050 is binding; do not reinterpret its key, default, or boundaries.
 - Canonical key: `[maintenance].started_without_claim_grace_seconds`.
 - Missing section/key means 300 seconds; zero is valid; negative and malformed
   values are errors. No migration rewrites an existing config file.
@@ -27,16 +27,15 @@ v0.1 `config.toml` that contains only `[project]`.
 - `internal/config/config.go` - model, default, serialization, and parsing.
 - `internal/config/config_test.go` - compatibility/boundary/round-trip tests.
 - `cmd/fid/init_test.go` - assert new workspaces receive the default section.
-- `project-docs/specs/01_PRD.md` - clarify PRD-OPS-008 warning semantics.
-- `project-docs/specs/04_TRD_CONFIG.md` - add the v0.1 maintenance section and
-  compatibility/default rules.
 
 ### Files To Read For Context
 
 - `cmd/fid/init.go`
 - `scaffold/initial-spec.md` section 9.8.1 (historical detail only; canonical
   docs above must be updated in this task)
-- `project-docs/docs/phases/phase-17/qa/validation-contract.md` DC-A/VAL-002
+- `project-docs/docs/phases/phase-17/qa/validation-contract.md` DEC-050/VAL-002
+- `project-docs/specs/01_PRD.md` PRD-OPS-008 (synced at kickoff by DEC-050)
+- `project-docs/specs/04_TRD_CONFIG.md` section 2 (synced at kickoff by DEC-050)
 
 ### Out Of Scope
 
@@ -60,8 +59,8 @@ because `ProjectConfig` has no maintenance grace contract.
 
 ## Documentation Updates
 
-- `project-docs/specs/01_PRD.md` - refine PRD-OPS-008.
-- `project-docs/specs/04_TRD_CONFIG.md` - document the additive section.
+- None expected. DEC-050 synchronized `01_PRD.md` and `04_TRD_CONFIG.md` at
+  kickoff; stop if implementation proves that contract wrong.
 
 ## Exact Commands To Run
 

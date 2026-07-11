@@ -27,7 +27,7 @@ closes, or cancels each item.
 | CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. The enhancement is a resolution-reason field + cancel `--reason` flag, touching the data model and `activity_log` audit. | v0.2 (with configurable workflows PRD-WF-011/012) | Low (product) |
 | CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Reopen with the next `internal/dev` work. | v0.2c (`fid dev resume`/`abandon`) | Low |
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. | Next SQL package reopen | Low |
-| CF-019 | Phase 16 final review | Behavior-preserving split of `internal/format/markdown.go` (661 lines) under the 400-line non-test file target. | Next formatter-heavy task | Low |
+| CF-019 | Phase 16 final review | Behavior-preserving split of `internal/format/markdown.go` (661 lines) under the 400-line non-test file target. | Phase 17 Task 1 (scheduled by DEC-049 kickoff) | Low |
 
 ## Recently Closed
 

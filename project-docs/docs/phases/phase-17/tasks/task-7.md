@@ -14,7 +14,7 @@ supported governance surface.
 
 ## Binding Constraints
 
-- DC-C must be Human-approved. Exact guarded commands:
+- DEC-052 is binding. Exact guarded commands:
   `decision create/get/list`; `escalation create/resolve/get/list`; `triage
   record/start/verdict`.
 - Exact first-line error: `error: commands for <entity> ship in v0.2`.
@@ -33,10 +33,6 @@ supported governance surface.
 - `cmd/fid/governance_stubs_test.go` - exact command matrix, error precedence,
   non-mutation, help visibility, and requirement-sync control.
 - `cmd/fid/root.go` - register the three guarded families.
-- `project-docs/specs/05_DESIGN_PLAN.md` - annotate v0.1 guard behavior in the
-  command tree if needed.
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 24 - document the exact
-  v0.1 guard matrix and error precedence.
 
 ### Files To Read For Context
 
@@ -45,6 +41,7 @@ supported governance surface.
 - `migrations/0002_v01_tables.up.sql`
 - `project-docs/specs/01_PRD.md` PRD-ERR-012
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 24
+- `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` Phase 17
 
 ### Out Of Scope
 
@@ -71,9 +68,8 @@ root command currently reports the governance families as unknown.
 
 ## Documentation Updates
 
-- `project-docs/specs/05_DESIGN_PLAN.md` - command-tree version annotation if
-  current text would imply availability.
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md` - exact v0.1 guard matrix.
+- None expected. DEC-052 synchronized the PRD, CLI design, and roadmap at
+  kickoff; stop if implementation proves that contract wrong.
 
 ## Exact Commands To Run
 
@@ -98,6 +94,6 @@ List any conditional command required by this task and why:
 
 ## Notes For Developer
 
-- Independent of tasks 1-6 after kickoff approval.
+- Independent of tasks 1-6; DEC-052 supplies the approved public contract.
 - Do not implement future flags merely to parse them; the version error must win.
 - Completion report: `project-docs/docs/phases/phase-17/tasks/task-7-done.md`.

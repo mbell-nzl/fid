@@ -16,7 +16,7 @@ the complete result deterministic so CI and rebuild comparisons are stable.
 
 ## Binding Constraints
 
-- DC-A/DC-B must be Human-approved; task-2 supplies the config field.
+- DEC-050/051 are binding; task-2 supplies the config field.
 - Measure started-without-claim age from the newest append-ordered
   `status_changed` activity row, falling back to `issues.created_at` only for a
   historical row with no transition activity. A non-status issue update must
@@ -49,6 +49,8 @@ the complete result deterministic so CI and rebuild comparisons are stable.
 - `internal/issues/issue.go`
 - `internal/issues/complete.go`
 - `internal/runs/record.go`
+- `project-docs/specs/GLOSSARY.md` (started-without-claim, stale verification,
+  telemetry gap)
 - `scaffold/initial-spec.md` section 9.8.1 (historical detail)
 
 ### Out Of Scope

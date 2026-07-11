@@ -100,7 +100,8 @@ List any conditional command required by this task and why:
 
 ## Notes For Developer
 
-- Depends on kickoff approval, but not on task-2 implementation.
+- Heavy Mode is approved by DEC-049. This task does not depend on task-2
+  implementation.
 - Keep each check independently testable and files/functions within quality
   budgets; do not build one monolithic SQL string.
 - Completion report: `project-docs/docs/phases/phase-17/tasks/task-3-done.md`.

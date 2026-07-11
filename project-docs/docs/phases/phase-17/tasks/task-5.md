@@ -15,7 +15,7 @@ markdown without reopening CF-019.
 
 ## Binding Constraints
 
-- DC-B must be approved. Default format is JSON; all read formats are required.
+- DEC-051 is binding. Default format is JSON; all read formats are required.
 - `--warn-as-error` changes only `status` and process exit. Warning rows remain
   warnings, byte/structurally identical across the two runs.
 - Render the full result before returning the non-zero outcome. Do not replace
@@ -37,9 +37,6 @@ markdown without reopening CF-019.
 - `internal/format/markdown.go` - add maintenance dispatch only.
 - `internal/format/markdown_maintenance.go` - focused result renderer.
 - `internal/format/markdown_test.go` - maintenance markdown cases.
-- `project-docs/specs/05_DESIGN_PLAN.md` - complete pass/warn/fail output states.
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md` - exact flags, formats, status/exit,
-  warning promotion, and output fields.
 - `project-docs/docs/playbook.md` - concise operator check examples.
 
 ### Files To Read For Context
@@ -49,6 +46,7 @@ markdown without reopening CF-019.
 - `internal/journal/projection.go`
 - `internal/format/format.go`
 - `project-docs/specs/05_DESIGN_PLAN.md` section 6.5
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` section 19
 
 ### Out Of Scope
 
@@ -75,9 +73,9 @@ root command has no `maintenance` family.
 
 ## Documentation Updates
 
-- `project-docs/specs/05_DESIGN_PLAN.md` - result examples.
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md` - public command contract.
 - `project-docs/docs/playbook.md` - operator usage.
+- DEC-051 synchronized `05_DESIGN_PLAN.md` and `06_DESIGN_PLAN_CLI.md` at
+  kickoff; stop if implementation proves that contract wrong.
 
 ## Exact Commands To Run
 

@@ -111,6 +111,34 @@ the Developer fixes and re-runs.
 Use when: describing deterministic quality checks during implementation.
 Avoid: "quality gate" when referring to subjective review.
 
+**Started-without-claim**:
+An issue in a `started` status category with no live claim after the configured
+maintenance grace window. The window starts at the latest append-ordered
+`status_changed` activity, falling back to issue creation when no transition
+exists. A maintenance warning and handoff-attention signal, not structural
+corruption.
+Use when: identifying started work that has remained unclaimed beyond the
+allowed handoff gap.
+Avoid: warning during the grace window or resetting age after a non-status
+issue update.
+
+**Stale verification**:
+An acceptance-criterion verification whose non-NULL `completion_id` references
+a superseded task completion. A maintenance warning that the evidence belongs
+to an abandoned attempt.
+Use when: auditing attempt-bound AC evidence after a newer completion supersedes
+the referenced attempt.
+Avoid: using the term for NULL/current completion references, old timestamps,
+or content-hash drift.
+
+**Telemetry gap**:
+A task completion with no `agent_runs` row explicitly linked through
+`agent_runs.completion_id`. A maintenance warning that completion-level cost or
+token statistics may under-count; an issue-only run is not sufficient linkage.
+Use when: auditing whether a completion has attributable run telemetry.
+Avoid: treating the warning as DB corruption or inferring linkage from matching
+issue ID/timestamp proximity.
+
 **Requirement**:
 A pointer to a PRD/TRD source section, not a copy of the requirement text.
 Stored as `requirements` rows with source document, source section, summary
@@ -528,4 +556,4 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-07-05*
+*Last updated: 2026-07-11*

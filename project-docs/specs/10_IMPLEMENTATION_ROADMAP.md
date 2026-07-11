@@ -323,7 +323,7 @@ with whet's task artifacts.
 | `fid maintenance vacuum` | SQLite VACUUM. | — |
 | Activity log | Projected timeline from journal events. Read-model only. Basic `fid activity list` read with entity, event, and date filters. | PRD-OUT-017 |
 | Pricing config | `.fid/pricing.toml` ships with defaults for current Anthropic, OpenAI, Google models. User-overridable. | PRD-NFR-010 |
-| Stub table CLI guard | Commands targeting v0.2 entities (`decision create`, `escalation create`, etc.) return "commands for <entity> ship in <version>" with non-zero exit code. | PRD-ERR-012 |
+| Stub table CLI guard | The v0.1 schema-only governance families `decision create/get/list`, `escalation create/resolve/get/list`, and `triage record/start/verdict` return "commands for <entity> ship in v0.2" with non-zero exit before validation or persistence access. Shipped `requirement sync` remains available. | PRD-ERR-012 |
 
 > **Phase-slicing note — v0.1e (Tech Lead, 2026-06-28).**
 > v0.1e is the **final v0.1 version** and the **largest by surface count** — 14
@@ -390,9 +390,11 @@ with whet's task artifacts.
 >   orphaned polymorphic refs, FK integrity, workflow state validity; warnings for
 >   stale claims, started-without-claim, stale verifications, telemetry gaps;
 >   `--warn-as-error` for CI; `--format json|markdown`), `fid maintenance vacuum`
->   (SQLite VACUUM), and the stub-table CLI guard (`decision create`,
->   `escalation create`, etc. return "commands for <entity> ship in <version>"
->   with non-zero exit). Close the version with an end-to-end v0.1 exit-criteria
+>   (SQLite VACUUM), and the stub-table CLI guard (`decision create/get/list`,
+>   `escalation create/resolve/get/list`, and `triage record/start/verdict`
+>   return "commands for <entity> ship in v0.2" with non-zero exit before
+>   validation or persistence access). Close the version with an end-to-end
+>   v0.1 exit-criteria
 >   smoke proving create → claim → transition → complete → unclaim under
 >   permissions, exercising the ready queue, links, labels, telemetry, and
 >   maintenance, plus a delete-and-rebuild non-destructive check. **Exit:**
@@ -678,4 +680,4 @@ v0.3 ──► v0.4a Validation Contracts
 v0.4 ──► v0.5 Polish (conditional items)
 ```
 
-*Last updated: 2026-06-28*
+*Last updated: 2026-07-11*

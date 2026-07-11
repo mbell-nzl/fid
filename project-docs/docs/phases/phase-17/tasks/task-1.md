@@ -82,7 +82,8 @@ List any conditional command required by this task and why:
 
 ## Notes For Developer
 
-- Task execution is blocked until kickoff approval promotes VAL-001 to Ready.
+- Heavy Mode and VAL-001 are approved by DEC-049; Task 1 starts only after the
+  QA plan is Ready.
 - Preserve helper ownership inside `internal/format`; do not create a shared
   utility package for this split.
 - Completion report: `project-docs/docs/phases/phase-17/tasks/task-1-done.md`.

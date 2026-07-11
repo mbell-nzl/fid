@@ -1,0 +1,109 @@
+# Phase 17 Decisions
+
+> Purpose: phase-local decision history, spec sync verdicts, workflow notes,
+> and wrap-up decisions. DEC numbering is global and never resets.
+
+## Decisions
+
+### DEC-049: Phase 17 runs in Heavy Mode
+
+- **Date:** 2026-07-11
+- **Context:** Phase 17 adds public CLI and config contracts, performs an
+  explicit derived-DB mutation under the projection lock, and closes v0.1.
+  `09_AI_WORKFLOW.md` section 4.3 classifies public-interface, persistence, and
+  release-adjacent work as Heavy Mode.
+- **Decision:** The Human approved **Heavy Mode**. Required artifacts are the
+  validation contract, nine task specs, a QA plan with fresh command and fixture
+  feasibility validation, reviews after Tasks 2, 5, and 7, final review, human
+  dogfood, and full-scope spec sync at wrap.
+- **Consequences:** No Developer task starts until the QA plan is Ready. Phase
+  17 is v0.1 early-dogfood closure, not the charter's v0.3 public release;
+  public-release threat model, scans, pre-release checklist, and held-out
+  scenarios remain deferred under the quality plan.
+- **Refs:** `09_AI_WORKFLOW.md` section 4.3; `08_QUALITY_PLAN.md` sections
+  5.8, 7, and 9; phase brief; VAL-001..025.
+
+### DEC-050: Maintenance warning definitions and grace config are fixed
+
+- **Date:** 2026-07-11
+- **Context:** PRD-OPS-008 required a configurable started-without-claim grace,
+  while the roadmap also named stale verifications and telemetry gaps. The
+  canonical specs did not define the key, boundary, time source, or linkage
+  semantics. Historical `scaffold/initial-spec.md` section 9.8.1 retained the
+  original five-minute and superseded-attempt intent.
+- **Decision:** Add
+  `[maintenance].started_without_claim_grace_seconds`, default 300 seconds;
+  zero is valid and negative/malformed values error. Missing config defaults to
+  300 without rewriting existing files. Age uses the newest append-ordered
+  `status_changed` activity, falling back to `issues.created_at`; non-status
+  updates do not reset it. Stale verification means non-NULL `completion_id`
+  referencing a superseded completion. Telemetry gap means a completion without
+  an `agent_runs.completion_id` reference; issue-only run linkage is not enough.
+- **Consequences:** Post-development handoffs can warn after five minutes when
+  a started-category issue has no claimant. A completion without full linked
+  telemetry can warn even when an issue-level dev run exists. These remain
+  warnings, not structural errors.
+- **Refs:** PRD-OPS-007/008; `04_TRD_CONFIG.md` section 2; DC-A;
+  VAL-002/007/008/009/010.
+
+### DEC-051: Maintenance results use pass, warn, and fail semantics
+
+- **Date:** 2026-07-11
+- **Context:** The design spec showed only a failing JSON example and did not
+  define warning-only status, warning promotion, output ordering, or how a
+  structured result survives a non-zero exit.
+- **Decision:** No findings returns `pass`/zero; warnings-only returns
+  `warn`/zero; warnings-only with `--warn-as-error` returns `fail`/non-zero; any
+  structural error returns `fail`/non-zero. Promotion changes only status and
+  exit: rows stay in `warnings`. Render the complete result to stdout before an
+  audit-outcome non-zero return. Fatal config/DB/encoding failures use the
+  normal stderr error path. Findings order by check, entity ID, then message.
+  The command supports json/toon/markdown/yaml.
+- **Consequences:** CI can parse structured non-zero audit output without
+  confusing promoted operational warnings with data corruption. `warn` becomes
+  a public result enum and all four formats follow the standing read contract.
+- **Refs:** PRD-OPS-005..008; PRD-OUT-001..004; DC-B;
+  `05_DESIGN_PLAN.md` section 6.5; `06_DESIGN_PLAN_CLI.md` section 19;
+  VAL-011/012/013.
+
+### DEC-052: The v0.1 governance stub guard covers three complete families
+
+- **Date:** 2026-07-11
+- **Context:** The v0.1 schema pre-creates decision, escalation, and triage
+  tables for references/views, while their command behavior is deferred. The
+  roadmap's `decision create`, `escalation create`, "etc." wording left the
+  exact guarded set and validation precedence ambiguous.
+- **Decision:** Register and version-gate `decision create/get/list`,
+  `escalation create/resolve/get/list`, and `triage record/start/verdict`. Each
+  returns `error: commands for <entity> ship in v0.2` non-zero before argument,
+  flag, actor, workspace, DB, or journal handling. It appends nothing. Keep the
+  shipped `requirement sync` unchanged; requirement pointers are not a
+  schema-only stub. Use public version `v0.2`, not internal slice `v0.2b`.
+- **Consequences:** Root help can expose honest future command families without
+  partial behavior. Actual governance CRUD/reads and their permissions remain
+  v0.2 work.
+- **Refs:** PRD-ERR-012; DC-C; `06_DESIGN_PLAN_CLI.md` section 24;
+  `10_IMPLEMENTATION_ROADMAP.md` Phase 17; VAL-016.
+
+## Carry-Forward Review At Kickoff
+
+| ID | Disposition | Rationale |
+|---|---|---|
+| CF-008 | Re-defer to v0.2 | Resolution reason is an unrelated product/data-model enhancement. |
+| CF-017 | Re-defer to v0.2c | Phase 17 does not modify `internal/dev`; Task 9 consumes it only through CLI tests. |
+| CF-018 | Re-defer to next SQL package reopen | Task 8 must not modify `internal/sqlquery`; any required change stops for CF-018 re-planning. |
+| CF-019 | Schedule in Phase 17 Task 1 | Task 5 reopens markdown rendering, so the behavior-preserving split lands first. |
+
+## Kickoff Spec Sync
+
+| Spec | Kickoff action | Decision reference |
+|---|---|---|
+| `01_PRD.md` | Clarified PRD-OPS-008 and PRD-ERR-012. | DEC-050/052 |
+| `04_TRD_CONFIG.md` | Added the v0.1 maintenance grace contract. | DEC-050 |
+| `05_DESIGN_PLAN.md` | Added maintenance result/exit semantics. | DEC-051 |
+| `06_DESIGN_PLAN_CLI.md` | Added maintenance truth table and exact v0.1 guard matrix. | DEC-051/052 |
+| `10_IMPLEMENTATION_ROADMAP.md` | Replaced the Phase 17 stub `etc.` with the approved command set. | DEC-052 |
+| `GLOSSARY.md` | Defined started-without-claim, stale verification, and telemetry gap. | DEC-050 |
+
+Full canonical spec-sync verdicts remain mandatory at phase wrap; this kickoff
+table does not substitute for the wrap audit.
