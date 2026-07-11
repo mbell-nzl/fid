@@ -19,7 +19,8 @@
 - **Consequences:** No Developer task starts until the QA plan is Ready. Phase
   17 is v0.1 early-dogfood closure, not the charter's v0.3 public release;
   public-release threat model, scans, pre-release checklist, and held-out
-  scenarios remain deferred under the quality plan.
+  scenarios remain deferred under the quality plan. DEC-054 later supersedes
+  only the nine-task count and review cadence after QA entry findings.
 - **Refs:** `09_AI_WORKFLOW.md` section 4.3; `08_QUALITY_PLAN.md` sections
   5.8, 7, and 9; phase brief; VAL-001..025.
 
@@ -119,6 +120,25 @@
   sessions before Phase 17 execution relies on this routing.
 - **Refs:** `09_AI_WORKFLOW.md` section 7; `project-docs/agents/`;
   `project-docs/tools/drills/run-drills.sh`.
+
+### DEC-054: Phase 17 uses a tests-only entry remediation, not a coverage waiver
+
+- **Date:** 2026-07-11
+- **Context:** The QA Lead's fresh feasibility run found `internal/journal` at
+  78.9%, below the existing COV-001 80% threshold. The approved Tasks 1-9 do
+  not authorize journal coverage work, so VAL-024 had no path to PASS.
+- **Decision:** Add Task 0 before product work. It may add focused
+  `internal/journal` behavioral tests only and must prove at least 80% in both
+  the focused and unchanged full-suite coverage runs. Production-code changes,
+  threshold changes, and waivers are prohibited. A QA Reviewer entry review
+  must accept Task 0's test quality and evidence before Task 1 starts; QA Lead
+  retains terminal VAL-024 ownership.
+- **Consequences:** Phase 17 now has ten tasks and reviews after Tasks 0, 2, 5,
+  and 7. The phase remains blocked on ESC-009 and on a QA Lead revision that
+  authorizes Task 0 and reconciles the QA plan's inventory, evidence, cadence,
+  report-lint commands, and entry criteria. The Phase Runner's append-only
+  ledger remains untouched and is reconciled when the run resumes.
+- **Refs:** QA-BLK-01; COV-001; VAL-024; `tasks/task-0.md`; ESC-009.
 
 ## Carry-Forward Review At Kickoff
 

@@ -9,7 +9,25 @@
 
 ## Open Escalations
 
-None.
+### ESC-009: Phase 17 QA routes lack model-qualification evidence
+
+- **Raised:** 2026-07-11
+- **By:** QA Lead / Phase 17 QA-BLK-02; accepted by Tech Lead
+- **Trigger:** DEC-053 and `09_AI_WORKFLOW.md` require seeded-defect evidence
+  before trusting a new model in a QA role.
+- **Context:** The new QA Lead did preserve the real Phase 17 hard stop in
+  `qa-plan.md`, but no Human-scored drill artifact qualifies either new QA
+  route, and no evidence proves the QA Reviewer escalation obligation.
+- **Question / proposed direction:** Preferred: run the full evidence-chain
+  drill set against fresh `gpt-5.6-terra` QA Reviewer and `gpt-5.6-sol` QA Lead
+  sessions, score every DEC-053 obligation, and commit a model-audit artifact
+  under `phase-17/qa/`. Do not infer uncovered obligations; add a scored seed
+  for cross-cutting escalation if needed. Fallback: Human approves restoration
+  of the proven Phase 16 QA routes (`gpt-5.5` high/medium), regenerates provider
+  files, and starts fresh QA sessions.
+- **Links:** DEC-053; QA-BLK-02; `project-docs/tools/drills/README.md`;
+  `project-docs/tools/drills/run-drills.sh`.
+- **Status:** Open - blocks all Developer execution.
 
 ## Recent Archive Notes
 

@@ -1,4 +1,4 @@
-# Phase Brief - Phase 17 (Approved; QA Planning)
+# Phase Brief - Phase 17 (Approved; Blocked At Entry)
 
 > **Purpose.** Default execution brief for the current phase. Full task and
 > validation detail lives in the Phase 17 archive.
@@ -16,17 +16,17 @@ are evidenced rather than inferred.
 
 ## Status
 
-**Approved; awaiting QA plan.** The Human approved Heavy Mode and DC-A/DC-B/DC-C
-on 2026-07-11; DEC-049..052 are recorded and VAL-001..025 are Ready. No
-Developer task may start until QA Lead creates the Heavy Mode QA plan with fresh
-command and fixture feasibility validation.
+**Approved; blocked at entry.** The QA plan is committed but not Ready:
+QA-BLK-01 found `internal/journal` at 78.9%, and QA-BLK-02 found no DEC-053
+model-audit evidence. DEC-054 adds tests-only Task 0 for coverage. No Developer
+starts until ESC-009 is resolved and QA Lead authorizes the entry remediation.
 
 ## Operating Mode
 
 **Heavy (approved, DEC-049).** Phase 17 adds public CLI/config contracts, mutates the
 derived persistence file under lock, and closes a version. Required workflow:
-validation contract, nine task specs, fresh QA-plan feasibility validation,
-mid-phase reviews after Tasks 2, 5, and 7, final review, human dogfood, and
+validation contract, ten task specs, fresh QA-plan feasibility validation,
+reviews after Tasks 0, 2, 5, and 7, final review, human dogfood, and
 full-scope spec sync. This is v0.1 early-dogfood closure, not the charter's v0.3
 public release; public-release threat model/scans/pre-release checklist and
 held-out scenarios remain deferred under `08_QUALITY_PLAN.md` sections 5.8/7/9.
@@ -37,7 +37,8 @@ Full specs: `../phases/phase-17/tasks/`.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | CF-019 markdown formatter split | Pending | QA plan Ready |
+| 0 | Restore journal COV-001 coverage | Entry-blocked | ESC-009 + revised QA plan |
+| 1 | CF-019 markdown formatter split | Pending | Task 0 + entry review |
 | 2 | Maintenance grace config contract | Pending | DEC-050 |
 | 3 | Maintenance structural errors | Pending | DEC-049 |
 | 4 | Maintenance warnings and info | Pending | Tasks 2-3 |
@@ -65,8 +66,8 @@ Full contract: `../phases/phase-17/qa/validation-contract.md`.
 | Artifact | Path | Status |
 |---|---|---|
 | Validation contract | `../phases/phase-17/qa/validation-contract.md` | Ready |
-| QA plan | `../phases/phase-17/qa/qa-plan.md` | Missing; next required artifact |
-| Mid-phase reviews | `../phases/phase-17/qa/review-1.md` etc. | After Tasks 2, 5, 7 |
+| QA plan | `../phases/phase-17/qa/qa-plan.md` | BLOCKED; QA-BLK-01/02 |
+| QA reviews | `../phases/phase-17/qa/review-entry.md` etc. | After Tasks 0, 2, 5, 7 |
 | Final review | `../phases/phase-17/qa/final-review.md` | Pending |
 | Human checklist | `../phases/phase-17/qa/human-checklist.md` | Pending |
 
@@ -115,14 +116,16 @@ Full contract: `../phases/phase-17/qa/validation-contract.md`.
 - Warning-only non-zero promotion must retain structured stdout for CI.
 - Task 9 is audit-only: any product defect stops for triage instead of expanding
   the final task across subsystem boundaries.
+- Task 0 is tests-only; a production change stops for re-planning.
 
 ## Open Questions
 
-None. QA-plan feasibility findings follow the normal hard-stop/escalation path.
+- ESC-009: DEC-053 QA model qualification or Human-approved proven-route
+  fallback. Task 0 resolves the separate COV-001 blocker without a waiver.
 
 ## Success / Exit Criteria
 
-- [ ] Tasks 1-9 complete with exact required gates.
+- [ ] Tasks 0-9 complete with exact required gates.
 - [ ] VAL-001..024 have deterministic terminal outcomes; VAL-025 dogfood is
   completed and accepted or explicitly dispositioned.
 - [ ] QA final review has no unresolved blocking finding.

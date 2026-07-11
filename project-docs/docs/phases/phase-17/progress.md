@@ -2,8 +2,9 @@
 
 > Phase: 17 - Maintenance + stub guard + v0.1 closure (roadmap v0.1e,
 > slice 4 of 4)
-> Status: APPROVED; awaiting Heavy Mode QA plan and fresh feasibility
-> validation. No Developer task is active.
+> Status: APPROVED / BLOCKED AT ENTRY. QA-BLK-01 now has Task 0 remediation;
+> ESC-009 model qualification and a revised Ready QA plan remain prerequisites.
+> No Developer task is active.
 
 ## Plan
 
@@ -15,6 +16,7 @@ v0.1 closure journey/rebuild/traceability evidence.
 
 | Task | Title | Status |
 |---|---|---|
+| 0 | Restore `internal/journal` COV-001 coverage | Pending; entry prerequisite |
 | 1 | CF-019 markdown formatter split | Pending |
 | 2 | Maintenance grace config contract | Pending |
 | 3 | Maintenance structural errors | Pending |
@@ -27,8 +29,9 @@ v0.1 closure journey/rebuild/traceability evidence.
 
 ## Validation
 
-`qa/validation-contract.md` contains VAL-001..025 at Ready after Human approval
-of Heavy Mode and DC-A/DC-B/DC-C. QA plan creation is the next hard prerequisite.
+`qa/validation-contract.md` contains VAL-001..025 at Ready. DEC-054 adds Task 0
+evidence to VAL-024 without changing its threshold or QA Lead ownership. The QA
+plan remains BLOCKED until ESC-009 is resolved and QA Lead revises it.
 
 ## Progress History
 
@@ -38,6 +41,8 @@ of Heavy Mode and DC-A/DC-B/DC-C. QA plan creation is the next hard prerequisite
   DEC-049..052 record the mode, maintenance warning/config contract,
   result/exit semantics, and exact governance guard matrix. Canonical affected
   specs were synchronized. No Developer task started.
+- Entry re-plan (2026-07-11): QA-BLK-01 accepted. DEC-054 adds tests-only Task
+  0 plus an entry review; no coverage waiver. QA-BLK-02 is tracked as ESC-009.
 
 ## Carry-Forward
 
@@ -49,4 +54,5 @@ of Heavy Mode and DC-A/DC-B/DC-C. QA plan creation is the next hard prerequisite
 
 ## Escalations
 
-None. QA-plan feasibility validation is pending, not an escalation.
+- ESC-009: qualify the DEC-053 QA routes with durable seeded-defect evidence or
+  approve the proven Phase 16 routing fallback. Developer execution is blocked.

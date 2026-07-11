@@ -15,6 +15,8 @@ proof; add no new product behavior.
 - VAL-021: priced run telemetry and aggregate cost/token read-back.
 - VAL-022: maintenance plus delete-and-rebuild structural equality.
 - VAL-023: journal trackability/immutability, DB ignore, and seeded-role rebuild.
+- VAL-025: supply the built-CLI and disposable recovery prerequisites for the
+  Human's phase-end dogfood; the Human remains the assertion validator.
 
 ## Binding Constraints
 
@@ -71,6 +73,9 @@ proof; add no new product behavior.
   plus rebuild restores equal state and audit output. (VAL-022)
 - [ ] Temp-git checks prove journal trackability, DB ignore, roles after rebuild,
   and byte-identical journal across all non-journal commands. (VAL-023)
+- [ ] The built CLI and disposable recovery path needed for HUMAN-25a..e are
+  executable after deterministic QA. The task does not claim the Human's
+  judgment outcome. (VAL-025)
 
 ## First Failing Test
 
@@ -112,4 +117,5 @@ List any conditional command required by this task and why:
 - QA Lead owns the separate phase-end v0.1 PRD-to-test traceability audit
   (VAL-024); this task supplies representative journey evidence, not a claim
   that one smoke proves every PRD row.
+- Human owns VAL-025; this task provides its executable prerequisites only.
 - Completion report: `project-docs/docs/phases/phase-17/tasks/task-9-done.md`.

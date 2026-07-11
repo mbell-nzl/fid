@@ -7,7 +7,7 @@
 
 ## Project State
 
-**Status:** Phase 17 is **APPROVED / AWAITING QA PLAN**. Phase 16 remains wrapped
+**Status:** Phase 17 is **APPROVED / BLOCKED AT ENTRY**. Phase 16 remains wrapped
 and no implementation task is active.
 
 Phase 17 kickoff state:
@@ -17,11 +17,14 @@ Phase 17 kickoff state:
   specs synchronized.
 - VAL-001..025 are Ready in
   `../phases/phase-17/qa/validation-contract.md`.
-- Nine ordered one-session task specs are ready under
-  `../phases/phase-17/tasks/`.
+- Ten ordered one-session task specs are ready under
+  `../phases/phase-17/tasks/`, including DEC-054's tests-only Task 0.
+- QA plan feasibility found `internal/journal` at 78.9% and no durable DEC-053
+  model-audit evidence. Task 0 addresses coverage; ESC-009 tracks model audit.
 
-## Proposed Task Order
+## Approved Task Order
 
+0. Restore `internal/journal` COV-001 coverage with tests only.
 1. CF-019 formatter split.
 2. Maintenance grace config.
 3. Structural error checks.
@@ -42,6 +45,7 @@ Phase 17 kickoff state:
 
 ## Next Action
 
-QA Lead authors `phase-17/qa/qa-plan.md` with fresh command, fixture, artifact,
-and human-check feasibility validation. Phase Runner may start Task 1 only after
-that plan is Ready.
+Human resolves ESC-009 by supplying the DEC-053 model-audit evidence or
+approving the proven-routing fallback. QA Lead then revises `qa-plan.md` to
+authorize Task 0 and the entry review. Task 1 starts only after Task 0 passes
+and its entry review has no unresolved Blocking finding.

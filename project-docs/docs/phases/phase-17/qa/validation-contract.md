@@ -36,8 +36,9 @@ If an assertion cannot be satisfied, stop and escalate rather than weakening it.
   later requirement reads are not treated as stub-table entities.
 
 The Human approved these decisions and Heavy Mode on 2026-07-11. DEC-049..052
-record the binding contract. Developer execution remains blocked only until the
-Heavy Mode QA plan completes fresh command and fixture feasibility validation.
+record the binding product contract. DEC-054 adds the tests-only Task 0 entry
+remediation after QA-BLK-01. Developer execution remains blocked until ESC-009
+is resolved and the QA Lead revises the Heavy Mode QA plan to authorize Task 0.
 
 ## Assertions
 
@@ -66,7 +67,7 @@ Heavy Mode QA plan completes fresh command and fixture feasibility validation.
 | VAL-021 | v0.1 exit criteria; PRD-TELEM-001..004 | The closure journey records priced run telemetry and cost/tokens stats report the expected non-NULL computed USD values. | Same journey using shipped pricing config, `run record`, and stats reads. | QA Lead | task-9 | Run snapshot and aggregate values match the pricing formula. | Telemetry is absent, NULL unexpectedly, or cost is wrong. | Ready | Provider reconciliation fields are optional. |
 | VAL-022 | v0.1 exit criteria; PRD-OPS-003..008; ADR-0001 | The closure workspace passes maintenance, then delete-and-rebuild reproduces identical user-visible/projected state and maintenance results. | Snapshot all exercised state and maintenance output, delete DB, rebuild, and compare structural equality. | QA Lead | task-9 | Rebuild restores roles and all exercised state with equal post-rebuild audit. | Data is lost, rebuilt state differs, or maintenance changes unexpectedly. | Ready | Scratch journal-vs-DB diff is v0.2+. |
 | VAL-023 | v0.1 exit criteria; PRD-INIT-001..004; PRD-OPS-001/004 | `fid init` creates a journal that can be tracked by git while `.fid/fid.sqlite` is ignored, and maintenance/vacuum/stub/read commands do not alter journal append-only history. | Temp git-repo integration test using generated `.fid/.gitignore`, git ignore/track checks, and before/after journal hashes. | QA Lead | task-9 | Journal is trackable, DB ignored, rebuild restores roles, and non-journal commands leave bytes unchanged. | Journal is ignored/untrackable, DB trackable, roles missing, or journal bytes change. | Ready | No automatic `git add` or commit. |
-| VAL-024 | Roadmap v0.1 exit criteria; `01_PRD.md` every requirement row targeted to v0.1; `08_QUALITY_PLAN.md` sections 5.2 and 9 | Every v0.1-targeted PRD row has reproducible passing test/evidence mapping; full unit/integration/benchmark/build gates pass and the CGO-disabled binary is under 30 MB. | QA Lead phase-end traceability audit plus exact phase gate, static build, and size evidence. | QA Lead | phase-end | No v0.1 PRD row is unmapped; every required gate passes; binary <30 MB. | Any row is unmapped, a gate fails/skips, or the binary exceeds the limit. | Ready | Public-release threat model/scans are deferred to v0.3 per charter/quality plan. |
+| VAL-024 | Roadmap v0.1 exit criteria; `01_PRD.md` every requirement row targeted to v0.1; `08_QUALITY_PLAN.md` sections 4.3, 5.2, and 9 | Every v0.1-targeted PRD row has reproducible passing test/evidence mapping; COV-001/COV-002 and the full unit/integration/benchmark/build gates pass; the CGO-disabled binary is under 30 MB. | Task 0 exact focused/full journal coverage evidence, then QA Lead phase-end traceability audit, exact phase gate, static build, and size evidence. | QA Lead | task-0 / phase-end | `internal/journal` is >=80%; no v0.1 PRD row is unmapped; every required gate passes; binary <30 MB. | Journal coverage remains below 80%, any row is unmapped, a gate fails/skips, or the binary exceeds the limit. | Ready | Public-release threat model/scans are deferred to v0.3 per charter/quality plan. |
 | VAL-025 | Charter early dogfood outcome; v0.1 exit criteria; `08_QUALITY_PLAN.md` section 5.3 | The Human uses the built CLI for real project work and judges the maintenance findings, version-gate errors, ready choice, and recovery path clear enough to accept v0.1. | Human checklist, one row per observable, after deterministic QA passes. | Human | phase-end | Every human row is completed and accepted or explicitly dispositioned before wrap. | A row fails/partial without disposition, or dogfood is not run. | Ready | No held-out scenario exists; this is ordinary real-work dogfood, not a hidden evaluator run. |
 
 ## Coverage Audit
@@ -76,10 +77,13 @@ Heavy Mode QA plan completes fresh command and fixture feasibility validation.
 - Roadmap maintenance vacuum -> VAL-015; roadmap read-format closure ->
   VAL-017; all v0.1 exit criteria -> VAL-018..025.
 - `01_PRD.md` every v0.1-targeted requirement row -> VAL-024's phase-end
-  traceability audit; Tasks 1-9 add narrower behavioral evidence where changed.
+  traceability audit; Task 0 restores its entry coverage prerequisite and Tasks
+  1-9 add narrower behavioral evidence where changed.
 - CF-019 is scheduled because task-5 necessarily reopens markdown rendering;
   CF-008, CF-017, and CF-018 remain outside the packages this phase changes.
-- Every task cites its owned IDs. VAL-024 and VAL-025 are honestly phase-end.
+- Every task cites its supported IDs. Task 0 supports phase-end VAL-024; Task 9
+  supplies the executable prerequisites for Human-owned VAL-025 without
+  claiming the Human judgment outcome.
 - Conditional assertions prove both states: VAL-002..010, VAL-012..016, and
   VAL-018..023. Parity assertions use deterministic deep/structural comparison:
   VAL-001, VAL-011, VAL-017, VAL-022, and VAL-023.
@@ -93,3 +97,4 @@ Heavy Mode QA plan completes fresh command and fixture feasibility validation.
 |---|---|---|---|---|
 | 2026-07-10 | VAL-001..025 | Created as Draft | Phase 17 planning | Human approval pending for DC-A/DC-B/DC-C and Heavy Mode |
 | 2026-07-11 | VAL-001..025 | Promoted to Ready | Human approved Heavy Mode and DC-A/DC-B/DC-C | DEC-049..052 |
+| 2026-07-11 | VAL-024/025 | Added Task 0 coverage evidence and Task 9 human-check prerequisites | QA-BLK-01 and task-to-VAL coverage audit | DEC-054 |
