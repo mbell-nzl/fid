@@ -54,5 +54,6 @@ plan remains BLOCKED until ESC-009 is resolved and QA Lead revises it.
 
 ## Escalations
 
-- ESC-009: qualify the DEC-053 QA routes with durable seeded-defect evidence or
-  approve the proven Phase 16 routing fallback. Developer execution is blocked.
+- ESC-009: qualify the DEC-053 QA routes with durable Human-scored
+  seeded-defect evidence. DEC-055 rejects any routing fallback; Developer
+  execution is blocked.

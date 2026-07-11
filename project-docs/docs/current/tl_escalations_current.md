@@ -22,12 +22,12 @@
   drill set against fresh `gpt-5.6-terra` QA Reviewer and `gpt-5.6-sol` QA Lead
   sessions, score every DEC-053 obligation, and commit a model-audit artifact
   under `phase-17/qa/`. Do not infer uncovered obligations; add a scored seed
-  for cross-cutting escalation if needed. Fallback: Human approves restoration
-  of the proven Phase 16 QA routes (`gpt-5.5` high/medium), regenerates provider
-  files, and starts fresh QA sessions.
+  for cross-cutting escalation if needed. DEC-055 rejects any routing fallback;
+  only passing model-audit evidence can resolve this escalation.
 - **Links:** DEC-053; QA-BLK-02; `project-docs/tools/drills/README.md`;
   `project-docs/tools/drills/run-drills.sh`.
-- **Status:** Open - blocks all Developer execution.
+- **Status:** Open - blocks all Developer execution; qualification is the only
+  accepted resolution.
 
 ## Recent Archive Notes
 

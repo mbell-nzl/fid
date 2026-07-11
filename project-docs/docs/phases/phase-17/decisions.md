@@ -140,6 +140,21 @@
   ledger remains untouched and is reconciled when the run resumes.
 - **Refs:** QA-BLK-01; COV-001; VAL-024; `tasks/task-0.md`; ESC-009.
 
+### DEC-055: Phase 17 must qualify the approved QA routing
+
+- **Date:** 2026-07-11
+- **Context:** ESC-009 offered qualification of the DEC-053 QA routing or a
+  return to the Phase 16 QA models as possible resolutions to QA-BLK-02.
+- **Decision:** The Human rejected the routing fallback under all
+  circumstances. Phase 17 must qualify `gpt-5.6-sol` xhigh for QA Lead and
+  `gpt-5.6-terra` high for QA Reviewer through the seeded-defect model audit.
+- **Consequences:** ESC-009 has one valid resolution: committed, Human-scored
+  evidence satisfying every DEC-053 obligation with no misses. A model change,
+  waiver, inferred pass, or reliance on the blocked QA plan alone cannot unblock
+  Developer execution.
+- **Refs:** DEC-053; ESC-009; QA-BLK-02;
+  `project-docs/tools/drills/README.md`.
+
 ## Carry-Forward Review At Kickoff
 
 | ID | Disposition | Rationale |

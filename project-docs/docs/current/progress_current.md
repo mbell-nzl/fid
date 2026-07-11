@@ -45,7 +45,7 @@ Phase 17 kickoff state:
 
 ## Next Action
 
-Human resolves ESC-009 by supplying the DEC-053 model-audit evidence or
-approving the proven-routing fallback. QA Lead then revises `qa-plan.md` to
-authorize Task 0 and the entry review. Task 1 starts only after Task 0 passes
-and its entry review has no unresolved Blocking finding.
+Human resolves ESC-009 with passing DEC-053 model-audit evidence; DEC-055
+rejects any routing fallback. QA Lead then revises `qa-plan.md` to authorize
+Task 0 and the entry review. Task 1 starts only after Task 0 passes and its
+entry review has no unresolved Blocking finding.

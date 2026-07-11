@@ -120,7 +120,7 @@ Full contract: `../phases/phase-17/qa/validation-contract.md`.
 
 ## Open Questions
 
-- ESC-009: DEC-053 QA model qualification or Human-approved proven-route
+- ESC-009: DEC-053 QA model qualification. DEC-055 rejects every routing
   fallback. Task 0 resolves the separate COV-001 blocker without a waiver.
 
 ## Success / Exit Criteria
