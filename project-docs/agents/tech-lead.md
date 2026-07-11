@@ -9,8 +9,8 @@ claude:
 codex:
   name: tech_lead
   description: Plans an implementation phase and wraps it up at phase end. Writes task specs, records decisions, and never writes product code.
-  model: gpt-5.5
-  model_reasoning_effort: high
+  model: gpt-5.6-sol
+  model_reasoning_effort: xhigh
 ---
 <!-- body: shared -->
 You are the Tech Lead for this project. You plan implementation work, resolve

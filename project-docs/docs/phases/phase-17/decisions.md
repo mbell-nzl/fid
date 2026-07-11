@@ -85,6 +85,41 @@
 - **Refs:** PRD-ERR-012; DC-C; `06_DESIGN_PLAN_CLI.md` section 24;
   `10_IMPLEMENTATION_ROADMAP.md` Phase 17; VAL-016.
 
+### DEC-053: Codex roles use evidence-matched GPT-5.6 routing
+
+- **Date:** 2026-07-11
+- **Context:** Phase 17 introduces GPT-5.6-class models to the Codex role
+  routing. Model selection must match each role's scope, preserve the proven
+  Phase Runner configuration, and avoid adopting higher-cost tiers without
+  role-specific evidence.
+- **Decision:** Use the following Codex routing:
+
+  | Role | Model | Reasoning |
+  |---|---|---:|
+  | Tech Lead | `gpt-5.6-sol` | xhigh |
+  | Phase Runner | `gpt-5.4-mini` | xhigh |
+  | Developer | `gpt-5.6-terra` | high |
+  | QA Lead | `gpt-5.6-sol` | xhigh |
+  | QA Reviewer | `gpt-5.6-terra` | high |
+  | TL-Lite | `gpt-5.6-terra` | medium |
+
+  Sol is reserved for phase-wide planning and QA synthesis. Terra handles
+  scoped implementation, review, and tactical triage. Phase Runner remains on
+  `gpt-5.4-mini` at xhigh because that routing is proven in this workflow and
+  the Luna cost increase lacks role-specific evidence. No max or ultra routing
+  is adopted.
+- **Consequences:** Phase 17 must not trust the new QA Lead or QA Reviewer
+  routing until model-audit evidence confirms that seeded defects are detected,
+  deterministic evidence is not replaced by prose inference, `VAL-NNN`
+  failures and blockers are dispositioned correctly, QA Reviewer escalates
+  cross-cutting findings, and QA Lead preserves hard stops without weakening
+  assertions. Phase Runner needs no new orchestrator-model qualification
+  because its model and effort are unchanged; the prompt-change regression
+  drill still applies. Existing Codex sessions must be replaced with fresh
+  sessions before Phase 17 execution relies on this routing.
+- **Refs:** `09_AI_WORKFLOW.md` section 7; `project-docs/agents/`;
+  `project-docs/tools/drills/run-drills.sh`.
+
 ## Carry-Forward Review At Kickoff
 
 | ID | Disposition | Rationale |

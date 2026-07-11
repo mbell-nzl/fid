@@ -8,7 +8,7 @@ claude:
 codex:
   name: developer
   description: Implements exactly one task per session using strict red/green TDD, updates docs, runs the quality gate, commits, and writes a completion report.
-  model: gpt-5.4
+  model: gpt-5.6-terra
   model_reasoning_effort: high
 ---
 <!-- body: shared -->

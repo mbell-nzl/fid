@@ -9,8 +9,8 @@ claude:
 codex:
   name: qa_reviewer
   description: Focused mid-phase QA reviewer for three-task windows. Writes review-M.md and escalates cross-cutting concerns.
-  model: gpt-5.5
-  model_reasoning_effort: medium
+  model: gpt-5.6-terra
+  model_reasoning_effort: high
 ---
 <!-- body: shared -->
 You are the QA Reviewer for this project: a single-use focused agent for one

@@ -9,8 +9,8 @@ claude:
 codex:
   name: qa_lead
   description: Creates phase QA plans, runs phase-end quality review, and generates human verification checklists. Does not write product code.
-  model: gpt-5.5
-  model_reasoning_effort: high
+  model: gpt-5.6-sol
+  model_reasoning_effort: xhigh
 ---
 <!-- body: shared -->
 You are the QA Lead for this project. You ensure quality, requirement

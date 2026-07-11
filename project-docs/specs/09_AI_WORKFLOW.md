@@ -1094,18 +1094,18 @@ Model guidance:
 
 | Role | Codex | Reasoning | Notes |
 |---|---|---:|---|
-| Tech Lead | `gpt-5.5` | high | phase planning, spec sync, wrap-up |
-| Phase Runner | `gpt-5.4-mini` | medium | mechanical orchestration, ledger discipline |
-| Developer | `gpt-5.5` | high | implementation and TDD |
-| QA Lead | `gpt-5.5` | high | phase-wide QA synthesis |
-| QA Reviewer | `gpt-5.5` | medium | bounded mid-phase review |
-| TL-Lite | `gpt-5.5` | medium | focused tactical triage |
+| Tech Lead | `gpt-5.6-sol` | xhigh | phase planning, spec sync, wrap-up |
+| Phase Runner | `gpt-5.4-mini` | xhigh | mechanical orchestration, ledger discipline |
+| Developer | `gpt-5.6-terra` | high | implementation and TDD |
+| QA Lead | `gpt-5.6-sol` | xhigh | phase-wide QA synthesis |
+| QA Reviewer | `gpt-5.6-terra` | high | bounded mid-phase review |
+| TL-Lite | `gpt-5.6-terra` | medium | focused tactical triage |
 
 Note: this table is Codex-specific. Claude Code agent model choices are
 configured separately, per agent, in `.claude/agents/*.md`, and are not
-duplicated here to avoid drift. The **Reasoning** column (high / medium) is the
-tool-agnostic signal — map it to the equivalent capability tier in whichever
-toolchain runs the role.
+duplicated here to avoid drift. The **Reasoning** column (xhigh / high / medium)
+is the tool-agnostic signal — map it to the equivalent capability tier in
+whichever toolchain runs the role.
 
 ## 8. Git And Quality Gates
 
