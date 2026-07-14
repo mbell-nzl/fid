@@ -54,8 +54,8 @@
 
 ## Commit hash
 
-- 26df9d52043d998a631aed4288613ee9c1aa176f
+- `26df9d52043d998a631aed4288613ee9c1aa176f`
 
 ## Commit subject
 
-- test(journal): restore journal coverage gate
+- `test(journal): restore journal coverage gate`
