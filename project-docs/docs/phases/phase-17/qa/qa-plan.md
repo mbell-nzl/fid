@@ -1,21 +1,49 @@
 # Phase 17 QA Plan - Maintenance, Stub Guards, and v0.1 Closure
 
 > Phase: 17 - Maintenance + stub guard + v0.1 closure
-> Refreshed: 2026-07-11
+> Refreshed: 2026-07-14
 > QA Lead: Codex
 > Operating mode: Heavy (DEC-049)
-> Status: **BLOCKED - not Ready**
+> Status: **READY FOR TASK 0; TASK 1 BLOCKED PENDING ENTRY REVIEW**
 
 ## Blocking Entry Findings
 
 The evidence design, commands, fixtures, artifacts, and human checks are
-feasible, but Developer execution must not start until both prerequisites below
-have durable resolution evidence.
+feasible. DEC-055's required model qualification is now committed and closes
+QA-BLK-02. QA-BLK-01 remains open at the evidenced 78.9% baseline, but DEC-054
+authorizes tests-only Task 0 as the remediation path. This plan authorizes Task
+0 only; it does not claim that COV-001 already passes or authorize Task 1.
 
-| ID | Blocking finding | Evidence | Required resolution |
+| ID | Finding and status | Evidence | Required resolution / disposition |
 |---|---|---|---|
-| QA-BLK-01 | The fresh COV-001 baseline is below the required threshold: `internal/journal` is 78.9%, while `08_QUALITY_PLAN.md` COV-001 requires each named domain package to remain at or above 80%. Tasks 1-9 do not authorize a journal-coverage remediation; Task 9 is explicitly audit-only. VAL-024 therefore has no presently authorized path to PASS. | Fresh `go test -race -coverprofile=coverage.out ./...` on 2026-07-11: `internal/journal ... coverage: 78.9%`; Phase 16 final review records the same 78.9%. Earlier DEC-007 and Phase 1/10/12 QA evidence establish package-level enforcement. | Tech Lead adds a scoped remediation task or explicitly expands a task spec to restore `internal/journal >= 80%`, then QA reruns the exact coverage commands. A quality-policy waiver would require a recorded Tech Lead/Human decision; QA will not infer one from Phase 16's contradictory PASS. |
-| QA-BLK-02 | DEC-053 says Phase 17 must not trust the new QA Lead/QA Reviewer model routing until model-audit evidence confirms seeded-defect detection and hard-stop behavior. No model-audit artifact or evidence reference exists in the required context or Phase 17 run ledger. | `project-docs/docs/phases/phase-17/decisions.md` DEC-053; repository search found no model-audit evidence beyond the decision itself. `run-ledger.md` contains only `RUN-START`. | Tech Lead/Human records and cites the required model-audit evidence, or records an approved proven-model routing/fallback. Start fresh role sessions after any routing change, as DEC-053 requires. |
+| QA-BLK-01 | **OPEN; Task 0 authorized.** `internal/journal` remains below COV-001: 78.9% against the unchanged 80% package threshold. Task 0 is the tests-only entry remediation; Tasks 1-9 do not authorize journal coverage work and Task 9 remains audit-only. | Fresh focused feasibility on 2026-07-14: `go test -race -coverprofile=/tmp/fid-journal-coverage.out ./internal/journal/...` passed tests but reported `coverage: 78.9%`; `go tool cover -func=/tmp/fid-journal-coverage.out` reported `total ... 78.9%`. The unchanged full-suite feasibility run on 2026-07-11 also reported `internal/journal ... coverage: 78.9%`. | Task 0 must add meaningful `internal/journal/*_test.go` coverage only, report every exact command, prove `internal/journal >=80.0%` in both focused and unchanged full-suite runs, and prove production files unchanged. `review-entry.md` must independently accept test quality and evidence before QA-BLK-01 closes or Task 1 starts. No production change, threshold change, or waiver is authorized. |
+| QA-BLK-02 | **CLOSED; ESC-009 qualification condition satisfied.** DEC-053/055 model qualification is satisfied for QA Lead `gpt-5.6-sol` xhigh and QA Reviewer `gpt-5.6-terra` high. | Commit `2d5e536fd523682e096909e1c2defc03b25fbc55` (`docs(qa): record phase 17 model qualification`) commits `qa/model-audit.md` and five verbatim evidence files. The Human scorecard records PASS/DETECTED for mechanical drills 00..04, Reviewer drills 05..08, and QA Lead drill 08, with no MISS; the audit explicitly verifies seeded-defect detection, deterministic evidence, blocker/VAL disposition, cross-cutting escalation, and preservation of both-state hard stops. | Satisfied by the committed audit, which explicitly states that it is sufficient to close QA-BLK-02/ESC-009. DEC-055 permits no routing fallback, waiver, or inferred qualification; none is used here. Fresh qualified role sessions remain required by DEC-053. |
+
+### Entry Criteria And Authorization
+
+**Task 0 is Ready** once this revised QA plan is committed. Its spec is
+concrete, its focused and full-suite commands are feasible, QA-BLK-02 is
+closed and ESC-009's qualification condition is satisfied by commit `2d5e536`,
+and DEC-054 expressly authorizes only meaningful
+`internal/journal/*_test.go` changes. The current 78.9% result is the red entry
+condition, not a passing threshold result.
+
+**Task 1 remains blocked** until all of the following are true:
+
+- Task 0's test commit and finalized `task-0-done.md` are committed.
+- Every Task 0 exact command is recorded `PASS`; both focused and unchanged
+  full-suite evidence report `internal/journal >=80.0%`.
+- Commit/file-state evidence proves no non-test Go file or compatibility
+  surface changed and no threshold or coverage policy changed.
+- The exact Task 0 report-lint command passes.
+- A fresh QA Reviewer commits `review-entry.md` with no unresolved Blocking
+  finding and `VERDICT: CONTINUE` after independently reviewing test quality,
+  reproducing representative coverage evidence, and confirming both focused
+  and full-suite threshold proof.
+
+Only that evidence closes QA-BLK-01. A partial increase below 80%, a
+focused-only pass, or positive test output without the full coverage evidence
+keeps Task 1 blocked.
 
 The stale roadmap wording `--format json|markdown` is a non-blocking
 documentation defect because DEC-051, the PRD output contract, design spec, CLI
@@ -39,7 +67,9 @@ Sources loaded for this plan:
 - `project-docs/docs/phases/phase-17/progress.md`
 - `project-docs/docs/phases/phase-17/decisions.md`
 - `project-docs/docs/phases/phase-17/qa/validation-contract.md`
-- `project-docs/docs/phases/phase-17/tasks/task-1.md` through `task-9.md`
+- `project-docs/docs/phases/phase-17/qa/model-audit.md` and committed adjacent
+  evidence files (commit `2d5e536`)
+- `project-docs/docs/phases/phase-17/tasks/task-0.md` through `task-9.md`
 - `project-docs/specs/08_QUALITY_PLAN.md` sections 3.4, 4.1-4.5, 5.1-5.9,
   7, 9, and 10
 - `project-docs/specs/09_AI_WORKFLOW.md` sections 2.6, 4, 6.1, and 8
@@ -67,19 +97,22 @@ ordinary real-work human dogfood for VAL-025.
   YES for VAL-002..010, VAL-012..016, and VAL-018..023.
 - Parity assertions have deterministic conformance proof: YES for VAL-001,
   VAL-011, VAL-017, VAL-022, and VAL-023.
-- Every task cites its owned assertions: YES.
+- Every Task 0-9 cites its owned assertions: YES; Task 0 supports VAL-024 and
+  does not claim a terminal VAL-024 outcome.
 - Every VAL-001..025 has a QA-plan verification step: YES; see section 7 and
   the coverage rollup in section 11.
 - One-line rollup: **all in-scope requirements are referenced by at least one
   VAL assertion: YES.**
 - Revisions requested from Tech Lead: none to assertion wording or ownership.
-  QA-BLK-01 is an execution-scope prerequisite, not a proposal to weaken
-  VAL-024. QA-BLK-02 is a DEC-053 evidence prerequisite.
+  DEC-054 provides the tests-only execution path for QA-BLK-01 without
+  weakening VAL-024. QA-BLK-02 is closed by DEC-055's required committed audit
+  evidence; no assertion refinement is needed.
 
 ## 3. Task Inventory
 
 | Task | Focus | Covered VAL IDs | Risk | QA notes |
 |---|---|---|---|---|
+| 0 | Restore journal COV-001 coverage with tests only | VAL-024 | High | Entry remediation only: meaningful `internal/journal/*_test.go` changes, focused and unchanged full-suite coverage >=80%, and production-byte/file-state proof; mandatory entry review before Task 1. |
 | 1 | Behavior-preserving formatter split | VAL-001 | Medium | Review byte parity and every resulting non-test file <=400 lines. |
 | 2 | Maintenance grace config | VAL-002 | High | Review legacy/missing, zero, positive, negative, malformed, and bootstrap round-trip states. |
 | 3 | Structural maintenance errors | VAL-003..006 | High | Trigger/FK bypass must be test-only; valid counterpart required for every violation family. |
@@ -89,13 +122,14 @@ ordinary real-work human dogfood for VAL-025.
 | 7 | Governance guards | VAL-016 | High | Exact command matrix and precedence; no validation or persistence access before gate. |
 | 8 | Read-format conformance | VAL-017 | High | Exact 15-command matrix; structural machine-format parity and markdown identities. |
 | 9 | v0.1 closure journey | VAL-018..023 | High | Audit-only; any product defect stops for triage. Temp git and delete/rebuild are mandatory. |
-| Phase end | Traceability, full gates, size | VAL-024 | High | Every v0.1 PRD row maps to reproducible evidence; COV-001 blocker must be closed. |
+| Phase end | Traceability, full gates, size | VAL-024 | High | Every v0.1 PRD row maps to reproducible evidence; Task 0 and entry-review evidence are reverified, but terminal VAL-024 remains QA Lead-owned. |
 | Human | Real-work dogfood | VAL-025 | High | Run only after deterministic QA; one judgment per HUMAN row. |
 
 ## 4. Required Evidence Strategy
 
 | Evidence ID | Required evidence | Covers | Owner | Produced by |
 |---|---|---|---|---|
+| EVID-00 | Meaningful failing-capable journal behavioral tests; exact focused and unchanged full-suite outputs both showing `internal/journal >=80.0%`; commit/file-state proof that production files, compatibility surfaces, and thresholds are unchanged; exact report-lint PASS | VAL-024 | Developer, QA Reviewer, QA Lead | Task 0 / entry review / final review |
 | EVID-01 | Before/after golden and existing formatter outputs plus `wc -l` of all split files | VAL-001 | Developer, QA Reviewer | Task 1 / review 1 |
 | EVID-02 | Config table tests for missing, zero, positive, negative, malformed, bootstrap, and legacy prefix-only input | VAL-002 | Developer, QA Reviewer | Task 2 / review 1 |
 | EVID-03 | One corrupt and one valid fixture per hierarchy/scheduling family, with full ordered finding payload | VAL-003 | Developer, QA Reviewer | Task 3 / review 2 |
@@ -119,9 +153,9 @@ ordinary real-work human dogfood for VAL-025.
 | EVID-21 | Priced run snapshot and independently calculated non-NULL cost/token aggregates | VAL-021 | Developer, QA Lead | Task 9 / final review |
 | EVID-22 | Pre/post delete-and-rebuild structural snapshots and equal maintenance output | VAL-022 | Developer, QA Lead | Task 9 / final review |
 | EVID-23 | Temp-git ignore/track proof and journal hashes across check, vacuum, guards, reads, and rebuild | VAL-023 | Developer, QA Lead | Task 9 / final review |
-| EVID-24 | Every v0.1 PRD row mapped to task/test/review evidence; exact phase gate, COV-001/COV-002 values, static size | VAL-024 | QA Lead | Final review |
+| EVID-24 | Every v0.1 PRD row mapped to task/test/review evidence; Task 0 and entry-review evidence reverified; exact phase gate, COV-001/COV-002 values, static size | VAL-024 | QA Lead | Final review |
 | EVID-25 | Five separately recorded real-work judgments | VAL-025 | Human | Human checklist |
-| EVID-26 | Exact task command coverage and valid commit hash/subject from committed completion reports | no VAL | QA Reviewer, QA Lead | Each review / final review |
+| EVID-26 | Exact task command coverage and valid commit hash/subject from all ten committed completion reports | no VAL | QA Reviewer, QA Lead | Entry review, each review, and final review |
 
 ## 5. Deterministic Gates
 
@@ -133,6 +167,8 @@ report. Narrower substitutions do not count.
 |---|---|---|---|
 | Format | `gofmt -l cmd internal` | No files listed | Every task and phase end |
 | Lint | `golangci-lint run ./...` | `0 issues.` | Every task and phase end |
+| Focused journal coverage execution | `go test -race -coverprofile=/tmp/fid-journal-coverage.out ./internal/journal/...` | Tests PASS and package reports >=80.0% | Task 0 and entry review |
+| Focused journal coverage report | `go tool cover -func=/tmp/fid-journal-coverage.out` | Exit 0 and total reports >=80.0% | Task 0 and entry review |
 | Coverage execution | `go test -race -coverprofile=coverage.out ./...` | All packages PASS | Every task and phase end |
 | Coverage report | `go tool cover -func=coverage.out` | Exit 0; COV-001 named packages >=80%, `cmd/fid` >=70%, no threshold decrease | Every task and phase end |
 | Unit suite | `go test -race ./...` | All packages PASS | Phase end, per quality plan 5.2 |
@@ -143,7 +179,7 @@ report. Narrower substitutions do not count.
 | Static size | `stat -c '%s %n' /tmp/fid-static` | Size evidence emitted | Task 9 and phase end |
 | Size assertion | `test "$(stat -c %s /tmp/fid-static)" -lt 31457280` | Exit 0 | Task 9 and phase end |
 | Formatter size | `wc -l internal/format/markdown.go internal/format/markdown_issue.go internal/format/markdown_lists.go internal/format/markdown_stats.go` | Every row <=400 | Task 1 / review 1 / final |
-| Completion report lint | Nine exact `project-docs/tools/report-lint.sh` commands listed in section 8 | Exit 0 for every task report/spec pair | Each review and final |
+| Completion report lint | Ten exact `project-docs/tools/report-lint.sh` commands listed in section 8 | Exit 0 for every task report/spec pair | Entry review, each review, and final |
 
 Security review at phase end covers SQL construction/input binding,
 test-only corruption bypass isolation, guard-before-input behavior, lock
@@ -152,8 +188,9 @@ remain deferred by DEC-049.
 
 ## 6. Command And Feasibility Validation
 
-Fresh validation was performed on 2026-07-11; no prior-phase command result was
-carried forward.
+Fresh Heavy Mode validation was performed on 2026-07-11, with the newly added
+Task 0 and model-audit paths validated on 2026-07-14; no prior-phase command
+result was carried forward.
 
 ### 6.1 Command Feasibility
 
@@ -161,6 +198,8 @@ carried forward.
 |---|---|---|---|
 | `gofmt -l cmd internal` | Exact command | PASS | Exit 0; no files listed. `gofmt -h` confirms `-l` and path arguments. |
 | `golangci-lint run ./...` | Exact command and help | PASS | Exit 0, `0 issues.`; `golangci-lint run --help` confirms syntax. |
+| `go test -race -coverprofile=/tmp/fid-journal-coverage.out ./internal/journal/...` | Exact command on 2026-07-14 | **BLOCKED for threshold, command feasible** | Tests passed and the profile was produced, but the package reported `coverage: 78.9% of statements`. This is Task 0's red entry condition, not a pass. |
+| `go tool cover -func=/tmp/fid-journal-coverage.out` | Exact command on 2026-07-14 | **BLOCKED for threshold, command feasible** | Exit 0 and function rows were emitted; `total ... 78.9%`. Task 0 and entry review require >=80.0%. |
 | `go test -race -coverprofile=coverage.out ./...` | Exact command | **BLOCKED for threshold, command feasible** | All tests passed; `cmd/fid` 77.5%; `internal/journal` 78.9%. The latter creates QA-BLK-01. |
 | `go tool cover -func=coverage.out` | Exact command and help | **BLOCKED for threshold, command feasible** | Exit 0; total 75.6%. `go tool cover -help` confirms `-func`. COV-001 package assessment must use the package totals emitted by the preceding `go test`. |
 | `go test -race ./...` | `go help testflag` plus successful stricter coverage invocation | PASS | Help confirms `-race`; coverage invocation ran the same suite with race instrumentation. Exact command remains mandatory at phase end. |
@@ -171,7 +210,7 @@ carried forward.
 | `stat -c '%s %n' /tmp/fid-static` | Exact command and `stat --help` | PASS | `12738389 /tmp/fid-static`; `%s` and `%n` supported. |
 | `test "$(stat -c %s /tmp/fid-static)" -lt 31457280` | Exact command and shell `help test` | PASS | Exit 0; current static binary is below 30 MiB. |
 | Task 1 `wc -l` command | `wc` availability, existing source check, task output-path check | PASS | `internal/format/markdown.go` exists; the other three paths are explicit Task 1 outputs and must exist before its exact command runs. |
-| Nine exact report-lint commands in section 8 | Script inspection and `project-docs/tools/report-lint.sh --self-test` | PASS | Self-test passed clean/skipped/narrower/fabricated-hash/dirty-report cases; all nine task/report paths are declared by task specs. |
+| Ten exact report-lint commands in section 8 | Script inspection and `project-docs/tools/report-lint.sh --self-test` on 2026-07-14 | PASS | Self-test passed required-command, narrower-substitution, blocker-report, hash/subject, uncommitted, and dirty-report cases; all ten task/report paths are declared by Task 0-9 specs. |
 | CLI human prerequisites | Built CLI help | PASS | Root, `init`, `ready`, `rebuild`, and `requirement sync` help all exit 0. Planned `maintenance` and governance syntax is fixed by DEC-051/052 and Tasks 5/7. |
 
 ### 6.2 Fixture Feasibility
@@ -194,14 +233,15 @@ carried forward.
 | Artifact assumption | Validation method | Result | Evidence |
 |---|---|---|---|
 | Validation target | File and VAL audit | PASS | `validation-contract.md` exists with VAL-001..025, singular owners, evidence, and terminal criteria. |
-| Task evidence inputs | File inventory | PASS | Nine task specs exist; each has exact commands and a completion-report path. No completion report is expected before its task runs. |
-| Mid-phase reviews | Template/path validation | PASS | `mid-phase-review-template.md` exists; `review-1.md`, `review-2.md`, and `review-3.md` are feasible at the checkpoints in section 8. |
+| Task evidence inputs | File inventory | PASS | Ten Task 0-9 specs exist; each has exact commands and a completion-report path. No completion report is expected before its task runs. |
+| Task 0 tests-only boundary | Task spec/file-scope inspection plus Git/report-lint capability check | PASS | Task 0 permits only `internal/journal/*_test.go`; its verified task commit file list and finalized report can prove that no production file, compatibility surface, or threshold changed. Any product change is a hard stop. |
+| Mid-phase reviews | Template/path validation | PASS | `mid-phase-review-template.md` exists; `review-entry.md`, `review-1.md`, `review-2.md`, and `review-3.md` are feasible at the checkpoints in section 8. |
 | Final review | Template/path validation | PASS | `final-review-template.md` includes gate results, every VAL outcome, deterministic execution, and maturity disposition. |
 | Human checklist | Template/path validation | PASS | `human-checklist-template.md` supports one observable per row and human-only outcomes. |
 | Completion report verification | Template/tool validation | PASS | Completion template and executable report-lint tool exist; self-test is green. |
 | Commit evidence | Git/tool validation | PASS | Git 2.53.0 is available; report-lint verifies hash, subject, committed state, and exact command coverage. |
 | QA artifact ownership | Repository/write check | PASS | This QA plan can be committed independently with `docs(qa): ...` and `Refs: phase-17`; unrelated `run-ledger.md` remains untouched. |
-| DEC-053 model-audit evidence | Repository search and run-ledger inspection | BLOCKED | No evidence artifact/reference found; see QA-BLK-02. |
+| DEC-053/055 model-audit evidence | `git rev-parse`, commit metadata, committed-tree inventory, and audit/scorecard inspection on 2026-07-14 | PASS | `2d5e536fd523682e096909e1c2defc03b25fbc55` is a valid commit with subject `docs(qa): record phase 17 model qualification`; it commits the audit and five referenced outputs, and the Human scorecard records no MISS. QA-BLK-02 is closed. |
 
 ### 6.4 Human-Check Feasibility
 
@@ -221,6 +261,7 @@ records a terminal outcome for every VAL.
 
 | ID | Check | Covers | Evidence required |
 |---|---|---|---|
+| QA-00 | Reverify Task 0's meaningful journal tests, focused and unchanged full-suite `internal/journal >=80.0%` results, tests-only commit scope, exact command coverage, and accepted entry review `(qa-lead)` | VAL-024 | `task-0-done.md`, exact focused/full outputs, verified commit file list, report-lint PASS, and committed `review-entry.md`; 78.9% or focused-only evidence cannot pass. |
 | QA-01 | Verify byte-identical pre-Phase-17 markdown outputs and all split formatter files <=400 lines `(qa-lead)` | VAL-001 | Review 1, golden/existing test output, final `wc -l`. |
 | QA-02 | Verify missing/zero/positive/negative/malformed config and bootstrap/legacy round-trip states `(qa-lead)` | VAL-002 | Focused test output naming every state. |
 | QA-03 | Verify every structural violation family and valid counterpart, including all FK-check rows `(qa-lead)` | VAL-003..006 | Review 2 and focused domain test output; fixture setup excerpt. |
@@ -239,21 +280,34 @@ records a terminal outcome for every VAL.
 | QA-16 | Audit every v0.1-targeted PRD row to reproducible task/test/review evidence `(qa-lead)` | VAL-024 | Complete PRD traceability table with no unmapped row. |
 | QA-17 | Run the exact phase gates, enforce COV-001/COV-002, and prove static binary <30 MiB `(qa-lead)` | VAL-024 | Literal command excerpts, package percentages, benchmark output, build/stat/test outputs. |
 | QA-18 | Verify impacted docs and full seven-spec sync, including four maintenance formats and exact guard matrix `(qa-lead)` | VAL-012, VAL-016, VAL-017, VAL-024 | Diff/file-state review and rendered command examples. |
-| QA-19 | Verify all nine completion reports are committed, clean, exact-command complete, and hash/subject valid `(qa-lead)` | VAL-024 | Nine report-lint PASS outputs and git evidence. |
+| QA-19 | Verify all ten completion reports are committed, clean, exact-command complete, and hash/subject valid `(qa-lead)` | VAL-024 | Ten report-lint PASS outputs and git evidence. |
 
 ## 8. Mid-Phase Review Cadence
 
 The Heavy Mode cadence is mandatory and overrides the default every-three-task
 rule:
 
-1. **Review 1 immediately after Task 2 and before Task 3.** Cover Tasks 1-2 and
+1. **Entry Review immediately after Task 0 and before Task 1.** Write
+   `project-docs/docs/phases/phase-17/qa/review-entry.md`; cover Task 0's
+   tests-only progress toward VAL-024 without assigning a terminal VAL-024
+   outcome. Run
+   `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-0-done.md project-docs/docs/phases/phase-17/tasks/task-0.md`,
+   independently rerun at least the focused journal coverage command and its
+   report, verify the unchanged full-suite output also reports
+   `internal/journal >=80.0%`, inspect the verified task commit file list for
+   `*_test.go`-only scope, and assess whether every new test asserts observable
+   behavior and can fail. Any production change, threshold/policy change,
+   focused-only threshold evidence, result below 80.0%, invalid/missing command
+   evidence, or weak line-coverage-only test is Blocking. Only a committed
+   review with `VERDICT: CONTINUE` closes QA-BLK-01 and authorizes Task 1.
+2. **Review 1 immediately after Task 2 and before Task 3.** Cover Tasks 1-2 and
    VAL-001..002. Run report-lint for:
    `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-1-done.md project-docs/docs/phases/phase-17/tasks/task-1.md`
    and
    `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-2-done.md project-docs/docs/phases/phase-17/tasks/task-2.md`.
    Recheck formatter line counts, byte-parity evidence, all config states, exact
    task commands, committed report hashes, and QA-BLK disposition.
-2. **Review 2 immediately after Task 5 and before Task 6.** Cover Tasks 3-5 and
+3. **Review 2 immediately after Task 5 and before Task 6.** Cover Tasks 3-5 and
    VAL-003..014. Run:
    `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-3-done.md project-docs/docs/phases/phase-17/tasks/task-3.md`,
    `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-4-done.md project-docs/docs/phases/phase-17/tasks/task-4.md`, and
@@ -261,7 +315,7 @@ rule:
    Re-run the integration gate, inspect test-only corruption isolation,
    both-state warning boundaries, all four formats, structured non-zero stdout,
    and journal immutability.
-3. **Review 3 immediately after Task 7 and before Task 8.** Cover Tasks 6-7 and
+4. **Review 3 immediately after Task 7 and before Task 8.** Cover Tasks 6-7 and
    VAL-015..016. Run:
    `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-17/tasks/task-6-done.md project-docs/docs/phases/phase-17/tasks/task-6.md`
    and
@@ -277,7 +331,8 @@ and
 Each review uses `project-docs/templates/mid-phase-review-template.md`, is
 committed by its QA Reviewer, and records `CONTINUE` or `BLOCK`. Missing,
 narrower, silently skipped, or uncommitted task evidence is Blocking. A review
-does not advance while either QA-BLK prerequisite remains unresolved.
+does not advance while an applicable blocking entry or in-window finding
+remains unresolved. Review 1 cannot substitute for or absorb the Entry Review.
 
 ## 9. Human Verification Scope
 
@@ -295,14 +350,15 @@ Generate only these rows in `human-checklist.md` after deterministic QA passes:
 
 The phase can proceed to final review only when:
 
-- QA-BLK-01 and QA-BLK-02 have durable resolution evidence.
-- Tasks 1-9 and their completion reports are committed and report-lint clean.
-- Reviews after Tasks 2, 5, and 7 are committed with no unresolved Blocking
-  finding.
+- QA-BLK-02 remains closed by committed audit `2d5e536`; QA-BLK-01 is closed
+  only by Task 0's focused/full >=80.0% proof and accepted Entry Review.
+- Tasks 0-9 and their completion reports are committed and report-lint clean.
+- Reviews after Tasks 0, 2, 5, and 7 are committed with no unresolved Blocking
+  finding; `review-entry.md` must precede Task 1.
 - Every required task and phase command passed, or the phase is stopped with a
   blocker report; substitutions are not accepted.
 - COV-001 named domain packages are each >=80% and COV-002 `cmd/fid` is >=70%.
-- QA-01..19 have reproducible evidence.
+- QA-00..19 have reproducible evidence.
 - VAL-001..024 each receive `PASS`, `FAIL`, `BLOCKED`, or `CARRY-FORWARD` in
   `final-review.md`; every PASS cites evidence.
 - `human-checklist.md` contains only HUMAN-25a..e and VAL-025 is accepted or
@@ -331,9 +387,12 @@ The phase can proceed to final review only when:
 | VAL-021 | QA-13, EVID-21 | QA Lead |
 | VAL-022 | QA-14, EVID-22 | QA Lead |
 | VAL-023 | QA-15, EVID-23 | QA Lead |
-| VAL-024 | QA-16..19, EVID-24/26 | QA Lead |
+| VAL-024 | QA-00, QA-16..19, EVID-00/24/26 | Entry Review / QA Lead |
 | VAL-025 | HUMAN-25a..e, EVID-25 | Human |
 
-Coverage is complete, but this plan remains **BLOCKED** until QA-BLK-01 and
-QA-BLK-02 are resolved. QA Lead must refresh the status and cite both
-resolutions before the Phase Runner starts Task 1.
+Coverage planning is complete. This plan is **Ready for Task 0 only** because
+QA-BLK-02 is closed by commit `2d5e536` and DEC-054 authorizes the tests-only
+remediation. QA-BLK-01 and Task 1 remain blocked until Task 0 proves the
+unchanged 80% threshold in both required coverage runs and the committed Entry
+Review accepts its tests, scope, commands, and evidence. No validation
+assertion or hard stop is waived.
