@@ -90,6 +90,42 @@ func TestWriteMarkdownRendersIssueGateLists(t *testing.T) {
 	})
 }
 
+func TestWriteMarkdownRendersReadyViewPointer(t *testing.T) {
+	epicID := "FID-epic01"
+	epicTitle := "Formatter work"
+	priority := 2
+	sequence := 4
+	estTokens := 900
+	view := ReadyView{Task: &issues.ReadyTask{
+		ID:        "FID-task01",
+		Title:     "Split markdown formatter",
+		Status:    "in_progress",
+		EpicID:    &epicID,
+		EpicTitle: &epicTitle,
+		Priority:  &priority,
+		Sequence:  &sequence,
+		EstTokens: &estTokens,
+	}}
+
+	var markdownOutput bytes.Buffer
+	if err := Write(&markdownOutput, Markdown, &view); err != nil {
+		t.Fatalf("Write(Markdown) error = %v", err)
+	}
+
+	want := "" +
+		"# Ready Task\n\n" +
+		"- ID: FID-task01\n" +
+		"- Title: Split markdown formatter\n" +
+		"- Status: in_progress\n" +
+		"- Epic: FID-epic01 (Formatter work)\n" +
+		"- Sequence: 4\n" +
+		"- Priority: P2\n" +
+		"- Est. tokens: 900\n"
+	if markdownOutput.String() != want {
+		t.Fatalf("markdown output = %q, want %q", markdownOutput.String(), want)
+	}
+}
+
 func emptyIssueMarkdownFixture() IssueMarkdownView {
 	ownerRole := "developer"
 	createdAt := "2026-06-07T14:00:00Z"
