@@ -194,6 +194,134 @@ func TestRevertVerdictClassifiesKnownEventTypes(t *testing.T) {
 	}
 }
 
+func TestRevertVerdictKeepsSpecificStrategiesForSupportedEventTypes(t *testing.T) {
+	tests := []struct {
+		name             string
+		event            Event
+		wantEligible     bool
+		wantMode         string
+		wantRestoreKey   string
+		wantPrecondition string
+		wantCorrection   string
+	}{
+		{
+			name:             "issue update without field effects uses guarded fallback",
+			event:            Event{EventType: "issue.updated"},
+			wantEligible:     true,
+			wantMode:         "inverse",
+			wantRestoreKey:   "prior_state",
+			wantPrecondition: "current_state",
+		},
+		{
+			name:             "concern address without field effects uses guarded fallback",
+			event:            Event{EventType: "issue.concern_addressed"},
+			wantEligible:     true,
+			wantMode:         "inverse",
+			wantRestoreKey:   "prior_state",
+			wantPrecondition: "current_state",
+		},
+		{
+			name: "link add removes only present rows",
+			event: Event{EventType: "link.added", Effects: []Effect{{
+				Table: "links",
+				PK:    map[string]any{"from_id": "FID-a1b2c3", "to_id": "FID-d4e5f6"},
+			}}},
+			wantEligible:     true,
+			wantMode:         "inverse",
+			wantRestoreKey:   "links_absent",
+			wantPrecondition: "links_present",
+		},
+		{
+			name: "link removal restores only absent rows",
+			event: Event{EventType: "link.removed", Effects: []Effect{{
+				Table: "links",
+				PK:    map[string]any{"from_id": "FID-a1b2c3", "to_id": "FID-d4e5f6"},
+			}}},
+			wantEligible:     true,
+			wantMode:         "inverse",
+			wantRestoreKey:   "links_present",
+			wantPrecondition: "links_absent",
+		},
+		{
+			name:         "acceptance criterion addition retracts fact",
+			event:        Event{EventType: "issue.ac_added"},
+			wantEligible: true,
+			wantMode:     "retraction",
+		},
+		{
+			name:         "concern raise retracts fact",
+			event:        Event{EventType: "issue.concern_raised"},
+			wantEligible: true,
+			wantMode:     "retraction",
+		},
+		{
+			name:         "gate result retracts fact",
+			event:        Event{EventType: "dev.gate.recorded"},
+			wantEligible: true,
+			wantMode:     "retraction",
+		},
+		{
+			name:           "workspace initialization stays non-revertible",
+			event:          Event{EventType: "project.initialized"},
+			wantCorrection: "create a fresh workspace if the project bootstrap was wrong",
+		},
+		{
+			name:           "label creation stays non-revertible",
+			event:          Event{EventType: "label.added"},
+			wantCorrection: "stop applying the label, or create the corrected label and move usage forward",
+		},
+		{
+			name:           "completion stays non-revertible",
+			event:          Event{EventType: "issue.completed"},
+			wantCorrection: "move the issue forward with the appropriate workflow command instead of removing the completion history",
+		},
+		{
+			name:           "run telemetry stays non-revertible",
+			event:          Event{EventType: "run.recorded"},
+			wantCorrection: "record a correcting run entry or leave the telemetry history intact",
+		},
+		{
+			name:           "requirement sync stays non-revertible",
+			event:          Event{EventType: "requirement.synced"},
+			wantCorrection: "rerun fid requirement sync from the corrected source document",
+		},
+		{
+			name:           "developer finish stays non-revertible",
+			event:          Event{EventType: "dev.finished"},
+			wantCorrection: "use the issue and dev commands to move workflow state forward instead of reverting the composite event",
+		},
+		{
+			name:           "developer block stays non-revertible",
+			event:          Event{EventType: "dev.blocked"},
+			wantCorrection: "use the issue and dev commands to move workflow state forward instead of reverting the composite event",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := RevertVerdict(tt.event)
+			if got.Eligible != tt.wantEligible {
+				t.Fatalf("eligible = %t, want %t", got.Eligible, tt.wantEligible)
+			}
+			if got.Mode != tt.wantMode {
+				t.Fatalf("mode = %q, want %q", got.Mode, tt.wantMode)
+			}
+			if tt.wantRestoreKey != "" && got.Restores[tt.wantRestoreKey] == nil {
+				t.Fatalf("restores = %#v, want %q entry", got.Restores, tt.wantRestoreKey)
+			}
+			if tt.wantPrecondition != "" && got.Precondition[tt.wantPrecondition] == nil {
+				t.Fatalf("precondition = %#v, want %q entry", got.Precondition, tt.wantPrecondition)
+			}
+			if got.Correction != tt.wantCorrection {
+				t.Fatalf("correction = %q, want %q", got.Correction, tt.wantCorrection)
+			}
+			if got.Note == "" {
+				t.Fatal("note = empty, want an operator explanation")
+			}
+		})
+	}
+}
+
 func TestRevertVerdictDefaultsUnknownTypesToSafeNotEligible(t *testing.T) {
 	got := RevertVerdict(Event{EventType: "mystery.event"})
 

@@ -1,8 +1,10 @@
 package journal
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -348,6 +350,60 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 			t.Fatalf("caught-up events = %d, want %d", result.ReplayStats.EventsReplayed, 1)
 		}
 	})
+}
+
+func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing.T) {
+	workspace := newReplayWorkspace(t)
+	writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
+
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-05.jsonl")
+	before, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) before rebuild error = %v", journalPath, err)
+	}
+
+	var result EnsureProjectionResult
+	err = WithLock(workspace, LockOwner{Command: "fid catch-up", ActorRole: "developer"}, func(lock *WriteLock) error {
+		if _, statErr := os.Stat(filepath.Join(workspace, ".fid", lockDirectoryName)); statErr != nil {
+			return fmt.Errorf("caller-held lock missing before catch-up: %w", statErr)
+		}
+
+		var ensureErr error
+		result, ensureErr = EnsureProjectionFreshWithLock(lock, testProjectMigrationsDir(t))
+		return ensureErr
+	})
+	if err != nil {
+		t.Fatalf("EnsureProjectionFreshWithLock() error = %v", err)
+	}
+
+	if result.Decision != fiddb.ProjectionRebuild {
+		t.Fatalf("freshness decision = %q, want %q", result.Decision, fiddb.ProjectionRebuild)
+	}
+	if result.ReplayStats.EventsReplayed != 2 {
+		t.Fatalf("replayed events = %d, want %d", result.ReplayStats.EventsReplayed, 2)
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() rebuilt projection error = %v", err)
+	}
+	defer closeProjectDB(t, conn)
+
+	var title string
+	if err := conn.QueryRow(`SELECT title FROM issues WHERE id = ?`, "FID-a1b2c3").Scan(&title); err != nil {
+		t.Fatalf("query rebuilt issue: %v", err)
+	}
+	if title != "Implement replay" {
+		t.Fatalf("rebuilt issue title = %q, want %q", title, "Implement replay")
+	}
+
+	after, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rebuild error = %v", journalPath, err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatalf("EnsureProjectionFreshWithLock() changed journal bytes")
+	}
 }
 
 func TestOrderedJournalFilesSkipsNonJournalEntries(t *testing.T) {
