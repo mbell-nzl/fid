@@ -54,8 +54,8 @@
 
 ## Commit hash
 
-- Pending commit
+- 26df9d52043d998a631aed4288613ee9c1aa176f
 
 ## Commit subject
 
-- Pending commit
+- test(journal): restore journal coverage gate
