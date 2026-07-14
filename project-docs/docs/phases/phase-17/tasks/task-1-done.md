@@ -50,8 +50,8 @@
 
 ## Commit hash
 
-- Pending commit
+- 65d2f94587310668b252ebfd4141ed9ef26c8ec0
 
 ## Commit subject
 
-- Pending commit
+- refactor(format): split markdown renderer
