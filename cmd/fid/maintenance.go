@@ -21,7 +21,42 @@ func newMaintenanceCommand() *cobra.Command {
 		Short: "Inspect and maintain the derived projection.",
 	}
 	cmd.AddCommand(newMaintenanceCheckCommand())
+	cmd.AddCommand(newMaintenanceVacuumCommand())
 	return cmd
+}
+
+func newMaintenanceVacuumCommand() *cobra.Command {
+	var actorRole string
+
+	cmd := &cobra.Command{
+		Use:   "vacuum",
+		Short: "Compact the derived SQLite projection without changing the journal.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+
+			result, err := maintenance.Vacuum(workspaceRoot, issueMigrationsDir(), actorRole)
+			if err != nil {
+				return renderMaintenanceVacuumError(cmd, err)
+			}
+			if err := writeIssueLine(cmd.ErrOrStderr(), "vacuum complete — .fid/fid.sqlite: %d B → %d B\n", result.BeforeBytes, result.AfterBytes); err != nil {
+				return err
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	return cmd
+}
+
+func renderMaintenanceVacuumError(cmd *cobra.Command, err error) error {
+	if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+		return renderErr
+	}
+	return err
 }
 
 func newMaintenanceCheckCommand() *cobra.Command {

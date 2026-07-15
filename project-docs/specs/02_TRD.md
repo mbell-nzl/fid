@@ -477,6 +477,12 @@ preferred domain correction command.
 - SQLite transactions remain required inside the write-lock boundary for
   projection atomicity. SQLite locking alone is not the write serializer,
   because the journal append is the commit point.
+- `fid maintenance vacuum --by <role>` is an explicit derived-DB maintenance
+  operation, not a domain write. After authorizing the role, it holds the same
+  `.fid/write.lock`, refreshes the projection through the held-lock path, then
+  runs SQLite `VACUUM` against `.fid/fid.sqlite`. It appends no journal event,
+  creates no activity row, and reports the database byte sizes before and
+  after compaction.
 - `.fid/write.lock` is acquired by atomically creating a lock directory that
   contains owner metadata: PID, hostname, started_at, command, and actor role
   when available. If the lock is held, fid waits for the configured short

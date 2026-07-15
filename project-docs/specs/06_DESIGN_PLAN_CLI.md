@@ -1492,10 +1492,19 @@ fid maintenance vacuum --by <role>
 |---|---|---|
 | `--by` | string | Acting role |
 
+Only `tl` and `human` may run this command. `--by` is required; missing,
+unknown, or denied roles fail before projection refresh or SQLite mutation.
+The command acquires `.fid/write.lock`, refreshes any stale or missing
+projection while holding that lock, then vacuums `.fid/fid.sqlite` without
+appending a journal event or activity row. It writes no stdout output.
+
 **Output (stderr):**
 ```text
-vacuum complete — .fid/fid.sqlite: 2.4 MB → 1.8 MB
+vacuum complete — .fid/fid.sqlite: 2516582 B → 1887437 B
 ```
+
+The byte counts are measured from the derived database immediately before and
+after `VACUUM`; they vary by workspace.
 
 ---
 

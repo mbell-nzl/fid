@@ -89,3 +89,22 @@ func TestAuthorizeIssueLabelActionsMatchMatrixExpectations(t *testing.T) {
 		}
 	}
 }
+
+func TestAuthorizeMaintenanceVacuumMatchesMatrixExpectations(t *testing.T) {
+	t.Parallel()
+
+	workspace := newPolicyWorkspace(t)
+	for _, role := range []string{"tl", "human"} {
+		if err := Authorize(workspace, role, "maintenance.vacuum"); err != nil {
+			t.Fatalf("Authorize(%q, maintenance.vacuum) error = %v, want allowed", role, err)
+		}
+	}
+
+	for _, role := range []string{"developer", "qa_reviewer", "qa_lead", "tl_lite", "workflow_runner"} {
+		err := Authorize(workspace, role, "maintenance.vacuum")
+		var deniedErr *PermissionDeniedError
+		if !errors.As(err, &deniedErr) {
+			t.Fatalf("Authorize(%q, maintenance.vacuum) error = %T, want *PermissionDeniedError", role, err)
+		}
+	}
+}

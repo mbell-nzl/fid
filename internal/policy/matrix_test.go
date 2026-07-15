@@ -41,6 +41,7 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		"dev.finish",
 		"dev.block",
 		"maintenance.rebuild",
+		"maintenance.vacuum",
 		"requirement.sync",
 		"link.add",
 		"link.remove",
@@ -75,6 +76,20 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		if !containsAction(expectedActions, action) {
 			t.Fatalf("matrix contains unexpected action %q", action)
 		}
+	}
+}
+
+func TestMatrixMaintenanceVacuumRowMatchesSchemaSection13(t *testing.T) {
+	t.Parallel()
+
+	got, ok := MatrixEntry("maintenance.vacuum")
+	if !ok {
+		t.Fatal(`MatrixEntry("maintenance.vacuum") found = false, want true`)
+	}
+
+	want := MatrixRow{Action: "maintenance.vacuum", TL: true, Human: true}
+	if got != want {
+		t.Fatalf("MatrixEntry(maintenance.vacuum) = %#v, want %#v", got, want)
 	}
 }
 
