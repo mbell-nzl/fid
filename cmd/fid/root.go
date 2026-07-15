@@ -28,7 +28,9 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newClaimCommand())
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())
+	cmd.AddCommand(newDecisionCommand())
 	cmd.AddCommand(newDevCommand())
+	cmd.AddCommand(newEscalationCommand())
 	cmd.AddCommand(newIssueCommand())
 	cmd.AddCommand(newJournalCommand())
 	cmd.AddCommand(newLabelCommand())
@@ -41,6 +43,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newRunCommand())
 	cmd.AddCommand(newSQLCommand())
 	cmd.AddCommand(newStatsCommand())
+	cmd.AddCommand(newTriageCommand())
 
 	return cmd
 }
