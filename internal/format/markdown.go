@@ -22,6 +22,13 @@ type IssueListMarkdownView struct {
 
 func writeMarkdown(writer io.Writer, value any) error {
 	switch typed := value.(type) {
+	case MaintenanceCheckView:
+		return writeMaintenanceCheckMarkdown(writer, typed)
+	case *MaintenanceCheckView:
+		if typed == nil {
+			return fmt.Errorf("markdown maintenance check view is nil")
+		}
+		return writeMaintenanceCheckMarkdown(writer, *typed)
 	case ReadyView:
 		return writeReadyMarkdown(writer, typed)
 	case *ReadyView:
