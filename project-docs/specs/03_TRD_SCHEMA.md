@@ -1074,6 +1074,29 @@ context, multi-table reads, ordering, or runtime state (calling role) that SQL
 doesn't have. They live in app-layer code exclusively, with `fid maintenance
 check` as the periodic audit.
 
+### 14.11 Maintenance Structural-Audit Parity (v0.1)
+
+`fid maintenance check` is read-only: it reports every discovered violation and
+never repairs projection rows or appends a journal event. Its structural-error
+pass mirrors the active v0.1 trigger-backed rules that can be invalidated by a
+corrupt or externally modified projection:
+
+- issue hierarchy; task sequence/scheduling; and the kind requirements for
+  acceptance criteria, task completions, epic metadata, schema-only decisions,
+  and schema-only triage events;
+- v0.1 link endpoint scope, endpoint resolution, and relation compatibility;
+  v0.1 claim scope and issue resolution; and activity-log supported type and
+  target resolution;
+- every row returned by `PRAGMA foreign_key_check`; and
+- each issue's `(workflow_id, status)` pair against the canonical v0.1 Go
+  workflow definitions.
+
+For every `activity_log` row, the audit also resolves `journal_event_id` in the
+append-only journal using the journal inspection path. A missing journal event
+is a structural error even though activity rows do not have a SQLite foreign
+key to journal storage. Findings are deterministic by check, entity ID, then
+message. Tables that do not exist in v0.1 are excluded.
+
 ---
 
 ## 15. Required SQLite Pragmas

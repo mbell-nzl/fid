@@ -35,7 +35,7 @@ they must not begin implementation that depends on that choice.
   `internal/workflow/`, `internal/policy/`, `internal/qa/`,
   `internal/validation/`, `internal/templates/`, `internal/search/`,
   `internal/stats/`, `internal/activity/`, `internal/report/`, `internal/changes/`,
-  `internal/handoff/`, `internal/evidence/`.
+  `internal/handoff/`, `internal/evidence/`, `internal/maintenance/`.
 - Persistence/integration adapters: `internal/journal/`, `internal/db/`,
   `internal/gitctx/`, `migrations/`.
 - Shared utilities/design system: no shared design system in v1. Keep shared
