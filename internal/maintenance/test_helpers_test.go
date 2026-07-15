@@ -392,3 +392,129 @@ func maintenanceMigrationsDir(t *testing.T) string {
 func stringPtr(value string) *string { return &value }
 
 func intPtr(value int) *int { return &value }
+
+func newWarningFixture(t *testing.T, now time.Time) structuralFixture {
+	t.Helper()
+
+	fixture := newMaintenanceFixture(t)
+	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
+	seedIssueAt(t, fixture.db, "FID-stale-claim", "task", "todo", now)
+	seedIssueAt(t, fixture.db, "FID-live-claim", "task", "todo", now)
+	seedIssueAt(t, fixture.db, "FID-start-live", "task", "in_progress", now.Add(-time.Hour))
+	seedIssueAt(t, fixture.db, "FID-start-before", "task", "in_progress", now.Add(-299*time.Second))
+	seedIssueAt(t, fixture.db, "FID-start-at", "task", "in_progress", now)
+	seedIssueAt(t, fixture.db, "FID-start-after", "task", "in_progress", now)
+	seedIssueAt(t, fixture.db, "FID-start-fallback", "task", "in_progress", now.Add(-300*time.Second))
+	seedIssueAt(t, fixture.db, "FID-start-non-status-update", "task", "in_progress", now.Add(-time.Hour))
+	seedIssueAt(t, fixture.db, "FID-start-zero", "task", "in_progress", now)
+	seedIssueAt(t, fixture.db, "FID-completion", "task", "todo", now)
+
+	seedClaimAt(t, fixture.db, "FID-stale-claim", now.Add(-300*time.Second), 300)
+	seedClaimAt(t, fixture.db, "FID-live-claim", now.Add(-time.Second), 300)
+	seedClaimAt(t, fixture.db, "FID-start-live", now.Add(-time.Second), 300)
+	seedActivityAt(t, fixture.db, "ACT-start-at", "FID-start-at", "status_changed", now.Add(-300*time.Second))
+	seedActivityAt(t, fixture.db, "ACT-start-after", "FID-start-after", "status_changed", now.Add(-301*time.Second))
+	seedActivityAt(t, fixture.db, "ACT-start-update", "FID-start-non-status-update", "status_changed", now.Add(-300*time.Second))
+	seedActivityAt(t, fixture.db, "ACT-non-status-update", "FID-start-non-status-update", "issue_updated", now.Add(-time.Second))
+
+	seedCompletionWithStatus(t, fixture.db, "TC-superseded", "FID-completion", 1, "superseded")
+	seedCompletionWithStatus(t, fixture.db, "TC-current", "FID-completion", 2, "dev_complete")
+	seedCompletionWithStatus(t, fixture.db, "TC-missing-run", "FID-completion", 3, "dev_complete")
+	seedCompletionWithStatus(t, fixture.db, "TC-issue-only-run", "FID-completion", 4, "dev_complete")
+	seedCompletionWithStatus(t, fixture.db, "TC-linked-run", "FID-completion", 5, "dev_complete")
+	seedAcceptanceCriterion(t, fixture.db, "AC-warning", "FID-completion")
+	seedVerification(t, fixture.db, "AV-stale", "AC-warning", stringPtr("TC-superseded"))
+	seedVerification(t, fixture.db, "AV-current", "AC-warning", stringPtr("TC-current"))
+	seedVerification(t, fixture.db, "AV-nil", "AC-warning", nil)
+	seedAgentRun(t, fixture.db, "RUN-superseded", "FID-completion", stringPtr("TC-superseded"))
+	seedAgentRun(t, fixture.db, "RUN-current", "FID-completion", stringPtr("TC-current"))
+	seedAgentRun(t, fixture.db, "RUN-issue-only", "FID-completion", nil)
+	seedAgentRun(t, fixture.db, "RUN-linked", "FID-completion", stringPtr("TC-linked-run"))
+	return fixture
+}
+
+func newInfoFixture(t *testing.T, now time.Time) structuralFixture {
+	t.Helper()
+
+	fixture := newMaintenanceFixture(t)
+	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
+	seedIssueAt(t, fixture.db, "FID-info-live", "task", "todo", now)
+	seedIssueAt(t, fixture.db, "FID-info-stale", "task", "todo", now)
+	seedIssueAt(t, fixture.db, "FID-info-activity", "task", "todo", now)
+	seedClaimAt(t, fixture.db, "FID-info-live", now.Add(-time.Second), 2)
+	seedClaimAt(t, fixture.db, "FID-info-stale", now.Add(-time.Second), 1)
+	seedActivityAt(t, fixture.db, "ACT-info-now", "FID-info-activity", "issue_updated", now)
+	seedActivityAt(t, fixture.db, "ACT-info-boundary", "FID-info-activity", "issue_updated", now.Add(-7*24*time.Hour))
+	seedActivityAt(t, fixture.db, "ACT-info-old", "FID-info-activity", "issue_updated", now.Add(-7*24*time.Hour-time.Second))
+	seedActivityAt(t, fixture.db, "ACT-info-future", "FID-info-activity", "issue_updated", now.Add(time.Second))
+	return fixture
+}
+
+func seedIssueAt(t *testing.T, db *sql.DB, id, kind, status string, createdAt time.Time) {
+	t.Helper()
+	workflowID := kind + "-default"
+	if _, err := db.Exec(`
+		INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, id, kind, id, workflowID, status, createdAt.Format(time.RFC3339), createdAt.Format(time.RFC3339)); err != nil {
+		t.Fatalf("insert dated issue %q: %v", id, err)
+	}
+}
+
+func seedClaimAt(t *testing.T, db *sql.DB, issueID string, claimedAt time.Time, ttlSeconds int) {
+	t.Helper()
+	if _, err := db.Exec(`
+		INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds)
+		VALUES ('issue', ?, 'developer', ?, ?)
+	`, issueID, claimedAt.Format(time.RFC3339), ttlSeconds); err != nil {
+		t.Fatalf("insert dated claim %q: %v", issueID, err)
+	}
+}
+
+func seedActivityAt(t *testing.T, db *sql.DB, id, issueID, event string, occurredAt time.Time) {
+	t.Helper()
+	if _, err := db.Exec(`
+		INSERT INTO activity_log (id, journal_event_id, ref_type, ref_id, event, occurred_at)
+		VALUES (?, 'EVT-20260715-000001', 'issue', ?, ?, ?)
+	`, id, issueID, event, occurredAt.Format(time.RFC3339)); err != nil {
+		t.Fatalf("insert activity %q: %v", id, err)
+	}
+}
+
+func seedCompletionWithStatus(t *testing.T, db *sql.DB, id, issueID string, attempt int, status string) {
+	t.Helper()
+	if _, err := db.Exec(`
+		INSERT INTO task_completions (id, issue_id, attempt_number, status)
+		VALUES (?, ?, ?, ?)
+	`, id, issueID, attempt, status); err != nil {
+		t.Fatalf("insert completion %q: %v", id, err)
+	}
+}
+
+func seedVerification(t *testing.T, db *sql.DB, id, acID string, completionID *string) {
+	t.Helper()
+	if _, err := db.Exec(`
+		INSERT INTO ac_verifications (id, ac_id, verifier_role, status, completion_id, verified_at)
+		VALUES (?, ?, 'qa_reviewer', 'verified', ?, '2026-07-15T12:00:00Z')
+	`, id, acID, completionID); err != nil {
+		t.Fatalf("insert verification %q: %v", id, err)
+	}
+}
+
+func seedAgentRun(t *testing.T, db *sql.DB, id, issueID string, completionID *string) {
+	t.Helper()
+	if _, err := db.Exec(`
+		INSERT INTO agent_runs (id, issue_id, completion_id, role, model)
+		VALUES (?, ?, ?, 'developer', 'gpt-5.4-mini')
+	`, id, issueID, completionID); err != nil {
+		t.Fatalf("insert agent run %q: %v", id, err)
+	}
+}
+
+func findingEntityIDs(findings []Finding) []string {
+	ids := make([]string, len(findings))
+	for index, finding := range findings {
+		ids[index] = finding.EntityID
+	}
+	return ids
+}

@@ -6,18 +6,29 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type CheckOptions struct {
-	DB         *sql.DB
-	JournalDir string
+	DB                              *sql.DB
+	JournalDir                      string
+	Now                             time.Time
+	StartedWithoutClaimGraceSeconds int
 }
 
 type Result struct {
-	Errors []Finding `json:"errors"`
+	Errors   []Finding `json:"errors"`
+	Warnings []Finding `json:"warnings"`
+	Info     Info      `json:"info"`
+}
+
+type Info struct {
+	IssueCount     int `json:"issue_count"`
+	ClaimCountLive int `json:"claim_count_live"`
+	RecentActivity int `json:"recent_activity_7d"`
 }
 
 type Finding struct {
@@ -35,6 +46,14 @@ func Check(options CheckOptions) (Result, error) {
 	if strings.TrimSpace(options.JournalDir) == "" {
 		return Result{}, fmt.Errorf("maintenance check: journal dir is required")
 	}
+	if options.StartedWithoutClaimGraceSeconds < 0 {
+		return Result{}, fmt.Errorf("maintenance check: started-without-claim grace must be non-negative")
+	}
+
+	now := options.Now.UTC()
+	if now.IsZero() {
+		now = time.Now().UTC()
+	}
 
 	checks := []structuralCheck{
 		checkKindHierarchy,
@@ -46,7 +65,7 @@ func Check(options CheckOptions) (Result, error) {
 		checkForeignKeys,
 		checkWorkflowStates,
 	}
-	result := Result{Errors: make([]Finding, 0)}
+	result := Result{Errors: make([]Finding, 0), Warnings: make([]Finding, 0)}
 	for _, check := range checks {
 		findings, err := check(options.DB, options.JournalDir)
 		if err != nil {
@@ -54,7 +73,18 @@ func Check(options CheckOptions) (Result, error) {
 		}
 		result.Errors = append(result.Errors, findings...)
 	}
+	warnings, err := checkWarnings(options.DB, now, options.StartedWithoutClaimGraceSeconds)
+	if err != nil {
+		return Result{}, err
+	}
+	info, err := checkInfo(options.DB, now)
+	if err != nil {
+		return Result{}, err
+	}
+	result.Warnings = append(result.Warnings, warnings...)
+	result.Info = info
 	sortFindings(result.Errors)
+	sortFindings(result.Warnings)
 	return result, nil
 }
 
