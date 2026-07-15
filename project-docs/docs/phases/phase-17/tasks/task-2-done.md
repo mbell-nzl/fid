@@ -53,8 +53,8 @@
 
 ## Commit hash
 
-- Pending commit
+- d9c12ecd1b59a26a8239f4c608aca62003f7acdb
 
 ## Commit subject
 
-- Pending commit
+- feat(config): add maintenance grace contract
