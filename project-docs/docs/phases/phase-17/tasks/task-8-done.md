@@ -48,8 +48,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `aa1c914cddffb7d0eb86508955c338b12823d3df`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): add v0.1 format conformance matrix`
