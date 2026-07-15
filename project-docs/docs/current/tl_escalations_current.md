@@ -9,28 +9,24 @@
 
 ## Open Escalations
 
-### ESC-009: Phase 17 QA routes lack model-qualification evidence
+### ESC-004 — Task 1 completion report has uncommitted post-commit edits
 
-- **Raised:** 2026-07-11
-- **By:** QA Lead / Phase 17 QA-BLK-02; accepted by Tech Lead
-- **Trigger:** DEC-053 and `09_AI_WORKFLOW.md` require seeded-defect evidence
-  before trusting a new model in a QA role.
-- **Context:** The new QA Lead did preserve the real Phase 17 hard stop in
-  `qa-plan.md`, but no Human-scored drill artifact qualifies either new QA
-  route, and no evidence proves the QA Reviewer escalation obligation.
-- **Question / proposed direction:** Preferred: run the full evidence-chain
-  drill set against fresh `gpt-5.6-terra` QA Reviewer and `gpt-5.6-sol` QA Lead
-  sessions, score every DEC-053 obligation, and commit a model-audit artifact
-  under `phase-17/qa/`. Do not infer uncovered obligations; add a scored seed
-  for cross-cutting escalation if needed. DEC-055 rejects any routing fallback;
-  only passing model-audit evidence can resolve this escalation.
-- **Links:** DEC-053; QA-BLK-02; `project-docs/tools/drills/README.md`;
-  `project-docs/tools/drills/run-drills.sh`.
-- **Status:** Open - blocks all Developer execution; qualification is the only
-  accepted resolution.
+- **Raised by:** TRG-004
+- **Phase/task:** Phase 17 / Task 1
+- **Trigger:** Quality-gate failure / report-lint evidence invalidation
+- **Issue:** `project-docs/docs/phases/phase-17/tasks/task-1-done.md` passes its structural and recorded-evidence parser checks, but report-lint fails because metadata-wrap changes remain uncommitted after commit `65d2f94587310668b252ebfd4141ed9ef26c8ec0` (`refactor(format): split markdown renderer`).
+- **Required resolution:** Commit the current report changes using the required task documentation commit, then rerun report-lint and attach fresh passing evidence. Do not treat the earlier code commit as verification of the modified report.
+- **Tech Lead disposition (2026-07-15):** Triage upheld. TRG-004 was correct to BLOCK — an uncommitted completion report has invalid report-lint evidence by definition, and the code commit `65d2f94` does not verify the report's current modifications. Resolution is mechanical and carries no spec, interface, contract, journal-schema, or architecture impact: the report body (backtick-wrapped metadata per TRG-003, plus VAL-001 coverage and the five recorded gates) is already correct and complete. No DEC-NNN required. Approved path: create the required `docs(task)` commit for the current `task-1-done.md`, rerun report-lint against the committed file, attach the fresh passing evidence, then resume Phase 17.
+- **Status:** Resolution approved — closes automatically once the `docs(task)` commit lands and report-lint passes on the committed file. Phase Runner confirms closure on resume.
 
 ## Recent Archive Notes
 
+- ESC-009 (Phase 17 QA route model-qualification) **resolved 2026-07-14** by
+  TRG-001: the committed model audit (`phase-17/qa/model-audit.md`, commit
+  `2d5e536`) records `PASS - QA routing qualified` with no MISS, closing
+  QA-BLK-02 and satisfying DEC-053/055. Task 0 and the Entry Review proceeded
+  on that basis. Full archival to `phase-17/tl-escalations.md` happens at
+  phase wrap-up.
 - Phase 16 raised no `ESC-NNN` items. Local unblock and workflow decisions
   DEC-043..048 plus TRG-046 are archived in
   `../phases/phase-16/tl-escalations.md` and `../phases/phase-16/decisions.md`.

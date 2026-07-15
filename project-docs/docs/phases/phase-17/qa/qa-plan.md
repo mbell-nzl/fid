@@ -5,6 +5,13 @@
 > QA Lead: Codex
 > Operating mode: Heavy (DEC-049)
 > Status: **READY FOR TASK 0; TASK 1 BLOCKED PENDING ENTRY REVIEW**
+> Status note (Tech Lead, 2026-07-15): The banner above predates Task 0
+> completion and is stale. Task 0 is committed and the Entry Review is
+> committed with `VERDICT: CONTINUE` (see `qa/review-entry.md` and the run
+> ledger), so QA-BLK-01 is closed and Task 1 is authorized — currently paused
+> only at the ESC-004 report-commit fix, not at entry review. QA Lead owns the
+> authoritative banner and `Refreshed` update at the next QA touch and the
+> QA-18 phase-end spec sync.
 
 ## Blocking Entry Findings
 

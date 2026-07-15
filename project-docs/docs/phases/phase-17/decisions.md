@@ -177,3 +177,30 @@
 
 Full canonical spec-sync verdicts remain mandatory at phase wrap; this kickoff
 table does not substitute for the wrap audit.
+
+## Interim Workflow Notes (for wrap-up retrospective)
+
+### WN-1: Recurring completion-report / report-lint friction
+
+- **Observed:** Three of the first four TL-Lite triages this phase were
+  report-lint stumbles — TRG-002 (Task 0 commit metadata not backtick-wrapped),
+  TRG-003 (Task 1 commit metadata not backtick-wrapped, same defect a second
+  time), and TRG-004 (Task 1 report left uncommitted after the metadata fix,
+  invalidating the lint evidence → ESC-004). The metadata-format defect
+  recurring across two separate tasks/sessions is a pattern, not a one-off.
+- **Likely contributing factor (flagged by Human 2026-07-15):** The subagent
+  prompts and the Codex GPT model routing (DEC-053) were both updated recently.
+  The Developer role now runs a newly routed model against a revised prompt, so
+  the recurrence may be a prompt/model-fit symptom rather than coincidence.
+- **Wrap-up action:** Review and tighten the Developer prompt/instructions
+  alongside the completion-report template and report-lint contract. Assess
+  specifically whether (a) the template needs a clearer worked example of the
+  backtick-wrapped `## Commit hash` / `## Commit subject` block, (b) the
+  Developer prompt must state explicitly that the completion report is its own
+  committed `docs(task)` step and must be clean before report-lint, and
+  (c) report-lint's error messaging should call out uncommitted/dirty report
+  state distinctly from parse failures. Decide at wrap-up whether this becomes a
+  DEC (template/tooling change) or a prompt-source edit under
+  `project-docs/agents/` + `sync-agents.sh`.
+- **Refs:** TRG-002/003/004; ESC-004; DEC-053; completion-report template;
+  `project-docs/tools/report-lint.sh`; `project-docs/agents/developer.md`.
