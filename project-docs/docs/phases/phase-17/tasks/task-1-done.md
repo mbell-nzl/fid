@@ -50,8 +50,8 @@
 
 ## Commit hash
 
-- 65d2f94587310668b252ebfd4141ed9ef26c8ec0
+- `65d2f94587310668b252ebfd4141ed9ef26c8ec0`
 
 ## Commit subject
 
-- refactor(format): split markdown renderer
+- `refactor(format): split markdown renderer`
