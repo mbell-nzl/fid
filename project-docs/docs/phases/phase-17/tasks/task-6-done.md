@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `f01a308377a59137fd3b9c509dad0742d6119aee`
 
 ## Commit subject
 
-- Pending commit
+- `feat(maintenance): add locked vacuum command`
