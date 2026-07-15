@@ -52,8 +52,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `34c6cef754ab34f3d483ccee311dd3b05c3b2337`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): guard unshipped governance commands`
