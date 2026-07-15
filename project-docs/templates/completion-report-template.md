@@ -63,6 +63,17 @@ complete, or recall a hash from memory.
 
 Copy the subject verbatim from `git log -1 --format=%s`.
 
+When replacing either placeholder, retain the surrounding Markdown backticks.
+The finalized fields must use this exact shape:
+
+```text
+## Commit hash
+- `0123456789abcdef`
+
+## Commit subject
+- `feat(scope): subject copied from git`
+```
+
 After filling in the hash and subject, commit the finalized report in an
 immediately following `docs(task): finalize completion report for phase-N
 task-M` commit. The hash above is the task commit's, never that docs commit's.

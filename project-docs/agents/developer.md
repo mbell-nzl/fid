@@ -78,13 +78,27 @@ sequence and stop:
 3. While `HEAD` is still the task commit, copy the hash from `git rev-parse
    --short HEAD` or `git rev-parse HEAD` and the subject from `git log -1
    --format=%s` into the report, replacing the placeholders. Never type,
-   pad, or reconstruct a hash from memory.
+   pad, or reconstruct a hash from memory. Retain the Markdown backticks when
+   replacing either placeholder; the finalized fields must use this exact
+   shape:
+
+   ```text
+   ## Commit hash
+   - `0123456789abcdef`
+
+   ## Commit subject
+   - `feat(scope): subject copied from git`
+   ```
 4. Commit the finalized report in an immediately following
    `docs(task): finalize completion report for phase-N task-M` commit. The
    hash in the report is the task commit's, never this docs commit's; a
    report cannot carry the hash of the same commit that introduces its final
    content, so this two-step pattern is mandatory.
-5. Verify the report path is committed and clean:
+5. Run `project-docs/tools/report-lint.sh <report> <task-spec>` against the
+   committed report. If it fails because the report needs correction, update
+   the report, create another `docs(task): ...` commit, and rerun the command
+   against the newly committed file.
+6. Verify the report path is committed and clean:
    `git status --porcelain -- <report path>` prints nothing. Then stop.
 
 ## Completion Report

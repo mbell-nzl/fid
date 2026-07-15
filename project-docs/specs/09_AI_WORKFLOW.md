@@ -412,13 +412,27 @@ Responsibilities:
     by copying them verbatim from `git` output: `git rev-parse --short HEAD` or
     `git rev-parse HEAD` for the hash, and `git log -1 --format=%s` for the
     subject. Replace the report placeholders with those values. Never type,
-    pad, complete, or recall a hash from memory.
+    pad, complete, or recall a hash from memory. Retain the Markdown backticks
+    when replacing either placeholder; the finalized fields must use this exact
+    shape:
+
+    ```text
+    ## Commit hash
+    - `0123456789abcdef`
+
+    ## Commit subject
+    - `feat(scope): subject copied from git`
+    ```
 12. Commit the finalized report in an immediately following
     `docs(task): finalize completion report for phase-<id> task-<n>` commit.
     The hash in the report is the task commit's, never this docs commit's; a
     report cannot carry the hash of the same commit that introduces its final
     content, so this two-step pattern is mandatory.
-13. Verify the report path is committed and clean:
+13. Run `project-docs/tools/report-lint.sh <report> <task spec>` against the
+    committed report. If it fails because the report needs correction, update
+    the report, create another `docs(task): ...` commit, and rerun the command
+    against the newly committed file.
+14. Verify the report path is committed and clean:
     `git status --porcelain -- <report path>` prints nothing. Then stop.
 
 Required completion report headings, in order:
