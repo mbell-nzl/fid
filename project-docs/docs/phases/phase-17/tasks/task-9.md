@@ -33,6 +33,43 @@ proof; add no new product behavior.
 - Snapshot observable/projected state and journal bytes before DB deletion;
   rebuild, then compare structurally without timestamp-string fragility.
 
+## Required Diagnostic (resume gate, added 2026-07-17 per DEC-056)
+
+The first resume attempt reported a rebuild-parity defect (ESC-010). Tech Lead
+did not accept that premise. Before changing any assertion, run this diagnostic;
+its result, not a hypothesis, selects the branch below.
+
+Control: in the same journey, at the end of the run and **with no rebuild and no
+DB deletion**, invoke `fid maintenance check --format json` twice with a few
+seconds of real elapsed time between the two calls. Record both
+`recent_activity_7d` values.
+
+- **Branch A — the control reproduces the movement** (the counter changes across
+  two plain checks with no rebuild involved). The rebuild is exonerated: the
+  counter is clock-relative, not derived state. Implement the amended VAL-022
+  method below, keep the control in the test as the evidence that the counter is
+  time-dependent by construction, and close the task. No product change.
+- **Branch B — the control does not reproduce the movement** and a direct
+  comparison of `SELECT * FROM activity_log ORDER BY id` before deletion versus
+  after rebuild returns different rows. This is a genuine persistence defect and
+  outranks the closure audit. Stop, do not amend VAL-022, and report with the row
+  diff attached (which side has the extra rows, their `id`, `journal_event_id`,
+  `event`, and `occurred_at`, and whether the journal contains matching events).
+
+Report the diagnostic result explicitly in the completion report either way.
+
+## Amended Parity Method (Branch A only, per DEC-056)
+
+- Compare each projected table separately and assert exact equality per table, so
+  a failure names the table. Do not compare one aggregated snapshot map.
+- Compare `maintenance check` on its state-derived subset only: `status`,
+  `errors`, `warnings`, and `info.issue_count` must be exactly equal.
+- Do not assert equality on `info.recent_activity_7d` or `info.claim_count_live`.
+  Both are functions of `(state, now)`; see DEC-056.
+- The binding constraint above already required comparison "without
+  timestamp-string fragility". A snapshot that embeds a `now`-relative counter in
+  the compared value does not satisfy that constraint.
+
 ## Scope
 
 ### Files To Create Or Modify
@@ -69,8 +106,11 @@ proof; add no new product behavior.
   writes nothing. (VAL-020)
 - [ ] Completion-linked telemetry produces the expected snapshot prices, USD
   cost, and stats aggregates. (VAL-021)
-- [ ] Maintenance passes the coherent fixture, vacuum preserves it, DB deletion
-  plus rebuild restores equal state and audit output. (VAL-022)
+- [ ] The DEC-056 required diagnostic is run and its result reported. (VAL-022)
+- [ ] Maintenance passes the coherent fixture, vacuum preserves it, and DB
+  deletion plus rebuild restores every projected table exactly and reproduces the
+  state-derived audit subset, with clock-relative counters handled per the
+  amended parity method. (VAL-022)
 - [ ] Temp-git checks prove journal trackability, DB ignore, roles after rebuild,
   and byte-identical journal across all non-journal commands. (VAL-023)
 - [ ] The built CLI and disposable recovery path needed for HUMAN-25a..e are

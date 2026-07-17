@@ -155,6 +155,58 @@
 - **Refs:** DEC-053; ESC-009; QA-BLK-02;
   `project-docs/tools/drills/README.md`.
 
+### DEC-056: Rebuild parity covers derived state, not clock-relative reads
+
+- **Date:** 2026-07-17
+- **Context:** ESC-010 (TRG-008) reported a shipped rebuild-parity defect: after
+  deleting the derived DB, `fid rebuild --by workflow_runner` left the journal
+  byte-identical but `fid maintenance check` reported `recent_activity_7d` as 17
+  before rebuild and 20 after. Task 9 stopped and VAL-022 was recorded BLOCKED.
+- **Decision:** The canonical parity contract is defined as follows.
+  1. **The journal is the sole source of truth for derived state.** After
+     delete-and-rebuild, every projected table must be exactly equal to its
+     pre-delete content. This is the substance of VAL-022 and it is not relaxed.
+  2. **Command output is not derived state.** A read whose value is a function of
+     `(projected state, wall-clock now)` is not a rebuild-parity observable,
+     because `now` is an input to the read, not something the journal reproduces.
+     Rebuild cannot and must not be expected to hold such a value constant across
+     two invocations separated by real elapsed time.
+  3. In `maintenance check`, `info.recent_activity_7d` and `info.claim_count_live`
+     are both clock-relative by construction (`countRecentActivity` filters on a
+     `now`-anchored window; `countLiveClaims` evaluates TTL liveness at `now`).
+     They are excluded from equality parity. `errors`, `warnings`, `status`, and
+     `info.issue_count` are state-derived and remain under exact parity.
+- **Root-cause finding (to be confirmed by the DEC-056 diagnostic):** The
+  reported 17 -> 20 movement is consistent with a clock artifact, not lost or
+  duplicated projection. Issue writes stamp `OccurredAt` via
+  `nextIssueUpdateTime` (`internal/issues/write_helpers.go`), which preserves
+  monotonicity by returning `prior + 1s` whenever the wall clock has not advanced
+  past the previous `updated_at`. A fast journey performs many issue mutations
+  inside the same second, so the last few activity rows carry `occurred_at`
+  values slightly **ahead** of the wall clock. `countRecentActivity` excludes
+  future rows (`!at.After(now)`). The pre-rebuild check therefore omits the
+  future-stamped rows; the post-rebuild check runs seconds later, by which time
+  the clock has caught up and the same rows count. Same rows, different `now`.
+- **Consequences:**
+  - ESC-010's premise is not accepted as established. No product change to
+    projection, rebuild, or maintenance is authorized on the current evidence.
+  - Task 9 resumes as an audit-only task and must first run the discriminating
+    diagnostic in `tasks/task-9.md` ("Required Diagnostic"). The diagnostic, not
+    a hypothesis, decides the branch.
+  - Branch A (control reproduces the movement with no rebuild): the defect is in
+    the assertion, not the product. Adopt the amended VAL-022 method and close.
+  - Branch B (projected `activity_log` rows genuinely differ after rebuild):
+    that is a real persistence defect. Stop again, do not amend VAL-022, and
+    re-escalate for a scoped remediation task.
+  - The future-stamped-`occurred_at` interaction is recorded as CF-020 for v0.2
+    rather than fixed inside a v0.1 closure audit task; it is a deliberate
+    monotonicity trade-off with a bounded, self-correcting effect on one info
+    counter.
+- **Refs:** ESC-010; TRG-008; VAL-022/023; `tasks/task-9.md` binding constraint
+  "compare structurally without timestamp-string fragility";
+  `internal/issues/write_helpers.go`; `internal/maintenance/info.go`;
+  `internal/journal/projection.go`; `internal/journal/replay.go`.
+
 ## Carry-Forward Review At Kickoff
 
 | ID | Disposition | Rationale |

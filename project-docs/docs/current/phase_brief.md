@@ -46,7 +46,7 @@ Full specs: `../phases/phase-17/tasks/`.
 | 6 | `fid maintenance vacuum` | Pending | Task 5 parent command |
 | 7 | Governance stub-table guards | Pending | DEC-052 |
 | 8 | v0.1 read-format conformance | Pending | Task 5 |
-| 9 | Full v0.1 closure journey | Pending | Tasks 2-8 |
+| 9 | Full v0.1 closure journey | Resume: DEC-056 diagnostic | Tasks 2-8; ESC-010 resolved |
 
 ## Validation Contract
 
@@ -91,6 +91,10 @@ Full contract: `../phases/phase-17/qa/validation-contract.md`.
 - CF-018: re-defer to next SQL package reopen; Task 8 exercises but does not
   modify `internal/sqlquery`. A required SQL-package fix stops for re-planning
   and schedules CF-018 first.
+- CF-020 (new, DEC-056): defer to v0.2. Burst issue writes stamp `occurred_at`
+  ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and
+  `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not
+  fix inside the v0.1 closure audit.
 
 ## Parity Matrix
 

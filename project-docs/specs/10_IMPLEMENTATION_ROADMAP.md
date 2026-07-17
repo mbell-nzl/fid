@@ -319,7 +319,7 @@ with whet's task artifacts.
 | `fid dev block` | Transition → failed_gate with reason and create completion with `gate_runs` snapshot. | PRD-DEV-008, PRD-DEV-010 |
 | `fid sql` | Read-only escape hatch. Reject non-SELECT/EXPLAIN/PRAGMA/WITH. | PRD-OUT-008, TRD-SEC-002 |
 | `fid journal inspect` | Read-only journal event inspection by `event_id`. Shows actor, command metadata, effects, journal location, event hash, and revert eligibility. | PRD-OPS-013 |
-| `fid maintenance check` | Consistency audit: kind-hierarchy violations, orphaned polymorphic refs, FK integrity, workflow state validity. Warnings: stale claims, started-without-claim, stale verifications, telemetry gaps. `--warn-as-error` for CI. `--format json\|markdown`. | PRD-OPS-005–008 |
+| `fid maintenance check` | Consistency audit: kind-hierarchy violations, orphaned polymorphic refs, FK integrity, workflow state validity. Warnings: stale claims, started-without-claim, stale verifications, telemetry gaps. `--warn-as-error` for CI. `--format json\|toon\|markdown\|yaml`. | PRD-OPS-005–008 |
 | `fid maintenance vacuum` | SQLite VACUUM. | — |
 | Activity log | Projected timeline from journal events. Read-model only. Basic `fid activity list` read with entity, event, and date filters. | PRD-OUT-017 |
 | Pricing config | `.fid/pricing.toml` ships with defaults for current Anthropic, OpenAI, Google models. User-overridable. | PRD-NFR-010 |
@@ -389,7 +389,8 @@ with whet's task artifacts.
 >   `fid maintenance check` (consistency audit: kind-hierarchy violations,
 >   orphaned polymorphic refs, FK integrity, workflow state validity; warnings for
 >   stale claims, started-without-claim, stale verifications, telemetry gaps;
->   `--warn-as-error` for CI; `--format json|markdown`), `fid maintenance vacuum`
+>   `--warn-as-error` for CI; `--format json|toon|markdown|yaml`),
+>   `fid maintenance vacuum`
 >   (SQLite VACUUM), and the stub-table CLI guard (`decision create/get/list`,
 >   `escalation create/resolve/get/list`, and `triage record/start/verdict`
 >   return "commands for <entity> ship in v0.2" with non-zero exit before
