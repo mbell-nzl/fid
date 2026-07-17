@@ -1,0 +1,102 @@
+//go:build integration
+
+package main
+
+import (
+	"bytes"
+	"os"
+	"path/filepath"
+	"testing"
+	"time"
+)
+
+func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
+	binary := buildClosureFIDBinary(t)
+	workspace := t.TempDir()
+	closureRun(t, workspace, "git", "init")
+	closureRunFID(t, binary, workspace, "init")
+	assertClosureGitLayout(t, workspace)
+
+	journalPath := closureJournalPath(t, workspace)
+	closureRun(t, workspace, "git", "add", filepath.ToSlash(filepath.Join(".fid", "journal")))
+	assertClosureJournalTracked(t, workspace)
+
+	closureRunFID(t, binary, workspace, "label", "add", "release", "--description", "Closure journey label", "--by", "developer")
+	closureWriteRequirementFixture(t, workspace)
+	closureRunFID(t, binary, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/closure.md", "--id", "PRD-LINK-002", "--by", "tl")
+
+	mainIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure lifecycle task", nil, nil, nil)
+	peerIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure linked peer", nil, nil, nil)
+	closureRunFID(t, binary, workspace, "issue", "label", "add", mainIssueID, "release", "--by", "developer")
+
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "qa_reviewer"},
+		`role "qa_reviewer" not permitted`)
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer"},
+		`has no live claim held by "developer"`)
+
+	closureRunFID(t, binary, workspace, "issue", "claim", mainIssueID, "--by", "developer")
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer")
+	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--by", "developer"},
+		"has_completion_report")
+	closureRunFID(t, binary, workspace, "issue", "ac", "verify", mainIssueID, acID, "--status", "pass", "--by", "qa_lead")
+	firstCompletionID := closureCompleteIssue(t, binary, workspace, mainIssueID)
+	concernID, addressCompletionID := closureRaiseAndAddressConcern(t, binary, workspace, mainIssueID, firstCompletionID)
+	if concernID == "" {
+		t.Fatal("addressed concern id = empty")
+	}
+	closureRunFID(t, binary, workspace, "issue", "unclaim", mainIssueID, "--by", "developer")
+
+	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--by", "developer")
+	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--by", "developer")
+	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--by", "developer"},
+		"relation")
+
+	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
+	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
+	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
+	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--by", "tl")
+	assertClosureReadyTask(t, binary, workspace, seqEpicID, seqNextID)
+
+	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)
+	closureCreateIssue(t, binary, workspace, "task", "Lower priority", nil, stringPointer(priorityEpicID), nil, "--priority", "3")
+	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
+	assertClosureReadyTask(t, binary, workspace, priorityEpicID, priorityHighID)
+
+	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", firstCompletionID,
+		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer")
+	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", addressCompletionID,
+		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "0", "--tokens-out", "0", "--by", "developer")
+	assertClosureTelemetry(t, binary, workspace, mainIssueID, firstCompletionID)
+
+	journalBeforeNonJournal := closureReadFile(t, journalPath)
+	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)
+	controlBefore := closureMaintenanceResult(t, binary, workspace)
+	time.Sleep(4 * time.Second)
+	controlAfter := closureMaintenanceResult(t, binary, workspace)
+	t.Logf("DEC-056 no-rebuild control recent_activity_7d: first=%d second=%d", controlBefore.Info.RecentActivity7D, controlAfter.Info.RecentActivity7D)
+	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "DEC-056 no-rebuild control")
+
+	beforeTables := closureProjectedTableSnapshots(t, binary, workspace)
+	beforeMaintenance := closureMaintenanceResult(t, binary, workspace)
+	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+		t.Fatalf("remove derived DB: %v", err)
+	}
+	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "rebuild")
+	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
+	afterMaintenance := closureMaintenanceResult(t, binary, workspace)
+	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
+	assertClosureClockRelativeMovementWithinControl(t, beforeMaintenance, afterMaintenance, controlBefore, controlAfter)
+	assertClosureRolesAfterRebuild(t, binary, workspace)
+	assertClosureJournalTracked(t, workspace)
+
+	if bytes.Equal(journalBeforeNonJournal, nil) {
+		t.Fatal("journal snapshot is empty")
+	}
+}
