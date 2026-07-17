@@ -5,20 +5,20 @@ Date: 2026-07-17
 
 ## Verdict
 
-BLOCK
+PASS - DETERMINISTIC PHASE-END QA COMPLETE; READY FOR HUMAN VERIFICATION
 
-VAL-001 through VAL-023 pass with reproducible evidence. VAL-024 is BLOCKED:
-the required phase-end workflow check fails because
-`project-docs/docs/current/tl_escalations_current.md` exceeds its line-budget
-tripwire, and the mandatory phase-end documentation sync still contains the
-stale two-format maintenance contract in `10_IMPLEMENTATION_ROADMAP.md`.
-VAL-025 is CARRY-FORWARD to the Human-owned dogfood checklist; no Human
-judgment is claimed here.
+VAL-001 through VAL-024 pass with reproducible evidence. The prior VAL-024
+blockers are cleared: `project-docs/tools/workflow-lint.sh` exits zero with no
+failures, `tl_escalations_current.md` is 49 lines against its 107-line tripwire,
+and both Phase 17 roadmap references now state
+`json|toon|markdown|yaml`. VAL-025 remains CARRY-FORWARD to the Human-owned
+dogfood checklist; no Human judgment is claimed here.
 
 The product unit, integration, coverage, benchmark, build, static-binary,
-format-matrix, and DEC-056 closure checks all pass. Phase 17 is not ready for
-Tech Lead wrap-up until the two deterministic VAL-024 blockers are corrected
-and the affected checks are rerun.
+format-matrix, DEC-056 closure, workflow, and documentation checks all pass.
+Phase 17 has no unresolved QA blocking finding and is unblocked for the Human
+gate. Phase completion still requires HUMAN-25a..e to be completed and accepted
+or explicitly dispositioned before Tech Lead wrap-up.
 
 ## Scope And Evidence
 
@@ -59,15 +59,16 @@ DEC-056 Branch A with implementation commit
 | Focused journal report | `go tool cover -func=/tmp/fid-journal-coverage.out` | PASS | Total 81.0%; `RevertVerdict` and `PrepareEvent` 100.0%. |
 | Integration | `go test -tags integration -race ./...` | PASS | All packages passed, including all integration-tagged built-CLI journeys. |
 | End-to-end | N/A | N/A | No separate accepted E2E harness. The integration-tagged built-CLI format and closure journeys below supply phase evidence. |
-| Read-format matrix | `go test -tags integration -race ./cmd/fid -run '^TestV01ReadCommandsSupportAllFormatsWithStructuralParity$' -count=1 -v` | PASS | All 15 named read-command subtests passed across JSON, TOON, markdown, and YAML in 4.331s. |
-| DEC-056 closure | `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1 -v ./cmd/fid` | PASS | Built-CLI journey passed in 5.267s; the no-rebuild control logged `first=17 second=20`, all 19 projected tables matched exactly after rebuild, and the amended maintenance comparison passed. |
-| Benchmarks | `go test -bench . -benchmem ./...` | PASS | `BenchmarkRebuildWorkspace1kEvents-6` 388.2 ms/rebuild and `BenchmarkRebuildWorkspace10kEvents-6` 3709 ms/rebuild; the 10k result passes TRD-PERF-002's 5s target. |
+| Read-format matrix | `go test -tags integration -race ./cmd/fid -run '^TestV01ReadCommandsSupportAllFormatsWithStructuralParity$' -count=1 -v` | PASS | All 15 named read-command subtests passed across JSON, TOON, markdown, and YAML; the test completed in 3.20s. |
+| DEC-056 closure | `go test -tags integration -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1 -v ./cmd/fid` | PASS | Built-CLI journey passed in 5.37s; the no-rebuild control logged `first=17 second=20`, all 19 projected tables matched exactly after rebuild, and the amended maintenance comparison passed. |
+| Benchmarks | `go test -bench . -benchmem ./...` | PASS | `BenchmarkRebuildWorkspace1kEvents-6` 386.4 ms/rebuild and `BenchmarkRebuildWorkspace10kEvents-6` 3712 ms/rebuild; the 10k result passes TRD-PERF-002's 5s target. |
 | Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS | Exit 0; `/tmp/fid` produced and `/tmp/fid --help` exited 0. |
 | Static build | `CGO_ENABLED=0 go build -o /tmp/fid-static ./cmd/fid` | PASS | Exit 0; standalone binary produced. |
 | Static size | `stat -c '%s %n' /tmp/fid-static` | PASS | `12869586 /tmp/fid-static` (12.27 MiB). |
 | Size assertion | `test "$(stat -c %s /tmp/fid-static)" -lt 31457280` | PASS | Exit 0; binary is below 30 MiB. |
-| Workflow drift/current-context budget | `project-docs/tools/workflow-lint.sh` | FAIL | All canonical/generated skill and prompt checks passed, but the command ended with `FAIL line budget exceeded (197 > 107 tripwire): tl_escalations_current.md` and exit 1. |
-| Full phase check | Exact AGENTS.md phase command list plus phase-specific workflow/documentation checks | FAIL | Every Go gate and static-size assertion passed; the workflow check and required documentation sync did not. Missing or failed required checks cannot be narrowed away. |
+| Workflow drift/current-context budget | `project-docs/tools/workflow-lint.sh` | PASS | Exit 0; final line `PASS workflow-lint completed with no failures`; current-context budgets include `tl_escalations_current.md` at 49 <= 107. |
+| Documentation sync | File-state review of PRD/TRD/schema/config/design/CLI/flow sources plus `10_IMPLEMENTATION_ROADMAP.md:322,392` | PASS | The maintenance, guard, config, persistence, and four-format contracts agree. Both previously stale roadmap occurrences now state JSON/TOON/markdown/YAML; no shipped-flow drift was found. |
+| Full phase check | Exact AGENTS.md phase command list plus phase-specific workflow/documentation checks | PASS | Every required Go, coverage, integration, benchmark, build, static-size, workflow, report-lint, and documentation check passed without a skipped or narrower substitution. |
 
 ## Validation Contract Outcomes
 
@@ -96,16 +97,16 @@ DEC-056 Branch A with implementation commit
 | VAL-021 | PASS | QA Lead | The same journey passed completion-linked priced-run persistence, independent snapshot-cost calculation, and non-NULL token/cost aggregates. |
 | VAL-022 | PASS | QA Lead | **Amended under DEC-056.** Branch A's no-rebuild control reproduced clock-relative movement (`recent_activity_7d` 17 to 20) without deleting or rebuilding the DB. After delete-and-rebuild, each of all 19 projected tables matched exactly; `status`, `errors`, `warnings`, and `info.issue_count` matched exactly; `recent_activity_7d` and `claim_count_live` moved no more than the control. This preserves exact derived-state parity without treating wall-clock `now` as journal state. |
 | VAL-023 | PASS | QA Lead | **Closed under DEC-056 Branch A.** The temp Git journey proved the journal trackable, `fid.sqlite` ignored, roles restored, and journal bytes unchanged across maintenance, vacuum, guarded commands, reads, and rebuild. Task 9 implementation/report commits are `7119d5b38d79663f544f093d55f676c375746419` and `54cf7eda6b309044f1bdcf2b4f7acfbc9b1ebadb`. |
-| VAL-024 | BLOCKED | QA Lead | The complete v0.1 PRD traceability audit below maps every targeted row; COV-001/COV-002, unit, integration, benchmarks, build, and 12,869,586-byte static binary checks pass. The terminal assertion cannot pass because `project-docs/tools/workflow-lint.sh` exits 1 on the 197-line current escalation file and QA-18 finds the still-stale roadmap maintenance-format row. VAL-024 explicitly fails when any required gate fails or a required sync remains incomplete. |
-| VAL-025 | CARRY-FORWARD | Human | No Human dogfood judgment has been made. `human-checklist.md` contains only HUMAN-25a..e with blank outcomes. Execution must wait until deterministic VAL-024 is cleared. |
+| VAL-024 | PASS | QA Lead | The complete v0.1 PRD traceability audit maps every targeted row to passing evidence; COV-001/COV-002, unit, integration, benchmarks, build, report-lint, workflow-lint, documentation sync, and the 12,869,586-byte static binary checks pass. `workflow-lint.sh` exits zero, the escalation file is 49/107 lines, and the roadmap's two maintenance rows now name all four formats. |
+| VAL-025 | CARRY-FORWARD | Human | No Human dogfood judgment has been made. `human-checklist.md` contains only HUMAN-25a..e with blank outcomes and is now ready to execute because VAL-024 passes. The Human must complete and accept or explicitly disposition all five rows before wrap. |
 
 ## VAL-024 v0.1 PRD Traceability Audit
 
 The audit covers all 101 requirement rows whose release note targets v0.1,
 plus PRD-ERR-012 because it defines the v0.1 governance guard observable.
-Every row has a concrete test or command mapping. PRD-OPS-010 is BLOCKED, not
-unmapped: its CLI/format/skill evidence passes, but the required current-state
-workflow check exits 1.
+Every row has a concrete passing test or command mapping. PRD-OPS-010 now passes
+because its CLI/format/skill evidence and the required current-state workflow
+check all pass.
 
 | PRD row | Reproducible evidence | Status |
 |---|---|---|
@@ -206,7 +207,7 @@ workflow check exits 1.
 | PRD-OPS-007 | `TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem` | PASS |
 | PRD-OPS-008 | `TestCheckWarningsClassifiesQualifyingAndNonQualifyingStates` plus zero-grace control | PASS |
 | PRD-OPS-009 | CGO-disabled build and 12,869,586-byte static-size evidence | PASS |
-| PRD-OPS-010 | Root help, VAL-017 structured output, generated prompt/skill sync checks; `workflow-lint.sh` then fails the current escalation-file line budget | BLOCKED |
+| PRD-OPS-010 | Root help, VAL-017 structured output, generated prompt/skill sync checks, and `workflow-lint.sh` exit 0 | PASS |
 | PRD-OPS-012 | `TestReplayJournalStopsOnPreconditionConflict` and `TestRebuildCommandReportsPreconditionConflict` | PASS |
 | PRD-OPS-013 | journal find/hash/revert-verdict tests and journal-inspect all-format CLI tests | PASS |
 | PRD-NFR-008 | `TestAcquireIsAtomicAcrossConcurrentAttempts` and `TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences` | PASS |
@@ -223,7 +224,7 @@ workflow check exits 1.
 - Task 0's separate focused journal command and report both reproduce 81.0%; the
   entry review verifies implementation commit
   `26df9d52043d998a631aed4288613ee9c1aa176f` changed test files only.
-- The benchmark gate passes. The available 10k replay benchmark is 3709 ms,
+- The benchmark gate passes. The available 10k replay benchmark is 3712 ms,
   below TRD-PERF-002's 5s threshold. No claim is made for performance targets
   that do not yet have a repository benchmark harness.
 - `CGO_ENABLED=0 go build -o /tmp/fid-static ./cmd/fid` exited zero.
@@ -231,23 +232,27 @@ workflow check exits 1.
   exits zero, satisfying TRD-PERF-007.
 - `/tmp/fid --help` exits zero and lists the shipped command families,
   including maintenance and guarded governance surfaces.
-- Terminal result remains BLOCKED because `workflow-lint.sh` exits 1 and the
-  mandatory documentation sync is incomplete. Passing product gates and size
-  evidence do not override VAL-024's all-required-gates condition.
+- `project-docs/tools/workflow-lint.sh` exits zero with no failures; its current-
+  context evidence reports `tl_escalations_current.md` at 49 <= 107 lines.
+- The Phase 17 roadmap table and phase-slicing note now both name JSON, TOON,
+  markdown, and YAML. The full impacted-document review finds no remaining
+  maintenance, guard, persistence, config, or shipped-flow mismatch.
+- Terminal result is PASS: no required command, mapped PRD row, coverage
+  threshold, static-size check, or documentation check is missing or failing.
 
 ## Requirement Compliance
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Every v0.1 PRD-targeted row | PARTIAL | Complete mapping above; 100/101 release-note-targeted rows have passing evidence, while PRD-OPS-010 is blocked by the current-state workflow check. PRD-ERR-012 also passes. |
+| Every v0.1 PRD-targeted row | MET | Complete mapping above; all 101 release-note-targeted rows have passing evidence. PRD-ERR-012 also passes. |
 | Maintenance check and formats | MET | VAL-002..014 pass; healthy/error/warning-promotion and projection-refresh states pass in four formats. |
 | Locked derived-DB vacuum | MET | VAL-015 passes authorization, policy, lock, preservation, and recovery checks. |
 | v0.1 governance guard | MET | VAL-016 and PRD-ERR-012 pass all ten guarded leaves and the requirement-sync control. |
 | All-read format conformance | MET | VAL-017 passes the exact 15-command by four-format matrix. |
 | v0.1 closure and rebuild | MET | VAL-018..023 pass; VAL-022/023 use the amended DEC-056 Branch A evidence. |
 | COV-001/COV-002 and static binary | MET | Named packages and CLI exceed thresholds; static binary is 12.27 MiB. |
-| Heavy Mode phase-end gate | NOT MET | VAL-024 is BLOCKED by failed workflow lint and incomplete mandatory documentation sync. |
-| Human real-work dogfood | CARRY-FORWARD | VAL-025 belongs only to the Human; all five outcomes are blank. |
+| Heavy Mode phase-end gate | MET | VAL-024 passes the complete command, traceability, coverage, static-size, workflow, report, and documentation evidence set. |
+| Human real-work dogfood | CARRY-FORWARD | VAL-025 belongs only to the Human; all five outcomes are blank and the checklist is ready to execute. |
 
 ## Deterministic Checklist Execution
 
@@ -270,8 +275,8 @@ workflow check exits 1.
 | QA-14 | PASS | Under DEC-056, all 19 projected tables and state-derived maintenance fields match exactly; clock-relative fields match the no-rebuild-control bound. |
 | QA-15 | PASS | Closure temp Git evidence passes journal trackability/immutability, DB ignore, and role restoration. |
 | QA-16 | PASS | The row-level table above maps every v0.1-targeted PRD row and PRD-ERR-012; none is unmapped. |
-| QA-17 | BLOCKED | All Go gates, coverage thresholds, benchmark/build checks, and static size pass, but the phase-required workflow command exits 1; the all-gates observable cannot pass. |
-| QA-18 | BLOCKED | Seven core specs were reviewed, but the QA plan's specifically named stale roadmap row remains at `10_IMPLEMENTATION_ROADMAP.md:322` with `--format json\|markdown` instead of JSON/TOON/markdown/YAML. Full wrap-up sync is not recorded. |
+| QA-17 | PASS | All Go gates, coverage thresholds, benchmark/build checks, static size, and the phase-required workflow command pass; `workflow-lint.sh` ends with no failures. |
+| QA-18 | PASS | PRD/TRD/schema/config/design/CLI/flow sources agree, and both roadmap occurrences at lines 322 and 392 now state JSON/TOON/markdown/YAML. File-state and rendered command examples show no remaining Phase 17 doc mismatch. |
 | QA-19 | PASS | All ten exact report-lint invocations passed. Each implementation hash resolves with the reported subject and each completion report is committed and clean. |
 
 ## Command And Feasibility Validation Result
@@ -280,12 +285,12 @@ workflow check exits 1.
   QA plan section 6.
 - Final-review commands were executed with their exact required scopes. No
   placeholder or invalid syntax was found.
-- Final execution defect: `project-docs/tools/workflow-lint.sh` is feasible but
-  fails the current file-state line-budget check. This is a failed gate, not a
-  command-feasibility defect.
-- Artifact defect: the required roadmap format reconciliation remains undone.
-- Human steps were previously validated as feasible, but their execution is
-  now contingent on deterministic VAL-024 clearing.
+- Final execution defects: none. `project-docs/tools/workflow-lint.sh` is
+  feasible and passes the current file-state checks.
+- Artifact defects: none in the QA-owned artifacts or Phase 17 documentation
+  sync reviewed here.
+- Human steps remain feasible and are now ready to execute because VAL-024
+  passes.
 
 ## Completion-Report And Commit Verification
 
@@ -334,21 +339,22 @@ All four required Heavy Mode reviews are committed: entry
 
 ## Documentation Review
 
-- Impacted docs updated: NO, not yet complete at phase-end scope.
+- Impacted docs updated: YES at the Phase 17 review scope.
 - Completion reports present and committed for all tasks: YES.
 - Core v0.1 maintenance and guard contracts in PRD/TRD/schema/config/design/CLI/
   flow sources were reviewed. The CLI spec correctly names all four maintenance
   formats and the exact guard matrix.
-- Specs needing Tech Lead sync: `10_IMPLEMENTATION_ROADMAP.md:322` must replace
-  `--format json|markdown` with the four-format contract and the wrap-up must
-  record the full spec-sync verdict.
-- Current-context reconciliation required: the Tech Lead-owned escalation file
-  must be archived/trimmed below its workflow-lint tripwire; WRAP-F1/F2 also
-  require ESC-004/register/ledger reconciliation.
+- Specs needing Tech Lead sync: none found by QA-18. The roadmap table and
+  Phase 17 slicing note both carry the four-format contract; the seven core
+  maintenance/guard sources and shipped-flow document are consistent.
+- Current-context reconciliation is complete enough for the QA gate:
+  `tl_escalations_current.md` has no open escalation and is 49 lines; archived
+  `phase-17/tl-escalations.md` records WRAP-F1/F2 reconciliation.
 - DEC-056, its validation-contract amendment, the final ledger entry, Task 9
-  spec, and related current orchestration changes are present in the working
-  tree but outside this QA artifact-only commit scope. The Tech Lead must commit
-  or otherwise reconcile them during the unblock/wrap sequence.
+  spec, roadmap sync, and related orchestration changes remain user/Tech Lead
+  working-tree changes outside this QA artifact-only commit. Their final wrap
+  commit remains Tech Lead-owned and does not alter this reproduced file-state
+  verdict.
 
 ## Human Checklist Readiness
 
@@ -359,7 +365,7 @@ Generated at
 - Uses one judgment observable per row: YES.
 - Human-only assertion mapped: YES, VAL-025 to HUMAN-25a..e.
 - Human outcome claimed by QA Lead: NO; all five outcomes remain blank.
-- Execution readiness: BLOCKED until VAL-024 deterministic blockers clear.
+- Execution readiness: READY; VAL-024 passes in this rerun.
 
 ## Coverage Caveat
 
@@ -373,8 +379,8 @@ remain exclusively Human judgments under VAL-025.
 
 | Maturity area | Status | Evidence or deferral |
 |---|---|---|
-| Baseline artifacts | BLOCKED | Validation contract, plan, reviews, final review, and checklist exist, but VAL-024 is not terminally passing. |
-| Automated gates | BLOCKED | Go/coverage/build gates pass; required workflow lint fails. |
+| Baseline artifacts | READY | Validation contract, plan, reviews, completion reports, final review, and Human checklist exist; VAL-001..024 pass. |
+| Automated gates | READY | Format, lint, race, coverage, integration, benchmark, build, static size, report-lint, and workflow-lint gates pass. |
 | Held-out scenarios | DEFERRED | DEC-049 defers held-out scenarios to v0.3; VAL-025 is ordinary real-work dogfood. |
 | Release readiness | DEFERRED | Threat model and public-release scanners remain deferred to v0.3 under DEC-049. |
 
@@ -382,22 +388,11 @@ remain exclusively Human judgments under VAL-025.
 
 ### Blocking
 
-- **QA-BLK-03 — current-context workflow gate fails.** Reproduce with
-  `project-docs/tools/workflow-lint.sh`; it exits 1 with
-  `FAIL line budget exceeded (197 > 107 tripwire): tl_escalations_current.md`.
-  Required fix: the Tech Lead must resolve/archive the recorded wrap findings,
-  trim the current escalation context within budget, rerun the exact command,
-  and record PASS. QA does not own that file.
-- **QA-BLK-04 — mandatory phase-end documentation sync is incomplete.**
-  `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md:322` still documents only
-  JSON/markdown for `fid maintenance check`; VAL-012/017 and the CLI contract
-  require JSON/TOON/markdown/YAML. Required fix: Tech Lead syncs the roadmap,
-  records the full spec-sync verdict, then QA-18/VAL-024 are reevaluated.
+- None.
 
 ### Major
 
-- VAL-025 has no Human outcome. This is deliberately CARRY-FORWARD rather than
-  an inferred QA pass; it cannot be executed until deterministic QA clears.
+- None.
 
 ### Improvement
 
@@ -411,7 +406,8 @@ remain exclusively Human judgments under VAL-025.
 
 ## Unresolved Risks And Carry-Forward Candidates
 
-- VAL-025 remains CARRY-FORWARD to HUMAN-25a..e; no Human outcome exists yet.
+- VAL-025 remains CARRY-FORWARD to the immediate Human gate at HUMAN-25a..e; no
+  Human outcome exists yet, so the phase is unblocked but not complete.
 - CF-020 remains deferred to v0.2 under DEC-056: monotonic issue timestamps can
   briefly place burst-write activity in the future, causing a bounded,
   self-correcting clock-relative info-count change.

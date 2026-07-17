@@ -5,8 +5,8 @@
 > Tester: _______________
 >
 > This checklist contains only Human-owned dogfood judgments for VAL-025.
-> Do not execute it until the deterministic VAL-024 blockers recorded in
-> `final-review.md` have been cleared and the phase-end gate has been rerun.
+> Deterministic VAL-024 passes in the rerun recorded in `final-review.md`; this
+> checklist is ready to execute before Phase 17 wrap-up.
 
 ## Real-Work v0.1 Dogfood
 
