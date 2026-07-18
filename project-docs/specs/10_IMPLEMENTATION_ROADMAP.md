@@ -473,6 +473,92 @@ relying on agent prose for deterministic claims.
 | Role permissions table | Schema migration: `role_permissions` table. Seed from v0.1 code constant. Add `fid role create` and `fid policy set`; `fid policy show` keeps the same CLI contract but reads from `role_permissions` after this migration. | PRD-ROLE-006, TRD-ARCH-010 |
 | Gate-obligation seams | Rule vocabulary reserved and rule-parameter shapes designed so transitions can later require versioned gate obligations (`required_gates_current`) and structured completion (`has_completion`) without re-migrating: `workflow_transition_requires.params_json` schema accommodates gate ID/version sets. Seam only — no receipt behavior in this slice. | PRD-WF-014–015 (seam), DEC-066 |
 
+> **Phase-slicing note — v0.2a (Tech Lead, 2026-07-18).**
+> v0.2a is the **first v0.2 version** and is **migration-heavy and
+> contract-heavy**: it converts two v0.1 hard-coded contracts into
+> data-configurable tables. The hard-coded workflow state machines
+> (`internal/workflow`) become `workflows` / `workflow_states` /
+> `workflow_transitions` / `workflow_transition_requires` rows, and the in-code
+> permissions matrix (Phase 10) becomes the `role_permissions` table. Both are
+> **behavior-preserving migrations** — the v0.1 defaults must migrate verbatim
+> and produce identical transition and permission behavior (a v0.2 exit
+> criterion). v0.2a also bakes in the **gate-obligation seams** that every
+> later v0.2b evidence obligation hangs off (DEC-066), so the
+> `workflow_transition_requires` schema must be right the first time; the seam
+> is schema/vocabulary only, with no receipt behavior. Slice into **three
+> phases (Phases 18–20)**, each exiting on commands an agent can run against a
+> real `.fid/` workspace. The migration phases carry the hard-to-change-contract
+> risk; per-phase operating mode is decided at each phase-start. The CF-023
+> workflow-tooling pass (doc/tooling only, light mode) precedes Phase 18 per the
+> phase brief and is not a numbered v0.2a implementation phase.
+>
+> - **Phase 18 — Workflow tables migration + engine data-source swap + gate
+>   seams (foundational, behavior-preserving).** Add the four workflow tables
+>   (with `workflow_transition_requires.params_json` shaped to accommodate future
+>   gate ID/version sets — the gate-obligation seam), seed the v0.1
+>   epic/task/subtask default state machines verbatim as rows, migrate
+>   `issues.workflow_id` to a real FK and `issues.status` to the composite FK
+>   `(workflow_id, state)`, and repoint `internal/workflow` transition validation
+>   to resolve states/transitions/rules from the data tables (rule functions stay
+>   named Go functions keyed by rule name in `workflow_transition_requires`).
+>   Reserve the `required_gates_current` / `has_completion` rule vocabulary in the
+>   schema without wiring any receipt behavior. Version the new journal events and
+>   the projection migration, add golden replay fixtures, and never rewrite v0.1
+>   history. **Exit:** after migration every existing issue carries an FK-backed
+>   workflow/status, every v0.1 transition behaves identically (same allowed
+>   edges, same rule evaluations, same entity-named rejection messages), a clean
+>   `fid rebuild` reproduces the migrated state deterministically, and
+>   `fid maintenance check` stays green; the gate-obligation seam is present in
+>   schema with no behavioral change. (PRD-WF-011–012, PRD-WF-014–015 seam,
+>   TRD-ARCH-009, DEC-066)
+> - **Phase 19 — `fid workflow define/assign/list` + escalation default
+>   workflow.** Implement `fid workflow define` (custom workflow with states,
+>   transitions, and per-transition rules drawn from the named rule vocabulary),
+>   `fid workflow assign` (per kind or per project), and `fid workflow list` (all
+>   read formats), with transition/rule references validated at define time. Seed
+>   the new escalation-kind default workflow (open → resolved, requires
+>   linked_to_decision); the escalation *entity* CLI stays v0.2d, so only the
+>   default workflow rows land here. **Exit:** an agent can define a custom
+>   workflow, assign it to a kind or project, list workflows in every format, and
+>   create an issue of that kind that picks up the assigned workflow instead of
+>   the built-in default; the escalation default workflow is present and
+>   inspectable. (PRD-WF-005a, PRD-WF-011–012)
+> - **Phase 20 — `role_permissions` migration + `fid role create` /
+>   `fid policy set` + v0.2a closure.** Add the `role_permissions` table seeded
+>   verbatim from the v0.1 in-code constant, repoint the Phase 10 enforcement seam
+>   to read the matrix from the table (behavior-preserving), and implement
+>   `fid role create` (add a project role) and `fid policy set` (set a role/action
+>   permission); `fid policy show` keeps the same CLI contract but now reads from
+>   `role_permissions`. Close the version with a v0.2a smoke: define + assign a
+>   custom workflow, migrate permissions, create a role, set a policy, and run a
+>   full gated issue lifecycle over the data-backed workflow + permissions.
+>   **Exit:** role permissions are data-configurable per project, `fid policy
+>   show` returns output identical to v0.1 for the seeded profile, `fid role
+>   create` / `fid policy set` mutate the matrix and gate a subsequent write
+>   accordingly, and the v0.2a slice of the v0.2 exit criteria ("custom workflows
+>   can be defined and assigned; v0.1 defaults migrate cleanly"; "role permissions
+>   are data-configurable per project") is demonstrably met. (PRD-ROLE-006,
+>   TRD-ARCH-010)
+>
+> Ordering rationale: the workflow-tables migration is the highest-risk
+> foundational contract and must land first — the workflow CLI and every later
+> v0.2b evidence obligation depend on data-backed workflow rules and the seam;
+> the workflow authoring CLI follows because it needs the migrated tables; the
+> `role_permissions` migration is independent of the workflow tables and pairs
+> naturally with the closure smoke, because the smoke wants a full gated
+> lifecycle over both data-backed subsystems. Re-slice freely if phase-start
+> dependency analysis supports a different cut — e.g. seeding the escalation
+> default in Phase 18 with the other defaults, or moving the `role_permissions`
+> migration ahead of the workflow CLI so the two migrations stay adjacent. The
+> binding rule is every phase ships an end-to-end verifiable increment, and
+> Phase 18 must preserve v0.1 transition behavior exactly. Explicit deferrals:
+> registered gate execution, receipts, evidence records, and freshness are v0.2b
+> (this slice reserves the rule seam only); the structured `has_completion`
+> behavior is v0.2c (seam only here); decision/escalation/triage/comment and
+> requirement-read CLIs plus link-endpoint expansion are v0.2d; configurable
+> policy management beyond `role create` / `policy set` / `policy show` and richer
+> workflow operations stay later.
+
 ### v0.2b — Evidence Foundation (new, DEC-059/060/061)
 
 | Item | Description | PRD/TRD Refs |

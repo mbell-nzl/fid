@@ -7,8 +7,10 @@
 
 ## Project State
 
-**Status:** Phase 17 is **COMPLETE / WRAPPED (2026-07-18)**. No phase is active.
-**v0.1 is closed for early dogfood (DEC-057).**
+**Status:** Phase 17 **COMPLETE / WRAPPED (2026-07-18)**; **v0.1 closed for
+early dogfood (DEC-057)**. **Phase 18 (v0.2a slice 1) is PLANNED — pending Human
+approval.** No implementation has begun. v0.2a is sliced into Phases 18–20 (see
+the roadmap phase-slicing note and `phase_brief.md`).
 
 Phase 17 outcome:
 
@@ -48,9 +50,9 @@ ratification. No implementation began.**
 
 ## Next Action
 
-**Human review** of the checkpoint decisions and re-sliced roadmap. Then:
-(1) the CF-023 workflow-tooling pass (light mode) so report-lint /
-escalation-register friction is fixed before execution, and (2) plan
-**Phase 18 - v0.2a Workflow Engine Migration (heavy mode)** with its
-validation contract and task slices. Do not start v0.2 work before Phase 18
-is planned and Human-approved.
+**Human approval** of the Phase 18 plan: operating mode (heavy), validation
+contract (VAL-001..014), and the five-task list in `phase_brief.md`. On
+approval, QA Lead drafts the Phase 18 QA plan (refining the contract), then
+Phase Runner drives the dev/QA loop. Recommended before execution: the CF-023
+workflow-tooling pass (light mode) so report-lint / escalation-register friction
+is fixed first. Do not start Phase 18 tasks before Human approval.
