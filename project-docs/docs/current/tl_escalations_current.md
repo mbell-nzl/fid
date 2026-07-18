@@ -13,6 +13,15 @@ None.
 
 ## Recent Archive Notes
 
+- Phase 17 wrapped 2026-07-18. It raised five escalations, all resolved and
+  archived to `../phases/phase-17/tl-escalations.md`: ESC-004 (Task 1
+  report-lint), ESC-005 (Task 2 report-lint, backfilled), ESC-009 (QA model
+  qualification), ESC-010 (rebuild parity; resolved by DEC-056 Branch A), and
+  ESC-011 (Task 7 report-lint, backfilled with a new ID). That file also records
+  the WRAP-F1/F2 register reconciliation. The two open retrospective items -
+  recurring report-lint commit-metadata friction and **ESC-NNN IDs not being
+  globally unique** (ESC-001/004/005 collide across phases) - are now tracked as
+  **CF-023** (DEC-058) and flagged for the deep retrospective before v0.2a.
 - Phase 16 raised no `ESC-NNN` items. Local unblock and workflow decisions
   DEC-043..048 plus TRG-046 are archived in
   `../phases/phase-16/tl-escalations.md` and `../phases/phase-16/decisions.md`.

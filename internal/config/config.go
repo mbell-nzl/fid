@@ -10,16 +10,18 @@ import (
 )
 
 const (
-	WorkspaceDirName = ".fid"
-	JournalDirName   = "journal"
-	ConfigFileName   = "config.toml"
-	PricingFileName  = "pricing.toml"
-	DatabaseFileName = "fid.sqlite"
-	GitIgnoreName    = ".gitignore"
+	WorkspaceDirName                       = ".fid"
+	JournalDirName                         = "journal"
+	ConfigFileName                         = "config.toml"
+	PricingFileName                        = "pricing.toml"
+	DatabaseFileName                       = "fid.sqlite"
+	GitIgnoreName                          = ".gitignore"
+	DefaultStartedWithoutClaimGraceSeconds = 300
 )
 
 type ProjectConfig struct {
-	Prefix string
+	Prefix                          string
+	StartedWithoutClaimGraceSeconds int
 }
 
 type ModelPricing struct {
@@ -51,7 +53,10 @@ type WorkspacePaths struct {
 }
 
 func DefaultProjectConfig(prefix string) ProjectConfig {
-	return ProjectConfig{Prefix: prefix}
+	return ProjectConfig{
+		Prefix:                          prefix,
+		StartedWithoutClaimGraceSeconds: DefaultStartedWithoutClaimGraceSeconds,
+	}
 }
 
 func DefaultPricingConfig() PricingConfig {
@@ -137,6 +142,7 @@ func ReadProjectConfig(path string) (ProjectConfig, error) {
 	scanner := bufio.NewScanner(file)
 	section := ""
 	prefix := ""
+	startedWithoutClaimGraceSeconds := DefaultStartedWithoutClaimGraceSeconds
 	for scanner.Scan() {
 		line := normalizeLine(scanner.Text())
 		if line == "" {
@@ -157,6 +163,17 @@ func ReadProjectConfig(path string) (ProjectConfig, error) {
 			}
 			prefix = parsed
 		}
+		if section == "maintenance" && key == "started_without_claim_grace_seconds" {
+			parsed, err := strconv.Atoi(value)
+			if err != nil || parsed < 0 {
+				return ProjectConfig{}, fmt.Errorf(
+					"parse project config %q: maintenance.started_without_claim_grace_seconds must be a non-negative integer, got %q",
+					path,
+					value,
+				)
+			}
+			startedWithoutClaimGraceSeconds = parsed
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		return ProjectConfig{}, fmt.Errorf("scan project config %q: %w", path, err)
@@ -165,7 +182,10 @@ func ReadProjectConfig(path string) (ProjectConfig, error) {
 		return ProjectConfig{}, fmt.Errorf("parse project config %q: missing [project].prefix", path)
 	}
 
-	return ProjectConfig{Prefix: prefix}, nil
+	return ProjectConfig{
+		Prefix:                          prefix,
+		StartedWithoutClaimGraceSeconds: startedWithoutClaimGraceSeconds,
+	}, nil
 }
 
 func ReadPricingConfig(path string) (PricingConfig, error) {
@@ -225,7 +245,11 @@ func projectConfigContents(project ProjectConfig) string {
 	return fmt.Sprintf(`# Project identity
 [project]
 prefix = %q
-`, project.Prefix)
+
+# Maintenance audit settings
+[maintenance]
+started_without_claim_grace_seconds = %d
+`, project.Prefix, project.StartedWithoutClaimGraceSeconds)
 }
 
 func pricingConfigContents(pricing PricingConfig) string {

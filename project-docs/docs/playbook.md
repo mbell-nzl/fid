@@ -113,3 +113,35 @@ phase-specific exception.
   not weakened or silently adapted.
 - Deterministic claims require reproducible evidence.
 - Keep held-out scenario material outside normal implementation context.
+
+## 8. Audit A Workspace
+
+Run the read-only maintenance audit before handoff or after rebuilding a
+projection:
+
+```text
+fid maintenance check
+fid maintenance check --format markdown
+fid maintenance check --warn-as-error --format json
+```
+
+The command refreshes a missing or stale SQLite projection before reading but
+does not append to the journal. It writes the complete audit result to stdout
+in `json` (default), `toon`, `markdown`, or `yaml`. No findings return
+`status: pass`; warnings alone return `status: warn` and exit zero unless
+`--warn-as-error` promotes the status and exit outcome to `fail`; any structural
+error returns `fail` and a non-zero exit.
+
+## 9. Compact the Derived Database
+
+Use VACUUM only when reclaiming local SQLite space is useful:
+
+```text
+fid maintenance vacuum --by tl
+```
+
+The command is available to `tl` and `human` only. It waits for the shared
+write lock, refreshes the derived projection if needed, then compacts only
+`.fid/fid.sqlite`. It does not append, compact, or delete journal history, and
+it creates no activity event. The stderr confirmation reports the database byte
+sizes before and after the operation.

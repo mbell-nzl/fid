@@ -59,7 +59,8 @@ Execution rules:
   project-docs/tools/report-lint.sh <report path> <task spec path>.
   It deterministically verifies required headings, sentinel sections, task-spec
   command coverage, the commit hash via `git rev-parse --verify
-  <hash>^{commit}`, and the subject against `git log -1 --format=%s`. A nonzero
+  <hash>^{commit}`, the subject against `git log -1 --format=%s`, and that the
+  report file itself is committed with no uncommitted modifications. A nonzero
   exit is a hard stop. Do not re-derive these checks by prose parsing.
 - Read the report for judgment items report-lint cannot check: blocker
   semantics, deviation content, concerns needing triage, and QA-plan commands

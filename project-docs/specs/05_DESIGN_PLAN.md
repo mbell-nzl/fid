@@ -368,6 +368,20 @@ claimed FID-a1b2c3 by developer (expires 2026-05-27T15:00:00Z)
 }
 ```
 
+Maintenance result and exit semantics:
+
+| Findings | `--warn-as-error` | `status` | Process exit |
+|---|---:|---|---:|
+| None | either | `pass` | zero |
+| Warnings only | false | `warn` | zero |
+| Warnings only | true | `fail` | non-zero |
+| Any errors | either | `fail` | non-zero |
+
+Warning promotion changes only top-level status and process exit; promoted rows
+remain in `warnings`. The complete structured result is written to stdout before
+an audit-outcome non-zero return. Fatal config, DB, or encoding failures use the
+normal stderr error path. Findings are ordered by check, entity ID, then message.
+
 ---
 
 ## 7. TUI Board Design (v0.3)
@@ -452,4 +466,4 @@ These judgments require human review and cannot be automated:
 | Cross-branch journal merge with conflicting writes | Text-based merge of JSONL, then rebuild reconciles | v0.1 |
 | Agent with wrong role attempts forbidden action | Permission enforcement with actionable error message | v0.1 |
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-11*

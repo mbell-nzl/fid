@@ -5,8 +5,88 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
+	"strings"
 	"testing"
 )
+
+func TestReadProjectConfigDefaultsMissingMaintenanceGraceToFiveMinutes(t *testing.T) {
+	t.Parallel()
+
+	path := filepath.Join(t.TempDir(), ConfigFileName)
+	if err := os.WriteFile(path, []byte("[project]\nprefix = \"FID\"\n"), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	project, err := ReadProjectConfig(path)
+	if err != nil {
+		t.Fatalf("ReadProjectConfig() error = %v", err)
+	}
+	if project.StartedWithoutClaimGraceSeconds != 300 {
+		t.Fatalf("started-without-claim grace = %d, want 300", project.StartedWithoutClaimGraceSeconds)
+	}
+}
+
+func TestProjectConfigMaintenanceGraceRoundTrips(t *testing.T) {
+	t.Parallel()
+
+	for _, graceSeconds := range []int{0, 45} {
+		graceSeconds := graceSeconds
+		t.Run(strconv.Itoa(graceSeconds)+" seconds", func(t *testing.T) {
+			t.Parallel()
+
+			project := ProjectConfig{
+				Prefix:                          "FID",
+				StartedWithoutClaimGraceSeconds: graceSeconds,
+			}
+			contents := projectConfigContents(project)
+			if !strings.Contains(contents, "[maintenance]\nstarted_without_claim_grace_seconds = "+strconv.Itoa(graceSeconds)) {
+				t.Fatalf("project config contents = %q, want maintenance grace %d", contents, graceSeconds)
+			}
+
+			path := filepath.Join(t.TempDir(), ConfigFileName)
+			if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+				t.Fatalf("WriteFile() error = %v", err)
+			}
+
+			roundTripped, err := ReadProjectConfig(path)
+			if err != nil {
+				t.Fatalf("ReadProjectConfig() error = %v", err)
+			}
+			if roundTripped != project {
+				t.Fatalf("round-tripped project = %#v, want %#v", roundTripped, project)
+			}
+		})
+	}
+}
+
+func TestReadProjectConfigRejectsInvalidMaintenanceGrace(t *testing.T) {
+	t.Parallel()
+
+	for name, graceValue := range map[string]string{
+		"negative":  "-1",
+		"malformed": "five minutes",
+	} {
+		name, graceValue := name, graceValue
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			path := filepath.Join(t.TempDir(), ConfigFileName)
+			contents := "[project]\nprefix = \"FID\"\n\n[maintenance]\nstarted_without_claim_grace_seconds = " + graceValue + "\n"
+			if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
+				t.Fatalf("WriteFile() error = %v", err)
+			}
+
+			_, err := ReadProjectConfig(path)
+			if err == nil {
+				t.Fatal("ReadProjectConfig() error = nil, want invalid maintenance grace error")
+			}
+			if !strings.Contains(err.Error(), "maintenance.started_without_claim_grace_seconds") {
+				t.Fatalf("ReadProjectConfig() error = %q, want maintenance grace context", err)
+			}
+		})
+	}
+}
 
 func TestDefaultPricingConfigIncludesAnthropicOpenAIAndGoogleModels(t *testing.T) {
 	t.Parallel()

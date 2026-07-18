@@ -212,6 +212,13 @@ Triage rules:
 - For QA Reviewer Blocking findings, RESUME is allowed only when the finding is
   demonstrably misclassified, already resolved by a verified commit, or covered
   by an accepted decision. Otherwise BLOCK.
+- TL-Lite is also the first-step triager for Phase Runner hard stops:
+  report-lint failure, missing report, blocker report, quality-gate failure,
+  placeholder command, missing command, silently skipped command, narrower
+  substituted command, or ad hoc gate substitution. RESUME is allowed only when
+  the failure is misclassified, already resolved by a verified commit with
+  attached evidence, or covered by an accepted decision. A genuine unresolved
+  failure is always BLOCK.
 - TL-Lite cannot run commands and never verifies commits itself. A commit
   counts as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and
@@ -276,9 +283,10 @@ Responsibilities:
    `project-docs/tools/report-lint.sh <report> <task spec>`. It
    deterministically verifies required headings, sentinel sections, task-spec
    command coverage, commit hash validity via `git rev-parse --verify
-   <hash>^{commit}`, and commit subject match against `git log -1 --format=%s`.
-   A nonzero exit is a hard stop; do not re-derive these checks by prose
-   parsing. A hash that does not resolve is a hard stop even when its
+   <hash>^{commit}`, commit subject match against `git log -1 --format=%s`,
+   and that the report file itself is committed with no uncommitted
+   modifications. A nonzero exit is a hard stop; do not re-derive these checks
+   by prose parsing. A hash that does not resolve is a hard stop even when its
    abbreviated prefix is valid.
 9. Read the report for the judgment items report-lint cannot check: blocker
    semantics, deviation content, concerns needing triage, and QA-plan commands
@@ -300,34 +308,48 @@ Responsibilities:
 13. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths, then append the REVIEW entry to the run ledger.
-14. Route soft blockers through TL-Lite triage. When a triage may turn on
-    "already resolved by a verified commit", verify the commit first and
-    attach the commit-verification evidence (hash, `git rev-parse --verify`
-    result, subject match) to the triage trigger; TL-Lite judges evidence and
-    never verifies commits itself. After TL-Lite returns, read the triage log
-    to confirm the TRG-NNN entry exists, then parse the literal final
-    `VERDICT:` line and append a TRIAGE entry to the run ledger.
+14. Route soft blockers and triage-gated hard stops through TL-Lite triage.
+    When a triage may turn on "already resolved by a verified commit", verify
+    the commit first and attach the commit-verification evidence (hash,
+    `git rev-parse --verify` result, subject match) to the triage trigger;
+    TL-Lite judges evidence and never verifies commits itself. After TL-Lite
+    returns, read the triage log to confirm the TRG-NNN entry exists, then
+    parse the literal final `VERDICT:` line and append a TRIAGE entry to the
+    run ledger.
 15. After all tasks complete, spawn QA Lead for final review and human
     checklist.
 16. Append the RUN-END entry to the run ledger and notify the Human with the
     final review path and current stop/completion state. When stopping early,
     append a STOP entry naming the trigger and the next human action.
 
-Hard stop conditions:
-- Developer quality gate fails. Do not send red tests, lint/static-analysis,
-  formatting, or coverage failure to TL-Lite.
+Hard stop conditions, triage-gated through TL-Lite first:
+
+Before appending a final STOP for any of these causes, spawn TL-Lite as the
+first-step triager with the failure evidence attached, append a TRIAGE entry
+for its verdict, and continue only on `VERDICT: RESUME`. On
+`VERDICT: BLOCK`, append the STOP entry referencing the TRG and ESC. Never
+record a STOP for these causes without a TRIAGE entry for it.
+
 - Completion report fails `project-docs/tools/report-lint.sh`.
-- Developer completion report omits a required task-spec or QA-plan command,
-  records it as skipped without a `BLOCKED` reason, or substitutes a narrower
-  command for a required gate.
 - Developer fails to produce a completion or blocker report.
+- A blocker report says the task could not be completed, the gate cannot pass,
+  a commit cannot be produced, or scope conflicts prevent progress.
+- Developer quality gate fails.
+- A required command is still a placeholder.
+- Developer completion report omits a required task-spec or QA-plan command,
+  records it as skipped without a `BLOCKED` reason, substitutes a narrower
+  command for a required gate, or uses an ad hoc gate substitution.
 - Completion report lacks required headings, commit hash, or commit subject.
 - Recorded commit hash does not resolve via `git rev-parse --verify
   <hash>^{commit}` to a single commit matching the report subject.
-- A blocker report says the task could not be completed, the gate cannot pass,
-  a commit cannot be produced, or scope conflicts prevent progress.
-- Scope conflict, missing artifact, child-agent unavailability, or branch issue
-  prevents safe execution.
+
+Hard stop conditions, immediate:
+
+- Missing validation contract.
+- Missing QA plan.
+- Required child agent cannot be spawned or reports the wrong role/model.
+- Branch issue or missing artifact prevents safe execution before task triage
+  can be constructed.
 - TL-Lite returns `VERDICT: BLOCK`.
 
 Soft blocker conditions:
@@ -341,6 +363,9 @@ TL-Lite resume:
 - Autonomous TL-Lite resumption is permanently enabled (DEC-002). On
   `VERDICT: RESUME`, Phase Runner records the TRG-NNN and continues without a
   Human stop. `VERDICT: BLOCK` still always stops the run.
+- If resuming from an existing STOP caused by a task blocker or failed
+  required gate and no TRIAGE entry exists for that STOP, spawn TL-Lite first,
+  append the TRIAGE entry, and continue only on `VERDICT: RESUME`.
 - The former WF-10 warm-up safeguard is retired; no warm-up tally is maintained.
 
 ### 2.5 Developer
@@ -379,13 +404,36 @@ Responsibilities:
    interaction and its observed result. Tests alone do not prove the
    entrypoint works.
 9. Create or update the completion report immediately after gate outcome is
-   known.
-10. Commit with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
-11. Record the commit hash and subject by copying them verbatim from `git`
-    output: `git rev-parse --short HEAD` or `git rev-parse HEAD` for the hash,
-    and `git log -1 --format=%s` for the subject. Never type, pad, complete, or
-    recall a hash from memory.
-12. Stop after report and commit are complete.
+   known, leaving `## Commit hash` and `## Commit subject` as
+   `- Pending commit`.
+10. Create the task commit (implementation, tests, docs, and the report draft)
+    with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
+11. While `HEAD` is still the task commit, record the commit hash and subject
+    by copying them verbatim from `git` output: `git rev-parse --short HEAD` or
+    `git rev-parse HEAD` for the hash, and `git log -1 --format=%s` for the
+    subject. Replace the report placeholders with those values. Never type,
+    pad, complete, or recall a hash from memory. Retain the Markdown backticks
+    when replacing either placeholder; the finalized fields must use this exact
+    shape:
+
+    ```text
+    ## Commit hash
+    - `0123456789abcdef`
+
+    ## Commit subject
+    - `feat(scope): subject copied from git`
+    ```
+12. Commit the finalized report in an immediately following
+    `docs(task): finalize completion report for phase-<id> task-<n>` commit.
+    The hash in the report is the task commit's, never this docs commit's; a
+    report cannot carry the hash of the same commit that introduces its final
+    content, so this two-step pattern is mandatory.
+13. Run `project-docs/tools/report-lint.sh <report> <task spec>` against the
+    committed report. If it fails because the report needs correction, update
+    the report, create another `docs(task): ...` commit, and rerun the command
+    against the newly committed file.
+14. Verify the report path is committed and clean:
+    `git status --porcelain -- <report path>` prints nothing. Then stop.
 
 Required completion report headings, in order:
 - `## Summary of what was implemented`
@@ -678,6 +726,10 @@ project-docs/
 ### 3.4 Codex Subagent Triggering
 
 - Codex subagents are explicit; Human or parent agent must request delegation.
+- Canonical role prompt sources live in `project-docs/agents/<role>.md`.
+  `.claude/agents/` and `.codex/agents/` are generated provider files. Edit the
+  canonical source and run `project-docs/tools/sync-agents.sh`; workflow-lint
+  fails when generated prompts drift.
 - Project Codex agents live in `.codex/agents/`.
 - `.codex/config.toml` must set `[features].multi_agent = true`.
 - `.codex/config.toml` must set `[agents].max_depth = 3`.
@@ -696,7 +748,55 @@ project-docs/
   `~/.codex/` and are selected with `--profile`.
 - Start a fresh Codex session after changing Codex config or agent files.
 
-### 3.5 Documentation Layout And Size Governance
+### 3.5 Repo Skills
+
+Repo skills are reusable procedural helpers, not workflow authority.
+`09_AI_WORKFLOW.md`, role prompts, templates, specs, and recorded decisions
+remain the source of truth for role boundaries, hard stops, required artifacts,
+and validation gates.
+
+Skill authoring and distribution:
+
+- Canonical skills live under `project-docs/skills/<skill-name>/SKILL.md`.
+- Codex-discoverable generated copies live under
+  `.agents/skills/<skill-name>/SKILL.md`. This is not a courtesy copy: Codex
+  natively discovers `.agents/skills/` by searching the working directory and
+  parent directories up to the repo root, then `$HOME/.agents/skills`, then
+  `/etc/codex/skills` with symlinks followed. The generated tree is the live
+  Codex skill surface.
+- Claude-discoverable generated copies live under
+  `.claude/skills/<skill-name>/SKILL.md`.
+- Generated skill copies are derived files and must not be edited directly.
+- Workflow-lint must fail when generated copies are missing or drift from the
+  canonical skill source.
+
+Skill invocation:
+
+- Codex invokes a skill implicitly when the task matches the skill
+  description, or explicitly via `$skill-name` or the `/skills` picker. Codex
+  budgets the in-context skill list, name plus description per skill, at 2% of
+  the context window or 8,000 characters, so descriptions must front-load
+  trigger language.
+- Claude invokes skills through its skill surface, matching on the same
+  descriptions.
+- Per-skill disabling for Codex is user-level `~/.codex/config.toml`
+  `[[skills.config]]`, never repository config.
+
+Skill file rules:
+
+- Canonical skills should follow the Agent Skills format: a skill directory
+  with `SKILL.md`, required `name`, required `description`, and Markdown body.
+- Keep `SKILL.md` focused on one coherent job. Move long references into
+  supporting files only when the skill genuinely needs them.
+- Descriptions must say what the skill does and when to use it, with clear
+  trigger language and boundaries.
+- Put `Provenance:` in the Markdown body, not custom frontmatter. Use
+  `Workflow-Extracted Skill`, `External-Adapted Skill`, or
+  `Reference-Only Pattern` terminology from `GLOSSARY.md`.
+- First versions should be instruction-only. Add scripts only when deterministic
+  and safe to run non-interactively.
+
+### 3.6 Documentation Layout And Size Governance
 
 Default-loaded current files:
 
@@ -1008,18 +1108,18 @@ Model guidance:
 
 | Role | Codex | Reasoning | Notes |
 |---|---|---:|---|
-| Tech Lead | `gpt-5.5` | high | phase planning, spec sync, wrap-up |
-| Phase Runner | `gpt-5.4-mini` | medium | mechanical orchestration, ledger discipline |
-| Developer | `gpt-5.5` | high | implementation and TDD |
-| QA Lead | `gpt-5.5` | high | phase-wide QA synthesis |
-| QA Reviewer | `gpt-5.5` | medium | bounded mid-phase review |
-| TL-Lite | `gpt-5.5` | medium | focused tactical triage |
+| Tech Lead | `gpt-5.6-sol` | xhigh | phase planning, spec sync, wrap-up |
+| Phase Runner | `gpt-5.4-mini` | xhigh | mechanical orchestration, ledger discipline |
+| Developer | `gpt-5.6-terra` | high | implementation and TDD |
+| QA Lead | `gpt-5.6-sol` | xhigh | phase-wide QA synthesis |
+| QA Reviewer | `gpt-5.6-terra` | high | bounded mid-phase review |
+| TL-Lite | `gpt-5.6-terra` | medium | focused tactical triage |
 
 Note: this table is Codex-specific. Claude Code agent model choices are
 configured separately, per agent, in `.claude/agents/*.md`, and are not
-duplicated here to avoid drift. The **Reasoning** column (high / medium) is the
-tool-agnostic signal — map it to the equivalent capability tier in whichever
-toolchain runs the role.
+duplicated here to avoid drift. The **Reasoning** column (xhigh / high / medium)
+is the tool-agnostic signal — map it to the equivalent capability tier in
+whichever toolchain runs the role.
 
 ## 8. Git And Quality Gates
 
@@ -1051,10 +1151,21 @@ Missing, silently skipped, or narrower substituted commands are failed gates.
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:
 required headings, sentinel sections, task-spec command coverage, hash
-validity, and subject match. Orchestrators (Phase Runner or human) run it
-instead of prose-parsing those checks; reviewers may run it as independent
-evidence. Judgment checks - QA-plan command applicability, deviation content,
-blocker acceptability - remain with agents and humans.
+validity, and subject match.
+
+A completion report cannot contain the hash of the exact commit that
+introduces the report's final content - changing the report changes the hash.
+The finalized, hash-bearing report is therefore committed in an immediately
+following `docs(task): ...` commit after the task commit it describes. A report
+is evidence only once committed; lint verdicts recorded against an uncommitted
+worktree file do not count toward the Definition of Done.
+
+`project-docs/tools/report-lint.sh <report> <task spec>` also verifies that
+the linted report file is committed with no uncommitted modifications.
+Orchestrators (Phase Runner or human) run report-lint instead of prose-parsing
+these checks; reviewers may run it as independent evidence. Judgment checks -
+QA-plan command applicability, deviation content, blocker acceptability -
+remain with agents and humans.
 
 `project-docs/tools/drills/run-drills.sh` runs the evidence-chain drills:
 seeded-defect fixtures that verify the QA chain itself still catches

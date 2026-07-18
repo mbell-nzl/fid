@@ -35,7 +35,7 @@ they must not begin implementation that depends on that choice.
   `internal/workflow/`, `internal/policy/`, `internal/qa/`,
   `internal/validation/`, `internal/templates/`, `internal/search/`,
   `internal/stats/`, `internal/activity/`, `internal/report/`, `internal/changes/`,
-  `internal/handoff/`, `internal/evidence/`.
+  `internal/handoff/`, `internal/evidence/`, `internal/maintenance/`.
 - Persistence/integration adapters: `internal/journal/`, `internal/db/`,
   `internal/gitctx/`, `migrations/`.
 - Shared utilities/design system: no shared design system in v1. Keep shared
@@ -103,11 +103,18 @@ Project-specific conventions:
   compatibility surfaces. Breaking or versioned changes require a spec update
   and matching tests before implementation.
 
-## Repo Skills
+## Agent Prompts And Skills
+
+Role prompts are single-sourced: edit `project-docs/agents/<role>.md` and run
+`project-docs/tools/sync-agents.sh`; `.claude/agents/` and `.codex/agents/`
+are generated provider files.
 
 Canonical repo skills live under `project-docs/skills/`. Provider-discoverable
 copies are generated from canonical skills into `.agents/skills/` for Codex and
-`.claude/skills/` for Claude.
+`.claude/skills/` for Claude. Codex discovers `.agents/skills/` natively and
+invokes a skill implicitly when the task matches its description or explicitly
+via `$skill-name`; Claude discovers `.claude/skills/` through its skill
+surface.
 
 Rules:
 
@@ -119,9 +126,10 @@ Rules:
 - First versions should be instruction-only. Scripts require documented
   prerequisites, safe non-interactive behavior, and dependency-budget rationale
   when they add dependencies.
+- Run `project-docs/tools/sync-agents.sh` after editing canonical role prompts.
 - Run `project-docs/tools/sync-skills.sh` after editing canonical skills.
-- Run `project-docs/tools/workflow-lint.sh` after skill generation to check
-  skill, prompt, template, and config drift.
+- Run `project-docs/tools/workflow-lint.sh` after prompt or skill generation to
+  check skill, prompt, template, and config drift.
 
 ## Dependency Budget
 

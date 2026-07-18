@@ -47,6 +47,7 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/issues/     Issue, AC, completion, concern logic
     ├──► internal/claims/     Claim acquire/release/steal
     ├──► internal/workflow/   State machines + transition rules (v0.1 hard-coded)
+    ├──► internal/maintenance/ Read-only structural audit over projection + journal
     ├──► internal/policy/     Role × action permissions matrix
     ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
     ├──► internal/runs/       Agent run recording with snapshot pricing
@@ -90,6 +91,7 @@ Rules:
 | `internal/issues/` | Domain | Issue CRUD, AC management, completion recording, concern lifecycle | Output formatting, CLI flag parsing |
 | `internal/claims/` | Domain | Claim acquire, release, force-steal, TTL enforcement | Workflow transition logic |
 | `internal/workflow/` | Domain | State machine definitions, transition validation, rule evaluation | Issue creation, AC verification |
+| `internal/maintenance/` | Domain | Read-only consistency audit over the projected SQLite data and journal references; structural errors, later warnings, and summary counts | CLI flag parsing, output formatting, journal writes, repair, deletion, or migration |
 | `internal/policy/` | Domain | Role validation, permission matrix lookups, action authorization | Workflow state logic |
 | `internal/dev/` | Domain | Compose developer write workflows (`dev start`, `dev gate`, later `dev finish`/`dev block`) into one validated journal event by orchestrating existing claim, workflow, run, and gate effect shapes | CLI flag parsing, output formatting, direct schema/migration ownership |
 | `internal/runs/` | Domain | Record `agent_runs` rows with snapshot pricing, computed cost, and provider reconciliation fields | Output formatting, CLI flag parsing, read aggregations |
@@ -475,6 +477,12 @@ preferred domain correction command.
 - SQLite transactions remain required inside the write-lock boundary for
   projection atomicity. SQLite locking alone is not the write serializer,
   because the journal append is the commit point.
+- `fid maintenance vacuum --by <role>` is an explicit derived-DB maintenance
+  operation, not a domain write. After authorizing the role, it holds the same
+  `.fid/write.lock`, refreshes the projection through the held-lock path, then
+  runs SQLite `VACUUM` against `.fid/fid.sqlite`. It appends no journal event,
+  creates no activity row, and reports the database byte sizes before and
+  after compaction.
 - `.fid/write.lock` is acquired by atomically creating a lock directory that
   contains owner metadata: PID, hostname, started_at, command, and actor role
   when available. If the lock is held, fid waits for the configured short

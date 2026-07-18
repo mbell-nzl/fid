@@ -55,6 +55,14 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 			t.Fatalf("Stat(%q) error = %v", path, err)
 		}
 	}
+	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configPayload, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
+	}
+	if got := string(configPayload); !strings.Contains(got, "[maintenance]\nstarted_without_claim_grace_seconds = 300") {
+		t.Fatalf("config.toml = %q, want default maintenance grace section", got)
+	}
 
 	gitignorePath := filepath.Join(workspace, ".fid", ".gitignore")
 	payload, err := os.ReadFile(gitignorePath)
@@ -71,6 +79,13 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	}
 	if projectConfig.Prefix != strings.ToUpper(filepath.Base(workspace)) {
 		t.Fatalf("project prefix = %q, want %q", projectConfig.Prefix, strings.ToUpper(filepath.Base(workspace)))
+	}
+	if projectConfig.StartedWithoutClaimGraceSeconds != config.DefaultStartedWithoutClaimGraceSeconds {
+		t.Fatalf(
+			"started-without-claim grace = %d, want %d",
+			projectConfig.StartedWithoutClaimGraceSeconds,
+			config.DefaultStartedWithoutClaimGraceSeconds,
+		)
 	}
 
 	pricingConfig, err := config.ReadPricingConfig(filepath.Join(workspace, ".fid", "pricing.toml"))

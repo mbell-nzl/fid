@@ -1,63 +1,54 @@
-# Phase Brief - Between Phases After Phase 16
+# Phase Brief - No Active Phase (v0.1 closed)
 
-> **Purpose.** Default execution brief for the current project state. Replaced
-> at each phase kickoff by the incoming Tech Lead.
+> **Purpose.** Default execution brief for the current phase. There is no active
+> phase; Phase 17 wrapped on 2026-07-18 and v0.1 is closed for early dogfood.
 >
 > **Size target:** under 150 lines.
->
-> **State:** Phase 16 is **WRAPPED**. No Developer task is active. Phase 17
-> kickoff is the next Tech Lead action.
 
-## Phase 16 Outcome
+## Status
 
-Phase 16 shipped the v0.1e activity timeline and read-only escape hatches:
+**No phase active.** Phase 17 (Maintenance + stub guard + v0.1 closure) is
+COMPLETE / WRAPPED. QA final review PASS, Human checklist PASS, VAL-001..025
+resolved. **v0.1 is closed for early dogfood (DEC-057).**
 
-- `fid activity list` over projected `activity_log` with `--on`, `--since`, and
-  `--event` filters in all read formats.
-- CF-011 broad activity reconciliation for the approved issue-scoped writers:
-  create, AC add/verify, complete, concern raise/address, unclaim, link add, and
-  `dev gate` / `gate_recorded`.
-- `fid sql` read-only escape hatch with classifier rejection and read-only
-  SQLite backstop for TRD-SEC-002.
-- `fid journal inspect <event-id>` with event location, hash parity, effects,
-  actor/command metadata, and revert verdict.
-- CF-016 `fid issue get --section gates` over raw append-only `gate_runs`.
+The next planning checkpoint slices roadmap **v0.2a - Workflow Engine Migration**
+into a new approved phase. This brief is refreshed at that kickoff.
 
-## Validation Status
+## Phase 17 Result (for reference)
 
-Final review: `project-docs/docs/phases/phase-16/qa/final-review.md`
+- Delivered `fid maintenance check`, locked `fid maintenance vacuum`, v0.2
+  governance command guards, full four-format read conformance, and the v0.1
+  closure journey/rebuild/traceability evidence.
+- Ten tasks (0-9) closed with verified single-commit implementations under Heavy
+  Mode; reviews after Tasks 0, 2, 5, 7; final review and Human dogfood complete.
+- VAL-022 narrowed under DEC-056 (journal is the sole source of derived state;
+  clock-relative reads excluded from rebuild-equality); Branch A confirmed with
+  no product change. VAL-023 unblocked with it.
+- Full archive: `../phases/phase-17/` (tasks, qa, decisions, progress,
+  run-ledger, triage-log, tl-escalations).
 
-| Range | Outcome | Notes |
-|---|---|---|
-| VAL-001..012 | PASS | Deterministic QA and phase-level gates passed. |
-| VAL-013 | PASS | Human checklist records HUMAN-16a..d PASS and overall PASS. |
+## Open Carry-Forward Into v0.2
 
-## Phase 16 Wrap Decisions
+- **CF-023 (Medium, deep-retrospective flagged):** workflow-tooling hardening -
+  report-lint / completion-report commit-metadata friction and ESC-NNN global
+  uniqueness (DEC-058). Recommended before v0.2a execution.
+- **CF-020 (v0.2):** future-`occurred_at` under burst writes vs the
+  future-excluding `recent_activity_7d` window (DEC-056).
+- **CF-021 / CF-022 (Low):** Go doc comments on maintenance exports; broader
+  markdown characterization tests. Do at next relevant package reopen.
+- **CF-008 (v0.2), CF-017 (v0.2c), CF-018 (next SQL package reopen)** unchanged.
 
-- DEC-048 archives Phase 16 with VAL-001..013 terminal PASS.
-- CF-011 and CF-016 are closed.
-- CF-018 and CF-019 capture non-blocking file-size follow-ups for
-  `internal/sqlquery/sqlquery.go` and `internal/format/markdown.go`.
-- TRG-046 RESUME was audited correct in hindsight. No `ESC-NNN` items are open.
+## Deferred Release Maturity
 
-## Next Phase Candidate
+Public-release threat model, SAST/scans, pre-release checklist, and held-out
+scenarios remain deferred to v0.3 per DEC-049 and `08_QUALITY_PLAN.md`
+sections 5.8/7/9. Phase 17 was v0.1 early-dogfood closure, not the charter's v0.3
+public release.
 
-Roadmap Phase 17 is "Maintenance + stub guard + v0.1 closure":
+## Next Planning Checkpoint
 
-- `fid maintenance check`
-- `fid maintenance vacuum`
-- stub-table CLI guards for governance entities not shipping until later
-- v0.1 exit-criteria smoke over the full implemented surface
-
-Phase 17 may carry CF-018/CF-019 only if it reopens the relevant packages.
-
-## Next Action
-
-Start Phase 17 kickoff only after reading:
-
-1. `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md` Phase 17 entry.
-2. Relevant sections named by that entry in PRD, TRD, schema, design, quality,
-   and workflow specs.
-3. `project-docs/docs/current/decisions_active.md`.
-4. Phase 16 wrap artifacts: `decisions.md`, `progress.md`,
-   `qa/final-review.md`, and `qa/human-checklist.md`.
+Plan v0.2a (Workflow Engine Migration) per `10_IMPLEMENTATION_ROADMAP.md`:
+workflow tables/migration, `fid workflow define/assign/list`, escalation
+workflow, and the `role_permissions` migration. Propose the operating mode,
+draft the validation contract, and slice one-session tasks. Do not begin v0.2
+work until that phase is Human-approved.

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/maintenance"
 )
 
 func TestWriteMarkdownMatchesGoldenFixtureForPopulatedIssue(t *testing.T) {
@@ -88,6 +89,81 @@ func TestWriteMarkdownRendersIssueGateLists(t *testing.T) {
 			t.Fatalf("markdown output = %q, want %q", markdownOutput.String(), want)
 		}
 	})
+}
+
+func TestWriteMarkdownRendersReadyViewPointer(t *testing.T) {
+	epicID := "FID-epic01"
+	epicTitle := "Formatter work"
+	priority := 2
+	sequence := 4
+	estTokens := 900
+	view := ReadyView{Task: &issues.ReadyTask{
+		ID:        "FID-task01",
+		Title:     "Split markdown formatter",
+		Status:    "in_progress",
+		EpicID:    &epicID,
+		EpicTitle: &epicTitle,
+		Priority:  &priority,
+		Sequence:  &sequence,
+		EstTokens: &estTokens,
+	}}
+
+	var markdownOutput bytes.Buffer
+	if err := Write(&markdownOutput, Markdown, &view); err != nil {
+		t.Fatalf("Write(Markdown) error = %v", err)
+	}
+
+	want := "" +
+		"# Ready Task\n\n" +
+		"- ID: FID-task01\n" +
+		"- Title: Split markdown formatter\n" +
+		"- Status: in_progress\n" +
+		"- Epic: FID-epic01 (Formatter work)\n" +
+		"- Sequence: 4\n" +
+		"- Priority: P2\n" +
+		"- Est. tokens: 900\n"
+	if markdownOutput.String() != want {
+		t.Fatalf("markdown output = %q, want %q", markdownOutput.String(), want)
+	}
+}
+
+func TestWriteMarkdownRendersMaintenanceCheck(t *testing.T) {
+	view := MaintenanceCheckView{
+		Status: "fail",
+		Result: maintenance.Result{
+			Errors: []maintenance.Finding{{
+				Check:    "workflow_state",
+				EntityID: "FID-bad001",
+				Message:  "issue FID-bad001 has unknown workflow/state pair missing/todo",
+			}},
+			Warnings: []maintenance.Finding{},
+			Info: maintenance.Info{
+				IssueCount:     1,
+				ClaimCountLive: 2,
+				RecentActivity: 3,
+			},
+		},
+	}
+
+	var output bytes.Buffer
+	if err := Write(&output, Markdown, view); err != nil {
+		t.Fatalf("Write(Markdown) error = %v", err)
+	}
+
+	want := "" +
+		"# Maintenance Check\n\n" +
+		"**Status:** fail\n\n" +
+		"## Errors\n\n" +
+		"- `workflow_state` FID-bad001: issue FID-bad001 has unknown workflow/state pair missing/todo\n\n" +
+		"## Warnings\n\n" +
+		"(no warnings)\n\n" +
+		"## Info\n\n" +
+		"- Issue count: 1\n" +
+		"- Live claim count: 2\n" +
+		"- Recent activity (7d): 3\n"
+	if output.String() != want {
+		t.Fatalf("markdown output = %q, want %q", output.String(), want)
+	}
 }
 
 func emptyIssueMarkdownFixture() IssueMarkdownView {

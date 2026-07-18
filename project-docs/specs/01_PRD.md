@@ -269,7 +269,7 @@ where a requirement is deferred past v0.1.
 | PRD-OPS-005 | The system shall provide a consistency audit that checks for kind-hierarchy violations, orphaned polymorphic references, FK integrity, and workflow state validity. | Must | v0.1 |
 | PRD-OPS-006 | When the consistency audit finds errors, the system shall exit non-zero and list each violation. | Must | v0.1 |
 | PRD-OPS-007 | The system shall support `--warn-as-error` on the consistency audit for CI and pre-merge use. | Should | v0.1 |
-| PRD-OPS-008 | The consistency audit shall report warnings for stale claims, started-category issues without a live claim (with a configurable grace window), and telemetry gaps. | Should | v0.1 |
+| PRD-OPS-008 | The consistency audit shall report warnings for stale claims, started-category issues without a live claim after a configurable grace window, AC verifications tied to superseded completions, and task completions without completion-linked agent-run telemetry. | Should | v0.1. `maintenance.started_without_claim_grace_seconds` defaults to 300; zero is valid. Age uses the latest append-ordered `status_changed` activity, falling back to issue creation; non-status updates do not reset it. Completion telemetry requires `agent_runs.completion_id`, not issue-only linkage. |
 | PRD-OPS-009 | The system shall distribute as a single binary with no runtime dependencies. | Must | v0.1 |
 | PRD-OPS-010 | The system shall support agent integration through the CLI contract, structured output, and repo skills. MCP integration is deferred until post-dogfood evaluation and requires a recorded product/security decision before entering a roadmap. | Must | v0.1 CLI/skills. MCP uncommitted. |
 | PRD-OPS-011 | The system shall support replaying a foreign event log into the current project with conflict detection on entity, claim, and status. | Could | v0.2. `fid merge --journal`. Builds on v0.1 journal preconditions. |
@@ -318,7 +318,7 @@ ambiguous.
 | PRD-ERR-009 | Malformed trailing line in the durable event log | Stop processing, report the corrupt line number and content, and prompt for manual repair. Do not silently skip or truncate. |
 | PRD-ERR-010 | Link creation with an invalid relation/entity-type combination | Return "<relation> is not valid between <from_type> and <to_type>" with non-zero exit code. |
 | PRD-ERR-011 | AC addition or completion creation on an epic-kind issue | Return "acceptance criteria / completions are not valid on epics" with non-zero exit code. |
-| PRD-ERR-012 | Command targeting a v0.2+ entity whose CLI surface has not shipped (e.g. `fid decision create` in v0.1) | Return "commands for <entity> ship in <version>" with non-zero exit code. |
+| PRD-ERR-012 | Command targeting a v0.2+ entity whose CLI surface has not shipped (e.g. `fid decision create` in v0.1) | Return "commands for <entity> ship in <version>" with non-zero exit code before argument, flag, role, workspace, DB, or journal handling. The v0.1 schema-only governance guard covers `decision create/get/list`, `escalation create/resolve/get/list`, and `triage record/start/verdict`; shipped `requirement sync` is excluded. |
 | PRD-ERR-013 | Export to a directory that does not exist | Create the directory tree rather than failing. |
 | PRD-ERR-014 | Journal append would use a UTC date older than the latest existing journal file | Return "system clock is behind latest journal date <date>; refusing to append out of order" with non-zero exit code. |
 
@@ -369,4 +369,4 @@ separately in `02_TRD.md` §11.
   pending evidence from v0.4 export usage.
 - [ ] What is the licensing model for open-source release?
 
-*Last updated: 2026-06-01*
+*Last updated: 2026-07-11*

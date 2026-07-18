@@ -117,6 +117,53 @@ func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 	}
 }
 
+func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
+	workspace := t.TempDir()
+	journalDir := filepath.Join(workspace, ".fid", "journal")
+	mustMkdirAll(t, journalDir)
+
+	journalPath := filepath.Join(journalDir, "2026-06-05.jsonl")
+	writeWriterEvents(t, journalPath,
+		writerRoleEvent("EVT-20260605-000001"),
+		writerRoleEvent("EVT-20260605-000002"),
+	)
+	before, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) before preparation error = %v", journalPath, err)
+	}
+
+	input := testAppendEvent("Prepare without append")
+	input.OccurredAt = time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
+
+	var prepared Event
+	err = WithLock(workspace, LockOwner{Command: "fid issue create --by developer", ActorRole: "developer"}, func(lock *WriteLock) error {
+		var prepareErr error
+		prepared, prepareErr = PrepareEvent(lock, input)
+		return prepareErr
+	})
+	if err != nil {
+		t.Fatalf("PrepareEvent() error = %v", err)
+	}
+
+	if prepared.EventID != "EVT-20260605-000003" {
+		t.Fatalf("prepared event id = %q, want %q", prepared.EventID, "EVT-20260605-000003")
+	}
+	if !prepared.OccurredAt.Equal(input.OccurredAt) {
+		t.Fatalf("prepared occurred_at = %s, want %s", prepared.OccurredAt, input.OccurredAt)
+	}
+	if !reflect.DeepEqual(prepared.Command, input.Command) {
+		t.Fatalf("prepared command = %#v, want %#v", prepared.Command, input.Command)
+	}
+
+	after, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after preparation error = %v", journalPath, err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatalf("PrepareEvent() changed journal bytes = %q, want %q", after, before)
+	}
+}
+
 func TestAppendEventIncrementsSequenceWithinUTCJournalFile(t *testing.T) {
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid", "journal"))
