@@ -101,15 +101,109 @@ Avoid: duplicating lifecycle fields (owner, status) as links.
 ## Execution and Audit
 
 **Gate**:
-A CLI command that produces a deterministic pass/fail signal (test runs,
-linters, coverage thresholds, format checks). Developers run gates during a
-task attempt; standalone `fid dev gate` writes append-only `gate_runs` rows.
-Finish/block commands snapshot the attempt's gate runs into
-`task_completions.gate_results` as JSON `(cmd, exit_code, ran_at,
-output_excerpt)`. A failing gate is a hard stop — TL-Lite cannot resolve it;
-the Developer fixes and re-runs.
+A deterministic command that produces a pass/fail signal (test runs, linters,
+coverage thresholds, format checks). From v0.2 (DEC-059) the trusted path is
+a registered [[Gate definition]] executed by fid (or a trusted runner),
+producing an [[Execution attempt]] and [[Execution receipt]]. The v0.1
+`fid dev gate` path records a caller-reported `gate_runs` row; those rows
+remain queryable but carry `trust_source=reported` and cannot satisfy a
+trusted-gate obligation. A failing gate is a hard stop — TL-Lite cannot
+resolve it; the Developer fixes and re-runs.
 Use when: describing deterministic quality checks during implementation.
-Avoid: "quality gate" when referring to subjective review.
+Avoid: "quality gate" when referring to subjective review; treating a
+reported exit code as proof a command ran.
+
+**Gate definition**:
+A versioned entry in trusted project configuration (`.fid/gates.toml`) that
+names one executable gate: stable gate ID, version, structured argv array,
+working directory, timeout, and environment allowlist. Registry changes are
+auditable, reviewable config changes. Obligations reference gates by gate
+ID/version, never by display string.
+Use when: registering or referencing an executable gate.
+Avoid: free-form shell command strings; "gate" for the definition when you
+mean a specific run (that is an [[Execution attempt]]).
+
+**Execution attempt**:
+An immutable record that fid (or a trusted runner) started executing a
+[[Gate definition]] — appended as an execution-start fact *before* the
+process spawns. An attempt with no terminal [[Execution receipt]] is an
+abandoned start, surfaced by `fid maintenance check`; it is never a pass.
+Use when: describing the start-side fact of the two-event execution model.
+Avoid: treating a start fact as an outcome, or backfilling a receipt for a
+crashed attempt.
+
+**Execution receipt**:
+The immutable terminal record of one [[Execution attempt]], appended only
+after the process terminates. Captures producer, [[Trust source]], gate
+definition ID/version, argv/cwd/timeout, exit code or signal, duration,
+git branch/base/head/tree identity and dirty state, toolchain fingerprint,
+bounded sanitized output excerpts with content hashes and
+truncation/redaction flags, and terminal status
+(`pass | fail | timed_out | cancelled | harness_error`). A crash may lose a
+pass but must never fabricate one.
+Use when: citing trusted deterministic evidence for an obligation.
+Avoid: "gate run" (the legacy reported row); mutating or re-snapshotting
+receipt content into other rows (link to the receipt instead).
+
+**Trust source**:
+The declared provenance class of a piece of deterministic evidence:
+`executed` (fid ran the registered gate itself), `attested` (a separately
+trusted runner produced the receipt under the versioned attestation
+contract), or `reported` (a caller asserted the outcome; includes all
+legacy v0.1 `gate_runs`). Only `executed`/`attested` evidence can satisfy a
+trusted-gate obligation; `reported` stays queryable history. Consumers must
+never silently downgrade from trusted to reported.
+Use when: classifying how gate/receipt evidence came to exist.
+Avoid: inferring trust from age or formatting; treating an import as
+trusted because it parses.
+
+**Evidence obligation**:
+A declared requirement that a workflow transition, AC verification, QA
+review, or validation outcome be backed by specific evidence — e.g. a
+current [[Execution receipt]] for a named [[Gate definition]], or a Human
+outcome for a judgment item. Deterministic obligations require trusted,
+terminal receipts or another checkable evidence type; an unverifiable
+command string cannot satisfy them. Human-judgment obligations are
+satisfied by recorded manual evidence and are never mislabeled as
+deterministic proof.
+Use when: specifying what evidence a state change requires.
+Avoid: conflating with [[Required validator]] (who must provide it).
+
+**Evidence freshness**:
+The validity dimension of evidence, separate from existence:
+`current`, `stale`, `missing`, `unverifiable`, or `inapplicable`. v0.2
+starts conservative: any relevant target-tree change (new head/tree
+identity) makes a gate receipt `stale`. Path-aware invalidation requires
+dogfood evidence that the coarse rule is too expensive, a sound
+affected-path model, and a new recorded decision.
+Use when: deciding whether existing evidence still proves its claim.
+Avoid: treating resolution/existence (`fid evidence check` v0.1 semantics)
+as freshness.
+
+**Work envelope**:
+A versioned, structured capability describing one approved slice of work:
+epic/phase outcome, risk lane, approved authority, protected decisions,
+task graph, validation and gate obligations, budgets, and stop conditions.
+Promoted from the conditional [[Task pack]] concept (DEC-063). fid exposes
+orchestration primitives over it — next actionable work with typed skip
+reasons, claim/lease and resumable run state, retry/intervention budgets
+and circuit-breaker state, machine-readable rejection/stop reasons, and
+attention items — while a deterministic runner (a separate kit component)
+drives the loop.
+Use when: describing the structured contract a runner executes against.
+Avoid: treating it as an LLM prompt, or fid as the loop host.
+
+**Human validation brief**:
+The generated wrap-up report for Human judgment (v0.4): outcomes delivered
+and user-visible changes; product/architecture/data/dependency/security
+decisions; deviations, unresolved risks, failed or carried-forward
+obligations, and open escalations; receipt and validation roll-up with
+spend, retries, and interventions; and the human-only checks still
+requiring judgment. A computed view over structured state — fid renders it;
+it does not author judgment.
+Use when: presenting phase/epic closure to the Human.
+Avoid: confusing with the [[Attention report]] (live pull-based digest of
+open judgment items) or hand-authored wrap-up prose.
 
 **Started-without-claim**:
 An issue in a `started` status category with no live claim after the configured
@@ -208,20 +302,21 @@ read-only SQL command.
 Avoid: using as a synonym for `fid sql`, saved views, or shell `rg`.
 
 **Evidence check**:
-A read-only verification that cited evidence references still resolve
-(`fid evidence check`, v0.4). For each embedded evidence ref on an AC
-verification, QA finding, or validation outcome in scope, it reports `resolved`,
-`missing`, or `unverifiable` by a type-keyed resolver: commits (git ref resolves,
-local) and file paths (file exists) are checkable; `command`, `manual`, and `url`
-evidence are unverifiable. It verifies *resolution/existence* only — never
-re-running a command or re-proving a claim (that would make fid an executor) and
-never comparing content hashes (no capture-time hash is stored). A computed read
-over existing embedded evidence; it adds no registry table.
-Use when: a QA Lead or Reviewer asks whether cited tests, commits, or files still
-exist before trusting a verification or outcome.
-Avoid: treating it as re-execution (it does not run `go test`) or as content
-drift detection (it checks existence, not whether the content still supports the
-claim).
+A read-only verification of cited evidence (`fid evidence check`). For each
+embedded evidence ref on an AC verification, QA finding, or validation outcome
+in scope, it reports `resolved`, `missing`, or `unverifiable` by a type-keyed
+resolver: commits (git ref resolves, local) and file paths (file exists) are
+checkable; free-form `command`, `manual`, and `url` evidence are unverifiable.
+From the v0.2 evidence foundation (DEC-060/061) it additionally reports
+[[Evidence freshness]] for receipt-backed evidence (`current`/`stale` from the
+receipt's captured tree identity and content hashes). It never re-runs a
+command inside the check — re-execution is `fid gate run`'s job — and it adds
+no registry table of its own (evidence records are first-class rows from
+v0.2b).
+Use when: a QA Lead or Reviewer asks whether cited evidence still exists and
+is still fresh before trusting a verification or outcome.
+Avoid: treating it as re-execution (it does not run `go test`); calling
+reported gate strings checkable (they stay `unverifiable`).
 
 **Attention report**:
 The pull-based, entity-aggregating digest of items currently needing human — or,
@@ -275,18 +370,15 @@ role) with the context pack (the role-tuned *data* bundle it composes over);
 treating it as a write (it is a view and acquires no claim).
 
 **Task pack**:
-A structured authoring artifact — a reviewed phase plan listing an epic and its
-tasks with acceptance criteria, dependencies, labels, estimates, and
-sequence/priority — ingested in one create-only transaction (`fid task-pack
-apply`, deferred/conditional). Apply produces a single [[Journal event]] with
-many effects and returns a source-ref→fid-id mapping. Input is structured
-(YAML/JSON/TOON), create-only, with no round-trip or sync — which is what keeps
-it distinct from markdown import (`fid import`, the separately deferred v0.5
-capability).
-Use when: describing bulk creation of a planned phase from one reviewed
-transaction, if the dogfood gate is met.
-Avoid: confusing a task pack (a create-only authoring *input*) with a
-[[Handoff pack]] (a generated prompt + manifest *output*), or with markdown
+*(Superseded 2026-07-18 by [[Work envelope]], DEC-063.)* The former
+deferred/conditional concept of a structured authoring artifact — a reviewed
+phase plan ingested in one create-only transaction (`fid task-pack apply`).
+Its semantics (single [[Journal event]] with many effects, source-ref→fid-id
+mapping, structured YAML/JSON/TOON input, create-only, no round-trip/sync)
+carry into `fid envelope apply` (PRD-OPS-021).
+Use when: reading historical artifacts that predate the work envelope.
+Avoid: using in new specs — write [[Work envelope]]; confusing either with a
+[[Handoff pack]] (a generated prompt + manifest *output*) or with markdown
 import/sync (round-trip editing of an existing markdown tree).
 
 **Journal event**:
@@ -499,9 +591,12 @@ Avoid: "engineer", "coder".
 **Workflow Runner**:
 The mechanical loop driver — fid's `workflow_runner` role (one of the seven
 seeded roles). Drives an epic's task loop, spawns agents, dispatches on
-completion-report inspection and review findings. Intentionally a cheaper
-model — its decisions are state-machine deterministic, not strategic. May
-later become a deterministic harness.
+completion and review state. Intentionally a cheaper model — its decisions
+are state-machine deterministic, not strategic. Per DEC-063 the direction is
+a deterministic runner (a separate kit component) driving fid's [[Work
+envelope]] orchestration primitives, with lifecycle bookkeeping, evidence
+completeness, and stop-policy enforcement in fid rather than in the runner
+prompt.
 Use when: describing fid's mechanical orchestration role (`workflow_runner`).
 Avoid: "Orchestrator" (misleading; the capable model is the TL).
 Distinct from: "Phase Runner" — the Claude Code build agent (`@phase-runner`;
@@ -568,4 +663,4 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-07-11*
+*Last updated: 2026-07-18*

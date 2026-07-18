@@ -109,13 +109,22 @@ a brief concept inventory, not a duplicate glossary.
 | Concern / Finding / Escalation | Quality signals raised at different workflow stages by different roles |
 | Validation contract | Assertion-level specification for an epic's proof obligations |
 | QA plan | Verification design citing contract assertions; declares evidence methods |
-| Gate | Deterministic CLI command producing pass/fail (tests, linters, etc.) |
+| Gate | Deterministic command producing pass/fail (tests, linters, etc.); trusted gates are registered definitions executed by fid |
+| Gate definition / Execution receipt | Versioned registered gate entry, and the immutable attested record of one execution (trust source, repository identity, terminal status) |
+| Evidence obligation | Declared requirement that a transition/verification/outcome be backed by specific, valid (current) evidence |
+| Work envelope | Versioned structured contract for one approved slice of work: outcome, authority, task graph, obligations, budgets, stop conditions |
 | Role | Workflow position (developer, qa_reviewer, qa_lead, tl_lite, tl, workflow_runner, human) with permission boundaries |
 
 ### 5.2 In Scope
 
 - Unified issue tracker (epic / task / subtask) with configurable workflows
 - Acceptance criteria with multi-role verification
+- Registered gate execution with trusted, immutable receipts; evidence
+  records with obligations and freshness (v0.2)
+- Structured completion path with generated completion views; completion
+  prose optional (v0.2)
+- Work envelopes and deterministic orchestration primitives for an external
+  runner kit (v0.3); fid hosts no LLM loop
 - Append-only task completions and structured developer concerns
 - QA reviews with findings, QA plans with steps (v0.3)
 - Validation contracts with assertions, required validators, and outcomes (v0.4)
@@ -138,6 +147,8 @@ a brief concept inventory, not a duplicate glossary.
 
 - Multi-tenant server, remote sync, auth, or hosting
 - Real-time collaboration or CRDT-based conflict resolution
+- Hosting models/agents, general job scheduling, shell automation, or git
+  mutation — fid executes only registered gate definitions (DEC-059)
 - Replacement for git, PRDs/TRDs, or the agent workflow protocol itself
 - User-defined custom fields
 - Multi-project queries across separate databases
@@ -209,6 +220,10 @@ Keep only project-shaping decisions here. Phase-local decisions belong in
 | Application-layer validation primary, triggers as backstop | Rich error messages and parameterised rules need app-layer context. Triggers guard structural invariants for non-CLI write paths (future dashboard, direct SQL). | spec §6.14 |
 | CLI/skill-first agent integration | Coding agents already use shell commands effectively. `fid --help`, structured output, examples, and repo skills are the primary agent interface. MCP is deferred until a concrete MCP-only client need appears and a product/security decision records the transport and threat model. | 2026-05-29 decision |
 | Hash-based IDs, not sequential | Reduces coordination needs for concurrent agent/branch issue creation. Collision risk managed by progressive length scaling (6→8 hex chars). | spec §6.0 |
+| fid executes registered gates; reported evidence is never trusted proof | Agent-reported exit codes cannot satisfy deterministic obligations; trusted evidence is an executed/attested receipt from a versioned registry. fid remains local-first: no agents, models, git mutation, or scheduling. | 2026-07-18, DEC-059/060 |
+| Evidence has identity, trust source, and freshness | Receipts and typed evidence records are first-class rows; validity (current/stale) is separate from existence; conservative whole-tree staleness first. | 2026-07-18, DEC-061 |
+| Completion prose is optional; views are generated | Structured `has_completion` obligations replace the mandatory completion Markdown; human-readable completion views and the validation brief are generated projections of structured state. | 2026-07-18, DEC-062/064 |
+| fid exposes runner primitives; the runner is a separate deterministic kit | Work envelopes + machine-readable orchestration primitives in fid; no hosted LLM loop. Humans keep protected-decision authority. | 2026-07-18, DEC-063 |
 
 ## 11. Document Suite
 
@@ -227,4 +242,4 @@ This charter is part of the core specification suite:
 - `09_AI_WORKFLOW.md` - agent roles and orchestration.
 - `10_IMPLEMENTATION_ROADMAP.md` - implementation phases.
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-18*

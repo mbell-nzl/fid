@@ -17,6 +17,17 @@ explicitly supersedes them:
 - `docs/adr/0003-three-tier-qa-model.md` — validation contracts, QA plans, and
   QA reviews ship together as the supported quality model.
 
+## Checkpoint Decisions (2026-07-18, pending Human ratification)
+
+**DEC-059..DEC-066** — trusted-evidence checkpoint
+(`../reviews/2026-07-18-roadmap-update-decisions.md`): registered gate
+execution with receipts and trust sources; typed evidence + freshness;
+optional completion prose behind structured `has_completion`; work envelopes
++ runner primitives; extended economics; roadmap re-slice (evidence
+foundation v0.2b before governance/reports; envelope v0.3a). Binding for all
+v0.2+ planning once ratified. DEC-066 relabels: old v0.2b→v0.2d,
+old v0.2c→v0.2e (CF-017's target is now v0.2e).
+
 ## Carry-Forward Register
 
 Tech Lead reviews this register at each phase start and schedules, re-defers,
@@ -25,7 +36,7 @@ closes, or cancels each item.
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
 | CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. The enhancement is a resolution-reason field + cancel `--reason` flag, touching the data model and `activity_log` audit. | v0.2 (with configurable workflows PRD-WF-011/012) | Low (product) |
-| CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Reopen with the next `internal/dev` work. | v0.2c (`fid dev resume`/`abandon`) | Low |
+| CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Reopen with the next `internal/dev` work. | v0.2e (`fid dev resume`/`abandon`; relabeled from v0.2c by DEC-066) | Low |
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. | Next SQL package reopen | Low |
 | CF-020 | Phase 17 DEC-056 | Burst issue writes stamp `occurred_at` ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not fix inside a v0.1 closure audit. | v0.2 | Low (product) |
 | CF-021 | Phase 17 Review 3 / STRUCT-003 | Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum`. | Next `internal/maintenance` reopen | Low |

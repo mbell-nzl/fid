@@ -46,7 +46,11 @@ stored in `activity_log.journal_event_id` and `projection_meta.last_event_id`.
 | `<project>` | Issue (`epic`, `task`, `subtask`) |
 | `AC` | Acceptance criterion |
 | `ACV` | Acceptance criterion verification |
-| `GATE` | Gate run |
+| `GATE` | Gate run (legacy reported evidence; v0.1) |
+| `GX` | Gate execution attempt (v0.2b) |
+| `RCP` | Gate execution receipt (v0.2b) |
+| `EV` | Evidence record (v0.2b) |
+| `ENV` | Work envelope (v0.3a) |
 | `TC` | Task completion |
 | `CON` | Concern |
 | `QAR` | QA review |
@@ -87,7 +91,9 @@ migration. Implement migrations by version:
   base telemetry, activity log, projection metadata, labels, roles, and stub
   decision/escalation/triage tables needed by v0.1 FKs/views.
 - **v0.2 additive:** workflow tables, role permissions, comments, governance
-  command support, and agent-run lifecycle/git context columns.
+  command support, agent-run lifecycle/git context columns, and the evidence
+  foundation (`gate_executions`, `gate_receipts`, `evidence_records`,
+  `evidence_links`) plus extended-economics `agent_runs` columns.
 - **v0.3 additive:** QA reviews/findings/plans, QA review claims, templates,
   and QA telemetry extension.
 - **v0.4+ additive:** validation contracts/outcomes, carry-forward,
@@ -280,6 +286,101 @@ CREATE TABLE gate_runs (
 -- `fid dev finish`, `fid dev block`, and `fid issue complete` snapshot the
 -- gate_runs for the same issue and attempt into task_completions.gate_results
 -- and derive gates_passed/gates_failed. Source gate_runs remain as audit rows.
+-- From v0.2b (DEC-059/060), gate_runs is the LEGACY reported-evidence table:
+-- rows project with trust_source='reported' and cannot satisfy trusted-gate
+-- obligations. Trusted evidence lives in gate_executions/gate_receipts (§2.4).
+```
+
+### 2.4 Evidence Foundation (v0.2b — draft DDL, DEC-059/060/061)
+
+Draft for the v0.2b migration; finalize column types/indexes at that phase's
+planning. Gate *definitions* are committed configuration (`.fid/gates.toml`,
+`04_TRD_CONFIG.md` §2.3), not a table — receipts snapshot the definition
+fields they executed with.
+
+```sql
+CREATE TABLE gate_executions (
+  id                  TEXT PRIMARY KEY,        -- GX-<hash> (see §1)
+  gate_id             TEXT NOT NULL,           -- registry gate ID
+  gate_version        INTEGER NOT NULL,        -- registry version executed
+  issue_id            TEXT REFERENCES issues(id),
+  attempt_number      INTEGER,                 -- derived active attempt when issue-scoped
+  agent_run_id        TEXT REFERENCES agent_runs(id),
+  trust_source        TEXT NOT NULL,           -- 'executed' | 'attested'
+  argv_json           TEXT NOT NULL,           -- snapshot of executed argv array
+  cwd                 TEXT NOT NULL,
+  timeout_seconds     INTEGER NOT NULL,
+  started_by_role     TEXT NOT NULL,
+  started_at          DATETIME NOT NULL,
+  CHECK (trust_source IN ('executed', 'attested'))
+);
+-- Append-only start facts, written BEFORE process spawn (TRD §4.3).
+-- A row with no gate_receipts child is an abandoned execution:
+-- surfaced by fid maintenance check; satisfies nothing.
+
+CREATE TABLE gate_receipts (
+  id                  TEXT PRIMARY KEY,        -- RCP-<hash> (see §1)
+  execution_id        TEXT NOT NULL UNIQUE REFERENCES gate_executions(id),
+  receipt_schema      INTEGER NOT NULL,        -- versioned receipt contract
+  producer            TEXT NOT NULL,           -- 'fid <version>' or attested runner identity
+  trust_source        TEXT NOT NULL,           -- 'executed' | 'attested'
+  status              TEXT NOT NULL,           -- 'pass' | 'fail' | 'timed_out'
+                                               -- | 'cancelled' | 'harness_error'
+  exit_code           INTEGER,
+  signal              TEXT,
+  duration_ms         INTEGER,
+  branch              TEXT,
+  base_commit         TEXT,
+  head_commit         TEXT,
+  tree_hash           TEXT,                    -- freshness anchor (PRD-EVID-003)
+  dirty               BOOLEAN,
+  capture_source      TEXT,                    -- 'captured' | 'provided' | 'absent'
+  toolchain_fingerprint TEXT,
+  stdout_excerpt      TEXT,                    -- bounded + sanitized
+  stderr_excerpt      TEXT,                    -- bounded + sanitized
+  stdout_hash         TEXT,
+  stderr_hash         TEXT,
+  stdout_bytes        INTEGER,
+  stderr_bytes        INTEGER,
+  truncated           BOOLEAN NOT NULL DEFAULT 0,
+  redacted            BOOLEAN NOT NULL DEFAULT 0,
+  log_artifact_ref    TEXT,                    -- content-addressed local artifact (TRD-SEC-008)
+  ended_at            DATETIME NOT NULL,
+  CHECK (status IN ('pass','fail','timed_out','cancelled','harness_error')),
+  CHECK (trust_source IN ('executed', 'attested')),
+  CHECK (status != 'pass' OR exit_code = 0)
+);
+-- Immutable terminal receipts; at most one per execution (UNIQUE execution_id).
+-- Appended only after process termination. Never updated; corrections are new
+-- executions. A 'pass' requires exit_code 0 by CHECK; timeouts/signals can
+-- never be 'pass'.
+
+CREATE TABLE evidence_records (
+  id                  TEXT PRIMARY KEY,        -- EV-<hash> (see §1)
+  evidence_type       TEXT NOT NULL,           -- 'receipt' | 'commit' | 'source_state'
+                                               -- | 'screenshot' | 'artifact' | 'human_outcome'
+  ref                 TEXT NOT NULL,           -- receipt ID / commit hash / path / artifact ref
+  recorded_by_role    TEXT NOT NULL,
+  human_actor         TEXT,                    -- required when evidence_type='human_outcome'
+  human_item          TEXT,                    -- checklist item for human outcomes
+  human_outcome       TEXT,                    -- 'pass' | 'fail' | 'blocked' for human outcomes
+  note                TEXT,
+  recorded_at         DATETIME NOT NULL,
+  CHECK (evidence_type != 'human_outcome'
+      OR (human_actor IS NOT NULL AND human_item IS NOT NULL
+          AND human_outcome IS NOT NULL))
+);
+
+CREATE TABLE evidence_links (
+  evidence_id         TEXT NOT NULL REFERENCES evidence_records(id),
+  ref_type            TEXT NOT NULL,           -- 'ac_verification' | 'qa_review'
+                                               -- | 'val_outcome' | 'workflow_gate'
+  ref_id              TEXT NOT NULL,
+  PRIMARY KEY (evidence_id, ref_type, ref_id)
+);
+-- Freshness ('current'/'stale'/'missing'/'unverifiable'/'inapplicable') is
+-- COMPUTED at read/enforcement time from the receipt's tree identity vs the
+-- target tree — it is not stored, so no invalidation writes are needed.
 ```
 
 ---
@@ -923,6 +1024,10 @@ AC verification maps to `issue.ac.verify.human`, not
 | `dev.block` | ✓ | – | – | – | – | – | ✓ |
 | `dev.resume` (v0.2) | ✓ | – | – | – | – | – | ✓ |
 | `dev.abandon` (v0.2) | ✓ | – | – | – | – | – | ✓ |
+| `gate.run` (v0.2b) | ✓ | ✓ | ✓ | – | – | ✓ | ✓ |
+| `gate.import` (v0.2b) | – | – | – | – | ✓ | ✓ | ✓ |
+| `evidence.record` (v0.2b) | ✓ | ✓ | ✓ | – | ✓ | – | ✓ |
+| `envelope.apply` (v0.3a) | – | – | – | – | ✓ | – | ✓ |
 | `maintenance.rebuild` | – | – | – | – | ✓ | ✓ | ✓ |
 | `maintenance.migrate` | – | – | – | – | ✓ | – | ✓ |
 | `maintenance.vacuum` | – | – | – | – | ✓ | – | ✓ |
@@ -1110,4 +1215,4 @@ Set on every connection open.
 
 ---
 
-*Last updated: 2026-07-05*
+*Last updated: 2026-07-18*

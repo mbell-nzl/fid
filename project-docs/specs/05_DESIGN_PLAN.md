@@ -67,9 +67,21 @@ fid
 ├── search <term>                 # v0.2: literal structured search
 ├── dev
 │   ├── start <id>                # claim + transition → in_progress + open agent_run
-│   ├── gate <id>                 # append gate_runs row for active attempt
+│   ├── gate <id>                 # append gate_runs row (deprecated v0.2b: reported evidence)
 │   ├── finish <id>               # close run + completion + transition → dev_complete
 │   └── block <id>                # transition → failed_gate
+├── gate                          # v0.2b: registered execution (DEC-059/060)
+│   ├── run <gate-id>             # execute registered gate → start fact + receipt
+│   ├── list                      # executions + receipts (--abandoned)
+│   ├── show <id>                 # one execution/receipt in full
+│   └── import                    # attested receipt via versioned contract
+├── evidence
+│   └── check                     # v0.2b: resolution + receipt freshness
+├── capabilities                  # v0.2b: machine-readable version/capability discovery
+├── envelope                      # v0.3a: work envelope (DEC-063)
+│   ├── apply                     # ingest reviewed envelope (create-only)
+│   └── status <id>               # budgets, circuit breaker, attention items
+├── next                          # v0.3a: next actionable + typed skip reasons
 ├── qa
 │   ├── start <epic-id>           # claim + create qa_review
 │   ├── finding <review-id>       # add qa_finding
@@ -466,4 +478,4 @@ These judgments require human review and cannot be automated:
 | Cross-branch journal merge with conflicting writes | Text-based merge of JSONL, then rebuild reconciles | v0.1 |
 | Agent with wrong role attempts forbidden action | Permission enforcement with actionable error message | v0.1 |
 
-*Last updated: 2026-07-11*
+*Last updated: 2026-07-18*
