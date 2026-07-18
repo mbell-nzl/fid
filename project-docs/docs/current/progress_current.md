@@ -37,10 +37,20 @@ Phase 17 outcome:
 None open. All Phase 17 escalations (ESC-004/005/009/010/011) are resolved and
 archived in `../phases/phase-17/tl-escalations.md`.
 
+## Planning Checkpoint (2026-07-18)
+
+The trusted-evidence planning checkpoint ran per
+`../reviews/2026-07-18-fid-roadmap-update-tl-brief.md`. DEC-059..DEC-066
+recorded in `../reviews/2026-07-18-roadmap-update-decisions.md`; specs 00-10
+and the roadmap re-sliced (evidence foundation v0.2b before governance/
+reports; lean completion v0.2c; work envelope v0.3a). **Pending Human
+ratification. No implementation began.**
+
 ## Next Action
 
-**Next planning checkpoint:** slice roadmap **v0.2a - Workflow Engine Migration**
-into a new approved phase. Do not start v0.2 work before that phase is planned
-and Human-approved. Recommend the CF-023 workflow-tooling deep retrospective
-before v0.2a execution so the report-lint / escalation-register friction is
-fixed rather than recurring.
+**Human review** of the checkpoint decisions and re-sliced roadmap. Then:
+(1) the CF-023 workflow-tooling pass (light mode) so report-lint /
+escalation-register friction is fixed before execution, and (2) plan
+**Phase 18 - v0.2a Workflow Engine Migration (heavy mode)** with its
+validation contract and task slices. Do not start v0.2 work before Phase 18
+is planned and Human-approved.

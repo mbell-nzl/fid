@@ -1251,4 +1251,24 @@ A deep retrospective on every phase produces rote output and trains readers to
 skim past real signal. Lightweight notes every phase generate data; deep
 retrospectives happen only when there is something concrete to learn from.
 
-*Last updated: 2026-07-05*
+## 11. Planned Enforcement Migration (Future — Not Yet In Effect)
+
+**This section changes nothing about the current pipeline.** The workflow
+above remains the markdown-based process used to build fid, exactly as
+written, until fid is adopted as this project's state backend and the Human
+approves the switch.
+
+Recorded direction (DEC-059..DEC-064, 2026-07-18): the mechanical
+enforcement this document currently places in role prompts and shell tools —
+completion-report commit discipline and report-lint, gate-evidence citation
+rules, "required command missing = failed gate" checks, escalation-ID
+uniqueness, stop-policy bookkeeping — is the class of rule that migrates into
+fid/runner behavior (execution receipts, structured completion obligations,
+machine-readable rejections, envelope stop conditions) once the corresponding
+fid capabilities ship and are dogfooded. Protected decisions — product,
+architecture, data-model, public-interface, and release judgments — remain
+with the Human and are never delegated to automated enforcement. When
+adoption happens, it will be a separate recorded decision with its own
+workflow document; this file is not updated incrementally toward it.
+
+*Last updated: 2026-07-18*

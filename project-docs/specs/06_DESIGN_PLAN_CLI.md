@@ -609,12 +609,28 @@ attempt. v0.1 derives the active attempt number from prior completions for the
 issue; finish/block commands snapshot matching gate runs into
 `task_completions.gate_results`.
 
+**Deprecated from v0.2b (DEC-059).** This surface survives only as an
+explicit reported-evidence/import path: rows carry `trust_source=reported`,
+are queryable history, and can never satisfy a trusted-gate obligation
+(`required_gates_current`). Trusted execution is `fid gate run` (§24). The
+v0.2b+ confirmation output adds a visible trust line so reported and trusted
+modes never look identical. Flag removal requires a recorded decision.
+
 **Output (stderr confirmation):**
 ```text
 gate recorded on FID-a1b2c3 (attempt 1)
   cmd: go test ./...
   exit_code: 0
   gates_passed: 1, gates_failed: 0
+```
+
+**Output (v0.2b+, note the trust line):**
+```text
+gate recorded on FID-a1b2c3 (attempt 1)
+  cmd: go test ./...
+  exit_code: 0
+  trust: reported (deprecated path — cannot satisfy trusted-gate obligations;
+         use fid gate run)
 ```
 
 **Gate failure:**
@@ -635,7 +651,8 @@ fid dev finish <issue-id> --by developer --completion-md <path>
 | Flag | Type | Required | Description |
 |---|---|---|---|
 | `--by` | string | yes | Acting role |
-| `--completion-md` | string | yes | Path to completion report |
+| `--completion-md` | string | yes* | Path to completion report. *From v0.2c (DEC-062), required only when the active workflow profile uses `has_completion_report`; structured-completion profiles accept the optional `--summary-md` instead. |
+| `--summary-md` | string | no | v0.2c: optional short authored summary/notes path stored on the completion |
 | `--tokens` | int | no | Actual tokens used |
 | `--commits` | string | no | Comma-separated commit hashes |
 | `--files` | string[] | no | Files touched (repeatable) |
@@ -643,9 +660,12 @@ fid dev finish <issue-id> --by developer --completion-md <path>
 | `--intervention-note` | string | no | Short note stored when `--human-intervention` is set |
 
 Composes: close agent_run + create task_completion + transition ->
-dev_complete (validates all_acs_verified, has_completion_report). The run's
+dev_complete (validates all_acs_verified plus the profile's completion rule —
+`has_completion_report`, or from v0.2c the structured `has_completion` with
+its AC/concern/receipt/evidence-obligation checks, PRD-WF-014/015). The run's
 `head_commit` and `dirty` flag are refreshed from git (auto-captured, v0.2) at
-finish.
+finish. Under a structured-completion profile the human-readable report is a
+generated view (`fid report completion`, §24), not an authored input.
 
 **Output (stderr confirmation):**
 ```text
@@ -1868,7 +1888,7 @@ the manifest's rendering and is also embedded as `prompt_md`.
 
 ---
 
-## 23. Evidence Commands (v0.4+)
+## 23. Evidence Commands (v0.2b+; amended 2026-07-18, DEC-061)
 
 ### `fid evidence check`
 
@@ -1881,24 +1901,29 @@ fid evidence check [--epic <id>] [--issue <id>] [--warn-as-error]
 |---|---|---|
 | `--epic` | string | Scope to one epic's issues |
 | `--issue` | string | Scope to one issue |
-| `--warn-as-error` | bool | Exit non-zero if any in-scope evidence is `missing` (CI / wrap-up gating) |
+| `--warn-as-error` | bool | Exit non-zero if any in-scope evidence is `missing` or `stale` (CI / wrap-up gating) |
 | `--format` | string | Output format (default: `json`) |
 
-Read-only. For each cited evidence reference on AC verifications, QA findings,
-and validation outcomes in scope, reports whether the reference still resolves. A
-type-keyed resolver decides checkability: `commit` refs resolve via local git;
-`source`/`test`/`screenshot`/file refs via filesystem existence; `command`,
-`manual`, and `url` evidence are `unverifiable`. It verifies resolution/existence
-only — it never re-runs a command (that would make fid an executor) and never
-compares content hashes (no capture-time hash is stored). Adds no schema and no
-evidence registry.
+Read-only. Pulled forward from v0.4 to the v0.2b evidence foundation. For each
+cited evidence reference on AC verifications, QA findings, and validation
+outcomes in scope, reports resolution and — for receipt-backed evidence —
+freshness. A type-keyed resolver decides checkability: `receipt` refs resolve
+to `gate_receipts` rows and report `current`/`stale` from the receipt's
+captured tree identity vs the target tree; `commit` refs resolve via local
+git; `source`/`test`/`screenshot`/file refs via filesystem existence;
+free-form `command`, `manual`, and `url` evidence are `unverifiable`. The
+check never re-runs a command — re-execution is `fid gate run`'s job.
 
 **JSON output:**
 ```json
 {
   "scope": {"epic": "FID-e1f2g3"},
-  "summary": {"checked": 14, "resolved": 11, "missing": 1, "unverifiable": 2},
+  "summary": {"checked": 15, "resolved": 11, "current": 0, "stale": 1,
+              "missing": 1, "unverifiable": 2},
   "evidence": [
+    {"source": "workflow_gate", "on": "FID-a1b2c3", "type": "receipt",
+     "ref": "RCP-9f8e7d", "gate": "go-test-race@1", "status": "stale",
+     "detail": "receipt tree 4c1d... != target tree 8a2b...; re-run fid gate run go-test-race"},
     {"source": "val_outcome", "on": "VAL-004", "type": "commit", "ref": "abc123f",
      "status": "resolved"},
     {"source": "ac_verification", "on": "AC-e5f6g7", "by": "developer", "type": "test",
@@ -1924,6 +1949,145 @@ commands. This section fills the remaining roadmap command families so every
 roadmapped CLI surface has an implementable version gate, flags, role
 requirement, output shape, and error vocabulary. All write commands also accept
 the global v0.2 `--dry-run` flag.
+
+### `fid gate run` (v0.2b+, DEC-059/060)
+
+```
+fid gate run <gate-id> [--version <n>] --by <role>
+    [--issue <id>] [--run <agent-run-id>]
+```
+
+| Flag | Type | Required | Description |
+|---|---|---|---|
+| `--by` | string | yes | Acting role (`gate.run` permission) |
+| `--version` | int | no | Pin a registry version; default latest registered |
+| `--issue` | string | no | Bind the execution to an issue's active attempt |
+| `--run` | string | no | Link the execution to an open agent run |
+
+Executes the registered gate definition from `.fid/gates.toml`: appends a
+`gate.execution_started` event, spawns the argv (no shell) with the
+definition's cwd/timeout/env allowlist, then appends the terminal
+`gate.receipt_recorded` event with status, repository identity, toolchain
+fingerprint, and bounded sanitized output. Exit code mirrors the gate:
+`0` on `pass`, non-zero otherwise (with `harness_error` distinguished from
+gate failure on stderr). Unregistered IDs and stale pinned versions are hard
+errors before any event is appended.
+
+**Output (stderr confirmation):**
+```text
+gate run go-test-race@1 on FID-a1b2c3 (attempt 1)
+  execution: GX-b2c3d4 started
+  argv: go test -race ./...   (cwd ., timeout 600s)
+  receipt: RCP-9f8e7d  status: pass  exit_code: 0  (41.2s)
+  tree: 8a2b4c6 (clean)  trust: executed
+  output: 2148 bytes captured, excerpt stored, sha256 1f2e...
+```
+
+**Timeout:**
+```text
+gate run go-test-race@1 on FID-a1b2c3 (attempt 1)
+  execution: GX-c3d4e5 started
+  receipt: RCP-0a1b2c  status: timed_out after 600s  trust: executed
+error: gate go-test-race@1 did not pass (timed_out)
+```
+
+### `fid gate list` / `fid gate show` (v0.2b+)
+
+```
+fid gate list [--issue <id>] [--gate <gate-id>] [--status <s>] [--abandoned]
+    [--format json|toon|markdown|yaml]
+fid gate show <execution-or-receipt-id> [--format ...]
+```
+
+Read-only. `list` returns executions with their terminal receipts (or
+`abandoned` when none); `--abandoned` filters to starts with no receipt.
+`show` returns one execution/receipt in full, including hashes, redaction/
+truncation flags, and `log_artifact_ref` when retained. Legacy reported
+`gate_runs` stay on `fid issue get --section gates`; they are not mixed into
+receipt listings.
+
+### `fid gate import` (v0.2b+, attested receipts)
+
+```
+fid gate import --receipt <file.json> --by <role>
+```
+
+Validates an externally produced receipt against the versioned attestation
+contract (schema version, producer identity, declared `trust_source=attested`,
+required fields) and appends it linked to its execution-start fact. Rejects —
+before any append — receipts with missing/`reported` trust source, unknown
+schema major, or an unregistered gate ID: importing can never silently satisfy
+a trusted-execution obligation (TRD-SEC-009).
+
+### `fid capabilities` (v0.2b+, DEC-066)
+
+```
+fid capabilities [--format json|toon]
+```
+
+Read-only machine-readable discovery for workflow kits — no SQLite or `.fid/`
+internals required:
+
+```json
+{
+  "fid_version": "0.2.0",
+  "event_schema": 2,
+  "projection_schema_version": 5,
+  "capabilities": {
+    "gate_execution": true,
+    "receipts": true,
+    "evidence_records": true,
+    "structured_completion": false,
+    "work_envelope": false
+  }
+}
+```
+
+A consumer that requires an absent capability stops with its own error; fid
+never downgrades trusted-receipt requirements to reported evidence.
+
+### `fid report completion` (v0.2c+, DEC-062)
+
+```
+fid report completion --task <id> [--attempt <n>]
+    [--format json|toon|markdown|html]
+```
+
+Generated completion view over structured state: changed commits/files and
+repository identity, gate receipts and evidence links (by stable ID — no
+snapshot copies), AC/validation coverage and outcomes, telemetry,
+interventions, deviations, concerns, decisions, and the optional authored
+summary. This view replaces the mandatory authored completion report under
+structured-completion profiles.
+
+### `fid report validation-brief` (v0.4c+, DEC-064)
+
+```
+fid report validation-brief --epic <id> [--format json|toon|markdown|html]
+```
+
+Generated human validation brief: outcomes delivered and user-visible
+changes; product/architecture/data/dependency/security decisions;
+deviations, unresolved risks, failed or carried-forward obligations, open
+escalations; receipt and validation roll-up with spend, retries, and
+interventions; and the remaining human-only checks. Contents defined by
+PRD-OUT-024; detailed output example at v0.4c phase planning.
+
+### `fid envelope` family (v0.3a+, DEC-063 — sketch)
+
+```
+fid envelope apply --file <envelope.yaml> --by <role> [--validate] [--dry-run]
+fid envelope status <envelope-id> [--format json|toon|markdown]
+fid next [--envelope <id>] [--format json|toon]
+```
+
+`apply` ingests a reviewed, versioned work envelope as one create-only journal
+event and returns a source-ref→fid-id mapping (carries PRD-OPS-020's
+semantics into PRD-OPS-021). `status` reports budgets, circuit-breaker state,
+obligation completeness, and attention items. `fid next` returns the next
+actionable work item with typed skip reasons (superset of `fid ready
+--explain`). Flag-level detail is deliberately deferred to v0.3a phase
+planning; the contract fields are fixed by PRD-OPS-021/022.
 
 ### v0.1 Governance Stub Guard
 

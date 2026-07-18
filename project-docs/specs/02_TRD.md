@@ -50,6 +50,8 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/maintenance/ Read-only structural audit over projection + journal
     ├──► internal/policy/     Role × action permissions matrix
     ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
+    ├──► internal/gates/      Gate registry, registered execution, receipts (v0.2b)
+    ├──► internal/envelope/   Work envelopes + orchestration primitives (v0.3a)
     ├──► internal/runs/       Agent run recording with snapshot pricing
     ├──► internal/qa/         QA reviews, findings (v0.3)
     ├──► internal/validation/ Contracts, assertions, outcomes (v0.4)
@@ -63,7 +65,7 @@ cmd/fid/              CLI command tree (Cobra)
     ├──► internal/changes/    Change digest over activity_log (v0.2+)
     ├──► internal/gitctx/     Read-only git context capture for runs (v0.2+)
     ├──► internal/handoff/    Handoff pack composition over packs/workflow/templates (v0.3+)
-    └──► internal/evidence/   Read-only evidence-ref resolution check (v0.4+)
+    └──► internal/evidence/   Evidence records, obligations, freshness + ref checks (v0.2b+)
 ```
 
 Rules:
@@ -108,7 +110,9 @@ Rules:
 | `internal/changes/` | Domain | Change digest aggregation over the `activity_log` read model: anchor resolution, per-entity net field changes, added/removed child facts (v0.2) | Output formatting, journal writes, new persisted tables |
 | `internal/gitctx/` | Infrastructure | Read-only capture of git context (branch, base/head commit, dirty, worktree) behind an interface; bounded, timed subprocess calls; graceful no-repo degradation (v0.2) | Any git mutation (checkout, branch, commit, stash), business logic |
 | `internal/handoff/` | Domain | Compose a role handoff pack (v0.3): assemble the manifest (required reads, commands, stop conditions, expected writes, live blockers, evidence obligations) from the role's context pack, the configured workflow, role permissions, and live blocker state; render via the handoff template | Output formatting, journal writes, git operations, hard-coding role or workflow policy |
-| `internal/evidence/` | Domain | Resolve cited evidence references read-only (v0.4): commit refs via `internal/gitctx`, file/source/screenshot refs via filesystem existence; classify each `resolved` / `missing` / `unverifiable` by type | Command execution, content hashing, journal writes, evidence storage (operates over existing embedded refs) |
+| `internal/gates/` | Domain | Gate registry parsing/validation (`.fid/gates.toml`), registered gate execution (argv exec with cwd/timeout/env allowlist), execution-start and terminal-receipt event preparation, output bounding/sanitization/hashing, attested-receipt import validation, trust-source classification (v0.2b) | Shell string evaluation, running agents or models, git mutation, job scheduling, CLI flag parsing, output formatting |
+| `internal/envelope/` | Domain | Work envelope ingestion/validation and orchestration primitives: next-actionable with typed skip reasons, budget/circuit-breaker state, machine-readable rejection/stop reasons, attention items (v0.3a) | Hosting an LLM loop, spawning agents, scheduling, prompt authoring |
+| `internal/evidence/` | Domain | Evidence records and links, obligation evaluation, freshness classification (`current`/`stale` from receipt tree identity and hashes), and read-only resolution of cited refs (commit refs via `internal/gitctx`, file/source/screenshot refs via filesystem existence; `resolved` / `missing` / `unverifiable` by type) (v0.2b+) | Command execution (that is `internal/gates/`), journal-bypassing writes, re-proving claims by re-running tools |
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
 
@@ -147,6 +151,22 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `escalations` | status, trigger_class, raised_by_role | FK target for concerns and triage_events. |
 | `triage_events` | verdict (RESUME/BLOCK), source, source_ref_id, reasoning_md | FK target for concerns.triaged_in_event_id. |
 | `requirements` | type (PRD/TRD), summary, source_doc, source_section, last_synced_hash | FK target for links (issue → requirement). v0.1 ships minimal `fid requirement sync` so requirement link targets can be created before v0.2 governance reads. |
+
+**Evidence foundation (v0.2b, DEC-059/060/061):**
+
+| Entity | Key Fields | Notes |
+|---|---|---|
+| Gate registry (config, not a table) | gate id, version, argv[], cwd, timeout, env allowlist, shell_mode flag | Lives in committed `.fid/gates.toml` (see `04_TRD_CONFIG.md` §2.3). Receipts snapshot the definition fields they ran with, so no FK to config is needed. |
+| `gate_executions` | id, gate_id, gate_version, issue_id, attempt_number, agent_run_id, trust_source, argv_json, cwd, timeout_seconds, started_at, started_by_role | Append-only execution-start facts, written before process spawn. A row with no `gate_receipts` child is an abandoned start (maintenance warning), never a pass. |
+| `gate_receipts` | id, execution_id (unique), receipt_schema, producer, trust_source, status (pass/fail/timed_out/cancelled/harness_error), exit_code, signal, duration_ms, branch, base_commit, head_commit, tree_hash, dirty, capture_source, toolchain_fingerprint, stdout_excerpt, stderr_excerpt, stdout_hash, stderr_hash, stdout_bytes, stderr_bytes, truncated, redacted, log_artifact_ref, ended_at | Immutable terminal receipts; at most one per execution. Legacy `gate_runs` rows remain and project as `trust_source='reported'`. |
+| `evidence_records` | id, evidence_type (receipt/commit/source_state/screenshot/artifact/human_outcome), ref (receipt id, commit hash, path, ...), recorded_by_role, human_actor, human_outcome, note, recorded_at | Typed first-class evidence. Human outcomes record actor, checklist item, outcome, timestamp, optional note. |
+| `evidence_links` | evidence_id, ref_type (ac_verification/qa_review/val_outcome/workflow_gate), ref_id | Connects evidence to the obligations/facts it supports. |
+
+**Work envelope (v0.3a, DEC-063):**
+
+| Entity | Key Fields | Notes |
+|---|---|---|
+| `work_envelopes` | id, version, epic_id, risk_lane, authority_json, protected_decisions_json, budgets_json, stop_conditions_json, status | Versioned, structured; ingested create-only with source-ref→fid-id mapping. Obligations reference gate IDs/versions and validation assertions. Detailed at v0.3a phase planning. |
 
 **Workflow engine (v0.2):**
 
@@ -269,6 +289,22 @@ write-path requirement even though the flag itself ships in v0.2.
 (`fid dev finish`) produce one event with multiple effects applied atomically.
 Half-applied composite state is data corruption the replay engine would
 faithfully reproduce.
+
+**Registered gate execution is deliberately two events (v0.2b, DEC-060).**
+External process execution and journal append cannot share one filesystem
+transaction, and fid models that honestly rather than pretending atomicity:
+
+1. `gate.execution_started` — appended (one event, one insert effect) *before*
+   the process spawns. This is a normal single logical write.
+2. The process runs to termination under fid's timeout.
+3. `gate.receipt_recorded` — appended only after termination, carrying the
+   terminal status, repository identity, and bounded sanitized output.
+
+Each of the two appends individually obeys the one-write-one-event rule. If
+fid crashes between them, the start fact survives with no receipt; `fid
+maintenance check` reports it as an abandoned execution, and it satisfies
+nothing. A crash may lose a pass; it must never fabricate one. Receipts are
+immutable once appended — corrections are new executions, never edits.
 
 **Event schema versioning:**
 
@@ -659,11 +695,25 @@ into the workflow tables before enabling user-defined workflows.
 |---|---|---|
 | `open` | `resolved` | `linked_to_decision` |
 
-### 4.7 Gate Run Persistence
+### 4.7 Gate Run And Receipt Persistence
 
-`fid dev gate` writes append-only `gate_runs` rows. It does not create or
-mutate `task_completions` directly, because completions represent finalized
-attempts.
+**v0.1 (legacy reported path).** `fid dev gate` writes append-only `gate_runs`
+rows. It does not create or mutate `task_completions` directly, because
+completions represent finalized attempts.
+
+**v0.2b (trusted path, DEC-059/060).** `fid gate run <gate-id>` executes the
+registered definition and persists a `gate_executions` start fact plus a
+terminal `gate_receipts` row (two events; see §4.3). Receipts snapshot the
+definition fields they ran with (gate ID, version, argv, cwd, timeout) and the
+repository identity at capture. `gate_runs` remains queryable as
+`trust_source='reported'` history; the deprecated `fid dev gate --cmd
+--exit-code` surface keeps appending to it as an explicit reported-evidence
+import until a recorded removal decision. Trusted obligations
+(`required_gates_current`, PRD-WF-015) read only `gate_receipts` with
+`trust_source IN ('executed','attested')`, status `pass`, and current
+freshness (PRD-EVID-003). Trusted-mode completions link receipts by ID; the
+v0.1 `task_completions.gate_results` JSON snapshot continues only for the
+legacy reported path.
 
 In v0.1, the active attempt number for a task is derived as:
 
@@ -699,6 +749,9 @@ does not mutate prior `gate_runs` or `task_completions`.
 | Markdown export with YAML frontmatter (v0.4) | Humans, git diffs, stakeholder review | Frontmatter schema documented; field additions non-breaking. | Export round-trip tests (structured fields survive export/re-parse). |
 | `.fid/config.toml` | CLI and export | Additive sections; no removal without migration. | Config parsing tests with missing/extra keys. |
 | `.fid/pricing.toml` | Cost computation in `agent_runs` | Additive model entries; user-overridable. | Test with missing model, custom model, default model. |
+| `.fid/gates.toml` gate registry (v0.2b) | `fid gate run`, workflow obligations, external runners | Versioned gate definitions; changes are reviewed config changes. Definition removal requires a deprecation note; receipts stay valid because they snapshot definition fields. | Registry parse/validation tests; receipt snapshot tests. |
+| Receipt JSON/TOON shape (v0.2b) | Workflow kits, `fid evidence check`, reports, attested-runner import | Versioned via `receipt_schema`. Field additions non-breaking; consumers reject unknown-major schemas. Import path validates the attestation contract version. | Golden receipt fixtures per schema version; import rejection tests. |
+| Capability discovery (`fid capabilities`, v0.2b) | Workflow kits and integrations | JSON/TOON; named capability flags only added, never silently removed. Consumers detect missing capabilities and stop; no silent fallback from trusted receipts to reported evidence. | Contract snapshot test; downgrade-detection test. |
 
 `fid search <term>` is a read-only discovery command, not a query language.
 The v0.2 implementation performs literal, case-insensitive matching across
@@ -717,6 +770,11 @@ as `rg` against markdown files when they need prose-content search.
 | TRD-SEC-002 | The `fid sql` escape hatch shall reject any statement other than SELECT, EXPLAIN, PRAGMA query, and WITH (read-only). | Integration test: attempt INSERT/UPDATE/DELETE/DROP via `fid sql`; assert rejection. |
 | TRD-SEC-003 | Journal files shall not contain secrets. CLI shall strip environment variables and sensitive flag values before recording command metadata in events. | Code review; test that event `command_metadata` contains no env vars or `--password`-style values. |
 | TRD-SEC-004 | SQLite triggers shall prevent structural corruption even from non-CLI write paths (future dashboard, direct SQL). | Trigger tests: attempt invalid inserts via raw SQL; assert RAISE fires. |
+| TRD-SEC-005 | The gate registry (`.fid/gates.toml`) is trusted project configuration. fid shall execute only definitions present in it; registry changes are auditable, reviewable config changes committed to git. (v0.2b) | Code review; test that `fid gate run` rejects unregistered IDs and stale versions. |
+| TRD-SEC-006 | Registered gate execution shall use structured argv with no implicit shell expansion. If an explicit shell-mode escape is retained (PRD-GATE-008), it shall be policy-controlled, visibly flagged in the registry and on every receipt, and off by default. (v0.2b) | Test: argv containing shell metacharacters is passed literally; shell-mode without the policy opt-in is rejected. |
+| TRD-SEC-007 | Gate execution shall apply the definition's environment allowlist, scrub sensitive flag values and environment data before journal persistence, bound captured stdout/stderr, and record redaction/truncation metadata on the receipt. (v0.2b) | Tests: secret-like env/args do not appear in journal bytes; oversized output is truncated with correct hashes/flags. |
+| TRD-SEC-008 | The Git-committed journal shall carry only safe metadata, excerpts, and hashes for gate output. Optional full logs shall be stored as content-addressed local (or CI) artifacts under an explicit retention policy, outside the journal. (v0.2b) | Journal byte inspection test; artifact store retention config test. |
+| TRD-SEC-009 | A receipt imported from an external producer shall declare its trust source and attestation contract version; import shall never silently satisfy a trusted-execution obligation with reported or unversioned evidence. The no-network, no-daemon, local-first default is preserved — import reads local files only. (v0.2b) | Import tests: missing/`reported` trust source cannot satisfy `required_gates_current`; no listener code. |
 
 ## 7. Performance and Reliability
 
@@ -802,7 +860,10 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-012 | The TOON marshaller shall be implemented in-tree with no third-party dependency. | v0.1 | Build with no TOON dependency in go.mod. |
 | TRD-ARCH-013 | Agent integration shall remain CLI/skill-first until dogfooding proves a concrete MCP-only client need. Any future MCP adapter shall require a recorded product/security decision, a threat model, and an explicit transport choice before implementation. | v0.1+ | Roadmap review confirms no MCP implementation task is committed before the decision; security review confirms no listener code exists. |
 | TRD-ARCH-014 | Markdown export shall include YAML frontmatter with structured fields. The frontmatter schema shall be documented and tested for round-trip stability. | v0.4 | Export → parse frontmatter → assert field values match DB. |
-| TRD-ARCH-015 | Template-driven validation shall declare required sections per template kind. `fid dev finish` and similar commands shall validate files against templates and reject malformed artifacts. | v0.3 | Integration test: submit completion report missing `## Concerns` heading; assert rejection. |
+| TRD-ARCH-015 | Template-driven validation shall declare required sections per template kind. Where a workflow profile still requires completion Markdown, `fid dev finish` shall validate files against templates and reject malformed artifacts; structured-completion profiles (PRD-WF-014) do not require the report at all. | v0.3 | Integration test: submit completion report missing `## Concerns` heading; assert rejection. |
+| TRD-ARCH-016 | The executor boundary: fid shall execute only versioned gate definitions approved in project configuration. It shall not run agents, host models, mutate git, evaluate shell strings by default, or schedule jobs. If execution lives in a companion process, fid still owns receipt schema, validation, journal events, linkage, and state-transition enforcement. | v0.2b | Code review + tests: unregistered command rejected; no git-mutating or listener code paths in `internal/gates/`. |
+| TRD-ARCH-017 | Gate receipts shall be immutable, identified rows linked to their execution-start facts, produced via the two-event model in §4.3. Rebuild shall reproduce receipt, evidence, and freshness state exactly from the journal. | v0.2b | Golden replay fixtures including an abandoned start; delete-and-rebuild parity test over receipts/evidence. |
+| TRD-ARCH-018 | Machine-readable integration shall go through documented JSON/TOON contracts (receipts, capability discovery, transition rejections, envelope primitives), never through SQLite internals or `.fid/` file layout assumptions. | v0.2b+ | Contract snapshot tests; docs list the supported surfaces. |
 
 ## 11. Open Technical Questions
 
@@ -818,5 +879,14 @@ tracked in `01_PRD.md` §7.
 - [ ] Should fid add a future MCP adapter after dogfooding? Start from the
   CLI/skill-first assumption; require a concrete MCP-only client need, a
   product/security decision, and a threat model before adding it to a roadmap.
+- [ ] Attestation contract detail for companion runners (DEC-059): key/identity
+  model for `producer`, contract version negotiation, and whether attested
+  receipts require a local co-signature. Decide at v0.2b phase planning.
+- [ ] Toolchain fingerprint contents (PRD-GATE-003): start with Go toolchain +
+  linter versions from `go version` / tool output, or a generic hash of a
+  declared tool list? Decide at v0.2b phase planning.
+- [ ] Full-log artifact store defaults (TRD-SEC-008): retention window, size
+  caps, and whether the store lives under `.fid/artifacts/` (gitignored) only
+  or may also target a CI artifact path. Decide at v0.2b phase planning.
 
-*Last updated: 2026-07-05*
+*Last updated: 2026-07-18*

@@ -19,6 +19,8 @@ Stable requirement IDs use the form `PRD-<AREA>-<NNN>`:
 - `ISSUE` - issue lifecycle (create, read, list, scheduling, ready queue)
 - `AC` - acceptance criteria and verification
 - `DEV` - developer workflow (completions, concerns, gates)
+- `GATE` - registered gate definitions, trusted execution, and receipts
+- `EVID` - evidence records, obligations, and freshness
 - `WF` - workflow transitions and state enforcement
 - `CLAIM` - exclusive-access leases
 - `ROLE` - role-based permissions
@@ -105,13 +107,13 @@ where a requirement is deferred past v0.1.
 | PRD-DEV-001 | When a developer completes a task attempt, the system shall create an append-only completion record with attempt number, tokens used, commit hashes, files touched, and gate results. | Must | v0.1 |
 | PRD-DEV-002 | The system shall support multiple completion attempts per task, each as a separate numbered record. | Must | v0.1 |
 | PRD-DEV-003 | When a previous attempt exists on a task, the system shall mark it as superseded when a new attempt is recorded. | Must | v0.1 |
-| PRD-DEV-004 | The system shall record gate results on completion records as structured data: command, exit code, timestamp, and output excerpt. | Must | v0.1 |
+| PRD-DEV-004 | The system shall record gate results on completion records as structured data: command, exit code, timestamp, and output excerpt. | Must | v0.1. **Amended 2026-07-18 (DEC-059/060):** from v0.2b, caller-reported gate data carries `trust_source=reported` and cannot satisfy a trusted-gate obligation; trusted-mode completions link execution receipts (PRD-GATE-*) instead of snapshotting gate JSON. |
 | PRD-DEV-005 | When a developer raises a concern during a task attempt, the system shall create a structured concern record linked to both the issue and the completion attempt. | Must | v0.1 |
 | PRD-DEV-006 | The system shall track concern lifecycle through statuses: open, addressed, escalated, wontfix. | Must | v0.1 |
 | PRD-DEV-007 | When an issue has one or more open concerns, the system shall surface this as a derived concern flag on issue reads. | Must | v0.1 |
 | PRD-DEV-008 | The system shall support composite developer commands that combine claim acquisition, status transition, agent run recording, and completion creation into a single atomic operation. | Should | v0.1 |
 | PRD-DEV-009 | When a developer records a human intervention during a task attempt, the system shall flag it on the completion record and may store a short intervention note. | Should | v0.1 |
-| PRD-DEV-010 | The system shall allow gate runs to be recorded before a completion exists. Gate runs shall be append-only and shall be rolled into the completion record for the same issue and attempt at finish time. | Must | v0.1 |
+| PRD-DEV-010 | The system shall allow gate runs to be recorded before a completion exists. Gate runs shall be append-only and shall be rolled into the completion record for the same issue and attempt at finish time. | Must | v0.1. **Amended 2026-07-18 (DEC-059):** from v0.2b, `fid dev gate --cmd --exit-code` is a deprecated reported-evidence/import path, visibly distinct from trusted execution (`fid gate run`); it remains importable historical data. |
 
 ### 3.5 Workflow Transitions (WF)
 
@@ -125,12 +127,14 @@ where a requirement is deferred past v0.1.
 | PRD-WF-005a | The system shall ship a default workflow for the escalation kind. | Must | v0.2 |
 | PRD-WF-006 | The system shall map every workflow state to a status category (unstarted, started, completed, cancelled) for portable queries. | Must | v0.1 |
 | PRD-WF-007 | The system shall support the `all_acs_verified` transition rule, parameterised by a set of required verifier roles. | Must | v0.1 |
-| PRD-WF-008 | The system shall support the `has_completion_report` transition rule. | Must | v0.1 |
+| PRD-WF-008 | The system shall support the `has_completion_report` transition rule. | Must | v0.1. **Amended 2026-07-18 (DEC-062):** retained for compatibility; workflow profiles may substitute the structured `has_completion` rule (PRD-WF-014) from v0.2c. Flag/rule removal requires a separate recorded decision. |
 | PRD-WF-009 | The system shall support the `concerns_addressed` transition rule, satisfied when no open concerns exist on the issue. | Must | v0.1 |
 | PRD-WF-010 | The system shall support the `all_child_tasks_done_or_cancelled` transition rule for epics. | Must | v0.1 |
 | PRD-WF-011 | Where the configurable workflow engine is enabled, the system shall allow users to define custom workflows with states, transitions, and per-transition rules. | Should | v0.2 |
 | PRD-WF-012 | Where the configurable workflow engine is enabled, the system shall allow assigning a custom workflow per kind or per project. | Should | v0.2 |
 | PRD-WF-013 | The system shall allow any issue to transition to the cancelled state from any non-cancelled state. | Must | v0.1 |
+| PRD-WF-014 | The system shall support a structured `has_completion` transition rule, satisfied when an append-only completion exists for the current attempt and all applicable AC, concern, receipt, and evidence-obligation rules for the transition are met. A completion Markdown report shall not be required by this rule; an optional authored summary path may be recorded. | Must | v0.2c (DEC-062). Additive workflow/profile change; `has_completion_report` keeps working. |
+| PRD-WF-015 | The system shall support a `required_gates_current` transition rule, parameterised by a set of gate definition IDs (and optional versions), satisfied only when each named gate has a trusted, terminal, passing execution receipt that is current for the target tree. Reported evidence shall not satisfy this rule. | Must | v0.2b/v0.2c (DEC-059/061). Gate identity by ID/version, never display string. |
 
 ### 3.6 Exclusive Access (CLAIM)
 
@@ -184,7 +188,8 @@ where a requirement is deferred past v0.1.
 | PRD-QA-006 | The system shall support QA plans with ordered verification steps, each specifying an evidence method and validator role. | Should | v0.3 |
 | PRD-QA-007 | Where a QA plan cites a validation contract, the system shall enforce coverage rules at plan finalisation. | Should | v0.4 |
 | PRD-QA-008 | The system shall support composite QA commands that combine claim acquisition, review creation, finding addition, and review completion into role-convenient operations. | Should | v0.3 |
-| PRD-QA-009 | The system shall provide a read-only evidence check (`fid evidence check`) that, for each cited evidence reference on AC verifications, QA findings, and validation outcomes in scope, reports whether the reference resolves: `resolved`, `missing`, or `unverifiable` by a type-keyed resolver (commits resolve via local git, file paths via filesystem existence; command/manual/url evidence are unverifiable). It shall verify resolution/existence only — never re-executing a command or comparing content hashes — and shall support `--warn-as-error`. | Should | v0.4. Read-only; adds no schema and no evidence registry (operates over existing embedded refs). fid is a verifier, not an executor. Hash-based content-drift detection deferred (needs capture-time hashes). |
+| PRD-QA-009 | The system shall provide a read-only evidence check (`fid evidence check`) that, for each cited evidence reference on AC verifications, QA findings, and validation outcomes in scope, reports whether the reference resolves: `resolved`, `missing`, or `unverifiable` by a type-keyed resolver (commits resolve via local git, file paths via filesystem existence; free-form command/manual/url evidence are unverifiable). It shall support `--warn-as-error`. | Should | v0.2b onward (pulled forward from v0.4; DEC-061). **Amended 2026-07-18:** receipt-backed evidence additionally reports freshness (`current`/`stale`) from captured tree identity and content hashes. The check itself never re-executes commands (`fid gate run` is the execution path — the earlier "fid is a verifier, not an executor" note is superseded by DEC-059 for registered gates only). |
+| PRD-QA-010 | The system shall record QA reviews with structured coverage: scope, review profile (e.g. security, code, validation, ux, data, performance), risk dimensions considered, files/contracts examined, receipts reproduced, verdict, and findings. A complete review with zero findings shall be a valid, accepted outcome. Review profiles are configuration over one common review contract, not separate persisted entity types. | Must | v0.3a (DEC-064). Ships with the first QA implementation so review rows link first-class evidence from day one. |
 
 ### 3.10 Validation Contracts (VAL)
 
@@ -193,7 +198,7 @@ where a requirement is deferred past v0.1.
 | PRD-VAL-001 | The system shall support validation contracts per epic, each containing ordered assertions with `VAL-NNN` display IDs. | Should | v0.4 |
 | PRD-VAL-002 | The system shall support required validator specifications per assertion, each declaring a validator role and evidence method. | Should | v0.4 |
 | PRD-VAL-003 | When an assertion outcome is recorded, the system shall create an append-only record with outcome (pass/fail/carry_forward), evidence, and recorder role. | Should | v0.4 |
-| PRD-VAL-004 | If an outcome is pass, the system shall require a non-null evidence method and evidence reference. | Should | v0.4 |
+| PRD-VAL-004 | If an outcome is pass, the system shall require a non-null evidence method and evidence reference. | Should | v0.4. **Amended 2026-07-18 (DEC-061/066):** outcomes whose evidence method is deterministic shall reference evidence records/receipts by ID from their first implementation, not embedded path/command strings, so no string-to-evidence migration is needed later. |
 | PRD-VAL-005 | If an outcome is carry_forward, the system shall require a non-null rationale. | Should | v0.4 |
 | PRD-VAL-006 | The system shall support linking acceptance criteria to validation assertions for traceability. | Should | v0.4 |
 | PRD-VAL-007 | The system shall support linking QA plan steps to validation assertions for coverage tracking. | Should | v0.4 |
@@ -228,6 +233,7 @@ where a requirement is deferred past v0.1.
 | PRD-TELEM-004 | The system shall aggregate token and cost statistics by role, by model, and by epic. | Must | v0.1 |
 | PRD-TELEM-005 | The system shall aggregate task statistics including estimate-vs-actual tokens, rework rate (attempts per task), and gate pass/fail counts. | Should | v0.2 |
 | PRD-TELEM-006 | The system shall aggregate human intervention frequency per epic. | Should | v0.2 |
+| PRD-TELEM-007 | The system shall record extended trajectory economics per agent run where observable: wall duration, retry count, resumptions, context compactions, tool or harness failure count, normalized failure class, Human interventions and intervention minutes, review findings attributed to the run's task, and escaped defects when later recorded. Values the harness cannot observe shall remain null; the system shall never require an agent to estimate them. | Should | v0.2e (DEC-065). Additive `agent_runs` columns + stats surfaces. |
 
 ### 3.13 Output, Export, Reports, and Templates (OUT)
 
@@ -254,9 +260,11 @@ where a requirement is deferred past v0.1.
 | PRD-OUT-018 | The system shall provide a lightweight `fid search <term>` command for literal, case-insensitive discovery across structured projected fields. | Should | v0.2. Search complements named reports and `fid sql`; it does not replace shell `rg` for full markdown body search. |
 | PRD-OUT-019 | The system shall provide a change digest command (`fid changes --since <anchor>`) that returns, grouped by entity, the net field changes and newly-added child facts for entities changed since the anchor, scoped by epic or entity. Anchors are journal event IDs or timestamps in v0.2, resolved by an extensible resolver. | Should | v0.2. Aggregated from `activity_log`; distinct from the chronological `fid activity list` (PRD-OUT-017). Net changes collapse intermediate transitions. Role-tuned shaping deferred to a fast-follow. |
 | PRD-OUT-020 | The system shall provide a human attention report (`fid report attention`) that aggregates, grouped by reason, the items currently needing human judgment: epics awaiting closure approval, open escalations without a resolving decision (flagged stale past a window), issues blocked by a cancelled (dead-end) blocker, and live human-held claims. Each group shall declare its audience; further reasons are added by source-entity availability without changing the contract. Scopable by `--epic`. | Should | v0.2. Pull-based; no notifications or watchers. Read-only aggregation over existing entities; adds no schema. Reasons light up as source entities ship (`blocking_finding_open` v0.3; `validation_failed`/`validation_carried_forward` v0.4). Role filter deferred as an additive fast-follow. Empty result is a zero-exit success state. |
-| PRD-OUT-021 | The system shall provide a handoff command (`fid handoff --role <role> --issue <id>`) that composes a role's context pack, a manifest derived from the configured workflow and role permissions (required reads, commands, stop conditions, expected writes, live blockers, and evidence obligations), and a handoff template into a prompt plus a machine-readable manifest for spawning that role. The target role shall be a parameter resolved against configured templates, not a hard-coded subcommand. The command shall be read-only — it shall acquire no claim and append no event. | Should | v0.3. Composes over context packs (PRD-OUT-005) and the template engine. Manifest fields are derived from configurable sources and extend by version (evidence obligations v0.4). JSON manifest by default; rendered prompt via `--format markdown`. |
+| PRD-OUT-021 | The system shall provide a handoff command (`fid handoff --role <role> --issue <id>`) that composes a role's context pack, a manifest derived from the configured workflow and role permissions (required reads, commands, stop conditions, expected writes, live blockers, and evidence obligations), and a handoff template into a prompt plus a machine-readable manifest for spawning that role. The target role shall be a parameter resolved against configured templates, not a hard-coded subcommand. The command shall be read-only — it shall acquire no claim and append no event. | Should | v0.3. Composes over context packs (PRD-OUT-005) and the template engine. Manifest fields are derived from configurable sources and extend by version. **Amended 2026-07-18:** evidence obligations are available from v0.2b (PRD-EVID-*), so the handoff manifest includes them from its first v0.3 implementation rather than waiting for v0.4. JSON manifest by default; rendered prompt via `--format markdown`. |
 | PRD-OUT-022 | The system may provide an estimate-only context metering command (`fid context estimate --pack <role> --issue <id>`) that reports the approximate token size of a context pack or handoff, broken down by section, as a model-agnostic heuristic. It shall not trim or omit pack content to fit a budget. | Could | Deferred/conditional. Gate: build only if dogfooding shows context packs overload sessions (default context is deliberately small). Estimate-only — `--budget-tokens` auto-trimming is rejected (it would make pack output lossy/non-deterministic). Heuristic proxy, not a per-model tokenizer (fid bundles none). |
 | PRD-OUT-023 | The system shall provide deterministic recurring-pattern reports (`fid report recurring-findings`, `recurring-concerns`, `recurring-patterns`) that group findings, concerns, gate runs, triage events, and validation-outcome failures by structured dimensions (trigger class, label, area, gate command, finding severity, affected file-path prefix, repeated `VAL-NNN` failures) and rank recurring groups as candidates with counts and exemplars. The reports shall surface candidates only; fid shall not author principles, decisions, or recommendation prose. | Should | v0.4. Deterministic grouping only — no ML/LLM/semantic theme extraction. Read-only over existing signals; adds no schema. Extends the v0.4b computed retro signals. A human turns a pattern into a DEC-NNN or principle. |
+| PRD-OUT-024 | The system shall generate a human validation brief for an epic/phase containing only: outcomes delivered and user-visible changes; product, architecture, data, dependency, and security decisions; deviations, unresolved risks, failed or carried-forward obligations, and open escalations; receipt and validation roll-up plus spend, retries, and interventions; and the human-only checks still requiring judgment. | Should | v0.4c (DEC-064). Generated view over structured state; lands ahead of export/dashboard/sync. Attention-report reasons (PRD-OUT-020) light up receipt/validation sources as they ship. |
+| PRD-OUT-025 | The system shall generate completion views in JSON, TOON, Markdown, or HTML from structured state: changed commits/files and repository identity, gate receipts and evidence links, AC/validation coverage and outcomes, agent telemetry, interventions, deviations, concerns, decisions, and the optional authored summary. Views shall link append-only receipt rows by stable ID and shall not snapshot independent copies of mutable gate-result JSON. | Should | v0.2c (DEC-062). Replaces mandatory completion prose; the authored summary stays optional input, never required. |
 
 ### 3.14 Operations and Maintenance (OPS)
 
@@ -281,7 +289,38 @@ where a requirement is deferred past v0.1.
 | PRD-OPS-017 | The system shall record git context on agent runs — branch, base commit, head commit, dirty flag, and worktree path — auto-captured read-only from git by default, overridable by flags, and degrading to a recorded null context with a warning outside a git worktree. Each run shall record whether its git context was captured, provided, or absent. | Should | v0.2. Read-only capture via `internal/gitctx/`; fid never performs git operations. Dirty is point-in-time as of the last recorded command. |
 | PRD-OPS-018 | The system shall track an agent-run lifecycle (open, closed, abandoned) and provide commands to list runs filtered by lifecycle, role, and epic, and to show one run's full detail. | Should | v0.2. `fid run list --open\|--abandoned`, `fid run show <run-id>`. |
 | PRD-OPS-019 | The system shall support resuming and abandoning runs. Resume shall re-acquire the claim and return the recorded git resume context, opening a new run linked to the prior; abandon shall release the claim and mark the run abandoned while preserving the run row. | Should | v0.2. `fid dev resume <task-id>`, `fid dev abandon <run-id> --reason-md --by`. Resume returns hints only; no git operations. |
-| PRD-OPS-020 | The system may support a task-pack apply that ingests a structured authoring artifact (a reviewed phase plan: epic metadata, tasks, acceptance criteria, dependencies, labels, estimates, sequence/priority, requirement links) as one create-only journal event with many effects, returning a source-ref→fid-id mapping, with `validate` and `--dry-run` modes. | Could | Deferred/conditional. Gate: build only if v0.1–v0.2 dogfooding shows TL planning ingestion is a measured friction/error source. Structured input only (YAML/JSON/TOON), create-only, no round-trip/sync — distinct from the deferred markdown import (`fid import`/`init --import`). Pack schema versioned and locked deliberately at build time. |
+| PRD-OPS-020 | *(Superseded 2026-07-18 by PRD-OPS-021/022, DEC-063.)* The system may support a task-pack apply that ingests a structured authoring artifact as one create-only journal event with many effects. | Won't (superseded) | The conditional task pack is promoted into the versioned work envelope. The create-only ingestion semantics, source-ref→fid-id mapping, and `validate`/`--dry-run` modes carry into PRD-OPS-021. |
+| PRD-OPS-021 | The system shall support versioned, structured work envelopes capturing an epic or phase outcome, risk lane, approved authority, protected decisions, task graph, validation and gate obligations, budgets, and stop conditions. Envelope ingestion shall be a create-only journal event with a source-ref→fid-id mapping and `validate`/`--dry-run` modes. | Should | v0.3a (DEC-063). Structured input only (YAML/JSON/TOON); schema versioned and locked deliberately at build time. |
+| PRD-OPS-022 | The system shall expose deterministic orchestration primitives over a work envelope: next actionable work with typed skip reasons; claim/lease and resumable run state; retry and intervention budgets with circuit-breaker state; machine-readable transition rejection and stop reasons; and attention items that require Human or architecture/product judgment. The system shall not host an LLM loop, spawn agents, or schedule jobs. | Should | v0.3a (DEC-063). A deterministic runner remains a separate kit component driving these primitives. Builds on `fid ready --explain`, claims, run lifecycle, and PRD-OUT-020. |
+| PRD-OPS-023 | The system shall provide a machine-readable capability and version discovery surface (`fid capabilities`) reporting the fid version, journal event schema version, projection schema version, and named capability flags (e.g. `gate_execution`, `receipts`, `evidence_records`, `structured_completion`, `work_envelope`). When a consumer requires a capability the workspace does not provide, it shall be able to detect that and stop; the system shall never silently fall back from trusted receipts to reported evidence. | Must | v0.2b (DEC-066). JSON/TOON contract so a workflow kit integrates without querying SQLite or depending on `.fid/` internals. |
+
+### 3.15 Registered Gates and Receipts (GATE)
+
+Added 2026-07-18 (DEC-059/060). Target slice v0.2b unless noted.
+
+| ID | Requirement | Priority | Notes |
+|---|---|---|---|
+| PRD-GATE-001 | The system shall support a registry of versioned gate definitions in trusted project configuration, each with a stable gate ID, version, structured argv array, working directory, timeout, and environment allowlist. Registry changes shall be ordinary auditable, reviewable configuration changes. | Must | v0.2b. `.fid/gates.toml`, committed. No implicit shell expansion. |
+| PRD-GATE-002 | When a registered gate is executed, the system shall append an execution-start fact before spawning the process and a terminal receipt only after the process terminates, with terminal status pass, fail, timed_out, cancelled, or harness_error. An execution start with no terminal receipt shall be reported as abandoned by the maintenance check and shall never satisfy an obligation. | Must | v0.2b. Honest two-event model; a crash may lose a pass but must never fabricate one. |
+| PRD-GATE-003 | A terminal receipt shall capture at least: receipt ID, schema version, producer, trust source, issue, attempt, agent run, role, timestamps; gate definition ID and version, argv, cwd, timeout, exit code or signal, duration; git branch/worktree plus base, head, and tree identity, dirty state, and capture source; toolchain fingerprint; bounded sanitized stdout/stderr excerpts, full-log reference where retained, content hashes, byte counts, and truncation/redaction flags. | Must | v0.2b. Immutable once appended. |
+| PRD-GATE-004 | Every gate evidence row shall declare a trust source: `executed` (fid ran the registered gate), `attested` (a separately trusted runner produced the receipt under a versioned attestation contract), or `reported` (caller-asserted). Only `executed` or `attested` receipts shall satisfy a trusted-gate obligation. | Must | v0.2b. Legacy v0.1 `gate_runs` project as `reported`; history is never rewritten. |
+| PRD-GATE-005 | The system shall accept imported receipts only through the versioned attestation contract, and an imported receipt shall declare its trust source explicitly. If the declared trust source or contract version is not acceptable to the obligation being satisfied, the system shall reject the satisfaction, not downgrade it silently. | Must | v0.2b. |
+| PRD-GATE-006 | If a registered gate execution exceeds its timeout or terminates on a signal, the system shall record the terminal receipt with status timed_out or the signal detail; such receipts shall never satisfy a passing obligation. | Must | v0.2b. |
+| PRD-GATE-007 | Before persisting a receipt, the system shall scrub sensitive flag values and environment data, bound captured output, and record redaction/truncation metadata. The Git-committed journal shall carry only safe metadata, excerpts, and hashes; optional full logs shall be stored as content-addressed local artifacts under an explicit retention policy. | Must | v0.2b. See TRD-SEC-007/008. |
+| PRD-GATE-008 | Where an explicit shell-mode gate definition is permitted by configuration, the system shall mark it as higher risk in the registry and on every receipt, and executing it shall require the policy-controlled opt-in. | Could | v0.2b+. Default is argv-only; shell mode may be rejected entirely at implementation time with a recorded decision. |
+
+### 3.16 Evidence Records and Obligations (EVID)
+
+Added 2026-07-18 (DEC-061). Target slice v0.2b/v0.2c unless noted.
+
+| ID | Requirement | Priority | Notes |
+|---|---|---|---|
+| PRD-EVID-001 | The system shall support typed evidence records that link AC verifications, QA review coverage, validation outcomes, and workflow gate obligations to receipts, commits, source state, screenshots, artifacts, or recorded human outcomes. | Must | v0.2b entity; consumed by QA (v0.3) and validation (v0.4) from their first implementation. |
+| PRD-EVID-002 | The system shall report evidence validity separately from existence, as one of: current, stale, missing, unverifiable, or inapplicable. | Must | v0.2b. Surfaced by `fid evidence check` and transition rejections. |
+| PRD-EVID-003 | While the conservative freshness rule is active, any relevant target-tree change after a gate receipt's captured tree identity shall make that receipt stale. Path-aware invalidation shall not be added without dogfood evidence that the coarse rule is too expensive, a sound affected-path model, and a recorded decision. | Must | v0.2b. |
+| PRD-EVID-004 | A deterministic evidence obligation shall be satisfiable only by a trusted, terminal receipt or another checkable evidence type. An unverifiable command string shall not satisfy a deterministic obligation. | Must | v0.2b/v0.2c. |
+| PRD-EVID-005 | Where an obligation requires or allows Human judgment, a recorded manual outcome (actor, checklist item, outcome, timestamp, optional note) shall satisfy it as first-class evidence, and the system shall never present manual evidence as deterministic proof. | Must | v0.2c. |
+| PRD-EVID-006 | Evidence obligations that name gates shall reference gate definition ID and version, not display strings. | Must | v0.2b. |
 
 ## 4. Non-Functional Product Requirements
 
@@ -342,31 +381,44 @@ phase planning.
 | PRD-TELEM-001 – 004 | v0.1 | | |
 | PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
-| PRD-ISSUE-024 – 025 | v0.2 | | |
-| PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006, PRD-LINK-007 | v0.2 | | |
-| PRD-GOV-001 – 005, 007 – 008, 012 – 013 | v0.2 | | |
-| PRD-TELEM-005 – 006 | v0.2 | | |
-| PRD-OUT-005 – 007, 018 – 020 | v0.2 | | |
-| PRD-OPS-011, 014 – 015 | v0.2 | | |
-| PRD-OPS-017 – 019 | v0.2 | | |
-| PRD-QA-001 – 006, 008, PRD-CLAIM-009 | v0.3 | | |
+| PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006 | v0.2a | | |
+| PRD-GATE-001 – 008, PRD-EVID-001 – 004, 006, PRD-WF-015, PRD-QA-009, PRD-OPS-017, PRD-OPS-023 | v0.2b | | |
+| PRD-WF-014, PRD-EVID-005, PRD-OUT-025 | v0.2c | | |
+| PRD-GOV-001 – 005, 007 – 008, 012 – 013, PRD-LINK-007 | v0.2d | | |
+| PRD-ISSUE-024 – 025 | v0.2e | | |
+| PRD-TELEM-005 – 007 | v0.2e | | |
+| PRD-OUT-005 – 007, 018 – 020 | v0.2e | | |
+| PRD-OPS-011, 014 – 015, 018 – 019 | v0.2e | | |
+| PRD-OPS-021 – 022 | v0.3a | | |
+| PRD-QA-001 – 006, 008, 010, PRD-CLAIM-009 | v0.3 | | |
 | PRD-OUT-012 – 015, 021 | v0.3 | | |
-| PRD-QA-007, PRD-QA-009, PRD-VAL-001 – 008 | v0.4 | | |
+| PRD-QA-007, PRD-VAL-001 – 008 | v0.4 | | |
 | PRD-GOV-009 – 011 | v0.4 | | |
-| PRD-OUT-009 – 011, 016, 023 | v0.4 | | |
+| PRD-OUT-009 – 011, 016, 023 – 024 | v0.4 | | |
 | PRD-ISSUE-017 | v0.5 | | |
+| PRD-OPS-020 | superseded (DEC-063) | | carried into PRD-OPS-021 |
 
 ## 7. Open Product Questions
 
 These are product and scope questions. Technical open questions are tracked
 separately in `02_TRD.md` §11.
 
-- [ ] Should the `workflow_runner` role become a deterministic harness rather
-  than an LLM role? Deferred from spec §15.1; revisit when routine
-  workflow_runner cost or prompt drift causes a real failure.
+- [x] Should the `workflow_runner` role become a deterministic harness rather
+  than an LLM role? **Resolved 2026-07-18 (DEC-063):** Phase 17's report-lint
+  stop/resume churn (DEC-058/CF-023) was the real failure this question waited
+  for. fid exposes deterministic orchestration primitives over work envelopes
+  (PRD-OPS-021/022); a deterministic runner may live as a separate kit
+  component. The `workflow_runner` role remains in the role enum for
+  attribution.
 - [ ] Should bidirectional markdown sync (`fid import`, `fid sync`) ship in
   v0.5, or is the agent-with-fid-skill alternative sufficient? Deferred
   pending evidence from v0.4 export usage.
 - [ ] What is the licensing model for open-source release?
+- [ ] Should explicit shell-mode gate definitions (PRD-GATE-008) exist at all,
+  or is argv-only sufficient? Decide during v0.2b planning with the threat
+  model refresh; default is argv-only.
+- [ ] When does path-aware receipt invalidation replace the conservative
+  whole-tree freshness rule (PRD-EVID-003)? Requires dogfood cost evidence and
+  a sound affected-path model.
 
-*Last updated: 2026-07-11*
+*Last updated: 2026-07-18*

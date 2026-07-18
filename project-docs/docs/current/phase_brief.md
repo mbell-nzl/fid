@@ -1,4 +1,4 @@
-# Phase Brief - No Active Phase (v0.1 closed)
+# Phase Brief - No Active Phase (v0.1 closed; roadmap re-sliced)
 
 > **Purpose.** Default execution brief for the current phase. There is no active
 > phase; Phase 17 wrapped on 2026-07-18 and v0.1 is closed for early dogfood.
@@ -7,48 +7,60 @@
 
 ## Status
 
-**No phase active.** Phase 17 (Maintenance + stub guard + v0.1 closure) is
-COMPLETE / WRAPPED. QA final review PASS, Human checklist PASS, VAL-001..025
-resolved. **v0.1 is closed for early dogfood (DEC-057).**
+**No phase active. No implementation has begun.** Phase 17 (Maintenance + stub
+guard + v0.1 closure) is COMPLETE / WRAPPED. QA final review PASS, Human
+checklist PASS, VAL-001..025 resolved. **v0.1 is closed for early dogfood
+(DEC-057).**
 
-The next planning checkpoint slices roadmap **v0.2a - Workflow Engine Migration**
-into a new approved phase. This brief is refreshed at that kickoff.
+On 2026-07-18 the Tech Lead performed the **trusted-evidence planning
+checkpoint** (`../reviews/2026-07-18-fid-roadmap-update-tl-brief.md`),
+recording **DEC-059..DEC-066** in
+`../reviews/2026-07-18-roadmap-update-decisions.md` and re-slicing the
+roadmap (specs 00-10 updated). Headlines, all **pending Human ratification**:
 
-## Phase 17 Result (for reference)
+- fid executes registered gates and issues trusted receipts; reported exit
+  codes can never satisfy trusted obligations (DEC-059/060).
+- Typed evidence records with trust source and freshness; conservative
+  whole-tree staleness first (DEC-061).
+- Completion prose optional behind structured `has_completion`; completion
+  views and the human validation brief are generated (DEC-062/064).
+- Work envelopes + deterministic runner primitives; runner stays a separate
+  kit component (DEC-063). Extended trajectory economics (DEC-065).
+- Roadmap re-slice (DEC-066): v0.2a workflow engine (+ seams) → **v0.2b
+  evidence foundation** → v0.2c lean completion → v0.2d governance → v0.2e
+  reports/run-ops; work envelope leads v0.3.
 
-- Delivered `fid maintenance check`, locked `fid maintenance vacuum`, v0.2
-  governance command guards, full four-format read conformance, and the v0.1
-  closure journey/rebuild/traceability evidence.
-- Ten tasks (0-9) closed with verified single-commit implementations under Heavy
-  Mode; reviews after Tasks 0, 2, 5, 7; final review and Human dogfood complete.
-- VAL-022 narrowed under DEC-056 (journal is the sole source of derived state;
-  clock-relative reads excluded from rebuild-equality); Branch A confirmed with
-  no product change. VAL-023 unblocked with it.
-- Full archive: `../phases/phase-17/` (tasks, qa, decisions, progress,
-  run-ledger, triage-log, tl-escalations).
+## Proposed Next Phases (pending Human approval)
+
+1. **CF-023 workflow-tooling pass** (pre-phase, light mode, doc/tooling only):
+   completion-report template affordance, Developer-prompt commit rule,
+   report-lint messaging, ESC-NNN uniqueness (DEC-058). Recommended before
+   any v0.2 execution.
+2. **Phase 18 - v0.2a Workflow Engine Migration (heavy mode):** workflow
+   tables/migration seeded verbatim from v0.1 defaults, `fid workflow
+   define/assign/list`, escalation workflow, `role_permissions` migration,
+   plus the gate-obligation seams from DEC-066. Heavy mode because it
+   migrates hard-to-change contracts (schema + workflow semantics). It is
+   the correct first dependency: every later evidence obligation hangs off
+   workflow rules referencing stable gate definitions.
+
+Do not begin v0.2 work until Phase 18 is planned (validation contract, QA
+plan, task slices) and Human-approved.
 
 ## Open Carry-Forward Into v0.2
 
-- **CF-023 (Medium, deep-retrospective flagged):** workflow-tooling hardening -
-  report-lint / completion-report commit-metadata friction and ESC-NNN global
-  uniqueness (DEC-058). Recommended before v0.2a execution.
+- **CF-023 (Medium, deep-retrospective flagged):** workflow-tooling hardening
+  (DEC-058). Recommended before v0.2a execution.
 - **CF-020 (v0.2):** future-`occurred_at` under burst writes vs the
   future-excluding `recent_activity_7d` window (DEC-056).
 - **CF-021 / CF-022 (Low):** Go doc comments on maintenance exports; broader
   markdown characterization tests. Do at next relevant package reopen.
-- **CF-008 (v0.2), CF-017 (v0.2c), CF-018 (next SQL package reopen)** unchanged.
+- **CF-008 (v0.2), CF-017 (now v0.2e - dev resume/abandon relabeled by
+  DEC-066), CF-018 (next SQL package reopen)** unchanged in substance.
 
 ## Deferred Release Maturity
 
 Public-release threat model, SAST/scans, pre-release checklist, and held-out
 scenarios remain deferred to v0.3 per DEC-049 and `08_QUALITY_PLAN.md`
-sections 5.8/7/9. Phase 17 was v0.1 early-dogfood closure, not the charter's v0.3
-public release.
-
-## Next Planning Checkpoint
-
-Plan v0.2a (Workflow Engine Migration) per `10_IMPLEMENTATION_ROADMAP.md`:
-workflow tables/migration, `fid workflow define/assign/list`, escalation
-workflow, and the `role_permissions` migration. Propose the operating mode,
-draft the validation contract, and slice one-session tasks. Do not begin v0.2
-work until that phase is Human-approved.
+sections 5.8/7/9. The v0.2b registered-execution threat surface adds
+TRD-SEC-005..009 and quality-plan §5.10 scenarios to that eventual pass.

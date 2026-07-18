@@ -126,7 +126,45 @@ fid tl wrapup FID-e1f2g3 --by tl
 fid issue transition FID-e1f2g3 --to closed --by human
 ```
 
-### 1.2 Prioritised Epic or Unattached Task (Steady-State)
+### 1.2 Trusted-Gate Developer Execution (v0.2b/v0.2c variant of Step 3)
+
+From the evidence foundation (DEC-059..062), Step 3 changes shape: gates are
+executed by fid against the registered definitions, and structured-completion
+profiles need no authored completion report.
+
+```
+fid dev start FID-a1b2c3 --model claude-sonnet-4-6 --by developer
+
+# ... developer implements ...
+
+fid issue ac verify FID-a1b2c3 AC-d4e5f6 --by developer \
+    --status pass --evidence-type test \
+    --evidence-ref "test/idgen_test.go::TestIDShape"
+
+fid gate run go-test-race --issue FID-a1b2c3 --by developer
+# → execution GX-b2c3d4, receipt RCP-9f8e7d status: pass, trust: executed
+fid gate run golangci-lint --issue FID-a1b2c3 --by developer
+# → receipt RCP-1a2b3c status: pass, trust: executed
+
+fid dev finish FID-a1b2c3 --by developer \
+    --summary-md project-docs/docs/phases/phase-1/tasks/FID-a1b2c3-notes.md \
+    --tokens 14823 --commits abc123
+# → validates has_completion + required_gates_current (receipts current for
+#   head tree), closes run, creates TC-7c3e9f linking receipts by ID,
+#   transitions → dev_complete, releases claim
+
+fid report completion --task FID-a1b2c3 --format markdown
+# → generated completion view (commits, receipts, AC coverage, telemetry,
+#   optional summary) — no authored report required
+```
+
+If the tree changes after a passing receipt, the receipt goes `stale` and the
+`required_gates_current` rule blocks `dev finish` until the gate is re-run
+(`fid evidence check` names the stale receipt and the re-run command). The
+legacy `fid dev gate --cmd --exit-code` path remains available only as
+deprecated reported evidence and cannot satisfy the trusted rule.
+
+### 1.3 Prioritised Epic or Unattached Task (Steady-State)
 
 Same lifecycle, minus batched QA:
 
@@ -280,4 +318,4 @@ Exported files carry a banner:
 
 ---
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-18*

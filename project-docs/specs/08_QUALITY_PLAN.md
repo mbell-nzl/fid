@@ -384,6 +384,43 @@ When repo skills are present, workflow-lint should verify:
 - Side-effectful skills disable implicit invocation where the provider supports
   that control.
 
+### 5.10 Evidence-Foundation Validation Scenarios (v0.2b+, DEC-059..066)
+
+The phases that implement registered gate execution, receipts, evidence,
+structured completion, and capability discovery must turn these scenarios
+into `VAL-NNN` assertions in their validation contracts. They are binding
+scenario minimums, not an exhaustive contract.
+
+1. A registered gate passes on a known clean target tree and satisfies its
+   exact obligation (gate ID/version match, trusted receipt, current
+   freshness).
+2. Nonzero exit, timeout, signal, harness error, and abandoned
+   execution-start paths never produce a passing receipt. (Both qualifying
+   and non-qualifying states evidenced, per §5.4.)
+3. A tree change after a pass makes the evidence stale and blocks a
+   transition that requires current evidence; re-running the gate unblocks
+   it.
+4. A legacy caller-reported exit code (`gate_runs` /
+   deprecated `fid dev gate`) remains queryable but cannot satisfy a
+   trusted-gate obligation.
+5. Secret-like arguments/environment values and oversized output do not leak
+   into the journal; excerpts are bounded, hashes match the captured bytes,
+   and redaction/truncation flags are correct.
+6. Journal rebuild reproduces receipt, evidence, and freshness state exactly
+   (including an abandoned start with no receipt); merge/conflict behavior
+   stays deterministic.
+7. Completion without a Markdown report succeeds only when all structured
+   completion obligations are met; an unmet obligation produces a
+   machine-readable rejection naming it.
+8. A QA review with complete structured coverage and zero findings is
+   accepted as a valid outcome.
+9. Manual Human evidence satisfies only obligations that require or allow
+   Human judgment; it is rejected for deterministic obligations.
+10. A consumer using the capability discovery contract detects an
+    unsupported fid version/capability and stops without weakening evidence;
+    no code path silently substitutes reported evidence for trusted
+    receipts.
+
 ---
 
 ## 6. CI / Automation
@@ -525,4 +562,4 @@ A phase is done when:
 - [ ] Phase decisions and progress were archived.
 - [ ] Current docs were compressed.
 
-*Last updated: 2026-05-27*
+*Last updated: 2026-07-18*

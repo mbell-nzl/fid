@@ -18,6 +18,11 @@
    roadmap version.
 5. **Prove requirements explicitly.** Phase plans turn scoped requirements into
    `VAL-NNN` assertions before implementation begins.
+6. **Trustworthy evidence before prose.** (DEC-066.) Capture deterministic
+   facts at the point they occur — registered execution, receipts, evidence
+   identity — before building prose-oriented context, export, dashboard, or
+   sync features on top of them. Never let a projection displace the
+   structured state it renders.
 
 ## Phase 0 - Specification And Foundation
 
@@ -442,11 +447,21 @@ with whet's task artifacts.
 
 ---
 
-## v0.2 — Governance, Workflow Engine, Reports
+## v0.2 — Workflow Engine, Trusted Evidence, Lean Completion, Governance
 
-**Goal:** Ship the configurable workflow engine, the full governance entity CLI
-surface (decisions, escalations, triage, requirements), named reports, context
-packs, and comments. This is where cross-epic analytical value compounds.
+> **Re-sliced 2026-07-18 (DEC-066).** Trustworthy evidence lands before
+> prose-oriented context/report features. Former v0.2b (governance) is now
+> v0.2d; former v0.2c (reports/context packs) is now v0.2e with `gitctx`
+> pulled forward into v0.2b. Dependency rules: workflow obligations reference
+> stable gate definitions; receipt/evidence identity exists before QA and
+> validation entities depend on it; a lean completion path exists before a
+> workflow kit adopts fid as its state backend.
+
+**Goal:** Ship the configurable workflow engine, the trusted-evidence
+foundation (registered gate execution, receipts, evidence records,
+freshness), the lean structured completion path, the full governance entity
+CLI surface, and then reports/context packs/run ops. This is where fid stops
+relying on agent prose for deterministic claims.
 
 ### v0.2a — Workflow Engine Migration
 
@@ -456,8 +471,34 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | `fid workflow define/assign/list` | Define custom workflows with states, transitions, and per-transition rules. Assign per kind or per project. | PRD-WF-011–012 |
 | Escalation workflow | Default workflow for escalation kind: open → resolved (requires linked_to_decision). | PRD-WF-005a |
 | Role permissions table | Schema migration: `role_permissions` table. Seed from v0.1 code constant. Add `fid role create` and `fid policy set`; `fid policy show` keeps the same CLI contract but reads from `role_permissions` after this migration. | PRD-ROLE-006, TRD-ARCH-010 |
+| Gate-obligation seams | Rule vocabulary reserved and rule-parameter shapes designed so transitions can later require versioned gate obligations (`required_gates_current`) and structured completion (`has_completion`) without re-migrating: `workflow_transition_requires.params_json` schema accommodates gate ID/version sets. Seam only — no receipt behavior in this slice. | PRD-WF-014–015 (seam), DEC-066 |
 
-### v0.2b — Governance Entities
+### v0.2b — Evidence Foundation (new, DEC-059/060/061)
+
+| Item | Description | PRD/TRD Refs |
+|---|---|---|
+| Gate registry | `.fid/gates.toml`: versioned gate definitions (structured argv, cwd, timeout, env allowlist). Registry parsing/validation in new `internal/gates/`. No implicit shell. | PRD-GATE-001, TRD-SEC-005–006 |
+| Run git context (pulled forward) | Auto-captured read-only git context via new `internal/gitctx/` (branch, base/head commit, dirty, worktree), flag override, graceful degradation. Additive `agent_runs` migration. Receipts require repository binding, so this lands here rather than in v0.2e. | PRD-OPS-017 |
+| Registered execution + receipts | `fid gate run`: execution-start fact before spawn, terminal receipt after termination (pass/fail/timed_out/cancelled/harness_error), repository identity + tree hash, toolchain fingerprint, bounded sanitized excerpts, hashes, redaction/truncation flags. Two-event honesty model; abandoned starts satisfy nothing. | PRD-GATE-002–003, 006, TRD §4.3/§4.7, TRD-ARCH-016–017 |
+| Trust source + legacy projection | `executed`/`attested`/`reported` classification. Legacy `gate_runs` project as `reported`; deprecated `fid dev gate` keeps working with a visible trust line. Old and trusted modes never look identical. | PRD-GATE-004, PRD-DEV-004/010 (amended) |
+| Attested receipt import | `fid gate import` validating the versioned attestation contract; rejection before append on missing/unacceptable trust source. | PRD-GATE-005, TRD-SEC-009 |
+| Output security + artifacts | Secret scrubbing, env allowlist, output bounding, content-addressed full logs under `.fid/artifacts/` with retention policy; journal keeps only safe metadata/excerpts/hashes. | PRD-GATE-007, TRD-SEC-007–008 |
+| Evidence records + freshness | `evidence_records`/`evidence_links` entities; validity separate from existence (`current`/`stale`/`missing`/`unverifiable`/`inapplicable`); conservative whole-tree staleness rule. `fid evidence check` pulled forward from v0.4 with receipt freshness reporting. | PRD-EVID-001–004, 006, PRD-QA-009 (amended) |
+| `required_gates_current` rule | Transition rule requiring current trusted passing receipts for named gate IDs/versions; machine-readable rejection naming the unmet obligation. | PRD-WF-015 |
+| Maintenance checks | Abandoned execution-start warnings; receipt/evidence structural checks in `fid maintenance check`. | PRD-GATE-002, PRD-OPS-005–008 |
+| Capability discovery | `fid capabilities`: fid version, event/projection schema versions, named capability flags. JSON/TOON contract for workflow kits; consumers stop on missing capabilities, never silently downgrade evidence. | PRD-OPS-023, TRD-ARCH-018 |
+| Compatibility migration | Versioned journal events + projection migration for all new entities; golden replay fixtures including abandoned starts; v0.1 history never rewritten. | DEC-066, TRD-ARCH-002–003, 017 |
+
+### v0.2c — Lean Completion (new, DEC-062)
+
+| Item | Description | PRD/TRD Refs |
+|---|---|---|
+| `has_completion` rule | Structured completion transition rule: append-only completion row + applicable AC, concern, receipt, and evidence-obligation checks. Additive workflow/profile change; `has_completion_report` keeps working. | PRD-WF-014 |
+| Lean `fid dev finish` | `--completion-md` required only under report-based profiles; optional `--summary-md` authored summary. Trusted-mode completions link receipts by ID instead of snapshotting gate JSON. | PRD-DEV-001–004 (amended), PRD-WF-014 |
+| Completion views | `fid report completion --task`: generated JSON/TOON/Markdown/HTML view from commits/files, receipts, evidence links, AC coverage, telemetry, interventions, concerns, decisions, optional summary. | PRD-OUT-025 |
+| Human-outcome evidence | Manual Human evidence records (actor, checklist item, outcome, timestamp, note) satisfying human-judgment obligations only. | PRD-EVID-005 |
+
+### v0.2d — Governance Entities (formerly v0.2b)
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
@@ -470,28 +511,39 @@ packs, and comments. This is where cross-epic analytical value compounds.
 | `fid comment add` | Comments on issues, decisions, escalations, requirements. `--on <type>/<id> --body-md --by <role>`. | PRD-GOV-008 |
 | Links expansion | Link endpoints expand to `decision` and `escalation`. | PRD-LINK-007 |
 
-### v0.2c — Reports and Context Packs
+### v0.2e — Reports, Context Packs, Run Ops, Economics (formerly v0.2c)
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | Named reports | `fid report epic-status`, `open-escalations`, `ac-matrix`, `epic-wrapup-pack`, `task-hygiene`, `stale-claims`. `fid report list`. `qa-blockers` waits for v0.3 QA findings. | PRD-OUT-006–007 |
-| Attention report | `fid report attention`: pull-based human-judgment digest grouped by reason (open/stale escalations, epics awaiting approval, dead-end blocked, human claims). Audience-tagged; reasons light up as source entities ship. Read-only, no schema. | PRD-OUT-020 |
+| Attention report | `fid report attention`: pull-based human-judgment digest grouped by reason (open/stale escalations, epics awaiting approval, dead-end blocked, human claims). Audience-tagged; receipt/validation reasons light up as sources ship. Read-only, no schema. | PRD-OUT-020 |
 | Lightweight search | `fid search <term>` over structured projected fields with filters for kind, status, label, epic, inbox, and format. Literal/case-insensitive only; no custom DSL. | PRD-OUT-018 |
 | Context packs | `fid issue get <id> --context-pack <role>`. Built-in packs: developer, qa_reviewer, qa_lead, tl_lite, tl. Role-tuned bundles. | PRD-OUT-005 |
 | `fid changes` | Entity-grouped change digest: net field changes plus newly-added child facts since an anchor (event ID or timestamp), scoped by `--epic`/`--entity`. Aggregated from `activity_log`; distinct from chronological `fid activity list`. Extensible anchor resolver; role shaping deferred. | PRD-OUT-019 |
 | Ready-queue explain | `fid ready --explain [--limit N] [--include-blocked]`: ranked candidates with deterministic `order_factors` + typed skip reasons (`blocked_by`/`claimed`/`sequence_wait`/`not_actionable`) + stale-claim flags. Default single-task output frozen; surfaces the existing rule, no new ranking semantics. | PRD-ISSUE-024 |
 | Inbox promote primitive | `fid issue update --epic`/`--inbox`: assign/clear a task's epic parent (null↔epic; sequence required for sequential) and toggle the inbox flag, completing the capture→promote flow. Formal `fid intake` verbs deferred. | PRD-ISSUE-025 |
 | `--dry-run` (all writes) | Universal write-preview flag: validate and build the would-be event, return the result plus an effect preview, append nothing. Exit code mirrors the simulated outcome. Relies on the v0.1 write-path seam (TRD §4.3) that separates validate/build from append. | PRD-OPS-015 |
-| Run git context | Auto-captured read-only git context (branch, base/head commit, dirty, worktree) on `agent_runs`, with flag override and graceful degradation outside a repo. New `internal/gitctx/`. Additive migration to `agent_runs`. | PRD-OPS-017 |
 | Run lifecycle + `fid run list/show` | `agent_runs.status` (open/closed/abandoned); `fid run list --open\|--abandoned` and `fid run show <run-id>`. | PRD-OPS-018 |
 | `fid dev resume` / `fid dev abandon` | Resume re-acquires the claim, opens a new run linked via `resumed_from_run_id`, returns git resume hints (no git operations). Abandon releases the claim and marks the run abandoned, preserving the row. | PRD-OPS-019 |
 | Stats expansion | `fid stats tasks --include est-vs-actual`, `fid stats attempts` (rework rate), `fid stats gates`, `fid stats interventions`. | PRD-TELEM-005–006 |
+| Trajectory economics | Additive `agent_runs` columns and stats for wall duration, retries, resumptions, observable context compactions, tool/harness failures, normalized failure class, Human interventions/minutes, review findings, escaped defects. Unknown values stay null — never agent-estimated. | PRD-TELEM-007 |
 | `fid merge --journal` | Replay foreign journal with conflict detection using v0.1 event preconditions. Useful for recovered worktrees. | PRD-OPS-011 |
 | `fid event revert` | Compensating-event correction: **inverse** mode restores mutable-state effects (transitions, field/label/link changes) under an effect precondition; **retraction** mode withdraws append-only facts (AC verifications, concerns, comments, triage) preserving the row. Creations/completions/claims/composites ineligible → forward domain guidance. Type-keyed, extensible. No bespoke domain-correction verbs. | PRD-OPS-014 |
 
 **v0.2 exit criteria:**
 
 - Custom workflows can be defined and assigned. v0.1 defaults migrate cleanly.
+- Registered gates execute with trusted receipts; timeout/signal/crash paths
+  never fabricate a pass; abandoned starts surface in maintenance.
+- Reported evidence is visibly distinct from trusted receipts and cannot
+  satisfy trusted obligations; v0.1 history projects as `reported` unchanged.
+- A tree change stales receipts and blocks transitions requiring current
+  evidence; journal rebuild reproduces receipt/evidence/freshness state.
+- Completion without a Markdown report succeeds under structured-completion
+  profiles when all obligations are met; completion views generate from
+  structured state.
+- `fid capabilities` lets a workflow kit integrate and fail cleanly without
+  touching SQLite or `.fid/` internals.
 - Decisions, escalations, triage events, and requirements have full CLI surface.
 - Comments work on all scoped entity types.
 - Named reports answer common cross-cutting questions in single commands.
@@ -502,42 +554,59 @@ packs, and comments. This is where cross-epic analytical value compounds.
 
 ---
 
-## v0.3 — QA Layer, Templates, TUI
+## v0.3 — Work Envelope, QA Layer, Templates, TUI
 
-**Goal:** Ship QA reviews and findings, QA plans, the template engine, TUI
-kanban board, and CLI/skill-first agent workflow guidance. Enables the full agentic task loop
-(TL plan → Developer execute → QA review → TL wrap-up) through fid.
+> **Re-sliced 2026-07-18 (DEC-063/064/066).** The work envelope and runner
+> primitives lead the version (promoted from the conditional task pack) so a
+> deterministic runner can adopt fid after the v0.2c lean completion path.
+> QA entities link first-class receipts/evidence from their first
+> implementation — no embedded path/string references that would immediately
+> need migration.
 
-### v0.3a — QA Reviews and Findings
+**Goal:** Ship work envelopes with orchestration primitives, QA reviews and
+findings with structured coverage, QA plans, the template engine, TUI kanban
+board, and CLI/skill-first agent workflow guidance. Enables the full agentic
+task loop (TL plan → Developer execute → QA review → TL wrap-up) through fid
+with mechanical enforcement in fid, not prompts.
+
+### v0.3a — Work Envelope and Runner Primitives (promoted, DEC-063)
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| QA tables | `qa_reviews`, `qa_findings`, `qa_review_task_window`. | PRD-QA-001–005 |
-| `fid qa-review create/get/list` | Polymorphic scope: epic_window, single_task, epic_full. Record which tasks are covered for window scope. | PRD-QA-001–002 |
-| `fid qa-finding add/list` | Findings with severity, status, task subject, evidence excerpt. Escalation from blocking findings. | PRD-QA-003–005 |
+| Work envelope entity | Versioned, structured envelope: epic/phase outcome, risk lane, approved authority, protected decisions, task graph, validation and gate obligations, budgets, stop conditions. `fid envelope apply` ingests a reviewed envelope create-only as one journal event with a source-ref→fid-id mapping, `--validate`/`--dry-run` modes. Schema versioned and locked at build. | PRD-OPS-021 |
+| Orchestration primitives | Next actionable work with typed skip reasons (`fid next`, superset of `fid ready --explain`); claim/lease + resumable run state (existing surfaces); retry/intervention budgets and circuit-breaker state; machine-readable transition rejection and stop reasons; attention items requiring Human or product/architecture judgment (`fid envelope status`). No LLM loop, no agent spawning, no scheduler. | PRD-OPS-022, TRD-ARCH-016 |
+| Runner-kit contract | JSON/TOON contracts for envelope state, rejections, and stop reasons so a deterministic runner (separate kit component) drives the loop without SQLite/`.fid/` internals. | TRD-ARCH-018, PRD-OPS-023 |
+
+### v0.3b — QA Reviews and Findings
+
+| Item | Description | PRD/TRD Refs |
+|---|---|---|
+| QA tables | `qa_reviews`, `qa_findings`, `qa_review_task_window`, plus structured coverage fields: review profile, risk dimensions, files/contracts examined, receipts reproduced, verdict. Review evidence links `evidence_records`/receipts by ID from day one. A complete review with zero findings is a valid outcome. | PRD-QA-001–005, 010 |
+| `fid qa-review create/get/list` | Polymorphic scope: epic_window, single_task, epic_full. Record which tasks are covered for window scope. Profiles (security/code/validation/ux/data/performance) are configuration over the common review contract, not entity types. | PRD-QA-001–002, 010 |
+| `fid qa-finding add/list` | Findings with severity, status, task subject, evidence excerpt plus evidence-record links. Escalation from blocking findings. | PRD-QA-003–005 |
 | `fid report qa-blockers` | Blocking QA findings report; ships with `qa_findings` so it has a first-class source table. | PRD-OUT-006 |
 | QA review claims | Claims expand to `qa_reviews`. `fid qa-review claim/unclaim`. | PRD-CLAIM-009 |
 | QA composites | `fid qa start`, `fid qa finding`, `fid qa verify`, `fid qa finish`. | PRD-QA-008 |
 | Comment scope expansion | Comments on `qa_review` entities. | PRD-GOV-008 |
 
-### v0.3b — QA Plans
+### v0.3c — QA Plans
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| QA plan tables | `qa_plans`, `qa_plan_steps`. `qa_reviews` gains nullable `plan_id` FK. | PRD-QA-006 |
+| QA plan tables | `qa_plans`, `qa_plan_steps`. `qa_reviews` gains nullable `plan_id` FK. Step evidence methods reference gate IDs / evidence types, not display strings. | PRD-QA-006, PRD-EVID-006 |
 | `fid qa-plan create/get/list` | QA plan per epic with optional contract reference (nullable until v0.4). | PRD-QA-006 |
 | `fid qa-plan step add/list/link` | Ordered steps with evidence method and validator role. Display IDs `QA-NN`. Link to assertions deferred to v0.4. | PRD-QA-006 |
 | `fid qa-plan finalise` | Coverage rule enforcement (no-op for contract rules until v0.4). | PRD-QA-007 |
 
-### v0.3c — Templates
+### v0.3d — Templates
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
 | Templates table and CLI | `templates` table. `fid template create/list/show`. Monotonic versioning per (kind, name). Built-in kinds: task_spec, subtask_spec, qa_plan, qa_review, human_checklist, decision_record, completion_report, epic_brief, triage_log_entry, retro_lightweight. | PRD-OUT-012 |
 | Template provenance | Add `created_from_template_{kind,name,version}` columns to `issues`, `task_completions`, `qa_reviews`, `decisions`. Populated when `--from-template` is used. | PRD-OUT-013 |
-| Template-driven validation | Templates declare required sections. `fid dev finish` validates completion reports against the `completion_report` template (e.g., requires `## Concerns` heading). Rejects malformed artifacts. | PRD-OUT-014, TRD-ARCH-015 |
+| Template-driven validation | Templates declare required sections. Where a profile still requires completion Markdown, `fid dev finish` validates reports against the `completion_report` template; structured-completion profiles skip it (PRD-WF-014). | PRD-OUT-014, TRD-ARCH-015 |
 
-### v0.3d — TUI and Agent Skills
+### v0.3e — TUI and Agent Skills
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
@@ -545,11 +614,15 @@ kanban board, and CLI/skill-first agent workflow guidance. Enables the full agen
 | Agent skills | Fid-aware skills and examples for coding agents that use `fid --help`, JSON/TOON output, and shell commands. No MCP server, daemon, or network listener is committed in v0.3. | PRD-OPS-010, TRD-ARCH-013 |
 | `fid handoff` | Handoff pack composition: `fid handoff --role <role> --issue <id>` composes context pack + workflow/permission-derived manifest (required reads, commands, stop conditions, expected writes, live blockers) + handoff template into a prompt and a machine-readable manifest. Role is a parameter; read-only. New `internal/handoff/`. | PRD-OUT-021 |
 | **Conditional:** `fid query` DSL | Only if v0.2 search, named reports, and read-only SQL leave meaningful gaps. Grammar specced based on uncovered queries from real usage. | — |
-| **Conditional:** `fid task-pack apply` | Bulk create-only ingestion of a reviewed structured task pack (epic + tasks + ACs + links) as one journal event with a source-ref→fid-id map. Only if v0.1–v0.2 dogfooding proves TL planning ingestion is real friction. Structured input only; not markdown import. Schema locked deliberately at build. | PRD-OPS-020 |
 
 **v0.3 exit criteria:**
 
+- A reviewed work envelope ingests in one transaction; a deterministic runner
+  can drive the loop through machine-readable primitives with budgets,
+  circuit-breaker state, and typed stop reasons.
 - Full QA review lifecycle: create → add findings → complete, with escalation.
+- QA reviews carry structured coverage and link receipts/evidence by ID;
+  a zero-finding complete review is accepted.
 - QA plans with ordered steps work for epic-level verification design.
 - Templates with versioning and structural validation prevent malformed artifacts.
 - TUI board provides useful kanban visualisation.
@@ -559,11 +632,19 @@ kanban board, and CLI/skill-first agent workflow guidance. Enables the full agen
 
 ---
 
-## v0.4 — Validation Contracts, Retros, Export
+## v0.4 — Validation Contracts, Retros, Human Brief, Export
+
+> **Re-sliced 2026-07-18 (DEC-064/066).** The generated human validation
+> brief lands *before* one-way markdown export so human/report projections
+> follow the structured state they render. `fid evidence check` moved to
+> v0.2b (evidence foundation) and is no longer a v0.4 item. Validation
+> outcomes link first-class evidence records/receipts from their first
+> implementation.
 
 **Goal:** Ship the validation contract layer, retrospectives, carry-forward
-items, markdown export, saved views, and computed retrospective signals.
-Validation contract outcomes become the primary wrap-up signal.
+items, the generated human validation brief, markdown export, saved views,
+and computed retrospective signals. Validation contract outcomes become the
+primary wrap-up signal.
 
 ### v0.4a — Validation Contracts
 
@@ -572,13 +653,12 @@ Validation contract outcomes become the primary wrap-up signal.
 | Contract tables | `validation_contracts`, `validation_assertions`, `validation_assertion_validators`, `qa_plan_step_assertions`, `val_assertion_outcomes`. Add nullable `acceptance_criteria.val_assertion_id` FK. | PRD-VAL-001–008 |
 | `fid contract create/get/activate` | Contracts per epic with draft/active/superseded status. | PRD-VAL-001 |
 | `fid assertion add/get/list` | Assertions with `VAL-NNN` display IDs, statements, carry-forward source. | PRD-VAL-001 |
-| `fid assertion validator add` | Required validator/evidence obligations per assertion. | PRD-VAL-002 |
+| `fid assertion validator add` | Required validator/evidence obligations per assertion; deterministic methods reference gate IDs / evidence types, not display strings. | PRD-VAL-002, PRD-EVID-006 |
 | `fid assertion link-ac` | Link ACs to assertions for traceability. | PRD-VAL-006 |
 | `fid qa-plan step link` | Link plan steps to assertions. | PRD-VAL-007 |
-| `fid outcome record/list` | Append-only outcomes: pass/fail/carry_forward. Pass requires evidence. Carry_forward requires rationale. | PRD-VAL-003–005 |
+| `fid outcome record/list` | Append-only outcomes: pass/fail/carry_forward. Pass requires evidence — deterministic evidence by evidence-record/receipt ID (PRD-VAL-004 as amended); Human evidence as recorded human outcomes. Carry_forward requires rationale. | PRD-VAL-003–005, PRD-EVID-004–005 |
 | Coverage rule enforcement | At `fid qa-plan finalise`: every requirement has an assertion, every assertion has a validator and a plan step, every pass has evidence. | PRD-VAL-008, PRD-QA-007 |
 | Contract reports | `fid report contract-coverage`, `assertion-trace`, `contract-outcomes`. | PRD-OUT-011 |
-| `fid evidence check` | Read-only evidence-integrity check: resolves cited refs on AC verifications, findings, and validation outcomes (commits via local git, files via filesystem; command/manual/url unverifiable). `--warn-as-error`. Verifier not executor; no schema, no registry. New `internal/evidence/`. | PRD-QA-009 |
 
 ### v0.4b — Retrospectives and Carry-Forward
 
@@ -586,22 +666,32 @@ Validation contract outcomes become the primary wrap-up signal.
 |---|---|---|
 | `carry_forward` table and CLI | Status: open, scheduled, closed, principled. `scheduled_epic_id` for future work. `promoted_principle` flag for principles rendering. | PRD-GOV-009–010 |
 | `retrospectives` table and CLI | Per-epic, lightweight or deep type. Recommendation field. `notes_md_path`. | PRD-GOV-011 |
-| Computed retro signals | Token-budget overruns, finding density, AC verification gap, contract pass-rate, carry-forward count. | spec §16 v0.4 |
+| Computed retro signals | Token-budget overruns, finding density, AC verification gap, contract pass-rate, carry-forward count — extended by the v0.2e economics columns (retries, interventions, failure classes). | spec §16 v0.4, PRD-TELEM-007 |
 | Recurring-pattern reports | `fid report recurring-findings`/`recurring-concerns`/`recurring-patterns`: deterministic grouping of findings/concerns/gates/triage/VAL failures by structured dimension, ranked as principle candidates. Surfaces candidates only — no ML, no fid-authored prose. | PRD-OUT-023 |
 
-### v0.4c — Export and Views
+### v0.4c — Human Validation Brief (new, DEC-064)
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| `fid export` | One-way markdown export. Default `whet` layout (docs/current/, docs/epics/<id>/tasks/, docs/epics/<id>/qa/, docs/reviews/). Frontmatter contract with YAML structured fields. "Generated by fid" banner. Config: `.fid/config.toml` `[export]` section. `--to`, `--epic`, `--since` flags. | PRD-OUT-009–010, TRD-ARCH-014 |
+| `fid report validation-brief` | Generated human validation brief per epic: outcomes delivered and user-visible changes; product/architecture/data/dependency/security decisions; deviations, unresolved risks, failed/carried-forward obligations, open escalations; receipt and validation roll-up with spend, retries, interventions; remaining human-only checks. JSON/TOON/Markdown/HTML. | PRD-OUT-024 |
+| Attention report growth | `fid report attention` gains `blocking_finding_open` (v0.3 sources) and `validation_failed`/`validation_carried_forward`/`stale_receipt` reasons now that sources exist. | PRD-OUT-020 |
+
+### v0.4d — Export and Views
+
+| Item | Description | PRD/TRD Refs |
+|---|---|---|
+| `fid export` | One-way markdown export. Default `whet` layout (docs/current/, docs/epics/<id>/tasks/, docs/epics/<id>/qa/, docs/reviews/). Frontmatter contract with YAML structured fields. "Generated by fid" banner. Config: `.fid/config.toml` `[export]` section. `--to`, `--epic`, `--since` flags. Renders generated completion views and the validation brief; exports never displace structured state as the source of truth. | PRD-OUT-009–010, 025, TRD-ARCH-014 |
 | `views` table and CLI | Saved read-only queries. Start with SQL-backed views; any DSL-backed view kind requires the conditional query decision to be accepted first. `fid view create/run/list`. | PRD-OUT-016 |
 
 **v0.4 exit criteria:**
 
 - Validation contracts with assertions, required validators, and outcomes provide
-  full traceability from requirements through to evidence.
+  full traceability from requirements through to first-class evidence
+  (receipts/evidence records by ID, not embedded strings).
 - Coverage rules enforce that every assertion has evidence.
 - Contract-coverage, assertion-trace, and contract-outcomes reports work.
+- The generated human validation brief covers an epic's closure judgment
+  without hand-authored wrap-up prose.
 - Retrospectives and carry-forward items support epic wrap-up discipline.
 - Markdown export produces a human-readable project tree with frontmatter.
 - All v0.4 PRD requirements have passing tests.
@@ -611,7 +701,10 @@ Validation contract outcomes become the primary wrap-up signal.
 ## v0.5 — Polish (Tentative)
 
 **Goal:** Improve the user experience with a web dashboard, cycles support,
-and conditional features based on usage evidence.
+and conditional features based on usage evidence. Per DEC-066 these items are
+explicitly *deferrals behind* the evidence foundation: neither the dashboard,
+the MCP evaluation, nor markdown import/sync may be pulled forward in place
+of receipt/evidence work.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
@@ -654,6 +747,10 @@ and conditional features based on usage evidence.
 | Scope creep from v0.1 into later version features | Medium | Medium | Stub tables with "ships in vN" CLI guard. PRD traceability table enforces version boundaries. |
 | Agent implementation quality degrades for under-designed commands | High | High | Design Plan output examples for every v0.1 command (audit recommendation #2). |
 | Premature MCP adapter duplicates the CLI and weakens no-listener guarantees | Medium | Medium | Keep v0.3 CLI/skill-first. Evaluate MCP only after dogfooding proves a concrete MCP-only client need and a threat model exists. |
+| Gate execution leaks secrets or oversized output into the committed journal | Medium | High | Env allowlist, secret scrubbing, bounded excerpts + hashes, content-addressed local artifacts (TRD-SEC-007/008); quality-plan scenario 5 (§5.10). |
+| Crash between execution start and receipt fabricates or loses evidence | Medium | High | Two-event honesty model (TRD §4.3): a crash can lose a pass but never fabricate one; abandoned starts surface in maintenance; golden replay fixtures include the abandoned path. |
+| Trusted/reported evidence blur lets old data satisfy new obligations | Medium | High | Explicit `trust_source` on every row; legacy `gate_runs` project as `reported`; obligations accept only `executed`/`attested`; visible trust line on deprecated `fid dev gate`; capability discovery stops consumers instead of silent fallback (TRD-SEC-009, PRD-OPS-023). |
+| Conservative whole-tree freshness proves too expensive in dogfood | Medium | Medium | Deliberate: measure during v0.2b–v0.2c dogfood; path-aware invalidation only with cost evidence, a sound affected-path model, and a recorded decision (PRD-EVID-003). |
 
 ---
 
@@ -666,19 +763,35 @@ v0.1a Persistence Foundation
               └──► v0.1d Claims, Permissions, Links
                     └──► v0.1e Telemetry, Composites, Maintenance
 
-v0.1 ──► v0.2a Workflow Engine Migration
-           └──► v0.2b Governance Entities
-                 └──► v0.2c Reports and Context Packs
+v0.1 ──► v0.2a Workflow Engine Migration (+ gate-obligation seams)
+           └──► v0.2b Evidence Foundation (registry, receipts, trust,
+                 │     freshness, gitctx, capabilities)
+                 └──► v0.2c Lean Completion (has_completion, views,
+                       │     human-outcome evidence)
+                       └──► v0.2d Governance Entities
+                             └──► v0.2e Reports, Context Packs, Run Ops,
+                                   Economics
 
-v0.2 ──► v0.3a QA Reviews ──► v0.3b QA Plans
-         v0.3c Templates (parallel with QA)
-         v0.3d TUI + Agent Skills (parallel, after QA tables exist)
+v0.2 ──► v0.3a Work Envelope + Runner Primitives (needs lean completion)
+         v0.3b QA Reviews (evidence-linked) ──► v0.3c QA Plans
+         v0.3d Templates (parallel with QA)
+         v0.3e TUI + Agent Skills + Handoff (parallel, after QA tables exist)
 
-v0.3 ──► v0.4a Validation Contracts
+v0.3 ──► v0.4a Validation Contracts (evidence-record outcomes)
          v0.4b Retros + Carry-Forward (parallel)
-         v0.4c Export + Views (parallel, after contracts)
+         v0.4c Human Validation Brief (after contracts)
+         v0.4d Export + Views (after brief — projections follow state)
 
-v0.4 ──► v0.5 Polish (conditional items)
+v0.4 ──► v0.5 Polish (conditional items; never displaces evidence work)
 ```
 
-*Last updated: 2026-07-11*
+Dependency rules preserved from DEC-066: workflow obligations reference
+stable gate definitions (v0.2a seam → v0.2b registry); receipt/evidence
+identity exists before QA (v0.3b) and validation (v0.4a) entities depend on
+it; the lean completion path (v0.2c) exists before a workflow kit adopts fid
+(v0.3a); human/report projections (v0.4c/v0.4d) follow the structured state
+they render; dashboard, MCP, and markdown sync (v0.5) do not displace the
+evidence foundation.
+
+*Last updated: 2026-07-18 (re-sliced per DEC-066; see
+`project-docs/docs/reviews/2026-07-18-roadmap-update-decisions.md`)*
