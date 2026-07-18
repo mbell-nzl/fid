@@ -139,6 +139,18 @@ Use when: auditing whether a completion has attributable run telemetry.
 Avoid: treating the warning as DB corruption or inferring linkage from matching
 issue ID/timestamp proximity.
 
+**Clock-relative read**:
+A read whose value is a function of `(projected state, wall-clock now)` rather
+than of derived state alone, e.g. `maintenance check` `info.recent_activity_7d`
+(a `now`-anchored window) and `info.claim_count_live` (TTL liveness at `now`).
+Because `now` is an input the journal does not reproduce, a clock-relative read
+is not a rebuild-parity observable and is excluded from delete-and-rebuild
+equality checks.
+Use when: reasoning about which outputs rebuild must reproduce exactly.
+Avoid: asserting equality of a clock-relative read across two invocations
+separated by real elapsed time, or treating its movement as lost/duplicated
+projection.
+
 **Requirement**:
 A pointer to a PRD/TRD source section, not a copy of the requirement text.
 Stored as `requirements` rows with source document, source section, summary

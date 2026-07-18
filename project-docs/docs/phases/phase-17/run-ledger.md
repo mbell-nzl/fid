@@ -248,3 +248,21 @@ Entry types, in the order they typically occur. Timestamps are
 - Commit: `7119d5b38d79663f544f093d55f676c375746419` - verified, subject matched
 - Diagnostic: Branch A; the no-rebuild control reproduced `recent_activity_7d` movement (`17` then `20`), so the amended parity method was used and no product code changed
 - QA-plan commands beyond the task spec: none required
+
+### 2026-07-18 10:18 REVIEW final-review
+
+- Path: `project-docs/docs/phases/phase-17/qa/final-review.md`
+- Human checklist: `project-docs/docs/phases/phase-17/qa/human-checklist.md`
+- Tasks covered: `phase-17/task-0` through `phase-17/task-9`
+- Blocking: 0
+- Improvement: 0
+- ESC raised: none
+- Verdict: PASS
+- Commit: `f91c5ec66e0d9e78411d96d32fa99d57d08e7d2e` - verified, subject matched
+- Human checklist commit: `499fd898a432c73835def92ed87891b753b54ee3` - verified, subject matched
+
+### 2026-07-18 10:18 RUN-END
+
+- Branch: `phase-17`
+- Outcome: Phase 17 complete; VAL-001 through VAL-025 are resolved and VAL-025 is accepted by the Human
+- Ready for Tech Lead wrap-up: yes

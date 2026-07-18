@@ -256,3 +256,178 @@ table does not substitute for the wrap audit.
   `project-docs/agents/` + `sync-agents.sh`.
 - **Refs:** TRG-002/003/004; ESC-004; DEC-053; completion-report template;
   `project-docs/tools/report-lint.sh`; `project-docs/agents/developer.md`.
+
+## Wrap-Up (2026-07-18)
+
+### DEC-057: v0.1 is closed for early dogfood
+
+- **Date:** 2026-07-18
+- **Context:** Phase 17 is the final v0.1 slice (roadmap v0.1e, slice 4 of 4).
+  The QA Lead final review records PASS with no Blocking or Major finding and
+  VAL-001..024 PASS; the Human checklist records HUMAN-25a..e PASS and an
+  overall PASS, resolving VAL-025. The run ledger records RUN-END with
+  "Phase 17 complete; VAL-001 through VAL-025 are resolved and VAL-025 is
+  accepted by the Human."
+- **Decision:** Declare the roadmap **v0.1 milestone closed**. Every
+  v0.1-targeted PRD row maps to reproducible passing evidence (VAL-024 audit,
+  101 rows plus PRD-ERR-012), the static binary is 12,869,586 bytes (<30 MB),
+  and the Human has accepted v0.1 for continued real-work dogfood.
+- **Consequences:** No active phase remains. The next planning checkpoint slices
+  roadmap **v0.2a — Workflow Engine Migration** into a new approved phase; v0.2
+  work does not start inside this closure phase. Public-release maturity
+  (threat model, SAST/scans, pre-release checklist, held-out scenarios) stays
+  deferred to v0.3 per DEC-049 and `08_QUALITY_PLAN.md` sections 5.8/7/9.
+- **Refs:** VAL-024/025; final-review.md; human-checklist.md; run-ledger RUN-END;
+  `10_IMPLEMENTATION_ROADMAP.md` v0.1 exit criteria.
+
+### DEC-058: Report-lint / completion-report friction is deferred to a workflow-tooling pass
+
+- **Date:** 2026-07-18
+- **Context:** WN-1 and the escalation-archive retrospective candidate record
+  that five of eight Phase 17 triages (TRG-002/003/004/005/007) were the same
+  report-lint commit-metadata defect, three of which escalated (ESC-004/005/011).
+  The recurrence began after the Developer prompt and DEC-053 Codex routing were
+  both updated, so it is plausibly a prompt/model-fit + template-affordance
+  problem, not a judgment problem.
+- **Decision:** Do not hand-edit prompts or tooling during this doc-only wrap.
+  Carry the fix forward as **CF-023** (workflow-tooling hardening) and flag it
+  for the deep retrospective. Scope: (a) a worked backtick-wrapped
+  `## Commit hash` / `## Commit subject` example in the completion-report
+  template, (b) an explicit Developer-prompt instruction that the completion
+  report is its own committed `docs(task)` step and must be clean before
+  report-lint, and (c) report-lint messaging that distinguishes an
+  uncommitted/dirty report from a parse failure.
+- **Consequences:** The friction is tracked durably rather than lost, and any
+  prompt/template/tooling change goes through `project-docs/agents/` +
+  `sync-agents.sh` / template edits with `workflow-lint.sh` verification in a
+  dedicated pass, not ad hoc at wrap.
+- **Refs:** WN-1; TRG-002/003/004/005/007; ESC-004/005/011; CF-023;
+  completion-report template; `project-docs/tools/report-lint.sh`;
+  `project-docs/agents/developer.md`.
+
+### VAL outcome audit
+
+All 25 assertions have terminal outcomes; none is FAIL or BLOCKED at wrap.
+
+| Outcome | Assertions | Disposition |
+|---|---|---|
+| PASS | VAL-001..024 (QA final review) and VAL-025 (Human checklist, HUMAN-25a..e PASS) | Accept; no action. |
+| Amended-then-PASS | VAL-022 (narrowed under DEC-056, Branch A confirmed); VAL-023 unblocked with it | Deviation recorded in the contract revision log; the future-`occurred_at` interaction is carried as CF-020. |
+| Deferred product follow-up | CF-020 (from DEC-056) | Re-defer to v0.2; bounded, self-correcting, does not block v0.1 closure. |
+
+### Full canonical spec-sync verdicts
+
+| Spec | Verdict | Note |
+|---|---|---|
+| `00_PROJECT_CHARTER.md` | verified-no-change | v0.3 public-release scope and deferrals unchanged; Phase 17 is v0.1 dogfood closure. |
+| `GLOSSARY.md` | touched: see DEC-050 (kickoff), DEC-056 (this wrap) | Kickoff added started-without-claim, stale verification, telemetry gap; wrap adds Clock-relative read. |
+| `01_PRD.md` | touched: see DEC-050/052 (kickoff) | Clarified PRD-OPS-008 and PRD-ERR-012 at kickoff; verified-no-change at wrap. |
+| `02_TRD.md` | verified-no-change | Vacuum reuses §4.3 lock and §13 VACUUM; DEC-056 authorized no shipped-behavior change, so no new boundary. |
+| `03_TRD_SCHEMA.md` | verified-no-change | No schema/trigger change; maintenance reads existing v0.1 tables and stub tables. |
+| `04_TRD_CONFIG.md` | touched: see DEC-050 (kickoff) | Added the maintenance grace contract at kickoff; verified-no-change at wrap. |
+| `05_DESIGN_PLAN.md` | touched: see DEC-051 (kickoff) | Added maintenance result/exit semantics at kickoff; verified-no-change at wrap. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-051/052 (kickoff), Task 6 (§19 vacuum) | Maintenance truth table, exact guard matrix, and vacuum CLI recorded; verified-no-change at wrap otherwise. |
+| `07_DESIGN_PLAN_FLOWS.md` | verified-no-change | QA-18 found no shipped-flow drift. |
+| `08_QUALITY_PLAN.md` | verified-no-change | COV-001 threshold unchanged (Task 0 restored coverage, no waiver, DEC-054); v0.3 deferrals unchanged. |
+| `09_AI_WORKFLOW.md` | verified-no-change | DEC-053 Codex routing lives in `project-docs/agents/`, not the workflow spec; report-lint/ESC-uniqueness fixes deferred to CF-023, not a wrap edit. |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-052 (kickoff), VAL-024 unblock (four-format rows) | Stub `etc.` replaced with the approved guard set; maintenance rows now name json/toon/markdown/yaml; verified-no-change at wrap. |
+
+### QA final-review recommendation dispositions
+
+QA Lead recorded no Blocking or Major finding. Three Improvement findings:
+
+| Finding | Disposition |
+|---|---|
+| Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum` (Review 3 / STRUCT-003). | Carry-forward CF-021; do at next `internal/maintenance` reopen. |
+| Add broader exact-output markdown characterizations (Review 1). | Carry-forward CF-022; do at next `internal/format` markdown reopen. |
+| Include recurring report-lint metadata friction in the retrospective. | Done: WN-1, DEC-058, CF-023, and the deep-retrospective recommendation below. |
+
+### Triage audit
+
+Eight TL-Lite triages (TRG-001..008; note the log's own inconsistent numbering,
+reconciled against `run-ledger.md` and the WRAP-F2 register reconciliation).
+
+- **RESUME verdicts — correct in hindsight:** TRG-001 (stale ESC-009 close;
+  followed by verified Task 0 completion), TRG-002/003 (report-metadata wraps;
+  followed by verified commits), and the Task 6 handoff-scope resume
+  (ledger TRG-006 / log TRG-005+TRG-017 duplicate). Each was followed by a
+  verified passing commit. None should have escalated.
+- **BLOCK verdicts — correct on the evidence available:** TRG-004 (ESC-004),
+  ledger TRG-005 (ESC-005), TRG-007 (ran with no ESC ID; backfilled ESC-011),
+  and TRG-008 (ESC-010). TRG-008 was right to BLOCK a reported persistence-parity
+  failure with no verification evidence; only its *diagnosis* was rejected
+  (DEC-056, Branch A).
+- **Autonomous TL-Lite resume** remained in effect (DEC-002); no warm-up tally.
+- **Flags carried to the retrospective:** (1) TRG numbering is inconsistent and
+  contains a duplicate (Task 6 recorded as both TRG-005 and TRG-017); (2) two
+  escalations (ESC-005, and the TRG-007 BLOCK) were never written to the register
+  when raised and were backfilled at wrap; (3) ESC-NNN IDs are not globally
+  unique despite the template requiring it (collisions: ESC-001, ESC-004,
+  ESC-005 across phases).
+
+## Workflow notes
+
+**What worked well.**
+
+- Heavy Mode caught the two things it exists to catch: QA plan feasibility
+  surfaced the COV-001 shortfall *before* any product task (DEC-054 Task 0,
+  tests-only, no waiver), and phase-end QA held the VAL-022 parity assertion to
+  a discriminating diagnostic instead of accepting either the reported defect or
+  the Tech Lead's own hypothesis. The DEC-056 diagnostic-before-remediation
+  discipline avoided a needless product change to rebuild/projection.
+- Deterministic evidence held throughout: every VAL row, gate, and PRD-row map
+  cites reproducible command/test output, and the static-binary size was
+  asserted by exact shell comparison rather than prose.
+
+**What was inefficient.**
+
+- Five of eight triages were the same report-lint completion-report
+  commit-metadata defect (three escalated). That is a tooling/template
+  affordance gap, not a judgment failure — captured as DEC-058 / CF-023.
+- The escalation register drifted from the run ledger: ESC-005 and the TRG-007
+  BLOCK were never registered when raised, ESC-004 stayed stale-open past its
+  close, and ESC-NNN IDs collide across phases. The ledger, not the register,
+  was the trustworthy run state; the register had to be reconciled at wrap.
+
+**Were the tasks the right size?**
+
+Mostly yes. The ten one-session tasks each closed with a single verified
+implementation commit. Task 0 (tests-only) was correctly isolated from product
+work. Task 9 was the one heavy task — audit-only but spanning the full v0.1
+surface — and it correctly stopped for escalation (ESC-010) rather than
+absorbing a cross-subsystem fix, which is the behavior the brief demanded.
+
+**Did QA cadence feel right?**
+
+Yes. Reviews after Tasks 0, 2, 5, and 7 mapped cleanly to the entry gate,
+config/formatter, maintenance CLI, and vacuum/guard boundaries, and each singular
+`VAL-NNN` validator owner held. The entry review (Task 0) was worth its cost.
+
+**Token-efficiency opportunities missed.**
+
+The repeated report-lint stop/resume cycles (RUN-START/STOP churn across five
+runs) burned orchestration turns on a mechanical formatting defect. Fixing the
+template affordance (CF-023) is the highest-leverage token saver for the next
+phase.
+
+### Deep retrospective recommendation
+
+Recommend a focused deep retrospective on **workflow-tooling reliability**, not
+product behavior, covering three linked items surfaced this phase:
+
+1. **Report-lint / completion-report commit-metadata friction** (DEC-058,
+   CF-023): decide the template + Developer-prompt + report-lint-messaging
+   changes and whether the recurrence is prompt/model-fit from the DEC-053
+   routing change; regression-drill after any prompt edit.
+2. **Escalation-register integrity**: ESC-NNN global uniqueness (the template
+   claims IDs never reset but ESC-001/004/005 collide across phases), plus the
+   register-vs-ledger drift where escalations were raised without ever being
+   registered. Decide whether IDs become phase-qualified and whether TL-Lite
+   must confirm an ESC write before a BLOCK STOP.
+3. **TRG numbering discipline**: per-phase TRG numbering produced a duplicate
+   (Task 6 as both TRG-005 and TRG-017) and disagreed with the ledger. Decide a
+   single authoritative numbering source.
+
+These are process/tooling defects with a measurable token cost; none blocked
+v0.1, but they recurred enough to warrant a dedicated pass before v0.2a
+execution.

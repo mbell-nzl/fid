@@ -1,142 +1,54 @@
-# Phase Brief - Phase 17 (Approved; Blocked At Entry)
+# Phase Brief - No Active Phase (v0.1 closed)
 
-> **Purpose.** Default execution brief for the current phase. Full task and
-> validation detail lives in the Phase 17 archive.
+> **Purpose.** Default execution brief for the current phase. There is no active
+> phase; Phase 17 wrapped on 2026-07-18 and v0.1 is closed for early dogfood.
 >
 > **Size target:** under 150 lines.
 
-## Phase Goal
-
-Close v0.1 early dogfood with a trustworthy maintenance audit, locked SQLite
-VACUUM, explicit version guards for schema-only governance entities, and
-deterministic proof of the full implemented surface. Success means structural
-violations and operational warnings are actionable, future commands fail with
-honest version guidance, and the v0.1 journey/rebuild/format/telemetry criteria
-are evidenced rather than inferred.
-
 ## Status
 
-**Approved; blocked at entry.** The QA plan is committed but not Ready:
-QA-BLK-01 found `internal/journal` at 78.9%, and QA-BLK-02 found no DEC-053
-model-audit evidence. DEC-054 adds tests-only Task 0 for coverage. No Developer
-starts until ESC-009 is resolved and QA Lead authorizes the entry remediation.
+**No phase active.** Phase 17 (Maintenance + stub guard + v0.1 closure) is
+COMPLETE / WRAPPED. QA final review PASS, Human checklist PASS, VAL-001..025
+resolved. **v0.1 is closed for early dogfood (DEC-057).**
 
-## Operating Mode
+The next planning checkpoint slices roadmap **v0.2a - Workflow Engine Migration**
+into a new approved phase. This brief is refreshed at that kickoff.
 
-**Heavy (approved, DEC-049).** Phase 17 adds public CLI/config contracts, mutates the
-derived persistence file under lock, and closes a version. Required workflow:
-validation contract, ten task specs, fresh QA-plan feasibility validation,
-reviews after Tasks 0, 2, 5, and 7, final review, human dogfood, and
-full-scope spec sync. This is v0.1 early-dogfood closure, not the charter's v0.3
-public release; public-release threat model/scans/pre-release checklist and
-held-out scenarios remain deferred under `08_QUALITY_PLAN.md` sections 5.8/7/9.
+## Phase 17 Result (for reference)
 
-## Task Index
+- Delivered `fid maintenance check`, locked `fid maintenance vacuum`, v0.2
+  governance command guards, full four-format read conformance, and the v0.1
+  closure journey/rebuild/traceability evidence.
+- Ten tasks (0-9) closed with verified single-commit implementations under Heavy
+  Mode; reviews after Tasks 0, 2, 5, 7; final review and Human dogfood complete.
+- VAL-022 narrowed under DEC-056 (journal is the sole source of derived state;
+  clock-relative reads excluded from rebuild-equality); Branch A confirmed with
+  no product change. VAL-023 unblocked with it.
+- Full archive: `../phases/phase-17/` (tasks, qa, decisions, progress,
+  run-ledger, triage-log, tl-escalations).
 
-Full specs: `../phases/phase-17/tasks/`.
+## Open Carry-Forward Into v0.2
 
-| Task | Title | Status | Dependencies |
-|---|---|---|---|
-| 0 | Restore journal COV-001 coverage | Entry-blocked | ESC-009 + revised QA plan |
-| 1 | CF-019 markdown formatter split | Pending | Task 0 + entry review |
-| 2 | Maintenance grace config contract | Pending | DEC-050 |
-| 3 | Maintenance structural errors | Pending | DEC-049 |
-| 4 | Maintenance warnings and info | Pending | Tasks 2-3 |
-| 5 | `fid maintenance check` CLI + formats | Pending | Tasks 1, 3-4 |
-| 6 | `fid maintenance vacuum` | Pending | Task 5 parent command |
-| 7 | Governance stub-table guards | Pending | DEC-052 |
-| 8 | v0.1 read-format conformance | Pending | Task 5 |
-| 9 | Full v0.1 closure journey | Resume: DEC-056 diagnostic | Tasks 2-8; ESC-010 resolved |
+- **CF-023 (Medium, deep-retrospective flagged):** workflow-tooling hardening -
+  report-lint / completion-report commit-metadata friction and ESC-NNN global
+  uniqueness (DEC-058). Recommended before v0.2a execution.
+- **CF-020 (v0.2):** future-`occurred_at` under burst writes vs the
+  future-excluding `recent_activity_7d` window (DEC-056).
+- **CF-021 / CF-022 (Low):** Go doc comments on maintenance exports; broader
+  markdown characterization tests. Do at next relevant package reopen.
+- **CF-008 (v0.2), CF-017 (v0.2c), CF-018 (next SQL package reopen)** unchanged.
 
-## Validation Contract
+## Deferred Release Maturity
 
-Full contract: `../phases/phase-17/qa/validation-contract.md`.
-
-| VAL range | Scope | Owner | Status |
-|---|---|---|---|
-| VAL-001..002 | CF-019 + config compatibility | Review 1 | Ready |
-| VAL-003..014 | maintenance errors/warnings/check CLI | Review 2 | Ready |
-| VAL-015..016 | vacuum + governance guards | Review 3 | Ready |
-| VAL-017..023 | read parity + closure journey | QA Lead | Ready |
-| VAL-024 | v0.1 PRD traceability + full/static gates | QA Lead, phase-end | Ready |
-| VAL-025 | real-work v0.1 dogfood | Human, phase-end | Ready |
-
-## QA Artifacts
-
-| Artifact | Path | Status |
-|---|---|---|
-| Validation contract | `../phases/phase-17/qa/validation-contract.md` | Ready |
-| QA plan | `../phases/phase-17/qa/qa-plan.md` | BLOCKED; QA-BLK-01/02 |
-| QA reviews | `../phases/phase-17/qa/review-entry.md` etc. | After Tasks 0, 2, 5, 7 |
-| Final review | `../phases/phase-17/qa/final-review.md` | Pending |
-| Human checklist | `../phases/phase-17/qa/human-checklist.md` | Pending |
-
-## Approved Decisions
-
-- **DEC-050 (DC-A):** `[maintenance].started_without_claim_grace_seconds`, default 300,
-  zero allowed, negative/malformed rejected; age from latest append-ordered
-  `status_changed`, fallback `issues.created_at`. Stale verification means a
-  superseded completion reference; telemetry gap requires completion linkage.
-- **DEC-051 (DC-B):** maintenance status is `pass|warn|fail`; warning promotion changes
-  exit/status only; deterministic finding order; all four read formats.
-- **DEC-052 (DC-C):** guard `decision create/get/list`, `escalation
-  create/resolve/get/list`, and `triage record/start/verdict` with
-  `commands for <entity> ship in v0.2`; leave `requirement sync` shipped.
-
-## Carry-Forward Disposition
-
-- CF-019: schedule in Task 1 because Task 5 reopens markdown rendering.
-- CF-008: re-defer to v0.2; unrelated product/data-model enhancement.
-- CF-017: re-defer to v0.2c; Phase 17 does not modify `internal/dev`.
-- CF-018: re-defer to next SQL package reopen; Task 8 exercises but does not
-  modify `internal/sqlquery`. A required SQL-package fix stops for re-planning
-  and schedules CF-018 first.
-- CF-020 (new, DEC-056): defer to v0.2. Burst issue writes stamp `occurred_at`
-  ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and
-  `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not
-  fix inside the v0.1 closure audit.
-
-## Parity Matrix
-
-| Axis | Maintenance | Other v0.1 reads | Evidence |
-|---|---|---|---|
-| Formats | json/toon/markdown/yaml | json/toon/markdown/yaml | VAL-012/017 |
-| Ordering | check/entity/message | established command order | VAL-011/017 |
-| Mutation | check none; vacuum DB-only | reads none | VAL-014/015/023 |
-| Failure | structured result + non-zero | documented command error | VAL-012/013/016 |
-
-## Interfaces / Subsystems In Scope
-
-- `internal/maintenance/`, `cmd/fid/maintenance.go` - audit and VACUUM.
-- `internal/config/` - additive grace-window config.
-- `internal/format/` - CF-019 split and maintenance markdown.
-- `cmd/fid/governance_stubs.go` - v0.2 entity guards.
-- `cmd/fid/e2e_v01*_test.go` - conformance and closure evidence.
-
-## Known Risks
-
-- Corrupt-state fixtures must bypass triggers only in tests; production pragmas
-  and trigger defenses remain enabled.
-- Warning-only non-zero promotion must retain structured stdout for CI.
-- Task 9 is audit-only: any product defect stops for triage instead of expanding
-  the final task across subsystem boundaries.
-- Task 0 is tests-only; a production change stops for re-planning.
-
-## Open Questions
-
-- ESC-009: DEC-053 QA model qualification. DEC-055 rejects every routing
-  fallback. Task 0 resolves the separate COV-001 blocker without a waiver.
-
-## Success / Exit Criteria
-
-- [ ] Tasks 0-9 complete with exact required gates.
-- [ ] VAL-001..024 have deterministic terminal outcomes; VAL-025 dogfood is
-  completed and accepted or explicitly dispositioned.
-- [ ] QA final review has no unresolved blocking finding.
-- [ ] Every v0.1 PRD row maps to passing evidence; static binary is <30 MB.
-- [ ] Tech Lead wrap records spec sync, triage audit, and v0.1 closure decision.
+Public-release threat model, SAST/scans, pre-release checklist, and held-out
+scenarios remain deferred to v0.3 per DEC-049 and `08_QUALITY_PLAN.md`
+sections 5.8/7/9. Phase 17 was v0.1 early-dogfood closure, not the charter's v0.3
+public release.
 
 ## Next Planning Checkpoint
 
-After Phase 17 wrap, slice roadmap v0.2a workflow-engine migration into a new
-approved phase; do not start v0.2 work inside this closure phase.
+Plan v0.2a (Workflow Engine Migration) per `10_IMPLEMENTATION_ROADMAP.md`:
+workflow tables/migration, `fid workflow define/assign/list`, escalation
+workflow, and the `role_permissions` migration. Propose the operating mode,
+draft the validation contract, and slice one-session tasks. Do not begin v0.2
+work until that phase is Human-approved.
