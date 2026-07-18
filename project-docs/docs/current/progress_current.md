@@ -50,9 +50,18 @@ ratification. No implementation began.**
 
 ## Next Action
 
-**Human approval** of the Phase 18 plan: operating mode (heavy), validation
-contract (VAL-001..014), and the five-task list in `phase_brief.md`. On
-approval, QA Lead drafts the Phase 18 QA plan (refining the contract), then
-Phase Runner drives the dev/QA loop. Recommended before execution: the CF-023
-workflow-tooling pass (light mode) so report-lint / escalation-register friction
-is fixed first. Do not start Phase 18 tasks before Human approval.
+The Phase 18 QA plan was drafted and came back `BLOCKED BEFORE TASK 1`
+(QA-BLK-18-01..03); Phase Runner triaged as TRG-001 → BLOCK and stopped. The
+Tech Lead resolved all three blocks on 2026-07-19 (**DEC-067**): the validation
+contract is refined to **Ready** (now VAL-001..024), Task 4's dependent-object
+inventory is made exact, and Task 5 gains the 100k-rebuild / 10k-read
+performance benchmarks. Remaining before task execution:
+
+1. **Human approval** of the Heavy Mode plan (operating mode, contract, five-task
+   list).
+2. On Phase Runner resume, the QA Lead refreshes the QA plan's IDs/mappings
+   (activating the now-active VAL-015..024) and clears its blocked status.
+
+Recommended before execution: the CF-023 workflow-tooling pass (light mode) so
+report-lint / escalation-register friction is fixed first. Do not start Phase 18
+tasks before Human approval.

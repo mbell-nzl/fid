@@ -19,16 +19,22 @@ present in schema with zero behavioral change.
 
 ## Status
 
-**Planning — pending Human approval.** No branch, no implementation. On
-approval, plan hands to Phase Runner for the dev/QA loop. Next concrete action:
-Human approves operating mode, validation contract, and task list; QA Lead then
-drafts the QA plan (refining the contract) before task execution.
+**Approved (Heavy Mode) — 2026-07-19.** The Human approved the operating mode,
+validation contract (VAL-001..024, Ready), and five-task list. The QA-plan
+block (QA-BLK-18-01..03 / TRG-001) was resolved by the Tech Lead: contract
+refined to **Ready** with VAL-015..024; Task 4 dependent-object inventory made
+exact; Task 5 performance benchmarks added — see DEC-067 in
+`../phases/phase-18/decisions.md`. Next concrete action: **resume the Phase
+Runner** from the existing RUN-START ledger entry. On resume it re-spawns the
+QA Lead to refresh the QA plan's IDs/mappings (activating VAL-015..024) and
+clear its `BLOCKED BEFORE TASK 1` status, then drives the dev/QA loop from
+Task 1.
 
 ## Operating Mode
 
 **Heavy.** Entry criteria met: this is a data-migration / persistence-contract /
 public-interface change (`09_AI_WORKFLOW.md` §4.3). Required artifacts:
-validation contract (done, draft), QA plan with fresh command/feasibility
+validation contract (Ready, VAL-001..024), QA plan with fresh command/feasibility
 validation, mid-phase cadence per QA plan, final review, human checklist, and
 spec sync across all seven specs at wrap. Orchestration via Phase Runner.
 
@@ -46,32 +52,28 @@ Full task specs and completion reports live under `../phases/phase-18/tasks/`.
 
 ## Validation Contract
 
-Full contract: `../phases/phase-18/qa/validation-contract.md`. All assertions
-are machine-checkable; validator is QA Lead throughout (no Human perception
-assertion applies).
+Full contract (24 assertions, **Ready**):
+`../phases/phase-18/qa/validation-contract.md`. All assertions are
+machine-checkable; validator is QA Lead throughout (no Human perception
+assertion applies). Refined 2026-07-19 (DEC-067) to unbundle independent
+observables and close coverage gaps (QA-BLK-18-01/02); VAL-015..024 added.
 
-| VAL ID | Source | Owning Task/Window | Validator | Status |
-|---|---|---|---|---|
-| VAL-001 | TRD-ARCH-009; TRD_SCHEMA §3 | task-1 | QA Lead | Draft |
-| VAL-002 | TRD §4.6 (seed verbatim) | task-1 | QA Lead | Draft |
-| VAL-003 | TRD §4.6 | task-1 | QA Lead | Draft |
-| VAL-004 | TRD §4.6; PRD-WF-007–010 | task-1 | QA Lead | Draft |
-| VAL-005 | PRD-WF-014/015 seam; DEC-066 | task-1 | QA Lead | Draft |
-| VAL-006 | TRD-ARCH-009; TRD_SCHEMA §2.1 | task-4 | QA Lead | Draft |
-| VAL-007 | TRD-ARCH-008; TRD_SCHEMA §2, §14 | task-4 | QA Lead | Draft |
-| VAL-008 | v0.2 exit; PRD-WF-001–010 | task-3 | QA Lead | Draft |
-| VAL-009 | PRD-CLAIM-005/006 | task-3 | QA Lead | Draft |
-| VAL-010 | PRD-OPS-005–008; §14.11 | task-5 | QA Lead | Draft |
-| VAL-011 | PRD-OPS-003–004; DEC-066 | task-5 (phase-end) | QA Lead | Draft |
-| VAL-012 | TRD §4.3; projection_meta | task-1 | QA Lead | Draft |
-| VAL-013 | DEC-066; TRD-ARCH-002–003 | task-5 | QA Lead | Draft |
-| VAL-014 | Roadmap v0.2a; TRD §4.6 | task-2 | QA Lead | Draft |
+| Owning window | Assertions |
+|---|---|
+| task-1 | VAL-001, VAL-002, VAL-003, VAL-004, VAL-005, VAL-016, VAL-012 |
+| task-2 | VAL-014, VAL-015 (advances VAL-002/003/004) |
+| task-3 | VAL-008, VAL-009, VAL-020 |
+| task-4 | VAL-006, VAL-007, VAL-018, VAL-019 |
+| task-5 (incl. phase-end) | VAL-010, VAL-011, VAL-013, VAL-017, VAL-021, VAL-022, VAL-023, VAL-024 |
+
+Performance controls (TRD-PERF-001/003 read + 100k-rebuild spot-checks) are a
+Task 5 benchmark gate, not a `VAL-NNN` (QA-BLK-18-03).
 
 ## QA Artifacts
 
 | Artifact | Path | Status |
 |---|---|---|
-| QA plan | `../phases/phase-18/qa/qa-plan.md` | Missing (QA Lead to draft) |
+| QA plan | `../phases/phase-18/qa/qa-plan.md` | Drafted; blocked pending QA-plan mapping refresh on resume (blocks resolved by DEC-067) |
 | Mid-phase reviews | `../phases/phase-18/qa/review-M.md` | Per QA plan (heavy; 5 tasks) |
 | Final review | `../phases/phase-18/qa/final-review.md` | Pending |
 | Human checklist | `../phases/phase-18/qa/human-checklist.md` | Pending |

@@ -12,12 +12,18 @@ does not change the `issues` table or the transition engine yet.
 
 ## Validation Contract Coverage
 
-- VAL-001: the four workflow tables exist with the specified columns incl. `workflow_transition_requires.params_json`.
+- VAL-001: the four workflow tables exist with the specified columns incl. `workflow_transition_requires.params_json`, the TRD_SCHEMA §3 PKs, and the composite FK; `workflow_transition_requires` intentionally has no PK/UNIQUE.
 - VAL-002: seeded `workflow_states` reproduce the v0.1 state→category maps for all three workflows.
 - VAL-003: seeded `workflow_transitions` reproduce the v0.1 allowed edges incl. explicit `<state>→cancelled`, excluding `cancelled→cancelled` and disallowed edges.
 - VAL-004: seeded `workflow_transition_requires` reproduce the v0.1 per-transition rules incl. parameterised roles in `params_json`.
-- VAL-005: gate-obligation seam present with no behavior (reserved vocab + params_json shape, no seeded use, no receipt logic).
-- VAL-012: `ProjectionSchemaVersion` bumped so a prior-version DB is rebuilt/caught-up.
+- VAL-005: the gate-obligation JSON shape round-trips loss-free through `params_json` (canonical `{"gates":[{"id":"gate-test","version":1}]}` inserts/loads/parses without losing any ID/version).
+- VAL-016: no seeded `workflow_transition_requires` row uses `required_gates_current` or `has_completion`.
+- VAL-012: `ProjectionSchemaVersion` bumped so a prior-version DB is rebuilt/caught-up, while an otherwise-fresh current-version DB is not rebuilt for schema-version reasons.
+
+Note: reserved-name *loader recognition* is VAL-015 (Task 2) and phase-end
+*behavior absence* is VAL-017 (Task 5); this task only proves the schema shape
+(VAL-005) and seed exclusion (VAL-016). The "no receipt/gate evaluation path
+exists" constraint below remains binding for this task.
 
 ## Binding Constraints
 
@@ -84,19 +90,27 @@ does not change the `issues` table or the transition engine yet.
 ## Acceptance Criteria
 
 - [ ] Migration 0007 creates all four workflow tables with the specified
-  columns, PKs, and the `workflow_transition_requires`→`workflow_transitions`
-  FK (VAL-001)
+  columns and the TRD_SCHEMA §3 PKs (`workflows(id)`,
+  `workflow_states(workflow_id,state)`,
+  `workflow_transitions(workflow_id,from_state,to_state)`) and the
+  `workflow_transition_requires`→`workflow_transitions` composite FK;
+  `workflow_transition_requires` carries no PK/UNIQUE constraint (VAL-001)
 - [ ] Seeded `workflow_states` equal the v0.1 state→category maps for all three
   workflows, no extra/missing states (VAL-002)
 - [ ] Seeded `workflow_transitions` equal the v0.1 allowed edges incl. explicit
   `<state>→cancelled`; `cancelled→cancelled` and disallowed edges absent (VAL-003)
 - [ ] Seeded `workflow_transition_requires` equal the v0.1 rules incl. `params_json`
   roles on the parameterised edges (VAL-004)
-- [ ] No seeded row uses `required_gates_current`/`has_completion`; a
-  gate-obligation-shaped `params_json` validates structurally; no receipt/gate
-  code is reachable (VAL-005)
-- [ ] `ProjectionSchemaVersion` bumped; a DB stored at the prior version is
-  rebuilt/caught-up on the next read (VAL-012)
+- [ ] A canonical gate-obligation JSON value (`{"gates":[{"id":"gate-test","version":1}]}`)
+  inserts into `params_json`, loads, parses, and round-trips without losing any
+  gate ID or version (VAL-005)
+- [ ] No seeded `workflow_transition_requires` row uses `required_gates_current`
+  or `has_completion` (VAL-016)
+- [ ] `ProjectionSchemaVersion` bumped: a DB stored at the prior version is
+  rebuilt/caught-up on the next read, while an otherwise-fresh current-version DB
+  is not rebuilt for schema-version reasons (VAL-012)
+- [ ] No receipt/gate evaluation path exists for the reserved rule names in this
+  phase (binding constraint; phase-end proof is VAL-017 in Task 5)
 - [ ] `.down.sql` cleanly reverses the migration
 
 ## First Failing Test

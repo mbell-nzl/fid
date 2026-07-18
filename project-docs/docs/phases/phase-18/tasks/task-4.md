@@ -12,7 +12,9 @@ using the SQLite 12-step procedure, preserving all data and recreating the
 ## Validation Contract Coverage
 
 - VAL-006: `issues.workflow_id` FK and `(workflow_id, status)` composite FK enforced — invalid rejected, valid accepted, `PRAGMA foreign_key_check` clean.
-- VAL-007: the rebuild preserves all issue rows and recreates the view, triggers, and indexes; migrated v0.1 reads are identical.
+- VAL-007: the rebuild preserves every `issues` row and column value exactly (row count and per-column values identical pre/post migration 0008).
+- VAL-018: exact dependent-schema-object preservation — the `sqlite_schema`/PRAGMA fingerprint after migration (and after down/up) matches the enumerated inventory in the binding constraints below.
+- VAL-019: `fid issue get`/`list` output is byte-identical pre/post migration 0008 for pre-existing issues.
 
 ## Binding Constraints
 
@@ -28,11 +30,37 @@ using the SQLite 12-step procedure, preserving all data and recreating the
   must exist in `workflow_states`). Preserve the other CHECKs (kind enum,
   priority range, epic est_tokens nullability, positive sequence, `UNIQUE
   (parent_id, sequence)`).
-- **Recreate everything attached to `issues`:** the `issues_enriched` view; the
-  kind-hierarchy triggers, sequence-scheduling triggers, kind-immutability
-  trigger, and polymorphic/ref triggers that reference `issues`; and all issues
-  indexes. Verify each exists post-migration. Cross-check against migrations
-  0001–0006 so nothing is dropped silently.
+- **Recreate exactly the objects dropped with `issues`, and verify (do not
+  drop) the objects that merely reference it.** Migrations 0001–0006 define **no
+  named index directly on `issues`**; the earlier "recreate all issues indexes"
+  wording was inexact and is replaced by this explicit `sqlite_schema` inventory
+  (QA-BLK-18-02). Dropping and renaming `issues` removes the objects defined
+  `ON issues`; the view and other-table triggers referencing `issues` survive in
+  `sqlite_schema` but must be validated as still correct. The exact inventory:
+  - **Five triggers defined `ON issues` (dropped with the table — MUST be
+    recreated):** `issues_parent_kind_guard_insert`,
+    `issues_parent_kind_guard_update`, `issues_kind_immutable` (migration 0004),
+    `issues_sequence_scheduling_guard_insert`, and
+    `issues_sequence_scheduling_guard_update` (migration 0006).
+  - **`issues_enriched` view (migration 0003):** it selects `i.*` from `issues`,
+    so drop and recreate it as part of the 12-step procedure and verify identical
+    definition and output.
+  - **Two named indexes `idx_concerns_issue_status` and `idx_triage_issue_created`
+    (migration 0003):** these are on `concerns`/`triage_events`, NOT on `issues`.
+    They MUST survive the rebuild unchanged — do not drop or recreate them; assert
+    they are still present and unchanged.
+  - **Other-table triggers whose body references `issues` (survive; verify
+    present and functional):** the 0004 kind-guard triggers
+    `acceptance_criteria_issue_kind_guard_insert`,
+    `task_completions_issue_kind_guard_insert`,
+    `epic_metadata_issue_kind_guard_insert`,
+    `triage_events_epic_kind_guard_insert`, `decisions_epic_kind_guard_insert`,
+    plus any 0005 ref-integrity triggers that reference `issues`.
+  - **PK and UNIQUE autoindexes:** the `issues(id)` PK autoindex and the
+    `UNIQUE(parent_id, sequence)` autoindex are recreated by the new table DDL;
+    verify them structurally via `PRAGMA index_list`/`index_info`.
+  Capture a named `sqlite_schema` + PRAGMA fingerprint before and after the
+  migration (and after `.down`/`.up`) and diff against this inventory.
 - **Data preservation is mandatory.** Row count and every column value must be
   identical pre/post migration; seeded workflow rows (Task 1) guarantee FK
   targets exist for all current issue `(workflow_id, status)` pairs.
@@ -74,10 +102,16 @@ using the SQLite 12-step procedure, preserving all data and recreating the
 - [ ] Invalid `workflow_id` or invalid `(workflow_id, status)` insert/update is
   rejected; a valid pair is accepted (VAL-006)
 - [ ] `PRAGMA foreign_key_check` returns no rows after migration (VAL-006)
-- [ ] All existing issue rows preserved unchanged; `issues_enriched` view,
-  issues triggers, and indexes recreated and present (VAL-007)
-- [ ] `fid issue get`/`list` output identical pre/post migration for existing
-  issues (VAL-007)
+- [ ] Every existing `issues` row and column value is preserved exactly
+  (row count and per-column values identical pre/post migration 0008) (VAL-007)
+- [ ] The post-migration `sqlite_schema`/PRAGMA fingerprint matches the exact
+  dependent-object inventory in the binding constraints: the five `ON issues`
+  triggers and the `issues_enriched` view are recreated; the two named indexes on
+  `concerns`/`triage_events` survive unchanged; other-table triggers referencing
+  `issues` remain present; the `issues(id)` PK and `UNIQUE(parent_id, sequence)`
+  autoindexes are present per PRAGMA; the fingerprint is stable across `.down`/`.up` (VAL-018)
+- [ ] `fid issue get`/`list` output is byte-identical pre/post migration for
+  pre-existing issues (VAL-019)
 - [ ] `.down.sql` reverses the migration; full suite (incl. integration) green
 
 ## First Failing Test
@@ -114,10 +148,13 @@ Conditional command required by this task:
 
 ## Notes For Developer
 
-- Highest-risk task in the phase. The table rebuild must recreate **every**
-  object attached to `issues`; enumerate them from migrations 0001–0006 before
-  writing 0008 and assert their existence post-migration. If any object cannot
-  be safely recreated, stop and escalate.
+- Highest-risk task in the phase. Recreate exactly the objects dropped with
+  `issues` (the five `ON issues` triggers and the `issues_enriched` view) and
+  verify — do not drop — the objects that only reference `issues` (the two named
+  indexes on `concerns`/`triage_events` and the other-table kind/ref triggers),
+  per the explicit inventory in the binding constraints. Assert the full
+  `sqlite_schema`/PRAGMA fingerprint post-migration. If any object cannot be
+  safely recreated or verified, stop and escalate.
 - Depends on Task 1 (FK targets). Independent of Task 3, but plan for it to land
   after Task 3 per the phase order.
 - Completion report at `project-docs/docs/phases/phase-18/tasks/task-4-done.md`.

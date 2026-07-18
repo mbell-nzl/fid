@@ -10,6 +10,7 @@ no consumer is repointed yet, so behavior is unchanged.
 ## Validation Contract Coverage
 
 - VAL-014: the DB-backed registry loaded from the seeded tables is behavior-equivalent to the frozen v0.1 Go definitions (states, categories, edges, rules) for all three workflows.
+- VAL-015: the loader recognizes `required_gates_current` and `has_completion` as known-but-unimplemented rule names — surfaced structurally with no panic, no evaluation, and no write.
 - Advances VAL-002/003/004 (the loader reading the seeded rows is a second, independent check that the seed matches v0.1).
 
 ## Binding Constraints
@@ -65,6 +66,9 @@ no consumer is repointed yet, so behavior is unchanged.
   three workflows (VAL-014)
 - [ ] Loader parses `params_json` roles back into `RequiredRoles`; reserved
   gate-obligation params and unimplemented rule names do not crash the loader
+- [ ] Loading a test-only row carrying `required_gates_current` or
+  `has_completion` surfaces the name as known-but-unimplemented with no panic,
+  no evaluation, and no write (VAL-015)
 - [ ] No consumer behavior changes; full suite stays green
 
 ## First Failing Test
