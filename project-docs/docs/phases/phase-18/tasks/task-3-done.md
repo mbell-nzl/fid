@@ -58,8 +58,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `77400cebaa57aa3518bfad0ea7938a4fa6325cfd`
 
 ## Commit subject
 
-- Pending commit
+- `test(issues): prove released claims stay absent after rebuild`
