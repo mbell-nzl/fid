@@ -647,6 +647,96 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 	}
 }
 
+func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	parent, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Parent task",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(parent) error = %v", err)
+	}
+	subtask, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "subtask",
+		Title:         "Rebuild released caller claim",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(parent.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(subtask) error = %v", err)
+	}
+
+	claimTransitionIssue(t, workspace, subtask.ID, "human")
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+		ToState:       "in_progress",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(todo->in_progress) error = %v", err)
+	}
+
+	started, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(in progress) error = %v", err)
+	}
+	if got := len(started.Claims); got != 1 {
+		t.Fatalf("Get(in progress).Claims = %#v, want live caller claim", started.Claims)
+	}
+	if got := started.Claims[0].ClaimedBy; got != "human" {
+		t.Fatalf("Get(in progress).Claims[0].ClaimedBy = %q, want human", got)
+	}
+
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+		ToState:       "done",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(in_progress->done) error = %v", err)
+	}
+
+	afterRelease, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after release) error = %v", err)
+	}
+	if got := len(afterRelease.Claims); got != 0 {
+		t.Fatalf("Get(after release).Claims = %#v, want no current claims", afterRelease.Claims)
+	}
+
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "workflow_runner"); err != nil {
+		t.Fatalf("RebuildWorkspace() error = %v", err)
+	}
+
+	afterRebuild, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after rebuild) error = %v", err)
+	}
+	if got := len(afterRebuild.Claims); got != 0 {
+		t.Fatalf("Get(after rebuild).Claims = %#v, want no current claims", afterRebuild.Claims)
+	}
+}
+
 func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 	t.Parallel()
 
