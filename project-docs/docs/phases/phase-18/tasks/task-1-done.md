@@ -61,8 +61,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `127f26806bd4a0baae622b277a508e51dde1aaf5`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add seeded workflow tables`
