@@ -133,8 +133,12 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
+		registry, err := workflow.Load(conn)
+		if err != nil {
+			return err
+		}
 
-		rules, allowed := workflow.RulesForEdge(current.WorkflowID, current.Status, toState)
+		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
 		if !allowed {
 			return &InvalidTransitionError{
 				IssueID:        current.ID,
@@ -155,7 +159,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				Unmet:          unmet,
 			}
 		}
-		if entersStartedCategory(current.WorkflowID, current.Status, toState) {
+		if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
 			if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, options.ActorRole); err != nil {
 				return err
 			}
@@ -204,7 +208,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				},
 			},
 		}
-		if leavesStartedCategory(current.WorkflowID, current.Status, toState) {
+		if leavesStartedCategory(registry, current.WorkflowID, current.Status, toState) {
 			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, options.ActorRole)
 			if err != nil {
 				return err
@@ -278,28 +282,28 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	return result, nil
 }
 
-func entersStartedCategory(workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(workflowID, fromState, toState)
+func entersStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
+	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
 	if !ok {
 		return false
 	}
 	return fromCategory != "started" && toCategory == "started"
 }
 
-func leavesStartedCategory(workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(workflowID, fromState, toState)
+func leavesStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
+	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
 	if !ok {
 		return false
 	}
 	return fromCategory == "started" && toCategory != "started"
 }
 
-func transitionCategories(workflowID, fromState, toState string) (string, string, bool) {
-	fromCategory, ok := workflow.CategoryForState(workflowID, fromState)
+func transitionCategories(registry *workflow.Registry, workflowID, fromState, toState string) (string, string, bool) {
+	fromCategory, ok := registry.CategoryForState(workflowID, fromState)
 	if !ok {
 		return "", "", false
 	}
-	toCategory, ok := workflow.CategoryForState(workflowID, toState)
+	toCategory, ok := registry.CategoryForState(workflowID, toState)
 	if !ok {
 		return "", "", false
 	}
