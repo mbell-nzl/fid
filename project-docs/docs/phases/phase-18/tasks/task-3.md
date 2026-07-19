@@ -80,6 +80,23 @@ including rich error messages and started-category claim enforcement.
   after rebuild (VAL-020)
 - [ ] Full suite green; no change to the `issue.transitioned` journal event shape
 
+## Remediation (Review 1 — VAL-020 rebuild evidence)
+
+Review 1 returned `BLOCK` (TRG-002; resolved by DEC-068): VAL-020 was marked
+`PASS` without proof that the released caller claim stays absent after a
+projection rebuild. **VAL-020 is unchanged.** Redo this task within scope:
+
+- Add a characterization test that (a) enters a started-category state holding a
+  live caller claim, (b) transitions out of started, (c) rebuilds the **exact**
+  released-claim workspace/projection, and (d) asserts the caller claim is still
+  absent after the rebuild. The existing general rebuild test rebuilds an
+  *entering-started* fixture and does **not** satisfy this — the released-claim
+  fixture must be the one rebuilt.
+- Correct the `task-3-done.md` VAL-020 evidence to cite the new test; remove the
+  "existing rebuild check remains covered by the transition suite" claim.
+- Rerun the full `## Exact Commands To Run` gate below and re-record results.
+- A QA Reviewer re-review of the VAL-020 remediation must pass before Task 4.
+
 ## First Failing Test
 
 A characterization test asserting a blocked `in_progress→dev_complete`
