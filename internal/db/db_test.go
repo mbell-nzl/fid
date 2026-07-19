@@ -183,7 +183,7 @@ func TestMigrateUpIsIdempotentOnReopen(t *testing.T) {
 	}
 }
 
-func TestIssuesCheckConstraintRejectsInvalidWorkflowForKind(t *testing.T) {
+func TestIssuesForeignKeysAllowExistingWorkflowStatePairRegardlessOfKind(t *testing.T) {
 	t.Parallel()
 
 	dbPath := t.TempDir() + "/fid.sqlite"
@@ -202,8 +202,8 @@ func TestIssuesCheckConstraintRejectsInvalidWorkflowForKind(t *testing.T) {
 		INSERT INTO issues (id, kind, title, workflow_id, status)
 		VALUES (?, ?, ?, ?, ?)
 	`, "FID-abc123", "epic", "Invalid epic", "task-default", "todo")
-	if err == nil {
-		t.Fatal("Exec() error = nil, want CHECK constraint failure")
+	if err != nil {
+		t.Fatalf("Exec() error = %v, want valid workflow/state pair accepted", err)
 	}
 }
 

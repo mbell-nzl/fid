@@ -35,6 +35,9 @@ func TestCheckErrorsReportsAllSeededStructuralViolationFamilies(t *testing.T) {
 		"dependent_row_kind",
 		"foreign_key_integrity",
 		"foreign_key_integrity",
+		"foreign_key_integrity",
+		"foreign_key_integrity",
+		"foreign_key_integrity",
 		"kind_hierarchy",
 		"kind_hierarchy",
 		"kind_hierarchy",
@@ -74,19 +77,26 @@ func assertActionableFindings(t *testing.T, findings []Finding) {
 	t.Helper()
 
 	foreignKeys := 0
+	issueLabelForeignKeys := 0
+	issueWorkflowForeignKeys := 0
 	for _, finding := range findings {
 		if finding.EntityID == "" || finding.Message == "" {
 			t.Fatalf("finding = %#v, want entity ID and message", finding)
 		}
 		if finding.Check == "foreign_key_integrity" {
 			foreignKeys++
-			if !strings.HasPrefix(finding.EntityID, "issue_labels:") || !strings.Contains(finding.Message, "references missing") {
-				t.Fatalf("foreign key finding = %#v, want table/row and parent identity", finding)
+			switch {
+			case strings.HasPrefix(finding.EntityID, "issue_labels:") && strings.Contains(finding.Message, "references missing"):
+				issueLabelForeignKeys++
+			case strings.HasPrefix(finding.EntityID, "issues:") && strings.Contains(finding.Message, "references missing workflow"):
+				issueWorkflowForeignKeys++
+			default:
+				t.Fatalf("foreign key finding = %#v, want seeded issue-label or workflow violation", finding)
 			}
 		}
 	}
-	if foreignKeys != 2 {
-		t.Fatalf("foreign key findings = %d, want every seeded row (2)", foreignKeys)
+	if foreignKeys != 5 || issueLabelForeignKeys != 2 || issueWorkflowForeignKeys != 3 {
+		t.Fatalf("foreign key findings = total %d, issue_labels %d, issues workflow %d; want 5, 2, 3", foreignKeys, issueLabelForeignKeys, issueWorkflowForeignKeys)
 	}
 }
 

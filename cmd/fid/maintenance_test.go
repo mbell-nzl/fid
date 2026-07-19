@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"path/filepath"
 	"reflect"
@@ -37,12 +38,7 @@ func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 		t.Fatalf("open projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`PRAGMA ignore_check_constraints = ON`); err != nil {
-		t.Fatalf("bypass fixture checks: %v", err)
-	}
-	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES ('FID-bad001', 'task', 'Corrupt workflow', 'missing', 'todo', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
-		t.Fatalf("seed corrupt issue: %v", err)
-	}
+	seedCorruptWorkflowFixture(t, conn, "FID-bad001")
 
 	stdout, stderr, err = runFIDCommandExpectError(t, workspace, "maintenance", "check")
 	if err == nil {
@@ -64,8 +60,12 @@ func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 	if failing.Status != "fail" {
 		t.Fatalf("failing status = %q, want fail", failing.Status)
 	}
-	if len(failing.Errors) != 1 || failing.Errors[0].Check != "workflow_state" {
-		t.Fatalf("failing errors = %#v, want workflow_state finding", failing.Errors)
+	gotChecks := make([]string, len(failing.Errors))
+	for index, finding := range failing.Errors {
+		gotChecks[index] = finding.Check
+	}
+	if want := []string{"foreign_key_integrity", "foreign_key_integrity", "workflow_state"}; !reflect.DeepEqual(gotChecks, want) {
+		t.Fatalf("failing checks = %#v, want %#v", gotChecks, want)
 	}
 }
 
@@ -110,12 +110,7 @@ func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
 		t.Fatalf("open projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`PRAGMA ignore_check_constraints = ON`); err != nil {
-		t.Fatalf("bypass fixture checks: %v", err)
-	}
-	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES ('FID-bad002', 'task', 'Corrupt workflow', 'missing', 'todo', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`); err != nil {
-		t.Fatalf("seed corrupt issue: %v", err)
-	}
+	seedCorruptWorkflowFixture(t, conn, "FID-bad002")
 
 	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
 		t.Run("failing "+formatName, func(t *testing.T) {
@@ -145,6 +140,27 @@ func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func seedCorruptWorkflowFixture(t *testing.T, conn *sql.DB, issueID string) {
+	t.Helper()
+
+	conn.SetMaxOpenConns(1)
+	if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+		t.Fatalf("bypass fixture foreign keys: %v", err)
+	}
+	if _, err := conn.Exec(`PRAGMA ignore_check_constraints = ON`); err != nil {
+		t.Fatalf("bypass fixture checks: %v", err)
+	}
+	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES (?, 'task', 'Corrupt workflow', 'missing', 'todo', '2026-01-01T00:00:00Z', '2026-01-01T00:00:00Z')`, issueID); err != nil {
+		t.Fatalf("seed corrupt issue: %v", err)
+	}
+	if _, err := conn.Exec(`PRAGMA ignore_check_constraints = OFF`); err != nil {
+		t.Fatalf("restore fixture checks: %v", err)
+	}
+	if _, err := conn.Exec(`PRAGMA foreign_keys = ON`); err != nil {
+		t.Fatalf("restore fixture foreign keys: %v", err)
 	}
 }
 
