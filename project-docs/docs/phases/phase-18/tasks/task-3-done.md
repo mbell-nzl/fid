@@ -56,8 +56,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `cf68153de4058f77d06451a1ceed3f2191658a77`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issues): resolve transitions from workflow registry`
