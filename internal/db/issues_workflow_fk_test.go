@@ -68,6 +68,41 @@ func TestMigration0008EnforcesWorkflowAndStateForeignKeys(t *testing.T) {
 		t.Fatalf("insert valid workflow/state pair: %v", err)
 	}
 
+	const (
+		updatedWorkflowID = "task-default"
+		updatedStatus     = "done"
+	)
+	result, err := conn.Exec(`
+		UPDATE issues
+		SET workflow_id = ?, status = ?
+		WHERE id = 'FID-valid-custom-pair'
+	`, updatedWorkflowID, updatedStatus)
+	if err != nil {
+		t.Fatalf("update valid workflow/state pair: %v", err)
+	}
+	if affected, err := result.RowsAffected(); err != nil {
+		t.Fatalf("valid workflow/state update rows affected: %v", err)
+	} else if affected != 1 {
+		t.Fatalf("valid workflow/state update rows affected = %d, want 1", affected)
+	}
+	var gotWorkflowID, gotStatus string
+	if err := conn.QueryRow(`
+		SELECT workflow_id, status
+		FROM issues
+		WHERE id = 'FID-valid-custom-pair'
+	`).Scan(&gotWorkflowID, &gotStatus); err != nil {
+		t.Fatalf("read valid workflow/state update: %v", err)
+	}
+	if gotWorkflowID != updatedWorkflowID || gotStatus != updatedStatus {
+		t.Fatalf(
+			"persisted workflow/state = (%q, %q), want (%q, %q)",
+			gotWorkflowID,
+			gotStatus,
+			updatedWorkflowID,
+			updatedStatus,
+		)
+	}
+
 	for _, query := range []string{
 		`UPDATE issues SET workflow_id = 'missing-workflow' WHERE id = 'FID-valid-custom-pair'`,
 		`UPDATE issues SET status = 'missing-state' WHERE id = 'FID-valid-custom-pair'`,
