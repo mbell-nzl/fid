@@ -3,6 +3,7 @@ package workflow
 type RuleReference struct {
 	Name          string
 	RequiredRoles []string
+	Unimplemented bool
 }
 
 type Definition struct {
@@ -24,13 +25,12 @@ func CategoryForState(workflowID, state string) (string, bool) {
 	if !ok {
 		return "", false
 	}
-	category, ok := definition.States[state]
-	return category, ok
+	return definition.CategoryForState(state)
 }
 
 func IsAllowedEdge(workflowID, fromState, toState string) bool {
-	_, ok := RulesForEdge(workflowID, fromState, toState)
-	return ok
+	definition, ok := definitions[workflowID]
+	return ok && definition.IsAllowedEdge(fromState, toState)
 }
 
 func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
@@ -38,6 +38,20 @@ func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool)
 	if !ok {
 		return nil, false
 	}
+	return definition.RulesForEdge(fromState, toState)
+}
+
+func (definition Definition) CategoryForState(state string) (string, bool) {
+	category, ok := definition.States[state]
+	return category, ok
+}
+
+func (definition Definition) IsAllowedEdge(fromState, toState string) bool {
+	_, ok := definition.RulesForEdge(fromState, toState)
+	return ok
+}
+
+func (definition Definition) RulesForEdge(fromState, toState string) ([]RuleReference, bool) {
 	if !knownState(definition, fromState) || !knownState(definition, toState) {
 		return nil, false
 	}
@@ -52,7 +66,7 @@ func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool)
 	if !ok {
 		return nil, false
 	}
-	return append([]RuleReference(nil), rules...), true
+	return cloneRuleReferences(rules), true
 }
 
 func knownState(definition Definition, state string) bool {
@@ -72,9 +86,24 @@ func cloneDefinition(definition Definition) Definition {
 	for fromState, destinations := range definition.Transitions {
 		clonedDestinations := make(map[string][]RuleReference, len(destinations))
 		for toState, rules := range destinations {
-			clonedDestinations[toState] = append([]RuleReference(nil), rules...)
+			clonedDestinations[toState] = cloneRuleReferences(rules)
 		}
 		cloned.Transitions[fromState] = clonedDestinations
+	}
+	return cloned
+}
+
+func cloneRuleReferences(rules []RuleReference) []RuleReference {
+	if rules == nil {
+		return nil
+	}
+	cloned := make([]RuleReference, len(rules))
+	for index, rule := range rules {
+		cloned[index] = RuleReference{
+			Name:          rule.Name,
+			RequiredRoles: append([]string(nil), rule.RequiredRoles...),
+			Unimplemented: rule.Unimplemented,
+		}
 	}
 	return cloned
 }
