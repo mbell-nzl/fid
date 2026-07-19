@@ -232,17 +232,17 @@ func TestMigration0006DownRemovesSequenceSchedulingBackstopOnly(t *testing.T) {
 	}
 }
 
-func TestDecideProjectionFreshnessRequiresPhaseTwoSchemaVersion(t *testing.T) {
+func TestDecideProjectionFreshnessRequiresPhase18SchemaVersion(t *testing.T) {
 	t.Parallel()
 
-	if ProjectionSchemaVersion != 3 {
-		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 3)
+	if ProjectionSchemaVersion != 4 {
+		t.Fatalf("ProjectionSchemaVersion = %d, want %d", ProjectionSchemaVersion, 4)
 	}
 
 	stale := DecideProjectionFreshness(ProjectionFreshnessInput{
 		MetaExists:                    true,
 		ReplayStatus:                  ReplayStatusClean,
-		StoredProjectionSchemaVersion: 2,
+		StoredProjectionSchemaVersion: 3,
 		CurrentProjectionSchema:       ProjectionSchemaVersion,
 		CheckpointExists:              true,
 		CheckpointMatches:             true,

@@ -1,0 +1,4 @@
+DROP TABLE IF EXISTS workflow_transition_requires;
+DROP TABLE IF EXISTS workflow_transitions;
+DROP TABLE IF EXISTS workflow_states;
+DROP TABLE IF EXISTS workflows;
