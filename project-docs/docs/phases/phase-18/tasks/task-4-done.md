@@ -63,8 +63,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0b4b8aaa14498d43b23381bd4f83669468c15e10`
 
 ## Commit subject
 
-- Pending commit
+- `feat(db): enforce issue workflow foreign keys`
