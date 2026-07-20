@@ -275,6 +275,42 @@ func TestStartRejectsInvalidWorkflowEdgeBeforeAppend(t *testing.T) {
 	}
 }
 
+func TestStartRejectsEdgeMissingFromProjectedWorkflowRegistry(t *testing.T) {
+	workspace := newDevWorkspace(t)
+	created, err := issues.Create(issues.CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testDevMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Registry-backed dev start",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transitions
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "todo", "in_progress"); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("delete projected transition: %v", err)
+	}
+	closeDevDB(t, conn)
+
+	_, err = Start(StartOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testDevMigrationsDir(t),
+		IssueID:       created.ID,
+		ActorRole:     "developer",
+		Model:         "claude-sonnet-4-6",
+	})
+	var invalidErr *issues.InvalidTransitionError
+	if !errors.As(err, &invalidErr) {
+		t.Fatalf("Start() error = %v, want projected-registry invalid transition", err)
+	}
+}
+
 func testDevMigrationsDir(t *testing.T) string {
 	t.Helper()
 

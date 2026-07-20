@@ -230,6 +230,33 @@ func TestGateRecordsReportedResultOnActiveAttempt(t *testing.T) {
 	}
 }
 
+func TestGateUsesProjectedWorkflowCategory(t *testing.T) {
+	workspace := newDevWorkspace(t)
+	issueID, _, _ := seedFinishReadyIssue(t, workspace)
+
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		UPDATE workflow_states
+		SET category = ?
+		WHERE workflow_id = ? AND state = ?
+	`, "unstarted", "task-default", "in_progress"); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("update projected workflow category: %v", err)
+	}
+	closeDevDB(t, conn)
+
+	_, err := Gate(GateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testDevMigrationsDir(t),
+		IssueID:       issueID,
+		ActorRole:     "developer",
+		Command:       "go test ./...",
+	})
+	if err == nil || !strings.Contains(err.Error(), "requires a started-category state") {
+		t.Fatalf("Gate() error = %v, want projected-category rejection", err)
+	}
+}
+
 func TestGateUsesNextAttemptNumberAfterCompletion(t *testing.T) {
 	t.Parallel()
 

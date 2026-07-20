@@ -73,15 +73,19 @@ func Ready(options ReadyOptions) (ReadyResult, error) {
 		return ReadyResult{}, err
 	}
 	defer closeIssueDB(conn)
+	registry, err := workflow.Load(conn)
+	if err != nil {
+		return ReadyResult{}, fmt.Errorf("ready issues: load workflow registry: %w", err)
+	}
 
 	rows, err := loadReadyRows(conn, strings.TrimSpace(options.EpicID))
 	if err != nil {
 		return ReadyResult{}, err
 	}
 	if strings.TrimSpace(options.EpicID) != "" {
-		return selectReadyForEpic(strings.TrimSpace(options.EpicID), rows), nil
+		return selectReadyForEpic(registry, strings.TrimSpace(options.EpicID), rows), nil
 	}
-	return selectReadyProjectWide(rows), nil
+	return selectReadyProjectWide(registry, rows), nil
 }
 
 func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
@@ -153,13 +157,13 @@ func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
 	return records, nil
 }
 
-func selectReadyForEpic(epicID string, rows []readyRowRecord) ReadyResult {
+func selectReadyForEpic(registry *workflow.Registry, epicID string, rows []readyRowRecord) ReadyResult {
 	scheduling := epicScheduling(rows)
 	if scheduling == "sequential" {
-		return selectSequentialEpic(epicID, rows)
+		return selectSequentialEpic(registry, epicID, rows)
 	}
 	if scheduling == "prioritised" {
-		return selectPrioritisedEpic(epicID, rows)
+		return selectPrioritisedEpic(registry, epicID, rows)
 	}
 	return ReadyResult{
 		Explanation: &ReadyExplanation{
@@ -170,13 +174,13 @@ func selectReadyForEpic(epicID string, rows []readyRowRecord) ReadyResult {
 	}
 }
 
-func selectReadyProjectWide(rows []readyRowRecord) ReadyResult {
+func selectReadyProjectWide(registry *workflow.Registry, rows []readyRowRecord) ReadyResult {
 	candidates := []readyCandidate{}
 	epicRows := map[string][]readyRowRecord{}
 
 	for _, row := range rows {
 		if row.task.EpicID == nil {
-			if isActionableReadyRow(row) {
+			if isActionableReadyRow(registry, row) {
 				candidates = append(candidates, readyCandidate{task: row.task, createdAt: row.createdAt})
 			}
 			continue
@@ -188,9 +192,9 @@ func selectReadyProjectWide(rows []readyRowRecord) ReadyResult {
 		var result ReadyResult
 		switch epicScheduling(groupedRows) {
 		case "sequential":
-			result = selectSequentialEpic(epicID, groupedRows)
+			result = selectSequentialEpic(registry, epicID, groupedRows)
 		case "prioritised":
-			result = selectPrioritisedEpic(epicID, groupedRows)
+			result = selectPrioritisedEpic(registry, epicID, groupedRows)
 		default:
 			continue
 		}
@@ -213,8 +217,8 @@ func selectReadyProjectWide(rows []readyRowRecord) ReadyResult {
 	}
 }
 
-func selectSequentialEpic(epicID string, rows []readyRowRecord) ReadyResult {
-	current := lowestSequenceUnfinished(rows)
+func selectSequentialEpic(registry *workflow.Registry, epicID string, rows []readyRowRecord) ReadyResult {
+	current := lowestSequenceUnfinished(registry, rows)
 	if current == nil {
 		return ReadyResult{
 			Explanation: &ReadyExplanation{
@@ -224,7 +228,7 @@ func selectSequentialEpic(epicID string, rows []readyRowRecord) ReadyResult {
 			},
 		}
 	}
-	if isActionableReadyRow(*current) {
+	if isActionableReadyRow(registry, *current) {
 		return ReadyResult{Task: &current.task}
 	}
 	return ReadyResult{
@@ -239,10 +243,10 @@ func selectSequentialEpic(epicID string, rows []readyRowRecord) ReadyResult {
 	}
 }
 
-func selectPrioritisedEpic(epicID string, rows []readyRowRecord) ReadyResult {
+func selectPrioritisedEpic(registry *workflow.Registry, epicID string, rows []readyRowRecord) ReadyResult {
 	candidates := []readyCandidate{}
 	for _, row := range rows {
-		if !isActionableReadyRow(row) {
+		if !isActionableReadyRow(registry, row) {
 			continue
 		}
 		candidates = append(candidates, readyCandidate{
@@ -271,10 +275,10 @@ func epicScheduling(rows []readyRowRecord) string {
 	return ""
 }
 
-func lowestSequenceUnfinished(rows []readyRowRecord) *readyRowRecord {
+func lowestSequenceUnfinished(registry *workflow.Registry, rows []readyRowRecord) *readyRowRecord {
 	var current *readyRowRecord
 	for _, row := range rows {
-		if !isUnfinishedReadyRow(row) {
+		if !isUnfinishedReadyRow(registry, row) {
 			continue
 		}
 		if current == nil || compareSequenceRows(row, *current) < 0 {
@@ -306,20 +310,20 @@ func compareSequenceRows(left, right readyRowRecord) int {
 	}
 }
 
-func isActionableReadyRow(row readyRowRecord) bool {
-	return readyStatusCategory(row.workflowID, row.status) == "unstarted"
+func isActionableReadyRow(registry *workflow.Registry, row readyRowRecord) bool {
+	return readyStatusCategory(registry, row.workflowID, row.status) == "unstarted"
 }
 
-func isUnfinishedReadyRow(row readyRowRecord) bool {
-	category := readyStatusCategory(row.workflowID, row.status)
+func isUnfinishedReadyRow(registry *workflow.Registry, row readyRowRecord) bool {
+	category := readyStatusCategory(registry, row.workflowID, row.status)
 	return category != "completed" && category != "cancelled"
 }
 
-func readyStatusCategory(workflowID, status string) string {
-	if category, ok := workflow.CategoryForState(workflowID, status); ok {
+func readyStatusCategory(registry *workflow.Registry, workflowID, status string) string {
+	if category, ok := registry.CategoryForState(workflowID, status); ok {
 		return category
 	}
-	return statusCategory(status)
+	return ""
 }
 
 func selectTopReadyCandidate(candidates []readyCandidate) *readyCandidate {

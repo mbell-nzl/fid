@@ -325,8 +325,8 @@ func buildIssueTransitionEffects(current issueState, toState, actorRole, eventID
 	}
 }
 
-func issueStatusCategory(workflowID, state string) (string, error) {
-	category, ok := workflow.CategoryForState(workflowID, state)
+func issueStatusCategory(registry *workflow.Registry, workflowID, state string) (string, error) {
+	category, ok := registry.CategoryForState(workflowID, state)
 	if !ok {
 		return "", fmt.Errorf("workflow %q does not define state %q", workflowID, state)
 	}

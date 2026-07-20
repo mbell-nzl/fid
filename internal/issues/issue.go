@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 const fidVersion = "0.1.0"
@@ -170,6 +172,14 @@ func statusCategory(status string) string {
 	default:
 		return "unstarted"
 	}
+}
+
+func registryStatusCategory(registry *workflow.Registry, workflowID, status string) (string, error) {
+	category, ok := registry.CategoryForState(workflowID, status)
+	if !ok {
+		return "", fmt.Errorf("workflow %q does not define state %q", workflowID, status)
+	}
+	return category, nil
 }
 
 func nullStringPointer(value sql.NullString) *string {

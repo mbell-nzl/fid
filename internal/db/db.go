@@ -17,8 +17,21 @@ var requiredPragmas = []string{
 	"recursive_triggers(1)",
 }
 
+var rebuildPragmas = append(append([]string{}, requiredPragmas...),
+	"synchronous(OFF)",
+	"journal_mode(MEMORY)",
+)
+
 func Open(path string) (*sql.DB, error) {
-	dsn, err := sqliteDSN(path)
+	return open(path, requiredPragmas)
+}
+
+func OpenForRebuild(path string) (*sql.DB, error) {
+	return open(path, rebuildPragmas)
+}
+
+func open(path string, pragmas []string) (*sql.DB, error) {
+	dsn, err := sqliteDSN(path, pragmas)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +49,7 @@ func Open(path string) (*sql.DB, error) {
 	return conn, nil
 }
 
-func sqliteDSN(path string) (string, error) {
+func sqliteDSN(path string, pragmas []string) (string, error) {
 	absolutePath, err := filepath.Abs(path)
 	if err != nil {
 		return "", fmt.Errorf("resolve sqlite database path: %w", err)
@@ -48,7 +61,7 @@ func sqliteDSN(path string) (string, error) {
 	}
 
 	query := url.Values{}
-	for _, pragma := range requiredPragmas {
+	for _, pragma := range pragmas {
 		query.Add("_pragma", pragma)
 	}
 

@@ -12,35 +12,6 @@ type Definition struct {
 	Transitions map[string]map[string][]RuleReference
 }
 
-func Workflow(workflowID string) (Definition, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return Definition{}, false
-	}
-	return cloneDefinition(definition), true
-}
-
-func CategoryForState(workflowID, state string) (string, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return "", false
-	}
-	return definition.CategoryForState(state)
-}
-
-func IsAllowedEdge(workflowID, fromState, toState string) bool {
-	definition, ok := definitions[workflowID]
-	return ok && definition.IsAllowedEdge(fromState, toState)
-}
-
-func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return nil, false
-	}
-	return definition.RulesForEdge(fromState, toState)
-}
-
 func (definition Definition) CategoryForState(state string) (string, bool) {
 	category, ok := definition.States[state]
 	return category, ok

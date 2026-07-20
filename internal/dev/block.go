@@ -57,7 +57,11 @@ func Block(options BlockOptions) (BlockResult, error) {
 		if err := requireTaskOrSubtask(current.ID, current.Kind); err != nil {
 			return err
 		}
-		if _, allowed := workflow.RulesForEdge(current.WorkflowID, current.Status, "failed_gate"); !allowed {
+		registry, err := workflow.Load(conn)
+		if err != nil {
+			return fmt.Errorf("dev block: load workflow registry: %w", err)
+		}
+		if _, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, "failed_gate"); !allowed {
 			return &issues.InvalidTransitionError{
 				IssueID:        current.ID,
 				CurrentState:   current.Status,

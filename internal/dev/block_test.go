@@ -194,3 +194,30 @@ func TestBlockSupersedesPriorCompletions(t *testing.T) {
 		t.Fatalf("prior task_completion status = %q, want superseded", firstStatus)
 	}
 }
+
+func TestBlockRejectsEdgeMissingFromProjectedWorkflowRegistry(t *testing.T) {
+	workspace := newDevWorkspace(t)
+	issueID, _, _ := seedFinishReadyIssue(t, workspace)
+
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transitions
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "in_progress", "failed_gate"); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("delete projected transition: %v", err)
+	}
+	closeDevDB(t, conn)
+
+	_, err := Block(BlockOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testDevMigrationsDir(t),
+		IssueID:       issueID,
+		ActorRole:     "developer",
+		ReasonMDPath:  "project-docs/docs/block.md",
+	})
+	var invalidErr *issues.InvalidTransitionError
+	if !errors.As(err, &invalidErr) {
+		t.Fatalf("Block() error = %v, want projected-registry invalid transition", err)
+	}
+}

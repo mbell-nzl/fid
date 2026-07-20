@@ -112,3 +112,36 @@ func TestCheckErrorsExcludesEveryResolvedV01Rule(t *testing.T) {
 		t.Fatalf("Check().Errors = %#v, want no errors", got.Errors)
 	}
 }
+
+func TestCheckWorkflowStatesReadsProjectedWorkflowTables(t *testing.T) {
+
+	fixture := newMaintenanceFixture(t)
+	seedJournalEvent(t, fixture.journalPath, "EVT-20260715-000001")
+	seedIssue(t, fixture.db, "FID-registry-audit", "task", nil, nil, "task-default", "todo")
+
+	setFixturePragmas(t, fixture.db, false, false)
+	if _, err := fixture.db.Exec(`
+		DELETE FROM workflow_states
+		WHERE workflow_id = ? AND state = ?
+	`, "task-default", "todo"); err != nil {
+		t.Fatalf("delete projected workflow state: %v", err)
+	}
+	setFixturePragmas(t, fixture.db, true, false)
+
+	result, err := Check(CheckOptions{DB: fixture.db, JournalDir: fixture.journalDir})
+	if err != nil {
+		t.Fatalf("Check() error = %v", err)
+	}
+	if !hasFinding(result.Errors, "workflow_state", "FID-registry-audit") {
+		t.Fatalf("Check().Errors = %#v, want workflow_state finding for projected-table mismatch", result.Errors)
+	}
+}
+
+func hasFinding(findings []Finding, check, entityID string) bool {
+	for _, finding := range findings {
+		if finding.Check == check && finding.EntityID == entityID {
+			return true
+		}
+	}
+	return false
+}

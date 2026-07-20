@@ -26,6 +26,32 @@ func TestOpenEnablesRequiredPragmas(t *testing.T) {
 	assertPragmaValue(t, conn, "recursive_triggers", 1)
 }
 
+func TestOpenForRebuildRelaxesDurabilityWithoutChangingNormalOpen(t *testing.T) {
+	rebuildPath := t.TempDir() + "/rebuild.sqlite"
+	rebuildConn, err := OpenForRebuild(rebuildPath)
+	if err != nil {
+		t.Fatalf("OpenForRebuild() error = %v", err)
+	}
+	defer closeDB(t, rebuildConn)
+
+	assertPragmaValue(t, rebuildConn, "foreign_keys", 1)
+	assertPragmaValue(t, rebuildConn, "recursive_triggers", 1)
+	assertPragmaValue(t, rebuildConn, "synchronous", 0)
+	assertPragmaTextValue(t, rebuildConn, "journal_mode", "memory")
+
+	normalPath := t.TempDir() + "/normal.sqlite"
+	normalConn, err := Open(normalPath)
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeDB(t, normalConn)
+
+	assertPragmaValue(t, normalConn, "foreign_keys", 1)
+	assertPragmaValue(t, normalConn, "recursive_triggers", 1)
+	assertPragmaValue(t, normalConn, "synchronous", 2)
+	assertPragmaTextValue(t, normalConn, "journal_mode", "delete")
+}
+
 func TestOpenEnablesRequiredPragmasOnEveryPhysicalConnection(t *testing.T) {
 	t.Parallel()
 
@@ -217,6 +243,19 @@ func assertPragmaValue(t *testing.T, conn *sql.DB, pragma string, want int) {
 
 	if got != want {
 		t.Fatalf("pragma %q = %d, want %d", pragma, got, want)
+	}
+}
+
+func assertPragmaTextValue(t *testing.T, conn *sql.DB, pragma, want string) {
+	t.Helper()
+
+	var got string
+	if err := conn.QueryRow("PRAGMA " + pragma + ";").Scan(&got); err != nil {
+		t.Fatalf("query pragma %q: %v", pragma, err)
+	}
+
+	if got != want {
+		t.Fatalf("pragma %q = %q, want %q", pragma, got, want)
 	}
 }
 

@@ -21,8 +21,8 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if !reflect.DeepEqual(registry.definitions, FrozenDefinitions()) {
-		t.Fatalf("loaded registry definitions = %#v, want frozen v0.1 definitions %#v", registry.definitions, FrozenDefinitions())
+	if !reflect.DeepEqual(registry.workflows, FrozenDefinitions()) {
+		t.Fatalf("loaded registry workflows = %#v, want frozen v0.1 definitions %#v", registry.workflows, FrozenDefinitions())
 	}
 }
 

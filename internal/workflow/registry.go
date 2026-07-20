@@ -9,8 +9,8 @@ import (
 
 // Registry resolves workflow definitions from the projected workflow tables.
 type Registry struct {
-	definitions map[string]Definition
-	edges       map[transitionKey][]RuleReference
+	workflows map[string]Definition
+	edges     map[transitionKey][]RuleReference
 }
 
 type transitionKey struct {
@@ -32,8 +32,8 @@ func Load(conn *sql.DB) (*Registry, error) {
 	defer func() { _ = rows.Close() }()
 
 	registry := &Registry{
-		definitions: make(map[string]Definition),
-		edges:       make(map[transitionKey][]RuleReference),
+		workflows: make(map[string]Definition),
+		edges:     make(map[transitionKey][]RuleReference),
 	}
 	for rows.Next() {
 		var workflowID string
@@ -44,7 +44,7 @@ func Load(conn *sql.DB) (*Registry, error) {
 		if err != nil {
 			return nil, err
 		}
-		registry.definitions[workflowID] = definition
+		registry.workflows[workflowID] = definition
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("load workflow registry: iterate workflows: %w", err)
@@ -54,7 +54,7 @@ func Load(conn *sql.DB) (*Registry, error) {
 
 // Workflow returns an isolated definition from the loaded registry.
 func (registry *Registry) Workflow(workflowID string) (Definition, bool) {
-	definition, ok := registry.definitions[workflowID]
+	definition, ok := registry.workflows[workflowID]
 	if !ok {
 		return Definition{}, false
 	}
@@ -63,7 +63,7 @@ func (registry *Registry) Workflow(workflowID string) (Definition, bool) {
 
 // CategoryForState returns a state category from the loaded registry.
 func (registry *Registry) CategoryForState(workflowID, state string) (string, bool) {
-	definition, ok := registry.definitions[workflowID]
+	definition, ok := registry.workflows[workflowID]
 	if !ok {
 		return "", false
 	}
@@ -78,7 +78,7 @@ func (registry *Registry) IsAllowedEdge(workflowID, fromState, toState string) b
 
 // RulesForEdge returns the ordered rules for an edge in the loaded registry.
 func (registry *Registry) RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
-	definition, ok := registry.definitions[workflowID]
+	definition, ok := registry.workflows[workflowID]
 	if !ok || !knownState(definition, fromState) || !knownState(definition, toState) {
 		return nil, false
 	}

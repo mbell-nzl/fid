@@ -9,6 +9,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type GateOptions struct {
@@ -62,7 +63,11 @@ func Gate(options GateOptions) (GateResult, error) {
 			return err
 		}
 
-		category, err := issueStatusCategory(current.WorkflowID, current.Status)
+		registry, err := workflow.Load(conn)
+		if err != nil {
+			return fmt.Errorf("dev gate: load workflow registry: %w", err)
+		}
+		category, err := issueStatusCategory(registry, current.WorkflowID, current.Status)
 		if err != nil {
 			return err
 		}

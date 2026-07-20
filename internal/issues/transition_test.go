@@ -350,6 +350,53 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 	}
 }
 
+func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Reserved gate seam",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
+		VALUES (?, ?, ?, ?, ?)
+	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, `{"gates":[{"id":"gate-test","version":1}]}`); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("insert reserved workflow rule: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	before, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("read journal before reserved rule: %v", err)
+	}
+	_, err = Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "in_progress",
+		ActorRole:     "developer",
+	})
+	if err == nil || !strings.Contains(err.Error(), `unsupported workflow rule "required_gates_current"`) {
+		t.Fatalf("Transition() error = %v, want unevaluated reserved-rule rejection", err)
+	}
+	after, readErr := os.ReadFile(journalPath)
+	if readErr != nil {
+		t.Fatalf("read journal after reserved rule: %v", readErr)
+	}
+	if !reflect.DeepEqual(after, before) {
+		t.Fatal("journal changed while reserved gate rule was rejected")
+	}
+}
+
 func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
 	t.Parallel()
 

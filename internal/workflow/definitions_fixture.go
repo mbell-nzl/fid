@@ -89,6 +89,39 @@ var definitions = map[string]Definition{
 	},
 }
 
+// Workflow returns an isolated frozen v0.1 fixture definition.
+func Workflow(workflowID string) (Definition, bool) {
+	definition, ok := definitions[workflowID]
+	if !ok {
+		return Definition{}, false
+	}
+	return cloneDefinition(definition), true
+}
+
+// CategoryForState returns a category from the frozen v0.1 fixture.
+func CategoryForState(workflowID, state string) (string, bool) {
+	definition, ok := definitions[workflowID]
+	if !ok {
+		return "", false
+	}
+	return definition.CategoryForState(state)
+}
+
+// IsAllowedEdge reports whether an edge exists in the frozen v0.1 fixture.
+func IsAllowedEdge(workflowID, fromState, toState string) bool {
+	definition, ok := definitions[workflowID]
+	return ok && definition.IsAllowedEdge(fromState, toState)
+}
+
+// RulesForEdge returns the ordered frozen v0.1 fixture rules for an edge.
+func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
+	definition, ok := definitions[workflowID]
+	if !ok {
+		return nil, false
+	}
+	return definition.RulesForEdge(fromState, toState)
+}
+
 // FrozenDefinitions returns an isolated copy of the v0.1 workflow reference.
 func FrozenDefinitions() map[string]Definition {
 	fixtures := make(map[string]Definition, len(definitions))

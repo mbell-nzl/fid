@@ -239,6 +239,48 @@ func TestFinishSucceedsWithoutPreexistingCompletionOnceDeveloperACsPass(t *testi
 	}
 }
 
+func TestFinishRejectsEdgeMissingFromProjectedWorkflowRegistry(t *testing.T) {
+	workspace := newDevWorkspace(t)
+	issueID, _, _ := seedFinishReadyIssue(t, workspace)
+
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("disable foreign keys: %v", err)
+	}
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transition_requires
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "in_progress", "dev_complete"); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("delete projected transition requirements: %v", err)
+	}
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transitions
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "in_progress", "dev_complete"); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("delete projected transition: %v", err)
+	}
+	if _, err := conn.Exec(`PRAGMA foreign_keys = ON`); err != nil {
+		closeDevDB(t, conn)
+		t.Fatalf("enable foreign keys: %v", err)
+	}
+	closeDevDB(t, conn)
+
+	_, err := Finish(FinishOptions{
+		WorkspaceRoot:    workspace,
+		MigrationsDir:    testDevMigrationsDir(t),
+		IssueID:          issueID,
+		ActorRole:        "developer",
+		CompletionMDPath: "project-docs/docs/finish.md",
+	})
+	var invalidErr *issues.InvalidTransitionError
+	if !errors.As(err, &invalidErr) {
+		t.Fatalf("Finish() error = %v, want projected-registry invalid transition", err)
+	}
+}
+
 func seedFinishReadyIssue(t *testing.T, workspace string) (string, string, string) {
 	t.Helper()
 
