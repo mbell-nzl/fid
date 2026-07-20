@@ -72,8 +72,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `37b3fb524bc5ba3d2774f6c14a12e78cbc028e1f`
 
 ## Commit subject
 
-- Pending commit
+- `perf(rebuild): relax projection durability`
