@@ -79,8 +79,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `795a7df673708d21e558448e20edeb367f864078`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): release registry rows before nested loads`
