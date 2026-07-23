@@ -75,3 +75,150 @@
 - Cause: Review 1 / TRG-002; unresolved VAL-020 rebuild evidence gap blocks Task 4.
 - Triage: TRG-002 (BLOCK; TL-Lite reported escalation ID requires the current escalation register)
 - Next human action: add the Task 3 rebuild assertion for released-claim absence, rerun the full Task 3 gate and report, then obtain a QA Reviewer re-review before resuming Task 4.
+
+### 2026-07-19 15:13 RUN-RESUME
+
+- Branch: `phase-18-workflow-migration`
+- Resuming from: TRG-002 STOP, resolved by `DEC-068`
+- ESC baseline (Open at resume): none
+- Reconciliation: Tasks 1-3 are complete; Review 1 is committed with one VAL-020 Blocking finding; Task 3 remediation is explicitly in scope and no Task 4 work has started.
+- Starting task: Task 3 VAL-020 remediation, then QA Reviewer re-review
+
+### 2026-07-19 15:19 TASK task-3 REMEDIATION COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-3-done.md`
+- report-lint: PASS
+- Commit: `77400cebaa57aa3518bfad0ea7938a4fa6325cfd` - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-07-19 15:23 REVIEW review-1-remediation
+
+- Path: `project-docs/docs/phases/phase-18/qa/review-1-remediation.md`
+- Tasks covered: task-3 VAL-020 remediation only
+- Blocking: 0 / Improvement: 0 / ESC raised: none
+
+### 2026-07-19 15:40 TASK task-4 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-4-done.md`
+- report-lint: PASS
+- Commit: `0b4b8aaa14498d43b23381bd4f83669468c15e10` - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-07-19 16:36 REVIEW review-2
+
+- Path: `project-docs/docs/phases/phase-18/qa/review-2.md`
+- Tasks covered: task-4
+- Blocking: 1 / Improvement: 0 / ESC raised: none
+
+### 2026-07-19 16:39 TRIAGE TRG-003
+
+- Trigger: Review 2 found VAL-006 lacks a successful valid `(workflow_id,status)` UPDATE probe and persisted-pair evidence before Task 5.
+- Verdict: BLOCK (escalated as ESC-NNN; TL-Lite did not mint a concrete identifier)
+
+### 2026-07-19 16:39 STOP
+
+- Cause: Review 2 / TRG-003; required VAL-006 qualifying UPDATE evidence remains unproven.
+- Triage: TRG-003 (BLOCK, escalated as ESC-NNN)
+- Next human action: Tech Lead resolve the escalated VAL-006 evidence gap, then resume with a Task 4 remediation Developer and QA Reviewer re-review before Task 5.
+
+### 2026-07-19 16:51 RUN-RESUME
+
+- Branch: `phase-18-workflow-migration`
+- Resuming from: TRG-003 STOP, resolved by `DEC-069`
+- ESC baseline (Open at resume): none
+- Reconciliation: Tasks 1-4 are complete; Review 2 is committed with one VAL-006 Blocking finding; no Task 5 report or implementation exists; DEC-069 is a local Task 4 remediation with no contract/scope/order change.
+- Starting task: Task 4 VAL-006 remediation, then QA Reviewer re-review
+
+### 2026-07-19 16:55 TASK task-4 REMEDIATION COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-4-done.md`
+- report-lint: PASS
+- Commit: `a27fb5fc5a8c72242d0777161af41f8a5fbaa3cb` - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-07-19 16:58 REVIEW review-2-remediation
+
+- Path: `project-docs/docs/phases/phase-18/qa/review-2-remediation.md`
+- Tasks covered: task-4 VAL-006 remediation only
+- Blocking: 0 / Improvement: 0 / ESC raised: none
+
+### 2026-07-20 16:35 TASK task-5 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-5-done.md`
+- report-lint: PASS (`project-docs/tools/report-lint.sh`)
+- Implementation commit: `37b3fb524bc5ba3d2774f6c14a12e78cbc028e1f` - verified, subject matched
+- Report-finalization commit: `d7f11995c77d8ed028b4ecaaa2cbd61e8688522c` - verified, subject matched
+- Evidence: all seven Task 5 phase-level commands PASS; VAL-024 inventory and runtime parity PASS; 100k rebuild `25235973633 ns/op` (`25236 ms/rebuild`), under the `<30s` target
+
+### 2026-07-20 16:55 REVIEW final QA review
+
+- Path: `project-docs/docs/phases/phase-18/qa/final-review.md`
+- Human checklist: `project-docs/docs/phases/phase-18/qa/human-checklist.md`
+- QA verdict: BLOCK
+- Validation outcomes: `VAL-001..VAL-024` all recorded PASS; blocking findings remain for a reproducible `workflow.Load` maintenance-test deadlock and missing QA-30 Tech Lead specification synchronization
+- Review commit: `46d8013abc46d44ed1694f8290c163d612de5f3a` (`docs(qa): complete phase 18 final review`)
+
+### 2026-07-20 16:58 TRIAGE TRG-001
+
+- Trigger: Final QA review BLOCK findings; required maintenance test hangs under the documented one-connection fixture and canonical specification synchronization is incomplete
+- Source: `project-docs/docs/phases/phase-18/qa/final-review.md`
+- Triage log: `project-docs/docs/phases/phase-18/triage-log.md`
+- Verdict: BLOCK (escalated as `ESC-001`)
+
+### 2026-07-20 16:59 STOP
+
+- Cause: Final QA review blocking findings, triaged by `TRG-001`
+- Evidence: `workflow.Load` deadlock reproduction remains unresolved; QA-30 requires stale `02_TRD.md`, `03_TRD_SCHEMA.md`, and phase-status synchronization
+- Escalation: `ESC-001` is Open in `project-docs/docs/current/tl_escalations_current.md`
+- Next human action: Tech Lead resolve the maintenance deadlock, coordinate the required specification/current-context synchronization, and obtain fresh deterministic full-gate evidence before resuming Phase 18
+
+### 2026-07-20 16:00 RUN-RESUME
+
+- Branch: `phase-18-workflow-migration`
+- Resuming from: TRG-004 STOP, resolved by `DEC-070`
+- ESC baseline (Open at resume): none
+- Reconciliation: Tasks 1-4 and required reviews are complete; Task 5 implementation remains in the working tree; the Task 5 blocker report is uncommitted and will be replaced by a normal completion report after the gate is completed.
+- Starting task: Task 5 gate/build completion and closure report
+
+### 2026-07-20 16:30 RUN-RESUME
+
+- Branch: `phase-18-workflow-migration`
+- Resuming from: TRG-005 STOP, resolved by `DEC-071`
+- ESC baseline (Open at resume): none
+- Reconciliation: Tasks 1-4 and required reviews are complete; retained Task 5 implementation and blocker report are uncommitted; DEC-071 authorizes a rebuild-only connection pragma fix plus focused test, then the full ordered gate and final report.
+- Starting task: Task 5 DEC-071 remediation, gate completion, and closure report
+
+### 2026-07-20 16:09 TRIAGE TRG-005
+
+- Trigger: DEC-070 Task 5 gate exposed a genuine TRD-PERF-003 failure: the 100k-event rebuild measured `33.3846063s`, exceeding the required `<30s` target.
+- Verdict: BLOCK (escalated as ESC-NEW; TL-Lite did not mint a concrete identifier or triage-log entry)
+
+### 2026-07-20 16:09 STOP
+
+- Cause: Task 5 performance-gate failure / TRG-005; `go test -bench . -benchmem ./...` exited 1 on the 100k-event rebuild threshold.
+- Triage: TRG-005 (BLOCK, escalated as ESC-NEW)
+- Next human action: Tech Lead resolve the TRD-PERF-003 performance escalation; do not weaken the `<30s` target. Then resume Task 5 from the retained working tree and rerun the full gate.
+
+### 2026-07-19 17:00 TRIAGE TRG-004
+
+- Trigger: Task 5 blocker report records incomplete required benchmark evidence and an unrun build command; no Task 5 commit exists.
+- Verdict: BLOCK (escalated as ESC-NNN; TL-Lite did not mint a concrete identifier or triage-log entry)
+
+### 2026-07-19 17:00 STOP
+
+- Cause: Task 5 blocker report / TRG-004; required `go test -bench . -benchmem ./...` did not complete and `go build -o /tmp/fid ./cmd/fid` was not run.
+- Triage: TRG-004 (BLOCK, escalated as ESC-NNN)
+- Next human action: Tech Lead resolve the Task 5 benchmark/build gate blocker and determine disposition of the uncommitted Task 5 implementation before resuming the phase.
+
+### 2026-07-19 16:55 TASK task-4 REMEDIATION COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-4-done.md`
+- report-lint: PASS
+- Commit: `a27fb5fc5a8c72242d0777161af41f8a5fbaa3cb` - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-07-19 16:58 REVIEW review-2-remediation
+
+- Path: `project-docs/docs/phases/phase-18/qa/review-2-remediation.md`
+- Tasks covered: task-4 VAL-006 remediation only
+- Blocking: 0 / Improvement: 0 / ESC raised: none

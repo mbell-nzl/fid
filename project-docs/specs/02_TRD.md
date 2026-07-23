@@ -46,7 +46,7 @@ cmd/fid/              CLI command tree (Cobra)
     │
     ├──► internal/issues/     Issue, AC, completion, concern logic
     ├──► internal/claims/     Claim acquire/release/steal
-    ├──► internal/workflow/   State machines + transition rules (v0.1 hard-coded)
+    ├──► internal/workflow/   Read-only registry loaded from the workflow tables
     ├──► internal/maintenance/ Read-only structural audit over projection + journal
     ├──► internal/policy/     Role × action permissions matrix
     ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
@@ -172,7 +172,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 
 | Entity | Key Fields | Notes |
 |---|---|---|
-| `workflows` | id (stable slug), name, applies_to | v0.1: hard-coded in app code as enum strings. |
+| `workflows` | id (stable slug), name, applies_to | v0.1: hard-coded in app code as enum strings. Seeded into the tables and made the runtime source of truth in v0.2a (§4.6). |
 | `workflow_states` | workflow_id, state, category, ordinal | Category enables portable queries. |
 | `workflow_transitions` | workflow_id, from_state, to_state | Explicit allowed edges. |
 | `workflow_transition_requires` | workflow_id, from/to_state, rule, params_json | E.g. `all_acs_verified` with `{"roles":["developer"]}`. |
@@ -582,6 +582,19 @@ PRAGMA foreign_keys = ON;
 PRAGMA recursive_triggers = ON;
 ```
 
+**Rebuild-connection exception (Phase 18, DEC-071).** The connection used by
+`fid rebuild` additionally sets `synchronous = OFF` and `journal_mode = MEMORY`
+(applied through the DSN `_pragma` mechanism so every pooled connection carries
+them). `foreign_keys` and `recursive_triggers` stay ON, and the normal
+command-path connection keeps full durability — this relaxation is scoped to
+rebuild only. It is safe because rebuild reconstructs a *derived* store from the
+canonical journal, from scratch and under the workspace write lock: a crash
+mid-rebuild discards the partial DB and re-rebuilds (ADR-0001, TRD-ARCH-001), so
+durability during reconstruction has no contract value. Pragmas change durability
+and journaling, not row data, so the rebuilt projection stays byte-identical.
+`journal_mode = MEMORY` (rather than `OFF`) preserves transactional rollback, so
+per-event error surfacing is unchanged.
+
 ### 4.5 Validation Strategy
 
 **Application-layer primary, SQLite triggers as backstop.**
@@ -618,12 +631,27 @@ AC verification freshness, required-validator satisfaction for validation
 outcomes, template validation. These need rich context, ordering,
 multi-table reads, or runtime state that SQL doesn't have.
 
-### 4.6 Default Workflows (v0.1 Hard-Coded)
+### 4.6 Default Workflows (migrated to the workflow tables in v0.2a)
 
-v0.1 ships with hard-coded workflow definitions in `internal/workflow/`.
-`issues.workflow_id` is an enum string and `issues.status` is constrained to
-the legal states for that workflow. v0.2 migrates these definitions verbatim
-into the workflow tables before enabling user-defined workflows.
+v0.1 shipped these workflow definitions hard-coded in `internal/workflow/`.
+**As of Phase 18 (v0.2a slice 1) they are seeded verbatim into the workflow
+tables (`03_TRD_SCHEMA.md` §3) by migration `0007`, and the tables are the
+runtime source of truth.** `internal/workflow` now loads a read-only registry
+from those tables on each read; the Go `definitions` map is retained solely as
+frozen parity fixtures for tests, and no production code path reads it. The
+tables below therefore document the seeded default data, not a hard-coded
+runtime structure.
+
+The defaults are seeded by migration DDL rather than journal events: they are
+system reference data, which keeps v0.1 history unchanged and satisfies foreign
+key ordering on rebuild. User-defined workflow definitions become journal events
+in Phase 19, when `fid workflow define/assign/list` ships.
+
+`issues.workflow_id` and `issues.status` are foreign keys into `workflows` and
+`workflow_states` (migration `0008`), so an issue cannot hold a workflow/state
+pair the tables do not define. Cancel edges (`<state>` → `cancelled` for every
+non-cancelled state) are seeded explicitly rather than resolved by a code
+special-case.
 
 **Task workflow: `task-default`**
 
@@ -889,4 +917,4 @@ tracked in `01_PRD.md` §7.
   caps, and whether the store lives under `.fid/artifacts/` (gitignored) only
   or may also target a CI artifact path. Decide at v0.2b phase planning.
 
-*Last updated: 2026-07-18*
+*Last updated: 2026-07-23*

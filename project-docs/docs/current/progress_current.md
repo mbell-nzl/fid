@@ -8,9 +8,12 @@
 ## Project State
 
 **Status:** Phase 17 **COMPLETE / WRAPPED (2026-07-18)**; **v0.1 closed for
-early dogfood (DEC-057)**. **Phase 18 (v0.2a slice 1) is PLANNED — pending Human
-approval.** No implementation has begun. v0.2a is sliced into Phases 18–20 (see
-the roadmap phase-slicing note and `phase_brief.md`).
+early dogfood (DEC-057)**. **Phase 18 (v0.2a slice 1) is IN EXECUTION (Heavy
+Mode) — final-review remediation.** All five tasks are implemented and committed;
+the QA Lead final review returned **BLOCK** (24 VAL PASS / 0 FAIL, but a
+registry-loader deadlock leaves four required gate commands non-terminating),
+resolved by **DEC-072**. v0.2a is sliced into Phases 18–20 (see the roadmap
+phase-slicing note and `phase_brief.md`).
 
 Phase 17 outcome:
 
@@ -36,8 +39,15 @@ Phase 17 outcome:
 
 ## Escalations
 
-None open. All Phase 17 escalations (ESC-004/005/009/010/011) are resolved and
-archived in `../phases/phase-17/tl-escalations.md`.
+**ESC-001 (Phase 18) — resolved by DEC-072**, pending remediation and QA
+re-review before it archives. Raised from the final-review BLOCK: the
+`workflow.Load` connection deadlock plus the then-absent QA-30 spec sync. The
+spec-sync half is done; the loader fix is the open work. Note the ID collides
+with Phase 17's ESC-001 — the known CF-023 defect; left as-is rather than
+renumbered mid-phase.
+
+All Phase 17 escalations (ESC-004/005/009/010/011) are resolved and archived in
+`../phases/phase-17/tl-escalations.md`.
 
 ## Planning Checkpoint (2026-07-18)
 
@@ -50,18 +60,33 @@ ratification. No implementation began.**
 
 ## Next Action
 
-The Phase 18 QA plan was drafted and came back `BLOCKED BEFORE TASK 1`
-(QA-BLK-18-01..03); Phase Runner triaged as TRG-001 → BLOCK and stopped. The
-Tech Lead resolved all three blocks on 2026-07-19 (**DEC-067**): the validation
-contract is refined to **Ready** (now VAL-001..024), Task 4's dependent-object
-inventory is made exact, and Task 5 gains the 100k-rebuild / 10k-read
-performance benchmarks. Remaining before task execution:
+Phase 18 is in Heavy-Mode execution. All five tasks are implemented and
+committed (Task 5 at `37b3fb5`; DEC-068 VAL-020, DEC-069 VAL-006, DEC-070 gate
+completion, and DEC-071 TRD-PERF-003 all remediated and re-reviewed). The QA Lead
+final review (`qa/final-review.md`) returned **BLOCK** with **24 VAL PASS / 0
+FAIL** but two Blocking findings, triaged as **TRG-006 → ESC-001** and resolved
+by **DEC-072**:
 
-1. **Human approval** of the Heavy Mode plan (operating mode, contract, five-task
-   list).
-2. On Phase Runner resume, the QA Lead refreshes the QA plan's IDs/mappings
-   (activating the now-active VAL-015..024) and clears its blocked status.
+- `workflow.Load` issues nested per-workflow queries while the outer `workflows`
+  rows still hold the connection, so it deadlocks on a one-connection pool and
+  four required gate commands (coverage, unit, integration, benchmark) never
+  terminate. The real CLI entrypoint is unaffected (no pool cap in `db.Open`), so
+  VAL-010 passes on behavior — but the heavy-mode gate is not green.
+- The QA-30 spec sync was absent. **Now applied** (DEC-072).
 
-Recommended before execution: the CF-023 workflow-tooling pass (light mode) so
-report-lint / escalation-register friction is fixed first. Do not start Phase 18
-tasks before Human approval.
+Remaining to close the phase:
+
+1. Resume the Phase Runner from the ESC-001 / TRG-006 STOP; re-spawn a Developer
+   to fix `workflow.Load` (materialize the workflow IDs and release the outer
+   rows before any nested query) and add a bounded-timeout single-connection
+   regression test, then run the full seven-command phase gate **to completion in
+   order**, re-run the focused maintenance evidence and the VAL-024 two-`rg`
+   inventory + runtime parity, correct the over-claimed command records in
+   `task-5-done.md`, and commit. Do **not** touch the fixtures' `SetMaxOpenConns(1)`
+   or the gate commands. A still-hanging command, changed registry ordering, a
+   broken parity assertion, or a 100k rebuild at/over `30s` **escalates**.
+2. QA Lead re-runs the **final review** against fresh deterministic evidence,
+   then the human checklist (4 items, pending) — Task 5 is the last task; no
+   further mid-phase review.
+3. At wrap: audit all 24 VAL outcomes, confirm the DEC-072 spec-sync verdict
+   table, archive ESC-001, and compress current context.

@@ -385,11 +385,23 @@ CREATE TABLE evidence_links (
 
 ---
 
-## 3. Workflows (v0.2+; v0.1 hard-coded)
+## 3. Workflows (shipped v0.2a; seeded from the v0.1 defaults)
 
-The v0.1 hard-coded workflow graphs, status-category mappings, and transition
-requirements are defined in `02_TRD.md` §4.6. The tables below ship in v0.2
-and are seeded from those defaults verbatim.
+The default workflow graphs, status-category mappings, and transition
+requirements are listed in `02_TRD.md` §4.6. **The tables below ship in v0.2a
+(migration `0007`), seeded verbatim from the v0.1 defaults, and are the runtime
+source of truth** — `internal/workflow` loads a read-only registry from them, and
+no production code path reads the frozen Go `definitions` map (retained only as
+test parity fixtures). Migration `0008` adds the `issues.workflow_id` and
+`issues.(workflow_id, status)` foreign keys into `workflows` /
+`workflow_states`.
+
+`workflow_transition_requires` intentionally has no PRIMARY KEY or UNIQUE
+constraint: an edge may carry several ordered rules, and order is resolved by
+`rowid`. Its `params_json` also carries the reserved gate-obligation shape
+(DEC-066) — the rule names `required_gates_current` and `has_completion` are
+recognised by the loader and surfaced as unimplemented, but are **not seeded**
+and have no evaluator; the seam is schema-present and behavior-free until v0.2b.
 
 ```sql
 CREATE TABLE workflows (
@@ -1179,7 +1191,7 @@ context, multi-table reads, ordering, or runtime state (calling role) that SQL
 doesn't have. They live in app-layer code exclusively, with `fid maintenance
 check` as the periodic audit.
 
-### 14.11 Maintenance Structural-Audit Parity (v0.1)
+### 14.11 Maintenance Structural-Audit Parity
 
 `fid maintenance check` is read-only: it reports every discovered violation and
 never repairs projection rows or appends a journal event. Its structural-error
@@ -1193,8 +1205,11 @@ corrupt or externally modified projection:
   v0.1 claim scope and issue resolution; and activity-log supported type and
   target resolution;
 - every row returned by `PRAGMA foreign_key_check`; and
-- each issue's `(workflow_id, status)` pair against the canonical v0.1 Go
-  workflow definitions.
+- each issue's `(workflow_id, status)` pair against the projected workflow
+  tables (§3), resolved through the read-only workflow registry. As of v0.2a
+  this is the migrated source of truth; the audit no longer consults the frozen
+  v0.1 Go definitions, which survive only as test parity fixtures. Behavior is
+  otherwise unchanged — an unknown pair is a structural error.
 
 For every `activity_log` row, the audit also resolves `journal_event_id` in the
 append-only journal using the journal inspection path. A missing journal event
@@ -1213,6 +1228,11 @@ PRAGMA recursive_triggers = ON;
 
 Set on every connection open.
 
+The `fid rebuild` connection additionally sets `synchronous = OFF` and
+`journal_mode = MEMORY` (DEC-071); `foreign_keys` and `recursive_triggers` remain
+ON and the normal command path keeps full durability. See `02_TRD.md` §4.4 for
+the rationale.
+
 ---
 
-*Last updated: 2026-07-18*
+*Last updated: 2026-07-23*

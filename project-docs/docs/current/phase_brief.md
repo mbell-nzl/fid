@@ -1,4 +1,4 @@
-# Phase Brief - Phase 18 (Planning — pending Human approval)
+# Phase Brief - Phase 18 (In execution — final-review remediation)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session.
@@ -19,16 +19,44 @@ present in schema with zero behavioral change.
 
 ## Status
 
-**Approved (Heavy Mode) — 2026-07-19.** The Human approved the operating mode,
-validation contract (VAL-001..024, Ready), and five-task list. The QA-plan
-block (QA-BLK-18-01..03 / TRG-001) was resolved by the Tech Lead: contract
-refined to **Ready** with VAL-015..024; Task 4 dependent-object inventory made
-exact; Task 5 performance benchmarks added — see DEC-067 in
-`../phases/phase-18/decisions.md`. Next concrete action: **resume the Phase
-Runner** from the existing RUN-START ledger entry. On resume it re-spawns the
-QA Lead to refresh the QA plan's IDs/mappings (activating VAL-015..024) and
-clear its `BLOCKED BEFORE TASK 1` status, then drives the dev/QA loop from
-Task 1.
+**In execution (Heavy Mode) — final-review remediation, 2026-07-23.** All five
+tasks are **implemented and committed** (Task 5 at `37b3fb5`, reports finalized
+at `d7f1199`). Five mid-phase blocks were resolved by the Tech Lead as do-now,
+in-window remediations with no contract change: **DEC-067** (QA-plan block /
+TRG-001), **DEC-068** (Review 1 / TRG-002, VAL-020 rebuild evidence), **DEC-069**
+(Review 2 / TRG-003, VAL-006 valid-pair UPDATE evidence), **DEC-070** (Task 5 /
+TRG-004, interrupted benchmark+build gate), and **DEC-071** (Task 5 / TRG-005,
+TRD-PERF-003 100k-rebuild failure, fixed by rebuild-scoped durability
+relaxation — target unchanged).
+
+**Current blocker: QA Lead final review returned `BLOCK`** (`qa/final-review.md`)
+with **24 PASS / 0 FAIL** on the validation contract but two Blocking findings,
+triaged as **TRG-006 → ESC-001** and resolved by **DEC-072**:
+
+1. **QA-BLK-18-FINAL-01 — `workflow.Load` deadlocks on a one-connection pool.**
+   It issues nested per-workflow queries while the outer `workflows` rows still
+   hold the connection (`internal/workflow/registry.go:23/38/112`), so four of
+   the seven required gate commands (coverage, unit, integration, benchmark)
+   **never terminate** on HEAD. Production `db.Open` sets no pool cap, so the
+   real `fid maintenance check` entrypoint is unaffected (VAL-010 PASS via the
+   real-entrypoint check) — but the heavy-mode gate is not green. Disposition:
+   **fix the loader, not the fixture**; do-now within Task 5.
+2. **QA-BLK-18-FINAL-02 — required Tech Lead spec sync absent (QA-30).**
+   **Resolved by DEC-072:** `02_TRD.md` §§4.4/4.6, `03_TRD_SCHEMA.md` §§3/14.11/
+   §15, the canonical-suite verdict table, and these current docs are now synced.
+
+**Next concrete action:** resume the Phase Runner from the ESC-001 / TRG-006
+STOP — re-spawn a Developer to apply the DEC-072 `workflow.Load` fix plus a
+bounded-timeout single-connection regression test, rerun the full seven-command
+phase gate **to completion in order** (capturing 1k/10k/100k rebuild + 10k-read
+`ns/op` and the fresh coverage total), re-run the focused maintenance evidence
+and the VAL-024 `rg` inventory, correct the over-claimed command records in
+`task-5-done.md`, and commit; then the QA Lead re-runs the **final review**
+against fresh evidence (Task 5 is the last task — no further mid-phase review),
+followed by the human checklist. A still-hanging command, a changed registry
+ordering, a broken parity assertion, or a 100k rebuild back at/over `30s`
+escalates rather than passing. See DEC-067..DEC-072 in
+`../phases/phase-18/decisions.md`.
 
 ## Operating Mode
 
@@ -44,11 +72,11 @@ Full task specs and completion reports live under `../phases/phase-18/tasks/`.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | Workflow tables migration + seed defaults + gate seam | Pending | None |
-| 2 | DB-backed workflow registry loader + v0.1 parity fixtures | Pending | 1 |
-| 3 | Transition-path data-source swap (behavior-preserving) | Pending | 1, 2 |
-| 4 | issues.workflow_id/status FK migration (table rebuild) | Pending | 1 |
-| 5 | Remaining consumer swap + maintenance parity + closure | Pending | 1–4 |
+| 1 | Workflow tables migration + seed defaults + gate seam | Complete | None |
+| 2 | DB-backed workflow registry loader + v0.1 parity fixtures | Complete | 1 |
+| 3 | Transition-path data-source swap (behavior-preserving) | Complete (VAL-020 remediated, DEC-068) | 1, 2 |
+| 4 | issues.workflow_id/status FK migration (table rebuild) | Complete (VAL-006 remediated, DEC-069, re-review PASS) | 1 |
+| 5 | Remaining consumer swap + maintenance parity + closure | Committed (`37b3fb5`, DEC-071 applied) — reopened for the DEC-072 loader-deadlock fix + gate rerun | 1–4 |
 
 ## Validation Contract
 
@@ -73,10 +101,10 @@ Task 5 benchmark gate, not a `VAL-NNN` (QA-BLK-18-03).
 
 | Artifact | Path | Status |
 |---|---|---|
-| QA plan | `../phases/phase-18/qa/qa-plan.md` | Drafted; blocked pending QA-plan mapping refresh on resume (blocks resolved by DEC-067) |
-| Mid-phase reviews | `../phases/phase-18/qa/review-M.md` | Per QA plan (heavy; 5 tasks) |
-| Final review | `../phases/phase-18/qa/final-review.md` | Pending |
-| Human checklist | `../phases/phase-18/qa/human-checklist.md` | Pending |
+| QA plan | `../phases/phase-18/qa/qa-plan.md` | Active (QA-01..QA-30); blocks resolved by DEC-067 |
+| Mid-phase reviews | `../phases/phase-18/qa/review-M.md` | Complete — `review-1`/`review-2` plus both remediation re-reviews `CONTINUE` |
+| Final review | `../phases/phase-18/qa/final-review.md` | **BLOCK** (2026-07-20); re-run required after the DEC-072 fix |
+| Human checklist | `../phases/phase-18/qa/human-checklist.md` | Generated, 4 items, all pending — execute after the gate is green |
 
 ## Active Constraints
 
@@ -115,24 +143,30 @@ Task 5 benchmark gate, not a `VAL-NNN` (QA-BLK-18-03).
 
 ## Open Questions
 
-- [ ] QA Lead: confirm the mid-phase review cadence for a 5-task heavy phase
-  (recommend a review after Task 3 and after Task 4, the two highest-risk swaps).
+- [x] QA Lead mid-phase review cadence for a 5-task heavy phase — settled: a
+  review after Task 3 and after Task 4, each with a remediation re-review.
 
-## Spec-Sync Note (Tech Lead, at wrap)
+## Spec-Sync Note (Tech Lead)
 
-TRD §14.11 and §4.6 wording ("validate against the canonical v0.1 Go
-definitions" / "v0.1 hard-coded") will need updating to reflect that maintenance
-now audits against the workflow tables and defaults are migrated. Track as a
-phase-decision spec-sync item; not a Developer doc task.
+**Applied 2026-07-23 (DEC-072).** `02_TRD.md` §§4.4/4.6 (+ the module map and
+entity table) and `03_TRD_SCHEMA.md` §§3/14.11/15 now record that the workflow
+tables are the runtime source of truth, that maintenance audits against the
+projected tables, and that rebuild uses a relaxed-durability connection. The
+canonical-suite verdict table is in `../phases/phase-18/decisions.md`. QA-30 is
+verification at re-review, not authorship.
 
 ## Success / Exit Criteria
 
-- [ ] All five tasks complete with green quality gates.
-- [ ] VAL-001..014 PASS with cited evidence (behavior parity + rebuild
-  determinism + seam-present-no-behavior).
+- [x] All five tasks implemented and committed.
+- [ ] All five tasks complete **with green quality gates** — blocked by the
+  DEC-072 loader deadlock; four required commands must terminate.
+- [x] VAL-001..024 PASS with cited evidence (behavior parity + rebuild
+  determinism + seam-present-no-behavior) — 24 PASS / 0 FAIL at final review,
+  to be re-confirmed against fresh evidence.
 - [ ] Final QA review has no unresolved blocking findings.
 - [ ] Human checklist accepted (heavy mode).
-- [ ] Phase sign-off recorded; TRD spec-sync applied.
+- [x] TRD spec-sync applied (DEC-072).
+- [ ] Phase sign-off recorded.
 
 ## Next Planning Checkpoint
 
