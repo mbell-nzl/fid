@@ -1,12 +1,12 @@
 # Phase 18 Human Verification Checklist
 
 > Phase: 18 - Workflow Tables Migration + Engine Data-Source Swap + Gate Seams
-> Date: 2026-07-20
+> Date: 2026-07-23
 > Tester: _______________
 >
 > Run on a disposable copy of a v0.1 workspace, never the sole real workspace.
-> Final deterministic QA is currently BLOCKED; execute this checklist after
-> QA-BLK-18-FINAL-01 is remediated and the phase gate is rerun.
+> Final deterministic QA passed on 2026-07-23. Execute this Human-only
+> checklist to complete Phase 18 product/dogfood sign-off.
 
 ## Behavior-Preservation Dogfood
 
