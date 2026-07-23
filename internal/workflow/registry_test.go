@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"runtime"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/db"
 )
@@ -23,6 +24,27 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 
 	if !reflect.DeepEqual(registry.workflows, FrozenDefinitions()) {
 		t.Fatalf("loaded registry workflows = %#v, want frozen v0.1 definitions %#v", registry.workflows, FrozenDefinitions())
+	}
+}
+
+func TestLoadReleasesWorkflowRowsBeforeNestedQueries(t *testing.T) {
+	conn := migratedWorkflowRegistryDB(t)
+	defer closeRegistryDB(t, conn)
+	conn.SetMaxOpenConns(1)
+
+	result := make(chan error, 1)
+	go func() {
+		_, err := Load(conn)
+		result <- err
+	}()
+
+	select {
+	case err := <-result:
+		if err != nil {
+			t.Fatalf("Load() error = %v", err)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("Load() did not return with one open database connection")
 	}
 }
 

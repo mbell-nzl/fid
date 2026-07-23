@@ -31,23 +31,31 @@ func Load(conn *sql.DB) (*Registry, error) {
 	}
 	defer func() { _ = rows.Close() }()
 
-	registry := &Registry{
-		workflows: make(map[string]Definition),
-		edges:     make(map[transitionKey][]RuleReference),
-	}
+	workflowIDs := make([]string, 0)
 	for rows.Next() {
 		var workflowID string
 		if err := rows.Scan(&workflowID); err != nil {
 			return nil, fmt.Errorf("load workflow registry: scan workflow: %w", err)
 		}
+		workflowIDs = append(workflowIDs, workflowID)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("load workflow registry: iterate workflows: %w", err)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, fmt.Errorf("load workflow registry: close workflows: %w", err)
+	}
+
+	registry := &Registry{
+		workflows: make(map[string]Definition),
+		edges:     make(map[transitionKey][]RuleReference),
+	}
+	for _, workflowID := range workflowIDs {
 		definition, err := loadDefinition(conn, registry, workflowID)
 		if err != nil {
 			return nil, err
 		}
 		registry.workflows[workflowID] = definition
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("load workflow registry: iterate workflows: %w", err)
 	}
 	return registry, nil
 }
