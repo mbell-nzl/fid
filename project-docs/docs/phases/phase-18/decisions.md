@@ -589,7 +589,23 @@
      **Frozen workflow definitions** (the v0.1 Go `definitions` map, retained
      **solely** as test parity fixtures — reading it from production code is a
      defect, per VAL-024). No flagged ambiguity was added or resolved.
-  9. **ESC-001 archived.** Resolved by DEC-072 and verified by the rerun
+  9. **Spec reconciliation gap found and closed at wrap: `03_TRD_SCHEMA.md`
+     §2.1.** The DEC-072 sync updated §3 (workflow tables) but left the `issues`
+     table of record in its v0.1 form: `workflow_id` and `status` still carried
+     future-tense "v0.2: FK to …" comments, and both enum CHECKs that migration
+     `0008` **removed** were still presented as current. §2.1 is now reconciled
+     to the shipped DDL (`REFERENCES workflows(id)`, the composite
+     `FOREIGN KEY (workflow_id, status)`, the removed CHECKs recorded as
+     historical), with a note that the kind→workflow pairing guarantee is
+     deliberately **not** carried over — it is an application-level default at
+     creation (`internal/issues`) because Phase 19 `fid workflow assign` must be
+     able to assign a non-default workflow per kind or project, which that CHECK
+     would have blocked. This is documentation only: no product behavior,
+     migration, or assertion changes, and the drop was specified and executed by
+     Task 4 ("replace, do not supplement, the enum CHECKs"). The miss itself is
+     evidence for DEC-074 (2e/2g): a spec-sync verdict of `touched` for a large
+     document is not the same as a section-level review.
+  10. **ESC-001 archived.** Resolved by DEC-072 and verified by the rerun
      (FRR-E01..E04, FRR-E11); moved out of `tl_escalations_current.md` into
      `tl-escalations.md`. The Phase 17 ESC-001 ID collision is left as recorded
      and remains a CF-023 item.
@@ -640,7 +656,12 @@
      backtick-wrapped commit-metadata example in the completion-report template,
      the Developer-prompt rule that the report is its own committed `docs(task)`
      step, and report-lint messaging that distinguishes a dirty tree from a parse
-     failure; (d) run-ledger hygiene (chronological append, no duplicate
+     failure — plus the cosmetic refresh of `08_QUALITY_PLAN.md` §3.2, whose
+     illustrative test-file-convention block names source files that do not
+     exist (`internal/workflow/engine.go`, `internal/issues/service.go`,
+     `internal/claims/service.go`, `internal/stats/aggregator.go`,
+     `internal/db/schema.go`, `internal/format/json.go`); (d) run-ledger
+     hygiene (chronological append, no duplicate
      entries); (e) a wrap-time reopen audit that checks trigger-based
      carry-forwards against the packages a phase actually modified (CF-017 and
      CF-021 were both missed in Phase 18); (f) evidence-honesty hardening so a
@@ -677,7 +698,7 @@ corrected at wrap per DEC-073 (7).
 | `00_PROJECT_CHARTER.md` | verified-no-change | No charter-level claim touched by the workflow migration. |
 | `01_PRD.md` | verified-no-change | PRD-WF-001..010/014/015, PRD-CLAIM-005/006, PRD-OPS-003..008 describe behavior that is preserved exactly; no wording contradicts the DB-backed source. |
 | `02_TRD.md` | touched — DEC-072 | §4.4 records the rebuild-scoped relaxed-durability connection (DEC-071); §4.6 retitled and re-scoped from "v0.1 Hard-Coded" to the migrated DB-backed source of truth. |
-| `03_TRD_SCHEMA.md` | touched — DEC-072 | §3 workflow tables now shipped and seeded (migration 0007) with the gate-obligation seam noted (DEC-066); §14.11 maintenance parity now audits the projected workflow tables; §15 notes the rebuild-connection pragma exception. |
+| `03_TRD_SCHEMA.md` | touched — DEC-072 **and DEC-073 (9)** | §3 workflow tables now shipped and seeded (migration 0007) with the gate-obligation seam noted (DEC-066); §14.11 maintenance parity now audits the projected workflow tables; §15 notes the rebuild-connection pragma exception. **Wrap correction:** §2.1 (the `issues` table of record) was still showing the v0.1 form — future-tense "v0.2: FK to …" column comments and the two enum CHECKs that migration `0008` removed. Now reconciled to the shipped DDL plus a note on the deliberately dropped kind→workflow pairing guarantee. |
 | `04_TRD_CONFIG.md` | verified-no-change | No config surface added; no new key, default, or file. |
 | `05_DESIGN_PLAN.md` | verified-no-change | No UX/presentation change; category display is byte-identical (VAL-019/022). |
 | `06_DESIGN_PLAN_CLI.md` | verified-no-change | No new command, flag, or output shape shipped this phase. |

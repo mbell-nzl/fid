@@ -92,7 +92,7 @@ Rules:
 | `internal/journal/` | Infrastructure | JSONL append, flush, replay, event schema versioning, upgrader chain | Command logic, business validation (receives pre-validated events) |
 | `internal/issues/` | Domain | Issue CRUD, AC management, completion recording, concern lifecycle | Output formatting, CLI flag parsing |
 | `internal/claims/` | Domain | Claim acquire, release, force-steal, TTL enforcement | Workflow transition logic |
-| `internal/workflow/` | Domain | State machine definitions, transition validation, rule evaluation | Issue creation, AC verification |
+| `internal/workflow/` | Domain | Read-only registry loading from the workflow tables (§4.6), transition validation, rule evaluation | Issue creation, AC verification, workflow authoring/mutation |
 | `internal/maintenance/` | Domain | Read-only consistency audit over the projected SQLite data and journal references; structural errors, later warnings, and summary counts | CLI flag parsing, output formatting, journal writes, repair, deletion, or migration |
 | `internal/policy/` | Domain | Role validation, permission matrix lookups, action authorization | Workflow state logic |
 | `internal/dev/` | Domain | Compose developer write workflows (`dev start`, `dev gate`, later `dev finish`/`dev block`) into one validated journal event by orchestrating existing claim, workflow, run, and gate effect shapes | CLI flag parsing, output formatting, direct schema/migration ownership |

@@ -118,11 +118,15 @@ CREATE TABLE issues (
                                                -- task's epic (optional),
                                                -- NULL for epics in v1
   title               TEXT NOT NULL,
-  workflow_id         TEXT NOT NULL,           -- v0.1: enum string ('task-default' |
-                                               --   'epic-default' | 'subtask-default').
-                                               -- v0.2: FK to workflows(id).
+  workflow_id         TEXT NOT NULL REFERENCES workflows(id),
+                                               -- v0.1: bare enum string ('task-default' |
+                                               --   'epic-default' | 'subtask-default'),
+                                               --   CHECK-paired with kind.
+                                               -- v0.2a (migration 0008): real FK to workflows(id).
   status              TEXT NOT NULL,           -- v0.1: CHECK-constrained per workflow_id.
-                                               -- v0.2: FK to workflow_states(workflow_id, state).
+                                               -- v0.2a (migration 0008): composite FK to
+                                               --   workflow_states(workflow_id, state); see the
+                                               --   FOREIGN KEY clause below.
   priority            INTEGER,                 -- 0..5 (0 = critical)
   sequence            INTEGER,                 -- positive sibling order; required for tasks
                                                -- under sequential epics, optional for subtasks,
@@ -141,16 +145,17 @@ CREATE TABLE issues (
                                                -- NULL means "any actor of owner_role".
   created_at          DATETIME, updated_at DATETIME,
   CHECK (kind IN ('epic', 'task', 'subtask')),
-  CHECK ((kind = 'epic' AND workflow_id = 'epic-default')
-      OR (kind = 'task' AND workflow_id = 'task-default')
-      OR (kind = 'subtask' AND workflow_id = 'subtask-default')),
-  CHECK ((workflow_id = 'task-default' AND status IN (
-          'todo', 'in_progress', 'dev_complete', 'qa_review',
-          'qa_block', 'failed_gate', 'qa_pass', 'done', 'cancelled'))
-      OR (workflow_id = 'epic-default' AND status IN (
-          'todo', 'in_progress', 'wrapped', 'closed', 'cancelled'))
-      OR (workflow_id = 'subtask-default' AND status IN (
-          'todo', 'in_progress', 'done', 'cancelled'))),
+  -- v0.1 carried two enum CHECKs here. Migration 0008 REMOVED both — replaced
+  -- by the composite FK below, not supplemented (see the note after this block):
+  --   CHECK (kind/workflow_id pairing: epic→epic-default, task→task-default,
+  --          subtask→subtask-default)
+  --   CHECK (per-workflow status enum: task-default IN ('todo','in_progress',
+  --          'dev_complete','qa_review','qa_block','failed_gate','qa_pass',
+  --          'done','cancelled'); epic-default IN ('todo','in_progress',
+  --          'wrapped','closed','cancelled'); subtask-default IN ('todo',
+  --          'in_progress','done','cancelled'))
+  FOREIGN KEY (workflow_id, status)
+    REFERENCES workflow_states(workflow_id, state),
   CHECK (priority IS NULL OR (priority >= 0 AND priority <= 5)),
   CHECK (kind != 'epic' OR est_tokens IS NULL),
   CHECK (sequence IS NULL OR sequence > 0),
@@ -165,6 +170,18 @@ CREATE TABLE epic_metadata (
   target_end          DATE
 );
 ```
+
+**Workflow columns after v0.2a (migration `0008`).** `issues.workflow_id` is a
+real FK to `workflows(id)` and `(workflow_id, status)` is a composite FK to
+`workflow_states(workflow_id, state)`, so the database rejects any workflow or
+state the workflow tables do not define (§3; `02_TRD.md` §4.6). The two v0.1
+enum CHECKs are **replaced, not supplemented**. One guarantee is deliberately
+not carried over: the database no longer enforces the kind→workflow pairing.
+Kind-appropriate defaults are assigned in application code at creation
+(`internal/issues`), and Phase 19 (`fid workflow assign`) makes per-kind and
+per-project assignment configurable — which that CHECK would have blocked. The
+`issues_enriched` view and every trigger defined on `issues` are re-created by
+migration `0008`'s table rebuild (§14).
 
 ### 2.2 Derived Columns via `issues_enriched`
 
