@@ -24,6 +24,29 @@ decay before a real defect exploits it.
 | drill-07 | stale doc claim | QA Reviewer |
 | drill-08 | VAL PASS on positive-only evidence | QA Reviewer / QA Lead |
 
+## Known Uncovered Defect Class
+
+**A required command that ran but never terminated, recorded `PASS`.** Phase 18
+produced this defect (DEC-072 / QA-BLK-18-FINAL-01): a `workflow.Load`
+connection deadlock left four required gate commands non-terminating, and the
+completion report recorded them `PASS` anyway. Only QA Lead's independent rerun
+caught it; the mid-phase review cadence structurally cannot, because a report
+that claims a result the reviewer does not re-execute is indistinguishable from
+one that earned it.
+
+The existing set does not cover this: drill-03 is a *silently skipped* required
+command and drill-04 a *narrower substituted* one — both detectable from the
+report text alone. A fabricated `PASS` is only detectable if the report is
+required to carry evidence the run itself produced.
+
+The completion-report template and Developer prompt now require a verbatim
+terminal-evidence token per command (a hung command has no final line to copy).
+That is an affordance, not a detector. A `drill-09` for this class needs
+`report-lint.sh` to check that each required command's result line carries an
+evidence token, and must be demonstrated failing-then-passing per Extending
+below. Not yet built — see
+`project-docs/docs/reviews/2026-07-26-workflow-retrospective.md` (DEC-087).
+
 ## Running
 
 Mechanical drills (00-04), scored automatically; exit code is the miss count:

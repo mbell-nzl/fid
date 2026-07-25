@@ -18,11 +18,11 @@ up instead of the built-in default. This is v0.2a slice 2 of 3.
 
 ## Status
 
-**Planned. Awaiting Human approval; no other precondition.** DEC-083
-re-defers CF-023 to the coming workflow overhaul and lifts the DEC-074
-execution gate, carrying two zero-cost mitigations in this phase instead
-(see Active Constraints). The deep retrospective (DEC-073) is decoupled and
-becomes an input to the overhaul. No branch exists yet; next action is Human
+**Planned. Awaiting Human approval; no other precondition.** DEC-083 lifted the
+DEC-074 execution gate. The deep retrospective ran 2026-07-26
+(`../reviews/2026-07-26-workflow-retrospective.md`); DEC-084..086 promote this
+phase's two stand-ins to standing rules and CF-023 narrows to DEC-087. **No
+task spec, assertion, or scope changed.** No branch yet; next action is Human
 approval, then the QA plan.
 
 ## Operating Mode
@@ -103,10 +103,11 @@ Planning decisions DEC-075..DEC-082 are recorded in
   CF-024 leaves only ~8-10% rebuild headroom.
 - `internal/dev` `Finish`/`Block` stay over the 60-line target (CF-017,
   v0.2e) — not this phase's refactor.
-- **CF-023 mitigations in force this phase (DEC-083).** A non-terminating
-  required command is never `PASS` — record that each command terminated.
-  Phase 19 uses phase-scoped `ESC-19-NNN` / `TRG-19-NNN` identifiers, and
-  every `BLOCK` mints the ID **and** writes the triage-log row.
+- **Evidence honesty and ID discipline are standing rules now, not phase-local
+  stand-ins (DEC-084..086).** A non-terminating required command is never
+  `PASS`; each result carries a verbatim terminal token. IDs are phase-scoped
+  (`TRG-19-NNN` / `ESC-19-NNN`, allocated from the phase triage log) and
+  TL-Lite writes the entry **before** reporting its verdict.
 
 ## Interfaces / Subsystems In Scope
 
@@ -126,10 +127,11 @@ renderer); `internal/maintenance/` (assignment integrity check).
   row, so the event must carry `delete`+`insert` only when a prior row exists.
 - **Coverage.** `internal/workflow` is a COV-001 80% package gaining a large
   amount of new code.
-- **CF-023 deferral residue (DEC-083).** Orchestration friction and
-  audit-trail gaps from Phase 18 may recur. Accepted: they cost turns, not
-  correctness. The evidence-honesty rule and phase-scoped IDs are the
-  mitigations; QA Lead's independent rerun remains the real control.
+- **CF-023 residue (now DEC-087).** The retrospective landed the prompt and
+  template fixes, but the only *mechanical* detector for a `PASS` recorded
+  against a non-terminating command — a `report-lint` evidence-token check plus
+  `drill-09` — is not built. QA Lead's independent rerun remains the real
+  control, and heavy mode retains it.
 
 ## Open Questions
 

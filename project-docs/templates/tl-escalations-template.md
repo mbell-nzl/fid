@@ -10,9 +10,15 @@
 
 ## Open Escalations
 
-> Newest at top. Use global ESC-NNN numbering that never resets.
+> Newest at top. Identifiers are **phase-scoped**: `ESC-<phase>-<NNN>`, for
+> example `ESC-19-001`. Allocate from the phase triage log
+> (`project-docs/docs/phases/phase-<N>/triage-log.md`), which records every ESC
+> minted in the phase and survives an escalation being closed and archived out
+> of this file. Take the highest `<NNN>` recorded there, plus one; start at
+> `001` in a new phase. Never emit a bare `ESC-NNN` placeholder — an escalation
+> without an identifier cannot be resumed, audited, or closed.
 
-### ESC-<NNN>: <short title>
+### ESC-<phase>-<NNN>: <short title>
 
 - **Raised:** <YYYY-MM-DD>
 - **By:** <agent / session reference>

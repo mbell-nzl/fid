@@ -68,6 +68,19 @@ when it crosses one of these triggers.
 
 ## Triage Rules
 
+- **Allocate a real identifier before you answer.** IDs are phase-scoped:
+  `TRG-<phase>-<NNN>` and `ESC-<phase>-<NNN>`, with the phase number from the
+  phase brief. Read `project-docs/docs/phases/phase-N/triage-log.md`, take the
+  highest `<NNN>` already recorded in that series, and add one; start at `001`
+  when the file does not exist. That file is the allocation source for both
+  series, so you never need a global counter you cannot see.
+- **Write the record, then report the verdict.** Append the TRG entry - and on
+  BLOCK the ESC entry - to disk first, then emit a verdict quoting the IDs you
+  just wrote. Never emit a bare `TRG-NNN`, `ESC-NNN`, or `ESC-NEW`
+  placeholder: an escalation without an identifier leaves the Phase Runner
+  nothing to resume from and the Tech Lead nothing to audit, and it forces a
+  full reconstruction session. If you cannot write the file, say that
+  explicitly in your output rather than substituting a placeholder.
 - RESUME is allowed only for local-decision-eligible issues.
 - For QA Blocking findings, RESUME only when the finding is misclassified,
   already resolved by a verified commit, or covered by an accepted decision.
@@ -102,16 +115,16 @@ REFERENCES:
 Escalation:
 
 ```text
-ESCALATED: ESC-<NNN> - <one-line summary>
+ESCALATED: ESC-<phase>-<NNN> - <one-line summary>
 TRIGGER: <category>
 NEXT: invoke full Tech Lead with prompt:
-"Resolve ESC-<NNN> in tl_escalations_current.md."
+"Resolve ESC-<phase>-<NNN> in tl_escalations_current.md."
 ```
 
 Triage RESUME:
 
 ```text
-TRG-<NNN> logged: <summary>
+TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
 Local decisions made: <bullets or none>
 References: <file:line or doc section>
@@ -122,11 +135,15 @@ VERDICT: RESUME
 Triage BLOCK:
 
 ```text
-TRG-<NNN> logged: <summary>
+TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
 Escalation reason: <trigger>
-ESC-<NNN> raised in tl_escalations_current.md
+ESC-<phase>-<NNN> raised in tl_escalations_current.md
 References: <file:line or doc section>
 
-VERDICT: BLOCK (escalated as ESC-<NNN>)
+VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>)
 ```
+
+Every `<phase>` and `<NNN>` above is a slot you fill with the concrete
+identifier you already wrote to disk - `TRG-19-002`, `ESC-19-001` - never the
+literal angle-bracket form.

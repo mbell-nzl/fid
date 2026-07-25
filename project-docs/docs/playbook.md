@@ -112,6 +112,10 @@ phase-specific exception.
 - A required validation assertion that cannot be satisfied must be escalated,
   not weakened or silently adapted.
 - Deterministic claims require reproducible evidence.
+- A required command that did not terminate is never `PASS`; it is `BLOCKED`.
+- Triage and escalation identifiers are phase-scoped (`TRG-<phase>-<NNN>`,
+  `ESC-<phase>-<NNN>`), allocated from the phase triage log, and written to
+  disk before the verdict is reported. Never a placeholder.
 - Keep held-out scenario material outside normal implementation context.
 
 ## 8. Audit A Workspace

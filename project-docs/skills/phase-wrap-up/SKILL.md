@@ -21,13 +21,23 @@ verification have produced their artifacts.
 3. Walk every in-phase decision, Developer deviation, validation-contract
    deviation, and QA recommendation marked for immediate action. For each spec,
    record whether it was touched, verified unchanged, or not applicable.
-4. Audit all `TRG-NNN` entries, confirming RESUME verdicts in hindsight.
-   Autonomous TL-Lite resume is permanent (DEC-002); no warm-up tally.
+4. Audit all `TRG-<phase>-<NNN>` entries, confirming RESUME verdicts in
+   hindsight. Check that every entry carries a real, unique, non-placeholder
+   identifier and that every BLOCK names the ESC it raised; a triage that
+   returned a verdict without a durable record is a workflow defect to report,
+   not a gap to backfill silently. Autonomous TL-Lite resume is permanent
+   (DEC-002); no warm-up tally.
 5. Append workflow notes and a deep-retrospective recommendation to the phase
    decisions file.
 6. Check whether phase work changed project language. Update
    `project-docs/specs/GLOSSARY.md` or flag ambiguity.
-7. Move resolved escalations into the phase archive, refresh active decisions
+7. Audit the carry-forward register against what the phase actually changed.
+   For every trigger-based item ("next reopen of X"), compare its trigger to
+   the files and packages the phase modified. If a trigger fired, disposition
+   it now — take it, re-target it, or convert it to a scheduled item. A
+   trigger-based carry-forward that nobody checks against the diff is a
+   carry-forward that silently never fires.
+8. Move resolved escalations into the phase archive, refresh active decisions
    and progress, and trim default-loaded current docs to their budgets.
 
 ## References

@@ -14,27 +14,45 @@
 
 ## Validation Contract Coverage
 
-- VAL-NNN: <evidence produced, status, or reason this task does not satisfy it>
+- VAL-NNN: <PASS/FAIL/BLOCKED> - <the specific test name, `file:line`, or
+  command output that proves it>
 - <If none apply, explain why explicitly.>
+
+Cite the artifact that proves the assertion, not the belief that it holds.
+"Covered by the existing suite", "behavior is unchanged", or a restatement of
+the assertion is not evidence. If the assertion names two states (a
+conditional, a both-directions parity, a valid/invalid matrix), cite evidence
+for **each** state; positive-only evidence is not a PASS.
 
 ## Tests run
 
-- `<command>` - PASS/FAIL
+- `<command>` - PASS/FAIL - `<verbatim final output line>`
 
 ## Exact quality-gate results
 
 Compare this section against the task spec's `## Exact Commands To Run`.
 
-- `gofmt -l cmd internal` - PASS/FAIL/BLOCKED
-- `golangci-lint run ./...` - PASS/FAIL/BLOCKED
-- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED
-- `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED
-- `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A
+- `gofmt -l cmd internal` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
+- `golangci-lint run ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
+- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
+- `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
+- `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A - `<verbatim final output line>`
 
 Every required command from the task spec and QA plan must appear here or in
 `## Tests run`. If a command is blocked, record the reason. Do not substitute a
 narrower command for a required gate without a blocker report; silently skipped
 or narrower substituted commands are failed gates.
+
+Each result carries one short verbatim token copied from the command's own
+terminal output — the last line it printed, or `exit 0 (no output)` for a
+silent success. Copy it; do not summarize or reconstruct it.
+
+**A command you did not watch terminate is never `PASS`.** A command that hung,
+was interrupted, was killed, or whose output you never saw complete has no
+final line to copy, and inventing one is fabricated evidence. Record it as
+`BLOCKED` with the reason in a blocker report and stop. A gate recorded `PASS`
+without terminating is invisible to every downstream review until someone
+re-runs it independently.
 
 ## Deviations from spec
 

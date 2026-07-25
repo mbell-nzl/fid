@@ -9,7 +9,15 @@
 > against completion reports and git history before continuing.
 
 Entry types, in the order they typically occur. Timestamps are
-`YYYY-MM-DD HH:MM` local time. Append new entries at the end of the file.
+`YYYY-MM-DD HH:MM` local time. Append new entries at the end of the file, in
+wall-clock order, one entry per event.
+
+Before appending, read the last entry. If the new entry would duplicate it or
+carry an earlier timestamp, you have lost track of run state: reconcile against
+completion reports and git history first. Never edit or delete a prior entry to
+fix an ordering or duplication mistake — append a `CORRECTION` entry naming the
+entries it supersedes and why. The ledger is evidence; its errors are part of
+the record.
 
 ### <YYYY-MM-DD HH:MM> RUN-START
 
@@ -31,19 +39,27 @@ Entry types, in the order they typically occur. Timestamps are
 - Tasks covered: <task range>
 - Blocking: <n> / Improvement: <n> / ESC raised: <list or "none">
 
-### <YYYY-MM-DD HH:MM> TRIAGE TRG-<NNN>
+### <YYYY-MM-DD HH:MM> TRIAGE TRG-<phase>-<NNN>
 
 - Trigger: <one line>
-- Verdict: <RESUME | BLOCK (escalated as ESC-NNN)>
+- Verdict: <RESUME | BLOCK (escalated as ESC-<phase>-<NNN>)>
+- Triage log: <`.../triage-log.md` entry confirmed | "MISSING - TL-Lite
+  returned a verdict without writing the entry">
+
+Record the concrete IDs TL-Lite wrote, never the literal placeholders
+`TRG-NNN` / `ESC-NNN`. If TL-Lite returns a verdict carrying a placeholder or
+writes no triage-log entry, say so verbatim in the `Triage log:` field. That
+field is the durable signal for the Tech Lead's wrap-up triage audit; do not
+leave the gap only in prose.
 
 ### <YYYY-MM-DD HH:MM> STOP
 
 - Cause: <task/review/TRG/ESC reference and one-line reason>
-- Triage: <TRG-NNN (BLOCK, escalated as ESC-NNN) | "immediate stop - no
-  triage required">. Triage-gated causes (report-lint failure, missing report,
-  blocker report, gate failure, placeholder/missing/skipped/narrower/ad hoc
-  command) must carry a TRG reference; a STOP for those causes without one
-  means TL-Lite was skipped.
+- Triage: <TRG-<phase>-<NNN> (BLOCK, escalated as ESC-<phase>-<NNN>) |
+  "immediate stop - no triage required">. Triage-gated causes (report-lint
+  failure, missing report, blocker report, gate failure,
+  placeholder/missing/skipped/narrower/ad hoc command) must carry a TRG
+  reference; a STOP for those causes without one means TL-Lite was skipped.
 - Next human action: <one line>
 
 ### <YYYY-MM-DD HH:MM> RUN-END

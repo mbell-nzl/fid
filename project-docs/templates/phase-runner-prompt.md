@@ -85,7 +85,10 @@ Execution rules:
   misclassified, already resolved by a verified commit, or accepted by a
   recorded decision.
 - Parse only the literal final TL-Lite verdict line:
-  VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-NNN).
+  VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>).
+  Identifiers are phase-scoped and allocated from the phase triage log. Record
+  the concrete IDs in the TRIAGE entry's `Triage log:` field; if TL-Lite
+  returned a placeholder or wrote no triage-log entry, record that verbatim.
 - After all tasks complete, spawn qa_lead with `agent_type = "qa_lead"` for
   final review and human checklist generation.
 - Verify final-review.md records every VAL-NNN outcome.

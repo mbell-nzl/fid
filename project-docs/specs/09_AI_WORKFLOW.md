@@ -198,17 +198,30 @@ When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
 
 Triage rules:
-- Every triage event appends TRG-NNN to
+- Identifiers are **phase-scoped**: `TRG-<phase>-<NNN>` and
+  `ESC-<phase>-<NNN>`, for example `TRG-19-001` and `ESC-19-001`. The phase
+  triage log `project-docs/docs/phases/phase-<id>/triage-log.md` is the single
+  allocation source for both series: take the highest `<NNN>` already recorded
+  there in the relevant series and add one, starting at `001` in a new phase.
+  Phase scoping exists because a global counter has no readable source of
+  truth — closed escalations leave the current register, so a global sequence
+  cannot be resumed by an agent that cannot scan every phase archive.
+- Every triage event appends a `TRG-<phase>-<NNN>` entry to
   `project-docs/docs/phases/phase-<id>/triage-log.md`, creating it from
-  `project-docs/templates/triage-log-template.md` if needed.
+  `project-docs/templates/triage-log-template.md` if needed. The entry is
+  written **before** the verdict is reported; the verdict quotes the
+  identifier that was written. A verdict carrying a placeholder identifier
+  (`ESC-NNN`, `ESC-NEW`) or unaccompanied by a log entry is a defective
+  triage: the event has no durable record, cannot be resumed mechanically, and
+  forces a full Tech Lead reconstruction.
 - Triage RESUME is allowed only when the issue is local-decision-eligible and
   no escalation is needed.
-- Triage BLOCK appends ESC-NNN to
+- Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
   `project-docs/docs/current/tl_escalations_current.md` when no existing ESC
-  covers the issue, then logs TRG-NNN with BLOCK.
-- If the source is an existing ESC-NNN, do not create a duplicate. Log TRG-NNN
-  with BLOCK pointing to the existing ESC unless the new issue is clearly
-  unrelated.
+  covers the issue, then logs the TRG entry with BLOCK.
+- If the source is an existing `ESC-<phase>-<NNN>`, do not create a duplicate.
+  Log the TRG entry with BLOCK pointing to the existing ESC unless the new
+  issue is clearly unrelated.
 - For QA Reviewer Blocking findings, RESUME is allowed only when the finding is
   demonstrably misclassified, already resolved by a verified commit, or covered
   by an accepted decision. Otherwise BLOCK.
@@ -225,7 +238,8 @@ Triage rules:
   subject match, or report-lint output). Without attached evidence, do not
   RESUME on the already-resolved-by-a-verified-commit ground.
 - The final line in triage mode must be exactly `VERDICT: RESUME` or
-  `VERDICT: BLOCK (escalated as ESC-NNN)`.
+  `VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>)`, with the concrete
+  identifier substituted.
 
 Write boundaries:
 - May append ESC entries to
@@ -1147,6 +1161,15 @@ when lint debt is in scope, or when the phase QA plan enforces it.
 Every required command listed by a task spec or QA plan must be recorded in the
 completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
 Missing, silently skipped, or narrower substituted commands are failed gates.
+
+Each recorded result carries one short verbatim token copied from the
+command's own terminal output — its last printed line, or `exit 0 (no output)`
+for a silent success. **A command that did not terminate is never `PASS`.** A
+hung, interrupted, or killed command produces no final line to copy; recording
+one is fabricated evidence, and recording `PASS` without it makes the false
+claim invisible to every downstream review until someone re-runs the gate
+independently. Such a command is `BLOCKED` with the reason in a blocker
+report. This rule is mode-invariant.
 
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:

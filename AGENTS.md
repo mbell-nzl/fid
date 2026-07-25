@@ -177,7 +177,10 @@ Use the task-spec command list when it exists; otherwise use these defaults.
 Every required command listed by a task spec or QA plan must be recorded in the
 completion report as `PASS`, or as `BLOCKED` with reason in a blocker report.
 A missing, silently skipped, or narrower substituted required command is a
-failed gate, not an acceptable omission.
+failed gate, not an acceptable omission. Record each result with one short
+verbatim token from the command's own output (its last printed line, or
+`exit 0 (no output)`). A command that did not terminate is never `PASS` — a
+hung, interrupted, or killed command is `BLOCKED`.
 
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,

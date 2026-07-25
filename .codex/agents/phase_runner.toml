@@ -129,17 +129,20 @@ Use a self-contained prompt:
 
 ```text
 Triage trigger: <one-line description>.
-Source: <task report path | review path | ESC-NNN>.
+Source: <task report path | review path | ESC-<phase>-<NNN>>.
 Commit-verification evidence: <hash, git rev-parse --verify result, and
 subject-match result, or "none">.
-Decide: RESUME or BLOCK. Log disposition to
+Decide: RESUME or BLOCK. Before answering, write the disposition to
 project-docs/docs/phases/phase-N/triage-log.md per
-project-docs/templates/triage-log-template.md. End with the literal final line
-VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-NNN).
-If the source is an existing ESC-NNN, reference that ESC rather than creating a
-duplicate unless the issue is clearly unrelated. For QA Blocking findings,
-RESUME is allowed only when the finding is misclassified, already resolved by a
-verified commit, or covered by an accepted recorded decision.
+project-docs/templates/triage-log-template.md, allocating the next phase-scoped
+TRG-<phase>-<NNN> from that file. On BLOCK, also write a concrete
+ESC-<phase>-<NNN> entry to tl_escalations_current.md. End with the literal final
+line VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>), quoting
+the identifier you actually wrote. Never return a placeholder identifier.
+If the source is an existing ESC-<phase>-<NNN>, reference that ESC rather than
+creating a duplicate unless the issue is clearly unrelated. For QA Blocking
+findings, RESUME is allowed only when the finding is misclassified, already
+resolved by a verified commit, or covered by an accepted recorded decision.
 ```
 
 TL-Lite cannot run commands. When a triage may turn on "already resolved by a
@@ -147,7 +150,10 @@ verified commit", you verify the commit first (`git rev-parse --verify
 <hash>^{commit}` plus subject match, or report-lint output) and attach that
 evidence to the trigger. TL-Lite judges the evidence; it never verifies
 commits itself. After TL-Lite returns, confirm `triage-log.md` contains the
-TRG entry and parse only the literal final `VERDICT:` line.
+TRG entry and parse only the literal final `VERDICT:` line. Copy the concrete
+identifiers into the TRIAGE ledger entry's `Triage log:` field. If TL-Lite
+returned a placeholder identifier or wrote no entry, record that verbatim in
+that field rather than only in prose, so the wrap-up triage audit can find it.
 
 When stopping, append a STOP entry to the run ledger and state the task,
 review, TRG, or ESC that triggered the stop and the next human action. For

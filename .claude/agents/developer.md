@@ -50,6 +50,12 @@ silently. The full role definition lives in `09_AI_WORKFLOW.md` §2.5
   a reason in a blocker report. Focused red/green commands do not substitute
   for the required gate; missing, silently skipped, or narrower substituted
   commands are failed gates.
+- Record each command's result with one short verbatim token copied from its
+  own terminal output: the last line it printed, or `exit 0 (no output)` for
+  a silent success. **A command you did not watch terminate is never `PASS`.**
+  A hung, interrupted, or killed command has no final line to copy, and
+  inventing one is fabricated evidence. Record it as `BLOCKED` with the
+  reason in a blocker report and stop.
 - Where the task changes behavior with a runtime surface, exercise the
   changed behavior once through the real entrypoint (the `fid` CLI or other
   real interface) before writing the report, and record the command or
@@ -68,7 +74,10 @@ sequence and stop:
 
 1. Write the completion report, including `VAL-NNN` evidence or an explicit
    no-VAL explanation, leaving `## Commit hash` and `## Commit subject` as
-   `- Pending commit`.
+   `- Pending commit`. Cite the specific test name, `file:line`, or command
+   output that proves each `VAL-NNN`. Restating the assertion or pointing at
+   "the existing suite" is not evidence, and an assertion naming two states
+   needs evidence for both.
 2. Create the task commit (implementation, tests, docs, and the report draft)
    with a Conventional Commit subject and `Refs: phase-N/task-M`.
 3. While `HEAD` is still the task commit, copy the hash from `git rev-parse
