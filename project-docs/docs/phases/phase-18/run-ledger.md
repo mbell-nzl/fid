@@ -142,6 +142,37 @@
 - Tasks covered: task-4 VAL-006 remediation only
 - Blocking: 0 / Improvement: 0 / ESC raised: none
 
+### 2026-07-23 20:32 RUN-RESUME
+
+- Branch: `phase-18-workflow-migration`
+- Resuming from: ESC-001 / TRG-006 STOP, resolved by `DEC-072`
+- ESC baseline (Open at resume): `ESC-001`
+- Reconciliation: `4c029fb` contains the DEC-072 spec/current-doc sync; `task-5-done.md` remains the stale pre-remediation report; working tree is clean.
+- Starting task: task-5 remediation, then QA Lead final review rerun
+
+### 2026-07-23 20:44 TASK task-5 REMEDIATION COMPLETE
+
+- Report: `project-docs/docs/phases/phase-18/tasks/task-5-done.md`
+- report-lint: PASS (`project-docs/tools/report-lint.sh`)
+- Implementation commit: `795a7df673708d21e558448e20edeb367f864078` - verified, subject matched
+- Report-finalization commit: `37fb202a11f7adab28592f8a6002e001681be087` - verified, subject matched
+- Evidence: DEC-072 loader fix complete; all seven phase-level commands PASS; fresh coverage total `76.8%`; benchmarks within target (`47590455 ns/op` registry read, `290188734/2825204196/26986552792 ns/op` for 1k/10k/100k rebuild); VAL-010 focused maintenance evidence and real-entrypoint check PASS; VAL-024 inventory and runtime parity PASS
+
+### 2026-07-23 21:01 REVIEW final QA review rerun
+
+- Path: `project-docs/docs/phases/phase-18/qa/final-review.md`
+- Human checklist: `project-docs/docs/phases/phase-18/qa/human-checklist.md`
+- Verdict: PASS
+- Validation outcomes: `VAL-001..VAL-024` all PASS; QA-25 PASS; QA-30 PASS; no Blocking findings remain
+- Review commit: `77a4560c787567458480d30d3fc37750f3d51c55` - verified, subject matched
+- ESC raised: none
+
+### 2026-07-23 21:01 RUN-END
+
+- Branch: `phase-18-workflow-migration`
+- Final state: Phase 18 final review PASS; human checklist generated with 4 pending items
+- Next human action: execute the human checklist, then hand back to Tech Lead for wrap-up, VAL audit, TRG audit, ESC-001 archival, and current-status refresh
+
 ### 2026-07-20 16:35 TASK task-5 COMPLETE
 
 - Report: `project-docs/docs/phases/phase-18/tasks/task-5-done.md`
