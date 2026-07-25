@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func Get(options GetOptions) (Issue, error) {
@@ -32,6 +33,10 @@ func Get(options GetOptions) (Issue, error) {
 		return Issue{}, err
 	}
 	defer closeIssueDB(conn)
+	registry, err := workflow.Load(conn)
+	if err != nil {
+		return Issue{}, fmt.Errorf("get issue: load workflow registry: %w", err)
+	}
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
@@ -74,7 +79,10 @@ func Get(options GetOptions) (Issue, error) {
 		return Issue{}, fmt.Errorf("query issue %q: %w", options.ID, err)
 	}
 
-	record.StatusCategory = statusCategory(record.Status)
+	record.StatusCategory, err = registryStatusCategory(registry, record.WorkflowID, record.Status)
+	if err != nil {
+		return Issue{}, err
+	}
 	record.Labels, err = issueLabels(conn, record.ID)
 	if err != nil {
 		return Issue{}, err

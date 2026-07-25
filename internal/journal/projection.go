@@ -154,7 +154,7 @@ func rebuildWorkspaceLocked(lock *WriteLock, migrationsDir string) (ReplayStats,
 		return ReplayStats{}, err
 	}
 
-	conn, err := fiddb.Open(dbPath)
+	conn, err := fiddb.OpenForRebuild(dbPath)
 	if err != nil {
 		return ReplayStats{}, err
 	}

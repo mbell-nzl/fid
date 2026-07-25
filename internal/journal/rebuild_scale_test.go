@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"bufio"
 	"database/sql"
 	"fmt"
 	"os"
@@ -90,69 +91,101 @@ func seedScaleReplayWorkspace(tb testing.TB, workspace string, targetEvents int)
 	}
 
 	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-06-07.jsonl")
-	events := buildScaleReplayEvents(targetEvents)
-	writeReplayEventsTB(tb, journalPath, events...)
+	eventCount := writeScaleReplayWorkspace(tb, journalPath, targetEvents)
 
-	return scaleReplaySeed{EventCount: len(events)}
+	return scaleReplaySeed{EventCount: eventCount}
 }
 
-func buildScaleReplayEvents(targetEvents int) []Event {
-	events := make([]Event, 0, targetEvents)
-	labels := []string{"perf", "scale", "benchmark"}
+func writeScaleReplayWorkspace(tb testing.TB, path string, targetEvents int) int {
+	tb.Helper()
 
-	appendEvent := func(event Event) {
-		if len(events) < targetEvents {
-			events = append(events, event)
+	file, err := os.Create(path)
+	if err != nil {
+		tb.Fatalf("create scale replay journal %q: %v", path, err)
+	}
+	writer := bufio.NewWriter(file)
+	count := 0
+	forEachScaleReplayEvent(targetEvents, func(event Event) {
+		line, marshalErr := marshalReplayEvent(event)
+		if marshalErr != nil {
+			_ = file.Close()
+			tb.Fatalf("marshal scale replay event: %v", marshalErr)
 		}
+		if _, writeErr := writer.Write(append(line, '\n')); writeErr != nil {
+			_ = file.Close()
+			tb.Fatalf("write scale replay event: %v", writeErr)
+		}
+		count++
+	})
+	if err := writer.Flush(); err != nil {
+		_ = file.Close()
+		tb.Fatalf("flush scale replay journal: %v", err)
+	}
+	if err := file.Close(); err != nil {
+		tb.Fatalf("close scale replay journal: %v", err)
+	}
+	return count
+}
+
+func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
+	labels := []string{"perf", "scale", "benchmark"}
+	eventCount := 0
+	appendEvent := func(event Event) bool {
+		if eventCount >= targetEvents {
+			return false
+		}
+		visit(event)
+		eventCount++
+		return eventCount < targetEvents
 	}
 
 	nextSequence := 1
-	appendEvent(scaleRoleSeedEvent(nextSequence))
+	if !appendEvent(scaleRoleSeedEvent(nextSequence)) {
+		return
+	}
 	nextSequence++
 
 	for _, label := range labels {
-		appendEvent(scaleLabelSeedEvent(nextSequence, label))
+		if !appendEvent(scaleLabelSeedEvent(nextSequence, label)) {
+			return
+		}
 		nextSequence++
 	}
 
-	for issueIndex := 1; len(events) < targetEvents; issueIndex++ {
-		appendEvent(scaleIssueCreatedEvent(nextSequence, issueIndex))
-		nextSequence++
-		if len(events) >= targetEvents {
-			break
+	for issueIndex := 1; eventCount < targetEvents; issueIndex++ {
+		if !appendEvent(scaleIssueCreatedEvent(nextSequence, issueIndex)) {
+			return
 		}
+		nextSequence++
 
 		if issueIndex%3 == 0 {
-			appendEvent(scaleAcceptanceCriterionEvent(nextSequence, issueIndex))
+			if !appendEvent(scaleAcceptanceCriterionEvent(nextSequence, issueIndex)) {
+				return
+			}
 			nextSequence++
-		}
-		if len(events) >= targetEvents {
-			break
 		}
 
 		if issueIndex%4 == 0 {
-			appendEvent(scaleIssueLabelEvent(nextSequence, issueIndex, labels[issueIndex%len(labels)]))
+			if !appendEvent(scaleIssueLabelEvent(nextSequence, issueIndex, labels[issueIndex%len(labels)])) {
+				return
+			}
 			nextSequence++
-		}
-		if len(events) >= targetEvents {
-			break
 		}
 
 		if issueIndex%5 == 0 {
-			appendEvent(scaleIssueTransitionEvent(nextSequence, issueIndex))
+			if !appendEvent(scaleIssueTransitionEvent(nextSequence, issueIndex)) {
+				return
+			}
 			nextSequence++
-		}
-		if len(events) >= targetEvents {
-			break
 		}
 
 		if issueIndex > 1 && issueIndex%7 == 0 {
-			appendEvent(scaleIssueLinkEvent(nextSequence, issueIndex))
+			if !appendEvent(scaleIssueLinkEvent(nextSequence, issueIndex)) {
+				return
+			}
 			nextSequence++
 		}
 	}
-
-	return events
 }
 
 func scaleRoleSeedEvent(sequence int) Event {
@@ -325,24 +358,6 @@ func scaleEventTime(sequence int) time.Time {
 
 func scaleIssueID(issueIndex int) string {
 	return fmt.Sprintf("FID-scale-%05d", issueIndex)
-}
-
-func writeReplayEventsTB(tb testing.TB, path string, events ...Event) {
-	tb.Helper()
-
-	var payload []byte
-	for _, event := range events {
-		line, err := marshalReplayEvent(event)
-		if err != nil {
-			tb.Fatalf("marshalReplayEvent() error = %v", err)
-		}
-		payload = append(payload, line...)
-		payload = append(payload, '\n')
-	}
-
-	if err := os.WriteFile(path, payload, 0o644); err != nil {
-		tb.Fatalf("WriteFile(%q) error = %v", path, err)
-	}
 }
 
 func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {

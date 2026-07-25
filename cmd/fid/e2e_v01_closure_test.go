@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
@@ -75,6 +77,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureTelemetry(t, binary, workspace, mainIssueID, firstCompletionID)
 
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
+	journalFilesBefore := closureJournalFileBytes(t, workspace)
 	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)
 	controlBefore := closureMaintenanceResult(t, binary, workspace)
 	time.Sleep(4 * time.Second)
@@ -82,19 +85,57 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	t.Logf("DEC-056 no-rebuild control recent_activity_7d: first=%d second=%d", controlBefore.Info.RecentActivity7D, controlAfter.Info.RecentActivity7D)
 	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "DEC-056 no-rebuild control")
 
+	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	if err := fiddb.MigrateDown(dbPath, filepath.Join("..", "..", "migrations")); err != nil {
+		t.Fatalf("migrate down for journal immutability boundary: %v", err)
+	}
+	if err := fiddb.MigrateUp(dbPath, filepath.Join("..", "..", "migrations")); err != nil {
+		t.Fatalf("migrate up for journal immutability boundary: %v", err)
+	}
+	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "migration")
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("open projection for stale-version boundary: %v", err)
+	}
+	if _, err := conn.Exec(`UPDATE projection_meta SET projection_schema_version = 3 WHERE key = 'default'`); err != nil {
+		_ = conn.Close()
+		t.Fatalf("set stale projection version: %v", err)
+	}
+	if err := conn.Close(); err != nil {
+		t.Fatalf("close stale projection: %v", err)
+	}
+	closureRunFID(t, binary, workspace, "issue", "list", "--format", "json")
+	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "stale-version refresh")
+
 	beforeTables := closureProjectedTableSnapshots(t, binary, workspace)
+	beforeSchema := closureSchemaSnapshot(t, binary, workspace)
+	assertClosureForeignKeysClean(t, binary, workspace)
 	beforeMaintenance := closureMaintenanceResult(t, binary, workspace)
-	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("remove derived DB: %v", err)
 	}
 	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
 	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "rebuild")
+	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "delete-and-rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
+	if afterSchema := closureSchemaSnapshot(t, binary, workspace); afterSchema != beforeSchema {
+		t.Fatalf("schema after first rebuild differs from before rebuild")
+	}
+	assertClosureForeignKeysClean(t, binary, workspace)
 	afterMaintenance := closureMaintenanceResult(t, binary, workspace)
 	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
 	assertClosureClockRelativeMovementWithinControl(t, beforeMaintenance, afterMaintenance, controlBefore, controlAfter)
 	assertClosureRolesAfterRebuild(t, binary, workspace)
 	assertClosureJournalTracked(t, workspace)
+
+	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "second rebuild")
+	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
+	if afterSchema := closureSchemaSnapshot(t, binary, workspace); afterSchema != beforeSchema {
+		t.Fatalf("schema after second rebuild differs from before rebuild")
+	}
+	assertClosureForeignKeysClean(t, binary, workspace)
 
 	if bytes.Equal(journalBeforeNonJournal, nil) {
 		t.Fatal("journal snapshot is empty")

@@ -4,12 +4,14 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
@@ -160,6 +162,239 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("Get(after rebuild) error = %v", err)
 	}
 	assertIssuesEqual(t, afterRebuild, beforeRebuild)
+}
+
+func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Registry edge source",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	claimTransitionIssue(t, workspace, created.ID, "human")
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transitions
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "todo", "in_progress"); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("delete registry edge: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	_, err = Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "in_progress",
+		ActorRole:     "human",
+	})
+	if err == nil {
+		t.Fatal("Transition() error = nil, want missing registry edge rejection")
+	}
+	if got, want := err.Error(), `transition issue "`+created.ID+`" from "todo" to "in_progress" is not allowed`; got != want {
+		t.Fatalf("Transition() error = %q, want %q", got, want)
+	}
+}
+
+func TestTransitionRegistryMatchesFrozenV01OrderedStateMatrix(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+
+	registry, err := workflow.Load(conn)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+
+	for workflowID, definition := range workflow.FrozenDefinitions() {
+		for fromState := range definition.States {
+			for toState := range definition.States {
+				wantRules, wantAllowed := workflow.RulesForEdge(workflowID, fromState, toState)
+				gotRules, gotAllowed := registry.RulesForEdge(workflowID, fromState, toState)
+				if gotAllowed != wantAllowed {
+					t.Fatalf("registry edge %s %s -> %s allowed = %t, want %t", workflowID, fromState, toState, gotAllowed, wantAllowed)
+				}
+				if !reflect.DeepEqual(gotRules, wantRules) {
+					t.Fatalf("registry edge %s %s -> %s rules = %#v, want %#v", workflowID, fromState, toState, gotRules, wantRules)
+				}
+			}
+		}
+	}
+}
+
+func TestTransitionUsesDBRuleReferences(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Registry rule source",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	claimTransitionIssue(t, workspace, created.ID, "human")
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "in_progress",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(todo->in_progress) error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transition_requires
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "in_progress", "dev_complete"); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("delete registry rules: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "dev_complete",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(in_progress->dev_complete) error = %v", err)
+	}
+}
+
+func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Registry category source",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		UPDATE workflow_states
+		SET category = ?
+		WHERE workflow_id = ? AND state = ?
+	`, "unstarted", "task-default", "in_progress"); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("update registry category: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "in_progress",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(todo->in_progress) error = %v", err)
+	}
+}
+
+func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Explicit cancellation edge",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		DELETE FROM workflow_transitions
+		WHERE workflow_id = ? AND from_state = ? AND to_state = ?
+	`, "task-default", "todo", "cancelled"); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("delete cancelled registry edge: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	_, err = Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "cancelled",
+		ActorRole:     "human",
+	})
+	if err == nil {
+		t.Fatal("Transition() error = nil, want missing cancelled registry edge rejection")
+	}
+	if got, want := err.Error(), `transition issue "`+created.ID+`" from "todo" to "cancelled" is not allowed`; got != want {
+		t.Fatalf("Transition() error = %q, want %q", got, want)
+	}
+}
+
+func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Reserved gate seam",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`
+		INSERT INTO workflow_transition_requires (workflow_id, from_state, to_state, rule, params_json)
+		VALUES (?, ?, ?, ?, ?)
+	`, "task-default", "todo", "in_progress", workflow.RuleRequiredGatesCurrent, `{"gates":[{"id":"gate-test","version":1}]}`); err != nil {
+		closeIssueTestDB(t, conn)
+		t.Fatalf("insert reserved workflow rule: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	before, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("read journal before reserved rule: %v", err)
+	}
+	_, err = Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "in_progress",
+		ActorRole:     "developer",
+	})
+	if err == nil || !strings.Contains(err.Error(), `unsupported workflow rule "required_gates_current"`) {
+		t.Fatalf("Transition() error = %v, want unevaluated reserved-rule rejection", err)
+	}
+	after, readErr := os.ReadFile(journalPath)
+	if readErr != nil {
+		t.Fatalf("read journal after reserved rule: %v", readErr)
+	}
+	if !reflect.DeepEqual(after, before) {
+		t.Fatal("journal changed while reserved gate rule was rejected")
+	}
 }
 
 func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
@@ -459,6 +694,96 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 	}
 }
 
+func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+
+	parent, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Parent task",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create(parent) error = %v", err)
+	}
+	subtask, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "subtask",
+		Title:         "Rebuild released caller claim",
+		ActorRole:     "developer",
+		ParentID:      stringPointer(parent.ID),
+	})
+	if err != nil {
+		t.Fatalf("Create(subtask) error = %v", err)
+	}
+
+	claimTransitionIssue(t, workspace, subtask.ID, "human")
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+		ToState:       "in_progress",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(todo->in_progress) error = %v", err)
+	}
+
+	started, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(in progress) error = %v", err)
+	}
+	if got := len(started.Claims); got != 1 {
+		t.Fatalf("Get(in progress).Claims = %#v, want live caller claim", started.Claims)
+	}
+	if got := started.Claims[0].ClaimedBy; got != "human" {
+		t.Fatalf("Get(in progress).Claims[0].ClaimedBy = %q, want human", got)
+	}
+
+	if _, err := Transition(TransitionOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+		ToState:       "done",
+		ActorRole:     "human",
+	}); err != nil {
+		t.Fatalf("Transition(in_progress->done) error = %v", err)
+	}
+
+	afterRelease, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after release) error = %v", err)
+	}
+	if got := len(afterRelease.Claims); got != 0 {
+		t.Fatalf("Get(after release).Claims = %#v, want no current claims", afterRelease.Claims)
+	}
+
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "workflow_runner"); err != nil {
+		t.Fatalf("RebuildWorkspace() error = %v", err)
+	}
+
+	afterRebuild, err := Get(GetOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            subtask.ID,
+	})
+	if err != nil {
+		t.Fatalf("Get(after rebuild) error = %v", err)
+	}
+	if got := len(afterRebuild.Claims); got != 0 {
+		t.Fatalf("Get(after rebuild).Claims = %#v, want no current claims", afterRebuild.Claims)
+	}
+}
+
 func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 	t.Parallel()
 
@@ -579,15 +904,12 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 	if !errors.As(err, &blockedErr) {
 		t.Fatalf("Transition() error = %T, want *BlockedTransitionError", err)
 	}
-	for _, want := range []string{
-		"all_acs_verified",
-		"has_completion_report",
-		"AC-dev-001",
-		"AC-dev-002",
-	} {
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("Transition() error = %q, want substring %q", err.Error(), want)
-		}
+	wantBlocked := `transition issue "` + created.ID + `" from "in_progress" to "dev_complete" blocked by workflow rules:
+  - all_acs_verified: entities AC-dev-001; missing roles developer
+  - all_acs_verified: entities AC-dev-002; missing roles developer
+  - has_completion_report: entities ` + created.ID
+	if got := err.Error(); got != wantBlocked {
+		t.Fatalf("Transition() error = %q, want %q", got, wantBlocked)
 	}
 	if got := countJournalLines(journalPath); got != linesBeforeReject {
 		t.Fatalf("journal lines after rejected rule transition = %d, want unchanged %d", got, linesBeforeReject)

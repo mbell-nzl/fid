@@ -60,12 +60,25 @@ func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 		t.Fatalf("projected role count = %d, want %d", roleCount, 1)
 	}
 
-	var title string
+	var title, workflowID, status string
 	if err := conn.QueryRow(`SELECT title FROM issues WHERE id = ?`, "FID-a1b2c3").Scan(&title); err != nil {
 		t.Fatalf("query issues: %v", err)
 	}
 	if title != "Implement replay" {
 		t.Fatalf("projected issue title = %q, want %q", title, "Implement replay")
+	}
+	if err := conn.QueryRow(`SELECT workflow_id, status FROM issues WHERE id = ?`, "FID-a1b2c3").Scan(&workflowID, &status); err != nil {
+		t.Fatalf("query migrated issue workflow pair: %v", err)
+	}
+	if workflowID != "task-default" || status != "todo" {
+		t.Fatalf("migrated issue workflow pair = (%q, %q), want (task-default, todo)", workflowID, status)
+	}
+	var category string
+	if err := conn.QueryRow(`SELECT category FROM workflow_states WHERE workflow_id = ? AND state = ?`, workflowID, status).Scan(&category); err != nil {
+		t.Fatalf("query migrated workflow state: %v", err)
+	}
+	if category != "unstarted" {
+		t.Fatalf("migrated workflow category = %q, want unstarted", category)
 	}
 }
 

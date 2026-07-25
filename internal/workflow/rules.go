@@ -7,6 +7,12 @@ const (
 	RuleHasCompletionReport         = "has_completion_report"
 	RuleConcernsAddressed           = "concerns_addressed"
 	RuleAllChildTasksDoneOrCanceled = "all_child_tasks_done_or_cancelled"
+	// RuleRequiredGatesCurrent is reserved for the v0.2b trusted-gate path.
+	// It has no evaluator in this phase.
+	RuleRequiredGatesCurrent = "required_gates_current"
+	// RuleHasCompletion is reserved for structured completion requirements.
+	// It has no evaluator in this phase.
+	RuleHasCompletion = "has_completion"
 )
 
 type RuleResult struct {

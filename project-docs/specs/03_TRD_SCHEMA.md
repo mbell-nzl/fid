@@ -118,11 +118,15 @@ CREATE TABLE issues (
                                                -- task's epic (optional),
                                                -- NULL for epics in v1
   title               TEXT NOT NULL,
-  workflow_id         TEXT NOT NULL,           -- v0.1: enum string ('task-default' |
-                                               --   'epic-default' | 'subtask-default').
-                                               -- v0.2: FK to workflows(id).
+  workflow_id         TEXT NOT NULL REFERENCES workflows(id),
+                                               -- v0.1: bare enum string ('task-default' |
+                                               --   'epic-default' | 'subtask-default'),
+                                               --   CHECK-paired with kind.
+                                               -- v0.2a (migration 0008): real FK to workflows(id).
   status              TEXT NOT NULL,           -- v0.1: CHECK-constrained per workflow_id.
-                                               -- v0.2: FK to workflow_states(workflow_id, state).
+                                               -- v0.2a (migration 0008): composite FK to
+                                               --   workflow_states(workflow_id, state); see the
+                                               --   FOREIGN KEY clause below.
   priority            INTEGER,                 -- 0..5 (0 = critical)
   sequence            INTEGER,                 -- positive sibling order; required for tasks
                                                -- under sequential epics, optional for subtasks,
@@ -141,16 +145,17 @@ CREATE TABLE issues (
                                                -- NULL means "any actor of owner_role".
   created_at          DATETIME, updated_at DATETIME,
   CHECK (kind IN ('epic', 'task', 'subtask')),
-  CHECK ((kind = 'epic' AND workflow_id = 'epic-default')
-      OR (kind = 'task' AND workflow_id = 'task-default')
-      OR (kind = 'subtask' AND workflow_id = 'subtask-default')),
-  CHECK ((workflow_id = 'task-default' AND status IN (
-          'todo', 'in_progress', 'dev_complete', 'qa_review',
-          'qa_block', 'failed_gate', 'qa_pass', 'done', 'cancelled'))
-      OR (workflow_id = 'epic-default' AND status IN (
-          'todo', 'in_progress', 'wrapped', 'closed', 'cancelled'))
-      OR (workflow_id = 'subtask-default' AND status IN (
-          'todo', 'in_progress', 'done', 'cancelled'))),
+  -- v0.1 carried two enum CHECKs here. Migration 0008 REMOVED both — replaced
+  -- by the composite FK below, not supplemented (see the note after this block):
+  --   CHECK (kind/workflow_id pairing: epic→epic-default, task→task-default,
+  --          subtask→subtask-default)
+  --   CHECK (per-workflow status enum: task-default IN ('todo','in_progress',
+  --          'dev_complete','qa_review','qa_block','failed_gate','qa_pass',
+  --          'done','cancelled'); epic-default IN ('todo','in_progress',
+  --          'wrapped','closed','cancelled'); subtask-default IN ('todo',
+  --          'in_progress','done','cancelled'))
+  FOREIGN KEY (workflow_id, status)
+    REFERENCES workflow_states(workflow_id, state),
   CHECK (priority IS NULL OR (priority >= 0 AND priority <= 5)),
   CHECK (kind != 'epic' OR est_tokens IS NULL),
   CHECK (sequence IS NULL OR sequence > 0),
@@ -165,6 +170,18 @@ CREATE TABLE epic_metadata (
   target_end          DATE
 );
 ```
+
+**Workflow columns after v0.2a (migration `0008`).** `issues.workflow_id` is a
+real FK to `workflows(id)` and `(workflow_id, status)` is a composite FK to
+`workflow_states(workflow_id, state)`, so the database rejects any workflow or
+state the workflow tables do not define (§3; `02_TRD.md` §4.6). The two v0.1
+enum CHECKs are **replaced, not supplemented**. One guarantee is deliberately
+not carried over: the database no longer enforces the kind→workflow pairing.
+Kind-appropriate defaults are assigned in application code at creation
+(`internal/issues`), and Phase 19 (`fid workflow assign`) makes per-kind and
+per-project assignment configurable — which that CHECK would have blocked. The
+`issues_enriched` view and every trigger defined on `issues` are re-created by
+migration `0008`'s table rebuild (§14).
 
 ### 2.2 Derived Columns via `issues_enriched`
 
@@ -385,11 +402,23 @@ CREATE TABLE evidence_links (
 
 ---
 
-## 3. Workflows (v0.2+; v0.1 hard-coded)
+## 3. Workflows (shipped v0.2a; seeded from the v0.1 defaults)
 
-The v0.1 hard-coded workflow graphs, status-category mappings, and transition
-requirements are defined in `02_TRD.md` §4.6. The tables below ship in v0.2
-and are seeded from those defaults verbatim.
+The default workflow graphs, status-category mappings, and transition
+requirements are listed in `02_TRD.md` §4.6. **The tables below ship in v0.2a
+(migration `0007`), seeded verbatim from the v0.1 defaults, and are the runtime
+source of truth** — `internal/workflow` loads a read-only registry from them, and
+no production code path reads the frozen Go `definitions` map (retained only as
+test parity fixtures). Migration `0008` adds the `issues.workflow_id` and
+`issues.(workflow_id, status)` foreign keys into `workflows` /
+`workflow_states`.
+
+`workflow_transition_requires` intentionally has no PRIMARY KEY or UNIQUE
+constraint: an edge may carry several ordered rules, and order is resolved by
+`rowid`. Its `params_json` also carries the reserved gate-obligation shape
+(DEC-066) — the rule names `required_gates_current` and `has_completion` are
+recognised by the loader and surfaced as unimplemented, but are **not seeded**
+and have no evaluator; the seam is schema-present and behavior-free until v0.2b.
 
 ```sql
 CREATE TABLE workflows (
@@ -1179,7 +1208,7 @@ context, multi-table reads, ordering, or runtime state (calling role) that SQL
 doesn't have. They live in app-layer code exclusively, with `fid maintenance
 check` as the periodic audit.
 
-### 14.11 Maintenance Structural-Audit Parity (v0.1)
+### 14.11 Maintenance Structural-Audit Parity
 
 `fid maintenance check` is read-only: it reports every discovered violation and
 never repairs projection rows or appends a journal event. Its structural-error
@@ -1193,8 +1222,11 @@ corrupt or externally modified projection:
   v0.1 claim scope and issue resolution; and activity-log supported type and
   target resolution;
 - every row returned by `PRAGMA foreign_key_check`; and
-- each issue's `(workflow_id, status)` pair against the canonical v0.1 Go
-  workflow definitions.
+- each issue's `(workflow_id, status)` pair against the projected workflow
+  tables (§3), resolved through the read-only workflow registry. As of v0.2a
+  this is the migrated source of truth; the audit no longer consults the frozen
+  v0.1 Go definitions, which survive only as test parity fixtures. Behavior is
+  otherwise unchanged — an unknown pair is a structural error.
 
 For every `activity_log` row, the audit also resolves `journal_event_id` in the
 append-only journal using the journal inspection path. A missing journal event
@@ -1213,6 +1245,11 @@ PRAGMA recursive_triggers = ON;
 
 Set on every connection open.
 
+The `fid rebuild` connection additionally sets `synchronous = OFF` and
+`journal_mode = MEMORY` (DEC-071); `foreign_keys` and `recursive_triggers` remain
+ON and the normal command path keeps full durability. See `02_TRD.md` §4.4 for
+the rationale.
+
 ---
 
-*Last updated: 2026-07-18*
+*Last updated: 2026-07-23*

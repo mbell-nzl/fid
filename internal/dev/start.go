@@ -61,7 +61,11 @@ func Start(options StartOptions) (StartResult, error) {
 			return err
 		}
 
-		if _, allowed := workflow.RulesForEdge(current.WorkflowID, current.Status, "in_progress"); !allowed {
+		registry, err := workflow.Load(conn)
+		if err != nil {
+			return fmt.Errorf("dev start: load workflow registry: %w", err)
+		}
+		if _, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, "in_progress"); !allowed {
 			return &issues.InvalidTransitionError{
 				IssueID:        current.ID,
 				CurrentState:   current.Status,

@@ -88,6 +88,10 @@ func (claim claimRecord) liveAt(now time.Time) (bool, time.Time, error) {
 }
 
 func startedWithoutClaimFindings(db *sql.DB, claims []claimRecord, now time.Time, graceSeconds int) ([]Finding, error) {
+	registry, err := workflow.Load(db)
+	if err != nil {
+		return nil, fmt.Errorf("check started-without-claim: load registry: %w", err)
+	}
 	liveClaims, err := liveIssueClaims(claims, now)
 	if err != nil {
 		return nil, err
@@ -115,7 +119,7 @@ func startedWithoutClaimFindings(db *sql.DB, claims []claimRecord, now time.Time
 		if err := rows.Scan(&id, &workflowID, &status, &createdAt, &transitionAt); err != nil {
 			return nil, fmt.Errorf("check started-without-claim: scan issue: %w", err)
 		}
-		category, ok := workflow.CategoryForState(workflowID, status)
+		category, ok := registry.CategoryForState(workflowID, status)
 		if !ok || category != "started" || liveClaims[id] {
 			continue
 		}

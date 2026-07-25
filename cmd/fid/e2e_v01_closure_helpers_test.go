@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -453,6 +454,22 @@ var closureProjectedTableQueries = []struct {
 		name:  "triage_events",
 		query: "SELECT * FROM triage_events ORDER BY id",
 	},
+	{
+		name:  "workflows",
+		query: "SELECT * FROM workflows ORDER BY id",
+	},
+	{
+		name:  "workflow_states",
+		query: "SELECT * FROM workflow_states ORDER BY workflow_id, ordinal, state",
+	},
+	{
+		name:  "workflow_transitions",
+		query: "SELECT * FROM workflow_transitions ORDER BY workflow_id, from_state, to_state",
+	},
+	{
+		name:  "workflow_transition_requires",
+		query: "SELECT * FROM workflow_transition_requires ORDER BY workflow_id, from_state, to_state, rowid",
+	},
 }
 
 func closureProjectedTableSnapshots(t *testing.T, binary, workspace string) map[string]string {
@@ -500,5 +517,39 @@ func assertClosureJournalBytesEqual(t *testing.T, journalPath string, want []byt
 	t.Helper()
 	if got := closureReadFile(t, journalPath); !bytes.Equal(got, want) {
 		t.Fatalf("journal bytes changed after %s", step)
+	}
+}
+
+func closureJournalFileBytes(t *testing.T, workspace string) map[string][]byte {
+	t.Helper()
+	paths, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
+	if err != nil {
+		t.Fatalf("find journal files: %v", err)
+	}
+	files := make(map[string][]byte, len(paths))
+	for _, path := range paths {
+		files[filepath.Base(path)] = closureReadFile(t, path)
+	}
+	return files
+}
+
+func assertClosureJournalFilesEqual(t *testing.T, got, want map[string][]byte, step string) {
+	t.Helper()
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("journal files changed after %s", step)
+	}
+}
+
+func closureSchemaSnapshot(t *testing.T, binary, workspace string) string {
+	t.Helper()
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", `SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name`, "--format", "json")
+	return stdout
+}
+
+func assertClosureForeignKeysClean(t *testing.T, binary, workspace string) {
+	t.Helper()
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", "PRAGMA foreign_key_check", "--format", "json")
+	if strings.TrimSpace(stdout) != "[]" {
+		t.Fatalf("foreign_key_check = %s, want []", stdout)
 	}
 }

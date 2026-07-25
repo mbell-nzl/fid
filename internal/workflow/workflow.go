@@ -3,6 +3,7 @@ package workflow
 type RuleReference struct {
 	Name          string
 	RequiredRoles []string
+	Unimplemented bool
 }
 
 type Definition struct {
@@ -11,120 +12,17 @@ type Definition struct {
 	Transitions map[string]map[string][]RuleReference
 }
 
-var definitions = map[string]Definition{
-	"task-default": {
-		ID: "task-default",
-		States: map[string]string{
-			"todo":         "unstarted",
-			"in_progress":  "started",
-			"dev_complete": "started",
-			"qa_review":    "started",
-			"qa_block":     "started",
-			"failed_gate":  "started",
-			"qa_pass":      "completed",
-			"done":         "completed",
-			"cancelled":    "cancelled",
-		},
-		Transitions: map[string]map[string][]RuleReference{
-			"todo": {
-				"in_progress": nil,
-			},
-			"in_progress": {
-				"dev_complete": {
-					{Name: RuleAllACsVerified, RequiredRoles: []string{"developer"}},
-					{Name: RuleHasCompletionReport},
-				},
-				"failed_gate": nil,
-			},
-			"failed_gate": {
-				"in_progress": nil,
-			},
-			"dev_complete": {
-				"qa_review": nil,
-			},
-			"qa_review": {
-				"qa_pass": {
-					{Name: RuleAllACsVerified, RequiredRoles: []string{"qa_lead"}},
-				},
-				"qa_block": nil,
-			},
-			"qa_block": {
-				"in_progress": nil,
-			},
-			"qa_pass": {
-				"done": nil,
-			},
-		},
-	},
-	"epic-default": {
-		ID: "epic-default",
-		States: map[string]string{
-			"todo":        "unstarted",
-			"in_progress": "started",
-			"wrapped":     "started",
-			"closed":      "completed",
-			"cancelled":   "cancelled",
-		},
-		Transitions: map[string]map[string][]RuleReference{
-			"todo": {
-				"in_progress": nil,
-			},
-			"in_progress": {
-				"wrapped": {
-					{Name: RuleAllChildTasksDoneOrCanceled},
-				},
-			},
-			"wrapped": {
-				"closed": nil,
-			},
-		},
-	},
-	"subtask-default": {
-		ID: "subtask-default",
-		States: map[string]string{
-			"todo":        "unstarted",
-			"in_progress": "started",
-			"done":        "completed",
-			"cancelled":   "cancelled",
-		},
-		Transitions: map[string]map[string][]RuleReference{
-			"todo": {
-				"in_progress": nil,
-			},
-			"in_progress": {
-				"done": nil,
-			},
-		},
-	},
-}
-
-func Workflow(workflowID string) (Definition, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return Definition{}, false
-	}
-	return cloneDefinition(definition), true
-}
-
-func CategoryForState(workflowID, state string) (string, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return "", false
-	}
+func (definition Definition) CategoryForState(state string) (string, bool) {
 	category, ok := definition.States[state]
 	return category, ok
 }
 
-func IsAllowedEdge(workflowID, fromState, toState string) bool {
-	_, ok := RulesForEdge(workflowID, fromState, toState)
+func (definition Definition) IsAllowedEdge(fromState, toState string) bool {
+	_, ok := definition.RulesForEdge(fromState, toState)
 	return ok
 }
 
-func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool) {
-	definition, ok := definitions[workflowID]
-	if !ok {
-		return nil, false
-	}
+func (definition Definition) RulesForEdge(fromState, toState string) ([]RuleReference, bool) {
 	if !knownState(definition, fromState) || !knownState(definition, toState) {
 		return nil, false
 	}
@@ -139,7 +37,7 @@ func RulesForEdge(workflowID, fromState, toState string) ([]RuleReference, bool)
 	if !ok {
 		return nil, false
 	}
-	return append([]RuleReference(nil), rules...), true
+	return cloneRuleReferences(rules), true
 }
 
 func knownState(definition Definition, state string) bool {
@@ -159,9 +57,24 @@ func cloneDefinition(definition Definition) Definition {
 	for fromState, destinations := range definition.Transitions {
 		clonedDestinations := make(map[string][]RuleReference, len(destinations))
 		for toState, rules := range destinations {
-			clonedDestinations[toState] = append([]RuleReference(nil), rules...)
+			clonedDestinations[toState] = cloneRuleReferences(rules)
 		}
 		cloned.Transitions[fromState] = clonedDestinations
+	}
+	return cloned
+}
+
+func cloneRuleReferences(rules []RuleReference) []RuleReference {
+	if rules == nil {
+		return nil
+	}
+	cloned := make([]RuleReference, len(rules))
+	for index, rule := range rules {
+		cloned[index] = RuleReference{
+			Name:          rule.Name,
+			RequiredRoles: append([]string(nil), rule.RequiredRoles...),
+			Unimplemented: rule.Unimplemented,
+		}
 	}
 	return cloned
 }

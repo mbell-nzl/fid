@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type ListOptions struct {
@@ -70,6 +71,10 @@ func List(options ListOptions) ([]ListItem, error) {
 		return nil, err
 	}
 	defer closeIssueDB(conn)
+	registry, err := workflow.Load(conn)
+	if err != nil {
+		return nil, fmt.Errorf("list issues: load workflow registry: %w", err)
+	}
 
 	query, args, err := issueListQuery(options)
 	if err != nil {
@@ -85,15 +90,17 @@ func List(options ListOptions) ([]ListItem, error) {
 	items := []ListItem{}
 	for rows.Next() {
 		var (
-			item     ListItem
-			parentID sql.NullString
-			priority sql.NullInt64
+			item       ListItem
+			workflowID string
+			parentID   sql.NullString
+			priority   sql.NullInt64
 		)
 		if err := rows.Scan(
 			&item.ID,
 			&item.Kind,
 			&item.Title,
 			&item.Status,
+			&workflowID,
 			&parentID,
 			&priority,
 			&item.ConcernsRaised,
@@ -103,7 +110,13 @@ func List(options ListOptions) ([]ListItem, error) {
 			return nil, fmt.Errorf("scan issue list row: %w", err)
 		}
 
-		item.StatusCategory = statusCategory(item.Status)
+		item.StatusCategory, err = registryStatusCategory(registry, workflowID, item.Status)
+		if err != nil {
+			return nil, err
+		}
+		if category := strings.TrimSpace(options.StatusCategory); category != "" && item.StatusCategory != category {
+			continue
+		}
 		item.ParentID = nullStringPointer(parentID)
 		item.Priority = nullIntPointer(priority)
 		items = append(items, item)
@@ -130,10 +143,6 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 	if status := strings.TrimSpace(options.Status); status != "" {
 		whereParts = append(whereParts, "ie.status = ?")
 		args = append(args, status)
-	}
-	if statusCategory := strings.TrimSpace(options.StatusCategory); statusCategory != "" {
-		whereParts = append(whereParts, issueStatusCategorySQL()+" = ?")
-		args = append(args, statusCategory)
 	}
 	if epicID := strings.TrimSpace(options.EpicID); epicID != "" {
 		whereParts = append(whereParts, "ie.parent_id = ?")
@@ -174,6 +183,7 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 			ie.kind,
 			ie.title,
 			ie.status,
+			ie.workflow_id,
 			ie.parent_id,
 			ie.priority,
 			ie.concerns_raised,
@@ -212,16 +222,6 @@ func issueListOrderClause(order string) (string, error) {
 			SupportedOrder: SupportedListOrders(),
 		}
 	}
-}
-
-func issueStatusCategorySQL() string {
-	return `CASE
-		WHEN ie.status IN ('todo') THEN 'unstarted'
-		WHEN ie.status IN ('in_progress', 'dev_complete', 'qa_review', 'qa_block', 'failed_gate', 'wrapped') THEN 'started'
-		WHEN ie.status IN ('qa_pass', 'done', 'closed') THEN 'completed'
-		WHEN ie.status IN ('cancelled') THEN 'cancelled'
-		ELSE 'unstarted'
-	END`
 }
 
 func ParsePriorityFilter(value string) ([]int, error) {

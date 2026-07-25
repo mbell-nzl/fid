@@ -16,6 +16,10 @@ func BenchmarkRebuildWorkspace10kEvents(b *testing.B) {
 	benchmarkRebuildWorkspace(b, 10000)
 }
 
+func BenchmarkRebuildWorkspace100kEvents(b *testing.B) {
+	benchmarkRebuildWorkspace(b, 100000)
+}
+
 func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
 	workspace := b.TempDir()
 	journalDir := filepath.Join(workspace, ".fid", "journal")
@@ -44,7 +48,22 @@ func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
 
 	b.StopTimer()
 	if b.N > 0 {
-		b.ReportMetric(total.Seconds()*1000/float64(b.N), "ms/rebuild")
+		average := total / time.Duration(b.N)
+		b.ReportMetric(float64(average.Microseconds())/1000, "ms/rebuild")
+		if limit, ok := rebuildTarget(targetEvents); ok && average >= limit {
+			b.Fatalf("%dk-event rebuild = %s, want <%s", targetEvents/1000, average, limit)
+		}
+	}
+}
+
+func rebuildTarget(eventCount int) (time.Duration, bool) {
+	switch eventCount {
+	case 10000:
+		return 5 * time.Second, true
+	case 100000:
+		return 30 * time.Second, true
+	default:
+		return 0, false
 	}
 }
 

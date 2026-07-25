@@ -146,7 +146,11 @@ func Finish(options FinishOptions) (FinishResult, error) {
 }
 
 func validateFinishTransition(conn *sql.DB, current issueState) error {
-	rules, allowed := workflow.RulesForEdge(current.WorkflowID, current.Status, "dev_complete")
+	registry, err := workflow.Load(conn)
+	if err != nil {
+		return fmt.Errorf("dev finish: load workflow registry: %w", err)
+	}
+	rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, "dev_complete")
 	if !allowed {
 		return &issues.InvalidTransitionError{
 			IssueID:        current.ID,

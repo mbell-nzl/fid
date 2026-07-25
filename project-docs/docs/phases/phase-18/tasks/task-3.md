@@ -9,8 +9,9 @@ including rich error messages and started-category claim enforcement.
 
 ## Validation Contract Coverage
 
-- VAL-008: every v0.1 transition behaves identically (allowed edges succeed; invalid edges rejected with the same `InvalidTransitionError`; blocked rules produce the same `BlockedTransitionError` naming the same unmet conditions/entities/roles; cancel-from-any-non-cancelled works).
-- VAL-009: started-category claim enforcement parity (into-started requires a live claim; out-of-started auto-releases), using DB-resolved categories.
+- VAL-008: every v0.1 transition behaves identically, proven by an **exhaustive** ordered-pair state matrix across all three frozen workflows plus rule satisfied/blocked fixtures for every ruled edge and exact built-CLI output/error for the allowed, invalid-edge, blocked-rule, and cancel categories (representative-only evidence is insufficient).
+- VAL-009: entering a started-category state requires the caller's live claim — missing, wrong-holder, and stale claims are rejected and a live caller claim is accepted, using DB-resolved categories.
+- VAL-020: leaving a started-category state auto-releases the caller's live claim within the same event/projection operation (claim absent in the projection and after rebuild).
 
 ## Binding Constraints
 
@@ -63,14 +64,38 @@ including rich error messages and started-category claim enforcement.
 ## Acceptance Criteria
 
 - [ ] The transition path resolves edges/categories/rules from the DB registry
-- [ ] Allowed edges succeed; invalid edges rejected with the same
-  `InvalidTransitionError` message as v0.1 (VAL-008)
-- [ ] Blocked rules produce the same `BlockedTransitionError` naming the same
-  unmet conditions, entity IDs, and missing roles as v0.1 (VAL-008)
+- [ ] An exhaustive ordered-pair state matrix across all three frozen workflows
+  matches v0.1: allowed edges succeed; every disallowed edge is rejected with the
+  same `InvalidTransitionError` message (VAL-008)
+- [ ] Every ruled edge is exercised in both satisfied and blocked states;
+  blocked rules produce the same `BlockedTransitionError` naming the same unmet
+  conditions, entity IDs, and missing roles as v0.1, with exact built-CLI output
+  for the allowed/invalid/blocked/cancel categories (VAL-008)
 - [ ] Cancel-from-any-non-cancelled succeeds; `cancelled→cancelled` rejected (VAL-008)
-- [ ] Into-started transition requires a live claim; out-of-started auto-releases,
-  using DB-resolved categories (VAL-009)
+- [ ] Entering a started-category state requires the caller's live claim:
+  missing, wrong-holder, and stale claims are rejected and a live caller claim is
+  accepted, using DB-resolved categories (VAL-009)
+- [ ] Leaving a started-category state auto-releases the caller's live claim in
+  the same event/projection operation; the claim is absent in the projection and
+  after rebuild (VAL-020)
 - [ ] Full suite green; no change to the `issue.transitioned` journal event shape
+
+## Remediation (Review 1 — VAL-020 rebuild evidence)
+
+Review 1 returned `BLOCK` (TRG-002; resolved by DEC-068): VAL-020 was marked
+`PASS` without proof that the released caller claim stays absent after a
+projection rebuild. **VAL-020 is unchanged.** Redo this task within scope:
+
+- Add a characterization test that (a) enters a started-category state holding a
+  live caller claim, (b) transitions out of started, (c) rebuilds the **exact**
+  released-claim workspace/projection, and (d) asserts the caller claim is still
+  absent after the rebuild. The existing general rebuild test rebuilds an
+  *entering-started* fixture and does **not** satisfy this — the released-claim
+  fixture must be the one rebuilt.
+- Correct the `task-3-done.md` VAL-020 evidence to cite the new test; remove the
+  "existing rebuild check remains covered by the transition suite" claim.
+- Rerun the full `## Exact Commands To Run` gate below and re-record results.
+- A QA Reviewer re-review of the VAL-020 remediation must pass before Task 4.
 
 ## First Failing Test
 

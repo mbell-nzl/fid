@@ -205,6 +205,11 @@ func validateActivityJournalEvent(journalDir, eventID string) error {
 }
 
 func checkWorkflowStates(db *sql.DB, _ string) ([]Finding, error) {
+	registry, err := workflow.Load(db)
+	if err != nil {
+		return nil, fmt.Errorf("check workflow states: load registry: %w", err)
+	}
+
 	rows, err := db.Query(`SELECT id, workflow_id, status FROM issues ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("check workflow states: query issues: %w", err)
@@ -217,7 +222,7 @@ func checkWorkflowStates(db *sql.DB, _ string) ([]Finding, error) {
 			_ = rows.Close()
 			return nil, fmt.Errorf("check workflow states: scan issue: %w", err)
 		}
-		if _, ok := workflow.CategoryForState(workflowID, state); !ok {
+		if _, ok := registry.CategoryForState(workflowID, state); !ok {
 			findings = append(findings, Finding{Check: "workflow_state", EntityID: id, Message: fmt.Sprintf("issue %s has unknown workflow/state pair %s/%s", id, workflowID, state)})
 		}
 	}

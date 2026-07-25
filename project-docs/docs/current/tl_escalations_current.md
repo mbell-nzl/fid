@@ -9,10 +9,23 @@
 
 ## Open Escalations
 
-None.
+**None.**
 
 ## Recent Archive Notes
 
+- Phase 18 wrapped 2026-07-25. It raised one escalation, **ESC-001**
+  (final-review BLOCK: the `workflow.Load` connection deadlock that left four
+  required gate commands non-terminating, plus the then-absent QA-30 spec sync).
+  Resolved by **DEC-072**, verified by the 2026-07-23 final-review rerun, and
+  archived to `../phases/phase-18/tl-escalations.md`. Its ID collides with Phase
+  17's ESC-001 and is left as recorded — the known CF-023 defect.
+- Phase 18's other five triages (TRG-001..005) returned `BLOCK` and were
+  adjudicated as DEC-067..DEC-071 without an `ESC-NNN`; that routing was correct
+  in substance, but in five of six cases TL-Lite reported an escalation it never
+  minted and wrote no triage log. **CF-023 is now a required pre-Phase-19
+  workflow-tooling pass (DEC-074)** covering exactly that: mint `ESC-NNN` **and**
+  the triage-log entry on every `BLOCK`, and enforce `ESC-NNN`/`TRG-NNN` global
+  uniqueness.
 - Phase 17 wrapped 2026-07-18. It raised five escalations, all resolved and
   archived to `../phases/phase-17/tl-escalations.md`: ESC-004 (Task 1
   report-lint), ESC-005 (Task 2 report-lint, backfilled), ESC-009 (QA model
