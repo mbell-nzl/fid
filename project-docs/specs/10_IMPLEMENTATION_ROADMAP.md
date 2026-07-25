@@ -496,8 +496,16 @@ relying on agent prose for deterministic claims.
 > previously said the CF-023 pass "precedes Phase 18". It did not run: Phase 18
 > executed first, and all six of its triages (TRG-001..006) reproduced the
 > CF-023 defects — TL-Lite BLOCK verdicts that could not mint an `ESC-NNN` or a
-> triage log, plus `TRG-001` and `ESC-001` ID collisions. The pass is now
-> **required before Phase 19 execution** and is no longer optional sequencing.
+> triage log, plus `TRG-001` and `ESC-001` ID collisions.
+>
+> **Superseded 2026-07-26 (DEC-083).** DEC-074's "required before Phase 19
+> execution" gate is lifted at the Human's direction: a broader agentic-workflow
+> overhaul is in progress and would discard the CF-023 tweaks. Tech Lead risk
+> read: items (a)-(g) are audit-trail and orchestration-friction defects with no
+> product-quality risk, and item (h) (evidence honesty) is carried as a rule by
+> every Phase 19 task spec, with QA Lead's independent rerun retained as the
+> real control. CF-023 stays open in the carry-forward register targeting the
+> overhaul. Phase 19 execution is gated only on Human approval of its plan.
 >
 > - **Phase 18 — Workflow tables migration + engine data-source swap + gate
 >   seams (foundational, behavior-preserving).** Add the four workflow tables

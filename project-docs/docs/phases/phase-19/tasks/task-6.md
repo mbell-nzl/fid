@@ -1,0 +1,188 @@
+# Phase 19 - Task 6: Closure — integrity, rebuild parity, exit scenario, spec sync
+
+## Objective
+
+Close the v0.2a slice-2 increment: teach `fid maintenance check` to validate
+assignment integrity, prove `fid rebuild` reproduces authored workflows and
+assignments deterministically, characterize the DEC-079 permissions boundary,
+run the end-to-end exit scenario, re-measure the CF-024 performance controls,
+and finish the spec and glossary sync.
+
+## Validation Contract Coverage
+
+- VAL-021: rebuild reproduces custom workflows and assignments
+  deterministically and non-destructively; journal bytes never change.
+- VAL-022: `fid maintenance check` is clean on a healthy workspace and
+  reports a deterministic finding for an incompatible seeded assignment.
+- VAL-023: the DEC-066 gate-obligation seam is still behavior-free after
+  workflow authoring ships.
+- VAL-024: transitioning into a custom-named state is rejected with the
+  documented error; a v0.1-named state under a custom workflow succeeds.
+- VAL-025: the v0.2a slice-2 exit scenario runs end to end.
+- VAL-026 (Human): a human operator can define, assign, and inspect a custom
+  workflow and judges the surface coherent — QA Lead fans this into
+  per-observable human-checklist rows.
+
+Assertions live in
+`project-docs/docs/phases/phase-19/qa/validation-contract.md`.
+
+## Binding Constraints
+
+- **New structural check, existing pattern.** Add
+  `checkWorkflowAssignments` to the `checks` slice in
+  `internal/maintenance/check.go`, following the `checkWorkflowStates`
+  precedent: read-only, deterministic, one `Finding` per violation with a
+  stable `Check` name and the offending entity ID. It flags an assignment
+  whose workflow `applies_to` is incompatible with the assigned scope
+  (kind-scope row whose workflow is bound to a different kind; project-scope
+  row whose workflow is not `any`). FK integrity is already covered by
+  `checkForeignKeys`; do not duplicate it.
+- **Rebuild parity evidence is whole-projection, not workflow-only**
+  (VAL-021). Follow the Phase 18 pattern: normalized per-table snapshots of
+  **every** projected table before deletion, after rebuild, and after a
+  second rebuild, plus `sqlite_schema` equality, clean
+  `PRAGMA foreign_key_check`, and per-file journal byte hashes at every
+  boundary. Document normalization for any intentionally volatile field.
+- **The exit scenario is scripted, not narrated** (VAL-025). Against a real
+  `.fid/` workspace using the built binary: define `task-strict`
+  (`--applies-to task`, v0.1 state names, plus a `concerns_addressed`
+  requirement on `in_progress->dev_complete`), assign it to kind `task`, list
+  it in every format, create a task that picks it up instead of
+  `task-default`, raise a concern, observe the transition blocked with a
+  `BlockedTransitionError` naming the open concern, address the concern,
+  observe the transition succeed — and assert throughout that a control issue
+  created under `task-default` before the assignment is unaffected.
+- **DEC-079 boundary is characterized, not worked around** (VAL-024). Prove
+  both states with the built CLI. Do not add matrix rows for custom state
+  names; that grant belongs to Phase 20's `fid policy set`.
+- **Seam evidence is reproducible** (VAL-023). Record the exact `rg` commands
+  and their output for the production-source inventory, alongside the CLI
+  rejection evidence for `required_gates_current` / `has_completion` and the
+  zero-row seeded query.
+- **CF-024 measurement obligation.** Run the benchmark gate and record the
+  100k-event rebuild against the `<30 s` TRD-PERF-003 control and the
+  10k-issue read against the `<500 ms` TRD-PERF-001 control, with the margin
+  compared to the Phase 18 baseline (`26.99–27.66 s`). **Do not weaken either
+  target.** If the rebuild regresses past the control, stop and escalate.
+- **CF-021 rides this task.** Add Go doc comments to the exported
+  `maintenance.VacuumResult` and `maintenance.Vacuum`. This task already
+  touches `internal/maintenance` and runs the full Go gate.
+- **Spec and glossary sync completes here.** `06_DESIGN_PLAN_CLI.md` records
+  the DEC-079 limitation and points at `fid policy set` (Phase 20).
+  `GLOSSARY.md` gains the Phase 19 terms.
+
+## Scope
+
+### Files To Create Or Modify
+
+- `internal/maintenance/check.go`,
+  `internal/maintenance/workflow_assignments.go` (new) — the new check
+- `internal/maintenance/check_test.go` /
+  `internal/maintenance/workflow_assignments_test.go` (new)
+- `internal/maintenance/vacuum.go` — CF-021 doc comments
+- `cmd/fid/e2e_v02a_workflow_authoring_test.go` (new) — VAL-024, VAL-025
+- `internal/journal/` rebuild/replay test files — VAL-021 whole-projection
+  parity for authored workflows and assignments
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` — DEC-079 limitation note
+- `project-docs/specs/GLOSSARY.md` — Phase 19 terms (see below)
+
+### Files To Read For Context
+
+- `internal/maintenance/check.go` (`checkWorkflowStates` precedent),
+  `internal/maintenance/errors.go`
+- `internal/journal/phase2_rebuild_test.go`,
+  `internal/journal/rebuild_scale_test.go`,
+  `internal/journal/rebuild_bench_test.go`
+- `cmd/fid/e2e_v01_closure_test.go` (end-to-end scenario conventions)
+- `project-docs/docs/phases/phase-18/qa/final-review.md` (Phase 18 rebuild and
+  benchmark evidence format, and the CF-024 baseline numbers)
+- `project-docs/docs/phases/phase-19/decisions.md` (DEC-079, DEC-082)
+
+### Out Of Scope
+
+- Any new command or flag.
+- Any permissions-matrix change (DEC-079; Phase 20).
+- Broader markdown characterization backfill (CF-022 remainder).
+- Any receipt, gate, or evidence behavior (v0.2b).
+
+## Acceptance Criteria
+
+- [ ] `fid maintenance check` reports no assignment finding on a healthy
+  workspace with valid kind and project assignments (VAL-022)
+- [ ] A test-seeded incompatible assignment produces a deterministic finding
+  and a non-zero `--warn-as-error` exit (VAL-022)
+- [ ] Normalized snapshots of every projected table are identical before
+  deletion, after rebuild, and after a second rebuild; `sqlite_schema` equal;
+  `foreign_key_check` clean; every journal file byte-identical at every
+  boundary (VAL-021)
+- [ ] `fid workflow define` rejects `required_gates_current` and
+  `has_completion`; zero seeded rows reference either; the recorded `rg`
+  inventory shows no production evaluator or query (VAL-023)
+- [ ] Transitioning into a custom-named state fails with the documented
+  no-matrix-entry error and appends nothing; a v0.1-named state under a
+  custom workflow succeeds (VAL-024)
+- [ ] The scripted exit scenario passes every step, including the unaffected
+  `task-default` control issue (VAL-025)
+- [ ] Benchmark gate run; 100k-event rebuild and 10k-issue read recorded
+  against their controls with the margin vs the Phase 18 baseline (CF-024)
+- [ ] `maintenance.VacuumResult` and `maintenance.Vacuum` carry Go doc
+  comments (CF-021)
+- [ ] `06_DESIGN_PLAN_CLI.md` DEC-079 note and `GLOSSARY.md` terms added
+
+## First Failing Test
+
+`TestCheckWorkflowAssignmentsFlagsIncompatibleAppliesTo`: seed a kind-scope
+assignment whose workflow is bound to another kind and assert the finding —
+fails until the check exists.
+
+## Documentation Updates
+
+- `project-docs/specs/06_DESIGN_PLAN_CLI.md` — the DEC-079 limitation:
+  transitions into custom state names require a permissions entry, delivered
+  by `fid policy set` in Phase 20.
+- `project-docs/specs/GLOSSARY.md` — add **Custom workflow** (a user-authored
+  workflow created by `fid workflow define`, stored as journal-derived rows in
+  the projected workflow tables, as opposed to the seeded defaults),
+  **Workflow assignment** (a `workflow_assignments` row binding a workflow to
+  an issue kind or to the project, with kind scope taking precedence), and
+  **Initial state** (the state an issue is created in: the first declared
+  `unstarted` state, else the first declared state).
+
+## Exact Commands To Run
+
+Run exactly:
+
+```text
+gofmt -l cmd internal
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+go test -tags integration -race ./...
+go test -bench . -benchmem ./...
+go build -o /tmp/fid ./cmd/fid
+```
+
+Required-command rules live in `AGENTS.md` (Commands): every required command
+is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
+narrower substituted commands are failed gates. A non-terminating command is
+never `PASS`; record wall-clock evidence that each command terminated.
+
+Conditional commands required by this task:
+
+- `go test -bench . -benchmem ./...` — the CF-024 measurement obligation.
+- `go test -tags integration -race ./...` and `go build -o /tmp/fid ./cmd/fid`
+  — the rebuild-parity and end-to-end scenario evidence.
+
+## Notes For Developer
+
+- Depends on Tasks 1-5. This is the phase-closure task; VAL-021, VAL-023, and
+  VAL-026 are phase-end assertions.
+- Phase 18's ESC-001 was a `workflow.Load` connection deadlock that left four
+  required gate commands non-terminating and was recorded `PASS` anyway. When
+  running this task's gate, confirm and record that **every** command
+  terminated before claiming a result.
+- Do not weaken the TRD-PERF-003 or TRD-PERF-001 controls. CF-024 records
+  roughly 8-10% headroom on the rebuild; a regression past the control is an
+  escalation, not a note.
+- Completion report at
+  `project-docs/docs/phases/phase-19/tasks/task-6-done.md`.

@@ -7,45 +7,51 @@
 
 ## Project State
 
-**Status:** Phase 18 **COMPLETE / WRAPPED (2026-07-25)**. **No phase is active.**
-v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1 of 3 is delivered.
-Next: the **required CF-023 workflow-tooling pass** (DEC-074) plus the
-recommended deep retrospective, then Phase 19 planning.
+**Status:** Phase 19 **PLANNED (2026-07-26), execution gated.** Phase 18 is
+COMPLETE / WRAPPED (2026-07-25); v0.1 remains closed for early dogfood
+(DEC-057); v0.2a slice 1 of 3 is delivered.
 
-Phase 18 outcome:
+Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
+v0.2a slice 2 of 3) is planned in **heavy mode** with six tasks and a 26-row
+validation contract. Artifacts: `../phases/phase-19/` — `decisions.md`
+(DEC-075..DEC-082), `qa/validation-contract.md`, `tasks/task-1..6.md`; brief
+refreshed in `phase_brief.md`.
 
-- All five tasks closed with verified commits and a terminating, green
-  seven-command heavy-mode gate; coverage total `76.8%`, all enforced package
-  thresholds met.
-- QA Lead final review (rerun 2026-07-23): **PASS** — 24 PASS / 0 FAIL / 0
-  BLOCKED / 0 CARRY-FORWARD, no Blocking or Major finding.
-- Human checklist (2026-07-25): **PASS** (HUMAN-01a..d all PASS).
-- VAL-001..024 all PASS against fresh evidence. No assertion, threshold,
-  fixture, or gate command was weakened at any point in the phase.
-- Six triages (TRG-001..006), all `BLOCK`, all correct in hindsight; one
-  escalation (ESC-001), resolved by DEC-072 and archived.
-- Wrap decisions: **DEC-073** (sign-off, audits, CF-024, glossary sync) and
-  **DEC-074** (CF-023 required before Phase 19; roadmap sequencing corrected).
+**Execution needs Human approval of the mode, contract, and task list — no
+other precondition.** DEC-083 re-defers CF-023 to the coming agentic-workflow
+overhaul and removes the DEC-074 execution gate; two zero-cost mitigations
+(evidence-honesty rule in every task spec; phase-scoped `ESC-19-NNN` /
+`TRG-19-NNN` with a triage-log row on every `BLOCK`) are carried by the phase
+instead. The deep retrospective (DEC-073) is decoupled and becomes an input to
+the overhaul.
 
-Delivered: workflow structure is now data (migrations `0007`/`0008`), every
-consumer resolves through `workflow.Load` from the projected workflow tables, the
-frozen Go `definitions` map is test-only, and the DEC-066 gate-obligation seam is
-present with zero behavior.
+Phase 18 outcome (full record in `../phases/phase-18/progress.md`): five tasks
+closed on a terminating, green seven-command heavy gate (coverage `76.8%`);
+final review **PASS** (24 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD); human
+checklist **PASS**; six triages all correct in hindsight; ESC-001 resolved by
+DEC-072. Wrap decisions **DEC-073** and **DEC-074**. Delivered: workflow
+structure is data (migrations `0007`/`0008`), every consumer resolves through
+`workflow.Load`, the frozen Go `definitions` map is test-only, and the DEC-066
+gate-obligation seam is present with zero behavior.
 
 ## Carry-Forward
 
-- **CF-024 NEW (DEC-073)** — 100k-event rebuild sits at `26.99–27.66 s` against
-  the `<30 s` TRD-PERF-003 control (~8–10% headroom). Reopen with the first
-  v0.2b projection/rebuild work; next lever is batching commits per N events.
-  Do not weaken the target.
-- **CF-023 (Medium, promoted by DEC-074)** — workflow-tooling hardening is now
-  **required before Phase 19 execution**, scope expanded from Phase 18 evidence.
-- **CF-021 (re-targeted)** — trigger fired in Phase 18 and was missed; now an
-  explicit Phase 19 planning item.
-- **CF-017 (v0.2e, re-targeted)** — trigger fired in Phase 18; correctly not
-  taken during a behavior-preserving migration; now scheduled, not trigger-based.
-- **CF-008 (v0.2)** — explicit decision point at Phase 19 planning.
-- CF-018, CF-020, CF-022 unchanged; their trigger packages were untouched.
+Dispositioned at Phase 19 planning (DEC-082):
+
+- **CF-023** — **re-deferred to the workflow overhaul (DEC-083, supersedes
+  DEC-074).** No product-quality risk in items (a)-(g); item (h) is carried as
+  a rule by every Phase 19 task spec. Stays open in the register.
+- **CF-021** — **scheduled: Phase 19 Task 6**, which already touches
+  `internal/maintenance` and runs the full Go gate.
+- **CF-022** — **partially taken: Phase 19 Task 5** ships a byte-exact golden
+  for the new markdown renderer; the backfill for pre-existing renderers stays
+  deferred.
+- **CF-024** — re-deferred to v0.2b, with a Phase 19 Task 6 **measurement
+  obligation**: re-record the 100k-event rebuild (`<30 s`) and 10k-issue read
+  (`<500 ms`) against the controls. Do not weaken either target.
+- **CF-008** — **re-deferred to v0.2d** (governance vocabulary), where it pairs
+  with the `activity_log` ref-type extension. Human confirmation pending.
+- **CF-017 (v0.2e), CF-018, CF-020** — re-deferred; triggers not fired.
 
 ## Escalations
 
@@ -66,15 +72,15 @@ executed within the ratified-by-practice v0.2a slice.
 
 ## Next Action
 
-Tech Lead planning, in order (each needs Human approval before execution):
+In order:
 
-1. **CF-023 workflow-tooling pass (required, DEC-074)** — light mode, doc/tooling
-   only: mint `ESC-NNN` + triage-log entry on every `BLOCK`; `ESC-NNN`/`TRG-NNN`
-   global uniqueness; report-lint/commit-metadata friction; run-ledger
-   chronological append without duplicates; wrap-time reopen audit for
-   trigger-based carry-forwards; evidence-honesty hardening so a non-terminating
-   command cannot be recorded `PASS`.
-2. **Deep retrospective (RECOMMENDED, DEC-073)** — CF-023 recurrence plus the
-   new evidence-over-claiming theme; pair it with the tooling pass.
-3. **Phase 19 planning** — `fid workflow define/assign/list` + escalation default
-   workflow (v0.2a slice 2 of 3), including CF-021 and CF-008 disposition.
+1. **Human approves the Phase 19 plan** — operating mode (heavy), validation
+   contract (VAL-001..026), the six-task list, and the CF-008 re-defer.
+2. **QA Lead drafts the Phase 19 QA plan** with fresh command and feasibility
+   validation (heavy mode never carries feasibility forward), then Phase
+   Runner starts Task 1.
+3. **Deep retrospective (DEC-073, timing at the Human's discretion)** — now an
+   input to the agentic-workflow overhaul rather than a driver of a CF-023
+   pass. Two themes: workflow-tooling reliability (CF-023 recurrence across
+   Phases 17-18) and evidence over-claiming (three Phase 18 reports asserted
+   `PASS` without evidence, each caught only by independent QA rerun).

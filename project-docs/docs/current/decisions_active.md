@@ -35,14 +35,24 @@ closes, or cancels each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. The enhancement is a resolution-reason field + cancel `--reason` flag, touching the data model and `activity_log` audit. | v0.2 — explicit decision point at **Phase 19 planning** (DEC-073) | Low (product) |
+| CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. The enhancement is a resolution-reason field + cancel `--reason` flag, touching the data model and `activity_log` audit. **Dispositioned at Phase 19 planning (DEC-082): re-deferred to v0.2d**, where the governance entities and the `activity_log` ref-type extension (DEC-081) land together; it is orthogonal to workflow authoring. Human confirmation pending. | v0.2d (DEC-082) | Low (product) |
 | CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Trigger fired in Phase 18 (Task 5 touched `internal/dev`) and was correctly not taken during a behavior-preserving migration; now **scheduled**, not trigger-based (DEC-073). | v0.2e (`fid dev resume`/`abandon`) planning item | Low |
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. | Next SQL package reopen | Low |
 | CF-020 | Phase 17 DEC-056 | Burst issue writes stamp `occurred_at` ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not fix inside a v0.1 closure audit. | v0.2 | Low (product) |
-| CF-021 | Phase 17 Review 3 / STRUCT-003 | Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum`. Trigger fired in Phase 18 (Task 5 touched `internal/maintenance`) and was missed; now an explicit **Phase 19 planning item** (DEC-073), to ride any task that already runs the Go gate. | Phase 19 | Low |
-| CF-022 | Phase 17 Review 1 | Add broader exact-output markdown characterization tests to lock rendering behavior beyond the current suite. | Next `internal/format` markdown reopen | Low |
-| CF-023 | Phase 17 DEC-058; scope expanded by Phase 18 DEC-074 | Workflow-tooling hardening: (a) worked backtick-wrapped commit-metadata example in the completion-report template, (b) Developer-prompt rule that the report is its own committed `docs(task)` step, (c) report-lint messaging distinguishing dirty vs parse failure, (d) **`ESC-NNN` and `TRG-NNN` global uniqueness**, (e) TL-Lite/Runner must mint a concrete `ESC-NNN` **and** a triage-log entry on every `BLOCK`, (f) run-ledger chronological append with no duplicate entries, (g) wrap-time reopen audit for trigger-based carry-forwards, (h) evidence-honesty hardening so a non-terminating required command cannot be recorded `PASS`. Light-mode doc/tooling pass. | **Required before Phase 19 execution** (DEC-074) | **High** |
-| CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom is thin: after the DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99–27.66 s` against the `<30 s` control (~8–10% margin). v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** | v0.2b (first projection/rebuild work) | Medium |
+| CF-021 | Phase 17 Review 3 / STRUCT-003 | Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum`. **Scheduled at Phase 19 planning (DEC-082): Phase 19 Task 6**, which already touches `internal/maintenance` and runs the full Go gate. | **Phase 19 Task 6 (scheduled)** | Low |
+| CF-022 | Phase 17 Review 1 | Add broader exact-output markdown characterization tests to lock rendering behavior beyond the current suite. Trigger fires in Phase 19 Task 5 (new `internal/format` markdown renderer). **Partially taken (DEC-082):** Task 5 ships a byte-exact golden for the new workflow-list renderer; the backfill for pre-existing renderers stays deferred. | Remainder: next `internal/format` markdown reopen | Low |
+| CF-023 | Phase 17 DEC-058; scope expanded by Phase 18 DEC-074 | Workflow-tooling hardening: (a) worked backtick-wrapped commit-metadata example in the completion-report template, (b) Developer-prompt rule that the report is its own committed `docs(task)` step, (c) report-lint messaging distinguishing dirty vs parse failure, (d) **`ESC-NNN` and `TRG-NNN` global uniqueness**, (e) TL-Lite/Runner must mint a concrete `ESC-NNN` **and** a triage-log entry on every `BLOCK`, (f) run-ledger chronological append with no duplicate entries, (g) wrap-time reopen audit for trigger-based carry-forwards, (h) evidence-honesty hardening so a non-terminating required command cannot be recorded `PASS`. **Re-deferred by DEC-083** (supersedes DEC-074): the Human's agentic-workflow overhaul supersedes these tweaks, so Phase 19 execution is no longer gated on them. Items (a)-(g) are audit-trail/friction defects with no product-quality risk; item (h) is carried as a rule by every Phase 19 task spec instead. Stays open so it is not lost if the overhaul slips or narrows. | **Workflow overhaul** (DEC-083) | Medium |
+| CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom is thin: after the DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99–27.66 s` against the `<30 s` control (~8–10% margin). v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** Phase 19 Task 6 carries a measurement obligation (re-record rebuild + read against the controls); the fix itself stays v0.2b (DEC-082). | v0.2b (first projection/rebuild work); measured in Phase 19 Task 6 | Medium |
+
+## Phase 19 Planning Decisions (2026-07-26, pending Human approval)
+
+**DEC-075..DEC-082** — recorded in `../phases/phase-19/decisions.md`: heavy
+operating mode; `workflow_assignments` as a journal-written projected table
+with kind→project→built-in resolution precedence; derived cancel edges and
+initial-state resolution; define restricted to the four implemented rules;
+custom state names not transitionable until Phase 20; `--applies-to`
+vocabulary incl. `escalation`; no `activity_log` rows for workflow authoring;
+carry-forward disposition. Binding for Phase 19 once approved.
 
 ## Recently Closed
 
@@ -82,7 +92,10 @@ closes, or cancels each item.
   assertions before task execution begins.
 - Before release-readiness work, decide where held-out scenarios live and how
   implementation agents are prevented from loading them.
-- **The CF-023 workflow-tooling pass runs before Phase 19 execution** (DEC-074).
+- **CF-023 is re-deferred to the workflow overhaul (DEC-083, supersedes
+  DEC-074).** Phase 19 execution is not gated on it. While it is open, two
+  rules stand in for it: a non-terminating required command is never `PASS`,
+  and every `BLOCK` mints its identifier **and** a triage-log row.
 - **No production (non-test) Go path may read the frozen v0.1 workflow
   `definitions` map** — it is a test-parity fixture only; the projected workflow
   tables are the runtime source of truth (Phase 18 VAL-024).
