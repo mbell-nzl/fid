@@ -489,8 +489,15 @@ relying on agent prose for deterministic claims.
 > phases (Phases 18–20)**, each exiting on commands an agent can run against a
 > real `.fid/` workspace. The migration phases carry the hard-to-change-contract
 > risk; per-phase operating mode is decided at each phase-start. The CF-023
-> workflow-tooling pass (doc/tooling only, light mode) precedes Phase 18 per the
-> phase brief and is not a numbered v0.2a implementation phase.
+> workflow-tooling pass (doc/tooling only, light mode) is not a numbered v0.2a
+> implementation phase.
+>
+> **CF-023 sequencing correction (Tech Lead, 2026-07-25, DEC-074).** This note
+> previously said the CF-023 pass "precedes Phase 18". It did not run: Phase 18
+> executed first, and all six of its triages (TRG-001..006) reproduced the
+> CF-023 defects — TL-Lite BLOCK verdicts that could not mint an `ESC-NNN` or a
+> triage log, plus `TRG-001` and `ESC-001` ID collisions. The pass is now
+> **required before Phase 19 execution** and is no longer optional sequencing.
 >
 > - **Phase 18 — Workflow tables migration + engine data-source swap + gate
 >   seams (foundational, behavior-preserving).** Add the four workflow tables

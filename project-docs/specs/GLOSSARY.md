@@ -98,6 +98,36 @@ Use when: describing cross-entity relationships outside parent-child
 hierarchy.
 Avoid: duplicating lifecycle fields (owner, status) as links.
 
+**Projected workflow tables**:
+The four SQLite tables that hold workflow definitions as data —
+`workflows`, `workflow_states`, `workflow_transitions`, and
+`workflow_transition_requires` (`03_TRD_SCHEMA.md` §3). Seeded verbatim from
+the v0.1 defaults by migration `0007` and, as of Phase 18, the runtime source
+of truth for states, status categories, allowed edges, and per-edge rules.
+Like every SQLite table they are a derived projection; the defaults are
+seeded by migration DDL because they are system reference data.
+Use when: naming where workflow structure is read from at runtime.
+Avoid: calling them the source of truth for *history* (the journal is);
+implying custom workflows can be authored in v0.2a slice 1 (that is Phase 19).
+
+**Workflow registry**:
+The read-only in-memory structure `internal/workflow` loads from the
+[[Projected workflow tables]] on each read (`workflow.Load`). It resolves a
+state's category, whether an edge is allowed, and which named rules attach to
+an edge. It evaluates nothing by itself — rule functions stay named Go
+functions keyed by rule name.
+Use when: describing how a consumer resolves workflow structure at runtime.
+Avoid: "workflow definitions" when you mean the loaded registry; treating it
+as a cache (it is loaded per read, not memoised).
+
+**Frozen workflow definitions**:
+The v0.1 hard-coded Go `definitions` map, retained after Phase 18 **solely as
+test parity fixtures**. No production code path reads it; its only purpose is
+to prove the [[Workflow registry]] stayed behavior-identical to v0.1.
+Use when: describing the parity reference in tests.
+Avoid: describing it as the source of truth, current behavior, or a fallback —
+it is none of those; reading it from production code is a defect.
+
 ## Execution and Audit
 
 **Gate**:
@@ -663,4 +693,5 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-07-18*
+*Last updated: 2026-07-25 (Phase 18 wrap, DEC-073: projected workflow tables,
+workflow registry, frozen workflow definitions)*

@@ -517,9 +517,160 @@
   03_TRD_SCHEMA.md §§3/14.11/15; DEC-067; DEC-068; DEC-069; DEC-070; DEC-071;
   CF-023.
 
+### DEC-073: Phase 18 wrap — sign-off, validation audit, and carry-forward disposition
+
+- **Date:** 2026-07-25
+- **Context:** The DEC-072 remediation landed (`795a7df` loader fix, `37fb202`
+  finalized Task 5 report); the QA Lead re-ran the **final review** against fresh
+  evidence and returned **PASS** (`77a4560`) with **24 PASS / 0 FAIL / 0 BLOCKED /
+  0 CARRY-FORWARD**, zero Blocking and zero Major findings; the Human executed the
+  four-item checklist and recorded **PASS** overall (`0edcfc8`, HUMAN-01a..d all
+  PASS, 2026-07-25). This decision is the Tech Lead wrap audit and sign-off.
+- **Decision:**
+  1. **Phase 18 is accepted and signed off.** All five tasks are complete with a
+     terminating, green seven-command heavy-mode gate (fresh coverage total
+     `76.8%`; every enforced package threshold met) plus the exact unit suite.
+  2. **Validation audit — 24/24 PASS, nothing to disposition.** Every
+     `VAL-001..024` outcome was re-confirmed against the rerun evidence index
+     (FRR-E01..E12); no assertion is `FAIL`, `BLOCKED`, `PARTIAL`, or
+     `CARRY-FORWARD`, so no do-now, carry-forward, rejection, or escalation is
+     required for any assertion. The audit also confirms that **no assertion,
+     threshold, fixture, or gate command was weakened at any point**: DEC-068
+     (VAL-020) and DEC-069 (VAL-006) supplied missing evidence, DEC-071 made the
+     rebuild faster instead of relaxing TRD-PERF-003, and DEC-072 fixed the
+     product defect instead of the one-connection fixture.
+  3. **Human checklist accepted.** HUMAN-01a (transition feel), HUMAN-01b
+     (get/list/ready presentation), HUMAN-01c (maintenance clarity), and
+     HUMAN-01d (Phase 18 dogfood acceptance) are all PASS with no requested
+     change. No `(human)` outcome contradicts a `(qa-lead)` PASS.
+  4. **QA recommendation disposition.** The final review raised one Improvement
+     finding — preserve CF-023 for the recorded workflow/report/ledger hygiene
+     issues and do not rewrite published history or the append-only run ledger.
+     **Accepted as written (no do-now edit).** The run ledger keeps its duplicated
+     Task 4 remediation entries and its out-of-chronological-order 07-20/07-23
+     blocks; both are folded into the CF-023 pass scope by DEC-074 instead.
+  5. **New carry-forward CF-024 — TRD-PERF-003 headroom is thin.** After the
+     DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99s`
+     (Task 5 rerun) and `27.66s` (QA rerun) against the `<30s` control: roughly
+     8–10% headroom, and the expected order-of-magnitude gain did not materialise
+     (actual improvement from `33.38s` was ~17–19%; the remaining cost is
+     per-event transaction/commit overhead, not fsync). v0.2b adds receipt,
+     evidence, and execution events, which raises event volume on exactly this
+     path. Disposition: **carry forward, target v0.2b** — reopen with the first
+     v0.2b projection/rebuild work; the next lever is batching commits per N
+     events in the shared `ProjectEvent` / `WriteProjectionMeta` path (a
+     higher-risk change the Tech Lead owns). **Do not weaken TRD-PERF-003.**
+  6. **Carry-forward register review.** CF-008 re-deferred with an explicit
+     decision point at **Phase 19 planning** (Phase 19 delivers PRD-WF-011/012,
+     the version CF-008 is paired with; it is a data-model + `activity_log`
+     change and may warrant its own slice). CF-018 and CF-022 unchanged — their
+     trigger packages (`internal/sqlquery`, `internal/format`) were not modified
+     this phase. CF-020 unchanged (v0.2). **CF-017 and CF-021 both had their
+     "next reopen" trigger fire in Phase 18 and were missed**: Task 5 modified
+     `internal/dev/{start,finish,block,gate,dev}.go` and
+     `internal/maintenance/{check,warnings}.go`. Disposition: CF-017 keeps its
+     v0.2e target (a behavior-preserving extraction inside a
+     behavior-preserving migration phase would have been the wrong risk trade)
+     but converts from trigger-based to a **scheduled v0.2e planning item**;
+     CF-021 converts to a **scheduled Phase 19 planning item** (two exported doc
+     comments, to ride any task that already runs the Go gate). Trigger-based
+     ("next reopen") carry-forwards proved unreliable; the wrap-time reopen audit
+     that would catch this is folded into the CF-023 pass (DEC-074).
+  7. **Spec-sync re-verification at wrap.** The DEC-072 canonical-suite table is
+     re-confirmed with two corrections recorded below: `GLOSSARY.md` is
+     **touched** (three canonical terms added at wrap, see (8)) and
+     `10_IMPLEMENTATION_ROADMAP.md` is **touched** (DEC-074 sequencing
+     correction). All other verdicts stand as recorded.
+  8. **Glossary sync (project language).** Phase 18 changed where workflow
+     structure comes from, so three terms are now canonical in `GLOSSARY.md`:
+     **Projected workflow tables** (the four SQLite tables, seeded by migration
+     `0007`, runtime source of truth as of Phase 18), **Workflow registry** (the
+     read-only structure `workflow.Load` builds per read; evaluates nothing), and
+     **Frozen workflow definitions** (the v0.1 Go `definitions` map, retained
+     **solely** as test parity fixtures — reading it from production code is a
+     defect, per VAL-024). No flagged ambiguity was added or resolved.
+  9. **ESC-001 archived.** Resolved by DEC-072 and verified by the rerun
+     (FRR-E01..E04, FRR-E11); moved out of `tl_escalations_current.md` into
+     `tl-escalations.md`. The Phase 17 ESC-001 ID collision is left as recorded
+     and remains a CF-023 item.
+- **Consequences:** Phase 18 closes; no phase is active. The next scheduled work
+  is the **CF-023 workflow-tooling pass (required before Phase 19, DEC-074)**,
+  then Phase 19 planning. Current context is compressed: phase brief marked
+  complete, `progress_current.md` and `decisions_active.md` refreshed with
+  CF-024 and the CF-017/CF-021/CF-008 re-targets, and the phase archive gains
+  `progress.md` and `tl-escalations.md`. A deep retrospective is **recommended**
+  before Phase 19 execution (see Workflow Notes).
+- **Refs:** `qa/final-review.md` (PASS rerun, FRR-E01..E12, Improvement
+  finding); `qa/human-checklist.md` (HUMAN-01a..d PASS);
+  `qa/validation-contract.md` VAL-001..024; `run-ledger.md` (RUN-END 21:01);
+  `tasks/task-5-done.md` (benchmark rows, coverage `76.8%`); DEC-067..DEC-072;
+  DEC-074; CF-008/017/018/020/021/022/023; new CF-024; `GLOSSARY.md`.
+
+### DEC-074: CF-023 becomes a required workflow-tooling pass before Phase 19 (roadmap sequencing correction)
+
+- **Date:** 2026-07-25
+- **Context:** CF-023 was opened at Phase 17 wrap (DEC-058) as a Medium
+  workflow-tooling hardening item, and the roadmap v0.2a slicing note said the
+  pass "precedes Phase 18". It did not run. Phase 18 executed first and
+  reproduced every defect in the register, at cost:
+  - **Five of six triages could not mint an escalation.** TRG-001, TRG-002,
+    TRG-003, TRG-004, and TRG-005 all recorded "BLOCK (escalation required)" or
+    "escalated as ESC-NNN/ESC-NEW" with **no concrete identifier and no
+    `triage-log.md` entry**, so each STOP required full Tech Lead adjudication to
+    reconstruct what had been escalated.
+  - **ID uniqueness failed twice.** The sixth triage was filed as `TRG-001`,
+    colliding with this phase's existing TRG-001 (relabelled TRG-006 by
+    DEC-072); the escalation it minted, `ESC-001`, collides with Phase 17's
+    ESC-001.
+  - **Run-ledger hygiene failed.** The append-only ledger contains duplicated
+    Task 4 remediation entries and blocks appended out of chronological order
+    (07-20 entries after 07-23 entries).
+  - **Report/commit-metadata friction recurred** (Task 2's report-finalization
+    commit `7edfff6` lacks its `Refs: phase-18/task-2` footer), and, more
+    seriously, **a completion report recorded `PASS` for four commands that never
+    terminated** (Task 5 pre-DEC-072), which only QA's independent rerun caught.
+- **Decision:**
+  1. **The CF-023 pass is required before Phase 19 execution**, not optional
+     sequencing. The roadmap v0.2a slicing note is corrected to say so
+     (`10_IMPLEMENTATION_ROADMAP.md` §v0.2a).
+  2. **Scope, from Phase 18 evidence** (to be turned into task specs at
+     planning): (a) the TL-Lite/Phase Runner `BLOCK` path must mint a concrete
+     `ESC-NNN` **and** write the triage-log entry before stopping; (b) `ESC-NNN`
+     and `TRG-NNN` global uniqueness; (c) the original CF-023 items — worked
+     backtick-wrapped commit-metadata example in the completion-report template,
+     the Developer-prompt rule that the report is its own committed `docs(task)`
+     step, and report-lint messaging that distinguishes a dirty tree from a parse
+     failure; (d) run-ledger hygiene (chronological append, no duplicate
+     entries); (e) a wrap-time reopen audit that checks trigger-based
+     carry-forwards against the packages a phase actually modified (CF-017 and
+     CF-021 were both missed in Phase 18); (f) evidence-honesty hardening so a
+     required command that does not terminate cannot be recorded `PASS` —
+     completion reports should carry exit status and duration for each required
+     command.
+  3. **Shape:** doc/tooling only, **light mode**, Tech Lead-planned; it is not a
+     numbered v0.2a implementation phase and does not change the v0.2a slicing
+     (Phases 18–20) or scope. CF-021's two doc comments may ride this pass only
+     if it runs the Go gate; otherwise CF-021 rides Phase 19 per DEC-073 (6).
+  4. **Sequencing rationale:** Phase 19 and Phase 20 are ordinary
+     feature/migration phases that will use the same runner, triage, escalation,
+     and report machinery. Phase 18 demonstrated that the machinery's failure
+     mode is not cosmetic — it converts every mid-phase block into a Tech Lead
+     reconstruction task. Fixing it once is cheaper than paying it twice more.
+- **Consequences:** `10_IMPLEMENTATION_ROADMAP.md` is touched (verdict table
+  updated). The next Tech Lead action after this wrap is planning the CF-023
+  pass, then Phase 19. `09_AI_WORKFLOW.md` is deliberately **not** edited here:
+  the workflow changes in (2) belong in one coherent pass with their tooling and
+  templates, not as piecemeal spec edits at wrap.
+- **Refs:** `10_IMPLEMENTATION_ROADMAP.md` §v0.2a phase-slicing note (CF-023
+  sequencing correction); `run-ledger.md` (TRG-001..005 verdict lines; duplicate
+  and out-of-order entries); `triage-log.md` (TRG-006 ID correction);
+  `tl-escalations.md` ESC-001; DEC-058 (CF-023 origin); DEC-067..DEC-072;
+  DEC-073; CF-023.
+
 ## Spec Sync Verdicts (Phase 18)
 
-Canonical suite disposition at wrap, per DEC-072 (7) and QA-30.
+Canonical suite disposition at wrap, per DEC-072 (7) and QA-30, re-verified and
+corrected at wrap per DEC-073 (7).
 
 | Spec | Verdict | Note |
 |---|---|---|
@@ -533,8 +684,8 @@ Canonical suite disposition at wrap, per DEC-072 (7) and QA-30.
 | `07_DESIGN_PLAN_FLOWS.md` | verified-no-change | Transition, claim, and maintenance flows are behavior-identical (VAL-008/009/010/020). |
 | `08_QUALITY_PLAN.md` | verified-no-change | Heavy-mode gate applied as written; DEC-072 explicitly declines to weaken it. |
 | `09_AI_WORKFLOW.md` | verified-no-change | No workflow-process change; the recurring ESC/TRG ID-uniqueness defect stays a CF-023 retro item, not a spec edit. |
-| `10_IMPLEMENTATION_ROADMAP.md` | verified-no-change | Phase 18 remains v0.2a slice 1 of 3; slicing unchanged. |
-| `GLOSSARY.md` | verified-no-change | No new canonical term; "workflow registry" and "projected workflow tables" already carry their Phase 18 meaning. |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched — DEC-074 | v0.2a slicing is unchanged (Phase 18 remains slice 1 of 3); the phase-slicing note now records that the CF-023 workflow-tooling pass did not precede Phase 18 and is **required before Phase 19 execution**. |
+| `GLOSSARY.md` | touched — DEC-073 | Three canonical terms added for the migrated source of truth: **Projected workflow tables**, **Workflow registry**, and **Frozen workflow definitions** (test-parity fixtures only; a production read is a defect, VAL-024). No flagged ambiguity added or resolved. |
 
 ## Triage Dispositions
 
@@ -614,3 +765,80 @@ Canonical suite disposition at wrap, per DEC-072 (7) and QA-30.
   apply the spec sync under Tech Lead authority. Guardrail: a changed registry
   ordering/content, a broken parity assertion, a 100k rebuild back at `≥30s`, or
   any still-non-terminating command escalates rather than passes.
+
+## Triage-Log Audit (wrap, DEC-073)
+
+- [x] **Walked every TRG-NNN.** Phase 18 produced six: TRG-001 (blocked QA plan),
+  TRG-002 (VAL-020 evidence), TRG-003 (VAL-006 evidence), TRG-004 (interrupted
+  benchmark/build gate), TRG-005 (TRD-PERF-003 100k breach), TRG-006 (final-review
+  BLOCK: loader deadlock + spec sync). All six are resolved by DEC-067..DEC-072
+  respectively.
+- [x] **Confirmed each verdict in hindsight.** **No TRG returned RESUME** — all
+  six returned `BLOCK`, and all six blocks were **correct**: each named a genuine
+  defect (two evidence over-claims, one incomplete gate, one real performance
+  breach, one latent connection-lifetime product defect, one blocked plan). No
+  block was spurious, and no in-phase resumption bypassed a real failure.
+- [x] **Flagged any TRG that should have escalated.** Escalation *routing* was
+  correct in substance: TRG-002/003/004/005 were localized in-window fixes inside
+  Task authority and correctly needed no `ESC-NNN`; TRG-001 and TRG-006 correctly
+  required full Tech Lead adjudication (contract rewrite; non-terminating gate
+  plus cross-document spec sync). The **mechanics** failed five times: TRG-001..005
+  reported "escalation required" / "escalated as ESC-NNN" without minting an
+  identifier or a triage-log entry, and TRG-006 was filed under a colliding ID.
+  Only TRG-006 produced a real `ESC-NNN` (ESC-001) and the phase's only triage-log
+  entry. This is the CF-023 defect class, promoted to a required pre-Phase-19
+  workflow-tooling pass by DEC-074.
+- [x] **Autonomous TL-Lite resume remains in effect** (DEC-002, permanent). No
+  warm-up tally is maintained. Phase 18 exercised the `BLOCK`-side path
+  exclusively, so the autonomous-resume policy itself was never load-bearing here.
+
+## Workflow Notes
+
+- **What worked well?** The heavy-mode chain held under pressure: the validation
+  contract plus an independent QA plan caught two report over-claims (VAL-020,
+  VAL-006), a real TRD-PERF-003 breach, and a genuine latent product defect
+  (`workflow.Load` deadlocking on a one-connection pool) that the real CLI
+  entrypoint hid. In all six blocks the "supply evidence or fix the product,
+  never weaken the assertion" rule was applied literally — the 30s rebuild target,
+  the `SetMaxOpenConns(1)` fixtures, and the seven-command gate all survived
+  untouched.
+- **What was inefficient?** Six STOP/resume cycles, five of which forced a full
+  Tech Lead session purely because TL-Lite could not mint an `ESC-NNN` or write a
+  triage log — the adjudication content was often small, but the reconstruction
+  cost was not. Worse, a completion report recorded `PASS` for four commands that
+  never terminated, which cost a complete final-review rerun (the single most
+  expensive artifact in the phase) plus a Developer remediation cycle.
+- **Were tasks the right size?** Tasks 1–4 were right-sized (one session each,
+  clean gates). **Task 5 was overloaded**: consumer swap plus maintenance parity
+  plus closure evidence plus eight VAL assertions plus the full seven-command
+  gate including a ~30s 100k-event benchmark. It absorbed four of the six triages.
+  A closure phase should split "swap the last consumers" from "produce
+  phase-closure and performance evidence".
+- **Did the QA review cadence feel right?** Yes for mid-phase — reviews after
+  Task 3 and Task 4 (each with a remediation re-review) caught both evidence gaps
+  before they compounded, and skipping a third review before the final review was
+  correct since Task 5 was last. The gap was not cadence but input trust: the
+  cadence cannot detect a gate recorded `PASS` without terminating; only QA's
+  independent rerun did. DEC-074 (2f) addresses that.
+- **Were there token-efficiency opportunities missed?** Yes. The full
+  seven-command gate ran end-to-end at least four times (each including 1k/10k/100k
+  rebuild benchmarks, ~30s+ for the 100k row alone), and one full final review was
+  rerun from scratch. The loader deadlock was cheaply detectable earlier — the
+  Task 2 registry tests did not use the one-connection fixture convention the
+  maintenance package already had. Also, DEC-067..DEC-072 total ~500 lines of
+  decision prose that every subsequent session reloads; the adjudications were
+  correct but could carry their reasoning more compactly.
+
+### Deep Retrospective Recommendation
+
+**RECOMMENDED — before Phase 19 execution.** Two independent recurrence tests
+fire. First, the CF-023 theme repeats across Phase 17 and Phase 18 and got worse:
+Phase 17 raised it from report-lint friction and ESC-ID collisions, and Phase 18
+reproduced it in five of six triages plus a second ID collision and run-ledger
+disorder. Second, a new theme appeared this phase — **evidence over-claiming**:
+three separate reports asserted `PASS` (VAL-020, VAL-006, and four Task 5
+commands) where the evidence did not exist, and each was caught only by
+independent QA rerun. The human checklist itself was clean (0% fail/partial) and
+no `(human)` failure maps to a `(qa-lead)` PASS, so the product signal is
+healthy; the process signal is not. Pair the retrospective with the DEC-074
+tooling pass so its findings can land in the same window.
