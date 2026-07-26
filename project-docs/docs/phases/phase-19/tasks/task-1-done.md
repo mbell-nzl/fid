@@ -5,6 +5,7 @@
 - Added reversible migrations `0009` for journal-projected workflow-assignment storage and `0010` for the exact `escalation-default` system reference workflow.
 - Added the `linked_to_decision` known-but-unimplemented loader rule and bumped the projection schema version to 5.
 - Preserved the frozen Phase 18 defaults and updated the schema/TRD documentation for the new table, seed, vocabulary, and future assignment precedence.
+- This hash-bearing report is finalized in the immediately following `docs(task)` commit.
 
 ## Files created or modified
 
@@ -74,8 +75,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `a509d59efcc826df417f64ea72a43d743936e669`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add assignment schema and escalation seed`
