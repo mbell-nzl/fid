@@ -7,23 +7,28 @@
 
 ## Project State
 
-**Status:** Phase 19 **PLANNED (2026-07-26), execution gated.** Phase 18 is
-COMPLETE / WRAPPED (2026-07-25); v0.1 remains closed for early dogfood
-(DEC-057); v0.2a slice 1 of 3 is delivered.
+**Status:** Phase 19 **APPROVED (DEC-093, 2026-07-26); QA plan re-verification
+is the last precondition to Task 1.** Phase 18 is COMPLETE / WRAPPED
+(2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1
+of 3 is delivered.
 
 Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
-v0.2a slice 2 of 3) is planned in **heavy mode** with six tasks and a 26-row
-validation contract. Artifacts: `../phases/phase-19/` — `decisions.md`
-(DEC-075..DEC-082), `qa/validation-contract.md`, `tasks/task-1..6.md`; brief
-refreshed in `phase_brief.md`.
+v0.2a slice 2 of 3) runs in **heavy mode** with six tasks and a **70-row**
+validation contract (`Ready`). Artifacts: `../phases/phase-19/` —
+`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-093),
+`qa/validation-contract.md`, `qa/qa-plan.md`, `tasks/task-1..6.md`; brief
+refreshed in `phase_brief.md`. Branch: `phase-19-workflow-authoring`.
 
-**Execution needs Human approval of the mode, contract, and task list — no
-other precondition.** DEC-083 re-defers CF-023 to the coming agentic-workflow
-overhaul and removes the DEC-074 execution gate; two zero-cost mitigations
-(evidence-honesty rule in every task spec; phase-scoped `ESC-19-NNN` /
-`TRG-19-NNN` with a triage-log row on every `BLOCK`) are carried by the phase
-instead. The deep retrospective (DEC-073) is decoupled and becomes an input to
-the overhaul.
+**QA plan blockers dispositioned (2026-07-26).** The QA plan opened BLOCKED on
+QA-BLK-01..07. DEC-089 resolves the `internal/workflow` architecture-boundary
+contradiction in the task pack's favor and syncs `02_TRD.md` §3; **DEC-090**
+keeps PRD-WF-013 (a v0.1 Must) intact by requiring exactly one `cancelled`
+state on issue-applicable workflows — the only new implementation obligation;
+DEC-091 unbundles 14 assertions and adds VAL-027..070 with corrected sources
+and a reproducible v0.1 parity baseline; DEC-092 adds the `workflow` family to
+`05_DESIGN_PLAN.md` §3.1; DEC-093 records Human approval and confirms CF-008.
+**Next: QA Lead re-verifies the QA plan against the refined contract and moves
+it from BLOCKED to Ready.**
 
 Phase 18 outcome (full record in `../phases/phase-18/progress.md`): five tasks
 closed on a terminating, green seven-command heavy gate (coverage `76.8%`);
@@ -50,7 +55,8 @@ Dispositioned at Phase 19 planning (DEC-082):
   obligation**: re-record the 100k-event rebuild (`<30 s`) and 10k-issue read
   (`<500 ms`) against the controls. Do not weaken either target.
 - **CF-008** — **re-deferred to v0.2d** (governance vocabulary), where it pairs
-  with the `activity_log` ref-type extension. Human confirmation pending.
+  with the `activity_log` ref-type extension. **Confirmed by the Human at
+  approval (DEC-093).**
 - **CF-017 (v0.2e), CF-018, CF-020** — re-deferred; triggers not fired.
 
 ## Escalations
@@ -74,13 +80,12 @@ executed within the ratified-by-practice v0.2a slice.
 
 In order:
 
-1. **Human approves the Phase 19 plan** — operating mode (heavy), validation
-   contract (VAL-001..026), the six-task list, and the CF-008 re-defer.
-2. **QA Lead drafts the Phase 19 QA plan** with fresh command and feasibility
-   validation (heavy mode never carries feasibility forward), then Phase
-   Runner starts Task 1.
-3. **Deep retrospective (DEC-073, timing at the Human's discretion)** — now an
+1. **QA Lead re-verifies the Phase 19 QA plan** against the refined contract
+   (VAL-001..070): confirm QA-BLK-01..07 are closed by DEC-089..093, add one
+   Section 4 evidence row and one Section 7 checklist step per new assertion,
+   re-check the two previously BLOCKED feasibility items (VAL-003 tuple
+   reference, VAL-059 baseline), and move the plan to **Ready**.
+2. **Phase Runner starts Task 1** once the plan is Ready.
+3. **Deep retrospective (DEC-073, timing at the Human's discretion)** — an
    input to the agentic-workflow overhaul rather than a driver of a CF-023
-   pass. Two themes: workflow-tooling reliability (CF-023 recurrence across
-   Phases 17-18) and evidence over-claiming (three Phase 18 reports asserted
-   `PASS` without evidence, each caught only by independent QA rerun).
+   pass.

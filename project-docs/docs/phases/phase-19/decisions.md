@@ -276,6 +276,162 @@ Phase: 19 — `fid workflow define/assign/list` + escalation default workflow
 - **Refs:** DEC-073, DEC-074, CF-023; `../phases/phase-18/decisions.md`
   Triage-Log Audit and Workflow Notes.
 
+## QA Plan Blocker Dispositions (2026-07-26)
+
+The Phase 19 QA plan opened **BLOCKED** on QA-BLK-01..07. DEC-089..DEC-093
+disposition all seven. Nothing in the task pack's scope was widened or
+weakened; the only behavioral addition is DEC-090's define-time rule.
+
+| Blocker | Disposition | Decision |
+|---|---|---|
+| QA-BLK-01 | Boundary resolved in favor of the task pack; `02_TRD.md` §3 synchronized now | DEC-089 |
+| QA-BLK-02 | PRD-WF-013 preserved unamended; issue-applicable workflows must declare exactly one `cancelled` state | DEC-090 |
+| QA-BLK-03 | 14 bundled assertions narrowed; split-out observables added one-for-one in the same task windows | DEC-091 |
+| QA-BLK-04 | 20 assertions added for uncovered binding behavior | DEC-091 |
+| QA-BLK-05 | Sources corrected; VAL-003/012/059 evidence made deterministic and reproducible | DEC-091 |
+| QA-BLK-06 | `05_DESIGN_PLAN.md` §3.1 command tree updated now; per-task verification ownership assigned | DEC-092 |
+| QA-BLK-07 | Human approval recorded; contract marked `Ready`; CF-008 disposition confirmed | DEC-093 |
+
+### DEC-089: `internal/workflow` owns workflow authoring, assignment, and resolution
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-01.
+- **Context:** `02_TRD.md` §3 described `internal/workflow/` as a *read-only
+  registry* and listed "workflow authoring/mutation" in its must-not column.
+  That wording was written for v0.1, when workflow structure was a hard-coded
+  Go map and there was no authoring surface at all. PRD-WF-011/012 (v0.2)
+  require authoring and assignment, and Tasks 2-4 place them in
+  `internal/workflow/`. QA correctly refused to choose between changing the
+  architecture and changing the spec.
+- **Decision:** the **task pack is correct and the TRD sentence is stale**.
+  Workflow authoring, assignment validation, effect construction, the
+  authoring/assignment write paths, and assignment resolution belong in
+  `internal/workflow/`, for three reasons:
+  1. It is the package that owns the workflow vocabulary (slugs, states,
+     categories, rules, cancel-edge policy). Splitting authoring away from the
+     registry would duplicate that vocabulary in a second package.
+  2. The write-path shape is the **established domain-package pattern**, not a
+     new one: `internal/issues` and `internal/dev` already orchestrate
+     `journal.WithLock` → `PrepareEvent` → `AppendEvent` → `ProjectEvent`.
+     `internal/workflow` doing the same for its own entity is symmetric.
+  3. The alternatives are worse: authoring in `cmd/fid/` violates TRD-ARCH-005
+     (no business logic in the interface adapter), and a new
+     `internal/workflowauthoring` package would split one entity's rules
+     across two packages for no benefit.
+- **Boundary that stays:** `internal/workflow` still must not create issues,
+  verify ACs, own schema/migrations, or format output. Task 4's
+  `internal/workflow/resolve.go` is consumed **by** `internal/issues`; issue
+  creation stays in `internal/issues`.
+- **Spec sync:** `02_TRD.md` §3 (the layer-responsibility table row and the
+  package tree annotation) is updated **now**, by the Tech Lead, as part of
+  this disposition — the contradiction must be gone before Task 2 starts, not
+  after. Task 6 re-verifies the row against what shipped.
+
+### DEC-090: PRD-WF-013 stays unamended; issue-applicable workflows must declare exactly one `cancelled` state
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-02. **Amends:** DEC-077 clause 1 (zero-cancelled branch).
+- **Context:** PRD-WF-013 ("any issue may transition to cancelled from any
+  non-cancelled state") is a v0.1 **Must**. DEC-077 allowed a definition to
+  declare zero `cancelled`-category states and materialize no cancel edge —
+  which is right for `escalation-default`, but nothing stopped such a workflow
+  from being assigned to an issue kind, producing an issue that can never be
+  cancelled. That is a silent violation of a Must.
+- **Options considered:** (a) require one cancelled state for issue-applicable
+  workflows; (b) restrict *assignment* of zero-cancelled workflows;
+  (c) formally revise PRD-WF-013 to be conditional.
+- **Decision: (a), with (b) as a free by-product.** `fid workflow define`
+  rejects, before any append, a definition that declares **zero**
+  `cancelled`-category states when `--applies-to` is `epic`, `task`,
+  `subtask`, or `any` (the issue-applicable vocabulary). The error names the
+  `applies_to` value and the PRD-WF-013 obligation. Zero cancelled states
+  stays legal only for non-issue applicability (`escalation`, `qa_review`),
+  which is exactly the `escalation-default` precedent. Exactly one cancelled
+  state behaves as DEC-077 specifies; more than one is still rejected.
+- **Why not (c):** weakening a v0.1 Must to accommodate an authoring
+  convenience is the wrong trade. The requirement is cheap to keep: one
+  validation rule in the Task 2 core, which already owns the cancelled-state
+  count.
+- **Defense in depth:** DEC-080's assignment rules already require
+  `applies_to` ∈ {`<kind>`, `any`} for `--kind` and `any` for `--project`, so
+  after this rule no assignable workflow can lack a cancel target. Both guards
+  are asserted (VAL-038 at define time, VAL-016/VAL-041 at assign time).
+- **Consequences:** Task 2 gains one rejection rule; VAL-038 replaces the
+  ambiguous zero-cancelled pass state with an explicit conditional. The Phase
+  19 exit scenario's `task-strict` workflow declares a `cancelled` state, as
+  it already did.
+- **Spec sync:** the PRD-WF-013 scoping note (already owned by Task 3) now
+  records the DEC-090 rule rather than an open-ended exemption;
+  `06_DESIGN_PLAN_CLI.md` documents the define-time rejection (Task 3).
+
+### DEC-091: Validation contract refinement — unbundling, coverage, and evidence
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-03, QA-BLK-04, QA-BLK-05.
+- **Decision:** `qa/validation-contract.md` is refined in place and marked
+  `Ready`. Three changes, all additive to rigor:
+  1. **Unbundling (QA-BLK-03).** VAL-001, 003, 004, 007, 009, 010, 011, 014,
+     015, 016, 017, 018, 019, and 023 are narrowed to one observable each;
+     every behavior they carried is now owned by exactly one assertion, in the
+     **same task window**. No ID is reused or retired.
+  2. **Coverage (QA-BLK-04).** New assertions cover the accepted rule
+     vocabulary, `--require` params and edge validation, duplicate state and
+     duplicate transition rejection, the DEC-080 `--applies-to` vocabulary and
+     `any`→NULL, DEC-081 no-`activity_log` for both event types, DEC-076
+     insert-versus-delete+insert effect shapes for both scopes, deterministic
+     list ordering, the all-format empty result, and the standing prohibition
+     on production reads of the frozen definitions fixture.
+  3. **Evidence (QA-BLK-05).** VAL-002's, VAL-009's, and VAL-021's sources are
+     corrected; VAL-003 gains a tuple-for-tuple frozen reference (with VAL-030
+     for the three Phase 18 defaults); VAL-012 names all four documented arrow
+     aliases; VAL-059 specifies a reproducible immutable baseline — the Task 3
+     completion commit, a committed capture script, committed artifacts under
+     `cmd/fid/testdata/v01_parity/`, and a committed, enumerated
+     volatile-field normalization allow-list.
+- **Result:** 26 → 70 assertions (10/14/13/13/11/9 across Tasks 1-6). Task
+  ownership, scope, and the six-task slicing are unchanged; the only new
+  implementation obligation in the whole disposition is DEC-090's rule.
+- **Obligation on the QA Lead:** the QA plan's Section 4 evidence map and
+  Section 7 deterministic checklist must gain one step per new assertion
+  before the plan leaves BLOCKED. No new assertion may inherit another's
+  outcome.
+
+### DEC-092: `05_DESIGN_PLAN.md` §3.1 command-tree ownership
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-06.
+- **Context:** §3.1 is the canonical CLI command tree and had no `workflow`
+  family, and no task owned adding it. The tree already documents
+  not-yet-implemented commands with version annotations (`gate` v0.2b,
+  `envelope` v0.3a), so it is a design index, not a shipped-surface mirror.
+- **Decision:** the Tech Lead adds the `workflow` family
+  (`define` / `assign` / `list`, annotated v0.2a) to §3.1 **now**, so the
+  canonical tree is not silently stale during execution. Per-task
+  verification ownership: Task 3 (`define`), Task 4 (`assign`), and Task 5
+  (`list`) each confirm the §3.1 entry matches the flag surface they shipped
+  and correct it in the same task if it diverges; Task 6 records the final
+  §3.1 and `02_TRD.md` §3 verdicts in the spec-sync sweep.
+- **Consequence:** `05_DESIGN_PLAN.md` moves from `TBD at wrap` to `touched`
+  in the spec-sync table below.
+
+### DEC-093: Human approval of the Phase 19 plan; CF-008 confirmed
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-07.
+- **Approval recorded (Human, 2026-07-26):** operating mode **heavy**
+  (DEC-075); the **six-task** list and its ordering; the refined validation
+  contract **VAL-001..VAL-070**, now `Ready`; the **CF-008** re-defer to v0.2d
+  (DEC-082), which is hereby confirmed rather than pending; and the DEC-089,
+  DEC-090, and DEC-092 dispositions above.
+- **Consequences:** the phase brief and `progress_current.md` no longer carry
+  an approval precondition. The remaining precondition to Task 1 is
+  procedural: the QA Lead re-verifies the QA plan against the refined contract
+  (DEC-091) and moves it from BLOCKED to Ready, with fresh heavy-mode command
+  and feasibility validation retained from the 2026-07-26 run only where the
+  underlying artifact did not change.
+- **Standing:** DEC-084..DEC-086 (phase-scoped IDs, triage row before verdict,
+  verbatim terminal token per required command) remain binding for execution.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from
@@ -285,12 +441,12 @@ the planning decisions above:
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | TBD at wrap | — |
 | `GLOSSARY.md` | touched (workflow assignment, custom workflow, initial state) | Task 6 |
-| `01_PRD.md` | touched — PRD-WF-013 scoping note (DEC-077) | Task 3 |
-| `02_TRD.md` | touched — §4.6 assignment precedence + escalation seed (DEC-076) | Task 1 |
-| `03_TRD_SCHEMA.md` | touched — §3 `workflow_assignments`, `applies_to` vocabulary, `linked_to_decision` (DEC-076/078/080) | Tasks 1, 4 |
+| `01_PRD.md` | touched — PRD-WF-013 scoping note (DEC-077, **as amended by DEC-090**) | Task 3 |
+| `02_TRD.md` | touched — §3 `internal/workflow` boundary (DEC-089, **applied at planning**); §4.6 assignment precedence + escalation seed (DEC-076) | Planning (§3), Task 1 (§4.6); Task 6 verifies |
+| `03_TRD_SCHEMA.md` | touched — §3 `workflow_assignments`, `applies_to` vocabulary, `linked_to_decision` (DEC-076/078/080); §2.1 resolution source | Tasks 1, 4 |
 | `04_TRD_CONFIG.md` | TBD at wrap | — |
-| `05_DESIGN_PLAN.md` | TBD at wrap | — |
-| `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080) | Tasks 3, 4, 5, 6 |
+| `05_DESIGN_PLAN.md` | touched — §3.1 `workflow` command family (DEC-092, **applied at planning**) | Planning; Tasks 3, 4, 5 verify their subcommand; Task 6 records the verdict |
+| `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080/090) | Tasks 3, 4, 5, 6 |
 | `07_DESIGN_PLAN_FLOWS.md` | TBD at wrap | — |
 | `08_QUALITY_PLAN.md` | TBD at wrap | — |
 | `09_AI_WORKFLOW.md` | TBD at wrap | — |

@@ -14,8 +14,14 @@ and finish the spec and glossary sync.
   deterministically and non-destructively; journal bytes never change.
 - VAL-022: `fid maintenance check` is clean on a healthy workspace and
   reports a deterministic finding for an incompatible seeded assignment.
-- VAL-023: the DEC-066 gate-obligation seam is still behavior-free after
-  workflow authoring ships.
+- VAL-023: `fid workflow define` still rejects `required_gates_current` and
+  `has_completion` at the CLI with version-scoped messages.
+- VAL-068: no seeded `workflow_transition_requires` row references either
+  reserved name.
+- VAL-069: the recorded `rg` inventory finds no production evaluator or query
+  for either reserved name.
+- VAL-070: the recorded `rg` inventory finds no production read of the frozen
+  v0.1 `definitions` map (`FrozenDefinitions(`).
 - VAL-024: transitioning into a custom-named state is rejected with the
   documented error; a v0.1-named state under a custom workflow succeeds.
 - VAL-025: the v0.2a slice-2 exit scenario runs end to end.
@@ -45,7 +51,9 @@ Assertions live in
   boundary. Document normalization for any intentionally volatile field.
 - **The exit scenario is scripted, not narrated** (VAL-025). Against a real
   `.fid/` workspace using the built binary: define `task-strict`
-  (`--applies-to task`, v0.1 state names, plus a `concerns_addressed`
+  (`--applies-to task`, v0.1 state names **including exactly one
+  `cancelled`-category state** as DEC-090 requires for issue-applicable
+  workflows, plus a `concerns_addressed`
   requirement on `in_progress->dev_complete`), assign it to kind `task`, list
   it in every format, create a task that picks it up instead of
   `task-default`, raise a concern, observe the transition blocked with a
@@ -55,10 +63,24 @@ Assertions live in
 - **DEC-079 boundary is characterized, not worked around** (VAL-024). Prove
   both states with the built CLI. Do not add matrix rows for custom state
   names; that grant belongs to Phase 20's `fid policy set`.
-- **Seam evidence is reproducible** (VAL-023). Record the exact `rg` commands
-  and their output for the production-source inventory, alongside the CLI
-  rejection evidence for `required_gates_current` / `has_completion` and the
-  zero-row seeded query.
+- **Seam evidence is reproducible** (VAL-023, VAL-068, VAL-069, VAL-070).
+  Record the exact commands and their output:
+
+  ```text
+  rg -n --glob '*.go' --glob '!**/*_test.go' \
+    '\brequired_gates_current\b|\bhas_completion\b' \
+    cmd/fid internal/issues internal/dev internal/journal internal/db \
+    internal/maintenance internal/policy
+  rg -n --glob '*.go' --glob '!**/*_test.go' \
+    --glob '!internal/workflow/definitions_fixture.go' \
+    'FrozenDefinitions\(' cmd internal
+  ```
+
+  Both are expected to produce no output. Reserved declarations and authoring
+  rejections inside `internal/workflow` are expected and are classified
+  separately in the report. Record this alongside the CLI rejection evidence
+  for `required_gates_current` / `has_completion` and the zero-row seeded
+  query.
 - **CF-024 measurement obligation.** Run the benchmark gate and record the
   100k-event rebuild against the `<30 s` TRD-PERF-003 control and the
   10k-issue read against the `<500 ms` TRD-PERF-001 control, with the margin
@@ -69,7 +91,11 @@ Assertions live in
   touches `internal/maintenance` and runs the full Go gate.
 - **Spec and glossary sync completes here.** `06_DESIGN_PLAN_CLI.md` records
   the DEC-079 limitation and points at `fid policy set` (Phase 20).
-  `GLOSSARY.md` gains the Phase 19 terms.
+  `GLOSSARY.md` gains the Phase 19 terms. This task also **verifies the two
+  planning-time spec edits** against what shipped and records the verdict in
+  the completion report: `02_TRD.md` §3 (`internal/workflow` responsibilities
+  and must-nots, DEC-089) and `05_DESIGN_PLAN.md` §3.1 (the `workflow`
+  command family, DEC-092). Correct either here if it diverges.
 
 ## Scope
 
@@ -85,6 +111,8 @@ Assertions live in
   parity for authored workflows and assignments
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — DEC-079 limitation note
 - `project-docs/specs/GLOSSARY.md` — Phase 19 terms (see below)
+- `project-docs/specs/02_TRD.md` §3 / `project-docs/specs/05_DESIGN_PLAN.md`
+  §3.1 — verification of the planning-time DEC-089 / DEC-092 edits
 
 ### Files To Read For Context
 
@@ -116,8 +144,14 @@ Assertions live in
   `foreign_key_check` clean; every journal file byte-identical at every
   boundary (VAL-021)
 - [ ] `fid workflow define` rejects `required_gates_current` and
-  `has_completion`; zero seeded rows reference either; the recorded `rg`
-  inventory shows no production evaluator or query (VAL-023)
+  `has_completion` at the CLI with version-scoped messages and no append
+  (VAL-023)
+- [ ] Zero seeded `workflow_transition_requires` rows reference either
+  reserved name (VAL-068)
+- [ ] The recorded `rg` inventory shows no production evaluator or query for
+  either reserved name (VAL-069)
+- [ ] The recorded `rg` inventory shows no production read of
+  `FrozenDefinitions(` outside the fixture file itself (VAL-070)
 - [ ] Transitioning into a custom-named state fails with the documented
   no-matrix-entry error and appends nothing; a v0.1-named state under a
   custom workflow succeeds (VAL-024)
@@ -128,6 +162,8 @@ Assertions live in
 - [ ] `maintenance.VacuumResult` and `maintenance.Vacuum` carry Go doc
   comments (CF-021)
 - [ ] `06_DESIGN_PLAN_CLI.md` DEC-079 note and `GLOSSARY.md` terms added
+- [ ] `02_TRD.md` §3 (DEC-089) and `05_DESIGN_PLAN.md` §3.1 (DEC-092) verified
+  against the shipped surface, with the verdict recorded
 
 ## First Failing Test
 
@@ -140,6 +176,9 @@ fails until the check exists.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — the DEC-079 limitation:
   transitions into custom state names require a permissions entry, delivered
   by `fid policy set` in Phase 20.
+- `project-docs/specs/02_TRD.md` §3 and `project-docs/specs/05_DESIGN_PLAN.md`
+  §3.1 — verify the planning-time DEC-089 / DEC-092 edits against the shipped
+  package responsibilities and command surface.
 - `project-docs/specs/GLOSSARY.md` — add **Custom workflow** (a user-authored
   workflow created by `fid workflow define`, stored as journal-derived rows in
   the projected workflow tables, as opposed to the seeded defaults),

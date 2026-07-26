@@ -46,7 +46,8 @@ cmd/fid/              CLI command tree (Cobra)
     │
     ├──► internal/issues/     Issue, AC, completion, concern logic
     ├──► internal/claims/     Claim acquire/release/steal
-    ├──► internal/workflow/   Read-only registry loaded from the workflow tables
+    ├──► internal/workflow/   Registry loaded from the workflow tables; from v0.2a
+    │                         also workflow authoring, assignment, and resolution
     ├──► internal/maintenance/ Read-only structural audit over projection + journal
     ├──► internal/policy/     Role × action permissions matrix
     ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
@@ -92,7 +93,7 @@ Rules:
 | `internal/journal/` | Infrastructure | JSONL append, flush, replay, event schema versioning, upgrader chain | Command logic, business validation (receives pre-validated events) |
 | `internal/issues/` | Domain | Issue CRUD, AC management, completion recording, concern lifecycle | Output formatting, CLI flag parsing |
 | `internal/claims/` | Domain | Claim acquire, release, force-steal, TTL enforcement | Workflow transition logic |
-| `internal/workflow/` | Domain | Read-only registry loading from the workflow tables (§4.6), transition validation, rule evaluation | Issue creation, AC verification, workflow authoring/mutation |
+| `internal/workflow/` | Domain | Registry loading from the workflow tables (§4.6), transition validation, rule evaluation; from v0.2a also workflow authoring (validation, cancel-edge materialization, deterministic effect construction), workflow-assignment validation and write paths, and assignment resolution consumed by `internal/issues` | Issue creation, AC verification, output formatting, schema/migration ownership |
 | `internal/maintenance/` | Domain | Read-only consistency audit over the projected SQLite data and journal references; structural errors, later warnings, and summary counts | CLI flag parsing, output formatting, journal writes, repair, deletion, or migration |
 | `internal/policy/` | Domain | Role validation, permission matrix lookups, action authorization | Workflow state logic |
 | `internal/dev/` | Domain | Compose developer write workflows (`dev start`, `dev gate`, later `dev finish`/`dev block`) into one validated journal event by orchestrating existing claim, workflow, run, and gate effect shapes | CLI flag parsing, output formatting, direct schema/migration ownership |

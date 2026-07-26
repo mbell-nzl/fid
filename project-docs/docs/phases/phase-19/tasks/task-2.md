@@ -12,10 +12,36 @@ exactly as Phase 18's registry loader preceded the consumer swap.
 
 - VAL-006: the effect builder produces a deterministic, ordered effect set
   matching the golden fixture across repeated builds.
-- VAL-007: every enumerated invalid definition is rejected with a distinct,
-  value-naming error; a valid definition is accepted.
-- VAL-008: cancel-edge materialization behaves per DEC-077 for one, zero, and
-  multiple `cancelled`-category states.
+- VAL-042: the core writes nothing — no journal bytes, no row mutation, no
+  mutating SQL.
+- VAL-007: identifier validation (slug pattern, duplicate slug, state-name
+  pattern, duplicate state) rejects with distinct value-naming errors; a
+  conformant definition is accepted.
+- VAL-032: states/categories structural validation (empty states, count
+  mismatch, unknown category).
+- VAL-033: transition validation (unknown state in an edge, duplicate
+  transition).
+- VAL-034: all four implemented rule names are accepted and reach the effect
+  set with their declared edges and params.
+- VAL-035: `required_gates_current` (v0.2b), `has_completion` (v0.2c),
+  `linked_to_decision` (v0.2d), and unknown rule names are each rejected with
+  a distinct, version-scoped message.
+- VAL-036: `--require` params validation — invalid JSON and
+  `all_acs_verified` without a non-empty `roles` array are rejected; valid
+  params are carried verbatim.
+- VAL-037: `--require` edge validation — an undeclared/unmaterialized edge is
+  rejected; a declared edge is accepted.
+- VAL-008: exactly one `cancelled` state materializes a cancel edge for every
+  non-cancelled state, deduplicated against explicitly declared cancel edges.
+- VAL-038: zero `cancelled` states is accepted only for non-issue
+  applicability (`escalation`, `qa_review`) and **rejected** for `epic`,
+  `task`, `subtask`, `any` (DEC-090).
+- VAL-039: more than one `cancelled` state is rejected before any effect is
+  built, naming the offending states.
+- VAL-040: the initial-state helper returns the first `unstarted` state, else
+  the first declared state.
+- VAL-041: the assignment-request validator rejects the five enumerated cases
+  with distinct errors and accepts both compatible request shapes.
 
 Assertions live in
 `project-docs/docs/phases/phase-19/qa/validation-contract.md`.
@@ -53,16 +79,24 @@ Assertions live in
     `required_gates_current` → v0.2b, `has_completion` → v0.2c,
     `linked_to_decision` → v0.2d;
   - `--require` params that are not valid JSON, or `all_acs_verified` without
-    a non-empty `roles` array.
+    a non-empty `roles` array;
+  - **zero `cancelled`-category states when `--applies-to` is issue-applicable**
+    (`epic`, `task`, `subtask`, `any`) — **DEC-090**. The error names the
+    `applies_to` value and the PRD-WF-013 obligation ("any issue may be
+    cancelled from any non-cancelled state"). Zero cancelled states stays
+    legal only for `escalation` and `qa_review`, which are not issue-
+    applicable; that is the `escalation-default` precedent.
 - **Implemented rule vocabulary is exactly four names**: `all_acs_verified`,
   `has_completion_report`, `concerns_addressed`,
   `all_child_tasks_done_or_cancelled`. Source them from the existing
   `internal/workflow` constants; do not re-declare string literals.
-- **Cancel-edge materialization (DEC-077).** Exactly one `cancelled`-category
-  state → materialize `<state> → <cancelled-state>` for every non-cancelled
-  declared state, skipping any the user already declared (no duplicate
-  effect). Zero cancelled states → materialize nothing. More than one → a
-  validation error (listed above).
+- **Cancel-edge materialization (DEC-077, as amended by DEC-090).** Exactly
+  one `cancelled`-category state → materialize `<state> → <cancelled-state>`
+  for every non-cancelled declared state, skipping any the user already
+  declared (no duplicate effect). Zero cancelled states → materialize nothing,
+  and this is **accepted only for non-issue applicability** (`escalation`,
+  `qa_review`); an issue-applicable definition declaring zero is rejected
+  (above). More than one → a validation error (listed above).
 - **Initial-state resolution belongs here too**, as a pure exported helper:
   the first declared state whose category is `unstarted`, else the first
   declared state. Task 4 consumes it; do not duplicate the rule there.
@@ -100,7 +134,8 @@ Assertions live in
 - `migrations/0007_v02a_workflow_tables.up.sql` (the shape the effects must
   reproduce), `migrations/0009_v02a_workflow_assignments.up.sql` (Task 1)
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow define/assign`
-- `project-docs/docs/phases/phase-19/decisions.md` (DEC-076, DEC-077, DEC-078)
+- `project-docs/docs/phases/phase-19/decisions.md` (DEC-076, DEC-077, DEC-078,
+  **DEC-090**)
 
 ### Out Of Scope
 
@@ -113,20 +148,37 @@ Assertions live in
 
 - [ ] The effect builder emits the contracted order and produces an identical
   slice on repeated builds of the same request (VAL-006)
-- [ ] Every enumerated rejection case in Binding Constraints returns a
-  distinct error naming the offending value, and a valid definition is
-  accepted (VAL-007)
+- [ ] Identifier rejections (bad slug, duplicate slug, bad state name,
+  duplicate state) each return a distinct value-naming error, and a
+  conformant definition is accepted (VAL-007)
+- [ ] Empty `--states`, a states/categories count mismatch, and an unknown
+  category are each rejected with distinct errors (VAL-032)
+- [ ] An edge naming an undeclared state and a duplicate transition are each
+  rejected with distinct errors (VAL-033)
+- [ ] All four implemented rule names are accepted and appear in the effect
+  set on their declared edges with their declared params (VAL-034)
+- [ ] The three reserved-unimplemented rule names are rejected with
+  version-scoped messages (v0.2b / v0.2c / v0.2d) and an unknown name is
+  rejected naming the value (VAL-035)
+- [ ] Invalid `--require` JSON and `all_acs_verified` without a non-empty
+  `roles` array are rejected; valid params are carried verbatim (VAL-036)
+- [ ] A `--require` on an undeclared/unmaterialized edge is rejected naming
+  the edge; a `--require` on a declared edge is accepted (VAL-037)
 - [ ] One-cancelled-state fixtures materialize cancel edges for every
   non-cancelled state, deduplicated against explicitly declared cancel edges
   (VAL-008)
-- [ ] A zero-cancelled-state fixture materializes no cancel edge (VAL-008)
-- [ ] A two-cancelled-state fixture is rejected (VAL-007/VAL-008)
+- [ ] A zero-cancelled-state fixture with `--applies-to escalation` or
+  `qa_review` is accepted and materializes no cancel edge, while the same
+  fixture with `--applies-to epic|task|subtask|any` is rejected with the
+  DEC-090 error (VAL-038)
+- [ ] A two-cancelled-state fixture is rejected naming both states (VAL-039)
 - [ ] The initial-state helper returns the first `unstarted` state, and the
-  first declared state when no `unstarted` state exists
+  first declared state when no `unstarted` state exists (VAL-040)
 - [ ] Assignment validation rejects unknown workflow, incompatible
   `applies_to` for kind scope, non-`any` workflow for project scope, both
-  scopes, and neither scope
-- [ ] No production path in this task writes to the DB or the journal
+  scopes, and neither scope, and accepts both compatible shapes (VAL-041)
+- [ ] No production path in this task writes to the DB or the journal, proven
+  by before/after state snapshots around the core suite (VAL-042)
 - [ ] Existing behavior is unchanged; the full suite stays green
 
 ## First Failing Test

@@ -9,13 +9,24 @@ uses to discover what workflows exist before assigning or transitioning.
 
 ## Validation Contract Coverage
 
-- VAL-018: all four formats render; the JSON payload matches the documented
-  field set with counts equal to projected row counts; the markdown renderer
-  has byte-exact characterization coverage (CF-022, partial).
-- VAL-019: `--kind` and `--active` filters include exactly the qualifying set
-  and exclude exactly the non-qualifying set.
-- VAL-020: `assigned_to` renders kind scope, project scope, and the
-  unassigned empty list correctly.
+- VAL-018: the JSON payload has exactly the documented field set, with counts
+  equal to projected row counts and `null` for `any`.
+- VAL-060: all four formats render and carry equivalent data.
+- VAL-061: the markdown renderer has byte-exact characterization against a
+  **committed** expected artifact (CF-022, partial).
+- VAL-019: `--kind <k>` includes exactly `<k>` and `any` workflows and
+  excludes other-kind workflows.
+- VAL-062: `--active` excludes a test-seeded inactive workflow; the unfiltered
+  run includes it.
+- VAL-063: `--kind` and `--active` compose to exactly the intersection.
+- VAL-020: a kind-assigned workflow renders `{"scope":"kind","kind":"<k>"}`.
+- VAL-064: a project-assigned workflow renders `{"scope":"project"}` with the
+  `kind` key **absent**.
+- VAL-065: an unassigned workflow renders an empty array, never `null`.
+- VAL-066: ordering is deterministic and two consecutive runs are
+  byte-identical.
+- VAL-067: an empty result renders as an empty array with exit 0 in all four
+  formats.
 
 Assertions live in
 `project-docs/docs/phases/phase-19/qa/validation-contract.md`.
@@ -95,22 +106,34 @@ Assertions live in
 
 ## Acceptance Criteria
 
+- [ ] The JSON payload has exactly the documented field set (no extra or
+  missing keys), the `states` and `transitions` counts equal SQL row counts
+  including materialized cancel edges, and `applies_to` is `null` for `any`
+  (VAL-018)
 - [ ] `fid workflow list` renders in json, toon, markdown, and yaml over one
-  fixture, and all four carry the same data (VAL-018)
-- [ ] The JSON payload has exactly the documented field set, and the `states`
-  and `transitions` counts equal SQL row counts including materialized cancel
-  edges (VAL-018)
-- [ ] The markdown renderer has a byte-exact golden test (VAL-018, CF-022)
+  fixture, and all four decode to equivalent data (VAL-060)
+- [ ] The markdown renderer has a byte-exact golden test whose expected bytes
+  are committed, and the completion report says whether they are a `testdata`
+  fixture or an in-test literal (VAL-061, CF-022)
 - [ ] `--kind <k>` includes `applies_to = <k>` and `any` workflows and
-  excludes workflows bound to another kind, with both inclusion and exclusion
-  evidenced (VAL-019)
+  excludes workflows bound to another kind, with both the included and
+  excluded ID sets asserted (VAL-019)
 - [ ] `--active` excludes a test-seeded inactive workflow; the unfiltered run
-  includes it (VAL-019)
-- [ ] `assigned_to` renders kind scope with `kind`, project scope without
-  `kind`, and an empty array for unassigned workflows (VAL-020)
-- [ ] Results are ordered by `workflows.id` and are reproducible across runs
-- [ ] An empty result renders as an empty array in every format
-- [ ] `06_DESIGN_PLAN_CLI.md` updated in this task
+  includes it (VAL-062)
+- [ ] `--kind` and `--active` together return exactly the intersection
+  (VAL-063)
+- [ ] A kind-assigned workflow renders `{"scope":"kind","kind":"<k>"}`
+  (VAL-020)
+- [ ] A project-assigned workflow renders `{"scope":"project"}` with the
+  `kind` key absent, not null (VAL-064)
+- [ ] An unassigned workflow renders an empty array, never `null` (VAL-065)
+- [ ] Results are ordered by `workflows.id` with `assigned_to` entries
+  project-scope-last then by kind, and two consecutive runs are byte-identical
+  (VAL-066)
+- [ ] An empty result renders as an empty array with exit 0 in all four
+  formats (VAL-067)
+- [ ] `06_DESIGN_PLAN_CLI.md` updated and the `05_DESIGN_PLAN.md` §3.1
+  `workflow list` entry verified in this task
 
 ## First Failing Test
 
@@ -123,6 +146,9 @@ exists.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow list` filter
   semantics, deterministic ordering, `assigned_to` shapes, empty-result
   behavior, and a note that the example counts are illustrative.
+- `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — verify the `workflow list`
+  entry added at planning (DEC-092) matches the shipped flag surface; correct
+  it in this task if it diverges.
 
 ## Exact Commands To Run
 

@@ -10,17 +10,29 @@ the matrix change lands once.
 
 ## Validation Contract Coverage
 
-- VAL-009: define appends exactly one `workflow.defined` event whose
-  projected rows match the declaration and resolve through `workflow.Load`.
-- VAL-010: every invalid input is rejected before any append or DB write, with
-  the error naming the offending value.
+- VAL-009: define appends exactly one `workflow.defined` event at the current
+  event schema, carrying every effect.
+- VAL-043: the projected rows match the declaration tuple-for-tuple across all
+  four workflow tables.
+- VAL-044: the defined workflow resolves through `workflow.Load`.
+- VAL-045: a successful define writes no `activity_log` row (DEC-081).
+- VAL-010: every rejection leaves the journal byte-identical.
+- VAL-046: every rejection leaves all four workflow tables' row sets
+  unchanged.
+- VAL-047: every rejection exits non-zero with a distinct stderr error naming
+  the offending value.
 - VAL-011: `workflow.define` / `workflow.assign` permit exactly `tl` and
-  `human`, appear in `fid policy show` in all four formats, and a denied
-  define appends nothing.
-- VAL-012: Unicode arrows in `--transitions` normalize to the same projected
-  edges as ASCII `->`.
+  `human` in the matrix.
+- VAL-048: both rows appear in `fid policy show` in json, toon, markdown, and
+  yaml.
+- VAL-049: a denied-role define is rejected with the standard permission error
+  and appends nothing; `tl` succeeds.
+- VAL-012: all four documented arrow spellings (`->`, `-->`, `→`, `⟶`)
+  project identical transition tuples.
 - VAL-013: the stderr confirmation matches the documented shape and its counts
   equal the projected row counts.
+- VAL-050: `--applies-to` accepts exactly the six documented values, `any`
+  projects SQL NULL, and any other value is rejected before append.
 
 Assertions live in
 `project-docs/docs/phases/phase-19/qa/validation-contract.md`.
@@ -98,8 +110,10 @@ Assertions live in
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow define`:
   `--applies-to` vocabulary incl. `escalation`, accepted rule vocabulary and
   the three version-scoped rejection messages, cancel-edge and initial-state
-  rules, `--name` setting id and name
-- `project-docs/specs/01_PRD.md` — PRD-WF-013 scoping note (DEC-077)
+  rules, the DEC-090 cancelled-state requirement, `--name` setting id and name
+- `project-docs/specs/01_PRD.md` — PRD-WF-013 scoping note (DEC-077/DEC-090)
+- `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — verify the `workflow define`
+  entry matches the shipped flag surface (DEC-092)
 
 ### Files To Read For Context
 
@@ -109,7 +123,8 @@ Assertions live in
 - `cmd/fid/issue_create.go`, `cmd/fid/issue_helpers.go`, `cmd/fid/policy.go`
 - `internal/workflow/authoring.go` (Task 2)
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` `fid workflow define`
-- `project-docs/docs/phases/phase-19/decisions.md` (DEC-076..DEC-081)
+- `project-docs/docs/phases/phase-19/decisions.md` (DEC-076..DEC-081,
+  **DEC-090**, **DEC-092**)
 
 ### Out Of Scope
 
@@ -120,23 +135,36 @@ Assertions live in
 
 ## Acceptance Criteria
 
-- [ ] `fid workflow define` creates a workflow whose projected rows in all
-  four workflow tables match the declaration tuple-for-tuple, including
-  declared order as `ordinal` and materialized cancel edges (VAL-009)
 - [ ] Exactly one `workflow.defined` event is appended per successful define,
-  and the workflow resolves through `workflow.Load` (VAL-009)
-- [ ] Every VAL-007 rejection case fails the CLI with an error naming the
-  offending value, leaving journal bytes and all four table row counts
-  unchanged (VAL-010)
-- [ ] `workflow.define` and `workflow.assign` permit exactly `tl` and
-  `human`; a denied role is rejected with the standard permission error and
-  appends nothing; both rows appear in `fid policy show` in json, toon,
-  markdown, and yaml (VAL-011)
-- [ ] A definition declared with Unicode arrows projects transitions
-  identical to the ASCII `->` form (VAL-012)
+  at `journal.CurrentEventSchema`, carrying every definition effect (VAL-009)
+- [ ] The projected rows in all four workflow tables match the declaration
+  tuple-for-tuple, including declared order as `ordinal` and materialized
+  cancel edges (VAL-043)
+- [ ] The defined workflow resolves through `workflow.Load` (VAL-044)
+- [ ] A successful define leaves the `activity_log` row set unchanged
+  (VAL-045)
+- [ ] Every core rejection case (VAL-007/032/033/035/036/037/038/039 plus the
+  VAL-049/050 cases) leaves the journal byte-identical, with an accepted
+  control that appends exactly one event (VAL-010)
+- [ ] Every rejection case leaves all four workflow tables' row sets unchanged
+  (VAL-046)
+- [ ] Every rejection exits non-zero with a distinct stderr error naming the
+  offending value (VAL-047)
+- [ ] `workflow.define` and `workflow.assign` permit exactly `tl` and `human`
+  and no other role (VAL-011)
+- [ ] Both rows appear in `fid policy show` in json, toon, markdown, and yaml
+  (VAL-048)
+- [ ] A denied-role define is rejected with the standard permission error and
+  appends zero journal bytes; the same command under `tl` succeeds (VAL-049)
+- [ ] Definitions differing only in arrow spelling (`->`, `-->`, `→`, `⟶`)
+  project identical transition tuples (VAL-012)
 - [ ] The stderr confirmation is byte-identical to the documented block and
   its three counts equal the projected row counts (VAL-013)
-- [ ] `06_DESIGN_PLAN_CLI.md` and the PRD-WF-013 scoping note are updated in
+- [ ] All six `--applies-to` values are accepted and project literally, `any`
+  projects SQL NULL, and an out-of-vocabulary value is rejected before append
+  naming the value (VAL-050)
+- [ ] `06_DESIGN_PLAN_CLI.md`, the PRD-WF-013 scoping note, and the
+  `05_DESIGN_PLAN.md` §3.1 `workflow define` entry are updated/verified in
   this task
 
 ## First Failing Test
@@ -149,10 +177,16 @@ tables match the declaration — fails until the command exists.
 
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow define` flags,
   vocabulary, rules, errors, and confirmation output (DEC-077, DEC-078,
-  DEC-080).
-- `project-docs/specs/01_PRD.md` — PRD-WF-013 gains the DEC-077 scoping note
-  that cancel edges exist for workflows declaring a `cancelled`-category
-  state, and that the seeded escalation default deliberately declares none.
+  DEC-080), **including the DEC-090 rejection**: an issue-applicable
+  `--applies-to` value requires exactly one `cancelled`-category state.
+- `project-docs/specs/01_PRD.md` — PRD-WF-013 gains the DEC-077/DEC-090
+  scoping note: cancel edges are materialized for workflows declaring a
+  `cancelled`-category state; **issue-applicable workflows must declare
+  exactly one**, so PRD-WF-013 holds for every issue; workflows for non-issue
+  entities (the seeded escalation default) may declare none.
+- `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — verify the `workflow define`
+  entry added at planning (DEC-092) matches the flag surface shipped here;
+  correct it in this task if it diverges.
 
 ## Exact Commands To Run
 
