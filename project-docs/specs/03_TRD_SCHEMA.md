@@ -415,16 +415,17 @@ test parity fixtures). Migration `0008` adds the `issues.workflow_id` and
 
 `workflow_transition_requires` intentionally has no PRIMARY KEY or UNIQUE
 constraint: an edge may carry several ordered rules, and order is resolved by
-`rowid`. Its `params_json` also carries the reserved gate-obligation shape
-(DEC-066) — the rule names `required_gates_current` and `has_completion` are
-recognised by the loader and surfaced as unimplemented, but are **not seeded**
-and have no evaluator; the seam is schema-present and behavior-free until v0.2b.
+`rowid`. Its `params_json` also carries reserved, known-but-unimplemented rule
+names: `required_gates_current` and `has_completion` (DEC-066) remain
+unseeded and behavior-free until v0.2b, while `linked_to_decision` is seeded
+only for `escalation-default` and has no evaluator until v0.2d. The loader
+surfaces all three structurally as unimplemented.
 
 ```sql
 CREATE TABLE workflows (
   id                  TEXT PRIMARY KEY,        -- stable slug, e.g. 'task-default'
   name                TEXT NOT NULL,
-  applies_to          TEXT,                    -- 'epic' | 'task' | 'subtask' | 'qa_review' | NULL (any)
+  applies_to          TEXT,                    -- 'epic' | 'task' | 'subtask' | 'qa_review' | 'escalation' | NULL (any)
   active              BOOLEAN DEFAULT 1,
   created_at          DATETIME
 );
@@ -455,6 +456,22 @@ CREATE TABLE workflow_transition_requires (
   FOREIGN KEY (workflow_id, from_state, to_state)
     REFERENCES workflow_transitions(workflow_id, from_state, to_state)
 );
+
+CREATE TABLE workflow_assignments (
+  scope       TEXT NOT NULL,
+  kind        TEXT,
+  workflow_id TEXT NOT NULL REFERENCES workflows(id),
+  assigned_at DATETIME,
+  CHECK (scope IN ('kind', 'project')),
+  CHECK ((scope = 'kind' AND kind IS NOT NULL)
+      OR (scope = 'project' AND kind IS NULL))
+);
+
+CREATE UNIQUE INDEX idx_workflow_assignments_kind
+  ON workflow_assignments(kind) WHERE scope = 'kind';
+
+CREATE UNIQUE INDEX idx_workflow_assignments_project
+  ON workflow_assignments(scope) WHERE scope = 'project';
 ```
 
 ---

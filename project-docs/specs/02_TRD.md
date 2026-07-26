@@ -645,14 +645,21 @@ runtime structure.
 
 The defaults are seeded by migration DDL rather than journal events: they are
 system reference data, which keeps v0.1 history unchanged and satisfies foreign
-key ordering on rebuild. User-defined workflow definitions become journal events
-in Phase 19, when `fid workflow define/assign/list` ships.
+key ordering on rebuild. Migration `0010` also seeds the v0.2
+`escalation-default` reference workflow; user-defined workflow definitions and
+assignments remain journal events when `fid workflow define/assign/list` ships.
 
 `issues.workflow_id` and `issues.status` are foreign keys into `workflows` and
 `workflow_states` (migration `0008`), so an issue cannot hold a workflow/state
 pair the tables do not define. Cancel edges (`<state>` → `cancelled` for every
 non-cancelled state) are seeded explicitly rather than resolved by a code
 special-case.
+
+`workflow_assignments` is a journal-projected table (migration `0009`), not
+seed data. At issue creation, workflow resolution is kind-scope assignment,
+then project-scope assignment, then the built-in kind default
+(`epic-default`, `task-default`, or `subtask-default`). With no assignment
+rows, resolution remains byte-identical to v0.1.
 
 **Task workflow: `task-default`**
 

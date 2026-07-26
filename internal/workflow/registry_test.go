@@ -22,8 +22,18 @@ func TestRegistryEqualsV01Definitions(t *testing.T) {
 		t.Fatalf("Load() error = %v", err)
 	}
 
-	if !reflect.DeepEqual(registry.workflows, FrozenDefinitions()) {
-		t.Fatalf("loaded registry workflows = %#v, want frozen v0.1 definitions %#v", registry.workflows, FrozenDefinitions())
+	frozen := FrozenDefinitions()
+	if len(registry.workflows) != len(frozen)+1 {
+		t.Fatalf("loaded workflow count = %d, want %d frozen defaults plus escalation-default", len(registry.workflows), len(frozen)+1)
+	}
+	for workflowID, want := range frozen {
+		got, ok := registry.Workflow(workflowID)
+		if !ok {
+			t.Fatalf("loaded registry is missing frozen workflow %q", workflowID)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("loaded frozen workflow %q = %#v, want %#v", workflowID, got, want)
+		}
 	}
 }
 
@@ -86,6 +96,30 @@ func TestLoadSurfacesReservedRulesAsUnimplementedWithoutWriting(t *testing.T) {
 	}
 	if !reflect.DeepEqual(rules, want) {
 		t.Fatalf("reserved rules = %#v, want %#v", rules, want)
+	}
+}
+
+func TestLoadSurfacesEscalationRuleAsUnimplementedWithoutWriting(t *testing.T) {
+	t.Parallel()
+
+	conn := migratedWorkflowRegistryDB(t)
+	defer closeRegistryDB(t, conn)
+
+	if _, err := conn.Exec(`PRAGMA query_only = ON`); err != nil {
+		t.Fatalf("set query_only: %v", err)
+	}
+
+	registry, err := Load(conn)
+	if err != nil {
+		t.Fatalf("Load() error = %v", err)
+	}
+	rules, ok := registry.RulesForEdge("escalation-default", "open", "resolved")
+	if !ok {
+		t.Fatal("loaded escalation-default open -> resolved edge is missing")
+	}
+	want := []RuleReference{{Name: RuleLinkedToDecision, Unimplemented: true}}
+	if !reflect.DeepEqual(rules, want) {
+		t.Fatalf("escalation rule = %#v, want %#v", rules, want)
 	}
 }
 

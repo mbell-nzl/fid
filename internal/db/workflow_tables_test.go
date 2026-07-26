@@ -338,6 +338,9 @@ func assertSeededWorkflows(t *testing.T, conn *sql.DB, definitions map[string]wo
 		if err := rows.Scan(&id, &appliesTo, &active); err != nil {
 			t.Fatalf("scan workflow: %v", err)
 		}
+		if _, ok := definitions[id]; !ok {
+			continue
+		}
 		got[id] = struct {
 			appliesTo string
 			active    bool
@@ -374,6 +377,9 @@ func assertSeededStates(t *testing.T, conn *sql.DB, definitions map[string]workf
 		if err := rows.Scan(&tuple.workflowID, &tuple.state, &tuple.category); err != nil {
 			t.Fatalf("scan workflow state: %v", err)
 		}
+		if _, ok := definitions[tuple.workflowID]; !ok {
+			continue
+		}
 		got = append(got, tuple)
 	}
 	if err := rows.Err(); err != nil {
@@ -406,6 +412,9 @@ func assertSeededTransitions(t *testing.T, conn *sql.DB, definitions map[string]
 		var tuple workflowTransitionTuple
 		if err := rows.Scan(&tuple.workflowID, &tuple.fromState, &tuple.toState); err != nil {
 			t.Fatalf("scan workflow transition: %v", err)
+		}
+		if _, ok := definitions[tuple.workflowID]; !ok {
+			continue
 		}
 		got = append(got, tuple)
 	}
@@ -450,6 +459,9 @@ func assertSeededRequirements(t *testing.T, conn *sql.DB, definitions map[string
 		var tuple workflowRequirementTuple
 		if err := rows.Scan(&tuple.workflowID, &tuple.fromState, &tuple.toState, &tuple.rule, &tuple.paramsJSON); err != nil {
 			t.Fatalf("scan workflow requirement: %v", err)
+		}
+		if _, ok := definitions[tuple.workflowID]; !ok {
+			continue
 		}
 		got = append(got, tuple)
 	}
