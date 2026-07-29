@@ -111,6 +111,47 @@ Assertions live in
   functions ≤ 60 lines, non-test files ≤ 400 lines. Split the validator and
   the effect builder into separate files if either approaches the limit.
 
+### Authorized test-packaging repair (DEC-096)
+
+The `[]journal.Effect` return type is **not** renegotiable and the dependency
+`internal/workflow` → `internal/journal` is **confirmed intended**, bounded to
+the `Effect` struct only. The import cycle is a test-packaging artifact and is
+repaired as follows — this is the whole authorization, and nothing outside it:
+
+- **Move** `TestMigration0007SeedsFrozenV01WorkflowDefinitions` and
+  `TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules` —
+  the only two tests that reference `internal/workflow` — out of
+  `internal/db/workflow_tables_test.go` into a **new `package db_test` file**
+  (suggested: `internal/db/workflow_seed_parity_test.go`).
+- **Move with them**, verbatim, the helpers only they use:
+  `assertSeededWorkflows`, `assertSeededStates`, `assertSeededTransitions`,
+  `assertSeededRequirements`, the `workflowStateTuple` /
+  `workflowTransitionTuple` / `workflowRequirementTuple` types, and
+  `stateTupleKey` / `transitionTupleKey` / `requirementTupleKey`.
+- **Leave in `package db`**: `TestMigrateUpSeedsTaskDefaultWorkflowStates`,
+  `TestMigration0007CreatesWorkflowSchema`, and
+  `TestMigration0007DownAndUpRestoresWorkflowTables`, plus
+  `assertPrimaryKeyColumns`, `assertCompositeTransitionRequirementForeignKey`,
+  `assertNoPrimaryKeyOrUniqueConstraint`, and `workflowTableNames`. None of
+  them import `internal/workflow`, and the down/up test needs
+  `newTestMigrator`, which needs the unexported `driverName`.
+- **Re-declare locally** in the new external file the few small helpers it
+  needs — `migratedWorkflowTablesDB`, `testMigrationsDir`, `closeDB`,
+  `closeRows` — under workflow-scoped names, matching the existing `db_test`
+  convention (`closeIssuesEnrichedDB`, `testIssuesEnrichedMigrationsDir` in
+  `internal/db/issues_enriched_test.go`). Import the package as
+  `fiddb "github.com/mbell-nzl/fid/internal/db"`, as the sibling `db_test`
+  files do.
+- **Behavior-preserving and test-only.** Do **not** change any production file
+  in `internal/db` or `internal/journal`. Do not export `driverName` or add any
+  new production API. Do not weaken, rename, skip, or drop a single assertion —
+  the moved tests must assert exactly what they assert today. Phase 18 VAL-024
+  and Phase 19 VAL-070 depend on `workflow.FrozenDefinitions()` staying a
+  test-only parity fixture; this move keeps it test-only.
+- **Escalate rather than widen.** If the split turns out to need a production
+  change, a newly exported identifier, or an edit to any file not named above,
+  stop and escalate. Do not extract `journal.Effect` into another package.
+
 ## Scope
 
 ### Files To Create Or Modify
@@ -124,6 +165,13 @@ Assertions live in
   `internal/workflow/assignment_test.go` (new)
 - `internal/workflow/rules.go` — export the implemented-rule set if a helper
   is needed; do not change existing rule semantics
+- **`internal/db/workflow_tables_test.go` + one new `package db_test` file
+  (authorized 2026-07-29 by DEC-096, test-only).** Returning
+  `[]journal.Effect` makes `internal/workflow` import `internal/journal`,
+  which imports `internal/db`; the in-package `package db` test file above
+  imports `internal/workflow`, closing `db [test] → workflow → journal → db`
+  and failing `golangci-lint run ./...` with `typecheck`. Repair exactly as
+  scoped in "Authorized test-packaging repair" below — no wider change.
 
 ### Files To Read For Context
 
@@ -179,6 +227,10 @@ Assertions live in
   scopes, and neither scope, and accepts both compatible shapes (VAL-041)
 - [ ] No production path in this task writes to the DB or the journal, proven
   by before/after state snapshots around the core suite (VAL-042)
+- [ ] The DEC-096 test-packaging repair is applied exactly as scoped: the two
+  workflow-importing tests and their helpers now live in `package db_test`, no
+  production file changed, no assertion changed, and
+  `golangci-lint run ./...` terminates clean
 - [ ] Existing behavior is unchanged; the full suite stays green
 
 ## First Failing Test
@@ -224,5 +276,39 @@ Conditional command required by this task:
 - Escalation tripwire: if a validation rule in the Binding Constraints list
   turns out to be unsatisfiable or contradictory against the specs, stop and
   escalate. Do not relax the rule or silently widen the accepted vocabulary.
+- **VAL-042's static inventory is a no-match proof.** The `rg` inventory that
+  shows the new core files contain no `INSERT`/`UPDATE`/`DELETE` terminates
+  with **no output and exit 1**; `rg` exits non-zero when it finds nothing.
+  Record it verbatim as `PASS (no match) - exit 1 (no output)` and name the
+  assertion. `exit 0 (no output)` means silent success and is a DEC-086
+  evidence violation for a search command — it is a hard stop, not a nit
+  (DEC-094, TRG-19-001).
 - Completion report at
   `project-docs/docs/phases/phase-19/tasks/task-2-done.md`.
+
+### Resuming after the 2026-07-29 blocker (DEC-096)
+
+The core implementation is already written and green; it is **uncommitted** in
+the worktree (`internal/workflow/authoring.go`, `authoring_effects.go`,
+`assignment.go`, `rules.go`, and their three test files), together with a
+blocker-shaped `task-2-done.md`. Do not rewrite it — reconcile it:
+
+1. Apply the authorized test-packaging repair above. That is the only new
+   implementation work.
+2. Rerun the **full** required command list top to bottom. `golangci-lint` and
+   both coverage commands were never able to run, so every result in the
+   existing report below `gofmt` is `BLOCKED` and must be replaced with a real,
+   freshly executed token — not carried over, not inferred.
+3. **Rewrite `task-2-done.md` as a normal completion report.** All fourteen
+   `VAL-` lines currently say `BLOCKED - ... task closure is blocked by the
+   required linter gate`; re-record each with its real outcome. Keep the
+   existing evidence citations, which are specific and correct.
+4. Keep the VAL-042 inventory line as `PASS (no match) - exit 1 (no output)` —
+   it was recorded correctly the first time (DEC-094) — but re-execute it so the
+   token is genuinely observed, and extend the file list if the repair changes
+   which files the assertion covers.
+5. Record the DEC-096 repair under "Deviations from spec" as an
+   **authorized** scope extension citing DEC-096, not as an unplanned deviation.
+6. Two commits: the implementation (`feat(workflow): ...`, including the
+   test-packaging repair) and the report as its own `docs(task): ...` commit.
+   Then rerun `report-lint.sh`.

@@ -11,6 +11,32 @@
 
 **None.**
 
+## Resolved This Phase (archive at wrap)
+
+- **ESC-19-002 — Task 2 lint gate blocked by a test-only import cycle (raised
+  2026-07-29, resolved 2026-07-29 by DEC-096/DEC-097).** Task 2's binding
+  `[]journal.Effect` return type makes `internal/workflow` import
+  `internal/journal`, which imports `internal/db`; the in-package test file
+  `internal/db/workflow_tables_test.go` imports `internal/workflow`, so the
+  `db` test binary closes a cycle and `golangci-lint run ./...` fails
+  `typecheck`. Resolution: **DEC-096** confirms `workflow → journal` as the
+  intended, minimal (`Effect`-only) dependency and authorizes the narrow repair
+  — move the two workflow-importing tests into the existing external `db_test`
+  package. No production code changes; no change to the Task 2 API. **DEC-097**
+  root-causes the missing triage record as a **Codex provider-prompt defect**
+  (shared body asserted a "cannot run commands" limit that only Claude's
+  frontmatter enforces; on Codex that reads as "cannot write files") and fixes
+  `project-docs/agents/tl-lite.md` — **`sync-agents.sh` must be run.**
+  Backfilled by the Tech Lead as TRG-19-002.
+- **ESC-19-001 — Task 1 VAL-031 evidence token (raised 2026-07-26, resolved
+  2026-07-29 by DEC-094/DEC-095).** `task-1-done.md` records the no-match `rg`
+  inventory as `PASS - exit 0 (no output)`; `rg` exits 1 on no match, so the
+  token was not copied from the command (DEC-086 violation). The VAL-031
+  observable itself holds. Resolution: report correction + re-execution
+  (DEC-094); the missing triage record is backfilled as TRG-19-001 and the
+  TL-Lite write failure is dispositioned by DEC-095. Backfilled by the Tech
+  Lead — TL-Lite raised the BLOCK without minting this ID.
+
 ## Recent Archive Notes
 
 - Phase 18 wrapped 2026-07-25. It raised one escalation, **ESC-001**

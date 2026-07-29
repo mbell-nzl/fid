@@ -180,7 +180,10 @@ A missing, silently skipped, or narrower substituted required command is a
 failed gate, not an acceptable omission. Record each result with one short
 verbatim token from the command's own output (its last printed line, or
 `exit 0 (no output)`). A command that did not terminate is never `PASS` — a
-hung, interrupted, or killed command is `BLOCKED`.
+hung, interrupted, or killed command is `BLOCKED`. A search or inventory
+command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
+real status, `exit 1 (no output)`, and say that no-match is the pass condition.
+`exit 0 (no output)` means silent success and is fabricated evidence there.
 
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,

@@ -1,4 +1,4 @@
-# Phase Brief - Phase 19 (Approved, awaiting QA plan unblock)
+# Phase Brief - Phase 19 (In execution)
 
 > **Purpose.** Default execution brief for the current phase. Loaded by every
 > agent session.
@@ -19,13 +19,24 @@ default. v0.2a slice 2 of 3.
 ## Status
 
 **Approved (DEC-093, 2026-07-26)** — mode, six-task list, refined contract
-(VAL-001..070), CF-008 re-defer. The QA plan opened **BLOCKED** on
-QA-BLK-01..07; all seven are dispositioned by **DEC-089..DEC-093**
-(`../phases/phase-19/decisions.md`): `internal/workflow` boundary resolved in
-the task pack's favor (`02_TRD.md` §3 synchronized); PRD-WF-013 preserved via
-DEC-090; contract unbundled to 70 `Ready` assertions; `05_DESIGN_PLAN.md` §3.1
-gains the `workflow` family. **Remaining precondition to Task 1: the QA Lead
-re-verifies the plan against the refined contract and moves it to Ready.**
+(VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
+**DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
+
+**In execution.** Task 1 **complete** (`a509d59`, plus `3b061e1` report
+correction under DEC-094; report-lint PASS).
+
+**Task 2 stopped, cleared to resume (TRG-19-002 / ESC-19-002).** Its core is
+written and green but **uncommitted**; `golangci-lint run ./...` failed on a
+test-only import cycle `db [test] → workflow → journal → db` created by the
+binding `[]journal.Effect` return type. **DEC-096** confirms `workflow →
+journal` as intended (bounded to `Effect`) and authorizes a narrow, test-only
+repair: move the two workflow-importing tests out of `package db` into the
+existing external `db_test` package. No production or API change. Repair plus
+report/commit reconciliation are scoped in
+`../phases/phase-19/tasks/task-2.md`. **DEC-097** root-causes TL-Lite's missing
+triage record as a Codex provider-prompt defect and fixes
+`project-docs/agents/tl-lite.md`; **`sync-agents.sh` must be run** to regenerate
+the provider prompts.
 
 ## Operating Mode
 
@@ -40,8 +51,8 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
-| 1 | `workflow_assignments` schema + `escalation-default` seed | Pending | None |
-| 2 | Workflow authoring core (validation + effect builder) | Pending | 1 |
+| 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
+| 2 | Workflow authoring core (validation + effect builder) | Stopped at lint gate; cleared to resume by DEC-096 | 1 |
 | 3 | `fid workflow define` + `workflow.defined` event | Pending | 1, 2 |
 | 4 | `fid workflow assign` + assignment-aware issue creation | Pending | 1-3 |
 | 5 | `fid workflow list` in every output format | Pending | 1, 3, 4 |
@@ -65,15 +76,16 @@ after DEC-091 (14 originals narrowed; VAL-027..070 added):
 
 ## QA Artifacts
 
-All under `../phases/phase-19/qa/`. `qa-plan.md` is **BLOCKED — awaiting QA
-Lead re-verification** (QA-BLK-01..07 dispositioned by DEC-089..093); it sets
-the mid-phase cadence (`review-1` after Tasks 1-3, `review-2` after Tasks 4-5).
-`final-review.md` / `human-checklist.md` are pending at phase end.
+All under `../phases/phase-19/qa/`. `qa-plan.md` is **Ready**; it sets the
+mid-phase cadence (`review-1` after Tasks 1-3, `review-2` after Tasks 4-5).
+`final-review.md` / `human-checklist.md` are pending at phase end. Triage IDs
+are allocated from `../phases/phase-19/triage-log.md`.
 
 ## Active Constraints
 
-DEC-075..DEC-082 (planning) and DEC-089..DEC-093 (QA-blocker dispositions) are
-recorded in `../phases/phase-19/decisions.md`. Binding during execution:
+DEC-075..DEC-082 (planning), DEC-089..DEC-093 (QA-blocker dispositions), and
+DEC-094..DEC-095 (Task 1 evidence correction, triage-log seeding) are recorded
+in `../phases/phase-19/decisions.md`. Binding during execution:
 
 - **`internal/workflow` owns authoring, assignment, and resolution** (DEC-089;
   `02_TRD.md` §3 synchronized). It still must not create issues, verify ACs,
@@ -107,7 +119,16 @@ recorded in `../phases/phase-19/decisions.md`. Binding during execution:
 - **Evidence honesty and ID discipline are standing rules (DEC-084..086).** A
   non-terminating required command is never `PASS`; each result carries a
   verbatim terminal token. IDs are phase-scoped (`TRG-19-NNN` / `ESC-19-NNN`),
-  written **before** the verdict.
+  allocated from `../phases/phase-19/triage-log.md` and written **before** the
+  verdict.
+- **No-match inventories exit 1** (DEC-094). VAL-031/042/069/070 are proven by
+  `rg` finding nothing, which terminates `exit 1 (no output)`. Record that,
+  never `exit 0 (no output)`.
+- **`internal/workflow` may import `internal/journal`, bounded to the `Effect`
+  struct** (DEC-096) — no append, projection, or replay surface. Consequently
+  **no in-package (`package db`) test file may import `internal/workflow`**;
+  tests needing both go in `package db_test`. Same rule for `internal/journal`
+  in-package tests.
 
 ## Interfaces / Subsystems In Scope
 

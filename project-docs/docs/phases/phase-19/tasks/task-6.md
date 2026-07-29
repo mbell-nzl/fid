@@ -76,7 +76,11 @@ Assertions live in
     'FrozenDefinitions\(' cmd internal
   ```
 
-  Both are expected to produce no output. Reserved declarations and authoring
+  Both are expected to produce **no output and exit 1** — `rg` exits non-zero
+  when it finds nothing, and that no-match is exactly what VAL-069/VAL-070
+  assert. Record each as `PASS (no match) - exit 1 (no output)`; recording
+  `exit 0 (no output)` for a search command is a DEC-086 evidence violation and
+  a hard stop (DEC-094, TRG-19-001). Reserved declarations and authoring
   rejections inside `internal/workflow` are expected and are classified
   separately in the report. Record this alongside the CLI rejection evidence
   for `required_gates_current` / `has_completion` and the zero-row seeded

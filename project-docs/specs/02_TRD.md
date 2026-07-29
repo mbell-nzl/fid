@@ -117,6 +117,26 @@ Rules:
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
 
+### 3.1 Dependency Direction Constraints
+
+Domain packages that produce journal events depend on `internal/journal` for
+the `Effect` data contract only; `internal/journal` depends on `internal/db`.
+That chain is one-way and must stay one-way.
+
+- **`internal/workflow` → `internal/journal` is permitted, bounded to the
+  `Effect` struct** (v0.2a, DEC-096). The authoring core returns
+  `[]journal.Effect` so the effect shape is never duplicated away from the
+  event schema it serialises into. `internal/workflow` must not reach any other
+  `internal/journal` surface — no append, no projection, no replay — which
+  would breach its "no schema/migration ownership, no writes" boundary above.
+- **Consequence for tests:** because `internal/journal` imports `internal/db`,
+  **no in-package (`package db`) test file in `internal/db` may import
+  `internal/workflow`**, and no in-package `internal/journal` test file may
+  either. Go compiles in-package test files into the package itself, so such an
+  import closes a cycle and fails `typecheck` for the whole repository. Tests
+  needing both belong in the external `package db_test` / `package journal_test`
+  packages, which are not compiled into the package under test.
+
 ## 4. Data Model
 
 ### 4.1 Entities

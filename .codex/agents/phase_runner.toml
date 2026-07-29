@@ -145,7 +145,8 @@ findings, RESUME is allowed only when the finding is misclassified, already
 resolved by a verified commit, or covered by an accepted recorded decision.
 ```
 
-TL-Lite cannot run commands. When a triage may turn on "already resolved by a
+TL-Lite does not execute verification commands (it does write its own triage
+records). When a triage may turn on "already resolved by a
 verified commit", you verify the commit first (`git rev-parse --verify
 <hash>^{commit}` plus subject match, or report-lint output) and attach that
 evidence to the trigger. TL-Lite judges the evidence; it never verifies

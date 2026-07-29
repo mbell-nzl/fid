@@ -432,6 +432,282 @@ weakened; the only behavioral addition is DEC-090's define-time rule.
 - **Standing:** DEC-084..DEC-086 (phase-scoped IDs, triage row before verdict,
   verbatim terminal token per required command) remain binding for execution.
 
+### DEC-094: VAL-031 evidence correction and the no-match inventory token convention
+
+- **Date:** 2026-07-29
+- **Resolves:** ESC-19-001 / TRG-19-001 (Task 1 completion report records the
+  no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command
+  terminates with no output and **exit 1**).
+- **Finding:** an evidence-recording defect, not an implementation defect.
+  `rg` exits 1 when it finds no match, so `exit 0 (no output)` — the workflow's
+  phrase for a *silent success* — cannot have been copied from that command's
+  output. DEC-086 makes the verbatim token mandatory and mode-invariant, so the
+  recorded result is invalid on its face. The VAL-031 observable itself (no
+  production `linked_to_decision` evaluator under `internal/issues` /
+  `cmd/fid`) holds: it was confirmed by the QA plan feasibility pass and again
+  by the Phase Runner's independent rerun. The Task 1 implementation commit
+  `a509d59` needs no change; the six required gate commands are unaffected, and
+  the `rg` inventory is not one of them.
+- **Decision — correction, not re-implementation.** Before Task 2 starts:
+  1. Re-execute the exact command
+     `rg -n --glob '*.go' --glob '!**/*_test.go' 'RuleLinkedToDecision|linked_to_decision' internal/issues cmd/fid`
+     and copy the observed token. Do not transcribe the token from this
+     decision, the ledger, or the QA plan — the point of the rule is that the
+     token comes from a real terminal.
+  2. Correct **both** occurrences in `tasks/task-1-done.md` (the VAL-031
+     coverage line and the `## Tests run` line) to the observed
+     `exit 1 (no output)`, stating inline that exit 1 **is** the no-match pass
+     condition for this inventory.
+  3. Add a correction note under `## Concerns, technical debt, or notes for the
+     Tech Lead` naming TRG-19-001, so the audit trail survives in the report
+     itself rather than only in the ledger.
+  4. Commit the replacement report as its own `docs(task): ...` commit
+     (`09_AI_WORKFLOW.md` step 13 — the `## Commit hash` field still names task
+     commit `a509d59` and does not change), rerun
+     `project-docs/tools/report-lint.sh` against the newly committed file, then
+     resume the Phase Runner at Task 2.
+  Task 1 is recorded complete only after that rerun passes.
+- **Convention (binding for the rest of the phase).** For inventory-style
+  assertions proven by the *absence* of matches — VAL-031, VAL-042, VAL-069,
+  VAL-070 — the expected terminal result is **exit 1 with no output**, and that
+  is what the report records: `PASS (no match) - exit 1 (no output)`. Exit 0
+  with matches printed is the *failing* result for these assertions. Recording
+  `exit 0 (no output)` for a search command is a DEC-086 violation and a hard
+  stop. The QA plan already wrote this convention down for VAL-069/070; it is
+  now stated in the validation contract for all four, and repeated in the Task
+  2 and Task 6 specs that own the remaining three.
+- **Canonical spec edits (justified by this decision):** `AGENTS.md`
+  (Commands) and `09_AI_WORKFLOW.md` §11 gain one sentence each — a search or
+  inventory command that finds nothing terminates non-zero, and the recorded
+  token is the real exit status, never the silent-success phrase.
+- **No contract weakening.** VAL-031 keeps its pass criterion, its evidence
+  method, and its QA Lead validator; the QA Lead still re-runs the inventory at
+  phase end. Nothing about this correction pre-clears VAL-031.
+
+### DEC-095: The phase triage log is seeded at phase start; a verdict without a written record is a defective triage
+
+- **Date:** 2026-07-29
+- **Resolves:** the second defect in TRG-19-001 — TL-Lite returned
+  `VERDICT: BLOCK (triage record could not be written)` and created neither
+  `phases/phase-19/triage-log.md` nor an `ESC-19-NNN`.
+- **Finding:** not a stale-prompt problem. `.claude/agents/tl-lite.md` is
+  byte-current with `project-docs/agents/tl-lite.md`, grants `Write`, names the
+  template, and explicitly says to *start at `001` when the file does not
+  exist*. TL-Lite had everything it needed and still treated an absent file as
+  an allocation blocker. This is the same failure mode DEC-085 was written to
+  stop, and it is now the second phase running (Phase 18: five of six triages
+  reported an escalation that was never minted). Cost: a full Tech Lead
+  reconstruction session for a two-line report fix.
+- **Decision:**
+  1. **The Tech Lead seeds `triage-log.md` at phase start**, template header
+     and empty table, as part of the phase directory. An empty allocation
+     source removes the create-a-file step from TL-Lite's critical path
+     entirely, which is cheaper than trusting prompt compliance a third time.
+     Phase 19's is created now (TRG-19-001 backfilled from the ledger); this
+     becomes a standing planning obligation from Phase 20.
+  2. **Phase Runner precondition:** if `triage-log.md` is absent when a triage
+     is needed, that is itself a phase-setup defect — record it in the ledger
+     and stop; do not ask TL-Lite to invent an ID.
+  3. **A verdict without a durable record is defective triage** and never
+     satisfies a stop. The Phase Runner correctly recorded the defect instead
+     of resuming; that handling is confirmed as the standard.
+  4. **Escalation of last resort:** when TL-Lite genuinely cannot write, the
+     Phase Runner records `TRIAGE (identifier unavailable)` — as it did here —
+     and the full Tech Lead backfills both the TRG and the ESC. Backfilled
+     entries are labelled as Tech Lead reconstructions so the audit trail never
+     implies TL-Lite wrote them.
+- **Carry-forward impact:** this is the recurrence CF-023/DEC-087 predicted.
+  Its remaining scope (drill-09 for the non-terminating / mis-recorded-token
+  defect class, plus the `report-lint.sh` evidence-token check) stays in the
+  workflow-overhaul bucket, but is **raised from Low to Medium** and gains a
+  concrete first check: flag any recorded result whose command begins with
+  `rg`/`grep` and whose token is `exit 0 (no output)`. A mechanical check would
+  have caught this defect at Task 1 close without a human in the loop; a drill
+  for the missing-triage-record class belongs in the same pass.
+- **Not decided here:** whether TL-Lite stays a separate role at all. That is
+  deep-retrospective scope (DEC-073), not a mid-phase change.
+
+#### Correction (2026-07-29, per DEC-097)
+
+The **Finding** above is wrong on its central claim and is corrected here
+rather than rewritten, so the reasoning trail stays auditable.
+
+It asserted this was "not a stale-prompt problem" on the evidence that
+`.claude/agents/tl-lite.md` is byte-current, grants `Write`, and says to start
+at `001` when the file does not exist — concluding that "TL-Lite had everything
+it needed and still treated an absent file as an allocation blocker."
+
+**The failing agent was the Codex `tl_lite`, not the Claude `tl-lite`.** The
+Claude definition was never the one executing. `.codex/agents/tl_lite.toml`
+declares no tools, and the shared prompt body told it three times that it could
+not run commands — the surface through which Codex writes files. So the
+prompt *was* the problem, in the provider that was actually running, and the
+exoneration above was reached by reading the wrong file.
+
+What survives: the remedy. Seeding `triage-log.md` at phase start is worth
+keeping on its own merits and made both backfills cheap. What does not survive:
+the root-cause attribution, and the inference that prompt compliance had been
+"trusted and failed." See DEC-097 for the corrected analysis and the fix.
+
+### DEC-096: `internal/workflow` may depend on `internal/journal` for the effect data contract; the Task 2 cycle is repaired by test packaging
+
+- **Date:** 2026-07-29
+- **Resolves:** ESC-19-002 / TRG-19-002 — Task 2's required
+  `golangci-lint run ./...` gate fails `typecheck` with
+  `import cycle not allowed in test`.
+- **Context:** Task 2 binds the authoring core's return type to
+  `[]journal.Effect`. `internal/journal` imports `internal/db`, and
+  `internal/db/workflow_tables_test.go` is an **in-package** (`package db`) test
+  file that imports `internal/workflow`. Go compiles in-package test files into
+  package `db` itself, so the `db` test binary closes
+  `db [test] → workflow → journal → db`. The Developer correctly refused to
+  self-authorize either an out-of-scope file edit or a dependency-boundary
+  change.
+- **Finding — this is a test-packaging artifact, not a design defect:**
+  1. **There is no production cycle.** `internal/workflow` production code uses
+     exactly one symbol from `internal/journal`: the `Effect` struct
+     (`internal/journal/event.go:31`), referenced only in
+     `internal/workflow/authoring_effects.go`. `internal/journal` does not
+     import `internal/workflow`.
+  2. **The dependency direction is the codebase norm.** `internal/issues`,
+     `internal/dev`, `internal/links`, `internal/claims`, `internal/labels`,
+     `internal/runs`, `internal/requirements`, `internal/policy`,
+     `internal/activity`, and `internal/bootstrap` all build `journal.Effect`
+     values. Under DEC-089 `internal/workflow` owns authoring, and the effect
+     set *is* the authoring output. `workflow` joining that list is consistent
+     layering, not an inversion.
+  3. **`journal.Effect` is schema-bearing.** It is the `effects` array of the
+     event JSON that becomes permanent replay history. Re-typing or duplicating
+     it inside `internal/workflow` would create exactly the drift risk this
+     phase's Known Risks call out.
+  4. **The blocked file is the only one affected.**
+     `internal/db/workflow_tables_test.go` is the sole `package db` file
+     importing `internal/workflow`. `internal/journal` has no test importing
+     `internal/workflow`. The blast radius is one file.
+  5. **The external test package already exists and already does this.**
+     `internal/db` has four `package db_test` files
+     (`issues_enriched_test.go`, `kind_triggers_test.go`, `ref_triggers_test.go`,
+     `issues_workflow_fk_cli_test.go`); three of them already import
+     `internal/journal`, which is legal precisely because an external test
+     package is not compiled into `db`.
+- **Decision:**
+  1. **`internal/workflow` → `internal/journal` is confirmed as intended and is
+     bounded to the `Effect` data contract.** The Task 2 API stays
+     `([]journal.Effect, error)`; it is not renegotiated. `internal/workflow`
+     must not grow a dependency on any other `internal/journal` surface
+     (no append, no projection, no replay) — that would breach DEC-089's
+     "must not own migrations / must not write" boundary.
+  2. **The narrow repair is authorized** and added to Task 2's scope: split
+     `internal/db/workflow_tables_test.go` so that the two tests needing
+     `internal/workflow` — `TestMigration0007SeedsFrozenV01WorkflowDefinitions`
+     and `TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules`
+     — move, with the helpers only they use (`assertSeededWorkflows`,
+     `assertSeededStates`, `assertSeededTransitions`, `assertSeededRequirements`,
+     the three tuple types and their key functions), into a new
+     `package db_test` file. The remaining three tests stay in `package db`.
+  3. **Test-only change, behavior-preserving.** No production file may change
+     under this authorization. Assertions move verbatim; nothing is weakened,
+     renamed, or dropped. The moved file re-declares the few small helpers it
+     needs (`testMigrationsDir`, `closeDB`, `closeRows`,
+     `migratedWorkflowTablesDB`) locally under workflow-scoped names, matching
+     the existing `db_test` convention (`closeIssuesEnrichedDB` et al.).
+  4. **No new exported production API.** `driverName` stays unexported;
+     `newTestMigrator`/`closeMigrator` stay in `package db` with
+     `TestMigration0007DownAndUpRestoresWorkflowTables`, which does not import
+     `internal/workflow` and therefore does not move.
+- **Rejected alternatives:**
+  - *Extract `Effect` into a leaf package with a `type Effect = ...` alias in
+    `journal`.* Architecturally tidier, but 154 references across 51 files, a
+    new package, and an edit to the event schema's home file — mid-phase, for a
+    change a type alias makes invisible. Disproportionate.
+  - *Give `internal/workflow` its own effect type and map it in Task 3.*
+    Contradicts the Task 2 spec, duplicates a schema-bearing type, and adds a
+    mapping layer whose only job is to drift.
+  - *Break `internal/journal` → `internal/db`.* Far outside phase scope.
+- **Standing constraint (binding beyond Phase 19):** **no in-package
+  (`package db`) test file in `internal/db` may import `internal/workflow`**,
+  because `internal/workflow` now sits above `internal/journal`, which imports
+  `internal/db`. Tests that need both belong in `package db_test`. Same rule
+  applies to `internal/journal`'s in-package tests.
+- **Spec impact:** `02_TRD.md` §3 gains the `internal/workflow` →
+  `internal/journal` edge and the `Effect`-only bound; Task 6 verifies at wrap.
+
+### DEC-097: TL-Lite's missing triage records are a provider-prompt defect on Codex, not agent unreliability
+
+- **Date:** 2026-07-29
+- **Resolves:** the second defect in TRG-19-002 — TL-Lite returned
+  `VERDICT: BLOCK (required triage/escalation records could not be written; no
+  identifier allocated)` and wrote neither `TRG-19-002` nor `ESC-19-002`.
+- **Supersedes an incorrect first finding.** This decision was first drafted
+  holding that TL-Lite's report of having "no filesystem read/write mechanism
+  available" was a hallucinated capability claim, on the evidence that
+  `.claude/agents/tl-lite.md:4` grants `Read, Glob, Grep, Edit, Write`. **That
+  was wrong, and wrong because it inspected the wrong provider.** The failing
+  agent was the **Codex** `tl_lite`, not the Claude `tl-lite`. The original
+  finding is recorded here rather than deleted, because the same mistake sits
+  inside DEC-095 (see the correction note appended there).
+- **Actual root cause — the Codex prompt tells TL-Lite it cannot write:**
+  1. `.codex/agents/tl_lite.toml` declares **no tools at all** — only `name`,
+     `description`, `model`, `model_reasoning_effort`, and
+     `developer_instructions`. Tool access comes solely from the global
+     `sandbox_mode = "workspace-write"` in `.codex/config.toml`. The
+     `tools: ... Write` / `disallowedTools: Bash` grant lives exclusively in the
+     `claude:` frontmatter block of `project-docs/agents/tl-lite.md` and is
+     emitted **only** into `.claude/agents/tl-lite.md`.
+  2. The **shared** prompt body told TL-Lite three separate times that it could
+     not run commands: "You do not write code, **run commands**…" (opening),
+     "never **run commands**" (Write Boundaries), and "**You cannot run
+     commands**, so you never verify commits yourself" (Triage Rules).
+  3. On Claude those two facts are coherent: `Write`/`Edit` are distinct tools
+     from `Bash`, so "never run commands" plainly means "don't use Bash."
+     **On Codex they are contradictory**, because Codex exposes file editing
+     through the same command/`apply_patch` surface as execution. An agent told
+     it cannot run commands, given no declared write tool, has a defensible
+     basis to conclude it has no filesystem write mechanism — which is
+     precisely, and accurately, what it reported.
+  4. This is therefore a **prompt-authoring defect in a provider-shared body**,
+     not agent unreliability. The agent behaved correctly given its
+     instructions, and reported the limitation explicitly rather than inventing
+     a placeholder ID — which is what its prompt asks for in that situation.
+- **Decision:**
+  1. **Fix the prompt at the canonical source.**
+     `project-docs/agents/tl-lite.md` is amended: the blanket "run commands"
+     prohibition is narrowed to its real intent (no quality gates, tests,
+     builds, git, or verification commands); the opening states that writing
+     the triage record is a file write and never optional; and a
+     `<!-- body: codex -->` segment names `apply_patch` under
+     `workspace-write` as the write affordance, with a matching
+     `<!-- body: claude -->` segment naming `Write`/`Edit`. A new triage rule
+     requires an *attempted* write before any claim of inability, quoting the
+     concrete error.
+  2. **`project-docs/tools/sync-agents.sh` must be run** to regenerate
+     `.claude/agents/tl-lite.md` and `.codex/agents/tl_lite.toml`; this session
+     has no shell. Until it runs, the generated prompts are stale and the defect
+     is still live. `sync-agents.sh --check` verifies.
+  3. **The DEC-095 mitigations stand** — seeding the triage log is independently
+     worthwhile and made both backfills cheap — but its *finding* is corrected,
+     not its remedy.
+  4. **The Phase Runner's handling is confirmed correct again**: it recorded
+     `TRIAGE (identifier unavailable)`, refused the placeholder, and stopped.
+  5. **No role change, and the deep-retrospective question is withdrawn.** The
+     draft escalated "should TL-Lite exist at all" to the retrospective on the
+     strength of the incorrect finding. With a concrete, cheap, provider-local
+     cause identified, that escalation is not justified. What *is* referred to
+     the retrospective is narrower and better founded: **provider-shared agent
+     bodies can encode capability claims that are true for one provider and
+     false for another**, and nothing checks for it.
+- **Open verification item (not decided here):** whether the Codex agent config
+  schema supports a per-agent sandbox/tool declaration that would make the write
+  affordance explicit rather than inherited from the global config. No such key
+  was invented here — an unverified key risks breaking agent loading. Confirm
+  against the Codex config schema before adding one.
+- **Carry-forward impact:** **CF-023 gains a drill case of a different and more
+  useful shape** than the draft's — a provider-shared prompt segment that
+  contradicts one provider's tool model — alongside the DEC-095 checks. A
+  cheap mechanical check falls out of it: flag any shared body asserting a
+  capability limit ("cannot run commands", "no access to") that is enforced by
+  only one provider's frontmatter. CF-023 stays **Medium**.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from
@@ -442,14 +718,14 @@ the planning decisions above:
 | `00_PROJECT_CHARTER.md` | TBD at wrap | — |
 | `GLOSSARY.md` | touched (workflow assignment, custom workflow, initial state) | Task 6 |
 | `01_PRD.md` | touched — PRD-WF-013 scoping note (DEC-077, **as amended by DEC-090**) | Task 3 |
-| `02_TRD.md` | touched — §3 `internal/workflow` boundary (DEC-089, **applied at planning**); §4.6 assignment precedence + escalation seed (DEC-076) | Planning (§3), Task 1 (§4.6); Task 6 verifies |
+| `02_TRD.md` | touched — §3 `internal/workflow` boundary (DEC-089, **applied at planning**); §3 `internal/workflow` → `internal/journal` `Effect`-only edge + the `package db` test-import constraint (**DEC-096**); §4.6 assignment precedence + escalation seed (DEC-076) | Planning (§3), Task 1 (§4.6), Task 2 (DEC-096 edge); Task 6 verifies |
 | `03_TRD_SCHEMA.md` | touched — §3 `workflow_assignments`, `applies_to` vocabulary, `linked_to_decision` (DEC-076/078/080); §2.1 resolution source | Tasks 1, 4 |
 | `04_TRD_CONFIG.md` | TBD at wrap | — |
 | `05_DESIGN_PLAN.md` | touched — §3.1 `workflow` command family (DEC-092, **applied at planning**) | Planning; Tasks 3, 4, 5 verify their subcommand; Task 6 records the verdict |
 | `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080/090) | Tasks 3, 4, 5, 6 |
 | `07_DESIGN_PLAN_FLOWS.md` | TBD at wrap | — |
 | `08_QUALITY_PLAN.md` | TBD at wrap | — |
-| `09_AI_WORKFLOW.md` | TBD at wrap | — |
+| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); `AGENTS.md` Commands carries the same sentence | Mid-phase (DEC-094); Task 6 verifies |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched — Phase 19 closure note | Wrap |
 
 ## Workflow Notes

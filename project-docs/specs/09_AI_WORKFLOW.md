@@ -62,7 +62,11 @@ Phase start:
    Light mode skips the validation contract and QA plan per the artifact
    matrix.
 5. Create `project-docs/docs/phases/phase-<id>/tasks/` and
-   `project-docs/docs/phases/phase-<id>/qa/`.
+   `project-docs/docs/phases/phase-<id>/qa/`, and seed an empty
+   `project-docs/docs/phases/phase-<id>/triage-log.md` from
+   `project-docs/templates/triage-log-template.md`. Seeding it at phase start
+   keeps ID allocation off the critical path of a mid-phase agent that must
+   otherwise create the file before it can mint an identifier.
 6. For normal and heavy modes, draft
    `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` using
    `project-docs/templates/validation-contract-template.md`. The contract is a
@@ -213,7 +217,12 @@ Triage rules:
   identifier that was written. A verdict carrying a placeholder identifier
   (`ESC-NNN`, `ESC-NEW`) or unaccompanied by a log entry is a defective
   triage: the event has no durable record, cannot be resumed mechanically, and
-  forces a full Tech Lead reconstruction.
+  forces a full Tech Lead reconstruction. The Tech Lead seeds the file at phase
+  start, so an absent triage log is a phase-setup defect: the Phase Runner
+  records it and stops rather than accepting a verdict with no identifier. When
+  a triage genuinely cannot be written, the Phase Runner logs
+  `TRIAGE (identifier unavailable)` and the full Tech Lead backfills both the
+  TRG and the ESC, labelled as reconstructions.
 - Triage RESUME is allowed only when the issue is local-decision-eligible and
   no escalation is needed.
 - Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
@@ -1170,6 +1179,15 @@ one is fabricated evidence, and recording `PASS` without it makes the false
 claim invisible to every downstream review until someone re-runs the gate
 independently. Such a command is `BLOCKED` with the reason in a blocker
 report. This rule is mode-invariant.
+
+The token is the command's real exit behavior, not the expected one. A search
+or inventory command (`rg`, `grep`) used to prove an *absence* — no production
+evaluator, no forbidden call site — terminates with **exit 1 and no output**
+when it finds nothing, which is the pass condition for that assertion. Record
+`PASS (no match) - exit 1 (no output)` and name the assertion; `exit 0 (no
+output)` is reserved for a silent success and is fabricated evidence here. A
+task spec or QA plan that relies on such an inventory states its expected exit
+status, so the Developer never has to infer one.
 
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:

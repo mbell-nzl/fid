@@ -7,10 +7,11 @@
 
 ## Project State
 
-**Status:** Phase 19 **APPROVED (DEC-093, 2026-07-26); QA plan re-verification
-is the last precondition to Task 1.** Phase 18 is COMPLETE / WRAPPED
-(2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1
-of 3 is delivered.
+**Status:** Phase 19 **IN EXECUTION.** QA plan is **Ready**; Task 1 is
+implemented and green (`a509d59`) but **not yet recorded complete** — its
+report needs the DEC-094 evidence correction before Task 2 starts. Phase 18 is
+COMPLETE / WRAPPED (2026-07-25); v0.1 remains closed for early dogfood
+(DEC-057); v0.2a slice 1 of 3 is delivered.
 
 Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
 v0.2a slice 2 of 3) runs in **heavy mode** with six tasks and a **70-row**
@@ -18,6 +19,16 @@ validation contract (`Ready`). Artifacts: `../phases/phase-19/` —
 `decisions.md` (DEC-075..DEC-083, DEC-089..DEC-093),
 `qa/validation-contract.md`, `qa/qa-plan.md`, `tasks/task-1..6.md`; brief
 refreshed in `phase_brief.md`. Branch: `phase-19-workflow-authoring`.
+
+**Task 1 stopped on evidence, not on code (2026-07-29).** The report recorded
+the VAL-031 no-match `rg` inventory as `exit 0 (no output)`; `rg` exits 1 on no
+match, so the token was not copied from the command (DEC-086). The observable
+holds and the six required gates all passed, so **DEC-094** orders a report
+correction — re-execute, record `exit 1 (no output)`, new `docs(task)` commit,
+rerun `report-lint.sh` — not a re-implementation. TL-Lite compounded it by
+returning `BLOCK` without writing a triage record; **DEC-095** seeds
+`triage-log.md` at phase start so allocation never depends on it again.
+TRG-19-001 and ESC-19-001 are backfilled by the Tech Lead.
 
 **QA plan blockers dispositioned (2026-07-26).** The QA plan opened BLOCKED on
 QA-BLK-01..07. DEC-089 resolves the `internal/workflow` architecture-boundary
@@ -61,7 +72,9 @@ Dispositioned at Phase 19 planning (DEC-082):
 
 ## Escalations
 
-**None open.** Phase 18's ESC-001 (final-review BLOCK — `workflow.Load`
+**None open.** **ESC-19-001** (Task 1 VAL-031 evidence token) was raised
+2026-07-26 and resolved 2026-07-29 by DEC-094/DEC-095; it stays in
+`tl_escalations_current.md` until the wrap archive. Phase 18's ESC-001 (final-review BLOCK — `workflow.Load`
 connection deadlock plus the then-absent QA-30 spec sync) is resolved by DEC-072,
 verified by the 2026-07-23 rerun, and archived in
 `../phases/phase-18/tl-escalations.md`. All Phase 17 escalations remain archived
@@ -80,12 +93,11 @@ executed within the ratified-by-practice v0.2a slice.
 
 In order:
 
-1. **QA Lead re-verifies the Phase 19 QA plan** against the refined contract
-   (VAL-001..070): confirm QA-BLK-01..07 are closed by DEC-089..093, add one
-   Section 4 evidence row and one Section 7 checklist step per new assertion,
-   re-check the two previously BLOCKED feasibility items (VAL-003 tuple
-   reference, VAL-059 baseline), and move the plan to **Ready**.
-2. **Phase Runner starts Task 1** once the plan is Ready.
+1. **Correct the Task 1 report per DEC-094** (Developer session or human with a
+   shell): re-execute the exact VAL-031 inventory, record the observed
+   `exit 1 (no output)` on both lines, add the TRG-19-001 correction note,
+   commit as its own `docs(task)` commit, rerun `report-lint.sh`.
+2. **Phase Runner resumes**: record Task 1 complete, then start Task 2.
 3. **Deep retrospective (DEC-073, timing at the Human's discretion)** — an
    input to the agentic-workflow overhaul rather than a driver of a CF-023
-   pass.
+   pass; TRG-19-001 is a fresh input for it.

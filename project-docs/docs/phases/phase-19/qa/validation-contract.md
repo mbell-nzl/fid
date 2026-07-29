@@ -146,6 +146,25 @@ instead of weakening the assertion or silently adapting the spec.
   execution, receipt, or evidence behavior (v0.2b); workflow deactivation,
   editing, or deletion commands (unscheduled); universal `--dry-run` (v0.2e).
 
+## Inventory-Assertion Evidence Convention (DEC-094)
+
+**VAL-031, VAL-042, VAL-069, and VAL-070** are proven by the *absence* of
+matches in a static `rg` inventory over non-test sources. For all four:
+
+- The passing result is **no output and exit 1** — `rg` exits non-zero when it
+  finds nothing. Exit 0 with printed matches is the **failing** result.
+- The completion report, review, or final review records
+  `PASS (no match) - exit 1 (no output)` against the exact command, and says
+  which assertion the no-match proves. Recording `exit 0 (no output)` for a
+  search command is a DEC-086 evidence violation and a hard stop, regardless of
+  whether the underlying observable happens to hold (Phase 19 TRG-19-001).
+- The command is recorded verbatim, including every `--glob` exclusion. A
+  narrower path list or a dropped exclusion is a substituted command, not
+  evidence.
+
+This does not relax any pass criterion: the QA Lead re-runs each inventory
+independently in its owning window.
+
 ## Assertion → Task/Window Map
 
 | Owning window | Assertions |
@@ -178,3 +197,4 @@ Heavy mode accepts no carry-forward.
 | 2026-07-26 | VAL-003, VAL-012, VAL-059 | evidence method made deterministic | QA-BLK-05: tuple-for-tuple reference (VAL-003 + new VAL-030), all four documented arrow aliases, reproducible immutable parity baseline | DEC-091 |
 | 2026-07-26 | VAL-038 | zero-cancelled branch scoped to non-issue applicability | QA-BLK-02: PRD-WF-013 must stay satisfiable for every issue | DEC-090 |
 | 2026-07-26 | all | status `Draft` → `Ready` | Human approval recorded; QA-BLK-01..07 dispositioned | DEC-089..DEC-093 |
+| 2026-07-29 | VAL-031, 042, 069, 070 | evidence convention added (no criterion changed) | TRG-19-001: the no-match/exit-1 rule was written down for VAL-069/070 only, so the VAL-031 inventory was reported with a fabricated `exit 0` token | DEC-094 |
