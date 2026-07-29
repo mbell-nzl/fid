@@ -9,7 +9,22 @@
 
 ## Open Escalations
 
-**None.**
+- **ESC-19-003 — VAL-059 baseline instruction conflicts with the required
+  immutable-baseline procedure (raised 2026-07-30).** Task 4's binding
+  constraint at `project-docs/docs/phases/phase-19/tasks/task-4.md:84-85`
+  directs the Developer to record `git rev-parse HEAD` as the Task 3 baseline.
+  At Review 1, ambient `HEAD` is the Task 3 *report* commit
+  `697c673620b336d81e2d5370c2dd373b46f60202`, while QA-plan §6
+  `VAL-059 Immutable Baseline Procedure` requires the Task 3 *implementation*
+  commit `50533e2b813bf073cd75f75eb70dd09cd15e9040`, explicitly not ambient
+  `HEAD`. The differing commits mean an ambient-HEAD capture can make the
+  supposedly immutable v0.1 parity evidence unreproducible or include later
+  artifacts. **Required resolution:** Tech Lead synchronizes the Task 4 spec
+  to QA-plan §6 before Task 4 starts: set and verify
+  `PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040`,
+  use its detached-worktree commands, and prohibit ambient `HEAD` as the
+  baseline selector. Raised by QA Review 1; triggers 5 and 6 (cross-task scope
+  and plausible material spec deviation).
 
 ## Resolved This Phase (archive at wrap)
 
