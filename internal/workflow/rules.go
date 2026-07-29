@@ -18,6 +18,14 @@ const (
 	RuleLinkedToDecision = "linked_to_decision"
 )
 
+// IsImplementedRule reports whether a rule has an evaluator in this release.
+func IsImplementedRule(name string) bool {
+	return name == RuleAllACsVerified ||
+		name == RuleHasCompletionReport ||
+		name == RuleConcernsAddressed ||
+		name == RuleAllChildTasksDoneOrCanceled
+}
+
 type RuleResult struct {
 	Satisfied bool
 	Unmet     []UnmetCondition
