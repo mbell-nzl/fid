@@ -107,8 +107,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `50533e2`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add define command and journal event`
