@@ -44,6 +44,7 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newSQLCommand())
 	cmd.AddCommand(newStatsCommand())
 	cmd.AddCommand(newTriageCommand())
+	cmd.AddCommand(newWorkflowCommand())
 
 	return cmd
 }
