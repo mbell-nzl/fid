@@ -106,3 +106,79 @@
   and revise Task 2/API scope; then reconcile the uncommitted Task 2 files,
   rerun the full required gate, produce committed implementation/report
   commits, rerun report-lint, and resume before Task 3.
+
+### 2026-07-30 06:34 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-07-29 20:34 STOP, resolved by DEC-096 and DEC-097
+- Reconciliation: `TRG-19-002` and `ESC-19-002` are concretely recorded in
+  the phase triage log and current escalation file; `ESC-19-002` is resolved.
+  Open ESC baseline at resume: none. The provider prompt repair is verified
+  by `project-docs/tools/sync-agents.sh --check` with exit code 0 for all
+  generated prompts, including both TL-Lite provider files.
+- Preserved Task 2 work remains uncommitted in the worktree; no files were
+  discarded or regenerated.
+- Starting task: task-2
+
+### 2026-07-30 06:43 TASK task-2 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-19/tasks/task-2-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Implementation commit: `10d4d242403851b5c676a4308cde598d251516ea` - verified,
+  subject matched (`feat(workflow): add authoring validation and effects`)
+- Report commit: `f61f527934de0f284f4981995e19deb8b3ba4ce9` - verified, subject
+  matched (`docs(task): finalize completion report for phase-19 task-2`);
+  report file committed and clean
+- Validation coverage: VAL-006..008, VAL-032..042, all fourteen Task 2
+  assertions recorded PASS; fresh focused `internal/workflow` coverage is
+  90.2%; full coverage total is 77.1%
+- QA-plan evidence: QA-06..08 and QA-37..47 apply; no additional command gate
+  beyond the Task 2 exact command list was required
+
+### 2026-07-30 06:57 TASK task-3 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-19/tasks/task-3-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Implementation commit: `50533e2b813bf073cd75f75eb70dd09cd15e9040` - verified,
+  subject matched (`feat(workflow): add define command and journal event`)
+- Report commit: `697c673620b336d81e2d5370c2dd373b46f60202` - verified, subject
+  matched (`docs(task): finalize completion report for phase-19 task-3`);
+  report file committed and clean
+- Validation coverage: VAL-009..013 and VAL-043..050, all thirteen Task 3
+  assertions, recorded PASS; built CLI exercise produced the documented
+  confirmation block with projected counts
+- QA-plan evidence: QA-09..13 and QA-48..55 apply; exact six-command Task 3
+  gate recorded PASS
+
+### 2026-07-30 07:07 REVIEW review-1
+
+- Review: `project-docs/docs/phases/phase-19/qa/review-1.md`
+- Review commit: `e079d1fa901b6618c71b3ed49033dc4188b75c29` - verified,
+  subject matched (`docs(qa): block phase 19 review 1 baseline mismatch`)
+- Independent command: `go test -race ./internal/db/... ./internal/workflow/... ./internal/policy/... ./cmd/fid/...` - PASS,
+  reviewer token `ok github.com/mbell-nzl/fid/cmd/fid 80.225s`
+- Verdict: BLOCK; all 37 Task 1-3 assertions and prior task gates were
+  evidenced, but Task 4's VAL-059 baseline selector conflicts with QA-plan
+  Section 6. Existing escalation: `ESC-19-003`.
+
+### 2026-07-30 07:07 TRIAGE
+
+- Trigger: QA Review 1 BLOCK on the Task 4 VAL-059 immutable-baseline
+  procedure; Task 4 selects ambient `git rev-parse HEAD` while QA-plan
+  Section 6 requires the verified Task 3 implementation commit.
+- Source: `project-docs/docs/phases/phase-19/qa/review-1.md`
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-003)`)
+- Triage log: `TRG-19-003`; existing escalation `ESC-19-003` was referenced,
+  not duplicated. Durable triage entry confirmed in
+  `project-docs/docs/phases/phase-19/triage-log.md`.
+
+### 2026-07-30 07:07 STOP
+
+- Cause: Review 1 Blocking finding prevents Task 4 from starting: the
+  immutable VAL-059 baseline procedure must be synchronized with the QA plan
+  before implementation.
+- Triage: `TRG-19-003` BLOCK, escalated as `ESC-19-003`.
+- Next human action: Tech Lead synchronize Task 4's baseline procedure to
+  QA-plan Section 6 using the verified Task 3 implementation commit
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040`, then resolve `ESC-19-003` and
+  resume the Phase Runner from this ledger before Task 4.

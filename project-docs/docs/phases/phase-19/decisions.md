@@ -708,6 +708,67 @@ the root-cause attribution, and the inference that prompt compliance had been
   capability limit ("cannot run commands", "no access to") that is enforced by
   only one provider's frontmatter. CF-023 stays **Medium**.
 
+### DEC-098: The VAL-059 parity baseline is pinned to the Task 3 implementation commit; ambient `HEAD` is prohibited
+
+- **Date:** 2026-07-30
+- **Resolves:** ESC-19-003 / TRG-19-003, raised by QA Review 1.
+- **Context.** Three artifacts described the same VAL-059 baseline differently.
+  Task 4's binding constraint said "record the **Task 3 completion commit**
+  hash with `git rev-parse HEAD`". The validation contract said "the Task 3
+  completion commit". QA-plan §6 said the Task 3 **implementation** commit,
+  "not the following report commit and not ambient `HEAD`". At Review 1 those
+  selectors demonstrably resolved to different commits: ambient `HEAD` was the
+  Task 3 *report* commit `697c673`, while the implementation commit is
+  `50533e2`.
+- **The QA plan is right, and the task spec is the artifact that drifted.** A
+  baseline is only immutable if its selector is immutable. `HEAD` moves with
+  every commit — including this escalation's own doc commits — so by the time a
+  Developer reaches Task 4 the ambient-`HEAD` capture would be taken from a
+  *later* tree than the one VAL-059 is supposed to freeze. That defeats the
+  purpose of the assertion: the parity evidence would be unreproducible by the
+  QA Lead and could silently include post-Task-3 artifacts. "Completion commit"
+  was itself the root ambiguity — Task N's work lands in two commits (the
+  implementation commit and the `docs(task)` report commit), and only the first
+  is a meaningful build target.
+- **Decision.**
+  1. **The baseline is pinned, not selected.** Task 4 and the validation
+     contract now carry the literal verified hash
+     `50533e2b813bf073cd75f75eb70dd09cd15e9040`. The Developer re-verifies it
+     with `git rev-parse --verify <hash>^{commit}` **and** cross-checks it
+     against the `## Commit hash` in the committed `task-3-done.md` (`50533e2`)
+     before use, so a wrong pin cannot propagate silently. `git rev-parse HEAD`,
+     branch names, and any other moving selector are prohibited.
+  2. **Task 4's procedure is synchronized to QA-plan §6 verbatim** — the
+     detached worktree at `/tmp/fid-phase19-v01-baseline`, the
+     `/tmp/fid-phase19-v01-baseline.bin` binary plus its recorded `sha256sum`,
+     the two-positional-argument `capture.sh`, the fixed
+     `cmd/fid/testdata/v01_parity/fixture/` with fixed IDs and journal
+     timestamps, the exact six output filenames, the candidate output root
+     `/tmp/fid-phase19-v01-parity-candidate/`, and the committed `SHA256SUMS`
+     manifest. The earlier improvised paths (`/tmp/fid-baseline`,
+     `<command>-<kind>.json`) are withdrawn.
+  3. **Normalization is the committed no-op** `{"json_pointers":[],"replacement":null}`;
+     all six files are raw-byte compared. The task spec's "allow-list of
+     creation/update timestamps" and the contract's matching phrase are
+     withdrawn as looser than QA-plan §6. If the fixed fixture cannot hold
+     timestamps stable, **Task 4 is `BLOCKED` and escalates**; the allow-list is
+     not widened and no expectation is hand-written. This tightens VAL-059; it
+     does not weaken it.
+  4. **The Developer does not read the QA plan**, so every QA-plan §6 command
+     is now written into Task 4's `## Exact Commands To Run`, including the
+     `sha256sum -c` and `diff -r` verification pair and the worktree cleanup.
+- **Consequences.** Task 4 is unblocked and may start. VAL-059's evidence is
+  reproducible by the QA Lead from committed artifacts alone. No implementation
+  behavior, API, or other assertion changes. `qa-plan.md` needs **no** edit — it
+  was correct throughout; the fix is in `task-4.md` and `validation-contract.md`.
+- **Workflow lesson (for the wrap-up notes).** The QA plan refined VAL-059's
+  procedure under DEC-091, but the already-written Task 4 spec was not
+  re-synchronized, and nothing mechanically compares a task spec's evidence
+  procedure against the QA plan's. Two independent prose copies of one procedure
+  drifted, and only a human-grade QA read caught it. Candidate rule: when a QA
+  plan fixes a procedure for a `VAL-NNN`, the task spec should **cite** that
+  section rather than paraphrase it. Referred to the deep retrospective.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from

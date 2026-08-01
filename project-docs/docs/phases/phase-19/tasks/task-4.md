@@ -80,27 +80,76 @@ Assertions live in
 - **Do not touch the transition path.** Transitioning into custom-named states
   is out of scope and is a documented Phase 19 boundary (DEC-079).
 - **The v0.1 parity baseline is an immutable, committed artifact** (VAL-059,
-  DEC-091). Before editing `internal/issues/create.go`:
-  1. Record the **Task 3 completion commit** hash with `git rev-parse HEAD`
-     and put it in `task-4-done.md`. That commit is the baseline.
-  2. Check it out in a scratch worktree
-     (`git worktree add /tmp/fid-baseline <hash>`) and build
-     `/tmp/fid-baseline-bin` from it. Do not reuse a stale `/tmp/fid`.
-  3. Commit a capture script at
-     `cmd/fid/testdata/v01_parity/capture.sh` that builds a fixture workspace
-     with **fixed** ids/titles/kinds (one epic, one task, one subtask, no
-     assignment rows) and writes `fid issue get <id> --format json` and
-     `fid issue list --format json` output to
-     `cmd/fid/testdata/v01_parity/<command>-<kind>.json`.
-  4. Run it against the baseline binary and **commit the resulting artifacts**
-     in this task. The QA Lead must be able to regenerate them from the
-     recorded hash and script alone.
-  5. Normalization is a committed, enumerated allow-list of volatile fields
-     (creation/update timestamps only), applied identically to both sides by a
-     committed helper. Prefer none. Anything outside the allow-list is
-     compared byte-for-byte.
-  If the baseline cannot be captured reproducibly, stop and escalate; do not
-  substitute a hand-written expectation.
+  DEC-091; procedure synchronized to QA-plan §6 by **DEC-098**). The baseline
+  is the **Task 3 implementation commit**, pinned below. **Ambient `HEAD` is
+  prohibited as the baseline selector** — when Review 1 checked, `HEAD` was
+  Task 3's *report* commit, a different commit, and it moves again with every
+  later commit. Before editing `internal/issues/create.go`:
+
+  1. **Pin and verify the baseline commit.** Confirm the pinned value
+     abbreviates to the `## Commit hash` in the committed `task-3-done.md`
+     (`50533e2`, subject `feat(workflow): add define command and journal
+     event`), then verify it resolves. Record the export line and the exact
+     40-hex output in `task-4-done.md`:
+
+     ```bash
+     PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
+     git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
+     ```
+
+     If the hash fails to resolve or disagrees with `task-3-done.md`, stop and
+     escalate. Never substitute `git rev-parse HEAD`, a branch name, or any
+     other moving selector.
+  2. **Build the baseline binary in a detached worktree** at that verified
+     hash, and record the `sha256sum` line in `task-4-done.md`. Use exactly
+     these paths; do not reuse a stale `/tmp/fid` or `/tmp/fid-baseline`:
+
+     ```bash
+     git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
+     go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
+     sha256sum /tmp/fid-phase19-v01-baseline.bin
+     ```
+
+  3. **Commit the fixture and the capture script.** The fixture is rooted at
+     `cmd/fid/testdata/v01_parity/fixture/`, contains **no**
+     `workflow_assignments` event or row, and fixes IDs (`FID-a10001` epic,
+     `FID-b20002` task, `FID-c30003` subtask), titles, kinds, parent links,
+     **and timestamps in its journal**.
+     `cmd/fid/testdata/v01_parity/capture.sh` takes exactly two positional
+     arguments — binary path and output root — recreates the workspace from
+     the committed fixture on every run, and executes exactly these six
+     command shapes:
+
+     ```text
+     fid issue get FID-a10001 --format json
+     fid issue get FID-b20002 --format json
+     fid issue get FID-c30003 --format json
+     fid issue list --kind epic --format json
+     fid issue list --kind task --format json
+     fid issue list --kind subtask --format json
+     ```
+
+     Baseline outputs are exactly `issue-get-epic.json`, `issue-get-task.json`,
+     `issue-get-subtask.json`, `issue-list-epic.json`, `issue-list-task.json`,
+     and `issue-list-subtask.json`, written **directly under**
+     `cmd/fid/testdata/v01_parity/` and committed in this task. Candidate
+     outputs go to `/tmp/fid-phase19-v01-parity-candidate/` and are **not**
+     committed.
+  4. **Normalization is a committed no-op.** Commit
+     `cmd/fid/testdata/v01_parity/normalization.json` containing exactly
+     `{"json_pointers":[],"replacement":null}`. All six files are compared
+     raw-byte. **If the fixed fixture cannot hold timestamps stable, this task
+     is `BLOCKED` — stop and escalate. Do not widen the allow-list, edit
+     `normalization.json`, or hand-write an expectation.**
+  5. **Commit `cmd/fid/testdata/v01_parity/SHA256SUMS`** with one `sha256sum`
+     line per baseline output. Every line carries the real 64-character
+     lowercase digest, exactly two spaces, and the relative filename;
+     placeholders are forbidden. `task-4-done.md` copies the six lines
+     verbatim. After this task is committed, the immutable baseline identity
+     is the Task 4 implementation commit plus those six digests.
+
+  The QA Lead must be able to regenerate the baseline from the recorded hash
+  and committed script alone.
 
 ## Scope
 
@@ -116,8 +165,9 @@ Assertions live in
   literal with resolved values
 - `internal/issues/create_test.go` / `internal/issues/issue_test.go` —
   assigned and unassigned creation coverage
-- `cmd/fid/testdata/v01_parity/` (new) — `capture.sh`, the committed baseline
-  output artifacts, and the normalization allow-list helper (VAL-059)
+- `cmd/fid/testdata/v01_parity/` (new, VAL-059) — `capture.sh`, `fixture/`,
+  the six committed baseline `.json` outputs, `normalization.json`, and
+  `SHA256SUMS`
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow assign`
   compatibility rules and errors
 - `project-docs/specs/03_TRD_SCHEMA.md` §2.1 — note that kind-appropriate
@@ -172,10 +222,12 @@ Assertions live in
   `unstarted` state and one without (VAL-017)
 - [ ] With no assignment rows, `workflow_id` and `status` are identical to
   v0.1 for epic, task, and subtask (VAL-058)
-- [ ] With no assignment rows, `fid issue get`/`list` output is byte-identical
-  to the committed baseline captured from the recorded Task 3 commit, with the
-  baseline hash, `capture.sh`, artifacts, and normalization helper all
-  committed (VAL-059)
+- [ ] With no assignment rows, all six candidate captures are byte-identical
+  to the committed baselines captured from the verified Task 3 **implementation**
+  commit `50533e2b813bf073cd75f75eb70dd09cd15e9040` (not ambient `HEAD`), with
+  the verified hash, baseline-binary `sha256sum`, `capture.sh`, `fixture/`, the
+  six outputs, the no-op `normalization.json`, and `SHA256SUMS` all committed
+  and reproducible (VAL-059)
 
 ## First Failing Test
 
@@ -217,17 +269,41 @@ Conditional commands required by this task:
 
 - `go test -tags integration -race ./...` — issue creation and a new event
   type both cross replay/rebuild paths.
-- `go build -o /tmp/fid ./cmd/fid` — VAL-017's byte-identical `issue get`/
-  `list` evidence needs the built binary.
+- `go build -o /tmp/fid ./cmd/fid` — VAL-059's byte-identical `issue get`/
+  `list` evidence needs the built candidate binary.
+
+VAL-059 evidence commands, run in this order and all reported in
+`task-4-done.md` with verbatim terminal tokens. The first three run **before**
+any `internal/issues/create.go` edit; the last three after the candidate build:
+
+```bash
+PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
+git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
+git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
+go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
+sha256sum /tmp/fid-phase19-v01-baseline.bin
+cmd/fid/testdata/v01_parity/capture.sh /tmp/fid-phase19-v01-baseline.bin cmd/fid/testdata/v01_parity
+cmd/fid/testdata/v01_parity/capture.sh /tmp/fid /tmp/fid-phase19-v01-parity-candidate
+sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS
+diff -r cmd/fid/testdata/v01_parity /tmp/fid-phase19-v01-parity-candidate
+```
+
+The `diff` must be empty except for the non-output files that live only in the
+committed directory (`capture.sh`, `fixture/`, `normalization.json`,
+`SHA256SUMS`); every one of the six `.json` outputs must match byte-for-byte.
+Remove the scratch worktree (`git worktree remove /tmp/fid-phase19-v01-baseline`)
+before finishing so `git status` is clean.
 
 ## Notes For Developer
 
 - Depends on Tasks 1-3. This is the heaviest task in the phase; if it grows
   past a single session, stop and report rather than partially landing the
   `internal/issues` change.
-- The v0.1 no-assignment parity half of VAL-017 is a regression guard on the
-  most-exercised path in the product. Capture the `issue get`/`list` bytes
-  from the pre-change build **before** editing `create.go`.
+- VAL-058/VAL-059 are the v0.1 no-assignment regression guard on the
+  most-exercised path in the product. Capture the baseline `issue get`/`list`
+  bytes from the pinned pre-change commit **before** editing `create.go`; once
+  `create.go` changes, the baseline can no longer be captured from the working
+  tree and only the pinned commit can reproduce it.
 - `applyDelete` fails the event if the delete matches zero rows. Decide the
   effect shape from state read inside the lock; never emit a speculative
   delete.

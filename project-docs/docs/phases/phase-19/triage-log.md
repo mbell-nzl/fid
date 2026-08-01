@@ -13,12 +13,52 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-003`, `ESC-19-003`.
+> **Next free IDs:** `TRG-19-004`, `ESC-19-004`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-003 | 2026-07-30 | QA Review 1 BLOCK: Task 4's immutable VAL-059 baseline instruction selects ambient git HEAD, while QA-plan §6 requires the verified Task 3 implementation commit and prohibits ambient HEAD | `qa/review-1.md`; existing `ESC-19-003` | BLOCK | ESC-19-003 | Genuine unresolved QA-blocking precondition. Synchronizing the Task 4 spec with the QA-plan procedure crosses the task/QA contract and requires full Tech Lead resolution before Task 4 starts. |
 | TRG-19-002 | 2026-07-29 | Task 2 required gate `golangci-lint run ./...` fails with a test-only import cycle `internal/db [test] → internal/workflow → internal/journal → internal/db`; repair appears to need an out-of-scope test file or a wider dependency decision | `tasks/task-2-done.md:60,66,70` | BLOCK | ESC-19-002 | Real gate failure, correctly escalated: it touches a dependency boundary and an out-of-scope file. Resolved by DEC-096 — `workflow → journal` is confirmed intended, and the narrow `db_test` split is authorized. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite could not write it: Codex provider-prompt defect, root-caused and fixed by DEC-097. |
 | TRG-19-001 | 2026-07-26 | Task 1 report records the VAL-031 no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command terminates with no output and exit 1 | `tasks/task-1-done.md:40,52` | BLOCK | ESC-19-001 | Evidence-token defect under DEC-086. Observable itself holds (no production evaluator). Report correction required; no implementation change. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite returned the verdict without writing this record. |
+
+---
+
+## TRG-19-003 - VAL-059 baseline selector conflicts with the immutable-baseline procedure
+
+- **Trigger:** "QA Review 1 BLOCK because Task 4's immutable VAL-059 baseline
+  instruction selects ambient git HEAD, while QA-plan Section 6 requires the
+  verified Task 3 implementation commit and explicitly prohibits ambient HEAD;
+  Task 4 must not start until the procedure is synchronized."
+- **Source:** `project-docs/docs/phases/phase-19/qa/review-1.md`; existing
+  `ESC-19-003` in `project-docs/docs/current/tl_escalations_current.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** This is a QA Blocking finding, not a misclassification. The
+  attached verification evidence establishes that
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040` is the Task 3 implementation
+  commit, but it does not resolve the conflicting Task 4 instruction. QA-plan
+  §6 requires that exact late-bound hash and expressly excludes ambient `HEAD`;
+  Task 4 still directs the Developer to select ambient `HEAD`. The finding is
+  neither resolved by a verified commit nor covered by an accepted decision.
+  Synchronizing a task specification with its phase QA procedure changes the
+  validation/evidence contract across task boundaries, so it exceeds TL-Lite's
+  local-decision authority.
+- **Local decisions made:** none by TL-Lite; existing escalation referenced,
+  not duplicated.
+- **References:** `tasks/task-4.md:84-85`; `qa/qa-plan.md` §6, "VAL-059
+  Immutable Baseline Procedure"; `qa/qa-plan.md:584-592`; `qa/review-1.md`
+  Verdict and Summary; `tl_escalations_current.md:12-27` (ESC-19-003);
+  `09_AI_WORKFLOW.md` §9.
+- **If BLOCK:** existing ESC-19-003 remains raised in
+  `tl_escalations_current.md`; recommended next action: invoke the full Tech
+  Lead to resolve ESC-19-003 by synchronizing Task 4's binding baseline
+  instruction with QA-plan §6 before any Task 4 work begins.
+- **Resolution (Tech Lead, 2026-07-30):** BLOCK sustained — the routing was
+  correct and the finding was real. Resolved by **DEC-098**: the baseline is
+  pinned to the verified Task 3 implementation commit
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040`, ambient `HEAD` is prohibited,
+  Task 4's procedure is synchronized to QA-plan §6, and normalization is fixed
+  to the committed no-op. `task-4.md` and `validation-contract.md` amended;
+  `qa-plan.md` unchanged. Task 4 cleared to start.
 
 ---
 

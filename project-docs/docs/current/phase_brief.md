@@ -22,21 +22,20 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution.** Task 1 **complete** (`a509d59`, plus `3b061e1` report
-correction under DEC-094; report-lint PASS).
+**In execution. Tasks 1-3 complete; QA Review 1 BLOCK resolved; Task 4 cleared
+to start.**
 
-**Task 2 stopped, cleared to resume (TRG-19-002 / ESC-19-002).** Its core is
-written and green but **uncommitted**; `golangci-lint run ./...` failed on a
-test-only import cycle `db [test] → workflow → journal → db` created by the
-binding `[]journal.Effect` return type. **DEC-096** confirms `workflow →
-journal` as intended (bounded to `Effect`) and authorizes a narrow, test-only
-repair: move the two workflow-importing tests out of `package db` into the
-existing external `db_test` package. No production or API change. Repair plus
-report/commit reconciliation are scoped in
-`../phases/phase-19/tasks/task-2.md`. **DEC-097** root-causes TL-Lite's missing
-triage record as a Codex provider-prompt defect and fixes
-`project-docs/agents/tl-lite.md`; **`sync-agents.sh` must be run** to regenerate
-the provider prompts.
+**Review 1 (Tasks 1-3) verdict BLOCK, now resolved (TRG-19-003 / ESC-19-003 /
+DEC-098).** All 37 in-window assertions (VAL-001..013, VAL-027..050) are ON
+TRACK with cited evidence and all Task 1-3 gates verified; the one blocking
+finding was a **Task 4 precondition**, not a defect in shipped work — Task 4
+said `git rev-parse HEAD` where QA-plan §6 requires the Task 3 *implementation*
+commit, and the two demonstrably differed. **DEC-098** pins the baseline,
+synchronizes Task 4 to QA-plan §6, and fixes normalization to the committed
+no-op; `task-4.md` and `validation-contract.md` amended, `qa-plan.md` unchanged.
+
+**Outstanding chore:** **`sync-agents.sh` must be run** to regenerate the
+provider prompts from the DEC-097 fix to `project-docs/agents/tl-lite.md`.
 
 ## Operating Mode
 
@@ -52,9 +51,9 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 | Task | Title | Status | Dependencies |
 |---|---|---|---|
 | 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
-| 2 | Workflow authoring core (validation + effect builder) | Stopped at lint gate; cleared to resume by DEC-096 | 1 |
-| 3 | `fid workflow define` + `workflow.defined` event | Pending | 1, 2 |
-| 4 | `fid workflow assign` + assignment-aware issue creation | Pending | 1-3 |
+| 2 | Workflow authoring core (validation + effect builder) | **Complete** (`10d4d24`) | 1 |
+| 3 | `fid workflow define` + `workflow.defined` event | **Complete** (`50533e2`, report `697c673`) | 1, 2 |
+| 4 | `fid workflow assign` + assignment-aware issue creation | **Next** — cleared by DEC-098 | 1-3 |
 | 5 | `fid workflow list` in every output format | Pending | 1, 3, 4 |
 | 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending | 1-5 |
 
@@ -129,6 +128,13 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
   **no in-package (`package db`) test file may import `internal/workflow`**;
   tests needing both go in `package db_test`. Same rule for `internal/journal`
   in-package tests.
+- **The VAL-059 parity baseline is pinned, never selected** (DEC-098). It is
+  the Task 3 implementation commit
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040`, verified with `git rev-parse
+  --verify` and cross-checked against `task-3-done.md`. **`git rev-parse HEAD`,
+  branch names, and any other moving selector are prohibited.** Normalization is
+  the committed no-op `{"json_pointers":[],"replacement":null}`; if the fixture
+  cannot hold timestamps stable, Task 4 is **`BLOCKED`** — never widen it.
 
 ## Interfaces / Subsystems In Scope
 
@@ -142,7 +148,7 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
 
 - **Task 4 is the heaviest.** It changes `internal/issues.Create`, the most
   exercised path in the product. VAL-058/059 are the regression guard; capture
-  the immutable baseline bytes **before** editing `create.go`.
+  the pinned baseline bytes **before** editing `create.go` (DEC-098 above).
 - **Reassignment effect shape.** `applyDelete` requires exactly one affected
   row, so the event carries `delete`+`insert` only when a prior row exists.
 - **Coverage.** `internal/workflow` is a COV-001 80% package gaining a lot of
