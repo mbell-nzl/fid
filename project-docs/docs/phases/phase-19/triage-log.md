@@ -13,13 +13,62 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-004`, `ESC-19-004`.
+> **Next free IDs:** `TRG-19-005`, `ESC-19-005`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-004 | 2026-08-01 | Task 4 blocker report: the first required VAL-059 baseline capture failed because `capture.sh` wrote into a missing output directory; a repaired-script retry succeeded, but the task stopped with uncommitted implementation and an uncleared scratch worktree | `tasks/task-4-done.md` | BLOCK | ESC-19-004 | Genuine unresolved required-command failure. The retry cannot substitute for the failed capture; partial-work recovery needs full Tech Lead disposition. |
 | TRG-19-003 | 2026-07-30 | QA Review 1 BLOCK: Task 4's immutable VAL-059 baseline instruction selects ambient git HEAD, while QA-plan §6 requires the verified Task 3 implementation commit and prohibits ambient HEAD | `qa/review-1.md`; existing `ESC-19-003` | BLOCK | ESC-19-003 | Genuine unresolved QA-blocking precondition. Synchronizing the Task 4 spec with the QA-plan procedure crosses the task/QA contract and requires full Tech Lead resolution before Task 4 starts. |
 | TRG-19-002 | 2026-07-29 | Task 2 required gate `golangci-lint run ./...` fails with a test-only import cycle `internal/db [test] → internal/workflow → internal/journal → internal/db`; repair appears to need an out-of-scope test file or a wider dependency decision | `tasks/task-2-done.md:60,66,70` | BLOCK | ESC-19-002 | Real gate failure, correctly escalated: it touches a dependency boundary and an out-of-scope file. Resolved by DEC-096 — `workflow → journal` is confirmed intended, and the narrow `db_test` split is authorized. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite could not write it: Codex provider-prompt defect, root-caused and fixed by DEC-097. |
 | TRG-19-001 | 2026-07-26 | Task 1 report records the VAL-031 no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command terminates with no output and exit 1 | `tasks/task-1-done.md:40,52` | BLOCK | ESC-19-001 | Evidence-token defect under DEC-086. Observable itself holds (no production evaluator). Report correction required; no implementation change. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite returned the verdict without writing this record. |
+
+---
+
+## TRG-19-004 - Task 4 VAL-059 capture failed before the required gate sequence
+
+- **Trigger:** "Task 4 blocker report says the first required VAL-059 baseline
+  capture failed because capture.sh attempted to write issue-get-epic.json into
+  a missing output directory; the script was repaired and a retry succeeded,
+  but the first required command failed and the task stopped with uncommitted
+  partial implementation plus an uncleared scratch baseline worktree."
+- **Source:** `project-docs/docs/phases/phase-19/tasks/task-4-done.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** This is a Phase Runner hard stop: the first required VAL-059
+  baseline capture failed, so its later retry cannot replace the required
+  command evidence. The attached report-lint result only validates blocker-mode
+  report structure and explicitly skips commit checks; no verified Task 4
+  implementation/report commit exists. No accepted decision resolves this new
+  gate failure. A fresh-session recovery must reconcile uncommitted changes and
+  the scratch worktree across Developer sessions before rerunning the complete
+  baseline and gate sequence, which exceeds local triage authority.
+- **Local decisions made:** none by TL-Lite; the repaired retry is not accepted
+  as evidence for the first failed required capture.
+- **References:** `tasks/task-4-done.md` (VAL-059, Tests run, Exact
+  quality-gate results, and Tech Lead notes); `09_AI_WORKFLOW.md` §2.3
+  (unresolved hard-stop failures always BLOCK; partial-work recovery trigger),
+  §8 (required-command evidence); DEC-098 (pinned VAL-059 procedure).
+- **If BLOCK:** ESC-19-004 raised in `tl_escalations_current.md`; recommended
+  next action: invoke the full Tech Lead to disposition the failed gate and
+  authorize a fresh Developer recovery plan for the uncommitted Task 4 work,
+  scratch worktree cleanup, and full-from-start VAL-059 plus quality-gate rerun.
+- **Resolution (Tech Lead, 2026-08-01):** BLOCK **sustained in outcome,
+  corrected in reasoning**. Stopping was right and the routing was right
+  (trigger 4: partial work spanning sessions and a public creation path) — Task
+  4 has no implementation or report commit, the six required gates never ran,
+  and three VAL-059 verification commands never ran. But the stated ground was
+  over-strict. The failed command was a path bug in `capture.sh`, a **Task 4
+  deliverable being authored**, not the product under test and not a
+  pre-existing gate; it wrote nothing and so could not contaminate anything; and
+  under DEC-098 the baseline is guarded **structurally** (detached worktree at
+  the pinned commit), not temporally, so working-tree edits cannot affect it.
+  Resolved by **DEC-099**: preserve the partial work, settle baseline provenance
+  by **reproduction against the committed `SHA256SUMS`** rather than restart,
+  remove the scratch worktree through `git worktree remove`, then finish the
+  task normally. **DEC-100** records the general rule and gives TL-Lite the
+  distinction it lacked between "task incomplete, stop" and "evidence tainted,
+  restart". `task-4.md` amended with a recovery preamble and the obsolete
+  pre-DEC-098 temporal guard removed; `validation-contract.md` and `qa-plan.md`
+  unchanged.
 
 ---
 

@@ -22,10 +22,10 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution. Tasks 1-3 complete; QA Review 1 BLOCK resolved; Task 4 cleared
-to start.**
+**In execution. Tasks 1-3 complete; Review 1 BLOCK and the Task 4 stop both
+resolved; Task 4 cleared to resume from preserved partial work.**
 
-**Review 1 (Tasks 1-3) verdict BLOCK, now resolved (TRG-19-003 / ESC-19-003 /
+**Review 1 (Tasks 1-3) verdict BLOCK, resolved (TRG-19-003 / ESC-19-003 /
 DEC-098).** All 37 in-window assertions (VAL-001..013, VAL-027..050) are ON
 TRACK with cited evidence and all Task 1-3 gates verified; the one blocking
 finding was a **Task 4 precondition**, not a defect in shipped work — Task 4
@@ -34,8 +34,13 @@ commit, and the two demonstrably differed. **DEC-098** pins the baseline,
 synchronizes Task 4 to QA-plan §6, and fixes normalization to the committed
 no-op; `task-4.md` and `validation-contract.md` amended, `qa-plan.md` unchanged.
 
-**Outstanding chore:** **`sync-agents.sh` must be run** to regenerate the
-provider prompts from the DEC-097 fix to `project-docs/agents/tl-lite.md`.
+**Task 4 stop, resolved (TRG-19-004 / ESC-19-004 / DEC-099 / DEC-100).** The
+first `capture.sh` run failed on a path bug in the script Task 4 was authoring.
+Stopping was right — no commit, six gates unrun — but "restart from scratch" was
+not: the failure wrote nothing, and DEC-098's guard is structural, not temporal.
+**DEC-099** preserves the partial work and settles baseline provenance by
+reproduction against the committed `SHA256SUMS`. **DEC-100** makes the general
+rule standing. `task-4.md` carries a **Recovery Preamble — read first**.
 
 ## Operating Mode
 
@@ -53,7 +58,7 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 | 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
 | 2 | Workflow authoring core (validation + effect builder) | **Complete** (`10d4d24`) | 1 |
 | 3 | `fid workflow define` + `workflow.defined` event | **Complete** (`50533e2`, report `697c673`) | 1, 2 |
-| 4 | `fid workflow assign` + assignment-aware issue creation | **Next** — cleared by DEC-098 | 1-3 |
+| 4 | `fid workflow assign` + assignment-aware issue creation | **In progress** — resume from preserved work (DEC-099) | 1-3 |
 | 5 | `fid workflow list` in every output format | Pending | 1, 3, 4 |
 | 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending | 1-5 |
 
@@ -135,6 +140,17 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
   branch names, and any other moving selector are prohibited.** Normalization is
   the committed no-op `{"json_pointers":[],"replacement":null}`; if the fixture
   cannot hold timestamps stable, Task 4 is **`BLOCKED`** — never widen it.
+  **The guard is structural, not temporal** (DEC-099): the baseline is built in
+  a detached worktree at the pinned commit from a committed fixed fixture, so
+  working-tree edits cannot affect it and capture order is not binding.
+  Provenance doubts are settled by **reproduction against `SHA256SUMS`**.
+- **A task-authored evidence harness that fails while being authored is a
+  deviation, not a failed gate** (DEC-100) — when the rerun is byte-identical,
+  the pass is deterministic and third-party reproducible, the artifact is a task
+  deliverable rather than the product under test or a pre-existing gate, and the
+  report states the failure, root cause, and fix. Otherwise the strict rule
+  holds. At triage, **"task incomplete, stop"** is not **"evidence tainted,
+  restart"**.
 
 ## Interfaces / Subsystems In Scope
 

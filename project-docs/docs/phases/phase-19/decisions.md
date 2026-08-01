@@ -769,6 +769,141 @@ the root-cause attribution, and the inference that prompt compliance had been
   plan fixes a procedure for a `VAL-NNN`, the task spec should **cite** that
   section rather than paraphrase it. Referred to the deep retrospective.
 
+### DEC-099: Task 4 recovery — preserve the partial work; re-verify the baseline by reproduction, not by restart
+
+- **Date:** 2026-08-01
+- **Resolves:** ESC-19-004 / TRG-19-004, raised from the Task 4 blocker report.
+- **Context.** Task 4's first required VAL-059 command,
+  `capture.sh /tmp/fid-phase19-v01-baseline.bin cmd/fid/testdata/v01_parity`,
+  failed with `cannot create cmd/fid/testdata/v01_parity/issue-get-epic.json:
+  Directory nonexistent`. The Developer repaired the script, retried
+  successfully, continued through three red/green cycles, then stopped without
+  running the six required gates and without committing. TL-Lite recorded BLOCK
+  on the ground that "the retry cannot substitute for the failed capture" and
+  recommended discarding or reconciling the partial work and rerunning the whole
+  VAL-059 procedure and every gate **from the beginning**.
+- **Finding 1 — the failed command was a defect in a Task 4 deliverable, not a
+  gate failure.** `capture.sh` is created *by this task* (Task 4 scope list,
+  `cmd/fid/testdata/v01_parity/`). Root cause is now visible in the repaired
+  script: it `cd`s into a `mktemp -d` workspace and then wrote to the
+  **relative** `output_root`, so `cmd/fid/testdata/v01_parity/...` resolved
+  inside the temp dir and did not exist. The fix absolutizes `output_root`
+  (lines 12-15) and adds `mkdir -p` (line 19). That is precisely the authoring
+  the task asked for. The same report records three `RED expected failure` →
+  `PASS` test cycles that nobody treats as failed gates; a harness reaching
+  green is the identical loop.
+- **Finding 2 — the failed run wrote nothing.** It aborted on the first
+  redirection. It cannot have produced, contaminated, or partially overwritten
+  any artifact; with respect to evidence it is a no-op.
+- **Finding 3 — the baseline's authenticity never depended on that first
+  capture, because DEC-098 already replaced the temporal guard with a
+  structural one.** The baseline binary is built in a **detached worktree at
+  the pinned commit** `50533e2…`, and `capture.sh` consumes only that binary
+  plus the committed, fully-fixed fixture (verified: fixed IDs, fixed event
+  IDs, fixed `occurred_at`, and outputs whose `created_at`/`updated_at` derive
+  solely from the journal). Baseline output is therefore a pure function of
+  *(pinned commit, committed fixture)*. Uncommitted working-tree edits to
+  `internal/issues/create.go` are structurally incapable of affecting it. Task 4
+  says so itself: "The QA Lead must be able to regenerate the baseline from the
+  recorded hash and committed script alone."
+- **The BLOCK is sustained in outcome and corrected in reasoning.** Stopping was
+  right and the escalation was correctly routed (trigger 4: partial work
+  spanning multiple sessions and a public creation path). Task 4 is genuinely
+  incomplete — no implementation or report commit, six required gates never run,
+  and the three VAL-059 verification commands (candidate capture, `sha256sum
+  -c`, `diff -r`) never run. But "restart the whole procedure from the
+  beginning" does not follow, and no rule requires it. What was in doubt is
+  **provenance of the six committed baseline outputs** — the report's prose
+  leaves the retry's timing relative to the `create.go` edit ambiguous. That
+  doubt is cheaply and mechanically decidable, and a narrative cannot settle it
+  either way.
+- **Decision.**
+  1. **Preserve the uncommitted work; do not discard it.** `09_AI_WORKFLOW.md`
+     §2.3 responsibility 2 directs a Developer to inspect in-scope partial work
+     and continue from that state, and this phase already set the precedent at
+     ESC-19-002/DEC-096, where Task 2's uncommitted work was preserved intact.
+     Discarding would destroy correct, evidenced work and re-run the phase's
+     highest-risk change for no evidentiary gain.
+  2. **Settle provenance by reproduction, not by narrative.** Before any other
+     Task 4 work, the recovery session removes the stale scratch worktree,
+     rebuilds the baseline binary from the pinned commit, re-captures into a
+     **fresh scratch root**, and checks the result against the committed
+     `SHA256SUMS`. A match proves the committed baselines authentic regardless
+     of when they were written; a mismatch catches contamination and the
+     committed baselines are replaced from the reproduction. Either way the
+     ambiguity is closed by a deterministic test. Exact commands are written
+     into `task-4.md`.
+  3. **Remove the scratch worktree through the authorized path** —
+     `git worktree remove /tmp/fid-phase19-v01-baseline` then
+     `git worktree prune` — before re-adding it, since the stopped session left
+     it registered and `git worktree add` would otherwise fail.
+  4. **Then complete Task 4 normally:** the candidate build, the candidate
+     capture, `sha256sum -c`, `diff -r`, the six required gates, the three named
+     spec updates, the implementation commit, and the `docs(task)` report
+     commit.
+  5. **Report the first failure honestly as a deviation** — its verbatim token,
+     the root cause, the fix, and the final `PASS` token — under DEC-100 below.
+     It is not recorded as a passed gate and it is not concealed.
+- **Spec correction.** `task-4.md` still carried the pre-DEC-098 *temporal*
+  guard ("the first three run **before** any `internal/issues/create.go` edit";
+  "once `create.go` changes, the baseline can no longer be captured from the
+  working tree"). Under DEC-098 that is obsolete and actively misleading — the
+  second clause refutes itself by conceding the pinned commit can always
+  reproduce it, and reading it as a binding precondition is what turned a
+  fixable harness bug into a full-task hard stop. It is demoted from a binding
+  precondition to sequencing guidance, with the structural guarantee stated
+  explicitly. VAL-059 is unchanged and not weakened: the baseline is still the
+  pinned commit, normalization is still the committed no-op, and comparison is
+  still raw-byte.
+- **Consequences.** Task 4 resumes in place from preserved work. No change to
+  any assertion, API, or behavior. `validation-contract.md` and `qa-plan.md`
+  need no edit.
+
+### DEC-100: A task-authored evidence harness that fails while being authored is a deviation, not a failed gate
+
+- **Date:** 2026-08-01
+- **Status:** binding beyond Phase 19.
+- **Context.** DEC-086 and `AGENTS.md` (Commands) make required-command evidence
+  strict: `PASS` or `BLOCKED`, verbatim tokens, no missing/skipped/narrower
+  substitutes, and a non-terminating command is never `PASS`. Those rules were
+  written for gates run *against finished work*. They say nothing about a
+  required command whose **harness is itself a deliverable of the same task**,
+  and Phase 19 Task 4 shows how that gap reads in practice: a one-line path bug
+  in a script the task existed to write was treated as a permanently failed gate
+  requiring a from-scratch restart.
+- **Decision.** A required command that fails, is repaired, and is rerun
+  **byte-identically** to a deterministic pass is recorded as `PASS` with a
+  **mandatory deviation note**, provided **all four** hold:
+  1. The failing artifact is a **deliverable of the task being authored** — a
+     fixture, capture/measurement script, or golden generator. **Not** the
+     product under test, **not** a test asserting product behavior, and **not** a
+     pre-existing committed gate, tool, or script.
+  2. The rerun command is **byte-identical**. Nothing is narrowed, substituted,
+     re-scoped, or re-pointed.
+  3. The final result is **deterministic and reproducible by a third party from
+     committed artifacts alone** — not a flaky or environment-dependent pass.
+  4. The report records the first failure's **verbatim token, the root cause,
+     and the fix**, plus the final result's own token.
+- **Otherwise the strict rule stands.** A required command that fails against
+  the product under test, or that passes only after the command, the test, or
+  the assertion is weakened, is a **failed gate** and escalates. Reruns that
+  mine for a flaky green are excluded by (3); "fix the test until it passes" is
+  excluded by (1) and (2).
+- **Rationale.** Red→green is the workflow's core method, not an exception to
+  it. A required-command list is a statement about the **final, reproducible
+  state** of a task's evidence, not a prohibition on iteration. The strict
+  reading would require any task that ships its own evidence tooling to write
+  that tooling correctly on the first attempt — a standard no rule imposes on
+  any other deliverable, and one that would have made Task 4 unrunnable.
+- **Consequences.** `AGENTS.md` (Commands) and `09_AI_WORKFLOW.md` §11 carry the
+  rule. TL-Lite gains an explicit distinction it lacked: **"the task is
+  incomplete, stop"** and **"the evidence is tainted, restart"** are different
+  verdicts with different remedies, and a harness bug is normally the first.
+- **Carry-forward impact.** CF-023 gains a drill case: a required command that
+  fails on a task-authored harness, repaired and rerun byte-identically —
+  correct handling is `PASS` **plus** a deviation note, not a blocker report and
+  not a silent rerun.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from
@@ -786,7 +921,7 @@ the planning decisions above:
 | `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080/090) | Tasks 3, 4, 5, 6 |
 | `07_DESIGN_PLAN_FLOWS.md` | TBD at wrap | — |
 | `08_QUALITY_PLAN.md` | TBD at wrap | — |
-| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); `AGENTS.md` Commands carries the same sentence | Mid-phase (DEC-094); Task 6 verifies |
+| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); §11 task-authored harness deviation rule (**DEC-100**, applied mid-phase); `AGENTS.md` Commands carries both | Mid-phase (DEC-094, DEC-100); Task 6 verifies |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched — Phase 19 closure note | Wrap |
 
 ## Workflow Notes

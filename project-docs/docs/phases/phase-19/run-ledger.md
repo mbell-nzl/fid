@@ -182,3 +182,43 @@
   QA-plan Section 6 using the verified Task 3 implementation commit
   `50533e2b813bf073cd75f75eb70dd09cd15e9040`, then resolve `ESC-19-003` and
   resume the Phase Runner from this ledger before Task 4.
+
+### 2026-08-01 19:42 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-07-30 07:07 STOP after Review 1 BLOCK, resolved by
+  DEC-098
+- Reconciliation: `TRG-19-003` / `ESC-19-003` are recorded and resolved;
+  `tl_escalations_current.md` has no open escalations. The pinned Task 3
+  implementation commit `50533e2b813bf073cd75f75eb70dd09cd15e9040` resolves
+  and matches `feat(workflow): add define command and journal event`.
+- DEC-098 baseline procedure is present in the amended Task 4 spec: ambient
+  `HEAD`, branch names, and other moving selectors are prohibited; baseline
+  capture precedes `internal/issues/create.go` edits; normalization is a
+  committed no-op and timestamp instability is BLOCKED/escalated.
+- Starting task: task-4
+
+### 2026-08-01 20:04 TRIAGE
+
+- Trigger: Task 4 blocker report records the first required VAL-059 baseline
+  capture failing because `capture.sh` wrote into a missing output directory;
+  a repaired-script retry succeeded but cannot substitute for the failed
+  required command. The task also left uncommitted partial implementation and
+  an uncleared scratch baseline worktree.
+- Source: `project-docs/docs/phases/phase-19/tasks/task-4-done.md`
+- report-lint: PASS in blocker mode (`PASS report-lint completed with no
+  failures`); no implementation or report commit exists.
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-004)`)
+- Triage log: `TRG-19-004`; durable entry confirmed in
+  `project-docs/docs/phases/phase-19/triage-log.md`.
+
+### 2026-08-01 20:04 STOP
+
+- Cause: Task 4's first required VAL-059 baseline capture failed; the later
+  retry is not substitute evidence, and the task has uncommitted partial work
+  plus `/tmp/fid-phase19-v01-baseline` remaining.
+- Triage: `TRG-19-004` BLOCK, escalated as `ESC-19-004`.
+- Next human action: Tech Lead disposition the preserved Task 4 worktree and
+  scratch baseline worktree, authorize or reject fresh-session recovery, then
+  rerun the complete pinned VAL-059 procedure and all Task 4 quality gates
+  before resuming the Phase Runner.

@@ -185,6 +185,18 @@ command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
 real status, `exit 1 (no output)`, and say that no-match is the pass condition.
 `exit 0 (no output)` means silent success and is fabricated evidence there.
 
+A required command whose **harness is a deliverable of the task being authored**
+(a fixture, capture/measurement script, or golden generator) may fail, be
+repaired, and be rerun to a pass. Record it `PASS` **with a mandatory deviation
+note** stating the first failure's verbatim token, the root cause, and the fix —
+provided the rerun command is **byte-identical**, the pass is **deterministic
+and third-party reproducible from committed artifacts**, and the failing
+artifact is not the product under test, a test asserting product behavior, or a
+pre-existing gate or tool. Otherwise the strict rule stands: a command that
+fails against the product, or that passes only after the command, the test, or
+the assertion is weakened or narrowed, is a **failed gate**. Iterating a harness
+to green is the normal red/green loop; mining for a flaky green is not.
+
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
 `.gopath/`, `.golangci-cache/`, `.cache/`). Do not request unsandboxed

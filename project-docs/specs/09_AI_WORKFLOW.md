@@ -1189,6 +1189,31 @@ output)` is reserved for a silent success and is fabricated evidence here. A
 task spec or QA plan that relies on such an inventory states its expected exit
 status, so the Developer never has to infer one.
 
+These rules govern commands run *against finished work*. A required command
+whose **harness is itself a deliverable of the task being authored** — a
+fixture, a capture or measurement script, a golden generator — is different: it
+is written during the task, and like any other deliverable it may be wrong on
+first execution. Such a command may fail, be repaired, and be rerun to a pass,
+recorded as `PASS` with a **mandatory deviation note** giving the first
+failure's verbatim token, the root cause, and the fix. All four conditions must
+hold: the failing artifact is a task deliverable and **not** the product under
+test, a test asserting product behavior, or a pre-existing committed gate or
+tool; the rerun command is **byte-identical**, with nothing narrowed,
+substituted, or re-pointed; the final pass is **deterministic and reproducible
+by a third party from committed artifacts alone**; and both the failure and the
+final result are recorded with their own tokens. If any condition fails, the
+strict rule applies and the gate is failed.
+
+The distinction matters at triage. **"The task is incomplete, stop"** and
+**"the evidence is tainted, restart"** are different verdicts with different
+remedies, and a harness bug is normally the first. A required-command list
+states what must be true of a task's **final, reproducible evidence**; it is not
+a prohibition on iteration, and reading it as one would demand that any task
+shipping its own evidence tooling get that tooling right on the first attempt.
+Where provenance of a captured artifact is genuinely in doubt, settle it by
+**reproducing the artifact from its pinned inputs and comparing digests** —
+reproduction, not chronology or narrative, is what establishes provenance.
+
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:
 required headings, sentinel sections, task-spec command coverage, hash

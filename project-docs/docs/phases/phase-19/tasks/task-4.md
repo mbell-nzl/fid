@@ -8,6 +8,66 @@ kind or to the project via a `workflow.assigned` journal event, and
 status `"todo"`, resolving both from assignments instead. This is the task
 that makes a custom workflow actually take effect.
 
+## Recovery Preamble — read first (DEC-099)
+
+**This task is resuming from preserved partial work.** A prior session stopped
+after the first `capture.sh` invocation failed on a path bug *in the script it
+was authoring*; it left uncommitted in-scope changes and a registered scratch
+worktree. **Do not discard the partial work and do not restart the task from
+scratch** — inspect it and continue from that state (`09_AI_WORKFLOW.md` §2.3).
+
+Preserved uncommitted files: `cmd/fid/workflow.go`,
+`cmd/fid/workflow_assign_test.go`, `internal/workflow/assign.go`,
+`internal/workflow/assign_test.go`, `internal/workflow/resolve.go`,
+`internal/issues/create.go`, `internal/issues/issue_test.go`, and
+`cmd/fid/testdata/v01_parity/` (including the repaired `capture.sh`, the six
+baseline outputs, `normalization.json`, and `SHA256SUMS`).
+
+**Step R — re-verify the committed baselines by reproduction, before anything
+else.** The six committed baseline outputs are of uncertain chronology relative
+to the `create.go` edit. Chronology does not matter (the baseline is built from
+the pinned commit in a detached worktree), but provenance must be *proven*, so
+reproduce it into a fresh scratch root and check it against the committed
+manifest. Report every token in `task-4-done.md`:
+
+```bash
+REPO=$(pwd)
+git worktree remove /tmp/fid-phase19-v01-baseline
+git worktree prune
+PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
+git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
+git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
+go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
+sha256sum /tmp/fid-phase19-v01-baseline.bin
+rm -rf /tmp/fid-phase19-v01-baseline-recheck
+cmd/fid/testdata/v01_parity/capture.sh /tmp/fid-phase19-v01-baseline.bin /tmp/fid-phase19-v01-baseline-recheck
+(cd /tmp/fid-phase19-v01-baseline-recheck && sha256sum -c "$REPO/cmd/fid/testdata/v01_parity/SHA256SUMS")
+```
+
+- **All six `OK`** → the committed baselines are proven authentic. Keep them and
+  proceed. This satisfies the baseline half of VAL-059.
+- **Any mismatch** → the committed baselines are contaminated. Replace all six
+  from `/tmp/fid-phase19-v01-baseline-recheck`, regenerate `SHA256SUMS`, record
+  the old and new digests and the discrepancy as a deviation, and proceed.
+- The baseline-binary digest is expected to be
+  `320867e46cb565ebe232cad5197a923f338798acf91c740d941422d56ee35820`. A
+  mismatch there is **not** itself a failure (it can vary with toolchain), but
+  note it; the six output digests are the authoritative check.
+
+**Then complete the task normally:** candidate build, candidate capture,
+`sha256sum -c`, `diff -r`, all six required gates, the three spec updates, the
+implementation commit, and the `docs(task)` report commit. Nothing else about
+this task's scope, assertions, or constraints changes.
+
+**Recording the earlier failure (DEC-100).** The prior `capture.sh` failure —
+`capture.sh: 20: cannot create cmd/fid/testdata/v01_parity/issue-get-epic.json:
+Directory nonexistent`, caused by the script resolving a relative output root
+after `cd`-ing into its temp workspace, fixed by absolutizing `output_root` and
+adding `mkdir -p` — is a **task-authored harness defect, recorded as a
+deviation, not a failed gate**. State the failure, its root cause, and its fix
+in `## Deviations from spec`, and record the command's final result as `PASS`
+with its own verbatim token.
+
 ## Validation Contract Coverage
 
 - VAL-014: a first kind assignment writes exactly one event and exactly one
@@ -84,7 +144,21 @@ Assertions live in
   is the **Task 3 implementation commit**, pinned below. **Ambient `HEAD` is
   prohibited as the baseline selector** — when Review 1 checked, `HEAD` was
   Task 3's *report* commit, a different commit, and it moves again with every
-  later commit. Before editing `internal/issues/create.go`:
+  later commit.
+
+  **The guard is structural, not temporal** (DEC-099). The baseline binary is
+  built in a *detached worktree at the pinned commit* and the capture consumes
+  only that binary plus the committed fixture, so baseline output is a pure
+  function of *(pinned commit, committed fixture)*. Edits to your working tree —
+  including `internal/issues/create.go` — cannot affect it. Capturing the
+  baseline first is still the recommended order because it is simpler and keeps
+  the report's evidence in reading order, **but it is not a binding
+  precondition, and a baseline captured later is not thereby invalid.** If a
+  capture ever needs re-verification, reproduce it from the pinned commit and
+  check it against the committed `SHA256SUMS`; reproduction, not chronology, is
+  what establishes provenance.
+
+  Baseline procedure:
 
   1. **Pin and verify the baseline commit.** Confirm the pinned value
      abbreviates to the `## Commit hash` in the committed `task-3-done.md`
@@ -273,8 +347,8 @@ Conditional commands required by this task:
   `list` evidence needs the built candidate binary.
 
 VAL-059 evidence commands, run in this order and all reported in
-`task-4-done.md` with verbatim terminal tokens. The first three run **before**
-any `internal/issues/create.go` edit; the last three after the candidate build:
+`task-4-done.md` with verbatim terminal tokens. The baseline commands come
+first by convention; the last three run after the candidate build:
 
 ```bash
 PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
@@ -300,10 +374,10 @@ before finishing so `git status` is clean.
   past a single session, stop and report rather than partially landing the
   `internal/issues` change.
 - VAL-058/VAL-059 are the v0.1 no-assignment regression guard on the
-  most-exercised path in the product. Capture the baseline `issue get`/`list`
-  bytes from the pinned pre-change commit **before** editing `create.go`; once
-  `create.go` changes, the baseline can no longer be captured from the working
-  tree and only the pinned commit can reproduce it.
+  most-exercised path in the product. The baseline always comes from the pinned
+  commit in a detached worktree, never from the working tree, so it stays
+  reproducible no matter when you capture it relative to editing `create.go`
+  (DEC-099). Capturing it first is still the tidier order.
 - `applyDelete` fails the event if the delete matches zero rows. Decide the
   effect shape from state read inside the lock; never emit a speculative
   delete.

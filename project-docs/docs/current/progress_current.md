@@ -7,39 +7,37 @@
 
 ## Project State
 
-**Status:** Phase 19 **IN EXECUTION.** QA plan is **Ready**; Task 1 is
-implemented and green (`a509d59`) but **not yet recorded complete** — its
-report needs the DEC-094 evidence correction before Task 2 starts. Phase 18 is
-COMPLETE / WRAPPED (2026-07-25); v0.1 remains closed for early dogfood
-(DEC-057); v0.2a slice 1 of 3 is delivered.
+**Status:** Phase 19 **IN EXECUTION.** Tasks 1-3 complete (`a509d59`/`3b061e1`,
+`10d4d24`, `50533e2`/`697c673`); QA Review 1 done; **Task 4 in progress,
+resuming from preserved partial work.** Phase 18 is COMPLETE / WRAPPED
+(2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1 of
+3 is delivered.
 
 Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
 v0.2a slice 2 of 3) runs in **heavy mode** with six tasks and a **70-row**
 validation contract (`Ready`). Artifacts: `../phases/phase-19/` —
-`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-093),
+`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-100),
 `qa/validation-contract.md`, `qa/qa-plan.md`, `tasks/task-1..6.md`; brief
 refreshed in `phase_brief.md`. Branch: `phase-19-workflow-authoring`.
 
-**Task 1 stopped on evidence, not on code (2026-07-29).** The report recorded
-the VAL-031 no-match `rg` inventory as `exit 0 (no output)`; `rg` exits 1 on no
-match, so the token was not copied from the command (DEC-086). The observable
-holds and the six required gates all passed, so **DEC-094** orders a report
-correction — re-execute, record `exit 1 (no output)`, new `docs(task)` commit,
-rerun `report-lint.sh` — not a re-implementation. TL-Lite compounded it by
-returning `BLOCK` without writing a triage record; **DEC-095** seeds
-`triage-log.md` at phase start so allocation never depends on it again.
-TRG-19-001 and ESC-19-001 are backfilled by the Tech Lead.
+**Task 4 stopped and was cleared to resume (2026-08-01, TRG-19-004 /
+ESC-19-004).** The first `capture.sh` run failed on a relative-path bug in the
+script Task 4 was itself authoring. Stopping was correct — no commit, six gates
+unrun, scratch worktree registered — but the recommended from-scratch restart
+was not: the failed run wrote nothing, and DEC-098's baseline guard is
+**structural** (detached worktree at the pinned commit + committed fixed
+fixture), so working-tree edits cannot reach it. **DEC-099** preserves the
+partial work and settles baseline provenance by reproduction against the
+committed `SHA256SUMS`. **DEC-100** makes it standing: a task-authored evidence
+harness failing while being authored is a **deviation, not a failed gate**.
 
-**QA plan blockers dispositioned (2026-07-26).** The QA plan opened BLOCKED on
-QA-BLK-01..07. DEC-089 resolves the `internal/workflow` architecture-boundary
-contradiction in the task pack's favor and syncs `02_TRD.md` §3; **DEC-090**
-keeps PRD-WF-013 (a v0.1 Must) intact by requiring exactly one `cancelled`
-state on issue-applicable workflows — the only new implementation obligation;
-DEC-091 unbundles 14 assertions and adds VAL-027..070 with corrected sources
-and a reproducible v0.1 parity baseline; DEC-092 adds the `workflow` family to
-`05_DESIGN_PLAN.md` §3.1; DEC-093 records Human approval and confirms CF-008.
-**Next: QA Lead re-verifies the QA plan against the refined contract and moves
-it from BLOCKED to Ready.**
+**Review 1 (Tasks 1-3): BLOCK, resolved by DEC-098.** All 37 in-window
+assertions ON TRACK with cited evidence; the sole blocking finding was a Task 4
+precondition (ambient `HEAD` vs. the pinned Task 3 implementation commit).
+
+**Earlier stops, all resolved:** Task 1 evidence-token defect (DEC-094/095,
+TRG-19-001); Task 2 test-only import cycle (DEC-096/097, TRG-19-002); QA-plan
+blockers QA-BLK-01..07 (DEC-089..093). Detail in `../phases/phase-19/`.
 
 Phase 18 outcome (full record in `../phases/phase-18/progress.md`): five tasks
 closed on a terminating, green seven-command heavy gate (coverage `76.8%`);

@@ -20,11 +20,11 @@ explicitly supersedes them:
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 
 **DEC-059..DEC-066** — trusted-evidence checkpoint
-(`../reviews/2026-07-18-roadmap-update-decisions.md`): registered gate
-execution with receipts and trust sources; typed evidence + freshness; optional
-completion prose behind structured `has_completion`; work envelopes + runner
-primitives; extended economics; roadmap re-slice (evidence foundation v0.2b
-before governance/reports; envelope v0.3a). Binding for all v0.2+ planning once
+(`../reviews/2026-07-18-roadmap-update-decisions.md`): registered gate execution
+with receipts and trust sources; typed evidence + freshness; optional completion
+prose behind structured `has_completion`; work envelopes + runner primitives;
+extended economics; roadmap re-slice (evidence foundation v0.2b before
+governance/reports; envelope v0.3a). Binding for all v0.2+ planning once
 ratified. DEC-066 relabels: old v0.2b→v0.2d, old v0.2c→v0.2e.
 
 ## Carry-Forward Register
@@ -33,13 +33,13 @@ Reviewed at each phase start: schedule, re-defer, close, or cancel each item.
 
 | ID | Source | Item | Target | Priority |
 |---|---|---|---|---|
-| CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is a single undifferentiated bucket and cannot distinguish "redundant", "duplicate", "won't fix", etc. The enhancement is a resolution-reason field + cancel `--reason` flag, touching the data model and `activity_log` audit. **Dispositioned at Phase 19 planning (DEC-082): re-deferred to v0.2d**, where the governance entities and the `activity_log` ref-type extension (DEC-081) land together; it is orthogonal to workflow authoring. **Human-confirmed at Phase 19 approval (DEC-093).** | v0.2d (DEC-082) | Low (product) |
+| CF-008 | Phase 5 DEC-015 (human HUMAN-013c) | Resolution type / cancellation reason: `cancelled` is one undifferentiated bucket (no "redundant", "duplicate", "won't fix"). Needs a resolution-reason field + cancel `--reason`, touching the data model and `activity_log` audit. **Re-deferred to v0.2d (DEC-082), human-confirmed (DEC-093)** — it lands with the governance entities and the DEC-081 ref-type extension; orthogonal to workflow authoring. | v0.2d (DEC-082) | Low (product) |
 | CF-017 | Phase 15 Review 1 + final review | Behavior-preserving function extraction for `internal/dev` `Finish` (~109 lines) and `Block` (~97 lines), both above the 60-line non-test function target. Trigger fired in Phase 18 (Task 5 touched `internal/dev`) and was correctly not taken during a behavior-preserving migration; now **scheduled**, not trigger-based (DEC-073). | v0.2e (`fid dev resume`/`abandon`) planning item | Low |
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. | Next SQL package reopen | Low |
 | CF-020 | Phase 17 DEC-056 | Burst issue writes stamp `occurred_at` ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not fix inside a v0.1 closure audit. | v0.2 | Low (product) |
 | CF-021 | Phase 17 Review 3 / STRUCT-003 | Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum`. **Scheduled at Phase 19 planning (DEC-082): Phase 19 Task 6**, which already touches `internal/maintenance` and runs the full Go gate. | **Phase 19 Task 6 (scheduled)** | Low |
 | CF-022 | Phase 17 Review 1 | Add broader exact-output markdown characterization tests to lock rendering behavior beyond the current suite. Trigger fires in Phase 19 Task 5 (new `internal/format` markdown renderer). **Partially taken (DEC-082):** Task 5 ships a byte-exact golden for the new workflow-list renderer; the backfill for pre-existing renderers stays deferred. | Remainder: next `internal/format` markdown reopen | Low |
-| CF-023 | Phase 17 DEC-058; expanded by DEC-074; **narrowed by DEC-088** | Workflow-tooling hardening. **Landed 2026-07-26** by the retrospective pass: (d) ID uniqueness → DEC-084 phase-scoped IDs; (e) mint ID + triage row on `BLOCK` → DEC-085; (f) run-ledger chronological append + correction entries; (g) wrap-time reopen audit; (h) evidence honesty → DEC-086. **Already satisfied** before the pass: (a) worked commit-metadata example, (b) report-is-its-own-`docs(task)`-commit rule — the Phase 17 recurrence did not repeat in Phase 18. **Reclassified low-value:** (c) report-lint dirty-vs-parse messaging. **Remaining scope: DEC-087 only** — `drill-09` for the non-terminating-command defect class plus the `report-lint.sh` evidence-token check it needs, both requiring a shell session to demonstrate failing-then-passing. **Recurred in Phase 19 Task 1 (TRG-19-001): a no-match `rg` recorded as `exit 0 (no output)`, caught only by an independent rerun; and TL-Lite again returned a BLOCK without minting the record DEC-085 requires. Raised to Medium (DEC-095)** with two concrete checks: flag `rg`/`grep` results recorded as `exit 0 (no output)`, and drill the missing-triage-record class. **Recurred again in Phase 19 Task 2 (TRG-19-002), root-caused by DEC-097** — the missing-record failures are a **provider-prompt defect**, not agent unreliability: the shared agent body asserted a capability limit ("cannot run commands") enforced only by Claude's frontmatter, which on Codex reads as "cannot write files." Adds a drill case and a cheap mechanical check — flag any shared body asserting a capability limit that only one provider's frontmatter backs. | **Workflow overhaul**, or any session with a shell (DEC-087) | **Medium** |
+| CF-023 | Phase 17 DEC-058; expanded by DEC-074; narrowed by DEC-088; raised to Medium by DEC-095 | Workflow-tooling hardening. Landed history and the closed sub-items are in `../phases/phase-19/decisions.md` (DEC-084..088, DEC-095, DEC-097, DEC-100). **Remaining scope: DEC-087** — `drill-09` plus the `report-lint.sh` evidence-token check, both needing a shell session to demonstrate failing-then-passing. **Three drill cases accumulated across Phase 19:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097) — cheaply detectable mechanically; (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically (DEC-100) — correct handling is `PASS` **plus** a deviation note, not a blocker report and not a silent rerun. | **Workflow overhaul**, or any session with a shell (DEC-087) | **Medium** |
 | CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom is thin: after the DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99–27.66 s` against the `<30 s` control (~8–10% margin). v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** Phase 19 Task 6 carries a measurement obligation (re-record rebuild + read against the controls); the fix itself stays v0.2b (DEC-082). | v0.2b (first projection/rebuild work); measured in Phase 19 Task 6 | Medium |
 
 ## Phase 19 Decisions (2026-07-26, approved DEC-093)
@@ -61,10 +61,9 @@ file. Binding beyond Phase 19:
   (`epic`/`task`/`subtask`/`any`) must declare **exactly one**
   `cancelled`-category state, so no issue can become non-cancellable. Zero
   stays legal only for `escalation` / `qa_review`.
-- **DEC-091** — contract refined to 70 `Ready` assertions (unbundled, gaps
-  closed, sources corrected, v0.1 parity baseline made reproducible).
-- **DEC-092** — `05_DESIGN_PLAN.md` §3.1 gains the `workflow` command family.
-- **DEC-093** — Human approval of mode, task list, contract, and CF-008.
+- **DEC-091/092/093** (phase-local) — contract refined to 70 `Ready` assertions;
+  `05_DESIGN_PLAN.md` §3.1 gains the `workflow` command family; Human approval
+  of mode, task list, contract, and CF-008.
 
 **DEC-094..DEC-095** (2026-07-29, resolving ESC-19-001 / TRG-19-001), same
 file. Binding beyond Phase 19:
@@ -77,8 +76,8 @@ file. Binding beyond Phase 19:
   status.
 - **DEC-095** — the Tech Lead **seeds `phases/phase-N/triage-log.md` at phase
   start** so ID allocation never depends on an agent creating a file; a verdict
-  without a durable record is defective triage; the Phase Runner stops rather
-  than accepting a placeholder ID.
+  without a durable record is defective triage, and the Phase Runner stops
+  rather than accept a placeholder ID.
 
 **DEC-096..DEC-097** (2026-07-29, resolving ESC-19-002 / TRG-19-002), same
 file. Binding beyond Phase 19:
@@ -91,17 +90,33 @@ file. Binding beyond Phase 19:
   the external `package db_test`. The same rule applies to `internal/journal`
   in-package tests. `02_TRD.md` §3 records the edge.
 - **DEC-097** — TL-Lite's missing triage records are a **provider-prompt
-  defect on Codex**, not agent unreliability. `.codex/agents/tl_lite.toml`
-  declares no tools, while the *shared* prompt body said three times that
-  TL-Lite "cannot run commands" — the surface Codex writes files through. True
-  and harmless on Claude (`Write`/`Edit` are separate from `Bash`);
-  self-contradictory on Codex. `project-docs/agents/tl-lite.md` is fixed
-  (narrowed prohibition + per-provider write-affordance segments + attempt-
-  before-claiming rule); **`sync-agents.sh` must be run to regenerate.**
-  DEC-095's contrary finding is corrected — it inspected the Claude definition
-  while Codex was the failing provider. No role change. **Standing lesson:
+  defect on Codex**, not agent unreliability: the *shared* body asserted a
+  "cannot run commands" limit enforced only by Claude's frontmatter, which on
+  Codex reads as "cannot write files." `project-docs/agents/tl-lite.md` fixed
+  and regenerated (`sync-agents.sh` run and verified). **Standing lesson:
   provider-shared agent bodies must not assert capability limits that only one
   provider's frontmatter enforces.**
+
+**DEC-099..DEC-100** (2026-08-01, resolving ESC-19-004 / TRG-19-004), same
+file. Binding beyond Phase 19:
+
+- **DEC-099** — Task 4 resumes from **preserved** partial work. The VAL-059
+  guard is **structural, not temporal**: the baseline is built in a detached
+  worktree at the pinned commit from a committed fixed fixture, so working-tree
+  edits cannot affect it and capture order is not binding. **Provenance of a
+  captured artifact is settled by reproducing it from its pinned inputs and
+  comparing digests**, not by chronology or narrative.
+- **DEC-100** — a required command whose **harness is a deliverable of the task
+  being authored** (fixture, capture/measurement script, golden generator) may
+  fail, be repaired, and be rerun to a pass, recorded `PASS` **with a mandatory
+  deviation note** giving the first failure's token, root cause, and fix. All
+  four must hold: the artifact is a task deliverable, **not** the product under
+  test, a behavior-asserting test, or a pre-existing gate/tool; the rerun is
+  **byte-identical**; the pass is **deterministic and third-party reproducible
+  from committed artifacts**; both failure and final result are recorded.
+  Otherwise the gate is failed. At triage, **"task incomplete, stop"** and
+  **"evidence tainted, restart"** are different verdicts — a harness bug is
+  normally the first. `AGENTS.md` and `09_AI_WORKFLOW.md` §11 updated.
 
 ## Workflow Retrospective Decisions (2026-07-26)
 
@@ -120,26 +135,24 @@ file. Binding beyond Phase 19:
 - **DEC-087 / DEC-088** — `drill-09` + the `report-lint` termination check are
   specified but **not landed**; sole remaining CF-023 scope (see the register).
 
-**Unverified:** the retrospective pass could not execute `sync-agents.sh`,
-`sync-skills.sh`, `workflow-lint.sh`, `report-lint.sh --self-test`, or
-`run-drills.sh`. Run them before trusting that surface.
+**Partly unverified:** `sync-agents.sh` has since been run and verified (DEC-097
+fix confirmed in the generated prompts). `sync-skills.sh`, `workflow-lint.sh`,
+`report-lint.sh --self-test`, and `run-drills.sh` remain unexecuted — run them
+before trusting that surface.
 
 ## Recently Closed
 
-- **Phase 18 closed** at wrap (DEC-073) — v0.2a slice 1 of 3: workflow
-  structure is data (migrations `0007`/`0008`), every consumer resolves through
-  `workflow.Load`, the frozen Go `definitions` map is test-only, and the
-  DEC-066 seam has zero behavior. VAL-001..024 PASS; final review and human
-  checklist PASS.
+- **Phase 18 closed** (DEC-073) — v0.2a slice 1 of 3: workflow structure is data
+  (migrations `0007`/`0008`), every consumer resolves through `workflow.Load`,
+  the frozen Go `definitions` map is test-only, the DEC-066 seam has zero
+  behavior. VAL-001..024, final review, and human checklist all PASS.
 - **v0.1 closed** at Phase 17 wrap (DEC-057) — every v0.1-targeted PRD row maps
-  to passing evidence (VAL-024), static binary 12.27 MiB (<30 MB), and the
-  Human accepted v0.1 for early dogfood. **CF-019** closed there too
-  (`internal/format/markdown.go` split into four <=400-line files).
-- **CF-011 / CF-016** closed at Phase 16 wrap — `activity_log` reconciliation
-  across the write commands, and `fid issue get --section gates`.
+  to passing evidence (VAL-024), static binary 12.27 MiB (<30 MB), Human
+  accepted for early dogfood. **CF-019** closed there too.
 - Earlier closed carry-forward items are archived in their phase decisions:
-  CF-013/014/015 (Phase 15), CF-003 (Phase 10), CF-012 (Phase 8), CF-009/010
-  (Phase 6), CF-004/006 (Phase 4), CF-005/007 (Phase 5), CF-002 (Phase 0).
+  CF-011/016 (Phase 16), CF-013/014/015 (Phase 15), CF-003 (Phase 10), CF-012
+  (Phase 8), CF-009/010 (Phase 6), CF-004/006 (Phase 4), CF-005/007 (Phase 5),
+  CF-002 (Phase 0).
 
 ## Environment Constraints
 
@@ -160,8 +173,6 @@ file. Binding beyond Phase 19:
   creating the file.
 - Before release-readiness work, decide where held-out scenarios live and how
   agents are prevented from loading them.
-- **CF-023 is narrowed to DEC-087** (drill-09 + report-lint termination check);
-  its two former stand-ins are now standing rules (DEC-084/085/086).
 - **No production (non-test) Go path may read the frozen v0.1 workflow
   `definitions` map** — test-parity fixture only; the projected workflow tables
   are the runtime source of truth (Phase 18 VAL-024; Phase 19 VAL-070).
