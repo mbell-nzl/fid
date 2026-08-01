@@ -14,7 +14,59 @@ func newWorkflowCommand() *cobra.Command {
 		Use:   "workflow",
 		Short: "Define and inspect workflows.",
 	}
-	cmd.AddCommand(newWorkflowDefineCommand())
+	cmd.AddCommand(newWorkflowDefineCommand(), newWorkflowAssignCommand())
+	return cmd
+}
+
+func newWorkflowAssignCommand() *cobra.Command {
+	var name, kind, actorRole string
+	var project bool
+	cmd := &cobra.Command{
+		Use:   "assign",
+		Short: "Assign a workflow.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+			if err := workflow.AuthorizeAssignment(workspaceRoot, actorRole); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			result, err := workflow.Assign(workflow.AssignOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				ActorRole:     actorRole,
+				Request: workflow.AssignmentRequest{
+					Name:    strings.TrimSpace(name),
+					Kind:    strings.TrimSpace(kind),
+					Project: project,
+				},
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			if result.Project {
+				return writeIssueLine(cmd.ErrOrStderr(), "assigned workflow %s to project\n", result.Name)
+			}
+			return writeIssueLine(cmd.ErrOrStderr(), "assigned workflow %s to kind %s\n", result.Name, result.Kind)
+		},
+	}
+	cmd.Flags().StringVar(&name, "name", "", "Workflow slug")
+	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind")
+	cmd.Flags().BoolVar(&project, "project", false, "Assign as project default")
+	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	for _, flagName := range []string{"name", "by"} {
+		if err := cmd.MarkFlagRequired(flagName); err != nil {
+			panic(err)
+		}
+	}
 	return cmd
 }
 
