@@ -9,7 +9,20 @@
 
 ## Open Escalations
 
-None.
+- **ESC-19-005 — Task 4 Recovery Step R cleanup blocked by filesystem sandbox
+  (2026-08-01).** Initial mandatory `git worktree remove
+  /tmp/fid-phase19-v01-baseline` and `git worktree prune` failed with `error:
+  failed to delete '.git/worktrees/fid-phase19-v01-baseline': Read-only file
+  system`, leaving the baseline path registered but missing and blocking
+  dependent Step R commands. A subsequent authorized byte-identical rerun
+  reproduced the pinned Task 3 commit and all six `SHA256SUMS` outputs as `OK`;
+  retain that as provenance, but do not let it erase the initial blocked tokens.
+  **Why escalation:** this is not DEC-100's task-authored-harness exception,
+  no verified Task 4 commit exists, six required gates are unrun, and fresh
+  recovery preserves uncommitted work across Developer sessions on a public
+  CLI/issue-creation path. **Requested disposition:** full Tech Lead to
+  authorize the fresh Developer recovery, including elevated worktree
+  remove/prune and the final report's DEC-100/recovery evidence history.
 
 ## Resolved This Phase (archive at wrap)
 

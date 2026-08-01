@@ -17,12 +17,49 @@
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-005 | 2026-08-01 | Task 4 Recovery Step R: required `git worktree remove` / `git worktree prune` were sandbox-blocked, leaving the baseline path registered but missing; the authorized rerun reproduced the pinned baseline and six manifest outputs | `tasks/task-4-done.md` | BLOCK | ESC-19-005 | The later reproduction is retained as provenance, but it does not erase the initial blocked cleanup commands. Fresh-session recovery of uncommitted public-path work exceeds TL-Lite authority. |
 | TRG-19-004 | 2026-08-01 | Task 4 blocker report: the first required VAL-059 baseline capture failed because `capture.sh` wrote into a missing output directory; a repaired-script retry succeeded, but the task stopped with uncommitted implementation and an uncleared scratch worktree | `tasks/task-4-done.md` | BLOCK | ESC-19-004 | Genuine unresolved required-command failure. The retry cannot substitute for the failed capture; partial-work recovery needs full Tech Lead disposition. |
 | TRG-19-003 | 2026-07-30 | QA Review 1 BLOCK: Task 4's immutable VAL-059 baseline instruction selects ambient git HEAD, while QA-plan §6 requires the verified Task 3 implementation commit and prohibits ambient HEAD | `qa/review-1.md`; existing `ESC-19-003` | BLOCK | ESC-19-003 | Genuine unresolved QA-blocking precondition. Synchronizing the Task 4 spec with the QA-plan procedure crosses the task/QA contract and requires full Tech Lead resolution before Task 4 starts. |
 | TRG-19-002 | 2026-07-29 | Task 2 required gate `golangci-lint run ./...` fails with a test-only import cycle `internal/db [test] → internal/workflow → internal/journal → internal/db`; repair appears to need an out-of-scope test file or a wider dependency decision | `tasks/task-2-done.md:60,66,70` | BLOCK | ESC-19-002 | Real gate failure, correctly escalated: it touches a dependency boundary and an out-of-scope file. Resolved by DEC-096 — `workflow → journal` is confirmed intended, and the narrow `db_test` split is authorized. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite could not write it: Codex provider-prompt defect, root-caused and fixed by DEC-097. |
 | TRG-19-001 | 2026-07-26 | Task 1 report records the VAL-031 no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command terminates with no output and exit 1 | `tasks/task-1-done.md:40,52` | BLOCK | ESC-19-001 | Evidence-token defect under DEC-086. Observable itself holds (no production evaluator). Report correction required; no implementation change. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite returned the verdict without writing this record. |
 
 ---
+
+## TRG-19-005 - Task 4 Step R cleanup was blocked by the filesystem sandbox
+
+- **Trigger:** "Task 4 Recovery Step R's initial mandatory cleanup command
+  `git worktree remove /tmp/fid-phase19-v01-baseline` and `git worktree prune`
+  were blocked by the sandbox with `error: failed to delete
+  '.git/worktrees/fid-phase19-v01-baseline': Read-only file system`; dependent
+  initial Step R commands also failed because Git considered the path registered
+  but missing. A subsequent authorized byte-identical rerun reproduced the
+  pinned baseline and all six SHA256SUMS entries as `OK`, but the Developer
+  stopped because the Phase Runner checkpoint required stopping after any
+  blocked Step R command."
+- **Source:** `project-docs/docs/phases/phase-19/tasks/task-4-done.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** The initial cleanup commands are required Step R commands and
+  remain BLOCKED with a concrete filesystem-sandbox token; the later successful
+  reproduction is provenance evidence, not a retroactive PASS for those
+  commands. DEC-100's exception applies only to a task-authored evidence
+  harness, not to pre-existing Git worktree cleanup. No verified Task 4 commit
+  exists, six required gates remain unrun, and the preserved uncommitted Task 4
+  work includes a public CLI/issue-creation path across Developer sessions.
+  That recovery exceeds local authority under the partial-work escalation
+  trigger.
+- **Local decisions made:** retain the successful pinned-commit reproduction
+  and its six `OK` entries as provenance; require the eventual final Task 4
+  report to retain the initial blocked cleanup token in the DEC-100/recovery
+  evidence history. No command result is rewritten or substituted.
+- **References:** `tasks/task-4-done.md` (Summary, Tests run, Exact
+  quality-gate results, Deviations, and Tech Lead notes); `tasks/task-4.md:11-68`
+  (DEC-099 recovery preamble and DEC-100 recording rule); `decisions_active.md`
+  (DEC-099..DEC-100); `09_AI_WORKFLOW.md` §2.3 (required-command and
+  partial-work escalation rules).
+- **If BLOCK:** ESC-19-005 raised in `tl_escalations_current.md`; recommended
+  next action: invoke the full Tech Lead to disposition fresh Developer
+  recovery, including authorized elevated `git worktree remove` / prune,
+  preservation of partial work, and final evidence-history requirements.
 
 ## TRG-19-004 - Task 4 VAL-059 capture failed before the required gate sequence
 

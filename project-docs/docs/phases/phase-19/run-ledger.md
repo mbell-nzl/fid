@@ -222,3 +222,45 @@
   scratch baseline worktree, authorize or reject fresh-session recovery, then
   rerun the complete pinned VAL-059 procedure and all Task 4 quality gates
   before resuming the Phase Runner.
+
+### 2026-08-01 21:13 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-08-01 20:04 STOP, resolved by DEC-099 and DEC-100
+- Reconciliation: `TRG-19-004` / `ESC-19-004` are recorded and resolved;
+  `tl_escalations_current.md` has no open escalations. No Task 4
+  implementation or report commit exists.
+- Preserved Task 4 work remains intact and uncommitted; nothing was discarded
+  or regenerated. The registered scratch worktree
+  `/tmp/fid-phase19-v01-baseline` remains and must be removed/re-added by
+  Step R before proceeding.
+- Step R is binding: reproduce the pinned baseline from
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040`, run `sha256sum -c` against the
+  committed manifest, and stop/triage on any mismatch.
+- Starting task: task-4 recovery from preserved work
+
+### 2026-08-01 21:27 TRIAGE
+
+- Trigger: Task 4 Recovery Step R's mandatory `git worktree remove` and
+  `git worktree prune` were blocked by the filesystem sandbox; dependent
+  commands then saw a registered-but-missing worktree. A later authorized
+  rerun reproduced the pinned baseline and all six manifest entries as `OK`,
+  but does not erase the initial blocked command evidence.
+- Source: `project-docs/docs/phases/phase-19/tasks/task-4-done.md`
+- report-lint: PASS in blocker mode (`PASS report-lint completed with no
+  failures`); no implementation or report commit exists.
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-005)`)
+- Triage log: `TRG-19-005`; durable entry confirmed in
+  `project-docs/docs/phases/phase-19/triage-log.md`.
+
+### 2026-08-01 21:27 STOP
+
+- Cause: Step R cleanup was blocked by read-only Git worktree metadata, and
+  the preserved Task 4 work spans Developer sessions on the public CLI and
+  issue-creation path. The six required gates remain unrun and no Task 4
+  commit exists.
+- Triage: `TRG-19-005` BLOCK, escalated as `ESC-19-005`.
+- Next human action: Tech Lead authorize the fresh recovery session and the
+  required elevated `git worktree remove`/prune operation, preserving the
+  partial work and successful six-OK reproduction as evidence; then resume
+  Task 4 and complete the full VAL-059 and quality-gate sequence.
