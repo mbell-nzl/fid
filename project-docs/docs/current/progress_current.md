@@ -7,16 +7,16 @@
 
 ## Project State
 
-**Status:** Phase 19 **IN EXECUTION.** Tasks 1-3 complete (`a509d59`/`3b061e1`,
-`10d4d24`, `50533e2`/`697c673`); QA Review 1 done; **Task 4 in progress,
-resuming from preserved partial work.** Phase 18 is COMPLETE / WRAPPED
+**Status:** Phase 19 **IN EXECUTION.** Tasks 1-4 complete (`a509d59`/`3b061e1`,
+`10d4d24`, `50533e2`/`697c673`, Task 4 human-attested per DEC-101); QA Review 1
+done; **next: Task 5, then Review 2.** Phase 18 is COMPLETE / WRAPPED
 (2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1 of
 3 is delivered.
 
 Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
 v0.2a slice 2 of 3) runs in **heavy mode** with six tasks and a **70-row**
 validation contract (`Ready`). Artifacts: `../phases/phase-19/` —
-`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-100),
+`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-101),
 `qa/validation-contract.md`, `qa/qa-plan.md`, `tasks/task-1..6.md`; brief
 refreshed in `phase_brief.md`. Branch: `phase-19-workflow-authoring`.
 
@@ -30,6 +30,18 @@ fixture), so working-tree edits cannot reach it. **DEC-099** preserves the
 partial work and settles baseline provenance by reproduction against the
 committed `SHA256SUMS`. **DEC-100** makes it standing: a task-authored evidence
 harness failing while being authored is a **deviation, not a failed gate**.
+
+**Task 4 stopped a third time and is now closed (2026-08-02, TRG-19-005 /
+ESC-19-005 / DEC-101).** Step R's `git worktree remove` / `prune` hit a
+read-only `.git/worktrees/` and cascaded into four dependent commands. **Three
+consecutive stops, none in the product — all in VAL-059's verification
+scaffolding**, each fixed narrowly so the next adjacent brick fell. DEC-101:
+cleanup is never evidence; scratch state is unique per attempt; task specs
+declare required environment capabilities and escalate shortfalls at step zero.
+Task 4's gates were then run by the Human **without token capture** — recorded
+as **human-attested**, with **QA Lead's Review 2 rerun as the named control**;
+any failure there reopens Task 4. **CF-025** converts VAL-059 into a permanent
+golden-file test in Task 6.
 
 **Review 1 (Tasks 1-3): BLOCK, resolved by DEC-098.** All 37 in-window
 assertions ON TRACK with cited evidence; the sole blocking finding was a Task 4

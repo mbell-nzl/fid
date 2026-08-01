@@ -101,6 +101,24 @@ Assertions live in
   and must-nots, DEC-089) and `05_DESIGN_PLAN.md` §3.1 (the `workflow`
   command family, DEC-092). Correct either here if it diverges.
 
+- **CF-025 — make VAL-059 a standing test, not a ceremony (DEC-101).** Add
+  `cmd/fid/v01_parity_test.go` (`//go:build integration`, `package main`) reusing
+  the `buildClosureFIDBinary` / `closureRunFID` helpers in
+  `e2e_v01_closure_helpers_test.go`: build the current binary, copy
+  `cmd/fid/testdata/v01_parity/fixture/` into `t.TempDir()`, run the six
+  committed command shapes, and compare each stdout **byte-for-byte** against
+  the six committed `.json` goldens, failing with the filename and a diff.
+  - The goldens, `fixture/`, `capture.sh`, `SHA256SUMS`, and
+    `normalization.json` **stay committed as provenance** — do not delete them.
+    What is retired is their status as *required manual procedure*.
+  - **Do not regenerate the goldens.** Their provenance is already established
+    by reproduction from the pinned Task 3 implementation commit
+    `50533e2b813bf073cd75f75eb70dd09cd15e9040` (DEC-099/DEC-101). If the new
+    test fails, that is a **real parity regression** — stop and escalate; never
+    re-record the goldens to make it pass.
+  - No detached worktree, no pinned-commit build, no `mktemp` scratch state, and
+    no cleanup command belongs in this test.
+
 ## Scope
 
 ### Files To Create Or Modify
@@ -111,6 +129,9 @@ Assertions live in
   `internal/maintenance/workflow_assignments_test.go` (new)
 - `internal/maintenance/vacuum.go` — CF-021 doc comments
 - `cmd/fid/e2e_v02a_workflow_authoring_test.go` (new) — VAL-024, VAL-025
+- `cmd/fid/v01_parity_test.go` (new, **CF-025 / DEC-101**) — converts VAL-059
+  from a manual ceremony into a standing golden-file test; see Binding
+  Constraints
 - `internal/journal/` rebuild/replay test files — VAL-021 whole-projection
   parity for authored workflows and assignments
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — DEC-079 limitation note

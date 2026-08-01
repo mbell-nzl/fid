@@ -41,6 +41,7 @@ Reviewed at each phase start: schedule, re-defer, close, or cancel each item.
 | CF-022 | Phase 17 Review 1 | Add broader exact-output markdown characterization tests to lock rendering behavior beyond the current suite. Trigger fires in Phase 19 Task 5 (new `internal/format` markdown renderer). **Partially taken (DEC-082):** Task 5 ships a byte-exact golden for the new workflow-list renderer; the backfill for pre-existing renderers stays deferred. | Remainder: next `internal/format` markdown reopen | Low |
 | CF-023 | Phase 17 DEC-058; expanded by DEC-074; narrowed by DEC-088; raised to Medium by DEC-095 | Workflow-tooling hardening. Landed history and the closed sub-items are in `../phases/phase-19/decisions.md` (DEC-084..088, DEC-095, DEC-097, DEC-100). **Remaining scope: DEC-087** — `drill-09` plus the `report-lint.sh` evidence-token check, both needing a shell session to demonstrate failing-then-passing. **Three drill cases accumulated across Phase 19:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097) — cheaply detectable mechanically; (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically (DEC-100) — correct handling is `PASS` **plus** a deviation note, not a blocker report and not a silent rerun. | **Workflow overhaul**, or any session with a shell (DEC-087) | **Medium** |
 | CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom is thin: after the DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99–27.66 s` against the `<30 s` control (~8–10% margin). v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** Phase 19 Task 6 carries a measurement obligation (re-record rebuild + read against the controls); the fix itself stays v0.2b (DEC-082). | v0.2b (first projection/rebuild work); measured in Phase 19 Task 6 | Medium |
+| CF-025 | Phase 19 DEC-101 (ESC-19-005) | Convert VAL-059 from a one-time manual ceremony into a **permanent golden-file integration test** in `cmd/fid`, reusing the `buildClosureFIDBinary` / `closureRunFID` pattern from `e2e_v01_closure_helpers_test.go`: copy `testdata/v01_parity/fixture/` into `t.TempDir()`, run the six commands against current code, compare byte-for-byte to the six committed `.json` goldens. Retires `capture.sh`, `SHA256SUMS`, `normalization.json`, and the detached-worktree machinery as *required procedure* (they stay committed as provenance) and upgrades a one-shot proof into a standing regression guard. Three consecutive Phase 19 stops were in this scaffolding; none were in the product. | **Phase 19 Task 6 (scheduled)** — heavy mode accepts no carry-forward past phase end, so this is the last legal slot | **Medium** |
 
 ## Phase 19 Decisions (2026-07-26, approved DEC-093)
 
@@ -117,6 +118,32 @@ file. Binding beyond Phase 19:
   Otherwise the gate is failed. At triage, **"task incomplete, stop"** and
   **"evidence tainted, restart"** are different verdicts — a harness bug is
   normally the first. `AGENTS.md` and `09_AI_WORKFLOW.md` §11 updated.
+
+**DEC-101** (2026-08-02, resolving ESC-19-005 / TRG-19-005), same file. Items
+1-3 binding beyond Phase 19:
+
+1. **Cleanup is never evidence.** Commands whose only purpose is removing or
+   pruning scratch state are excluded from required-command evidence — never
+   reported `PASS`/`BLOCKED`, never gating a sequence; a failed cleanup is a
+   note, not a stop.
+2. **Scratch state is unique per attempt.** Temporary directories, worktrees,
+   and binaries are allocated with `mktemp -d` or an equivalent fresh path so no
+   run can depend on a prior run's cleanup. A fixed scratch path in a procedure
+   is a **spec defect**.
+3. **Task specs declare required environment capabilities** — `/tmp`, `.git/`,
+   network, elevation. A shortfall is discovered and escalated **at step zero**,
+   never halfway through a sequence.
+4. Phase 19-local: ESC-19-005 closed without rework (the six `OK` reproduction
+   **is** the DEC-099 provenance test); Task 4's gates are **human-attested**
+   without token capture, with **QA Lead's Review 2 rerun as the named control**
+   — any failure there voids the disposition and reopens Task 4.
+5. **CF-025** — convert VAL-059 from a manual ceremony into a permanent
+   golden-file integration test in `cmd/fid`. Due Task 6.
+
+**Standing lesson:** three consecutive Phase 19 stops were in VAL-059's
+verification scaffolding and none in the product. When an evidence apparatus
+becomes larger than the observable it protects, fix the apparatus, not the
+brick that fell.
 
 ## Workflow Retrospective Decisions (2026-07-26)
 

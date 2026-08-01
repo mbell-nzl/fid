@@ -9,26 +9,28 @@
 
 ## Open Escalations
 
-- **ESC-19-005 — Task 4 Recovery Step R cleanup blocked by filesystem sandbox
-  (2026-08-01).** Initial mandatory `git worktree remove
-  /tmp/fid-phase19-v01-baseline` and `git worktree prune` failed with `error:
-  failed to delete '.git/worktrees/fid-phase19-v01-baseline': Read-only file
-  system`, leaving the baseline path registered but missing and blocking
-  dependent Step R commands. A subsequent authorized byte-identical rerun
-  reproduced the pinned Task 3 commit and all six `SHA256SUMS` outputs as `OK`;
-  retain that as provenance, but do not let it erase the initial blocked tokens.
-  **Why escalation:** this is not DEC-100's task-authored-harness exception,
-  no verified Task 4 commit exists, six required gates are unrun, and fresh
-  recovery preserves uncommitted work across Developer sessions on a public
-  CLI/issue-creation path. **Requested disposition:** full Tech Lead to
-  authorize the fresh Developer recovery, including elevated worktree
-  remove/prune and the final report's DEC-100/recovery evidence history.
+None.
 
 ## Resolved This Phase (archive at wrap)
 
 Full reasoning lives in `../phases/phase-19/decisions.md` and
 `../phases/phase-19/triage-log.md`; these are pointers.
 
+- **ESC-19-005 — Task 4 Step R cleanup blocked by the filesystem sandbox
+  (2026-08-01 → DEC-101).** `git worktree remove` / `git worktree prune` failed
+  with `Read-only file system`, leaving the path registered-but-missing and
+  cascading into four dependent commands; an authorized rerun then reproduced
+  the pinned baseline with all six `SHA256SUMS` entries `OK`. **The stop matched
+  the letter of Step R and the reasoning was wrong:** cleanup proves nothing
+  about parity, and I had fenced it inside the evidence set with a fixed scratch
+  path, so one failed `rm` gated the whole sequence. **DEC-101:** cleanup is
+  never evidence; scratch state is unique per attempt (`mktemp -d`); task specs
+  declare required environment capabilities and escalate shortfalls at step
+  zero. Baseline provenance is settled by the six `OK` and closed. Task 4's
+  gates were then run by the Human **without token capture** — recorded
+  honestly as human-attested, with **QA Lead's Review 2 rerun as the control**;
+  any failure there voids the disposition and reopens Task 4. **CF-025** carries
+  the VAL-059 golden-file test conversion to Task 6.
 - **ESC-19-004 — Task 4's first VAL-059 baseline capture failed (2026-08-01 →
   DEC-099/DEC-100).** `capture.sh` resolved a relative output root after
   `cd`-ing into its temp workspace. The task stopped with no commit, six gates

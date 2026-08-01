@@ -13,7 +13,7 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-005`, `ESC-19-005`.
+> **Next free IDs:** `TRG-19-006`, `ESC-19-006`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
@@ -60,6 +60,25 @@
   next action: invoke the full Tech Lead to disposition fresh Developer
   recovery, including authorized elevated `git worktree remove` / prune,
   preservation of partial work, and final evidence-history requirements.
+- **Resolution (Tech Lead, 2026-08-02):** BLOCK **sustained in outcome,
+  corrected in reasoning**, and the fault is mine, not TL-Lite's or the
+  Developer's. The letter of Step R did require a stop, and TL-Lite applied it
+  faithfully. But a blocked *cleanup* command is not a blocked *gate*: `git
+  worktree remove` proves nothing about parity. I had fenced housekeeping inside
+  the evidence set and used a fixed scratch path, so one failed `rm` cascaded
+  into four dependent commands and gated the sequence. Resolved by **DEC-101**:
+  cleanup is never evidence; scratch state is unique per attempt; task specs
+  declare required environment capabilities and escalate shortfalls at step
+  zero. The authorized rerun's six `OK` **is** the DEC-099 provenance test, so
+  the baseline is settled and closed with no rework. Task 4's gates were then
+  executed by the Human without token capture — recorded as human-attested with
+  QA Lead's Review 2 rerun as the named control. **CF-025** carries the VAL-059
+  golden-file test conversion to Task 6.
+- **Pattern note for wrap-up:** TRG-19-003/004/005 are three consecutive stops,
+  none in the product, all in VAL-059's verification scaffolding. Each was fixed
+  narrowly, so the next adjacent brick fell. Wrap-up should ask whether the
+  evidence apparatus was proportionate to the observable, not just whether each
+  triage verdict was individually correct — they all were.
 
 ## TRG-19-004 - Task 4 VAL-059 capture failed before the required gate sequence
 

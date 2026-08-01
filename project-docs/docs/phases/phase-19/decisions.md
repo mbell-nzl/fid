@@ -904,6 +904,86 @@ the root-cause attribution, and the inference that prompt compliance had been
   correct handling is `PASS` **plus** a deviation note, not a blocker report and
   not a silent rerun.
 
+### DEC-101: Cleanup is not evidence — Task 4 closed under human-executed gates
+
+- **Date:** 2026-08-02
+- **Status:** binding beyond Phase 19 (items 1-3); Phase 19-local (items 4-5).
+- **Context.** Task 4 stopped three times. Not one stop was in the product:
+  ESC-19-003 was a doc-vs-doc disagreement about the baseline selector,
+  ESC-19-004 was a path bug in `capture.sh` — a script the task existed to
+  author — and ESC-19-005 was `git worktree remove` failing on a read-only
+  `.git/worktrees/`, which cascaded into four dependent commands. In every case
+  the *software* was fine; the verification scaffolding fell over. DEC-098 and
+  DEC-099/100 each repaired the specific brick that fell and left the
+  scaffolding standing, so the next adjacent brick fell next.
+- **Root cause (Tech Lead, self-assessed).** Three defects in my own artifacts:
+  1. **DEC-099's Step R put housekeeping inside the evidence fence.** `git
+     worktree remove` and `git worktree prune` prove nothing about parity. They
+     are cleanup. Fencing them under "report every token, stop on any blocked
+     command" gave a temp-directory permission error the same weight as a parity
+     mismatch, and the Developer correctly obeyed what I wrote.
+  2. **The scratch path was fixed, not unique**, so every attempt depended on
+     the *previous* attempt having tidied up — the exact coupling that turned
+     one failed `rm` into a four-command cascade.
+  3. **Step R and DEC-099 called the baselines "committed" when they were
+     untracked.** `cmd/fid/testdata/v01_parity/` was `??` in `git status`
+     throughout. The reproduction was still valid — it regenerated from the
+     pinned commit and matched the manifest — but the spec described a state
+     that did not exist. Resolved: the directory is committed as of the Task 4
+     implementation commit.
+- **Decision.**
+  1. **Cleanup is never evidence.** Commands whose only purpose is removing or
+     pruning scratch state are excluded from required-command evidence. They are
+     not reported `PASS`/`BLOCKED`, they never gate a sequence, and a failed
+     cleanup is a note, not a stop. Only commands that *establish or check an
+     observable* are evidence.
+  2. **Scratch state is unique per attempt.** Task specs that use temporary
+     directories, worktrees, or binaries allocate them with `mktemp -d` (or an
+     equivalent fresh path) so no run can ever depend on a prior run's cleanup.
+     Fixed scratch paths in a procedure are a spec defect.
+  3. **Task specs declare required environment capabilities.** Any procedure
+     needing write access beyond the repo working tree — `/tmp`, `.git/`,
+     network, elevated permissions — names it in the task spec. A capability
+     shortfall is discovered and escalated **at step zero**, never halfway
+     through a sequence.
+  4. **ESC-19-005 is closed without rework.** The authorized Step R rerun
+     reproduced the pinned baseline and returned all six `SHA256SUMS` entries
+     `OK`. Under DEC-099 that *is* the provenance test — reproduction from pinned
+     inputs, not chronology or narrative. Repeating it would establish nothing
+     further. TRG-19-005's verdict is **sustained in outcome** (the letter of
+     Step R did require a stop) and **corrected in reasoning** (a blocked
+     cleanup command is not a blocked gate).
+  5. **VAL-059's remaining assertion is the candidate check.** With the baseline
+     provenance settled and committed, the standing assertion is `sha256sum -c`
+     of the candidate capture against the committed manifest — six `OK`. The
+     detached-worktree pinned-commit build was a **one-time** act to establish
+     that the goldens record v0.1 behavior. It is complete and is not repeated.
+- **Evidence provenance for Task 4 (recorded honestly).** The six required
+  gates, the baseline reproduction, and the candidate parity check were executed
+  **by the Human directly**, outside a Developer session, and **verbatim
+  terminal tokens were not captured**. This does not meet DEC-084/086. It is
+  recorded as **human-attested**, not as token-cited evidence, and
+  `task-4-done.md` says so in those words rather than carrying invented tokens —
+  the failure mode that produced TRG-19-001 in this very phase. **The control is
+  QA Lead's independent re-execution at Review 2**, which is already required by
+  the QA plan and which owns all thirteen Task 4 assertions. If any command
+  fails under QA Lead, this disposition is void and Task 4 reopens.
+- **Consequences.** Items 1-3 belong in `09_AI_WORKFLOW.md` §6 (task
+  specification contract) and the task-spec template; Task 6 carries the edit.
+  `AGENTS.md` needs no change. No product code, schema, CLI surface, or
+  validation assertion is weakened — VAL-059's observable is unchanged.
+- **Carry-forward (CF-025).** Convert VAL-059 from a one-time manual ceremony
+  into a permanent golden-file integration test in `cmd/fid`, reusing the
+  `buildClosureFIDBinary` / `closureRunFID` pattern from
+  `e2e_v01_closure_helpers_test.go`: copy `testdata/v01_parity/fixture/` into
+  `t.TempDir()`, run the six commands against current code, compare byte-for-byte
+  to the six committed `.json` goldens. This retires `capture.sh`,
+  `SHA256SUMS`, `normalization.json`, and the worktree machinery as *required
+  procedure* (they stay committed as provenance), and upgrades a one-shot proof
+  into a standing regression guard. **Scheduled for Task 6**; if Task 6 runs
+  long, it carries to Phase 20 — heavy mode accepts no carry-forward past phase
+  end, so Task 6 is the last legal slot.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from

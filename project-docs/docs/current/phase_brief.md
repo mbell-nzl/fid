@@ -22,8 +22,14 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution. Tasks 1-3 complete; Review 1 BLOCK and the Task 4 stop both
-resolved; Task 4 cleared to resume from preserved partial work.**
+**In execution. Tasks 1-4 complete. Next: Task 5, then Review 2.**
+
+**Task 4 closed under DEC-101 (2026-08-02) with a named control.** Its gates and
+VAL-059 commands were executed by the **Human without verbatim token capture**,
+recorded honestly as **human-attested** rather than token-cited. **QA Lead's
+Review 2 rerun is the control and must independently re-execute all six gates
+and all thirteen Task 4 assertions; any failure voids the disposition and
+reopens Task 4.**
 
 **Review 1 (Tasks 1-3) verdict BLOCK, resolved (TRG-19-003 / ESC-19-003 /
 DEC-098).** All 37 in-window assertions (VAL-001..013, VAL-027..050) are ON
@@ -40,7 +46,18 @@ Stopping was right — no commit, six gates unrun — but "restart from scratch"
 not: the failure wrote nothing, and DEC-098's guard is structural, not temporal.
 **DEC-099** preserves the partial work and settles baseline provenance by
 reproduction against the committed `SHA256SUMS`. **DEC-100** makes the general
-rule standing. `task-4.md` carries a **Recovery Preamble — read first**.
+rule standing.
+
+**Task 4 third stop, resolved (TRG-19-005 / ESC-19-005 / DEC-101).** Step R's
+`git worktree remove` / `prune` hit a read-only `.git/worktrees/` and cascaded
+into four dependent commands. The stop matched the letter of Step R; the
+reasoning was wrong. **Three consecutive stops, none in the product — all in
+VAL-059's verification scaffolding**, each fixed narrowly so the next adjacent
+brick fell. **DEC-101:** cleanup is never evidence; scratch state is unique per
+attempt (`mktemp -d`); task specs declare required environment capabilities and
+escalate shortfalls at step zero. Baseline provenance is settled by the six
+`OK` and closed — not repeated. **CF-025** converts VAL-059 into a permanent
+golden-file test in Task 6.
 
 ## Operating Mode
 
@@ -58,7 +75,7 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 | 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
 | 2 | Workflow authoring core (validation + effect builder) | **Complete** (`10d4d24`) | 1 |
 | 3 | `fid workflow define` + `workflow.defined` event | **Complete** (`50533e2`, report `697c673`) | 1, 2 |
-| 4 | `fid workflow assign` + assignment-aware issue creation | **In progress** — resume from preserved work (DEC-099) | 1-3 |
+| 4 | `fid workflow assign` + assignment-aware issue creation | **Complete** (human-attested, DEC-101; Review 2 is the control) | 1-3 |
 | 5 | `fid workflow list` in every output format | Pending | 1, 3, 4 |
 | 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending | 1-5 |
 
@@ -151,6 +168,14 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
   report states the failure, root cause, and fix. Otherwise the strict rule
   holds. At triage, **"task incomplete, stop"** is not **"evidence tainted,
   restart"**.
+- **Cleanup is never evidence** (DEC-101). Commands that only remove or prune
+  scratch state are excluded from required-command evidence: never reported
+  `PASS`/`BLOCKED`, never gating a sequence, and a failed cleanup is a note, not
+  a stop. **Scratch state is unique per attempt** (`mktemp -d`) so no run
+  depends on a prior run's cleanup — a fixed scratch path in a procedure is a
+  spec defect. **Task specs declare required environment capabilities** (`/tmp`,
+  `.git/`, network, elevation); a shortfall is escalated **at step zero**, never
+  mid-sequence.
 
 ## Interfaces / Subsystems In Scope
 
@@ -170,6 +195,12 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
 - **Coverage.** `internal/workflow` is a COV-001 80% package gaining a lot of
   new code. **CF-023 residue (DEC-087):** no mechanical detector exists for a
   `PASS` against a non-terminating command; QA Lead's rerun is the control.
+- **Review 2 carries unusual weight** (DEC-101). It is the sole independent
+  verification of Task 4's six gates and thirteen assertions, not a sampling
+  pass. Treat Task 4 as unverified until it clears.
+- **CF-025 is due in Task 6** (DEC-101): convert VAL-059 into a permanent
+  golden-file integration test. Heavy mode accepts no carry-forward past phase
+  end, so Task 6 is the last legal slot.
 
 ## Open Questions
 
