@@ -2219,6 +2219,12 @@ fid workflow list [--kind <kind>] [--active] [--format json|toon|markdown|yaml]
 
 Read-only. Lists defined workflows and current assignments.
 
+`--kind <kind>` includes workflows whose `applies_to` is `<kind>` or `null`
+(`any`) and excludes workflows for other kinds. `--active` restricts results to
+active workflows; the two filters compose. Results are ordered by workflow ID.
+Within each `assigned_to` array, kind scopes are ordered by kind and the
+project scope is last. An empty result is `[]` in every format with exit 0.
+
 **JSON output:**
 ```json
 [
@@ -2233,6 +2239,13 @@ Read-only. Lists defined workflows and current assignments.
   }
 ]
 ```
+
+The example `states` and `transitions` counts are illustrative; each command
+returns the actual projected row counts, including materialized cancel edges.
+`applies_to` is `null` for `any`. Kind assignments render as
+`{"scope":"kind","kind":"<kind>"}`; project assignments render as
+`{"scope":"project"}` with `kind` omitted; and unassigned workflows render
+`"assigned_to": []`.
 
 ### `fid role create` (v0.2+)
 

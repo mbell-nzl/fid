@@ -5,6 +5,7 @@ import (
 	"os"
 	"strings"
 
+	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
@@ -14,7 +15,46 @@ func newWorkflowCommand() *cobra.Command {
 		Use:   "workflow",
 		Short: "Define and inspect workflows.",
 	}
-	cmd.AddCommand(newWorkflowDefineCommand(), newWorkflowAssignCommand())
+	cmd.AddCommand(newWorkflowDefineCommand(), newWorkflowAssignCommand(), newWorkflowListCommand())
+	return cmd
+}
+
+func newWorkflowListCommand() *cobra.Command {
+	var formatName, kind string
+	var active bool
+	cmd := &cobra.Command{
+		Use:   "list",
+		Short: "List defined workflows.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			workspaceRoot, err := os.Getwd()
+			if err != nil {
+				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+			items, err := workflow.List(workflow.ListOptions{
+				WorkspaceRoot: workspaceRoot,
+				MigrationsDir: issueMigrationsDir(),
+				Kind:          strings.TrimSpace(kind),
+				Active:        active,
+			})
+			if err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
+					return renderErr
+				}
+				return err
+			}
+			return nil
+		},
+	}
+	cmd.Flags().StringVar(&kind, "kind", "", "Only workflows applicable to this kind")
+	cmd.Flags().BoolVar(&active, "active", false, "Only active workflows")
+	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }
 

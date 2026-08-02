@@ -10,6 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/links"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/stats"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 type IssueMarkdownView struct {
@@ -82,6 +83,8 @@ func writeMarkdown(writer io.Writer, value any) error {
 		return writeTokensStatsMarkdown(writer, typed)
 	case []stats.CostRow:
 		return writeCostStatsMarkdown(writer, typed)
+	case []workflow.ListItem:
+		return writeWorkflowListMarkdown(writer, typed)
 	default:
 		return fmt.Errorf("unsupported markdown value type %T", value)
 	}

@@ -58,7 +58,7 @@ func loadWorkflowStates(conn *sql.DB, workflowID string) ([]State, error) {
 	if err != nil {
 		return nil, fmt.Errorf("load workflow %q states: %w", workflowID, err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	states := make([]State, 0)
 	for rows.Next() {
 		var state State
