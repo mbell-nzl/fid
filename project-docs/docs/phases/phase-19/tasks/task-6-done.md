@@ -117,8 +117,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `09aa0a081d2ecfee025c3b4d8158bc6203d02d98`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): close workflow authoring integrity`
