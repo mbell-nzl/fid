@@ -1,5 +1,36 @@
 # Phase 19 - Task 5: `fid workflow list` in every output format
 
+## Recovery preamble — read first (DEC-102, 2026-08-02)
+
+This task was blocked at `golangci-lint run ./...` (ESC-19-006 / TRG-19-006) and
+is now cleared to resume. Four things changed:
+
+1. **Resume from the preserved worktree; do not restart.** The prior session's
+   implementation is intact and uncommitted across `cmd/fid/workflow.go`,
+   `internal/format/markdown.go`, and five new files. `task-5-done.md` exists as
+   a blocker report and is **overwritten** by the real completion report.
+2. **One out-of-scope repair is authorized, and only this one.**
+   `internal/workflow/resolve.go:61` changes from `defer rows.Close()` to
+   `defer func() { _ = rows.Close() }()`, matching `registry.go` and `list.go`
+   in the same package. Behaviour is identical — the rows are fully drained and
+   `rows.Err()` is already checked on line 70 — so no new test is required and
+   VAL-058/059 parity is untouched. **Do not** repair anything else outside the
+   file list below; escalate instead.
+3. **This gate run carries Task 4's weight too.** `golangci-lint run ./...` is
+   repo-wide, so a green token-cited run here *is* the independent
+   re-execution of Task 4's lint gate, which was falsely attested as passing.
+   Say so explicitly in the completion report's gate section.
+4. **Every gate token is captured in this session.** No result may be recorded
+   `PASS` on anything other than a token observed in the session that writes the
+   report. An uncaptured result is `UNVERIFIED`, never `PASS` (DEC-102 item 5).
+
+**Standing rule this incident produced (DEC-102 item 1).** If you decline a
+repair as "pre-existing", you must cite the **introducing commit** and show it
+predates the phase-start commit — `git log -S`, `git log --diff-filter=A`, or
+`git blame`. `git show HEAD` proves a line is committed, not that it is
+inherited, and using it here misclassified a one-day-old Task 4 regression as
+baseline debt.
+
 ## Objective
 
 Ship the read surface: `fid workflow list` returns defined workflows with
@@ -83,6 +114,9 @@ Assertions live in
 - `internal/format/markdown_workflow.go` (new) — markdown renderer
 - `internal/format/markdown.go` — add the type case
 - `internal/format/markdown_workflow_test.go` (new) — byte-exact golden
+- `internal/workflow/resolve.go` — **authorized one-line exception only**
+  (DEC-102 item 4): line 61 `defer rows.Close()` →
+  `defer func() { _ = rows.Close() }()`. No other change to this file.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow list` filters,
   ordering, `assigned_to` shapes, and the note that example counts are
   illustrative
@@ -162,10 +196,14 @@ go tool cover -func=coverage.out
 go build -o /tmp/fid ./cmd/fid
 ```
 
+Run the full sequence from the top, including the commands that ran in the
+blocked session.
+
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
 narrower substituted commands are failed gates. A non-terminating command is
-never `PASS`.
+never `PASS`. Per DEC-102 item 5, a result not observed in this session is
+`UNVERIFIED`, never `PASS`.
 
 Conditional command required by this task:
 
@@ -182,4 +220,6 @@ Conditional command required by this task:
   to a generic structure and comparing; do not settle for "all four commands
   exited zero".
 - Completion report at
-  `project-docs/docs/phases/phase-19/tasks/task-5-done.md`.
+  `project-docs/docs/phases/phase-19/tasks/task-5-done.md`, overwriting the
+  blocker report. Keep a short deviations entry recording the ESC-19-006 block,
+  the misclassification, and the authorized `resolve.go` repair.

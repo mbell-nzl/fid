@@ -984,6 +984,98 @@ the root-cause attribution, and the inference that prompt compliance had been
   long, it carries to Phase 20 — heavy mode accepts no carry-forward past phase
   end, so Task 6 is the last legal slot.
 
+### DEC-102: Task 4's attested lint PASS is disproven — "pre-existing" needs provenance, and attested gates are not evidence
+
+- **Date:** 2026-08-02
+- **Status:** items 1, 5 binding beyond Phase 19; items 2-4, 6 Phase 19-local.
+- **Context.** Task 5's Developer hit `golangci-lint run ./...` failing with
+  `* errcheck: 1` at `internal/workflow/resolve.go:61` (`defer rows.Close()`),
+  classified it as **pre-existing and out of scope**, preserved its uncommitted
+  work, and filed a blocker report. TL-Lite sustained that framing and escalated
+  as ESC-19-006, asking me to authorize a narrow repair of old baseline debt.
+  **The framing was wrong, and it concealed the actual finding.**
+- **What the evidence shows.** The Developer justified "pre-existing" with `git
+  show HEAD`, which proves a line is *committed*, not that it *predates the
+  task*. HEAD is `3a6ca15`, which contains Task 4.
+  `git log --diff-filter=A --oneline -- internal/workflow/resolve.go` returns
+  **`32614bb`** — Task 4's implementation commit, this phase, one day earlier.
+  `task-4-done.md` independently lists the file as `(new)`. The line is also the
+  **only** unguarded `defer rows.Close()` in the repository; ~20 other production
+  sites use `_ = rows.Close()`, including `registry.go` in the same package. And
+  `* errcheck: 1` means that once the Developer cleared its own two in-scope
+  findings, this was the sole remaining finding in the entire tree.
+- **Therefore Task 4's lint gate did not pass.** `.golangci.yml` is v2 with
+  `default: none`, `errcheck` enabled and **no exclusion presets**, so `.Close`
+  is not excluded. `resolve.go` is unmodified since `32614bb`, and it was a new
+  file, so no stale lint cache could have masked it. The same command over the
+  same committed line fails today. `task-4-done.md` recorded
+  `golangci-lint run ./...` as `PASS (human-attested)`. **That record is false.**
+- **Decision.**
+  1. **"Pre-existing" is a provenance claim and requires provenance evidence.**
+     It is established against the **phase-start** commit with `git log -S` /
+     `git log --diff-filter=A` / `git blame`, and the claim must cite the
+     introducing commit. `git show HEAD` is never sufficient — it cannot
+     distinguish inherited debt from debt this phase created three commits ago.
+     A Developer declining an out-of-scope repair still owes this citation.
+  2. **DEC-101's void condition has triggered.** I wrote it as "if any command
+     fails under QA Lead at Review 2, this disposition is void and Task 4
+     reopens." The failure arrived two days early from a Developer instead of QA
+     Lead. Reading that as "wrong role, doesn't count" would be the mirror image
+     of my ESC-19-005 error — letter over substance, in the direction convenient
+     to me. It counts. The disposition that closed Task 4 on attestation is void.
+  3. **The remedy is scoped to what is actually disproven.** Exactly one of six
+     gates is contradicted; an errcheck finding has no bearing on whether
+     `go test -race` passes. Task 4's implementation stands, its commit is not
+     rewritten, and its thirteen assertions remain Review 2's job as planned.
+     Task 4 moves to **Complete (gates unverified)** and does not close until a
+     token-cited gate run is green. `task-4-done.md`'s lint line is corrected to
+     **FAIL** with the disproving token and this DEC — the record is amended, not
+     quietly overwritten.
+  4. **The repair is authorized inside Task 5** as a named in-scope exception:
+     `internal/workflow/resolve.go:61` becomes
+     `defer func() { _ = rows.Close() }()`, matching `registry.go` and `list.go`
+     in the same package. Behaviour is identical — the rows are fully drained and
+     `rows.Err()` is already checked — so VAL-058/059 parity is untouched and no
+     new test is required. `golangci-lint run ./...` is repo-wide, so **Task 5's
+     green run is itself the independent re-execution of Task 4's lint gate**;
+     the Task 5 report states this explicitly and Task 4's gate 2 of 6 is then
+     verified rather than re-attested.
+  5. **Gate results not captured in the executing session are `UNVERIFIED`,
+     never `PASS`.** DEC-101 accepted human attestation against a *named future
+     control*. That was insufficient: the false `PASS` survived triage, a
+     run-resume reconciliation, and a Tech Lead escalation, and surfaced only
+     because an unrelated task happened to run the same command. A control that
+     fires late enough to be tripped over by accident is not a control. If gates
+     are executed outside the session that records them, the result is recorded
+     `UNVERIFIED` and the task does not close on it.
+  6. **Review 2 is hardened, not rescoped.** QA Lead still re-runs all six Task 4
+     gates and all thirteen assertions, now knowing one attestation is
+     demonstrably false and the other four remain uncorroborated (gate 2 having
+     been settled by Task 5). QA Lead reports whether any *other* attested result
+     is contradicted.
+- **Verdict on TRG-19-006.** BLOCK **sustained in outcome, corrected in
+  reasoning** — the fourth consecutive stop in this phase to fit that
+  description. Stopping was right: a required gate genuinely failed and the
+  preserved work spans three subsystems. The Developer was also right not to
+  self-authorize an out-of-scope edit (the same discipline I sustained in
+  TRG-19-002). The defect was the *provenance check that was never run*, by
+  Developer and by TL-Lite alike, which turned a one-day-old regression into
+  inherited debt and left the real finding unreported.
+- **Proportionality note.** The code defect is trivial — one line, zero
+  behavioural impact, five seconds to fix during Task 4. The lint gate is exactly
+  the mechanism that catches this class of thing, and it is the one gate that was
+  attested rather than executed. The defect is uninteresting; its survival is
+  not.
+- **Consequences.** Item 1 belongs in `09_AI_WORKFLOW.md` §11 and the
+  Developer-role prompt (out-of-scope claims cite the introducing commit); item 5
+  belongs in `09_AI_WORKFLOW.md` §11 alongside DEC-084/086 and in `AGENTS.md`
+  (Commands). Task 6 carries both edits with the DEC-101 items 1-3 edit. No
+  product code, schema, CLI surface, or validation assertion is weakened.
+- **Carry-forward impact.** CF-023 gains a fourth drill case: a completion report
+  claiming an out-of-scope repair is "pre-existing" without citing an introducing
+  commit older than the phase-start commit. This one is mechanically detectable
+  and is the cheapest of the four.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from
@@ -1001,7 +1093,7 @@ the planning decisions above:
 | `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080/090) | Tasks 3, 4, 5, 6 |
 | `07_DESIGN_PLAN_FLOWS.md` | TBD at wrap | — |
 | `08_QUALITY_PLAN.md` | TBD at wrap | — |
-| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); §11 task-authored harness deviation rule (**DEC-100**, applied mid-phase); `AGENTS.md` Commands carries both | Mid-phase (DEC-094, DEC-100); Task 6 verifies |
+| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); §11 task-authored harness deviation rule (**DEC-100**, applied mid-phase); §6 task-spec scratch-state and environment-capability rules (**DEC-101** items 1-3); §11 out-of-scope claims cite an introducing commit + uncaptured gate results are `UNVERIFIED` (**DEC-102** items 1, 5); `AGENTS.md` Commands carries the token rules | Mid-phase (DEC-094, DEC-100); Task 6 (DEC-101, DEC-102) |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched — Phase 19 closure note | Wrap |
 
 ## Workflow Notes

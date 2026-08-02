@@ -264,3 +264,46 @@
   required elevated `git worktree remove`/prune operation, preserving the
   partial work and successful six-OK reproduction as evidence; then resume
   Task 4 and complete the full VAL-059 and quality-gate sequence.
+
+### 2026-08-02 10:33 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-08-01 21:27 STOP, resolved by DEC-101
+- Reconciliation: current HEAD is `3a6ca15119bae734f7d3d8f035ca707026085328`,
+  the Task 4 report-finalization commit; Task 4 implementation is committed
+  at `32614bbbd50e683b61921e9ed6beabee73b46021`, and Tasks 1-3 completion
+  reports and reported commits resolve with matching subjects. The worktree
+  is clean on `phase-19-workflow-authoring`. `ESC-19-005` is resolved and the
+  Open ESC baseline is none. Task 4 remains subject to Review 2's named
+  control: QA Lead must independently rerun all six Task 4 gates and all
+  thirteen Task 4 assertions; any failure reopens Task 4.
+- QA cadence audit: Review 2 is scheduled after Tasks 4-5 and is not due
+  before Task 5; no prior Review 2 artifact exists.
+- Starting task: task-5
+
+### 2026-08-02 10:46 TRIAGE
+
+- Trigger: Task 5 required `golangci-lint run ./...` failed on the
+  pre-existing unchecked `rows.Close()` at `internal/workflow/resolve.go:61`;
+  the Developer produced a blocker report with preserved uncommitted Task 5
+  work and no implementation or report commit.
+- Source: `project-docs/docs/phases/phase-19/tasks/task-5-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`) in blocker
+  mode; commit verification: none (no commit created).
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-006)`)
+- Triage log: `TRG-19-006`; escalation: `ESC-19-006`; durable entries
+  confirmed in `project-docs/docs/phases/phase-19/triage-log.md` and
+  `project-docs/docs/current/tl_escalations_current.md`.
+
+### 2026-08-02 10:46 STOP
+
+- Cause: Task 5 required lint gate failed with the verified pre-existing
+  `resolve.go:61` `errcheck` finding. The remaining required commands, commit,
+  report finalization, and built-CLI evidence cannot proceed under the failed
+  gate; preserved work spans the public CLI, workflow core, and formatter.
+- Triage: `TRG-19-006` BLOCK, escalated as `ESC-19-006`.
+- Next human action: Tech Lead authorize and disposition the narrow
+  pre-existing `rows.Close()` lint repair and recovery of the preserved Task 5
+  work, then resume the Developer to rerun the full Task 5 command sequence
+  from `gofmt -l cmd internal`, produce implementation and report commits,
+  and pass report-lint before Review 2.

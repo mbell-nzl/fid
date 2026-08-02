@@ -22,42 +22,40 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution. Tasks 1-4 complete. Next: Task 5, then Review 2.**
+**In execution. Tasks 1-3 complete; Task 4 complete with gates unverified.
+Next: resume Task 5, then Review 2.**
 
-**Task 4 closed under DEC-101 (2026-08-02) with a named control.** Its gates and
-VAL-059 commands were executed by the **Human without verbatim token capture**,
-recorded honestly as **human-attested** rather than token-cited. **QA Lead's
-Review 2 rerun is the control and must independently re-execute all six gates
-and all thirteen Task 4 assertions; any failure voids the disposition and
-reopens Task 4.**
+**Task 4's attested lint PASS was disproven (TRG-19-006 / ESC-19-006 /
+DEC-102).** DEC-101 closed Task 4 on **human-attested** gates with QA Lead's
+Review 2 rerun as the named control, and **that control triggered two days early
+from a Developer instead of QA Lead**: Task 5's `golangci-lint run ./...` failed
+on `internal/workflow/resolve.go:61`, a line **Task 4 itself introduced**
+(`32614bb`), which the Task 5 report misclassified as pre-existing on the
+strength of `git show HEAD`. **DEC-102** honours the void condition in substance
+but scopes the remedy to what is disproven: Task 4's implementation, commit, and
+thirteen assertions stand; its lint line is corrected to **FAIL** and four gates
+to **UNVERIFIED**; the one-line repair is authorized inside Task 5, whose
+repo-wide green run verifies Task 4's gate 2 of 6. Task 4 does not close until
+that run is token-cited green.
 
-**Review 1 (Tasks 1-3) verdict BLOCK, resolved (TRG-19-003 / ESC-19-003 /
-DEC-098).** All 37 in-window assertions (VAL-001..013, VAL-027..050) are ON
-TRACK with cited evidence and all Task 1-3 gates verified; the one blocking
-finding was a **Task 4 precondition**, not a defect in shipped work — Task 4
-said `git rev-parse HEAD` where QA-plan §6 requires the Task 3 *implementation*
-commit, and the two demonstrably differed. **DEC-098** pins the baseline,
-synchronizes Task 4 to QA-plan §6, and fixes normalization to the committed
-no-op; `task-4.md` and `validation-contract.md` amended, `qa-plan.md` unchanged.
+**Review 1 (Tasks 1-3) verdict BLOCK, resolved.** All 37 in-window assertions
+(VAL-001..013, VAL-027..050) are ON TRACK with cited evidence and all Task 1-3
+gates verified. The one blocking finding was a Task 4 precondition, not a defect
+in shipped work.
 
-**Task 4 stop, resolved (TRG-19-004 / ESC-19-004 / DEC-099 / DEC-100).** The
-first `capture.sh` run failed on a path bug in the script Task 4 was authoring.
-Stopping was right — no commit, six gates unrun — but "restart from scratch" was
-not: the failure wrote nothing, and DEC-098's guard is structural, not temporal.
-**DEC-099** preserves the partial work and settles baseline provenance by
-reproduction against the committed `SHA256SUMS`. **DEC-100** makes the general
-rule standing.
+**Four consecutive BLOCKs, every one correct to stop and every one wrong or
+incomplete in its stated reason; three trace to defects in my own artifacts.**
+Reasoning lives in `../phases/phase-19/triage-log.md` and `decisions.md`; the
+binding rules are under Active Constraints below. Wrap-up should treat this as
+one systemic finding about reasoning quality at the triage seam, not four
+incidents.
 
-**Task 4 third stop, resolved (TRG-19-005 / ESC-19-005 / DEC-101).** Step R's
-`git worktree remove` / `prune` hit a read-only `.git/worktrees/` and cascaded
-into four dependent commands. The stop matched the letter of Step R; the
-reasoning was wrong. **Three consecutive stops, none in the product — all in
-VAL-059's verification scaffolding**, each fixed narrowly so the next adjacent
-brick fell. **DEC-101:** cleanup is never evidence; scratch state is unique per
-attempt (`mktemp -d`); task specs declare required environment capabilities and
-escalate shortfalls at step zero. Baseline provenance is settled by the six
-`OK` and closed — not repeated. **CF-025** converts VAL-059 into a permanent
-golden-file test in Task 6.
+| Stop | Cause | Disposition |
+|---|---|---|
+| TRG/ESC-19-003 | Task 4 baseline selector contradicted QA-plan §6 | DEC-098 pins the baseline; `task-4.md` + contract amended |
+| TRG/ESC-19-004 | `capture.sh` path bug in a script Task 4 was authoring | DEC-099 preserves partial work; DEC-100 makes the rule standing |
+| TRG/ESC-19-005 | Step R `git worktree remove` hit a read-only `.git/` | DEC-101: cleanup is never evidence; CF-025 to Task 6 |
+| TRG/ESC-19-006 | Task 4's own lint regression declined as "pre-existing" | DEC-102: provenance required; Task 4 gates unverified |
 
 ## Operating Mode
 
@@ -75,8 +73,8 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 | 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
 | 2 | Workflow authoring core (validation + effect builder) | **Complete** (`10d4d24`) | 1 |
 | 3 | `fid workflow define` + `workflow.defined` event | **Complete** (`50533e2`, report `697c673`) | 1, 2 |
-| 4 | `fid workflow assign` + assignment-aware issue creation | **Complete** (human-attested, DEC-101; Review 2 is the control) | 1-3 |
-| 5 | `fid workflow list` in every output format | Pending | 1, 3, 4 |
+| 4 | `fid workflow assign` + assignment-aware issue creation | **Complete, gates unverified** (`32614bb`; lint FAIL corrected under DEC-102, four gates `UNVERIFIED`, Review 2 verifies) | 1-3 |
+| 5 | `fid workflow list` in every output format | **In progress** — implementation preserved uncommitted; resuming under DEC-102 | 1, 3, 4 |
 | 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending | 1-5 |
 
 ## Validation Contract
@@ -105,8 +103,8 @@ are allocated from `../phases/phase-19/triage-log.md`.
 ## Active Constraints
 
 DEC-075..DEC-082 (planning), DEC-089..DEC-093 (QA-blocker dispositions), and
-DEC-094..DEC-095 (Task 1 evidence correction, triage-log seeding) are recorded
-in `../phases/phase-19/decisions.md`. Binding during execution:
+DEC-094..DEC-102 (mid-phase escalation dispositions) are recorded in
+`../phases/phase-19/decisions.md`. Binding during execution:
 
 - **`internal/workflow` owns authoring, assignment, and resolution** (DEC-089;
   `02_TRD.md` §3 synchronized). It still must not create issues, verify ACs,
@@ -150,17 +148,13 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
   **no in-package (`package db`) test file may import `internal/workflow`**;
   tests needing both go in `package db_test`. Same rule for `internal/journal`
   in-package tests.
-- **The VAL-059 parity baseline is pinned, never selected** (DEC-098). It is
-  the Task 3 implementation commit
-  `50533e2b813bf073cd75f75eb70dd09cd15e9040`, verified with `git rev-parse
-  --verify` and cross-checked against `task-3-done.md`. **`git rev-parse HEAD`,
-  branch names, and any other moving selector are prohibited.** Normalization is
-  the committed no-op `{"json_pointers":[],"replacement":null}`; if the fixture
-  cannot hold timestamps stable, Task 4 is **`BLOCKED`** — never widen it.
-  **The guard is structural, not temporal** (DEC-099): the baseline is built in
-  a detached worktree at the pinned commit from a committed fixed fixture, so
-  working-tree edits cannot affect it and capture order is not binding.
-  Provenance doubts are settled by **reproduction against `SHA256SUMS`**.
+- **The VAL-059 parity baseline is pinned, never selected** (DEC-098/099).
+  Pinned to the Task 3 implementation commit
+  `50533e2b813bf073cd75f75eb70dd09cd15e9040`; moving selectors are prohibited
+  and normalization is the committed no-op — **never widen it**. Baseline
+  provenance is **settled and closed** (six `SHA256SUMS` `OK`, DEC-101); the
+  standing assertion is the candidate check against the committed manifest.
+  CF-025 replaces the ceremony with a real test in Task 6.
 - **A task-authored evidence harness that fails while being authored is a
   deviation, not a failed gate** (DEC-100) — when the rerun is byte-identical,
   the pass is deterministic and third-party reproducible, the artifact is a task
@@ -168,6 +162,15 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
   report states the failure, root cause, and fix. Otherwise the strict rule
   holds. At triage, **"task incomplete, stop"** is not **"evidence tainted,
   restart"**.
+- **A gate result not captured in the session that records it is `UNVERIFIED`,
+  never `PASS`** (DEC-102). DEC-101's "attest now, verify at Review 2" was
+  insufficient — the false `PASS` survived triage, a run-resume reconciliation,
+  and a Tech Lead escalation, and surfaced only because an unrelated task ran the
+  same command. A control that fires late enough to be tripped over by accident
+  is not a control. **"Pre-existing" is a provenance claim**: declining an
+  out-of-scope repair requires citing the introducing commit via `git log -S` /
+  `git log --diff-filter=A` / `git blame` and showing it predates phase-start.
+  `git show HEAD` proves a line is committed, not inherited.
 - **Cleanup is never evidence** (DEC-101). Commands that only remove or prune
   scratch state are excluded from required-command evidence: never reported
   `PASS`/`BLOCKED`, never gating a sequence, and a failed cleanup is a note, not
@@ -187,17 +190,17 @@ in `../phases/phase-19/decisions.md`. Binding during execution:
 
 ## Known Risks
 
-- **Task 4 is the heaviest.** It changes `internal/issues.Create`, the most
-  exercised path in the product. VAL-058/059 are the regression guard; capture
-  the pinned baseline bytes **before** editing `create.go` (DEC-098 above).
-- **Reassignment effect shape.** `applyDelete` requires exactly one affected
-  row, so the event carries `delete`+`insert` only when a prior row exists.
+- **Task 4 changed `internal/issues.Create`**, the most exercised path in the
+  product, and its gates are not yet independently verified. VAL-058/059 are the
+  regression guard.
 - **Coverage.** `internal/workflow` is a COV-001 80% package gaining a lot of
   new code. **CF-023 residue (DEC-087):** no mechanical detector exists for a
   `PASS` against a non-terminating command; QA Lead's rerun is the control.
-- **Review 2 carries unusual weight** (DEC-101). It is the sole independent
-  verification of Task 4's six gates and thirteen assertions, not a sampling
-  pass. Treat Task 4 as unverified until it clears.
+- **Review 2 carries unusual weight** (DEC-101, hardened by DEC-102). It is the
+  sole independent verification of Task 4's thirteen assertions and its four
+  still-`UNVERIFIED` gates — not a sampling pass. One Task 4 attestation is
+  already **demonstrably false**, so QA Lead must also report whether any other
+  attested result is contradicted. Task 5 settles gate 2 of 6.
 - **CF-025 is due in Task 6** (DEC-101): convert VAL-059 into a permanent
   golden-file integration test. Heavy mode accepts no carry-forward past phase
   end, so Task 6 is the last legal slot.

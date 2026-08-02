@@ -13,6 +13,14 @@ This does not meet DEC-084/086. It is dispositioned by **DEC-101**, which names
 all thirteen Task 4 assertions and re-runs every command. **If any command fails
 under QA Lead, DEC-101's disposition is void and this task reopens.**
 
+> **Update 2026-08-02 (DEC-102): that condition has triggered, early.** Task 5's
+> Developer independently re-ran `golangci-lint run ./...` and it **failed** on a
+> line this task introduced. The attested PASS above is disproven. DEC-101's
+> disposition is void; the remedy is scoped to what is disproven (see the
+> corrected gate results below). This task is **Complete (gates unverified)** and
+> does not close until a token-cited gate run is green. Its implementation,
+> commit, and thirteen assertions stand and remain Review 2's responsibility.
+
 ## Summary of what was implemented
 
 - `fid workflow assign --name <slug> [--kind <k>] [--project] --by <role>`
@@ -113,15 +121,37 @@ it was never widened, and no expectation was hand-written.
 
 ## Exact quality-gate results
 
-All six recorded **PASS (human-attested)** — see the provenance note; tokens
-were not captured, and QA Lead's Review 2 rerun is the control.
+> **Corrected 2026-08-02 by the Tech Lead (DEC-102).** The lint gate below was
+> originally recorded `PASS (human-attested)`. That record was **false** and is
+> corrected in place to **FAIL**. Under DEC-102 item 5, results not captured in
+> the session that records them are `UNVERIFIED`, never `PASS`; the four
+> remaining attested gates are relabelled accordingly. Nothing here is deleted —
+> the original claim is stated so the failure is auditable.
 
-- `gofmt -l cmd internal` — PASS (human-attested), no files listed
-- `golangci-lint run ./...` — PASS (human-attested)
-- `go test -race -coverprofile=coverage.out ./...` — PASS (human-attested)
-- `go tool cover -func=coverage.out` — PASS (human-attested)
-- `go test -tags integration -race ./...` — PASS (human-attested)
-- `go build -o /tmp/fid ./cmd/fid` — PASS (human-attested)
+- `gofmt -l cmd internal` — UNVERIFIED (human-attested, no token captured); no
+  files listed
+- `golangci-lint run ./...` — **FAIL**. Originally recorded
+  `PASS (human-attested)`. Disproven 2026-08-02 by Task 5's independent
+  in-session run of the identical command over the same committed line:
+  `* errcheck: 1` at `internal/workflow/resolve.go:61:18: Error return value of
+  rows.Close is not checked (errcheck)`. `resolve.go` is **new in this task**
+  (`git log --diff-filter=A -- internal/workflow/resolve.go` → `32614bb`), so
+  the finding was introduced here and no stale lint cache could have masked it.
+  Repaired under DEC-102 item 4 inside Task 5; because `golangci-lint run ./...`
+  is repo-wide, **Task 5's green token-cited run is the verifying re-execution
+  of this gate**. See ESC-19-006 / TRG-19-006.
+- `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED (human-attested,
+  no token captured); not contradicted — an errcheck finding has no bearing on
+  test outcomes
+- `go tool cover -func=coverage.out` — UNVERIFIED (human-attested, no token
+  captured)
+- `go test -tags integration -race ./...` — UNVERIFIED (human-attested, no token
+  captured)
+- `go build -o /tmp/fid ./cmd/fid` — UNVERIFIED (human-attested, no token
+  captured)
+
+Four gates remain uncorroborated and are re-executed by QA Lead at Review 2
+(DEC-102 item 6). This task is **Complete (gates unverified)** until they are.
 
 ## Deviations from spec
 

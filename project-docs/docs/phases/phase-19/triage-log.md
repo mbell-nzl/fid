@@ -13,15 +13,71 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-006`, `ESC-19-006`.
+> **Next free IDs:** `TRG-19-007`, `ESC-19-007`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-006 | 2026-08-02 | Task 5 required `golangci-lint run ./...` gate failed with pre-existing unchecked `rows.Close()` in `internal/workflow/resolve.go:61`; the Developer preserved uncommitted Task 5 work and submitted a blocker report | `tasks/task-5-done.md` | BLOCK | ESC-19-006 | Genuine unresolved required-gate failure (`* errcheck: 1`). Recovery of uncommitted public CLI, workflow-core, and formatter changes across Developer sessions exceeds TL-Lite authority. |
 | TRG-19-005 | 2026-08-01 | Task 4 Recovery Step R: required `git worktree remove` / `git worktree prune` were sandbox-blocked, leaving the baseline path registered but missing; the authorized rerun reproduced the pinned baseline and six manifest outputs | `tasks/task-4-done.md` | BLOCK | ESC-19-005 | The later reproduction is retained as provenance, but it does not erase the initial blocked cleanup commands. Fresh-session recovery of uncommitted public-path work exceeds TL-Lite authority. |
 | TRG-19-004 | 2026-08-01 | Task 4 blocker report: the first required VAL-059 baseline capture failed because `capture.sh` wrote into a missing output directory; a repaired-script retry succeeded, but the task stopped with uncommitted implementation and an uncleared scratch worktree | `tasks/task-4-done.md` | BLOCK | ESC-19-004 | Genuine unresolved required-command failure. The retry cannot substitute for the failed capture; partial-work recovery needs full Tech Lead disposition. |
 | TRG-19-003 | 2026-07-30 | QA Review 1 BLOCK: Task 4's immutable VAL-059 baseline instruction selects ambient git HEAD, while QA-plan §6 requires the verified Task 3 implementation commit and prohibits ambient HEAD | `qa/review-1.md`; existing `ESC-19-003` | BLOCK | ESC-19-003 | Genuine unresolved QA-blocking precondition. Synchronizing the Task 4 spec with the QA-plan procedure crosses the task/QA contract and requires full Tech Lead resolution before Task 4 starts. |
 | TRG-19-002 | 2026-07-29 | Task 2 required gate `golangci-lint run ./...` fails with a test-only import cycle `internal/db [test] → internal/workflow → internal/journal → internal/db`; repair appears to need an out-of-scope test file or a wider dependency decision | `tasks/task-2-done.md:60,66,70` | BLOCK | ESC-19-002 | Real gate failure, correctly escalated: it touches a dependency boundary and an out-of-scope file. Resolved by DEC-096 — `workflow → journal` is confirmed intended, and the narrow `db_test` split is authorized. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite could not write it: Codex provider-prompt defect, root-caused and fixed by DEC-097. |
 | TRG-19-001 | 2026-07-26 | Task 1 report records the VAL-031 no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command terminates with no output and exit 1 | `tasks/task-1-done.md:40,52` | BLOCK | ESC-19-001 | Evidence-token defect under DEC-086. Observable itself holds (no production evaluator). Report correction required; no implementation change. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite returned the verdict without writing this record. |
+
+---
+
+## TRG-19-006 - Task 5 lint gate blocked by pre-existing unchecked rows.Close
+
+- **Trigger:** "Task 5 required quality gate failed at `golangci-lint run ./...`
+  on a pre-existing unchecked `rows.Close()` in `internal/workflow/resolve.go:61`,
+  and the Developer produced a blocker report with preserved uncommitted Task 5
+  work and no implementation/report commit."
+- **Source:** `project-docs/docs/phases/phase-19/tasks/task-5-done.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** This is a genuine unresolved required quality-gate failure:
+  the blocker report records the exact lint token `* errcheck: 1` and the
+  unchanged baseline finding at `internal/workflow/resolve.go:61:18`. It is not
+  misclassified, no accepted decision covers it, and no commit-verification
+  evidence supports the resolved-by-commit exception. The remaining Task 5
+  recovery includes uncommitted changes across the public CLI, workflow core,
+  and output-formatting subsystems, so it crosses the partial-work and
+  multi-subsystem escalation triggers.
+- **Local decisions made:** none by TL-Lite; no command result is substituted
+  or treated as passed.
+- **References:** `tasks/task-5-done.md` (Exact quality-gate results,
+  Deviations from spec, and Tech Lead notes); `decisions_active.md` (DEC-101
+  does not waive pre-existing product/gate failures); `09_AI_WORKFLOW.md` §2.3
+  (genuine unresolved hard-stop failures and partial-work escalation rules).
+- **If BLOCK:** ESC-19-006 raised in `tl_escalations_current.md`; recommended
+  next action: invoke the full Tech Lead to authorize disposition of the
+  pre-existing `resolve.go` lint repair and a recovery plan for preserved Task
+  5 work, then rerun the task's full required gate sequence from the first
+  command.
+- **Resolution (Tech Lead, 2026-08-02):** BLOCK **sustained in outcome,
+  corrected in reasoning** — the fourth consecutive stop in this phase to fit
+  that description. Stopping was right (a required gate genuinely failed, three
+  subsystems of preserved work) and declining an out-of-scope edit was right —
+  the same discipline I sustained at TRG-19-002. **But "pre-existing" was never
+  verified.** The Developer cited `git show HEAD`, which proves a line is
+  committed, not that it is inherited; HEAD contains Task 4.
+  `git log --diff-filter=A -- internal/workflow/resolve.go` returns **`32614bb`**
+  — Task 4's own implementation commit, one day earlier — and `task-4-done.md`
+  lists the file as `(new)`. It is also the only unguarded `defer rows.Close()`
+  in the repository. TL-Lite adopted the Developer's framing without testing it,
+  so the escalation reached me as "authorize a repair of old baseline debt" when
+  the actual finding was **Task 4's `golangci-lint` PASS is false**. Resolved by
+  **DEC-102**: provenance claims must cite an introducing commit; DEC-101's void
+  condition has triggered; Task 4 becomes *Complete (gates unverified)* with its
+  lint line corrected to FAIL; the one-line repair is authorized inside Task 5,
+  whose repo-wide green run is the verifying re-execution; uncaptured gate
+  results are `UNVERIFIED`, never `PASS`.
+- **Pattern note for wrap-up.** TRG-19-003/004/005/006 are four consecutive
+  BLOCKs, every one correct to stop and every one wrong or incomplete in its
+  stated reason. Three trace to defects in my own artifacts. Wrap-up should treat
+  this as a single systemic finding about reasoning quality at the triage seam,
+  not four unrelated incidents — and should ask specifically why no participant
+  ran a two-second provenance check before a claim of "pre-existing" travelled
+  through a Developer, a triage, and a Tech Lead escalation intact.
 
 ---
 

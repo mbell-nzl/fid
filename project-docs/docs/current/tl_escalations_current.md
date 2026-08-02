@@ -16,6 +16,23 @@ None.
 Full reasoning lives in `../phases/phase-19/decisions.md` and
 `../phases/phase-19/triage-log.md`; these are pointers.
 
+- **ESC-19-006 — Task 5's lint block was misclassified as pre-existing; it
+  disproved Task 4's attested lint PASS (2026-08-02 → DEC-102).**
+  `golangci-lint run ./...` failed `* errcheck: 1` at
+  `internal/workflow/resolve.go:61`. The Developer called it pre-existing on the
+  strength of `git show HEAD` and declined the out-of-scope repair; TL-Lite
+  adopted that framing. **Stopping was right and declining was right, but the
+  provenance was never checked:** `git log --diff-filter=A` returns **`32614bb`**,
+  Task 4's own commit, and `task-4-done.md` lists the file as `(new)`. So the
+  gate Task 4 recorded as `PASS (human-attested)` **could not have passed**.
+  **DEC-102:** "pre-existing" requires an introducing commit older than
+  phase-start; DEC-101's void condition has triggered (early, from a Developer
+  rather than QA Lead — honoured in substance); Task 4 → **Complete (gates
+  unverified)** with its lint line corrected to FAIL and four gates relabelled
+  `UNVERIFIED`; the one-line repair is authorized inside Task 5, whose repo-wide
+  green run verifies Task 4's gate 2 of 6; **uncaptured gate results are
+  `UNVERIFIED`, never `PASS`** — a named future control is not a substitute.
+
 - **ESC-19-005 — Task 4 Step R cleanup blocked by the filesystem sandbox
   (2026-08-01 → DEC-101).** `git worktree remove` / `git worktree prune` failed
   with `Read-only file system`, leaving the path registered-but-missing and
@@ -66,20 +83,15 @@ Full reasoning lives in `../phases/phase-19/decisions.md` and
 
 ## Recent Archive Notes
 
-- **Phase 18** (wrapped 2026-07-25) raised **ESC-001** — a final-review BLOCK on
-  the `workflow.Load` connection deadlock. Resolved by **DEC-072**, archived to
-  `../phases/phase-18/tl-escalations.md`. Its ID collides with Phase 17's
-  ESC-001; left as recorded (the CF-023 defect that motivated DEC-084).
-- **Phase 18's** other five triages (TRG-001..005) returned `BLOCK` and were
-  adjudicated as DEC-067..071 without an `ESC-NNN`. Correct in substance, but in
-  five of six cases TL-Lite reported an escalation it never minted and wrote no
-  triage log — now fixed by DEC-085 and tracked as **CF-023**.
-- **Phase 17** (wrapped 2026-07-18) raised five escalations, all resolved and
-  archived to `../phases/phase-17/tl-escalations.md`, plus the WRAP-F1/F2
-  register reconciliation. Its two open retrospective items became **CF-023**.
-- **Phase 16** raised no `ESC-NNN`; DEC-043..048 and TRG-046 are archived in
-  `../phases/phase-16/`. Phase 16 VAL-013 is not an escalation — the completed
-  human checklist records PASS for HUMAN-16a..d.
+- **Phase 18** — ESC-001 (final-review BLOCK, `workflow.Load` deadlock) resolved
+  by DEC-072; five other triages adjudicated as DEC-067..071 without an
+  `ESC-NNN`. In five of six cases TL-Lite reported an escalation it never minted
+  and wrote no triage log — fixed by DEC-085, tracked as **CF-023**. Archived to
+  `../phases/phase-18/tl-escalations.md`.
+- **Phase 17** — five escalations, all resolved; two retrospective items became
+  **CF-023**. Archived to `../phases/phase-17/tl-escalations.md`.
+- **Phase 16** — no `ESC-NNN`; DEC-043..048 and TRG-046 archived in
+  `../phases/phase-16/`.
 
 ## Standing Escalation Triggers
 
