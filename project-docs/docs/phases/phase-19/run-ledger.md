@@ -307,3 +307,95 @@
   work, then resume the Developer to rerun the full Task 5 command sequence
   from `gofmt -l cmd internal`, produce implementation and report commits,
   and pass report-lint before Review 2.
+
+### 2026-08-02 15:09 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-08-02 10:46 STOP, resolved by DEC-102
+- Reconciliation: `DEC-102` is committed at `2711f09`; `ESC-19-006` is
+  resolved and the Open ESC baseline is none. Task 4 is recorded as Complete
+  with gates unverified; its lint failure was reclassified as in-phase debt,
+  and the repo-wide Task 5 lint run is the verifying re-execution for that
+  Task 4 gate. The Task 5 implementation remains preserved and uncommitted;
+  `task-5-done.md` remains the prior blocker report and will be overwritten by
+  the real completion report. No preserved implementation files were
+  discarded or regenerated.
+- Recovery contract: Developer must re-read the changed Task 5 spec, apply
+  only the authorized `internal/workflow/resolve.go:61` one-line repair, run
+  all five exact commands from the top, and record PASS only for tokens
+  observed in that same report-writing session; unobserved results are
+  UNVERIFIED.
+- QA cadence audit: Review 2 remains scheduled after committed Task 4 and
+  Task 5 reports and is not due before this Task 5 recovery; no Review 2
+  artifact exists.
+- Starting task: task-5 recovery from preserved work
+
+### 2026-08-02 15:16 TASK task-5 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-19/tasks/task-5-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`); report
+  file committed and clean.
+- Implementation commit:
+  `8f79013c7e8afcd3d4bd73f9821484d9dd9d9334` - verified, subject matched
+  (`feat(workflow): add workflow list command`).
+- Report commit: `f218c4f88e95f3f84b6f910eb41586ef383bd4b3` - verified, subject
+  matched (`docs(task): finalize completion report for phase-19 task-5`).
+- Report-lint commit: `530a82ab8e8ed4e5d75b957b659e1e8cebbd638d` - verified,
+  subject matched (`docs(task): record completion report lint for phase-19
+  task-5`).
+- Exact five-command gate: PASS in the report with session-observed tokens;
+  `gofmt` `exit 0 (no output)`, lint `0 issues.`, race coverage test
+  `ok ... internal/workflow 5.477s coverage: 80.4% of statements`, cover
+  `total ... (statements) 77.0%`, and build `exit 0 (no output)`. The repo-wide
+  lint pass independently verifies Task 4's gate 2 of 6 under DEC-102.
+- Validation coverage: VAL-018..020 and VAL-060..067 recorded PASS; QA-18..20
+  and QA-60..72 apply. No Developer concerns or dependency changes.
+- Next cadence event: Review 2 for Tasks 4-5 is now due before Task 6.
+
+### 2026-08-02 15:29 REVIEW review-2
+
+- Review: `project-docs/docs/phases/phase-19/qa/review-2.md`
+- Review commit: `2abcc6c9f242b69262ed3da024111854cbcbc27c` - verified, subject
+  matched (`docs(qa): review phase 19 tasks 4-5`).
+- Independent representative command: `go test -race ./internal/issues/...
+  ./internal/workflow/... ./internal/format/... ./cmd/fid/` - PASS,
+  `ok github.com/mbell-nzl/fid/cmd/fid 79.674s`.
+- Scope: all 24 Task 4-5 assertions reviewed; all six Task 4 gates and all
+  five Task 5 gates independently re-executed. Task 4 gates passed, but VAL-059
+  required root-level SHA verification failed with
+  `sha256sum: WARNING: 6 listed files could not be read`; Task 4 report-lint
+  failed with 7 failures. Task 5 assertions and gates are on track/PASS.
+- Verdict: BLOCK; blocking findings: Task 4 report evidence is mechanically
+  non-compliant and the authoritative VAL-059 SHA procedure is not executable
+  from the prescribed repository-root context. Improvement findings concern
+  distinct rejection-error assertions and permanent replay assertions.
+- Escalation raised by review: `ESC-19-007`; TL-Lite triage required before
+  any STOP or continuation.
+
+### 2026-08-02 15:31 TRIAGE
+
+- Trigger: Review 2 BLOCKed Tasks 4-5 because Task 4's completion report fails
+  report-lint and the authoritative root-level VAL-059 SHA-256 command fails
+  as written, although directory-local artifact checks pass.
+- Source: `project-docs/docs/phases/phase-19/qa/review-2.md`
+- Commit verification: review commit
+  `2abcc6c9f242b69262ed3da024111854cbcbc27c` resolved and subject matched;
+  Task 5 report-lint PASS; Task 4 report-lint FAIL with 7 failures.
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-007)`)
+- Triage log: `TRG-19-007`; existing escalation `ESC-19-007` referenced, not
+  duplicated. Durable triage entry confirmed in
+  `project-docs/docs/phases/phase-19/triage-log.md`.
+
+### 2026-08-02 15:31 STOP
+
+- Cause: Review 2 found two unresolved Task 4 blockers: the committed Task 4
+  completion report is not report-lint compliant, and the exact required
+  repository-root VAL-059 `sha256sum -c` procedure exits 1 because its bare
+  manifest paths do not resolve from that working directory. Directory-local
+  parity checks passing do not substitute for the prescribed command.
+- Triage: `TRG-19-007` BLOCK, escalated as `ESC-19-007`.
+- Next human action: Tech Lead resolve `ESC-19-007` by recording one
+  authoritative, exact, working-directory-safe VAL-059 procedure and
+  dispositioning Task 4's completion report so `report-lint` passes; then
+  resume the Phase Runner before Task 6. Task 5 remains complete, while Task 4
+  is reopened pending compliant evidence closure.

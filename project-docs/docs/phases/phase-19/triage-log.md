@@ -13,10 +13,11 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-007`, `ESC-19-007`.
+> **Next free IDs:** `TRG-19-008`, `ESC-19-008`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-007 | 2026-08-02 | QA Review 2 BLOCK: Task 4's completion report fails `report-lint.sh` 7× and the prescribed root-level VAL-059 `sha256sum -c` command exits 1, despite all six Task 4 gates and candidate parity passing under independent QA execution | `qa/review-2.md`; existing `ESC-19-007` | BLOCK | ESC-19-007 | Correct BLOCK. Both defects are in evidence artifacts, not the product. Resolved by DEC-103 — the prescribed manifest command never worked; the report closes via a Developer evidence session; CF-025 promoted to first and mandatory in Task 6. **Table row backfilled by Tech Lead 2026-08-02** — the detail section below was written but the summary row and the next-free-ID header were not updated (CF-023). |
 | TRG-19-006 | 2026-08-02 | Task 5 required `golangci-lint run ./...` gate failed with pre-existing unchecked `rows.Close()` in `internal/workflow/resolve.go:61`; the Developer preserved uncommitted Task 5 work and submitted a blocker report | `tasks/task-5-done.md` | BLOCK | ESC-19-006 | Genuine unresolved required-gate failure (`* errcheck: 1`). Recovery of uncommitted public CLI, workflow-core, and formatter changes across Developer sessions exceeds TL-Lite authority. |
 | TRG-19-005 | 2026-08-01 | Task 4 Recovery Step R: required `git worktree remove` / `git worktree prune` were sandbox-blocked, leaving the baseline path registered but missing; the authorized rerun reproduced the pinned baseline and six manifest outputs | `tasks/task-4-done.md` | BLOCK | ESC-19-005 | The later reproduction is retained as provenance, but it does not erase the initial blocked cleanup commands. Fresh-session recovery of uncommitted public-path work exceeds TL-Lite authority. |
 | TRG-19-004 | 2026-08-01 | Task 4 blocker report: the first required VAL-059 baseline capture failed because `capture.sh` wrote into a missing output directory; a repaired-script retry succeeded, but the task stopped with uncommitted implementation and an uncleared scratch worktree | `tasks/task-4-done.md` | BLOCK | ESC-19-004 | Genuine unresolved required-command failure. The retry cannot substitute for the failed capture; partial-work recovery needs full Tech Lead disposition. |
@@ -312,3 +313,55 @@ Phase wrap-up checklist:
       that every BLOCK names the ESC it raised.
 - [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
 -->
+
+---
+
+## TRG-19-007 - Review 2 confirms unresolved Task 4 evidence failures
+
+- **Trigger:** QA Review 2 BLOCKed Tasks 4-5 because Task 4's completion report fails report-lint and the authoritative VAL-059 root-level SHA-256 command fails as written, despite directory-local artifact checks passing.
+- **Source:** `project-docs/docs/phases/phase-19/qa/review-2.md`; existing
+  `ESC-19-007` in `project-docs/docs/current/tl_escalations_current.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** The attached, verified review evidence establishes that Task 4
+  report-lint returned `FAIL report-lint found 7 failure(s)`, including a
+  missing `## Tests run` section and six required gates without `PASS` or
+  `BLOCKED` records. It also establishes that the authoritative required
+  command `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` exits 1 from
+  the repository root because six manifest paths cannot be read. Passing
+  directory-local checks show the product artifact observable holds, but do
+  not resolve the contradictory required evidence procedure or failed report.
+  This QA Blocking finding is neither misclassified, resolved by the attached
+  review commit, nor covered by an accepted decision authorizing resumption.
+- **Local decisions made:** none by TL-Lite; existing ESC-19-007 referenced,
+  not duplicated.
+- **References:** `qa/review-2.md` (Verdict; Task 4 report-lint result;
+  VAL-059 SHA-256 result); `tl_escalations_current.md:12-21` (ESC-19-007);
+  `09_AI_WORKFLOW.md` §2.3 (QA blocking and hard-stop triage), §9.
+- **If BLOCK:** existing ESC-19-007 remains raised in
+  `tl_escalations_current.md`; recommended next action: invoke the full Tech
+  Lead to resolve ESC-19-007, reconciling the authoritative VAL-059 procedure
+  and Task 4 completion-report evidence before the Phase Runner resumes.
+- **Resolution (Tech Lead, 2026-08-02):** BLOCK **sustained in outcome and in
+  reasoning** — the first of the phase's five stops where the stated ground was
+  fully correct. Both defects were real, both were in evidence artifacts rather
+  than the product, and Review 2 separated those cleanly. Resolved by
+  **DEC-103**: the prescribed `sha256sum -c` command never worked from the
+  repository root and the obvious repair is also invalid (self-referential);
+  the authoritative form checks a `mktemp -d` candidate capture from that
+  directory by absolute manifest path. **VAL-059 = PASS** on Review 2's executed
+  evidence. `task-4-done.md` closes via a **Developer evidence session** rather
+  than by transcribing QA Lead's tokens, which would have re-opened the DEC-102
+  item 5 loophole hours after closing it. `report-lint.sh` was **right** and
+  needs no behavioural change. CF-025 promoted to first and mandatory in Task 6;
+  Review 2's two improvement findings are do-now there.
+- **Record-keeping note.** The detail section above was written but the summary
+  table row and the `Next free IDs` header were not updated; both are Tech Lead
+  backfills. This is the third TL-Lite record-keeping miss in Phase 19
+  (TRG-19-001 and TRG-19-002 were written entirely by backfill) and belongs to
+  **CF-023**. The reasoning quality here was high; the bookkeeping was not.
+- **Pattern note for wrap-up.** ESC-19-003/004/005/007 are four stops in one
+  observable's shell scaffolding, plus ESC-19-006 in the fallout from it. Zero
+  product defects in five stops. Wrap-up's headline finding should be
+  **evidence apparatus disproportionate to the observable**, and the counterfactual
+  worth recording is that CF-025 — expressing VAL-059 as a Go test — was
+  available at planning time and would have avoided all five.

@@ -22,40 +22,46 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution. Tasks 1-3 complete; Task 4 complete with gates unverified.
-Next: resume Task 5, then Review 2.**
+**In execution. Tasks 1-3, 5 complete. Task 4 needs a closure evidence session.
+Next: Task 4 evidence session, then Task 6.**
 
-**Task 4's attested lint PASS was disproven (TRG-19-006 / ESC-19-006 /
-DEC-102).** DEC-101 closed Task 4 on **human-attested** gates with QA Lead's
-Review 2 rerun as the named control, and **that control triggered two days early
-from a Developer instead of QA Lead**: Task 5's `golangci-lint run ./...` failed
-on `internal/workflow/resolve.go:61`, a line **Task 4 itself introduced**
-(`32614bb`), which the Task 5 report misclassified as pre-existing on the
-strength of `git show HEAD`. **DEC-102** honours the void condition in substance
-but scopes the remedy to what is disproven: Task 4's implementation, commit, and
-thirteen assertions stand; its lint line is corrected to **FAIL** and four gates
-to **UNVERIFIED**; the one-line repair is authorized inside Task 5, whose
-repo-wide green run verifies Task 4's gate 2 of 6. Task 4 does not close until
-that run is token-cited green.
+**Review 2 verdict BLOCK, resolved (TRG-19-007 / ESC-19-007 / DEC-103).** Review
+2 (`2abcc6c`) independently re-ran **all six Task 4 gates green** (lint
+`0 issues.`) and all five Task 5 gates, and confirmed VAL-059's observable —
+fresh candidate capture, six `OK`, clean `diff -r`. **All 25 in-window assertions
+are ON TRACK except VAL-059, and its two blocking findings are both in evidence
+artifacts, not the product.** (1) The prescribed
+`sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` **never worked** from the
+repo root — the manifest correctly holds bare filenames — and the obvious repair
+is also invalid, being self-referential. (2) `task-4-done.md` has never passed
+`report-lint.sh`. **DEC-103** fixes the procedure in both docs, records **VAL-059
+= PASS**, and closes Task 4 through a **Developer evidence session** rather than
+transcribing QA Lead's tokens. **CF-025 is promoted to first and mandatory in
+Task 6**; no further manual VAL-059 run is authorized.
+
+Earlier: **DEC-102** (TRG/ESC-19-006) disproved Task 4's human-attested lint
+PASS via a regression Task 4 itself introduced, voided DEC-101's disposition,
+and made uncaptured gate results `UNVERIFIED`, never `PASS`.
 
 **Review 1 (Tasks 1-3) verdict BLOCK, resolved.** All 37 in-window assertions
 (VAL-001..013, VAL-027..050) are ON TRACK with cited evidence and all Task 1-3
 gates verified. The one blocking finding was a Task 4 precondition, not a defect
 in shipped work.
 
-**Four consecutive BLOCKs, every one correct to stop and every one wrong or
-incomplete in its stated reason; three trace to defects in my own artifacts.**
-Reasoning lives in `../phases/phase-19/triage-log.md` and `decisions.md`; the
-binding rules are under Active Constraints below. Wrap-up should treat this as
-one systemic finding about reasoning quality at the triage seam, not four
-incidents.
+**Five stops, zero product defects.** Four are in one observable's shell
+scaffolding (VAL-059) and the fifth is fallout from it. Reasoning lives in
+`../phases/phase-19/triage-log.md` and `decisions.md`; binding rules are under
+Active Constraints below. **Wrap-up headline: evidence apparatus
+disproportionate to the observable** — CF-025 was available at planning and
+would have avoided all five.
 
 | Stop | Cause | Disposition |
 |---|---|---|
 | TRG/ESC-19-003 | Task 4 baseline selector contradicted QA-plan §6 | DEC-098 pins the baseline; `task-4.md` + contract amended |
 | TRG/ESC-19-004 | `capture.sh` path bug in a script Task 4 was authoring | DEC-099 preserves partial work; DEC-100 makes the rule standing |
 | TRG/ESC-19-005 | Step R `git worktree remove` hit a read-only `.git/` | DEC-101: cleanup is never evidence; CF-025 to Task 6 |
-| TRG/ESC-19-006 | Task 4's own lint regression declined as "pre-existing" | DEC-102: provenance required; Task 4 gates unverified |
+| TRG/ESC-19-006 | Task 4's own lint regression declined as "pre-existing" | DEC-102: provenance required; attested gates are `UNVERIFIED` |
+| TRG/ESC-19-007 | Prescribed `sha256sum -c` never ran; report never linted | DEC-103: procedure corrected; CF-025 first + mandatory |
 
 ## Operating Mode
 
@@ -73,9 +79,9 @@ Specs and completion reports: `../phases/phase-19/tasks/`.
 | 1 | `workflow_assignments` schema + `escalation-default` seed | **Complete** (`a509d59`, `3b061e1`) | None |
 | 2 | Workflow authoring core (validation + effect builder) | **Complete** (`10d4d24`) | 1 |
 | 3 | `fid workflow define` + `workflow.defined` event | **Complete** (`50533e2`, report `697c673`) | 1, 2 |
-| 4 | `fid workflow assign` + assignment-aware issue creation | **Complete, gates unverified** (`32614bb`; lint FAIL corrected under DEC-102, four gates `UNVERIFIED`, Review 2 verifies) | 1-3 |
-| 5 | `fid workflow list` in every output format | **In progress** — implementation preserved uncommitted; resuming under DEC-102 | 1, 3, 4 |
-| 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending | 1-5 |
+| 4 | `fid workflow assign` + assignment-aware issue creation | Implementation **complete** (`32614bb`), all gates green under Review 2. **Needs a closure evidence session** (DEC-103) to produce a `report-lint`-clean report with its own tokens. | 1-3 |
+| 5 | `fid workflow list` in every output format | **Complete** (`8f79013`, report-lint PASS, VAL-018..020 + VAL-060..067 verified at Review 2) | 1, 3, 4 |
+| 6 | Closure: integrity, rebuild parity, exit scenario, spec sync | Pending — **CF-025 first and mandatory** | 1-5 |
 
 ## Validation Contract
 
@@ -148,13 +154,13 @@ DEC-094..DEC-102 (mid-phase escalation dispositions) are recorded in
   **no in-package (`package db`) test file may import `internal/workflow`**;
   tests needing both go in `package db_test`. Same rule for `internal/journal`
   in-package tests.
-- **The VAL-059 parity baseline is pinned, never selected** (DEC-098/099).
-  Pinned to the Task 3 implementation commit
-  `50533e2b813bf073cd75f75eb70dd09cd15e9040`; moving selectors are prohibited
-  and normalization is the committed no-op — **never widen it**. Baseline
-  provenance is **settled and closed** (six `SHA256SUMS` `OK`, DEC-101); the
-  standing assertion is the candidate check against the committed manifest.
-  CF-025 replaces the ceremony with a real test in Task 6.
+- **VAL-059 is `PASS` and its ceremony is closed** (DEC-098/099/101/103).
+  Baseline pinned to `50533e2b813bf073cd75f75eb70dd09cd15e9040`, established,
+  committed, and **never regenerated**; normalization is the committed no-op.
+  The manifest check runs **from a `mktemp -d` candidate capture directory, by
+  absolute manifest path** — the repo-root form never worked and the
+  artifact-directory form is self-referential; both are struck. **CF-025 retires
+  the shell ceremony in Task 6; no further manual run is authorized.**
 - **A task-authored evidence harness that fails while being authored is a
   deviation, not a failed gate** (DEC-100) — when the rerun is byte-identical,
   the pass is deterministic and third-party reproducible, the artifact is a task
@@ -196,14 +202,15 @@ DEC-094..DEC-102 (mid-phase escalation dispositions) are recorded in
 - **Coverage.** `internal/workflow` is a COV-001 80% package gaining a lot of
   new code. **CF-023 residue (DEC-087):** no mechanical detector exists for a
   `PASS` against a non-terminating command; QA Lead's rerun is the control.
-- **Review 2 carries unusual weight** (DEC-101, hardened by DEC-102). It is the
-  sole independent verification of Task 4's thirteen assertions and its four
-  still-`UNVERIFIED` gates — not a sampling pass. One Task 4 attestation is
-  already **demonstrably false**, so QA Lead must also report whether any other
-  attested result is contradicted. Task 5 settles gate 2 of 6.
-- **CF-025 is due in Task 6** (DEC-101): convert VAL-059 into a permanent
-  golden-file integration test. Heavy mode accepts no carry-forward past phase
-  end, so Task 6 is the last legal slot.
+- **Review 2 is done and its verification held.** All six Task 4 gates and all
+  five Task 5 gates passed under independent QA execution; 25 of 26 in-window
+  assertions ON TRACK. Task 4's remaining debt is documentary, not behavioural.
+- **CF-025 is first and mandatory in Task 6** (DEC-101/103). Heavy mode accepts
+  no carry-forward past phase end, so Task 6 is the last legal slot — and five
+  stops have already been spent on the procedure it replaces.
+- **Task 6 is now the largest task** and carries CF-021, CF-024's measurement,
+  CF-025, spec/glossary sync, the exit scenario, and Review 2's two do-now test
+  strengthenings. Watch its size; if it must split, CF-025 stays.
 
 ## Open Questions
 

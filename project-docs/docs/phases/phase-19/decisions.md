@@ -1076,6 +1076,110 @@ the root-cause attribution, and the inference that prompt compliance had been
   commit older than the phase-start commit. This one is mechanically detectable
   and is the cheapest of the four.
 
+### DEC-103: The VAL-059 manifest command was never runnable — stop patching the ceremony
+
+- **Date:** 2026-08-02
+- **Status:** items 1-2, 6 Phase 19-local; items 3-5 binding beyond Phase 19.
+- **Context.** Review 2 (`2abcc6c`, BLOCK) independently re-ran all six Task 4
+  gates — **all six PASS**, lint `0 issues.` — and confirmed VAL-059's underlying
+  observable: a fresh candidate capture checked against the committed manifest
+  returns six `OK`, with `diff -r` showing no JSON delta. It then found two
+  blocking defects, **both in evidence artifacts, neither in the product**.
+- **Finding 1 — the required command cannot work, and never could.**
+  `task-4.md:361` and `qa-plan.md:477-481` prescribe
+  `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` from the repository
+  root. `sha256sum -c` resolves listed filenames **relative to the working
+  directory**, and the manifest deliberately holds bare filenames. From the repo
+  root it therefore looks for `./issue-get-epic.json` and exits 1 with
+  `sha256sum: WARNING: 6 listed files could not be read`. **The bare-filename
+  manifest is correct** — it is what makes the manifest checkable against any
+  capture directory. The *command* was wrong from the day I wrote it.
+  Worse, the "obvious" repair is also wrong: running it inside
+  `cmd/fid/testdata/v01_parity/` checks the committed baselines against **their
+  own** digests, a tautology that says nothing about the candidate. The only
+  meaningful form checks the *candidate capture directory* against the manifest —
+  which is exactly what Review 2 ran, and it passed.
+- **Finding 2 — `task-4-done.md` has never passed `report-lint.sh`.** Seven
+  failures: a missing `## Tests run` heading (structural, predates my edits and
+  was never caught because Task 4's gates were human-executed and its report
+  never linted) and six required commands recorded `UNVERIFIED`/`FAIL`, which
+  DEC-102 introduced and the linter accepts as neither `PASS` nor `BLOCKED`.
+  **The linter's behaviour is correct** — it is refusing to close a task on
+  unverified evidence, which is precisely its job. Its message is merely
+  undiagnostic.
+- **Decision.**
+  1. **One authoritative VAL-059 procedure**, replacing the prescribed command in
+     both `task-4.md` and `qa-plan.md` §6. The manifest is checked **from the
+     candidate capture directory, by absolute manifest path**, against a
+     `mktemp -d` scratch root (DEC-101 item 2):
+
+     ```bash
+     manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+     capture_root="$(mktemp -d)"
+     go build -o "$capture_root/fid" ./cmd/fid
+     cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+     ( cd "$capture_root" && sha256sum -c "$manifest" )
+     ```
+
+     The repo-root form is **struck**, not amended. The directory-local form
+     (`cd cmd/fid/testdata/v01_parity && sha256sum -c SHA256SUMS`) is **also
+     struck**: it is self-referential and must never be cited as parity evidence.
+  2. **VAL-059 is `PASS`**, on Review 2's executed evidence: six `OK` from a
+     fresh candidate capture plus a clean `diff -r`. The observable was never in
+     doubt; a mis-written command string produced a false negative. QA Lead is
+     the assertion's validator and has verified it independently — that is the
+     control working, not failing.
+  3. **Task 4 closes through a Developer evidence session, not a Tech Lead
+     rewrite and not a cross-role citation.** I considered letting
+     `task-4-done.md` cite Review 2's tokens with attribution. I am refusing that:
+     it would re-open, three hours after DEC-102 item 5 closed it, exactly the
+     loophole that says a result recorded in one place may be evidenced from
+     another. A short Developer session re-runs Task 4's six gates and the
+     corrected VAL-059 procedure against the unchanged `32614bb` tree, captures
+     its own tokens, and rewrites `task-4-done.md` to be `report-lint` clean —
+     including the `## Tests run` section it has never had. The implementation
+     commit is not rewritten; the report lands as a `docs(task)` commit and still
+     cites `32614bb`. Cost is minutes; it retires every provenance question on
+     the phase's most-troubled task permanently.
+  4. **A required command that has never been executed successfully by anyone is
+     not a specification — it is a guess.** Any command written into a task spec
+     or QA plan as required evidence must be executed once, by its author, before
+     it is published. This procedure was authored, reviewed, escalated over three
+     times, and dispositioned twice by me without anyone once running the literal
+     string from the literal directory it names. `09_AI_WORKFLOW.md` §6 carries
+     this; Task 6 makes the edit.
+  5. **Working-directory sensitivity is declared.** Any required command whose
+     result depends on the working directory states that directory explicitly, or
+     is written to be directory-independent. Bare relative paths in a committed
+     manifest are correct and must be paired with a `cd` into the directory they
+     resolve against.
+  6. **Review 2's two improvement findings are do-now in Task 6**, not deferred.
+     `cmd/fid/workflow_assign_test.go:61` asserts only non-empty stderr where
+     VAL-016 requires six pairwise-distinct value-naming errors, and
+     `internal/workflow/assign_test.go:13` never rebuilds and re-asserts the
+     replayed row per scope. Review 2 proved both behaviours by direct trace, so
+     the observables hold — but a *manual trace standing in for a permanent test*
+     is the same defect as VAL-059, and this phase has spent five stops on it.
+- **CF-025 is promoted to the first item in Task 6 and is mandatory.** When the
+  Go golden test lands, the shell ceremony (`capture.sh`, `SHA256SUMS`,
+  `normalization.json`) is **retired as required procedure** and stays committed
+  only as provenance. **No sixth manual VAL-059 run is authorized after Task 6.**
+- **Pattern (fifth stop, fourth in VAL-059's scaffolding).** ESC-19-003/004/005
+  and now 007 are all the same failure: I specified a multi-step shell ceremony
+  as required evidence for a single observable, and defended it one brick at a
+  time — pinning the baseline, then preserving partial work, then excluding
+  cleanup, now fixing the working directory. Each repair was locally correct and
+  the strategy was wrong. The product has not failed once in this phase. The
+  correct move was CF-025 at planning: express the observable as a test. Wrap-up
+  should treat "evidence apparatus disproportionate to the observable" as the
+  phase's headline finding.
+- **Consequences.** Items 4-5 belong in `09_AI_WORKFLOW.md` §6 (task
+  specification contract), with the DEC-101 and DEC-102 edits; Task 6 carries all
+  of them. `report-lint.sh` needs no behavioural change — it was right — but a
+  diagnostic message naming `UNVERIFIED`/`FAIL` explicitly is worth adding under
+  CF-023 when that tooling next opens. No product code, schema, CLI surface, or
+  validation assertion is weakened.
+
 ## Spec Sync Verdicts
 
 Recorded at wrap-up for the full canonical spec suite. Known obligations from

@@ -8,65 +8,46 @@ kind or to the project via a `workflow.assigned` journal event, and
 status `"todo"`, resolving both from assignments instead. This is the task
 that makes a custom workflow actually take effect.
 
-## Recovery Preamble — read first (DEC-099)
+## Closure Evidence Session — read first (DEC-103, 2026-08-02)
 
-**This task is resuming from preserved partial work.** A prior session stopped
-after the first `capture.sh` invocation failed on a path bug *in the script it
-was authoring*; it left uncommitted in-scope changes and a registered scratch
-worktree. **Do not discard the partial work and do not restart the task from
-scratch** — inspect it and continue from that state (`09_AI_WORKFLOW.md` §2.3).
+**The implementation is complete and committed at `32614bb`. Write no product
+code.** This session exists solely to give Task 4 the one thing it has never
+had: a single session that ran the gates and wrote the report.
 
-Preserved uncommitted files: `cmd/fid/workflow.go`,
-`cmd/fid/workflow_assign_test.go`, `internal/workflow/assign.go`,
-`internal/workflow/assign_test.go`, `internal/workflow/resolve.go`,
-`internal/issues/create.go`, `internal/issues/issue_test.go`, and
-`cmd/fid/testdata/v01_parity/` (including the repaired `capture.sh`, the six
-baseline outputs, `normalization.json`, and `SHA256SUMS`).
+Why: Task 4's gates were originally executed by the Human without token capture
+(DEC-101), one of those attestations was later disproven (DEC-102), and
+`task-4-done.md` has never passed `report-lint.sh` — it is missing `## Tests
+run` and records six commands as `UNVERIFIED`/`FAIL`. Review 2 (`2abcc6c`) has
+independently re-run all six gates green, but **its tokens are QA Lead's, not
+this report's** (DEC-102 item 5 / DEC-103 item 3), so they are not transcribed
+here.
 
-**Step R — re-verify the committed baselines by reproduction, before anything
-else.** The six committed baseline outputs are of uncertain chronology relative
-to the `create.go` edit. Chronology does not matter (the baseline is built from
-the pinned commit in a detached worktree), but provenance must be *proven*, so
-reproduce it into a fresh scratch root and check it against the committed
-manifest. Report every token in `task-4-done.md`:
+**Do exactly this:**
 
-```bash
-REPO=$(pwd)
-git worktree remove /tmp/fid-phase19-v01-baseline
-git worktree prune
-PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
-git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
-git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
-go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
-sha256sum /tmp/fid-phase19-v01-baseline.bin
-rm -rf /tmp/fid-phase19-v01-baseline-recheck
-cmd/fid/testdata/v01_parity/capture.sh /tmp/fid-phase19-v01-baseline.bin /tmp/fid-phase19-v01-baseline-recheck
-(cd /tmp/fid-phase19-v01-baseline-recheck && sha256sum -c "$REPO/cmd/fid/testdata/v01_parity/SHA256SUMS")
-```
+1. Confirm the tree is at `32614bb`'s content for Task 4's files and that
+   `git status` shows no product-code modifications.
+2. Run all six required gates from `## Exact Commands To Run` below, **in order,
+   capturing every verbatim terminal token in this session.**
+3. Run the corrected VAL-059 candidate procedure in `## Exact Commands To Run`
+   (DEC-103 item 1). All six entries must be `OK`.
+4. Rewrite `task-4-done.md` so that `report-lint.sh` passes:
+   - add the missing `## Tests run` section;
+   - record all six gates `PASS` with **your own** captured tokens;
+   - keep `## Commit hash` = `32614bbbd50e683b61921e9ed6beabee73b46021` and the
+     subject `feat(workflow): add assign command and assignment-aware creation`
+     — the implementation commit is **not** rewritten;
+   - keep the deviation history (the `capture.sh` path bug, the sandbox-blocked
+     cleanup, the human-attested evidence episode, the untracked-baselines
+     wording) — this record is corrected, never laundered;
+   - state plainly that the original human-attested `golangci-lint` PASS was
+     false and that this session re-established the gate evidence.
+5. Commit as `docs(task): ...` and run
+   `project-docs/tools/report-lint.sh task-4-done.md task-4.md` until it is
+   clean. **The report must be committed before lint counts** (report-lint
+   check 7).
 
-- **All six `OK`** → the committed baselines are proven authentic. Keep them and
-  proceed. This satisfies the baseline half of VAL-059.
-- **Any mismatch** → the committed baselines are contaminated. Replace all six
-  from `/tmp/fid-phase19-v01-baseline-recheck`, regenerate `SHA256SUMS`, record
-  the old and new digests and the discrepancy as a deviation, and proceed.
-- The baseline-binary digest is expected to be
-  `320867e46cb565ebe232cad5197a923f338798acf91c740d941422d56ee35820`. A
-  mismatch there is **not** itself a failure (it can vary with toolchain), but
-  note it; the six output digests are the authoritative check.
-
-**Then complete the task normally:** candidate build, candidate capture,
-`sha256sum -c`, `diff -r`, all six required gates, the three spec updates, the
-implementation commit, and the `docs(task)` report commit. Nothing else about
-this task's scope, assertions, or constraints changes.
-
-**Recording the earlier failure (DEC-100).** The prior `capture.sh` failure —
-`capture.sh: 20: cannot create cmd/fid/testdata/v01_parity/issue-get-epic.json:
-Directory nonexistent`, caused by the script resolving a relative output root
-after `cd`-ing into its temp workspace, fixed by absolutizing `output_root` and
-adding `mkdir -p` — is a **task-authored harness defect, recorded as a
-deviation, not a failed gate**. State the failure, its root cause, and its fix
-in `## Deviations from spec`, and record the command's final result as `PASS`
-with its own verbatim token.
+If any gate fails, stop and escalate — do not repair product code in this
+session.
 
 ## Validation Contract Coverage
 
@@ -346,27 +327,38 @@ Conditional commands required by this task:
 - `go build -o /tmp/fid ./cmd/fid` — VAL-059's byte-identical `issue get`/
   `list` evidence needs the built candidate binary.
 
-VAL-059 evidence commands, run in this order and all reported in
-`task-4-done.md` with verbatim terminal tokens. The baseline commands come
-first by convention; the last three run after the candidate build:
+VAL-059 evidence commands — **corrected 2026-08-02 by DEC-103.** The baseline
+is already established, committed, and closed (DEC-101): the six `SHA256SUMS`
+digests record v0.1 behaviour and are never regenerated. The detached-worktree
+capture is **struck** and must not run again. The only standing assertion is the
+candidate check:
 
 ```bash
-PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
-git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
-git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
-go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
-sha256sum /tmp/fid-phase19-v01-baseline.bin
-cmd/fid/testdata/v01_parity/capture.sh /tmp/fid-phase19-v01-baseline.bin cmd/fid/testdata/v01_parity
-cmd/fid/testdata/v01_parity/capture.sh /tmp/fid /tmp/fid-phase19-v01-parity-candidate
-sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS
-diff -r cmd/fid/testdata/v01_parity /tmp/fid-phase19-v01-parity-candidate
+manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+capture_root="$(mktemp -d)"
+go build -o "$capture_root/fid" ./cmd/fid
+cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+( cd "$capture_root" && sha256sum -c "$manifest" )
 ```
 
-The `diff` must be empty except for the non-output files that live only in the
-committed directory (`capture.sh`, `fixture/`, `normalization.json`,
-`SHA256SUMS`); every one of the six `.json` outputs must match byte-for-byte.
-Remove the scratch worktree (`git worktree remove /tmp/fid-phase19-v01-baseline`)
-before finishing so `git status` is clean.
+All six entries must report `OK`. **Working directory is load-bearing**
+(DEC-103 item 5): the manifest holds bare relative filenames so it can be
+checked against *any* capture directory, which means `sha256sum -c` must run
+**from the candidate capture root**, with the manifest given as an absolute
+path.
+
+Two forms are prohibited and must never be cited as parity evidence:
+
+- `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` from the repository
+  root — the listed names do not resolve there; it exits 1 with
+  `sha256sum: WARNING: 6 listed files could not be read`. This was the
+  previously prescribed command and it never worked.
+- `cd cmd/fid/testdata/v01_parity && sha256sum -c SHA256SUMS` — this checks the
+  committed baselines against their own digests. It is self-referential and
+  proves nothing about the candidate.
+
+Scratch state is per-attempt (`mktemp -d`, DEC-101 item 2) and needs no cleanup;
+cleanup is never evidence (DEC-101 item 1).
 
 ## Notes For Developer
 

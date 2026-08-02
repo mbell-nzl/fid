@@ -475,15 +475,37 @@ Before editing `internal/issues/create.go`, Task 4 must:
    fixture cannot keep timestamps stable, Task 4 is `BLOCKED`; the allow-list
    is not silently widened.
 5. Commit `cmd/fid/testdata/v01_parity/SHA256SUMS` containing a `sha256sum`
-   line for each of the six baseline outputs. Review 2 and final QA run
-   `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS`, verify every listed
-   artifact is committed and clean, regenerate from the recorded commit and
-   script, and require empty byte diffs against the candidate outputs. Every
-   manifest line must contain the actual 64-character lowercase SHA-256,
-   exactly two spaces, and the relative output filename; placeholders are
-   forbidden. `task-4-done.md` copies the six lines verbatim. After Task 4 is
-   committed, the immutable baseline-artifact identity is the reported Task 4
-   implementation commit plus those six manifest hashes.
+   line for each of the six baseline outputs. Every manifest line must contain
+   the actual 64-character lowercase SHA-256, exactly two spaces, and the bare
+   relative output filename; placeholders are forbidden. `task-4-done.md`
+   copies the six lines verbatim. After Task 4 is committed, the immutable
+   baseline-artifact identity is the reported Task 4 implementation commit plus
+   those six manifest hashes.
+
+   **Corrected 2026-08-02 by DEC-103.** This step previously directed Review 2
+   and final QA to run `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS`
+   from the repository root. **That command never worked** — `sha256sum -c`
+   resolves listed filenames against the working directory, and the manifest
+   correctly holds bare names so it can be checked against any capture
+   directory. Review 2 executed it as written and it exited 1 with
+   `sha256sum: WARNING: 6 listed files could not be read` (ESC-19-007). The
+   authoritative procedure is:
+
+   ```bash
+   manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+   capture_root="$(mktemp -d)"
+   go build -o "$capture_root/fid" ./cmd/fid
+   cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+   ( cd "$capture_root" && sha256sum -c "$manifest" )
+   ```
+
+   All six entries must report `OK`. Running the manifest from
+   `cmd/fid/testdata/v01_parity/` is **also prohibited**: it checks the
+   committed baselines against their own digests and proves nothing about the
+   candidate. The baseline is established and closed (DEC-101) and is never
+   regenerated. **CF-025 retires this whole procedure** — once Task 6 lands the
+   Go golden test, the shell ceremony stays committed as provenance only and no
+   further manual run is authorized.
 
 The detached-worktree feasibility run terminated successfully. `git worktree
 add -h` confirms `--detach <path> <commit-ish>`; `sha256sum --help` confirms

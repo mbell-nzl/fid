@@ -39,9 +39,9 @@ Reviewed at each phase start: schedule, re-defer, close, or cancel each item.
 | CF-020 | Phase 17 DEC-056 | Burst issue writes stamp `occurred_at` ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and `recent_activity_7d` excludes future rows. Bounded and self-correcting; do not fix inside a v0.1 closure audit. | v0.2 | Low (product) |
 | CF-021 | Phase 17 Review 3 / STRUCT-003 | Add Go doc comments to exported `maintenance.VacuumResult` and `Vacuum`. **Scheduled at Phase 19 planning (DEC-082): Phase 19 Task 6**, which already touches `internal/maintenance` and runs the full Go gate. | **Phase 19 Task 6 (scheduled)** | Low |
 | CF-022 | Phase 17 Review 1 | Add broader exact-output markdown characterization tests to lock rendering behavior beyond the current suite. Trigger fires in Phase 19 Task 5 (new `internal/format` markdown renderer). **Partially taken (DEC-082):** Task 5 ships a byte-exact golden for the new workflow-list renderer; the backfill for pre-existing renderers stays deferred. | Remainder: next `internal/format` markdown reopen | Low |
-| CF-023 | Phase 17 DEC-058; expanded by DEC-074; narrowed by DEC-088; raised to Medium by DEC-095 | Workflow-tooling hardening. Landed history and the closed sub-items are in `../phases/phase-19/decisions.md` (DEC-084..088, DEC-095, DEC-097, DEC-100). **Remaining scope: DEC-087** — `drill-09` plus the `report-lint.sh` evidence-token check, both needing a shell session to demonstrate failing-then-passing. **Three drill cases accumulated across Phase 19:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097) — cheaply detectable mechanically; (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically (DEC-100) — correct handling is `PASS` **plus** a deviation note, not a blocker report and not a silent rerun. | **Workflow overhaul**, or any session with a shell (DEC-087) | **Medium** |
+| CF-023 | Phase 17 DEC-058; expanded by DEC-074; narrowed by DEC-088; raised to Medium by DEC-095 | Workflow-tooling hardening. Landed history and the closed sub-items are in `../phases/phase-19/decisions.md` (DEC-084..088, DEC-095, DEC-097, DEC-100). **Remaining scope: DEC-087** — `drill-09` plus the `report-lint.sh` evidence-token check, both needing a shell session to demonstrate failing-then-passing. **Three drill cases accumulated across Phase 19:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097) — cheaply detectable mechanically; (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically (DEC-100) — correct handling is `PASS` **plus** a deviation note, not a blocker report and not a silent rerun; (4) a report declining an out-of-scope repair as "pre-existing" without citing an introducing commit older than phase-start (DEC-102) — the cheapest of the four to detect mechanically. **Also open:** `report-lint.sh` should name `UNVERIFIED`/`FAIL` explicitly instead of the generic "no PASS/BLOCKED result" (DEC-103; behaviour is correct, message is not), and TL-Lite missed the triage-log summary row and next-free-ID header at TRG-19-007 — the third record-keeping miss in Phase 19 after TRG-19-001/002. | **Workflow overhaul**, or any session with a shell (DEC-087) | **Medium** |
 | CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom is thin: after the DEC-071 rebuild-connection fix the 100k-event rebuild measures `26.99–27.66 s` against the `<30 s` control (~8–10% margin). v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** Phase 19 Task 6 carries a measurement obligation (re-record rebuild + read against the controls); the fix itself stays v0.2b (DEC-082). | v0.2b (first projection/rebuild work); measured in Phase 19 Task 6 | Medium |
-| CF-025 | Phase 19 DEC-101 (ESC-19-005) | Convert VAL-059 from a one-time manual ceremony into a **permanent golden-file integration test** in `cmd/fid`, reusing the `buildClosureFIDBinary` / `closureRunFID` pattern from `e2e_v01_closure_helpers_test.go`: copy `testdata/v01_parity/fixture/` into `t.TempDir()`, run the six commands against current code, compare byte-for-byte to the six committed `.json` goldens. Retires `capture.sh`, `SHA256SUMS`, `normalization.json`, and the detached-worktree machinery as *required procedure* (they stay committed as provenance) and upgrades a one-shot proof into a standing regression guard. Three consecutive Phase 19 stops were in this scaffolding; none were in the product. | **Phase 19 Task 6 (scheduled)** — heavy mode accepts no carry-forward past phase end, so this is the last legal slot | **Medium** |
+| CF-025 | Phase 19 DEC-101 (ESC-19-005) | Convert VAL-059 from a one-time manual ceremony into a **permanent golden-file integration test** in `cmd/fid`, reusing the `buildClosureFIDBinary` / `closureRunFID` pattern from `e2e_v01_closure_helpers_test.go`: copy `testdata/v01_parity/fixture/` into `t.TempDir()`, run the six commands against current code, compare byte-for-byte to the six committed `.json` goldens. Retires `capture.sh`, `SHA256SUMS`, `normalization.json`, and the detached-worktree machinery as *required procedure* (they stay committed as provenance) and upgrades a one-shot proof into a standing regression guard. Three consecutive Phase 19 stops were in this scaffolding; none were in the product. | **Phase 19 Task 6 — FIRST and MANDATORY (DEC-103)** — heavy mode accepts no carry-forward past phase end, so this is the last legal slot. Five Phase 19 stops (ESC-19-003/004/005/007) were in the procedure this replaces and none were in the product; if Task 6 must shed scope, this item stays. | **High** |
 
 ## Phase 19 Decisions (2026-07-26, approved DEC-093)
 
@@ -134,16 +134,36 @@ file. Binding beyond Phase 19:
    network, elevation. A shortfall is discovered and escalated **at step zero**,
    never halfway through a sequence.
 4. Phase 19-local: ESC-19-005 closed without rework (the six `OK` reproduction
-   **is** the DEC-099 provenance test); Task 4's gates are **human-attested**
-   without token capture, with **QA Lead's Review 2 rerun as the named control**
-   — any failure there voids the disposition and reopens Task 4.
+   **is** the DEC-099 provenance test); Task 4's gates were **human-attested**
+   without token capture, with QA Lead's Review 2 rerun as the named control.
+   **That control fired and the attestation failed — see DEC-102.**
 5. **CF-025** — convert VAL-059 from a manual ceremony into a permanent
-   golden-file integration test in `cmd/fid`. Due Task 6.
+   golden-file integration test in `cmd/fid`. **First and mandatory in Task 6**
+   (DEC-103).
 
-**Standing lesson:** three consecutive Phase 19 stops were in VAL-059's
-verification scaffolding and none in the product. When an evidence apparatus
-becomes larger than the observable it protects, fix the apparatus, not the
-brick that fell.
+**DEC-102..DEC-103** (2026-08-02, resolving ESC-19-006/007 and TRG-19-006/007),
+same file. Binding beyond Phase 19:
+
+- **DEC-102** — **a gate result not captured in the session that records it is
+  `UNVERIFIED`, never `PASS`.** A named future control is not a substitute: the
+  false attestation survived triage, a run-resume reconciliation, and a Tech Lead
+  escalation, surfacing only when an unrelated task ran the same command. Also:
+  **"pre-existing" is a provenance claim** — declining an out-of-scope repair
+  requires citing the introducing commit (`git log -S` /
+  `git log --diff-filter=A` / `git blame`) and showing it predates phase-start.
+  `git show HEAD` proves a line is committed, not inherited.
+- **DEC-103** — **a required command that has never been executed successfully by
+  anyone is not a specification, it is a guess.** Any command written into a task
+  spec or QA plan as required evidence is executed once by its author before
+  publication. **Working-directory sensitivity is declared**: a required command
+  whose result depends on CWD names that directory, or is written to be
+  directory-independent. Bare relative paths in a committed manifest are correct
+  and must be paired with a `cd` into the directory they resolve against.
+
+**Standing lesson:** five Phase 19 stops, four in VAL-059's verification
+scaffolding and one in its fallout; **zero in the product**. When an evidence
+apparatus becomes larger than the observable it protects, fix the apparatus, not
+the brick that fell — and prefer expressing the observable as a test.
 
 ## Workflow Retrospective Decisions (2026-07-26)
 

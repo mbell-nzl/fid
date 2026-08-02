@@ -9,24 +9,31 @@
 
 ## Open Escalations
 
-- **ESC-19-007 — Review 2 found Task 4's mandated SHA-256 verification command
-  is not executable from the repository root (2026-08-02).** Task 4 and QA-plan
-  §6 both prescribe `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS`, but
-  its manifest intentionally contains bare relative output filenames. Review 2
-  independently ran the exact root-level command: it exited 1 with
-  `sha256sum: WARNING: 6 listed files could not be read`. Running the same
-  manifest from the committed-artifact or fresh candidate-capture directory
-  returns all six `OK`, and raw candidate output is byte-identical. The product
-  observable therefore holds, but the required evidence procedure and Task 4
-  completion report are contradictory/non-reproducible as written. **Trigger:
-  quality-gate anomaly and cross-artifact acceptance ambiguity.** Tech Lead
-  must correct the authoritative procedure and disposition Task 4's report
-  before the phase proceeds to Task 6; Review 2 is BLOCK.
+None.
 
 ## Resolved This Phase (archive at wrap)
 
 Full reasoning lives in `../phases/phase-19/decisions.md` and
 `../phases/phase-19/triage-log.md`; these are pointers.
+
+- **ESC-19-007 — the mandated VAL-059 manifest command never worked, and Task 4's
+  report has never passed report-lint (2026-08-02 → DEC-103).** Review 2 re-ran
+  all six Task 4 gates **green** (lint `0 issues.`) and confirmed candidate
+  parity (six `OK`, clean `diff -r`), then found two evidence defects.
+  (1) `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` from the repo root
+  **cannot resolve** the manifest's bare filenames — `WARNING: 6 listed files
+  could not be read`. The manifest is right; my command was wrong from the day I
+  wrote it, and the obvious repair (running it inside the artifact directory) is
+  *also* wrong — it checks the baselines against their own digests. **DEC-103**
+  makes the authoritative form a `mktemp -d` candidate capture checked from that
+  directory by absolute manifest path; both bad forms are struck.
+  (2) `task-4-done.md` fails report-lint 7× (missing `## Tests run`; six
+  commands `UNVERIFIED`/`FAIL`). The linter is **correct** — it is refusing to
+  close a task on unverified evidence. Fixed by a **Developer closure evidence
+  session** that re-runs the gates and rewrites the report with its own tokens;
+  Review 2's tokens are QA Lead's and are **not** transcribed (DEC-102 item 5).
+  **VAL-059 = PASS** on Review 2's executed evidence. **CF-025 is promoted to
+  first and mandatory in Task 6**; no sixth manual run is authorized.
 
 - **ESC-19-006 — Task 5's lint block was misclassified as pre-existing; it
   disproved Task 4's attested lint PASS (2026-08-02 → DEC-102).**

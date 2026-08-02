@@ -101,6 +101,14 @@ Assertions live in
   and must-nots, DEC-089) and `05_DESIGN_PLAN.md` §3.1 (the `workflow`
   command family, DEC-092). Correct either here if it diverges.
 
+- **CF-025 is the FIRST item in this task and is mandatory (DEC-103).** Do it
+  before the other work, not last. Phase 19 has now spent **five stops** on
+  VAL-059's shell ceremony (ESC-19-003/004/005/007) and **not one** on the
+  product. When this test lands, `capture.sh` / `SHA256SUMS` /
+  `normalization.json` are retired as required procedure and **no further manual
+  VAL-059 run is authorized in this phase or after it.** If Task 6 runs long,
+  this survives and something else gives.
+
 - **CF-025 — make VAL-059 a standing test, not a ceremony (DEC-101).** Add
   `cmd/fid/v01_parity_test.go` (`//go:build integration`, `package main`) reusing
   the `buildClosureFIDBinary` / `closureRunFID` helpers in
@@ -118,6 +126,20 @@ Assertions live in
     re-record the goldens to make it pass.
   - No detached worktree, no pinned-commit build, no `mktemp` scratch state, and
     no cleanup command belongs in this test.
+
+- **Review 2's two improvement findings are do-now here, not deferred
+  (DEC-103 item 6).** Both are the same defect as VAL-059 in miniature — a
+  manual trace standing in for a permanent test — and this phase has paid enough
+  for that pattern:
+  - `cmd/fid/workflow_assign_test.go:61` asserts only that stderr is non-empty,
+    where **VAL-016 requires six pairwise-distinct value-naming errors**. Assert
+    the six expected messages explicitly and assert they are distinct from one
+    another. Review 2 confirmed current behaviour by direct CLI trace, so this is
+    a test-strength gap, not a product defect.
+  - `internal/workflow/assign_test.go:13` proves effect *shape* but never
+    deletes the projection, rebuilds, and re-asserts the replayed row per scope.
+    Add that assertion for both kind and project scope. Review 2 performed it
+    manually via `fid rebuild --by tl`.
 
 ## Scope
 
