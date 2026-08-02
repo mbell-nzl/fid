@@ -128,6 +128,27 @@ Use when: describing the parity reference in tests.
 Avoid: describing it as the source of truth, current behavior, or a fallback —
 it is none of those; reading it from production code is a defect.
 
+**Custom workflow**:
+A user-authored workflow created by `fid workflow define`, stored as
+journal-derived rows in the projected workflow tables rather than as a seeded
+default.
+Use when: distinguishing an authored workflow from a system reference default.
+Avoid: calling it a second source of truth; its history remains journal-canonical.
+
+**Workflow assignment**:
+A `workflow_assignments` row binding a workflow to an issue kind or to the
+project. A kind-scope assignment takes precedence over a project-scope
+assignment when an issue is created.
+Use when: describing how a workflow is selected for a new issue.
+Avoid: treating an assignment as part of the workflow definition itself.
+
+**Initial state**:
+The state an issue receives at creation: the first declared `unstarted` state
+in its resolved workflow, or the first declared state when none is
+`unstarted`.
+Use when: describing creation-time workflow resolution.
+Avoid: assuming every workflow starts in `todo`.
+
 ## Execution and Audit
 
 **Gate**:

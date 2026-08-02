@@ -12,14 +12,27 @@ import (
 
 func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 	workspace, migrationsDir := initializedWorkflowWorkspace(t)
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open projection: %v", err)
-	}
-	defer closeRegistryDB(t, conn)
-	for _, id := range []string{"second-task", "first-project", "second-project"} {
-		if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES (?, ?, NULL, 1)`, id, id); err != nil {
-			t.Fatalf("insert workflow %q: %v", id, err)
+	for _, fixture := range []struct {
+		name      string
+		appliesTo string
+	}{
+		{name: "second-task", appliesTo: "task"},
+		{name: "first-project", appliesTo: "any"},
+		{name: "second-project", appliesTo: "any"},
+	} {
+		if _, err := Define(DefineOptions{
+			WorkspaceRoot: workspace,
+			MigrationsDir: migrationsDir,
+			ActorRole:     "tl",
+			Request: DefinitionRequest{
+				Name:        fixture.name,
+				AppliesTo:   fixture.appliesTo,
+				States:      []string{"queued", "done", "cancelled"},
+				Categories:  []string{"unstarted", "completed", "cancelled"},
+				Transitions: []Transition{{From: "queued", To: "done"}},
+			},
+		}); err != nil {
+			t.Fatalf("Define(%q) error = %v", fixture.name, err)
 		}
 	}
 
@@ -73,6 +86,27 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 			}
 			if got := second.Effects[1].Values["workflow_id"]; got != fixture.lastID {
 				t.Fatalf("second workflow_id = %#v, want %q", got, fixture.lastID)
+			}
+			if _, err := journal.RebuildWorkspace(workspace, migrationsDir, "tl"); err != nil {
+				t.Fatalf("RebuildWorkspace() error = %v", err)
+			}
+			rebuilt, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+			if err != nil {
+				t.Fatalf("open rebuilt projection: %v", err)
+			}
+			defer closeRegistryDB(t, rebuilt)
+			var replayed string
+			query := `SELECT workflow_id FROM workflow_assignments WHERE scope = ?`
+			args := []any{"project"}
+			if !fixture.second.Project {
+				query += ` AND kind = ?`
+				args = []any{"kind", fixture.second.Kind}
+			}
+			if err := rebuilt.QueryRow(query, args...).Scan(&replayed); err != nil {
+				t.Fatalf("query replayed assignment: %v", err)
+			}
+			if replayed != fixture.lastID {
+				t.Fatalf("replayed assignment workflow_id = %q, want %q", replayed, fixture.lastID)
 			}
 		})
 	}

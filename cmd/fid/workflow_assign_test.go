@@ -63,19 +63,28 @@ func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 
-	for _, args := range [][]string{
-		{"workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl"},
-		{"workflow", "assign", "--name", "task-default", "--project", "--by", "tl"},
-		{"workflow", "assign", "--name", "task-default", "--kind", "task", "--project", "--by", "tl"},
-		{"workflow", "assign", "--name", "task-default", "--by", "tl"},
-		{"workflow", "assign", "--name", "task-default", "--kind", "epic", "--by", "tl"},
-		{"workflow", "assign", "--name", "task-default", "--kind", "task", "--by", "developer"},
+	seen := make(map[string]struct{})
+	for _, fixture := range []struct {
+		args []string
+		want string
+	}{
+		{[]string{"workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl"}, "error: workflow \"missing\" does not exist\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--project", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" cannot be assigned to project\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--project", "--by", "tl"}, "error: workflow assignment specifies both kind and project scopes\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--by", "tl"}, "error: workflow assignment requires a kind or project scope\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "epic", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" is incompatible with kind \"epic\"\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--by", "developer"}, "error: role \"developer\" not permitted for action \"workflow.assign\"\n  check `fid policy show` for permitted role/action combinations\n"},
 	} {
+		args := fixture.args
 		before := mustReadCommandFile(t, journalPath)
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, args...)
-		if err == nil || stdout != "" || stderr == "" {
+		if err == nil || stdout != "" || stderr != fixture.want {
 			t.Fatalf("assign %v = (%q, %q, %v), want rejection", args, stdout, stderr, err)
 		}
+		if _, duplicate := seen[stderr]; duplicate {
+			t.Fatalf("assign %v stderr = %q, want a value-naming error distinct from every prior rejection", args, stderr)
+		}
+		seen[stderr] = struct{}{}
 		if after := mustReadCommandFile(t, journalPath); string(after) != string(before) {
 			t.Fatalf("assign %v changed journal", args)
 		}
@@ -89,6 +98,9 @@ func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
 		if count != 0 {
 			t.Fatalf("assign %v left %d assignment rows", args, count)
 		}
+	}
+	if len(seen) != 6 {
+		t.Fatalf("distinct rejection messages = %d, want 6", len(seen))
 	}
 }
 

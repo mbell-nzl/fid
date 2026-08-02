@@ -2174,6 +2174,16 @@ When an issue is assigned a custom workflow in the subsequent assignment
 slice, its initial state is the first declared `unstarted` state, or the first
 declared state when none is `unstarted`.
 
+**Custom-state transition boundary (DEC-079):** Phase 19 permits authoring,
+assignment, listing, and issue creation for custom workflows, but the current
+permissions matrix contains transition actions only for the v0.1 state names.
+Consequently a transition into a custom-named state fails with
+`authorize action "issue.transition.<state>": no permissions matrix entry` and
+does not append a journal event. This is not an implicit permission grant;
+custom workflows that reuse v0.1 state names remain transitionable. Phase 20's
+`fid policy set` delivers the explicit permission configuration required for
+custom state names.
+
 **Output (stderr confirmation):**
 ```text
 defined workflow dev-flow-strict for task
