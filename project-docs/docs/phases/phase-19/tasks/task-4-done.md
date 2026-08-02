@@ -1,26 +1,5 @@
 # Phase 19 - Task 4: `fid workflow assign` + assignment-aware issue creation - Completion Report
 
-## Evidence provenance — read first (DEC-101)
-
-The gates and VAL-059 commands below were executed **by the Human directly**,
-outside a Developer session, during the ESC-19-005 recovery. **Verbatim terminal
-tokens were not captured.** Results are recorded as **human-attested**, not as
-token-cited evidence, and no token has been reconstructed or invented — TRG-19-001
-in this phase was exactly that failure and it is not repeated here.
-
-This does not meet DEC-084/086. It is dispositioned by **DEC-101**, which names
-**QA Lead's independent re-execution at Review 2** as the control. QA Lead owns
-all thirteen Task 4 assertions and re-runs every command. **If any command fails
-under QA Lead, DEC-101's disposition is void and this task reopens.**
-
-> **Update 2026-08-02 (DEC-102): that condition has triggered, early.** Task 5's
-> Developer independently re-ran `golangci-lint run ./...` and it **failed** on a
-> line this task introduced. The attested PASS above is disproven. DEC-101's
-> disposition is void; the remedy is scoped to what is disproven (see the
-> corrected gate results below). This task is **Complete (gates unverified)** and
-> does not close until a token-cited gate run is green. Its implementation,
-> commit, and thirteen assertions stand and remain Review 2's responsibility.
-
 ## Summary of what was implemented
 
 - `fid workflow assign --name <slug> [--kind <k>] [--project] --by <role>`
@@ -53,6 +32,8 @@ under QA Lead, DEC-101's disposition is void and this task reopens.**
 - `internal/issues/create.go` — resolved workflow + initial state
 - `internal/issues/issue_test.go` — assigned and unassigned creation coverage
 - `cmd/fid/testdata/v01_parity/` (new) — parity fixture, harness, and goldens
+- `project-docs/docs/phases/phase-19/tasks/task-4-done.md` — DEC-103 closure
+  evidence only; no product code was changed in this session.
 
 ## Documentation updated
 
@@ -62,96 +43,103 @@ under QA Lead, DEC-101's disposition is void and this task reopens.**
   the creation-time resolution source
 - `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — `workflow assign` flag surface
   verified against what shipped (DEC-092)
+- This completion report — fresh DEC-103 closure evidence and report-lint-ready
+  gate records.
 
 ## Validation Contract Coverage
 
-All thirteen recorded **PASS (human-attested)** under the provenance note above;
-each is re-validated independently by QA Lead at Review 2.
+Closure-session scope is fresh command evidence, not a replacement for QA
+Lead's assertion-level validation. The fresh `go test -race -coverprofile=coverage.out
+./...` gate passed with terminal token `ok github.com/mbell-nzl/fid/internal/workflow
+(cached) coverage: 80.4% of statements`; its tests include the cited Task 4
+coverage below. The earlier human-attested results remain history only, and no
+QA Review 2 terminal token is transcribed here.
 
-- VAL-014 — first kind assignment: one event, one kind-scope row
-- VAL-051 — reassignment replaces the row; superseded workflow stays defined
-- VAL-052 — kind-scope effect shape: `insert` alone, then ordered
-  `delete`+`insert`; replay from empty reproduces one row
-- VAL-053 — same effect-shape rule for project scope, PK `{"scope":"project"}`
-- VAL-015 — `--project` writes one project-scope row with NULL `kind`
-- VAL-054 — kind without kind-scope assignment resolves to the project one
-- VAL-055 — kind-scope assignment wins over an existing project assignment
-- VAL-016 — six enumerated rejections each produce a distinct value-naming
-  error; the compatible case succeeds
-- VAL-056 — every rejection leaves journal bytes and row counts unchanged
-- VAL-057 — successful assign writes no `activity_log` row (DEC-081)
-- VAL-058 — with no assignment rows, all three kinds yield the v0.1 workflow
-  and `status='todo'`
-- VAL-017 — creation under an assignment yields the assigned workflow and the
-  DEC-077 initial state, for a workflow with an `unstarted` state and one
-  without
-- VAL-059 — with no assignment rows, all six candidate captures are
-  byte-identical to the committed baselines; see below
+- VAL-014 — PASS — `TestWorkflowAssignProjectsOneKindAssignment` verifies the
+  built CLI's one appended `workflow.assigned` event and one kind assignment at
+  `cmd/fid/workflow_assign_test.go:23-50`.
+- VAL-051 — PASS — `TestAssignEmitsScopeAwareReplacementEffects` covers the
+  second kind assignment's replacement effect at
+  `internal/workflow/assign_test.go:54-75`; superseded-workflow listability was
+  independently validated in the QA window and is not re-attested by this
+  closure session.
+- VAL-052 — PASS — `TestAssignEmitsScopeAwareReplacementEffects` checks the
+  first kind `insert` and ordered kind `delete` + `insert` with the exact PK at
+  `internal/workflow/assign_test.go:54-75`. DEC-103 records the missing
+  permanent per-scope replay assertion for Task 6; this report does not claim a
+  new assertion-level replay trace.
+- VAL-053 — PASS — the `project` subtest checks the first project `insert` and
+  ordered project `delete` + `insert` with PK `{"scope":"project"}` at
+  `internal/workflow/assign_test.go:42-75`. The same DEC-103 Task 6 permanent
+  replay-test follow-up applies.
+- VAL-015 — PASS — `TestWorkflowAssignProjectsOneKindAssignment` is the built
+  CLI event/row pattern at `cmd/fid/workflow_assign_test.go:23-50`; project-scope
+  row evidence remains in the Task 4 QA validation window rather than being
+  newly re-run here.
+- VAL-054 — PASS — project fallback is asserted by
+  `TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment` at
+  `internal/issues/issue_test.go:281-320`.
+- VAL-055 — PASS — kind-over-project precedence is asserted by the same test at
+  `internal/issues/issue_test.go:281-320`.
+- VAL-016 — PASS — all six CLI rejection inputs, their non-zero stderr, and an
+  accepted control are covered at `cmd/fid/workflow_assign_test.go:66-92`.
+  That test does not yet retain pairwise-distinct/value-naming assertions;
+  DEC-103 assigns that permanent-test strengthening to Task 6, so no stronger
+  closure-session claim is made.
+- VAL-056 — PASS — each VAL-016 rejection preserves journal bytes and leaves
+  zero assignment rows at `cmd/fid/workflow_assign_test.go:74-91`.
+- VAL-057 — PASS — the successful built-CLI assign leaves `activity_log` empty
+  at `cmd/fid/workflow_assign_test.go:52-58`.
+- VAL-017 — PASS — both initial-state branches under an assignment are asserted
+  in `TestIssueCreateUsesAssignedWorkflowAndItsInitialState` at
+  `internal/issues/issue_test.go:176-258`.
+- VAL-058 — PASS — the no-assignment all-kind regression coverage remains in
+  `internal/issues/issue_test.go`'s create fixtures and is additionally checked
+  at the CLI boundary by this session's VAL-059 candidate capture below.
+- VAL-059 — PASS — this closure session executed the corrected DEC-103
+  candidate procedure and observed all six raw-byte manifest checks `OK` in
+  `## Tests run`; baseline provenance remains the closed one-time Task 3
+  reproduction recorded by DEC-101.
 
-## VAL-059 evidence
+## Tests run
 
-**Baseline provenance — established and complete.** Reproduced from the pinned
-Task 3 implementation commit
-`50533e2b813bf073cd75f75eb70dd09cd15e9040` in a detached worktree, captured
-through the committed `capture.sh`, and checked against the committed
-`SHA256SUMS`: **all six entries `OK`**, confirmed twice (the authorized
-2026-08-01 Step R rerun and the 2026-08-02 human re-verification). Under DEC-099
-reproduction from pinned inputs *is* the provenance test. Per DEC-101 this
-one-time establishment is now closed and is not repeated.
+- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.4% of statements`
+- Corrected DEC-103 VAL-059 candidate procedure — PASS:
+  - `issue-get-epic.json: OK`
+  - `issue-get-task.json: OK`
+  - `issue-get-subtask.json: OK`
+  - `issue-list-epic.json: OK`
+  - `issue-list-task.json: OK`
+  - `issue-list-subtask.json: OK`
 
-**Candidate parity — the standing assertion.** The candidate binary
-(`go build -o /tmp/fid ./cmd/fid`) captured through the same committed
-`capture.sh` into a fresh scratch root, checked against the committed manifest:
-**all six entries `OK`**. Byte-identical, so the no-assignment path is unchanged
-from v0.1.
+  Executed exactly:
 
-Committed digests:
+  ```bash
+  manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+  capture_root="$(mktemp -d)"
+  go build -o "$capture_root/fid" ./cmd/fid
+  cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+  ( cd "$capture_root" && sha256sum -c "$manifest" )
+  ```
 
-```text
-e04e116c6df34cb85825dc4aa3b886a4edc56143409808f5ac7e4eb56fdbb5f4  issue-get-epic.json
-0e71ea0d6ddbee4e9e62275d7f96aed873f23629945cbbe5eb55f109b05ed7f4  issue-get-task.json
-ed7e271430d01257a3f92e8f59326e7c1ff562ce5ff16654def825c681635541  issue-get-subtask.json
-8dd2f3cf2be2d9e9b78bce77a6121ada76b10b593fd75c91768881d21eecd9f4  issue-list-epic.json
-febad62c2f5f9720a680689f464fd80ac6389426f6b63ba00571948ee9b3d9b5  issue-list-task.json
-152bb980ee36e22ad1bbd008e0257a565810a568212c6d24afd3b48ce41570a6  issue-list-subtask.json
-```
-
-Normalization is the committed no-op `{"json_pointers":[],"replacement":null}`;
-it was never widened, and no expectation was hand-written.
+  The manifest was checked from the fresh candidate capture root by absolute
+  path. The prohibited repository-root and self-referential artifact-directory
+  SHA commands were not run.
 
 ## Exact quality-gate results
 
-> **Corrected 2026-08-02 by the Tech Lead (DEC-102).** The lint gate below was
-> originally recorded `PASS (human-attested)`. That record was **false** and is
-> corrected in place to **FAIL**. Under DEC-102 item 5, results not captured in
-> the session that records them are `UNVERIFIED`, never `PASS`; the four
-> remaining attested gates are relabelled accordingly. Nothing here is deleted —
-> the original claim is stated so the failure is auditable.
+This DEC-103 closure session re-established every gate with its own terminal
+token. The original human-attested `golangci-lint run ./...` PASS was **false**
+(DEC-102): Task 5 later found the Task 4-introduced unchecked `rows.Close`.
+That history is retained below as a deviation; it is not evidence for this
+report. The fresh result is the PASS recorded here.
 
-- `gofmt -l cmd internal` — UNVERIFIED (human-attested, no token captured); no
-  files listed
-- `golangci-lint run ./...` — **FAIL**. Originally recorded
-  `PASS (human-attested)`. Disproven 2026-08-02 by Task 5's independent
-  in-session run of the identical command over the same committed line:
-  `* errcheck: 1` at `internal/workflow/resolve.go:61:18: Error return value of
-  rows.Close is not checked (errcheck)`. `resolve.go` is **new in this task**
-  (`git log --diff-filter=A -- internal/workflow/resolve.go` → `32614bb`), so
-  the finding was introduced here and no stale lint cache could have masked it.
-  Repaired under DEC-102 item 4 inside Task 5; because `golangci-lint run ./...`
-  is repo-wide, **Task 5's green token-cited run is the verifying re-execution
-  of this gate**. See ESC-19-006 / TRG-19-006.
-- `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED (human-attested,
-  no token captured); not contradicted — an errcheck finding has no bearing on
-  test outcomes
-- `go tool cover -func=coverage.out` — UNVERIFIED (human-attested, no token
-  captured)
-- `go test -tags integration -race ./...` — UNVERIFIED (human-attested, no token
-  captured)
-- `go build -o /tmp/fid ./cmd/fid` — UNVERIFIED (human-attested, no token
-  captured)
-
-Four gates remain uncorroborated and are re-executed by QA Lead at Review 2
-(DEC-102 item 6). This task is **Complete (gates unverified)** until they are.
+- `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
+- `golangci-lint run ./...` — PASS — `0 issues.`
+- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.4% of statements`
+- `go tool cover -func=coverage.out` — PASS — `total:									(statements)					77.0%`
+- `go test -tags integration -race ./...` — PASS — `ok github.com/mbell-nzl/fid/internal/workflow	(cached)`
+- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
 
 ## Deviations from spec
 
@@ -161,32 +149,40 @@ Four gates remain uncorroborated and are re-executed by QA Lead at Review 2
    Root cause: the script resolved a relative output root *after* `cd`-ing into
    its temp workspace. Fix: absolutize `output_root` and create it with
    `mkdir -p`. The repaired script reruns byte-identically and deterministically;
-   recorded `PASS` with this note, per DEC-100.
+   the harness correction is retained as required history.
 2. **Step R cleanup was sandbox-blocked (ESC-19-005 → DEC-101).** `git worktree
    remove /tmp/fid-phase19-v01-baseline` and `git worktree prune` failed with
    `error: failed to delete '.git/worktrees/fid-phase19-v01-baseline':
-   Read-only file system`, leaving the path registered-but-missing and
-   cascading into four dependent commands. Retained verbatim here as required by
-   TRG-19-005. DEC-101 rules cleanup out of the evidence set and requires unique
-   per-attempt scratch paths; the recovery used `mktemp -d` accordingly.
-3. **Evidence executed by the Human without token capture.** See the provenance
-   note; dispositioned by DEC-101.
-4. **Step R described the baselines as "committed" when they were untracked.**
-   `cmd/fid/testdata/v01_parity/` was `??` throughout the recovery. The
-   reproduction was unaffected (it regenerates from the pinned commit), but the
-   spec described a state that did not exist. Resolved by this task's
-   implementation commit, which commits the directory.
+   Read-only file system`, leaving the path registered-but-missing and cascading
+   into four dependent commands. DEC-101 rules cleanup out of the evidence set,
+   requires unique per-attempt scratch paths, and the closure candidate capture
+   therefore uses `mktemp -d` with no cleanup evidence.
+3. **Human-attested evidence episode (DEC-101, voided by DEC-102).** The six
+   required gates, baseline reproduction, and candidate parity check were first
+   executed by the Human outside a Developer session with no captured terminal
+   tokens. They were correctly recorded as human-attested rather than
+   reconstructed. DEC-102 subsequently established that uncaptured results are
+   `UNVERIFIED`, never `PASS`.
+4. **Original attested lint PASS was false (DEC-102).** The unchecked
+   `rows.Close` in Task 4's new `internal/workflow/resolve.go` caused
+   `golangci-lint run ./...` to fail; Task 5 repaired it in scope. This session
+   re-ran the exact gate and establishes the fresh `0 issues.` PASS token above.
+5. **Untracked-baselines wording.** Step R described
+   `cmd/fid/testdata/v01_parity/` as committed while it was `??`. Reproduction
+   was unaffected because it regenerated from the pinned Task 3 commit, but the
+   description was inaccurate. Task 4's implementation commit subsequently
+   committed the directory.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- **CF-025 (DEC-101):** VAL-059 should become a permanent golden-file
-  integration test in `cmd/fid` rather than a manual ceremony, reusing the
-  `buildClosureFIDBinary` / `closureRunFID` pattern. Scheduled for Task 6; it is
-  the last legal slot, as heavy mode accepts no carry-forward past phase end.
-- **Review 2 carries unusual weight.** It is the sole independent verification
-  of all thirteen Task 4 assertions and all six gates, not just a sampling pass.
-- Unassign / clear-assignment remains unscheduled. `fid issue transition` into
-  custom-named states remains blocked until Phase 20 (DEC-079).
+- **CF-025 (DEC-101/DEC-103):** convert VAL-059 into the permanent Go
+  golden-file test scheduled first and mandatorily in Task 6. This manual shell
+  procedure remains provenance only after that test lands; no further manual
+  VAL-059 run is authorized.
+- DEC-103 also assigns permanent assertion strengthening to Task 6: pairwise
+  distinct/value-naming CLI rejection checks for VAL-016 and per-scope replay
+  row assertions for VAL-052/VAL-053. The behavior is QA-validated, but those
+  durable tests must replace the review trace.
 
 ## Dependency-budget note
 
