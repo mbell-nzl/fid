@@ -9,7 +9,19 @@
 
 ## Open Escalations
 
-None.
+- **ESC-19-007 — Review 2 found Task 4's mandated SHA-256 verification command
+  is not executable from the repository root (2026-08-02).** Task 4 and QA-plan
+  §6 both prescribe `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS`, but
+  its manifest intentionally contains bare relative output filenames. Review 2
+  independently ran the exact root-level command: it exited 1 with
+  `sha256sum: WARNING: 6 listed files could not be read`. Running the same
+  manifest from the committed-artifact or fresh candidate-capture directory
+  returns all six `OK`, and raw candidate output is byte-identical. The product
+  observable therefore holds, but the required evidence procedure and Task 4
+  completion report are contradictory/non-reproducible as written. **Trigger:
+  quality-gate anomaly and cross-artifact acceptance ambiguity.** Tech Lead
+  must correct the authoritative procedure and disposition Task 4's report
+  before the phase proceeds to Task 6; Review 2 is BLOCK.
 
 ## Resolved This Phase (archive at wrap)
 
