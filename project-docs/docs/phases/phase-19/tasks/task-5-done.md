@@ -78,6 +78,7 @@
 - Built-CLI entrypoint: in fresh `/tmp/fid-phase19-task5.siuHqS`,
   `/tmp/fid init && /tmp/fid workflow list --format markdown` - PASS - rendered
   the four seeded workflow rows, including `| task-default | Task default | task | true | 9 | 17 | [] |`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-19/tasks/task-5-done.md project-docs/docs/phases/phase-19/tasks/task-5.md` - PASS - `PASS report-lint completed with no failures`
 
 ## Exact quality-gate results
 
