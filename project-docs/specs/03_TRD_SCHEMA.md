@@ -1243,13 +1243,27 @@ corrupt or externally modified projection:
   tables (§3), resolved through the read-only workflow registry. As of v0.2a
   this is the migrated source of truth; the audit no longer consults the frozen
   v0.1 Go definitions, which survive only as test parity fixtures. Behavior is
-  otherwise unchanged — an unknown pair is a structural error.
+  otherwise unchanged — an unknown pair is a structural error; and
+- **workflow-assignment compatibility** (v0.2a, DEC-105). Each
+  `workflow_assignments` row is checked against its workflow's `applies_to`: a
+  kind-scope row whose workflow is bound to a different kind, and a project-scope
+  row whose workflow is not `any`, are each a structural error naming the
+  offending assignment. Foreign-key integrity for the same table is already
+  covered by the `PRAGMA foreign_key_check` pass above and is not duplicated
+  here.
 
 For every `activity_log` row, the audit also resolves `journal_event_id` in the
 append-only journal using the journal inspection path. A missing journal event
 is a structural error even though activity rows do not have a SQLite foreign
 key to journal storage. Findings are deterministic by check, entity ID, then
-message. Tables that do not exist in v0.1 are excluded.
+message.
+
+**Table scope (corrected v0.2a, DEC-105).** This audit previously excluded every
+table that does not exist in v0.1. That exclusion no longer holds: v0.2a's
+projected `workflow_assignments` table is audited by the check above. The rule
+is now that a projected table is audited once it has a structural invariant that
+a corrupt or externally modified projection could violate — not that it shipped
+in v0.1.
 
 ---
 

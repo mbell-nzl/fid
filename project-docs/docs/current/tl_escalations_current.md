@@ -9,9 +9,27 @@
 
 ## Open Escalations
 
-None.
+None. **All five final-review blocking findings are dispositioned (DEC-105);
+QA Lead's subsequent final-review disposition is the remaining gate.**
 
 ## Resolved This Phase (archive at wrap)
+
+- **ESC-19-008 — final-review BLOCK on five findings (2026-08-02 → DEC-105,
+  2026-08-07).** **None required a product code change.**
+  (1) **VAL-026** completed by the Human: **9 PASS**, raising CF-026 (workflow
+  inspection + lifecycle), which Tech Lead split into **CF-026a** (read surface,
+  schedulable now) and **CF-026b** (lifecycle model, needs a decision first).
+  (2) **Architecture contradiction is real but the code is right** —
+  `internal/workflow` legitimately uses the journal write API under DEC-089;
+  DEC-096's `Effect`-only *characterization* is superseded while its operative
+  test-packaging rule stands. (3) **Stale canonical records** accepted; Tech Lead
+  syncs at wrap. (4) **Missing `Refs:` on `32614bb`** accepted as a deviation —
+  10 sibling commits carry it, so the convention holds and only enforcement is
+  missing (→ CF-023); **history is not rewritten**, since the hash is cited in
+  eight places. (5) **Structure budgets carried forward as CF-027**:
+  `create.go` was **419** lines at `50533e2` and is **412** now — inherited debt
+  that Phase 19 *improved*, to be decomposed after CF-025's parity test makes it
+  safe.
 
 Full reasoning lives in `../phases/phase-19/decisions.md` and
 `../phases/phase-19/triage-log.md`; these are pointers.

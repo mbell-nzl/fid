@@ -22,8 +22,12 @@ default. v0.2a slice 2 of 3.
 (VAL-001..070), CF-008 re-defer. QA-BLK-01..07 dispositioned by
 **DEC-089..DEC-093** (`../phases/phase-19/decisions.md`); QA plan **Ready**.
 
-**In execution. Tasks 1-3, 5 complete. Task 4 needs a closure evidence session.
-Next: Task 4 evidence session, then Task 6.**
+**All six tasks complete. Awaiting QA Lead's subsequent final-review
+disposition, then wrap.** Final review returned BLOCK on five findings; **all
+five are dispositioned by DEC-105 and none required a product code change.**
+VAL-026 human dogfood is **9 PASS**, raising CF-026 (split into CF-026a/b).
+`02_TRD.md` §3.1, `03_TRD_SCHEMA.md` §14.11, the roadmap closure disposition,
+and `progress_current.md` are synchronized.
 
 **Review 2 verdict BLOCK, resolved (TRG-19-007 / ESC-19-007 / DEC-103).** Review
 2 (`2abcc6c`) independently re-ran **all six Task 4 gates green** (lint

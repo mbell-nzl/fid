@@ -13,10 +13,11 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Newest entry at top.
 >
-> **Next free IDs:** `TRG-19-008`, `ESC-19-008`.
+> **Next free IDs:** `TRG-19-009`, `ESC-19-009`.
 
 | TRG-19-NNN | Date | Trigger | Source | Verdict | ESC-19-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-19-008 | 2026-08-02 | Phase 19 final review BLOCK: VAL-026 has nine blank Human rows; QA-29/30/31 fail structure budgets, canonical/current-record consistency, and immutable Task 4 commit metadata | `qa/final-review.md` | BLOCK | ESC-19-008 | Correct BLOCK. Human judgment cannot be substituted; each deterministic finding requires full Tech Lead/Human disposition. Heavy mode permits no carry-forward; QA must re-disposition closure. |
 | TRG-19-007 | 2026-08-02 | QA Review 2 BLOCK: Task 4's completion report fails `report-lint.sh` 7× and the prescribed root-level VAL-059 `sha256sum -c` command exits 1, despite all six Task 4 gates and candidate parity passing under independent QA execution | `qa/review-2.md`; existing `ESC-19-007` | BLOCK | ESC-19-007 | Correct BLOCK. Both defects are in evidence artifacts, not the product. Resolved by DEC-103 — the prescribed manifest command never worked; the report closes via a Developer evidence session; CF-025 promoted to first and mandatory in Task 6. **Table row backfilled by Tech Lead 2026-08-02** — the detail section below was written but the summary row and the next-free-ID header were not updated (CF-023). |
 | TRG-19-006 | 2026-08-02 | Task 5 required `golangci-lint run ./...` gate failed with pre-existing unchecked `rows.Close()` in `internal/workflow/resolve.go:61`; the Developer preserved uncommitted Task 5 work and submitted a blocker report | `tasks/task-5-done.md` | BLOCK | ESC-19-006 | Genuine unresolved required-gate failure (`* errcheck: 1`). Recovery of uncommitted public CLI, workflow-core, and formatter changes across Developer sessions exceeds TL-Lite authority. |
 | TRG-19-005 | 2026-08-01 | Task 4 Recovery Step R: required `git worktree remove` / `git worktree prune` were sandbox-blocked, leaving the baseline path registered but missing; the authorized rerun reproduced the pinned baseline and six manifest outputs | `tasks/task-4-done.md` | BLOCK | ESC-19-005 | The later reproduction is retained as provenance, but it does not erase the initial blocked cleanup commands. Fresh-session recovery of uncommitted public-path work exceeds TL-Lite authority. |
@@ -24,6 +25,61 @@
 | TRG-19-003 | 2026-07-30 | QA Review 1 BLOCK: Task 4's immutable VAL-059 baseline instruction selects ambient git HEAD, while QA-plan §6 requires the verified Task 3 implementation commit and prohibits ambient HEAD | `qa/review-1.md`; existing `ESC-19-003` | BLOCK | ESC-19-003 | Genuine unresolved QA-blocking precondition. Synchronizing the Task 4 spec with the QA-plan procedure crosses the task/QA contract and requires full Tech Lead resolution before Task 4 starts. |
 | TRG-19-002 | 2026-07-29 | Task 2 required gate `golangci-lint run ./...` fails with a test-only import cycle `internal/db [test] → internal/workflow → internal/journal → internal/db`; repair appears to need an out-of-scope test file or a wider dependency decision | `tasks/task-2-done.md:60,66,70` | BLOCK | ESC-19-002 | Real gate failure, correctly escalated: it touches a dependency boundary and an out-of-scope file. Resolved by DEC-096 — `workflow → journal` is confirmed intended, and the narrow `db_test` split is authorized. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite could not write it: Codex provider-prompt defect, root-caused and fixed by DEC-097. |
 | TRG-19-001 | 2026-07-26 | Task 1 report records the VAL-031 no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command terminates with no output and exit 1 | `tasks/task-1-done.md:40,52` | BLOCK | ESC-19-001 | Evidence-token defect under DEC-086. Observable itself holds (no production evaluator). Report correction required; no implementation change. Entry **backfilled by Tech Lead 2026-07-29** — TL-Lite returned the verdict without writing this record. |
+
+---
+
+## TRG-19-008 - Phase 19 final-review closure block
+
+- **Trigger:** "Phase 19 QA Lead final review BLOCKed phase closure. All eight
+  phase-end commands and six report-lint checks pass, but VAL-026 is
+  Human-blocked with nine blank checklist rows; QA-29 fails in-scope
+  file/function budgets; QA-30 finds contradictory/stale canonical
+  architecture, maintenance-schema, current-context, and roadmap records;
+  QA-31 finds immutable Task 4 implementation commit 32614bb lacks required
+  Refs: phase-19/task-4 footer."
+- **Source:** `project-docs/docs/phases/phase-19/qa/final-review.md`.
+- **Verdict:** BLOCK.
+- **Reasoning:** VAL-026 is explicitly Human-only and all nine checklist rows
+  remain blank, so QA judgment cannot replace it. QA-29 is an unresolved
+  in-scope structure-budget failure; QA-30 requires canonical and current-state
+  reconciliation across multiple records and subsystems; QA-31 requires a
+  Tech Lead/Human disposition under immutable-history policy. None is
+  misclassified, resolved by the attached final-review commit verification, or
+  covered by an accepted decision. Heavy mode records no carry-forward.
+- **Local decisions made:** none by TL-Lite; retain the final review's 69
+  deterministic PASS outcomes and verified final-review/report-lint evidence
+  without treating them as resolution of the five blocking findings.
+- **References:** `qa/final-review.md:217,263,316-318,364-365,409-414,451-470,
+  486-488`; `qa/human-checklist.md` (HUMAN-26a..HUMAN-26i all blank);
+  `phase_brief.md` (Heavy mode and Success / Exit Criteria);
+  `09_AI_WORKFLOW.md` §2.3, §9.
+- **If BLOCK:** ESC-19-008 raised in `tl_escalations_current.md`; recommended
+  next action: invoke the full Tech Lead to resolve ESC-19-008, obtain the
+  Human VAL-026 outcomes, disposition QA-29/30/31, and request a subsequent
+  QA final-review verdict.
+- **Resolution (Tech Lead, 2026-08-07):** BLOCK **sustained in outcome and in
+  reasoning** — the second consecutive triage where the stated ground was fully
+  correct. Refusing to substitute QA judgment for a Human-only assertion was
+  exactly right, and the four deterministic findings were real. Resolved by
+  **DEC-105**; **none required a product code change.** VAL-026 is **9 PASS**
+  (CF-026 raised, split into CF-026a/b). The architecture contradiction was real
+  but resolved *against the decision, not the code* — DEC-096 was a Task-2
+  snapshot stated as a permanent invariant and falsified by Tasks 3-4, which
+  DEC-089 had already authorized. The `Refs:` gap is one outlier commit against
+  ten compliant siblings, so history stands and enforcement moves to CF-023.
+  The structure-budget finding **inverted on provenance**: `create.go` was 419
+  lines at `50533e2` and is 412 now — inherited debt that the phase improved —
+  so it carries as CF-027 behind CF-025's parity test.
+- **Pattern note for wrap-up.** Applying DEC-102's provenance rule turned
+  QA-BLK-FINAL-05 from an in-scope blocking finding into inherited debt that the
+  phase *improved*. That rule has now paid for itself twice in five days
+  (ESC-19-006, and here in the opposite direction). It is the clearest keep in
+  DEC-104 item 5's retirement table. Separately: `32614bb` — the single commit
+  produced by the irregular human-executed Task 4 session — accounts for **four**
+  distinct defects across this phase (false gate attestation, lint regression,
+  missing `Refs:` footer, report that never passed report-lint). No other commit
+  in Phase 19 produced more than zero. That is the phase's single strongest piece
+  of evidence for DEC-102 item 5.
 
 ---
 

@@ -7,107 +7,95 @@
 
 ## Project State
 
-**Status:** Phase 19 **IN EXECUTION.** Tasks 1-4 complete (`a509d59`/`3b061e1`,
-`10d4d24`, `50533e2`/`697c673`, Task 4 human-attested per DEC-101); QA Review 1
-done; **next: Task 5, then Review 2.** Phase 18 is COMPLETE / WRAPPED
-(2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a slice 1 of
-3 is delivered.
+**Status:** Phase 19 **AWAITING QA LEAD FINAL-REVIEW RE-DISPOSITION.** All six
+tasks complete; Reviews 1 and 2 done; final review returned BLOCK on five
+findings, **all five now dispositioned by DEC-105**. Phase 18 is COMPLETE /
+WRAPPED (2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a
+slice 2 of 3 is delivered pending closure.
 
-Phase 19 (`fid workflow define/assign/list` + escalation default workflow,
-v0.2a slice 2 of 3) runs in **heavy mode** with six tasks and a **70-row**
-validation contract (`Ready`). Artifacts: `../phases/phase-19/` —
-`decisions.md` (DEC-075..DEC-083, DEC-089..DEC-101),
-`qa/validation-contract.md`, `qa/qa-plan.md`, `tasks/task-1..6.md`; brief
-refreshed in `phase_brief.md`. Branch: `phase-19-workflow-authoring`.
+Phase 19 (`fid workflow define/assign/list` + escalation default workflow) ran
+in **heavy mode** with six tasks and a **70-row** validation contract.
+Artifacts: `../phases/phase-19/` — `decisions.md` (DEC-075..DEC-083,
+DEC-089..DEC-105), `qa/validation-contract.md`, `qa/qa-plan.md`,
+`qa/review-1.md`, `qa/review-2.md`, `qa/final-review.md`,
+`qa/human-checklist.md`, `tasks/task-1..6.md`. Branch:
+`phase-19-workflow-authoring`.
 
-**Task 4 stopped and was cleared to resume (2026-08-01, TRG-19-004 /
-ESC-19-004).** The first `capture.sh` run failed on a relative-path bug in the
-script Task 4 was itself authoring. Stopping was correct — no commit, six gates
-unrun, scratch worktree registered — but the recommended from-scratch restart
-was not: the failed run wrote nothing, and DEC-098's baseline guard is
-**structural** (detached worktree at the pinned commit + committed fixed
-fixture), so working-tree edits cannot reach it. **DEC-099** preserves the
-partial work and settles baseline provenance by reproduction against the
-committed `SHA256SUMS`. **DEC-100** makes it standing: a task-authored evidence
-harness failing while being authored is a **deviation, not a failed gate**.
+## Task Outcomes
 
-**Task 4 stopped a third time and is now closed (2026-08-02, TRG-19-005 /
-ESC-19-005 / DEC-101).** Step R's `git worktree remove` / `prune` hit a
-read-only `.git/worktrees/` and cascaded into four dependent commands. **Three
-consecutive stops, none in the product — all in VAL-059's verification
-scaffolding**, each fixed narrowly so the next adjacent brick fell. DEC-101:
-cleanup is never evidence; scratch state is unique per attempt; task specs
-declare required environment capabilities and escalate shortfalls at step zero.
-Task 4's gates were then run by the Human **without token capture** — recorded
-as **human-attested**, with **QA Lead's Review 2 rerun as the named control**;
-any failure there reopens Task 4. **CF-025** converts VAL-059 into a permanent
-golden-file test in Task 6.
+| Task | Commit | Status |
+|---|---|---|
+| 1 | `a509d59` / `3b061e1` | Complete |
+| 2 | `10d4d24` | Complete |
+| 3 | `50533e2` / `697c673` | Complete |
+| 4 | `32614bb` | Complete — gates re-established by a DEC-103 closure evidence session after the original human-attested record was disproven |
+| 5 | `8f79013` | Complete |
+| 6 | see phase archive | Complete — CF-025, CF-021, CF-024 measurement, spec/glossary sync |
 
-**Review 1 (Tasks 1-3): BLOCK, resolved by DEC-098.** All 37 in-window
-assertions ON TRACK with cited evidence; the sole blocking finding was a Task 4
-precondition (ambient `HEAD` vs. the pinned Task 3 implementation commit).
+## Quality Outcome
 
-**Earlier stops, all resolved:** Task 1 evidence-token defect (DEC-094/095,
-TRG-19-001); Task 2 test-only import cycle (DEC-096/097, TRG-19-002); QA-plan
-blockers QA-BLK-01..07 (DEC-089..093). Detail in `../phases/phase-19/`.
+**Zero product defects across the phase.** Eight escalations, all in
+verification apparatus or evidence records:
 
-Phase 18 outcome (full record in `../phases/phase-18/progress.md`): five tasks
-closed on a terminating, green seven-command heavy gate (coverage `76.8%`);
-final review **PASS** (24 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD); human
-checklist **PASS**; six triages all correct in hindsight; ESC-001 resolved by
-DEC-072. Wrap decisions **DEC-073** and **DEC-074**. Delivered: workflow
-structure is data (migrations `0007`/`0008`), every consumer resolves through
-`workflow.Load`, the frozen Go `definitions` map is test-only, and the DEC-066
-gate-obligation seam is present with zero behavior.
+- **Four in one observable's shell ceremony** (VAL-059): ESC-19-003 baseline
+  selector, ESC-19-004 `capture.sh` path bug, ESC-19-005 sandbox-blocked
+  cleanup, ESC-19-007 a manifest command that never worked from the prescribed
+  directory. **CF-025 retired the ceremony** into a standing Go golden test.
+- **ESC-19-006** — Task 4's human-attested lint `PASS` disproven by a regression
+  Task 4 itself introduced, misclassified as "pre-existing" from `git show HEAD`.
+- **ESC-19-001/002** — an evidence-token defect and a test-only import cycle.
+- **ESC-19-008** — final review; five findings, none in product code.
+
+`32614bb`, the single commit produced by the irregular human-executed Task 4
+session, accounts for **four** distinct defects. No other Phase 19 commit
+produced any. That is the phase's strongest evidence for DEC-102 item 5.
+
+Human dogfood **VAL-026: 9 PASS / 0 FAIL / 0 PARTIAL**, raising CF-026.
+
+## Standing Rules Produced
+
+**Keep:** DEC-102 (uncaptured gate results are `UNVERIFIED`, never `PASS`;
+"pre-existing" requires an introducing commit older than phase-start) — has
+already paid for itself twice, in opposite directions. DEC-103 items 4-5 (a
+required command is executed by its author before publication; working-directory
+sensitivity is declared). DEC-104 (Tech Lead gains a shell; specifies observables
+not bespoke mechanism; second-escalation tripwire; evidence is an automated test
+unless justified).
+
+**Proposed for retirement at wrap (DEC-104 item 5):** DEC-098, DEC-099's
+baseline half, DEC-101 items 1-2 — all scar tissue from the ceremony CF-025
+deleted.
 
 ## Carry-Forward
 
-Dispositioned at Phase 19 planning (DEC-082):
-
-- **CF-023** — **re-deferred to the workflow overhaul (DEC-083, supersedes
-  DEC-074).** No product-quality risk in items (a)-(g); item (h) is carried as
-  a rule by every Phase 19 task spec. Stays open in the register.
-- **CF-021** — **scheduled: Phase 19 Task 6**, which already touches
-  `internal/maintenance` and runs the full Go gate.
-- **CF-022** — **partially taken: Phase 19 Task 5** ships a byte-exact golden
-  for the new markdown renderer; the backfill for pre-existing renderers stays
-  deferred.
-- **CF-024** — re-deferred to v0.2b, with a Phase 19 Task 6 **measurement
-  obligation**: re-record the 100k-event rebuild (`<30 s`) and 10k-issue read
-  (`<500 ms`) against the controls. Do not weaken either target.
-- **CF-008** — **re-deferred to v0.2d** (governance vocabulary), where it pairs
-  with the `activity_log` ref-type extension. **Confirmed by the Human at
-  approval (DEC-093).**
-- **CF-017 (v0.2e), CF-018, CF-020** — re-deferred; triggers not fired.
+- **CF-021** — closed in Task 6.
+- **CF-022** — partially taken in Task 5; renderer backfill still deferred.
+- **CF-023** — open; gained the DEC-102 drill case, the `report-lint.sh`
+  `UNVERIFIED` message, and mechanical `Refs:` enforcement.
+- **CF-024** — measured in Task 6 (100k rebuild `23.935 s` against `<30 s`,
+  ~20% headroom); fix stays v0.2b.
+- **CF-025** — **closed in Task 6**; VAL-059 is now a standing test.
+- **CF-026a / CF-026b** — new, from the human dogfood: `workflow show` read
+  surface, and the workflow lifecycle model (design decision before scheduling).
+- **CF-027** — new: `internal/issues/create.go` decomposition. Inherited debt
+  (419 lines at `50533e2`, 412 now — the phase improved it); sequenced behind
+  CF-025's parity test.
+- **CF-008 (v0.2d), CF-017 (v0.2e), CF-018, CF-020** — re-deferred; unchanged.
 
 ## Escalations
 
-**None open.** **ESC-19-001** (Task 1 VAL-031 evidence token) was raised
-2026-07-26 and resolved 2026-07-29 by DEC-094/DEC-095; it stays in
-`tl_escalations_current.md` until the wrap archive. Phase 18's ESC-001 (final-review BLOCK — `workflow.Load`
-connection deadlock plus the then-absent QA-30 spec sync) is resolved by DEC-072,
-verified by the 2026-07-23 rerun, and archived in
-`../phases/phase-18/tl-escalations.md`. All Phase 17 escalations remain archived
-in `../phases/phase-17/tl-escalations.md`.
-
-## Planning Checkpoint (2026-07-18)
-
-The trusted-evidence planning checkpoint ran per
-`../reviews/2026-07-18-fid-roadmap-update-tl-brief.md`. DEC-059..DEC-066
-recorded in `../reviews/2026-07-18-roadmap-update-decisions.md`; specs 00-10 and
-the roadmap re-sliced (evidence foundation v0.2b before governance/reports; lean
-completion v0.2c; work envelope v0.3a). **Pending Human ratification**; Phase 18
-executed within the ratified-by-practice v0.2a slice.
+**None open.** ESC-19-001..008 are all resolved and stay in
+`tl_escalations_current.md` until the wrap archive.
 
 ## Next Action
 
 In order:
 
-1. **Correct the Task 1 report per DEC-094** (Developer session or human with a
-   shell): re-execute the exact VAL-031 inventory, record the observed
-   `exit 1 (no output)` on both lines, add the TRG-19-001 correction note,
-   commit as its own `docs(task)` commit, rerun `report-lint.sh`.
-2. **Phase Runner resumes**: record Task 1 complete, then start Task 2.
-3. **Deep retrospective (DEC-073, timing at the Human's discretion)** — an
-   input to the agentic-workflow overhaul rather than a driver of a CF-023
-   pass; TRG-19-001 is a fresh input for it.
+1. **QA Lead issues a subsequent final-review disposition** against DEC-105's
+   five dispositions. Heavy mode requires it before closure.
+2. **Tech Lead wrap-up** — workflow notes, full spec-sync verdict table, the
+   DEC-104 item 5 keep/retire verdicts, archive, current-doc trimming, and the
+   Phase 20 brief.
+3. **Deep retrospective (DEC-104)** — eight escalations, twelve decisions, zero
+   product defects. Brief: which rules would have prevented anything, which are
+   scar tissue, what minimum set survives.

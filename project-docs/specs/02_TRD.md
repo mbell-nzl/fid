@@ -123,12 +123,26 @@ Domain packages that produce journal events depend on `internal/journal` for
 the `Effect` data contract only; `internal/journal` depends on `internal/db`.
 That chain is one-way and must stay one-way.
 
-- **`internal/workflow` → `internal/journal` is permitted, bounded to the
-  `Effect` struct** (v0.2a, DEC-096). The authoring core returns
-  `[]journal.Effect` so the effect shape is never duplicated away from the
-  event schema it serialises into. `internal/workflow` must not reach any other
-  `internal/journal` surface — no append, no projection, no replay — which
-  would breach its "no schema/migration ownership, no writes" boundary above.
+- **`internal/workflow` → `internal/journal` is permitted and includes the
+  journal write API** (v0.2a; DEC-089, corrected by DEC-105). The authoring core
+  returns `[]journal.Effect` so the effect shape is never duplicated away from
+  the event schema it serialises into, and the authoring **write paths**
+  (`define.go`, `assign.go`) additionally use `WithLock`,
+  `EnsureProjectionFreshWithLock`, `PrepareEvent`, `DryRunProjectEvent`,
+  `AppendEvent`, and `ProjectEvent`. This follows directly from DEC-089:
+  `internal/workflow` **owns** workflow authoring, assignment, and resolution,
+  and owning a write path means appending the event. Pushing append and
+  projection up into `cmd/fid` would be the worse design.
+  - **Superseded wording (DEC-096, corrected by DEC-105):** DEC-096 described
+    this edge as "bounded to the `Effect` struct — no append, no projection, no
+    replay." That was an accurate description of the package **at Task 2**, when
+    it only built effects, and it was wrongly stated as a permanent invariant.
+    Tasks 3-4 added the write paths DEC-089 had already authorized. **The
+    boundary that still holds** is the one in §3: no issue creation, no AC
+    verification, no output formatting, and no schema or migration ownership.
+  - **Replay stays out.** `internal/workflow` must not add resolution logic to
+    the projection or replay path — replay re-resolving assignments would make
+    history non-deterministic (DEC-076).
 - **Consequence for tests:** because `internal/journal` imports `internal/db`,
   **no in-package (`package db`) test file in `internal/db` may import
   `internal/workflow`**, and no in-package `internal/journal` test file may

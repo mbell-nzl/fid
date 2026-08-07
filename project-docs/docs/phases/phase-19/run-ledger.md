@@ -399,3 +399,107 @@
   dispositioning Task 4's completion report so `report-lint` passes; then
   resume the Phase Runner before Task 6. Task 5 remains complete, while Task 4
   is reopened pending compliant evidence closure.
+
+### 2026-08-02 17:45 RUN-RESUME
+
+- Branch: `phase-19-workflow-authoring`
+- Resuming from: 2026-08-02 15:31 STOP, resolved by DEC-103
+- Reconciliation: `DEC-103` is committed at `4945f34`; `ESC-19-007` is
+  resolved and the Open ESC baseline is none. Task 5 is complete at
+  `8f79013c7e8afcd3d4bd73f9821484d9dd9d9334`; its report-lint result remains
+  PASS. Task 4 implementation commit
+  `32614bbbd50e683b61921e9ed6beabee73b46021` resolves with subject
+  `feat(workflow): add assign command and assignment-aware creation`; no
+  product code is to be written. `task-4-done.md` is the known stale report
+  with seven report-lint failures and will be rewritten by the closure
+  evidence session as a `docs(task)` commit while retaining the implementation
+  hash and deviation history.
+- Closure contract: Developer must run Task 4's six exact gates in order and
+  the corrected VAL-059 candidate-root procedure, capturing its own tokens;
+  Review 2 tokens must not be transcribed. Any gate failure is a triage-gated
+  stop. Task 4 proceeds to Task 6 only after the rewritten report is committed
+  and report-lint passes.
+- Next task contract: Task 6 is pending; CF-025 is the first mandatory item,
+  and Review 2's two improvement findings are do-now under DEC-103.
+- Starting task: Task 4 closure evidence session
+
+### 2026-08-02 17:50 TASK task-4 CLOSURE EVIDENCE COMPLETE
+
+- Report: `project-docs/docs/phases/phase-19/tasks/task-4-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`); report
+  file committed and clean.
+- Implementation commit retained unchanged:
+  `32614bbbd50e683b61921e9ed6beabee73b46021` - verified, subject matched
+  (`feat(workflow): add assign command and assignment-aware creation`).
+- Report commit: `ba65078cdacffb6e153cfdeb4e20196084cab947` - verified, subject
+  matched (`docs(task): record phase-19 task-4 closure evidence`).
+- Closure evidence: all six Task 4 gates PASS with fresh Developer-session
+  tokens; corrected DEC-103 VAL-059 candidate procedure produced all six
+  manifest `OK` results. No product-code modifications were made. Review 2
+  tokens were not transcribed; the deviation history was retained.
+- Task 4 status: implementation and gates closed; VAL-014..017 and
+  VAL-051..059 report coverage retained, with Task 6 permanent test
+  strengthening still required for VAL-016/052/053.
+- Next task: task-6, with CF-025 first and mandatory.
+
+### 2026-08-02 18:06 TASK task-6 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-19/tasks/task-6-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`); report
+  file committed and clean.
+- Implementation commit: `09aa0a081d2ecfee025c3b4d8158bc6203d02d98` -
+  verified, subject matched (`feat(workflow): close workflow authoring
+  integrity`).
+- Report commit: `988737b7f68da1ef481a98b0184400248321837b` - verified, subject
+  matched (`docs(task): finalize completion report for phase-19 task-6`).
+- Required gate: all seven Task 6 commands PASS with recorded terminating
+  tokens; benchmark gate PASS. CF-025 was first and PASS; both Review 2
+  improvement strengthenings PASS; VAL-021..025 and VAL-068..070 PASS.
+- Measurements: 10k issue read `44.29 ms/registry-read` against `<500 ms`;
+  100k rebuild `24749 ms/rebuild` against `<30 s`, faster than the Phase 18
+  `26.99–27.66 s` baseline. VAL-026 remains Human-only and is pending the
+  final human checklist.
+- Next cadence event: QA Lead final review and human checklist.
+
+### 2026-08-02 18:36 REVIEW final-review
+
+- Review: `project-docs/docs/phases/phase-19/qa/final-review.md`
+- Human checklist: `project-docs/docs/phases/phase-19/qa/human-checklist.md`
+- Review commit: `cfba808b8fb7f11347dc1c989838a59fecb1fc6e` - verified, subject
+  matched (`docs(qa): record phase 19 final review`).
+- Phase-end gate: all eight exact commands terminated and PASSed; all six
+  task report/spec pairs passed report-lint; 69 deterministic VAL assertions
+  PASS, with VAL-026 Human-only BLOCKED pending nine checklist outcomes.
+- Verdict: BLOCK. Blocking findings are QA-29 (in-scope structure budgets),
+  QA-30 (canonical architecture/maintenance/current/roadmap synchronization),
+  QA-31 (immutable Task 4 implementation commit lacks required
+  `Refs: phase-19/task-4`), and the unexecuted Human VAL-026 checklist.
+- TL-Lite triage required before STOP; no Task 6 product or report work
+  remains pending.
+
+### 2026-08-02 18:37 TRIAGE
+
+- Trigger: QA Lead final review BLOCKed phase closure with nine blank Human
+  VAL-026 rows and unresolved QA-29/30/31 findings.
+- Source: `project-docs/docs/phases/phase-19/qa/final-review.md`
+- Commit verification: final-review commit
+  `cfba808b8fb7f11347dc1c989838a59fecb1fc6e` resolved and subject matched;
+  all six task report/spec report-lint pairs PASSed.
+- Verdict: BLOCK (`VERDICT: BLOCK (escalated as ESC-19-008)`)
+- Triage log: `TRG-19-008`; durable entry confirmed in
+  `project-docs/docs/phases/phase-19/triage-log.md`. Escalation
+  `ESC-19-008` confirmed in `project-docs/docs/current/tl_escalations_current.md`.
+
+### 2026-08-02 18:37 STOP
+
+- Cause: Final QA is not phase-ready. Human-only `VAL-026` has no recorded
+  outcomes; QA-29 identifies the in-scope `create.go` structure-budget
+  violation; QA-30 identifies contradictory/stale canonical and current
+  records; QA-31 identifies the missing phase/task footer on immutable Task 4
+  implementation history. Heavy mode permits no carry-forward.
+- Triage: `TRG-19-008` BLOCK, escalated as `ESC-19-008`.
+- Next human action: Full Tech Lead coordinates all nine Human checklist
+  judgments, resolves the structure-budget and canonical-record findings, and
+  records an immutable-history disposition for Task 4's missing footer. Then
+  QA Lead must issue a subsequent final-review disposition; do not append
+  RUN-END or claim phase readiness before all blockers are resolved.
