@@ -7,30 +7,26 @@
 
 ## Project State
 
-**Status:** Phase 19 **AWAITING QA LEAD FINAL-REVIEW RE-DISPOSITION.** All six
-tasks complete; Reviews 1 and 2 done; final review returned BLOCK on five
-findings, **all five now dispositioned by DEC-105**. Phase 18 is COMPLETE /
-WRAPPED (2026-07-25); v0.1 remains closed for early dogfood (DEC-057); v0.2a
-slice 2 of 3 is delivered pending closure.
+**No phase is active.** Phase 19 is **COMPLETE / WRAPPED** (2026-08-08,
+DEC-106). Phase 18 is complete (2026-07-25); v0.1 remains closed for early
+dogfood (DEC-057). **v0.2a slice 2 of 3 is delivered.** Next planned work is
+**Phase 20 — `role_permissions` migration + `fid role create` / `fid policy set`
++ v0.2a closure**, which has not been planned yet.
 
-Phase 19 (`fid workflow define/assign/list` + escalation default workflow) ran
-in **heavy mode** with six tasks and a **70-row** validation contract.
-Artifacts: `../phases/phase-19/` — `decisions.md` (DEC-075..DEC-083,
-DEC-089..DEC-105), `qa/validation-contract.md`, `qa/qa-plan.md`,
-`qa/review-1.md`, `qa/review-2.md`, `qa/final-review.md`,
-`qa/human-checklist.md`, `tasks/task-1..6.md`. Branch:
-`phase-19-workflow-authoring`.
+Branch: `phase-19-workflow-authoring`.
 
-## Task Outcomes
+## Phase 19 Outcome
 
-| Task | Commit | Status |
-|---|---|---|
-| 1 | `a509d59` / `3b061e1` | Complete |
-| 2 | `10d4d24` | Complete |
-| 3 | `50533e2` / `697c673` | Complete |
-| 4 | `32614bb` | Complete — gates re-established by a DEC-103 closure evidence session after the original human-attested record was disproven |
-| 5 | `8f79013` | Complete |
-| 6 | see phase archive | Complete — CF-025, CF-021, CF-024 measurement, spec/glossary sync |
+Six tasks, **heavy** mode, a **70-row** validation contract, and
+**70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**. QA Lead's subsequent final
+review returned **PASS WITH IMPROVEMENTS**; the Human checklist is **9 PASS /
+0 FAIL / 0 PARTIAL**. Shipped: `fid workflow define` / `assign` / `list`, the
+`workflow_assignments` projected table with kind→project→built-in precedence,
+the `escalation-default` seed, and assignment-aware issue creation.
+
+Full history, task/commit map, and carry-forward detail:
+`../phases/phase-19/progress.md`. Decisions: `../phases/phase-19/decisions.md`
+(DEC-075..DEC-083, DEC-089..DEC-106).
 
 ## Quality Outcome
 
@@ -46,56 +42,58 @@ verification apparatus or evidence records:
 - **ESC-19-001/002** — an evidence-token defect and a test-only import cycle.
 - **ESC-19-008** — final review; five findings, none in product code.
 
-`32614bb`, the single commit produced by the irregular human-executed Task 4
-session, accounts for **four** distinct defects. No other Phase 19 commit
-produced any. That is the phase's strongest evidence for DEC-102 item 5.
-
-Human dogfood **VAL-026: 9 PASS / 0 FAIL / 0 PARTIAL**, raising CF-026.
+The **irregular human-executed Task 4 session** produced **five** distinct
+defects across its two commits, `32614bb` and `ce4cf5b`: a false gate
+attestation, a lint regression, two missing `Refs:` footers, and a report that
+never passed report-lint. **Every other Developer and QA-Lead task commit in the
+phase range carries `Refs:` and produced none** (the six remaining gaps in the
+range are five `docs(tl)` governance commits and one raw human commit,
+`ebbcd16`). That is the phase's strongest evidence for DEC-102 item 5.
 
 ## Standing Rules Produced
 
-**Keep:** DEC-102 (uncaptured gate results are `UNVERIFIED`, never `PASS`;
-"pre-existing" requires an introducing commit older than phase-start) — has
-already paid for itself twice, in opposite directions. DEC-103 items 4-5 (a
-required command is executed by its author before publication; working-directory
-sensitivity is declared). DEC-104 (Tech Lead gains a shell; specifies observables
-not bespoke mechanism; second-escalation tripwire; evidence is an automated test
-unless justified).
+**Kept** (each now a sentence in a canonical spec, not a phase decision an agent
+must remember to load): DEC-094, DEC-095, DEC-096 (test-packaging half),
+DEC-097, DEC-099 (reproduction principle), DEC-100, DEC-101 items 1-3,
+DEC-102 items 1 and 5, DEC-103 items 4-5, DEC-104 items 1-4.
 
-**Proposed for retirement at wrap (DEC-104 item 5):** DEC-098, DEC-099's
-baseline half, DEC-101 items 1-2 — all scar tissue from the ceremony CF-025
-deleted.
+**Retired at wrap** (DEC-106 item 6): DEC-098 entire, DEC-099's baseline half,
+DEC-101 item 4, DEC-103 items 1-3, and DEC-096's `Effect`-only characterization
+— all procedure-specific scar tissue from the ceremony CF-025 deleted.
+DEC-104 proposed retiring DEC-101 items 1-2 as well; that was **overturned**,
+because both cost one sentence and `t.TempDir()` satisfies them by construction.
+
+Scored across the eleven rule-bearing decisions (DEC-094..DEC-104): **nine
+keeps, three retirements, two splits** — five retired items once the split
+halves are counted individually.
 
 ## Carry-Forward
 
-- **CF-021** — closed in Task 6.
+- **CF-021, CF-025** — **closed** in Task 6.
 - **CF-022** — partially taken in Task 5; renderer backfill still deferred.
-- **CF-023** — open; gained the DEC-102 drill case, the `report-lint.sh`
-  `UNVERIFIED` message, and mechanical `Refs:` enforcement.
-- **CF-024** — measured in Task 6 (100k rebuild `23.935 s` against `<30 s`,
-  ~20% headroom); fix stays v0.2b.
-- **CF-025** — **closed in Task 6**; VAL-059 is now a standing test.
-- **CF-026a / CF-026b** — new, from the human dogfood: `workflow show` read
+- **CF-023** — open, **Medium**. Gained three drill cases, the `report-lint.sh`
+  `UNVERIFIED` message, mechanical `Refs:` enforcement, and the DEC-106 item 5
+  prevention (spec-sync obligations must land in the owning task's
+  `## Documentation Updates`).
+- **CF-024** — measured in Task 6: 100k rebuild `24.749 s` against `<30 s`
+  (~17.5% headroom, up from ~8-10%). Improved, not closed; fix stays v0.2b.
+- **CF-026a / CF-026b** — new, from the human dogfood: the `workflow show` read
   surface, and the workflow lifecycle model (design decision before scheduling).
-- **CF-027** — new: `internal/issues/create.go` decomposition. Inherited debt
-  (419 lines at `50533e2`, 412 now — the phase improved it); sequenced behind
-  CF-025's parity test.
-- **CF-008 (v0.2d), CF-017 (v0.2e), CF-018, CF-020** — re-deferred; unchanged.
+- **CF-027** — new: `internal/issues/create.go` and `writeMarkdown`
+  decomposition. Inherited debt the phase improved; sequenced behind CF-025's
+  parity test.
+- **CF-008 (v0.2d), CF-017 (v0.2e), CF-018, CF-020** — re-deferred, unchanged.
 
 ## Escalations
 
-**None open.** ESC-19-001..008 are all resolved and stay in
-`tl_escalations_current.md` until the wrap archive.
+**None open.** ESC-19-001..008 are resolved and archived in
+`../phases/phase-19/tl-escalations.md`.
 
 ## Next Action
 
-In order:
-
-1. **QA Lead issues a subsequent final-review disposition** against DEC-105's
-   five dispositions. Heavy mode requires it before closure.
-2. **Tech Lead wrap-up** — workflow notes, full spec-sync verdict table, the
-   DEC-104 item 5 keep/retire verdicts, archive, current-doc trimming, and the
-   Phase 20 brief.
-3. **Deep retrospective (DEC-104)** — eight escalations, twelve decisions, zero
-   product defects. Brief: which rules would have prevented anything, which are
-   scar tissue, what minimum set survives.
+1. **Deep retrospective (recommended, DEC-104/DEC-106)** — eight escalations,
+   twelve decisions, zero product defects. Brief in
+   `../phases/phase-19/decisions.md` → Deep retrospective recommendation.
+2. **Phase 20 planning** — `role_permissions` migration + `fid role create` /
+   `fid policy set` + v0.2a closure, carrying the DEC-079 unblock, the v0.2a
+   exit smoke, and CF-026a as a scheduling candidate.

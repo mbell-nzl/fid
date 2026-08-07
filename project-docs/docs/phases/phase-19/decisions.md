@@ -1352,10 +1352,165 @@ the root-cause attribution, and the inference that prompt compliance had been
   targets, which is the normal mechanism and is not carry-forward of unfinished
   phase scope.
 
+## Wrap-Up Decisions (2026-08-08)
+
+### DEC-106: Phase 19 sign-off — closure preconditions landed, keep/retire verdicts recorded
+
+- **Date:** 2026-08-08
+- **Status:** Phase 19 sign-off. The keep/retire table and the spec-sync
+  corrections are binding beyond the phase.
+- **Context.** QA Lead's subsequent final-review disposition
+  (`qa/final-review-2.md`, 2026-08-07) returned **PASS WITH IMPROVEMENTS**:
+  all five `final-review.md` blocking findings dispositioned, contract closing
+  **70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**, QA-BLK-FINAL-03 sustained
+  in part with two documentary preconditions named against the wrap commit. It
+  also corrected two of my own DEC-105 evidence claims and added MAJOR-01,
+  MINOR-01, and MINOR-02. **Phase 19 is signed off.**
+
+**1. PRECON-01 (stale, self-contradictory `phase_brief.md` task table) — DONE.**
+   The wrap replaces the Phase 19 brief with a no-active-phase brief, so the
+   stale Task 4 / Task 6 cells are gone rather than corrected in place, and the
+   authoritative final task statuses now live in the phase archive
+   (`progress.md`), which is where a Phase 20 planning session will look. QA
+   Lead was right to refuse to accept "the wrap will replace it" as a
+   disposition while the wrap had not happened; it has now happened in the same
+   commit as this decision.
+
+**2. PRECON-02 (two false statements about the Task 4 session) — DONE, and the
+   correction is worth more than the sentence it replaces.** QA Lead's E-11
+   partition is adopted verbatim in `progress_current.md` and in the CF-023
+   register line: across `50533e2..HEAD`, **every Developer/QA-Lead task commit
+   carries `Refs:` except `32614bb` and `ce4cf5b`, and both are products of the
+   same irregular human-executed Task 4 session**; the other six gaps are five
+   `docs(tl)` governance commits and one raw human commit (`ebbcd16`).
+   - My DEC-105 item 4 asserted "10 sibling commits carried it, so the
+     convention holds" from a bare `grep -c` **without taking the denominator**
+     — the range holds 18 commits, so 10-of-18 demonstrates nothing. The
+     disposition was right; the evidence for it was not.
+   - The corrected statement **raises** the Task 4 session's defect count from
+     four to five, and it is the second time in this phase that taking a
+     denominator changed the meaning of a number (the first was
+     QA-BLK-FINAL-05's phase-start line count). **"A count is not a rate until
+     the population is stated"** joins the CF-023 drill set as case 5; it is
+     mechanically detectable and it is the cheapest of the five.
+
+**3. MAJOR-01 (`02_TRD.md` §3.1 lead sentence false for ten packages) — FIXED.**
+   Independently reproduced at wrap:
+   `journal.(WithLock|AppendEvent|ProjectEvent)(` resolves in ten non-test
+   packages — `bootstrap`, `claims`, `dev`, `issues`, `labels`, `links`,
+   `maintenance`, `requirements`, `runs`, `workflow`. §3.1 now states the actual
+   norm (data contract **and** write API, plus `EnsureProjectionFresh*` on read
+   paths), keeps the one-way `workflow → journal → db` chain as the constraint
+   the section exists to protect, and names `internal/workflow/list.go`'s read
+   path in the enumeration.
+   - **This is the same defect as QA-BLK-FINAL-02, aimed one package family
+     over**, and it was *introduced by this phase* (`65f6710`, the DEC-096
+     sync). `bb7d61a` corrected the workflow bullet and left the false
+     generalisation above it standing. **Naming a rule in the exception clause
+     does not repair a false general statement.**
+
+**4. MINOR-01 / MINOR-02 — accepted onto the register.**
+   `internal/format/markdown.go` `writeMarkdown` (68 lines, 66 at phase start,
+   +2 for one unavoidable type-switch dispatch arm) joins **CF-027** so the next
+   `internal/format` reopen takes it with CF-022's renderer backfill in one
+   pass. `ebbcd16` (no Conventional Commit type, no `Refs:`, wrong phase number
+   in the subject) joins **CF-023** as further evidence that a `commit-msg` hook
+   is the answer; history is not rewritten, on the same immutable-history
+   reasoning as `32614bb`.
+
+**5. A spec-sync obligation this phase assigned to Task 6 was never executed,
+   and neither the completion report nor the final review caught it.** The
+   Spec Sync Verdicts table below assigned DEC-101 items 1-3 and DEC-102 items
+   1 and 5 to Task 6 for landing in `09_AI_WORKFLOW.md` and `AGENTS.md`. Task
+   6's report lists only `06_DESIGN_PLAN_CLI.md` and `GLOSSARY.md` under
+   documentation updated, and records **"Deviations from spec: None"**. The
+   rules were absent from both files at wrap; they are landed now, together
+   with DEC-103 items 4-5 and DEC-097.
+   - **Root cause is planning, not the Developer.** Task 6's spec carried its
+     own documentation list; the sync table was a Tech Lead planning artifact
+     the Developer never loaded. An obligation recorded only in a document its
+     owner does not read is not assigned.
+   - **The phase's own headline rule caught it.** DEC-102 says an unverified
+     claim is not evidence; "verified without correction" in a completion report
+     is exactly such a claim, and the wrap-time per-doc audit is what the
+     workflow has instead of a mechanical check. **The audit is load-bearing,
+     not ceremonial** — it was the only control that fired here.
+   - **Prevention:** every spec-sync obligation lands as an explicit line in the
+     owning task's `## Documentation Updates`, not only in the sync table.
+     Recorded against **CF-023**.
+
+**6. Keep/retire verdicts for the phase's standing rules (DEC-104 item 5).**
+   Twelve decisions from eight escalations is too many to carry forward whole.
+   The test applied: *does the rule survive the mechanism that produced it, and
+   does it fit in one sentence?*
+
+| Rule | Verdict | Reasoning |
+|---|---|---|
+| DEC-094 — no-match inventories record `exit 1 (no output)` | **KEEP** (in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | Mechanism-independent, one sentence, already caught a real fabricated token. |
+| DEC-095 — Tech Lead seeds the triage log at phase start | **KEEP** (Scheduled Commitments) | Removes a precondition an agent cannot satisfy mid-triage. Still not mechanically enforced; CF-023. |
+| DEC-096 — `workflow → journal` edge | **SPLIT**: characterization **RETIRED**, test-packaging rule **KEPT** | The `Effect`-only description was a Task-2 snapshot stated as a permanent invariant (DEC-105 item 2). The `package db` / `package journal` in-package test-import prohibition is a real Go constraint and stands (`02_TRD.md` §3.1). |
+| DEC-097 — provider-shared prompt bodies must not assert one-provider capability limits | **KEEP** (now in `09_AI_WORKFLOW.md` §7) | Generic to any multi-provider prompt set; previously lived only in a phase decision, which is why it is being restated in a canonical spec now. |
+| DEC-098 — VAL-059 baseline pinned to `50533e2`, ambient `HEAD` prohibited | **RETIRE** | Procedure-specific. CF-025's committed goldens have no baseline selector to get wrong. Nothing generic survives that DEC-103 does not already say. |
+| DEC-099 — Task 4 recovery; baseline re-verified by reproduction | **SPLIT**: recovery half **RETIRED** (phase-local), reproduction principle **KEPT** | "Provenance is settled by reproducing from pinned inputs and comparing digests, not by chronology" is already in `09_AI_WORKFLOW.md` §8 and is mechanism-independent. |
+| DEC-100 — a task-authored harness that fails while being authored is a deviation, not a failed gate | **KEEP** (in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | The four conditions are strict enough to be safe and the rule prevents a whole class of false blockers. |
+| DEC-101 items 1-2 — cleanup is never evidence; scratch state is unique per attempt | **KEEP** (now in `09_AI_WORKFLOW.md` §6/§8, `AGENTS.md`) — **overturning DEC-104's proposed retirement** | DEC-104 proposed retiring these with the ceremony. Reconsidered: both are one sentence, both are mechanism-independent, and CF-025 does not eliminate scratch state — it makes the rule free, because `t.TempDir()` satisfies "unique per attempt" by construction. A rule that costs one sentence and is satisfied automatically by the preferred mechanism is not scar tissue; it is the reason the preferred mechanism is preferred. |
+| DEC-101 item 3 — task specs declare required environment capabilities | **KEEP** (now in `09_AI_WORKFLOW.md` §6) | Moves a sandbox shortfall from mid-sequence to step zero. |
+| DEC-101 item 4 — Task 4's human-attested gates with a named future control | **RETIRE** | Superseded by DEC-102 within 24 hours. It is the phase's clearest example of a rule that was wrong when written. |
+| DEC-102 items 1 and 5 — uncaptured gate results are `UNVERIFIED`; "pre-existing" needs an introducing commit | **KEEP** (now in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | The strongest keep in the phase. Paid for itself twice in five days in opposite directions — it exposed a false `PASS` (ESC-19-006) and it converted a blocking structure finding into inherited debt the phase improved (QA-BLK-FINAL-05). |
+| DEC-103 items 1-3 — the corrected VAL-059 manifest command form | **RETIRE** | Procedure-specific; retired with the ceremony. |
+| DEC-103 items 4-5 — a required command is executed by its author before publication; working-directory sensitivity is declared | **KEEP** (now in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | Would have prevented ESC-19-007 outright, and it is the cheapest rule in the phase to comply with. |
+| DEC-104 items 1-4 — Tech Lead has a shell; specify observables not mechanisms; second-escalation tripwire; evidence is an automated test unless justified | **KEEP** (item 4 now in `09_AI_WORKFLOW.md` §6) | Items 1-3 are role-boundary and triage rules that belong in the deep retrospective's scope before further codification; item 4 is the phase's single highest-leverage prevention and is in the spec now. |
+
+   Net across the eleven rule-bearing decisions (DEC-094..DEC-104), scored by
+   table row: **nine keeps, three retirements, two splits** — or **five retired
+   items** once the two split halves (DEC-096's characterization, DEC-099's
+   baseline procedure) are counted individually. DEC-105 and DEC-106 are
+   dispositions, not rules, and are not scored. Every keep is now a sentence in
+   a canonical spec rather than a phase decision an agent must remember to load.
+
+- **Consequence.** Phase 19 is **COMPLETE / WRAPPED**. Exit criteria met: six
+  tasks green, `VAL-001..070` all `PASS` with cited evidence, no unresolved
+  blocking finding, human checklist accepted 9/9. Carried forward with named
+  targets: **CF-023** (+ two new drill cases and the sync-obligation
+  prevention), **CF-026a**, **CF-026b**, **CF-027** (+ `writeMarkdown`), and the
+  unchanged **CF-008 / CF-017 / CF-018 / CF-020 / CF-022 / CF-024**. A **deep
+  retrospective is recommended** (see below); it is the correct forum for
+  DEC-104 items 1-3.
+
 ## Spec Sync Verdicts
 
-Recorded at wrap-up for the full canonical spec suite. Known obligations from
-the planning decisions above:
+Recorded at wrap-up for the full canonical spec suite. Every row is a positive
+review assertion: `verified-no-change` means the doc was read against what the
+phase shipped, not that nobody looked.
+
+| Doc | Verdict | Detail |
+|---|---|---|
+| `00_PROJECT_CHARTER.md` | **verified-no-change** | Configurable workflows are already stated as goal 3 and as a v0.2 scope line; Phase 19 delivered part of that goal without changing vision, scope, non-goals, or success criteria. |
+| `GLOSSARY.md` | **touched: Task 6 and DEC-106** | Task 6 added **Custom workflow**, **Workflow assignment**, and **Initial state**. Wrap added **Unverified gate result**, because DEC-102 introduced `UNVERIFIED` as project language and it collides with the v0.2b `attested` **Trust source**: `attested` is a receipt from a separately trusted runner under a versioned contract and *can* satisfy an obligation, while `UNVERIFIED` is an uncaptured human or agent claim and *cannot*. A human running a gate by hand produces the latter, not the former — which is precisely the confusion that made ESC-19-005's disposition wrong. Flagged and disambiguated rather than left to collide when v0.2b lands. |
+| `01_PRD.md` | **touched: see DEC-090** | PRD-WF-013 stays unamended; the scoping note records that an issue-applicable workflow must declare exactly one `cancelled` state, so no issue can become non-cancellable. PRD-WF-005a and PRD-WF-011/012 shipped as written. |
+| `02_TRD.md` | **touched: see DEC-089, DEC-096, DEC-076, DEC-105, DEC-106** | §3 `internal/workflow` row now owns authoring, assignment write paths, and resolution with its must-nots intact; §3.1 records the write-API edge (DEC-105) and the in-package test-import constraint (DEC-096); §3.1's lead sentence corrected for all ten write-API packages (**DEC-106**, MAJOR-01); §4.6 assignment precedence and the escalation seed (DEC-076). |
+| `03_TRD_SCHEMA.md` | **touched: see DEC-076, DEC-078, DEC-080, DEC-105** | §3 `workflow_assignments` DDL, `applies_to` vocabulary, `linked_to_decision` reservation; §2.1 resolution source; §14.11 workflow-assignment integrity audit and the corrected table-scope rule ("a projected table is audited once it has a structural invariant a corrupt projection could violate"), verified line-by-line against `internal/maintenance/workflow_assignments.go` in `final-review-2.md` E-08. |
+| `04_TRD_CONFIG.md` | **N/A** | Phase 19 added no `.fid/` file, directory, config key, or environment variable. The doc contains no workflow surface to drift. |
+| `05_DESIGN_PLAN.md` | **touched: see DEC-092** | §3.1 command tree carries `workflow define` / `assign` / `list` with their flag summaries (`05_DESIGN_PLAN.md:117-120`), matching the shipped commands. Applied at planning; re-verified at wrap. |
+| `06_DESIGN_PLAN_CLI.md` | **touched: see DEC-077, DEC-078, DEC-079, DEC-080, DEC-090** | Full flag specs, rule vocabulary, rejection messages, and output examples for the three commands; Task 6 added the DEC-079 custom-state transition limitation and its Phase 20 `fid policy set` resolution path. The documented `workflow list` payload (counts, not a graph) matches the shipped surface exactly — which is what makes CF-026a a *new* gap rather than unshipped scope. |
+| `07_DESIGN_PLAN_FLOWS.md` | **verified-no-change** | Phase 19 changed no end-to-end flow, whet mapping, or export contract. The only `workflow` reference is a frontmatter example value untouched by assignment resolution. |
+| `08_QUALITY_PLAN.md` | **verified-no-change** | COV-001 already enumerates `internal/workflow/`; STRUCT-001..004 targets, the gate list, and the maturity path are unchanged. The two STRUCT breaches this phase surfaced are **inherited** and carry as CF-027, which is the register mechanism the plan already prescribes — not a target change. |
+| `09_AI_WORKFLOW.md` | **touched: see DEC-094, DEC-100, DEC-101, DEC-102, DEC-103, DEC-097, DEC-104, DEC-106** | §8 gained the no-match token rule and the task-authored-harness deviation rule mid-phase, and at wrap the `UNVERIFIED` rule, the "pre-existing" provenance rule, "cleanup is never evidence", and author-executed/CWD-declared commands. §6 gained required environment capabilities, per-attempt scratch state, and "prefer an automated test over a manual procedure". §7 gained the provider-shared capability-limit rule. **Landed at wrap, not by Task 6 — see DEC-106 item 5.** |
+| `10_IMPLEMENTATION_ROADMAP.md` | **touched: see DEC-105, DEC-106** | Phase 19 closure disposition — exit criteria met, zero product defects, phase-level lessons, CF-026a/CF-026b/CF-027, deep-retrospective recommendation — plus the DEC-106 sign-off note recording the subsequent PASS verdict, the five retirements, and CF-027's unblocking. Phase 20's entry is unchanged and still accurate. |
+| `AGENTS.md` (root, non-spec) | **touched: see DEC-102, DEC-101, DEC-103** | Commands section now carries the `UNVERIFIED`, provenance, cleanup, scratch-state, and working-directory rules alongside the existing token and harness rules. |
+
+### Superseded planning expectations
+
+| Doc | Planned verdict | Actual | Why |
+|---|---|---|---|
+| `00_PROJECT_CHARTER.md` | TBD | verified-no-change | No scope movement. |
+| `04_TRD_CONFIG.md` | TBD | N/A | No config surface touched. |
+| `07_DESIGN_PLAN_FLOWS.md` | TBD | verified-no-change | No flow changed. |
+| `08_QUALITY_PLAN.md` | TBD | verified-no-change | Breaches are inherited; register handles them. |
+| `02_TRD.md` §3.1 | "`Effect`-only edge (DEC-096)" | corrected twice | DEC-105 fixed the workflow bullet; **DEC-106** fixed the false generalisation above it. |
+| `09_AI_WORKFLOW.md` (DEC-101/102) | "Task 6" | landed at wrap | Task 6 never received the obligation — DEC-106 item 5. |
+
+<!-- Retained for history: the planning-time expectation table. -->
 
 | Doc | Expected verdict | Owning task |
 |---|---|---|
@@ -1372,6 +1527,182 @@ the planning decisions above:
 | `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); §11 task-authored harness deviation rule (**DEC-100**, applied mid-phase); §6 task-spec scratch-state and environment-capability rules (**DEC-101** items 1-3); §11 out-of-scope claims cite an introducing commit + uncaptured gate results are `UNVERIFIED` (**DEC-102** items 1, 5); `AGENTS.md` Commands carries the token rules | Mid-phase (DEC-094, DEC-100); Task 6 (DEC-101, DEC-102) |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched — Phase 19 closure note | Wrap |
 
+## Triage-Log Audit (wrap-up)
+
+Eight entries, `TRG-19-001..008`, all **BLOCK**, all with a real unique
+phase-scoped ID and a named `ESC-19-NNN`. No `RESUME` verdicts were issued this
+phase, so there are none to confirm in hindsight. Autonomous TL-Lite resume is
+permanently enabled (DEC-002); no warm-up tally is maintained.
+
+| TRG | Verdict | Correct to stop? | Reasoning correct? | Notes |
+|---|---|---|---|---|
+| 001 | BLOCK | Yes | Yes | Fabricated `exit 0` token on a no-match `rg`. Record written by Tech Lead backfill — TL-Lite returned a verdict with no record. |
+| 002 | BLOCK | Yes | Yes | Test-only import cycle; correctly identified as a dependency-boundary question. Record backfilled — provider-prompt defect (DEC-097). |
+| 003 | BLOCK | Yes | Yes | Task 4 spec had drifted from QA-plan §6. QA was right and my spec was wrong. |
+| 004 | BLOCK | Yes | **No** | Over-strict: a path bug in a Task-4-authored harness that wrote nothing. Produced DEC-100. |
+| 005 | BLOCK | Yes | **No** | A blocked *cleanup* command gated a parity sequence. My spec fenced housekeeping inside the evidence set. Produced DEC-101. |
+| 006 | BLOCK | Yes | **No** | Adopted the Developer's unverified "pre-existing" framing; the real finding was that Task 4's lint `PASS` was false. Produced DEC-102. |
+| 007 | BLOCK | Yes | Yes | Both defects real, both in evidence artifacts, cleanly separated from the product. Summary row and next-free-ID header backfilled (third record-keeping miss). |
+| 008 | BLOCK | Yes | Yes | Refused to substitute QA judgment for a Human-only assertion. Exactly right. |
+
+**Should any TRG have escalated that did not?** No — all eight escalated.
+**Should any have resolved locally instead?** Arguably **004**, on the reasoning
+DEC-100 later recorded; but TL-Lite had no rule permitting it at the time, and
+inventing one mid-triage is precisely what TL-Lite must not do. Escalating was
+correct under the rules that existed.
+
+**The systemic finding is not the verdicts — it is the reasoning.** Three of
+eight (004/005/006) were correct to stop and wrong about why, and all three
+trace to defects in **my own artifacts**: an over-fenced evidence set, a fixed
+scratch path, and a task spec that never had its commands executed. A triage
+seam that reliably stops but unreliably explains sends the Tech Lead the wrong
+problem — TRG-19-006 arrived as "authorize a repair of old baseline debt" when
+the actual finding was "a recorded gate `PASS` is false."
+
+**Record-keeping remains the weakest link.** Three of eight entries (001, 002,
+007) required a Tech Lead backfill. 002 was root-caused to a provider-prompt
+defect and fixed; 001 and 007 were not. This is the same defect class Phase 18
+raised as CF-023 and it has now persisted across two phases without a
+mechanical check.
+
 ## Workflow Notes
 
-Appended at wrap-up.
+### What worked well
+
+- **Zero product defects across eight escalations and six tasks.** Every stop
+  was in verification apparatus or evidence records. The product code that
+  shipped — two migrations, three CLI commands, a new projected table, two new
+  journal event types, and a change to `internal/issues.Create` — drew no
+  blocking finding at any review. Two independent QA reviews plus two final
+  reviews re-ran gates and found the implementation green each time.
+- **The stop discipline held under pressure and was never tuned down.** Five
+  consecutive stops in one observable's scaffolding is exactly the situation
+  where a team starts waiving gates. Nothing was waived, no assertion was
+  weakened, and VAL-059 ended `PASS` on executed evidence.
+- **DEC-102 is the phase's best artifact.** It was written to catch a false
+  `PASS` and then, five days later, applied in the opposite direction to turn a
+  blocking structure-budget finding into inherited debt the phase had actually
+  improved. A rule that changes outcomes in both directions is a real rule.
+- **QA Lead's second disposition audited my dispositions and found two weak
+  evidence claims while reaching the same outcomes.** That is the three-tier QA
+  model (ADR-0003) working as designed, and it caught MAJOR-01 — a false
+  generalisation *this phase introduced* — that both my own sync and the first
+  final review had walked past.
+- **CF-025 was the right call and Task 6 executed it first, as mandated.**
+  VAL-059 is now a standing regression test instead of a five-step manual
+  ceremony, and it runs on every integration test invocation forever.
+
+### What was inefficient
+
+- **The evidence apparatus was disproportionate to the observable.** VAL-059
+  asserts "v0.1 CLI output is byte-identical." That is a golden-file test —
+  roughly 60 lines of Go against a committed fixture, which is what it finally
+  became. Instead it was specified as a detached worktree at a pinned commit, a
+  capture script, a SHA-256 manifest, a normalization file, and a five-step
+  procedure. Four escalations landed in that scaffolding and a fifth in its
+  fallout. **The counterfactual is exact: CF-025 was available at planning time
+  and would have avoided all five.**
+- **Four of the five ceremony stops were repairs to the apparatus rather than
+  reconsiderations of it.** DEC-098 pinned the baseline; DEC-099 preserved the
+  work; DEC-101 fixed cleanup; DEC-103 fixed the manifest command. Each was
+  individually correct and each left the machine standing so the next brick
+  could fall. DEC-104's **second-escalation tripwire** exists because the right
+  question — *should this mechanism exist at all?* — was not asked until the
+  fourth.
+- **I published required commands I had never run.** The VAL-059 `sha256sum -c`
+  form could not have worked on the day I wrote it, and the obvious repair was
+  also invalid. This cost a full escalation and a Developer closure session.
+  DEC-103 and the Tech Lead shell (DEC-104) both exist to close this, and
+  DEC-106 item 5 shows the same failure mode in a different guise: an
+  obligation recorded only in a table its owner never reads.
+- **One session that bypassed the Developer loop produced five defects** — a
+  false gate attestation, a lint regression, a missing `Refs:` footer, a report
+  that never passed report-lint, and a second commit with the same footer gap.
+  Every other Phase 19 task commit produced none. The irregular path was taken
+  to unblock a sandbox problem and cost far more than the block it relieved.
+- **Twelve decisions for one phase is too many.** Five are retired at this wrap
+  and one was superseded within 24 hours of being written. Writing a rule is
+  cheap and feels like progress; the wrap-time keep/retire audit is the only
+  thing preventing accumulation, and it should not be the *first* time the
+  question is asked.
+
+### Were the tasks the right size?
+
+Mostly yes for Tasks 1-3 and 5. Two problems:
+
+- **Task 4 was overloaded** — a new CLI command, a change to the product's most
+  exercised write path, *and* the entire v0.1 parity ceremony. Four of the
+  phase's eight escalations are Task 4's, and the parity work is what generated
+  them. The parity obligation should have been its own task, or, correctly, a
+  test written in Task 4's normal red/green loop.
+- **Task 6 was flagged at planning as the largest task and grew further** —
+  CF-021, CF-024's measurement, CF-025, spec sync, the exit scenario, and two
+  do-now review findings. It shipped clean, which is a credit to the ordering
+  (CF-025 first and mandatory), but it also silently dropped the
+  `09_AI_WORKFLOW.md` / `AGENTS.md` sync obligation. **A task that carries "and
+  also sync the specs" as its last bullet will drop it.**
+
+### Did the QA cadence feel right?
+
+Yes, and it was decisive. Review 1 after Tasks 1-3 and Review 2 after Tasks 4-5
+both returned BLOCK on real findings, and Review 2's independent re-run is what
+disproved Task 4's attested lint `PASS` — a defect that had already survived a
+triage, a run-resume reconciliation, and a Tech Lead escalation. **Independent
+re-execution, not review-by-reading, is what caught it.** The final review then
+found five more, and the *subsequent* final review found a sixth (MAJOR-01) in
+the wrap-up sync itself. Every tier of the three-tier model paid for itself.
+
+### Were token-efficiency opportunities missed?
+
+Yes, and the same one repeatedly. The phase spent enormous context on
+verification *procedure*: four escalation cycles, four decisions, a briefing
+document, and roughly a dozen sessions, all on scaffolding for a single
+byte-comparison assertion. Expressing the observable as a test at planning time
+would have cost one task-spec bullet. Secondarily, `phase_brief.md` sat at
+~235 lines against a 150-line target for most of the phase because each
+escalation appended a paragraph; the brief became a narrative of stops rather
+than an execution brief.
+
+### Deep retrospective recommendation
+
+**Recommended — and this is the strongest case the project has produced.**
+
+Phase 19 delivered its scope with **zero product defects** and consumed eight
+escalations, twelve decisions, and roughly a dozen extra sessions doing it.
+Every stop was in the verification apparatus. That is not a quality problem; it
+is a **calibration** problem, and it is invisible to any per-incident review
+because every individual verdict in the chain was correct.
+
+Brief for the retrospective:
+
+1. **Proportionality.** For each `VAL-NNN` in Phases 17-19, compare the cost of
+   the evidence mechanism to the observable it protects. Where a manual
+   procedure was specified, ask what the automated-test form would have cost.
+   DEC-104 item 4 asserts "evidence is an automated test unless the contract
+   records why not" — measure how many current assertions would survive it.
+2. **Which rules would have prevented anything?** Replay all twelve Phase 19
+   decisions against the eight escalations and count preventions, not
+   plausibility. My read: DEC-103 (author-executed commands) prevents
+   ESC-19-007 outright; DEC-104 item 4 prevents ESC-19-003/004/005/007 by
+   deleting the mechanism; DEC-102 prevents ESC-19-006. The rest are
+   post-hoc.
+3. **Scar tissue.** Five of twelve are retired at this wrap and one was
+   superseded within a day. Is there a standing rule budget, and what is the
+   removal mechanism when there is no wrap to force the question?
+4. **The triage seam.** Three of eight triages stopped correctly and reasoned
+   wrongly, all three about *my* artifacts. Is the fix better TL-Lite input
+   (task specs whose commands have been executed), a provenance checklist at
+   the seam, or accepting that triage returns "stop" and the Tech Lead owns
+   "why"?
+5. **The irregular-session cost.** One human-executed session bypassing the
+   Developer loop produced five of the phase's defects. What is the sanctioned
+   path when the sandbox blocks a Developer, and why was it not used?
+6. **Record-keeping.** Three of eight triage entries needed Tech Lead backfill,
+   two phases running. CF-023 has accumulated five drill cases and a mechanical
+   `Refs:` check without landing any of them. Decide whether CF-023 is scheduled
+   work or a wish list.
+
+Minimum set to survive: what remains after applying "one sentence,
+mechanism-independent, prevents a named incident." The keep/retire table in
+DEC-106 item 6 is my proposal; the retrospective should challenge it, starting
+with whether DEC-104 items 1-3 belong in the workflow spec at all.

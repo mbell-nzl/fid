@@ -185,6 +185,23 @@ Phase-end final review records every `VAL-NNN` as `PASS`, `FAIL`, `BLOCKED`,
 or `CARRY-FORWARD` with cited evidence. `PASS` without evidence is invalid.
 Heavy mode accepts no carry-forward.
 
+### Final outcome (2026-08-07, closed at wrap 2026-08-08)
+
+**70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD.**
+
+| Assertions | Outcome | Validator | Evidence |
+|---|---|---|---|
+| VAL-001..025, VAL-027..070 (69) | **PASS** | QA Lead | `qa/final-review.md`, on evidence from `qa/review-1.md`, `qa/review-2.md`, the six completion reports, and the eight-command phase gate. `qa/final-review-2.md` E-01 proves the tree did not move between the final review and closure. |
+| VAL-026 (1) | **PASS** | Human | `qa/human-checklist.md` HUMAN-26a..26i — 9 PASS / 0 FAIL / 0 PARTIAL, 2026-08-07, tester MBEL; corroborated by `qa/final-review-2.md` E-04/E-05/E-06 against the shipped binary. |
+
+No assertion, threshold, fixture, or gate command was weakened at any point in
+the phase. VAL-059's evidence *method* was tightened twice (DEC-098, DEC-103)
+and then replaced outright by a permanent Go golden test (CF-025 / DEC-103);
+the assertion itself is unchanged.
+
+Assertions audited at wrap-up (DEC-106): no `FAIL`, `BLOCKED`, or
+`CARRY-FORWARD` outcome exists, so no assertion-level disposition was required.
+
 ## Revision Log
 
 | Date | Assertion | Change | Reason | Decision reference |
@@ -199,3 +216,5 @@ Heavy mode accepts no carry-forward.
 | 2026-07-26 | all | status `Draft` → `Ready` | Human approval recorded; QA-BLK-01..07 dispositioned | DEC-089..DEC-093 |
 | 2026-07-29 | VAL-031, 042, 069, 070 | evidence convention added (no criterion changed) | TRG-19-001: the no-match/exit-1 rule was written down for VAL-069/070 only, so the VAL-031 inventory was reported with a fabricated `exit 0` token | DEC-094 |
 | 2026-07-30 | VAL-059 | evidence method tightened (assertion strengthened, not weakened) | TRG-19-003/ESC-19-003: "Task 3 completion commit" was ambiguous between the implementation and report commits and permitted a timestamp allow-list, both looser than QA-plan §6. Baseline pinned to the verified implementation commit with ambient `HEAD` prohibited; normalization fixed to the committed no-op | DEC-098 |
+| 2026-08-02 | VAL-059 | evidence method corrected, then **replaced by a permanent test** (assertion unchanged) | TRG-19-007/ESC-19-007: the prescribed root-level `sha256sum -c` never resolved the manifest's bare filenames and the obvious repair was self-referential. The manual ceremony is retired by CF-025 in favour of `TestV01ParityGoldenOutputs` (`cmd/fid/v01_parity_test.go`), which copies the committed fixture into `t.TempDir()` and byte-compares six committed goldens on every integration run. `capture.sh`, `SHA256SUMS`, and `normalization.json` remain committed as provenance only; no manual run is authorized | DEC-103, CF-025 |
+| 2026-08-08 | all | final outcomes recorded; contract closed | Phase 19 wrap-up audit: 70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD, nothing to disposition | DEC-106 |

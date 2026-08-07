@@ -185,6 +185,18 @@ command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
 real status, `exit 1 (no output)`, and say that no-match is the pass condition.
 `exit 0 (no output)` means silent success and is fabricated evidence there.
 
+A gate result **not captured in the session that records it** is `UNVERIFIED`,
+never `PASS` — attestation from memory, transcription from another agent's
+report, and a promised future control are all `UNVERIFIED`, which is not a
+passing state. Declining an out-of-scope repair as "pre-existing" is a
+**provenance claim**: cite the introducing commit (`git log -S`,
+`git log --diff-filter=A`, `git blame`) and show it predates phase start.
+`git show HEAD` proves a line is committed, not inherited. **Cleanup is never
+evidence**: commands that only remove or prune scratch state are never recorded
+`PASS`/`BLOCKED` and never gate a sequence. Allocate scratch state fresh per
+attempt (`mktemp -d`), and declare the working directory for any command whose
+result depends on it.
+
 A required command whose **harness is a deliverable of the task being authored**
 (a fixture, capture/measurement script, or golden generator) may fail, be
 repaired, and be rerun to a pass. Record it `PASS` **with a mandatory deviation

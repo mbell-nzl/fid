@@ -208,6 +208,18 @@ Use when: classifying how gate/receipt evidence came to exist.
 Avoid: inferring trust from age or formatting; treating an import as
 trusted because it parses.
 
+**Unverified gate result**:
+The status of a required-command result that was **not captured in the session
+that records it** — attested from memory, transcribed from another agent's
+report, or promised against a named future control. Recorded as `UNVERIFIED`,
+which is not a passing state and never substitutes for `PASS` (DEC-102).
+Use when: a report cannot cite a verbatim terminal token it produced itself.
+Avoid: confusing with the `attested` [[Trust source]]. `attested` describes a
+*receipt produced by a separately trusted runner under a versioned contract*
+and can satisfy an obligation; `UNVERIFIED` describes a *human or agent claim
+with no captured output* and cannot. A human running a gate by hand and
+reporting the outcome produces an `UNVERIFIED` result, not an `attested` one.
+
 **Evidence obligation**:
 A declared requirement that a workflow transition, AC verification, QA
 review, or validation outcome be backed by specific evidence — e.g. a

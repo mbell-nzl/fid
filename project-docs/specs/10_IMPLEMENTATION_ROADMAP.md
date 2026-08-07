@@ -553,6 +553,15 @@ relying on agent prose for deterministic claims.
 >   and **CF-027** (`internal/issues/create.go` decomposition, inherited debt the
 >   phase improved, sequenced behind CF-025). A **deep retrospective** is
 >   recommended (DEC-104).
+>
+>   **Signed off 2026-08-08 (DEC-106).** QA Lead's subsequent final review
+>   returned **PASS WITH IMPROVEMENTS**; the contract closed
+>   **70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**. Its two wrap-commit
+>   preconditions and MAJOR-01 landed at wrap, along with a spec-sync obligation
+>   Task 6 had never received (DEC-101/102/103 rules into `09_AI_WORKFLOW.md`
+>   and `AGENTS.md`). Five of the phase's twelve decisions were **retired** as
+>   procedure-specific scar tissue. **CF-027 is now unblocked** — CF-025's
+>   parity test, the guard it was sequenced behind, shipped in Task 6.
 > - **Phase 20 — `role_permissions` migration + `fid role create` /
 >   `fid policy set` + v0.2a closure.** Add the `role_permissions` table seeded
 >   verbatim from the v0.1 in-code constant, repoint the Phase 10 enforcement seam

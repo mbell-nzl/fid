@@ -360,14 +360,23 @@ This entry and ESC-19-001 are reconstructed from the run ledger and the
 committed report; they are Tech Lead backfills, not TL-Lite output.
 
 <!--
-Phase wrap-up checklist:
+Phase wrap-up checklist (completed 2026-08-08, DEC-106; full audit in
+decisions.md -> Triage-Log Audit):
 
-- [ ] Walked every TRG-19-NNN above.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed every entry carries a real, unique, non-placeholder ID, and
-      that every BLOCK names the ESC it raised.
-- [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
+- [x] Walked every TRG-19-NNN above (001..008).
+- [x] Confirmed each RESUME verdict was correct in hindsight — N/A: all eight
+      verdicts were BLOCK, so there are no RESUME verdicts to confirm.
+- [x] Flagged any TRG that should have escalated — none; all eight escalated.
+      TRG-19-004 could arguably have resolved locally under the rule DEC-100
+      later recorded, but no such rule existed at the time and inventing one
+      mid-triage is exactly what TL-Lite must not do.
+- [x] Confirmed every entry carries a real, unique, non-placeholder ID, and
+      that every BLOCK names the ESC it raised. All eight carry ESC-19-001..008.
+      Three entries (001, 002, 007) required a Tech Lead backfill — the CF-023
+      record-keeping defect class, now two phases running.
+- [x] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
+- [x] Systemic finding recorded: three of eight (004/005/006) stopped correctly
+      and reasoned wrongly, all three about Tech Lead artifacts.
 -->
 
 ---

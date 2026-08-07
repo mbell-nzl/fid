@@ -1063,6 +1063,21 @@ are (exactly as written there):
 - <constraints, ordering, known pitfalls, escalation tripwires>
 ```
 
+A task spec that prescribes an evidence procedure also states two things the
+Developer cannot infer:
+
+- **Required environment capabilities** — `/tmp`, a writable `.git/`, network,
+  elevation. A shortfall is discovered and escalated at step zero, never
+  halfway through a sequence.
+- **Scratch state is unique per attempt.** Temporary directories, worktrees,
+  and binaries are allocated with `mktemp -d` or an equivalent fresh path, so no
+  run can depend on a prior run's cleanup. A fixed scratch path in a procedure
+  is a spec defect.
+
+Prefer expressing an observable as an automated test over a manual procedure.
+A validation contract that records a manual evidence procedure states why a
+test cannot carry the assertion.
+
 Required-command rules are stated once in `AGENTS.md` (Commands); the task
 spec's `## Exact Commands To Run` section points there rather than restating
 them at length. Scenario, parity, and audit obligations are phase-level
@@ -1124,6 +1139,12 @@ The role definitions in section 2 are canonical behavior for all tools.
   must not define `[profiles.*]`; personal profile files belong under
   `~/.codex/` when an operator needs a named top-level launch profile.
 - Templates in `project-docs/templates/` must not contradict the workflow.
+- **A provider-shared prompt body must not assert a capability limit that only
+  one provider's frontmatter enforces.** A shared sentence such as "you cannot
+  run commands" reads on the provider that does enforce it as a description of
+  its own tool restrictions, and on the provider that does not as a broader
+  prohibition — including "cannot write files". State capability limits where
+  they are enforced; keep the shared body about role behavior.
 - After changing any of these files, start a fresh Codex or Claude session
   before relying on the updated definitions.
 
@@ -1213,6 +1234,37 @@ shipping its own evidence tooling get that tooling right on the first attempt.
 Where provenance of a captured artifact is genuinely in doubt, settle it by
 **reproducing the artifact from its pinned inputs and comparing digests** —
 reproduction, not chronology or narrative, is what establishes provenance.
+
+**A gate result not captured in the session that records it is `UNVERIFIED`,
+never `PASS`.** A result attested from memory, transcribed from another agent's
+report, or promised against a named future control is `UNVERIFIED`, and
+`UNVERIFIED` is not a passing state. Naming a later verifier is not a
+substitute: a control that fires late enough to be tripped over by accident is
+not a control. Copy the token in the session that runs the command, or record
+`UNVERIFIED` and stop.
+
+**"Pre-existing" is a provenance claim and needs provenance evidence.**
+Declining an out-of-scope repair is often correct, but the report must cite the
+introducing commit — `git log -S`, `git log --diff-filter=A`, or `git blame` —
+and show that it predates the phase-start commit. `git show HEAD` proves a line
+is committed, not that it is inherited; HEAD contains the current phase.
+An unverified "pre-existing" claim travels through triage and escalation intact
+and can conceal a regression the same task introduced.
+
+**Cleanup is never evidence.** A command whose only purpose is removing or
+pruning scratch state is excluded from required-command evidence: never
+reported `PASS` or `BLOCKED`, never gating a sequence, and a failed cleanup is
+a note rather than a stop. Cleanup proves nothing about the observable it sits
+next to; fencing it inside an evidence set lets one failed `rm` block a whole
+procedure.
+
+**A required command is executed by its author before it is published.** A
+command written into a task spec or QA plan as required evidence and never once
+run successfully by anyone is not a specification, it is a guess. Where a
+command's result depends on the working directory, the spec names that
+directory or the command is written to be directory-independent; bare relative
+paths in a committed manifest are correct and must be paired with a `cd` into
+the directory they resolve against.
 
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:

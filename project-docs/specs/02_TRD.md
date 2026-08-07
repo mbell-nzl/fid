@@ -120,8 +120,22 @@ Rules:
 ### 3.1 Dependency Direction Constraints
 
 Domain packages that produce journal events depend on `internal/journal` for
-the `Effect` data contract only; `internal/journal` depends on `internal/db`.
-That chain is one-way and must stay one-way.
+the event/effect data contract **and** for the journal write API — `WithLock`,
+`PrepareEvent`, `DryRunProjectEvent`, `AppendEvent`, `ProjectEvent` — and read
+paths additionally use the `EnsureProjectionFresh*` freshness helpers.
+`internal/journal` depends on `internal/db`. **That chain is one-way and must
+stay one-way**; the one-way rule, not the width of the surface, is the
+constraint this section exists to protect.
+
+Ten non-test domain packages call the write API today — `bootstrap`, `claims`,
+`dev`, `issues`, `labels`, `links`, `maintenance`, `requirements`, `runs`, and
+`workflow` (e.g. `internal/issues/ac.go`). An `Effect`-only dependency is
+therefore **not** the project norm and never was; a package that only builds
+effects is the narrow case, not the rule. Corrected 2026-08-08 (DEC-106): the
+earlier "`Effect` data contract only" phrasing was introduced in Phase 19 with
+the DEC-096 sync, was false for those ten packages on the day it was written,
+and made an auditor reading `internal/issues` against this section find a
+violation that does not exist.
 
 - **`internal/workflow` → `internal/journal` is permitted and includes the
   journal write API** (v0.2a; DEC-089, corrected by DEC-105). The authoring core
@@ -129,7 +143,8 @@ That chain is one-way and must stay one-way.
   the event schema it serialises into, and the authoring **write paths**
   (`define.go`, `assign.go`) additionally use `WithLock`,
   `EnsureProjectionFreshWithLock`, `PrepareEvent`, `DryRunProjectEvent`,
-  `AppendEvent`, and `ProjectEvent`. This follows directly from DEC-089:
+  `AppendEvent`, and `ProjectEvent`. The read path (`list.go`) uses
+  `EnsureProjectionFresh`. This follows directly from DEC-089:
   `internal/workflow` **owns** workflow authoring, assignment, and resolution,
   and owning a write path means appending the event. Pushing append and
   projection up into `cmd/fid` would be the worse design.
