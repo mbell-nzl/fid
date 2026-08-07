@@ -1,0 +1,7 @@
+# Project identity
+[project]
+prefix = "FID"
+
+# Maintenance audit settings
+[maintenance]
+started_without_claim_grace_seconds = 300

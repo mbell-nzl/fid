@@ -276,26 +276,1433 @@ Phase: 19 — `fid workflow define/assign/list` + escalation default workflow
 - **Refs:** DEC-073, DEC-074, CF-023; `../phases/phase-18/decisions.md`
   Triage-Log Audit and Workflow Notes.
 
+## QA Plan Blocker Dispositions (2026-07-26)
+
+The Phase 19 QA plan opened **BLOCKED** on QA-BLK-01..07. DEC-089..DEC-093
+disposition all seven. Nothing in the task pack's scope was widened or
+weakened; the only behavioral addition is DEC-090's define-time rule.
+
+| Blocker | Disposition | Decision |
+|---|---|---|
+| QA-BLK-01 | Boundary resolved in favor of the task pack; `02_TRD.md` §3 synchronized now | DEC-089 |
+| QA-BLK-02 | PRD-WF-013 preserved unamended; issue-applicable workflows must declare exactly one `cancelled` state | DEC-090 |
+| QA-BLK-03 | 14 bundled assertions narrowed; split-out observables added one-for-one in the same task windows | DEC-091 |
+| QA-BLK-04 | 20 assertions added for uncovered binding behavior | DEC-091 |
+| QA-BLK-05 | Sources corrected; VAL-003/012/059 evidence made deterministic and reproducible | DEC-091 |
+| QA-BLK-06 | `05_DESIGN_PLAN.md` §3.1 command tree updated now; per-task verification ownership assigned | DEC-092 |
+| QA-BLK-07 | Human approval recorded; contract marked `Ready`; CF-008 disposition confirmed | DEC-093 |
+
+### DEC-089: `internal/workflow` owns workflow authoring, assignment, and resolution
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-01.
+- **Context:** `02_TRD.md` §3 described `internal/workflow/` as a *read-only
+  registry* and listed "workflow authoring/mutation" in its must-not column.
+  That wording was written for v0.1, when workflow structure was a hard-coded
+  Go map and there was no authoring surface at all. PRD-WF-011/012 (v0.2)
+  require authoring and assignment, and Tasks 2-4 place them in
+  `internal/workflow/`. QA correctly refused to choose between changing the
+  architecture and changing the spec.
+- **Decision:** the **task pack is correct and the TRD sentence is stale**.
+  Workflow authoring, assignment validation, effect construction, the
+  authoring/assignment write paths, and assignment resolution belong in
+  `internal/workflow/`, for three reasons:
+  1. It is the package that owns the workflow vocabulary (slugs, states,
+     categories, rules, cancel-edge policy). Splitting authoring away from the
+     registry would duplicate that vocabulary in a second package.
+  2. The write-path shape is the **established domain-package pattern**, not a
+     new one: `internal/issues` and `internal/dev` already orchestrate
+     `journal.WithLock` → `PrepareEvent` → `AppendEvent` → `ProjectEvent`.
+     `internal/workflow` doing the same for its own entity is symmetric.
+  3. The alternatives are worse: authoring in `cmd/fid/` violates TRD-ARCH-005
+     (no business logic in the interface adapter), and a new
+     `internal/workflowauthoring` package would split one entity's rules
+     across two packages for no benefit.
+- **Boundary that stays:** `internal/workflow` still must not create issues,
+  verify ACs, own schema/migrations, or format output. Task 4's
+  `internal/workflow/resolve.go` is consumed **by** `internal/issues`; issue
+  creation stays in `internal/issues`.
+- **Spec sync:** `02_TRD.md` §3 (the layer-responsibility table row and the
+  package tree annotation) is updated **now**, by the Tech Lead, as part of
+  this disposition — the contradiction must be gone before Task 2 starts, not
+  after. Task 6 re-verifies the row against what shipped.
+
+### DEC-090: PRD-WF-013 stays unamended; issue-applicable workflows must declare exactly one `cancelled` state
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-02. **Amends:** DEC-077 clause 1 (zero-cancelled branch).
+- **Context:** PRD-WF-013 ("any issue may transition to cancelled from any
+  non-cancelled state") is a v0.1 **Must**. DEC-077 allowed a definition to
+  declare zero `cancelled`-category states and materialize no cancel edge —
+  which is right for `escalation-default`, but nothing stopped such a workflow
+  from being assigned to an issue kind, producing an issue that can never be
+  cancelled. That is a silent violation of a Must.
+- **Options considered:** (a) require one cancelled state for issue-applicable
+  workflows; (b) restrict *assignment* of zero-cancelled workflows;
+  (c) formally revise PRD-WF-013 to be conditional.
+- **Decision: (a), with (b) as a free by-product.** `fid workflow define`
+  rejects, before any append, a definition that declares **zero**
+  `cancelled`-category states when `--applies-to` is `epic`, `task`,
+  `subtask`, or `any` (the issue-applicable vocabulary). The error names the
+  `applies_to` value and the PRD-WF-013 obligation. Zero cancelled states
+  stays legal only for non-issue applicability (`escalation`, `qa_review`),
+  which is exactly the `escalation-default` precedent. Exactly one cancelled
+  state behaves as DEC-077 specifies; more than one is still rejected.
+- **Why not (c):** weakening a v0.1 Must to accommodate an authoring
+  convenience is the wrong trade. The requirement is cheap to keep: one
+  validation rule in the Task 2 core, which already owns the cancelled-state
+  count.
+- **Defense in depth:** DEC-080's assignment rules already require
+  `applies_to` ∈ {`<kind>`, `any`} for `--kind` and `any` for `--project`, so
+  after this rule no assignable workflow can lack a cancel target. Both guards
+  are asserted (VAL-038 at define time, VAL-016/VAL-041 at assign time).
+- **Consequences:** Task 2 gains one rejection rule; VAL-038 replaces the
+  ambiguous zero-cancelled pass state with an explicit conditional. The Phase
+  19 exit scenario's `task-strict` workflow declares a `cancelled` state, as
+  it already did.
+- **Spec sync:** the PRD-WF-013 scoping note (already owned by Task 3) now
+  records the DEC-090 rule rather than an open-ended exemption;
+  `06_DESIGN_PLAN_CLI.md` documents the define-time rejection (Task 3).
+
+### DEC-091: Validation contract refinement — unbundling, coverage, and evidence
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-03, QA-BLK-04, QA-BLK-05.
+- **Decision:** `qa/validation-contract.md` is refined in place and marked
+  `Ready`. Three changes, all additive to rigor:
+  1. **Unbundling (QA-BLK-03).** VAL-001, 003, 004, 007, 009, 010, 011, 014,
+     015, 016, 017, 018, 019, and 023 are narrowed to one observable each;
+     every behavior they carried is now owned by exactly one assertion, in the
+     **same task window**. No ID is reused or retired.
+  2. **Coverage (QA-BLK-04).** New assertions cover the accepted rule
+     vocabulary, `--require` params and edge validation, duplicate state and
+     duplicate transition rejection, the DEC-080 `--applies-to` vocabulary and
+     `any`→NULL, DEC-081 no-`activity_log` for both event types, DEC-076
+     insert-versus-delete+insert effect shapes for both scopes, deterministic
+     list ordering, the all-format empty result, and the standing prohibition
+     on production reads of the frozen definitions fixture.
+  3. **Evidence (QA-BLK-05).** VAL-002's, VAL-009's, and VAL-021's sources are
+     corrected; VAL-003 gains a tuple-for-tuple frozen reference (with VAL-030
+     for the three Phase 18 defaults); VAL-012 names all four documented arrow
+     aliases; VAL-059 specifies a reproducible immutable baseline — the Task 3
+     completion commit, a committed capture script, committed artifacts under
+     `cmd/fid/testdata/v01_parity/`, and a committed, enumerated
+     volatile-field normalization allow-list.
+- **Result:** 26 → 70 assertions (10/14/13/13/11/9 across Tasks 1-6). Task
+  ownership, scope, and the six-task slicing are unchanged; the only new
+  implementation obligation in the whole disposition is DEC-090's rule.
+- **Obligation on the QA Lead:** the QA plan's Section 4 evidence map and
+  Section 7 deterministic checklist must gain one step per new assertion
+  before the plan leaves BLOCKED. No new assertion may inherit another's
+  outcome.
+
+### DEC-092: `05_DESIGN_PLAN.md` §3.1 command-tree ownership
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-06.
+- **Context:** §3.1 is the canonical CLI command tree and had no `workflow`
+  family, and no task owned adding it. The tree already documents
+  not-yet-implemented commands with version annotations (`gate` v0.2b,
+  `envelope` v0.3a), so it is a design index, not a shipped-surface mirror.
+- **Decision:** the Tech Lead adds the `workflow` family
+  (`define` / `assign` / `list`, annotated v0.2a) to §3.1 **now**, so the
+  canonical tree is not silently stale during execution. Per-task
+  verification ownership: Task 3 (`define`), Task 4 (`assign`), and Task 5
+  (`list`) each confirm the §3.1 entry matches the flag surface they shipped
+  and correct it in the same task if it diverges; Task 6 records the final
+  §3.1 and `02_TRD.md` §3 verdicts in the spec-sync sweep.
+- **Consequence:** `05_DESIGN_PLAN.md` moves from `TBD at wrap` to `touched`
+  in the spec-sync table below.
+
+### DEC-093: Human approval of the Phase 19 plan; CF-008 confirmed
+
+- **Date:** 2026-07-26
+- **Resolves:** QA-BLK-07.
+- **Approval recorded (Human, 2026-07-26):** operating mode **heavy**
+  (DEC-075); the **six-task** list and its ordering; the refined validation
+  contract **VAL-001..VAL-070**, now `Ready`; the **CF-008** re-defer to v0.2d
+  (DEC-082), which is hereby confirmed rather than pending; and the DEC-089,
+  DEC-090, and DEC-092 dispositions above.
+- **Consequences:** the phase brief and `progress_current.md` no longer carry
+  an approval precondition. The remaining precondition to Task 1 is
+  procedural: the QA Lead re-verifies the QA plan against the refined contract
+  (DEC-091) and moves it from BLOCKED to Ready, with fresh heavy-mode command
+  and feasibility validation retained from the 2026-07-26 run only where the
+  underlying artifact did not change.
+- **Standing:** DEC-084..DEC-086 (phase-scoped IDs, triage row before verdict,
+  verbatim terminal token per required command) remain binding for execution.
+
+### DEC-094: VAL-031 evidence correction and the no-match inventory token convention
+
+- **Date:** 2026-07-29
+- **Resolves:** ESC-19-001 / TRG-19-001 (Task 1 completion report records the
+  no-match `rg` inventory as `PASS - exit 0 (no output)`; the exact command
+  terminates with no output and **exit 1**).
+- **Finding:** an evidence-recording defect, not an implementation defect.
+  `rg` exits 1 when it finds no match, so `exit 0 (no output)` — the workflow's
+  phrase for a *silent success* — cannot have been copied from that command's
+  output. DEC-086 makes the verbatim token mandatory and mode-invariant, so the
+  recorded result is invalid on its face. The VAL-031 observable itself (no
+  production `linked_to_decision` evaluator under `internal/issues` /
+  `cmd/fid`) holds: it was confirmed by the QA plan feasibility pass and again
+  by the Phase Runner's independent rerun. The Task 1 implementation commit
+  `a509d59` needs no change; the six required gate commands are unaffected, and
+  the `rg` inventory is not one of them.
+- **Decision — correction, not re-implementation.** Before Task 2 starts:
+  1. Re-execute the exact command
+     `rg -n --glob '*.go' --glob '!**/*_test.go' 'RuleLinkedToDecision|linked_to_decision' internal/issues cmd/fid`
+     and copy the observed token. Do not transcribe the token from this
+     decision, the ledger, or the QA plan — the point of the rule is that the
+     token comes from a real terminal.
+  2. Correct **both** occurrences in `tasks/task-1-done.md` (the VAL-031
+     coverage line and the `## Tests run` line) to the observed
+     `exit 1 (no output)`, stating inline that exit 1 **is** the no-match pass
+     condition for this inventory.
+  3. Add a correction note under `## Concerns, technical debt, or notes for the
+     Tech Lead` naming TRG-19-001, so the audit trail survives in the report
+     itself rather than only in the ledger.
+  4. Commit the replacement report as its own `docs(task): ...` commit
+     (`09_AI_WORKFLOW.md` step 13 — the `## Commit hash` field still names task
+     commit `a509d59` and does not change), rerun
+     `project-docs/tools/report-lint.sh` against the newly committed file, then
+     resume the Phase Runner at Task 2.
+  Task 1 is recorded complete only after that rerun passes.
+- **Convention (binding for the rest of the phase).** For inventory-style
+  assertions proven by the *absence* of matches — VAL-031, VAL-042, VAL-069,
+  VAL-070 — the expected terminal result is **exit 1 with no output**, and that
+  is what the report records: `PASS (no match) - exit 1 (no output)`. Exit 0
+  with matches printed is the *failing* result for these assertions. Recording
+  `exit 0 (no output)` for a search command is a DEC-086 violation and a hard
+  stop. The QA plan already wrote this convention down for VAL-069/070; it is
+  now stated in the validation contract for all four, and repeated in the Task
+  2 and Task 6 specs that own the remaining three.
+- **Canonical spec edits (justified by this decision):** `AGENTS.md`
+  (Commands) and `09_AI_WORKFLOW.md` §11 gain one sentence each — a search or
+  inventory command that finds nothing terminates non-zero, and the recorded
+  token is the real exit status, never the silent-success phrase.
+- **No contract weakening.** VAL-031 keeps its pass criterion, its evidence
+  method, and its QA Lead validator; the QA Lead still re-runs the inventory at
+  phase end. Nothing about this correction pre-clears VAL-031.
+
+### DEC-095: The phase triage log is seeded at phase start; a verdict without a written record is a defective triage
+
+- **Date:** 2026-07-29
+- **Resolves:** the second defect in TRG-19-001 — TL-Lite returned
+  `VERDICT: BLOCK (triage record could not be written)` and created neither
+  `phases/phase-19/triage-log.md` nor an `ESC-19-NNN`.
+- **Finding:** not a stale-prompt problem. `.claude/agents/tl-lite.md` is
+  byte-current with `project-docs/agents/tl-lite.md`, grants `Write`, names the
+  template, and explicitly says to *start at `001` when the file does not
+  exist*. TL-Lite had everything it needed and still treated an absent file as
+  an allocation blocker. This is the same failure mode DEC-085 was written to
+  stop, and it is now the second phase running (Phase 18: five of six triages
+  reported an escalation that was never minted). Cost: a full Tech Lead
+  reconstruction session for a two-line report fix.
+- **Decision:**
+  1. **The Tech Lead seeds `triage-log.md` at phase start**, template header
+     and empty table, as part of the phase directory. An empty allocation
+     source removes the create-a-file step from TL-Lite's critical path
+     entirely, which is cheaper than trusting prompt compliance a third time.
+     Phase 19's is created now (TRG-19-001 backfilled from the ledger); this
+     becomes a standing planning obligation from Phase 20.
+  2. **Phase Runner precondition:** if `triage-log.md` is absent when a triage
+     is needed, that is itself a phase-setup defect — record it in the ledger
+     and stop; do not ask TL-Lite to invent an ID.
+  3. **A verdict without a durable record is defective triage** and never
+     satisfies a stop. The Phase Runner correctly recorded the defect instead
+     of resuming; that handling is confirmed as the standard.
+  4. **Escalation of last resort:** when TL-Lite genuinely cannot write, the
+     Phase Runner records `TRIAGE (identifier unavailable)` — as it did here —
+     and the full Tech Lead backfills both the TRG and the ESC. Backfilled
+     entries are labelled as Tech Lead reconstructions so the audit trail never
+     implies TL-Lite wrote them.
+- **Carry-forward impact:** this is the recurrence CF-023/DEC-087 predicted.
+  Its remaining scope (drill-09 for the non-terminating / mis-recorded-token
+  defect class, plus the `report-lint.sh` evidence-token check) stays in the
+  workflow-overhaul bucket, but is **raised from Low to Medium** and gains a
+  concrete first check: flag any recorded result whose command begins with
+  `rg`/`grep` and whose token is `exit 0 (no output)`. A mechanical check would
+  have caught this defect at Task 1 close without a human in the loop; a drill
+  for the missing-triage-record class belongs in the same pass.
+- **Not decided here:** whether TL-Lite stays a separate role at all. That is
+  deep-retrospective scope (DEC-073), not a mid-phase change.
+
+#### Correction (2026-07-29, per DEC-097)
+
+The **Finding** above is wrong on its central claim and is corrected here
+rather than rewritten, so the reasoning trail stays auditable.
+
+It asserted this was "not a stale-prompt problem" on the evidence that
+`.claude/agents/tl-lite.md` is byte-current, grants `Write`, and says to start
+at `001` when the file does not exist — concluding that "TL-Lite had everything
+it needed and still treated an absent file as an allocation blocker."
+
+**The failing agent was the Codex `tl_lite`, not the Claude `tl-lite`.** The
+Claude definition was never the one executing. `.codex/agents/tl_lite.toml`
+declares no tools, and the shared prompt body told it three times that it could
+not run commands — the surface through which Codex writes files. So the
+prompt *was* the problem, in the provider that was actually running, and the
+exoneration above was reached by reading the wrong file.
+
+What survives: the remedy. Seeding `triage-log.md` at phase start is worth
+keeping on its own merits and made both backfills cheap. What does not survive:
+the root-cause attribution, and the inference that prompt compliance had been
+"trusted and failed." See DEC-097 for the corrected analysis and the fix.
+
+### DEC-096: `internal/workflow` may depend on `internal/journal` for the effect data contract; the Task 2 cycle is repaired by test packaging
+
+- **Date:** 2026-07-29
+- **Resolves:** ESC-19-002 / TRG-19-002 — Task 2's required
+  `golangci-lint run ./...` gate fails `typecheck` with
+  `import cycle not allowed in test`.
+- **Context:** Task 2 binds the authoring core's return type to
+  `[]journal.Effect`. `internal/journal` imports `internal/db`, and
+  `internal/db/workflow_tables_test.go` is an **in-package** (`package db`) test
+  file that imports `internal/workflow`. Go compiles in-package test files into
+  package `db` itself, so the `db` test binary closes
+  `db [test] → workflow → journal → db`. The Developer correctly refused to
+  self-authorize either an out-of-scope file edit or a dependency-boundary
+  change.
+- **Finding — this is a test-packaging artifact, not a design defect:**
+  1. **There is no production cycle.** `internal/workflow` production code uses
+     exactly one symbol from `internal/journal`: the `Effect` struct
+     (`internal/journal/event.go:31`), referenced only in
+     `internal/workflow/authoring_effects.go`. `internal/journal` does not
+     import `internal/workflow`.
+  2. **The dependency direction is the codebase norm.** `internal/issues`,
+     `internal/dev`, `internal/links`, `internal/claims`, `internal/labels`,
+     `internal/runs`, `internal/requirements`, `internal/policy`,
+     `internal/activity`, and `internal/bootstrap` all build `journal.Effect`
+     values. Under DEC-089 `internal/workflow` owns authoring, and the effect
+     set *is* the authoring output. `workflow` joining that list is consistent
+     layering, not an inversion.
+  3. **`journal.Effect` is schema-bearing.** It is the `effects` array of the
+     event JSON that becomes permanent replay history. Re-typing or duplicating
+     it inside `internal/workflow` would create exactly the drift risk this
+     phase's Known Risks call out.
+  4. **The blocked file is the only one affected.**
+     `internal/db/workflow_tables_test.go` is the sole `package db` file
+     importing `internal/workflow`. `internal/journal` has no test importing
+     `internal/workflow`. The blast radius is one file.
+  5. **The external test package already exists and already does this.**
+     `internal/db` has four `package db_test` files
+     (`issues_enriched_test.go`, `kind_triggers_test.go`, `ref_triggers_test.go`,
+     `issues_workflow_fk_cli_test.go`); three of them already import
+     `internal/journal`, which is legal precisely because an external test
+     package is not compiled into `db`.
+- **Decision:**
+  1. **`internal/workflow` → `internal/journal` is confirmed as intended and is
+     bounded to the `Effect` data contract.** The Task 2 API stays
+     `([]journal.Effect, error)`; it is not renegotiated. `internal/workflow`
+     must not grow a dependency on any other `internal/journal` surface
+     (no append, no projection, no replay) — that would breach DEC-089's
+     "must not own migrations / must not write" boundary.
+  2. **The narrow repair is authorized** and added to Task 2's scope: split
+     `internal/db/workflow_tables_test.go` so that the two tests needing
+     `internal/workflow` — `TestMigration0007SeedsFrozenV01WorkflowDefinitions`
+     and `TestMigration0007ReservesGateObligationShapeWithoutSeedingReservedRules`
+     — move, with the helpers only they use (`assertSeededWorkflows`,
+     `assertSeededStates`, `assertSeededTransitions`, `assertSeededRequirements`,
+     the three tuple types and their key functions), into a new
+     `package db_test` file. The remaining three tests stay in `package db`.
+  3. **Test-only change, behavior-preserving.** No production file may change
+     under this authorization. Assertions move verbatim; nothing is weakened,
+     renamed, or dropped. The moved file re-declares the few small helpers it
+     needs (`testMigrationsDir`, `closeDB`, `closeRows`,
+     `migratedWorkflowTablesDB`) locally under workflow-scoped names, matching
+     the existing `db_test` convention (`closeIssuesEnrichedDB` et al.).
+  4. **No new exported production API.** `driverName` stays unexported;
+     `newTestMigrator`/`closeMigrator` stay in `package db` with
+     `TestMigration0007DownAndUpRestoresWorkflowTables`, which does not import
+     `internal/workflow` and therefore does not move.
+- **Rejected alternatives:**
+  - *Extract `Effect` into a leaf package with a `type Effect = ...` alias in
+    `journal`.* Architecturally tidier, but 154 references across 51 files, a
+    new package, and an edit to the event schema's home file — mid-phase, for a
+    change a type alias makes invisible. Disproportionate.
+  - *Give `internal/workflow` its own effect type and map it in Task 3.*
+    Contradicts the Task 2 spec, duplicates a schema-bearing type, and adds a
+    mapping layer whose only job is to drift.
+  - *Break `internal/journal` → `internal/db`.* Far outside phase scope.
+- **Standing constraint (binding beyond Phase 19):** **no in-package
+  (`package db`) test file in `internal/db` may import `internal/workflow`**,
+  because `internal/workflow` now sits above `internal/journal`, which imports
+  `internal/db`. Tests that need both belong in `package db_test`. Same rule
+  applies to `internal/journal`'s in-package tests.
+- **Spec impact:** `02_TRD.md` §3 gains the `internal/workflow` →
+  `internal/journal` edge and the `Effect`-only bound; Task 6 verifies at wrap.
+
+### DEC-097: TL-Lite's missing triage records are a provider-prompt defect on Codex, not agent unreliability
+
+- **Date:** 2026-07-29
+- **Resolves:** the second defect in TRG-19-002 — TL-Lite returned
+  `VERDICT: BLOCK (required triage/escalation records could not be written; no
+  identifier allocated)` and wrote neither `TRG-19-002` nor `ESC-19-002`.
+- **Supersedes an incorrect first finding.** This decision was first drafted
+  holding that TL-Lite's report of having "no filesystem read/write mechanism
+  available" was a hallucinated capability claim, on the evidence that
+  `.claude/agents/tl-lite.md:4` grants `Read, Glob, Grep, Edit, Write`. **That
+  was wrong, and wrong because it inspected the wrong provider.** The failing
+  agent was the **Codex** `tl_lite`, not the Claude `tl-lite`. The original
+  finding is recorded here rather than deleted, because the same mistake sits
+  inside DEC-095 (see the correction note appended there).
+- **Actual root cause — the Codex prompt tells TL-Lite it cannot write:**
+  1. `.codex/agents/tl_lite.toml` declares **no tools at all** — only `name`,
+     `description`, `model`, `model_reasoning_effort`, and
+     `developer_instructions`. Tool access comes solely from the global
+     `sandbox_mode = "workspace-write"` in `.codex/config.toml`. The
+     `tools: ... Write` / `disallowedTools: Bash` grant lives exclusively in the
+     `claude:` frontmatter block of `project-docs/agents/tl-lite.md` and is
+     emitted **only** into `.claude/agents/tl-lite.md`.
+  2. The **shared** prompt body told TL-Lite three separate times that it could
+     not run commands: "You do not write code, **run commands**…" (opening),
+     "never **run commands**" (Write Boundaries), and "**You cannot run
+     commands**, so you never verify commits yourself" (Triage Rules).
+  3. On Claude those two facts are coherent: `Write`/`Edit` are distinct tools
+     from `Bash`, so "never run commands" plainly means "don't use Bash."
+     **On Codex they are contradictory**, because Codex exposes file editing
+     through the same command/`apply_patch` surface as execution. An agent told
+     it cannot run commands, given no declared write tool, has a defensible
+     basis to conclude it has no filesystem write mechanism — which is
+     precisely, and accurately, what it reported.
+  4. This is therefore a **prompt-authoring defect in a provider-shared body**,
+     not agent unreliability. The agent behaved correctly given its
+     instructions, and reported the limitation explicitly rather than inventing
+     a placeholder ID — which is what its prompt asks for in that situation.
+- **Decision:**
+  1. **Fix the prompt at the canonical source.**
+     `project-docs/agents/tl-lite.md` is amended: the blanket "run commands"
+     prohibition is narrowed to its real intent (no quality gates, tests,
+     builds, git, or verification commands); the opening states that writing
+     the triage record is a file write and never optional; and a
+     `<!-- body: codex -->` segment names `apply_patch` under
+     `workspace-write` as the write affordance, with a matching
+     `<!-- body: claude -->` segment naming `Write`/`Edit`. A new triage rule
+     requires an *attempted* write before any claim of inability, quoting the
+     concrete error.
+  2. **`project-docs/tools/sync-agents.sh` must be run** to regenerate
+     `.claude/agents/tl-lite.md` and `.codex/agents/tl_lite.toml`; this session
+     has no shell. Until it runs, the generated prompts are stale and the defect
+     is still live. `sync-agents.sh --check` verifies.
+  3. **The DEC-095 mitigations stand** — seeding the triage log is independently
+     worthwhile and made both backfills cheap — but its *finding* is corrected,
+     not its remedy.
+  4. **The Phase Runner's handling is confirmed correct again**: it recorded
+     `TRIAGE (identifier unavailable)`, refused the placeholder, and stopped.
+  5. **No role change, and the deep-retrospective question is withdrawn.** The
+     draft escalated "should TL-Lite exist at all" to the retrospective on the
+     strength of the incorrect finding. With a concrete, cheap, provider-local
+     cause identified, that escalation is not justified. What *is* referred to
+     the retrospective is narrower and better founded: **provider-shared agent
+     bodies can encode capability claims that are true for one provider and
+     false for another**, and nothing checks for it.
+- **Open verification item (not decided here):** whether the Codex agent config
+  schema supports a per-agent sandbox/tool declaration that would make the write
+  affordance explicit rather than inherited from the global config. No such key
+  was invented here — an unverified key risks breaking agent loading. Confirm
+  against the Codex config schema before adding one.
+- **Carry-forward impact:** **CF-023 gains a drill case of a different and more
+  useful shape** than the draft's — a provider-shared prompt segment that
+  contradicts one provider's tool model — alongside the DEC-095 checks. A
+  cheap mechanical check falls out of it: flag any shared body asserting a
+  capability limit ("cannot run commands", "no access to") that is enforced by
+  only one provider's frontmatter. CF-023 stays **Medium**.
+
+### DEC-098: The VAL-059 parity baseline is pinned to the Task 3 implementation commit; ambient `HEAD` is prohibited
+
+- **Date:** 2026-07-30
+- **Resolves:** ESC-19-003 / TRG-19-003, raised by QA Review 1.
+- **Context.** Three artifacts described the same VAL-059 baseline differently.
+  Task 4's binding constraint said "record the **Task 3 completion commit**
+  hash with `git rev-parse HEAD`". The validation contract said "the Task 3
+  completion commit". QA-plan §6 said the Task 3 **implementation** commit,
+  "not the following report commit and not ambient `HEAD`". At Review 1 those
+  selectors demonstrably resolved to different commits: ambient `HEAD` was the
+  Task 3 *report* commit `697c673`, while the implementation commit is
+  `50533e2`.
+- **The QA plan is right, and the task spec is the artifact that drifted.** A
+  baseline is only immutable if its selector is immutable. `HEAD` moves with
+  every commit — including this escalation's own doc commits — so by the time a
+  Developer reaches Task 4 the ambient-`HEAD` capture would be taken from a
+  *later* tree than the one VAL-059 is supposed to freeze. That defeats the
+  purpose of the assertion: the parity evidence would be unreproducible by the
+  QA Lead and could silently include post-Task-3 artifacts. "Completion commit"
+  was itself the root ambiguity — Task N's work lands in two commits (the
+  implementation commit and the `docs(task)` report commit), and only the first
+  is a meaningful build target.
+- **Decision.**
+  1. **The baseline is pinned, not selected.** Task 4 and the validation
+     contract now carry the literal verified hash
+     `50533e2b813bf073cd75f75eb70dd09cd15e9040`. The Developer re-verifies it
+     with `git rev-parse --verify <hash>^{commit}` **and** cross-checks it
+     against the `## Commit hash` in the committed `task-3-done.md` (`50533e2`)
+     before use, so a wrong pin cannot propagate silently. `git rev-parse HEAD`,
+     branch names, and any other moving selector are prohibited.
+  2. **Task 4's procedure is synchronized to QA-plan §6 verbatim** — the
+     detached worktree at `/tmp/fid-phase19-v01-baseline`, the
+     `/tmp/fid-phase19-v01-baseline.bin` binary plus its recorded `sha256sum`,
+     the two-positional-argument `capture.sh`, the fixed
+     `cmd/fid/testdata/v01_parity/fixture/` with fixed IDs and journal
+     timestamps, the exact six output filenames, the candidate output root
+     `/tmp/fid-phase19-v01-parity-candidate/`, and the committed `SHA256SUMS`
+     manifest. The earlier improvised paths (`/tmp/fid-baseline`,
+     `<command>-<kind>.json`) are withdrawn.
+  3. **Normalization is the committed no-op** `{"json_pointers":[],"replacement":null}`;
+     all six files are raw-byte compared. The task spec's "allow-list of
+     creation/update timestamps" and the contract's matching phrase are
+     withdrawn as looser than QA-plan §6. If the fixed fixture cannot hold
+     timestamps stable, **Task 4 is `BLOCKED` and escalates**; the allow-list is
+     not widened and no expectation is hand-written. This tightens VAL-059; it
+     does not weaken it.
+  4. **The Developer does not read the QA plan**, so every QA-plan §6 command
+     is now written into Task 4's `## Exact Commands To Run`, including the
+     `sha256sum -c` and `diff -r` verification pair and the worktree cleanup.
+- **Consequences.** Task 4 is unblocked and may start. VAL-059's evidence is
+  reproducible by the QA Lead from committed artifacts alone. No implementation
+  behavior, API, or other assertion changes. `qa-plan.md` needs **no** edit — it
+  was correct throughout; the fix is in `task-4.md` and `validation-contract.md`.
+- **Workflow lesson (for the wrap-up notes).** The QA plan refined VAL-059's
+  procedure under DEC-091, but the already-written Task 4 spec was not
+  re-synchronized, and nothing mechanically compares a task spec's evidence
+  procedure against the QA plan's. Two independent prose copies of one procedure
+  drifted, and only a human-grade QA read caught it. Candidate rule: when a QA
+  plan fixes a procedure for a `VAL-NNN`, the task spec should **cite** that
+  section rather than paraphrase it. Referred to the deep retrospective.
+
+### DEC-099: Task 4 recovery — preserve the partial work; re-verify the baseline by reproduction, not by restart
+
+- **Date:** 2026-08-01
+- **Resolves:** ESC-19-004 / TRG-19-004, raised from the Task 4 blocker report.
+- **Context.** Task 4's first required VAL-059 command,
+  `capture.sh /tmp/fid-phase19-v01-baseline.bin cmd/fid/testdata/v01_parity`,
+  failed with `cannot create cmd/fid/testdata/v01_parity/issue-get-epic.json:
+  Directory nonexistent`. The Developer repaired the script, retried
+  successfully, continued through three red/green cycles, then stopped without
+  running the six required gates and without committing. TL-Lite recorded BLOCK
+  on the ground that "the retry cannot substitute for the failed capture" and
+  recommended discarding or reconciling the partial work and rerunning the whole
+  VAL-059 procedure and every gate **from the beginning**.
+- **Finding 1 — the failed command was a defect in a Task 4 deliverable, not a
+  gate failure.** `capture.sh` is created *by this task* (Task 4 scope list,
+  `cmd/fid/testdata/v01_parity/`). Root cause is now visible in the repaired
+  script: it `cd`s into a `mktemp -d` workspace and then wrote to the
+  **relative** `output_root`, so `cmd/fid/testdata/v01_parity/...` resolved
+  inside the temp dir and did not exist. The fix absolutizes `output_root`
+  (lines 12-15) and adds `mkdir -p` (line 19). That is precisely the authoring
+  the task asked for. The same report records three `RED expected failure` →
+  `PASS` test cycles that nobody treats as failed gates; a harness reaching
+  green is the identical loop.
+- **Finding 2 — the failed run wrote nothing.** It aborted on the first
+  redirection. It cannot have produced, contaminated, or partially overwritten
+  any artifact; with respect to evidence it is a no-op.
+- **Finding 3 — the baseline's authenticity never depended on that first
+  capture, because DEC-098 already replaced the temporal guard with a
+  structural one.** The baseline binary is built in a **detached worktree at
+  the pinned commit** `50533e2…`, and `capture.sh` consumes only that binary
+  plus the committed, fully-fixed fixture (verified: fixed IDs, fixed event
+  IDs, fixed `occurred_at`, and outputs whose `created_at`/`updated_at` derive
+  solely from the journal). Baseline output is therefore a pure function of
+  *(pinned commit, committed fixture)*. Uncommitted working-tree edits to
+  `internal/issues/create.go` are structurally incapable of affecting it. Task 4
+  says so itself: "The QA Lead must be able to regenerate the baseline from the
+  recorded hash and committed script alone."
+- **The BLOCK is sustained in outcome and corrected in reasoning.** Stopping was
+  right and the escalation was correctly routed (trigger 4: partial work
+  spanning multiple sessions and a public creation path). Task 4 is genuinely
+  incomplete — no implementation or report commit, six required gates never run,
+  and the three VAL-059 verification commands (candidate capture, `sha256sum
+  -c`, `diff -r`) never run. But "restart the whole procedure from the
+  beginning" does not follow, and no rule requires it. What was in doubt is
+  **provenance of the six committed baseline outputs** — the report's prose
+  leaves the retry's timing relative to the `create.go` edit ambiguous. That
+  doubt is cheaply and mechanically decidable, and a narrative cannot settle it
+  either way.
+- **Decision.**
+  1. **Preserve the uncommitted work; do not discard it.** `09_AI_WORKFLOW.md`
+     §2.3 responsibility 2 directs a Developer to inspect in-scope partial work
+     and continue from that state, and this phase already set the precedent at
+     ESC-19-002/DEC-096, where Task 2's uncommitted work was preserved intact.
+     Discarding would destroy correct, evidenced work and re-run the phase's
+     highest-risk change for no evidentiary gain.
+  2. **Settle provenance by reproduction, not by narrative.** Before any other
+     Task 4 work, the recovery session removes the stale scratch worktree,
+     rebuilds the baseline binary from the pinned commit, re-captures into a
+     **fresh scratch root**, and checks the result against the committed
+     `SHA256SUMS`. A match proves the committed baselines authentic regardless
+     of when they were written; a mismatch catches contamination and the
+     committed baselines are replaced from the reproduction. Either way the
+     ambiguity is closed by a deterministic test. Exact commands are written
+     into `task-4.md`.
+  3. **Remove the scratch worktree through the authorized path** —
+     `git worktree remove /tmp/fid-phase19-v01-baseline` then
+     `git worktree prune` — before re-adding it, since the stopped session left
+     it registered and `git worktree add` would otherwise fail.
+  4. **Then complete Task 4 normally:** the candidate build, the candidate
+     capture, `sha256sum -c`, `diff -r`, the six required gates, the three named
+     spec updates, the implementation commit, and the `docs(task)` report
+     commit.
+  5. **Report the first failure honestly as a deviation** — its verbatim token,
+     the root cause, the fix, and the final `PASS` token — under DEC-100 below.
+     It is not recorded as a passed gate and it is not concealed.
+- **Spec correction.** `task-4.md` still carried the pre-DEC-098 *temporal*
+  guard ("the first three run **before** any `internal/issues/create.go` edit";
+  "once `create.go` changes, the baseline can no longer be captured from the
+  working tree"). Under DEC-098 that is obsolete and actively misleading — the
+  second clause refutes itself by conceding the pinned commit can always
+  reproduce it, and reading it as a binding precondition is what turned a
+  fixable harness bug into a full-task hard stop. It is demoted from a binding
+  precondition to sequencing guidance, with the structural guarantee stated
+  explicitly. VAL-059 is unchanged and not weakened: the baseline is still the
+  pinned commit, normalization is still the committed no-op, and comparison is
+  still raw-byte.
+- **Consequences.** Task 4 resumes in place from preserved work. No change to
+  any assertion, API, or behavior. `validation-contract.md` and `qa-plan.md`
+  need no edit.
+
+### DEC-100: A task-authored evidence harness that fails while being authored is a deviation, not a failed gate
+
+- **Date:** 2026-08-01
+- **Status:** binding beyond Phase 19.
+- **Context.** DEC-086 and `AGENTS.md` (Commands) make required-command evidence
+  strict: `PASS` or `BLOCKED`, verbatim tokens, no missing/skipped/narrower
+  substitutes, and a non-terminating command is never `PASS`. Those rules were
+  written for gates run *against finished work*. They say nothing about a
+  required command whose **harness is itself a deliverable of the same task**,
+  and Phase 19 Task 4 shows how that gap reads in practice: a one-line path bug
+  in a script the task existed to write was treated as a permanently failed gate
+  requiring a from-scratch restart.
+- **Decision.** A required command that fails, is repaired, and is rerun
+  **byte-identically** to a deterministic pass is recorded as `PASS` with a
+  **mandatory deviation note**, provided **all four** hold:
+  1. The failing artifact is a **deliverable of the task being authored** — a
+     fixture, capture/measurement script, or golden generator. **Not** the
+     product under test, **not** a test asserting product behavior, and **not** a
+     pre-existing committed gate, tool, or script.
+  2. The rerun command is **byte-identical**. Nothing is narrowed, substituted,
+     re-scoped, or re-pointed.
+  3. The final result is **deterministic and reproducible by a third party from
+     committed artifacts alone** — not a flaky or environment-dependent pass.
+  4. The report records the first failure's **verbatim token, the root cause,
+     and the fix**, plus the final result's own token.
+- **Otherwise the strict rule stands.** A required command that fails against
+  the product under test, or that passes only after the command, the test, or
+  the assertion is weakened, is a **failed gate** and escalates. Reruns that
+  mine for a flaky green are excluded by (3); "fix the test until it passes" is
+  excluded by (1) and (2).
+- **Rationale.** Red→green is the workflow's core method, not an exception to
+  it. A required-command list is a statement about the **final, reproducible
+  state** of a task's evidence, not a prohibition on iteration. The strict
+  reading would require any task that ships its own evidence tooling to write
+  that tooling correctly on the first attempt — a standard no rule imposes on
+  any other deliverable, and one that would have made Task 4 unrunnable.
+- **Consequences.** `AGENTS.md` (Commands) and `09_AI_WORKFLOW.md` §11 carry the
+  rule. TL-Lite gains an explicit distinction it lacked: **"the task is
+  incomplete, stop"** and **"the evidence is tainted, restart"** are different
+  verdicts with different remedies, and a harness bug is normally the first.
+- **Carry-forward impact.** CF-023 gains a drill case: a required command that
+  fails on a task-authored harness, repaired and rerun byte-identically —
+  correct handling is `PASS` **plus** a deviation note, not a blocker report and
+  not a silent rerun.
+
+### DEC-101: Cleanup is not evidence — Task 4 closed under human-executed gates
+
+- **Date:** 2026-08-02
+- **Status:** binding beyond Phase 19 (items 1-3); Phase 19-local (items 4-5).
+- **Context.** Task 4 stopped three times. Not one stop was in the product:
+  ESC-19-003 was a doc-vs-doc disagreement about the baseline selector,
+  ESC-19-004 was a path bug in `capture.sh` — a script the task existed to
+  author — and ESC-19-005 was `git worktree remove` failing on a read-only
+  `.git/worktrees/`, which cascaded into four dependent commands. In every case
+  the *software* was fine; the verification scaffolding fell over. DEC-098 and
+  DEC-099/100 each repaired the specific brick that fell and left the
+  scaffolding standing, so the next adjacent brick fell next.
+- **Root cause (Tech Lead, self-assessed).** Three defects in my own artifacts:
+  1. **DEC-099's Step R put housekeeping inside the evidence fence.** `git
+     worktree remove` and `git worktree prune` prove nothing about parity. They
+     are cleanup. Fencing them under "report every token, stop on any blocked
+     command" gave a temp-directory permission error the same weight as a parity
+     mismatch, and the Developer correctly obeyed what I wrote.
+  2. **The scratch path was fixed, not unique**, so every attempt depended on
+     the *previous* attempt having tidied up — the exact coupling that turned
+     one failed `rm` into a four-command cascade.
+  3. **Step R and DEC-099 called the baselines "committed" when they were
+     untracked.** `cmd/fid/testdata/v01_parity/` was `??` in `git status`
+     throughout. The reproduction was still valid — it regenerated from the
+     pinned commit and matched the manifest — but the spec described a state
+     that did not exist. Resolved: the directory is committed as of the Task 4
+     implementation commit.
+- **Decision.**
+  1. **Cleanup is never evidence.** Commands whose only purpose is removing or
+     pruning scratch state are excluded from required-command evidence. They are
+     not reported `PASS`/`BLOCKED`, they never gate a sequence, and a failed
+     cleanup is a note, not a stop. Only commands that *establish or check an
+     observable* are evidence.
+  2. **Scratch state is unique per attempt.** Task specs that use temporary
+     directories, worktrees, or binaries allocate them with `mktemp -d` (or an
+     equivalent fresh path) so no run can ever depend on a prior run's cleanup.
+     Fixed scratch paths in a procedure are a spec defect.
+  3. **Task specs declare required environment capabilities.** Any procedure
+     needing write access beyond the repo working tree — `/tmp`, `.git/`,
+     network, elevated permissions — names it in the task spec. A capability
+     shortfall is discovered and escalated **at step zero**, never halfway
+     through a sequence.
+  4. **ESC-19-005 is closed without rework.** The authorized Step R rerun
+     reproduced the pinned baseline and returned all six `SHA256SUMS` entries
+     `OK`. Under DEC-099 that *is* the provenance test — reproduction from pinned
+     inputs, not chronology or narrative. Repeating it would establish nothing
+     further. TRG-19-005's verdict is **sustained in outcome** (the letter of
+     Step R did require a stop) and **corrected in reasoning** (a blocked
+     cleanup command is not a blocked gate).
+  5. **VAL-059's remaining assertion is the candidate check.** With the baseline
+     provenance settled and committed, the standing assertion is `sha256sum -c`
+     of the candidate capture against the committed manifest — six `OK`. The
+     detached-worktree pinned-commit build was a **one-time** act to establish
+     that the goldens record v0.1 behavior. It is complete and is not repeated.
+- **Evidence provenance for Task 4 (recorded honestly).** The six required
+  gates, the baseline reproduction, and the candidate parity check were executed
+  **by the Human directly**, outside a Developer session, and **verbatim
+  terminal tokens were not captured**. This does not meet DEC-084/086. It is
+  recorded as **human-attested**, not as token-cited evidence, and
+  `task-4-done.md` says so in those words rather than carrying invented tokens —
+  the failure mode that produced TRG-19-001 in this very phase. **The control is
+  QA Lead's independent re-execution at Review 2**, which is already required by
+  the QA plan and which owns all thirteen Task 4 assertions. If any command
+  fails under QA Lead, this disposition is void and Task 4 reopens.
+- **Consequences.** Items 1-3 belong in `09_AI_WORKFLOW.md` §6 (task
+  specification contract) and the task-spec template; Task 6 carries the edit.
+  `AGENTS.md` needs no change. No product code, schema, CLI surface, or
+  validation assertion is weakened — VAL-059's observable is unchanged.
+- **Carry-forward (CF-025).** Convert VAL-059 from a one-time manual ceremony
+  into a permanent golden-file integration test in `cmd/fid`, reusing the
+  `buildClosureFIDBinary` / `closureRunFID` pattern from
+  `e2e_v01_closure_helpers_test.go`: copy `testdata/v01_parity/fixture/` into
+  `t.TempDir()`, run the six commands against current code, compare byte-for-byte
+  to the six committed `.json` goldens. This retires `capture.sh`,
+  `SHA256SUMS`, `normalization.json`, and the worktree machinery as *required
+  procedure* (they stay committed as provenance), and upgrades a one-shot proof
+  into a standing regression guard. **Scheduled for Task 6**; if Task 6 runs
+  long, it carries to Phase 20 — heavy mode accepts no carry-forward past phase
+  end, so Task 6 is the last legal slot.
+
+### DEC-102: Task 4's attested lint PASS is disproven — "pre-existing" needs provenance, and attested gates are not evidence
+
+- **Date:** 2026-08-02
+- **Status:** items 1, 5 binding beyond Phase 19; items 2-4, 6 Phase 19-local.
+- **Context.** Task 5's Developer hit `golangci-lint run ./...` failing with
+  `* errcheck: 1` at `internal/workflow/resolve.go:61` (`defer rows.Close()`),
+  classified it as **pre-existing and out of scope**, preserved its uncommitted
+  work, and filed a blocker report. TL-Lite sustained that framing and escalated
+  as ESC-19-006, asking me to authorize a narrow repair of old baseline debt.
+  **The framing was wrong, and it concealed the actual finding.**
+- **What the evidence shows.** The Developer justified "pre-existing" with `git
+  show HEAD`, which proves a line is *committed*, not that it *predates the
+  task*. HEAD is `3a6ca15`, which contains Task 4.
+  `git log --diff-filter=A --oneline -- internal/workflow/resolve.go` returns
+  **`32614bb`** — Task 4's implementation commit, this phase, one day earlier.
+  `task-4-done.md` independently lists the file as `(new)`. The line is also the
+  **only** unguarded `defer rows.Close()` in the repository; ~20 other production
+  sites use `_ = rows.Close()`, including `registry.go` in the same package. And
+  `* errcheck: 1` means that once the Developer cleared its own two in-scope
+  findings, this was the sole remaining finding in the entire tree.
+- **Therefore Task 4's lint gate did not pass.** `.golangci.yml` is v2 with
+  `default: none`, `errcheck` enabled and **no exclusion presets**, so `.Close`
+  is not excluded. `resolve.go` is unmodified since `32614bb`, and it was a new
+  file, so no stale lint cache could have masked it. The same command over the
+  same committed line fails today. `task-4-done.md` recorded
+  `golangci-lint run ./...` as `PASS (human-attested)`. **That record is false.**
+- **Decision.**
+  1. **"Pre-existing" is a provenance claim and requires provenance evidence.**
+     It is established against the **phase-start** commit with `git log -S` /
+     `git log --diff-filter=A` / `git blame`, and the claim must cite the
+     introducing commit. `git show HEAD` is never sufficient — it cannot
+     distinguish inherited debt from debt this phase created three commits ago.
+     A Developer declining an out-of-scope repair still owes this citation.
+  2. **DEC-101's void condition has triggered.** I wrote it as "if any command
+     fails under QA Lead at Review 2, this disposition is void and Task 4
+     reopens." The failure arrived two days early from a Developer instead of QA
+     Lead. Reading that as "wrong role, doesn't count" would be the mirror image
+     of my ESC-19-005 error — letter over substance, in the direction convenient
+     to me. It counts. The disposition that closed Task 4 on attestation is void.
+  3. **The remedy is scoped to what is actually disproven.** Exactly one of six
+     gates is contradicted; an errcheck finding has no bearing on whether
+     `go test -race` passes. Task 4's implementation stands, its commit is not
+     rewritten, and its thirteen assertions remain Review 2's job as planned.
+     Task 4 moves to **Complete (gates unverified)** and does not close until a
+     token-cited gate run is green. `task-4-done.md`'s lint line is corrected to
+     **FAIL** with the disproving token and this DEC — the record is amended, not
+     quietly overwritten.
+  4. **The repair is authorized inside Task 5** as a named in-scope exception:
+     `internal/workflow/resolve.go:61` becomes
+     `defer func() { _ = rows.Close() }()`, matching `registry.go` and `list.go`
+     in the same package. Behaviour is identical — the rows are fully drained and
+     `rows.Err()` is already checked — so VAL-058/059 parity is untouched and no
+     new test is required. `golangci-lint run ./...` is repo-wide, so **Task 5's
+     green run is itself the independent re-execution of Task 4's lint gate**;
+     the Task 5 report states this explicitly and Task 4's gate 2 of 6 is then
+     verified rather than re-attested.
+  5. **Gate results not captured in the executing session are `UNVERIFIED`,
+     never `PASS`.** DEC-101 accepted human attestation against a *named future
+     control*. That was insufficient: the false `PASS` survived triage, a
+     run-resume reconciliation, and a Tech Lead escalation, and surfaced only
+     because an unrelated task happened to run the same command. A control that
+     fires late enough to be tripped over by accident is not a control. If gates
+     are executed outside the session that records them, the result is recorded
+     `UNVERIFIED` and the task does not close on it.
+  6. **Review 2 is hardened, not rescoped.** QA Lead still re-runs all six Task 4
+     gates and all thirteen assertions, now knowing one attestation is
+     demonstrably false and the other four remain uncorroborated (gate 2 having
+     been settled by Task 5). QA Lead reports whether any *other* attested result
+     is contradicted.
+- **Verdict on TRG-19-006.** BLOCK **sustained in outcome, corrected in
+  reasoning** — the fourth consecutive stop in this phase to fit that
+  description. Stopping was right: a required gate genuinely failed and the
+  preserved work spans three subsystems. The Developer was also right not to
+  self-authorize an out-of-scope edit (the same discipline I sustained in
+  TRG-19-002). The defect was the *provenance check that was never run*, by
+  Developer and by TL-Lite alike, which turned a one-day-old regression into
+  inherited debt and left the real finding unreported.
+- **Proportionality note.** The code defect is trivial — one line, zero
+  behavioural impact, five seconds to fix during Task 4. The lint gate is exactly
+  the mechanism that catches this class of thing, and it is the one gate that was
+  attested rather than executed. The defect is uninteresting; its survival is
+  not.
+- **Consequences.** Item 1 belongs in `09_AI_WORKFLOW.md` §11 and the
+  Developer-role prompt (out-of-scope claims cite the introducing commit); item 5
+  belongs in `09_AI_WORKFLOW.md` §11 alongside DEC-084/086 and in `AGENTS.md`
+  (Commands). Task 6 carries both edits with the DEC-101 items 1-3 edit. No
+  product code, schema, CLI surface, or validation assertion is weakened.
+- **Carry-forward impact.** CF-023 gains a fourth drill case: a completion report
+  claiming an out-of-scope repair is "pre-existing" without citing an introducing
+  commit older than the phase-start commit. This one is mechanically detectable
+  and is the cheapest of the four.
+
+### DEC-103: The VAL-059 manifest command was never runnable — stop patching the ceremony
+
+- **Date:** 2026-08-02
+- **Status:** items 1-2, 6 Phase 19-local; items 3-5 binding beyond Phase 19.
+- **Context.** Review 2 (`2abcc6c`, BLOCK) independently re-ran all six Task 4
+  gates — **all six PASS**, lint `0 issues.` — and confirmed VAL-059's underlying
+  observable: a fresh candidate capture checked against the committed manifest
+  returns six `OK`, with `diff -r` showing no JSON delta. It then found two
+  blocking defects, **both in evidence artifacts, neither in the product**.
+- **Finding 1 — the required command cannot work, and never could.**
+  `task-4.md:361` and `qa-plan.md:477-481` prescribe
+  `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` from the repository
+  root. `sha256sum -c` resolves listed filenames **relative to the working
+  directory**, and the manifest deliberately holds bare filenames. From the repo
+  root it therefore looks for `./issue-get-epic.json` and exits 1 with
+  `sha256sum: WARNING: 6 listed files could not be read`. **The bare-filename
+  manifest is correct** — it is what makes the manifest checkable against any
+  capture directory. The *command* was wrong from the day I wrote it.
+  Worse, the "obvious" repair is also wrong: running it inside
+  `cmd/fid/testdata/v01_parity/` checks the committed baselines against **their
+  own** digests, a tautology that says nothing about the candidate. The only
+  meaningful form checks the *candidate capture directory* against the manifest —
+  which is exactly what Review 2 ran, and it passed.
+- **Finding 2 — `task-4-done.md` has never passed `report-lint.sh`.** Seven
+  failures: a missing `## Tests run` heading (structural, predates my edits and
+  was never caught because Task 4's gates were human-executed and its report
+  never linted) and six required commands recorded `UNVERIFIED`/`FAIL`, which
+  DEC-102 introduced and the linter accepts as neither `PASS` nor `BLOCKED`.
+  **The linter's behaviour is correct** — it is refusing to close a task on
+  unverified evidence, which is precisely its job. Its message is merely
+  undiagnostic.
+- **Decision.**
+  1. **One authoritative VAL-059 procedure**, replacing the prescribed command in
+     both `task-4.md` and `qa-plan.md` §6. The manifest is checked **from the
+     candidate capture directory, by absolute manifest path**, against a
+     `mktemp -d` scratch root (DEC-101 item 2):
+
+     ```bash
+     manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+     capture_root="$(mktemp -d)"
+     go build -o "$capture_root/fid" ./cmd/fid
+     cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+     ( cd "$capture_root" && sha256sum -c "$manifest" )
+     ```
+
+     The repo-root form is **struck**, not amended. The directory-local form
+     (`cd cmd/fid/testdata/v01_parity && sha256sum -c SHA256SUMS`) is **also
+     struck**: it is self-referential and must never be cited as parity evidence.
+  2. **VAL-059 is `PASS`**, on Review 2's executed evidence: six `OK` from a
+     fresh candidate capture plus a clean `diff -r`. The observable was never in
+     doubt; a mis-written command string produced a false negative. QA Lead is
+     the assertion's validator and has verified it independently — that is the
+     control working, not failing.
+  3. **Task 4 closes through a Developer evidence session, not a Tech Lead
+     rewrite and not a cross-role citation.** I considered letting
+     `task-4-done.md` cite Review 2's tokens with attribution. I am refusing that:
+     it would re-open, three hours after DEC-102 item 5 closed it, exactly the
+     loophole that says a result recorded in one place may be evidenced from
+     another. A short Developer session re-runs Task 4's six gates and the
+     corrected VAL-059 procedure against the unchanged `32614bb` tree, captures
+     its own tokens, and rewrites `task-4-done.md` to be `report-lint` clean —
+     including the `## Tests run` section it has never had. The implementation
+     commit is not rewritten; the report lands as a `docs(task)` commit and still
+     cites `32614bb`. Cost is minutes; it retires every provenance question on
+     the phase's most-troubled task permanently.
+  4. **A required command that has never been executed successfully by anyone is
+     not a specification — it is a guess.** Any command written into a task spec
+     or QA plan as required evidence must be executed once, by its author, before
+     it is published. This procedure was authored, reviewed, escalated over three
+     times, and dispositioned twice by me without anyone once running the literal
+     string from the literal directory it names. `09_AI_WORKFLOW.md` §6 carries
+     this; Task 6 makes the edit.
+  5. **Working-directory sensitivity is declared.** Any required command whose
+     result depends on the working directory states that directory explicitly, or
+     is written to be directory-independent. Bare relative paths in a committed
+     manifest are correct and must be paired with a `cd` into the directory they
+     resolve against.
+  6. **Review 2's two improvement findings are do-now in Task 6**, not deferred.
+     `cmd/fid/workflow_assign_test.go:61` asserts only non-empty stderr where
+     VAL-016 requires six pairwise-distinct value-naming errors, and
+     `internal/workflow/assign_test.go:13` never rebuilds and re-asserts the
+     replayed row per scope. Review 2 proved both behaviours by direct trace, so
+     the observables hold — but a *manual trace standing in for a permanent test*
+     is the same defect as VAL-059, and this phase has spent five stops on it.
+- **CF-025 is promoted to the first item in Task 6 and is mandatory.** When the
+  Go golden test lands, the shell ceremony (`capture.sh`, `SHA256SUMS`,
+  `normalization.json`) is **retired as required procedure** and stays committed
+  only as provenance. **No sixth manual VAL-059 run is authorized after Task 6.**
+- **Pattern (fifth stop, fourth in VAL-059's scaffolding).** ESC-19-003/004/005
+  and now 007 are all the same failure: I specified a multi-step shell ceremony
+  as required evidence for a single observable, and defended it one brick at a
+  time — pinning the baseline, then preserving partial work, then excluding
+  cleanup, now fixing the working directory. Each repair was locally correct and
+  the strategy was wrong. The product has not failed once in this phase. The
+  correct move was CF-025 at planning: express the observable as a test. Wrap-up
+  should treat "evidence apparatus disproportionate to the observable" as the
+  phase's headline finding.
+- **Consequences.** Items 4-5 belong in `09_AI_WORKFLOW.md` §6 (task
+  specification contract), with the DEC-101 and DEC-102 edits; Task 6 carries all
+  of them. `report-lint.sh` needs no behavioural change — it was right — but a
+  diagnostic message naming `UNVERIFIED`/`FAIL` explicitly is worth adding under
+  CF-023 when that tooling next opens. No product code, schema, CLI surface, or
+  validation assertion is weakened.
+
+### DEC-104: Prevention program — give the Tech Lead a shell, specify observables not mechanisms, and retire the scar tissue
+
+- **Date:** 2026-08-03
+- **Status:** binding beyond Phase 19. Item 1 approved by the Human 2026-08-03.
+- **Context.** Phase 19 produced **eight escalations, ten decisions, and zero
+  product defects.** Every stop was in verification apparatus. Five of the eight
+  share a single cause: I specified a bespoke multi-step shell ceremony as
+  required evidence for one byte-comparison observable, then defended it one
+  brick at a time across four escalations. The obvious response — another rule
+  per incident — is the trap. This decision adds four changes and **retires
+  six**.
+- **Decision.**
+  1. **The Tech Lead gets a shell.** *Approved by the Human, 2026-08-03, on the
+     reasoning that frontier models in orchestrator roles will use it
+     responsibly rather than drifting into implementation.* The role authored
+     required commands it was structurally incapable of executing — DEC-103 item
+     4 ("the author executes it once before publishing") was **unenforceable by
+     the role that most needed it**, which is the direct cause of ESC-19-003 and
+     ESC-19-007. Bounded use:
+     - **Permitted:** executing any command it authors before publishing it;
+       provenance and history checks (`git log`, `git blame`, `git show`);
+       reading repository and workspace state; validating that a spec claim
+       matches the tree.
+     - **Forbidden, unchanged:** writing product code or tests; running quality
+       gates *as task evidence* — under DEC-102 item 5 evidence belongs to the
+       session that records it, and a Tech Lead run is verification of a
+       **command**, never of a **task**.
+     - The write boundary in `09_AI_WORKFLOW.md` §2.2 is otherwise unchanged.
+  2. **The Tech Lead specifies observables; the shell-holder authors bespoke
+     mechanism.** My observables were correct every time this phase — pinned
+     baseline, byte-identical output, no assignment rows. **Every defect was in
+     mechanism.** Standard repo-wide gate commands stay Tech Lead-specified
+     (they are proven by hundreds of repetitions and their exact form is what
+     blocks narrowing and substitution). Bespoke, task-specific evidence
+     procedures are specified as an observable plus acceptance criteria, and the
+     Developer or QA Lead authors the commands.
+  3. **Second-escalation tripwire.** A *second* escalation touching the same
+     assertion, procedure, or artifact triggers mandatory reconsideration of the
+     **approach**, not another patch. The disposition must state explicitly
+     whether the mechanism should exist at all. Had this existed, it would have
+     fired at ESC-19-004 and landed CF-025 in Task 4 rather than Task 6, saving
+     three escalations. This targets the actual failure — not a missing rule,
+     but a failure to escalate my own thinking as evidence accumulated.
+  4. **Evidence is an automated test unless the contract records why not.** The
+     validation contract's Evidence column may not carry a bespoke multi-step
+     manual procedure without a recorded justification, the same way a skipped
+     gate cannot pass silently. VAL-059 was a byte comparison and was expressible
+     as a Go test on day one.
+  5. **Rule retirement is mandatory at wrap-up.** Roughly half of this phase's
+     rules exist to make a bad mechanism safe, and CF-025 deletes that mechanism.
+     Carrying them all forward charges every future phase cognitive rent for a
+     procedure that no longer exists. Wrap-up **must** record a keep/retire
+     verdict for each:
+
+     | Decision | Proposed verdict |
+     |---|---|
+     | DEC-098 (pinned baseline, no moving selectors) | **Retire** with CF-025 |
+     | DEC-099 baseline half | **Retire**; keep the partial-work half |
+     | DEC-101 items 1-2 (cleanup never evidence; unique scratch) | **Retire or demote** — they bite only where manual scratch ceremonies exist |
+     | DEC-100 (task-authored harness = deviation) | **Keep**, though the case largely stops arising |
+     | DEC-102 (uncaptured = `UNVERIFIED`; provenance for "pre-existing") | **Keep permanently** — general, and both caught real defects |
+     | DEC-103 items 4-5 (author executes; declare CWD) | **Keep**, now enforceable under item 1 |
+
+  6. **No rule may be added per incident.** Five of eight escalations share one
+     cause and get one fix. Nothing here tunes down the stop discipline: agents
+     stopping rather than self-authorizing was the healthiest behaviour in the
+     phase and it fired correctly on my bad specifications every time.
+- **Deep retrospective recommended.** Eight escalations, ten decisions, zero
+  product defects is an unusual enough signature to warrant a dedicated pass
+  rather than wrap-up workflow notes. Brief: which of the ten rules would have
+  prevented anything, which are scar tissue, and what minimum set survives.
+  Secondary question: whether QA-30's stale/contradictory canonical records are
+  an early symptom of decision churn under escalation pressure.
+- **Consequences.** Item 1 edits `09_AI_WORKFLOW.md` §2.2 and
+  `project-docs/agents/tech-lead.md`, then requires `sync-agents.sh`. Items 2-4
+  edit `09_AI_WORKFLOW.md` §6 and the validation-contract template. Item 5 is a
+  wrap-up obligation. **These are workflow-doc edits, not Phase 19 product
+  scope** — they land at wrap-up or in Phase 20 planning, not by reopening a
+  task. No product code, schema, CLI surface, or validation assertion changes.
+
+### DEC-105: Final-review disposition — all five blocking findings resolved, none in product code
+
+- **Date:** 2026-08-07
+- **Status:** Phase 19-local dispositions; item 2's boundary correction is
+  binding beyond the phase.
+- **Context.** QA Lead's final review returned BLOCK on five findings
+  (ESC-19-008 / TRG-19-008). All five are now dispositioned on evidence. **Not
+  one required a product code change** — consistent with the whole phase.
+
+**1. QA-BLK-FINAL-01 (VAL-026 unexecuted) — RESOLVED.** The Human completed
+   HUMAN-26a..26i on 2026-08-07: **9 PASS, 0 FAIL, 0 PARTIAL**. VAL-026 is
+   `PASS`. The dogfood raised one product gap, recorded as **CF-026** — workflow
+   inspection and lifecycle management. That is a *finding*, not a defect in
+   shipped scope: nothing in Phase 19 promised `workflow show` or workflow
+   revision.
+
+**2. QA-BLK-FINAL-02 (canonical architecture contradiction) — RESOLVED by
+   correcting the decision, not the code.** Verified: `internal/workflow/`
+   `define.go` and `assign.go` call `journal.WithLock`,
+   `EnsureProjectionFreshWithLock`, `PrepareEvent`, `DryRunProjectEvent`,
+   `AppendEvent`, and `ProjectEvent`. DEC-096's phrase "bounded to the `Effect`
+   struct — no append, projection, or replay surface" is **false today**.
+   - **The code is right and the decision is stale.** DEC-096 was written at
+     Task 2, when `internal/workflow` genuinely only built `[]journal.Effect`.
+     Tasks 3 and 4 then added the write paths that **DEC-089 explicitly
+     authorized** ("owns authoring, assignment, and resolution"). Owning a write
+     path means appending events; the alternative — pushing append/projection up
+     into `cmd/fid` — would be worse.
+   - **DEC-096's operative rule survives unchanged:** no in-package (`package
+     db`) test file may import `internal/workflow`, and the same for
+     `internal/journal`. That test-packaging constraint is what DEC-096 existed
+     for and it remains correct.
+   - **Superseded:** DEC-096's characterization of the dependency as
+     `Effect`-only. `internal/workflow` uses the journal's write API.
+     `02_TRD.md` §3/§3.1 is synchronized to the real boundary at wrap.
+   - **Failure mode worth naming:** a decision written from a snapshot and
+     stated as a permanent invariant, never revisited when later tasks in the
+     same phase falsified it. This is the **same family** as the VAL-059
+     ceremony — DEC-104's retrospective brief covers both.
+
+**3. QA-BLK-FINAL-03 (stale canonical/current/roadmap records) — ACCEPTED,
+   Tech Lead does it at wrap.** `02_TRD.md` §3/§3.1 (folds into item 2),
+   `03_TRD_SCHEMA.md` §14.11 assignment-integrity audit, `phase_brief.md` /
+   `progress_current.md` post-Task-6, and the roadmap Phase 19 closure
+   disposition. Documentary only.
+
+**4. QA-BLK-FINAL-04 (missing `Refs:` on `32614bb`) — ACCEPTED as a recorded
+   deviation; history is NOT rewritten.** Evidence:
+   `git log --format='%h %s%n%b' 50533e2..HEAD | grep -c 'Refs:'` → **10**. The
+   convention is being followed; `32614bb` is an **outlier, not a systemic
+   gap** — and it is precisely the commit produced by the irregular
+   human-executed Task 4 session.
+   - **No rewrite.** `32614bb` is cited in `task-4-done.md`, report-lint checks
+     5-6, `review-2.md`, and DEC-101/102/103/105. Rewriting it to add a trailer
+     would invalidate all of them to fix one metadata line — a strictly negative
+     trade under immutable-history policy.
+   - The task↔commit mapping is preserved in `task-4-done.md` and the phase
+     brief, which is the property `Refs:` exists to provide.
+   - **Prevention is mechanical, not exhortation:** a `commit-msg` hook or a
+     `report-lint.sh` check. Added to **CF-023**.
+   - **Pattern:** the one session that bypassed the normal Developer loop
+     produced four separate defects — a false gate attestation (DEC-102), a lint
+     regression, this missing footer, and a report that never passed report-lint
+     (DEC-103). That is the strongest available evidence for DEC-102 item 5.
+
+**5. QA-BLK-FINAL-05 (structure budgets) — CARRY FORWARD as CF-027; the finding
+   is inherited and Phase 19 improved it.** Evidence:
+   `git show 50533e2:internal/issues/create.go | wc -l` → **419**; the file is
+   **412** today. `Create` spans lines 19-246 (~228 lines) against the 60-line
+   target, and the file exceeds the 400-line STRUCT-002 target.
+   - **Task 4 made the file seven lines shorter**, replacing
+     `defaultWorkflowID(kind)` and the `"todo"` literal with a resolver call.
+     The breach predates the phase; `create.go` is the only task-touched file
+     over budget and the phase's net effect on it was positive.
+   - **Do-now is rejected on risk.** Decomposing a 228-line function on
+     `internal/issues.Create` — the most exercised path in the product — at the
+     end of a phase with eight escalations, is a bad trade. Provenance-checked
+     inherited debt in a file the phase *improved* does not justify it.
+   - **Sequencing makes it safe later:** CF-025's Go parity test is the exact
+     regression guard for this path. The decomposition lands **after** CF-025,
+     with VAL-058/059 as the safety net. Recorded as **CF-027**, same class as
+     CF-017 (`internal/dev`) and CF-018 (`internal/sqlquery`).
+   - Applying DEC-102's provenance rule is what turned this from "in-scope
+     blocking finding" into "inherited debt, improved." That rule has now paid
+     for itself twice in five days.
+
+- **Consequence.** No blocking finding remains open. QA Lead issues a subsequent
+  final-review disposition against these five, then the phase wraps. Heavy mode
+  carries no *feasibility* forward; CF-026/CF-027 are register items with named
+  targets, which is the normal mechanism and is not carry-forward of unfinished
+  phase scope.
+
+## Wrap-Up Decisions (2026-08-08)
+
+### DEC-106: Phase 19 sign-off — closure preconditions landed, keep/retire verdicts recorded
+
+- **Date:** 2026-08-08
+- **Status:** Phase 19 sign-off. The keep/retire table and the spec-sync
+  corrections are binding beyond the phase.
+- **Context.** QA Lead's subsequent final-review disposition
+  (`qa/final-review-2.md`, 2026-08-07) returned **PASS WITH IMPROVEMENTS**:
+  all five `final-review.md` blocking findings dispositioned, contract closing
+  **70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**, QA-BLK-FINAL-03 sustained
+  in part with two documentary preconditions named against the wrap commit. It
+  also corrected two of my own DEC-105 evidence claims and added MAJOR-01,
+  MINOR-01, and MINOR-02. **Phase 19 is signed off.**
+
+**1. PRECON-01 (stale, self-contradictory `phase_brief.md` task table) — DONE.**
+   The wrap replaces the Phase 19 brief with a no-active-phase brief, so the
+   stale Task 4 / Task 6 cells are gone rather than corrected in place, and the
+   authoritative final task statuses now live in the phase archive
+   (`progress.md`), which is where a Phase 20 planning session will look. QA
+   Lead was right to refuse to accept "the wrap will replace it" as a
+   disposition while the wrap had not happened; it has now happened in the same
+   commit as this decision.
+
+**2. PRECON-02 (two false statements about the Task 4 session) — DONE, and the
+   correction is worth more than the sentence it replaces.** QA Lead's E-11
+   partition is adopted verbatim in `progress_current.md` and in the CF-023
+   register line: across `50533e2..HEAD`, **every Developer/QA-Lead task commit
+   carries `Refs:` except `32614bb` and `ce4cf5b`, and both are products of the
+   same irregular human-executed Task 4 session**; the other six gaps are five
+   `docs(tl)` governance commits and one raw human commit (`ebbcd16`).
+   - My DEC-105 item 4 asserted "10 sibling commits carried it, so the
+     convention holds" from a bare `grep -c` **without taking the denominator**
+     — the range holds 18 commits, so 10-of-18 demonstrates nothing. The
+     disposition was right; the evidence for it was not.
+   - The corrected statement **raises** the Task 4 session's defect count from
+     four to five, and it is the second time in this phase that taking a
+     denominator changed the meaning of a number (the first was
+     QA-BLK-FINAL-05's phase-start line count). **"A count is not a rate until
+     the population is stated"** joins the CF-023 drill set as case 5; it is
+     mechanically detectable and it is the cheapest of the five.
+
+**3. MAJOR-01 (`02_TRD.md` §3.1 lead sentence false for ten packages) — FIXED.**
+   Independently reproduced at wrap:
+   `journal.(WithLock|AppendEvent|ProjectEvent)(` resolves in ten non-test
+   packages — `bootstrap`, `claims`, `dev`, `issues`, `labels`, `links`,
+   `maintenance`, `requirements`, `runs`, `workflow`. §3.1 now states the actual
+   norm (data contract **and** write API, plus `EnsureProjectionFresh*` on read
+   paths), keeps the one-way `workflow → journal → db` chain as the constraint
+   the section exists to protect, and names `internal/workflow/list.go`'s read
+   path in the enumeration.
+   - **This is the same defect as QA-BLK-FINAL-02, aimed one package family
+     over**, and it was *introduced by this phase* (`65f6710`, the DEC-096
+     sync). `bb7d61a` corrected the workflow bullet and left the false
+     generalisation above it standing. **Naming a rule in the exception clause
+     does not repair a false general statement.**
+
+**4. MINOR-01 / MINOR-02 — accepted onto the register.**
+   `internal/format/markdown.go` `writeMarkdown` (68 lines, 66 at phase start,
+   +2 for one unavoidable type-switch dispatch arm) joins **CF-027** so the next
+   `internal/format` reopen takes it with CF-022's renderer backfill in one
+   pass. `ebbcd16` (no Conventional Commit type, no `Refs:`, wrong phase number
+   in the subject) joins **CF-023** as further evidence that a `commit-msg` hook
+   is the answer; history is not rewritten, on the same immutable-history
+   reasoning as `32614bb`.
+
+**5. A spec-sync obligation this phase assigned to Task 6 was never executed,
+   and neither the completion report nor the final review caught it.** The
+   Spec Sync Verdicts table below assigned DEC-101 items 1-3 and DEC-102 items
+   1 and 5 to Task 6 for landing in `09_AI_WORKFLOW.md` and `AGENTS.md`. Task
+   6's report lists only `06_DESIGN_PLAN_CLI.md` and `GLOSSARY.md` under
+   documentation updated, and records **"Deviations from spec: None"**. The
+   rules were absent from both files at wrap; they are landed now, together
+   with DEC-103 items 4-5 and DEC-097.
+   - **Root cause is planning, not the Developer.** Task 6's spec carried its
+     own documentation list; the sync table was a Tech Lead planning artifact
+     the Developer never loaded. An obligation recorded only in a document its
+     owner does not read is not assigned.
+   - **The phase's own headline rule caught it.** DEC-102 says an unverified
+     claim is not evidence; "verified without correction" in a completion report
+     is exactly such a claim, and the wrap-time per-doc audit is what the
+     workflow has instead of a mechanical check. **The audit is load-bearing,
+     not ceremonial** — it was the only control that fired here.
+   - **Prevention:** every spec-sync obligation lands as an explicit line in the
+     owning task's `## Documentation Updates`, not only in the sync table.
+     Recorded against **CF-023**.
+
+**6. Keep/retire verdicts for the phase's standing rules (DEC-104 item 5).**
+   Twelve decisions from eight escalations is too many to carry forward whole.
+   The test applied: *does the rule survive the mechanism that produced it, and
+   does it fit in one sentence?*
+
+| Rule | Verdict | Reasoning |
+|---|---|---|
+| DEC-094 — no-match inventories record `exit 1 (no output)` | **KEEP** (in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | Mechanism-independent, one sentence, already caught a real fabricated token. |
+| DEC-095 — Tech Lead seeds the triage log at phase start | **KEEP** (Scheduled Commitments) | Removes a precondition an agent cannot satisfy mid-triage. Still not mechanically enforced; CF-023. |
+| DEC-096 — `workflow → journal` edge | **SPLIT**: characterization **RETIRED**, test-packaging rule **KEPT** | The `Effect`-only description was a Task-2 snapshot stated as a permanent invariant (DEC-105 item 2). The `package db` / `package journal` in-package test-import prohibition is a real Go constraint and stands (`02_TRD.md` §3.1). |
+| DEC-097 — provider-shared prompt bodies must not assert one-provider capability limits | **KEEP** (now in `09_AI_WORKFLOW.md` §7) | Generic to any multi-provider prompt set; previously lived only in a phase decision, which is why it is being restated in a canonical spec now. |
+| DEC-098 — VAL-059 baseline pinned to `50533e2`, ambient `HEAD` prohibited | **RETIRE** | Procedure-specific. CF-025's committed goldens have no baseline selector to get wrong. Nothing generic survives that DEC-103 does not already say. |
+| DEC-099 — Task 4 recovery; baseline re-verified by reproduction | **SPLIT**: recovery half **RETIRED** (phase-local), reproduction principle **KEPT** | "Provenance is settled by reproducing from pinned inputs and comparing digests, not by chronology" is already in `09_AI_WORKFLOW.md` §8 and is mechanism-independent. |
+| DEC-100 — a task-authored harness that fails while being authored is a deviation, not a failed gate | **KEEP** (in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | The four conditions are strict enough to be safe and the rule prevents a whole class of false blockers. |
+| DEC-101 items 1-2 — cleanup is never evidence; scratch state is unique per attempt | **KEEP** (now in `09_AI_WORKFLOW.md` §6/§8, `AGENTS.md`) — **overturning DEC-104's proposed retirement** | DEC-104 proposed retiring these with the ceremony. Reconsidered: both are one sentence, both are mechanism-independent, and CF-025 does not eliminate scratch state — it makes the rule free, because `t.TempDir()` satisfies "unique per attempt" by construction. A rule that costs one sentence and is satisfied automatically by the preferred mechanism is not scar tissue; it is the reason the preferred mechanism is preferred. |
+| DEC-101 item 3 — task specs declare required environment capabilities | **KEEP** (now in `09_AI_WORKFLOW.md` §6) | Moves a sandbox shortfall from mid-sequence to step zero. |
+| DEC-101 item 4 — Task 4's human-attested gates with a named future control | **RETIRE** | Superseded by DEC-102 within 24 hours. It is the phase's clearest example of a rule that was wrong when written. |
+| DEC-102 items 1 and 5 — uncaptured gate results are `UNVERIFIED`; "pre-existing" needs an introducing commit | **KEEP** (now in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | The strongest keep in the phase. Paid for itself twice in five days in opposite directions — it exposed a false `PASS` (ESC-19-006) and it converted a blocking structure finding into inherited debt the phase improved (QA-BLK-FINAL-05). |
+| DEC-103 items 1-3 — the corrected VAL-059 manifest command form | **RETIRE** | Procedure-specific; retired with the ceremony. |
+| DEC-103 items 4-5 — a required command is executed by its author before publication; working-directory sensitivity is declared | **KEEP** (now in `09_AI_WORKFLOW.md` §8, `AGENTS.md`) | Would have prevented ESC-19-007 outright, and it is the cheapest rule in the phase to comply with. |
+| DEC-104 items 1-4 — Tech Lead has a shell; specify observables not mechanisms; second-escalation tripwire; evidence is an automated test unless justified | **KEEP** (item 4 now in `09_AI_WORKFLOW.md` §6) | Items 1-3 are role-boundary and triage rules that belong in the deep retrospective's scope before further codification; item 4 is the phase's single highest-leverage prevention and is in the spec now. |
+
+   Net across the eleven rule-bearing decisions (DEC-094..DEC-104), scored by
+   table row: **nine keeps, three retirements, two splits** — or **five retired
+   items** once the two split halves (DEC-096's characterization, DEC-099's
+   baseline procedure) are counted individually. DEC-105 and DEC-106 are
+   dispositions, not rules, and are not scored. Every keep is now a sentence in
+   a canonical spec rather than a phase decision an agent must remember to load.
+
+- **Consequence.** Phase 19 is **COMPLETE / WRAPPED**. Exit criteria met: six
+  tasks green, `VAL-001..070` all `PASS` with cited evidence, no unresolved
+  blocking finding, human checklist accepted 9/9. Carried forward with named
+  targets: **CF-023** (+ two new drill cases and the sync-obligation
+  prevention), **CF-026a**, **CF-026b**, **CF-027** (+ `writeMarkdown`), and the
+  unchanged **CF-008 / CF-017 / CF-018 / CF-020 / CF-022 / CF-024**. A **deep
+  retrospective is recommended** (see below); it is the correct forum for
+  DEC-104 items 1-3.
+
 ## Spec Sync Verdicts
 
-Recorded at wrap-up for the full canonical spec suite. Known obligations from
-the planning decisions above:
+Recorded at wrap-up for the full canonical spec suite. Every row is a positive
+review assertion: `verified-no-change` means the doc was read against what the
+phase shipped, not that nobody looked.
+
+| Doc | Verdict | Detail |
+|---|---|---|
+| `00_PROJECT_CHARTER.md` | **verified-no-change** | Configurable workflows are already stated as goal 3 and as a v0.2 scope line; Phase 19 delivered part of that goal without changing vision, scope, non-goals, or success criteria. |
+| `GLOSSARY.md` | **touched: Task 6 and DEC-106** | Task 6 added **Custom workflow**, **Workflow assignment**, and **Initial state**. Wrap added **Unverified gate result**, because DEC-102 introduced `UNVERIFIED` as project language and it collides with the v0.2b `attested` **Trust source**: `attested` is a receipt from a separately trusted runner under a versioned contract and *can* satisfy an obligation, while `UNVERIFIED` is an uncaptured human or agent claim and *cannot*. A human running a gate by hand produces the latter, not the former — which is precisely the confusion that made ESC-19-005's disposition wrong. Flagged and disambiguated rather than left to collide when v0.2b lands. |
+| `01_PRD.md` | **touched: see DEC-090** | PRD-WF-013 stays unamended; the scoping note records that an issue-applicable workflow must declare exactly one `cancelled` state, so no issue can become non-cancellable. PRD-WF-005a and PRD-WF-011/012 shipped as written. |
+| `02_TRD.md` | **touched: see DEC-089, DEC-096, DEC-076, DEC-105, DEC-106** | §3 `internal/workflow` row now owns authoring, assignment write paths, and resolution with its must-nots intact; §3.1 records the write-API edge (DEC-105) and the in-package test-import constraint (DEC-096); §3.1's lead sentence corrected for all ten write-API packages (**DEC-106**, MAJOR-01); §4.6 assignment precedence and the escalation seed (DEC-076). |
+| `03_TRD_SCHEMA.md` | **touched: see DEC-076, DEC-078, DEC-080, DEC-105** | §3 `workflow_assignments` DDL, `applies_to` vocabulary, `linked_to_decision` reservation; §2.1 resolution source; §14.11 workflow-assignment integrity audit and the corrected table-scope rule ("a projected table is audited once it has a structural invariant a corrupt projection could violate"), verified line-by-line against `internal/maintenance/workflow_assignments.go` in `final-review-2.md` E-08. |
+| `04_TRD_CONFIG.md` | **N/A** | Phase 19 added no `.fid/` file, directory, config key, or environment variable. The doc contains no workflow surface to drift. |
+| `05_DESIGN_PLAN.md` | **touched: see DEC-092** | §3.1 command tree carries `workflow define` / `assign` / `list` with their flag summaries (`05_DESIGN_PLAN.md:117-120`), matching the shipped commands. Applied at planning; re-verified at wrap. |
+| `06_DESIGN_PLAN_CLI.md` | **touched: see DEC-077, DEC-078, DEC-079, DEC-080, DEC-090** | Full flag specs, rule vocabulary, rejection messages, and output examples for the three commands; Task 6 added the DEC-079 custom-state transition limitation and its Phase 20 `fid policy set` resolution path. The documented `workflow list` payload (counts, not a graph) matches the shipped surface exactly — which is what makes CF-026a a *new* gap rather than unshipped scope. |
+| `07_DESIGN_PLAN_FLOWS.md` | **verified-no-change** | Phase 19 changed no end-to-end flow, whet mapping, or export contract. The only `workflow` reference is a frontmatter example value untouched by assignment resolution. |
+| `08_QUALITY_PLAN.md` | **verified-no-change** | COV-001 already enumerates `internal/workflow/`; STRUCT-001..004 targets, the gate list, and the maturity path are unchanged. The two STRUCT breaches this phase surfaced are **inherited** and carry as CF-027, which is the register mechanism the plan already prescribes — not a target change. |
+| `09_AI_WORKFLOW.md` | **touched: see DEC-094, DEC-100, DEC-101, DEC-102, DEC-103, DEC-097, DEC-104, DEC-106** | §8 gained the no-match token rule and the task-authored-harness deviation rule mid-phase, and at wrap the `UNVERIFIED` rule, the "pre-existing" provenance rule, "cleanup is never evidence", and author-executed/CWD-declared commands. §6 gained required environment capabilities, per-attempt scratch state, and "prefer an automated test over a manual procedure". §7 gained the provider-shared capability-limit rule. **Landed at wrap, not by Task 6 — see DEC-106 item 5.** |
+| `10_IMPLEMENTATION_ROADMAP.md` | **touched: see DEC-105, DEC-106** | Phase 19 closure disposition — exit criteria met, zero product defects, phase-level lessons, CF-026a/CF-026b/CF-027, deep-retrospective recommendation — plus the DEC-106 sign-off note recording the subsequent PASS verdict, the five retirements, and CF-027's unblocking. Phase 20's entry is unchanged and still accurate. |
+| `AGENTS.md` (root, non-spec) | **touched: see DEC-102, DEC-101, DEC-103** | Commands section now carries the `UNVERIFIED`, provenance, cleanup, scratch-state, and working-directory rules alongside the existing token and harness rules. |
+
+### Superseded planning expectations
+
+| Doc | Planned verdict | Actual | Why |
+|---|---|---|---|
+| `00_PROJECT_CHARTER.md` | TBD | verified-no-change | No scope movement. |
+| `04_TRD_CONFIG.md` | TBD | N/A | No config surface touched. |
+| `07_DESIGN_PLAN_FLOWS.md` | TBD | verified-no-change | No flow changed. |
+| `08_QUALITY_PLAN.md` | TBD | verified-no-change | Breaches are inherited; register handles them. |
+| `02_TRD.md` §3.1 | "`Effect`-only edge (DEC-096)" | corrected twice | DEC-105 fixed the workflow bullet; **DEC-106** fixed the false generalisation above it. |
+| `09_AI_WORKFLOW.md` (DEC-101/102) | "Task 6" | landed at wrap | Task 6 never received the obligation — DEC-106 item 5. |
+
+<!-- Retained for history: the planning-time expectation table. -->
 
 | Doc | Expected verdict | Owning task |
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | TBD at wrap | — |
 | `GLOSSARY.md` | touched (workflow assignment, custom workflow, initial state) | Task 6 |
-| `01_PRD.md` | touched — PRD-WF-013 scoping note (DEC-077) | Task 3 |
-| `02_TRD.md` | touched — §4.6 assignment precedence + escalation seed (DEC-076) | Task 1 |
-| `03_TRD_SCHEMA.md` | touched — §3 `workflow_assignments`, `applies_to` vocabulary, `linked_to_decision` (DEC-076/078/080) | Tasks 1, 4 |
+| `01_PRD.md` | touched — PRD-WF-013 scoping note (DEC-077, **as amended by DEC-090**) | Task 3 |
+| `02_TRD.md` | touched — §3 `internal/workflow` boundary (DEC-089, **applied at planning**); §3 `internal/workflow` → `internal/journal` `Effect`-only edge + the `package db` test-import constraint (**DEC-096**); §4.6 assignment precedence + escalation seed (DEC-076) | Planning (§3), Task 1 (§4.6), Task 2 (DEC-096 edge); Task 6 verifies |
+| `03_TRD_SCHEMA.md` | touched — §3 `workflow_assignments`, `applies_to` vocabulary, `linked_to_decision` (DEC-076/078/080); §2.1 resolution source | Tasks 1, 4 |
 | `04_TRD_CONFIG.md` | TBD at wrap | — |
-| `05_DESIGN_PLAN.md` | TBD at wrap | — |
-| `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080) | Tasks 3, 4, 5, 6 |
+| `05_DESIGN_PLAN.md` | touched — §3.1 `workflow` command family (DEC-092, **applied at planning**) | Planning; Tasks 3, 4, 5 verify their subcommand; Task 6 records the verdict |
+| `06_DESIGN_PLAN_CLI.md` | touched — define/assign/list flags, rules, errors, limits (DEC-077/078/079/080/090) | Tasks 3, 4, 5, 6 |
 | `07_DESIGN_PLAN_FLOWS.md` | TBD at wrap | — |
 | `08_QUALITY_PLAN.md` | TBD at wrap | — |
-| `09_AI_WORKFLOW.md` | TBD at wrap | — |
+| `09_AI_WORKFLOW.md` | touched — §11 no-match search-command token rule (DEC-094, **applied mid-phase**); §11 task-authored harness deviation rule (**DEC-100**, applied mid-phase); §6 task-spec scratch-state and environment-capability rules (**DEC-101** items 1-3); §11 out-of-scope claims cite an introducing commit + uncaptured gate results are `UNVERIFIED` (**DEC-102** items 1, 5); `AGENTS.md` Commands carries the token rules | Mid-phase (DEC-094, DEC-100); Task 6 (DEC-101, DEC-102) |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched — Phase 19 closure note | Wrap |
+
+## Triage-Log Audit (wrap-up)
+
+Eight entries, `TRG-19-001..008`, all **BLOCK**, all with a real unique
+phase-scoped ID and a named `ESC-19-NNN`. No `RESUME` verdicts were issued this
+phase, so there are none to confirm in hindsight. Autonomous TL-Lite resume is
+permanently enabled (DEC-002); no warm-up tally is maintained.
+
+| TRG | Verdict | Correct to stop? | Reasoning correct? | Notes |
+|---|---|---|---|---|
+| 001 | BLOCK | Yes | Yes | Fabricated `exit 0` token on a no-match `rg`. Record written by Tech Lead backfill — TL-Lite returned a verdict with no record. |
+| 002 | BLOCK | Yes | Yes | Test-only import cycle; correctly identified as a dependency-boundary question. Record backfilled — provider-prompt defect (DEC-097). |
+| 003 | BLOCK | Yes | Yes | Task 4 spec had drifted from QA-plan §6. QA was right and my spec was wrong. |
+| 004 | BLOCK | Yes | **No** | Over-strict: a path bug in a Task-4-authored harness that wrote nothing. Produced DEC-100. |
+| 005 | BLOCK | Yes | **No** | A blocked *cleanup* command gated a parity sequence. My spec fenced housekeeping inside the evidence set. Produced DEC-101. |
+| 006 | BLOCK | Yes | **No** | Adopted the Developer's unverified "pre-existing" framing; the real finding was that Task 4's lint `PASS` was false. Produced DEC-102. |
+| 007 | BLOCK | Yes | Yes | Both defects real, both in evidence artifacts, cleanly separated from the product. Summary row and next-free-ID header backfilled (third record-keeping miss). |
+| 008 | BLOCK | Yes | Yes | Refused to substitute QA judgment for a Human-only assertion. Exactly right. |
+
+**Should any TRG have escalated that did not?** No — all eight escalated.
+**Should any have resolved locally instead?** Arguably **004**, on the reasoning
+DEC-100 later recorded; but TL-Lite had no rule permitting it at the time, and
+inventing one mid-triage is precisely what TL-Lite must not do. Escalating was
+correct under the rules that existed.
+
+**The systemic finding is not the verdicts — it is the reasoning.** Three of
+eight (004/005/006) were correct to stop and wrong about why, and all three
+trace to defects in **my own artifacts**: an over-fenced evidence set, a fixed
+scratch path, and a task spec that never had its commands executed. A triage
+seam that reliably stops but unreliably explains sends the Tech Lead the wrong
+problem — TRG-19-006 arrived as "authorize a repair of old baseline debt" when
+the actual finding was "a recorded gate `PASS` is false."
+
+**Record-keeping remains the weakest link.** Three of eight entries (001, 002,
+007) required a Tech Lead backfill. 002 was root-caused to a provider-prompt
+defect and fixed; 001 and 007 were not. This is the same defect class Phase 18
+raised as CF-023 and it has now persisted across two phases without a
+mechanical check.
 
 ## Workflow Notes
 
-Appended at wrap-up.
+### What worked well
+
+- **Zero product defects across eight escalations and six tasks.** Every stop
+  was in verification apparatus or evidence records. The product code that
+  shipped — two migrations, three CLI commands, a new projected table, two new
+  journal event types, and a change to `internal/issues.Create` — drew no
+  blocking finding at any review. Two independent QA reviews plus two final
+  reviews re-ran gates and found the implementation green each time.
+- **The stop discipline held under pressure and was never tuned down.** Five
+  consecutive stops in one observable's scaffolding is exactly the situation
+  where a team starts waiving gates. Nothing was waived, no assertion was
+  weakened, and VAL-059 ended `PASS` on executed evidence.
+- **DEC-102 is the phase's best artifact.** It was written to catch a false
+  `PASS` and then, five days later, applied in the opposite direction to turn a
+  blocking structure-budget finding into inherited debt the phase had actually
+  improved. A rule that changes outcomes in both directions is a real rule.
+- **QA Lead's second disposition audited my dispositions and found two weak
+  evidence claims while reaching the same outcomes.** That is the three-tier QA
+  model (ADR-0003) working as designed, and it caught MAJOR-01 — a false
+  generalisation *this phase introduced* — that both my own sync and the first
+  final review had walked past.
+- **CF-025 was the right call and Task 6 executed it first, as mandated.**
+  VAL-059 is now a standing regression test instead of a five-step manual
+  ceremony, and it runs on every integration test invocation forever.
+
+### What was inefficient
+
+- **The evidence apparatus was disproportionate to the observable.** VAL-059
+  asserts "v0.1 CLI output is byte-identical." That is a golden-file test —
+  roughly 60 lines of Go against a committed fixture, which is what it finally
+  became. Instead it was specified as a detached worktree at a pinned commit, a
+  capture script, a SHA-256 manifest, a normalization file, and a five-step
+  procedure. Four escalations landed in that scaffolding and a fifth in its
+  fallout. **The counterfactual is exact: CF-025 was available at planning time
+  and would have avoided all five.**
+- **Four of the five ceremony stops were repairs to the apparatus rather than
+  reconsiderations of it.** DEC-098 pinned the baseline; DEC-099 preserved the
+  work; DEC-101 fixed cleanup; DEC-103 fixed the manifest command. Each was
+  individually correct and each left the machine standing so the next brick
+  could fall. DEC-104's **second-escalation tripwire** exists because the right
+  question — *should this mechanism exist at all?* — was not asked until the
+  fourth.
+- **I published required commands I had never run.** The VAL-059 `sha256sum -c`
+  form could not have worked on the day I wrote it, and the obvious repair was
+  also invalid. This cost a full escalation and a Developer closure session.
+  DEC-103 and the Tech Lead shell (DEC-104) both exist to close this, and
+  DEC-106 item 5 shows the same failure mode in a different guise: an
+  obligation recorded only in a table its owner never reads.
+- **One session that bypassed the Developer loop produced five defects** — a
+  false gate attestation, a lint regression, a missing `Refs:` footer, a report
+  that never passed report-lint, and a second commit with the same footer gap.
+  Every other Phase 19 task commit produced none. The irregular path was taken
+  to unblock a sandbox problem and cost far more than the block it relieved.
+- **Twelve decisions for one phase is too many.** Five are retired at this wrap
+  and one was superseded within 24 hours of being written. Writing a rule is
+  cheap and feels like progress; the wrap-time keep/retire audit is the only
+  thing preventing accumulation, and it should not be the *first* time the
+  question is asked.
+
+### Were the tasks the right size?
+
+Mostly yes for Tasks 1-3 and 5. Two problems:
+
+- **Task 4 was overloaded** — a new CLI command, a change to the product's most
+  exercised write path, *and* the entire v0.1 parity ceremony. Four of the
+  phase's eight escalations are Task 4's, and the parity work is what generated
+  them. The parity obligation should have been its own task, or, correctly, a
+  test written in Task 4's normal red/green loop.
+- **Task 6 was flagged at planning as the largest task and grew further** —
+  CF-021, CF-024's measurement, CF-025, spec sync, the exit scenario, and two
+  do-now review findings. It shipped clean, which is a credit to the ordering
+  (CF-025 first and mandatory), but it also silently dropped the
+  `09_AI_WORKFLOW.md` / `AGENTS.md` sync obligation. **A task that carries "and
+  also sync the specs" as its last bullet will drop it.**
+
+### Did the QA cadence feel right?
+
+Yes, and it was decisive. Review 1 after Tasks 1-3 and Review 2 after Tasks 4-5
+both returned BLOCK on real findings, and Review 2's independent re-run is what
+disproved Task 4's attested lint `PASS` — a defect that had already survived a
+triage, a run-resume reconciliation, and a Tech Lead escalation. **Independent
+re-execution, not review-by-reading, is what caught it.** The final review then
+found five more, and the *subsequent* final review found a sixth (MAJOR-01) in
+the wrap-up sync itself. Every tier of the three-tier model paid for itself.
+
+### Were token-efficiency opportunities missed?
+
+Yes, and the same one repeatedly. The phase spent enormous context on
+verification *procedure*: four escalation cycles, four decisions, a briefing
+document, and roughly a dozen sessions, all on scaffolding for a single
+byte-comparison assertion. Expressing the observable as a test at planning time
+would have cost one task-spec bullet. Secondarily, `phase_brief.md` sat at
+~235 lines against a 150-line target for most of the phase because each
+escalation appended a paragraph; the brief became a narrative of stops rather
+than an execution brief.
+
+### Deep retrospective recommendation
+
+**Recommended — and this is the strongest case the project has produced.**
+
+Phase 19 delivered its scope with **zero product defects** and consumed eight
+escalations, twelve decisions, and roughly a dozen extra sessions doing it.
+Every stop was in the verification apparatus. That is not a quality problem; it
+is a **calibration** problem, and it is invisible to any per-incident review
+because every individual verdict in the chain was correct.
+
+Brief for the retrospective:
+
+1. **Proportionality.** For each `VAL-NNN` in Phases 17-19, compare the cost of
+   the evidence mechanism to the observable it protects. Where a manual
+   procedure was specified, ask what the automated-test form would have cost.
+   DEC-104 item 4 asserts "evidence is an automated test unless the contract
+   records why not" — measure how many current assertions would survive it.
+2. **Which rules would have prevented anything?** Replay all twelve Phase 19
+   decisions against the eight escalations and count preventions, not
+   plausibility. My read: DEC-103 (author-executed commands) prevents
+   ESC-19-007 outright; DEC-104 item 4 prevents ESC-19-003/004/005/007 by
+   deleting the mechanism; DEC-102 prevents ESC-19-006. The rest are
+   post-hoc.
+3. **Scar tissue.** Five of twelve are retired at this wrap and one was
+   superseded within a day. Is there a standing rule budget, and what is the
+   removal mechanism when there is no wrap to force the question?
+4. **The triage seam.** Three of eight triages stopped correctly and reasoned
+   wrongly, all three about *my* artifacts. Is the fix better TL-Lite input
+   (task specs whose commands have been executed), a provenance checklist at
+   the seam, or accepting that triage returns "stop" and the Tech Lead owns
+   "why"?
+5. **The irregular-session cost.** One human-executed session bypassing the
+   Developer loop produced five of the phase's defects. What is the sanctioned
+   path when the sandbox blocks a Developer, and why was it not used?
+6. **Record-keeping.** Three of eight triage entries needed Tech Lead backfill,
+   two phases running. CF-023 has accumulated five drill cases and a mechanical
+   `Refs:` check without landing any of them. Decide whether CF-023 is scheduled
+   work or a wish list.
+
+Minimum set to survive: what remains after applying "one sentence,
+mechanism-independent, prevents a named incident." The keep/retire table in
+DEC-106 item 6 is my proposal; the retrospective should challenge it, starting
+with whether DEC-104 items 1-3 belong in the workflow spec at all.

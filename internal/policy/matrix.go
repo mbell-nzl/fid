@@ -70,6 +70,8 @@ var defaultMatrixRows = []MatrixRow{
 	{Action: "label.add", Developer: true, TL: true, WorkflowRunner: true, Human: true},
 	{Action: "issue.label.add", Developer: true, TL: true, WorkflowRunner: true, Human: true},
 	{Action: "issue.label.remove", Developer: true, TL: true, WorkflowRunner: true, Human: true},
+	{Action: "workflow.define", TL: true, Human: true},
+	{Action: "workflow.assign", TL: true, Human: true},
 }
 
 var matrixByAction = buildMatrixByAction(defaultMatrixRows)

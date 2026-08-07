@@ -2140,13 +2140,49 @@ fid workflow define --name <slug> --applies-to <kind>
 
 | Flag | Type | Required | Description |
 |---|---|---|---|
-| `--name` | string | yes | Stable workflow slug, e.g. `dev-flow-strict` |
-| `--applies-to` | string | yes | `epic`, `task`, `subtask`, `qa_review`, or `any` |
+| `--name` | string | yes | Stable workflow slug used for both `workflows.id` and `workflows.name`, e.g. `dev-flow-strict` |
+| `--applies-to` | string | yes | Exactly `epic`, `task`, `subtask`, `qa_review`, `escalation`, or `any`; `any` projects as SQL `NULL` |
 | `--states` | csv | yes | Ordered state names |
 | `--categories` | csv | yes | One category per state: `unstarted`, `started`, `completed`, `cancelled` |
-| `--transitions` | csv | yes | Edges as `from->to`; Unicode arrows are accepted but normalised |
-| `--require` | string[] | no | Transition rule binding, e.g. `in_progress->dev_complete:all_acs_verified{"roles":["developer"]}` |
+| `--transitions` | csv | yes | Edges as `from->to`; `->`, `-->`, `→`, and `⟶` are accepted equivalently and surrounding whitespace is trimmed |
+| `--require` | string[] | no | Transition rule binding `<from>-><to>:<rule>[<json>]`, e.g. `in_progress->dev_complete:all_acs_verified{"roles":["developer"]}`; only the first colon after the edge separates the binding, so JSON colons are preserved |
 | `--by` | string | yes | Acting role; default profile permits `tl` and `human` |
+
+Only these implemented rule names are accepted: `all_acs_verified`,
+`has_completion_report`, `concerns_addressed`, and
+`all_child_tasks_done_or_cancelled`. The following version-scoped rejections
+occur before any journal append:
+
+```text
+error: workflow rule "required_gates_current" is reserved for v0.2b
+error: workflow rule "has_completion" is reserved for v0.2c
+error: workflow rule "linked_to_decision" is reserved for v0.2d
+```
+
+An unknown rule is rejected naming that rule. A requirement edge must be a
+declared or materialized transition; absent JSON projects `params_json` as
+`NULL`.
+
+For a workflow declaring exactly one `cancelled`-category state, define
+materializes an edge from every non-cancelled state to that state, without
+duplicating an explicitly declared edge. `epic`, `task`, `subtask`, and `any`
+workflows must declare exactly one cancelled state, so every issue remains
+cancellable (PRD-WF-013); zero cancelled states are allowed only for
+`qa_review` and `escalation`. More than one cancelled state is rejected.
+
+When an issue is assigned a custom workflow in the subsequent assignment
+slice, its initial state is the first declared `unstarted` state, or the first
+declared state when none is `unstarted`.
+
+**Custom-state transition boundary (DEC-079):** Phase 19 permits authoring,
+assignment, listing, and issue creation for custom workflows, but the current
+permissions matrix contains transition actions only for the v0.1 state names.
+Consequently a transition into a custom-named state fails with
+`authorize action "issue.transition.<state>": no permissions matrix entry` and
+does not append a journal event. This is not an implicit permission grant;
+custom workflows that reuse v0.1 state names remain transitionable. Phase 20's
+`fid policy set` delivers the explicit permission configuration required for
+custom state names.
 
 **Output (stderr confirmation):**
 ```text
@@ -2156,9 +2192,11 @@ defined workflow dev-flow-strict for task
   requirements: 2
 ```
 
-**Errors:** duplicate workflow slug, mismatched states/categories count,
-transition referencing an unknown state, unknown rule name, or denied
-`workflow.define` permission.
+**Errors:** invalid or duplicate workflow slug/state/transition, mismatched
+states/categories count, a transition referencing an unknown state, invalid
+applicability, an invalid requirement or rule, a cancelled-state policy
+violation, or denied `workflow.define` permission. Every rejection occurs
+before journal append.
 
 ### `fid workflow assign` (v0.2+)
 
@@ -2191,6 +2229,12 @@ fid workflow list [--kind <kind>] [--active] [--format json|toon|markdown|yaml]
 
 Read-only. Lists defined workflows and current assignments.
 
+`--kind <kind>` includes workflows whose `applies_to` is `<kind>` or `null`
+(`any`) and excludes workflows for other kinds. `--active` restricts results to
+active workflows; the two filters compose. Results are ordered by workflow ID.
+Within each `assigned_to` array, kind scopes are ordered by kind and the
+project scope is last. An empty result is `[]` in every format with exit 0.
+
 **JSON output:**
 ```json
 [
@@ -2205,6 +2249,13 @@ Read-only. Lists defined workflows and current assignments.
   }
 ]
 ```
+
+The example `states` and `transitions` counts are illustrative; each command
+returns the actual projected row counts, including materialized cancel edges.
+`applies_to` is `null` for `any`. Kind assignments render as
+`{"scope":"kind","kind":"<kind>"}`; project assignments render as
+`{"scope":"project"}` with `kind` omitted; and unassigned workflows render
+`"assigned_to": []`.
 
 ### `fid role create` (v0.2+)
 

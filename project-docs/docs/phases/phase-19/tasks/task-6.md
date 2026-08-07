@@ -14,8 +14,14 @@ and finish the spec and glossary sync.
   deterministically and non-destructively; journal bytes never change.
 - VAL-022: `fid maintenance check` is clean on a healthy workspace and
   reports a deterministic finding for an incompatible seeded assignment.
-- VAL-023: the DEC-066 gate-obligation seam is still behavior-free after
-  workflow authoring ships.
+- VAL-023: `fid workflow define` still rejects `required_gates_current` and
+  `has_completion` at the CLI with version-scoped messages.
+- VAL-068: no seeded `workflow_transition_requires` row references either
+  reserved name.
+- VAL-069: the recorded `rg` inventory finds no production evaluator or query
+  for either reserved name.
+- VAL-070: the recorded `rg` inventory finds no production read of the frozen
+  v0.1 `definitions` map (`FrozenDefinitions(`).
 - VAL-024: transitioning into a custom-named state is rejected with the
   documented error; a v0.1-named state under a custom workflow succeeds.
 - VAL-025: the v0.2a slice-2 exit scenario runs end to end.
@@ -45,7 +51,9 @@ Assertions live in
   boundary. Document normalization for any intentionally volatile field.
 - **The exit scenario is scripted, not narrated** (VAL-025). Against a real
   `.fid/` workspace using the built binary: define `task-strict`
-  (`--applies-to task`, v0.1 state names, plus a `concerns_addressed`
+  (`--applies-to task`, v0.1 state names **including exactly one
+  `cancelled`-category state** as DEC-090 requires for issue-applicable
+  workflows, plus a `concerns_addressed`
   requirement on `in_progress->dev_complete`), assign it to kind `task`, list
   it in every format, create a task that picks it up instead of
   `task-default`, raise a concern, observe the transition blocked with a
@@ -55,10 +63,28 @@ Assertions live in
 - **DEC-079 boundary is characterized, not worked around** (VAL-024). Prove
   both states with the built CLI. Do not add matrix rows for custom state
   names; that grant belongs to Phase 20's `fid policy set`.
-- **Seam evidence is reproducible** (VAL-023). Record the exact `rg` commands
-  and their output for the production-source inventory, alongside the CLI
-  rejection evidence for `required_gates_current` / `has_completion` and the
-  zero-row seeded query.
+- **Seam evidence is reproducible** (VAL-023, VAL-068, VAL-069, VAL-070).
+  Record the exact commands and their output:
+
+  ```text
+  rg -n --glob '*.go' --glob '!**/*_test.go' \
+    '\brequired_gates_current\b|\bhas_completion\b' \
+    cmd/fid internal/issues internal/dev internal/journal internal/db \
+    internal/maintenance internal/policy
+  rg -n --glob '*.go' --glob '!**/*_test.go' \
+    --glob '!internal/workflow/definitions_fixture.go' \
+    'FrozenDefinitions\(' cmd internal
+  ```
+
+  Both are expected to produce **no output and exit 1** — `rg` exits non-zero
+  when it finds nothing, and that no-match is exactly what VAL-069/VAL-070
+  assert. Record each as `PASS (no match) - exit 1 (no output)`; recording
+  `exit 0 (no output)` for a search command is a DEC-086 evidence violation and
+  a hard stop (DEC-094, TRG-19-001). Reserved declarations and authoring
+  rejections inside `internal/workflow` are expected and are classified
+  separately in the report. Record this alongside the CLI rejection evidence
+  for `required_gates_current` / `has_completion` and the zero-row seeded
+  query.
 - **CF-024 measurement obligation.** Run the benchmark gate and record the
   100k-event rebuild against the `<30 s` TRD-PERF-003 control and the
   10k-issue read against the `<500 ms` TRD-PERF-001 control, with the margin
@@ -69,7 +95,51 @@ Assertions live in
   touches `internal/maintenance` and runs the full Go gate.
 - **Spec and glossary sync completes here.** `06_DESIGN_PLAN_CLI.md` records
   the DEC-079 limitation and points at `fid policy set` (Phase 20).
-  `GLOSSARY.md` gains the Phase 19 terms.
+  `GLOSSARY.md` gains the Phase 19 terms. This task also **verifies the two
+  planning-time spec edits** against what shipped and records the verdict in
+  the completion report: `02_TRD.md` §3 (`internal/workflow` responsibilities
+  and must-nots, DEC-089) and `05_DESIGN_PLAN.md` §3.1 (the `workflow`
+  command family, DEC-092). Correct either here if it diverges.
+
+- **CF-025 is the FIRST item in this task and is mandatory (DEC-103).** Do it
+  before the other work, not last. Phase 19 has now spent **five stops** on
+  VAL-059's shell ceremony (ESC-19-003/004/005/007) and **not one** on the
+  product. When this test lands, `capture.sh` / `SHA256SUMS` /
+  `normalization.json` are retired as required procedure and **no further manual
+  VAL-059 run is authorized in this phase or after it.** If Task 6 runs long,
+  this survives and something else gives.
+
+- **CF-025 — make VAL-059 a standing test, not a ceremony (DEC-101).** Add
+  `cmd/fid/v01_parity_test.go` (`//go:build integration`, `package main`) reusing
+  the `buildClosureFIDBinary` / `closureRunFID` helpers in
+  `e2e_v01_closure_helpers_test.go`: build the current binary, copy
+  `cmd/fid/testdata/v01_parity/fixture/` into `t.TempDir()`, run the six
+  committed command shapes, and compare each stdout **byte-for-byte** against
+  the six committed `.json` goldens, failing with the filename and a diff.
+  - The goldens, `fixture/`, `capture.sh`, `SHA256SUMS`, and
+    `normalization.json` **stay committed as provenance** — do not delete them.
+    What is retired is their status as *required manual procedure*.
+  - **Do not regenerate the goldens.** Their provenance is already established
+    by reproduction from the pinned Task 3 implementation commit
+    `50533e2b813bf073cd75f75eb70dd09cd15e9040` (DEC-099/DEC-101). If the new
+    test fails, that is a **real parity regression** — stop and escalate; never
+    re-record the goldens to make it pass.
+  - No detached worktree, no pinned-commit build, no `mktemp` scratch state, and
+    no cleanup command belongs in this test.
+
+- **Review 2's two improvement findings are do-now here, not deferred
+  (DEC-103 item 6).** Both are the same defect as VAL-059 in miniature — a
+  manual trace standing in for a permanent test — and this phase has paid enough
+  for that pattern:
+  - `cmd/fid/workflow_assign_test.go:61` asserts only that stderr is non-empty,
+    where **VAL-016 requires six pairwise-distinct value-naming errors**. Assert
+    the six expected messages explicitly and assert they are distinct from one
+    another. Review 2 confirmed current behaviour by direct CLI trace, so this is
+    a test-strength gap, not a product defect.
+  - `internal/workflow/assign_test.go:13` proves effect *shape* but never
+    deletes the projection, rebuilds, and re-asserts the replayed row per scope.
+    Add that assertion for both kind and project scope. Review 2 performed it
+    manually via `fid rebuild --by tl`.
 
 ## Scope
 
@@ -81,10 +151,15 @@ Assertions live in
   `internal/maintenance/workflow_assignments_test.go` (new)
 - `internal/maintenance/vacuum.go` — CF-021 doc comments
 - `cmd/fid/e2e_v02a_workflow_authoring_test.go` (new) — VAL-024, VAL-025
+- `cmd/fid/v01_parity_test.go` (new, **CF-025 / DEC-101**) — converts VAL-059
+  from a manual ceremony into a standing golden-file test; see Binding
+  Constraints
 - `internal/journal/` rebuild/replay test files — VAL-021 whole-projection
   parity for authored workflows and assignments
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — DEC-079 limitation note
 - `project-docs/specs/GLOSSARY.md` — Phase 19 terms (see below)
+- `project-docs/specs/02_TRD.md` §3 / `project-docs/specs/05_DESIGN_PLAN.md`
+  §3.1 — verification of the planning-time DEC-089 / DEC-092 edits
 
 ### Files To Read For Context
 
@@ -116,8 +191,14 @@ Assertions live in
   `foreign_key_check` clean; every journal file byte-identical at every
   boundary (VAL-021)
 - [ ] `fid workflow define` rejects `required_gates_current` and
-  `has_completion`; zero seeded rows reference either; the recorded `rg`
-  inventory shows no production evaluator or query (VAL-023)
+  `has_completion` at the CLI with version-scoped messages and no append
+  (VAL-023)
+- [ ] Zero seeded `workflow_transition_requires` rows reference either
+  reserved name (VAL-068)
+- [ ] The recorded `rg` inventory shows no production evaluator or query for
+  either reserved name (VAL-069)
+- [ ] The recorded `rg` inventory shows no production read of
+  `FrozenDefinitions(` outside the fixture file itself (VAL-070)
 - [ ] Transitioning into a custom-named state fails with the documented
   no-matrix-entry error and appends nothing; a v0.1-named state under a
   custom workflow succeeds (VAL-024)
@@ -128,6 +209,8 @@ Assertions live in
 - [ ] `maintenance.VacuumResult` and `maintenance.Vacuum` carry Go doc
   comments (CF-021)
 - [ ] `06_DESIGN_PLAN_CLI.md` DEC-079 note and `GLOSSARY.md` terms added
+- [ ] `02_TRD.md` §3 (DEC-089) and `05_DESIGN_PLAN.md` §3.1 (DEC-092) verified
+  against the shipped surface, with the verdict recorded
 
 ## First Failing Test
 
@@ -140,6 +223,9 @@ fails until the check exists.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — the DEC-079 limitation:
   transitions into custom state names require a permissions entry, delivered
   by `fid policy set` in Phase 20.
+- `project-docs/specs/02_TRD.md` §3 and `project-docs/specs/05_DESIGN_PLAN.md`
+  §3.1 — verify the planning-time DEC-089 / DEC-092 edits against the shipped
+  package responsibilities and command surface.
 - `project-docs/specs/GLOSSARY.md` — add **Custom workflow** (a user-authored
   workflow created by `fid workflow define`, stored as journal-derived rows in
   the projected workflow tables, as opposed to the seeded defaults),

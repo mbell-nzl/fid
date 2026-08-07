@@ -114,6 +114,10 @@ fid
 │   └── list                      # --stale --by <role>
 ├── policy
 │   └── show                      # display active permissions matrix
+├── workflow                      # v0.2a: configurable workflow engine
+│   ├── define                    # --name --applies-to --states --categories --transitions [--require]... --by
+│   ├── assign                    # --name [--kind <kind>] [--project] --by
+│   └── list                      # --kind, --active, --format
 ├── run
 │   └── record                    # agent_run telemetry
 ├── journal

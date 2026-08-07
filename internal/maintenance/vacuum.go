@@ -11,11 +11,13 @@ import (
 	"github.com/mbell-nzl/fid/internal/policy"
 )
 
+// VacuumResult reports the derived SQLite projection size before and after compaction.
 type VacuumResult struct {
 	BeforeBytes int64
 	AfterBytes  int64
 }
 
+// Vacuum compacts the derived SQLite projection without changing journal history.
 func Vacuum(workspaceRoot, migrationsDir, byRole string) (VacuumResult, error) {
 	if err := policy.Authorize(workspaceRoot, byRole, "maintenance.vacuum"); err != nil {
 		return VacuumResult{}, err

@@ -13,6 +13,7 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 func Create(options CreateOptions) (CreateResult, error) {
@@ -87,7 +88,10 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 
-		workflowID := defaultWorkflowID(kind)
+		resolvedWorkflow, err := workflow.ResolveIssueWorkflow(conn, kind)
+		if err != nil {
+			return err
+		}
 		defaultOwnerRole := defaultIssueOwnerRole(kind)
 		if ownerRole != nil {
 			defaultOwnerRole = *ownerRole
@@ -96,8 +100,8 @@ func Create(options CreateOptions) (CreateResult, error) {
 		issueValues := map[string]any{
 			"kind":        kind,
 			"title":       options.Title,
-			"workflow_id": workflowID,
-			"status":      "todo",
+			"workflow_id": resolvedWorkflow.ID,
+			"status":      resolvedWorkflow.InitialState,
 			"owner_role":  defaultOwnerRole,
 			"created_at":  timestamp,
 			"updated_at":  timestamp,
@@ -265,17 +269,6 @@ func supportedIssueKind(kind string) bool {
 		return true
 	default:
 		return false
-	}
-}
-
-func defaultWorkflowID(kind string) string {
-	switch kind {
-	case "epic":
-		return "epic-default"
-	case "subtask":
-		return "subtask-default"
-	default:
-		return "task-default"
 	}
 }
 

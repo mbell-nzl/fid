@@ -128,6 +128,27 @@ Use when: describing the parity reference in tests.
 Avoid: describing it as the source of truth, current behavior, or a fallback —
 it is none of those; reading it from production code is a defect.
 
+**Custom workflow**:
+A user-authored workflow created by `fid workflow define`, stored as
+journal-derived rows in the projected workflow tables rather than as a seeded
+default.
+Use when: distinguishing an authored workflow from a system reference default.
+Avoid: calling it a second source of truth; its history remains journal-canonical.
+
+**Workflow assignment**:
+A `workflow_assignments` row binding a workflow to an issue kind or to the
+project. A kind-scope assignment takes precedence over a project-scope
+assignment when an issue is created.
+Use when: describing how a workflow is selected for a new issue.
+Avoid: treating an assignment as part of the workflow definition itself.
+
+**Initial state**:
+The state an issue receives at creation: the first declared `unstarted` state
+in its resolved workflow, or the first declared state when none is
+`unstarted`.
+Use when: describing creation-time workflow resolution.
+Avoid: assuming every workflow starts in `todo`.
+
 ## Execution and Audit
 
 **Gate**:
@@ -186,6 +207,18 @@ never silently downgrade from trusted to reported.
 Use when: classifying how gate/receipt evidence came to exist.
 Avoid: inferring trust from age or formatting; treating an import as
 trusted because it parses.
+
+**Unverified gate result**:
+The status of a required-command result that was **not captured in the session
+that records it** — attested from memory, transcribed from another agent's
+report, or promised against a named future control. Recorded as `UNVERIFIED`,
+which is not a passing state and never substitutes for `PASS` (DEC-102).
+Use when: a report cannot cite a verbatim terminal token it produced itself.
+Avoid: confusing with the `attested` [[Trust source]]. `attested` describes a
+*receipt produced by a separately trusted runner under a versioned contract*
+and can satisfy an obligation; `UNVERIFIED` describes a *human or agent claim
+with no captured output* and cannot. A human running a gate by hand and
+reporting the outcome produces an `UNVERIFIED` result, not an `attested` one.
 
 **Evidence obligation**:
 A declared requirement that a workflow transition, AC verification, QA

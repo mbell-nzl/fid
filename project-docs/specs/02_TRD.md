@@ -46,7 +46,8 @@ cmd/fid/              CLI command tree (Cobra)
     │
     ├──► internal/issues/     Issue, AC, completion, concern logic
     ├──► internal/claims/     Claim acquire/release/steal
-    ├──► internal/workflow/   Read-only registry loaded from the workflow tables
+    ├──► internal/workflow/   Registry loaded from the workflow tables; from v0.2a
+    │                         also workflow authoring, assignment, and resolution
     ├──► internal/maintenance/ Read-only structural audit over projection + journal
     ├──► internal/policy/     Role × action permissions matrix
     ├──► internal/dev/        Developer composites over claim/transition/run/gate writes
@@ -92,7 +93,7 @@ Rules:
 | `internal/journal/` | Infrastructure | JSONL append, flush, replay, event schema versioning, upgrader chain | Command logic, business validation (receives pre-validated events) |
 | `internal/issues/` | Domain | Issue CRUD, AC management, completion recording, concern lifecycle | Output formatting, CLI flag parsing |
 | `internal/claims/` | Domain | Claim acquire, release, force-steal, TTL enforcement | Workflow transition logic |
-| `internal/workflow/` | Domain | Read-only registry loading from the workflow tables (§4.6), transition validation, rule evaluation | Issue creation, AC verification, workflow authoring/mutation |
+| `internal/workflow/` | Domain | Registry loading from the workflow tables (§4.6), transition validation, rule evaluation; from v0.2a also workflow authoring (validation, cancel-edge materialization, deterministic effect construction), workflow-assignment validation and write paths, and assignment resolution consumed by `internal/issues` | Issue creation, AC verification, output formatting, schema/migration ownership |
 | `internal/maintenance/` | Domain | Read-only consistency audit over the projected SQLite data and journal references; structural errors, later warnings, and summary counts | CLI flag parsing, output formatting, journal writes, repair, deletion, or migration |
 | `internal/policy/` | Domain | Role validation, permission matrix lookups, action authorization | Workflow state logic |
 | `internal/dev/` | Domain | Compose developer write workflows (`dev start`, `dev gate`, later `dev finish`/`dev block`) into one validated journal event by orchestrating existing claim, workflow, run, and gate effect shapes | CLI flag parsing, output formatting, direct schema/migration ownership |
@@ -115,6 +116,55 @@ Rules:
 | `internal/evidence/` | Domain | Evidence records and links, obligation evaluation, freshness classification (`current`/`stale` from receipt tree identity and hashes), and read-only resolution of cited refs (commit refs via `internal/gitctx`, file/source/screenshot refs via filesystem existence; `resolved` / `missing` / `unverifiable` by type) (v0.2b+) | Command execution (that is `internal/gates/`), journal-bypassing writes, re-proving claims by re-running tools |
 | `migrations/` | Infrastructure | Numbered SQL up/down migration pairs | Application logic |
 | `testdata/` | Test support | Fixture DBs, golden files, sample journals | Production code |
+
+### 3.1 Dependency Direction Constraints
+
+Domain packages that produce journal events depend on `internal/journal` for
+the event/effect data contract **and** for the journal write API — `WithLock`,
+`PrepareEvent`, `DryRunProjectEvent`, `AppendEvent`, `ProjectEvent` — and read
+paths additionally use the `EnsureProjectionFresh*` freshness helpers.
+`internal/journal` depends on `internal/db`. **That chain is one-way and must
+stay one-way**; the one-way rule, not the width of the surface, is the
+constraint this section exists to protect.
+
+Ten non-test domain packages call the write API today — `bootstrap`, `claims`,
+`dev`, `issues`, `labels`, `links`, `maintenance`, `requirements`, `runs`, and
+`workflow` (e.g. `internal/issues/ac.go`). An `Effect`-only dependency is
+therefore **not** the project norm and never was; a package that only builds
+effects is the narrow case, not the rule. Corrected 2026-08-08 (DEC-106): the
+earlier "`Effect` data contract only" phrasing was introduced in Phase 19 with
+the DEC-096 sync, was false for those ten packages on the day it was written,
+and made an auditor reading `internal/issues` against this section find a
+violation that does not exist.
+
+- **`internal/workflow` → `internal/journal` is permitted and includes the
+  journal write API** (v0.2a; DEC-089, corrected by DEC-105). The authoring core
+  returns `[]journal.Effect` so the effect shape is never duplicated away from
+  the event schema it serialises into, and the authoring **write paths**
+  (`define.go`, `assign.go`) additionally use `WithLock`,
+  `EnsureProjectionFreshWithLock`, `PrepareEvent`, `DryRunProjectEvent`,
+  `AppendEvent`, and `ProjectEvent`. The read path (`list.go`) uses
+  `EnsureProjectionFresh`. This follows directly from DEC-089:
+  `internal/workflow` **owns** workflow authoring, assignment, and resolution,
+  and owning a write path means appending the event. Pushing append and
+  projection up into `cmd/fid` would be the worse design.
+  - **Superseded wording (DEC-096, corrected by DEC-105):** DEC-096 described
+    this edge as "bounded to the `Effect` struct — no append, no projection, no
+    replay." That was an accurate description of the package **at Task 2**, when
+    it only built effects, and it was wrongly stated as a permanent invariant.
+    Tasks 3-4 added the write paths DEC-089 had already authorized. **The
+    boundary that still holds** is the one in §3: no issue creation, no AC
+    verification, no output formatting, and no schema or migration ownership.
+  - **Replay stays out.** `internal/workflow` must not add resolution logic to
+    the projection or replay path — replay re-resolving assignments would make
+    history non-deterministic (DEC-076).
+- **Consequence for tests:** because `internal/journal` imports `internal/db`,
+  **no in-package (`package db`) test file in `internal/db` may import
+  `internal/workflow`**, and no in-package `internal/journal` test file may
+  either. Go compiles in-package test files into the package itself, so such an
+  import closes a cycle and fails `typecheck` for the whole repository. Tests
+  needing both belong in the external `package db_test` / `package journal_test`
+  packages, which are not compiled into the package under test.
 
 ## 4. Data Model
 
@@ -644,14 +694,21 @@ runtime structure.
 
 The defaults are seeded by migration DDL rather than journal events: they are
 system reference data, which keeps v0.1 history unchanged and satisfies foreign
-key ordering on rebuild. User-defined workflow definitions become journal events
-in Phase 19, when `fid workflow define/assign/list` ships.
+key ordering on rebuild. Migration `0010` also seeds the v0.2
+`escalation-default` reference workflow; user-defined workflow definitions and
+assignments remain journal events when `fid workflow define/assign/list` ships.
 
 `issues.workflow_id` and `issues.status` are foreign keys into `workflows` and
 `workflow_states` (migration `0008`), so an issue cannot hold a workflow/state
 pair the tables do not define. Cancel edges (`<state>` → `cancelled` for every
 non-cancelled state) are seeded explicitly rather than resolved by a code
 special-case.
+
+`workflow_assignments` is a journal-projected table (migration `0009`), not
+seed data. At issue creation, workflow resolution is kind-scope assignment,
+then project-scope assignment, then the built-in kind default
+(`epic-default`, `task-default`, or `subtask-default`). With no assignment
+rows, resolution remains byte-identical to v0.1.
 
 **Task workflow: `task-default`**
 

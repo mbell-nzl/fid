@@ -48,6 +48,8 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		"label.add",
 		"issue.label.add",
 		"issue.label.remove",
+		"workflow.define",
+		"workflow.assign",
 	}
 
 	rows := MatrixRows()
@@ -76,6 +78,23 @@ func TestMatrixContainsExactlyTheImplementedV01WriteActions(t *testing.T) {
 		if !containsAction(expectedActions, action) {
 			t.Fatalf("matrix contains unexpected action %q", action)
 		}
+	}
+}
+
+func TestMatrixWorkflowAuthoringRowsPermitOnlyTLAndHuman(t *testing.T) {
+	t.Parallel()
+
+	for _, action := range []string{"workflow.define", "workflow.assign"} {
+		t.Run(action, func(t *testing.T) {
+			got, ok := MatrixEntry(action)
+			if !ok {
+				t.Fatalf("MatrixEntry(%q) found = false, want true", action)
+			}
+			want := MatrixRow{Action: action, TL: true, Human: true}
+			if got != want {
+				t.Fatalf("MatrixEntry(%q) = %#v, want %#v", action, got, want)
+			}
+		})
 	}
 }
 

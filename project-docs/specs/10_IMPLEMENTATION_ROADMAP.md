@@ -538,6 +538,30 @@ relying on agent prose for deterministic claims.
 >   create an issue of that kind that picks up the assigned workflow instead of
 >   the built-in default; the escalation default workflow is present and
 >   inspectable. (PRD-WF-005a, PRD-WF-011–012)
+>
+>   **Closure disposition (2026-08-07, DEC-105).** Exit criteria met. Six tasks
+>   delivered against a 70-row validation contract; VAL-026 human dogfood
+>   **9 PASS**. **Zero product defects across the phase** — all eight escalations
+>   were in verification apparatus or evidence records, and four of them in one
+>   observable's shell ceremony (VAL-059), now retired by CF-025 into a standing
+>   Go golden test. Phase-level lessons are DEC-102 (uncaptured gate results are
+>   `UNVERIFIED`, never `PASS`; "pre-existing" requires an introducing commit),
+>   DEC-103 (a required command is executed by its author before publication),
+>   and DEC-104 (the Tech Lead gains a shell and specifies observables rather
+>   than bespoke mechanism). Carried forward: **CF-026a** (`workflow show` read
+>   surface), **CF-026b** (workflow lifecycle model — design decision first),
+>   and **CF-027** (`internal/issues/create.go` decomposition, inherited debt the
+>   phase improved, sequenced behind CF-025). A **deep retrospective** is
+>   recommended (DEC-104).
+>
+>   **Signed off 2026-08-08 (DEC-106).** QA Lead's subsequent final review
+>   returned **PASS WITH IMPROVEMENTS**; the contract closed
+>   **70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**. Its two wrap-commit
+>   preconditions and MAJOR-01 landed at wrap, along with a spec-sync obligation
+>   Task 6 had never received (DEC-101/102/103 rules into `09_AI_WORKFLOW.md`
+>   and `AGENTS.md`). Five of the phase's twelve decisions were **retired** as
+>   procedure-specific scar tissue. **CF-027 is now unblocked** — CF-025's
+>   parity test, the guard it was sequenced behind, shipped in Task 6.
 > - **Phase 20 — `role_permissions` migration + `fid role create` /
 >   `fid policy set` + v0.2a closure.** Add the `role_permissions` table seeded
 >   verbatim from the v0.1 in-code constant, repoint the Phase 10 enforcement seam

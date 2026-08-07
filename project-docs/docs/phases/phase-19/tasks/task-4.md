@@ -8,16 +8,73 @@ kind or to the project via a `workflow.assigned` journal event, and
 status `"todo"`, resolving both from assignments instead. This is the task
 that makes a custom workflow actually take effect.
 
+## Closure Evidence Session — read first (DEC-103, 2026-08-02)
+
+**The implementation is complete and committed at `32614bb`. Write no product
+code.** This session exists solely to give Task 4 the one thing it has never
+had: a single session that ran the gates and wrote the report.
+
+Why: Task 4's gates were originally executed by the Human without token capture
+(DEC-101), one of those attestations was later disproven (DEC-102), and
+`task-4-done.md` has never passed `report-lint.sh` — it is missing `## Tests
+run` and records six commands as `UNVERIFIED`/`FAIL`. Review 2 (`2abcc6c`) has
+independently re-run all six gates green, but **its tokens are QA Lead's, not
+this report's** (DEC-102 item 5 / DEC-103 item 3), so they are not transcribed
+here.
+
+**Do exactly this:**
+
+1. Confirm the tree is at `32614bb`'s content for Task 4's files and that
+   `git status` shows no product-code modifications.
+2. Run all six required gates from `## Exact Commands To Run` below, **in order,
+   capturing every verbatim terminal token in this session.**
+3. Run the corrected VAL-059 candidate procedure in `## Exact Commands To Run`
+   (DEC-103 item 1). All six entries must be `OK`.
+4. Rewrite `task-4-done.md` so that `report-lint.sh` passes:
+   - add the missing `## Tests run` section;
+   - record all six gates `PASS` with **your own** captured tokens;
+   - keep `## Commit hash` = `32614bbbd50e683b61921e9ed6beabee73b46021` and the
+     subject `feat(workflow): add assign command and assignment-aware creation`
+     — the implementation commit is **not** rewritten;
+   - keep the deviation history (the `capture.sh` path bug, the sandbox-blocked
+     cleanup, the human-attested evidence episode, the untracked-baselines
+     wording) — this record is corrected, never laundered;
+   - state plainly that the original human-attested `golangci-lint` PASS was
+     false and that this session re-established the gate evidence.
+5. Commit as `docs(task): ...` and run
+   `project-docs/tools/report-lint.sh task-4-done.md task-4.md` until it is
+   clean. **The report must be committed before lint counts** (report-lint
+   check 7).
+
+If any gate fails, stop and escalate — do not repair product code in this
+session.
+
 ## Validation Contract Coverage
 
-- VAL-014: kind assignment writes one event and exactly one kind-scope row;
-  reassignment replaces it and leaves the superseded workflow defined.
-- VAL-015: project assignment creates exactly one project-scope row, and
-  kind-scope assignment takes precedence over it (both directions).
-- VAL-016: every invalid assign is rejected before append with a distinct
-  error; the valid case succeeds.
-- VAL-017: issue creation picks up the assigned workflow and its resolved
-  initial state, and is byte-identical to v0.1 when no assignment exists.
+- VAL-014: a first kind assignment writes exactly one event and exactly one
+  kind-scope row.
+- VAL-051: reassignment replaces that row and leaves the superseded workflow
+  defined and listable.
+- VAL-052: kind-scope effect shape — `insert` alone first, ordered
+  `delete`+`insert` on reassignment, both replay-safe.
+- VAL-053: the same effect-shape rule for project scope.
+- VAL-015: `--project` writes exactly one project-scope row with NULL `kind`.
+- VAL-054: a kind without a kind-scope assignment resolves to the project
+  assignment.
+- VAL-055: a kind with a kind-scope assignment wins over the project
+  assignment.
+- VAL-016: each of the six enumerated assign rejections has its own
+  value-naming error; the compatible case succeeds.
+- VAL-056: every assign rejection leaves journal bytes and
+  `workflow_assignments` rows unchanged.
+- VAL-057: a successful assign writes no `activity_log` row (DEC-081).
+- VAL-017: creation under an assignment yields the assigned workflow and the
+  DEC-077 initial state, for a workflow with an `unstarted` state and one
+  without.
+- VAL-058: with no assignment rows, all three kinds yield the v0.1 workflow
+  and `status='todo'`.
+- VAL-059: with no assignment rows, `fid issue get`/`list` output is
+  byte-identical to the immutable pre-change baseline (procedure below).
 
 Assertions live in
 `project-docs/docs/phases/phase-19/qa/validation-contract.md`.
@@ -63,6 +120,91 @@ Assertions live in
   Do not add resolution logic to the projection path.
 - **Do not touch the transition path.** Transitioning into custom-named states
   is out of scope and is a documented Phase 19 boundary (DEC-079).
+- **The v0.1 parity baseline is an immutable, committed artifact** (VAL-059,
+  DEC-091; procedure synchronized to QA-plan §6 by **DEC-098**). The baseline
+  is the **Task 3 implementation commit**, pinned below. **Ambient `HEAD` is
+  prohibited as the baseline selector** — when Review 1 checked, `HEAD` was
+  Task 3's *report* commit, a different commit, and it moves again with every
+  later commit.
+
+  **The guard is structural, not temporal** (DEC-099). The baseline binary is
+  built in a *detached worktree at the pinned commit* and the capture consumes
+  only that binary plus the committed fixture, so baseline output is a pure
+  function of *(pinned commit, committed fixture)*. Edits to your working tree —
+  including `internal/issues/create.go` — cannot affect it. Capturing the
+  baseline first is still the recommended order because it is simpler and keeps
+  the report's evidence in reading order, **but it is not a binding
+  precondition, and a baseline captured later is not thereby invalid.** If a
+  capture ever needs re-verification, reproduce it from the pinned commit and
+  check it against the committed `SHA256SUMS`; reproduction, not chronology, is
+  what establishes provenance.
+
+  Baseline procedure:
+
+  1. **Pin and verify the baseline commit.** Confirm the pinned value
+     abbreviates to the `## Commit hash` in the committed `task-3-done.md`
+     (`50533e2`, subject `feat(workflow): add define command and journal
+     event`), then verify it resolves. Record the export line and the exact
+     40-hex output in `task-4-done.md`:
+
+     ```bash
+     PHASE19_TASK3_IMPLEMENTATION_COMMIT=50533e2b813bf073cd75f75eb70dd09cd15e9040
+     git rev-parse --verify "$PHASE19_TASK3_IMPLEMENTATION_COMMIT^{commit}"
+     ```
+
+     If the hash fails to resolve or disagrees with `task-3-done.md`, stop and
+     escalate. Never substitute `git rev-parse HEAD`, a branch name, or any
+     other moving selector.
+  2. **Build the baseline binary in a detached worktree** at that verified
+     hash, and record the `sha256sum` line in `task-4-done.md`. Use exactly
+     these paths; do not reuse a stale `/tmp/fid` or `/tmp/fid-baseline`:
+
+     ```bash
+     git worktree add --detach /tmp/fid-phase19-v01-baseline "$PHASE19_TASK3_IMPLEMENTATION_COMMIT"
+     go -C /tmp/fid-phase19-v01-baseline build -o /tmp/fid-phase19-v01-baseline.bin ./cmd/fid
+     sha256sum /tmp/fid-phase19-v01-baseline.bin
+     ```
+
+  3. **Commit the fixture and the capture script.** The fixture is rooted at
+     `cmd/fid/testdata/v01_parity/fixture/`, contains **no**
+     `workflow_assignments` event or row, and fixes IDs (`FID-a10001` epic,
+     `FID-b20002` task, `FID-c30003` subtask), titles, kinds, parent links,
+     **and timestamps in its journal**.
+     `cmd/fid/testdata/v01_parity/capture.sh` takes exactly two positional
+     arguments — binary path and output root — recreates the workspace from
+     the committed fixture on every run, and executes exactly these six
+     command shapes:
+
+     ```text
+     fid issue get FID-a10001 --format json
+     fid issue get FID-b20002 --format json
+     fid issue get FID-c30003 --format json
+     fid issue list --kind epic --format json
+     fid issue list --kind task --format json
+     fid issue list --kind subtask --format json
+     ```
+
+     Baseline outputs are exactly `issue-get-epic.json`, `issue-get-task.json`,
+     `issue-get-subtask.json`, `issue-list-epic.json`, `issue-list-task.json`,
+     and `issue-list-subtask.json`, written **directly under**
+     `cmd/fid/testdata/v01_parity/` and committed in this task. Candidate
+     outputs go to `/tmp/fid-phase19-v01-parity-candidate/` and are **not**
+     committed.
+  4. **Normalization is a committed no-op.** Commit
+     `cmd/fid/testdata/v01_parity/normalization.json` containing exactly
+     `{"json_pointers":[],"replacement":null}`. All six files are compared
+     raw-byte. **If the fixed fixture cannot hold timestamps stable, this task
+     is `BLOCKED` — stop and escalate. Do not widen the allow-list, edit
+     `normalization.json`, or hand-write an expectation.**
+  5. **Commit `cmd/fid/testdata/v01_parity/SHA256SUMS`** with one `sha256sum`
+     line per baseline output. Every line carries the real 64-character
+     lowercase digest, exactly two spaces, and the relative filename;
+     placeholders are forbidden. `task-4-done.md` copies the six lines
+     verbatim. After this task is committed, the immutable baseline identity
+     is the Task 4 implementation commit plus those six digests.
+
+  The QA Lead must be able to regenerate the baseline from the recorded hash
+  and committed script alone.
 
 ## Scope
 
@@ -78,6 +220,9 @@ Assertions live in
   literal with resolved values
 - `internal/issues/create_test.go` / `internal/issues/issue_test.go` —
   assigned and unassigned creation coverage
+- `cmd/fid/testdata/v01_parity/` (new, VAL-059) — `capture.sh`, `fixture/`,
+  the six committed baseline `.json` outputs, `normalization.json`, and
+  `SHA256SUMS`
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow assign`
   compatibility rules and errors
 - `project-docs/specs/03_TRD_SCHEMA.md` §2.1 — note that kind-appropriate
@@ -106,22 +251,38 @@ Assertions live in
 - [ ] `fid workflow assign --kind <k>` appends exactly one
   `workflow.assigned` event and leaves exactly one kind-scope row (VAL-014)
 - [ ] Re-assigning the same kind replaces that row (still exactly one, naming
-  the new workflow) and the superseded workflow remains defined (VAL-014)
-- [ ] `--project` creates exactly one project-scope row; a kind without a
-  kind-scope assignment resolves to it, and a kind with one resolves to its
-  own workflow (VAL-015)
+  the new workflow) and the superseded workflow remains defined and listable
+  (VAL-051)
+- [ ] A first kind assignment emits an `insert` alone, a kind reassignment
+  emits ordered `delete` then `insert`, and replay from empty reproduces one
+  row (VAL-052)
+- [ ] The same effect-shape rule holds for project scope, with PK
+  `{"scope":"project"}` on the delete (VAL-053)
+- [ ] `--project` appends one event and creates exactly one project-scope row
+  with NULL `kind` (VAL-015)
+- [ ] A kind without a kind-scope assignment resolves to the project
+  assignment (VAL-054)
+- [ ] A kind with a kind-scope assignment resolves to its own workflow even
+  when a project assignment exists (VAL-055)
 - [ ] Unknown slug, incompatible `applies_to` for `--kind`, non-`any`
   workflow for `--project`, both scopes, neither scope, and a denied role are
-  each rejected with a distinct error, leaving journal bytes and
-  `workflow_assignments` row counts unchanged (VAL-016)
+  each rejected with a distinct value-naming error, and a compatible assign
+  succeeds (VAL-016)
+- [ ] Every one of those rejections leaves journal bytes and
+  `workflow_assignments` rows unchanged (VAL-056)
+- [ ] A successful assign leaves the `activity_log` row set unchanged
+  (VAL-057)
 - [ ] `fid issue create --kind <k>` under an assignment yields the assigned
   `workflow_id` and the DEC-077 initial state, proven for a workflow with an
   `unstarted` state and one without (VAL-017)
 - [ ] With no assignment rows, `workflow_id` and `status` are identical to
-  v0.1 for epic, task, and subtask, and `fid issue get`/`list` output is
-  byte-identical to the pre-change build (VAL-017)
-- [ ] A first assignment emits an `insert` alone; a reassignment emits
-  `delete` then `insert`, and both replay cleanly
+  v0.1 for epic, task, and subtask (VAL-058)
+- [ ] With no assignment rows, all six candidate captures are byte-identical
+  to the committed baselines captured from the verified Task 3 **implementation**
+  commit `50533e2b813bf073cd75f75eb70dd09cd15e9040` (not ambient `HEAD`), with
+  the verified hash, baseline-binary `sha256sum`, `capture.sh`, `fixture/`, the
+  six outputs, the no-op `normalization.json`, and `SHA256SUMS` all committed
+  and reproducible (VAL-059)
 
 ## First Failing Test
 
@@ -137,6 +298,9 @@ workflow to kind `task`, create a task, and assert `workflow_id` and `status`
 - `project-docs/specs/03_TRD_SCHEMA.md` §2.1 — the note that kind-appropriate
   defaults are assigned in application code is updated to name
   `workflow_assignments` as the resolution source.
+- `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — verify the `workflow assign`
+  entry added at planning (DEC-092) matches the shipped flag surface; correct
+  it in this task if it diverges.
 
 ## Exact Commands To Run
 
@@ -160,17 +324,52 @@ Conditional commands required by this task:
 
 - `go test -tags integration -race ./...` — issue creation and a new event
   type both cross replay/rebuild paths.
-- `go build -o /tmp/fid ./cmd/fid` — VAL-017's byte-identical `issue get`/
-  `list` evidence needs the built binary.
+- `go build -o /tmp/fid ./cmd/fid` — VAL-059's byte-identical `issue get`/
+  `list` evidence needs the built candidate binary.
+
+VAL-059 evidence commands — **corrected 2026-08-02 by DEC-103.** The baseline
+is already established, committed, and closed (DEC-101): the six `SHA256SUMS`
+digests record v0.1 behaviour and are never regenerated. The detached-worktree
+capture is **struck** and must not run again. The only standing assertion is the
+candidate check:
+
+```bash
+manifest="$(git rev-parse --show-toplevel)/cmd/fid/testdata/v01_parity/SHA256SUMS"
+capture_root="$(mktemp -d)"
+go build -o "$capture_root/fid" ./cmd/fid
+cmd/fid/testdata/v01_parity/capture.sh "$capture_root/fid" "$capture_root"
+( cd "$capture_root" && sha256sum -c "$manifest" )
+```
+
+All six entries must report `OK`. **Working directory is load-bearing**
+(DEC-103 item 5): the manifest holds bare relative filenames so it can be
+checked against *any* capture directory, which means `sha256sum -c` must run
+**from the candidate capture root**, with the manifest given as an absolute
+path.
+
+Two forms are prohibited and must never be cited as parity evidence:
+
+- `sha256sum -c cmd/fid/testdata/v01_parity/SHA256SUMS` from the repository
+  root — the listed names do not resolve there; it exits 1 with
+  `sha256sum: WARNING: 6 listed files could not be read`. This was the
+  previously prescribed command and it never worked.
+- `cd cmd/fid/testdata/v01_parity && sha256sum -c SHA256SUMS` — this checks the
+  committed baselines against their own digests. It is self-referential and
+  proves nothing about the candidate.
+
+Scratch state is per-attempt (`mktemp -d`, DEC-101 item 2) and needs no cleanup;
+cleanup is never evidence (DEC-101 item 1).
 
 ## Notes For Developer
 
 - Depends on Tasks 1-3. This is the heaviest task in the phase; if it grows
   past a single session, stop and report rather than partially landing the
   `internal/issues` change.
-- The v0.1 no-assignment parity half of VAL-017 is a regression guard on the
-  most-exercised path in the product. Capture the `issue get`/`list` bytes
-  from the pre-change build **before** editing `create.go`.
+- VAL-058/VAL-059 are the v0.1 no-assignment regression guard on the
+  most-exercised path in the product. The baseline always comes from the pinned
+  commit in a detached worktree, never from the working tree, so it stays
+  reproducible no matter when you capture it relative to editing `create.go`
+  (DEC-099). Capturing it first is still the tidier order.
 - `applyDelete` fails the event if the delete matches zero rows. Decide the
   effect shape from state read inside the lock; never emit a speculative
   delete.

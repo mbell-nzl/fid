@@ -62,7 +62,11 @@ Phase start:
    Light mode skips the validation contract and QA plan per the artifact
    matrix.
 5. Create `project-docs/docs/phases/phase-<id>/tasks/` and
-   `project-docs/docs/phases/phase-<id>/qa/`.
+   `project-docs/docs/phases/phase-<id>/qa/`, and seed an empty
+   `project-docs/docs/phases/phase-<id>/triage-log.md` from
+   `project-docs/templates/triage-log-template.md`. Seeding it at phase start
+   keeps ID allocation off the critical path of a mid-phase agent that must
+   otherwise create the file before it can mint an identifier.
 6. For normal and heavy modes, draft
    `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` using
    `project-docs/templates/validation-contract-template.md`. The contract is a
@@ -213,7 +217,12 @@ Triage rules:
   identifier that was written. A verdict carrying a placeholder identifier
   (`ESC-NNN`, `ESC-NEW`) or unaccompanied by a log entry is a defective
   triage: the event has no durable record, cannot be resumed mechanically, and
-  forces a full Tech Lead reconstruction.
+  forces a full Tech Lead reconstruction. The Tech Lead seeds the file at phase
+  start, so an absent triage log is a phase-setup defect: the Phase Runner
+  records it and stops rather than accepting a verdict with no identifier. When
+  a triage genuinely cannot be written, the Phase Runner logs
+  `TRIAGE (identifier unavailable)` and the full Tech Lead backfills both the
+  TRG and the ESC, labelled as reconstructions.
 - Triage RESUME is allowed only when the issue is local-decision-eligible and
   no escalation is needed.
 - Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
@@ -1054,6 +1063,21 @@ are (exactly as written there):
 - <constraints, ordering, known pitfalls, escalation tripwires>
 ```
 
+A task spec that prescribes an evidence procedure also states two things the
+Developer cannot infer:
+
+- **Required environment capabilities** — `/tmp`, a writable `.git/`, network,
+  elevation. A shortfall is discovered and escalated at step zero, never
+  halfway through a sequence.
+- **Scratch state is unique per attempt.** Temporary directories, worktrees,
+  and binaries are allocated with `mktemp -d` or an equivalent fresh path, so no
+  run can depend on a prior run's cleanup. A fixed scratch path in a procedure
+  is a spec defect.
+
+Prefer expressing an observable as an automated test over a manual procedure.
+A validation contract that records a manual evidence procedure states why a
+test cannot carry the assertion.
+
 Required-command rules are stated once in `AGENTS.md` (Commands); the task
 spec's `## Exact Commands To Run` section points there rather than restating
 them at length. Scenario, parity, and audit obligations are phase-level
@@ -1115,6 +1139,12 @@ The role definitions in section 2 are canonical behavior for all tools.
   must not define `[profiles.*]`; personal profile files belong under
   `~/.codex/` when an operator needs a named top-level launch profile.
 - Templates in `project-docs/templates/` must not contradict the workflow.
+- **A provider-shared prompt body must not assert a capability limit that only
+  one provider's frontmatter enforces.** A shared sentence such as "you cannot
+  run commands" reads on the provider that does enforce it as a description of
+  its own tool restrictions, and on the provider that does not as a broader
+  prohibition — including "cannot write files". State capability limits where
+  they are enforced; keep the shared body about role behavior.
 - After changing any of these files, start a fresh Codex or Claude session
   before relying on the updated definitions.
 
@@ -1170,6 +1200,71 @@ one is fabricated evidence, and recording `PASS` without it makes the false
 claim invisible to every downstream review until someone re-runs the gate
 independently. Such a command is `BLOCKED` with the reason in a blocker
 report. This rule is mode-invariant.
+
+The token is the command's real exit behavior, not the expected one. A search
+or inventory command (`rg`, `grep`) used to prove an *absence* — no production
+evaluator, no forbidden call site — terminates with **exit 1 and no output**
+when it finds nothing, which is the pass condition for that assertion. Record
+`PASS (no match) - exit 1 (no output)` and name the assertion; `exit 0 (no
+output)` is reserved for a silent success and is fabricated evidence here. A
+task spec or QA plan that relies on such an inventory states its expected exit
+status, so the Developer never has to infer one.
+
+These rules govern commands run *against finished work*. A required command
+whose **harness is itself a deliverable of the task being authored** — a
+fixture, a capture or measurement script, a golden generator — is different: it
+is written during the task, and like any other deliverable it may be wrong on
+first execution. Such a command may fail, be repaired, and be rerun to a pass,
+recorded as `PASS` with a **mandatory deviation note** giving the first
+failure's verbatim token, the root cause, and the fix. All four conditions must
+hold: the failing artifact is a task deliverable and **not** the product under
+test, a test asserting product behavior, or a pre-existing committed gate or
+tool; the rerun command is **byte-identical**, with nothing narrowed,
+substituted, or re-pointed; the final pass is **deterministic and reproducible
+by a third party from committed artifacts alone**; and both the failure and the
+final result are recorded with their own tokens. If any condition fails, the
+strict rule applies and the gate is failed.
+
+The distinction matters at triage. **"The task is incomplete, stop"** and
+**"the evidence is tainted, restart"** are different verdicts with different
+remedies, and a harness bug is normally the first. A required-command list
+states what must be true of a task's **final, reproducible evidence**; it is not
+a prohibition on iteration, and reading it as one would demand that any task
+shipping its own evidence tooling get that tooling right on the first attempt.
+Where provenance of a captured artifact is genuinely in doubt, settle it by
+**reproducing the artifact from its pinned inputs and comparing digests** —
+reproduction, not chronology or narrative, is what establishes provenance.
+
+**A gate result not captured in the session that records it is `UNVERIFIED`,
+never `PASS`.** A result attested from memory, transcribed from another agent's
+report, or promised against a named future control is `UNVERIFIED`, and
+`UNVERIFIED` is not a passing state. Naming a later verifier is not a
+substitute: a control that fires late enough to be tripped over by accident is
+not a control. Copy the token in the session that runs the command, or record
+`UNVERIFIED` and stop.
+
+**"Pre-existing" is a provenance claim and needs provenance evidence.**
+Declining an out-of-scope repair is often correct, but the report must cite the
+introducing commit — `git log -S`, `git log --diff-filter=A`, or `git blame` —
+and show that it predates the phase-start commit. `git show HEAD` proves a line
+is committed, not that it is inherited; HEAD contains the current phase.
+An unverified "pre-existing" claim travels through triage and escalation intact
+and can conceal a regression the same task introduced.
+
+**Cleanup is never evidence.** A command whose only purpose is removing or
+pruning scratch state is excluded from required-command evidence: never
+reported `PASS` or `BLOCKED`, never gating a sequence, and a failed cleanup is
+a note rather than a stop. Cleanup proves nothing about the observable it sits
+next to; fencing it inside an evidence set lets one failed `rm` block a whole
+procedure.
+
+**A required command is executed by its author before it is published.** A
+command written into a task spec or QA plan as required evidence and never once
+run successfully by anyone is not a specification, it is a guess. Where a
+command's result depends on the working directory, the spec names that
+directory or the command is written to be directory-independent; bare relative
+paths in a committed manifest are correct and must be paired with a `cd` into
+the directory they resolve against.
 
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:

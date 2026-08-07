@@ -145,6 +145,17 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "tl"); !got {
 		t.Fatal("policy show tl/issue.create.epic = false, want true")
 	}
+	for _, action := range []string{"workflow.define", "workflow.assign"} {
+		if got := commandPolicyCellAllowed(t, rows, action, "tl"); !got {
+			t.Fatalf("policy show tl/%s = false, want true", action)
+		}
+		if got := commandPolicyCellAllowed(t, rows, action, "human"); !got {
+			t.Fatalf("policy show human/%s = false, want true", action)
+		}
+		if got := commandPolicyCellAllowed(t, rows, action, "developer"); got {
+			t.Fatalf("policy show developer/%s = true, want false", action)
+		}
+	}
 
 	deniedStdout, deniedStderr, err := runFIDCommandExpectError(
 		t,
@@ -179,6 +190,44 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 	}
 	if !strings.Contains(allowedStderr, "created issue ") || !strings.Contains(allowedStderr, "(epic)") {
 		t.Fatalf("tl epic create stderr = %q, want create confirmation", allowedStderr)
+	}
+}
+
+func TestPolicyShowIncludesWorkflowAuthoringRowsInEveryFormat(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	for _, formatName := range []string{"json", "toon", "yaml"} {
+		t.Run(formatName, func(t *testing.T) {
+			stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", formatName)
+			if stderr != "" {
+				t.Fatalf("stderr = %q, want empty", stderr)
+			}
+			var rows []any
+			switch formatName {
+			case "json":
+				rows = decodeCommandJSONStructure(t, stdout).([]any)
+			case "toon":
+				rows = decodeCommandTOONStructure(t, stdout).([]any)
+			case "yaml":
+				rows = decodeCommandYAMLStructure(t, stdout).([]any)
+			}
+			for _, action := range []string{"workflow.define", "workflow.assign"} {
+				if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
+					t.Fatalf("policy show %s missing allowed %s row", formatName, action)
+				}
+			}
+		})
+	}
+
+	markdown, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "markdown")
+	if stderr != "" {
+		t.Fatalf("markdown stderr = %q, want empty", stderr)
+	}
+	for _, action := range []string{"workflow.define", "workflow.assign"} {
+		if !strings.Contains(markdown, "| "+action+" | false | false | false | false | true | false | true |") {
+			t.Fatalf("markdown = %q, want %s row", markdown, action)
+		}
 	}
 }
 

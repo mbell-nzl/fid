@@ -1,5 +1,36 @@
 # Phase 19 - Task 5: `fid workflow list` in every output format
 
+## Recovery preamble — read first (DEC-102, 2026-08-02)
+
+This task was blocked at `golangci-lint run ./...` (ESC-19-006 / TRG-19-006) and
+is now cleared to resume. Four things changed:
+
+1. **Resume from the preserved worktree; do not restart.** The prior session's
+   implementation is intact and uncommitted across `cmd/fid/workflow.go`,
+   `internal/format/markdown.go`, and five new files. `task-5-done.md` exists as
+   a blocker report and is **overwritten** by the real completion report.
+2. **One out-of-scope repair is authorized, and only this one.**
+   `internal/workflow/resolve.go:61` changes from `defer rows.Close()` to
+   `defer func() { _ = rows.Close() }()`, matching `registry.go` and `list.go`
+   in the same package. Behaviour is identical — the rows are fully drained and
+   `rows.Err()` is already checked on line 70 — so no new test is required and
+   VAL-058/059 parity is untouched. **Do not** repair anything else outside the
+   file list below; escalate instead.
+3. **This gate run carries Task 4's weight too.** `golangci-lint run ./...` is
+   repo-wide, so a green token-cited run here *is* the independent
+   re-execution of Task 4's lint gate, which was falsely attested as passing.
+   Say so explicitly in the completion report's gate section.
+4. **Every gate token is captured in this session.** No result may be recorded
+   `PASS` on anything other than a token observed in the session that writes the
+   report. An uncaptured result is `UNVERIFIED`, never `PASS` (DEC-102 item 5).
+
+**Standing rule this incident produced (DEC-102 item 1).** If you decline a
+repair as "pre-existing", you must cite the **introducing commit** and show it
+predates the phase-start commit — `git log -S`, `git log --diff-filter=A`, or
+`git blame`. `git show HEAD` proves a line is committed, not that it is
+inherited, and using it here misclassified a one-day-old Task 4 regression as
+baseline debt.
+
 ## Objective
 
 Ship the read surface: `fid workflow list` returns defined workflows with
@@ -9,13 +40,24 @@ uses to discover what workflows exist before assigning or transitioning.
 
 ## Validation Contract Coverage
 
-- VAL-018: all four formats render; the JSON payload matches the documented
-  field set with counts equal to projected row counts; the markdown renderer
-  has byte-exact characterization coverage (CF-022, partial).
-- VAL-019: `--kind` and `--active` filters include exactly the qualifying set
-  and exclude exactly the non-qualifying set.
-- VAL-020: `assigned_to` renders kind scope, project scope, and the
-  unassigned empty list correctly.
+- VAL-018: the JSON payload has exactly the documented field set, with counts
+  equal to projected row counts and `null` for `any`.
+- VAL-060: all four formats render and carry equivalent data.
+- VAL-061: the markdown renderer has byte-exact characterization against a
+  **committed** expected artifact (CF-022, partial).
+- VAL-019: `--kind <k>` includes exactly `<k>` and `any` workflows and
+  excludes other-kind workflows.
+- VAL-062: `--active` excludes a test-seeded inactive workflow; the unfiltered
+  run includes it.
+- VAL-063: `--kind` and `--active` compose to exactly the intersection.
+- VAL-020: a kind-assigned workflow renders `{"scope":"kind","kind":"<k>"}`.
+- VAL-064: a project-assigned workflow renders `{"scope":"project"}` with the
+  `kind` key **absent**.
+- VAL-065: an unassigned workflow renders an empty array, never `null`.
+- VAL-066: ordering is deterministic and two consecutive runs are
+  byte-identical.
+- VAL-067: an empty result renders as an empty array with exit 0 in all four
+  formats.
 
 Assertions live in
 `project-docs/docs/phases/phase-19/qa/validation-contract.md`.
@@ -72,6 +114,9 @@ Assertions live in
 - `internal/format/markdown_workflow.go` (new) — markdown renderer
 - `internal/format/markdown.go` — add the type case
 - `internal/format/markdown_workflow_test.go` (new) — byte-exact golden
+- `internal/workflow/resolve.go` — **authorized one-line exception only**
+  (DEC-102 item 4): line 61 `defer rows.Close()` →
+  `defer func() { _ = rows.Close() }()`. No other change to this file.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow list` filters,
   ordering, `assigned_to` shapes, and the note that example counts are
   illustrative
@@ -95,22 +140,34 @@ Assertions live in
 
 ## Acceptance Criteria
 
+- [ ] The JSON payload has exactly the documented field set (no extra or
+  missing keys), the `states` and `transitions` counts equal SQL row counts
+  including materialized cancel edges, and `applies_to` is `null` for `any`
+  (VAL-018)
 - [ ] `fid workflow list` renders in json, toon, markdown, and yaml over one
-  fixture, and all four carry the same data (VAL-018)
-- [ ] The JSON payload has exactly the documented field set, and the `states`
-  and `transitions` counts equal SQL row counts including materialized cancel
-  edges (VAL-018)
-- [ ] The markdown renderer has a byte-exact golden test (VAL-018, CF-022)
+  fixture, and all four decode to equivalent data (VAL-060)
+- [ ] The markdown renderer has a byte-exact golden test whose expected bytes
+  are committed, and the completion report says whether they are a `testdata`
+  fixture or an in-test literal (VAL-061, CF-022)
 - [ ] `--kind <k>` includes `applies_to = <k>` and `any` workflows and
-  excludes workflows bound to another kind, with both inclusion and exclusion
-  evidenced (VAL-019)
+  excludes workflows bound to another kind, with both the included and
+  excluded ID sets asserted (VAL-019)
 - [ ] `--active` excludes a test-seeded inactive workflow; the unfiltered run
-  includes it (VAL-019)
-- [ ] `assigned_to` renders kind scope with `kind`, project scope without
-  `kind`, and an empty array for unassigned workflows (VAL-020)
-- [ ] Results are ordered by `workflows.id` and are reproducible across runs
-- [ ] An empty result renders as an empty array in every format
-- [ ] `06_DESIGN_PLAN_CLI.md` updated in this task
+  includes it (VAL-062)
+- [ ] `--kind` and `--active` together return exactly the intersection
+  (VAL-063)
+- [ ] A kind-assigned workflow renders `{"scope":"kind","kind":"<k>"}`
+  (VAL-020)
+- [ ] A project-assigned workflow renders `{"scope":"project"}` with the
+  `kind` key absent, not null (VAL-064)
+- [ ] An unassigned workflow renders an empty array, never `null` (VAL-065)
+- [ ] Results are ordered by `workflows.id` with `assigned_to` entries
+  project-scope-last then by kind, and two consecutive runs are byte-identical
+  (VAL-066)
+- [ ] An empty result renders as an empty array with exit 0 in all four
+  formats (VAL-067)
+- [ ] `06_DESIGN_PLAN_CLI.md` updated and the `05_DESIGN_PLAN.md` §3.1
+  `workflow list` entry verified in this task
 
 ## First Failing Test
 
@@ -123,6 +180,9 @@ exists.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` — `fid workflow list` filter
   semantics, deterministic ordering, `assigned_to` shapes, empty-result
   behavior, and a note that the example counts are illustrative.
+- `project-docs/specs/05_DESIGN_PLAN.md` §3.1 — verify the `workflow list`
+  entry added at planning (DEC-092) matches the shipped flag surface; correct
+  it in this task if it diverges.
 
 ## Exact Commands To Run
 
@@ -136,10 +196,14 @@ go tool cover -func=coverage.out
 go build -o /tmp/fid ./cmd/fid
 ```
 
+Run the full sequence from the top, including the commands that ran in the
+blocked session.
+
 Required-command rules live in `AGENTS.md` (Commands): every required command
 is reported `PASS`, or `BLOCKED` with reason; missing, silently skipped, or
 narrower substituted commands are failed gates. A non-terminating command is
-never `PASS`.
+never `PASS`. Per DEC-102 item 5, a result not observed in this session is
+`UNVERIFIED`, never `PASS`.
 
 Conditional command required by this task:
 
@@ -156,4 +220,6 @@ Conditional command required by this task:
   to a generic structure and comparing; do not settle for "all four commands
   exited zero".
 - Completion report at
-  `project-docs/docs/phases/phase-19/tasks/task-5-done.md`.
+  `project-docs/docs/phases/phase-19/tasks/task-5-done.md`, overwriting the
+  blocker report. Keep a short deviations entry recording the ESC-19-006 block,
+  the misclassification, and the authorized `resolve.go` repair.

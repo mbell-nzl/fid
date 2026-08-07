@@ -12,15 +12,24 @@ No CLI change in this task.
 
 ## Validation Contract Coverage
 
-- VAL-001: `workflow_assignments` has the DEC-076 shape and its uniqueness
-  holds in both directions (duplicate kind-scope and duplicate project-scope
-  rejected; distinct kinds accepted).
+- VAL-001: `workflow_assignments` has exactly the DEC-076 **structure**
+  (columns, types, CHECKs, FK, both partial unique indexes).
+- VAL-027: kind-scope uniqueness both ways — duplicate kind rejected, two
+  distinct kinds accepted.
+- VAL-028: project-scope uniqueness both ways — first project row accepted,
+  second rejected.
+- VAL-029: the scope/kind pairing CHECK rejects both malformed shapes and
+  accepts both well-formed ones.
 - VAL-002: migrations `0009`/`0010` are fully reversible (`up → down → up`
   leaves no residue and no fingerprint drift).
-- VAL-003: `escalation-default` is seeded exactly per TRD §4.6 and the three
-  v0.1 defaults are unchanged.
+- VAL-003: `escalation-default` is seeded exactly per TRD §4.6, tuple-for-tuple,
+  with nothing extra.
+- VAL-030: the three Phase 18 defaults are tuple-identical to the frozen
+  reference before and after `0010` (counts are not evidence).
 - VAL-004: the registry loader surfaces `linked_to_decision` as
-  known-but-unimplemented with no panic, no evaluation, no write.
+  known-but-unimplemented, with no panic.
+- VAL-031: `workflow.Load` over the seeded DB writes nothing and no production
+  evaluator exists for `linked_to_decision`.
 - VAL-005: the projection schema version bump rebuilds a stale projection and
   does not rebuild a fresh current-version one.
 
@@ -118,19 +127,27 @@ Assertions live in
 
 ## Acceptance Criteria
 
-- [ ] `workflow_assignments` exists with the exact DEC-076 columns, CHECKs,
-  FK, and two partial unique indexes (VAL-001)
-- [ ] A second `kind`-scope row for the same kind is rejected; a second
-  `project`-scope row is rejected; rows for two different kinds are both
-  accepted (VAL-001)
+- [ ] `workflow_assignments` exists with the exact DEC-076 columns, types,
+  CHECKs, FK, and two partial unique indexes (VAL-001)
+- [ ] A second `kind`-scope row for the same kind is rejected and rows for two
+  different kinds are both accepted (VAL-027)
+- [ ] The first `project`-scope row is accepted and a second is rejected
+  (VAL-028)
+- [ ] `scope='kind'` with NULL `kind` and `scope='project'` with a non-NULL
+  `kind` are both rejected; both well-formed shapes are accepted (VAL-029)
 - [ ] `up → down → up` over migrations `0009`/`0010` leaves an identical
   `sqlite_schema` fingerprint and row set, with no residual index, table, or
   seeded row after `.down` (VAL-002)
 - [ ] `escalation-default` is seeded tuple-for-tuple per TRD §4.6, with no
-  cancel edge, and the three v0.1 default workflows are unchanged (VAL-003)
+  cancel edge and no extra row in any of the four tables (VAL-003)
+- [ ] The three v0.1 default workflows are tuple-identical to the frozen
+  `internal/workflow/definitions_fixture.go` reference before and after `0010`
+  — assert tuples, not counts (VAL-030)
 - [ ] `workflow.Load` returns `escalation-default` with `linked_to_decision`
-  surfaced as known-but-unimplemented; no panic, no evaluation, no write
-  (VAL-004)
+  surfaced as known-but-unimplemented and no panic (VAL-004)
+- [ ] `workflow.Load` over the seeded DB leaves journal bytes, `sqlite_schema`,
+  and all four workflow-table row sets unchanged, and no production evaluator
+  exists for `linked_to_decision` (VAL-031)
 - [ ] `ProjectionSchemaVersion` is 5; a DB stamped 4 rebuilds before serving a
   read, and a fresh version-5 projection is not rebuilt for schema-version
   reasons (VAL-005)

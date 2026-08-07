@@ -415,16 +415,17 @@ test parity fixtures). Migration `0008` adds the `issues.workflow_id` and
 
 `workflow_transition_requires` intentionally has no PRIMARY KEY or UNIQUE
 constraint: an edge may carry several ordered rules, and order is resolved by
-`rowid`. Its `params_json` also carries the reserved gate-obligation shape
-(DEC-066) — the rule names `required_gates_current` and `has_completion` are
-recognised by the loader and surfaced as unimplemented, but are **not seeded**
-and have no evaluator; the seam is schema-present and behavior-free until v0.2b.
+`rowid`. Its `params_json` also carries reserved, known-but-unimplemented rule
+names: `required_gates_current` and `has_completion` (DEC-066) remain
+unseeded and behavior-free until v0.2b, while `linked_to_decision` is seeded
+only for `escalation-default` and has no evaluator until v0.2d. The loader
+surfaces all three structurally as unimplemented.
 
 ```sql
 CREATE TABLE workflows (
   id                  TEXT PRIMARY KEY,        -- stable slug, e.g. 'task-default'
   name                TEXT NOT NULL,
-  applies_to          TEXT,                    -- 'epic' | 'task' | 'subtask' | 'qa_review' | NULL (any)
+  applies_to          TEXT,                    -- 'epic' | 'task' | 'subtask' | 'qa_review' | 'escalation' | NULL (any)
   active              BOOLEAN DEFAULT 1,
   created_at          DATETIME
 );
@@ -455,6 +456,22 @@ CREATE TABLE workflow_transition_requires (
   FOREIGN KEY (workflow_id, from_state, to_state)
     REFERENCES workflow_transitions(workflow_id, from_state, to_state)
 );
+
+CREATE TABLE workflow_assignments (
+  scope       TEXT NOT NULL,
+  kind        TEXT,
+  workflow_id TEXT NOT NULL REFERENCES workflows(id),
+  assigned_at DATETIME,
+  CHECK (scope IN ('kind', 'project')),
+  CHECK ((scope = 'kind' AND kind IS NOT NULL)
+      OR (scope = 'project' AND kind IS NULL))
+);
+
+CREATE UNIQUE INDEX idx_workflow_assignments_kind
+  ON workflow_assignments(kind) WHERE scope = 'kind';
+
+CREATE UNIQUE INDEX idx_workflow_assignments_project
+  ON workflow_assignments(scope) WHERE scope = 'project';
 ```
 
 ---
@@ -1226,13 +1243,27 @@ corrupt or externally modified projection:
   tables (§3), resolved through the read-only workflow registry. As of v0.2a
   this is the migrated source of truth; the audit no longer consults the frozen
   v0.1 Go definitions, which survive only as test parity fixtures. Behavior is
-  otherwise unchanged — an unknown pair is a structural error.
+  otherwise unchanged — an unknown pair is a structural error; and
+- **workflow-assignment compatibility** (v0.2a, DEC-105). Each
+  `workflow_assignments` row is checked against its workflow's `applies_to`: a
+  kind-scope row whose workflow is bound to a different kind, and a project-scope
+  row whose workflow is not `any`, are each a structural error naming the
+  offending assignment. Foreign-key integrity for the same table is already
+  covered by the `PRAGMA foreign_key_check` pass above and is not duplicated
+  here.
 
 For every `activity_log` row, the audit also resolves `journal_event_id` in the
 append-only journal using the journal inspection path. A missing journal event
 is a structural error even though activity rows do not have a SQLite foreign
 key to journal storage. Findings are deterministic by check, entity ID, then
-message. Tables that do not exist in v0.1 are excluded.
+message.
+
+**Table scope (corrected v0.2a, DEC-105).** This audit previously excluded every
+table that does not exist in v0.1. That exclusion no longer holds: v0.2a's
+projected `workflow_assignments` table is audited by the check above. The rule
+is now that a projected table is audited once it has a structural invariant that
+a corrupt or externally modified projection could violate — not that it shipped
+in v0.1.
 
 ---
 

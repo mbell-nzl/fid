@@ -470,6 +470,10 @@ var closureProjectedTableQueries = []struct {
 		name:  "workflow_transition_requires",
 		query: "SELECT * FROM workflow_transition_requires ORDER BY workflow_id, from_state, to_state, rowid",
 	},
+	{
+		name:  "workflow_assignments",
+		query: "SELECT * FROM workflow_assignments ORDER BY scope, kind, workflow_id",
+	},
 }
 
 func closureProjectedTableSnapshots(t *testing.T, binary, workspace string) map[string]string {

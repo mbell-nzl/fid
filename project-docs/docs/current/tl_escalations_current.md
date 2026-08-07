@@ -9,37 +9,28 @@
 
 ## Open Escalations
 
-**None.**
+**None.** No phase is active.
 
 ## Recent Archive Notes
 
-- Phase 18 wrapped 2026-07-25. It raised one escalation, **ESC-001**
-  (final-review BLOCK: the `workflow.Load` connection deadlock that left four
-  required gate commands non-terminating, plus the then-absent QA-30 spec sync).
-  Resolved by **DEC-072**, verified by the 2026-07-23 final-review rerun, and
-  archived to `../phases/phase-18/tl-escalations.md`. Its ID collides with Phase
-  17's ESC-001 and is left as recorded — the known CF-023 defect.
-- Phase 18's other five triages (TRG-001..005) returned `BLOCK` and were
-  adjudicated as DEC-067..DEC-071 without an `ESC-NNN`; that routing was correct
-  in substance, but in five of six cases TL-Lite reported an escalation it never
-  minted and wrote no triage log. **CF-023 is now a required pre-Phase-19
-  workflow-tooling pass (DEC-074)** covering exactly that: mint `ESC-NNN` **and**
-  the triage-log entry on every `BLOCK`, and enforce `ESC-NNN`/`TRG-NNN` global
-  uniqueness.
-- Phase 17 wrapped 2026-07-18. It raised five escalations, all resolved and
-  archived to `../phases/phase-17/tl-escalations.md`: ESC-004 (Task 1
-  report-lint), ESC-005 (Task 2 report-lint, backfilled), ESC-009 (QA model
-  qualification), ESC-010 (rebuild parity; resolved by DEC-056 Branch A), and
-  ESC-011 (Task 7 report-lint, backfilled with a new ID). That file also records
-  the WRAP-F1/F2 register reconciliation. The two open retrospective items -
-  recurring report-lint commit-metadata friction and **ESC-NNN IDs not being
-  globally unique** (ESC-001/004/005 collide across phases) - are now tracked as
-  **CF-023** (DEC-058) and flagged for the deep retrospective before v0.2a.
-- Phase 16 raised no `ESC-NNN` items. Local unblock and workflow decisions
-  DEC-043..048 plus TRG-046 are archived in
-  `../phases/phase-16/tl-escalations.md` and `../phases/phase-16/decisions.md`.
-- Phase 16 VAL-013 is not an escalation; the completed human checklist records
-  PASS for HUMAN-16a..d.
+- **Phase 19** — **eight escalations, ESC-19-001..008, all resolved, zero
+  product defects.** Every one landed in verification apparatus or evidence
+  records: four (003/004/005/007) in one observable's shell ceremony for
+  VAL-059, one (006) in its fallout — a false gate attestation disproven by a
+  lint regression the same task introduced — one (001) an evidence-token
+  defect, one (002) a test-only import cycle, and one (008) the final review's
+  five findings, none in product code. Resolved by DEC-094..DEC-106.
+  All eight carried real, unique, phase-scoped IDs (DEC-084); the ID-collision
+  defect that affected Phases 17-18 did not recur. Three of eight triage records
+  required a Tech Lead backfill (CF-023). Archived to
+  `../phases/phase-19/tl-escalations.md`.
+- **Phase 18** — ESC-001 (final-review BLOCK, `workflow.Load` deadlock) resolved
+  by DEC-072; five other triages adjudicated as DEC-067..071 without an
+  `ESC-NNN`. In five of six cases TL-Lite reported an escalation it never minted
+  and wrote no triage log — fixed by DEC-085, tracked as **CF-023**. Archived to
+  `../phases/phase-18/tl-escalations.md`.
+- **Phase 17** — five escalations, all resolved; two retrospective items became
+  **CF-023**. Archived to `../phases/phase-17/tl-escalations.md`.
 
 ## Standing Escalation Triggers
 
