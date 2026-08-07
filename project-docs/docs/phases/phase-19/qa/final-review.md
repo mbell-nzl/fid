@@ -4,6 +4,11 @@ Reviewer: Codex QA Lead (GPT-5)
 Date: 2026-08-02
 Operating mode: Heavy
 
+> **Superseded 2026-08-07.** This verdict (BLOCK) is historical and is retained
+> unedited for the audit trail. All five blocking findings were dispositioned by
+> DEC-105 and re-reviewed in `final-review-2.md`, which carries the operative
+> verdict.
+
 ## Verdict
 
 **BLOCK**
