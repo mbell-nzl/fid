@@ -1,101 +1,69 @@
 # Phase Brief - No Active Phase
 
-> **Purpose.** Default execution brief for the current phase. Loaded by every
-> agent session.
->
-> **Size target:** under 150 lines.
+> Default execution brief loaded by every agent session.
 
 ## Status
 
-**No phase is active.** Phase 19 is **COMPLETE / WRAPPED** (2026-08-08,
-DEC-106). Do not start implementation work against this file. The next phase
-begins with a Tech Lead planning session that replaces this brief entirely.
+**No phase is active.** Phase 19 is complete and wrapped. Phase 20 is
+superseded by ADR-0010/0011. Do not begin product implementation from this
+file or from the historical version roadmap.
 
-## Last Completed Phase
+## Current product direction
 
-**Phase 19 — `fid workflow define/assign/list` + escalation default workflow**
-(v0.2a slice 2 of 3), heavy mode, six tasks, 70-assertion validation contract.
+fid remains a local-first Issue tracker and becomes the durable operational
+backend for the V2 kit. The project and kit own engineering intent, policy, and
+orchestration. fid owns Issues, immutable execution contracts, authority,
+Claims/Runs, trusted evidence, reviews, Human Outcomes, Attention, recovery,
+and semantic projections.
 
-- **Outcome:** 70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD. QA Lead
-  subsequent final review **PASS WITH IMPROVEMENTS**; Human checklist **9/9
-  PASS**. **Zero product defects.**
-- **Shipped:** `fid workflow define` / `assign` / `list`, the
-  `workflow_assignments` projected table with kind→project→built-in precedence,
-  the `escalation-default` seed (PRD-WF-005a), and assignment-aware issue
-  creation.
-- **Archive:** `../phases/phase-19/` — `progress.md`, `decisions.md`,
-  `triage-log.md`, `tl-escalations.md`, `tasks/`, `qa/`.
-- Branch: `phase-19-workflow-authoring`.
+There is no production compatibility obligation. Superseded V1 commands,
+models, migrations, event fixtures, and generic TOON/YAML/Markdown formatting
+will be replaced or removed before first dogfood. JSON is the only canonical
+machine representation.
 
-## Next Planning Checkpoint
+## Current checkpoint
 
-**ADR-0011 specification realignment, then backend-port reslice.** Gates D1/D2
-supersede Phase 20 and the V1 process-shaped forward roadmap. Do not plan
-`role_permissions`, `fid role create`, `fid policy set`, compatibility adapters,
-or retired document aggregates. Roadmap:
-`../../specs/10_IMPLEMENTATION_ROADMAP.md`.
+Gate D2's canonical fid spec rewrite is complete. Remaining governance work:
 
-Inputs the planning session must take:
+1. align the V2 kit documents;
+2. complete an independent cross-repository consistency audit;
+3. fix material findings and refresh the Human report; and
+4. discuss and ratify Gate D3's vertical-slice order.
 
-- **Deep retrospective disposition (optional, not an automatic gate,
-  DEC-104/DEC-106).** Phase 19 spent
-  eight escalations and twelve decisions to ship zero product defects. The brief
-  is in `../phases/phase-19/decisions.md` → *Deep retrospective recommendation*.
-  ADR-0011 retires routine retrospective product records; decide during the
-  reslice whether this one project-owned retrospective is still worth doing.
-- **DEC-079 unblock.** Custom workflow *state names* remain
-  non-transitionable. Generic actor/capability enforcement in the backend port,
-  not Phase 20's `fid policy set`, owns the future unblock. Never infer allow.
-- **CF-026a is a scheduling candidate** — `fid workflow show`, a bounded
-  additive read surface over already-projected tables, raised by the Phase 19
-  human dogfood. **CF-026b is not schedulable** until its lifecycle model is
-  recorded as a decision.
-- **CF-027 is now safe to take** — CF-025's parity test is the regression guard
-  it was sequenced behind. It reopens `internal/issues/create.go`; decide
-  explicitly during roadmap disposition rather than letting the trigger lapse.
-- **CF-023 and V1-document tooling** must be reassessed rather than carried
-  automatically; the current heavy development procedure is not future fid
-  product scope.
+The candidate sequence and open ordering questions are in
+`../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5.
 
-## Standing Constraints Carried Out Of Phase 19
+## Next implementation phase
 
-Binding on all future phases. Full text in
-`../phases/phase-19/decisions.md`; each is also now stated in a canonical spec.
+The next phase begins only after Gate D3 and must define one coherent vertical
+slice with:
 
-- **Uncaptured gate results are `UNVERIFIED`, never `PASS`** (DEC-102). A
-  result attested from memory, transcribed from another agent's report, or
-  promised against a named future control is not a passing state.
-  **"Pre-existing" is a provenance claim**: cite the introducing commit and show
-  it predates phase start. `git show HEAD` proves a line is committed, not
-  inherited.
-- **A required command is executed by its author before publication**
-  (DEC-103). A command in a task spec or QA plan that nobody has ever run is a
-  guess. Working-directory sensitivity is declared.
-- **Evidence is an automated test** unless the validation contract records why
-  it cannot be (DEC-104). Phase 19's headline lesson: four escalations landed in
-  a manual ceremony that a 60-line golden test replaced.
-- **Cleanup is never evidence**; scratch state is unique per attempt; task specs
-  declare required environment capabilities and escalate shortfalls at step zero
-  (DEC-101 items 1-3).
-- **A task-authored evidence harness that fails while being authored is a
-  deviation, not a failed gate** (DEC-100), under its four conditions.
-- **No-match inventories terminate `exit 1 (no output)`** (DEC-094).
-  `exit 0 (no output)` there is fabricated evidence.
-- **The Tech Lead seeds `phases/phase-N/triage-log.md` at planning time**
-  (DEC-095), and IDs are phase-scoped `TRG-<phase>-<NNN>` / `ESC-<phase>-<NNN>`
-  (DEC-084), written **before** the verdict (DEC-085).
-- **Spec-sync obligations land in the owning task's `## Documentation Updates`**,
-  not only in the phase sync table (DEC-106 item 5). An obligation recorded only
-  in a document its owner does not read is not assigned.
-- **`internal/workflow` owns workflow authoring, assignment, and resolution**
-  (DEC-089) and may use the journal write API (DEC-105); it must not create
-  issues, verify ACs, own migrations, or format output. No in-package
-  (`package db` / `package journal`) test file may import `internal/workflow`
-  (DEC-096).
-- **Custom state names are not transitionable until generic actor/capability
-  enforcement is implemented** (DEC-079, ADR-0010). Do not auto-register
-  matrix rows or infer permission to work around it.
-- **The DEC-066 gate-obligation seam stays behavior-free until v0.2b**, and no
-  production Go path reads the frozen v0.1 `definitions` map.
-- **Do not weaken TRD-PERF-003 (`<30 s`) or TRD-PERF-001 (`<500 ms`).**
-  Current: 100k rebuild `24.749 s`, 10k registry read `44.29 ms` (CF-024).
+- accepted terminology, JSON schemas, errors, events, and invariants;
+- exact retained and removed surfaces;
+- shared fake/fid conformance cases;
+- a first failing behavioral test;
+- recovery and migration consequences; and
+- current repository quality commands.
+
+Useful implemented foundation may be retained, but its V1 public shape is not
+a compatibility contract. The generic replacement must preserve fail-closed
+authority or evidence behavior before safety-relevant V1 code disappears.
+
+## Temporary delivery process
+
+`AGENTS.md` remains binding while fid is developed with the V1 repository
+process. Its role, validation-contract, task-report, and evidence rules are
+delivery scaffolding until the V2 kit can replace them; they are not fid product
+features and must not leak back into the target model.
+
+## Active cautions
+
+- Do not implement global role-policy tables or `fid role/policy` commands.
+- Do not add QA Plan, Validation Contract, template, handoff, triage, or
+  completion-report aggregates.
+- Do not trust caller-reported command outcomes as Receipts.
+- Do not read SQLite, journal, or `.fid/` internals from the kit.
+- Do not use the in-memory fake as a production fallback.
+- Do not create a second durable work graph beside Issues.
+- Do not add output encodings beside canonical JSON without satisfying the
+  ADR-0011 evidence trigger.

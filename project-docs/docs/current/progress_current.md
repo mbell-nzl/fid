@@ -1,101 +1,61 @@
 # Progress - Current
 
-> **Purpose.** In-flight phase status only. Historical progress lives under
-> `../phases/phase-N/progress.md`.
->
-> **Size target:** under 100 lines.
+> In-flight status only. Historical implementation progress remains in the
+> phase archives.
 
-## Project State
+## Project state
 
-**No phase is active.** Phase 19 is **COMPLETE / WRAPPED** (2026-08-08,
-DEC-106). Phase 18 is complete (2026-07-25); v0.1 remains closed for early
-dogfood (DEC-057), but fid has no adopted project workspace or compatibility
-constituency. **v0.2a workflow authoring is delivered.** Gates D1/D2 supersede
-Phase 20 and the accumulated V1 process-product roadmap. No replacement phase
-has been planned; specification realignment and backend-port reslicing are
-next.
+**No implementation phase is active.** Phase 19 completed and wrapped on
+2026-08-08. fid has no adopted project workspace or compatibility constituency.
 
-Branch: `phase-19-workflow-authoring`.
+Gates D1/D2 supersede Phase 20 and the historical process-shaped roadmap. The
+target product is now the standalone Issue tracker plus the fid/V2 durable
+operational kernel described by ADR-0011.
 
-## Phase 19 Outcome
+Branch: `main`.
 
-Six tasks, **heavy** mode, a **70-row** validation contract, and
-**70 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**. QA Lead's subsequent final
-review returned **PASS WITH IMPROVEMENTS**; the Human checklist is **9 PASS /
-0 FAIL / 0 PARTIAL**. Shipped: `fid workflow define` / `assign` / `list`, the
-`workflow_assignments` projected table with kind→project→built-in precedence,
-the `escalation-default` seed, and assignment-aware issue creation.
+## Gate D2 documentation
 
-Full history, task/commit map, and carry-forward detail:
-`../phases/phase-19/progress.md`. Decisions: `../phases/phase-19/decisions.md`
-(DEC-075..DEC-083, DEC-089..DEC-106).
+Completed and committed:
 
-## Quality Outcome
+- product decision ADR, decision-session ledger, and reconciliation report;
+- charter, PRD, and glossary rewrite;
+- technical, logical-schema, and runtime-configuration rewrite;
+- CLI, Human-interface, and end-to-end flow rewrite; and
+- quality, V2 workflow-integration, and convergence-roadmap rewrite.
 
-**Zero product defects across the phase.** Eight escalations, all in
-verification apparatus or evidence records:
+The rewrite removes forward promises for global role policy, role composites,
+QA Plans, Validation Contracts, templates, skills, handoffs, routine
+retrospectives, generic TOON/YAML/Markdown output, and pre-dogfood
+compatibility. JSON is the sole canonical machine representation.
 
-- **Four in one observable's shell ceremony** (VAL-059): ESC-19-003 baseline
-  selector, ESC-19-004 `capture.sh` path bug, ESC-19-005 sandbox-blocked
-  cleanup, ESC-19-007 a manifest command that never worked from the prescribed
-  directory. **CF-025 retired the ceremony** into a standing Go golden test.
-- **ESC-19-006** — Task 4's human-attested lint `PASS` disproven by a regression
-  Task 4 itself introduced, misclassified as "pre-existing" from `git show HEAD`.
-- **ESC-19-001/002** — an evidence-token defect and a test-only import cycle.
-- **ESC-19-008** — final review; five findings, none in product code.
+## Implementation baseline
 
-The **irregular human-executed Task 4 session** produced **five** distinct
-defects across its two commits, `32614bb` and `ce4cf5b`: a false gate
-attestation, a lint regression, two missing `Refs:` footers, and a report that
-never passed report-lint. **Every other Developer and QA-Lead task commit in the
-phase range carries `Refs:` and produced none** (the six remaining gaps in the
-range are five `docs(tl)` governance commits and one raw human commit,
-`ebbcd16`). That is the phase's strongest evidence for DEC-102 item 5.
+Phase 19's Issue workflow authoring implementation remains useful foundation,
+not a frozen public contract. Retain useful Issue, journal, SQLite, rebuild,
+locking, identity, and repository primitives only where they conform to the
+new specs.
 
-## Standing Rules Produced
+Product code has not yet been removed or reshaped under ADR-0011. Removal and
+replacement require bounded red/green implementation slices after Gate D3.
 
-**Kept** (each now a sentence in a canonical spec, not a phase decision an agent
-must remember to load): DEC-094, DEC-095, DEC-096 (test-packaging half),
-DEC-097, DEC-099 (reproduction principle), DEC-100, DEC-101 items 1-3,
-DEC-102 items 1 and 5, DEC-103 items 4-5, DEC-104 items 1-4.
+## Carry-forward
 
-**Retired at wrap** (DEC-106 item 6): DEC-098 entire, DEC-099's baseline half,
-DEC-101 item 4, DEC-103 items 1-3, and DEC-096's `Effect`-only characterization
-— all procedure-specific scar tissue from the ceremony CF-025 deleted.
-DEC-104 proposed retiring DEC-101 items 1-2 as well; that was **overturned**,
-because both cost one sentence and `t.TempDir()` satisfies them by construction.
+The active disposition is in `decisions_active.md`. In summary:
 
-Scored across the eleven rule-bearing decisions (DEC-094..DEC-104): **nine
-keeps, three retirements, two splits** — five retired items once the split
-halves are counted individually.
+- cancel `internal/dev` refactoring and generic Markdown formatter work;
+- keep Issue-path and rebuild-performance debt only when their retained paths
+  reopen;
+- treat workflow inspection/lifecycle as candidates, not commitments; and
+- keep V1 process-tooling concerns separate from product scope.
 
-## Carry-Forward
+## Current work
 
-- **CF-021, CF-025** — **closed** in Task 6.
-- **CF-022** — partially taken in Task 5; renderer backfill still deferred.
-- **CF-023** — open, **Medium**. Gained three drill cases, the `report-lint.sh`
-  `UNVERIFIED` message, mechanical `Refs:` enforcement, and the DEC-106 item 5
-  prevention (spec-sync obligations must land in the owning task's
-  `## Documentation Updates`).
-- **CF-024** — measured in Task 6: 100k rebuild `24.749 s` against `<30 s`
-  (~17.5% headroom, up from ~8-10%). Improved, not closed; fix stays v0.2b.
-- **CF-026a / CF-026b** — new, from the human dogfood: the `workflow show` read
-  surface, and the workflow lifecycle model (design decision before scheduling).
-- **CF-027** — new: `internal/issues/create.go` and `writeMarkdown`
-  decomposition. Inherited debt the phase improved; sequenced behind CF-025's
-  parity test.
-- **CF-008 (v0.2d), CF-017 (v0.2e), CF-018, CF-020** — re-deferred, unchanged.
+1. Align the V2 kit's fid compatibility and roadmap documents with ADR-0011.
+2. Run a fresh-agent cross-repository consistency audit and fix material
+   contradictions.
+3. Refresh the Windows-accessible reconciliation report.
+4. Present Gate D3's slice-order decision for Human discussion.
 
-## Escalations
-
-**None open.** ESC-19-001..008 are resolved and archived in
-`../phases/phase-19/tl-escalations.md`.
-
-## Next Action
-
-1. **Realign the canonical specification suite to ADR-0011** and independently
-   audit it for stale V1 product promises.
-2. **Ratify the replacement backend-port vertical-slice order and phase cut.**
-   Product-code removal follows through TDD slices, not this decision session.
-3. Reassess Phase 19 carry-forwards against the new ledger; cancel work tied to
-   retired packages and schedule only items that protect retained behavior.
+No implementation task should cite the superseded historical version roadmap
+as forward authority.
