@@ -602,7 +602,7 @@ relying on agent prose for deterministic claims.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| Gate registry | `.fid/gates.toml`: versioned gate definitions (structured argv, cwd, timeout, env allowlist). Registry parsing/validation in new `internal/gates/`. No implicit shell. | PRD-GATE-001, TRD-SEC-005–006 |
+| Gate Definition Registration | Ingest and resolve complete immutable registrations created from project-owned Gate Definitions through the kit schema/validation/activation contract. fid never parses mutable authoring configuration at execution. No implicit shell or caller field substitution. | PRD-GATE-001, TRD-SEC-005–006, Gate B3 |
 | Run git context (pulled forward) | Auto-captured read-only git context via new `internal/gitctx/` (branch, base/head commit, dirty, worktree), flag override, graceful degradation. Additive `agent_runs` migration. Receipts require repository binding, so this lands here rather than in v0.2e. | PRD-OPS-017 |
 | Registered execution + receipts | `fid gate run`: execution-start fact before spawn, terminal receipt after termination (pass/fail/timed_out/cancelled/harness_error), repository identity + tree hash, toolchain fingerprint, bounded sanitized excerpts, hashes, redaction/truncation flags. Two-event honesty model; abandoned starts satisfy nothing. | PRD-GATE-002–003, 006, TRD §4.3/§4.7, TRD-ARCH-016–017 |
 | Trust source + legacy projection | `executed`/`attested`/`reported` classification. Legacy `gate_runs` project as `reported`; deprecated `fid dev gate` keeps working with a visible trust line. Old and trusted modes never look identical. | PRD-GATE-004, PRD-DEV-004/010 (amended) |
@@ -698,8 +698,8 @@ with mechanical enforcement in fid, not prompts.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| Work envelope entity | Versioned, structured envelope: epic/phase outcome, risk lane, approved authority, protected decisions, task graph, validation and gate obligations, budgets, stop conditions. `fid envelope apply` ingests a reviewed envelope create-only as one journal event with a source-ref→fid-id mapping, `--validate`/`--dry-run` modes. Schema versioned and locked at build. | PRD-OPS-021 |
-| Orchestration primitives | Next actionable work with typed skip reasons (`fid next`, superset of `fid ready --explain`); claim/lease + resumable run state (existing surfaces); retry/intervention budgets and circuit-breaker state; machine-readable transition rejection and stop reasons; attention items requiring Human or product/architecture judgment (`fid envelope status`). No LLM loop, no agent spawning, no scheduler. | PRD-OPS-022, TRD-ARCH-016 |
+| Work envelope entity | Versioned execution contract over one primary fid Issue and an explicitly bounded related Issue set: outcome, risk lane, approved authority, protected decisions, validation and gate obligations, budgets, stop conditions. It references the existing Issue graph and creates no persistent Work Item graph. Exact revision/membership rules require the remaining ADR-0005 scenarios before implementation. | PRD-OPS-021, ADR-0005 |
+| Orchestration primitives | Derived, noncanonical Next action with typed non-actionable reasons (`fid next`, superset of `fid ready --explain`); Issue/Envelope/role/Obligation-bound claim and resumable Run state; Review Runs; retry/intervention budgets and circuit-breaker state; machine-readable transition rejection and stop reasons; attention (`fid envelope status`). Parallel mutation follows ADR-0006 and returns `mutation-conflict` when isolation is unproven. No persisted Next-action work entity, LLM loop, agent spawning, or scheduler. | PRD-OPS-022/024, TRD-ARCH-016, ADR-0005/0006 |
 | Runner-kit contract | JSON/TOON contracts for envelope state, rejections, and stop reasons so a deterministic runner (separate kit component) drives the loop without SQLite/`.fid/` internals. | TRD-ARCH-018, PRD-OPS-023 |
 
 ### v0.3b — QA Reviews and Findings

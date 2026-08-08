@@ -6,23 +6,26 @@
 
 ## 1. Vision
 
-`fid` is a local-first, agent-first issue tracker for AI-assisted software
-development. It provides a structured, queryable knowledge graph over the
-artifacts an agentic coding workflow produces — issues, acceptance criteria,
-completion reports, QA reviews, decisions, escalations, triage events,
-validation contracts, and token telemetry — backed by SQLite and driven
-entirely through a CLI.
+`fid` is a local-first, agent-first issue tracker and durable operational
+work-state and evidence backend for AI-assisted software development. It
+provides a structured, queryable graph over issues and their lifecycle, work
+relationships, claims and runs, events and projections, receipts and evidence,
+reviews and outcomes, attention, and telemetry. Its append-only journal is
+canonical and its SQLite projection is driven entirely through a CLI.
 
 The name comes from a tapered hand tool used to open up tightly-laid rope so
 the strands can be worked separately. The metaphor fits: fid opens up
 tightly-coupled project work into separable, trackable parts that agents and
 humans can manipulate independently.
 
-The long-term vision is a single binary that replaces the scattered markdown
-files, grep pipelines, and manual bookkeeping that AI-assisted development
-workflows currently rely on, giving both agents and humans a shared,
-schema-enforced, queryable project state without requiring a server, auth
-layer, or external service.
+The long-term vision is a single binary that replaces scattered operational
+Markdown and manual bookkeeping with shared, schema-enforced, queryable work
+state without requiring a server, auth layer, or external service. fid does
+not own the engineering method around that state: an external kit owns risk,
+authority, role routing, deterministic orchestration, and provider projections.
+Project files and Git remain canonical for product intent, architecture,
+decisions, code, and repository identity; Humans retain product judgment and
+protected-decision authority. (ADR-0004)
 
 ## 2. Problem Statement
 
@@ -56,8 +59,8 @@ project artifact type, and computed retrospective signals.
 
 | Segment | Description | Primary Needs |
 |---|---|---|
-| Primary | Solo developer or small team running an agentic coding workflow with multi-role agents (TL, Developer, QA, TL-Lite) | Queryable project state, enforced workflow invariants, token/cost telemetry, cross-epic traceability |
-| Secondary | TL agents bootstrapping and managing projects; Workflow Runner agents driving task loops | Machine-readable issue reads (`--format json/toon`), claim-based exclusive access, role-tuned context packs, `fid ready` queue |
+| Primary | Solo developer or small team running an agentic coding workflow directly or through an external workflow kit | Queryable operational work state, enforced integrity/evidence invariants, telemetry, cross-issue traceability |
+| Secondary | Orchestrator, Builder, Reviewer, and deterministic-harness consumers | Versioned machine contracts, issue/work projections, claims, receipts, evidence, attention, and resume/recovery state |
 | Secondary | Human product owners reviewing and approving work | Markdown export for human reading, human verification checklists, dashboard (v0.5) |
 | Not target | Teams needing real-time multi-tenant collaboration | fid is local-first, single-project-per-DB, last-write-wins; no auth, no remote sync, no CRDTs |
 | Not target | Users wanting a custom-fields platform or general-purpose project manager | Schema is opinionated; no user-defined fields in v1 |
@@ -90,6 +93,11 @@ These principles guide tradeoffs when requirements conflict.
    for token efficiency, role-tuned context packs to minimise context window
    pressure, claim-based exclusive access to prevent concurrent agent
    conflicts.
+7. **One authoritative owner per kind of truth.** fid owns operational work
+   state and evidence. The workflow kit owns engineering-workflow policy and
+   orchestration. Project files and Git own product/code truth; Humans own
+   judgment and protected decisions. Integrations exchange versioned records
+   and references rather than creating competing copies. (ADR-0004)
 
 ## 5. Scope
 
@@ -101,7 +109,8 @@ a brief concept inventory, not a duplicate glossary.
 
 | Concept | Description |
 |---|---|
-| Issue | Unified entity for epics, tasks, and subtasks — the trackable work item |
+| Issue | Unified entity for epics, tasks, and subtasks; Issues and their relationships are the only durable work graph (ADR-0005) |
+| Operational work state | Durable issues plus execution facts, evidence, attention, and projections that agents query and resume from |
 | Epic | Top-level container of related tasks; sequential or prioritised scheduling |
 | Workflow | Named state machine with states, transitions, and per-transition validation rules |
 | Claim | Short-lived exclusive-access lease on an entity (issue, QA review) |
@@ -112,7 +121,7 @@ a brief concept inventory, not a duplicate glossary.
 | Gate | Deterministic command producing pass/fail (tests, linters, etc.); trusted gates are registered definitions executed by fid |
 | Gate definition / Execution receipt | Versioned registered gate entry, and the immutable attested record of one execution (trust source, repository identity, terminal status) |
 | Evidence obligation | Declared requirement that a transition/verification/outcome be backed by specific, valid (current) evidence |
-| Work envelope | Versioned structured contract for one approved slice of work: outcome, authority, task graph, obligations, budgets, stop conditions |
+| Work envelope | Versioned execution contract over a primary Issue and an explicitly bounded related Issue set: outcome, authority, obligations, budgets, and stop conditions. It does not duplicate the Issue graph. |
 | Role | Workflow position (developer, qa_reviewer, qa_lead, tl_lite, tl, workflow_runner, human) with permission boundaries |
 
 ### 5.2 In Scope
@@ -131,7 +140,9 @@ a brief concept inventory, not a duplicate glossary.
 - Decisions, escalations, triage events, carry-forward items, retrospectives
 - Typed cross-entity links with auto-inverse
 - Claim-based exclusive access with TTL
-- Role-based permission enforcement
+- Actor/capability and claim precondition enforcement over approved authority;
+  the shipped role matrix remains a compatibility surface pending roadmap
+  disposition
 - JSONL journal as source of truth; SQLite as derived query cache
 - Multi-format output: JSON (default), TOON (opt-in), Markdown, YAML
 - Token/cost telemetry per agent run with snapshot pricing
@@ -143,13 +154,21 @@ a brief concept inventory, not a duplicate glossary.
 - Templates with monotonic versioning (v0.3)
 - Single static Go binary, project-scoped `.fid/` directory
 
+Items in the pre-ADR-0004 roadmap that encode a particular engineering method
+(including role choreography, QA-plan/validation hierarchies, templates, and
+role-specific reports) require explicit forward-roadmap disposition. Their
+presence here does not assign workflow-policy ownership back to fid.
+
 ### 5.3 Out of Scope
 
 - Multi-tenant server, remote sync, auth, or hosting
 - Real-time collaboration or CRDT-based conflict resolution
 - Hosting models/agents, general job scheduling, shell automation, or git
   mutation — fid executes only registered gate definitions (DEC-059)
-- Replacement for git, PRDs/TRDs, or the agent workflow protocol itself
+- Owning risk classification, authority/role routing, provider projections, or
+  the engineering-workflow policy and orchestration loop
+- Replacement for Git, PRDs/TRDs, canonical project decisions, or Human
+  product judgment
 - User-defined custom fields
 - Multi-project queries across separate databases
 - SLA tracking, burn-down charts, customer requests, OKRs
@@ -180,7 +199,7 @@ Define objective or observable outcomes.
 |---|---|
 | Early dogfood | v0.1 core issue layer replaces ~70% of daily interaction with whet's task artifacts. `fid init`, issue CRUD, AC verification, claims, ready queue, link management, and journal/rebuild all work reliably. The author uses fid for real project work. |
 | Public release | v0.3 ships QA reviews, templates, and TUI board. The full agentic task loop (TL plan → Developer execute → QA review → TL wrap-up) runs through fid's CLI with enforced workflow invariants. Cross-epic queries answer in single commands. |
-| Long-term | fid is the standard storage/query layer for AI-assisted development workflows. Projects adopt it without forking; the configurable workflow engine and role system accommodate diverse team shapes. Token telemetry and retrospective signals drive measurable efficiency improvements across projects. |
+| Long-term | fid is a stable issue-tracking and operational work-state/evidence layer for AI-assisted development workflows. Projects and evolving workflow kits adopt it through versioned capability contracts without forking or depending on storage internals. Telemetry and trusted evidence make workflow effectiveness measurable. |
 
 ## 8. Constraints
 
@@ -224,6 +243,7 @@ Keep only project-shaping decisions here. Phase-local decisions belong in
 | Evidence has identity, trust source, and freshness | Receipts and typed evidence records are first-class rows; validity (current/stale) is separate from existence; conservative whole-tree staleness first. | 2026-07-18, DEC-061 |
 | Completion prose is optional; views are generated | Structured `has_completion` obligations replace the mandatory completion Markdown; human-readable completion views and the validation brief are generated projections of structured state. | 2026-07-18, DEC-062/064 |
 | fid exposes runner primitives; the runner is a separate deterministic kit | Work envelopes + machine-readable orchestration primitives in fid; no hosted LLM loop. Humans keep protected-decision authority. | 2026-07-18, DEC-063 |
+| fid owns operational work state; the kit owns engineering workflow policy | Keeps fid independently useful as an issue tracker and stable backend while risk, roles, orchestration, and provider capabilities evolve in the kit. Project/Git/Human truth stays with its authoritative owner. | ADR-0004 |
 
 ## 11. Document Suite
 
@@ -242,4 +262,4 @@ This charter is part of the core specification suite:
 - `09_AI_WORKFLOW.md` - agent roles and orchestration.
 - `10_IMPLEMENTATION_ROADMAP.md` - implementation phases.
 
-*Last updated: 2026-07-18*
+*Last updated: 2026-08-08 (ADR-0004 product-boundary ratification)*

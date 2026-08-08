@@ -5,9 +5,12 @@
 >
 > **Size target:** under 150 lines.
 
-## Pre-Scaffold Design Decisions
+## Durable Architecture Decisions
 
-Three ADRs predate the phase system and remain binding unless superseded:
+The first three ADRs predate the phase system. ADR-0004 records the approved
+fid/V2 product boundary, ADR-0005 resolves durable work identity, and ADR-0006
+defines parallel mutation isolation. All remain binding unless explicitly
+superseded:
 
 - `docs/adr/0001-journal-canonical-db-derived.md` — journal is source of truth,
   SQLite is a derived projection. No daemon.
@@ -15,6 +18,65 @@ Three ADRs predate the phase system and remain binding unless superseded:
   configurable, seeded from a default profile.
 - `docs/adr/0003-three-tier-qa-model.md` — validation contracts, QA plans, and
   QA reviews ship together.
+- `docs/adr/0004-operational-work-state-boundary.md` — fid owns issue tracking
+  plus durable operational work state/evidence; the external kit owns
+  engineering-workflow policy, risk/authority/role routing, orchestration, and
+  provider projections. ADR-0002/0003 remain compatibility assumptions pending
+  explicit forward-roadmap disposition.
+- `docs/adr/0005-issues-are-the-durable-work-graph.md` — fid Issues are the
+  only durable work graph. Work Envelopes reference selected Issues; the
+  harness derives noncanonical Next actions instead of persisting a second
+  Work Item graph.
+- `docs/adr/0006-isolate-parallel-builder-mutations.md` — one active mutating
+  Builder Claim per Issue; parallel mutation requires distinct Issues,
+  separate worktrees, and provably disjoint scopes.
+
+**Gate C delivery decision (2026-08-08):** qualify all twelve V2 kit
+backend-port capabilities before migrating a live project. Implement them as
+bounded vertical slices with contract/conformance evidence, controlled
+fixtures, and a disposable migration rehearsal; this is not a big-bang phase
+or approval of the whole historical fid roadmap. Exact slicing follows the
+open semantics decision and roadmap disposition.
+
+**Gate B1 policy/enforcement decision (2026-08-08):** the kit evaluates
+engineering-workflow policy and compiles the approved Work Envelope; fid does
+not recalculate risk, routing, or obligation-selection policy. fid enforces
+generic integrity plus the approved envelope's recorded preconditions,
+authorization, non-weakening, trusted-evidence, freshness, and lifecycle
+rules. Shared conformance fixtures prevent contract drift.
+
+**Gate B2 trusted-executor decision (2026-08-08):** fid is the primary local
+executor for registered gates and creates receipts from observed execution;
+callers supply only immutable registration references. External attested
+runners are a secondary CI/Assured/release extension. Reported results never
+satisfy trusted obligations. Live output is required; framing remains an
+interface-design detail.
+
+**Gate B3 Gate Definition authority decision (2026-08-08):** the project owns
+approved machine-readable Gate Definition values; the kit owns their versioned
+schema, validation, and activation; fid owns immutable registrations,
+executions, and receipts and never executes directly from mutable authoring
+configuration. `QUALITY_PLAN.md` is explanatory. Exact authoring-file location
+is deferred; standalone clients use the registration contract.
+
+**Gate B4 fid-native work identity decision (2026-08-08):** fid Issues and
+their relationships are the only durable work graph. A Work Envelope selects a
+primary Issue and, where necessary, a bounded related Issue set; it does not
+own persistent Work Items. Durable decomposition uses tasks/subtasks; smaller
+steps remain transient plans or Run checkpoints. The harness computes Next
+actions from durable state. Claims/Runs bind Issue, Envelope revision, actor
+role, and optional Obligation; reviews use Review Runs/Records. Parallel
+claims, rework, crash recovery, and multi-Issue envelope behavior require
+joint conformance scenarios before implementation.
+
+**Gate B4a parallel-Builder decision (2026-08-08):** one Issue may have at
+most one active mutating Builder Claim. Claims bind Issue, Envelope revision,
+Builder, and worktree; the Envelope itself is not claimed. Parallel mutation
+requires distinct selected Issues, separate worktrees, and declared provably
+disjoint scopes. Otherwise the second Next action is non-actionable with
+`mutation-conflict`. Read-only Review Runs may coexist but are repository-
+identity-bound and become stale when their target changes. Three Gate B4
+lifecycle scenarios remain open.
 
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 

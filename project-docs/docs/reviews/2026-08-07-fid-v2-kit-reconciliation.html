@@ -606,6 +606,12 @@
 
     .decision-gate strong { color: var(--teal); }
 
+    .decision-gate.approved {
+      padding: 20px;
+      border-left: 5px solid var(--green);
+      background: var(--green-soft);
+    }
+
     .source-list {
       columns: 2;
       column-gap: 44px;
@@ -684,27 +690,30 @@
         with durable execution state and trusted evidence without importing V1's process weight.
       </p>
       <div class="headline-verdict">
-        <span class="claim-label recommendation">Analyst recommendation</span>
-        <strong>Pull forward a contract-first vertical backend slice.</strong>
+        <span class="claim-label decision">Approved direction</span>
+        <strong>Qualify the complete backend port through staged vertical slices.</strong>
         Do not wait through fid's existing v0.2-v0.4 order, do not start Phase 20 as written,
         and do not bypass D-006/D-007. First settle the joint port semantics; then implement
-        enough first-class fid capability to run one real Routine task with trusted receipts,
-        recovery, and structured completion.
+        and qualify all twelve V2 backend-port capabilities before migrating a live project.
+        Each slice still requires contract, conformance, and recovery evidence.
       </div>
       <div class="meta">
         <span><strong>fid snapshot:</strong> <code>phase-19-workflow-authoring@bb7d61a</code></span>
         <span><strong>Kit snapshot:</strong> <code>v2@b9860ac</code></span>
         <span><strong>Scope:</strong> specs, roadmap, current state, implementation surfaces</span>
-        <span><strong>Decision status:</strong> analysis only; no recommendation ratified</span>
+        <span><strong>Decision status:</strong> Gates A, B1-B4a, and C ratified 8 August; three B4 lifecycle scenarios and Gate D remain</span>
       </div>
     </div>
   </header>
 
   <div class="decision-banner" role="note">
     <div class="wrap">
-      <strong>No product decision was made by producing or revising this report.</strong>
-      It is a cognitive re-entry aid. Recommendations become binding only after Human
-      ratification and matching changes to the appropriate specifications or decision records.
+      <strong>Gates A, B1-B4a, and C were ratified by the Human on 8 August 2026.</strong>
+      fid owns durable operational work state and evidence; all twelve V2 backend-port
+      capabilities will be qualified before live-project migration; the kit evaluates policy
+      while fid enforces recorded preconditions and executes immutable registered local gates.
+      fid Issues are the only durable work graph. Parallel Builder isolation is approved;
+      three lifecycle scenarios and Gate D remain.
     </div>
   </div>
 
@@ -719,11 +728,11 @@
     </div>
     <div class="done">
       <span>Kit V2</span>
-      <strong>V2-0 through V2-2 complete; deterministic harness and fake exist.</strong>
+      <strong>V2-0/V2-1 complete; historical V2-2 closed, but its WorkItem model now needs correction.</strong>
     </div>
     <div class="blocked">
       <span>Joint path</span>
-      <strong>V2-3 is correctly blocked on a production fid contract and capabilities.</strong>
+      <strong>V2-3 is paused for the V2-2 fid-native correction and production fid capabilities.</strong>
     </div>
   </div>
 
@@ -1037,16 +1046,17 @@
           </table>
         </div>
 
-        <div class="callout warn">
-          <span class="claim-label decision">Open Human decision</span>
-          <strong>One joint contract decision is still missing</strong>
+        <div class="callout good">
+          <span class="claim-label current">Approved 2026-08-08</span>
+          <strong>fid Issues are the only durable work graph</strong>
           <p>
-            V2 currently gives envelope work items their own IDs, while fid already gives
-            issues durable IDs. Before implementation, the products must specify whether a
-            Work Item ID is a fid Issue ID, an explicit binding to one, or an envelope-local
-            snapshot identity. The safest default is an explicit, lossless binding. The lack
-            of that rule explains why today's issue CLI cannot simply be used as the V2 port;
-            it does <em>not</em> make issue tracking obsolete.
+            A Work Envelope references one primary fid Issue and, where explicitly selected,
+            a bounded related Issue set. It does not create persistent Work Items. Durable
+            decomposition uses fid tasks and subtasks; smaller steps remain transient plans
+            or concise Run checkpoints. The harness derives a noncanonical Next action, and
+            independent review uses a Review Run and Review Record satisfying an Obligation.
+            The existing V2-2 <code>WorkItem</code>/<code>WorkGraph</code> fake is superseded
+            work in progress and requires a bounded correction before V2-3 resumes.
           </p>
         </div>
       </div>
@@ -1054,11 +1064,11 @@
 
     <section id="boundary">
       <div class="wrap">
-        <p class="section-label">04 / Target product boundary</p>
-        <h2>A slimmer fid should own work, facts, and trust, not the whole engineering method.</h2>
+        <p class="section-label">04 / Ratified product boundary</p>
+        <h2>fid owns work, facts, and trust, not the whole engineering method.</h2>
         <p class="claim-context">
-          <span class="claim-label recommendation">Recommended product boundary</span>
-          This ownership split reconciles the accepted documents but has not been ratified as fid's new product thesis.
+          <span class="claim-label current">Ratified product boundary</span>
+          Approved by the Human on 8 August 2026 and recorded in ADR-0004.
         </p>
 
         <div class="ownership-grid">
@@ -1119,8 +1129,8 @@
         </div>
 
         <div class="callout">
-          <span class="claim-label recommendation">Recommendation</span>
-          <strong>Proposed fid product thesis</strong>
+          <span class="claim-label current">Approved direction</span>
+          <strong>fid product thesis</strong>
           <p>
             fid is a local-first issue tracker and the journal-canonical operational source of
             truth for agentic work. V2 extends it with execution contracts, trusted evidence,
@@ -1137,8 +1147,9 @@
         <h2>The two roadmaps align in intent but still disagree in several concrete contracts.</h2>
         <p class="claim-context">
           <span class="claim-label analysis">Cross-product analysis</span>
-          <span class="claim-label decision">Six open decisions</span>
-          These are detected contract tensions with proposed resolutions, not decisions already made.
+          <span class="claim-label decision">Six open contract resolutions</span>
+          Gate A settles the product boundary, but these detailed semantics and roadmap
+          dispositions remain to be resolved through Gates B and D.
         </p>
 
         <div class="option-grid">
@@ -1163,11 +1174,11 @@
           <article class="panel warn">
             <h3>3. Gate definition ownership is duplicated</h3>
             <p>
-              fid plans <code>.fid/gates.toml</code>; V2 says the project owns gate definitions
-              and fid stores immutable registration/resolution records bound to project,
-              overlay, repository, and authorization identity.
+              fid's draft treats project-owned <code>.fid/gates.toml</code> as the live registry
+              parsed at execution; V2 requires an authored definition to become an immutable
+              registration bound to project, overlay, repository, and authorization identity.
             </p>
-            <p><strong>Decision needed:</strong> one project-owned definition source, with fid registrations as immutable derived trust records.</p>
+            <p><strong>Approved direction:</strong> the project owns authored values, the kit owns schema/validation/activation, and fid resolves only immutable active registrations. Exact authoring filename is deferred.</p>
           </article>
           <article class="panel warn">
             <h3>4. Kit Activation risks dual truth</h3>
@@ -1201,12 +1212,27 @@
     <section id="options">
       <div class="wrap">
         <p class="section-label">06 / Credible ways forward</p>
-        <h2>There are four coherent options. Only one gives early evidence without discarding the architecture.</h2>
+        <h2>Three delivery options remain inside the approved product boundary.</h2>
         <p class="claim-context">
           <span class="claim-label analysis">Options analysis</span>
-          <span class="claim-label recommendation">Option 2 recommended</span>
-          All four options remain available until the Human records a choice.
+          <span class="claim-label decision">Option 3 approved</span>
+          Gate C selects full-capability qualification with staged implementation.
+          Gate A rejects replacing fid with a kit-native durable backend and
+          continues to reject hybrid persistence.
         </p>
+
+        <div class="callout warn">
+          <strong>Terminology correction</strong>
+          <p>
+            The earlier wording &ldquo;Routine capability profile&rdquo; was analyst
+            shorthand, not a canonical kit term. <strong>Routine</strong> is a risk lane;
+            backend capabilities are independently versioned operations. Option 2 means
+            delivering the minimum backend capability set needed to execute, interrupt,
+            recover, evidence, and complete one real Routine-lane task before adding the
+            remaining capabilities. Option 3 means delivering all twelve currently specified
+            capabilities before the first production integration.
+          </p>
+        </div>
 
         <div class="table-wrap">
           <table class="option-table">
@@ -1225,20 +1251,20 @@
                 <td><span class="tag fit-defer">Credible, poor</span></td>
               </tr>
               <tr>
-                <td>2. Contract-first vertical slice <span class="recommend-label">Recommended</span></td>
-                <td>Jointly publish the port contract, reslice fid around the Routine production path, then implement the adapter and one real task.</td>
+                <td>2. Narrow first production slice</td>
+                <td>Jointly publish the port contract, implement the minimum production capability set for one real Routine-lane task, then run that task through the adapter.</td>
                 <td>High. Preserves D-006/D-007 and fail-closed conformance.</td>
-                <td>Fastest legitimate feedback.</td>
-                <td>Requires coordinated decisions and disciplined scope.</td>
-                <td><span class="tag fit-core">Best balance</span></td>
+                <td>Potentially fastest, but not in the current project portfolio.</td>
+                <td>Partial V1/V2 adoption creates trial setup, dual-operation, and live-project risk before the complete V2 benefit exists.</td>
+                <td><span class="tag fit-defer">Not selected</span></td>
               </tr>
               <tr>
-                <td>3. Full 12-capability fast-forward</td>
-                <td>Pull every current compatibility-matrix row into one fid program before returning to V2-3.</td>
+                <td>3. Full-capability qualification <span class="recommend-label">Approved</span></td>
+                <td>Implement all twelve backend-port capabilities as bounded vertical slices, qualify each against the contract, and migrate no live project until the complete port passes.</td>
                 <td>High if contracts are settled first.</td>
-                <td>Medium to slow; one large qualification cliff.</td>
-                <td>Big-bang design and no Routine feedback until reviews, Human outcomes, activation, and export all land.</td>
-                <td><span class="tag fit-rescope">Coherent, heavy</span></td>
+                <td>Slower to live feedback; deterministic evidence accumulates throughout implementation.</td>
+                <td>More up-front scope and delayed workflow-economic evidence; mitigated by staged conformance and migration rehearsal.</td>
+                <td><span class="tag fit-core">Selected by Gate C</span></td>
               </tr>
               <tr>
                 <td>4. Replace D-006 with a kit-native durable backend</td>
@@ -1246,7 +1272,7 @@
                 <td>Coherent only as a recorded full boundary change, not hybrid persistence.</td>
                 <td>Medium. Removes coordination but rebuilds fid capabilities.</td>
                 <td>Duplicates mature journal/rebuild work and weakens fid's independent product case.</td>
-                <td><span class="tag fit-defer">Fallback option</span></td>
+                <td><span class="tag fit-retire">Rejected by Gate A</span></td>
               </tr>
               <tr>
                 <td>Rejected: hybrid persistence</td>
@@ -1261,11 +1287,12 @@
         </div>
 
         <div class="callout good">
-          <strong>Why the narrow slice is not a prohibited shortcut</strong>
+          <strong>Why full qualification is not a big-bang implementation</strong>
           <p>
-            It changes the specs before code, publishes exact contracts, implements first-class
-            fid state, and keeps the fake test-only. It reduces the number of capabilities required
-            for the first Routine scenario; it does not weaken the semantics of any capability used.
+            Production migration waits for all twelve capabilities, but development does not wait
+            until the end for evidence. Each bounded slice publishes exact contracts, implements
+            first-class fid state, keeps the fake test-only, and passes shared conformance and
+            recovery checks before the next slice builds on it.
           </p>
         </div>
       </div>
@@ -1273,11 +1300,12 @@
 
     <section id="sequence" class="band">
       <div class="wrap">
-        <p class="section-label">07 / Recommended sequence</p>
-        <h2>Break the deadlock with a contract release, then qualify one complete path.</h2>
+        <p class="section-label">07 / Approved delivery shape</p>
+        <h2>Build the complete port in slices, then migrate at a controlled boundary.</h2>
         <p class="claim-context">
-          <span class="claim-label recommendation">Proposed sequence</span>
-          This sequence is contingent on the open product, semantics, scope, and roadmap decisions in section 09.
+          <span class="claim-label decision">Gate C approved</span>
+          The qualification threshold is decided. Exact semantics and roadmap slicing remain
+          contingent on Gates B and D in section 09.
         </p>
 
         <div class="sequence">
@@ -1288,7 +1316,7 @@
           <div><span class="step">04 / Trust</span><h4>Register and execute gates</h4><p>Immutable binding-aware registrations, reference-only execution, start facts, receipts, redaction, bounded artifacts, and abandoned execution handling.</p></div>
           <div><span class="step">05 / Evidence</span><h4>Evaluate obligations</h4><p>Current/stale/unverifiable/inapplicable records, artifact availability, whole-tree freshness, and structured completion.</p></div>
           <div><span class="step">06 / Recovery</span><h4>Portable export and adapter</h4><p>Lossless structured export/validation, kit transport adapter, unchanged conformance suite, rebuild, interruption, and unavailable-backend tests.</p></div>
-          <div><span class="step">07 / Learn</span><h4>One Routine task</h4><p>Run real work end to end. Only then extend the profile to independent reviews, Human outcomes, Standard work, and the Human brief.</p></div>
+          <div><span class="step">07 / Adopt</span><h4>Rehearse, then migrate</h4><p>Qualify all twelve capabilities, rehearse against a disposable V1 project copy, then begin live adoption at a project or phase boundary and run the matched V1/V2 evaluation.</p></div>
         </div>
 
         <h3>Proposed capability staging</h3>
@@ -1297,20 +1325,20 @@
             <thead><tr><th>Stage</th><th>Capabilities</th><th>First proof</th></tr></thead>
             <tbody>
               <tr><td>Protocol</td><td>Discovery, independent versions, schemas, availability, limits, typed errors.</td><td>The kit refuses unsupported profiles without inspecting fid internals.</td></tr>
-              <tr><td>Routine workflow</td><td><code>workflow.state.v1</code>, <code>workflow.transitions.v1</code>, <code>work.claims.v1</code>, <code>attention.v1</code>, minimum trajectory telemetry, activation participant state.</td><td>Create, claim, interrupt, rebuild, and resume one envelope.</td></tr>
-              <tr><td>Routine trust</td><td>Gate registrations, receipts, freshness, obligation evaluation, structured completion, portable export.</td><td>One real task completes only on current trusted evidence.</td></tr>
-              <tr><td>Standard extension</td><td><code>reviews.coverage.v1</code>, <code>human.outcomes.v1</code>, richer economics and projections.</td><td>A Standard task with independent zero-finding-safe review and Human validation.</td></tr>
+              <tr><td>First-task state and recovery</td><td><code>workflow.state.v1</code>, <code>workflow.transitions.v1</code>, <code>work.claims.v1</code>, <code>attention.v1</code>, minimum trajectory telemetry, activation participant state.</td><td>Create, claim, interrupt, rebuild, and resume one Routine-lane envelope.</td></tr>
+              <tr><td>First-task trust and completion</td><td>Gate registrations, receipts, freshness, obligation evaluation, structured completion, portable export.</td><td>One real Routine-lane task completes only on current trusted evidence.</td></tr>
+              <tr><td>Review and outcome completion</td><td><code>reviews.coverage.v1</code>, <code>human.outcomes.v1</code>, richer economics and projections.</td><td>The complete twelve-capability port passes shared conformance before migration rehearsal.</td></tr>
             </tbody>
           </table>
         </div>
 
         <div class="callout warn">
-          <strong>The current compatibility matrix should become profile-aware.</strong>
+          <strong>Qualification breadth and per-task use are different decisions.</strong>
           <p>
-            Requiring all twelve capabilities for every first use undermines the purpose of
-            independent capability negotiation and the V2 risk lanes. A Routine profile should
-            fail closed on everything it actually requires, without also requiring unused
-            Standard/Assured review and Human-outcome operations.
+            Gate C requires all twelve capabilities to be available and qualified before live
+            migration. It does not require every Routine-lane task to invoke all twelve.
+            Independent capability negotiation remains useful, and each task should fail closed
+            on every capability it actually requires.
           </p>
         </div>
       </div>
@@ -1486,7 +1514,7 @@
 
               <tr class="phase-break" data-phase="v02e"><td colspan="5">v0.2e - reports, context, run operations, and economics</td></tr>
               <tr data-phase="v02e" data-status="planned" data-fit="rescope"><td>v0.2e</td><td>Named reports</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Generated projections are valuable; replace V1 epic/role report names with envelope status, obligations, completion, attention, and Human brief views.</td></tr>
-              <tr data-phase="v02e" data-status="planned" data-fit="core"><td>v0.2e</td><td>Attention report</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Pull durable attention lifecycle into the Routine workflow slice; keep the report as a projection and routine status non-interrupting.</td></tr>
+              <tr data-phase="v02e" data-status="planned" data-fit="core"><td>v0.2e</td><td>Attention report</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Pull durable attention lifecycle into the first Routine-lane workflow slice; keep the report as a projection and routine status non-interrupting.</td></tr>
               <tr data-phase="v02e" data-status="planned" data-fit="defer"><td>v0.2e</td><td>Lightweight search</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-defer">Defer</span></td><td>Useful after real state exists, but not a V2-3 blocker. Use precise projections and IDs first.</td></tr>
               <tr data-phase="v02e" data-status="planned" data-fit="rescope"><td>v0.2e</td><td>Context packs</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>V2 needs concise role and changed-since projections, but for Orchestrator/Builder/Reviewer and without copied protocol prose.</td></tr>
               <tr data-phase="v02e" data-status="planned" data-fit="core"><td>v0.2e</td><td><code>fid changes</code></td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>A changed-since fact projection directly reduces context and repeated summaries.</td></tr>
@@ -1509,7 +1537,7 @@
               <tr data-phase="v03b" data-status="planned" data-fit="rescope"><td>v0.3b</td><td>QA tables and structured coverage</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>V2 needs one common Review record with profiles, independence, coverage, verdict, receipts, and zero-or-more findings. Drop QA-role-specific assumptions.</td></tr>
               <tr data-phase="v03b" data-status="planned" data-fit="rescope"><td>v0.3b</td><td>QA review create/get/list</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Expose backend-port review operations and projections rather than a separate V1 QA command family.</td></tr>
               <tr data-phase="v03b" data-status="planned" data-fit="rescope"><td>v0.3b</td><td>QA finding add/list</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Findings remain useful structured review output; link them to Reviewer profile, subject, evidence, and disposition.</td></tr>
-              <tr data-phase="v03b" data-status="planned" data-fit="defer"><td>v0.3b</td><td>QA blockers report</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-defer">Defer</span></td><td>A useful projection after review records exist, not a prerequisite for the Routine production path.</td></tr>
+              <tr data-phase="v03b" data-status="planned" data-fit="defer"><td>v0.3b</td><td>QA blockers report</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-defer">Defer</span></td><td>A useful projection after review records exist, not a prerequisite for the first Routine-lane production task.</td></tr>
               <tr data-phase="v03b" data-status="planned" data-fit="rescope"><td>v0.3b</td><td>QA review claims</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Use the generic claim contract with Reviewer actor/profile and read-only/non-exclusive policy where allowed.</td></tr>
               <tr data-phase="v03b" data-status="planned" data-fit="retire"><td>v0.3b</td><td>QA composite commands</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-retire">Retire</span></td><td><code>qa start/finding/verify/finish</code> preserves V1 role choreography. The V2 Reviewer and harness use generic port operations.</td></tr>
               <tr data-phase="v03b" data-status="planned" data-fit="retire"><td>v0.3b</td><td>Comment scope on reviews</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-retire">Retire</span></td><td>Meaningful reasoning belongs in review verdict/findings or a linked concern/deviation, not a free-form comment stream.</td></tr>
@@ -1585,23 +1613,40 @@
     <section id="gates" class="band">
       <div class="wrap">
         <p class="section-label">09 / Human decision gates</p>
-        <h2>Four decisions remain open before another implementation phase.</h2>
+        <h2>Product, scope, and the policy split are approved; detailed semantics and roadmap remain open.</h2>
         <p class="claim-context">
-          <span class="claim-label decision">Unmade Human decisions</span>
-          The report recommends answers, but none of these gates has been approved by the Human.
+          <span class="claim-label decision">Human decision status</span>
+          Gates A, B1-B4a, and C are approved. Three Gate B4 lifecycle scenarios and Gate D
+          roadmap disposition remain to be worked through.
         </p>
 
-        <div class="decision-gate">
-          <strong>Gate A / Product</strong>
-          <div>Approve fid's primary job as the local issue tracker and operational source of truth for agents, extended to serve as V2's workflow-state and evidence backend. Issue tracking remains at the product center.</div>
+        <div class="decision-gate approved">
+          <strong>Gate A / Product - APPROVED 2026-08-08</strong>
+          <div>fid remains the local issue tracker and owns durable operational work state and evidence. The kit owns engineering-workflow policy, risk/authority/role routing, deterministic orchestration, and provider projections. Recorded in ADR-0004.</div>
         </div>
-        <div class="decision-gate">
-          <strong>Gate B / Semantics</strong>
-          <div>Choose how kit-owned policy reaches fid: a published shared pure transition contract, or a narrower persistence port with generic fid invariants. Do not independently reimplement policy on both sides without a conformance source.</div>
+        <div class="decision-gate approved">
+          <strong>Gate B1 / Policy and enforcement - APPROVED 2026-08-08</strong>
+          <div>The kit evaluates engineering-workflow policy and compiles the approved Work Envelope. fid does not recalculate risk, routing, or obligation-selection policy; it enforces generic integrity and the recorded envelope's authorization, non-weakening, trusted-evidence, freshness, revision, lease, idempotency, and lifecycle preconditions.</div>
         </div>
-        <div class="decision-gate">
-          <strong>Gate C / Scope</strong>
-          <div>Approve the Routine capability profile and split V2-3 into a contract step, a Routine production path, and later Standard/Assured extensions. Otherwise accept the cost of the full twelve-capability fast-forward.</div>
+        <div class="decision-gate approved">
+          <strong>Gate B2 / Trusted executor - APPROVED 2026-08-08</strong>
+          <div>fid is the primary trusted local executor and creates receipts from observed registered-gate execution. External attested runners are a secondary CI/Assured/release extension; reported results never satisfy trusted obligations. Live output is required, with framing still to design.</div>
+        </div>
+        <div class="decision-gate approved">
+          <strong>Gate B3 / Gate Definition authority - APPROVED 2026-08-08</strong>
+          <div>The project owns machine-readable Gate Definition values; the kit owns schema, validation, and activation; fid owns immutable registrations and never executes mutable authoring configuration. Quality-plan prose is explanatory, the exact authoring filename is deferred, and standalone clients use the same registration contract.</div>
+        </div>
+        <div class="decision-gate approved">
+          <strong>Gate B4 / fid-native work identity - APPROVED 2026-08-08</strong>
+          <div>fid Issues and their relationships are the only durable work graph. Work Envelopes reference selected Issues; Claims and Runs bind Issue, Envelope revision, actor role, and optional Obligation; the harness derives noncanonical Next actions. Review uses Review Runs/Records rather than Review Work Items. Review rework, interrupted Runs, and multi-Issue Envelope revision still require explicit conformance scenarios before implementation.</div>
+        </div>
+        <div class="decision-gate approved">
+          <strong>Gate B4a / Parallel Builder isolation - APPROVED 2026-08-08</strong>
+          <div>One Issue permits one active mutating Builder Claim. Parallel mutation requires distinct selected Issues, separate worktrees, and declared provably disjoint scopes; otherwise the second Next action returns <code>mutation-conflict</code>. Read-only Review Runs may coexist, but their results bind the exact repository identity and stale when it changes.</div>
+        </div>
+        <div class="decision-gate approved">
+          <strong>Gate C / Scope - APPROVED 2026-08-08</strong>
+          <div>Implement and qualify all twelve V2 backend-port capabilities before migrating a live project. Deliver them through bounded vertical slices with contract and conformance evidence, controlled fixtures, and a disposable migration rehearsal; this does not approve the whole historical fid roadmap or require every task to invoke every capability.</div>
         </div>
         <div class="decision-gate">
           <strong>Gate D / Roadmap</strong>
@@ -1612,8 +1657,9 @@
           <strong>Stop condition</strong>
           <p>
             If the joint contract cannot produce a small, comprehensible first production
-            profile without copying the kit's policy engine into fid, choose Option 4
-            deliberately. Do not preserve both products by creating a boundary neither can explain.
+            capability set without copying the kit's policy engine into fid, stop and revisit
+            Gate A explicitly. Do not silently revive the rejected kit-native or hybrid
+            persistence options, or preserve both products behind a boundary neither can explain.
           </p>
         </div>
       </div>
@@ -1635,6 +1681,8 @@
           <li><a href="2026-07-18-roadmap-update-decisions.md">fid DEC-059 through DEC-066</a></li>
           <li><a href="../current/progress_current.md">fid current progress</a></li>
           <li><a href="2026-08-07-fid-viability-review.html">earlier fid viability review</a></li>
+          <li><a href="../../../docs/adr/0004-operational-work-state-boundary.md">ADR-0004: operational work-state boundary</a></li>
+          <li><a href="2026-08-08-fid-v2-direction-decision-session.md">ongoing fid/V2 direction decision session</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/decisions/0001-v2-foundation.md">V2 foundation decisions D-001 through D-010</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/00_PROJECT_CHARTER.md">V2 Charter</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/01_PRD.md">V2 PRD</a></li>
@@ -1648,8 +1696,8 @@
         </ul>
         <p class="matrix-note">
           No held-out scenario repository or evaluator prompt was read. This report makes
-          architecture and roadmap recommendations; it does not alter either product's accepted
-          decisions or specifications.
+          architecture and roadmap recommendations. Gates A, B1-B4a, and C are accepted;
+          individual feature dispositions and Gate D remain analysis until separately decided.
         </p>
       </div>
     </section>
@@ -1657,7 +1705,7 @@
 
   <footer>
     <div class="wrap">
-      <p>Analysis only. Prepared as a cognitive re-entry and decision aid; recommendations require Human ratification and appropriate recorded changes before implementation.</p>
+      <p>Gates A, B1-B4a, and C were ratified on 8 August 2026. Gate B4 still requires explicit review-rework, interrupted-Run, and multi-Issue Envelope scenarios before implementation; Gate D roadmap disposition remains open.</p>
     </div>
   </footer>
 

@@ -30,18 +30,35 @@ ambiguity before implementation relies on the term.
 ## Project Identity
 
 **fid**:
-A local-first, agent-first issue tracker for AI-assisted software
-development. SQLite-backed CLI. A tapered hand tool used to open up
-tightly-laid rope so the strands can be worked separately. Pairs with
-**whet** (sharpening) as a workshop-drawer set — fid is the tracker; whet
-is a separate sibling project.
+A local-first, agent-first issue tracker and durable operational work-state
+and evidence backend for AI-assisted software development. SQLite-backed CLI.
+A tapered hand tool used to open up tightly-laid rope so the strands can be
+worked separately. Pairs with **whet** (sharpening) as a workshop-drawer set —
+fid is the tracker; whet is a separate sibling project.
+Use when: naming the product that owns issue tracking and operational work
+state for agents and external workflow kits.
+Avoid: describing fid as the owner of engineering-workflow policy, provider
+prompts, the model loop, canonical project prose/code, or Human judgment.
+
+**Operational work state**:
+The durable, queryable record of what work exists and what has happened while
+executing it: issues and relationships, lifecycle state, claims and runs,
+ordered events and projections, receipts and evidence, attention, reviews,
+outcomes, and telemetry. fid is authoritative for this domain; its journal is
+the canonical persistence representation.
+Use when: distinguishing resumable workflow facts from project requirements,
+source code, kit policy, or Human judgment.
+Avoid: unqualified "source of truth"; claiming fid owns PRD/TRD prose, Git
+objects, engineering-workflow policy, or product approval.
 
 ## Core Entities
 
 **Issue**:
-Any row in the unified `issues` table — an epic, task, or subtask. The
-umbrella term, not a synonym for "ticket".
-Use when: referring to any tracked work item regardless of kind.
+Any row in the unified `issues` table — an epic, task, or subtask. Issues and
+their parent/dependency relationships are fid's only durable work graph; a Work
+Envelope selects Issues rather than duplicating them as persistent Work Items
+(ADR-0005). The umbrella term is not a synonym for "ticket".
+Use when: referring to any durable unit of tracked work regardless of kind.
 Avoid: "ticket", using "issue" colloquially to mean "task".
 
 **Epic**:
@@ -81,7 +98,7 @@ planned).
 A unit of work — the rough equivalent of a Linear/Jira "issue".
 `kind='task'` in the `issues` table. Has acceptance criteria and produces
 task completions. May belong to an epic or stand alone.
-Use when: describing a single implementable work item.
+Use when: describing a single implementable durable unit of work.
 Avoid: "issue" when you specifically mean a task.
 
 **Subtask**:
@@ -165,14 +182,26 @@ Avoid: "quality gate" when referring to subjective review; treating a
 reported exit code as proof a command ran.
 
 **Gate definition**:
-A versioned entry in trusted project configuration (`.fid/gates.toml`) that
-names one executable gate: stable gate ID, version, structured argv array,
-working directory, timeout, and environment allowlist. Registry changes are
-auditable, reviewable config changes. Obligations reference gates by gate
-ID/version, never by display string.
+A versioned value in project-owned machine-readable configuration, governed by
+the kit-owned schema and activation procedure, that names one executable gate:
+stable gate ID, version, structured argv array, working directory, timeout,
+environment allowlist, and execution policies. fid never executes this mutable
+authoring value directly; activation creates an immutable
+[[Gate definition registration]]. Obligations reference gates by registered
+identity/version, never by display string.
 Use when: registering or referencing an executable gate.
 Avoid: free-form shell command strings; "gate" for the definition when you
 mean a specific run (that is an [[Execution attempt]]).
+
+**Gate definition registration**:
+The immutable operational authorization fid creates when the kit validates and
+activates a complete project-approved [[Gate definition]]. It binds the exact
+definition and digest to project, overlay, repository, authorization, status,
+and registration version. The trusted executor resolves it by reference; a
+mutable authoring-file edit cannot change it or authorize execution.
+Use when: naming what fid may execute and what an [[Execution receipt]] binds.
+Avoid: calling the authoring file the live registry; mutating a registration
+instead of activating a new version.
 
 **Execution attempt**:
 An immutable record that fid (or a trusted runner) started executing a
@@ -245,16 +274,45 @@ as freshness.
 
 **Work envelope**:
 A versioned, structured capability describing one approved slice of work:
-epic/phase outcome, risk lane, approved authority, protected decisions,
-task graph, validation and gate obligations, budgets, and stop conditions.
-Promoted from the conditional [[Task pack]] concept (DEC-063). fid exposes
-orchestration primitives over it — next actionable work with typed skip
-reasons, claim/lease and resumable run state, retry/intervention budgets
+outcome, one primary fid Issue plus an explicitly bounded related Issue set,
+risk lane, approved authority, protected decisions, validation and gate
+obligations, budgets, and stop conditions.
+Promoted from the conditional [[Task pack]] concept (DEC-063). Kit/project
+policy supplies its engineering semantics; fid persists its operational state
+and exposes orchestration primitives over it — next actionable work with typed
+skip reasons, claim/lease and resumable run state, retry/intervention budgets
 and circuit-breaker state, machine-readable rejection/stop reasons, and
 attention items — while a deterministic runner (a separate kit component)
-drives the loop.
+drives the loop. The kit evaluates policy and compiles the approved envelope;
+fid enforces generic integrity and its recorded preconditions without
+recalculating kit policy. The Envelope is not a second work graph and creates
+no persistent Work Item identity (ADR-0005).
 Use when: describing the structured contract a runner executes against.
-Avoid: treating it as an LLM prompt, or fid as the loop host.
+Avoid: treating it as an LLM prompt, fid as the loop host, the envelope as a
+replacement Issue, or its selected-Issue references as independently mutable
+work entities.
+
+**Next action**:
+A noncanonical projection of the action currently permitted or required,
+derived from Issue, Work Envelope, Obligation, Claim, Run, Review, evidence,
+stop, and attention state. It names the action kind, subject, required actor
+role, and typed reason, but has no independent lifecycle or durable work
+identity.
+Use when: asking the harness what can or must happen next or why no action is
+available.
+Avoid: persisting it as a Work Item, using it as a second backlog, or treating
+the projection as authority independent of the records from which it derives.
+
+**Engineering-workflow policy**:
+The rules that classify risk, grant authority, select roles/reviewer profiles,
+route work, set budgets and obligations, and determine when Human judgment is
+required. The external workflow kit and project configuration own this policy;
+fid records approved operational inputs and outcomes without becoming the
+method's author (ADR-0004).
+Use when: distinguishing kit-owned strategic workflow rules from fid-owned
+operational state, integrity checks, and evidence records.
+Avoid: using it for a fid [[Workflow]], which is an issue lifecycle state
+machine, or asking fid to independently recalculate kit risk or routing policy.
 
 **Human validation brief**:
 The generated wrap-up report for Human judgment (v0.4): outcomes delivered
@@ -544,9 +602,14 @@ Avoid: "responsible role" (RACI overloaded), "assignee" (Linear-style).
 **Claim holder**:
 The role currently holding the exclusive-access lease on an entity. Stored
 on `claims.claimed_by`. Short-lived (minutes, TTL-bounded). A right to
-*advance* the work right now. Does not transfer ownership.
+*advance* the work right now. Does not transfer ownership. In the V2-aligned
+path, one Issue may have at most one active mutating Builder Claim; the Claim
+also binds the Envelope revision and worktree. Parallel mutation requires
+distinct selected Issues, separate worktrees, and provably disjoint scopes,
+or the second action is `mutation-conflict` (ADR-0006).
 Use when: describing who has the current working lock on an entity.
-Avoid: confusing with [[Owner role]] (long-lived accountability).
+Avoid: confusing with [[Owner role]] (long-lived accountability), claiming a
+Work Envelope itself, or treating separate agents as sufficient isolation.
 
 **Required validator**:
 A planned verifier role/evidence obligation for a [[Validation assertion]].
@@ -726,5 +789,6 @@ Avoid: quality gate when referring to product code checks.
 |---|---|---|---|
 | `task_completions` kind guard ("task only" vs "task or subtask") | TRD SCHEMA §14.1 specifies the backstop kind guard is the "same" as `acceptance_criteria` (task or subtask); TRD §4.1's entity note says "(task only)". §4.1 explicitly states its column lists are indicative and §14.1 is the trigger reference. | Tech Lead | Phase 2 resolved the backstop trigger to §14.1 (task **or** subtask). Reconcile the §4.1 wording (or confirm the divergence is intentional for app-layer completions) at Phase 2 spec sync. |
 
-*Last updated: 2026-07-25 (Phase 18 wrap, DEC-073: projected workflow tables,
-workflow registry, frozen workflow definitions)*
+*Last updated: 2026-08-08 (ADR-0004/0005: operational boundary and Issue-native
+work identity). Previous material update: 2026-07-25 Phase 18 wrap (DEC-073:
+projected workflow tables, workflow registry, frozen workflow definitions).*

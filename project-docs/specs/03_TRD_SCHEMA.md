@@ -310,10 +310,13 @@ CREATE TABLE gate_runs (
 
 ### 2.4 Evidence Foundation (v0.2b — draft DDL, DEC-059/060/061)
 
-Draft for the v0.2b migration; finalize column types/indexes at that phase's
-planning. Gate *definitions* are committed configuration (`.fid/gates.toml`,
-`04_TRD_CONFIG.md` §2.3), not a table — receipts snapshot the definition
-fields they executed with.
+Draft for the evidence migration; finalize column types/indexes with the
+V2-aligned backend-port slice. The earlier live `.fid/gates.toml` registry is
+superseded by immutable Gate Definition Registrations created from
+project-owned authoring configuration. Their exact projection schema and the
+execution/receipt foreign-key updates belong to that joint slice; the draft
+below still shows the pre-registration execution columns and must not be
+implemented unchanged.
 
 ```sql
 CREATE TABLE gate_executions (

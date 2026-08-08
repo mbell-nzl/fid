@@ -1964,14 +1964,18 @@ fid gate run <gate-id> [--version <n>] --by <role>
 | `--issue` | string | no | Bind the execution to an issue's active attempt |
 | `--run` | string | no | Link the execution to an open agent run |
 
-Executes the registered gate definition from `.fid/gates.toml`: appends a
+Resolves and executes the active immutable Gate Definition Registration:
+appends a
 `gate.execution_started` event, spawns the argv (no shell) with the
 definition's cwd/timeout/env allowlist, then appends the terminal
 `gate.receipt_recorded` event with status, repository identity, toolchain
 fingerprint, and bounded sanitized output. Exit code mirrors the gate:
 `0` on `pass`, non-zero otherwise (with `harness_error` distinguished from
-gate failure on stderr). Unregistered IDs and stale pinned versions are hard
-errors before any event is appended.
+gate failure on stderr). Unknown, stale, mismatched, unauthorized, or
+substituted registrations are hard errors before any event is appended. The
+exact CLI syntax for registration-reference invocation is finalized with the
+backend-port command contract; `<gate-id>` remains explanatory shorthand here,
+not permission to resolve mutable authoring configuration.
 
 **Output (stderr confirmation):**
 ```text
@@ -2084,10 +2088,11 @@ fid next [--envelope <id>] [--format json|toon]
 `apply` ingests a reviewed, versioned work envelope as one create-only journal
 event and returns a source-ref→fid-id mapping (carries PRD-OPS-020's
 semantics into PRD-OPS-021). `status` reports budgets, circuit-breaker state,
-obligation completeness, and attention items. `fid next` returns the next
-actionable work item with typed skip reasons (superset of `fid ready
---explain`). Flag-level detail is deliberately deferred to v0.3a phase
-planning; the contract fields are fixed by PRD-OPS-021/022.
+obligation completeness, and attention items. `fid next` returns a derived,
+noncanonical Next action over selected fid Issues, with typed non-actionable
+reasons (superset of `fid ready --explain`). It does not create or return a
+persistent Work Item entity (ADR-0005). Flag-level detail is deliberately
+deferred to the V2-aligned envelope slice.
 
 ### v0.1 Governance Stub Guard
 
