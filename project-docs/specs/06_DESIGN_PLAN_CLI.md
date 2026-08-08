@@ -698,16 +698,19 @@ dev block FID-a1b2c3
 fid dev resume <task-id> --by developer [--force]
 ```
 
-Composes: re-acquire the claim + open a new agent_run linked to the task's prior
-run via `resumed_from_run_id`, carrying forward `branch` and `base_commit`. Any
-prior still-open run for the task is marked `abandoned` (reason: superseded by
-resume). Respects claim rules; `--force` permits a sanctioned steal of a live
-claim. fid returns resume *hints* only — it never performs git operations.
+Composes: recover mutation authority + open a new agent_run linked to the
+task's prior run via `resumed_from_run_id`, carrying forward repository hints.
+Any prior still-open run is marked `interrupted`, not intentionally abandoned.
+Recovery requires confirmed prior-executor termination, eligible Claim
+release/expiry/authorized supersession, and a repository reconciliation
+result. `--force` is protected recovery, not proof of termination. fid returns
+resume *hints* and records supplied reconciliation facts only; it never
+performs git operations or discards worktree state (ADR-0007).
 
 **Output (stderr confirmation):**
 ```text
 dev resume FID-a1b2c3
-  prior run RUN-b2c3d4 marked abandoned (superseded by resume)
+  prior run RUN-b2c3d4 marked interrupted (superseded by recovery)
   agent run: RUN-e5f6g7 opened (resumed_from RUN-b2c3d4)
   branch phase-1/core, base 9f2a1c0, last head abc123f
   worktree /home/mark/wt/fid-a1b2c3

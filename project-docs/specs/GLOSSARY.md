@@ -560,14 +560,17 @@ Avoid: assuming a dry-run reserves an ID or a claim; it changes no state.
 The record of one agent execution against an entity (`agent_runs`,
 `RUN-<hash>`): token/cost telemetry plus, from v0.2, optional git context
 (branch, base/head commit, dirty, worktree, `git_source`) and a lifecycle
-(`open` → `closed` | `abandoned`). Opened by `fid dev start` (or recorded
+(`open` → `closed` | `abandoned` | `interrupted`). Opened by `fid dev start` (or recorded
 post-hoc by `fid run record`), closed by `fid dev finish`/`fid dev block`,
 abandoned by `fid dev abandon`, and continued by `fid dev resume` (which opens
-a new run linked via `resumed_from_run_id`).
+a new run linked via `resumed_from_run_id`). In the V2-aligned path, session or
+executor loss makes the prior Run `interrupted`; its identity is never reused
+(ADR-0007).
 Use when: referring to a single agent execution attempt and its telemetry, git
 context, and lifecycle.
-Avoid: treating it as telemetry only (its role broadened in v0.2), or as a
-[[Claim holder|Claim]] (a run does not itself grant exclusive access).
+Avoid: treating it as telemetry only (its role broadened in v0.2), as a
+[[Claim holder|Claim]] (a run does not itself grant exclusive access), or
+calling an unplanned interruption an intentional abandonment.
 
 ## Roles and Who-Does-What
 

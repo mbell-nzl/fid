@@ -33,8 +33,9 @@ editable source of truth is introduced.
   the Claim/worktree isolation rule. Procedural steps do not become Issues
   merely to make the harness advance.
 - Before the joint contract is implemented, conformance scenarios must still
-  settle review findings and rework, crash recovery during a Run, and Envelope
-  revision or partial completion across multiple selected Issues.
+  settle review findings and rework plus Envelope revision or partial
+  completion across multiple selected Issues. ADR-0007 resolves interrupted-
+  Run recovery.
 - This decision resolves the Issue/Work Item identity question left open by
   ADR-0004. It does not decide the detailed schema or transport for those
   scenarios.

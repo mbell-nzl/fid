@@ -8,9 +8,9 @@
 ## Durable Architecture Decisions
 
 The first three ADRs predate the phase system. ADR-0004 records the approved
-fid/V2 product boundary, ADR-0005 resolves durable work identity, and ADR-0006
-defines parallel mutation isolation. All remain binding unless explicitly
-superseded:
+fid/V2 product boundary, ADR-0005 resolves durable work identity, ADR-0006
+defines parallel mutation isolation, and ADR-0007 defines interruption
+recovery. All remain binding unless explicitly superseded:
 
 - `docs/adr/0001-journal-canonical-db-derived.md` — journal is source of truth,
   SQLite is a derived projection. No daemon.
@@ -30,6 +30,9 @@ superseded:
 - `docs/adr/0006-isolate-parallel-builder-mutations.md` — one active mutating
   Builder Claim per Issue; parallel mutation requires distinct Issues,
   separate worktrees, and provably disjoint scopes.
+- `docs/adr/0007-recover-interruptions-with-linked-runs.md` — a recovery
+  creates a linked new Run only after executor termination and non-destructive
+  worktree reconciliation; ambiguity stops.
 
 **Gate C delivery decision (2026-08-08):** qualify all twelve V2 kit
 backend-port capabilities before migrating a live project. Implement them as
@@ -66,8 +69,9 @@ own persistent Work Items. Durable decomposition uses tasks/subtasks; smaller
 steps remain transient plans or Run checkpoints. The harness computes Next
 actions from durable state. Claims/Runs bind Issue, Envelope revision, actor
 role, and optional Obligation; reviews use Review Runs/Records. Parallel
-claims, rework, crash recovery, and multi-Issue envelope behavior require
-joint conformance scenarios before implementation.
+claims and interrupted-Run recovery are resolved by Gate B4a/B4b. Review
+rework and multi-Issue Envelope behavior still require joint conformance
+scenarios before implementation.
 
 **Gate B4a parallel-Builder decision (2026-08-08):** one Issue may have at
 most one active mutating Builder Claim. Claims bind Issue, Envelope revision,
@@ -75,8 +79,18 @@ Builder, and worktree; the Envelope itself is not claimed. Parallel mutation
 requires distinct selected Issues, separate worktrees, and declared provably
 disjoint scopes. Otherwise the second Next action is non-actionable with
 `mutation-conflict`. Read-only Review Runs may coexist but are repository-
-identity-bound and become stale when their target changes. Three Gate B4
-lifecycle scenarios remain open.
+identity-bound and become stale when their target changes. Gate B4b later
+resolves interrupted-Run recovery; two Gate B4 scenarios remain open.
+
+**Gate B4b interrupted-Run recovery decision (2026-08-08):** continuation
+always creates a new Run linked to a terminally `interrupted` prior Run. The
+old executor must be confirmed terminated and its Claim released, expired, or
+authorizedly superseded; lease expiry alone is insufficient. The kit/harness
+reconciles the worktree non-destructively. In-scope changes may be explicitly
+adopted but are not trusted evidence; unsafe or ambiguous state returns
+`recovery-state-conflict`, and unknown liveness returns
+`executor-liveness-unknown`. Issue/Envelope state, obligations, evidence rules,
+and consumed budgets carry forward. Two Gate B4 scenarios remain open.
 
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 

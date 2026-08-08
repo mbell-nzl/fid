@@ -238,10 +238,39 @@ recorded Claim-conflict preconditions.
 
 Recorded in: `docs/adr/0006-isolate-parallel-builder-mutations.md`.
 
+## Decision 8 / Gate B4b - Interrupted-Run Recovery
+
+Status: **APPROVED by Human on 2026-08-08**
+
+Continuation after an agent-session or executor interruption always creates a
+new Run linked to the prior Run. Run identity is never reused. The prior Run
+becomes terminally `interrupted`, distinct from successful closure and
+intentional abandonment; the Issue and Work Envelope remain active.
+
+Takeover requires the prior executor to be confirmed terminated and its Claim
+released, expired, or explicitly superseded through authorized force recovery.
+Lease expiry alone is not proof that filesystem mutation stopped. Unknown
+liveness returns `executor-liveness-unknown` and blocks mutation.
+
+The kit/harness captures and reconciles the current worktree against the Run
+start, last durable checkpoint, approved scope, and repository history before
+the new Claim/Run may mutate. A new Builder may explicitly adopt in-scope
+recovered work, but that work is not trusted evidence. Protected, unexpected,
+unattributable, or unsafe state returns `recovery-state-conflict`. Recovery
+never automatically resets, cleans, stashes, checks out, commits, or discards
+Git state.
+
+Obligations, concerns, evidence rules, and consumed budgets carry forward.
+Receipts retain exact-target freshness semantics, and an execution start
+without a terminal receipt satisfies nothing. Human authority is required only
+for force takeover or ambiguous/protected repository state.
+
+Recorded in: `docs/adr/0007-recover-interruptions-with-linked-runs.md`.
+
 ## Open Decision Order
 
-1. Remaining Gate B4 lifecycle scenarios, starting with interrupted-Run
-   recovery, then review rework and multi-Issue Envelope behavior.
+1. Remaining Gate B4 lifecycle scenarios: review rework, then multi-Issue
+   Envelope revision/partial completion.
 2. Roadmap disposition: reslice/order and treatment of role-, QA-, template-,
    and report-oriented features.
 

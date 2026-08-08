@@ -113,17 +113,27 @@ Envelopes reference one primary Issue and an explicitly bounded related Issue
 set; they do not contain persistent Work Item identities. The harness derives
 noncanonical Next actions from durable state. Claims and Runs bind Issue,
 Envelope revision, actor role, and optional Obligation. The detailed joint
-contract must cover review rework, interrupted Runs, and multi-Issue Envelope
-revision before implementation; parallel Claim isolation is resolved by
-ADR-0006 (ADR-0005).
+contract must cover review rework and multi-Issue Envelope revision before
+implementation; parallel Claim isolation and interrupted-Run recovery are
+resolved by ADR-0006/0007 (ADR-0005).
 
 ADR-0006 resolves parallel claims: fid atomically allows at most one active
 mutating Builder Claim per Issue and rejects unproven isolation with
 `mutation-conflict`. Parallel mutation requires distinct selected Issues,
 separate worktree identities, and declared disjoint scopes established by the
 kit/harness. Review Runs may coexist only as repository-identity-bound,
-read-only executions whose results stale when the target changes. The other
-three joint scenarios remain open.
+read-only executions whose results stale when the target changes. ADR-0007
+separately resolves interrupted-Run recovery; review rework and multi-Issue
+Envelope behavior remain open.
+
+ADR-0007 resolves interrupted Runs. A new session receives a new linked Run;
+the prior Run becomes `interrupted`. Recovery requires confirmed executor
+termination, Claim release/expiry/authorized supersession, and repository-port
+reconciliation before mutation. Unknown liveness and unsafe repository state
+fail closed as `executor-liveness-unknown` and `recovery-state-conflict`.
+Recovery persists facts and references but performs no Git mutation. Budgets,
+obligations, concerns, and evidence freshness carry forward. Two joint
+scenarios remain open.
 
 fid is the primary trusted local executor for registered gates: callers supply
 an immutable registration reference, fid records the start before process
