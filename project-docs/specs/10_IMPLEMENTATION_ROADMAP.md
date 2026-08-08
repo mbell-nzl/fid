@@ -698,15 +698,19 @@ with mechanical enforcement in fid, not prompts.
 
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| Work envelope entity | Versioned execution contract over one primary fid Issue and an explicitly bounded related Issue set: outcome, risk lane, approved authority, protected decisions, validation and gate obligations, budgets, stop conditions. It references the existing Issue graph and creates no persistent Work Item graph. Exact revision/membership rules require the remaining ADR-0005 scenarios before implementation. | PRD-OPS-021, ADR-0005 |
-| Orchestration primitives | Derived, noncanonical Next action with typed non-actionable reasons (`fid next`, superset of `fid ready --explain`); Issue/Envelope/role/Obligation-bound Claim and resumable Run state; Review Runs; retry/intervention budgets and circuit-breaker state; machine-readable transition rejection and stop reasons; attention (`fid envelope status`). Parallel mutation follows ADR-0006. Interrupted recovery follows ADR-0007: linked new Run, confirmed termination, non-destructive worktree reconciliation, and carry-forward budgets/evidence. No persisted Next-action work entity, LLM loop, agent spawning, scheduler, or Git mutation. | PRD-OPS-022/024/025, TRD-ARCH-016, ADR-0005/0006/0007 |
+| Work envelope entity | Versioned execution contract over one primary fid Issue and an explicitly bounded related Issue set: outcome, risk lane, approved authority, protected decisions, validation and gate obligations, budgets, stop conditions. It references the existing Issue graph and creates no persistent Work Item graph. Exact revision/membership rules require the remaining multi-Issue ADR-0005 scenario before implementation. | PRD-OPS-021, ADR-0005 |
+| Orchestration primitives | Derived, noncanonical Next action with typed non-actionable reasons (`fid next`, superset of `fid ready --explain`); Issue/Envelope/role/Obligation-bound Claim and resumable Run state; Review Runs; retry/intervention budgets and circuit-breaker state; machine-readable transition rejection and stop reasons; attention (`fid envelope status`). Parallel mutation follows ADR-0006. Interrupted recovery follows ADR-0007. Review rework follows ADR-0008: immutable exact-target records, same-Issue Builder rework, independent resolution, conservative staleness, and `review-rework-exhausted`. No persisted Next-action work entity, LLM loop, agent spawning, scheduler, or Git mutation. | PRD-OPS-022/024/025/026, TRD-ARCH-016, ADR-0005/0006/0007/0008 |
 | Runner-kit contract | JSON/TOON contracts for envelope state, rejections, and stop reasons so a deterministic runner (separate kit component) drives the loop without SQLite/`.fid/` internals. | TRD-ARCH-018, PRD-OPS-023 |
 
 ### v0.3b — QA Reviews and Findings
 
+The command names below predate the V2 backend-port contract. Gate D must
+either align or rescope them without weakening ADR-0008; exact command and JSON
+spelling is not decided by the lifecycle rule.
+
 | Item | Description | PRD/TRD Refs |
 |---|---|---|
-| QA tables | `qa_reviews`, `qa_findings`, `qa_review_task_window`, plus structured coverage fields: review profile, risk dimensions, files/contracts examined, receipts reproduced, verdict. Review evidence links `evidence_records`/receipts by ID from day one. A complete review with zero findings is a valid outcome. | PRD-QA-001–005, 010 |
+| QA tables | Review Records and Findings plus structured coverage fields: review profile, risk dimensions, files/contracts examined, receipts reproduced, verdict, Envelope revision, and exact repository identity. Records are immutable; `changes-required` leaves the review Obligation unsatisfied. Review evidence links `evidence_records`/receipts by ID from day one. A complete qualifying review with zero findings is a valid outcome. Exact projection names await backend-port design. | PRD-QA-001–005, 010; PRD-OPS-026; ADR-0008 |
 | `fid qa-review create/get/list` | Polymorphic scope: epic_window, single_task, epic_full. Record which tasks are covered for window scope. Profiles (security/code/validation/ux/data/performance) are configuration over the common review contract, not entity types. | PRD-QA-001–002, 010 |
 | `fid qa-finding add/list` | Findings with severity, status, task subject, evidence excerpt plus evidence-record links. Escalation from blocking findings. | PRD-QA-003–005 |
 | `fid report qa-blockers` | Blocking QA findings report; ships with `qa_findings` so it has a first-class source table. | PRD-OUT-006 |

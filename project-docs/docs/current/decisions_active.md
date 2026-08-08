@@ -69,9 +69,9 @@ own persistent Work Items. Durable decomposition uses tasks/subtasks; smaller
 steps remain transient plans or Run checkpoints. The harness computes Next
 actions from durable state. Claims/Runs bind Issue, Envelope revision, actor
 role, and optional Obligation; reviews use Review Runs/Records. Parallel
-claims and interrupted-Run recovery are resolved by Gate B4a/B4b. Review
-rework and multi-Issue Envelope behavior still require joint conformance
-scenarios before implementation.
+claims, interrupted-Run recovery, and review rework are resolved by Gate
+B4a/B4b/B4c. Multi-Issue Envelope behavior still requires a joint conformance
+scenario before implementation.
 
 **Gate B4a parallel-Builder decision (2026-08-08):** one Issue may have at
 most one active mutating Builder Claim. Claims bind Issue, Envelope revision,
@@ -80,7 +80,8 @@ requires distinct selected Issues, separate worktrees, and declared provably
 disjoint scopes. Otherwise the second Next action is non-actionable with
 `mutation-conflict`. Read-only Review Runs may coexist but are repository-
 identity-bound and become stale when their target changes. Gate B4b later
-resolves interrupted-Run recovery; two Gate B4 scenarios remain open.
+resolves interrupted-Run recovery and Gate B4c resolves review rework; one Gate
+B4 scenario remains open.
 
 **Gate B4b interrupted-Run recovery decision (2026-08-08):** continuation
 always creates a new Run linked to a terminally `interrupted` prior Run. The
@@ -90,7 +91,19 @@ reconciles the worktree non-destructively. In-scope changes may be explicitly
 adopted but are not trusted evidence; unsafe or ambiguous state returns
 `recovery-state-conflict`, and unknown liveness returns
 `executor-liveness-unknown`. Issue/Envelope state, obligations, evidence rules,
-and consumed budgets carry forward. Two Gate B4 scenarios remain open.
+and consumed budgets carry forward. Gate B4c resolves review rework; one Gate
+B4 scenario remains open.
+
+**Gate B4c review-rework decision (2026-08-08):** a completed Review Run
+creates an immutable, exact-target Review Record. `changes-required` leaves the
+review Obligation unsatisfied and derives `builder-rework` on the original
+Issue/Envelope; no Work Item or follow-up Issue is created automatically. A
+new Builder Claim/Run addresses in-scope Findings, but only a new independent
+Review Record may resolve them. Target changes stale prior proof; initial reuse
+is whole-profile conservative. Scope, protected-decision, dependency, risk,
+acceptance, Obligation, or authority changes require an Envelope revision.
+Blocking work cannot be deferred merely to pass, and exhausted cycles return
+`review-rework-exhausted` plus Attention. One Gate B4 scenario remains open.
 
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 

@@ -20,5 +20,5 @@ changes. The kit/harness establishes the approved worktree and scope isolation;
 fid atomically enforces the resulting Claim-conflict preconditions.
 
 This resolves the parallel-Builder scenario required by ADR-0005. ADR-0007
-resolves interrupted-Run recovery. Review rework and multi-Issue Envelope
-revision/partial completion remain open joint-contract scenarios.
+resolves interrupted-Run recovery and ADR-0008 resolves review rework.
+Multi-Issue Envelope revision/partial completion remains open.

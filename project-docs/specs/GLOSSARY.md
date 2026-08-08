@@ -303,6 +303,17 @@ available.
 Avoid: persisting it as a Work Item, using it as a second backlog, or treating
 the projection as authority independent of the records from which it derives.
 
+**Review record**:
+The immutable outcome of one completed, independent Review Run, bound to the
+exact Work Envelope revision and repository identity reviewed. It records the
+review profile and coverage, verdict, Findings, concerns, and evidence
+references. `changes-required` proves review happened but does not satisfy the
+review Obligation; only a later qualifying Review Record can resolve its
+Findings and satisfy that Obligation (ADR-0008).
+Use when: citing what an independent review established at an exact target.
+Avoid: editing a prior verdict, treating a Builder's "addressed" assertion as
+resolution, or creating a Review Work Item.
+
 **Engineering-workflow policy**:
 The rules that classify risk, grant authority, select roles/reviewer profiles,
 route work, set budgets and obligations, and determine when Human judgment is
@@ -642,7 +653,10 @@ Avoid: "issue" (overloaded with [[Issue]]), "flag" (vague).
 **Finding**:
 A structured discovery made by a QA Reviewer or QA Lead during a
 [[QA review]]. One row in `qa_findings`. Has `severity` (`blocking` |
-`improvement`) and status. May escalate.
+`improvement`) and status. May escalate. In the V2-aligned review contract it
+is emitted by an immutable [[Review record]]; a Builder may address it, but
+only a later qualifying Review Record may resolve it. A blocking Finding cannot
+be deferred merely to satisfy the current review Obligation.
 Use when: QA discovers something during review.
 Avoid: using "finding" for developer-raised flags — those are [[Concern]]s.
 

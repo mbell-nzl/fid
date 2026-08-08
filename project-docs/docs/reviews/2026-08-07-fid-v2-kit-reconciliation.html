@@ -701,19 +701,19 @@
         <span><strong>fid snapshot:</strong> <code>phase-19-workflow-authoring@bb7d61a</code></span>
         <span><strong>Kit snapshot:</strong> <code>v2@b9860ac</code></span>
         <span><strong>Scope:</strong> specs, roadmap, current state, implementation surfaces</span>
-        <span><strong>Decision status:</strong> Gates A, B1-B4b, and C ratified 8 August; two B4 lifecycle scenarios and Gate D remain</span>
+        <span><strong>Decision status:</strong> Gates A, B1-B4c, and C ratified 8 August; one B4 lifecycle scenario and Gate D remain</span>
       </div>
     </div>
   </header>
 
   <div class="decision-banner" role="note">
     <div class="wrap">
-      <strong>Gates A, B1-B4b, and C were ratified by the Human on 8 August 2026.</strong>
+      <strong>Gates A, B1-B4c, and C were ratified by the Human on 8 August 2026.</strong>
       fid owns durable operational work state and evidence; all twelve V2 backend-port
       capabilities will be qualified before live-project migration; the kit evaluates policy
       while fid enforces recorded preconditions and executes immutable registered local gates.
       fid Issues are the only durable work graph. Parallel Builder isolation and linked-Run
-      interruption recovery are approved; two lifecycle scenarios and Gate D remain.
+      interruption recovery and review rework are approved; one lifecycle scenario and Gate D remain.
     </div>
   </div>
 
@@ -1616,7 +1616,7 @@
         <h2>Product, scope, and the policy split are approved; detailed semantics and roadmap remain open.</h2>
         <p class="claim-context">
           <span class="claim-label decision">Human decision status</span>
-          Gates A, B1-B4b, and C are approved. Two Gate B4 lifecycle scenarios and Gate D
+          Gates A, B1-B4c, and C are approved. One Gate B4 lifecycle scenario and Gate D
           roadmap disposition remain to be worked through.
         </p>
 
@@ -1638,7 +1638,7 @@
         </div>
         <div class="decision-gate approved">
           <strong>Gate B4 / fid-native work identity - APPROVED 2026-08-08</strong>
-          <div>fid Issues and their relationships are the only durable work graph. Work Envelopes reference selected Issues; Claims and Runs bind Issue, Envelope revision, actor role, and optional Obligation; the harness derives noncanonical Next actions. Review uses Review Runs/Records rather than Review Work Items. Review rework and multi-Issue Envelope revision still require explicit conformance scenarios before implementation.</div>
+          <div>fid Issues and their relationships are the only durable work graph. Work Envelopes reference selected Issues; Claims and Runs bind Issue, Envelope revision, actor role, and optional Obligation; the harness derives noncanonical Next actions. Review uses Review Runs/Records rather than Review Work Items. Multi-Issue Envelope revision still requires an explicit conformance scenario before implementation.</div>
         </div>
         <div class="decision-gate approved">
           <strong>Gate B4a / Parallel Builder isolation - APPROVED 2026-08-08</strong>
@@ -1647,6 +1647,10 @@
         <div class="decision-gate approved">
           <strong>Gate B4b / Interrupted-Run recovery - APPROVED 2026-08-08</strong>
           <div>Continuation creates a linked new Run and marks the prior Run <code>interrupted</code>; identity is never reused. Recovery requires confirmed executor termination, eligible Claim release/expiry/authorized supersession, and non-destructive worktree reconciliation. Unknown liveness or unsafe state stops; obligations, evidence rules, and consumed budgets carry forward.</div>
+        </div>
+        <div class="decision-gate approved">
+          <strong>Gate B4c / Review rework - APPROVED 2026-08-08</strong>
+          <div>A <code>changes-required</code> Review Record is immutable but leaves the review Obligation unsatisfied. Rework uses a new Builder Run on the original Issue and Envelope; only a new independent Review Record resolves Findings. Target changes stale prior proof, material contract changes require an Envelope revision, and exhausted cycles return <code>review-rework-exhausted</code> plus Attention.</div>
         </div>
         <div class="decision-gate approved">
           <strong>Gate C / Scope - APPROVED 2026-08-08</strong>
@@ -1700,7 +1704,7 @@
         </ul>
         <p class="matrix-note">
           No held-out scenario repository or evaluator prompt was read. This report makes
-          architecture and roadmap recommendations. Gates A, B1-B4b, and C are accepted;
+          architecture and roadmap recommendations. Gates A, B1-B4c, and C are accepted;
           individual feature dispositions and Gate D remain analysis until separately decided.
         </p>
       </div>
@@ -1709,7 +1713,7 @@
 
   <footer>
     <div class="wrap">
-      <p>Gates A, B1-B4b, and C were ratified on 8 August 2026. Gate B4 still requires explicit review-rework and multi-Issue Envelope scenarios before implementation; Gate D roadmap disposition remains open.</p>
+      <p>Gates A, B1-B4c, and C were ratified on 8 August 2026. Gate B4 still requires an explicit multi-Issue Envelope revision/partial-completion scenario before implementation; Gate D roadmap disposition remains open.</p>
     </div>
   </footer>
 

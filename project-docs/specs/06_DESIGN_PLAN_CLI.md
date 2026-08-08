@@ -2654,6 +2654,14 @@ error: journal merge conflict at EVT-20260601-000042
   applied before conflict: 14
 ```
 
+> **V2 alignment note (2026-08-08):** The QA command spellings below predate
+> ADR-0008 and remain roadmap input, not the approved backend-port interface.
+> The replacement contract must create an immutable Review Record bound to an
+> Envelope revision and exact repository identity; `changes-required` derives
+> same-Issue `builder-rework`, and only a new independent Review Record may
+> resolve a Finding. Gate D will align or rescope the commands and publish the
+> exact machine response schema.
+
 ### `fid qa-review create` (v0.3+)
 
 ```

@@ -1,7 +1,7 @@
 # fid and Agentic Engineering Kit V2 - Direction Decision Session
 
 Date: 2026-08-08
-Status: In progress; six decisions approved, remaining decisions open
+Status: In progress; nine decisions approved, remaining decisions open
 Method: one decision at a time, challenged against canonical fid and kit docs
 
 ## Decision 1 - Product Boundary
@@ -211,8 +211,10 @@ Before implementation, joint conformance scenarios must settle:
 
 - parallel Builder claims over independently claimable Issues (resolved by
   Decision 7 / Gate B4a and ADR-0006);
-- review findings that return work for rework or create follow-up work;
-- crash recovery during an active Run; and
+- review findings that return work for rework or create follow-up work
+  (resolved by Decision 9 / Gate B4c and ADR-0008);
+- crash recovery during an active Run (resolved by Decision 8 / Gate B4b and
+  ADR-0007); and
 - Envelope revision and partial completion across multiple selected Issues.
 
 Recorded in: `docs/adr/0005-issues-are-the-durable-work-graph.md`.
@@ -267,10 +269,41 @@ for force takeover or ambiguous/protected repository state.
 
 Recorded in: `docs/adr/0007-recover-interruptions-with-linked-runs.md`.
 
+## Decision 9 / Gate B4c - Review Rework
+
+Status: **APPROVED by Human on 2026-08-08**
+
+A completed Review Run creates an immutable Review Record bound to the exact
+Envelope revision and repository identity reviewed. A `changes-required`
+record proves review occurred but leaves the review Obligation unsatisfied.
+The original Issue and Envelope remain active; the harness derives
+`builder-rework` rather than creating a Work Item or automatically opening a
+second Issue.
+
+An in-scope correction uses a new Builder Claim and Run on the same Issue and
+Envelope revision. The Envelope is revised only when the correction changes
+approved scope, a protected decision, dependency, risk, acceptance,
+Obligation, or authority. A separate nonblocking improvement may become an
+explicitly linked Issue, but blocking work cannot be deferred merely to pass
+the current review.
+
+The Builder may record that a Finding was addressed and request re-review, but
+only a new independent Review Run and immutable Review Record can resolve it
+or satisfy the review Obligation. Repository target changes stale prior
+target-bound receipts and Review Records; the initial contract conservatively
+re-runs the applicable whole gate/review profile. Rework consumes existing
+budgets, and exhaustion returns `review-rework-exhausted` plus Attention.
+
+A blocking Finding may otherwise cease to block only through an authoritative
+inapplicability fact, an approved Envelope revision, or explicit Human risk
+acceptance where project policy permits it.
+
+Recorded in: `docs/adr/0008-keep-review-rework-on-the-original-issue.md`.
+
 ## Open Decision Order
 
-1. Remaining Gate B4 lifecycle scenarios: review rework, then multi-Issue
-   Envelope revision/partial completion.
+1. Remaining Gate B4 lifecycle scenario: multi-Issue Envelope revision and
+   partial completion.
 2. Roadmap disposition: reslice/order and treatment of role-, QA-, template-,
    and report-oriented features.
 

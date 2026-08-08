@@ -113,9 +113,9 @@ Envelopes reference one primary Issue and an explicitly bounded related Issue
 set; they do not contain persistent Work Item identities. The harness derives
 noncanonical Next actions from durable state. Claims and Runs bind Issue,
 Envelope revision, actor role, and optional Obligation. The detailed joint
-contract must cover review rework and multi-Issue Envelope revision before
-implementation; parallel Claim isolation and interrupted-Run recovery are
-resolved by ADR-0006/0007 (ADR-0005).
+contract must still cover multi-Issue Envelope revision before implementation;
+parallel Claim isolation, interrupted-Run recovery, and review rework are
+resolved by ADR-0006/0007/0008 (ADR-0005).
 
 ADR-0006 resolves parallel claims: fid atomically allows at most one active
 mutating Builder Claim per Issue and rejects unproven isolation with
@@ -123,8 +123,8 @@ mutating Builder Claim per Issue and rejects unproven isolation with
 separate worktree identities, and declared disjoint scopes established by the
 kit/harness. Review Runs may coexist only as repository-identity-bound,
 read-only executions whose results stale when the target changes. ADR-0007
-separately resolves interrupted-Run recovery; review rework and multi-Issue
-Envelope behavior remain open.
+separately resolves interrupted-Run recovery and ADR-0008 resolves review
+rework; multi-Issue Envelope behavior remains open.
 
 ADR-0007 resolves interrupted Runs. A new session receives a new linked Run;
 the prior Run becomes `interrupted`. Recovery requires confirmed executor
@@ -132,8 +132,16 @@ termination, Claim release/expiry/authorized supersession, and repository-port
 reconciliation before mutation. Unknown liveness and unsafe repository state
 fail closed as `executor-liveness-unknown` and `recovery-state-conflict`.
 Recovery persists facts and references but performs no Git mutation. Budgets,
-obligations, concerns, and evidence freshness carry forward. Two joint
-scenarios remain open.
+obligations, concerns, and evidence freshness carry forward.
+
+ADR-0008 resolves review rework. A `changes-required` Review Record is
+immutable evidence of review but leaves its review Obligation unsatisfied and
+derives `builder-rework` on the original Issue/Envelope. A Builder can address
+but cannot resolve a Finding; only a later independent Review Record can do so.
+Target changes stale prior target-bound proof. Rework uses the existing
+budgets, with `review-rework-exhausted` and Attention on exhaustion. Scope,
+protected-decision, dependency, risk, acceptance, Obligation, or authority
+changes require an Envelope revision. One joint scenario remains open.
 
 fid is the primary trusted local executor for registered gates: callers supply
 an immutable registration reference, fid records the start before process
@@ -276,7 +284,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 
 | Entity | Key Fields | Notes |
 |---|---|---|
-| `work_envelopes` | id, version, primary_issue_id, selected_issue_refs, risk_lane, authority_json, protected_decisions_json, budgets_json, stop_conditions_json, status | Versioned execution contract referencing the existing Issue graph; no Work Item table or identity. Obligations reference registered gates and selected Issue subjects. Exact normalized projection and revision rules follow joint scenario design (ADR-0005). |
+| `work_envelopes` | id, version, primary_issue_id, selected_issue_refs, risk_lane, authority_json, protected_decisions_json, budgets_json, stop_conditions_json, status | Versioned execution contract referencing the existing Issue graph; no Work Item table or identity. Obligations reference registered gates and selected Issue subjects. Exact normalized projection and multi-Issue revision rules follow the remaining joint scenario (ADR-0005). |
 
 **Workflow engine (v0.2):**
 
@@ -298,9 +306,9 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 
 | Entity | Key Fields | Notes |
 |---|---|---|
-| `qa_reviews` | scope (epic_window/single_task/epic_full), reviewer_role, body_md_path | Polymorphic scope via epic_id / task_id columns. |
+| Review Records (exact projection name finalized with the backend port) | envelope revision, repository identity, reviewer/run, profile/coverage, verdict, evidence refs, completed_at | Immutable exact-target outcome. `changes-required` does not satisfy its review Obligation; a later record resolves Findings. Existing `qa_reviews` schema is roadmap input to rescope, not the V2 contract. |
 | `qa_review_task_window` | review_id, task_id | Many-to-many for epic_window scope. |
-| `qa_findings` | severity (blocking/improvement), status, finding_md, evidence_excerpt | May escalate via escalated_to_esc. |
+| Review Findings (exact projection name finalized with the backend port) | review_record_id, issue subject, severity, description/artifact ref, evidence refs, addressed_by_run, resolved_by_review_record | Builder addressing and independent resolution are distinct. Blocking Findings cannot be deferred merely to pass; may escalate. Existing `qa_findings` projection is subject to V2 alignment. |
 | `qa_plans` | epic_id, contract_id (nullable), status | Verification design for an epic. |
 | `qa_plan_steps` | plan_id, ordinal, display_id (QA-NN), evidence_method, validator_role | Individual verification steps. |
 | `templates` | kind, name, version, body_md, active | Monotonic versioning per (kind, name). |
@@ -1009,6 +1017,7 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-016 | The executor boundary: fid shall execute only active immutable Gate Definition Registrations approved from project configuration and supplied by reference. It shall not parse the kit's authoring source, run agents, host models, mutate git, evaluate shell strings by default, or schedule jobs. External attested runners are secondary; fid still owns registration resolution, receipt schema/validation, journal events, linkage, and state-transition enforcement. | V2-aligned backend port | Code review + conformance tests: unregistered/substituted command rejected; no git-mutating or listener code paths in `internal/gates/`. |
 | TRD-ARCH-017 | Gate receipts shall be immutable, identified rows linked to their execution-start facts, produced via the two-event model in §4.3. Rebuild shall reproduce receipt, evidence, and freshness state exactly from the journal. | v0.2b | Golden replay fixtures including an abandoned start; delete-and-rebuild parity test over receipts/evidence. |
 | TRD-ARCH-018 | Machine-readable integration shall go through documented JSON/TOON contracts (receipts, capability discovery, transition rejections, envelope primitives), never through SQLite internals or `.fid/` file layout assumptions. | v0.2b+ | Contract snapshot tests; docs list the supported surfaces. |
+| TRD-ARCH-019 | Review outcomes shall be immutable and exact-target-bound. A `changes-required` outcome keeps the original Issue/Envelope active and derives Builder rework; only a later independent Review Record may resolve Findings or satisfy the review Obligation. Rework shall consume existing budgets, conservatively stale prior target-bound proof, and require Envelope revision when approved scope or authority semantics change. | V2-aligned backend port | Shared conformance fixtures for same-Issue rework, independent resolution, staleness, forbidden deferral/self-resolution, revision triggers, and `review-rework-exhausted`. |
 
 ## 11. Open Technical Questions
 

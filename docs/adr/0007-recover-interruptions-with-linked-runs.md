@@ -32,5 +32,6 @@ freshness rules; an execution start without a terminal receipt satisfies
 nothing. Human authority is required only for force takeover or ambiguous/
 protected repository state.
 
-This resolves the interrupted-Run scenario required by ADR-0005. Review
-rework and multi-Issue Envelope revision/partial completion remain open.
+This resolves the interrupted-Run scenario required by ADR-0005. ADR-0008
+resolves review rework. Multi-Issue Envelope revision/partial completion
+remains open.
