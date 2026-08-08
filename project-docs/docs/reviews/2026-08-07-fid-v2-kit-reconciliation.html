@@ -681,7 +681,7 @@
 <body>
   <header class="masthead">
     <div class="wrap">
-      <p class="eyebrow">Cross-product analysis report / 7 August 2026</p>
+      <p class="eyebrow">Cross-product analysis report / 7 August 2026 / decisions updated 9 August</p>
       <h1>fid and the Agentic Engineering Kit V2</h1>
       <p class="lede">
         A reconciliation of product aims, ownership boundaries, implementation state,
@@ -698,8 +698,8 @@
         Each slice still requires contract, conformance, and recovery evidence.
       </div>
       <div class="meta">
-        <span><strong>fid snapshot:</strong> <code>phase-19-workflow-authoring@bb7d61a</code></span>
-        <span><strong>Kit snapshot:</strong> <code>v2@b9860ac</code></span>
+        <span><strong>Initial code snapshots:</strong> <code>fid phase-19-workflow-authoring@bb7d61a</code> / <code>kit v2@b9860ac</code></span>
+        <span><strong>Aligned contract baseline:</strong> <code>fid ADR-0011</code> / <code>kit Decision 0009</code></span>
         <span><strong>Scope:</strong> specs, roadmap, current state, implementation surfaces</span>
         <span><strong>Decision status:</strong> Gates A, B1-B4d, C, D1, and D2 ratified 8-9 August; vertical-slice order remains open</span>
       </div>
@@ -972,7 +972,7 @@
               <tr><td>Human</td><td>Human</td><td>Retains intent, protected decisions, risk acceptance, product validation, and release authority.</td></tr>
               <tr><td>Tech Lead</td><td>Orchestrator</td><td>Plans the outcome and issue graph, chooses the risk lane, proposes the envelope, routes work, and manages budgets within explicit authority.</td></tr>
               <tr><td>Phase Runner</td><td>Deterministic harness</td><td>Sequencing, claims/leases, retries, gate invocation, evidence checks, and stop/resume mechanics become code rather than prompt choreography.</td></tr>
-              <tr><td>Developer</td><td>Builder</td><td>Still owns one bounded work item, implementation, tests, real-entrypoint exercise, implicated docs, and concerns.</td></tr>
+              <tr><td>Developer</td><td>Builder</td><td>Owns one claimed fid Issue execution, implementation, tests, real-entrypoint exercise, implicated docs, and concerns.</td></tr>
               <tr><td>QA Lead + QA Reviewer</td><td>Orchestrator + Reviewer profiles</td><td>Validation obligations are planned into the envelope; fresh independent review is invoked according to risk and may use code, validation, security, UX, migration, performance, or release profiles.</td></tr>
               <tr><td>TL-Lite</td><td>Authority policy + circuit breaker</td><td>Routine local decisions remain local; protected or ambiguous decisions become typed stops for the Orchestrator or Human.</td></tr>
             </tbody>
@@ -1020,7 +1020,7 @@
               <tr><td>Project specification or decision</td><td>What is correct, and why?</td><td>Versioned project files and Git</td><td>fid stores identity and references, not a competing prose copy.</td></tr>
               <tr><td>Issue / epic / task</td><td>What work exists, how is it related, and where is it in its lifecycle?</td><td>fid</td><td>The durable work inventory. It can exist before, across, and after Work Envelopes.</td></tr>
               <tr><td>Work Envelope</td><td>What is approved for this execution, with what risk, authority, scope, obligations, and budgets?</td><td>Kit semantics, durably stored by fid</td><td>References or snapshots the selected issue graph and approved revision.</td></tr>
-              <tr><td>Claim and run</td><td>Who is working now, under which lease and attempt?</td><td>fid</td><td>Bound to an envelope work item and, through it, the underlying issue.</td></tr>
+              <tr><td>Claim and run</td><td>Who is working now, under which lease and attempt?</td><td>fid</td><td>Bound directly to a selected Issue, exact Envelope revision, generic Actor authority, and optional Obligation.</td></tr>
               <tr><td>Receipt and evidence</td><td>What command, review, artifact, or Human outcome occurred, and is it current?</td><td>fid, with Git/artifact identities</td><td>Satisfies an envelope obligation; never substitutes for the requirement itself.</td></tr>
               <tr><td>Risk, authority, and routing policy</td><td>What must happen and who may act?</td><td>V2 kit plus project configuration</td><td>Compiled into the approved envelope; fid enforces public preconditions without inventing policy.</td></tr>
               <tr><td>Human judgment</td><td>Is the product outcome acceptable?</td><td>Human</td><td>Recorded as an authorized outcome where required.</td></tr>
@@ -1163,7 +1163,7 @@
               rules. A fid adapter implementing the same interface would reproduce kit policy,
               not merely persist it.
             </p>
-            <p><strong>Decision needed:</strong> publish shared pure transition semantics, or narrow fid enforcement to generic preconditions and trusted-obligation checks.</p>
+            <p><strong>Approved B1:</strong> the kit compiles approved policy into the Envelope revision; fid enforces generic integrity, recorded authority, and trusted-obligation checks without recalculating kit policy.</p>
           </article>
           <article class="panel stop">
             <h3>2. Both products define the Work Envelope</h3>
@@ -1171,7 +1171,7 @@
               V2 has an implemented schema and domain model. fid schedules its own Work Envelope
               for v0.3a. Independent definitions will drift; mapping current issues is not lossless.
             </p>
-            <p><strong>Decision needed:</strong> the kit owns the semantic schema; fid implements a first-class compatible aggregate and stores project references rather than competing prose.</p>
+            <p><strong>Approved B4:</strong> the shared semantic contract uses fid Issues as the only work graph and immutable Work Envelope revisions as execution contracts; fid stores project references rather than competing prose.</p>
           </article>
           <article class="panel warn">
             <h3>3. Gate definition ownership is duplicated</h3>
@@ -1188,7 +1188,7 @@
               V2-1 already coordinates filesystem activation records while the backend port
               also models full activation state. fid currently has no activation target.
             </p>
-            <p><strong>Decision needed:</strong> the kit owns the cross-resource coordinator; fid persists its participant state and shared activation identity, unless one canonical record is explicitly chosen.</p>
+            <p><strong>Approved direction:</strong> the kit coordinates the cross-resource transaction; fid persists its participant state and the shared activation identity through the backend port.</p>
           </article>
           <article class="panel warn">
             <h3>5. Two different meanings of export</h3>
@@ -1196,7 +1196,7 @@
               fid's v0.4d export is a one-way whet-style Markdown projection. V2 requires a
               lossless, backend-neutral recovery export with identities and history.
             </p>
-            <p><strong>Decision needed:</strong> portable structured export moves forward; Markdown export becomes an optional projection.</p>
+            <p><strong>Approved D2:</strong> portable structured export/validation is core. The whet-style Markdown export is retired; a separately named Human projection is allowed only for a concrete decision interface.</p>
           </article>
           <article class="panel stop">
             <h3>6. Phase 20 solves the old role model</h3>
@@ -1205,7 +1205,7 @@
               Human, Orchestrator, Builder, Reviewer, and harness authority, with policy owned
               by the kit and Work Envelope.
             </p>
-            <p><strong>Approved D1:</strong> supersede Phase 20; retain current issue CLI policy for compatibility, defer configurable global roles, and design generic actor/capability enforcement with the port.</p>
+            <p><strong>Approved D1/D2:</strong> supersede Phase 20 and remove the no-user V1 role-policy surface after generic Actor/capability and recorded Envelope authority enforcement replaces it. There is no compatibility mode.</p>
           </article>
         </div>
       </div>
@@ -1353,23 +1353,22 @@
         <p class="claim-context">
           <span class="claim-label current">Status is sourced</span>
           <span class="claim-label analysis">Direction is analyst judgment</span>
-          No row in this table changes the accepted fid roadmap by itself.
+          Gate D2 accepts the feature dispositions; Gate D3 still orders their implementation.
         </p>
         <p class="prose">
           The inventory unit is each feature row in fid's implementation roadmap, including
           Phase 0 and tentative/later work. The direction column is separate from implementation
           status: a feature can be shipped and still need a contract change, or be core to fid
-          without being required by the first V2 backend profile. "Compatible" means useful
-          supported behavior that is not on V2's first integration-critical path; it does not
-          mean obsolete. "Retire" means remove it from the V2-aligned forward roadmap, not
-          delete working code immediately. Every direction remains proposed until explicitly
-          accepted or rejected through the project's decision process.
+          without being required by the first V2 backend profile. "Development-only" means an
+          unstable diagnostic rather than supported integration behavior. "Retire" now means
+          remove the behavior and displaced code before first dogfood, with replacement-bound
+          safety behavior removed only after its generic successor passes.
         </p>
 
         <div class="legend" aria-label="Disposition legend">
           <span class="tag fit-core">Core: keep/pull forward</span>
           <span class="tag fit-rescope">Rescope to V2 contract</span>
-          <span class="tag fit-legacy">Compatible / not V2-critical</span>
+          <span class="tag fit-legacy">Development-only / noncontract</span>
           <span class="tag fit-defer">Defer until evidence</span>
           <span class="tag fit-retire">Retire from aligned roadmap</span>
           <span class="tag fit-project">Project-development only</span>
@@ -1384,7 +1383,7 @@
               <option value="all">All directions</option>
               <option value="core">Core</option>
               <option value="rescope">Rescope</option>
-              <option value="legacy">Compatible / not V2-critical</option>
+              <option value="legacy">Development-only / noncontract</option>
               <option value="defer">Defer</option>
               <option value="retire">Retire</option>
               <option value="project">Project-development only</option>
@@ -1426,7 +1425,7 @@
               <tr data-phase="v01a" data-status="shipped" data-fit="core"><td>v0.1a</td><td>Journal replayer</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Directly supports V2 context-reset and event-only recovery requirements.</td></tr>
               <tr data-phase="v01a" data-status="shipped" data-fit="core"><td>v0.1a</td><td><code>fid rebuild</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Keep and extend so envelopes, claims, receipts, evidence, attention, and telemetry reproduce exactly.</td></tr>
               <tr data-phase="v01a" data-status="shipped" data-fit="core"><td>v0.1a</td><td><code>fid init</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Keep fid initialization, but coordinate it with the kit's activation participant and backend capability setup.</td></tr>
-              <tr data-phase="v01a" data-status="shipped" data-fit="core"><td>v0.1a</td><td>Issue ID generation</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Durable issue identity remains central. The joint contract must bind envelope work items to issue IDs without forcing every port aggregate to use issue-prefix semantics.</td></tr>
+              <tr data-phase="v01a" data-status="shipped" data-fit="core"><td>v0.1a</td><td>Issue ID generation</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Durable Issue identity remains central. Work Envelopes select Issue IDs directly; opaque port identifiers do not require callers to parse prefixes.</td></tr>
               <tr data-phase="v01a" data-status="shipped" data-fit="retire"><td>v0.1a</td><td>Output format engine</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Replace</span></td><td>Gate D2 makes JSON the sole canonical machine representation. Remove universal TOON, YAML, and Markdown formatters; render purpose-built Human Markdown/HTML only where a named decision interface justifies it.</td></tr>
 
               <tr class="phase-break" data-phase="v01b"><td colspan="5">v0.1b - issue lifecycle</td></tr>
@@ -1442,7 +1441,7 @@
 
               <tr class="phase-break" data-phase="v01c"><td colspan="5">v0.1c - acceptance criteria, completions, and concerns</td></tr>
               <tr data-phase="v01c" data-status="shipped" data-fit="core"><td>v0.1c</td><td><code>fid issue ac add</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Issue acceptance criteria remain useful statements of desired outcome. The envelope compiles applicable criteria into typed obligations where executable proof is required.</td></tr>
-              <tr data-phase="v01c" data-status="shipped" data-fit="rescope"><td>v0.1c</td><td><code>fid issue ac verify</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Keep Human or reported verification visible, but distinguish it from executed or independently attested evidence and never let it satisfy a stronger trust requirement.</td></tr>
+              <tr data-phase="v01c" data-status="shipped" data-fit="rescope"><td>v0.1c</td><td><code>fid issue ac verify</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Replace</span></td><td>Keep the Acceptance Criterion statement; replace role verification with qualifying Evidence Records, Review Records, or Human Outcomes under the applicable Obligation.</td></tr>
               <tr data-phase="v01c" data-status="shipped" data-fit="core"><td>v0.1c</td><td><code>fid issue ac list</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Core issue context. Envelope obligation projections can link back to the acceptance criteria they operationalize.</td></tr>
               <tr data-phase="v01c" data-status="shipped" data-fit="rescope"><td>v0.1c</td><td><code>fid issue complete</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>The append-only completion concept is useful; gate snapshots and mandatory report semantics must give way to receipt-linked structured completion.</td></tr>
               <tr data-phase="v01c" data-status="shipped" data-fit="rescope"><td>v0.1c</td><td><code>fid concern raise</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>V2 needs durable concerns. Generalize scope/actor/status references beyond developer completion rows.</td></tr>
@@ -1451,7 +1450,7 @@
               <tr data-phase="v01c" data-status="shipped" data-fit="core"><td>v0.1c</td><td>Derived concern flag</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Useful issue-level operational signal. V2 resume state and attention add broader execution context alongside it.</td></tr>
 
               <tr class="phase-break" data-phase="v01d"><td colspan="5">v0.1d - claims, permissions, and links</td></tr>
-              <tr data-phase="v01d" data-status="shipped" data-fit="rescope"><td>v0.1d</td><td><code>fid issue claim</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>The atomic TTL foundation is reusable. V2 requires work-item identity, full actor reference, versioned renewal, idempotency, and lease-bound transitions.</td></tr>
+              <tr data-phase="v01d" data-status="shipped" data-fit="rescope"><td>v0.1d</td><td><code>fid issue claim</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>The atomic TTL foundation is reusable. The replacement binds Issue, Envelope revision, generic Actor authority, mutation scope, versioned renewal, idempotency, and lease-bound transitions.</td></tr>
               <tr data-phase="v01d" data-status="shipped" data-fit="rescope"><td>v0.1d</td><td><code>fid issue unclaim</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Carry release semantics into the backend port with release reason and idempotency.</td></tr>
               <tr data-phase="v01d" data-status="shipped" data-fit="rescope"><td>v0.1d</td><td><code>fid claim list</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Useful operator projection; V2 resume also needs claims scoped to an envelope.</td></tr>
               <tr data-phase="v01d" data-status="shipped" data-fit="rescope"><td>v0.1d</td><td>Claim-transition integration</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Core invariant, but V2 must bind claim ID, actor identity, expected envelope revision, and obligation state atomically.</td></tr>
@@ -1470,12 +1469,12 @@
               <tr data-phase="v01e" data-status="shipped" data-fit="retire"><td>v0.1e</td><td><code>fid dev gate</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Retire</span></td><td>Remove caller-reported gate recording and <code>gate_runs</code>; no real history requires import. Registered execution and immutable Receipts are the only forward deterministic path.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="retire"><td>v0.1e</td><td><code>fid dev finish</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Replace</span></td><td>Replace with generic receipt-linked structured completion; do not preserve completion-report choreography.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="retire"><td>v0.1e</td><td><code>fid dev block</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Replace</span></td><td>Replace with generic typed Stops and Attention; no Developer-specific compatibility command remains.</td></tr>
-              <tr data-phase="v01e" data-status="shipped" data-fit="legacy"><td>v0.1e</td><td><code>fid sql</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-legacy">Compatible</span></td><td>Useful local operator escape hatch. It must never become an integration surface or compatibility guarantee.</td></tr>
+              <tr data-phase="v01e" data-status="shipped" data-fit="legacy"><td>v0.1e</td><td><code>fid sql</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-legacy">Development only</span></td><td>Keep only as an explicitly unstable diagnostic. It is never an integration or schema compatibility surface.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="core"><td>v0.1e</td><td><code>fid journal inspect</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Valuable audit and diagnostic surface for immutable workflow, receipt, and recovery facts.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="core"><td>v0.1e</td><td><code>fid maintenance check</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Extend for sequence gaps, claim conflicts, abandoned executions, receipt integrity, evidence links, and export parity.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="core"><td>v0.1e</td><td><code>fid maintenance vacuum</code></td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Low-cost local maintenance. Not part of the port, but compatible with the target product boundary.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="core"><td>v0.1e</td><td>Activity log</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Structured lifecycle history is exactly what should replace progress ledgers and routine status prose.</td></tr>
-              <tr data-phase="v01e" data-status="shipped" data-fit="legacy"><td>v0.1e</td><td>Pricing config</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-legacy">Compatible</span></td><td>Useful for current manual run recording. V2 provider/harness telemetry should supply authoritative cost when available.</td></tr>
+              <tr data-phase="v01e" data-status="shipped" data-fit="retire"><td>v0.1e</td><td>Pricing config for manual run recording</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Retire</span></td><td>Remove the manual-estimate path. Trajectory telemetry records observed provider/harness cost when available and preserves unknown values as null.</td></tr>
               <tr data-phase="v01e" data-status="shipped" data-fit="retire"><td>v0.1e</td><td>Stub-table CLI guard</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Retire</span></td><td>A temporary compatibility device, not a feature. Remove obsolete promised-command stubs when the roadmap is formally resliced.</td></tr>
 
               <tr class="phase-break" data-phase="v02a"><td colspan="5">v0.2a - workflow engine migration</td></tr>
@@ -1489,17 +1488,17 @@
               <tr data-phase="v02b" data-status="planned" data-fit="rescope"><td>v0.2b</td><td>Gate registry</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Pull forward, but replace an independent <code>.fid/gates.toml</code> source with immutable registrations derived from project-owned V2 gate definitions.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Run Git context</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Pull forward. Expand to the V2 repository identity contract, including dirty-state digest and explicit nulls.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Registered execution and receipts</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>The primary differentiation and immediate V2 blocker. Implement reference-only execution bound to immutable registration and repository identity.</td></tr>
-              <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Trust source and legacy projection</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Essential migration boundary. Reported legacy rows remain visible but never satisfy executed/attested obligations.</td></tr>
+              <tr data-phase="v02b" data-status="planned" data-fit="retire"><td>v0.2b</td><td>Legacy reported-gate projection</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-retire">Retire</span></td><td>No fid history needs migration. Caller-reported commands and exit codes do not become Receipts; non-deterministic project evidence remains explicitly separate where policy permits it.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Attested receipt import</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Keep in the contract even if executed receipts ship first; it is the safe path for a separately trusted runner or CI producer.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Output security and artifacts</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Non-negotiable for trusted execution: sanitize before persistence, bound excerpts, retain hashes, and separate local full-log policy.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Evidence records and freshness</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Pull forward. Align exactly to V2's three dimensions: obligation absence, record validity, and referenced-artifact availability.</td></tr>
-              <tr data-phase="v02b" data-status="planned" data-fit="rescope"><td>v0.2b</td><td><code>required_gates_current</code> rule</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Keep the invariant, but make it part of generic envelope obligation evaluation as well as optional legacy issue transitions.</td></tr>
+              <tr data-phase="v02b" data-status="planned" data-fit="rescope"><td>v0.2b</td><td><code>required_gates_current</code> rule</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Replace</span></td><td>Preserve the invariant directly in generic Envelope Obligation evaluation; remove the V1 rule surface.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Evidence maintenance checks</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Pull forward with receipt uniqueness, abandoned starts, binding conflicts, artifact state, and rebuild parity.</td></tr>
               <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Capability discovery</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>The first implementation task after contract approval. Include independent versions, schema ranges, availability, limits, and trust sources.</td></tr>
-              <tr data-phase="v02b" data-status="planned" data-fit="core"><td>v0.2b</td><td>Compatibility migration</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Keep additive journal evolution and golden replay. Add backend-port event fixtures and never rewrite v0.1 history.</td></tr>
+              <tr data-phase="v02b" data-status="planned" data-fit="retire"><td>v0.2b</td><td>V1 compatibility migration</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-retire">Retire</span></td><td>No old journal history is supported. Build slice-specific event fixtures, then consolidate one clean schema/event baseline before dogfood.</td></tr>
 
               <tr class="phase-break" data-phase="v02c"><td colspan="5">v0.2c - lean completion</td></tr>
-              <tr data-phase="v02c" data-status="planned" data-fit="rescope"><td>v0.2c</td><td><code>has_completion</code> rule</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Pull forward as Work Envelope structured completion with current obligations; retain the issue rule only for compatibility.</td></tr>
+              <tr data-phase="v02c" data-status="planned" data-fit="rescope"><td>v0.2c</td><td><code>has_completion</code> rule</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Replace</span></td><td>Replace with structured Envelope completion over selected Issue states and current applicable Obligations; no compatibility rule remains.</td></tr>
               <tr data-phase="v02c" data-status="planned" data-fit="rescope"><td>v0.2c</td><td>Lean <code>fid dev finish</code></td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Make report prose optional, but expose generic backend completion operations rather than make the V2 harness use a Developer command.</td></tr>
               <tr data-phase="v02c" data-status="planned" data-fit="core"><td>v0.2c</td><td>Completion views</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Directly supports one fact/many projections and eliminates hand-authored completion reports.</td></tr>
               <tr data-phase="v02c" data-status="planned" data-fit="core"><td>v0.2c</td><td>Human-outcome evidence</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Required for Standard/Human validation. Enforce Human actor provenance and never relabel it deterministic proof.</td></tr>
@@ -1583,7 +1582,7 @@
               <tr data-phase="v04c" data-status="planned" data-fit="core"><td>v0.4c</td><td>Attention report growth</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-core">Core</span></td><td>Keep as a projection over durable deduplicated attention, findings, outcomes, and stale evidence.</td></tr>
 
               <tr class="phase-break" data-phase="v04d"><td colspan="5">v0.4d - export and saved views</td></tr>
-              <tr data-phase="v04d" data-status="planned" data-fit="rescope"><td>v0.4d</td><td><code>fid export</code></td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Pull lossless backend-neutral structured export/validation forward. Defer whet-style Markdown export as an optional Human projection.</td></tr>
+              <tr data-phase="v04d" data-status="planned" data-fit="rescope"><td>v0.4d</td><td><code>fid export</code></td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-rescope">Replace</span></td><td>Implement lossless backend-neutral structured export/validation. Retire the whet-style Markdown tree; purpose-built Human projections are separate named interfaces.</td></tr>
               <tr data-phase="v04d" data-status="planned" data-fit="defer"><td>v0.4d</td><td>Saved views table and CLI</td><td><span class="tag status-planned">Planned</span></td><td><span class="tag fit-defer">Defer</span></td><td>Useful only after real repeated query needs emerge; not part of recovery portability.</td></tr>
 
               <tr class="phase-break" data-phase="v05"><td colspan="5">v0.5 - tentative polish</td></tr>
@@ -1604,10 +1603,9 @@
           </table>
         </div>
         <p class="matrix-note">
-          Status is based on the examined fid branch and current phase records. Phase 19's
-          product work is implemented, but its final closure re-disposition is still pending
-          in the checked-out branch. Features can be technically shipped and still need
-          rescoping, or remain compatible without being required by the first V2 profile.
+          Status is based on the examined implementation and phase records. Phase 19 is closed;
+          its useful Issue/workflow foundation remains implementation input, not a frozen public
+          contract. Gate D2 accepts the dispositions above; Gate D3 decides the deletion order.
         </p>
       </div>
     </section>
@@ -1615,11 +1613,11 @@
     <section id="gates" class="band">
       <div class="wrap">
         <p class="section-label">09 / Human decision gates</p>
-        <h2>Product, scope, policy split, and lifecycle semantics are approved; roadmap disposition remains open.</h2>
+        <h2>The product surface is approved; only the replacement slice order remains open.</h2>
         <p class="claim-context">
           <span class="claim-label decision">Human decision status</span>
-          Gates A, B1-B4d, and C are approved. Gate B4 lifecycle design is complete;
-          Gate D roadmap disposition remains to be worked through.
+          Gates A, B1-B4d, C, D1, and D2 are approved. Gate B4 lifecycle design and
+          Gate D2 feature disposition are complete; Gate D3 orders the replacement slices.
         </p>
 
         <div class="decision-gate approved">
@@ -1640,7 +1638,7 @@
         </div>
         <div class="decision-gate approved">
           <strong>Gate B4 / fid-native work identity - APPROVED 2026-08-08</strong>
-          <div>fid Issues and their relationships are the only durable work graph. Work Envelopes reference selected Issues; Claims and Runs bind Issue, Envelope revision, actor role, and optional Obligation; the harness derives noncanonical Next actions. Review uses Review Runs/Records rather than Review Work Items. Gates B4a-B4d resolve the required lifecycle scenarios.</div>
+          <div>fid Issues and their relationships are the only durable work graph. Work Envelopes reference selected Issues; Claims and Runs bind Issue, Envelope revision, generic Actor capabilities and Authority Grants, and optional Obligation; the harness derives noncanonical Next Actions. Review uses Review Runs/Records rather than Review Work Items. Gates B4a-B4d resolve the required lifecycle scenarios.</div>
         </div>
         <div class="decision-gate approved">
           <strong>Gate B4a / Parallel Builder isolation - APPROVED 2026-08-08</strong>
@@ -1704,6 +1702,7 @@
           <li><a href="../current/progress_current.md">fid current progress</a></li>
           <li><a href="2026-08-07-fid-viability-review.html">earlier fid viability review</a></li>
           <li><a href="../../../docs/adr/0004-operational-work-state-boundary.md">ADR-0004: operational work-state boundary</a></li>
+          <li><a href="../../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md">ADR-0011: durable operational kernel and clean baseline</a></li>
           <li><a href="2026-08-08-fid-v2-direction-decision-session.md">ongoing fid/V2 direction decision session</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/decisions/0001-v2-foundation.md">V2 foundation decisions D-001 through D-010</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/00_PROJECT_CHARTER.md">V2 Charter</a></li>
@@ -1711,6 +1710,7 @@
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/trd/02_INTERFACES.md">V2 interfaces and backend port</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/trd/03_DATA_MODEL.md">V2 data model</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/FID_COMPATIBILITY.md">V2 fid compatibility matrix</a></li>
+          <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/specs/decisions/0009-target-the-clean-fid-operational-baseline.md">V2 Decision 0009: clean fid baseline</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/docs/reviews/2026-07-18-fresh-eyes-agentic-engineering-process-review.html">fresh-eyes agentic engineering process review</a></li>
           <li><a href="../../../../agentic-coding-project-starter-kit/project-docs/docs/reviews/2026-07-18-v1-release-and-v2-implementation-plan.md">V1 release and V2 implementation plan</a></li>
           <li><code>kit/internal/backend/port.go</code> and the V2-2 conformance fake</li>
@@ -1718,8 +1718,8 @@
         </ul>
         <p class="matrix-note">
           No held-out scenario repository or evaluator prompt was read. This report makes
-          architecture and roadmap recommendations. Gates A, B1-B4d, and C are accepted;
-          individual feature dispositions and Gate D remain analysis until separately decided.
+          architecture and roadmap recommendations. Gates A, B1-B4d, C, D1, and D2 are
+          accepted; only Gate D3's exact slice order remains for Human decision.
         </p>
       </div>
     </section>
@@ -1765,7 +1765,7 @@
         }, {});
         summary.textContent = visible + ' of ' + rows.length + ' features shown. Full inventory: ' +
           (counts.core || 0) + ' core, ' + (counts.rescope || 0) + ' rescope, ' +
-          (counts.legacy || 0) + ' compatible, ' + (counts.defer || 0) + ' defer, ' +
+          (counts.legacy || 0) + ' development-only, ' + (counts.defer || 0) + ' defer, ' +
           (counts.retire || 0) + ' retire, ' + (counts.project || 0) + ' project-only.';
       }
 

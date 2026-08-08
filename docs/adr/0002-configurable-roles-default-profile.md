@@ -1,11 +1,10 @@
 # Roles configurable via a seeded default profile
 
-> **Amended 2026-08-08 by ADR-0010.** The V1 default role set, authorization
-> behavior, and `fid policy show` remain compatibility surfaces. The planned
-> v0.2 `role_permissions` migration plus `fid role create` / `fid policy set`
-> are deferred and conditional rather than committed. Generic V2 actor and
-> recorded-authority enforcement is designed with the backend port; the kit
-> owns role selection and routing.
+> **Superseded 2026-08-09 by ADR-0011.** No adopted workspace depends on this
+> role model. The V1 role set, authorization surface, `fid policy show`,
+> `role_permissions`, and role-policy commands are removed during pre-dogfood
+> convergence. Generic Actor capabilities and recorded Envelope authority
+> replace them. The text below is historical reasoning, not forward scope.
 
 ## Decision
 

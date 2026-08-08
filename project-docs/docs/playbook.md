@@ -120,21 +120,21 @@ phase-specific exception.
 
 ## 8. Audit A Workspace
 
-Run the read-only maintenance audit before handoff or after rebuilding a
-projection:
+ADR-0011 makes JSON the only machine representation. The target audit surface
+after convergence slice A is:
 
 ```text
 fid maintenance check
-fid maintenance check --format markdown
-fid maintenance check --warn-as-error --format json
+fid maintenance check --warn-as-error --json
 ```
 
-The command refreshes a missing or stale SQLite projection before reading but
-does not append to the journal. It writes the complete audit result to stdout
-in `json` (default), `toon`, `markdown`, or `yaml`. No findings return
-`status: pass`; warnings alone return `status: warn` and exit zero unless
-`--warn-as-error` promotes the status and exit outcome to `fail`; any structural
-error returns `fail` and a non-zero exit.
+Human default output is concise terminal text; `--json` emits the canonical
+machine envelope. There is no `--format`, TOON, YAML, or generic Markdown
+output. The current pre-convergence binary still contains displaced formatter
+behavior, but no adopted workspace depends on it and new integrations must not
+use it. The audit refreshes a missing/stale projection without appending to the
+journal. Warnings exit zero unless `--warn-as-error` promotes the outcome;
+structural errors exit non-zero.
 
 ## 9. Compact the Derived Database
 
@@ -144,8 +144,10 @@ Use VACUUM only when reclaiming local SQLite space is useful:
 fid maintenance vacuum --by tl
 ```
 
-The command is available to `tl` and `human` only. It waits for the shared
-write lock, refreshes the derived projection if needed, then compacts only
+The current pre-convergence command is restricted to V1 `tl` and `human`
+callers. That role check is replacement-bound, not a forward authority
+contract. The operation waits for the shared write lock, refreshes the derived
+projection if needed, then compacts only
 `.fid/fid.sqlite`. It does not append, compact, or delete journal history, and
 it creates no activity event. The stderr confirmation reports the database byte
 sizes before and after the operation.

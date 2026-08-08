@@ -51,11 +51,10 @@ The active disposition is in `decisions_active.md`. In summary:
 
 ## Current work
 
-1. Align the V2 kit's fid compatibility and roadmap documents with ADR-0011.
-2. Run a fresh-agent cross-repository consistency audit and fix material
-   contradictions.
-3. Refresh the Windows-accessible reconciliation report.
-4. Present Gate D3's slice-order decision for Human discussion.
+1. Validate the reconciled fid/kit canonical documents after the independent
+   audit fixes.
+2. Refresh the Windows-accessible reconciliation report.
+3. Present Gate D3's slice-order decision for Human discussion.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

@@ -87,8 +87,9 @@ Project-specific conventions:
   use `QA-NN`.
 - Error handling: return errors rather than panicking for expected failures;
   wrap lower-level errors with context using `fmt.Errorf("operation: %w", err)`;
-  present structured stderr output and JSON errors when `--format json` is
-  active.
+  present structured stderr output and JSON errors when `--json` is active in
+  the target contract. Existing `--format json` fixtures are displaced
+  pre-convergence implementation, not a compatibility promise.
 - Formatting style: Go code uses `gofmt` and `goimports`; Markdown stays
   concise and keeps command examples current with the CLI specs.
 - File/function size budgets: non-test functions target 60 lines or less;
@@ -98,10 +99,12 @@ Project-specific conventions:
   tests; test observable behavior and contracts, not implementation trivia;
   use temporary SQLite databases for integration tests and golden fixtures for
   journal/event compatibility.
-- Public interface compatibility policy: CLI flags, JSON output shapes, journal
-  event schemas, migrations, and documented markdown/frontmatter contracts are
-  compatibility surfaces. Breaking or versioned changes require a spec update
-  and matching tests before implementation.
+- Public interface compatibility policy: before the first supported baseline,
+  ADR-0011 permits replacement of current CLI flags, schemas, events,
+  migrations, and generic formatters without a legacy mode. Accepted target
+  JSON contracts and slice event schemas require a spec update and matching
+  tests before implementation; after first adoption they become normal
+  versioned compatibility surfaces.
 
 ## Agent Prompts And Skills
 
@@ -290,7 +293,8 @@ See `project-docs/docs/playbook.md` for a concise operator runbook.
 - `project-docs/specs/GLOSSARY.md` - canonical project language.
 - `project-docs/specs/01_PRD.md` - product requirements.
 - `project-docs/specs/02_TRD.md` - technical requirements.
-- `project-docs/specs/03_TRD_SCHEMA.md` - full SQL schema, triggers, validation.
+- `project-docs/specs/03_TRD_SCHEMA.md` - target logical schema and invariants;
+  physical DDL/events are accepted slice by slice before implementation.
 - `project-docs/specs/04_TRD_CONFIG.md` - `.fid/` directory structure and config.
 - `project-docs/specs/05_DESIGN_PLAN.md` - user experience and surfaces.
 - `project-docs/specs/06_DESIGN_PLAN_CLI.md` - CLI flag specs and output examples.

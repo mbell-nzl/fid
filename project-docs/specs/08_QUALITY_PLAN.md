@@ -182,7 +182,7 @@ complete.
 
 Dogfood records enough telemetry to answer whether fid reduces or adds work:
 
-- commands and tokens per completed Work Item;
+- commands and tokens per completed Issue;
 - retries, stale-write conflicts, and recovery time;
 - evidence collection cost and invalidation rate;
 - Human interruptions by reason and lane;

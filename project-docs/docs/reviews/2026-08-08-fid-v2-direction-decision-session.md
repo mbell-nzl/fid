@@ -392,10 +392,15 @@ correctness regression.
 Recorded in:
 `docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md`.
 
+Documentation outcome (2026-08-09): the full fid spec suite and kit-facing
+contract were rewritten and independently reviewed. The review corrected the
+kit's historical complete-Envelope event snapshots, role-bound port fields,
+reported/caller-supplied Receipt paths, missing capability traceability, and
+stale operator/report claims. Exact leaf schemas remain Gate D3 slice work.
+
 ## Open Decision Order
 
-1. Complete and independently review the ADR-0011 specification realignment.
-2. Ratify the replacement backend-port vertical-slice order and phase cut.
+1. Ratify the replacement backend-port vertical-slice order and phase cut.
 
 The order may change if discussion shows that a downstream choice depends on
 an unresolved semantic decision.

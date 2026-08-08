@@ -23,12 +23,13 @@ machine representation.
 
 ## Current checkpoint
 
-Gate D2's canonical fid spec rewrite is complete. Remaining governance work:
+Gate D2's fid specs and the V2 kit contract are aligned. An independent
+cross-repository audit found stale event-snapshot, Receipt-ingestion, role,
+operator-doc, report, and traceability clauses; those findings have been
+reconciled in the canonical documents.
 
-1. align the V2 kit documents;
-2. complete an independent cross-repository consistency audit;
-3. fix material findings and refresh the Human report; and
-4. discuss and ratify Gate D3's vertical-slice order.
+Remaining governance work is to validate the documentation set, refresh the
+Windows report copy, and discuss/ratify Gate D3's vertical-slice order.
 
 The candidate sequence and open ordering questions are in
 `../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5.
