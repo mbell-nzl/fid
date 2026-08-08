@@ -32,10 +32,9 @@ editable source of truth is introduced.
 - Parallel Builders require independently claimable Issues; ADR-0006 defines
   the Claim/worktree isolation rule. Procedural steps do not become Issues
   merely to make the harness advance.
-- Before the joint contract is implemented, conformance scenarios must still
-  settle Envelope revision or partial completion across multiple selected
-  Issues. ADR-0007 resolves interrupted-Run recovery and ADR-0008 resolves
-  review findings and rework.
+- ADR-0006 through ADR-0009 resolve the required joint lifecycle scenarios:
+  parallel Builder isolation, interrupted-Run recovery, review rework, and
+  multi-Issue Envelope revision/partial progress.
 - This decision resolves the Issue/Work Item identity question left open by
   ADR-0004. It does not decide the detailed schema or transport for those
   scenarios.

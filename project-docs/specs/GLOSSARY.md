@@ -292,6 +292,26 @@ Avoid: treating it as an LLM prompt, fid as the loop host, the envelope as a
 replacement Issue, or its selected-Issue references as independently mutable
 work entities.
 
+**Envelope revision**:
+An immutable approved version of a [[Work envelope]]. Selection or material
+outcome, scope, authority, risk, acceptance, Obligation, budget, or stop-
+condition changes create a new revision after mutation against the prior
+revision is quiescent. Prior Claims, Runs, Review Records, and receipts retain
+their original revision binding. Removing unfinished work records an
+authorized visible disposition (ADR-0009).
+Use when: changing the approved execution contract while preserving its audit
+history.
+Avoid: editing an active revision, silently dropping an unfinished Issue, or
+using revision membership as a second work lifecycle.
+
+**Partial progress**:
+A derived view of the fid Issue states selected by an active [[Work envelope]].
+It has no durable identity or lifecycle. The Envelope remains active until all
+active-revision Issues and applicable Obligations satisfy completion.
+Use when: reporting how much of a multi-Issue Envelope has completed.
+Avoid: "partial completion" as a persisted Envelope state or reopening an
+already completed Issue merely because related work remains.
+
 **Next action**:
 A noncanonical projection of the action currently permitted or required,
 derived from Issue, Work Envelope, Obligation, Claim, Run, Review, evidence,

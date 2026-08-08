@@ -43,5 +43,5 @@ Human risk acceptance where project policy permits it.
   stale target proof, re-review resolution, forbidden Builder self-resolution,
   blocking deferral, legitimate linked follow-up work, Envelope-revision
   triggers, budget exhaustion, idempotent retry, and atomic failure.
-- This resolves the review-rework scenario required by ADR-0005. Multi-Issue
-  Envelope revision and partial completion remain open.
+- This resolves the review-rework scenario required by ADR-0005. ADR-0009
+  resolves multi-Issue Envelope revision and partial progress.

@@ -69,9 +69,9 @@ own persistent Work Items. Durable decomposition uses tasks/subtasks; smaller
 steps remain transient plans or Run checkpoints. The harness computes Next
 actions from durable state. Claims/Runs bind Issue, Envelope revision, actor
 role, and optional Obligation; reviews use Review Runs/Records. Parallel
-claims, interrupted-Run recovery, and review rework are resolved by Gate
-B4a/B4b/B4c. Multi-Issue Envelope behavior still requires a joint conformance
-scenario before implementation.
+claims, interrupted-Run recovery, review rework, and multi-Issue Envelope
+revision are resolved by Gate B4a/B4b/B4c/B4d. The Gate B4 lifecycle design is
+complete; exact transport and projection schemas remain implementation work.
 
 **Gate B4a parallel-Builder decision (2026-08-08):** one Issue may have at
 most one active mutating Builder Claim. Claims bind Issue, Envelope revision,
@@ -80,8 +80,8 @@ requires distinct selected Issues, separate worktrees, and declared provably
 disjoint scopes. Otherwise the second Next action is non-actionable with
 `mutation-conflict`. Read-only Review Runs may coexist but are repository-
 identity-bound and become stale when their target changes. Gate B4b later
-resolves interrupted-Run recovery and Gate B4c resolves review rework; one Gate
-B4 scenario remains open.
+resolves interrupted-Run recovery, Gate B4c resolves review rework, and Gate
+B4d resolves multi-Issue Envelope revision/partial progress.
 
 **Gate B4b interrupted-Run recovery decision (2026-08-08):** continuation
 always creates a new Run linked to a terminally `interrupted` prior Run. The
@@ -91,8 +91,8 @@ reconciles the worktree non-destructively. In-scope changes may be explicitly
 adopted but are not trusted evidence; unsafe or ambiguous state returns
 `recovery-state-conflict`, and unknown liveness returns
 `executor-liveness-unknown`. Issue/Envelope state, obligations, evidence rules,
-and consumed budgets carry forward. Gate B4c resolves review rework; one Gate
-B4 scenario remains open.
+and consumed budgets carry forward. Gate B4c resolves review rework and Gate
+B4d resolves multi-Issue Envelope revision/partial progress.
 
 **Gate B4c review-rework decision (2026-08-08):** a completed Review Run
 creates an immutable, exact-target Review Record. `changes-required` leaves the
@@ -103,7 +103,19 @@ Review Record may resolve them. Target changes stale prior proof; initial reuse
 is whole-profile conservative. Scope, protected-decision, dependency, risk,
 acceptance, Obligation, or authority changes require an Envelope revision.
 Blocking work cannot be deferred merely to pass, and exhausted cycles return
-`review-rework-exhausted` plus Attention. One Gate B4 scenario remains open.
+`review-rework-exhausted` plus Attention. Gate B4d resolves the remaining
+multi-Issue scenario.
+
+**Gate B4d multi-Issue Envelope decision (2026-08-08):** partial progress is a
+projection of selected fid Issue states, not an Envelope state or membership
+lifecycle. Selection or material contract changes create immutable revisions;
+a new revision cannot activate while mutation remains live against the old
+one. Removing unfinished work requires an authorized visible disposition, and
+adding work selects an existing Issue. Completed Issues remain complete, but
+later target changes may stale bound proof. Envelope completion requires every
+Issue selected by the active revision to be satisfying-terminal and every
+applicable Obligation current and satisfied; cancellation is not satisfaction.
+Gate B4 lifecycle design is complete.
 
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 

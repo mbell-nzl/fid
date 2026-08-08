@@ -21,4 +21,4 @@ fid atomically enforces the resulting Claim-conflict preconditions.
 
 This resolves the parallel-Builder scenario required by ADR-0005. ADR-0007
 resolves interrupted-Run recovery and ADR-0008 resolves review rework.
-Multi-Issue Envelope revision/partial completion remains open.
+ADR-0009 resolves multi-Issue Envelope revision/partial progress.

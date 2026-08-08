@@ -1,7 +1,7 @@
 # fid and Agentic Engineering Kit V2 - Direction Decision Session
 
 Date: 2026-08-08
-Status: In progress; nine decisions approved, remaining decisions open
+Status: In progress; ten decisions approved, roadmap decisions open
 Method: one decision at a time, challenged against canonical fid and kit docs
 
 ## Decision 1 - Product Boundary
@@ -215,7 +215,8 @@ Before implementation, joint conformance scenarios must settle:
   (resolved by Decision 9 / Gate B4c and ADR-0008);
 - crash recovery during an active Run (resolved by Decision 8 / Gate B4b and
   ADR-0007); and
-- Envelope revision and partial completion across multiple selected Issues.
+- Envelope revision and partial completion across multiple selected Issues
+  (resolved by Decision 10 / Gate B4d and ADR-0009).
 
 Recorded in: `docs/adr/0005-issues-are-the-durable-work-graph.md`.
 
@@ -300,11 +301,40 @@ acceptance where project policy permits it.
 
 Recorded in: `docs/adr/0008-keep-review-rework-on-the-original-issue.md`.
 
+## Decision 10 / Gate B4d - Multi-Issue Envelope Revision
+
+Status: **APPROVED by Human on 2026-08-08**
+
+Progress across selected Issues is a derived projection of fid Issue state,
+not a `partially-completed` Envelope status, per-membership lifecycle, or Work
+Item graph. A selected Issue that completes remains complete when another
+Issue remains open or the Envelope is revised.
+
+Changing selection, outcome, scope, authority, risk, acceptance, Obligations,
+budgets, or stop conditions creates a new immutable Envelope revision. The old
+revision remains auditable, and existing Claims, Runs, Reviews, and receipts
+retain their original revision bindings. The new revision may activate only
+after the old revision has no active mutating Claim or Run.
+
+Removing an unfinished Issue requires an authorized recorded disposition and
+reason: successor Envelope linkage or explicit deferral that leaves the Issue
+open and visible, an authoritative inapplicability fact, or an approved outcome
+change. The kit re-evaluates policy and obtains required authority. Adding work
+selects an existing fid Issue; it does not create Envelope-owned work.
+
+The Envelope completes only when every Issue selected by its active revision
+is in a satisfying terminal state and all applicable Obligations are current
+and satisfied. Cancellation does not satisfy completion or dependencies.
+Completed Issue state carries across revisions, while later repository changes
+may stale exact-target proof and require final Envelope-level gates/review to
+run again.
+
+Recorded in:
+`docs/adr/0009-revise-multi-issue-envelopes-without-duplicating-work-state.md`.
+
 ## Open Decision Order
 
-1. Remaining Gate B4 lifecycle scenario: multi-Issue Envelope revision and
-   partial completion.
-2. Roadmap disposition: reslice/order and treatment of role-, QA-, template-,
+1. Roadmap disposition: reslice/order and treatment of role-, QA-, template-,
    and report-oriented features.
 
 The order may change if discussion shows that a downstream choice depends on

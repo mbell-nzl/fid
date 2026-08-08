@@ -2095,7 +2095,10 @@ obligation completeness, and attention items. `fid next` returns a derived,
 noncanonical Next action over selected fid Issues, with typed non-actionable
 reasons (superset of `fid ready --explain`). It does not create or return a
 persistent Work Item entity (ADR-0005). Flag-level detail is deliberately
-deferred to the V2-aligned envelope slice.
+deferred to the V2-aligned envelope slice. That interface must preserve
+ADR-0009: partial progress is derived, revisions are immutable and require
+prior mutation to be quiescent, unfinished removals retain an authorized
+visible disposition, and cancellation does not satisfy completion.
 
 ### v0.1 Governance Stub Guard
 

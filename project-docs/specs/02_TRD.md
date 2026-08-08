@@ -112,10 +112,10 @@ fid Issues and their relationships are the only durable work graph. Work
 Envelopes reference one primary Issue and an explicitly bounded related Issue
 set; they do not contain persistent Work Item identities. The harness derives
 noncanonical Next actions from durable state. Claims and Runs bind Issue,
-Envelope revision, actor role, and optional Obligation. The detailed joint
-contract must still cover multi-Issue Envelope revision before implementation;
-parallel Claim isolation, interrupted-Run recovery, and review rework are
-resolved by ADR-0006/0007/0008 (ADR-0005).
+Envelope revision, actor role, and optional Obligation. ADR-0006 through
+ADR-0009 resolve the joint lifecycle contract for parallel Claim isolation,
+interrupted-Run recovery, review rework, and multi-Issue Envelope revision
+(ADR-0005).
 
 ADR-0006 resolves parallel claims: fid atomically allows at most one active
 mutating Builder Claim per Issue and rejects unproven isolation with
@@ -123,8 +123,8 @@ mutating Builder Claim per Issue and rejects unproven isolation with
 separate worktree identities, and declared disjoint scopes established by the
 kit/harness. Review Runs may coexist only as repository-identity-bound,
 read-only executions whose results stale when the target changes. ADR-0007
-separately resolves interrupted-Run recovery and ADR-0008 resolves review
-rework; multi-Issue Envelope behavior remains open.
+separately resolves interrupted-Run recovery, ADR-0008 resolves review rework,
+and ADR-0009 resolves multi-Issue Envelope revision/partial progress.
 
 ADR-0007 resolves interrupted Runs. A new session receives a new linked Run;
 the prior Run becomes `interrupted`. Recovery requires confirmed executor
@@ -141,7 +141,16 @@ but cannot resolve a Finding; only a later independent Review Record can do so.
 Target changes stale prior target-bound proof. Rework uses the existing
 budgets, with `review-rework-exhausted` and Attention on exhaustion. Scope,
 protected-decision, dependency, risk, acceptance, Obligation, or authority
-changes require an Envelope revision. One joint scenario remains open.
+changes require an Envelope revision.
+
+ADR-0009 resolves multi-Issue Envelope revision. Partial progress is derived
+from selected Issue states and is not a new lifecycle. Revisions are immutable,
+retain old record bindings, and cannot activate while mutation remains live
+against the prior revision. Removing unfinished work requires an authorized
+visible disposition; adding work selects an existing Issue. Completion requires
+all Issues selected by the active revision to be satisfying-terminal and all
+applicable Obligations current and satisfied. Cancellation satisfies neither
+completion nor dependencies. The Gate B4 lifecycle contract is complete.
 
 fid is the primary trusted local executor for registered gates: callers supply
 an immutable registration reference, fid records the start before process
@@ -284,7 +293,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 
 | Entity | Key Fields | Notes |
 |---|---|---|
-| `work_envelopes` | id, version, primary_issue_id, selected_issue_refs, risk_lane, authority_json, protected_decisions_json, budgets_json, stop_conditions_json, status | Versioned execution contract referencing the existing Issue graph; no Work Item table or identity. Obligations reference registered gates and selected Issue subjects. Exact normalized projection and multi-Issue revision rules follow the remaining joint scenario (ADR-0005). |
+| `work_envelopes` | id, version, primary_issue_id, selected_issue_refs, risk_lane, authority_json, protected_decisions_json, budgets_json, stop_conditions_json, status | Versioned execution contract referencing the existing Issue graph; no Work Item table or identity. Obligations reference registered gates and selected Issue subjects. Revisions are immutable; progress derives from Issue state; unfinished removals require an authorized visible disposition (ADR-0005/0009). |
 
 **Workflow engine (v0.2):**
 
@@ -1018,6 +1027,7 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-017 | Gate receipts shall be immutable, identified rows linked to their execution-start facts, produced via the two-event model in §4.3. Rebuild shall reproduce receipt, evidence, and freshness state exactly from the journal. | v0.2b | Golden replay fixtures including an abandoned start; delete-and-rebuild parity test over receipts/evidence. |
 | TRD-ARCH-018 | Machine-readable integration shall go through documented JSON/TOON contracts (receipts, capability discovery, transition rejections, envelope primitives), never through SQLite internals or `.fid/` file layout assumptions. | v0.2b+ | Contract snapshot tests; docs list the supported surfaces. |
 | TRD-ARCH-019 | Review outcomes shall be immutable and exact-target-bound. A `changes-required` outcome keeps the original Issue/Envelope active and derives Builder rework; only a later independent Review Record may resolve Findings or satisfy the review Obligation. Rework shall consume existing budgets, conservatively stale prior target-bound proof, and require Envelope revision when approved scope or authority semantics change. | V2-aligned backend port | Shared conformance fixtures for same-Issue rework, independent resolution, staleness, forbidden deferral/self-resolution, revision triggers, and `review-rework-exhausted`. |
+| TRD-ARCH-020 | Multi-Issue Envelope progress shall be derived from fid Issue state. Revisions shall be immutable and activate only after prior-revision mutation is quiescent. Unfinished selection removal shall preserve an authorized visible disposition, and completion shall require every active-revision selection to be satisfying-terminal plus every applicable Obligation current and satisfied. | V2-aligned backend port | Shared conformance fixtures for partial progress, add/remove revision, completed-Issue carry-forward, live-mutation conflict, unauthorized weakening, cancellation/dependencies, evidence staleness, and atomic completion. |
 
 ## 11. Open Technical Questions
 

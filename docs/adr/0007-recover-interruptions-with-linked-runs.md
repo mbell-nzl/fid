@@ -33,5 +33,5 @@ nothing. Human authority is required only for force takeover or ambiguous/
 protected repository state.
 
 This resolves the interrupted-Run scenario required by ADR-0005. ADR-0008
-resolves review rework. Multi-Issue Envelope revision/partial completion
-remains open.
+resolves review rework and ADR-0009 resolves multi-Issue Envelope
+revision/partial progress.
