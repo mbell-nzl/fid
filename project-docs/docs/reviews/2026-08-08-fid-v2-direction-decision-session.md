@@ -1,7 +1,7 @@
 # fid and Agentic Engineering Kit V2 - Direction Decision Session
 
 Date: 2026-08-08 to 2026-08-09
-Status: In progress; twelve decisions approved, slice-order decision open
+Status: In progress; thirteen decisions approved, Routine-skeleton decision open
 Method: one decision at a time, challenged against canonical fid and kit docs
 
 ## Decision 1 - Product Boundary
@@ -396,11 +396,35 @@ Documentation outcome (2026-08-09): the full fid spec suite and kit-facing
 contract were rewritten and independently reviewed. The review corrected the
 kit's historical complete-Envelope event snapshots, role-bound port fields,
 reported/caller-supplied Receipt paths, missing capability traceability, and
-stale operator/report claims. Exact leaf schemas remain Gate D3 slice work.
+stale operator/report claims. Exact leaf schemas remain owning-slice work.
+
+## Decision 13 / Gate D3.1 - Vertical Scenario Slices
+
+Status: **APPROVED by Human on 2026-08-09**
+
+Convergence is organized primarily as phase-sized vertical scenario slices,
+not as separate horizontal contract, state, evidence, and projection layers.
+Each slice may require several Developer tasks and horizontal implementation
+work, but it is accepted through an end-to-end journey.
+
+The order is a clean standalone Issue journey; a one-Issue Routine walking
+skeleton; failure/recovery; review/Human judgment; parallel/evolving work; and
+whole-port qualification/baseline convergence. Each phase owns named legacy
+removals. Safety-relevant V1 code remains only until its generic replacement
+passes; the final phase is not a general dumping ground for earlier cleanup.
+
+The new Issue slice reuses Phase 20 because the superseded role-policy Phase 20
+never acquired an artifact directory. fid continues to use the V1 repository
+process for these implementation phases; that delivery scaffolding does not
+re-enter fid product scope.
+
+Recorded in:
+`docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md`.
 
 ## Open Decision Order
 
-1. Ratify the replacement backend-port vertical-slice order and phase cut.
+1. Before Phase 21 planning, settle the exact one-Issue Routine walking-
+   skeleton inclusion and exclusion boundary (Gate D3.2).
 
 The order may change if discussion shows that a downstream choice depends on
 an unresolved semantic decision.

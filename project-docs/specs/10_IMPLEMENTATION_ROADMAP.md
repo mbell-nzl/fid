@@ -1,8 +1,9 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Product surface accepted; replacement slice order pending Gate D3
+**Status:** Gate D3.1 accepted; Phase 20 ready for V1 Tech Lead planning
 **Last updated:** 2026-08-09
-**Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md)
+**Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
+[ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
 ## 1. Objective
 
@@ -37,13 +38,15 @@ migrations, and formatters are removed rather than deprecated.
   Markdown output is removed.
 - speculative features live only in ADR-0011's evidence-gated candidate
   ledger.
+- convergence is delivered as phase-sized vertical scenario slices; horizontal
+  work may support a phase but is not its acceptance boundary.
 
 ### Open decision
 
-**Gate D3** must ratify the exact vertical-slice order, dependency edges, and
-the slice in which each displaced implementation surface leaves the build.
-Section 5 is a candidate sequence for that discussion, not an approved task
-pack.
+**Gate D3.1** has ratified the vertical-slice order and initial removal owners
+in section 5. The exact Phase 20 task pack is now planning work under the
+currently binding V1 delivery process. **Gate D3.2** will settle the exact thin
+Routine walking-skeleton boundary before Phase 21 is planned.
 
 ## 3. Foundation to retain
 
@@ -88,31 +91,46 @@ Capability identifiers describe behavior, not packages or one-command-per-
 capability CLI design. Exact JSON schemas and event types are accepted with the
 owning slice before its code changes.
 
-## 5. Candidate vertical-slice sequence for Gate D3
+## 5. Approved vertical-scenario phase sequence
 
-The proposed order keeps fid buildable and places a replacement beside each
-high-risk removal before the old model disappears.
+Each slice is one V1-style implementation phase containing multiple bounded
+Developer tasks. Schema, event, adapter, migration, and cleanup tasks may be
+horizontal inside the phase; the acceptance boundary is the coherent scenario
+in the second column. Exact JSON and event contracts are accepted by the
+owning phase before its product code changes.
 
-| Candidate slice | Coherent outcome | Principal displacement |
-|---|---|---|
-| A. Contract and clean machine surface | Versioned JSON envelope, capability discovery, error taxonomy, idempotency/revision conventions, project identity, and shared fake/fid conformance harness. | Remove generic TOON, YAML, and Markdown formatters and `--format`; retain only Human text plus `--json`. Remove promised-command stubs with no target contract. |
-| B. Envelope execution kernel | Envelope/Revisions, selected Issues, Actors, capabilities, Authority Grants, scoped Claims, Runs, Stops, Attention, recovery, and Next Action work end to end. | Remove V1 role matrix, `fid policy show`, role-bound Claims, escalation/triage aggregates, and `fid dev start/block` choreography after generic authority is proven. |
-| C. Trusted deterministic evidence | Project Gate Definition activation, immutable registrations, Attempts, Receipts, artifacts, Evidence Records, trust classes, and freshness work end to end. | Remove reported `gate_runs`, gate snapshots, universal `fid dev gate`, and any completion path that trusts caller-reported command outcomes. |
-| D. Review, Human judgment, and completion | Review Records, coverage, Findings, Concerns, Deviations, Decision references, Human Outcomes, acceptance evidence, and completion evaluation work end to end. | Remove role-specific verification columns, QA/TL composites, completion reports as state, and V1 `fid dev finish`. |
-| E. Activation, portability, and trajectory | Atomic Kit Activation, portable export validation, rebuild equivalence, changed-since/context/Human projections, and trajectory measures complete the port. | Remove whet-style Markdown export, generic report promises, and any duplicate activation or recovery truth. |
-| F. Baseline convergence | Consolidated initial schema/events, clean repository initialization, security/recovery hardening, full conformance, disposable migration rehearsal, and Human validation. | Remove superseded migrations, event fixtures, compatibility tests, dead packages, and temporary slice scaffolding. |
+| Phase / slice | End-to-end acceptance journey | Contract and capability advance | Owned legacy removal |
+|---|---|---|---|
+| **20. Clean standalone Issue journey** | Initialize a repository; create, relate, inspect, update, and transition Issues; explain failure; rebuild; and repeat the journey through canonical JSON. | Establish common JSON success/error envelopes, project identity, revision/idempotency conventions where used, and the retained standalone Issue contract. | Remove universal TOON/YAML/Markdown formatters, `--format`, format-matrix tests, obsolete promised-command stubs, and Issue-path fields or commands with no retained meaning. Do not yet remove fail-closed V1 authority. |
+| **21. One-Issue Routine walking skeleton** | Activate one kit/project/backend contract; select one Issue; authorize and claim one Builder Run; execute one immutable registered gate through fid; create trusted evidence; evaluate completion; then resume and export the same state. | Introduce the thinnest coherent Envelope/Revision, Actor authority, Claim/Run, Gate Registration/Attempt/Receipt, Evidence/Freshness, Attention, completion, activation, and portable-export path. Gate D3.2 fixes the exact inclusion boundary before planning. | After replacements pass, remove the V1 role matrix and `fid policy show`, role-bound Claim/Run fields, `fid dev start/gate/finish/block`, reported `gate_runs`, gate snapshots, and completion-report-as-state paths. |
+| **22. Failure and recovery** | Interrupt or abandon execution, recover liveness, reconcile repository state, start a linked Run, retry or stop safely, stale prior proof, rebuild, and resume without contradictory truth. | Complete typed Stops, Attention disposition, lease/liveness rules, activation recovery, freshness failure, rebuild equivalence, and recovery-grade export behavior. | Remove escalation entities and commands, duplicate recovery/activity truth, caller-reported terminal-result paths, and temporary walking-skeleton recovery shortcuts. |
+| **23. Review and Human judgment** | An independent Reviewer records coverage and zero-or-more Findings; Builder rework preserves review independence; protected or subjective Obligations receive authorized Human Outcomes; completion is reevaluated. | Complete Reviews, Findings, Concerns, Deviations, project Decision/requirement references, Human Outcomes, acceptance evidence, and Human-facing decision projections. | Remove role-specific verification columns, QA/TL composites, legacy requirement authoring that duplicates project prose, and remaining role-specific completion behavior. |
+| **24. Parallel and evolving work** | Execute distinct selected Issues in disjoint worktrees; reject conflicting Claims; revise a multi-Issue Envelope; carry valid completion forward; handle removed unfinished work explicitly; and preserve review rework rules. | Complete multi-Issue revision, scope conflict, dependency, partial-progress, parallel-claim, linked-Run, and evolving-obligation semantics. | Remove remaining V1 Claim/Run shapes, triage and carry-forward composites, and any Envelope-owned duplicate work or partial-progress state. |
+| **25. Qualification and baseline convergence** | Run the full shared fake/fid conformance suite, all recovery and security scenarios, portable validation, a disposable V1-project input migration rehearsal, and Human validation of the operating experience. | Qualify all twelve capabilities together; finish trajectory telemetry and named operational/Human projections; consolidate the first supported schema and event baseline. | Remove superseded migrations and event fixtures, V1 parity/compatibility tests, dead packages, temporary slice scaffolding, generic report/whet-export residue, and any retired surface found by the whole-product audit. |
 
-Questions Gate D3 must settle:
+The removal column is an ownership map, not permission to keep a known retired
+surface until Phase 25. Phase planning must enumerate exact commands, packages,
+tables, events, migrations, fixtures, and tests. If implementation discovery
+moves an item, the owning phase records the reason and a concrete new expiry
+point.
 
-1. Whether Kit Activation belongs in slice A rather than E because all later
-   operations need an activated contract.
-2. Whether Attention should arrive with Stops in slice B or with Human Outcomes
-   in slice D.
-3. Whether portable export must appear early as a test oracle for every slice.
-4. Which old commands remain temporarily buildable inside a slice without being
-   advertised as supported.
-5. The smallest end-to-end acceptance scenario and exact deletion list for each
-   slice.
+### 5.1 Current implementation ownership check
+
+This is the pre-planning map for implementation that exists after Phase 19.
+The Tech Lead must replace it with an exact file/schema/event inventory in each
+phase plan.
+
+| Current surface | Planned treatment |
+|---|---|
+| `internal/format`, root format selection, and V1 format-matrix tests | Delete in Phase 20; retain direct Human text and canonical `--json` behavior, not a universal formatter framework. |
+| `governance_stubs.go` and promised-command stub tests | Delete in Phase 20. Later commands appear only with an owning accepted contract. |
+| `internal/issues`, `labels`, `links`, Issue CLI, and Issue workflow authoring | Exercise and sharpen in Phase 20; retain the domain behavior that passes the new standalone contract. |
+| `internal/policy`, `internal/dev`, `fid policy`, `fid dev`, and role-bound portions of `claims`, `runs`, and `workflow` | Replace and delete in Phase 21 after generic Actor/Envelope authority, Claims/Runs, trusted execution, and completion pass. |
+| Legacy recovery/activity facts that duplicate Run, Stop, Attention, or activation recovery | Replace/delete in Phase 22; retain activity only as an event-derived projection. |
+| `internal/requirements` authoring and role-specific acceptance/concern verification | Replace in Phase 23 with project-owned prose references plus generic acceptance, Review, Finding, Concern, Decision, and Human Outcome facts. |
+| Remaining V1 Claim/Run shapes and any triage/carry-forward composites exposed during multi-Issue work | Delete in Phase 24 after parallel and Envelope-revision rules pass. |
+| `internal/stats` behavior not justified by trajectory telemetry, V1 parity/e2e fixtures, superseded migrations/events, and dead packages | Replace or delete in Phase 25 during whole-product convergence. |
+| `internal/journal`, `internal/db`, locking, IDs, rebuild, maintenance, and `fid sql` | Retain as foundation subject to the new contracts; `fid sql` remains an unstable development diagnostic. |
 
 ## 6. Removal rules
 
@@ -193,12 +211,12 @@ reading `.fid/` internals.
 
 ## 10. Immediate next work
 
-1. Complete the coordinated spec and kit-contract rewrite for Gate D2.
-2. Run an independent cross-document consistency audit and fix material
-   contradictions.
-3. Ratify Gate D3 using the candidate sequence and questions in section 5.
-4. Create the first bounded implementation task with exact removals, contracts,
-   failing tests, and quality commands.
+1. Invoke the V1 Tech Lead to plan the new Phase 20 from section 5.
+2. Approve Phase 20 terminology, public JSON behavior, exact retained/removal
+   inventory, validation contract, task boundaries, and quality commands.
+3. Implement and independently review Phase 20 through the existing V1 process.
+4. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary before
+   planning Phase 21.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

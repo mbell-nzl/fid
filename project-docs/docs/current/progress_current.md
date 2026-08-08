@@ -8,9 +8,10 @@
 **No implementation phase is active.** Phase 19 completed and wrapped on
 2026-08-08. fid has no adopted project workspace or compatibility constituency.
 
-Gates D1/D2 supersede Phase 20 and the historical process-shaped roadmap. The
-target product is now the standalone Issue tracker plus the fid/V2 durable
-operational kernel described by ADR-0011.
+Gates D1/D2 supersede the old Phase 20 role-policy proposal and the historical
+process-shaped roadmap. Gate D3.1 establishes a new Phase 20 as the first of
+six vertical scenario slices. The target product remains the standalone Issue
+tracker plus the fid/V2 durable operational kernel described by ADR-0011.
 
 Branch: `main`.
 
@@ -36,8 +37,9 @@ not a frozen public contract. Retain useful Issue, journal, SQLite, rebuild,
 locking, identity, and repository primitives only where they conform to the
 new specs.
 
-Product code has not yet been removed or reshaped under ADR-0011. Removal and
-replacement require bounded red/green implementation slices after Gate D3.
+Product code has not yet been removed or reshaped under ADR-0011. ADR-0012 now
+assigns replacement and removal to phase-sized vertical scenarios beginning
+with the standalone Issue journey.
 
 ## Carry-forward
 
@@ -51,10 +53,11 @@ The active disposition is in `decisions_active.md`. In summary:
 
 ## Current work
 
-1. Validate the reconciled fid/kit canonical documents after the independent
-   audit fixes.
-2. Refresh the Windows-accessible reconciliation report.
-3. Present Gate D3's slice-order decision for Human discussion.
+1. Invoke the V1 Tech Lead to plan the new Phase 20 standalone Issue slice.
+2. Approve its exact JSON contracts, removal inventory, validation contract,
+   Developer tasks, and quality commands before implementation.
+3. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+   planning.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

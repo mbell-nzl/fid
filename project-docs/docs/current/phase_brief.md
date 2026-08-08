@@ -4,9 +4,10 @@
 
 ## Status
 
-**No phase is active.** Phase 19 is complete and wrapped. Phase 20 is
-superseded by ADR-0010/0011. Do not begin product implementation from this
-file or from the historical version roadmap.
+**No phase is active.** Phase 19 is complete and wrapped. The old Phase 20
+role-policy proposal is superseded by ADR-0010/0011. ADR-0012 authorizes the V1
+Tech Lead to plan a new Phase 20 for the clean standalone Issue journey; no
+`phase-20/` artifact directory currently exists.
 
 ## Current product direction
 
@@ -28,16 +29,16 @@ cross-repository audit found stale event-snapshot, Receipt-ingestion, role,
 operator-doc, report, and traceability clauses; those findings have been
 reconciled in the canonical documents.
 
-Remaining governance work is to validate the documentation set, refresh the
-Windows report copy, and discuss/ratify Gate D3's vertical-slice order.
-
-The candidate sequence and open ordering questions are in
-`../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5.
+Gate D3.1 now fixes the six vertical scenario phases and their legacy-removal
+owners. The approved sequence is in
+`../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5. Gate D3.2 remains for the
+exact Phase 21 Routine walking-skeleton boundary and does not block Phase 20
+planning.
 
 ## Next implementation phase
 
-The next phase begins only after Gate D3 and must define one coherent vertical
-slice with:
+The V1 Tech Lead may now plan Phase 20. It must define one coherent standalone
+Issue slice with:
 
 - accepted terminology, JSON schemas, errors, events, and invariants;
 - exact retained and removed surfaces;
@@ -45,6 +46,10 @@ slice with:
 - a first failing behavioral test;
 - recovery and migration consequences; and
 - current repository quality commands.
+
+Phase 20 must remove generic TOON/YAML/Markdown formatting, `--format`, format-
+matrix tests, and obsolete command stubs. It must not remove fail-closed V1
+authority until Phase 21 provides and proves generic authority.
 
 Useful implemented foundation may be retained, but its V1 public shape is not
 a compatibility contract. The generic replacement must preserve fail-closed

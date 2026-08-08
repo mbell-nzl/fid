@@ -20,11 +20,15 @@
 - [ADR-0007](../../../docs/adr/0007-recover-interruptions-with-linked-runs.md):
   interruption recovery creates a linked new Run after reconciliation.
 - [ADR-0010](../../../docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md):
-  Phase 20 is superseded and generic authority belongs to the port.
+  the old role-policy Phase 20 is superseded and generic authority belongs to
+  the port.
 - [ADR-0011](../../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md):
   retain the Issue tracker and durable kernel, remove the pre-dogfood V1
   compatibility surface, use JSON as the sole machine representation, and gate
   optional features on observed evidence.
+- [ADR-0012](../../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md):
+  deliver convergence through six phase-sized end-to-end scenarios, beginning
+  with a clean standalone Issue journey in a newly planned Phase 20.
 
 ## Ratified fid/V2 gates
 
@@ -58,6 +62,9 @@
 - **Gate D2:** apply ADR-0011's durability test; retire duplicate process
   aggregates, role choreography, generic TOON/YAML/Markdown output, and V1
   compatibility. TUI/dashboard and search lead the candidate ledger.
+- **Gate D3.1:** use vertical scenario phases rather than horizontal subsystem
+  phases. Each phase owns explicit legacy removals and may contain multiple
+  bounded Developer tasks under the current V1 delivery process.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -65,9 +72,8 @@ specification suite.
 
 ## Open decision
 
-**Gate D3:** ratify the vertical-slice order, dependency edges, and exact point
-where each displaced command, model, event, migration, fixture, and package is
-removed. The candidate sequence is in
+**Gate D3.2:** settle the exact one-Issue Routine walking-skeleton boundary
+before Phase 21 planning. Phase 20 planning may proceed now from
 `../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5.
 
 ## Carry-forward disposition
@@ -96,9 +102,10 @@ implementation work, including TDD, evidence, command, phase, and hard-stop
 rules. Those requirements are temporary engineering scaffolding, not forward
 fid product requirements.
 
-No implementation phase starts from the historical version roadmap. A new
-phase requires Gate D3, accepted slice contracts, exact removals, and a fresh
-validation contract under the currently binding delivery process.
+No implementation phase starts from the historical version roadmap. The V1
+Tech Lead may now plan the new Phase 20 with accepted slice contracts, exact
+removals, and a fresh validation contract under the currently binding delivery
+process.
 
 ## Environment
 

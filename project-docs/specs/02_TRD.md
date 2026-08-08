@@ -100,8 +100,8 @@ trust sources. Missing or incompatible capability returns a typed stop.
 
 ## 5. Semantic Operation Groups
 
-Exact CLI spelling is a Gate D3 implementation decision; these semantic
-operations bind every transport.
+Exact CLI spelling is accepted with the owning implementation phase; these
+semantic operations bind every transport.
 
 ### 5.1 Work and projections
 

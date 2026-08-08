@@ -11,9 +11,10 @@ workshop-drawer set.
 
 Pre-dogfood convergence. The journal/SQLite foundation, Issue tracker, and
 Issue workflow authoring are implemented through historical Phase 19. ADR-0011
-and the current specs now define the sharper fid/V2 target; no implementation
-phase is active while Gate D3 orders the replacement slices. No production
-workspace or compatibility promise exists yet.
+defines the sharper fid/V2 target, and ADR-0012 orders six vertical scenario
+slices. No implementation phase is active; the V1 Tech Lead may now plan the
+new Phase 20 standalone Issue slice. No production workspace or compatibility
+promise exists yet.
 
 ## Playbook
 
