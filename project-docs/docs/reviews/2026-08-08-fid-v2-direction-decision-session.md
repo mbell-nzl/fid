@@ -1,7 +1,7 @@
 # fid and Agentic Engineering Kit V2 - Direction Decision Session
 
 Date: 2026-08-08
-Status: In progress; ten decisions approved, roadmap decisions open
+Status: In progress; eleven decisions approved, roadmap decisions open
 Method: one decision at a time, challenged against canonical fid and kit docs
 
 ## Decision 1 - Product Boundary
@@ -332,10 +332,34 @@ run again.
 Recorded in:
 `docs/adr/0009-revise-multi-issue-envelopes-without-duplicating-work-state.md`.
 
+## Decision 11 / Gate D1 - Supersede Phase 20
+
+Status: **APPROVED by Human on 2026-08-08**
+
+Phase 20 as written is superseded. The `role_permissions` migration, `fid role
+create`, and `fid policy set` are not the next phase or part of the V2 backend-
+port critical path. They remain deferred, conditional standalone-fid features
+that require dogfood evidence and a new roadmap decision before implementation.
+
+The existing V1 issue-CLI permission behavior and `fid policy show` remain
+supported. Implemented Issue workflow authoring/assignment remains core.
+Custom state names without a V1 permission action remain non-transitionable
+until generic actor/capability enforcement lands; no implicit permission is
+introduced.
+
+The backend-port slices provide generic actor identity, capability, and
+recorded-authority enforcement. The kit selects and routes its Orchestrator,
+Builder, and Reviewer roles and compiles grants into the Work Envelope; fid
+enforces the recorded grants without owning the kit's role taxonomy or policy.
+
+Recorded in:
+`docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md`.
+
 ## Open Decision Order
 
-1. Roadmap disposition: reslice/order and treatment of role-, QA-, template-,
-   and report-oriented features.
+1. Continue Gate D feature disposition: QA plans/templates, context/handoff
+   prose helpers, TUI, reports/metrics, governance, and other non-port scope.
+2. Ratify the replacement backend-port vertical-slice order and phase cut.
 
 The order may change if discussion shows that a downstream choice depends on
 an unresolved semantic decision.

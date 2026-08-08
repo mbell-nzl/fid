@@ -1073,8 +1073,10 @@ fid claim list [--stale] [--by <role>] [--format json|toon|markdown|yaml]
 fid policy show [--format json|toon|markdown|yaml]
 ```
 
-Displays the active permissions matrix. v0.1 reads the in-code default
-matrix; v0.2 reads the project-configurable `role_permissions` table.
+Displays the active permissions matrix. The supported compatibility path reads
+the in-code V1 default matrix. A project-configurable `role_permissions` table
+is deferred and conditional under ADR-0010; V2 Envelope authority is a
+separate generic backend-port contract.
 
 **JSON output:**
 ```json
@@ -2191,9 +2193,10 @@ permissions matrix contains transition actions only for the v0.1 state names.
 Consequently a transition into a custom-named state fails with
 `authorize action "issue.transition.<state>": no permissions matrix entry` and
 does not append a journal event. This is not an implicit permission grant;
-custom workflows that reuse v0.1 state names remain transitionable. Phase 20's
-`fid policy set` delivers the explicit permission configuration required for
-custom state names.
+custom workflows that reuse v0.1 state names remain transitionable. Generic
+actor/capability enforcement in the V2 backend port owns the future unblock
+for custom state names. Until then they remain non-transitionable; fid never
+infers permission. The former Phase 20 `fid policy set` plan is superseded.
 
 **Output (stderr confirmation):**
 ```text
@@ -2268,7 +2271,11 @@ returns the actual projected row counts, including materialized cancel edges.
 `{"scope":"project"}` with `kind` omitted; and unassigned workflows render
 `"assigned_to": []`.
 
-### `fid role create` (v0.2+)
+### `fid role create` (deferred/conditional; ADR-0010)
+
+This is a reserved interface sketch, not scheduled scope. Reactivation
+requires standalone-fid dogfood evidence, a roadmap decision, and renewed
+public-contract review.
 
 ```
 fid role create <name> [--description <text>] [--human] --by <role>
@@ -2288,7 +2295,11 @@ created role release_manager
 **Errors:** invalid role name, duplicate active role, or denied `role.create`
 permission.
 
-### `fid policy set` (v0.2+)
+### `fid policy set` (deferred/conditional; ADR-0010)
+
+This is a reserved interface sketch, not scheduled scope. It is not the V2
+authority mechanism; the backend port generically enforces recorded Envelope
+grants.
 
 ```
 fid policy set --role <role> --action <action> --allow|--deny

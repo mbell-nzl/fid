@@ -303,7 +303,7 @@ lists are indicative; refer to the schema doc for exhaustive definitions.
 | `workflow_states` | workflow_id, state, category, ordinal | Category enables portable queries. |
 | `workflow_transitions` | workflow_id, from_state, to_state | Explicit allowed edges. |
 | `workflow_transition_requires` | workflow_id, from/to_state, rule, params_json | E.g. `all_acs_verified` with `{"roles":["developer"]}`. |
-| `role_permissions` | role_name, action, conditions | v0.1: in app-code constant. v0.2: migrated to table. |
+| `role_permissions` (reserved, conditional) | role_name, action, conditions | V1 remains an in-code compatibility constant. The table migration is not scheduled; ADR-0010 requires standalone dogfood evidence and a new decision. V2 authority uses generic actor/capability plus Envelope grants. |
 
 **Governance support (v0.2):**
 
@@ -1017,7 +1017,7 @@ Supply-chain gates to define before release readiness:
 | TRD-ARCH-007 | `PRAGMA foreign_keys = ON` and `PRAGMA recursive_triggers = ON` shall be set on every database connection. | v0.1 | Test: open connection, query pragma values, assert ON. |
 | TRD-ARCH-008 | The `issues_enriched` view shall use index-only lookups on `concerns(issue_id, status)` and `triage_events(issue_id, created_at)`. | v0.1 | EXPLAIN QUERY PLAN assertion in test. |
 | TRD-ARCH-009 | Workflow transition rules shall be implemented as named Go functions in v0.1, migrated to `workflow_transition_requires` table rows in v0.2. | v0.1–v0.2 | v0.1: unit tests per rule function. v0.2: migration test seeds defaults; integration test confirms identical behavior. |
-| TRD-ARCH-010 | The permissions matrix shall be a code constant in v0.1, migrated to `role_permissions` table in v0.2. Unknown roles shall be hard-rejected in v0.1. | v0.1–v0.2 | v0.1: test every CLI write action has a matrix entry; test denied combinations raise errors. v0.2: migration test seeds from v0.1 constant. |
+| TRD-ARCH-010 | The V1 permissions matrix shall remain a code constant and unknown V1 roles shall be rejected. A future `role_permissions` migration is conditional under ADR-0010 and shall not supply V2 workflow policy; backend-port authority enforcement shall be generic and bind recorded Envelope grants. | v0.1 compatibility; V2-aligned backend port | Compatibility tests cover every V1 write action and denied combination; port conformance tests cover actor identity, capabilities, recorded grants, and forbidden policy recalculation. |
 | TRD-ARCH-011 | Claim acquisition shall be atomic via `INSERT ... ON CONFLICT DO NOTHING`. Zero affected rows indicates an existing claim. | v0.1 | Integration test with concurrent acquire attempts. |
 | TRD-ARCH-012 | The TOON marshaller shall be implemented in-tree with no third-party dependency. | v0.1 | Build with no TOON dependency in go.mod. |
 | TRD-ARCH-013 | Agent integration shall remain CLI/skill-first until dogfooding proves a concrete MCP-only client need. Any future MCP adapter shall require a recorded product/security decision, a threat model, and an explicit transport choice before implementation. | v0.1+ | Roadmap review confirms no MCP implementation task is committed before the decision; security review confirms no listener code exists. |

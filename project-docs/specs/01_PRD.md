@@ -160,7 +160,7 @@ where a requirement is deferred past v0.1.
 | PRD-ROLE-003 | If the specified role lacks permission for the requested action, the system shall reject the command with an error naming the role, the action, and that it is not permitted. | Must | v0.1 |
 | PRD-ROLE-004 | The system shall allow the `human` role to invoke any write command via `--by human` as the product-owner escape valve. Role-attributed evidence and history rows shall still record `human` as the acting/verifying role; `--by human` shall not impersonate another verifier role such as `developer` or `qa_lead`. | Must | v0.1 |
 | PRD-ROLE-005 | The system shall provide a command to display the active permissions matrix. | Should | v0.1 |
-| PRD-ROLE-006 | Where configurable permissions are enabled, the system shall allow per-project role creation and permission customisation. | Should | v0.2 |
+| PRD-ROLE-006 | Where configurable permissions are enabled, the system shall allow per-project role creation and permission customisation. | Should | Deferred/conditional (ADR-0010). Not part of the V2 backend-port critical path; requires standalone-fid dogfood evidence and a new roadmap decision. |
 
 ### 3.8 Cross-Entity Links (LINK)
 
@@ -385,7 +385,8 @@ phase planning.
 | PRD-TELEM-001 – 004 | v0.1 | | |
 | PRD-OUT-001 – 003a, 004, 008 | v0.1 | | |
 | PRD-OPS-001 – 009 | v0.1 | | |
-| PRD-WF-005a, PRD-WF-011 – 012, PRD-ROLE-006 | v0.2a | | |
+| PRD-WF-005a, PRD-WF-011 – 012 | v0.2a | | |
+| PRD-ROLE-006 | Deferred/conditional (ADR-0010) | | |
 | PRD-GATE-001 – 008, PRD-EVID-001 – 004, 006, PRD-WF-015, PRD-QA-009, PRD-OPS-017, PRD-OPS-023 | v0.2b | | |
 | PRD-WF-014, PRD-EVID-005, PRD-OUT-025 | v0.2c | | |
 | PRD-GOV-001 – 005, 007 – 008, 012 – 013, PRD-LINK-007 | v0.2d | | |

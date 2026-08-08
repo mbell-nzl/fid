@@ -14,8 +14,9 @@ recovery. All remain binding unless explicitly superseded:
 
 - `docs/adr/0001-journal-canonical-db-derived.md` — journal is source of truth,
   SQLite is a derived projection. No daemon.
-- `docs/adr/0002-configurable-roles-default-profile.md` — roles/permissions are
-  configurable, seeded from a default profile.
+- `docs/adr/0002-configurable-roles-default-profile.md` — V1 default roles and
+  authorization remain compatibility behavior; ADR-0010 defers its planned
+  configurable-role implementation.
 - `docs/adr/0003-three-tier-qa-model.md` — validation contracts, QA plans, and
   QA reviews ship together.
 - `docs/adr/0004-operational-work-state-boundary.md` — fid owns issue tracking
@@ -33,13 +34,16 @@ recovery. All remain binding unless explicitly superseded:
 - `docs/adr/0007-recover-interruptions-with-linked-runs.md` — a recovery
   creates a linked new Run only after executor termination and non-destructive
   worktree reconciliation; ambiguity stops.
+- `docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md` —
+  Phase 20 is superseded; configurable global roles/policy are conditional,
+  while generic actor/recorded-authority enforcement belongs in the port.
 
 **Gate C delivery decision (2026-08-08):** qualify all twelve V2 kit
 backend-port capabilities before migrating a live project. Implement them as
 bounded vertical slices with contract/conformance evidence, controlled
 fixtures, and a disposable migration rehearsal; this is not a big-bang phase
-or approval of the whole historical fid roadmap. Exact slicing follows the
-open semantics decision and roadmap disposition.
+or approval of the whole historical fid roadmap. Gate B semantics are closed;
+exact slicing follows Gate D roadmap disposition.
 
 **Gate B1 policy/enforcement decision (2026-08-08):** the kit evaluates
 engineering-workflow policy and compiles the approved Work Envelope; fid does
@@ -117,6 +121,14 @@ Issue selected by the active revision to be satisfying-terminal and every
 applicable Obligation current and satisfied; cancellation is not satisfaction.
 Gate B4 lifecycle design is complete.
 
+**Gate D1 Phase 20 decision (2026-08-08):** Phase 20 as written is
+superseded. Preserve V1 issue-CLI permission behavior, `fid policy show`, and
+implemented Issue workflow authoring. Defer the `role_permissions` migration,
+`fid role create`, and `fid policy set` pending standalone dogfood evidence and
+a new roadmap decision. The V2 port receives generic actor/capability and
+recorded-authority enforcement; kit policy owns role selection/routing. Gate D
+feature disposition and slice ordering remain open.
+
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 
 **DEC-059..DEC-066** — trusted-evidence checkpoint
@@ -138,9 +150,9 @@ at each wrap against what the phase actually changed.
 | CF-018 | Phase 16 Review 2 + final review | Behavior-preserving split of `internal/sqlquery/sqlquery.go` (595 lines) under the 400-line non-test file target. Keep the public package API stable. **Trigger did not fire in Phase 19** (`internal/sqlquery` untouched). | Next SQL package reopen | Low |
 | CF-020 | Phase 17 DEC-056 | Burst issue writes stamp `occurred_at` ahead of the wall clock via `nextIssueUpdateTime`'s monotonicity bump, and `recent_activity_7d` excludes future rows. Bounded and self-correcting. | v0.2 | Low (product) |
 | CF-022 | Phase 17 Review 1 | Broader exact-output markdown characterization tests to lock rendering behavior. **Trigger fired in Phase 19 Task 5 and was partially taken:** the new workflow-list renderer ships a byte-exact golden. The backfill for pre-existing renderers stays deferred — and should be taken **with CF-027's `writeMarkdown` split**, since both reopen `internal/format`. | Next `internal/format` reopen (pair with CF-027) | Low |
-| CF-023 | Phase 17 DEC-058; expanded by DEC-074/DEC-095; raised to Medium by DEC-095 | **Workflow-tooling hardening.** Landed history and closed sub-items are in `../phases/phase-19/decisions.md`. **Open scope:** (a) `drill-09` plus the `report-lint.sh` evidence-token check (DEC-087), both needing a shell session to demonstrate failing-then-passing; (b) `report-lint.sh` should name `UNVERIFIED`/`FAIL` explicitly instead of the generic "no PASS/BLOCKED result" (DEC-103 — behaviour is correct, message is not); (c) **mechanical `Refs: phase-N/task-M` enforcement** via a `commit-msg` hook or a `report-lint.sh` check, covering Conventional-Commit subject format too — in `50533e2..HEAD` every Developer/QA-Lead task commit carries the trailer **except `32614bb` and `ce4cf5b`, both from the same irregular Task 4 session**, and the six other gaps are five `docs(tl)` governance commits plus one raw human commit (`ebbcd16`, which also has no Conventional-Commit type and names the wrong phase). Decide whether the hook covers `docs(tl)` or `AGENTS.md` exempts it explicitly; (d) **spec-sync obligations must appear in the owning task's `## Documentation Updates`**, not only in the phase sync table (DEC-106 item 5). **Five accumulated drill cases:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097); (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically — correct handling is `PASS` **plus** a deviation note (DEC-100); (4) a report declining an out-of-scope repair as "pre-existing" without citing an introducing commit older than phase-start (DEC-102); (5) **a count presented as a rate without its denominator** (DEC-106 item 2) — the cheapest of the five to detect. **Record-keeping remains unfixed across two phases:** three of eight Phase 19 triage entries required Tech Lead backfill. | **Workflow overhaul**, or any session with a shell. **Decide at Phase 20 planning whether this is scheduled work or a wish list.** | **Medium** |
+| CF-023 | Phase 17 DEC-058; expanded by DEC-074/DEC-095; raised to Medium by DEC-095 | **Workflow-tooling hardening.** Landed history and closed sub-items are in `../phases/phase-19/decisions.md`. **Open scope:** (a) `drill-09` plus the `report-lint.sh` evidence-token check (DEC-087), both needing a shell session to demonstrate failing-then-passing; (b) `report-lint.sh` should name `UNVERIFIED`/`FAIL` explicitly instead of the generic "no PASS/BLOCKED result" (DEC-103 — behaviour is correct, message is not); (c) **mechanical `Refs: phase-N/task-M` enforcement** via a `commit-msg` hook or a `report-lint.sh` check, covering Conventional-Commit subject format too — in `50533e2..HEAD` every Developer/QA-Lead task commit carries the trailer **except `32614bb` and `ce4cf5b`, both from the same irregular Task 4 session**, and the six other gaps are five `docs(tl)` governance commits plus one raw human commit (`ebbcd16`, which also has no Conventional-Commit type and names the wrong phase). Decide whether the hook covers `docs(tl)` or `AGENTS.md` exempts it explicitly; (d) **spec-sync obligations must appear in the owning task's `## Documentation Updates`**, not only in the phase sync table (DEC-106 item 5). **Five accumulated drill cases:** (1) a non-terminating or wrong-exit command recorded `PASS` — flag `rg`/`grep` results written as `exit 0 (no output)`; (2) a provider-shared prompt body asserting a capability limit only one provider's frontmatter enforces (DEC-097); (3) a required command failing on a *task-authored harness*, repaired and rerun byte-identically — correct handling is `PASS` **plus** a deviation note (DEC-100); (4) a report declining an out-of-scope repair as "pre-existing" without citing an introducing commit older than phase-start (DEC-102); (5) **a count presented as a rate without its denominator** (DEC-106 item 2) — the cheapest of the five to detect. **Record-keeping remains unfixed across two phases:** three of eight Phase 19 triage entries required Tech Lead backfill. | **Workflow overhaul**, or any session with a shell. **Decide during Gate D reslicing whether this is scheduled work or a wish list.** | **Medium** |
 | CF-024 | Phase 18 DEC-073 | TRD-PERF-003 headroom. **Measured in Phase 19 Task 6: 100k-event rebuild `24.749 s` against the `<30 s` control (~17.5% headroom, up from ~8-10%)**, and 10k registry read `44.29 ms` against `<500 ms`. Improved but **not closed** — v0.2b receipts/evidence raise event volume on this path. Next lever is batching commits per N events in the shared `ProjectEvent` / `WriteProjectionMeta` path (Tech Lead-owned). **Do not weaken the target.** | v0.2b (first projection/rebuild work) | Medium |
-| CF-026a | Phase 19 Human VAL-026 dogfood (DEC-105) | **Workflow inspection — the read half.** `fid workflow list` exposes only counts; no named-workflow `show`/`get` renders states, categories, ordered transitions, requirements, and assignments together. The shipped surface matches the documented surface exactly (`06_DESIGN_PLAN_CLI.md`), so this is a **new gap found by dogfooding**, not unshipped scope. Bounded read surface over already-projected tables; no data-model decision needed. | **v0.2a closure — Phase 20 planning candidate** (small, additive, no schema change) | Medium (product) |
+| CF-026a | Phase 19 Human VAL-026 dogfood (DEC-105) | **Workflow inspection — the read half.** `fid workflow list` exposes only counts; no named-workflow `show`/`get` renders states, categories, ordered transitions, requirements, and assignments together. The shipped surface matches the documented surface exactly (`06_DESIGN_PLAN_CLI.md`), so this is a **new gap found by dogfooding**, not unshipped scope. Bounded read surface over already-projected tables; no data-model decision needed. | Gate D disposition candidate (small, additive, no schema change) | Medium (product) |
 | CF-026b | Phase 19 Human VAL-026 dogfood (DEC-105) | **Workflow lifecycle management — the design half.** Custom workflows cannot be revised, deactivated, retired, or deleted; reusing a slug is rejected. Needs a journal-safe model *decided before it is scheduled*: whether revision creates a successor/version, how kind/project assignment changes apply, what existing issues retain on revision, and which history-preserving retirement/deletion rules apply. No direct SQLite edits. | **Design decision first**, then v0.2d governance work alongside CF-008 | Medium (product) |
 | CF-027 | Phase 19 QA-BLK-FINAL-05 (DEC-105); extended by DEC-106 (MINOR-01) | Behavior-preserving decomposition of **`internal/issues/create.go`** (412 lines, over STRUCT-002's 400; `Create` ~228 lines, over STRUCT-001's 60) and **`internal/format/markdown.go` `writeMarkdown`** (68 lines, over 60). **Both are inherited debt, not phase regressions** — `create.go` was 419 lines at phase start and Phase 19 made it *smaller*; `writeMarkdown` was 66 and grew by one unavoidable type-switch dispatch arm. Same class as CF-017 and CF-018. **Sequencing was the safety property and it is now satisfied:** CF-025's Go parity test landed in Phase 19 Task 6 and is the exact regression guard for the `create.go` path, with VAL-058/059 as the net. | **Now unblocked** — next `internal/issues` reopen; pair the `writeMarkdown` half with CF-022 | Low |
 
@@ -228,8 +240,9 @@ the brick that fell, and prefer expressing the observable as a test.
 - **The gate-obligation seam stays behavior-free until v0.2b**: no seeded use,
   no receipt/gate evaluation or query for `required_gates_current` /
   `has_completion` (DEC-066; Phase 18 VAL-016/017, Phase 19 VAL-068/069).
-- **A deep retrospective is recommended before Phase 20 planning** (DEC-104,
-  DEC-106); brief in `../phases/phase-19/decisions.md`.
+- **The Phase 19 deep retrospective is a Gate D disposition candidate**
+  (DEC-104, DEC-106), not a predecessor to superseded Phase 20; brief in
+  `../phases/phase-19/decisions.md`.
 
 ## TL-Lite Resume Policy
 

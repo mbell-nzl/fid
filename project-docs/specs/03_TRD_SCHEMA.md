@@ -79,7 +79,8 @@ Natural and composite keys stay natural: `requirements.id`
 ref_id)`, `workflow_states(...)`, `workflow_transitions(...)`,
 `workflow_transition_requires(...)`, `qa_review_task_window(...)`,
 `qa_plan_step_assertions(...)`, `validation_assertion_validators(...)`,
-and `role_permissions(...)`.
+and, only if ADR-0010's conditional feature is reactivated,
+`role_permissions(...)`.
 
 ### 1.2 Migration Placement
 
@@ -822,7 +823,7 @@ CREATE TABLE roles (
   created_at      DATETIME
 );
 
--- v0.2+
+-- Deferred/conditional by ADR-0010; reserved design, not a scheduled migration.
 CREATE TABLE role_permissions (
   role_name       TEXT NOT NULL REFERENCES roles(name),
   action          TEXT NOT NULL,               -- e.g. 'issue.create.task', 'issue.transition.dev_complete'

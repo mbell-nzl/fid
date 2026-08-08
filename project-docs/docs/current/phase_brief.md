@@ -29,28 +29,30 @@ begins with a Tech Lead planning session that replaces this brief entirely.
 
 ## Next Planning Checkpoint
 
-**Phase 20 — `role_permissions` migration + `fid role create` /
-`fid policy set` + v0.2a closure.** Roadmap entry:
-`../../specs/10_IMPLEMENTATION_ROADMAP.md` (v0.2a section).
+**Gate D roadmap disposition and backend-port reslice.** Gate D1 supersedes
+Phase 20 as written. Do not plan or implement the `role_permissions` migration,
+`fid role create`, or `fid policy set` without standalone-fid dogfood evidence
+and a new decision. Roadmap:
+`../../specs/10_IMPLEMENTATION_ROADMAP.md`.
 
 Inputs the planning session must take:
 
-- **Deep retrospective first (recommended, DEC-104/DEC-106).** Phase 19 spent
+- **Deep retrospective disposition (recommended, not an automatic gate,
+  DEC-104/DEC-106).** Phase 19 spent
   eight escalations and twelve decisions to ship zero product defects. The brief
   is in `../phases/phase-19/decisions.md` → *Deep retrospective recommendation*.
-  Its output should shape Phase 20's evidence design before the contract is
-  drafted.
-- **DEC-079 unblock.** Custom workflow *state names* are not transitionable
-  until the permissions matrix is data-backed. Phase 20's `fid policy set` is
-  the unblock, and the v0.2a exit smoke depends on it.
+  Decide during the reslice whether its output is worth producing before the
+  first port contract.
+- **DEC-079 unblock.** Custom workflow *state names* remain
+  non-transitionable. Generic actor/capability enforcement in the backend port,
+  not Phase 20's `fid policy set`, owns the future unblock. Never infer allow.
 - **CF-026a is a scheduling candidate** — `fid workflow show`, a bounded
   additive read surface over already-projected tables, raised by the Phase 19
   human dogfood. **CF-026b is not schedulable** until its lifecycle model is
   recorded as a decision.
 - **CF-027 is now safe to take** — CF-025's parity test is the regression guard
-  it was sequenced behind. It reopens `internal/issues/create.go`, which Phase
-  20 may not otherwise touch; decide explicitly rather than letting the trigger
-  lapse.
+  it was sequenced behind. It reopens `internal/issues/create.go`; decide
+  explicitly during roadmap disposition rather than letting the trigger lapse.
 - **CF-023** carries five accumulated drill cases plus mechanical `Refs:`
   enforcement and has not landed across two phases. Decide whether it is
   scheduled work or a wish list.
@@ -90,8 +92,9 @@ Binding on all future phases. Full text in
   issues, verify ACs, own migrations, or format output. No in-package
   (`package db` / `package journal`) test file may import `internal/workflow`
   (DEC-096).
-- **Custom state names are not transitionable until the Phase 20 matrix work**
-  (DEC-079). Do not auto-register matrix rows to work around it.
+- **Custom state names are not transitionable until generic actor/capability
+  enforcement is implemented** (DEC-079, ADR-0010). Do not auto-register
+  matrix rows or infer permission to work around it.
 - **The DEC-066 gate-obligation seam stays behavior-free until v0.2b**, and no
   production Go path reads the frozen v0.1 `definitions` map.
 - **Do not weaken TRD-PERF-003 (`<30 s`) or TRD-PERF-001 (`<500 ms`).**

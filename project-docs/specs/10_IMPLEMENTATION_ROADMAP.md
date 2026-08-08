@@ -303,7 +303,8 @@ with whet's task artifacts.
 > if phase-start dependency analysis supports a different cut (e.g. merging labels
 > into Phase 12) — the binding rule is every phase ships an end-to-end verifiable
 > increment. Explicit deferrals: configurable `role_permissions` table +
-> `fid role create` / `fid policy set` remain v0.2 (PRD-ROLE-006); requirement
+> `fid role create` / `fid policy set` are conditional under ADR-0010;
+> requirement
 > get/list and drift reporting remain v0.2 (PRD-GOV-007); link endpoints to
 > decisions/escalations remain v0.2 (PRD-LINK-007); QA-review claims remain v0.3
 > (PRD-CLAIM-009). New v0.1d write commands the spec says project to
@@ -470,27 +471,15 @@ relying on agent prose for deterministic claims.
 | Workflow tables | Schema migration: `workflows`, `workflow_states`, `workflow_transitions`, `workflow_transition_requires`. Seed with v0.1 defaults verbatim. Migrate `issues.workflow_id` to real FK, `issues.status` to composite FK `(workflow_id, state)`. | PRD-WF-011–012, TRD-ARCH-009 |
 | `fid workflow define/assign/list` | Define custom workflows with states, transitions, and per-transition rules. Assign per kind or per project. | PRD-WF-011–012 |
 | Escalation workflow | Default workflow for escalation kind: open → resolved (requires linked_to_decision). | PRD-WF-005a |
-| Role permissions table | Schema migration: `role_permissions` table. Seed from v0.1 code constant. Add `fid role create` and `fid policy set`; `fid policy show` keeps the same CLI contract but reads from `role_permissions` after this migration. | PRD-ROLE-006, TRD-ARCH-010 |
+| Configurable role policy | **Deferred/conditional (ADR-0010), not v0.2a or backend-port critical-path scope.** Preserve the V1 in-code matrix and `fid policy show`; generic V2 actor/capability and recorded-authority enforcement lands with the port. `role_permissions`, `fid role create`, and `fid policy set` require standalone dogfood evidence and a new decision. | PRD-ROLE-006, TRD-ARCH-010, ADR-0010 |
 | Gate-obligation seams | Rule vocabulary reserved and rule-parameter shapes designed so transitions can later require versioned gate obligations (`required_gates_current`) and structured completion (`has_completion`) without re-migrating: `workflow_transition_requires.params_json` schema accommodates gate ID/version sets. Seam only — no receipt behavior in this slice. | PRD-WF-014–015 (seam), DEC-066 |
 
-> **Phase-slicing note — v0.2a (Tech Lead, 2026-07-18).**
-> v0.2a is the **first v0.2 version** and is **migration-heavy and
-> contract-heavy**: it converts two v0.1 hard-coded contracts into
-> data-configurable tables. The hard-coded workflow state machines
-> (`internal/workflow`) become `workflows` / `workflow_states` /
-> `workflow_transitions` / `workflow_transition_requires` rows, and the in-code
-> permissions matrix (Phase 10) becomes the `role_permissions` table. Both are
-> **behavior-preserving migrations** — the v0.1 defaults must migrate verbatim
-> and produce identical transition and permission behavior (a v0.2 exit
-> criterion). v0.2a also bakes in the **gate-obligation seams** that every
-> later v0.2b evidence obligation hangs off (DEC-066), so the
-> `workflow_transition_requires` schema must be right the first time; the seam
-> is schema/vocabulary only, with no receipt behavior. Slice into **three
-> phases (Phases 18–20)**, each exiting on commands an agent can run against a
-> real `.fid/` workspace. The migration phases carry the hard-to-change-contract
-> risk; per-phase operating mode is decided at each phase-start. The CF-023
-> workflow-tooling pass (doc/tooling only, light mode) is not a numbered v0.2a
-> implementation phase.
+> **Phase-slicing disposition — v0.2a (amended 2026-08-08, ADR-0010).**
+> Phases 18 and 19 delivered the behavior-preserving workflow-table migration,
+> authoring/assignment CLI, and gate-obligation seams. The former third slice,
+> Phase 20, is superseded. The V1 permission matrix remains the compatibility
+> source; configurable role policy is conditional. Generic V2 actor/capability
+> and recorded-authority enforcement is resliced with the backend port.
 >
 > **CF-023 sequencing correction (Tech Lead, 2026-07-25, DEC-074).** This note
 > previously said the CF-023 pass "precedes Phase 18". It did not run: Phase 18
@@ -562,41 +551,25 @@ relying on agent prose for deterministic claims.
 >   and `AGENTS.md`). Five of the phase's twelve decisions were **retired** as
 >   procedure-specific scar tissue. **CF-027 is now unblocked** — CF-025's
 >   parity test, the guard it was sequenced behind, shipped in Task 6.
-> - **Phase 20 — `role_permissions` migration + `fid role create` /
->   `fid policy set` + v0.2a closure.** Add the `role_permissions` table seeded
->   verbatim from the v0.1 in-code constant, repoint the Phase 10 enforcement seam
->   to read the matrix from the table (behavior-preserving), and implement
->   `fid role create` (add a project role) and `fid policy set` (set a role/action
->   permission); `fid policy show` keeps the same CLI contract but now reads from
->   `role_permissions`. Close the version with a v0.2a smoke: define + assign a
->   custom workflow, migrate permissions, create a role, set a policy, and run a
->   full gated issue lifecycle over the data-backed workflow + permissions.
->   **Exit:** role permissions are data-configurable per project, `fid policy
->   show` returns output identical to v0.1 for the seeded profile, `fid role
->   create` / `fid policy set` mutate the matrix and gate a subsequent write
->   accordingly, and the v0.2a slice of the v0.2 exit criteria ("custom workflows
->   can be defined and assigned; v0.1 defaults migrate cleanly"; "role permissions
->   are data-configurable per project") is demonstrably met. (PRD-ROLE-006,
->   TRD-ARCH-010)
+> - **Former Phase 20 — SUPERSEDED 2026-08-08 (ADR-0010).** Do not migrate
+>   `role_permissions` or implement `fid role create` / `fid policy set` as the
+>   next phase. Preserve V1 authorization and `fid policy show`. Implement
+>   generic actor/capability and recorded-Envelope-authority enforcement in the
+>   backend-port slices. Configurable standalone roles require dogfood evidence
+>   and a new roadmap decision.
 >
-> Ordering rationale: the workflow-tables migration is the highest-risk
-> foundational contract and must land first — the workflow CLI and every later
-> v0.2b evidence obligation depend on data-backed workflow rules and the seam;
-> the workflow authoring CLI follows because it needs the migrated tables; the
-> `role_permissions` migration is independent of the workflow tables and pairs
-> naturally with the closure smoke, because the smoke wants a full gated
-> lifecycle over both data-backed subsystems. Re-slice freely if phase-start
-> dependency analysis supports a different cut — e.g. seeding the escalation
-> default in Phase 18 with the other defaults, or moving the `role_permissions`
-> migration ahead of the workflow CLI so the two migrations stay adjacent. The
-> binding rule is every phase ships an end-to-end verifiable increment, and
-> Phase 18 must preserve v0.1 transition behavior exactly. Explicit deferrals:
+> Ordering outcome: the workflow-tables migration landed before the workflow
+> authoring CLI, preserving the dependency on data-backed rules and the gate
+> seam. The former `role_permissions` ordering rationale is superseded by
+> ADR-0010.
+> The binding rule remains that every phase ships an end-to-end verifiable
+> increment and preserves V1 compatibility. Explicit deferrals:
 > registered gate execution, receipts, evidence records, and freshness are v0.2b
 > (this slice reserves the rule seam only); the structured `has_completion`
 > behavior is v0.2c (seam only here); decision/escalation/triage/comment and
 > requirement-read CLIs plus link-endpoint expansion are v0.2d; configurable
-> policy management beyond `role create` / `policy set` / `policy show` and richer
-> workflow operations stay later.
+> role/policy management and richer workflow operations require
+> later evidence and decisions.
 
 ### v0.2b — Evidence Foundation (new, DEC-059/060/061)
 
@@ -674,7 +647,8 @@ relying on agent prose for deterministic claims.
 - Named reports answer common cross-cutting questions in single commands.
 - `fid search` handles common discovery without requiring SQL.
 - Context packs reduce agent context window pressure.
-- Role permissions are data-configurable per project.
+- V1 role-permission behavior and `fid policy show` remain compatible;
+  configurable role policy is conditional under ADR-0010.
 - All v0.2 PRD requirements have passing tests.
 
 ---
@@ -922,5 +896,5 @@ it; the lean completion path (v0.2c) exists before a workflow kit adopts fid
 they render; dashboard, MCP, and markdown sync (v0.5) do not displace the
 evidence foundation.
 
-*Last updated: 2026-07-18 (re-sliced per DEC-066; see
-`project-docs/docs/reviews/2026-07-18-roadmap-update-decisions.md`)*
+*Last updated: 2026-08-08 (Gate D1 supersedes Phase 20 and defers configurable
+role policy; see ADR-0010).*

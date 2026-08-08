@@ -1,5 +1,12 @@
 # Roles configurable via a seeded default profile
 
+> **Amended 2026-08-08 by ADR-0010.** The V1 default role set, authorization
+> behavior, and `fid policy show` remain compatibility surfaces. The planned
+> v0.2 `role_permissions` migration plus `fid role create` / `fid policy set`
+> are deferred and conditional rather than committed. Generic V2 actor and
+> recorded-authority enforcement is designed with the backend port; the kit
+> owns role selection and routing.
+
 ## Decision
 
 Agent roles and the role × action permissions matrix are configurable per project, seeded at `fid init` from a built-in default profile. Roles are stored in a `roles` table from v0.1; the permissions matrix migrates from app-code constants to a `role_permissions` table in v0.2, paralleling the workflow-engine migration. The default profile name is `default`. Unknown roles are hard-rejected by the CLI in v0.1 (configurable in v0.2 once `role_permissions` is data).

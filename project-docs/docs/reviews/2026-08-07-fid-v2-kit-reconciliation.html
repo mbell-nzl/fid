@@ -693,28 +693,28 @@
         <span class="claim-label decision">Approved direction</span>
         <strong>Qualify the complete backend port through staged vertical slices.</strong>
         Do not wait through fid's existing v0.2-v0.4 order, do not start Phase 20 as written,
-        and do not bypass D-006/D-007. First settle the joint port semantics; then implement
-        and qualify all twelve V2 backend-port capabilities before migrating a live project.
+        and do not bypass D-006/D-007. Joint port semantics and the Phase 20 disposition
+        are now settled; implement and qualify all twelve V2 backend-port capabilities before migrating a live project.
         Each slice still requires contract, conformance, and recovery evidence.
       </div>
       <div class="meta">
         <span><strong>fid snapshot:</strong> <code>phase-19-workflow-authoring@bb7d61a</code></span>
         <span><strong>Kit snapshot:</strong> <code>v2@b9860ac</code></span>
         <span><strong>Scope:</strong> specs, roadmap, current state, implementation surfaces</span>
-        <span><strong>Decision status:</strong> Gates A, B1-B4d, and C ratified 8 August; Gate D remains</span>
+        <span><strong>Decision status:</strong> Gates A, B1-B4d, C, and D1 ratified 8 August; remaining Gate D dispositions open</span>
       </div>
     </div>
   </header>
 
   <div class="decision-banner" role="note">
     <div class="wrap">
-      <strong>Gates A, B1-B4d, and C were ratified by the Human on 8 August 2026.</strong>
+      <strong>Gates A, B1-B4d, C, and D1 were ratified by the Human on 8 August 2026.</strong>
       fid owns durable operational work state and evidence; all twelve V2 backend-port
       capabilities will be qualified before live-project migration; the kit evaluates policy
       while fid enforces recorded preconditions and executes immutable registered local gates.
       fid Issues are the only durable work graph. Parallel Builder isolation and linked-Run
       interruption recovery, review rework, and multi-Issue Envelope revision are approved;
-      Gate D remains.
+      Phase 20 is superseded; remaining Gate D feature and slice dispositions are open.
     </div>
   </div>
 
@@ -725,7 +725,7 @@
     </div>
     <div class="partial">
       <span>fid v0.2a</span>
-      <strong>Workflow tables and authoring implemented; Phase 20 policy migration remains.</strong>
+      <strong>Workflow tables and authoring implemented; Phase 20 is superseded.</strong>
     </div>
     <div class="done">
       <span>Kit V2</span>
@@ -1204,7 +1204,7 @@
               Human, Orchestrator, Builder, Reviewer, and harness authority, with policy owned
               by the kit and Work Envelope.
             </p>
-            <p><strong>Decision needed:</strong> pause Phase 20; retain the current issue CLI policy for compatibility and design actor/capability enforcement for the port separately.</p>
+            <p><strong>Approved D1:</strong> supersede Phase 20; retain current issue CLI policy for compatibility, defer configurable global roles, and design generic actor/capability enforcement with the port.</p>
           </article>
         </div>
       </div>
@@ -1479,9 +1479,9 @@
 
               <tr class="phase-break" data-phase="v02a"><td colspan="5">v0.2a - workflow engine migration</td></tr>
               <tr data-phase="v02a" data-status="shipped" data-fit="core"><td>v0.2a</td><td>Workflow tables</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-core">Core</span></td><td>Configurable issue lifecycle is core fid capability. Envelope execution state should be first-class and linked to it, not forced into the same graph.</td></tr>
-              <tr data-phase="v02a" data-status="partial" data-fit="core"><td>v0.2a</td><td><code>fid workflow define/assign/list</code></td><td><span class="tag status-partial">Implemented</span></td><td><span class="tag fit-core">Core</span></td><td>Product code is implemented on the examined branch; closure is pending and custom-state transitions still depend on Phase 20. This remains an issue capability, not V2 policy.</td></tr>
+              <tr data-phase="v02a" data-status="partial" data-fit="core"><td>v0.2a</td><td><code>fid workflow define/assign/list</code></td><td><span class="tag status-partial">Implemented</span></td><td><span class="tag fit-core">Core</span></td><td>Product code is implemented on the examined branch. Custom-state transitions await generic actor/capability enforcement; workflow authoring remains an issue capability, not V2 policy.</td></tr>
               <tr data-phase="v02a" data-status="shipped" data-fit="retire"><td>v0.2a</td><td>Escalation workflow</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-retire">Retire</span></td><td>V2 typed stops, attention, and protected decisions supersede a dedicated escalation issue workflow.</td></tr>
-              <tr data-phase="v02a" data-status="planned" data-fit="rescope"><td>v0.2a</td><td>Role permissions table</td><td><span class="tag status-planned">Phase 20</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>Do not implement the seven-role plan as the next phase. Redesign generic actor/capability enforcement with the port contract while preserving current issue CLI behavior.</td></tr>
+              <tr data-phase="v02a" data-status="planned" data-fit="rescope"><td>v0.2a</td><td>Role permissions table</td><td><span class="tag status-planned">Deferred</span></td><td><span class="tag fit-rescope">Conditional</span></td><td>Gate D1 supersedes Phase 20. Preserve current issue CLI behavior; configurable global roles require standalone dogfood evidence and a new decision. Generic actor/capability enforcement belongs to the port.</td></tr>
               <tr data-phase="v02a" data-status="shipped" data-fit="rescope"><td>v0.2a</td><td>Gate-obligation seams</td><td><span class="tag status-shipped">Shipped</span></td><td><span class="tag fit-rescope">Rescope</span></td><td>The vocabulary seam is useful, but V2 obligations attach to Work Envelopes and registered gate references, not only issue workflow edges.</td></tr>
 
               <tr class="phase-break" data-phase="v02b"><td colspan="5">v0.2b - evidence foundation</td></tr>
@@ -1661,9 +1661,13 @@
           <strong>Gate C / Scope - APPROVED 2026-08-08</strong>
           <div>Implement and qualify all twelve V2 backend-port capabilities before migrating a live project. Deliver them through bounded vertical slices with contract and conformance evidence, controlled fixtures, and a disposable migration rehearsal; this does not approve the whole historical fid roadmap or require every task to invoke every capability.</div>
         </div>
+        <div class="decision-gate approved">
+          <strong>Gate D1 / Phase 20 disposition - APPROVED 2026-08-08</strong>
+          <div>Supersede Phase 20 as written. Preserve V1 issue-CLI permission behavior, <code>fid policy show</code>, and implemented workflow authoring. Defer <code>role_permissions</code>, <code>fid role create</code>, and <code>fid policy set</code> pending standalone dogfood evidence; enforce generic actor/capability and recorded Envelope authority in the backend port.</div>
+        </div>
         <div class="decision-gate">
-          <strong>Gate D / Roadmap</strong>
-          <div>Pause fid Phase 20 as written; supersede the current ordering with the joint vertical slice. Explicitly dispose every retired/deferred matrix row so it cannot quietly re-enter as presumed scope.</div>
+          <strong>Gate D / Remaining roadmap disposition</strong>
+          <div>Explicitly dispose the remaining non-port feature groups, then ratify the replacement backend-port vertical-slice order so retired or deferred rows cannot quietly re-enter as presumed scope.</div>
         </div>
 
         <div class="callout critical">
@@ -1718,7 +1722,7 @@
 
   <footer>
     <div class="wrap">
-      <p>Gates A, B1-B4d, and C were ratified on 8 August 2026. Gate B4 lifecycle design is complete; Gate D roadmap disposition remains open.</p>
+      <p>Gates A, B1-B4d, C, and D1 were ratified on 8 August 2026. Phase 20 is superseded; remaining Gate D feature and slice dispositions are open.</p>
     </div>
   </footer>
 
