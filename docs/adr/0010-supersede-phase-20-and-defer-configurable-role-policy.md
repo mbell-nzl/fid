@@ -11,11 +11,13 @@ adding `fid policy set` are not part of the V2 backend-port critical path.
 They are deferred, conditional standalone-fid features that require dogfood
 evidence and a new roadmap decision before implementation.
 
-Existing V1 issue-CLI authorization behavior and `fid policy show` remain
-supported for compatibility. Already implemented Issue workflow authoring and
-assignment remain core tracker capabilities. Custom state names that lack a V1
-permission action remain non-transitionable until generic actor/capability
-enforcement is delivered; fid must not grant them implicitly.
+ADR-0011 later removed the compatibility premise because fid has no adopted
+workspaces or journal history. Existing V1 issue-CLI authorization and
+`fid policy show` are therefore removed when generic authority replaces them.
+Already implemented Issue workflow authoring and assignment remain core tracker
+capabilities. Custom state names that lack a V1 permission action remain
+non-transitionable until that replacement lands; fid must not grant them
+implicitly during the transition.
 
 The V2 backend port instead receives generic actor identity, capability, and
 recorded-authority enforcement in the relevant vertical slice. The kit owns
@@ -31,5 +33,6 @@ requiring its own configurable global role taxonomy.
   implementation.
 - The reserved `role_permissions` schema and `fid role create` / `fid policy
   set` sketches remain non-executable design input, not scheduled scope.
-- No compatibility surface is deleted or broken by this decision.
+- ADR-0010 itself deleted no compatibility surface; ADR-0011 subsequently
+  authorizes pre-dogfood removal because no real consumer depends on one.
 - The next roadmap work is the joint backend-port reslice, not Phase 20.

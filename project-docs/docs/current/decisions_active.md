@@ -14,16 +14,14 @@ recovery. All remain binding unless explicitly superseded:
 
 - `docs/adr/0001-journal-canonical-db-derived.md` — journal is source of truth,
   SQLite is a derived projection. No daemon.
-- `docs/adr/0002-configurable-roles-default-profile.md` — V1 default roles and
-  authorization remain compatibility behavior; ADR-0010 defers its planned
-  configurable-role implementation.
-- `docs/adr/0003-three-tier-qa-model.md` — validation contracts, QA plans, and
-  QA reviews ship together.
+- `docs/adr/0002-configurable-roles-default-profile.md` — superseded for
+  forward product scope by ADR-0010/0011; fid does not own kit role policy.
+- `docs/adr/0003-three-tier-qa-model.md` — superseded for forward product scope
+  by ADR-0011; validation invariants compile into Work Envelope Obligations.
 - `docs/adr/0004-operational-work-state-boundary.md` — fid owns issue tracking
   plus durable operational work state/evidence; the external kit owns
   engineering-workflow policy, risk/authority/role routing, orchestration, and
-  provider projections. ADR-0002/0003 remain compatibility assumptions pending
-  explicit forward-roadmap disposition.
+  provider projections. ADR-0011 completes the forward-roadmap disposition.
 - `docs/adr/0005-issues-are-the-durable-work-graph.md` — fid Issues are the
   only durable work graph. Work Envelopes reference selected Issues; the
   harness derives noncanonical Next actions instead of persisting a second
@@ -35,15 +33,20 @@ recovery. All remain binding unless explicitly superseded:
   creates a linked new Run only after executor termination and non-destructive
   worktree reconciliation; ambiguity stops.
 - `docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md` —
-  Phase 20 is superseded; configurable global roles/policy are conditional,
-  while generic actor/recorded-authority enforcement belongs in the port.
+  Phase 20 is superseded; generic actor/recorded-authority enforcement belongs
+  in the port. ADR-0011 later removes the pre-dogfood compatibility premise.
+- `docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md` — fid
+  commits to its Issue tracker, durable operational kernel, V2 port, and named
+  projections; pre-dogfood V1 clutter is replaced without compatibility mode;
+  JSON is the sole canonical machine format; optional surfaces are triggered
+  by dogfood evidence.
 
 **Gate C delivery decision (2026-08-08):** qualify all twelve V2 kit
 backend-port capabilities before migrating a live project. Implement them as
 bounded vertical slices with contract/conformance evidence, controlled
 fixtures, and a disposable migration rehearsal; this is not a big-bang phase
-or approval of the whole historical fid roadmap. Gate B semantics are closed;
-exact slicing follows Gate D roadmap disposition.
+or approval of the whole historical fid roadmap. Gate B semantics and Gate D
+feature disposition are closed; exact vertical-slice ordering remains open.
 
 **Gate B1 policy/enforcement decision (2026-08-08):** the kit evaluates
 engineering-workflow policy and compiles the approved Work Envelope; fid does
@@ -122,12 +125,22 @@ applicable Obligation current and satisfied; cancellation is not satisfaction.
 Gate B4 lifecycle design is complete.
 
 **Gate D1 Phase 20 decision (2026-08-08):** Phase 20 as written is
-superseded. Preserve V1 issue-CLI permission behavior, `fid policy show`, and
-implemented Issue workflow authoring. Defer the `role_permissions` migration,
-`fid role create`, and `fid policy set` pending standalone dogfood evidence and
-a new roadmap decision. The V2 port receives generic actor/capability and
-recorded-authority enforcement; kit policy owns role selection/routing. Gate D
-feature disposition and slice ordering remain open.
+superseded. The V2 port receives generic actor/capability and recorded-authority
+enforcement; kit policy owns role selection/routing. ADR-0011 subsequently
+removes the no-user V1 matrix, `fid policy show`, `role_permissions`, `fid role
+create`, and `fid policy set` from forward scope rather than preserving them.
+Implemented Issue workflow authoring remains core.
+
+**Gate D2 product-surface decision (2026-08-09):** apply the durability test in
+ADR-0011. Retire fid-native QA Plans, Validation Contracts, templates, agent
+skills, handoffs, triage/TL/QA/Developer choreography, routine retrospectives,
+and universal prose-format output. Retain the Issue tracker, Work Envelope
+operational kernel, trusted Evidence, Reviews/Findings, Outcomes, Attention,
+telemetry, recovery/export, and named projections. Because fid has no adopted
+workspace or history, replace pre-dogfood V1 surfaces without compatibility
+mode and rebaseline schema/events before dogfood. JSON is the only canonical
+machine representation; TOON, YAML, and generic Markdown formatters retire.
+TUI/dashboard and search lead the concise evidence-gated candidate ledger.
 
 ## Checkpoint Decisions (2026-07-18, pending Human ratification)
 

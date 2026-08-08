@@ -1,5 +1,11 @@
 # Ship the three-tier QA model in full
 
+> **Superseded for forward product scope on 2026-08-09 by ADR-0011.** The
+> historical three-tier QA procedure may remain part of how fid is developed
+> until the V2 kit replaces it, but QA Plans and Validation Contracts are no
+> longer planned fid product aggregates. Their behavioral invariants move to
+> Work Envelope Obligations, Review Records, Evidence, and Human Outcomes.
+
 ## Decision
 
 fid ships the full three-tier quality model: validation contracts, QA plans, and QA reviews. Plans + reviews land in v0.3; contracts + assertions + required-validator rows + outcomes + the AC↔assertion linkage + coverage reports land in v0.4. All three layers are schema-optional — a project can use any subset — but they are not optional *from fid*: they ship together as the supported quality model.

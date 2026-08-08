@@ -29,20 +29,20 @@ begins with a Tech Lead planning session that replaces this brief entirely.
 
 ## Next Planning Checkpoint
 
-**Gate D roadmap disposition and backend-port reslice.** Gate D1 supersedes
-Phase 20 as written. Do not plan or implement the `role_permissions` migration,
-`fid role create`, or `fid policy set` without standalone-fid dogfood evidence
-and a new decision. Roadmap:
+**ADR-0011 specification realignment, then backend-port reslice.** Gates D1/D2
+supersede Phase 20 and the V1 process-shaped forward roadmap. Do not plan
+`role_permissions`, `fid role create`, `fid policy set`, compatibility adapters,
+or retired document aggregates. Roadmap:
 `../../specs/10_IMPLEMENTATION_ROADMAP.md`.
 
 Inputs the planning session must take:
 
-- **Deep retrospective disposition (recommended, not an automatic gate,
+- **Deep retrospective disposition (optional, not an automatic gate,
   DEC-104/DEC-106).** Phase 19 spent
   eight escalations and twelve decisions to ship zero product defects. The brief
   is in `../phases/phase-19/decisions.md` → *Deep retrospective recommendation*.
-  Decide during the reslice whether its output is worth producing before the
-  first port contract.
+  ADR-0011 retires routine retrospective product records; decide during the
+  reslice whether this one project-owned retrospective is still worth doing.
 - **DEC-079 unblock.** Custom workflow *state names* remain
   non-transitionable. Generic actor/capability enforcement in the backend port,
   not Phase 20's `fid policy set`, owns the future unblock. Never infer allow.
@@ -53,9 +53,9 @@ Inputs the planning session must take:
 - **CF-027 is now safe to take** — CF-025's parity test is the regression guard
   it was sequenced behind. It reopens `internal/issues/create.go`; decide
   explicitly during roadmap disposition rather than letting the trigger lapse.
-- **CF-023** carries five accumulated drill cases plus mechanical `Refs:`
-  enforcement and has not landed across two phases. Decide whether it is
-  scheduled work or a wish list.
+- **CF-023 and V1-document tooling** must be reassessed rather than carried
+  automatically; the current heavy development procedure is not future fid
+  product scope.
 
 ## Standing Constraints Carried Out Of Phase 19
 

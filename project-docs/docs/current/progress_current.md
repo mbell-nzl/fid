@@ -9,9 +9,10 @@
 
 **No phase is active.** Phase 19 is **COMPLETE / WRAPPED** (2026-08-08,
 DEC-106). Phase 18 is complete (2026-07-25); v0.1 remains closed for early
-dogfood (DEC-057). **v0.2a workflow authoring is delivered.** Gate D1
-supersedes the planned Phase 20 configurable-role slice. No replacement phase
-has been planned; Gate D roadmap disposition and backend-port reslicing are
+dogfood (DEC-057), but fid has no adopted project workspace or compatibility
+constituency. **v0.2a workflow authoring is delivered.** Gates D1/D2 supersede
+Phase 20 and the accumulated V1 process-product roadmap. No replacement phase
+has been planned; specification realignment and backend-port reslicing are
 next.
 
 Branch: `phase-19-workflow-authoring`.
@@ -92,11 +93,9 @@ halves are counted individually.
 
 ## Next Action
 
-1. **Finish Gate D roadmap disposition** — explicitly classify non-port
-   features and ratify the replacement vertical-slice order.
-2. **Plan the first backend-port slice** only after Gate D closes. Phase 20 is
-   superseded; do not schedule `role_permissions`, `fid role create`, or
-   `fid policy set` without new standalone-fid dogfood evidence and a decision.
-3. Disposition the recommended Phase 19 deep retrospective and outstanding
-   carry-forwards during that reslice rather than treating them as implicit
-   prerequisites.
+1. **Realign the canonical specification suite to ADR-0011** and independently
+   audit it for stale V1 product promises.
+2. **Ratify the replacement backend-port vertical-slice order and phase cut.**
+   Product-code removal follows through TDD slices, not this decision session.
+3. Reassess Phase 19 carry-forwards against the new ledger; cancel work tied to
+   retired packages and schedule only items that protect retained behavior.

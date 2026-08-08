@@ -1,7 +1,7 @@
 # fid and Agentic Engineering Kit V2 - Direction Decision Session
 
-Date: 2026-08-08
-Status: In progress; eleven decisions approved, roadmap decisions open
+Date: 2026-08-08 to 2026-08-09
+Status: In progress; twelve decisions approved, slice-order decision open
 Method: one decision at a time, challenged against canonical fid and kit docs
 
 ## Decision 1 - Product Boundary
@@ -355,10 +355,46 @@ enforces the recorded grants without owning the kit's role taxonomy or policy.
 Recorded in:
 `docs/adr/0010-supersede-phase-20-and-defer-configurable-role-policy.md`.
 
+ADR-0011 subsequently amends D1's compatibility clause: fid has no adopted
+workspace or journal history, so the V1 matrix and `fid policy show` are
+removed when generic authority replaces them rather than preserved.
+
+## Decision 12 / Gate D2 - Durable Kernel And Product Surface
+
+Status: **APPROVED by Human on 2026-08-09**
+
+fid creates a first-class record only when the fact affects permitted action or
+completion, is required for resume/recovery/rebuild/audit, proves authority or
+an Obligation, or provides trustworthy operational measurement. The committed
+product is the core Issue tracker, Work Envelope operational kernel, trusted
+Evidence, Reviews/Findings, Human Outcomes, Attention, telemetry, portable
+recovery, and the named projections required to operate and understand them.
+
+QA Plans, Validation Contract/assertion hierarchies, templates, agent skills,
+handoffs, triage/TL/QA/Developer composites, routine retrospective records, and
+other engineering-method document models retire from fid. Project files retain
+exceptional validation and decision prose; the kit compiles policy into Work
+Envelope Obligations.
+
+fid has no users, adopted workspaces, or journal history. It therefore makes no
+compatibility promise for its pre-dogfood commands, schema, migrations, role
+policy, output matrix, or events. Superseded implementation is replaced in
+buildable TDD slices and the schema/events are rebaselined before first dogfood;
+there is no legacy mode.
+
+JSON is the sole canonical machine representation. Universal TOON, YAML, and
+Markdown formatters retire. Purpose-built Human-readable Markdown/HTML remains
+allowed for named decision interfaces. The concise evidence-gated ledger keeps
+TUI/dashboard and search as the leading candidates; token-efficient projection
+encoding, including TOON, requires measured end-to-end benefit with no
+correctness regression.
+
+Recorded in:
+`docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md`.
+
 ## Open Decision Order
 
-1. Continue Gate D feature disposition: QA plans/templates, context/handoff
-   prose helpers, TUI, reports/metrics, governance, and other non-port scope.
+1. Complete and independently review the ADR-0011 specification realignment.
 2. Ratify the replacement backend-port vertical-slice order and phase cut.
 
 The order may change if discussion shows that a downstream choice depends on
