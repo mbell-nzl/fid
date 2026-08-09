@@ -15,9 +15,31 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
-| _(none yet)_ | | | | | | |
+| TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-001 - Review 1 unresolved cross-task evidence gaps
+
+- **Trigger:** QA Review 1 has two unresolved Blocking evidence gaps before
+  Task 4 can start: Task 1 does not exhaustively prove exact detail
+  value/null/nested schemas and redaction behavior for every registered reason
+  code; Tasks 2-3 do not prove the required strict-config and init boundary
+  matrix, including one-character/128-byte/MaxInt64 and overflow
+  just-inside/outside cases.
+- **Source:** `project-docs/docs/phases/phase-20/qa/review-1.md`
+- **Verdict:** BLOCK
+- **Reasoning:** These are QA Reviewer Blocking findings that are neither
+  misclassified, resolved by the supplied verified review commit, nor covered
+  by an accepted decision. They leave VAL-002 and VAL-043 without the required
+  qualifying/non-qualifying evidence and span completed Tasks 1-3.
+- **Local decisions made:** none
+- **References:** `project-docs/docs/phases/phase-20/qa/review-1.md` (Task 1
+  and Task 2 Blocking findings); `project-docs/docs/phases/phase-20/qa/validation-contract.md`
+  (VAL-002, VAL-043); `project-docs/specs/09_AI_WORKFLOW.md` \u00a72.3.
+- **If BLOCK:** ESC-20-001 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve the cross-task evidence
+  recovery before Task 4 starts.
 
 <!--
 Phase wrap-up checklist:

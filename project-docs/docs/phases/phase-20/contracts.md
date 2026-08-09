@@ -199,7 +199,7 @@ replay, divergence, and internal failures that have no single entity subject.
 | `project-not-found`, `project-already-initialized` | `{path: string}` |
 | `issue-not-found`, `requirement-not-found`, `label-not-found`, `workflow-not-found` | `{id: string}` |
 | `link-not-found` | `{from_type: string, from_id: string, relation: string, to_type: string, to_id: string}` |
-| `duplicate-entity` | `{entity_type: string, identity: {fields: string[], values: string[]}}` (parallel arrays in field-name order) |
+| `duplicate-entity` | `{entity_type: string, identity: {fields: string[], values: string[]}}` (equal-length parallel arrays in field-name order; a length mismatch is invalid) |
 | `state-conflict` | `{expected_revision: integer, actual_revision: integer}` |
 | `lock-unavailable` | `{lock_path: string}` |
 | `hierarchy-invalid` | `{kind: string, parent_id: string?, parent_kind: string?, rule: string}` |

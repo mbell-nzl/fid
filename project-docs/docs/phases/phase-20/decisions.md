@@ -378,6 +378,68 @@
 - **Refs:** `contracts.md`; `qa/validation-contract.md`; `current/phase_brief.md`;
   `09_AI_WORKFLOW.md` §§3.6, 4, 6.
 
+### DEC-130: ESC-20-001 resolved by two bounded evidence-recovery tasks before Task 4
+
+- **Date:** 2026-08-09
+- **Context:** Review 1 returned BLOCK with two Blocking findings, and
+  `TRG-20-001` escalated them as `ESC-20-001` because both span completed tasks
+  and leave an accepted VAL unproven. Task 1's registry test compares only
+  flattened `DetailFields` names, so no test can detect a changed detail value
+  type, nullable rule, or nested schema for any of the 23 codes (VAL-002).
+  Tasks 2-3 prove representative malformed config input and one 16-character
+  prefix, but not the required just-inside/outside domain matrix for the
+  one-character prefix, the 128-byte project ID, `math.MaxInt64` executor and
+  maintenance values, or overflow rejection (VAL-043). Inspection of
+  `internal/cli/codes.go` shows the production registry already models typed,
+  nullable, and nested detail fields with per-code subject allow-lists, so this
+  is an evidence gap rather than a suspected product defect.
+- **Decision:**
+  1. **VAL-002 and VAL-043 keep their accepted pass/fail criteria unchanged.**
+     No assertion is weakened, deferred to a later window, or closed on source
+     reading. Both findings are sustained as Blocking.
+  2. Recovery is **two bounded Developer tasks**, not one, because a single
+     session covering both matrices is the same oversized-evidence shape that
+     produced the gap: **task-3a** (exhaustive reason-code schema, subject, and
+     redaction matrix, `internal/cli` only) and **task-3b** (strict-config and
+     init boundary matrix, plus the Task 3 collision regression).
+  3. Both are **test-first and test-led**. Product code changes only where an
+     exhaustive matrix exposes a registry or parser that accepts an
+     out-of-contract input; any repair stays inside the owning package and any
+     needed behavior beyond contracts §2.4/§2.5 or `04_TRD_CONFIG.md` §2
+     escalates instead of being invented.
+  4. **Contracts §2.5 is clarified, not changed:** `duplicate-entity`
+     `identity.fields`/`identity.values` are equal-length parallel arrays, and a
+     length mismatch is invalid. This makes an already-implied rule assertable;
+     enforcement is authorized in task-3a behind a red test.
+  5. Review 1's Medium improvement (dangling `.fid` symlink collision) is
+     **do now** in task-3b. QA reproduced the correct behavior manually, so only
+     the committed regression is missing and the guard is one `Lstat` away from
+     silent loss of a path entry.
+  6. Review 1's Low improvement (`internal/config/config.go` at 512 lines) is
+     **do now** in task-3b as a pure file move with no API change, because
+     task-3b is the config-owning session and Task 2 enlarged the breach.
+  7. `internal/bootstrap/init.go` at 427 lines is **carry-forward as CF-028**,
+     trigger-based: split staging/fsync helpers only when a later task changes
+     that file for another reason. QA's own note is that splitting now would
+     obscure the intentionally linear activation protocol. CF-028 is registered
+     in `decisions_active.md` at wrap-up.
+  8. Phase Runner resumes at **task-3a → task-3b → bounded QA re-review
+     `qa/review-1b.md` → Task 4**. The re-review is scoped to the two recovery
+     commits, the two sustained Blocking findings, and the Medium improvement;
+     it does not re-open unrelated Tasks 1-3 surface. Task 4 starts only on a
+     non-BLOCK re-review verdict. The six accepted review windows and Review 2's
+     scope are unchanged; `review-1b.md` is an escalation-resolution artifact,
+     not a new cadence review, so the QA plan needs no amendment.
+- **Consequences:** VAL-002 and VAL-043 gain qualifying and non-qualifying
+  evidence inside their accepted owning windows, so neither has to be carried to
+  Task 18 or the final review. The phase costs two extra Developer sessions and
+  one bounded review. The phase task index gains 3a/3b; the eighteen accepted
+  tasks and their numbering are untouched.
+- **Refs:** `qa/review-1.md`; `triage-log.md` `TRG-20-001`;
+  `tl-escalations.md` `ESC-20-001`; `qa/validation-contract.md` VAL-002/042/043;
+  `contracts.md` §§2.4, 2.5, 3.2.1; `04_TRD_CONFIG.md` §2; `AGENTS.md`
+  (file/function size budgets); tasks 3a and 3b.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

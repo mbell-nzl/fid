@@ -5,16 +5,18 @@
 
 ## Project state
 
-**Phase 20's implementation pack is Human-approved; QA planning is next.**
-Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
-workspace or compatibility constituency.
+**Phase 20 is in flight: Tasks 1-3 are complete and Review 1 returned BLOCK.**
+`ESC-20-001` is resolved by DEC-130 with two bounded evidence-recovery tasks
+(3a, 3b) and a bounded re-review before Task 4; no acceptance criterion was
+weakened. Phase 19 completed and wrapped on 2026-08-08. fid has no adopted
+project workspace or compatibility constituency.
 
 Gates D1/D2 supersede the old Phase 20 role-policy proposal and the historical
 process-shaped roadmap. Gate D3.1 establishes the new Phase 20 as the first of
 six vertical scenario slices. The target product remains the standalone Issue
 tracker plus the fid/V2 durable operational kernel described by ADR-0011.
 
-Branch: `main`.
+Branch: `phase-20`.
 
 ## Gate D2 documentation
 
@@ -73,11 +75,17 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 
 ## Current work
 
-1. QA Lead writes and validates `../phases/phase-20/qa/qa-plan.md`; the
-   validation rows then leave `Draft` only as that plan records.
-2. Phase Runner starts Task 1 and follows the six accepted review windows.
-3. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+1. Phase Runner resumes at task-3a, then task-3b (DEC-130 evidence recovery).
+2. QA Reviewer produces the bounded `../phases/phase-20/qa/review-1b.md`; Task 4
+   starts only on a non-BLOCK verdict.
+3. Phase Runner continues Tasks 4-18 through the six accepted review windows.
+4. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
+
+Carry-forward opened this phase: **CF-028** — `internal/bootstrap/init.go` is
+427 lines against the 400-line budget; split staging/fsync helpers only when a
+later task changes that file for another reason. Registered in
+`decisions_active.md` at wrap-up.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

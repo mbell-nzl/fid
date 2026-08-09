@@ -9,9 +9,20 @@
 
 ## Open Escalations
 
-**None.** No phase is active.
+_None._
+
+---
 
 ## Recent Archive Notes
+
+- **Phase 20 (in flight)** — **ESC-20-001 resolved by DEC-130 (2026-08-09).**
+  Review 1's two Blocking findings were sustained without weakening VAL-002 or
+  VAL-043. Recovery is two bounded test-led tasks, **task-3a** (exhaustive
+  reason-code detail/subject/redaction matrix) and **task-3b** (strict-config
+  and init boundary matrix, dangling-symlink collision regression, config file
+  split), then a bounded re-review `qa/review-1b.md`, then Task 4. Detail lives
+  in `../phases/phase-20/decisions.md` DEC-130 and
+  `../phases/phase-20/tl-escalations.md`.
 
 - **Phase 19** — **eight escalations, ESC-19-001..008, all resolved, zero
   product defects.** Every one landed in verification apparatus or evidence

@@ -6,7 +6,30 @@
 
 ## Escalations
 
-_None yet._
+### Resolved
+
+- **ESC-20-001 — Review 1 BLOCK on two cross-task evidence gaps (raised
+  2026-08-09 via `TRG-20-001`; resolved 2026-08-09 by DEC-130).** **Neither
+  finding was a suspected product defect; both were missing evidence for an
+  accepted assertion.** (1) Task 1's registry test compared only flattened
+  `DetailFields` names, so no test could detect a changed detail value type,
+  nullable rule, or nested object/object-list schema for any of the 23 codes,
+  leaving **VAL-002** unproven. (2) Tasks 2-3 proved representative malformed
+  config input and one 16-character prefix, but not the required
+  just-inside/outside matrix — one-character prefix, 128-byte project ID,
+  `math.MaxInt64` executor and maintenance values, overflow rejection — leaving
+  **VAL-043** unproven. **DEC-130 sustained both findings and changed no
+  acceptance criterion.** Recovery is two bounded test-led tasks rather than
+  one, because a single session spanning both matrices repeats the
+  oversized-evidence shape that caused the gap: **task-3a** (`internal/cli`
+  matrix, with equal-length `duplicate-entity` parallel arrays clarified in
+  contracts §2.5 and enforcement pre-authorized) and **task-3b** (config/init
+  matrix, plus the do-now dangling-symlink collision regression and the do-now
+  `internal/config/config.go` split). `internal/bootstrap/init.go`'s 427-line
+  breach is **CF-028**, trigger-based, per QA's own note that splitting now
+  would obscure the linear activation protocol. Phase Runner resumes at
+  task-3a → task-3b → bounded `qa/review-1b.md` → Task 4; the six accepted
+  review windows are unchanged.
 
 ## Planning-time escalation candidates considered and resolved without an ESC
 
