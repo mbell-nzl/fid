@@ -48,8 +48,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `51763124db2cd6f6c6d00d15548de37532bbc273`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): enforce closed reason-code details`
