@@ -5,86 +5,122 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 )
 
-func TestReadProjectConfigDefaultsMissingMaintenanceGraceToFiveMinutes(t *testing.T) {
+func TestProjectConfigRoundTripsStrictTargetSchema(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), ConfigFileName)
-	if err := os.WriteFile(path, []byte("[project]\nprefix = \"FID\"\n"), 0o644); err != nil {
+	project := ProjectConfig{
+		ProjectID:                    "opaque-project-identity",
+		IssuePrefix:                  "FID",
+		ArtifactRoot:                 "artifacts",
+		MaxOutputBytes:               10485760,
+		MaxExcerptBytes:              16384,
+		AbandonedAttemptGraceSeconds: 300,
+	}
+	contents := projectConfigContents(project)
+	for _, want := range []string{
+		"config_version = 1",
+		"[project]\nid = \"opaque-project-identity\"\nissue_prefix = \"FID\"",
+		"[storage]\nartifact_root = \"artifacts\"",
+		"[executor_limits]\nmax_output_bytes = 10485760\nmax_excerpt_bytes = 16384",
+		"[maintenance]\nabandoned_attempt_grace_seconds = 300",
+	} {
+		if !strings.Contains(contents, want) {
+			t.Fatalf("project config contents = %q, want %q", contents, want)
+		}
+	}
+	if strings.Contains(contents, "\nprefix =") || strings.Contains(contents, "started_without_claim") {
+		t.Fatalf("project config contents = %q, contains retired key", contents)
+	}
+	if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 		t.Fatalf("WriteFile() error = %v", err)
 	}
-
-	project, err := ReadProjectConfig(path)
+	roundTripped, err := ReadProjectConfig(path)
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
-	if project.StartedWithoutClaimGraceSeconds != 300 {
-		t.Fatalf("started-without-claim grace = %d, want 300", project.StartedWithoutClaimGraceSeconds)
+	if roundTripped != project {
+		t.Fatalf("round-tripped project = %#v, want %#v", roundTripped, project)
 	}
 }
 
-func TestProjectConfigMaintenanceGraceRoundTrips(t *testing.T) {
+func TestReadProjectConfigRejectsUnknownDuplicateAliasAndInvalidInputs(t *testing.T) {
 	t.Parallel()
 
-	for _, graceSeconds := range []int{0, 45} {
-		graceSeconds := graceSeconds
-		t.Run(strconv.Itoa(graceSeconds)+" seconds", func(t *testing.T) {
-			t.Parallel()
+	valid := `config_version = 1
 
-			project := ProjectConfig{
-				Prefix:                          "FID",
-				StartedWithoutClaimGraceSeconds: graceSeconds,
-			}
-			contents := projectConfigContents(project)
-			if !strings.Contains(contents, "[maintenance]\nstarted_without_claim_grace_seconds = "+strconv.Itoa(graceSeconds)) {
-				t.Fatalf("project config contents = %q, want maintenance grace %d", contents, graceSeconds)
-			}
+[project]
+id = "opaque-project-identity"
+issue_prefix = "FID"
 
-			path := filepath.Join(t.TempDir(), ConfigFileName)
-			if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
-				t.Fatalf("WriteFile() error = %v", err)
-			}
+[storage]
+artifact_root = "artifacts"
 
-			roundTripped, err := ReadProjectConfig(path)
-			if err != nil {
-				t.Fatalf("ReadProjectConfig() error = %v", err)
-			}
-			if roundTripped != project {
-				t.Fatalf("round-tripped project = %#v, want %#v", roundTripped, project)
-			}
-		})
-	}
-}
+[executor_limits]
+max_output_bytes = 10
+max_excerpt_bytes = 10
 
-func TestReadProjectConfigRejectsInvalidMaintenanceGrace(t *testing.T) {
-	t.Parallel()
-
-	for name, graceValue := range map[string]string{
-		"negative":  "-1",
-		"malformed": "five minutes",
+[maintenance]
+abandoned_attempt_grace_seconds = 0
+`
+	for name, contents := range map[string]string{
+		"unknown key":         strings.Replace(valid, "issue_prefix", "prefix", 1),
+		"duplicate key":       strings.Replace(valid, "issue_prefix = \"FID\"", "issue_prefix = \"FID\"\nissue_prefix = \"ABC\"", 1),
+		"missing version":     strings.Replace(valid, "config_version = 1\n\n", "", 1),
+		"unsupported version": strings.Replace(valid, "config_version = 1", "config_version = 2", 1),
+		"escaping artifact":   strings.Replace(valid, "artifact_root = \"artifacts\"", "artifact_root = \"../artifacts\"", 1),
+		"invalid prefix":      strings.Replace(valid, "issue_prefix = \"FID\"", "issue_prefix = \"fid\"", 1),
+		"invalid limits":      strings.Replace(valid, "max_excerpt_bytes = 10", "max_excerpt_bytes = 11", 1),
+		"negative grace":      strings.Replace(valid, "abandoned_attempt_grace_seconds = 0", "abandoned_attempt_grace_seconds = -1", 1),
 	} {
-		name, graceValue := name, graceValue
+		name, contents := name, contents
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
 			path := filepath.Join(t.TempDir(), ConfigFileName)
-			contents := "[project]\nprefix = \"FID\"\n\n[maintenance]\nstarted_without_claim_grace_seconds = " + graceValue + "\n"
 			if err := os.WriteFile(path, []byte(contents), 0o644); err != nil {
 				t.Fatalf("WriteFile() error = %v", err)
 			}
 
 			_, err := ReadProjectConfig(path)
 			if err == nil {
-				t.Fatal("ReadProjectConfig() error = nil, want invalid maintenance grace error")
-			}
-			if !strings.Contains(err.Error(), "maintenance.started_without_claim_grace_seconds") {
-				t.Fatalf("ReadProjectConfig() error = %q, want maintenance grace context", err)
+				t.Fatal("ReadProjectConfig() error = nil, want strict config rejection")
 			}
 		})
+	}
+}
+
+func TestValidateIssuePrefixRejectsInvalidBasename(t *testing.T) {
+	if err := ValidateIssuePrefix("INVALID_PREFIX"); err == nil {
+		t.Fatal("ValidateIssuePrefix() error = nil, want invalid underscore rejection")
+	}
+}
+
+func TestReadProjectConfigRejectsArtifactRootSymlinkEscape(t *testing.T) {
+	fidRoot := t.TempDir()
+	outside := t.TempDir()
+	if err := os.Symlink(outside, filepath.Join(fidRoot, "artifacts")); err != nil {
+		t.Fatalf("Symlink() error = %v", err)
+	}
+	project := ProjectConfig{
+		ProjectID:                    "opaque-project-identity",
+		IssuePrefix:                  "FID",
+		ArtifactRoot:                 "artifacts",
+		MaxOutputBytes:               10,
+		MaxExcerptBytes:              10,
+		AbandonedAttemptGraceSeconds: 0,
+	}
+	path := filepath.Join(fidRoot, ConfigFileName)
+	if err := os.WriteFile(path, []byte(projectConfigContents(project)), 0o644); err != nil {
+		t.Fatalf("WriteFile() error = %v", err)
+	}
+
+	if _, err := ReadProjectConfig(path); err == nil {
+		t.Fatal("ReadProjectConfig() error = nil, want artifact-root symlink escape rejection")
 	}
 }
 
@@ -136,7 +172,11 @@ func TestWriteBootstrapFilesRoundTripsDefaultConfig(t *testing.T) {
 
 	defaultPricing := DefaultPricingConfig()
 	workspace := t.TempDir()
-	paths, err := WriteBootstrapFiles(workspace, DefaultProjectConfig("FID"), defaultPricing)
+	project, err := NewDefaultProjectConfig("FID")
+	if err != nil {
+		t.Fatalf("NewDefaultProjectConfig() error = %v", err)
+	}
+	paths, err := WriteBootstrapFiles(workspace, project, defaultPricing)
 	if err != nil {
 		t.Fatalf("WriteBootstrapFiles() error = %v", err)
 	}
@@ -145,8 +185,8 @@ func TestWriteBootstrapFilesRoundTripsDefaultConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
-	if projectConfig.Prefix != "FID" {
-		t.Fatalf("project prefix = %q, want %q", projectConfig.Prefix, "FID")
+	if projectConfig.IssuePrefix != "FID" {
+		t.Fatalf("project issue prefix = %q, want %q", projectConfig.IssuePrefix, "FID")
 	}
 
 	pricingConfig, err := ReadPricingConfig(paths.PricingPath)

@@ -63,10 +63,14 @@ func InitializeWorkspace(options InitOptions) (InitResult, error) {
 	prefix := options.Prefix
 	explicitPrefix := strings.TrimSpace(options.Prefix) != ""
 	if strings.TrimSpace(prefix) == "" {
-		prefix = DefaultPrefix(options.WorkspaceRoot)
+		prefix = "FID"
 	}
 
-	if _, err := config.WriteBootstrapFiles(options.WorkspaceRoot, config.DefaultProjectConfig(prefix), config.DefaultPricingConfig()); err != nil {
+	projectConfig, err := config.NewDefaultProjectConfig(prefix)
+	if err != nil {
+		return InitResult{}, err
+	}
+	if _, err := config.WriteBootstrapFiles(options.WorkspaceRoot, projectConfig, config.DefaultPricingConfig()); err != nil {
 		return InitResult{}, err
 	}
 

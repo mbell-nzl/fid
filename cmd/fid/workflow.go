@@ -60,7 +60,7 @@ func newWorkflowListCommand() *cobra.Command {
 
 func newWorkflowAssignCommand() *cobra.Command {
 	var name, kind, actorRole string
-	var project bool
+	var projectWide bool
 	cmd := &cobra.Command{
 		Use:   "assign",
 		Short: "Assign a workflow.",
@@ -83,7 +83,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 				Request: workflow.AssignmentRequest{
 					Name:    strings.TrimSpace(name),
 					Kind:    strings.TrimSpace(kind),
-					Project: project,
+					Project: projectWide,
 				},
 			})
 			if err != nil {
@@ -100,7 +100,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 	}
 	cmd.Flags().StringVar(&name, "name", "", "Workflow slug")
 	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind")
-	cmd.Flags().BoolVar(&project, "project", false, "Assign as project default")
+	cmd.Flags().BoolVar(&projectWide, "project-wide", false, "Assign as project default")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	for _, flagName := range []string{"name", "by"} {
 		if err := cmd.MarkFlagRequired(flagName); err != nil {

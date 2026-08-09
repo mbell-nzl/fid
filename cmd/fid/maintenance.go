@@ -15,6 +15,8 @@ import (
 
 var errMaintenanceCheckFailed = errors.New("maintenance check failed")
 
+const legacyStartedWithoutClaimGraceSeconds = 300
+
 func newMaintenanceCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "maintenance",
@@ -79,10 +81,6 @@ func newMaintenanceCheckCommand() *cobra.Command {
 			}
 
 			paths := config.WorkspacePathsForRoot(workspaceRoot)
-			projectConfig, err := config.ReadProjectConfig(paths.ConfigPath)
-			if err != nil {
-				return renderMaintenanceCheckError(cmd, err)
-			}
 			conn, err := fiddb.Open(paths.DatabasePath)
 			if err != nil {
 				return renderMaintenanceCheckError(cmd, err)
@@ -92,7 +90,7 @@ func newMaintenanceCheckCommand() *cobra.Command {
 			result, err := maintenance.Check(maintenance.CheckOptions{
 				DB:                              conn,
 				JournalDir:                      paths.JournalDir,
-				StartedWithoutClaimGraceSeconds: projectConfig.StartedWithoutClaimGraceSeconds,
+				StartedWithoutClaimGraceSeconds: legacyStartedWithoutClaimGraceSeconds,
 			})
 			if err != nil {
 				return renderMaintenanceCheckError(cmd, err)

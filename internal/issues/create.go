@@ -69,7 +69,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 		defer closeIssueDB(conn)
 
-		issueID, err := journal.GenerateID(projectConfig.Prefix, func(candidate string) (bool, error) {
+		issueID, err := journal.GenerateID(projectConfig.IssuePrefix, func(candidate string) (bool, error) {
 			return issueIDExists(conn, candidate)
 		})
 		if err != nil {

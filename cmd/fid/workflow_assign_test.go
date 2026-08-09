@@ -69,8 +69,8 @@ func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
 		want string
 	}{
 		{[]string{"workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl"}, "error: workflow \"missing\" does not exist\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--project", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" cannot be assigned to project\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--project", "--by", "tl"}, "error: workflow assignment specifies both kind and project scopes\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--project-wide", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" cannot be assigned to project\n"},
+		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--project-wide", "--by", "tl"}, "error: workflow assignment specifies both kind and project scopes\n"},
 		{[]string{"workflow", "assign", "--name", "task-default", "--by", "tl"}, "error: workflow assignment requires a kind or project scope\n"},
 		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "epic", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" is incompatible with kind \"epic\"\n"},
 		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--by", "developer"}, "error: role \"developer\" not permitted for action \"workflow.assign\"\n  check `fid policy show` for permitted role/action combinations\n"},

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +24,16 @@ func newInitCommand() *cobra.Command {
 			workspaceRoot, err := os.Getwd()
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
+			}
+			if strings.TrimSpace(prefix) == "" {
+				prefix = bootstrap.DefaultPrefix(workspaceRoot)
+				if err := config.ValidateIssuePrefix(prefix); err != nil {
+					validationErr := fmt.Errorf("infer default prefix: %w", err)
+					if renderErr := renderInitError(cmd, validationErr); renderErr != nil {
+						return renderErr
+					}
+					return validationErr
+				}
 			}
 
 			result, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{

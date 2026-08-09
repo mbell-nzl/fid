@@ -3,10 +3,12 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -212,5 +214,50 @@ func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.
 	}
 	if len(defaultResult.Warnings) == 0 || !reflect.DeepEqual(defaultResult.Warnings, promotedResult.Warnings) {
 		t.Fatalf("warning payloads = %s, %s; want identical non-empty warnings", defaultResult.Warnings, promotedResult.Warnings)
+	}
+}
+
+func TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile(config) error = %v", err)
+	}
+	updatedConfig := strings.Replace(string(configBytes), "abandoned_attempt_grace_seconds = 300", "abandoned_attempt_grace_seconds = 0", 1)
+	if err := os.WriteFile(configPath, []byte(updatedConfig), 0o644); err != nil {
+		t.Fatalf("WriteFile(config) error = %v", err)
+	}
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	startedAt := time.Now().UTC().Add(-5 * time.Second).Format(time.RFC3339)
+	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES ('FID-fixed-grace', 'task', 'Started without claim', 'task-default', 'in_progress', ?, ?)`, startedAt, startedAt); err != nil {
+		t.Fatalf("seed warning issue: %v", err)
+	}
+
+	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
+	if err != nil {
+		t.Fatalf("maintenance check error = %v", err)
+	}
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	var result struct {
+		Warnings []struct {
+			Check string `json:"check"`
+		} `json:"warnings"`
+	}
+	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
+		t.Fatalf("decode maintenance output: %v", err)
+	}
+	for _, warning := range result.Warnings {
+		if warning.Check == "started_without_claim" {
+			t.Fatalf("warnings = %#v, want fixed 300-second grace", result.Warnings)
+		}
 	}
 }

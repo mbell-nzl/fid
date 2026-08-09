@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -25,7 +26,7 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	cmd := newRootCommand()
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -60,8 +61,19 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
 	}
-	if got := string(configPayload); !strings.Contains(got, "[maintenance]\nstarted_without_claim_grace_seconds = 300") {
-		t.Fatalf("config.toml = %q, want default maintenance grace section", got)
+	for _, want := range []string{
+		"config_version = 1",
+		"[project]\nid = ",
+		"issue_prefix = ",
+		"[storage]\nartifact_root = \"artifacts\"",
+		"[maintenance]\nabandoned_attempt_grace_seconds = 300",
+	} {
+		if !strings.Contains(string(configPayload), want) {
+			t.Fatalf("config.toml = %q, want %q", configPayload, want)
+		}
+	}
+	if strings.Contains(string(configPayload), "\nprefix =") || strings.Contains(string(configPayload), "started_without_claim") {
+		t.Fatalf("config.toml = %q, contains retired key", configPayload)
 	}
 
 	gitignorePath := filepath.Join(workspace, ".fid", ".gitignore")
@@ -77,15 +89,14 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
-	if projectConfig.Prefix != strings.ToUpper(filepath.Base(workspace)) {
-		t.Fatalf("project prefix = %q, want %q", projectConfig.Prefix, strings.ToUpper(filepath.Base(workspace)))
+	if projectConfig.IssuePrefix != "FID" {
+		t.Fatalf("project issue prefix = %q, want %q", projectConfig.IssuePrefix, "FID")
 	}
-	if projectConfig.StartedWithoutClaimGraceSeconds != config.DefaultStartedWithoutClaimGraceSeconds {
-		t.Fatalf(
-			"started-without-claim grace = %d, want %d",
-			projectConfig.StartedWithoutClaimGraceSeconds,
-			config.DefaultStartedWithoutClaimGraceSeconds,
-		)
+	if projectConfig.ProjectID == "" {
+		t.Fatal("project identity is empty")
+	}
+	if projectConfig.AbandonedAttemptGraceSeconds != config.DefaultAbandonedAttemptGraceSeconds {
+		t.Fatalf("abandoned-attempt grace = %d, want %d", projectConfig.AbandonedAttemptGraceSeconds, config.DefaultAbandonedAttemptGraceSeconds)
 	}
 
 	pricingConfig, err := config.ReadPricingConfig(filepath.Join(workspace, ".fid", "pricing.toml"))
@@ -102,15 +113,14 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	defaultWorkspace := t.TempDir()
-	runInitCommand(t, defaultWorkspace, "init")
+	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
 	defaultConfig, err := config.ReadProjectConfig(filepath.Join(defaultWorkspace, ".fid", "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() default error = %v", err)
 	}
-	wantDefault := strings.ToUpper(filepath.Base(defaultWorkspace))
-	if defaultConfig.Prefix != wantDefault {
-		t.Fatalf("default prefix = %q, want %q", defaultConfig.Prefix, wantDefault)
+	if defaultConfig.IssuePrefix != "FID" {
+		t.Fatalf("default issue prefix = %q, want %q", defaultConfig.IssuePrefix, "FID")
 	}
 
 	customWorkspace := t.TempDir()
@@ -120,14 +130,51 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() custom error = %v", err)
 	}
-	if customConfig.Prefix != "ABC" {
-		t.Fatalf("custom prefix = %q, want %q", customConfig.Prefix, "ABC")
+	if customConfig.IssuePrefix != "ABC" {
+		t.Fatalf("custom issue prefix = %q, want %q", customConfig.IssuePrefix, "ABC")
+	}
+}
+
+func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing.T) {
+	workspace := filepath.Join(t.TempDir(), "invalid_prefix")
+	if err := os.Mkdir(workspace, 0o755); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommand()
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"init"})
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd() error = %v", err)
+	}
+	defer mustChdir(t, cwd)
+	mustChdir(t, workspace)
+	if got, getwdErr := os.Getwd(); getwdErr != nil || got != workspace {
+		t.Fatalf("Getwd() = %q, %v; want %q", got, getwdErr, workspace)
+	}
+	if err := config.ValidateIssuePrefix(bootstrap.DefaultPrefix(workspace)); err == nil {
+		t.Fatal("test workspace unexpectedly has a valid default prefix")
+	}
+
+	err = cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want explicit-prefix rejection")
+	}
+	if !strings.Contains(stderr.String(), "project.issue_prefix") {
+		t.Fatalf("stderr = %q, want prefix guidance", stderr.String())
+	}
+	if _, statErr := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+		t.Fatalf(".fid state = %v, want no workspace", statErr)
 	}
 }
 
 func TestInitCommandSeedsExactlyOneBootstrapEventAndSevenRoles(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
 	journalPath := mustJournalPath(t, workspace)
 	payload, err := os.ReadFile(journalPath)
@@ -198,7 +245,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	cmd := newRootCommand()
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
 	cwd, err := os.Getwd()
 	if err != nil {
@@ -294,6 +341,9 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 
 func runInitCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
+	if len(args) > 0 && args[0] == "init" && !containsArgument(args, "--prefix") {
+		args = append(args, "--prefix", "FID")
+	}
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -315,6 +365,15 @@ func runInitCommand(t *testing.T, workspace string, args ...string) (string, str
 	}
 
 	return stdout.String(), stderr.String()
+}
+
+func containsArgument(args []string, value string) bool {
+	for _, arg := range args {
+		if arg == value {
+			return true
+		}
+	}
+	return false
 }
 
 func mustJournalPath(t *testing.T, workspace string) string {
