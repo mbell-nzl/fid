@@ -15,6 +15,16 @@ _None._
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-002 resolved by DEC-131 (2026-08-09).**
+  Both Review 1b Blocking findings sustained; **no product defect**. Init's
+  derived-prefix rejection is contract-correct (§3.2.1); three e2e journeys are
+  stale fixtures that never converged, hidden because every Phase 20 full-suite
+  `go test` gate was recorded with the impossible token `exit 0 (no output)`.
+  Those lines are now **UNVERIFIED**. Recovery: **task-3c** (fixture
+  convergence, `max_excerpt_bytes` rows, real-token full gate) and **task-3d**
+  (report-lint token control, report corrections), then `qa/review-1c.md`, then
+  Task 4. A third BLOCK returns to the Human. **CF-029** extends the control to
+  QA review artifacts.
 - **Phase 20 (in flight)** — **ESC-20-001 resolved by DEC-130 (2026-08-09).**
   Review 1's two Blocking findings were sustained without weakening VAL-002 or
   VAL-043. Recovery is two bounded test-led tasks, **task-3a** (exhaustive

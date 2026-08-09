@@ -440,6 +440,83 @@
   `contracts.md` §§2.4, 2.5, 3.2.1; `04_TRD_CONFIG.md` §2; `AGENTS.md`
   (file/function size budgets); tasks 3a and 3b.
 
+### DEC-131: ESC-20-002 resolved; the real defect is the gate-evidence record, not the product
+
+- **Date:** 2026-08-09
+- **Context:** Review 1b sustained the recovery but returned BLOCK on two
+  findings: VAL-043 never exercises rejected lower-bound/type/overflow values
+  for `executor_limits.max_excerpt_bytes`, and the required
+  `go test -tags integration -race ./...` gate fails in three `cmd/fid`
+  journeys with `error: invalid project initialization argument` despite
+  task-3b recording it `PASS`. Investigating the second finding exposed a
+  larger problem than the review scoped:
+  1. **The product is correct.** `contracts.md` §3.2.1 requires that an omitted
+     `--prefix` uppercase the directory basename and be accepted **only** if it
+     matches `^[A-Z][A-Z0-9]{0,15}$`. `cmd/fid/init.go:34-41` does exactly that.
+     The three failures are `t.TempDir()` roots whose basename is `001`, which
+     must reject.
+  2. **The fixtures never converged.** `cmd/fid/e2e_v01_closure_test.go:19` and
+     the other binary-driven journeys still call bare `init`. The unit-suite
+     helper `runInitCommand` (`cmd/fid/init_test.go:704-706`) silently appends
+     `--prefix FID`, which is why `go test -race ./...` stayed green while the
+     integration journeys did not. Strict rejection has existed since Task 2's
+     `TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename`.
+  3. **Every full-suite gate record in this phase is unverifiable.** Tasks 1, 2,
+     3, 3a, and 3b all record `go test ... ./...` with the token
+     `exit 0 (no output)`. `go test ./...` prints an `ok`/`?` line per package,
+     so that token cannot come from that command; `AGENTS.md` (Commands) says
+     `exit 0 (no output)` for a command that prints **is fabricated evidence**.
+     `task-3b-done.md:70` goes further and records a `go test` command with the
+     token `  295 internal/config/project_config.go`, which is `wc -l` output.
+     Review 1 also claimed an independent integration `PASS` with the same
+     impossible token. Review 1b is the first artifact in Phase 20 that actually
+     ran the integration gate, and it failed.
+- **Decision:**
+  1. **Both Review 1b Blocking findings are sustained.** VAL-043 keeps its
+     accepted criteria; the exact integration command is not narrowed,
+     substituted, or waived.
+  2. **No product change.** The init behavior matches the accepted contract.
+     Any proposal to relax derived-prefix validation so the old journeys pass is
+     a contract change and escalates; it is not authorized here.
+  3. **Fixture convergence, not weakening:** repair every stale integration
+     journey that initializes with a non-conforming derived prefix by supplying
+     an explicit valid `--prefix`, preserving each journey's behavioral
+     assertions. `runInitCommand`'s `--prefix FID` injection is **accepted and
+     recorded** as a deliberate fixture default, valid because dedicated tests
+     own the derived-prefix accept and reject paths; it is not to be
+     re-litigated, but it may never be the only reason a suite is green.
+  4. **All Phase 20 full-suite gate lines recorded with `exit 0 (no output)` are
+     `UNVERIFIED`, not `PASS`,** per the DEC-102 rule that an uncaptured gate is
+     never a passing state. History is **not** re-run at each old commit; that
+     buys little. The honest baseline is one clean full-gate run on the current
+     tree, captured with real tokens, in task-3c.
+  5. **Recovery is two bounded tasks:** **task-3c** (integration-journey
+     convergence, the missing `max_excerpt_bytes` rejection rows, provenance
+     for the failure, and a real-token full gate) and **task-3d** (the
+     evidence-token control in `report-lint.sh`, plus correction notes on the
+     five affected completion reports).
+  6. **A control lands now, not as a promise.** `report-lint.sh` must reject
+     `exit 0 (no output)` as the token for any recorded command containing
+     `go test`, and must require such a command's token to look like `go test`
+     output. This phase has now lost two review cycles to unverified gates;
+     a named future control is not a substitute (DEC-102).
+  7. **QA correction:** the next review appends a `## Corrections` record to
+     `qa/review-1.md` retracting its independent integration-reproduction row.
+     QA independent reproduction must cite the real output tail.
+  8. **CF-029:** extend the evidence-token control to QA review artifacts, so a
+     review cannot record an impossible token either. Trigger-based; registered
+     in `decisions_active.md` at wrap-up.
+  9. Phase Runner resumes at **task-3c → task-3d → bounded re-review
+     `qa/review-1c.md` → Task 4**, on a non-BLOCK verdict. A third BLOCK returns
+     to the Human, not to another recovery task.
+- **Consequences:** Phase 20 gets a truthful gate baseline and a mechanical
+  control against recurrence, and VAL-043 closes inside its owning window. The
+  cost is two more Developer sessions and one bounded review. No accepted
+  contract, VAL, or command changed. The three journeys keep their coverage.
+- **Refs:** `qa/review-1b.md`; `triage-log.md` `TRG-20-002`; `tl-escalations.md`
+  `ESC-20-002`; DEC-130; phase-19 DEC-102/DEC-103; `AGENTS.md` (Commands);
+  `contracts.md` §3.2.1; `qa/validation-contract.md` VAL-043; tasks 3c and 3d.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

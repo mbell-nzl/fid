@@ -15,9 +15,36 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-002 | 2026-08-09 | Bounded QA re-review review-1b returned BLOCK with two unresolved findings before Task 4 | `qa/review-1b.md` | BLOCK | ESC-20-002 | VAL-043 has an exhaustive evidence gap and the required integration gate fails in three init scenarios. |
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-002 - Review 1b unresolved VAL-043 evidence and integration-gate failure
+
+- **Trigger:** bounded QA re-review review-1b returned BLOCK with two new
+  unresolved findings before Task 4: VAL-043 lacks explicit rejected
+  lower-bound/type/overflow cases for `executor_limits.max_excerpt_bytes`, and
+  the exact required integration command fails in three `cmd/fid init`
+  scenarios with invalid project initialization argument, contradicting
+  task-3b's recorded PASS gate.
+- **Source:** `project-docs/docs/phases/phase-20/qa/review-1b.md`
+- **Verdict:** BLOCK
+- **Reasoning:** These are QA Reviewer Blocking findings and a required-gate
+  failure. They are not misclassified, no supplied verified commit resolves
+  them, and no accepted decision covers them: DEC-130 applies only to the
+  earlier ESC-20-001 recovery and does not weaken or close VAL-043. The repair
+  affects strict-config evidence and the integration journey across subsystems,
+  so it exceeds local-decision authority.
+- **Local decisions made:** none
+- **References:** `project-docs/docs/phases/phase-20/qa/review-1b.md`
+  (VAL-043 and Task 3b Blocking findings);
+  `project-docs/docs/current/tl_escalations_current.md` (ESC-20-001 archive
+  note); `project-docs/docs/phases/phase-20/decisions.md` (DEC-130);
+  `project-docs/specs/09_AI_WORKFLOW.md` §2.3.
+- **If BLOCK:** ESC-20-002 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-002 before Task 4
+  starts.
 
 ## TRG-20-001 - Review 1 unresolved cross-task evidence gaps
 

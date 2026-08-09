@@ -5,11 +5,13 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-3 are complete and Review 1 returned BLOCK.**
-`ESC-20-001` is resolved by DEC-130 with two bounded evidence-recovery tasks
-(3a, 3b) and a bounded re-review before Task 4; no acceptance criterion was
-weakened. Phase 19 completed and wrapped on 2026-08-08. fid has no adopted
-project workspace or compatibility constituency.
+**Phase 20 is in flight: Tasks 1-3b are complete and Reviews 1 and 1b both
+returned BLOCK.** `ESC-20-001` (DEC-130) and `ESC-20-002` (DEC-131) are
+resolved with no weakened acceptance criterion and no product defect: the
+findings were missing evidence, a stale integration fixture, and — the real
+problem — full-suite gate records that were never captured from real output.
+Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
+workspace or compatibility constituency.
 
 Gates D1/D2 supersede the old Phase 20 role-policy proposal and the historical
 process-shaped roadmap. Gate D3.1 establishes the new Phase 20 as the first of
@@ -75,17 +77,28 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 
 ## Current work
 
-1. Phase Runner resumes at task-3a, then task-3b (DEC-130 evidence recovery).
-2. QA Reviewer produces the bounded `../phases/phase-20/qa/review-1b.md`; Task 4
-   starts only on a non-BLOCK verdict.
+1. Phase Runner resumes at task-3c (integration-journey convergence, missing
+   `max_excerpt_bytes` rows, honest full-gate baseline), then task-3d
+   (report-lint evidence-token control, completion-report corrections).
+2. QA Reviewer produces the bounded `../phases/phase-20/qa/review-1c.md`,
+   including a `## Corrections` record for review-1's integration row. Task 4
+   starts only on a non-BLOCK verdict; a third BLOCK returns to the Human.
 3. Phase Runner continues Tasks 4-18 through the six accepted review windows.
 4. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
-Carry-forward opened this phase: **CF-028** — `internal/bootstrap/init.go` is
-427 lines against the 400-line budget; split staging/fsync helpers only when a
-later task changes that file for another reason. Registered in
-`decisions_active.md` at wrap-up.
+Carry-forward opened this phase, both registered in `decisions_active.md` at
+wrap-up:
+
+- **CF-028** — `internal/bootstrap/init.go` is 427 lines against the 400-line
+  budget; split staging/fsync helpers only when a later task changes that file
+  for another reason.
+- **CF-029** — extend the evidence-token control to QA review artifacts, so a
+  review cannot record a token its command could not have produced.
+
+All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
+are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is
+the phase's verified gate baseline.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

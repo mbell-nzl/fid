@@ -8,6 +8,30 @@
 
 ### Resolved
 
+- **ESC-20-002 — Review 1b BLOCK: missing `max_excerpt_bytes` rejection rows and
+  a failing required integration gate (raised 2026-08-09 via `TRG-20-002`;
+  resolved 2026-08-09 by DEC-131).** **The product was correct; the evidence
+  record was not.** `contracts.md` §3.2.1 requires an omitted `--prefix` to be
+  derived from the directory basename and accepted only if it matches the
+  grammar, so the three `cmd/fid` journeys initializing in `t.TempDir()` roots
+  named `001` **must** fail. They are stale fixtures that never converged when
+  init became strict at Task 2. The failure stayed invisible because the
+  unit-suite helper `runInitCommand` silently appends `--prefix FID` while the
+  binary-driven journeys do not, **and because every Phase 20 full-suite
+  `go test` gate — tasks 1, 2, 3, 3a, 3b — was recorded with the token
+  `exit 0 (no output)`, which `go test ./...` cannot produce**; one line even
+  carried `wc -l` output. Review 1 claimed the same impossible token for its
+  independent reproduction; review-1b is the first artifact in the phase that
+  actually ran the gate. DEC-131 sustained both findings, changed no product
+  code, contract, or VAL, marked the affected gate lines **UNVERIFIED** rather
+  than re-running history, and ordered **task-3c** (fixture convergence, the
+  missing rejection rows, provenance, one honest current-tree gate run) and
+  **task-3d** (a `report-lint.sh` token-plausibility control with self-tests,
+  plus correction notes on the five reports). `runInitCommand`'s prefix
+  injection is accepted as a deliberate fixture default. **CF-029** extends the
+  control to QA review artifacts. Resumption is task-3c → task-3d →
+  `qa/review-1c.md` → Task 4; a third BLOCK returns to the Human.
+
 - **ESC-20-001 — Review 1 BLOCK on two cross-task evidence gaps (raised
   2026-08-09 via `TRG-20-001`; resolved 2026-08-09 by DEC-130).** **Neither
   finding was a suspected product defect; both were missing evidence for an
