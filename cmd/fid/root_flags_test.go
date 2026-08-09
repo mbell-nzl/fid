@@ -14,7 +14,6 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 	}{
 		{"legacy json", []string{"--json", "journal", "inspect", "EVT-missing"}, "--json"},
 		{"legacy project", []string{"--project", t.TempDir(), "maintenance", "vacuum"}, "--project"},
-		{"unmigrated target", []string{"--project", t.TempDir(), "init"}, "--project"},
 	} {
 		fixture := fixture
 		t.Run(fixture.name, func(t *testing.T) {
