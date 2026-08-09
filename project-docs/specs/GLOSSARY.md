@@ -294,12 +294,38 @@ Use when: identifying prose that should not become durable product state.
 Avoid: applying the term to requirements, decisions, Findings, Deviations, or
 Human judgment.
 
+## Temporary Repository Delivery Terms
+
+These terms remain canonical for the V1 process used to build fid. They are
+not forward fid product entities and do not contradict the product-term
+retirements below.
+
+**Operating Mode**
+Definition: The per-phase declaration - light, normal, or heavy - selecting
+which V1 delivery artifacts a phase must produce. It changes the artifact set,
+never exact-command evidence rules, commit discipline, or hard stops.
+Use when: planning a fid implementation phase under `09_AI_WORKFLOW.md`.
+Avoid: using the mode as a fid runtime state or V2 backend-port field.
+
+**Validation Contract / Validation Assertion**
+Definition: The current per-phase file of testable `VAL-NNN` assertions used to
+connect requirements, Developer tasks, and QA evidence while building fid.
+Use when: planning or validating a current fid implementation phase.
+Avoid: modelling either as a durable fid product aggregate.
+
+**Phase roles and artifacts**
+Definition: Tech Lead, TL-Lite, Phase Runner, Developer, QA Lead, QA Reviewer,
+phase briefs, task specs, QA plans, completion reports, triage logs, and
+handoffs defined by the binding V1 repository workflow.
+Use when: operating the current fid build pipeline.
+Avoid: encoding them in fid's forward domain model or backend contract.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation
 Assertion`, `Triage Entry`, `Developer completion report`, and `handoff` are not
-forward fid entities. They may appear in historical phase records or in the
-external kit's temporary engineering memory. New fid product specifications
-must use the retained terms above.
+forward fid entities. They may appear in historical phase records, the current
+V1 repository delivery process, or the external kit's temporary engineering
+memory. New fid product specifications must use the retained terms above.
 
 *Last updated: 2026-08-09 (ADR-0011)*

@@ -1,19 +1,21 @@
 # QUALITY PLAN - fid
 
-**Status:** Target quality contract for the first supported fid baseline
+**Status:** Binding repository quality gates and target product quality contract
 **Last updated:** 2026-08-09
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md)
 
 ## 1. Purpose
 
-This document defines how fid earns trust as an Issue tracker and durable
-operational backend. It tests product behavior, storage integrity, recovery,
-machine contracts, and the boundary between project policy and fid facts.
+This document defines both the quality gates used while building fid and how
+fid earns trust as an Issue tracker and durable operational backend. It tests
+product behavior, storage integrity, recovery, machine contracts, and the
+boundary between project policy and fid facts.
 
-It does not prescribe the project-development process used to build fid. Until
-the V2 kit is ready, the current repository instructions, phase artifacts, and
-quality commands remain the binding engineering procedure. Those temporary
-working practices are not fid product features.
+`09_AI_WORKFLOW.md` prescribes the current V1 development process. The
+repository gates and validation rules below are binding inputs to that process
+until the Human approves a replacement. They are delivery scaffolding, not fid
+product features. The remaining sections define target product assurance and
+first-adoption evidence without changing the active agent workflow.
 
 ## 2. Quality properties
 
@@ -132,6 +134,11 @@ accepted task specification says so. Failing tests are fixed by correcting the
 product or accepted contract, never by weakening evidence. Runtime and test
 dependencies follow the recorded dependency budget and license policy.
 
+Every required command must pass or be recorded as `BLOCKED` with reason in a
+blocker report. Missing, silently skipped, or narrower substituted commands are
+failed gates. A no-match search records its real non-zero status rather than a
+fabricated successful exit.
+
 Coverage is a diagnostic, not a substitute for scenario coverage. Changes to
 journal, authority, evidence, completion, recovery, or public JSON contracts
 require broader tests even when line coverage is unchanged.
@@ -148,6 +155,12 @@ Every convergence slice must include, in order:
 6. documentation and capability advertisement updates; and
 7. an independent consistency review when the slice changes a cross-product
    contract.
+
+Each `VAL-NNN` assertion states one observable behavior, invariant, or release-
+readiness claim. Conditional assertions define evidence for qualifying and
+non-qualifying states; positive-only evidence is insufficient. Task specs,
+completion reports, reviews, and final QA outcomes cite the same assertion IDs
+under the active V1 workflow.
 
 A slice is not complete if it leaves two authoritative models for the same
 fact. Temporary compilation scaffolding is allowed only inside the slice and
