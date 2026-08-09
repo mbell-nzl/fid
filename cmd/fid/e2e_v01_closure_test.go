@@ -16,7 +16,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	binary := buildClosureFIDBinary(t)
 	workspace := t.TempDir()
 	closureRun(t, workspace, "git", "init")
-	closureRunFID(t, binary, workspace, "init")
+	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	assertClosureGitLayout(t, workspace)
 
 	journalPath := closureJournalPath(t, workspace)

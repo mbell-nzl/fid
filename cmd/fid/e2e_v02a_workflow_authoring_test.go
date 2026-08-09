@@ -14,7 +14,7 @@ import (
 func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
 	binary := buildClosureFIDBinary(t)
 	workspace := t.TempDir()
-	closureRunFID(t, binary, workspace, "init")
+	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	journalPath := closureJournalPath(t, workspace)
 
 	assertReservedRulesAreNotSeeded(t, binary, workspace)
@@ -76,7 +76,7 @@ func assertReservedRulesAreNotSeeded(t *testing.T, binary, workspace string) {
 func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
 	binary := buildClosureFIDBinary(t)
 	workspace := t.TempDir()
-	closureRunFID(t, binary, workspace, "init")
+	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
