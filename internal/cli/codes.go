@@ -217,7 +217,43 @@ func validateFailure(failure Failure, definition reasonDefinition) error {
 	if err := validateSubject(failure.Subject, definition.spec.SubjectTypes); err != nil {
 		return err
 	}
-	return validateDetails(failure.Details, definition.details)
+	if err := validateDetails(failure.Details, definition.details); err != nil {
+		return err
+	}
+	if failure.Code == CodeDuplicateEntity {
+		return validateDuplicateEntityIdentity(failure.Details)
+	}
+	return nil
+}
+
+func validateDuplicateEntityIdentity(details map[string]any) error {
+	identity, ok := details["identity"].(map[string]any)
+	if !ok {
+		return fmt.Errorf("duplicate-entity identity must be an object")
+	}
+	fields, ok := stringArrayLength(identity["fields"])
+	if !ok {
+		return fmt.Errorf("duplicate-entity identity fields must be a string array")
+	}
+	values, ok := stringArrayLength(identity["values"])
+	if !ok {
+		return fmt.Errorf("duplicate-entity identity values must be a string array")
+	}
+	if fields != values {
+		return fmt.Errorf("duplicate-entity identity fields and values must have equal length")
+	}
+	return nil
+}
+
+func stringArrayLength(value any) (int, bool) {
+	switch values := value.(type) {
+	case []string:
+		return len(values), true
+	case []any:
+		return len(values), true
+	default:
+		return 0, false
+	}
 }
 
 func validateSubject(subject *Subject, allowed []SubjectType) error {
