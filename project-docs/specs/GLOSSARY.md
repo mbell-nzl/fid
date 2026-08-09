@@ -320,6 +320,36 @@ handoffs defined by the binding V1 repository workflow.
 Use when: operating the current fid build pipeline.
 Avoid: encoding them in fid's forward domain model or backend contract.
 
+## Machine Interface
+
+**Response Envelope**
+Definition: The versioned JSON wrapper every machine-mode fid operation
+returns, carrying contract version, operation name, and either a result with
+optional Event identity or a typed error.
+Use when: describing the transport shape of a CLI or port response.
+Avoid: the bare word "envelope," which means **Work Envelope**; and treating
+the wrapper as a durable entity.
+
+**Operation name**
+Definition: The stable dotted identifier of one machine operation, such as
+`issue.transition`, carried by both success and failure responses.
+Use when: routing, logging, or asserting on a specific operation.
+Avoid: deriving it from the command string or from a Human message.
+
+**Reason code**
+Definition: A stable machine identifier for why an operation failed, paired
+with a closed category and a retryability flag.
+Use when: a consumer must branch on a failure.
+Avoid: parsing Human message text, or introducing a code outside the owning
+slice contract.
+
+**Project root**
+Definition: The directory that directly contains `.fid/` and identifies one fid
+project.
+Use when: describing discovery, explicit selection, or path normalization.
+Avoid: "workspace," which historically named the same directory and now invites
+confusion with a Git worktree.
+
 ## Retired Product Terms
 
 `Work Item`, fid `Role`, `QA Plan`, `Validation Contract`, `Validation

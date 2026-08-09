@@ -20,6 +20,12 @@ fid [--project <path>] [--json] <command> ...
 - Concurrent mutations accept `--expected-revision` where applicable.
 - Project-relative paths are normalized and cannot escape approved roots.
 
+Phase 20 convergence qualification: the global spellings are initially valid
+only for leaves listed in the approved Phase 20 retained-operation inventory.
+An explicitly supplied `--project` or `--json` on a listed legacy leaf rejects
+before its handler; neither flag may be accepted and ignored. Later slices
+remove or migrate those leaves and retire this temporary restriction.
+
 ## 2. JSON Envelope
 
 Success:
@@ -55,6 +61,25 @@ Failure is written to stderr with non-zero process status:
 No Human message substring is parsed for control flow. Unknown major contract
 versions and required enum values reject.
 
+Envelope rules:
+
+- `contract_version` and `operation` are present on success and failure.
+- `result` is an object, never a bare array or scalar; list operations use a
+  named collection key.
+- `event` is `null` for a non-mutating operation and
+  `{"id": ..., "occurred_at": ...}` for a mutation that appended one Event.
+- `error.details` is always present and may be `{}`; `error.subject` is `null`
+  when the failure has no single subject.
+- Success and failure envelopes are mutually exclusive: a success envelope has
+  no `error` key, a failure envelope has no `result` or `event` key.
+
+To distinguish this transport wrapper from the durable **Work Envelope**
+entity, the wrapper is named the **Response Envelope** in specifications, code,
+and tests.
+
+`error.category` is a closed set: `invalid-input`, `not-found`, `conflict`,
+`authority`, `precondition`, `integrity`, `internal`.
+
 ## 3. Target Command Tree
 
 ### Project and capability
@@ -84,6 +109,10 @@ fid link add|remove|list
 fid ready
 fid workflow define|assign|list
 ```
+
+`workflow assign` selects assignment scope with exactly one of `--kind <kind>`
+or `--project-wide`. The latter spelling avoids collision with global
+`--project <path>`, which always selects the fid project root.
 
 Standalone inventory mutations record Actor attribution without claiming
 protected Human authority. Execution-bound transitions additionally require
@@ -207,6 +236,18 @@ retry-exhausted
 
 Owning slices may add closed codes through versioned contract changes.
 
+Codes accepted with the Phase 20 standalone Issue slice: `invalid-argument`,
+`unsupported-kind`, `unsupported-relation`, `project-not-found`,
+`project-already-initialized`, `issue-not-found`, `requirement-not-found`,
+`label-not-found`, `link-not-found`, `workflow-not-found`, `duplicate-entity`,
+`state-conflict`, `lock-unavailable`, `hierarchy-invalid`, `dependency-cycle`,
+`transition-not-permitted`, `authority-missing`, `authority-unknown-actor`,
+`authority-denied`, `journal-replay-stopped`, `projection-divergence`,
+`result-limit-exceeded`, `internal-error`. Phase 20 maps fail-closed V1 role failures to the three
+`authority-*` codes. Phase 21 replaces the V1 checks, but the semantic codes are
+not automatically removed: the generic authority contract may retain or refine
+them through its own accepted contract change.
+
 ## 6. Removed Commands
 
 The supported baseline contains no:
@@ -239,4 +280,19 @@ renderer consumes the same typed projection returned as JSON, declares its own
 small set of outputs, and carries no round-trip/import promise. Initial allowed
 candidate: `projection human-brief` as terminal text, Markdown, or HTML.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+## 8. Accepted Slice Leaf Contracts
+
+Exact request/response schemas are accepted by the Human with their owning
+vertical slice before product code changes. Accepted slice contracts:
+
+| Slice | Accepted contract |
+|---|---|
+| Phase 20 - clean standalone Issue journey | `../docs/phases/phase-20/contracts.md` |
+
+A slice contract fixes its operation names, `result` shapes, reason codes,
+closed request/flag shapes, ordering/limits, redaction/unknown-field behavior,
+removal inventory, and the exact set of commands that emit a Response Envelope.
+Commands scheduled for deletion in a later slice keep their current unenveloped
+output and are listed in the owning slice contract with an expiry phase.
+
+*Last updated: 2026-08-09 (Phase 20 accepted slice contract)*

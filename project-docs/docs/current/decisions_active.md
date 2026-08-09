@@ -102,10 +102,21 @@ implementation work, including TDD, evidence, command, phase, and hard-stop
 rules. Those requirements are temporary engineering scaffolding, not forward
 fid product requirements.
 
-No implementation phase starts from the historical version roadmap. The V1
-Tech Lead may now plan the new Phase 20 with accepted slice contracts, exact
-removals, and a fresh validation contract under the currently binding delivery
-process.
+No implementation phase starts from the historical version roadmap. Phase 20 is
+planned, V1-workflow-self-checked, and independently audited (2026-08-09): heavy
+mode, eighteen tasks, six mid-phase reviews, `VAL-001..VAL-046`,
+`DEC-107..DEC-129`. Its accepted slice contract is
+`../phases/phase-20/contracts.md`; Human approval accepted amendments to
+`03_TRD_SCHEMA.md` §8, `04_TRD_CONFIG.md` §2/§5,
+`06_DESIGN_PLAN_CLI.md` §2/§5/§8, and `GLOSSARY.md`. QA-plan acceptance remains
+the pre-Developer gate.
+
+Two Phase 20 constraints bind every later agent session: fail-closed V1
+authority stays until Phase 21 proves generic authority (DEC-113), and no
+Phase 21 Routine or Envelope surface is pulled forward (DEC-117).
+Canonical workflow authoring exposes states/transitions only, never the V1
+role/assurance `--require` grammar; retained legacy `dev` status mutations still
+advance complete Issue aggregate revision until Phase 21 deletes them (DEC-128).
 
 ## Environment
 

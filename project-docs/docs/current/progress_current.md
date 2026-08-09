@@ -5,11 +5,12 @@
 
 ## Project state
 
-**No implementation phase is active.** Phase 19 completed and wrapped on
-2026-08-08. fid has no adopted project workspace or compatibility constituency.
+**Phase 20's implementation pack is Human-approved; QA planning is next.**
+Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
+workspace or compatibility constituency.
 
 Gates D1/D2 supersede the old Phase 20 role-policy proposal and the historical
-process-shaped roadmap. Gate D3.1 establishes a new Phase 20 as the first of
+process-shaped roadmap. Gate D3.1 establishes the new Phase 20 as the first of
 six vertical scenario slices. The target product remains the standalone Issue
 tracker plus the fid/V2 durable operational kernel described by ADR-0011.
 
@@ -51,11 +52,30 @@ The active disposition is in `decisions_active.md`. In summary:
 - treat workflow inspection/lifecycle as candidates, not commitments; and
 - keep V1 process-tooling concerns separate from product scope.
 
+## Phase 20 plan
+
+Planned, self-checked, and independently audited on 2026-08-09 under the binding
+V1 delivery process. Heavy mode, eighteen bounded Developer tasks, six
+mid-phase reviews, `VAL-001..VAL-046`, decisions `DEC-107..DEC-129`. Artifacts are under
+`../phases/phase-20/`; the accepted slice contract is
+`../phases/phase-20/contracts.md`.
+
+Human approval accepted amendments to four specs before implementation, as the
+DDL and JSON contract gates require: `03_TRD_SCHEMA.md` §8 (migrations
+`0011_p20_remove_issue_fields` and `0012_p20_issue_revision`),
+`04_TRD_CONFIG.md` §2/§5 (versioned strict config and atomic init),
+`06_DESIGN_PLAN_CLI.md` §2/§5/§8 (Response Envelope rules, Phase 20 reason
+codes, slice contract index), and `GLOSSARY.md` (Machine Interface terms).
+
+Phase 20 preserves fail-closed V1 authority and pulls no Phase 21 Routine or
+Envelope work forward. Issue revision is aggregate-wide; link endpoint types are
+explicit; `journal inspect` stays legacy rather than publishing V1 Event internals.
+
 ## Current work
 
-1. Invoke the V1 Tech Lead to plan the new Phase 20 standalone Issue slice.
-2. Approve its exact JSON contracts, removal inventory, validation contract,
-   Developer tasks, and quality commands before implementation.
+1. QA Lead writes and validates `../phases/phase-20/qa/qa-plan.md`; the
+   validation rows then leave `Draft` only as that plan records.
+2. Phase Runner starts Task 1 and follows the six accepted review windows.
 3. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 

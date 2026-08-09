@@ -79,7 +79,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 | `issue_dependencies` | Issue, prerequisite Issue, created Event | No self-link or directed cycle. |
 | `epic_scheduling` | Epic ID, mode | One row per Epic; mode is sequential or prioritized. |
 | `acceptance_criteria` | ID, Issue, ordinal, text, created Event | Unique ordinal per Issue. No verification role columns. |
-| `labels` | name, color, description | Stable project label identity. |
+| `labels` | name, colour, description | Stable project label identity. |
 | `issue_labels` | Issue, label | Composite primary key. |
 | `links` | from type/ID, relation, to type/ID, created Event | Endpoints use a closed supported type registry; dedicated lifecycle fields are not duplicated. |
 | `requirement_refs` | stable requirement ID, source reference/digest, status | Project files remain canonical. |
@@ -220,4 +220,63 @@ For each D3 vertical slice, the task pack must amend this document with:
 Until that amendment is accepted, implementation depending on that table or
 Event family is blocked rather than inferred from this logical catalog.
 
-*Last updated: 2026-08-09 (ADR-0011 logical rebaseline)*
+## 8. Accepted Slice DDL
+
+Entries in this section are accepted only with the Human-approved owning slice
+contract and task pack.
+
+### 8.1 Phase 20 - clean standalone Issue journey
+
+Migrations `0011_p20_remove_issue_fields` and `0012_p20_issue_revision`
+realign the `issues` projection with section 3.2. Full slice contract, including
+JSON results and the removal inventory, is in
+`../docs/phases/phase-20/contracts.md`.
+
+`0011` up (logical shape; a table-rebuild implementation in the `0008` style is
+permitted because the dependent CHECK constraint is removed with its column):
+
+```sql
+ALTER TABLE issues DROP COLUMN in_inbox;
+ALTER TABLE issues DROP COLUMN est_tokens;
+ALTER TABLE issues DROP COLUMN due_date;
+```
+
+Its down migration restores `in_inbox BOOLEAN DEFAULT 0`, `est_tokens INTEGER`,
+and `due_date DATE` with the original
+`kind != 'epic' OR est_tokens IS NULL` check.
+
+`0012` up/down:
+
+```sql
+-- up
+ALTER TABLE issues ADD COLUMN revision INTEGER NOT NULL DEFAULT 1;
+-- down
+ALTER TABLE issues DROP COLUMN revision;
+```
+
+Rules:
+
+- The caller never supplies the resulting `revision`. Issue revision covers the
+  complete aggregate. `issue.created` stores revision 1; `issue.updated`,
+  `issue.transitioned`, `issue.ac_added`, `issue.label.added`,
+  `issue.label.removed`, `link.added`, `link.removed`, `dev.started`,
+  `dev.finished`, and `dev.blocked` advance each affected Issue exactly once.
+  Link Events advance one or two Issue endpoints as applicable. The legacy dev
+  families retain this invariant only until their Phase 21 deletion.
+- Every update-like revision Effect has `op:"update"`, `table:"issues"`,
+  `pk:{id}`, `values:{revision: prior+1}`, `prior:{revision: prior}`, and
+  `preconditions:{revision: prior}`. Empty optional Effect maps are omitted,
+  never `null`. The existing absolute-assignment projector therefore rebuilds
+  deterministically without a new Effect operation.
+- The `issues_enriched` view is recreated without the removed columns.
+- No new table or Event family is introduced. The eleven existing families above
+  lose the retired effect keys and carry the exact revision Effects defined in
+  the Phase 20 contract section 7. Golden fixtures cover every family, including
+  Issue/Issue and Issue/requirement link cases.
+- Development journals containing the removed keys are not migrated. A
+  projection applier meeting an unknown column key fails loudly. Repository
+  fixtures are regenerated with the migration, and live/rebuild parity is proven
+  against the regenerated fixtures.
+- Deletion mapping for displaced surfaces is in the phase contract, section 5.
+
+*Last updated: 2026-08-09 (Phase 20 accepted slice DDL amendment)*

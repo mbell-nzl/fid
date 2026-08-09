@@ -1,6 +1,6 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Gate D3.1 accepted; Phase 20 ready for V1 Tech Lead planning
+**Status:** Gate D3.1 and revised Phase 20 implementation pack accepted
 **Last updated:** 2026-08-09
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
@@ -41,11 +41,13 @@ migrations, and formatters are removed rather than deprecated.
 - convergence is delivered as phase-sized vertical scenario slices; horizontal
   work may support a phase but is not its acceptance boundary.
 
-### Open decision
+### Current gate position
 
 **Gate D3.1** has ratified the vertical-slice order and initial removal owners
-in section 5. The exact Phase 20 task pack is now planning work under the
-currently binding V1 delivery process. **Gate D3.2** will settle the exact thin
+in section 5. The Human accepted the exact Phase 20 contract, validation
+contract, and eighteen-task pack on 2026-08-09 under the binding V1 delivery
+process. QA-plan acceptance is the remaining pre-implementation gate.
+**Gate D3.2** will settle the exact thin
 Routine walking-skeleton boundary before Phase 21 is planned.
 
 ## 3. Foundation to retain
@@ -118,7 +120,8 @@ point.
 
 This is the pre-planning map for implementation that exists after Phase 19.
 The Tech Lead must replace it with an exact file/schema/event inventory in each
-phase plan.
+phase plan. Phase 20's exact inventory is
+`../docs/phases/phase-20/contracts.md` section 5.
 
 | Current surface | Planned treatment |
 |---|---|
@@ -211,9 +214,12 @@ reading `.fid/` internals.
 
 ## 10. Immediate next work
 
-1. Invoke the V1 Tech Lead to plan the new Phase 20 from section 5.
-2. Approve Phase 20 terminology, public JSON behavior, exact retained/removal
-   inventory, validation contract, task boundaries, and quality commands.
+1. **Accepted (2026-08-09).** Phase 20 planned, V1-workflow-self-checked, independently audited, and Human-approved from section 5. Slice contract:
+   `../docs/phases/phase-20/contracts.md`; DDL amendment: `03_TRD_SCHEMA.md`
+   section 8; config amendment: `04_TRD_CONFIG.md` sections 2/5;
+   cross-cutting CLI rules: `06_DESIGN_PLAN_CLI.md` sections 2, 5, 8.
+2. QA Lead writes and validates the Phase 20 QA plan; Phase Runner then starts
+   Task 1.
 3. Implement and independently review Phase 20 through the existing V1 process.
 4. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary before
    planning Phase 21.
