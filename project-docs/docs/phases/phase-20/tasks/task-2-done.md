@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `cd53c43319a3301d3a8cc0089b6785d9afbb163f`
 
 ## Commit subject
 
-- Pending commit
+- `feat(project): add strict project selection config`
