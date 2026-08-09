@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `f978b6d382b3ae90ff44a7f4577799bb048329d4`
 
 ## Commit subject
 
-- Pending commit
+- `test(config): converge init integration fixtures`
