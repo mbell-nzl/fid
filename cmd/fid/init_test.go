@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -300,6 +301,85 @@ func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	}
 }
 
+func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		workspaceName string
+		prefix        string
+		valid         bool
+		wantPrefix    string
+	}{
+		{name: "explicit one character", workspaceName: "project", prefix: "A", valid: true, wantPrefix: "A"},
+		{name: "explicit 16 characters", workspaceName: "project", prefix: "A123456789012345", valid: true, wantPrefix: "A123456789012345"},
+		{name: "explicit 17 characters", workspaceName: "project", prefix: "A1234567890123456"},
+		{name: "explicit lowercase", workspaceName: "project", prefix: "fid"},
+		{name: "explicit leading digit", workspaceName: "project", prefix: "1FID"},
+		{name: "derived uppercase basename", workspaceName: "fid", valid: true, wantPrefix: "FID"},
+		{name: "derived invalid basename", workspaceName: "invalid_prefix"},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			workspace := filepath.Join(t.TempDir(), test.workspaceName)
+			if err := os.Mkdir(workspace, 0o755); err != nil {
+				t.Fatalf("Mkdir() error = %v", err)
+			}
+			args := []string{"--project", workspace, "--json", "init"}
+			if test.prefix != "" {
+				args = append(args, "--prefix", test.prefix)
+			}
+			stdout, stderr, err := executeInitCommand(t, args...)
+			if test.valid {
+				if err != nil {
+					t.Fatalf("Execute(%v) error = %v", args, err)
+				}
+				if stderr != "" {
+					t.Fatalf("stderr = %q, want empty", stderr)
+				}
+				assertProjectInitSuccess(t, stdout)
+				assertActivatedConfigRoundTrip(t, workspace, test.wantPrefix)
+				assertNoInitStagingResidue(t, workspace)
+				return
+			}
+			if err == nil {
+				t.Fatalf("Execute(%v) error = nil, want invalid-argument rejection", args)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			assertProjectInitFailureCode(t, stderr, "invalid-argument")
+			if _, statErr := os.Lstat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+				t.Fatalf(".fid state = %v, want absent", statErr)
+			}
+			assertNoInitStagingResidue(t, workspace)
+		})
+	}
+}
+
+func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
+	workspace := t.TempDir()
+	danglingTarget := filepath.Join(workspace, "missing-fid-target")
+	workspacePath := filepath.Join(workspace, ".fid")
+	if err := os.Symlink(danglingTarget, workspacePath); err != nil {
+		t.Fatalf("Symlink() error = %v", err)
+	}
+
+	stdout, stderr, err := executeInitCommand(t, "--project", workspace, "--json", "init", "--prefix", "FID")
+	if err == nil {
+		t.Fatal("Execute() error = nil, want project-already-initialized rejection")
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertProjectInitFailureCode(t, stderr, "project-already-initialized")
+	if got, readErr := os.Readlink(workspacePath); readErr != nil || got != danglingTarget {
+		t.Fatalf("Readlink(%q) = %q, %v; want unchanged dangling target %q", workspacePath, got, readErr, danglingTarget)
+	}
+	if info, statErr := os.Lstat(workspacePath); statErr != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("Lstat(%q) = %v, %v; want unchanged symlink", workspacePath, info, statErr)
+	}
+	assertNoInitStagingResidue(t, workspace)
+}
+
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	defaultWorkspace := t.TempDir()
 	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
@@ -525,6 +605,97 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 	}
 	if !bytes.Equal(afterJournal, beforeJournal) {
 		t.Fatal("journal bytes changed after rebuild")
+	}
+}
+
+func executeInitCommand(t *testing.T, args ...string) (string, string, error) {
+	t.Helper()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommand()
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	return stdout.String(), stderr.String(), err
+}
+
+func assertProjectInitSuccess(t *testing.T, payload string) {
+	t.Helper()
+	var envelope struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+	}
+	if err := json.Unmarshal([]byte(payload), &envelope); err != nil {
+		t.Fatalf("Unmarshal(success) error = %v\npayload=%q", err, payload)
+	}
+	if !envelope.OK || envelope.Operation != "project.init" {
+		t.Fatalf("success envelope = %+v, want successful project.init", envelope)
+	}
+}
+
+func assertProjectInitFailureCode(t *testing.T, payload, wantCode string) {
+	t.Helper()
+	var envelope struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(payload), &envelope); err != nil {
+		t.Fatalf("Unmarshal(failure) error = %v\npayload=%q", err, payload)
+	}
+	if envelope.OK || envelope.Operation != "project.init" || envelope.Error.Code != wantCode {
+		t.Fatalf("failure envelope = %+v, want failed project.init with %q", envelope, wantCode)
+	}
+}
+
+func assertActivatedConfigRoundTrip(t *testing.T, workspace, wantPrefix string) {
+	t.Helper()
+	path := filepath.Join(workspace, ".fid", "config.toml")
+	project, err := config.ReadProjectConfig(path)
+	if err != nil {
+		t.Fatalf("ReadProjectConfig(%q) error = %v", path, err)
+	}
+	if project.IssuePrefix != wantPrefix {
+		t.Fatalf("IssuePrefix = %q, want %q", project.IssuePrefix, wantPrefix)
+	}
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", path, err)
+	}
+	want := fmt.Sprintf(`config_version = 1
+
+[project]
+id = %q
+issue_prefix = %q
+
+[storage]
+artifact_root = "artifacts"
+
+[executor_limits]
+max_output_bytes = %d
+max_excerpt_bytes = %d
+
+[maintenance]
+abandoned_attempt_grace_seconds = %d
+`, project.ProjectID, project.IssuePrefix, config.DefaultMaxOutputBytes, config.DefaultMaxExcerptBytes, config.DefaultAbandonedAttemptGraceSeconds)
+	if string(payload) != want {
+		t.Fatalf("activated config contents = %q, want exact target keys %q", payload, want)
+	}
+}
+
+func assertNoInitStagingResidue(t *testing.T, workspace string) {
+	t.Helper()
+	entries, err := os.ReadDir(workspace)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".fid-staging-") {
+			t.Fatalf("staging residue %q remains", entry.Name())
+		}
 	}
 }
 
