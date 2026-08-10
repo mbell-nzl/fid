@@ -15,11 +15,34 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-004 | 2026-08-10 | Infrastructure Review 1 found a retained integration-tagged in-process test outside both accepted gates | `qa/infra-review-1.md` | BLOCK | ESC-20-004 | Task 3f's direct-parent inventory omitted `internal/issues/transition_rules_test.go`; repository-wide classification and ordinary ownership are required before Task 4. |
 | TRG-20-003 | 2026-08-09 | Task 3d blocker report: required full-suite coverage gate has no captured terminal output and report-lint fails on three go-test prose false matches | `tasks/task-3d-done.md` | BLOCK | ESC-20-003 | The required gate is UNVERIFIED, not PASS; the new report-lint control also has an unresolved three-failure false-match defect. |
 | TRG-20-002 | 2026-08-09 | Bounded QA re-review review-1b returned BLOCK with two unresolved findings before Task 4 | `qa/review-1b.md` | BLOCK | ESC-20-002 | VAL-043 has an exhaustive evidence gap and the required integration gate fails in three init scenarios. |
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-004 - Infrastructure Review 1 found an orphaned tagged test
+
+- **Trigger:** The fresh infrastructure review found
+  `internal/issues/transition_rules_test.go` still tagged while Task 3f's
+  canonical dedicated command runs only `cmd/fid/integration`; the ordinary
+  command excludes the file and the classification regression scanned only
+  the direct `cmd/fid` parent.
+- **Source:** `project-docs/docs/phases/phase-20/qa/infra-review-1.md`
+- **Verdict:** BLOCK
+- **Reasoning:** This is a cross-task gate-definition regression against
+  DEC-133's complete tagged-test accounting. The test's real persistence
+  assertion is valid, but no accepted command executes it. The Human-approved
+  pack explicitly requires blocking findings to be corrected and returned to
+  the same reviewer before Task 4.
+- **Local decisions made:** none; correction follows DEC-133's existing rule
+  that in-process tests belong to the ordinary suite and that every tagged
+  test must be inventoried.
+- **References:** `qa/infra-review-1.md`; `decisions.md` DEC-133;
+  `infra-improvement-pack.md` Invariants and Final Evidence Contract.
+- **If BLOCK:** ESC-20-004 raised in `tl_escalations_current.md`; correction
+  commit `75c856a` awaits complete post-fix gates and same-reviewer re-review.
 
 ## TRG-20-003 - Task 3d blocked by uncaptured coverage gate and report-lint false matches
 

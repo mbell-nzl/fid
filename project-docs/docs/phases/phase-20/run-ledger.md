@@ -433,3 +433,38 @@ Human-approved and QA-plan acceptance is next._
   timing evidence
 - Deliverable: committed `qa/infra-review-1.md` with Blocking/Improvement
   findings and explicit verdict; Task 4 remains blocked
+
+### 2026-08-10 REVIEW infra-review-1 BLOCK
+
+- Review commit: `b34367af9ee08a2d0d395ae9060e883c1c24d3bb`
+- Verdict: BLOCK; ESC-20-004 records one integration-tagged in-process test
+  outside both the ordinary and dedicated accepted gates
+- Reproduction: tagged targeted invocation ran and passed; ordinary targeted
+  invocation returned `[no tests to run]`; the dedicated gate could not reach
+  `internal/issues`
+- Required correction: move the retained in-process test into the ordinary
+  suite and make the tagged-test inventory repository-wide
+
+### 2026-08-10 ESC-20-004 CORRECTION START
+
+- First failing regression: repository-wide classification failed with
+  `integration-tagged tests outside dedicated package = [internal/issues/transition_rules_test.go], want none`
+- Correction commit: `75c856a` (`test(integration): enforce repository-wide classification`)
+- Green focused evidence: the ordinary targeted race invocation visibly ran
+  and passed the retained test at 1.909s; the dedicated classification race
+  test passed at 1.444s
+- Next action: run complete post-fix gates and return the committed correction
+  and evidence to the same independent reviewer
+
+### 2026-08-10 ESC-20-004 CORRECTION GATE COMPLETE
+
+- Format and lint: PASS; `exit 0 (no output)` and `0 issues.`
+- Ordinary race/coverage: PASS with observed nested-session `exit_code: 0`;
+  `internal/issues` ran for 30.529s at 82.1% coverage
+- Coverage report: PASS at 77.9% total; dedicated integration: PASS at 4.470s
+- Full benchmarks: PASS; 100k rebuild 24.430s/op and final package 0.438s
+- Build and workflow-lint: PASS; silent exit 0 and
+  `PASS workflow-lint completed with no failures`
+- Failures: none in the post-correction gate sequence
+- Next action: commit the correction evidence and return ESC-20-004 to the
+  same independent reviewer; Task 4 remains blocked

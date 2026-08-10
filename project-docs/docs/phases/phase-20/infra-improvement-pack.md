@@ -17,15 +17,16 @@
 
 ## Current Checkpoint
 
-- Pack status: `APPROVED`
+- Pack status: `CORRECTING REVIEW BLOCK`
 - Branch: `phase-20`
-- Last verified commit: `e80cb3bd48925596b713a3a6f3baec19c87256f9`
-- Current task: independent infrastructure review
+- Last verified commit: `75c856a`
+- Current task: ESC-20-004 correction and re-review
 - Frozen review range: `81e1576169d3d798b6ee0391f82955210dfb6823^..e80cb3bd48925596b713a3a6f3baec19c87256f9`
-- Next exact action: fresh QA Reviewer independently audits the frozen range,
-  writes and commits `qa/infra-review-1.md`, and returns a BLOCK/NON-BLOCK
-  verdict with findings
-- Open blockers: none
+- Next exact action: commit the complete post-fix evidence, update this anchor
+  with that verified commit, then return the correction to the same QA Reviewer
+- Open blockers: ESC-20-004 - the first independent review found one
+  integration-tagged in-process test outside both accepted gates; correction
+  is implemented but awaits complete gates and same-reviewer re-review
 - Active command: none
 
 When a command is live across a tool yield, replace `Active command: none` with
@@ -150,6 +151,15 @@ time fell from 8.440s to 4.331s (48.7%). Remaining `time.Sleep` references are
 the production journal-lock backoff seam, its contention/cancellation test,
 and the closure source guard's diagnostic string.
 
+Infrastructure Review 1 found one Task 3f inventory omission: the direct-parent
+guard could not see `internal/issues/transition_rules_test.go`, leaving that
+tagged in-process test outside both accepted gates. Correction `75c856a`
+reproduced the finding with a repository-wide guard, removed only the misplaced
+build constraint, and retained the complete persistence assertion in the
+ordinary suite. The corrected inventory permits integration tags only under
+`cmd/fid/integration`; the ordinary targeted race invocation visibly ran the
+retained test, and the dedicated classifier passed.
+
 ## Final Gate Results
 
 - All eight Task 3e-3l report lints: PASS; each ended with
@@ -172,6 +182,28 @@ and the closure source guard's diagnostic string.
   PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	172.806s`.
 - `go test -tags integration -race -count=3 ./cmd/fid/integration/...`:
   PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.161s`.
+
+Post-review correction gate on commit `75c856a`:
+
+- Focused ordinary ownership: PASS -
+  `--- PASS: TestEvaluateTransitionRuleConcernsAddressedUsesRealConcernWrites (0.89s)`.
+- Repository-wide classification red: expected FAIL before tag removal -
+  `integration-tagged tests outside dedicated package = [internal/issues/transition_rules_test.go], want none`.
+- Repository-wide classification green: PASS - dedicated classifier ended
+  `ok` in 1.444s.
+- `gofmt -l cmd internal`: PASS - `exit 0 (no output)`.
+- `golangci-lint run ./...`: PASS - `0 issues.`.
+- `go test -race -coverprofile=coverage.out ./...`: PASS - the retained
+  package ran for 30.529s at 82.1% coverage and the command reached
+  `exit_code: 0`.
+- `go tool cover -func=coverage.out`: PASS - total statement coverage 77.9%.
+- `go test -tags integration -race ./cmd/fid/integration/...`: PASS -
+  dedicated integration ran for 4.470s.
+- `go test -bench . -benchmem ./...`: PASS - 100k rebuild measured
+  24.430s/op and the final workflow package ran for 0.438s.
+- `go build -o /tmp/fid ./cmd/fid`: PASS - `exit 0 (no output)`.
+- `project-docs/tools/workflow-lint.sh`: PASS -
+  `PASS workflow-lint completed with no failures`.
 
 ## Invariants
 
@@ -206,7 +238,8 @@ and the closure source guard's diagnostic string.
 | Task 3k claims clock | COMPLETE | `bec40c8` | `tasks/task-3k-done.md` | PASS | report-lint PASS |
 | Task 3l maintenance clock use | COMPLETE | `16978f5` | `tasks/task-3l-done.md` | PASS | report-lint PASS |
 | Final measurements/gates | COMPLETE | - | this file | PASS | pending independent review |
-| Independent infra review | IN_PROGRESS | - | `qa/infra-review-1.md` | - | pending |
+| Independent infra review | BLOCKED | `b34367a` | `qa/infra-review-1.md` | reviewer reproductions PASS | BLOCK: ESC-20-004 |
+| ESC-20-004 correction/re-review | IN_PROGRESS | `75c856a` | this file | focused red/green and full gate PASS | pending |
 
 Only one row may be `IN_PROGRESS`. A task becomes `COMPLETE` only after focused
 red/green evidence, every exact command PASS, verified task commit, finalized

@@ -17,8 +17,11 @@
   Reproduction: tagged targeted test PASS; ordinary targeted test PASS with
   `[no tests to run]`; dedicated command PASS. This contradicts DEC-133's
   complete tagged-test accounting and leaves a real concern-write transition
-  rule outside every accepted gate. Full Tech Lead resolution is required
-  before Task 4.
+  rule outside every accepted gate. DEC-134 sustains the finding. Correction
+  `75c856a` makes the inventory repository-wide and moves the retained test
+  into the ordinary suite without changing its assertions; complete post-fix
+  gates pass. ESC-20-004 remains open until the same reviewer returns a
+  non-BLOCK verdict; Task 4 remains blocked.
 
 ---
 

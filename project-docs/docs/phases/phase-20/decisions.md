@@ -637,6 +637,35 @@
   `qa/review-1c.md`; tasks 3e-3l; `AGENTS.md`; `08_QUALITY_PLAN.md`;
   `09_AI_WORKFLOW.md` §8.
 
+### DEC-134: ESC-20-004 sustains the review finding and applies DEC-133 repository-wide
+
+- **Date:** 2026-08-10
+- **Context:** Infrastructure Review 1 found
+  `internal/issues/transition_rules_test.go` retained its integration build
+  constraint after Task 3f. The classification guard inspected only the direct
+  `cmd/fid` parent, the ordinary gate therefore excluded this test, and the
+  dedicated command could not reach `internal/issues`. The Human-approved
+  pack requires every Blocking finding to be corrected and returned to the
+  same reviewer before Task 4.
+- **Decision:**
+  1. Sustain ESC-20-004 as a gate-definition regression, not a product defect
+     and not grounds to weaken the retained persistence assertion.
+  2. Apply DEC-133's existing classification across the whole repository:
+     integration-tagged tests may exist only in the dedicated real-process
+     package; in-process tests belong to the ordinary suite.
+  3. Use a failing repository-wide source inventory to reproduce the omission,
+     remove only the orphaned file's build constraint, and preserve its test
+     body unchanged. Correction commit `75c856a` implements this path.
+  4. Rerun the complete phase-level gate on the corrected tree. ESC-20-004
+     remains open and Task 4 remains blocked until the same independent
+     reviewer returns a non-BLOCK verdict.
+- **Consequences:** The retained concern-write transition test becomes part of
+  ordinary race/coverage, and a future tagged test anywhere outside
+  `cmd/fid/integration` fails the dedicated classifier. No product code,
+  public contract, VAL, dependency, or accepted gate command changes.
+- **Refs:** `TRG-20-004`; `ESC-20-004`; `qa/infra-review-1.md`; DEC-133;
+  correction `75c856a`; `infra-improvement-pack.md`.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.
