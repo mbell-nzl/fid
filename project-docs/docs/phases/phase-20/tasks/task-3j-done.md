@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `338c5dc9289aa85d1592fe0817f5cbb10d4cf609`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): parallelize isolated command tests`

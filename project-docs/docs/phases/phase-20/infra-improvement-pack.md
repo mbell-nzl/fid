@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `cc73b086d7ebd1d45fbaa86c939d92c60ca94f53`
+- Last verified commit: `338c5dc9289aa85d1592fe0817f5cbb10d4cf609`
 - Current task: Task 3j - bounded command-test parallelism
-- Next exact action: commit Task 3j implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3j's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 

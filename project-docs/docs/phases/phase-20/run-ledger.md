@@ -296,3 +296,13 @@ Human-approved and QA-plan acceptance is next._
 - Boundary: Go scheduler-bounded parallelism only for cloned, global-state-free
   tests; protected real-init owners remain serial
 - Next action: capture the failing goroutine-safe concurrency regression
+
+### 2026-08-10 TASK task-3j IMPLEMENTED
+
+- Task commit: `338c5dc9289aa85d1592fe0817f5cbb10d4cf609` - verified,
+  subject matched (`test(cli): parallelize isolated command tests`)
+- Isolation: concurrent two-workspace race regression PASS; 104 isolated
+  top-level tests parallel, protected owners serial
+- Timing: 88.748s to 72.130s one-count; 431.955s to 353.465s five-count
+- Required gates: PASS with observed terminal results; report finalization and
+  report-lint remain
