@@ -375,3 +375,14 @@ Human-approved and QA-plan acceptance is next._
   journey state; real CLI defaults and maintenance rules remain unchanged
 - Next action: capture exact-boundary coverage and remove the dedicated
   closure journey's four-second wall-clock sleep
+
+### 2026-08-10 TASK task-3l IMPLEMENTED
+
+- Task commit: `16978f597eb8c31a727f02670165013805efea90` - verified,
+  subject matched (`test(maintenance): make closure timing deterministic`)
+- Fixed-time boundary: 299.999999999s excluded, 300s and 300.000000001s
+  included; closure maintenance results match exactly across rebuild
+- Sleep inventory: closure sleep removed; only journal lock backoff/cancellation
+  timing and the AST guard's diagnostic string remain
+- Required gates: PASS; ten-count dedicated result 32.305s and fresh dedicated
+  result 4.331s; report finalization and report-lint remain
