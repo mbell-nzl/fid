@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `1acec1c000b4c95420ec4a4cc857517b2f05e6a7`
+- Last verified commit: `ec72fdad4cf1e21be82b22644b382825b91d3b0f`
 - Current task: Task 3f - dedicated integration package and gate migration
-- Next exact action: commit Task 3f implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3f's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 

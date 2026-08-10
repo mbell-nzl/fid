@@ -204,3 +204,13 @@ Human-approved and QA-plan acceptance is next._
   real-binary journeys, and run old/new integration commands before migration
 - Next action: capture the complete before inventory and add the classification
   regression
+
+### 2026-08-10 TASK task-3f IMPLEMENTED
+
+- Task commit: `ec72fdad4cf1e21be82b22644b382825b91d3b0f` - verified,
+  subject matched (`test(integration): isolate real-process journeys`)
+- Classification: 12 in-process tests ordinary; four real-process journeys in
+  the dedicated package; source-level regression PASS
+- Required gates: workflow, format, lint, coverage, cover, old integration,
+  new integration, and build PASS with observed terminal results
+- Next action: finalize the report and run report-lint

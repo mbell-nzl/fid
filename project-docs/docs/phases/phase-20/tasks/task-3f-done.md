@@ -87,8 +87,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ec72fdad4cf1e21be82b22644b382825b91d3b0f`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): isolate real-process journeys`
