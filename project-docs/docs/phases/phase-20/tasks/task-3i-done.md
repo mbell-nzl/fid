@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `3e830b49c8a90472f091e7b852848cf6f86694d8`
 
 ## Commit subject
 
-- Pending commit
+- `refactor(cli): inject command working directory`

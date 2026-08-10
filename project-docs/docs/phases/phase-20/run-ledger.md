@@ -274,3 +274,12 @@ Human-approved and QA-plan acceptance is next._
 - Boundary: production captures the caller cwd once; tests inject isolated
   roots; public workspace-selection semantics remain unchanged
 - Next action: capture the failing no-process-chdir regression
+
+### 2026-08-10 TASK task-3i IMPLEMENTED
+
+- Task commit: `3e830b49c8a90472f091e7b852848cf6f86694d8` - verified,
+  subject matched (`refactor(cli): inject command working directory`)
+- Inventory: no `os.Chdir`/`mustChdir`; production has one constructor-owned
+  `os.Getwd`; injected/default/relative-path focused tests PASS
+- Exact five-count race gate: PASS after 431.955s with observed terminal output
+- Remaining required gates: PASS; report finalization and report-lint remain

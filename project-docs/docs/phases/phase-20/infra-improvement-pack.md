@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `9a251582f2d1d95e05f4c46b3d0c67186574b20b`
+- Last verified commit: `3e830b49c8a90472f091e7b852848cf6f86694d8`
 - Current task: Task 3i - explicit command working directory
-- Next exact action: commit Task 3i implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3i's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 
