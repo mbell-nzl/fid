@@ -12,7 +12,7 @@ import (
 
 func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -78,7 +78,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 
 func TestLabelListDefaultsToJSON(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "tech-debt", "--by", "developer")
@@ -112,7 +112,7 @@ func TestLabelListDefaultsToJSON(t *testing.T) {
 
 func TestLabelListFormatsMatchJSONReference(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "tech-debt", "--by", "developer")
@@ -150,7 +150,7 @@ func TestLabelListFormatsMatchJSONReference(t *testing.T) {
 func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 	t.Run("duplicate add", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 		runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 
 		journalPath := mustJournalPath(t, workspace)
@@ -173,7 +173,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 
 	t.Run("denied and unknown reject before append", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -224,7 +224,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 
 func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {

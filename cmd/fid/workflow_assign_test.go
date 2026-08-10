@@ -9,7 +9,7 @@ import (
 
 func TestWorkflowAssignProjectsOneKindAssignment(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace,
 		"workflow", "define",
 		"--name", "assigned-task-flow",
@@ -60,7 +60,7 @@ func TestWorkflowAssignProjectsOneKindAssignment(t *testing.T) {
 
 func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
 
 	seen := make(map[string]struct{})

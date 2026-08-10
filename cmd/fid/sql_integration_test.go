@@ -9,7 +9,7 @@ import (
 
 func TestSQLCommandRejectsMutationAttemptsWithoutChangingProjectedCounts(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,

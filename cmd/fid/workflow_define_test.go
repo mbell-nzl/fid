@@ -16,7 +16,7 @@ import (
 
 func TestWorkflowDefineProjectsDeclaredStatesTransitionsAndRules(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
@@ -74,7 +74,7 @@ func TestWorkflowDefineProjectsDeclaredStatesTransitionsAndRules(t *testing.T) {
 
 func TestWorkflowDefineAuthorizesBeforeParsingAndDoesNotAppendOnDenial(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
 	before := mustReadCommandFile(t, journalPath)
 
@@ -105,7 +105,7 @@ func TestWorkflowDefineAuthorizesBeforeParsingAndDoesNotAppendOnDenial(t *testin
 
 func TestWorkflowDefinePreservesJSONRequirementParametersAfterTheEdgeColon(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(
 		t,
@@ -164,7 +164,7 @@ func TestWorkflowDefineRejectsWithoutMutatingJournalOrWorkflowTables(t *testing.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 			journalPath := mustJournalPath(t, workspace)
 			beforeJournal := mustReadCommandFile(t, journalPath)
 			conn := openWorkflowCommandDB(t, workspace)
@@ -204,7 +204,7 @@ func TestWorkflowDefineNormalizesArrowsAndAcceptsAppliesToVocabulary(t *testing.
 	for _, arrow := range []string{"->", "-->", "→", "⟶"} {
 		t.Run("arrow "+arrow, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 			runFIDCommand(t, workspace, "workflow", "define", "--name", "arrow-flow", "--applies-to", "task", "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", " todo "+arrow+" done ", "--by", "tl")
 			conn := openWorkflowCommandDB(t, workspace)
 			defer closeCommandDB(t, conn)
@@ -215,7 +215,7 @@ func TestWorkflowDefineNormalizesArrowsAndAcceptsAppliesToVocabulary(t *testing.
 	for _, appliesTo := range []string{"epic", "task", "subtask", "qa_review", "escalation", "any"} {
 		t.Run("applies to "+appliesTo, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 			states, categories, transitions := "todo,done,cancelled", "unstarted,completed,cancelled", "todo->done"
 			if appliesTo == "qa_review" || appliesTo == "escalation" {
 				states, categories, transitions = "open,resolved", "unstarted,completed", "open->resolved"

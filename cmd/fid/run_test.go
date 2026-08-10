@@ -11,7 +11,7 @@ import (
 
 func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -69,7 +69,7 @@ func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
 
 func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -130,7 +130,7 @@ func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
 
 func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -175,7 +175,7 @@ func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
 
 func TestRunRecordPolicyShowMatchesAllowedRoles(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {

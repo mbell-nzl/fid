@@ -16,7 +16,7 @@ import (
 
 func TestActivityListAppliesFilters(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	primaryIssueID := createActivityCommandIssue(t, workspace, "Primary issue")
 	secondaryIssueID := createActivityCommandIssue(t, workspace, "Secondary issue")
@@ -95,7 +95,7 @@ func TestActivityListAppliesFilters(t *testing.T) {
 
 func TestActivityListDispatchesFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := createActivityCommandIssue(t, workspace, "Primary issue")
 	entry := newActivityCommandSeedIdentity(t, workspace, 100, 33*time.Hour)

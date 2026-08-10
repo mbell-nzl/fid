@@ -15,7 +15,7 @@ import (
 
 func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	taskID := createStatsCommandIssue(t, workspace, "task", "CLI stats task", nil)
 	recordStatsCommandRun(t, workspace, taskID, "developer", "claude-sonnet-4-6", 120, 30)
@@ -47,7 +47,7 @@ func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
 
 func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	epicID := createStatsCommandIssue(t, workspace, "epic", "CLI telemetry epic", nil)
 	taskID := createStatsCommandIssue(t, workspace, "task", "CLI epic task", stringPointer(epicID))
@@ -141,7 +141,7 @@ func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 
 func TestStatsCostSupportsFormatsAndExcludesNullCostsFromSum(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	epicID := createStatsCommandIssue(t, workspace, "epic", "CLI cost epic", nil)
 	taskID := createStatsCommandIssue(t, workspace, "task", "CLI cost task", stringPointer(epicID))

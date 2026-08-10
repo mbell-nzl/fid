@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `b08c9ddab22ff600a020695cdf6467708492d591`
+- Last verified commit: `f2dc4f8c587eb1eca3f6e923967808037cf898a4`
 - Current task: Task 3h - reusable pristine workspace fixture
-- Next exact action: add the failing clone parity/isolation regression, then
-  implement the package-owned real-initialization template
+- Next exact action: commit Task 3h implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -85,6 +85,16 @@ Task 3g binary inventory: `main_test.go` contains the sole real
 `buildClosureFIDBinary` function remains. All four journeys still allocate a
 distinct `t.TempDir()` workspace. The final fresh dedicated race run took
 8.228s after one package-owned build, versus Task 3f's 10.266s four-build run.
+
+Task 3h fixture inventory: package `TestMain` creates one closed template via
+the complete production `InitializeWorkspace` path. The regression proves two
+clones are byte-and-mode equivalent, mutation-isolated, and byte-equivalent
+after rebuild. 116 exact default-init setups in 25 non-protected command-test
+files now clone it. Fifty real-init calls remain across the protected init,
+rebuild, journal, maintenance durability, golden/rebuild scenario, and
+compatibility-heavy Issue/AC owners. Directly comparable uncached package race
+time fell from 150.540s to 88.748s (41.0%); the exact coverage run reported
+88.773s for `cmd/fid`.
 
 ## Invariants
 

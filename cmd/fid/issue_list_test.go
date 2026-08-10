@@ -11,7 +11,7 @@ import (
 
 func TestIssueListFiltersAndOrdering(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -78,7 +78,7 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 
 func TestIssueListDispatchesFormatsAndRejectsUnknownFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {

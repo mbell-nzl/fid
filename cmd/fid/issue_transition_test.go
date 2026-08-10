@@ -14,7 +14,7 @@ import (
 
 func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI transition", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -47,7 +47,7 @@ func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 
 func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI invalid transition", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -93,7 +93,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 
 func TestIssueTransitionRendersRuleFailures(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI rule failure", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -146,7 +146,7 @@ func TestIssueTransitionRendersRuleFailures(t *testing.T) {
 
 func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI role validation", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -228,7 +228,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 
 			_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", tt.name, "--by", "developer")
 			issueID := parseCreatedIssueID(t, createStderr)
@@ -280,7 +280,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 
 func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI state permissions", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -336,7 +336,7 @@ func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 
 func TestIssueTransitionReleasesCallerClaimWhenLeavingStartedState(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, parentStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI parent", "--by", "developer")
 	parentID := parseCreatedIssueID(t, parentStderr)

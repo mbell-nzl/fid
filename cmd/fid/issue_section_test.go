@@ -13,7 +13,7 @@ import (
 func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
 	t.Run("json read-back exposes populated and omitted due dates", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		_, withDueDateStderr := runFIDCommand(
 			t,
@@ -61,7 +61,7 @@ func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
 
 	t.Run("sections return only the requested structured data and stable empty states", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 		if err != nil {

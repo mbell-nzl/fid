@@ -8,7 +8,7 @@ import (
 
 func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Implement issue update", "--priority", "2", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -58,7 +58,7 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 
 func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Single field update", "--priority", "2", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -88,7 +88,7 @@ func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
 
 func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Reject invalid update", "--priority", "2", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -128,7 +128,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 
 func TestIssueUpdateRequiresKnownByRole(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Role validation update", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)

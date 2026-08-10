@@ -15,7 +15,7 @@ import (
 
 func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	defaultStdout, defaultStderr := runFIDCommand(t, workspace, "policy", "show")
 	if defaultStderr != "" {
@@ -75,7 +75,7 @@ func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
 
 func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	journalPath := mustJournalPath(t, workspace)
 	beforePayload, err := os.ReadFile(journalPath)
@@ -131,7 +131,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 
 func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {
@@ -195,7 +195,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 
 func TestPolicyShowIncludesWorkflowAuthoringRowsInEveryFormat(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	for _, formatName := range []string{"json", "toon", "yaml"} {
 		t.Run(formatName, func(t *testing.T) {

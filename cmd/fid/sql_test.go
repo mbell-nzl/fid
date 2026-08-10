@@ -11,7 +11,7 @@ import (
 
 func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	jsonStdout, jsonStderr := runFIDCommand(
 		t,
@@ -96,7 +96,7 @@ func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 
 func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	tests := []struct {
 		name         string
@@ -134,7 +134,7 @@ func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
 
 func TestSQLCommandRequiresSingleQueryArgument(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "sql")
 	if err == nil {

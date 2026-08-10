@@ -12,7 +12,7 @@ import (
 
 func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -62,7 +62,7 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 
 func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -129,7 +129,7 @@ func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.
 
 func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {
@@ -216,7 +216,7 @@ func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 
 func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := seedCommandDevFinishReadyIssue(t, workspace)
 
@@ -265,7 +265,7 @@ func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 
 func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := seedCommandStartedIssue(t, workspace, "CLI dev block")
 	runFIDCommand(
@@ -324,7 +324,7 @@ func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
 
 func TestDevFinishAndBlockDeniedRolesRejectBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	finishIssueID := seedCommandDevFinishReadyIssue(t, workspace)
 	blockIssueID := seedCommandStartedIssue(t, workspace, "CLI denied dev block")

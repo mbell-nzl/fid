@@ -12,7 +12,7 @@ import (
 
 func TestWorkflowListRendersDocumentedJSONFieldSet(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "workflow", "list")
 	if stderr != "" {
@@ -42,7 +42,7 @@ func TestWorkflowListRendersDocumentedJSONFieldSet(t *testing.T) {
 
 func TestWorkflowListFormatsFiltersAndAssignments(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	conn := openWorkflowCommandDB(t, workspace)
 	seedWorkflowListCommandFixture(t, conn)
 	closeCommandDB(t, conn)
@@ -86,7 +86,7 @@ func TestWorkflowListFormatsFiltersAndAssignments(t *testing.T) {
 	}
 
 	emptyWorkspace := t.TempDir()
-	runInitCommand(t, emptyWorkspace, "init")
+	clonePristineWorkspaceInto(t, emptyWorkspace)
 	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
 		stdout, stderr := runFIDCommand(t, emptyWorkspace, "workflow", "list", "--kind", "qa_review", "--format", formatName)
 		if stderr != "" || stdout != "[]\n" {

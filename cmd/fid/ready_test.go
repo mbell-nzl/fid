@@ -11,7 +11,7 @@ import (
 
 func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -108,7 +108,7 @@ func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
 
 func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -302,7 +302,7 @@ func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 
 func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -408,7 +408,7 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 
 func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
 	selectedWorkspace := t.TempDir()
-	runInitCommand(t, selectedWorkspace, "init")
+	clonePristineWorkspaceInto(t, selectedWorkspace)
 
 	selectedConn, err := fiddb.Open(filepath.Join(selectedWorkspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -432,7 +432,7 @@ func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
 	})
 
 	emptyWorkspace := t.TempDir()
-	runInitCommand(t, emptyWorkspace, "init")
+	clonePristineWorkspaceInto(t, emptyWorkspace)
 
 	emptyConn, err := fiddb.Open(filepath.Join(emptyWorkspace, ".fid", "fid.sqlite"))
 	if err != nil {

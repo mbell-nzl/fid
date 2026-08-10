@@ -12,7 +12,7 @@ import (
 
 func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, firstStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "First issue", "--by", "developer")
 	firstIssueID := parseCreatedIssueID(t, firstStderr)
@@ -114,7 +114,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testing.T) {
 	t.Run("implements requirement", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		issueID := createCommandIssue(t, workspace, "Implements issue")
 		syncCommandRequirement(t, workspace, "PRD-LINK-002")
@@ -213,7 +213,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 		for _, tt := range tests {
 			t.Run(tt.name, func(t *testing.T) {
 				workspace := t.TempDir()
-				runInitCommand(t, workspace, "init")
+				clonePristineWorkspaceInto(t, workspace)
 				ids := tt.setup(t, workspace)
 
 				command := append([]string(nil), tt.command...)
@@ -245,7 +245,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 
 func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	firstIssueID := createCommandIssue(t, workspace, "First issue")
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
@@ -368,7 +368,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 			ids := tt.setup(t, workspace)
 
 			command := append([]string(nil), tt.command...)
@@ -399,7 +399,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 
 func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {
@@ -438,7 +438,7 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 
 func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParity(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	primaryIssueID := createCommandIssue(t, workspace, "Primary issue")
 	outgoingIssueID := createCommandIssue(t, workspace, "Schema migration runner")
@@ -525,7 +525,7 @@ func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParit
 
 func TestLinkListEmptyResult(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := createCommandIssue(t, workspace, "Unlinked issue")
 

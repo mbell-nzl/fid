@@ -10,7 +10,7 @@ import (
 
 func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -123,7 +123,7 @@ func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 
 func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr, err := runFIDCommandExpectError(
 		t,
@@ -146,7 +146,7 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 
 func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -290,7 +290,7 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 
 func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr, err := runFIDCommandExpectError(
 		t,
@@ -311,7 +311,7 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 
 func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	firstIssueID, firstConcernID := seedConcernListIssueAndConcern(t, workspace, "First concern", true)
 	secondIssueID, secondConcernID := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
@@ -375,7 +375,7 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 
 func TestConcernListDispatchesFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, _ = seedConcernListIssueAndConcern(t, workspace, "First concern", true)
 	secondIssueID, _ := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)

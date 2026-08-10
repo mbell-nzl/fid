@@ -48,7 +48,7 @@ type v01FormatMatrixSeed struct {
 func seedV01FormatMatrixWorkspace(t *testing.T, workspace string) v01FormatMatrixSeed {
 	t.Helper()
 
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, issueStderr := runFIDCommand(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Format matrix task", "--priority", "0", "--by", "developer",

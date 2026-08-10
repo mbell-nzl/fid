@@ -15,7 +15,7 @@ import (
 
 func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
 	if err != nil {
@@ -73,7 +73,7 @@ func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 
 func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
 		t.Run(formatName, func(t *testing.T) {
@@ -168,7 +168,7 @@ func seedCorruptWorkflowFixture(t *testing.T, conn *sql.DB, issueID string) {
 
 func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -219,7 +219,7 @@ func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.
 
 func TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	configPath := filepath.Join(workspace, ".fid", "config.toml")
 	configBytes, err := os.ReadFile(configPath)
 	if err != nil {

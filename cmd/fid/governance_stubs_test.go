@@ -11,7 +11,7 @@ import (
 
 func TestGovernanceStubCommandsReturnVersionGateBeforeValidation(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
@@ -128,7 +128,7 @@ func TestGovernanceStubFamiliesAppearInRootHelp(t *testing.T) {
 
 func TestRequirementSyncRemainsShippedAlongsideGovernanceStubGuards(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 	writeRequirementFixture(t, workspace, "project-docs/specs/control.md", `# Control
 
 | ID | Requirement | Priority | Notes |

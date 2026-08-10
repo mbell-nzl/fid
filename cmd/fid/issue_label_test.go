@@ -13,7 +13,7 @@ import (
 
 func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "api", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
@@ -139,7 +139,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 	t.Run("add rejects missing and duplicate label", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 		_, createStderr := runFIDCommand(
@@ -185,7 +185,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 
 	t.Run("permissions reject denied and unknown roles", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 		_, createStderr := runFIDCommand(
@@ -231,7 +231,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 
 func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "api", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
@@ -356,7 +356,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 
 func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 	_, createStderr := runFIDCommand(
@@ -390,7 +390,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 
 func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
 	if stderr != "" {

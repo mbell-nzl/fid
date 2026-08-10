@@ -12,7 +12,7 @@ import (
 
 func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI completion", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -147,7 +147,7 @@ func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *
 
 func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI supersession", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -217,7 +217,7 @@ func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t
 
 func TestIssueCompleteCommandRejectsEpicBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Epic completion reject", "--scheduling", "sequential", "--by", "tl")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -313,7 +313,7 @@ func TestIssueCompleteCommandRejectsUnknownRoleAndMissingIssueBeforeAppend(t *te
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 
 			args := tt.args(t, workspace)
 			journalPath := mustJournalPath(t, workspace)
