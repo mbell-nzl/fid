@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `338c5dc9289aa85d1592fe0817f5cbb10d4cf609`
-- Current task: Task 3j - bounded command-test parallelism
-- Next exact action: commit Task 3j's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `587a86991d8cfa89c06c4eed7c9b30cf981167fd`
+- Current task: Task 3k - deterministic claims time
+- Next exact action: add the fixed-time exact-expiry boundary regression and
+  capture its expected failure before implementation
 - Open blockers: none
 - Active command: none
 
@@ -143,8 +143,8 @@ five-count time fell from 431.955s to 353.465s.
 | Task 3g shared binary | COMPLETE | `1edb689` | `tasks/task-3g-done.md` | PASS | report-lint PASS |
 | Task 3h workspace fixture | COMPLETE | `bca799f` | `tasks/task-3h-done.md` | PASS | report-lint PASS |
 | Task 3i remove `os.Chdir` | COMPLETE | `3e830b4` | `tasks/task-3i-done.md` | PASS | report-lint PASS |
-| Task 3j bounded parallelism | IN_PROGRESS | - | `tasks/task-3j-done.md` | - | - |
-| Task 3k claims clock | PENDING | - | `tasks/task-3k-done.md` | - | - |
+| Task 3j bounded parallelism | COMPLETE | `338c5dc` | `tasks/task-3j-done.md` | PASS | report-lint PASS |
+| Task 3k claims clock | IN_PROGRESS | - | `tasks/task-3k-done.md` | - | - |
 | Task 3l maintenance clock use | PENDING | - | `tasks/task-3l-done.md` | - | - |
 | Final measurements/gates | PENDING | - | this file | - | - |
 | Independent infra review | PENDING | - | `qa/infra-review-1.md` | - | - |

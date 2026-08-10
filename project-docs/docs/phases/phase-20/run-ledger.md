@@ -306,3 +306,18 @@ Human-approved and QA-plan acceptance is next._
 - Timing: 88.748s to 72.130s one-count; 431.955s to 353.465s five-count
 - Required gates: PASS with observed terminal results; report finalization and
   report-lint remain
+
+### 2026-08-10 TASK task-3j COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3j-done.md`
+- Report-lint: PASS with all seven required commands recorded
+- Final report commit: `587a86991d8cfa89c06c4eed7c9b30cf981167fd`
+- Next task: task-3k deterministic claims time
+
+### 2026-08-10 TASK task-3k START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3k.md`
+- Boundary: inject one optional operation timestamp at the narrow claims
+  domain seam; zero values retain real UTC time and claim semantics stay fixed
+- Next action: capture the failing exact-expiry boundary regression, then
+  remove claim command sleeps through deterministic test fixture state
