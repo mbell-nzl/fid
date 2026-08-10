@@ -19,11 +19,13 @@
 
 - Pack status: `CORRECTING REVIEW BLOCK`
 - Branch: `phase-20`
-- Last verified commit: `75c856a`
+- Last verified commit: `c4131a790ad332cb5f4258ebc707c79bc74b29ce`
 - Current task: ESC-20-004 correction and re-review
 - Frozen review range: `81e1576169d3d798b6ee0391f82955210dfb6823^..e80cb3bd48925596b713a3a6f3baec19c87256f9`
-- Next exact action: commit the complete post-fix evidence, update this anchor
-  with that verified commit, then return the correction to the same QA Reviewer
+- Frozen correction range: `75c856a^..c4131a7`
+- Next exact action: the same QA Reviewer audits the frozen correction range,
+  appends committed re-review evidence to `qa/infra-review-1.md`, and returns a
+  BLOCK/NON-BLOCK verdict
 - Open blockers: ESC-20-004 - the first independent review found one
   integration-tagged in-process test outside both accepted gates; correction
   is implemented but awaits complete gates and same-reviewer re-review

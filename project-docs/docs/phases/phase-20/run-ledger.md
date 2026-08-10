@@ -468,3 +468,13 @@ Human-approved and QA-plan acceptance is next._
 - Failures: none in the post-correction gate sequence
 - Next action: commit the correction evidence and return ESC-20-004 to the
   same independent reviewer; Task 4 remains blocked
+
+### 2026-08-10 ESC-20-004 RE-REVIEW START
+
+- Correction commit: `75c856a`; evidence/decision commit: `c4131a7`
+- Frozen correction range: `75c856a^..c4131a7`
+- Reviewer: the same independent QA Reviewer who authored Infrastructure
+  Review 1, preserving finding ownership while remaining independent of repair
+- Required disposition: append committed re-review evidence and an explicit
+  BLOCK/NON-BLOCK verdict to `qa/infra-review-1.md`
+- Task 4 remains blocked
