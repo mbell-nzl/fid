@@ -96,13 +96,16 @@
 - `go test -tags integration -race ./...` - PASS -
   `ok  github.com/mbell-nzl/fid/internal/workflow  (cached)`.
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
-- Conditional correction-report lints for Tasks 1, 2, and 3 - PASS -
-  `PASS report-lint completed with no failures` for each report.
-- Conditional correction-report lint for Task 3a first returned
-  `FAIL report-lint found 1 failure(s)` because the historical focused test
-  recorded only `ok`. The Task 3a and Task 3b historical-report corrections
-  are committed with this finalized report, then the byte-identical Task 3a
-  lint and the Task 3b lint are run against committed, clean reports.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-1-done.md project-docs/docs/phases/phase-20/tasks/task-1.md` - PASS -
+  `PASS report-lint completed with no failures`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-2-done.md project-docs/docs/phases/phase-20/tasks/task-2.md` - PASS -
+  `PASS report-lint completed with no failures`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3-done.md project-docs/docs/phases/phase-20/tasks/task-3.md` - PASS -
+  `PASS report-lint completed with no failures`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3a-done.md project-docs/docs/phases/phase-20/tasks/task-3a.md` - PASS on byte-identical rerun -
+  `PASS report-lint completed with no failures`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3b-done.md project-docs/docs/phases/phase-20/tasks/task-3b.md` - PASS -
+  `PASS report-lint completed with no failures`.
 
 ## Deviations from spec
 
@@ -121,7 +124,8 @@
   `wc -l` token on a combined focused command. Fix: preserve both original
   records and classify those uncaptured commands UNVERIFIED under DEC-131.
   The validator and command are not weakened or narrowed; the byte-identical
-  rerun occurs after this commit makes both corrected reports clean.
+  rerun passed with `PASS report-lint completed with no failures` after the
+  finalized-report commit made both corrected reports clean.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
