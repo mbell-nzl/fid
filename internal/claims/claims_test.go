@@ -340,6 +340,62 @@ func TestAcquireRejectsLiveConflictBeforeAppend(t *testing.T) {
 	}
 }
 
+func TestAcquireUsesSuppliedTimeAtExpiryBoundary(t *testing.T) {
+	t.Parallel()
+
+	claimedAt := time.Date(2040, time.January, 2, 3, 4, 5, 0, time.UTC)
+	ttlSeconds := 60
+	tests := []struct {
+		name         string
+		now          time.Time
+		wantConflict bool
+	}{
+		{name: "just before", now: claimedAt.Add(60*time.Second - time.Nanosecond), wantConflict: true},
+		{name: "exact boundary", now: claimedAt.Add(60 * time.Second)},
+		{name: "just after", now: claimedAt.Add(60*time.Second + time.Nanosecond)},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newClaimsWorkspace(t)
+			created := createClaimIssue(t, workspace, "Deterministic expiry boundary")
+			if _, err := Acquire(AcquireOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testClaimsMigrationsDir(t),
+				IssueID:       created.ID,
+				ActorRole:     "developer",
+				TTLSeconds:    &ttlSeconds,
+				Now:           claimedAt,
+			}); err != nil {
+				t.Fatalf("Acquire(initial) error = %v", err)
+			}
+
+			result, err := Acquire(AcquireOptions{
+				WorkspaceRoot: workspace,
+				MigrationsDir: testClaimsMigrationsDir(t),
+				IssueID:       created.ID,
+				ActorRole:     "qa_reviewer",
+				Now:           test.now,
+			})
+			if test.wantConflict {
+				var conflictErr *LiveClaimConflictError
+				if !errors.As(err, &conflictErr) {
+					t.Fatalf("Acquire(boundary) error = %v, want *LiveClaimConflictError", err)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("Acquire(boundary) error = %v", err)
+			}
+			if result.ClaimedAt != test.now.UTC().Format(time.RFC3339) {
+				t.Fatalf("Acquire(boundary).ClaimedAt = %q, want %q", result.ClaimedAt, test.now.UTC().Format(time.RFC3339))
+			}
+		})
+	}
+}
+
 func TestAcquireRejectsLiveConflictWhenJournalIsAheadOfProjection(t *testing.T) {
 	t.Parallel()
 

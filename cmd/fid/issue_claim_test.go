@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -438,7 +437,7 @@ func TestIssueClaimCommandTakesOverStaleClaimWithoutForce(t *testing.T) {
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer", "--ttl", "1s")
-	time.Sleep(1100 * time.Millisecond)
+	ageCommandClaims(t, workspace, issueID)
 
 	stdout, stderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "qa_reviewer")
 	if stdout != "" {

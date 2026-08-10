@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `587a86991d8cfa89c06c4eed7c9b30cf981167fd`
+- Last verified commit: `3ef34fe`
 - Current task: Task 3k - deterministic claims time
-- Next exact action: add the fixed-time exact-expiry boundary regression and
-  capture its expected failure before implementation
+- Next exact action: commit Task 3k implementation with its draft completion
+  report, then finalize the report against the verified task commit
 - Open blockers: none
 - Active command: none
 
@@ -113,6 +113,16 @@ bounded by the host's six available CPUs (`GOMAXPROCS` unset). A concurrent
 two-workspace command regression is race-clean and proves journal/template
 isolation. Uncached package race time fell from 88.748s to 72.130s (18.7%);
 five-count time fell from 431.955s to 353.465s.
+
+Task 3k time inventory: acquire, renew, release, list, and shared live-claim
+validation resolve one optional operation timestamp; zero values use current UTC
+time. Fixed tests cover just-before, exact, and just-after expiry. All three
+claim command sleeps were replaced by deterministic temporary projection state.
+The initial exact ten-count gate reached Go's default timeout at 10m0s. Six
+isolated validation/list tests were reclassified onto the real initialized
+clone and bounded parallel scheduler without changing assertions; one-count
+`cmd/fid` time fell from 68.797s to 57.903s, and the byte-identical gate rerun
+passed at 578.869s for `cmd/fid`.
 
 ## Invariants
 

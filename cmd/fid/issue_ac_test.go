@@ -105,6 +105,8 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 }
 
 func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		args    func(t *testing.T, workspace string) []string
@@ -192,7 +194,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 
 			args := tt.args(t, workspace)
 			journalPath := mustJournalPath(t, workspace)
@@ -469,6 +471,8 @@ func TestIssueACVerifyCommandLatestPerRoleSurvivesRebuild(t *testing.T) {
 }
 
 func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		args    func(t *testing.T, workspace string) []string
@@ -537,7 +541,7 @@ func TestIssueACVerifyCommandRejectsBeforeAppend(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 
 			args := tt.args(t, workspace)
 			journalPath := mustJournalPath(t, workspace)

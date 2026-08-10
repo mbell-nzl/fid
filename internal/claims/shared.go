@@ -13,16 +13,16 @@ import (
 )
 
 func RequireLiveIssueClaimHeld(conn *sql.DB, issueID, actorRole string) error {
-	_, err := requireLiveIssueClaimHeld(conn, issueID, actorRole)
+	_, err := requireLiveIssueClaimHeldAt(conn, issueID, actorRole, operationTime(time.Time{}))
 	return err
 }
 
-func requireLiveIssueClaimHeld(conn *sql.DB, issueID, actorRole string) (*currentClaim, error) {
+func requireLiveIssueClaimHeldAt(conn *sql.DB, issueID, actorRole string, now time.Time) (*currentClaim, error) {
 	current, err := loadCurrentClaim(conn, issueID)
 	if err != nil {
 		return nil, err
 	}
-	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != actorRole {
+	if current == nil || !current.isLiveAt(now) || current.ClaimedBy != actorRole {
 		return nil, claimNotHeldError(issueID, actorRole, current)
 	}
 	return current, nil
@@ -152,8 +152,8 @@ func dereferenceString(value *string) any {
 	return *value
 }
 
-func takeoverReason(current *currentClaim, options AcquireOptions) string {
-	if options.Force && current.isLiveAt(time.Now().UTC()) {
+func takeoverReason(current *currentClaim, force bool, now time.Time) string {
+	if force && current.isLiveAt(now) {
 		return "force_acquire"
 	}
 	return "stale_takeover"

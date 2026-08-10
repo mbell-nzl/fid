@@ -8,14 +8,14 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestClaimListDefaultsToJSONAndListsLiveClaims(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim list", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -71,8 +71,9 @@ func TestClaimListDefaultsToJSONAndListsLiveClaims(t *testing.T) {
 }
 
 func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	staleDeveloperID := createClaimListIssue(t, workspace, "Stale developer claim")
 	staleQAID := createClaimListIssue(t, workspace, "Stale QA claim")
@@ -81,7 +82,7 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 
 	runFIDCommand(t, workspace, "issue", "claim", staleDeveloperID, "--by", "developer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", staleQAID, "--by", "qa_reviewer", "--ttl", "1s")
-	time.Sleep(1100 * time.Millisecond)
+	ageCommandClaims(t, workspace, staleDeveloperID, staleQAID)
 	runFIDCommand(t, workspace, "issue", "claim", liveDeveloperID, "--by", "developer", "--note", "live developer claim")
 	runFIDCommand(t, workspace, "issue", "claim", liveHumanID, "--by", "human", "--note", "human held claim")
 
@@ -147,8 +148,9 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 }
 
 func TestClaimListStaleFilterIsReadOnlyAndUsesRowIDOrder(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	firstStaleID := createClaimListIssue(t, workspace, "First stale claim")
 	secondStaleID := createClaimListIssue(t, workspace, "Second stale claim")
@@ -157,7 +159,7 @@ func TestClaimListStaleFilterIsReadOnlyAndUsesRowIDOrder(t *testing.T) {
 	runFIDCommand(t, workspace, "issue", "claim", firstStaleID, "--by", "developer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", secondStaleID, "--by", "qa_reviewer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", liveID, "--by", "human")
-	time.Sleep(1100 * time.Millisecond)
+	ageCommandClaims(t, workspace, firstStaleID, secondStaleID)
 
 	journalPath := mustJournalPath(t, workspace)
 	beforePayload, err := os.ReadFile(journalPath)
@@ -248,6 +250,27 @@ func createClaimListIssue(t *testing.T, workspace, title string) string {
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
 	return parseCreatedIssueID(t, stderr)
+}
+
+func ageCommandClaims(t *testing.T, workspace string, issueIDs ...string) {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	const staleClaimedAt = "2000-01-01T12:00:00Z"
+	for _, issueID := range issueIDs {
+		if _, err := conn.Exec(`
+			UPDATE claims
+			SET claimed_at = ?
+			WHERE ref_type = 'issue' AND ref_id = ?
+		`, staleClaimedAt, issueID); err != nil {
+			t.Fatalf("age claim %q: %v", issueID, err)
+		}
+	}
 }
 
 func commandClaimListIDs(t *testing.T, rows []any) []string {

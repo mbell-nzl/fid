@@ -321,3 +321,29 @@ Human-approved and QA-plan acceptance is next._
   domain seam; zero values retain real UTC time and claim semantics stay fixed
 - Next action: capture the failing exact-expiry boundary regression, then
   remove claim command sleeps through deterministic test fixture state
+
+### 2026-08-10 TASK task-3k GATE-FAIL
+
+- Command: `go test -race -count=10 ./internal/claims ./cmd/fid`
+- Working directory: `/home/mark/projects/fid`
+- Terminal result: exit 1; `internal/claims` passed in 70.440s, then `cmd/fid`
+  failed with `panic: test timed out after 10m0s`
+- Classification: real Go test timeout, not a discarded or silent agent
+  session; nested session `87471` was retained through terminal exit
+- Next action: collect one-count per-test timing evidence and determine whether
+  the unchanged exact command can pass after scoped fixture improvements
+
+### 2026-08-10 TASK task-3k GATE-REPAIRED
+
+- Diagnostic: one-count `cmd/fid` timing was 68.797s before repair; three
+  validation-only Issue/AC matrices accounted for 10.25s of serial work and
+  three claim-list tests accounted for 2.85s
+- Repair: moved only those six isolated tests onto the existing real
+  initialized clone and bounded `t.Parallel`; rebuild, durability, and
+  compatibility owners remain real-init and serial
+- Focused race result: PASS at 2.771s; repaired one-count package result: PASS
+  at 57.903s
+- Byte-identical required command: PASS; `internal/claims` 71.771s and
+  `cmd/fid` 578.869s with observed exit 0
+- Deviation disposition: the first timeout, root cause, scoped harness repair,
+  and byte-identical pass remain mandatory Task 3k report evidence

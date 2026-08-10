@@ -318,6 +318,8 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 }
 
 func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name    string
 		args    func(t *testing.T, workspace string) []string
@@ -430,7 +432,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, tt.args(t, workspace)...)
 			if err == nil {

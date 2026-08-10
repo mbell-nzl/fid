@@ -17,6 +17,7 @@ type ListOptions struct {
 	MigrationsDir string
 	ClaimedBy     string
 	StaleOnly     bool
+	Now           time.Time
 }
 
 type ListItem struct {
@@ -48,7 +49,7 @@ func List(options ListOptions) ([]ListItem, error) {
 	}
 	defer closeClaimsConn(conn)
 
-	return queryClaimList(conn, options, time.Now().UTC())
+	return queryClaimList(conn, options, operationTime(options.Now))
 }
 
 func queryClaimList(conn *sql.DB, options ListOptions, now time.Time) ([]ListItem, error) {
