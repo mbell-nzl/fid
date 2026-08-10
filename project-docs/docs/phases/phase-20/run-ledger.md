@@ -347,3 +347,15 @@ Human-approved and QA-plan acceptance is next._
   `cmd/fid` 578.869s with observed exit 0
 - Deviation disposition: the first timeout, root cause, scoped harness repair,
   and byte-identical pass remain mandatory Task 3k report evidence
+
+### 2026-08-10 TASK task-3k IMPLEMENTED
+
+- Task commit: `bec40c86d49932c862079aa67163003cab6a62ee` - verified,
+  subject matched (`test(claims): make expiry time deterministic`)
+- Clock seam: acquire, renew, release, list, and shared live validation use one
+  supplied operation time; zero values retain current UTC behavior
+- Sleep inventory: all three claim command sleeps removed; fixed expiry
+  boundaries and command ownership/staleness assertions PASS
+- Required gates: PASS with observed terminal results, including the
+  byte-identical repaired ten-count command; report finalization and
+  report-lint remain

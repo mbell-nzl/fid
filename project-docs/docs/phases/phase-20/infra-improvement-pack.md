@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `3ef34fe`
+- Last verified commit: `bec40c86d49932c862079aa67163003cab6a62ee`
 - Current task: Task 3k - deterministic claims time
-- Next exact action: commit Task 3k implementation with its draft completion
-  report, then finalize the report against the verified task commit
+- Next exact action: commit Task 3k's finalized completion report, then run its
+  exact report-lint command against the clean report path
 - Open blockers: none
 - Active command: none
 
@@ -154,7 +154,7 @@ passed at 578.869s for `cmd/fid`.
 | Task 3h workspace fixture | COMPLETE | `bca799f` | `tasks/task-3h-done.md` | PASS | report-lint PASS |
 | Task 3i remove `os.Chdir` | COMPLETE | `3e830b4` | `tasks/task-3i-done.md` | PASS | report-lint PASS |
 | Task 3j bounded parallelism | COMPLETE | `338c5dc` | `tasks/task-3j-done.md` | PASS | report-lint PASS |
-| Task 3k claims clock | IN_PROGRESS | - | `tasks/task-3k-done.md` | - | - |
+| Task 3k claims clock | IN_PROGRESS | `bec40c8` | `tasks/task-3k-done.md` | PASS | pending report-lint |
 | Task 3l maintenance clock use | PENDING | - | `tasks/task-3l-done.md` | - | - |
 | Final measurements/gates | PENDING | - | this file | - | - |
 | Independent infra review | PENDING | - | `qa/infra-review-1.md` | - | - |
