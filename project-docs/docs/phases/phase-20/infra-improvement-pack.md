@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `f2dc4f8c587eb1eca3f6e923967808037cf898a4`
+- Last verified commit: `bca799f52f55286e8a45cc68c341cb539ba50481`
 - Current task: Task 3h - reusable pristine workspace fixture
-- Next exact action: commit Task 3h implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3h's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 

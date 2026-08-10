@@ -250,3 +250,14 @@ Human-approved and QA-plan acceptance is next._
 - Boundary: clone one closed real initialized template only for tests whose
   subject is not init/rebuild/migration/durability/compatibility
 - Next action: capture the failing fixture parity/isolation regression
+
+### 2026-08-10 TASK task-3h IMPLEMENTED
+
+- Task commit: `bca799f52f55286e8a45cc68c341cb539ba50481` - verified,
+  subject matched (`test(cli): reuse pristine workspace fixtures`)
+- Fixture: real initialized template, byte/mode clone parity, mutation
+  isolation, and byte-identical rebuild regression PASS
+- Adoption: 116 cloned setups, 50 protected real-init calls; uncached package
+  race time 150.540s before and 88.748s after
+- Required gates: PASS with observed terminal results; report finalization and
+  report-lint remain

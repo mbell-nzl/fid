@@ -67,8 +67,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `bca799f52f55286e8a45cc68c341cb539ba50481`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): reuse pristine workspace fixtures`
