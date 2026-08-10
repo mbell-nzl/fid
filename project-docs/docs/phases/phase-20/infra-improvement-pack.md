@@ -19,11 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `038ce3e`
+- Last verified commit: `3018bcc`
 - Current task: final measurements and pack gates
-- Next exact action: run all eight report lints, then the final format, lint,
-  ordinary coverage/cover, dedicated integration, benchmark, build,
-  workflow-lint, and repeated affected-package race gates
+- Next exact action: commit the final gate evidence, freeze the pack range, and
+  assign the independent infrastructure review to a fresh QA Reviewer
 - Open blockers: none
 - Active command: none
 
@@ -149,6 +148,29 @@ time fell from 8.440s to 4.331s (48.7%). Remaining `time.Sleep` references are
 the production journal-lock backoff seam, its contention/cancellation test,
 and the closure source guard's diagnostic string.
 
+## Final Gate Results
+
+- All eight Task 3e-3l report lints: PASS; each ended with
+  `PASS report-lint completed with no failures` on a committed clean path.
+- `gofmt -l cmd internal`: PASS - `exit 0 (no output)`.
+- `golangci-lint run ./...`: PASS - `0 issues.`.
+- `go test -race -coverprofile=coverage.out ./...`: PASS -
+  `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
+- `go tool cover -func=coverage.out`: PASS -
+  `total:										(statements)					77.7%`.
+- `go test -tags integration -race ./cmd/fid/integration/...`: PASS -
+  `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	(cached)`.
+- `go test -bench . -benchmem ./...`: PASS - 100k rebuild measured
+  24.383s/op and the last package token was
+  `ok  	github.com/mbell-nzl/fid/internal/workflow	0.439s`.
+- `go build -o /tmp/fid ./cmd/fid`: PASS - `exit 0 (no output)`.
+- `project-docs/tools/workflow-lint.sh`: PASS -
+  `PASS workflow-lint completed with no failures`.
+- `go test -race -count=3 ./internal/claims ./internal/maintenance ./cmd/fid`:
+  PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	172.806s`.
+- `go test -tags integration -race -count=3 ./cmd/fid/integration/...`:
+  PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.161s`.
+
 ## Invariants
 
 - Every existing integration-tagged test is accounted for by name: a true
@@ -181,7 +203,7 @@ and the closure source guard's diagnostic string.
 | Task 3j bounded parallelism | COMPLETE | `338c5dc` | `tasks/task-3j-done.md` | PASS | report-lint PASS |
 | Task 3k claims clock | COMPLETE | `bec40c8` | `tasks/task-3k-done.md` | PASS | report-lint PASS |
 | Task 3l maintenance clock use | COMPLETE | `16978f5` | `tasks/task-3l-done.md` | PASS | report-lint PASS |
-| Final measurements/gates | IN_PROGRESS | - | this file | - | - |
+| Final measurements/gates | COMPLETE | - | this file | PASS | pending independent review |
 | Independent infra review | PENDING | - | `qa/infra-review-1.md` | - | - |
 
 Only one row may be `IN_PROGRESS`. A task becomes `COMPLETE` only after focused
