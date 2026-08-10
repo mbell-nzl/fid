@@ -33,26 +33,27 @@
 
 - `rg -n '^func BenchmarkInitializeWorkspace' internal/bootstrap` - EXPECTED
   RED - `exit 1 (no output)`.
-- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS -
-  `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
+- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
 
 ## Exact quality-gate results
 
-- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS -
-  `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
+- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
 - `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS -
-  `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
 - `go tool cover -func=coverage.out` - PASS -
   `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./...` - PASS -
-  `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)`.
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)`.
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
 
 ## Deviations from spec
 
-- None.
+- The first report-lint run failed with `FAIL report-lint found 4 failure(s)`.
+  Root cause: four valid `go test` output tokens were wrapped onto continuation
+  lines, while the validator deliberately requires each token on the command's
+  result bullet. The report formatting was corrected without changing any
+  command, result, test, assertion, or validator; the byte-identical lint
+  command is rerun after this correction is committed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
