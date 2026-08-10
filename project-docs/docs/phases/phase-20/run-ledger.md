@@ -214,3 +214,16 @@ Human-approved and QA-plan acceptance is next._
 - Required gates: workflow, format, lint, coverage, cover, old integration,
   new integration, and build PASS with observed terminal results
 - Next action: finalize the report and run report-lint
+
+### 2026-08-10 TASK task-3f COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3f-done.md`
+- Report-lint: PASS with all eight required commands recorded
+- Next task: task-3g package-owned integration binary reuse
+
+### 2026-08-10 TASK task-3g START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3g.md`
+- Boundary: one immutable binary per package run, real subprocesses and
+  distinct workspaces preserved, no product source change
+- Next action: capture the failing package-harness inventory regression

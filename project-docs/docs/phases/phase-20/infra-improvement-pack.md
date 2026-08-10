@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `ec72fdad4cf1e21be82b22644b382825b91d3b0f`
-- Current task: Task 3f - dedicated integration package and gate migration
-- Next exact action: commit Task 3f's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `2ed8cf3f1aaade19a30175771de8b7979fad9ace`
+- Current task: Task 3g - reuse one integration binary
+- Next exact action: add the failing package-harness regression requiring one
+  package-owned binary and no per-test build helper
 - Open blockers: none
 - Active command: none
 
@@ -105,8 +105,8 @@ Task 3f before/after integration inventory:
 | Review 1c | COMPLETE | `cb5f1bf` | `qa/review-1c.md` | PASS | NON-BLOCK |
 | Planning / DEC-133 | COMPLETE | `81e1576` | this file | workflow-lint PASS | Human-approved |
 | Task 3e benchmark | COMPLETE | `af615cb` | `tasks/task-3e-done.md` | PASS | report-lint PASS |
-| Task 3f integration package/gate | IN_PROGRESS | - | `tasks/task-3f-done.md` | - | - |
-| Task 3g shared binary | PENDING | - | `tasks/task-3g-done.md` | - | - |
+| Task 3f integration package/gate | COMPLETE | `ec72fda` | `tasks/task-3f-done.md` | PASS | report-lint PASS |
+| Task 3g shared binary | IN_PROGRESS | - | `tasks/task-3g-done.md` | - | - |
 | Task 3h workspace fixture | PENDING | - | `tasks/task-3h-done.md` | - | - |
 | Task 3i remove `os.Chdir` | PENDING | - | `tasks/task-3i-done.md` | - | - |
 | Task 3j bounded parallelism | PENDING | - | `tasks/task-3j-done.md` | - | - |
