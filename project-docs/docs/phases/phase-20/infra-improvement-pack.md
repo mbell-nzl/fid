@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `3e830b49c8a90472f091e7b852848cf6f86694d8`
-- Current task: Task 3i - explicit command working directory
-- Next exact action: commit Task 3i's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `654da9dc77e5140cfb43c89267daf5e08e5746ee`
+- Current task: Task 3j - bounded command-test parallelism
+- Next exact action: add the failing goroutine-safe concurrent clone command
+  regression, then classify and parallelize isolated top-level tests
 - Open blockers: none
 - Active command: none
 
@@ -132,8 +132,8 @@ then passed after 431.955s.
 | Task 3f integration package/gate | COMPLETE | `ec72fda` | `tasks/task-3f-done.md` | PASS | report-lint PASS |
 | Task 3g shared binary | COMPLETE | `1edb689` | `tasks/task-3g-done.md` | PASS | report-lint PASS |
 | Task 3h workspace fixture | COMPLETE | `bca799f` | `tasks/task-3h-done.md` | PASS | report-lint PASS |
-| Task 3i remove `os.Chdir` | IN_PROGRESS | - | `tasks/task-3i-done.md` | - | - |
-| Task 3j bounded parallelism | PENDING | - | `tasks/task-3j-done.md` | - | - |
+| Task 3i remove `os.Chdir` | COMPLETE | `3e830b4` | `tasks/task-3i-done.md` | PASS | report-lint PASS |
+| Task 3j bounded parallelism | IN_PROGRESS | - | `tasks/task-3j-done.md` | - | - |
 | Task 3k claims clock | PENDING | - | `tasks/task-3k-done.md` | - | - |
 | Task 3l maintenance clock use | PENDING | - | `tasks/task-3l-done.md` | - | - |
 | Final measurements/gates | PENDING | - | this file | - | - |

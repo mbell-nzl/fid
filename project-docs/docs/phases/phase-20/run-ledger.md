@@ -283,3 +283,16 @@ Human-approved and QA-plan acceptance is next._
   `os.Getwd`; injected/default/relative-path focused tests PASS
 - Exact five-count race gate: PASS after 431.955s with observed terminal output
 - Remaining required gates: PASS; report finalization and report-lint remain
+
+### 2026-08-10 TASK task-3i COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3i-done.md`
+- Report-lint: PASS with all seven required commands recorded
+- Next task: task-3j bounded command-test parallelism
+
+### 2026-08-10 TASK task-3j START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3j.md`
+- Boundary: Go scheduler-bounded parallelism only for cloned, global-state-free
+  tests; protected real-init owners remain serial
+- Next action: capture the failing goroutine-safe concurrency regression
