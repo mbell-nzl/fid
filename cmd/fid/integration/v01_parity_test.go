@@ -11,7 +11,7 @@ import (
 )
 
 func TestV01ParityGoldenOutputs(t *testing.T) {
-	binary := buildClosureFIDBinary(t)
+	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
 

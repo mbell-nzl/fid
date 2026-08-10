@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `2ed8cf3f1aaade19a30175771de8b7979fad9ace`
+- Last verified commit: `1ff0c7dbee27c01045b81d5260cb7bc2d2befe47`
 - Current task: Task 3g - reuse one integration binary
-- Next exact action: add the failing package-harness regression requiring one
-  package-owned binary and no per-test build helper
+- Next exact action: commit Task 3g implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -79,6 +79,12 @@ Task 3f before/after integration inventory:
 - Transitional old gate: `cmd/fid` 152.981s and dedicated package 10.266s.
   The canonical dedicated command passed independently and no longer reruns
   the ordinary package.
+
+Task 3g binary inventory: `main_test.go` contains the sole real
+`exec.Command("go", "build", ...)` call; the AST harness guard proves no
+`buildClosureFIDBinary` function remains. All four journeys still allocate a
+distinct `t.TempDir()` workspace. The final fresh dedicated race run took
+8.228s after one package-owned build, versus Task 3f's 10.266s four-build run.
 
 ## Invariants
 

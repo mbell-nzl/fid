@@ -13,7 +13,7 @@ import (
 )
 
 func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
-	binary := buildClosureFIDBinary(t)
+	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRun(t, workspace, "git", "init")
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")

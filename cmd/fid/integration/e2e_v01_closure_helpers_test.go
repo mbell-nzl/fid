@@ -15,22 +15,6 @@ import (
 	"testing"
 )
 
-func buildClosureFIDBinary(t *testing.T) string {
-	t.Helper()
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("get test directory: %v", err)
-	}
-	binary := filepath.Join(t.TempDir(), "fid")
-	cmd := exec.Command("go", "build", "-o", binary, "./cmd/fid")
-	cmd.Dir = filepath.Clean(filepath.Join(cwd, "..", "..", ".."))
-	if output, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("build fid: %v\n%s", err, output)
-	}
-	return binary
-}
-
 func closureRun(t *testing.T, workspace, command string, args ...string) (string, string) {
 	t.Helper()
 

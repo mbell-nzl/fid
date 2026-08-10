@@ -12,7 +12,7 @@ import (
 )
 
 func TestV02aWorkflowAuthoringExitScenarioAndRebuildParity(t *testing.T) {
-	binary := buildClosureFIDBinary(t)
+	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 	journalPath := closureJournalPath(t, workspace)
@@ -74,7 +74,7 @@ func assertReservedRulesAreNotSeeded(t *testing.T, binary, workspace string) {
 }
 
 func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
-	binary := buildClosureFIDBinary(t)
+	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
 	closureRunFID(t, binary, workspace, "init", "--prefix", "FID")
 

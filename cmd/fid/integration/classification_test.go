@@ -25,13 +25,26 @@ func TestIntegrationClassification(t *testing.T) {
 		"TestV02aWorkflowAuthoringExitScenarioAndRebuildParity",
 	}
 
-	gotJourneys := topLevelTests(t, dedicatedDir, "TestIntegrationClassification")
+	gotJourneys := topLevelTests(t, dedicatedDir,
+		"TestIntegrationClassification",
+		"TestIntegrationBinaryOwnedByPackage",
+	)
 	if !reflect.DeepEqual(gotJourneys, wantJourneys) {
 		t.Fatalf("dedicated integration journeys = %v, want %v", gotJourneys, wantJourneys)
 	}
 
 	if tagged := taggedTestFiles(t, parentDir); len(tagged) != 0 {
 		t.Fatalf("integration-tagged tests outside dedicated package = %v, want none", tagged)
+	}
+}
+
+func TestIntegrationBinaryOwnedByPackage(t *testing.T) {
+	functions := topLevelFunctions(t, classificationDirectory(t))
+	if !functions["TestMain"] {
+		t.Fatal("dedicated integration package has no TestMain-owned binary lifecycle")
+	}
+	if functions["buildClosureFIDBinary"] {
+		t.Fatal("per-test buildClosureFIDBinary helper remains")
 	}
 }
 
@@ -66,13 +79,54 @@ func topLevelTests(t *testing.T, directory string, excluded ...string) []string 
 		}
 		for _, declaration := range parsed.Decls {
 			function, ok := declaration.(*ast.FuncDecl)
-			if ok && function.Recv == nil && strings.HasPrefix(function.Name.Name, "Test") && !excludedNames[function.Name.Name] {
+			if ok && isGoTestFunction(function) && !excludedNames[function.Name.Name] {
 				names = append(names, function.Name.Name)
 			}
 		}
 	}
 	sort.Strings(names)
 	return names
+}
+
+func isGoTestFunction(function *ast.FuncDecl) bool {
+	if function.Recv != nil || !strings.HasPrefix(function.Name.Name, "Test") || function.Type.Params == nil {
+		return false
+	}
+	parameters := function.Type.Params.List
+	if len(parameters) != 1 || len(parameters[0].Names) != 1 {
+		return false
+	}
+	pointer, ok := parameters[0].Type.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	selector, ok := pointer.X.(*ast.SelectorExpr)
+	return ok && selector.Sel.Name == "T"
+}
+
+func topLevelFunctions(t *testing.T, directory string) map[string]bool {
+	t.Helper()
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		t.Fatalf("read integration directory: %v", err)
+	}
+	functions := make(map[string]bool)
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "_test.go") {
+			continue
+		}
+		parsed, err := parser.ParseFile(token.NewFileSet(), filepath.Join(directory, entry.Name()), nil, 0)
+		if err != nil {
+			t.Fatalf("parse %s: %v", entry.Name(), err)
+		}
+		for _, declaration := range parsed.Decls {
+			function, ok := declaration.(*ast.FuncDecl)
+			if ok && function.Recv == nil {
+				functions[function.Name.Name] = true
+			}
+		}
+	}
+	return functions
 }
 
 func taggedTestFiles(t *testing.T, directory string) []string {
