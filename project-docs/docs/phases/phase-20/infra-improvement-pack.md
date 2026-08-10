@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `16978f597eb8c31a727f02670165013805efea90`
-- Current task: Task 3l - deterministic maintenance time
-- Next exact action: commit Task 3l's finalized completion report, then run its
-  exact report-lint command against the clean report path
+- Last verified commit: `d93c4334c35613dc44f5bcb858c87dd00aa42859`
+- Current task: final measurements and pack gates
+- Next exact action: capture three same-host `-count=1` ordinary race/coverage
+  samples and three dedicated integration samples without mining results
 - Open blockers: none
 - Active command: none
 
@@ -165,8 +165,8 @@ and the closure source guard's diagnostic string.
 | Task 3i remove `os.Chdir` | COMPLETE | `3e830b4` | `tasks/task-3i-done.md` | PASS | report-lint PASS |
 | Task 3j bounded parallelism | COMPLETE | `338c5dc` | `tasks/task-3j-done.md` | PASS | report-lint PASS |
 | Task 3k claims clock | COMPLETE | `bec40c8` | `tasks/task-3k-done.md` | PASS | report-lint PASS |
-| Task 3l maintenance clock use | IN_PROGRESS | `16978f5` | `tasks/task-3l-done.md` | PASS | pending report-lint |
-| Final measurements/gates | PENDING | - | this file | - | - |
+| Task 3l maintenance clock use | COMPLETE | `16978f5` | `tasks/task-3l-done.md` | PASS | report-lint PASS |
+| Final measurements/gates | IN_PROGRESS | - | this file | - | - |
 | Independent infra review | PENDING | - | `qa/infra-review-1.md` | - | - |
 
 Only one row may be `IN_PROGRESS`. A task becomes `COMPLETE` only after focused

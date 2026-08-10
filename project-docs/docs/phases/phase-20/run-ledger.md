@@ -386,3 +386,18 @@ Human-approved and QA-plan acceptance is next._
   timing and the AST guard's diagnostic string remain
 - Required gates: PASS; ten-count dedicated result 32.305s and fresh dedicated
   result 4.331s; report finalization and report-lint remain
+
+### 2026-08-10 TASK task-3l COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3l-done.md`
+- Report-lint: PASS with all seven required commands recorded
+- Final report commit: `d93c4334c35613dc44f5bcb858c87dd00aa42859`
+- Next step: final three-sample measurement and full pack gate
+
+### 2026-08-10 FINAL-GATE START
+
+- Frozen implementation range for measurement: `81e1576..d93c433`
+- Measurement contract: three same-host `-count=1` ordinary race/coverage
+  samples plus three dedicated integration samples; record every result
+- Next action: capture all six samples, compute medians, then run the complete
+  final evidence contract before independent review
