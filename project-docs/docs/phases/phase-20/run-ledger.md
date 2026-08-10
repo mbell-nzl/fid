@@ -401,3 +401,13 @@ Human-approved and QA-plan acceptance is next._
   samples plus three dedicated integration samples; record every result
 - Next action: capture all six samples, compute medians, then run the complete
   final evidence contract before independent review
+
+### 2026-08-10 FINAL-MEASUREMENT COMPLETE
+
+- Ordinary `cmd/fid` samples: 70.124s, 70.903s, 71.332s; median 70.903s
+- Dedicated integration samples: 4.525s, 4.371s, 4.339s; median 4.371s
+- Median combined: 75.274s versus 293.700s baseline; reduction 74.4%, above
+  the Human-approved 40% target
+- Sampling disposition: all six first-attempt results recorded; no retry or
+  timing selection
+- Next action: run every report lint and the complete final pack gate

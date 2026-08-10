@@ -19,10 +19,11 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `d93c4334c35613dc44f5bcb858c87dd00aa42859`
+- Last verified commit: `038ce3e`
 - Current task: final measurements and pack gates
-- Next exact action: capture three same-host `-count=1` ordinary race/coverage
-  samples and three dedicated integration samples without mining results
+- Next exact action: run all eight report lints, then the final format, lint,
+  ordinary coverage/cover, dedicated integration, benchmark, build,
+  workflow-lint, and repeated affected-package race gates
 - Open blockers: none
 - Active command: none
 
@@ -47,6 +48,20 @@ race/coverage and accepted dedicated integration surfaces. Target: at least 40%
 lower median combined wall time. Timing is not mined for green; all samples and
 host variance are recorded. Correctness, race freedom, and exact gates are hard
 requirements regardless of timing.
+
+Final same-host samples, all exit 0 and recorded without retry:
+
+| Sample | Ordinary race/coverage `cmd/fid` | Dedicated integration | Combined |
+|---|---:|---:|---:|
+| 1 | 70.124s | 4.525s | 74.649s |
+| 2 | 70.903s | 4.371s | 75.274s |
+| 3 | 71.332s | 4.339s | 75.671s |
+| Median | 70.903s | 4.371s | 75.274s |
+
+The median combined result is 218.426s lower than the 293.700s baseline, a
+74.4% reduction. Ordinary sample range is 1.208s (1.7% of median); dedicated
+range is 0.186s (4.3% of median). The 40% target is satisfied without changing
+correctness gates.
 
 Task 3e production initialization benchmark, three consecutive samples on the
 same host: 34.063 ms/op, 34.544 ms/op, and 35.501 ms/op (median 34.544 ms/op),
