@@ -13,6 +13,10 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"time"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/maintenance"
 )
 
 func closureRun(t *testing.T, workspace, command string, args ...string) (string, string) {
@@ -291,79 +295,56 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	}
 }
 
-type closureMaintenanceCheck struct {
-	Status   string          `json:"status"`
-	Errors   json.RawMessage `json:"errors"`
-	Warnings json.RawMessage `json:"warnings"`
-	Info     struct {
-		IssueCount       int `json:"issue_count"`
-		ClaimCountLive   int `json:"claim_count_live"`
-		RecentActivity7D int `json:"recent_activity_7d"`
-	} `json:"info"`
-}
-
-func closureMaintenanceResult(t *testing.T, binary, workspace string) closureMaintenanceCheck {
+func closureAgedMaintenanceTime(t *testing.T, workspace string) time.Time {
 	t.Helper()
 
-	stdout, _ := closureRunFID(t, binary, workspace, "maintenance", "check", "--format", "json")
-	var result closureMaintenanceCheck
-	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatalf("decode maintenance check: %v", err)
+	var latest time.Time
+	for path, payload := range closureJournalFileBytes(t, workspace) {
+		for lineNumber, line := range bytes.Split(bytes.TrimSpace(payload), []byte{'\n'}) {
+			var event struct {
+				OccurredAt time.Time `json:"occurred_at"`
+			}
+			if err := json.Unmarshal(line, &event); err != nil {
+				t.Fatalf("decode %s:%d for maintenance time: %v", path, lineNumber+1, err)
+			}
+			if event.OccurredAt.After(latest) {
+				latest = event.OccurredAt
+			}
+		}
+	}
+	if latest.IsZero() {
+		t.Fatal("latest journal event time is zero")
+	}
+	return latest.UTC().Add(24 * time.Hour)
+}
+
+func closureMaintenanceResultAt(t *testing.T, workspace string, now time.Time) maintenance.Result {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open projection for maintenance check: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	result, err := maintenance.Check(maintenance.CheckOptions{
+		DB:                              conn,
+		JournalDir:                      filepath.Join(workspace, ".fid", "journal"),
+		Now:                             now,
+		StartedWithoutClaimGraceSeconds: 300,
+	})
+	if err != nil {
+		t.Fatalf("maintenance check at %s: %v", now, err)
 	}
 	return result
 }
 
-func assertClosureMaintenanceStateEqual(t *testing.T, got, want closureMaintenanceCheck) {
+func assertClosureMaintenanceStateEqual(t *testing.T, got, want maintenance.Result) {
 	t.Helper()
 
-	if got.Status != want.Status {
-		t.Fatalf("maintenance status after rebuild = %q, want %q", got.Status, want.Status)
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("maintenance result after rebuild = %#v, want %#v", got, want)
 	}
-	if !bytes.Equal(got.Errors, want.Errors) {
-		t.Fatalf("maintenance errors after rebuild = %s, want %s", got.Errors, want.Errors)
-	}
-	if !bytes.Equal(got.Warnings, want.Warnings) {
-		t.Fatalf("maintenance warnings after rebuild = %s, want %s", got.Warnings, want.Warnings)
-	}
-	if got.Info.IssueCount != want.Info.IssueCount {
-		t.Fatalf("maintenance issue_count after rebuild = %d, want %d", got.Info.IssueCount, want.Info.IssueCount)
-	}
-}
-
-func assertClosureClockRelativeMovementWithinControl(t *testing.T, beforeRebuild, afterRebuild, controlBefore, controlAfter closureMaintenanceCheck) {
-	t.Helper()
-
-	assertClosureCounterMovementWithinControl(
-		t,
-		"recent_activity_7d",
-		beforeRebuild.Info.RecentActivity7D,
-		afterRebuild.Info.RecentActivity7D,
-		controlBefore.Info.RecentActivity7D,
-		controlAfter.Info.RecentActivity7D,
-	)
-	assertClosureCounterMovementWithinControl(
-		t,
-		"claim_count_live",
-		beforeRebuild.Info.ClaimCountLive,
-		afterRebuild.Info.ClaimCountLive,
-		controlBefore.Info.ClaimCountLive,
-		controlAfter.Info.ClaimCountLive,
-	)
-}
-
-func assertClosureCounterMovementWithinControl(t *testing.T, name string, beforeRebuild, afterRebuild, controlBefore, controlAfter int) {
-	t.Helper()
-
-	if got, limit := absoluteDifference(afterRebuild, beforeRebuild), absoluteDifference(controlAfter, controlBefore); got > limit {
-		t.Fatalf("%s movement across rebuild = %d (%d -> %d), exceeds no-rebuild control movement %d (%d -> %d)", name, got, beforeRebuild, afterRebuild, limit, controlBefore, controlAfter)
-	}
-}
-
-func absoluteDifference(left, right int) int {
-	if left < right {
-		return right - left
-	}
-	return left - right
 }
 
 var closureProjectedTableQueries = []struct {

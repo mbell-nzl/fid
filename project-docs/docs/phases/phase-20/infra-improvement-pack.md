@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `299073001c7079ac70c59ba6a3bc67be29011305`
+- Last verified commit: `e2fadd8`
 - Current task: Task 3l - deterministic maintenance time
-- Next exact action: add or strengthen the fixed exact-boundary maintenance
-  regression, then replace the closure journey's four-second sleep
+- Next exact action: commit Task 3l implementation with its draft completion
+  report, then finalize the report against the verified task commit
 - Open blockers: none
 - Active command: none
 
@@ -123,6 +123,16 @@ isolated validation/list tests were reclassified onto the real initialized
 clone and bounded parallel scheduler without changing assertions; one-count
 `cmd/fid` time fell from 68.797s to 57.903s, and the byte-identical gate rerun
 passed at 578.869s for `cmd/fid`.
+
+Task 3l maintenance inventory: the domain's explicit 300-second grace test now
+covers 299.999999999s, exactly 300s, and 300.000000001s. The real-binary
+closure journey derives one maintenance evaluation time 24 hours after its
+latest journal event and supplies it through existing `CheckOptions.Now` both
+before and after rebuild; every finding and info counter must match exactly.
+The four-second sleep and clock-drift allowance are gone. Dedicated integration
+time fell from 8.440s to 4.331s (48.7%). Remaining `time.Sleep` references are
+the production journal-lock backoff seam, its contention/cancellation test,
+and the closure source guard's diagnostic string.
 
 ## Invariants
 

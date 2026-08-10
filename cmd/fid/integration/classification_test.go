@@ -26,6 +26,7 @@ func TestIntegrationClassification(t *testing.T) {
 	}
 
 	gotJourneys := topLevelTests(t, dedicatedDir,
+		"TestClosureJourneyHasNoWallClockSleep",
 		"TestIntegrationClassification",
 		"TestIntegrationBinaryOwnedByPackage",
 	)
@@ -36,6 +37,30 @@ func TestIntegrationClassification(t *testing.T) {
 	if tagged := taggedTestFiles(t, parentDir); len(tagged) != 0 {
 		t.Fatalf("integration-tagged tests outside dedicated package = %v, want none", tagged)
 	}
+}
+
+func TestClosureJourneyHasNoWallClockSleep(t *testing.T) {
+	path := filepath.Join(classificationDirectory(t), "e2e_v01_closure_test.go")
+	parsed, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+	if err != nil {
+		t.Fatalf("parse closure journey: %v", err)
+	}
+
+	ast.Inspect(parsed, func(node ast.Node) bool {
+		call, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+		selector, ok := call.Fun.(*ast.SelectorExpr)
+		if !ok || selector.Sel.Name != "Sleep" {
+			return true
+		}
+		identifier, ok := selector.X.(*ast.Ident)
+		if ok && identifier.Name == "time" {
+			t.Errorf("closure journey contains time.Sleep at %s", path)
+		}
+		return true
+	})
 }
 
 func TestIntegrationBinaryOwnedByPackage(t *testing.T) {

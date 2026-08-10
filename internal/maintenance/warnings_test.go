@@ -67,3 +67,40 @@ func TestCheckWarningsIncludesStartedIssueAtZeroGrace(t *testing.T) {
 		t.Fatalf("Check().Warnings entity IDs = %#v, want %#v", findingEntityIDs(got.Warnings), want)
 	}
 }
+
+func TestCheckStartedWithoutClaimGraceBoundary(t *testing.T) {
+	t.Parallel()
+
+	startedAt := time.Date(2040, time.January, 2, 3, 4, 5, 0, time.UTC)
+	tests := []struct {
+		name        string
+		now         time.Time
+		wantFinding bool
+	}{
+		{name: "just before", now: startedAt.Add(300*time.Second - time.Nanosecond)},
+		{name: "exact boundary", now: startedAt.Add(300 * time.Second), wantFinding: true},
+		{name: "just after", now: startedAt.Add(300*time.Second + time.Nanosecond), wantFinding: true},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
+			fixture := newMaintenanceFixture(t)
+			seedJournalEvent(t, fixture.journalPath, "EVT-20400102-000001")
+			seedIssueAt(t, fixture.db, "FID-boundary", "task", "in_progress", startedAt)
+			result, err := Check(CheckOptions{
+				DB:                              fixture.db,
+				JournalDir:                      fixture.journalDir,
+				Now:                             test.now,
+				StartedWithoutClaimGraceSeconds: 300,
+			})
+			if err != nil {
+				t.Fatalf("Check() error = %v", err)
+			}
+			if got := hasFinding(result.Warnings, "started_without_claim", "FID-boundary"); got != test.wantFinding {
+				t.Fatalf("started_without_claim finding = %t, want %t", got, test.wantFinding)
+			}
+		})
+	}
+}

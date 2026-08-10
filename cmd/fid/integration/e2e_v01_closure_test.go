@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -79,11 +78,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)
 	assertClosureMaintenanceAndReadCommands(t, binary, workspace, mainIssueID, journalBeforeNonJournal)
-	controlBefore := closureMaintenanceResult(t, binary, workspace)
-	time.Sleep(4 * time.Second)
-	controlAfter := closureMaintenanceResult(t, binary, workspace)
-	t.Logf("DEC-056 no-rebuild control recent_activity_7d: first=%d second=%d", controlBefore.Info.RecentActivity7D, controlAfter.Info.RecentActivity7D)
-	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "DEC-056 no-rebuild control")
+	maintenanceNow := closureAgedMaintenanceTime(t, workspace)
 
 	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
 	if err := fiddb.MigrateDown(dbPath, filepath.Join("..", "..", "..", "migrations")); err != nil {
@@ -111,7 +106,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	beforeTables := closureProjectedTableSnapshots(t, binary, workspace)
 	beforeSchema := closureSchemaSnapshot(t, binary, workspace)
 	assertClosureForeignKeysClean(t, binary, workspace)
-	beforeMaintenance := closureMaintenanceResult(t, binary, workspace)
+	beforeMaintenance := closureMaintenanceResultAt(t, workspace, maintenanceNow)
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("remove derived DB: %v", err)
 	}
@@ -123,9 +118,8 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 		t.Fatalf("schema after first rebuild differs from before rebuild")
 	}
 	assertClosureForeignKeysClean(t, binary, workspace)
-	afterMaintenance := closureMaintenanceResult(t, binary, workspace)
+	afterMaintenance := closureMaintenanceResultAt(t, workspace, maintenanceNow)
 	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
-	assertClosureClockRelativeMovementWithinControl(t, beforeMaintenance, afterMaintenance, controlBefore, controlAfter)
 	assertClosureRolesAfterRebuild(t, binary, workspace)
 	assertClosureJournalTracked(t, workspace)
 
