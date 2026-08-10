@@ -79,6 +79,9 @@
 - The integration gate remained silent across the initial 30-second yield and
   three retained-session polls, then returned `exit_code: 0`; its package
   output included `ok  github.com/mbell-nzl/fid/cmd/fid  160.765s`.
+- First conditional-harness run:
+  `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3a-done.md project-docs/docs/phases/phase-20/tasks/task-3a.md` -
+  EXPECTED HARNESS RED - `FAIL report-lint found 1 failure(s)`.
 
 ## Exact quality-gate results
 
@@ -93,9 +96,13 @@
 - `go test -tags integration -race ./...` - PASS -
   `ok  github.com/mbell-nzl/fid/internal/workflow  (cached)`.
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
-- Conditional correction-report lints for Tasks 1, 2, 3, 3a, and 3b are run
-  after this task commit makes the corrected reports committed and clean; the
-  finalized report records their results.
+- Conditional correction-report lints for Tasks 1, 2, and 3 - PASS -
+  `PASS report-lint completed with no failures` for each report.
+- Conditional correction-report lint for Task 3a first returned
+  `FAIL report-lint found 1 failure(s)` because the historical focused test
+  recorded only `ok`. The Task 3a and Task 3b historical-report corrections
+  are committed with this finalized report, then the byte-identical Task 3a
+  lint and the Task 3b lint are run against committed, clean reports.
 
 ## Deviations from spec
 
@@ -105,8 +112,16 @@
   product change and does not begin the broader performance follow-up pack.
 - Conditional lints for the five corrected historical reports must run after
   the task commit because `report-lint.sh` intentionally rejects reports with
-  uncommitted modifications. Their results are added to this report in the
-  immediately following final-report commit.
+  uncommitted modifications. The immediately following final-report commit
+  makes the additional historical corrections clean; a corrective docs commit
+  then records the byte-identical rerun results.
+- The first Task 3a conditional lint failed with
+  `FAIL report-lint found 1 failure(s)`. Root cause: the historical focused
+  command used the abbreviated token `ok`, and Task 3b retained a known
+  `wc -l` token on a combined focused command. Fix: preserve both original
+  records and classify those uncaptured commands UNVERIFIED under DEC-131.
+  The validator and command are not weakened or narrowed; the byte-identical
+  rerun occurs after this commit makes both corrected reports clean.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -120,8 +135,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `d0bffbcd63d9a36474fde7a3da2c76facb604501`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): recover long-running gate evidence`

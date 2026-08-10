@@ -22,7 +22,7 @@
 ## Tests run
 
 - `go test ./internal/cli -run 'TestReasonCodeDetailSchemaIsExactForEveryCode|TestDuplicateEntityRequiresEqualLengthIdentityArrays' -count=1` - FAIL - `FAIL`
-- `go test -race ./internal/cli -count=1` - PASS - `ok`
+- `go test -race ./internal/cli -count=1` - UNVERIFIED - see Gate-evidence correction (DEC-131).
 - Real entrypoint check: not required. This recovery task adds no command migration or new runtime surface; the changed registry is exercised through its public `NewFailure`/`WriteFailure` boundary by the exhaustive matrix.
 
 ## Exact quality-gate results
@@ -59,5 +59,6 @@
 - The full-suite `go test -race -coverprofile=coverage.out ./...` and `go test -tags integration -race ./...` records are UNVERIFIED. Each original recorded token `exit 0 (no output)` could not have come from a completed `go test` run: long runs may print nothing until their packages finish, while a killed or timed-out run is BLOCKED, never PASS with a silent token.
 - Preserved original record: `go test -race -coverprofile=coverage.out ./...` - PASS - original recorded token `exit 0 (no output)`.
 - Preserved original record: `go test -tags integration -race ./...` - PASS - original recorded token `exit 0 (no output)`.
+- Preserved original record: `go test -race ./internal/cli -count=1` - PASS - original recorded token `ok`, which is not a complete `go test` package-output marker.
 - `task-3c-done.md`'s current-tree full-gate run is the Phase 20 verified baseline; these historical commands were not re-run at Task 3a's commit.
-- Task 3a remains complete, but its own full-suite gate evidence is UNVERIFIED as of its task commit.
+- Task 3a remains complete, but its own full-suite and focused gate evidence is UNVERIFIED as of its task commit.

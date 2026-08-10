@@ -67,7 +67,7 @@
 - `go test ./internal/config -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape' -count=1` - PASS - `ok   github.com/mbell-nzl/fid/internal/config	0.010s`
 - `go test ./cmd/fid -run 'TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - RED - `FAIL` (the new helper captured output before executing Cobra; it was corrected without changing a behavior assertion).
 - `go test ./cmd/fid -run 'TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - PASS - `ok   github.com/mbell-nzl/fid/cmd/fid	0.141s`
-- `go test ./internal/config ./cmd/fid -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape|TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - PASS - `  295 internal/config/project_config.go`
+- `go test ./internal/config ./cmd/fid -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape|TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - UNVERIFIED - see Gate-evidence correction (DEC-131).
 - `/tmp/fid --project <fresh>/FID --json init` (after creating a fresh `<fresh>/FID` directory) - PASS - stdout contained one successful `project.init` Response Envelope with `issue_prefix:"FID"`, stderr was empty, and exit status was 0.
 
 ## Exact quality-gate results
@@ -106,5 +106,6 @@
 - The full-suite `go test -race -coverprofile=coverage.out ./...` and `go test -tags integration -race ./...` records are UNVERIFIED. Each original recorded token `exit 0 (no output)` could not have come from a completed `go test` run: long runs may print nothing until their packages finish, while a killed or timed-out run is BLOCKED, never PASS with a silent token.
 - Preserved original record: `go test -race -coverprofile=coverage.out ./...` - PASS - original recorded token `exit 0 (no output)`.
 - Preserved original record: `go test -tags integration -race ./...` - PASS - original recorded token `exit 0 (no output)`.
+- Preserved original record: `go test ./internal/config ./cmd/fid -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape|TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - PASS - original recorded token `  295 internal/config/project_config.go`, which came from `wc -l`, not `go test`.
 - `task-3c-done.md`'s current-tree full-gate run is the Phase 20 verified baseline; these historical commands were not re-run at Task 3b's commit.
-- Task 3b remains complete, but its own full-suite gate evidence is UNVERIFIED as of its task commit.
+- Task 3b remains complete, but its own full-suite and combined focused gate evidence is UNVERIFIED as of its task commit.
