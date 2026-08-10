@@ -324,3 +324,24 @@ Final readiness at kickoff: **READY**. All 46 assertions have feasible
 evidence, every task acceptance section covers its assigned assertions, all
 required commands and artifact assumptions are concrete and validated, and no
 ESC is required before Task 1.
+
+## 11. DEC-133 Infrastructure Pack Addendum
+
+The Human-approved Tasks 3e-3l are test/delivery infrastructure and cover no
+product VAL. Their binding scope, evidence, and checkpoint state live in
+`../infra-improvement-pack.md` and their task specs. They do not change the
+phase validation contract or six accepted product review windows.
+
+Task 3f runs both the former repository-wide integration command and the new
+dedicated-package command, proves the complete tagged-test inventory, then
+updates active gate surfaces to
+`go test -tags integration -race ./cmd/fid/integration/...`. Reviews 3-5 and
+remaining Task 4-18 specs use that command after migration; completed historical
+artifacts remain unchanged.
+
+A fresh QA Reviewer performs one additional bounded review after Task 3l and
+final measurements, writing `qa/infra-review-1.md`. It independently checks
+test inventory, gate equivalence, real-binary reuse, fixture parity/isolation,
+working-directory semantics, race stability, clock behavior, documentation
+sync, and timing reproducibility. Task 4 is blocked until this review is
+non-BLOCK and any corrections pass the final gate.

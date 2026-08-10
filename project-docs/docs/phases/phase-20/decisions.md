@@ -580,6 +580,63 @@
   `ESC-20-003`; task-3d; `AGENTS.md` (Commands); `09_AI_WORKFLOW.md` §8;
   `report-lint.sh`; `workflow-lint.sh`.
 
+### DEC-133: Human-approved infrastructure pack isolates integration work without weakening gates
+
+- **Date:** 2026-08-10
+- **Context:** The Human approved the remediation plan recorded in
+  `reviews/2026-08-10-gate-execution-and-test-runtime-diagnosis.md` after
+  Review 1c closed Tasks 3c/3d with a non-BLOCK verdict. The current race gates
+  spend about 294 seconds combined on this host. The integration command reruns
+  the ordinary suite, four journeys rebuild one binary, command tests repeatedly
+  initialize durable workspaces, process-wide `os.Chdir` prevents parallelism,
+  and four fixed sleeps consume 7.3 seconds.
+- **Decision:**
+  1. Insert Tasks 3e-3l before Task 4, tracked by
+     `infra-improvement-pack.md`: initialization benchmark; integration
+     classification/package and gate migration; shared integration binary;
+     reusable workspace fixture; working-directory injection; bounded
+     parallelism; claims clock; maintenance clock-fixture convergence.
+  2. The dedicated integration package owns real-process journeys only. The
+     twelve integration-tagged in-process tests become ordinary `cmd/fid`
+     tests; the four binary journeys move with their helpers to
+     `cmd/fid/integration`. No test or assertion is removed.
+  3. After Task 3f, the accepted integration gate is
+     `go test -tags integration -race ./cmd/fid/integration/...`. Task 3f runs
+     both old and new commands as transition evidence and updates every
+     canonical gate surface plus remaining Phase 20 task/QA commands.
+     Completed historical specs and reports are not rewritten.
+  4. A pristine workspace fixture is test-only and may replace initialization
+     only where initialization is not the subject. Init, bootstrap, migration,
+     rebuild, compatibility, and durability tests keep the production path;
+     parity and per-test isolation are mandatory.
+  5. Production CLI behavior is unchanged. Tests receive an explicit working
+     directory through the root-command boundary before any `t.Parallel` is
+     added. Parallelism is bounded to tests with isolated filesystem, database,
+     environment, stream, and signal state and must survive repeated race runs.
+  6. Claims receives a narrow optional time input with real UTC time as the
+     zero-value production default. Maintenance already has `CheckOptions.Now`;
+     Task 3l uses that accepted boundary instead of adding another abstraction.
+  7. `InitializeWorkspace` durability semantics are benchmarked, not optimized.
+     No rebuild verification, migration, fsync, activation, journal, or DB
+     parity behavior may be weakened for test speed.
+  8. No dependency is added. No product contract, VAL, schema, journal format,
+     or CLI output changes. The same-host target is at least 40% lower median
+     combined race/coverage plus dedicated-integration wall time than the
+     roughly 294-second baseline; correctness remains the hard requirement.
+  9. After final gates, a fresh QA Reviewer independently audits the frozen
+     commit range and writes `qa/infra-review-1.md`. Task 4 remains blocked
+     until every Blocking finding is fixed and the pack is complete.
+- **Consequences:** The integration gate ceases to duplicate ordinary test
+  execution, fixtures become reusable without mocking persistence,
+  process-global directory mutation no longer blocks safe concurrency, and
+  wall-clock waits become deterministic. The campaign costs eight separately
+  committed TDD tasks plus an independent review. The anchor, not chat history,
+  is authoritative across compaction or session boundaries.
+- **Refs:** Human approval dated 2026-08-10;
+  `reviews/2026-08-10-gate-execution-and-test-runtime-diagnosis.md`;
+  `qa/review-1c.md`; tasks 3e-3l; `AGENTS.md`; `08_QUALITY_PLAN.md`;
+  `09_AI_WORKFLOW.md` §8.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

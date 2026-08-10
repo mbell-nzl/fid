@@ -77,14 +77,13 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 
 ## Current work
 
-1. Phase Runner resumes at task-3c (integration-journey convergence, missing
-   `max_excerpt_bytes` rows, honest full-gate baseline), then task-3d
-   (report-lint evidence-token control, completion-report corrections).
-2. QA Reviewer produces the bounded `../phases/phase-20/qa/review-1c.md`,
-   including a `## Corrections` record for review-1's integration row. Task 4
-   starts only on a non-BLOCK verdict; a third BLOCK returns to the Human.
-3. Phase Runner continues Tasks 4-18 through the six accepted review windows.
-4. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+1. Review 1c is complete and NON-BLOCK at commit `cb5f1bf`.
+2. Execute the Human-approved DEC-133 infrastructure pack Tasks 3e-3l using
+   `../phases/phase-20/infra-improvement-pack.md` as the compaction-safe anchor.
+3. A fresh QA Reviewer commits `qa/infra-review-1.md`; Task 4 starts only after
+   a non-BLOCK verdict and final post-review gates.
+4. Phase Runner continues Tasks 4-18 through the six accepted review windows.
+5. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
 Carry-forward opened this phase, both registered in `decisions_active.md` at

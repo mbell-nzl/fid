@@ -13,10 +13,10 @@ revision, and the retained Issue contract. Delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-3b complete; Reviews 1 and 1b both
-returned BLOCK.** DEC-130 then DEC-131 resolved `ESC-20-001`/`ESC-20-002` with
-no weakened VAL and no product change. Run tasks 3c and 3d, then bounded
-re-review `qa/review-1c.md`, then Task 4. A third BLOCK returns to the Human.
+**In flight on branch `phase-20`. Tasks 1-3d and recovery Review 1c are
+complete.** DEC-133 inserts the Human-approved infrastructure Tasks 3e-3l and
+independent `qa/infra-review-1.md` before Task 4. Execution state is anchored
+in `../phases/phase-20/infra-improvement-pack.md`.
 
 ## Operating Mode And Slice Contract
 
@@ -37,9 +37,10 @@ and legacy expiry ledger.
 | 3 | Atomic project initialization | Complete | 1-2 |
 | 3a | Reason-code schema and redaction evidence | Complete (DEC-130) | 1 |
 | 3b | Strict-config and init boundary evidence | Complete; VAL-043 gap owed by 3c | 2-3, 3a |
-| 3c | Integration-journey convergence and honest gate baseline | Pending (DEC-131) | 3b |
-| 3d | Evidence-token control and gate-record correction | Pending (DEC-131) | 3c |
-| 4 | Rebuild, authority, and lock failures | Blocked until review-1c is non-BLOCK | 1-3, 3a-3d |
+| 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
+| 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
+| 3e-3l | Infrastructure performance pack | Approved (DEC-133) | review-1c |
+| 4 | Rebuild, authority, and lock failures | Blocked until infra-review-1 is non-BLOCK | 1-3, 3a-3l |
 | 5 | Remove orphaned Issue fields | Pending | 4 |
 | 6 | Replayable Issue aggregate revision | Pending | 5 |
 | 7 | Issue hierarchy invariant | Pending | 5-6 |
@@ -57,8 +58,9 @@ and legacy expiry ledger.
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
 12, 15, and 17; Task 18 follows the sixth review. Tasks 3a-3d are DEC-130/131
-recovery sessions that add no scope and change no accepted window;
-`review-1b/1c.md` are escalation-resolution artifacts, not cadence reviews.
+recovery sessions. Tasks 3e-3l are the DEC-133 infrastructure pack and add no
+product VAL; `review-1b/1c.md` and `infra-review-1.md` are bounded artifacts,
+not cadence reviews.
 
 ## Validation Contract
 

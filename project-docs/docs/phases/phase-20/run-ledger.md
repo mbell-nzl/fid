@@ -152,3 +152,23 @@ Human-approved and QA-plan acceptance is next._
   updated Open ESC baseline is none
 - Next action: sequence bounded review-1c and the Human-requested infrastructure
   follow-up pack before Task 4; no review or Task 4 work started in this recovery
+
+### 2026-08-10 19:55 REVIEW review-1c
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-1c.md`
+- Tasks covered: task-3c and task-3d recovery commits
+- Verdict: CONTINUE (NON-BLOCK); Blocking: 0 / Improvement: 0 / ESC raised: none
+- Commit: `cb5f1bfb13048c41463ef772757022ce0237681f` - verified, subject matched
+  (`docs(qa): review phase 20 recovery`)
+- Independent evidence: both recovery report lints, all five historical-report
+  lints, report-lint self-test, workflow-lint, focused VAL-043/044 tests, and
+  exact integration gate PASS with observed `exit_code: 0`
+
+### 2026-08-10 19:55 RUN-RESUME
+
+- Branch: `phase-20`
+- Resuming from: non-BLOCK Review 1c under Human-approved DEC-133
+- Starting task: planning-only anchor, then tasks 3e-3l, independent
+  `qa/infra-review-1.md`, then Task 4
+- Durable state: `project-docs/docs/phases/phase-20/infra-improvement-pack.md`
+- Open ESC baseline: none
