@@ -17,7 +17,7 @@ import (
 
 func TestIntegrationClassification(t *testing.T) {
 	dedicatedDir := classificationDirectory(t)
-	parentDir := filepath.Dir(dedicatedDir)
+	repositoryRoot := filepath.Dir(filepath.Dir(filepath.Dir(dedicatedDir)))
 	wantJourneys := []string{
 		"TestMaintenanceCheckReportsIncompatibleWorkflowAssignment",
 		"TestV01ClosureJourneyAndRebuildParity",
@@ -34,7 +34,7 @@ func TestIntegrationClassification(t *testing.T) {
 		t.Fatalf("dedicated integration journeys = %v, want %v", gotJourneys, wantJourneys)
 	}
 
-	if tagged := taggedTestFiles(t, parentDir); len(tagged) != 0 {
+	if tagged := taggedTestFilesOutside(t, repositoryRoot, dedicatedDir); len(tagged) != 0 {
 		t.Fatalf("integration-tagged tests outside dedicated package = %v, want none", tagged)
 	}
 }
@@ -154,24 +154,37 @@ func topLevelFunctions(t *testing.T, directory string) map[string]bool {
 	return functions
 }
 
-func taggedTestFiles(t *testing.T, directory string) []string {
+func taggedTestFilesOutside(t *testing.T, repositoryRoot, dedicatedDir string) []string {
 	t.Helper()
-	entries, err := os.ReadDir(directory)
-	if err != nil {
-		t.Fatalf("read parent test directory: %v", err)
-	}
 	var names []string
-	for _, entry := range entries {
-		if entry.IsDir() || !strings.HasSuffix(entry.Name(), "_test.go") {
-			continue
+	err := filepath.WalkDir(repositoryRoot, func(path string, entry os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
-		contents, err := os.ReadFile(filepath.Join(directory, entry.Name()))
+		if entry.IsDir() {
+			if path == dedicatedDir || (path != repositoryRoot && strings.HasPrefix(entry.Name(), ".")) {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !strings.HasSuffix(entry.Name(), "_test.go") {
+			return nil
+		}
+		contents, err := os.ReadFile(path)
 		if err != nil {
-			t.Fatalf("read %s: %v", entry.Name(), err)
+			return err
 		}
 		if strings.HasPrefix(string(contents), "//go:build integration\n") {
-			names = append(names, entry.Name())
+			relative, err := filepath.Rel(repositoryRoot, path)
+			if err != nil {
+				return err
+			}
+			names = append(names, filepath.ToSlash(relative))
 		}
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("inventory repository integration-tagged tests: %v", err)
 	}
 	sort.Strings(names)
 	return names
