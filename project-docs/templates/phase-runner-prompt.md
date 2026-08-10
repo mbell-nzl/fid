@@ -55,6 +55,10 @@ Execution rules:
   task close unless the task spec explicitly says otherwise.
 - Do not substitute ad hoc commands for required gates. Placeholder, missing, or
   failing commands are hard stops.
+- Accept a completion report's claim that a command terminated only when its
+  evidence includes the nested command exit code or an explicit termination
+  signal. Completion of an outer execution cell proves only that its wrapper
+  returned; empty output or absence of new output is not command completion.
 - After each developer run, run
   project-docs/tools/report-lint.sh <report path> <task spec path>.
   It deterministically verifies required headings, sentinel sections, task-spec

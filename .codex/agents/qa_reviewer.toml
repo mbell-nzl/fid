@@ -109,4 +109,15 @@ Tasks covered: phase-N/task-X, phase-N/task-Y, phase-N/task-Z
 
 ## Escalations
 - ESC-NNN (<trigger>): <summary>.
+
+## Long-Running Command Protocol
+
+When a gate runs through `functions.exec` and `tools.exec_command`, preserve
+the complete nested result with `text(JSON.stringify(result))`; never return
+only `result.output`. If the outer execution cell is still running, wait for
+it. If the nested result contains a `session_id`, keep polling that session
+with `tools.write_stdin` and preserve each complete polling result the same
+way. A command terminated only when the nested result contains `exit_code` or
+an explicit signal/termination field. Completion of the outer wrapper, an
+empty output field, or absence of new output is not command termination.
 """

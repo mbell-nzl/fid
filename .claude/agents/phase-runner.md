@@ -83,6 +83,13 @@ skipped, narrower substituted, or failing commands. A narrower substituted
 command is a failed gate unless the report marks the required command
 `BLOCKED` with the reason.
 
+A completion report may claim that a command terminated only when its
+evidence includes the nested command's `exit_code` or an explicit
+signal/termination result. Completion of an outer execution cell proves only
+that its wrapper returned; it does not prove that a yielded nested command
+terminated. Treat missing termination evidence as a failed gate and route it
+through the normal triage-gated hard stop.
+
 ## Triage-Gated Hard Stops
 
 Before appending a final STOP for any of these causes, spawn TL-Lite as the

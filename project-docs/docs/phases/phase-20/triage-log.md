@@ -15,10 +15,39 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-003 | 2026-08-09 | Task 3d blocker report: required full-suite coverage gate has no captured terminal output and report-lint fails on three go-test prose false matches | `tasks/task-3d-done.md` | BLOCK | ESC-20-003 | The required gate is UNVERIFIED, not PASS; the new report-lint control also has an unresolved three-failure false-match defect. |
 | TRG-20-002 | 2026-08-09 | Bounded QA re-review review-1b returned BLOCK with two unresolved findings before Task 4 | `qa/review-1b.md` | BLOCK | ESC-20-002 | VAL-043 has an exhaustive evidence gap and the required integration gate fails in three init scenarios. |
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-003 - Task 3d blocked by uncaptured coverage gate and report-lint false matches
+
+- **Trigger:** Task 3d Developer produced a blocker report because the required
+  `go test -race -coverprofile=coverage.out ./...` terminated in the session
+  without captured terminal output, making its gate UNVERIFIED rather than
+  PASS; independent report-lint then failed three checks because the new
+  go-test token control matched explanatory `go test` prose in the blocker
+  report. Task 3d has no commit.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-3d-done.md`
+- **Verdict:** BLOCK
+- **Reasoning:** This is a genuine unresolved required-gate and report-lint
+  hard stop. AGENTS.md and DEC-131 require a real terminal token for a
+  full-suite `go test` PASS and classify uncaptured output as UNVERIFIED, not
+  success. The report-lint failure is a second genuine hard stop; no attached
+  verified commit resolves either condition, and DEC-131 requires the new
+  control to land rather than remain a promise. The resulting partial-work
+  recovery changes delivery tooling and evidence across Task 3d and the five
+  corrected completion reports, exceeding local-decision authority.
+- **Local decisions made:** none
+- **References:** `project-docs/docs/phases/phase-20/tasks/task-3d-done.md`
+  (Exact quality-gate results and blocker); `AGENTS.md` (Commands, evidence
+  token and UNVERIFIED rules); `project-docs/docs/phases/phase-20/decisions.md`
+  (DEC-131, decisions 4-6 and 9); `project-docs/specs/09_AI_WORKFLOW.md` §2.3
+  and §9.
+- **If BLOCK:** ESC-20-003 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-003 before any Task 3d
+  recovery or review-1c work resumes.
 
 ## TRG-20-002 - Review 1b unresolved VAL-043 evidence and integration-gate failure
 

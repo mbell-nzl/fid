@@ -148,6 +148,31 @@ for path in $agent_files; do
   check_file "$path" "agent prompt/config"
 done
 
+# Codex gate-running roles must retain the nested command session handle for
+# commands that outlive the initial exec yield. Generated prompts are checked
+# alongside canonical sources so provider drift cannot silently restore the
+# false "terminated without output" failure mode from ESC-20-003.
+codex_gate_session_surfaces="
+project-docs/agents/developer.md
+project-docs/agents/qa-lead.md
+project-docs/agents/qa-reviewer.md
+.codex/agents/developer.toml
+.codex/agents/qa_lead.toml
+.codex/agents/qa_reviewer.toml
+"
+
+for file in $codex_gate_session_surfaces; do
+  check_contains "$file" 'JSON\.stringify' "Codex full exec-result preservation"
+  check_contains "$file" 'session_id' "Codex nested command session handling"
+  check_contains "$file" 'write_stdin' "Codex long-command polling"
+  check_contains "$file" 'exit_code' "Codex observed command termination"
+done
+
+for file in project-docs/agents/phase-runner.md .codex/agents/phase_runner.toml; do
+  check_contains "$file" 'exit_code' "Phase Runner command-termination evidence"
+  check_contains "$file" 'outer.*execution cell|execution cell.*outer' "Phase Runner wrapper-completion guardrail"
+done
+
 check_file "project-docs/docs/playbook.md" "operator playbook"
 check_file "project-docs/templates/hooks/claude-settings.example.json" "Claude hook example"
 check_file "project-docs/templates/hooks/codex-hooks-notes.md" "Codex hook notes"

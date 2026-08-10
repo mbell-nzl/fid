@@ -471,6 +471,24 @@
      Review 1 also claimed an independent integration `PASS` with the same
      impossible token. Review 1b is the first artifact in Phase 20 that actually
      ran the integration gate, and it failed.
+  4. **Confirmed by Human reproduction (2026-08-09).** `go test -tags
+     integration -race ./...` run by the Human from the repository root
+     reproduced exactly three failures — `TestV01ClosureJourneyAndRebuildParity`,
+     `TestV02aWorkflowAuthoringExitScenarioAndRebuildParity`, and
+     `TestMaintenanceCheckReportsIncompatibleWorkflowAssignment` — each
+     `.../001/fid init: exit status 1` with `error: invalid project
+     initialization argument`. Every other package reported `ok`. The
+     diagnosis is verified, not inferred.
+  5. **Named probable cause of the bad token.** That run took **184.9s for
+     `cmd/fid` alone** and several minutes overall, and Go prints nothing until
+     packages complete. The likely mechanism is an agent whose long-running
+     command was timed out or killed, then written up as `exit 0 (no output)`
+     because no output had appeared. `AGENTS.md` already governs this: a hung,
+     interrupted, or killed command is `BLOCKED`, never `PASS`. This is a
+     probable cause, not a proven one; the disposition below is unchanged
+     either way, but task-3d's failure message must name it, because telling a
+     future agent "your command was probably killed — record `BLOCKED`" is far
+     more useful than "invalid token".
 - **Decision:**
   1. **Both Review 1b Blocking findings are sustained.** VAL-043 keeps its
      accepted criteria; the exact integration command is not narrowed,
@@ -516,6 +534,51 @@
 - **Refs:** `qa/review-1b.md`; `triage-log.md` `TRG-20-002`; `tl-escalations.md`
   `ESC-20-002`; DEC-130; phase-19 DEC-102/DEC-103; `AGENTS.md` (Commands);
   `contracts.md` §3.2.1; `qa/validation-contract.md` VAL-043; tasks 3c and 3d.
+
+### DEC-132: Human-authorized ESC-20-003 recovery preserves Task 3d and repairs long-running gate handling
+
+- **Date:** 2026-08-10
+- **Context:** Task 3d stopped after its execution wrapper returned only the
+  nested command's empty `output` field and discarded the rest of the result,
+  including the `session_id` needed to keep polling. The underlying full-suite
+  command was still running; completion of the outer execution cell was
+  mistaken for termination of the nested command. The Task 3d blocker report
+  then exposed a second tooling defect: `report-lint.sh` treated wrapped
+  explanatory prose containing `go test` as command-result records. The Human
+  authorized a recovery super-agent outside the normal one-task/session and
+  role boundaries solely to preserve and complete Task 3d, repair these
+  workflow controls, capture the exact gates, commit the recovery, and close
+  ESC-20-003.
+- **Decision:**
+  1. Preserve the existing Task 3d implementation and historical report
+     corrections. Repair the false match by validating only recorded
+     command-result bullets and excluding legitimate `BLOCKED`/`UNVERIFIED`
+     records from PASS-token plausibility checks. Keep every existing rejection
+     case and add a wrapped-blocker regression.
+  2. Canonical Codex prompts for Developer, QA Lead, and QA Reviewer must
+     preserve the complete nested execution result, retain and poll any
+     `session_id` with `write_stdin`, and claim termination only from an
+     `exit_code` or explicit termination signal. Phase Runner must reject a
+     report that confuses outer execution-cell completion with nested-command
+     termination. Generated provider prompts and `workflow-lint.sh` enforce the
+     rule.
+  3. Run Task 3d's exact command sequence without narrowing or substitution,
+     capture real `go test` package-output tokens, finalize its completion
+     report, and use the normal task-commit/final-report-commit sequence.
+  4. The recovery may also commit its diagnosis, canonical workflow rule,
+     generated prompts, decision, escalation closure, and append-only ledger
+     reconciliation. No product code or accepted VAL/contract changes are
+     authorized.
+  5. **Do not begin the broader test-performance refactors.** They belong to a
+     separate Human-requested infrastructure follow-up pack inserted before
+     Task 4, after Task 3d and ESC-20-003 are closed.
+- **Consequences:** The third BLOCK is resolved without discarding completed
+  work or weakening any gate. Long-running silence remains expected behavior;
+  agents retain the actual session until it terminates. Task 4 remains blocked
+  behind review-1c and the separately authorized follow-up pack.
+- **Refs:** Human authorization dated 2026-08-10; `TRG-20-003`;
+  `ESC-20-003`; task-3d; `AGENTS.md` (Commands); `09_AI_WORKFLOW.md` §8;
+  `report-lint.sh`; `workflow-lint.sh`.
 
 ## Spec Sync Verdict
 

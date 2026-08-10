@@ -94,3 +94,29 @@ Human-approved and QA-plan acceptance is next._
 - Cause: bounded review-1b is BLOCKED by missing rejected `max_excerpt_bytes` boundary cases and a failed required integration gate; TL-Lite `TRG-20-002` returned `VERDICT: BLOCK (escalated as ESC-20-002)`.
 - Triage: `TRG-20-002` (BLOCK, escalated as `ESC-20-002`)
 - Next human action: define bounded recovery for the VAL-043 evidence gap and failing init integration scenarios, preserving the accepted VAL-043 criteria and exact integration command, before Task 4 resumes.
+
+### 2026-08-09 20:32 RUN-RESUME
+
+- Branch: `phase-20`
+- Resuming from: prior review-1b STOP, resolved by DEC-131
+- Reconciliation: Tasks 3a/3b and review-1b remain recorded; both findings are sustained with no product change authorized. `ESC-20-002` is closed and the updated Open ESC baseline is none. Earlier full-suite go-test tokens remain UNVERIFIED pending task-3c's current-tree baseline.
+- Starting task: task-3c, then task-3d, bounded QA re-review `review-1c.md`, then task-4
+
+### 2026-08-09 20:44 TASK task-3c COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3c-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Commit: `f978b6d382b3ae90ff44a7f4577799bb048329d4` - verified, subject matched (`test(config): converge init integration fixtures`)
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-09 20:54 TRIAGE TRG-20-003
+
+- Trigger: Task 3d has an UNVERIFIED required coverage gate with no captured terminal output, and independent report-lint fails three checks on go-test prose false matches in the blocker report.
+- Verdict: BLOCK (escalated as ESC-20-003)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` entry `TRG-20-003` confirmed; `ESC-20-003` written to current escalations
+
+### 2026-08-09 20:54 STOP
+
+- Cause: Task 3d blocker report records `go test -race -coverprofile=coverage.out ./...` as UNVERIFIED because no output token was captured; report-lint independently failed three checks; TL-Lite `TRG-20-003` returned `VERDICT: BLOCK (escalated as ESC-20-003)`. This is the third BLOCK after DEC-131.
+- Triage: `TRG-20-003` (BLOCK, escalated as `ESC-20-003`)
+- Next human action: Human resolve `ESC-20-003` and authorize any further Task 3d recovery disposition; no review-1c or Task 4 work may start until the Human resumes the run.

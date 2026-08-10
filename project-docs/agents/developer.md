@@ -139,3 +139,15 @@ commit, or stay inside scope, still write `task-M-done.md` as a blocker
 report before stopping. Include current state, files changed, commands run,
 the exact blocker, quality-gate status so far, which required commands are
 `PASS`/`BLOCKED`/not run, and whether a commit was created.
+<!-- body: codex -->
+
+## Long-Running Command Protocol
+
+When a gate runs through `functions.exec` and `tools.exec_command`, preserve
+the complete nested result with `text(JSON.stringify(result))`; never return
+only `result.output`. If the outer execution cell is still running, wait for
+it. If the nested result contains a `session_id`, keep polling that session
+with `tools.write_stdin` and preserve each complete polling result the same
+way. A command terminated only when the nested result contains `exit_code` or
+an explicit signal/termination field. Completion of the outer wrapper, an
+empty output field, or absence of new output is not command termination.

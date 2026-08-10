@@ -76,6 +76,53 @@ required_commands() {
   ' "$1"
 }
 
+# Reject evidence tokens that cannot have been printed by the recorded go test
+# command. This is intentionally mechanical: it cannot prove the command ran,
+# but it can catch a silent-success or unrelated token copied into its record.
+validate_go_test_tokens() {
+  while IFS= read -r line; do
+    case "$line" in
+      '- `'*'go test'*'`'*'- '*) ;;
+      *) continue ;;
+    esac
+
+    case "$line" in
+      *BLOCKED*|*UNVERIFIED*) continue ;;
+    esac
+
+    token=$(printf '%s\n' "$line" | awk -F '`' 'NF >= 4 { print $4 }')
+    case "$token" in
+      'exit 0 (no output)')
+        fail "go test recorded an impossible silent-success token on line: $line. Long go test runs may print nothing until packages finish; wait for completion. A killed or timed-out run is BLOCKED, never PASS with a silent token."
+        ;;
+      *'ok '*|*FAIL*|*PASS*|*---*|*'no test files'*)
+        pass "go test token looks like output: $token"
+        ;;
+      *)
+        fail "go test token does not look like go test output on line: $line. Long go test runs may print nothing until packages finish; wait for completion. A killed or timed-out run is BLOCKED, never PASS with a silent token."
+        ;;
+    esac
+  done <<EOF
+$1
+EOF
+}
+
+# DEC-131 requires an additive correction to five already-complete Phase 20
+# reports. The exception is deliberately narrower than normal gate coverage:
+# only a corrected go test record can remain UNVERIFIED, and only when the
+# report preserves the original impossible token in its appended correction.
+has_dec131_go_test_correction() {
+  report=$1
+  cmd=$2
+  case "$cmd" in
+    *'go test'*) ;;
+    *) return 1 ;;
+  esac
+  grep -Fqx '## Gate-evidence correction (DEC-131)' "$report" &&
+    grep -F "\`$cmd\`" "$report" | grep -q 'UNVERIFIED' &&
+    grep -Fq 'original recorded token `exit 0 (no output)`' "$report"
+}
+
 run_lint() {
   report=$1
   spec=$2
@@ -160,6 +207,7 @@ EOF
     { section_body "$report" '## Tests run'
       section_body "$report" '## Exact quality-gate results'; } | grep -v '^[[:space:]]*$' || true
   )
+  validate_go_test_tokens "$results"
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
     case "$cmd" in
@@ -179,6 +227,8 @@ EOF
       else
         fail "required command BLOCKED outside a blocker report: $cmd"
       fi
+    elif printf '%s\n' "$match" | grep -q 'UNVERIFIED' && has_dec131_go_test_correction "$report" "$cmd"; then
+      pass "required go test command recorded UNVERIFIED in DEC-131 historical correction: $cmd"
     else
       fail "required command present but has no PASS/BLOCKED result: $cmd"
     fi
@@ -273,6 +323,8 @@ Run exactly:
 echo format-fixture
 echo lint-fixture
 echo coverage-fixture
+go test ./...
+go test -tags integration ./...
 ```
 
 ## Notes For Developer
@@ -306,6 +358,8 @@ EOF
 ## Tests run
 
 - \`echo coverage-fixture\` - PASS
+- \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\`
+- \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\`
 
 ## Exact quality-gate results
 
@@ -358,6 +412,12 @@ EOF
     fi
   }
 
+  commit_fixture() {
+    git -C "$tmp" add "$1"
+    git -C "$tmp" -c user.name=fixture -c user.email=fixture@example.invalid \
+      commit -q -m "test: add report-lint fixture"
+  }
+
   # Clean report must pass. Committed in a follow-up docs commit, mirroring
   # the required two-step pattern (task commit, then finalized report commit).
   write_report "$tmp/clean.md" "$good_hash" "$good_subject"
@@ -365,6 +425,33 @@ EOF
   git -C "$tmp" -c user.name=fixture -c user.email=fixture@example.invalid \
     commit -q -m "docs(task): finalize completion report fixture"
   expect "clean report passes" zero "" "$tmp/clean.md"
+  expect "accepted real go test tokens pass" zero "" "$tmp/clean.md"
+
+  # A full go test run can print nothing until packages finish. A silent token
+  # therefore cannot prove it terminated successfully.
+  sed 's|`ok  example.com/fixture  0.001s`|`exit 0 (no output)`|' "$tmp/clean.md" > "$tmp/impossible-go-test-token.md"
+  commit_fixture impossible-go-test-token.md
+  expect "impossible go test token fails" nonzero "go test recorded an impossible silent-success token" "$tmp/impossible-go-test-token.md"
+
+  # Non-go-test output cannot be copied in as evidence for a go test command.
+  sed 's|`ok  example.com/fixture  0.001s`|`295 internal/config/project_config.go`|' "$tmp/clean.md" > "$tmp/mismatched-go-test-token.md"
+  commit_fixture mismatched-go-test-token.md
+  expect "mismatched go test token fails" nonzero "go test token does not look like go test output" "$tmp/mismatched-go-test-token.md"
+
+  # DEC-131 corrections retain the historical record but do not let a
+  # fabricated token remain a passing gate result.
+  sed \
+    -e 's|`go test ./...` - PASS - `ok  example.com/fixture  0.001s`|`go test ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131)|' \
+    -e 's|`go test -tags integration ./...` - PASS - `ok  example.com/fixture/integration  0.002s`|`go test -tags integration ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131)|' \
+    "$tmp/clean.md" > "$tmp/corrected-historical-go-test.md"
+  cat >> "$tmp/corrected-historical-go-test.md" <<'EOF'
+
+## Gate-evidence correction (DEC-131)
+
+- The original recorded token `exit 0 (no output)` is retained as history.
+EOF
+  commit_fixture corrected-historical-go-test.md
+  expect "corrected historical go test records pass" zero "DEC-131 historical correction" "$tmp/corrected-historical-go-test.md"
 
   # Missing required heading.
   sed '/^## Dependency-budget note$/,/^## Commit hash$/{/^## Dependency-budget note$/d; /^- No dependency changes\.$/d;}' \
@@ -407,8 +494,12 @@ EOF
   write_report "$tmp/blocker.md" "$good_hash" "$good_subject"
   sed -e 's|- `'"$good_hash"'`|- `No commit created - blocker report`|' \
       -e 's|`echo lint-fixture` - PASS|`echo lint-fixture` - BLOCKED|' \
+      -e '/^- `go test \.\/\.\.\.` - PASS/c\
+- `go test ./...` - BLOCKED - the command\
+  terminated in this session with no captured terminal output. For `go test`,\
+  no PASS can be recorded.' \
       "$tmp/blocker.md" > "$tmp/blocker-final.md"
-  expect "well-formed blocker report passes lint" zero "blocker report detected" "$tmp/blocker-final.md"
+  expect "wrapped go test blocker explanation passes lint" zero "blocker report detected" "$tmp/blocker-final.md"
 
   # Finalized report never committed.
   cp "$tmp/clean.md" "$tmp/uncommitted.md"

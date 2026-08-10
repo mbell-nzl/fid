@@ -112,6 +112,15 @@ List any conditional command required by this task and why:
 
 ## Notes For Developer
 
+- **This gate is slow: expect several minutes wall clock, roughly three of them
+  in `cmd/fid` alone, with no output at all until packages finish.** Go compiles
+  everything first and prints one line per package as it completes. Do not kill
+  it. A killed or timed-out run is `BLOCKED` with that reason, never `PASS`.
+  Capture it with `2>&1 | tee` so the real tail survives.
+- The Human-verified failure signature is three `cmd/fid` tests, each
+  `.../001/fid init: exit status 1` with `error: invalid project initialization
+  argument`, and `ok` for every other package. If you see a different set,
+  something has changed since DEC-131 and you should say so.
 - Start by reproducing the failure, not by fixing it. Paste the real failing
   output tail into the report before the repair.
 - If a journey cannot be converged without changing what it asserts, stop and

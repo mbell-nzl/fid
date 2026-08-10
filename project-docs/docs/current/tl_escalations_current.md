@@ -9,7 +9,17 @@
 
 ## Open Escalations
 
-_None._
+- **ESC-20-003 — Task 3d gate-evidence and report-lint failure
+  (2026-08-09).** The required `go test -race
+  -coverprofile=coverage.out ./...` gate terminated without captured terminal
+  output, so its result is UNVERIFIED and cannot be recorded PASS. The Task 3d
+  blocker report also records an independent `report-lint` failure: the new
+  go-test token control matched explanatory `go test` prose three times. No
+  task or finalized-report commit exists, and no attached verification evidence
+  resolves either failure. This is the third Phase 20 BLOCK following
+  DEC-131's recovery path; resolve the delivery-tooling/evidence recovery and
+  its authorized disposition before resuming Task 3d or starting review-1c.
+  Source: `project-docs/docs/phases/phase-20/tasks/task-3d-done.md`.
 
 ---
 

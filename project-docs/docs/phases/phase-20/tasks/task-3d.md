@@ -63,6 +63,10 @@ full-suite `go test` gate with an impossible token (DEC-131).
       now fail.
 - [ ] Commands that legitimately print nothing (`gofmt -l`, `go build`) still
       accept `exit 0 (no output)`; no existing check is weakened.
+- [ ] The failure message names the probable cause and the correct action: a
+      long `go test` run prints nothing until packages finish, so a killed or
+      timed-out run is `BLOCKED` with that reason, never `PASS` with a
+      silent-success token.
 - [ ] `--self-test` gains cases for the rejected impossible token, the rejected
       mismatched token, and the accepted real token, and passes.
 - [ ] Each of the five Phase 20 completion reports carries an appended

@@ -1210,6 +1210,14 @@ claim invisible to every downstream review until someone re-runs the gate
 independently. Such a command is `BLOCKED` with the reason in a blocker
 report. This rule is mode-invariant.
 
+For an execution tool that can yield a long-running command, wrapper
+completion is not command completion. The executing role preserves the full
+result object, retains any nested session handle, polls that session until the
+nested result reports an exit code or explicit termination signal, and records
+the output token only then. A downstream reviewer or orchestrator rejects a
+termination claim that is supported only by completion of the outer wrapper,
+empty output, or absence of new output.
+
 The token is the command's real exit behavior, not the expected one. A search
 or inventory command (`rg`, `grep`) used to prove an *absence* — no production
 evaluator, no forbidden call site — terminates with **exit 1 and no output**

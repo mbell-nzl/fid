@@ -29,9 +29,9 @@
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)`
 - `golangci-lint run ./...` - PASS - `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `exit 0 (no output)`
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131).
 - `go tool cover -func=coverage.out` - PASS - `77.4%`
-- `go test -tags integration -race ./...` - PASS - `exit 0 (no output)`
+- `go test -tags integration -race ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131).
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`
 
 ## Deviations from spec
@@ -53,3 +53,11 @@
 ## Commit subject
 
 - `fix(cli): enforce closed reason-code details`
+
+## Gate-evidence correction (DEC-131)
+
+- The full-suite `go test -race -coverprofile=coverage.out ./...` and `go test -tags integration -race ./...` records are UNVERIFIED. Each original recorded token `exit 0 (no output)` could not have come from a completed `go test` run: long runs may print nothing until their packages finish, while a killed or timed-out run is BLOCKED, never PASS with a silent token.
+- Preserved original record: `go test -race -coverprofile=coverage.out ./...` - PASS - original recorded token `exit 0 (no output)`.
+- Preserved original record: `go test -tags integration -race ./...` - PASS - original recorded token `exit 0 (no output)`.
+- `task-3c-done.md`'s current-tree full-gate run is the Phase 20 verified baseline; these historical commands were not re-run at Task 3a's commit.
+- Task 3a remains complete, but its own full-suite gate evidence is UNVERIFIED as of its task commit.
