@@ -158,3 +158,57 @@ Review written: project-docs/docs/phases/phase-20/qa/infra-review-1.md
 Blocking: 1  Improvement: 0  Escalations: ESC-20-004
 VERDICT: BLOCK
 ```
+
+## Re-review - ESC-20-004 correction (75c856a through e96f263)
+
+### Findings first
+
+#### Blocking
+
+- None. ESC-20-004 is corrected: the retained concern-write transition-rule
+  test is now an ordinary test, and the repository-wide inventory prevents an
+  integration-tagged test outside the dedicated package from being silently
+  omitted again.
+
+#### Improvement
+
+- None.
+
+### Correction audit
+
+- Verified commits and subjects: `75c856a` (`test(integration): enforce
+  repository-wide classification`), `c4131a7` (`docs(phase): record
+  ESC-20-004 correction evidence`), and `e96f263` (`docs(qa): return
+  ESC-20-004 for re-review`) all resolve as commits on `phase-20`.
+- `75c856a` removes only the two-line `//go:build integration` constraint from
+  `internal/issues/transition_rules_test.go`; the complete persistence and
+  transition-rule assertion body is unchanged. It changes no accepted gate
+  command, product behavior, validation assertion, or test dependency.
+- `cmd/fid/integration/classification_test.go:18-39` now resolves the
+  repository root and requires no tagged test outside the dedicated package.
+  `taggedTestFilesOutside` walks repository test files and returns a relative
+  path for every outside file beginning with `//go:build integration`; it skips
+  the dedicated package, whose four real-process journeys are separately
+  enumerated. Current source inventory finds exactly six tagged test files, all
+  in `cmd/fid/integration`.
+
+### Independent command evidence
+
+| Check | Result | Terminal evidence |
+|---|---|---|
+| Ordinary ownership | PASS | `go test -race -count=1 -run '^TestEvaluateTransitionRuleConcernsAddressedUsesRealConcernWrites$' ./internal/issues` ended `ok  github.com/mbell-nzl/fid/internal/issues 1.904s`; the test is compiled and executed without the integration tag. |
+| Repository-wide classifier | PASS | `go test -tags integration -race -count=1 -run '^TestIntegrationClassification$' ./cmd/fid/integration/...` ended `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.596s`. |
+| Canonical ordinary race/coverage gate | PASS | `go test -race -coverprofile=coverage.out ./...` exited 0; output includes `ok  github.com/mbell-nzl/fid/internal/issues (cached) coverage: 82.1% of statements` and completed through `internal/workflow`. |
+| Canonical dedicated integration gate | PASS | `go test -tags integration -race ./cmd/fid/integration/...` exited 0 with `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.307s`. |
+
+### Re-review verdict
+
+**NON-BLOCK.** ESC-20-004 is resolved. The correction preserves the original
+assertion, restores it to the ordinary accepted gate, and prevents the same
+class of repository-wide classification omission without weakening a gate.
+
+```text
+Re-review appended: project-docs/docs/phases/phase-20/qa/infra-review-1.md
+Blocking: 0  Improvement: 0  Escalations: none (ESC-20-004 resolved)
+VERDICT: NON-BLOCK
+```
