@@ -359,3 +359,19 @@ Human-approved and QA-plan acceptance is next._
 - Required gates: PASS with observed terminal results, including the
   byte-identical repaired ten-count command; report finalization and
   report-lint remain
+
+### 2026-08-10 TASK task-3k COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3k-done.md`
+- Report-lint: PASS with all seven required commands and both harness
+  deviations recorded
+- Final report commit: `299073001c7079ac70c59ba6a3bc67be29011305`
+- Next task: task-3l deterministic maintenance time
+
+### 2026-08-10 TASK task-3l START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3l.md`
+- Boundary: reuse `maintenance.CheckOptions.Now` or deterministic persisted
+  journey state; real CLI defaults and maintenance rules remain unchanged
+- Next action: capture exact-boundary coverage and remove the dedicated
+  closure journey's four-second wall-clock sleep
