@@ -172,3 +172,12 @@ Human-approved and QA-plan acceptance is next._
   `qa/infra-review-1.md`, then Task 4
 - Durable state: `project-docs/docs/phases/phase-20/infra-improvement-pack.md`
 - Open ESC baseline: none
+
+### 2026-08-10 TASK task-3e START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3e.md`
+- Planning commit: `81e157617d2de06d5d9025ac245366072e725007` - verified
+- Boundary: benchmark the complete production initialization path; no product
+  optimization or durability change
+- Next action: capture the specified benchmark-absence proof, then implement
+  and run `BenchmarkInitializeWorkspace`

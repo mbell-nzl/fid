@@ -19,9 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `cb5f1bfb13048c41463ef772757022ce0237681f`
-- Current task: planning-only anchor and task specifications
-- Next exact action: commit DEC-133, this anchor, Tasks 3e-3l, QA-plan/current-context updates, and ledger entries
+- Last verified commit: `81e157617d2de06d5d9025ac245366072e725007`
+- Current task: Task 3e - production initialization benchmark
+- Next exact action: run Task 3e's benchmark-absence proof, add
+  `BenchmarkInitializeWorkspace`, and run its focused benchmark
 - Open blockers: none
 - Active command: none
 
@@ -70,8 +71,8 @@ requirements regardless of timing.
 | Step | Status | Task commit | Report | Exact gate | Review |
 |---|---|---|---|---|---|
 | Review 1c | COMPLETE | `cb5f1bf` | `qa/review-1c.md` | PASS | NON-BLOCK |
-| Planning / DEC-133 | IN_PROGRESS | pending | this file | pending | Human-approved |
-| Task 3e benchmark | PENDING | - | `tasks/task-3e-done.md` | - | - |
+| Planning / DEC-133 | COMPLETE | `81e1576` | this file | workflow-lint PASS | Human-approved |
+| Task 3e benchmark | IN_PROGRESS | - | `tasks/task-3e-done.md` | - | - |
 | Task 3f integration package/gate | PENDING | - | `tasks/task-3f-done.md` | - | - |
 | Task 3g shared binary | PENDING | - | `tasks/task-3g-done.md` | - | - |
 | Task 3h workspace fixture | PENDING | - | `tasks/task-3h-done.md` | - | - |
