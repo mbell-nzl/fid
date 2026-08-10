@@ -89,12 +89,10 @@
   `SELF-TEST PASS report-lint self-test completed with no failures`.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
 - `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS -
-  `ok  github.com/mbell-nzl/fid/internal/workflow  (cached)  coverage: 80.5% of statements`.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
 - `go tool cover -func=coverage.out` - PASS -
   `total:  (statements)  77.7%`.
-- `go test -tags integration -race ./...` - PASS -
-  `ok  github.com/mbell-nzl/fid/internal/workflow  (cached)`.
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)`.
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-1-done.md project-docs/docs/phases/phase-20/tasks/task-1.md` - PASS -
   `PASS report-lint completed with no failures`.
