@@ -6,20 +6,19 @@
 
 ## Escalations
 
-### Open
-
-- **ESC-20-004 - Infrastructure Review 1 found an orphaned integration-tagged
-  in-process test (raised 2026-08-10 via `TRG-20-004`).** Task 3f's
-  classification regression scanned only the direct `cmd/fid` parent, so
-  `internal/issues/transition_rules_test.go` remained excluded from the
-  ordinary gate while the dedicated gate targeted only `cmd/fid/integration`.
-  DEC-133 already requires repository-wide accounting and ordinary ownership
-  for in-process tests. Correction `75c856a` strengthens the guard and removes
-  only the misplaced tag; focused and complete post-fix gates pass. The
-  escalation remains open until the same independent reviewer returns a
-  non-BLOCK verdict.
-
 ### Resolved
+
+- **ESC-20-004 - Infrastructure Review 1 gate-accounting correction (raised
+  2026-08-10 via `TRG-20-004`; resolved 2026-08-10 by DEC-134).** Task 3f's
+  classifier inspected only the direct `cmd/fid` parent and missed
+  `internal/issues/transition_rules_test.go`, leaving that tagged in-process
+  test outside both accepted gates. Correction `75c856a` first reproduced the
+  finding with a repository-wide guard, then removed only the misplaced build
+  constraint; the test body and assertions are unchanged. Complete post-fix
+  gates passed. The same reviewer independently verified ordinary ownership,
+  repository-wide classification, canonical race/coverage, and dedicated
+  integration, then returned NON-BLOCK in commit `cd9e6bc`. No product code,
+  public contract, VAL, dependency, or gate command changed.
 
 - **ESC-20-003 — Task 3d gate-evidence and report-lint recovery (raised
   2026-08-09 via `TRG-20-003`; resolved 2026-08-10 by DEC-132).** The full-suite

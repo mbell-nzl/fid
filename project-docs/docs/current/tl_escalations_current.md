@@ -9,24 +9,20 @@
 
 ## Open Escalations
 
-- **ESC-20-004 — Canonical integration gate omits a retained tagged in-process
-  test.** Task 3f's inventory regression only scans the direct `cmd/fid`
-  parent, while `internal/issues/transition_rules_test.go` retains
-  `//go:build integration`. The ordinary race/coverage command excludes that
-  test, and the canonical dedicated command targets only `cmd/fid/integration`.
-  Reproduction: tagged targeted test PASS; ordinary targeted test PASS with
-  `[no tests to run]`; dedicated command PASS. This contradicts DEC-133's
-  complete tagged-test accounting and leaves a real concern-write transition
-  rule outside every accepted gate. DEC-134 sustains the finding. Correction
-  `75c856a` makes the inventory repository-wide and moves the retained test
-  into the ordinary suite without changing its assertions; complete post-fix
-  gates pass. ESC-20-004 remains open until the same reviewer returns a
-  non-BLOCK verdict; Task 4 remains blocked.
+- None.
 
 ---
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-004 resolved by DEC-134 (2026-08-10).**
+  Infrastructure Review 1 found Task 3f's direct-parent classifier omitted an
+  integration-tagged in-process test in `internal/issues`, leaving it outside
+  both accepted gates. Correction `75c856a` makes the inventory
+  repository-wide and removes only the misplaced build constraint. Complete
+  post-fix gates passed; the same reviewer independently verified ordinary
+  ownership, classification, race/coverage, and dedicated integration and
+  returned NON-BLOCK at `cd9e6bc`. No product behavior or assertion changed.
 - **Phase 20 (in flight)** — **ESC-20-003 resolved by DEC-132 (2026-08-10).**
   The Go command had not terminated: a wrapper returned only empty `output`
   and discarded the live nested `session_id`. Canonical Codex prompts now

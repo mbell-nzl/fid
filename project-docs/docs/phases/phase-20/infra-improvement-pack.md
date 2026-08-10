@@ -17,18 +17,16 @@
 
 ## Current Checkpoint
 
-- Pack status: `CORRECTING REVIEW BLOCK`
+- Pack status: `COMPLETE`
 - Branch: `phase-20`
-- Last verified commit: `c4131a790ad332cb5f4258ebc707c79bc74b29ce`
-- Current task: ESC-20-004 correction and re-review
+- Last verified commit: `cd9e6bcd599ab5c9914ac76731c095dcc3b5a0c7`
+- Current task: none; infrastructure pack complete
 - Frozen review range: `81e1576169d3d798b6ee0391f82955210dfb6823^..e80cb3bd48925596b713a3a6f3baec19c87256f9`
-- Frozen correction range: `75c856a^..c4131a7`
-- Next exact action: the same QA Reviewer audits the frozen correction range,
-  appends committed re-review evidence to `qa/infra-review-1.md`, and returns a
-  BLOCK/NON-BLOCK verdict
-- Open blockers: ESC-20-004 - the first independent review found one
-  integration-tagged in-process test outside both accepted gates; correction
-  is implemented but awaits complete gates and same-reviewer re-review
+- Frozen correction range: `75c856a^..e96f263`
+- Next exact action: return control to the normal Phase Runner at Task 4; do
+  not treat this recovery authority as continuing into product implementation
+- Open blockers: none; ESC-20-004 resolved by correction `75c856a` and the
+  same reviewer's NON-BLOCK commit `cd9e6bc`
 - Active command: none
 
 When a command is live across a tool yield, replace `Active command: none` with
@@ -239,9 +237,9 @@ Post-review correction gate on commit `75c856a`:
 | Task 3j bounded parallelism | COMPLETE | `338c5dc` | `tasks/task-3j-done.md` | PASS | report-lint PASS |
 | Task 3k claims clock | COMPLETE | `bec40c8` | `tasks/task-3k-done.md` | PASS | report-lint PASS |
 | Task 3l maintenance clock use | COMPLETE | `16978f5` | `tasks/task-3l-done.md` | PASS | report-lint PASS |
-| Final measurements/gates | COMPLETE | - | this file | PASS | pending independent review |
-| Independent infra review | BLOCKED | `b34367a` | `qa/infra-review-1.md` | reviewer reproductions PASS | BLOCK: ESC-20-004 |
-| ESC-20-004 correction/re-review | IN_PROGRESS | `75c856a` | this file | focused red/green and full gate PASS | pending |
+| Final measurements/gates | COMPLETE | - | this file | PASS | NON-BLOCK after correction |
+| Independent infra review | COMPLETE | `b34367a`, `cd9e6bc` | `qa/infra-review-1.md` | reviewer reproductions PASS | BLOCK, then NON-BLOCK |
+| ESC-20-004 correction/re-review | COMPLETE | `75c856a` | this file | focused red/green and full gate PASS | NON-BLOCK |
 
 Only one row may be `IN_PROGRESS`. A task becomes `COMPLETE` only after focused
 red/green evidence, every exact command PASS, verified task commit, finalized

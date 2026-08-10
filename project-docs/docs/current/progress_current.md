@@ -78,11 +78,12 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 ## Current work
 
 1. Review 1c is complete and NON-BLOCK at commit `cb5f1bf`.
-2. Execute the Human-approved DEC-133 infrastructure pack Tasks 3e-3l using
-   `../phases/phase-20/infra-improvement-pack.md` as the compaction-safe anchor.
-3. A fresh QA Reviewer commits `qa/infra-review-1.md`; Task 4 starts only after
-   a non-BLOCK verdict and final post-review gates.
-4. Phase Runner continues Tasks 4-18 through the six accepted review windows.
+2. The Human-approved DEC-133 infrastructure pack Tasks 3e-3l is complete;
+   `../phases/phase-20/infra-improvement-pack.md` retains the execution record.
+3. Infrastructure Review 1's ESC-20-004 correction is independently NON-BLOCK
+   at `cd9e6bc`; all final post-review gates pass.
+4. Phase Runner resumes at Task 4, then continues Tasks 5-18 through the six
+   accepted review windows.
 5. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 

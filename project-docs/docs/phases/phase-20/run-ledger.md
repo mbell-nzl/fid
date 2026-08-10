@@ -478,3 +478,23 @@ Human-approved and QA-plan acceptance is next._
 - Required disposition: append committed re-review evidence and an explicit
   BLOCK/NON-BLOCK verdict to `qa/infra-review-1.md`
 - Task 4 remains blocked
+
+### 2026-08-10 ESC-20-004 RE-REVIEW COMPLETE
+
+- Same-reviewer commit: `cd9e6bcd599ab5c9914ac76731c095dcc3b5a0c7`
+- Verdict: NON-BLOCK; Blocking 0, Improvement 0, escalations none
+- Independent ordinary ownership: PASS at 1.904s; repository-wide classifier:
+  PASS at 1.596s
+- Independent canonical ordinary race/coverage: PASS with `internal/issues`
+  at 82.1%; canonical dedicated integration: PASS at 4.307s
+- ESC-20-004: resolved; no assertion, gate, product behavior, VAL, or
+  dependency was weakened
+
+### 2026-08-10 INFRASTRUCTURE PACK COMPLETE
+
+- Tasks 3e-3l, final measurements/gates, independent review, the one Blocking
+  correction, and same-reviewer re-review are complete
+- Final median combined gate time: 75.274s versus 293.700s baseline, a 74.4%
+  reduction and above the approved 40% target
+- Open blockers: none
+- Recovery authority ends here; next normal workflow action is Task 4

@@ -13,10 +13,11 @@ revision, and the retained Issue contract. Delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-3d and recovery Review 1c are
-complete.** DEC-133 inserts the Human-approved infrastructure Tasks 3e-3l and
-independent `qa/infra-review-1.md` before Task 4. Execution state is anchored
-in `../phases/phase-20/infra-improvement-pack.md`.
+**In flight on branch `phase-20`. Tasks 1-3l, recovery Review 1c, and the
+independent infrastructure review are complete.** Infrastructure Review 1's
+only Blocking finding was corrected and independently returned NON-BLOCK at
+`cd9e6bc`. Task 4 is next. The completed execution record is anchored in
+`../phases/phase-20/infra-improvement-pack.md`.
 
 ## Operating Mode And Slice Contract
 
@@ -39,8 +40,8 @@ and legacy expiry ledger.
 | 3b | Strict-config and init boundary evidence | Complete; VAL-043 gap owed by 3c | 2-3, 3a |
 | 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
 | 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
-| 3e-3l | Infrastructure performance pack | Approved (DEC-133) | review-1c |
-| 4 | Rebuild, authority, and lock failures | Blocked until infra-review-1 is non-BLOCK | 1-3, 3a-3l |
+| 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
+| 4 | Rebuild, authority, and lock failures | Pending; next | 1-3, 3a-3l |
 | 5 | Remove orphaned Issue fields | Pending | 4 |
 | 6 | Replayable Issue aggregate revision | Pending | 5 |
 | 7 | Issue hierarchy invariant | Pending | 5-6 |
@@ -84,7 +85,7 @@ Full contract: `../phases/phase-20/qa/validation-contract.md`.
 | Validation contract | `../phases/phase-20/qa/validation-contract.md` | Human-approved; VAL-002/VAL-043 windows extended to tasks 3a-3c (DEC-130/131) |
 | QA plan | `../phases/phase-20/qa/qa-plan.md` | Accepted; unchanged by DEC-130/131 |
 | Mid-phase reviews | `../phases/phase-20/qa/review-M.md` | After Tasks 3, 6, 9, 12, 15, 17; review 6 includes independent contract/spec consistency |
-| Recovery re-reviews | `../phases/phase-20/qa/review-1b.md`, `review-1c.md` | 1b done (BLOCK); 1c required after tasks 3c-3d, before Task 4, and must append a `## Corrections` record retracting review-1's integration-reproduction row |
+| Recovery reviews | `../phases/phase-20/qa/review-1b.md`, `review-1c.md`, `infra-review-1.md` | 1b BLOCK corrected; 1c NON-BLOCK; infrastructure review BLOCK corrected and re-reviewed NON-BLOCK |
 | Final review / Human checklist | `../phases/phase-20/qa/` | Pending; must re-run the full gate with real tokens |
 
 ## Active Constraints
