@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `e1e068376abc442be479043c2f163a0c69d24d7a`
+- Last verified commit: `7f0bd70c80b0b4d40dbac89f9498dee2732523c2`
 - Current task: Task 3e - production initialization benchmark
-- Next exact action: run Task 3e's benchmark-absence proof, add
-  `BenchmarkInitializeWorkspace`, and run its focused benchmark
+- Next exact action: commit Task 3e implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -47,6 +47,12 @@ race/coverage and accepted dedicated integration surfaces. Target: at least 40%
 lower median combined wall time. Timing is not mined for green; all samples and
 host variance are recorded. Correctness, race freedom, and exact gates are hard
 requirements regardless of timing.
+
+Task 3e production initialization benchmark, three consecutive samples on the
+same host: 34.063 ms/op, 34.544 ms/op, and 35.501 ms/op (median 34.544 ms/op),
+approximately 3.84 MB and 5,243 allocations per operation. Rebuild verification
+and schema initialization dominate the observed intervals. DEC-133 leaves both
+production stages unchanged; later tasks reuse real initialized test state.
 
 ## Invariants
 
