@@ -19,10 +19,12 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `3018bcc`
-- Current task: final measurements and pack gates
-- Next exact action: commit the final gate evidence, freeze the pack range, and
-  assign the independent infrastructure review to a fresh QA Reviewer
+- Last verified commit: `e80cb3bd48925596b713a3a6f3baec19c87256f9`
+- Current task: independent infrastructure review
+- Frozen review range: `81e1576169d3d798b6ee0391f82955210dfb6823^..e80cb3bd48925596b713a3a6f3baec19c87256f9`
+- Next exact action: fresh QA Reviewer independently audits the frozen range,
+  writes and commits `qa/infra-review-1.md`, and returns a BLOCK/NON-BLOCK
+  verdict with findings
 - Open blockers: none
 - Active command: none
 
@@ -204,7 +206,7 @@ and the closure source guard's diagnostic string.
 | Task 3k claims clock | COMPLETE | `bec40c8` | `tasks/task-3k-done.md` | PASS | report-lint PASS |
 | Task 3l maintenance clock use | COMPLETE | `16978f5` | `tasks/task-3l-done.md` | PASS | report-lint PASS |
 | Final measurements/gates | COMPLETE | - | this file | PASS | pending independent review |
-| Independent infra review | PENDING | - | `qa/infra-review-1.md` | - | - |
+| Independent infra review | IN_PROGRESS | - | `qa/infra-review-1.md` | - | pending |
 
 Only one row may be `IN_PROGRESS`. A task becomes `COMPLETE` only after focused
 red/green evidence, every exact command PASS, verified task commit, finalized

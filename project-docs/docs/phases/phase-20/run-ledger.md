@@ -423,3 +423,13 @@ Human-approved and QA-plan acceptance is next._
 - Failures: none in the final gate sequence
 - Next action: freeze the committed pack range and assign fresh independent
   QA Reviewer audit `qa/infra-review-1.md`; Task 4 remains blocked
+
+### 2026-08-10 REVIEW infra-review-1 START
+
+- Frozen range: `81e1576169d3d798b6ee0391f82955210dfb6823^..e80cb3bd48925596b713a3a6f3baec19c87256f9`
+- Reviewer: fresh QA Reviewer subagent, independent of implementation
+- Scope: inventory/gate equivalence, shared binary, fixture parity/isolation,
+  working-directory semantics, race stability, clock seams, docs sync, and
+  timing evidence
+- Deliverable: committed `qa/infra-review-1.md` with Blocking/Improvement
+  findings and explicit verdict; Task 4 remains blocked
