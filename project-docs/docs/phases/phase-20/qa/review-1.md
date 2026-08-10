@@ -113,3 +113,20 @@ was not edited by this review.
 
 Blocking: 2  Improvement: 2  Escalations: none
 VERDICT: BLOCK
+
+## Corrections
+
+- **DEC-131 decision 7 — integration-reproduction row retracted.** The
+  `Independent required reproduction` row above incorrectly reported
+  `go test -tags integration -race ./...` as PASS with the impossible token
+  `exit 0 (no output)`. That row is retracted: a repository-wide `go test`
+  command prints package output when it terminates, and the original review did
+  not preserve terminal output evidence.
+- **Replacement evidence (2026-08-10).** The exact command was rerun from
+  `/home/mark/projects/fid` during Review 1c and terminated with exit code 0.
+  Its real output tail was
+  `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)` (with preceding
+  package lines including `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t(cached)`).
+  This current-tree result is independent gate evidence for the recovered
+  integration baseline; it does not rewrite the original review's evidence
+  record.
