@@ -144,8 +144,8 @@ and must appear in those completion reports with their real exit behavior.
 | Lint/static analysis | `golangci-lint run ./...` | Exit 0 | Every task; phase end |
 | Race/coverage | `go test -race -coverprofile=coverage.out ./...` | Exit 0 and current-session `coverage.out` | Every task; phase end |
 | Coverage report | `go tool cover -func=coverage.out` | Exit 0; per-function and total report from the immediately preceding profile | Every task; phase end |
-| Integration | `go test -tags integration -race ./...` | Exit 0 | Tasks 2-18; phase end |
-| Accepted journey | `go test -tags integration -race ./...` | Task 18's committed Phase 20 journey passes inside the integration suite | Task 18; phase end; no separate E2E placeholder |
+| Integration | `go test -tags integration -race ./cmd/fid/integration/...` | Exit 0 | Tasks 4-18 after DEC-133; phase end |
+| Accepted journey | `go test -tags integration -race ./cmd/fid/integration/...` | Task 18's committed Phase 20 journey passes inside the dedicated real-process suite | Task 18; phase end; no separate E2E placeholder |
 | Benchmarks | `go test -bench . -benchmem ./...` | Exit 0 with benchmark timing/allocation output | Tasks 5, 6, and 18; phase end |
 | Build/package | `go build -o /tmp/fid ./cmd/fid` | Exit 0 and executable produced | Every task; phase end |
 | Module convergence | `go mod tidy` | Exit 0; only intended `go.mod`/`go.sum` changes | Task 16 |
@@ -161,7 +161,7 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./...
+go test -tags integration -race ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
@@ -186,7 +186,7 @@ pass condition remains real exit 1 with no output.
 | `golangci-lint run ./...` | `golangci-lint run --help`; version/config inventory | PASS | Help exit 0 with `Usage: golangci-lint run [flags]`; version 2.12.2; `.golangci.yml` exists. |
 | `go test -race -coverprofile=coverage.out ./...` | `go help test`, `go help testflag`, platform/cache inspection | PASS | Go 1.26.2 on linux/amd64; help documents `-race` and `-coverprofile`; module is repository `go.mod`; writable repo-local caches are configured. |
 | `go tool cover -func=coverage.out` | `go tool cover -help`; producer/consumer sequence inspection | PASS | Help printed `go tool cover -func=c.out`; plan requires the profile from the immediately preceding successful test command, preventing stale-profile evidence. |
-| `go test -tags integration -race ./...` | `go help build` plus integration-file inventory | PASS | Help documents `-tags`; 15 current `//go:build integration` files prove the scope exists; Task 18 adds its accepted journey to this same scope. |
+| `go test -tags integration -race ./cmd/fid/integration/...` | `go help build` plus committed classification regression | PASS | Help documents `-tags`; `cmd/fid/integration/classification_test.go` requires exactly four current real-process journeys and no integration-tagged parent-package tests. Task 18 adds its accepted journey to this dedicated scope. |
 | `go test -bench . -benchmem ./...` | `go help testflag` plus benchmark inventory | PASS | Help documents `-bench .` and `-benchmem`; four existing benchmarks cover rebuild and Issue registry reads. |
 | `go build -o /tmp/fid ./cmd/fid` | `go help build`, package/file state, target state | PASS | Help documents `-o`; `cmd/fid/main.go` contains `package main`/`func main`; `/tmp` is writable and the existing `/tmp/fid` is owned by the current user. Command exit remains the gate, never stale binary existence. |
 | `go mod tidy` | `go help mod tidy`; module-file state | PASS | Help exit 0 with exact usage; `go.mod` and `go.sum` exist; Task 16 owns their intended dependency-removal diff. |
@@ -260,9 +260,9 @@ report with a reason.
 |---|---|---|---|---|---|
 | Review 1 | Task 3 | Tasks/reports 1-3 | VAL-001..005, VAL-008, VAL-017, VAL-026, VAL-027, VAL-039, VAL-042, VAL-043, VAL-044 | `go test -tags integration -race ./...` | One config model, one root-flag registry, discovery boundary, strict parser, fixed maintenance grace, atomic init stages. |
 | Review 2 | Task 6 | Tasks/reports 4-6 | VAL-006, VAL-007, VAL-009, VAL-010, VAL-011, VAL-012 plus shared VAL-001, VAL-002, VAL-008, VAL-017, VAL-044 | `go test -bench . -benchmem ./...` | Fail-closed authority, deterministic locks, migration/down path, all owned revision families, live/rebuild progress. |
-| Review 3 | Task 9 | Tasks/reports 7-9 | VAL-013..020, VAL-040, VAL-041, VAL-044, VAL-045 plus shared VAL-002, VAL-008, VAL-010, VAL-011, VAL-017 | `go test -tags integration -race ./...` | Legal/illegal hierarchy, exact reads, both ready states, concurrency and transition atomicity, owner boundary. |
-| Review 4 | Task 12 | Tasks/reports 10-12 | VAL-021..026, VAL-046 plus shared VAL-008, VAL-010, VAL-011, VAL-017, VAL-041, VAL-044, VAL-045 | `go test -tags integration -race ./...` | AC/label/link/workflow structural contracts, cycles and diamond, opaque endpoints, V1 authoring absence. |
-| Review 5 | Task 15 | Tasks/reports 13-15 | VAL-027, VAL-028, VAL-029, VAL-031 plus shared VAL-002, VAL-008, VAL-017, VAL-044, VAL-045 | `go test -tags integration -race ./...` | Same-fixture maintenance branches, semantic legacy JSON, journal boundary, no weakened caller tests. |
+| Review 3 | Task 9 | Tasks/reports 7-9 | VAL-013..020, VAL-040, VAL-041, VAL-044, VAL-045 plus shared VAL-002, VAL-008, VAL-010, VAL-011, VAL-017 | `go test -tags integration -race ./cmd/fid/integration/...` | Legal/illegal hierarchy, exact reads, both ready states, concurrency and transition atomicity, owner boundary. |
+| Review 4 | Task 12 | Tasks/reports 10-12 | VAL-021..026, VAL-046 plus shared VAL-008, VAL-010, VAL-011, VAL-017, VAL-041, VAL-044, VAL-045 | `go test -tags integration -race ./cmd/fid/integration/...` | AC/label/link/workflow structural contracts, cycles and diamond, opaque endpoints, V1 authoring absence. |
+| Review 5 | Task 15 | Tasks/reports 13-15 | VAL-027, VAL-028, VAL-029, VAL-031 plus shared VAL-002, VAL-008, VAL-017, VAL-044, VAL-045 | `go test -tags integration -race ./cmd/fid/integration/...` | Same-fixture maintenance branches, semantic legacy JSON, journal boundary, no weakened caller tests. |
 | Review 6 | Task 17 | Tasks/reports 16-17 | VAL-030..034 and documentation progress for VAL-037 | `go test -race -coverprofile=coverage.out ./...` | Mandatory independent consistency review of accepted CLI/config/schema/Event/removal contracts against `contracts.md`, canonical spec amendments, live tree, and Tasks 1-17; execute all Task 16/17 absence checks. |
 
 Review artifacts use `project-docs/templates/mid-phase-review-template.md` and

@@ -1,6 +1,6 @@
 //go:build integration
 
-package main
+package integration
 
 import (
 	"bytes"
@@ -86,10 +86,10 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "DEC-056 no-rebuild control")
 
 	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
-	if err := fiddb.MigrateDown(dbPath, filepath.Join("..", "..", "migrations")); err != nil {
+	if err := fiddb.MigrateDown(dbPath, filepath.Join("..", "..", "..", "migrations")); err != nil {
 		t.Fatalf("migrate down for journal immutability boundary: %v", err)
 	}
-	if err := fiddb.MigrateUp(dbPath, filepath.Join("..", "..", "migrations")); err != nil {
+	if err := fiddb.MigrateUp(dbPath, filepath.Join("..", "..", "..", "migrations")); err != nil {
 		t.Fatalf("migrate up for journal immutability boundary: %v", err)
 	}
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "migration")

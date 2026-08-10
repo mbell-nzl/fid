@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `9d00278a89c7620834ba1a6db700fc795a72af5a`
+- Last verified commit: `1acec1c000b4c95420ec4a4cc857517b2f05e6a7`
 - Current task: Task 3f - dedicated integration package and gate migration
-- Next exact action: capture the complete integration-tag/test-name and
-  real-binary journey inventory, then add the failing classification regression
+- Next exact action: commit Task 3f implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -53,6 +53,32 @@ same host: 34.063 ms/op, 34.544 ms/op, and 35.501 ms/op (median 34.544 ms/op),
 approximately 3.84 MB and 5,243 allocations per operation. Rebuild verification
 and schema initialization dominate the observed intervals. DEC-133 leaves both
 production stages unchanged; later tasks reuse real initialized test state.
+
+Task 3f before/after integration inventory:
+
+- Before: 14 tagged files, one helper and 16 top-level tests in `cmd/fid`.
+- Dedicated real-process journeys moved to `cmd/fid/integration`:
+  `TestV01ClosureJourneyAndRebuildParity`, `TestV01ParityGoldenOutputs`,
+  `TestV02aWorkflowAuthoringExitScenarioAndRebuildParity`, and
+  `TestMaintenanceCheckReportsIncompatibleWorkflowAssignment`.
+- Reclassified into the ordinary `cmd/fid` suite:
+  `TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity`,
+  `TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd`,
+  `TestV01CAllACsVerifiedGateAndRebuildParity`,
+  `TestV01CHasCompletionReportGateAndRebuildParity`,
+  `TestV01CConcernRebuildParity`, `TestV01CClosureSmoke`,
+  `TestV01DClosureLifecycleSmokeAndRebuildParity`,
+  `TestV01DLinkFlowAndRebuildParity`,
+  `TestV01EActivityLifecycleCoverageAndRebuildParity`,
+  `TestV01EDevCompositeSmokeAndRebuildParity`,
+  `TestV01ReadCommandsSupportAllFormatsWithStructuralParity`, and
+  `TestSQLCommandRejectsMutationAttemptsWithoutChangingProjectedCounts`.
+- After: five tagged files in the dedicated package (four moved files plus the
+  classification guard), exactly four journey tests, and zero tagged parent
+  files. No test or assertion was removed.
+- Transitional old gate: `cmd/fid` 152.981s and dedicated package 10.266s.
+  The canonical dedicated command passed independently and no longer reruns
+  the ordinary package.
 
 ## Invariants
 

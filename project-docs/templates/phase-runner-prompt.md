@@ -24,6 +24,8 @@ Current state:
 
 Execution rules:
 - Verify that all quality commands in AGENTS.md are concrete, not placeholders.
+- Preserve the dedicated real-process integration package named in AGENTS.md;
+  do not widen its command to `./...` and duplicate the ordinary suite.
 - Verify that the validation contract exists before task execution.
 - Maintain the append-only run ledger at
   project-docs/docs/phases/phase-<PHASE_NUMBER>/run-ledger.md using

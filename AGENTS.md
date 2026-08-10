@@ -185,8 +185,8 @@ verbatim token from the command's own output (its last printed line, or
 `exit 0 (no output)`). A command that did not terminate is never `PASS` — a
 hung, interrupted, or killed command is `BLOCKED`. **A silent command is not a
 finished command:** `go test ./...` compiles every package before printing
-anything, so the repository-wide race and integration gates run for several
-minutes with no output and then emit one line per package. Wait for them.
+anything, so the repository-wide race and dedicated integration gates can run
+for minutes with no output and then emit package result lines. Wait for them.
 `exit 0 (no output)` is never a valid token for a `go test` command. A search or inventory
 command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
 real status, `exit 1 (no output)`, and say that no-match is the pass condition.
@@ -235,7 +235,10 @@ installs still require the normal dependency-budget and approval path.
   go tool cover -func=coverage.out
   ```
 
-- Integration tests: `go test -tags integration -race ./...`.
+- Real-process integration journeys:
+  `go test -tags integration -race ./cmd/fid/integration/...`. In-process
+  SQLite and command contract tests belong in the ordinary suite; do not widen
+  this gate to `./...`, which reruns that suite under the tag.
 - End-to-end tests: `N/A` until an end-to-end or held-out scenario harness is
   accepted in the specs.
 - Build verification: `go build -o /tmp/fid ./cmd/fid`.
@@ -246,7 +249,7 @@ installs still require the normal dependency-budget and approval path.
   golangci-lint run ./...
   go test -race -coverprofile=coverage.out ./...
   go tool cover -func=coverage.out
-  go test -tags integration -race ./...
+  go test -tags integration -race ./cmd/fid/integration/...
   go test -bench . -benchmem ./...
   go build -o /tmp/fid ./cmd/fid
   ```
@@ -282,7 +285,7 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./...
+go test -tags integration -race ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```

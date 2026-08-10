@@ -1,6 +1,6 @@
 //go:build integration
 
-package main
+package integration
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 func TestV01ParityGoldenOutputs(t *testing.T) {
 	binary := buildClosureFIDBinary(t)
 	workspace := t.TempDir()
-	copyParityFixture(t, filepath.Join("testdata", "v01_parity", "fixture"), workspace)
+	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
 
 	for _, fixture := range []struct {
 		name   string
@@ -29,7 +29,7 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 	} {
 		t.Run(fixture.name, func(t *testing.T) {
 			got, _ := closureRunFID(t, binary, workspace, fixture.args...)
-			want, err := os.ReadFile(filepath.Join("testdata", "v01_parity", fixture.golden))
+			want, err := os.ReadFile(filepath.Join("..", "testdata", "v01_parity", fixture.golden))
 			if err != nil {
 				t.Fatalf("read golden %s: %v", fixture.golden, err)
 			}

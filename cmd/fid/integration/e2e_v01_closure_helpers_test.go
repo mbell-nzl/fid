@@ -1,6 +1,6 @@
 //go:build integration
 
-package main
+package integration
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ func buildClosureFIDBinary(t *testing.T) string {
 	}
 	binary := filepath.Join(t.TempDir(), "fid")
 	cmd := exec.Command("go", "build", "-o", binary, "./cmd/fid")
-	cmd.Dir = filepath.Clean(filepath.Join(cwd, "..", ".."))
+	cmd.Dir = filepath.Clean(filepath.Join(cwd, "..", "..", ".."))
 	if output, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("build fid: %v\n%s", err, output)
 	}
@@ -59,6 +59,14 @@ func closureRunCommand(workspace, command string, args ...string) (string, strin
 	cmd.Stderr = &stderr
 	err := cmd.Run()
 	return stdout.String(), stderr.String(), err
+}
+
+func stringPointer(value string) *string {
+	return &value
+}
+
+func intPointer(value int) *int {
+	return &value
 }
 
 func assertClosureGitLayout(t *testing.T, workspace string) {

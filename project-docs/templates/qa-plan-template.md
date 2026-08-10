@@ -64,7 +64,7 @@ still a placeholder when execution is requested, mark the QA plan BLOCKED.
 | Lint/static analysis | `golangci-lint run ./...` | PASS | Every task |
 | Coverage/confidence | `go test -race -coverprofile=coverage.out ./...` | PASS | Task-level gate |
 | Coverage report | `go tool cover -func=coverage.out` | PASS and threshold evidence | Task-level gate |
-| Integration | `go test -tags integration -race ./...` | PASS or N/A | Phase-end when applicable |
+| Integration | `go test -tags integration -race ./cmd/fid/integration/...` | PASS or N/A | Phase-end when applicable |
 | End-to-end | `<E2E_COMMAND>` | PASS or N/A | Surface/user-journey phases |
 | Benchmarks | `go test -bench . -benchmem ./...` | PASS | Phase-end or performance-sensitive tasks |
 | Build/package | `go build -o /tmp/fid ./cmd/fid` | PASS | Phase-end or release candidate |

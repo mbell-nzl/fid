@@ -1094,6 +1094,13 @@ concerns declared in the phase brief (Parity Matrix) and QA plan; parity or
 heavy-mode phases may add task-spec sections for them when the phase brief
 requires it.
 
+The canonical integration command targets the dedicated real-process package,
+`go test -tags integration -race ./cmd/fid/integration/...`. Ordinary
+in-process command and persistence tests run under the default race/coverage
+gate. Expanding the integration command to `./...` is not additional evidence;
+it duplicates the ordinary suite under a build tag and is a gate-definition
+regression.
+
 ### 6.1 Validation Contract
 
 `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` is a sibling
