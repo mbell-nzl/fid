@@ -10,6 +10,7 @@ import (
 )
 
 func TestGovernanceStubCommandsReturnVersionGateBeforeValidation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -95,6 +96,7 @@ func TestGovernanceStubCommandsReturnVersionGateBeforeValidation(t *testing.T) {
 }
 
 func TestGovernanceStubVersionGateWinsBeforeWorkspaceValidation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "escalation", "create", "--future-flag", "value")
@@ -110,6 +112,7 @@ func TestGovernanceStubVersionGateWinsBeforeWorkspaceValidation(t *testing.T) {
 }
 
 func TestGovernanceStubFamiliesAppearInRootHelp(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 
 	stdout, stderr := runFIDCommand(t, workspace, "--help")
@@ -127,6 +130,7 @@ func TestGovernanceStubFamiliesAppearInRootHelp(t *testing.T) {
 }
 
 func TestRequirementSyncRemainsShippedAlongsideGovernanceStubGuards(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	writeRequirementFixture(t, workspace, "project-docs/specs/control.md", `# Control

@@ -7,6 +7,7 @@ import (
 )
 
 func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -57,6 +58,7 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -87,6 +89,7 @@ func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
 }
 
 func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -127,6 +130,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 }
 
 func TestIssueUpdateRequiresKnownByRole(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

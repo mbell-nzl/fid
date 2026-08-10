@@ -13,6 +13,7 @@ import (
 )
 
 func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -114,6 +115,7 @@ func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
 }
 
 func TestRequirementSyncRejectsMalformedInputBeforeAppend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		body          string
@@ -210,6 +212,7 @@ This file contains prose only.
 }
 
 func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
+	t.Parallel()
 	t.Run("human allowed", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)

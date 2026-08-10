@@ -15,6 +15,7 @@ import (
 )
 
 func TestActivityListAppliesFilters(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -94,6 +95,7 @@ func TestActivityListAppliesFilters(t *testing.T) {
 }
 
 func TestActivityListDispatchesFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

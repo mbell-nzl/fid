@@ -14,6 +14,7 @@ import (
 )
 
 func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -74,6 +75,7 @@ func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
 }
 
 func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -130,6 +132,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 }
 
 func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -194,6 +197,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 }
 
 func TestPolicyShowIncludesWorkflowAuthoringRowsInEveryFormat(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

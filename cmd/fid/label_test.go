@@ -11,6 +11,7 @@ import (
 )
 
 func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -77,6 +78,7 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 }
 
 func TestLabelListDefaultsToJSON(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -111,6 +113,7 @@ func TestLabelListDefaultsToJSON(t *testing.T) {
 }
 
 func TestLabelListFormatsMatchJSONReference(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -148,6 +151,7 @@ func TestLabelListFormatsMatchJSONReference(t *testing.T) {
 }
 
 func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
+	t.Parallel()
 	t.Run("duplicate add", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
@@ -223,6 +227,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 }
 
 func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

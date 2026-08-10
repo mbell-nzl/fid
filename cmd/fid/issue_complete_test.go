@@ -11,6 +11,7 @@ import (
 )
 
 func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -146,6 +147,7 @@ func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *
 }
 
 func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -216,6 +218,7 @@ func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t
 }
 
 func TestIssueCompleteCommandRejectsEpicBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -256,6 +259,7 @@ func TestIssueCompleteCommandRejectsEpicBeforeAppend(t *testing.T) {
 }
 
 func TestIssueCompleteCommandRejectsUnknownRoleAndMissingIssueBeforeAppend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		args    func(t *testing.T, workspace string) []string

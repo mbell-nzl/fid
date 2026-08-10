@@ -8,6 +8,7 @@ import (
 )
 
 func TestWorkflowAssignProjectsOneKindAssignment(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace,
@@ -59,6 +60,7 @@ func TestWorkflowAssignProjectsOneKindAssignment(t *testing.T) {
 }
 
 func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)

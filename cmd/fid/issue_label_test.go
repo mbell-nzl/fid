@@ -12,6 +12,7 @@ import (
 )
 
 func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -137,6 +138,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 }
 
 func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
+	t.Parallel()
 	t.Run("add rejects missing and duplicate label", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
@@ -230,6 +232,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 }
 
 func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -355,6 +358,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 }
 
 func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -389,6 +393,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 }
 
 func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

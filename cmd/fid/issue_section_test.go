@@ -11,6 +11,7 @@ import (
 )
 
 func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
+	t.Parallel()
 	t.Run("json read-back exposes populated and omitted due dates", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)

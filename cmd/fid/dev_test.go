@@ -11,6 +11,7 @@ import (
 )
 
 func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -61,6 +62,7 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 }
 
 func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -128,6 +130,7 @@ func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.
 }
 
 func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -215,6 +218,7 @@ func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 }
 
 func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -264,6 +268,7 @@ func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 }
 
 func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -323,6 +328,7 @@ func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
 }
 
 func TestDevFinishAndBlockDeniedRolesRejectBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

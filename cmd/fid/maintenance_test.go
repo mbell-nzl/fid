@@ -14,6 +14,7 @@ import (
 )
 
 func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -72,6 +73,7 @@ func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 }
 
 func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -167,6 +169,7 @@ func seedCorruptWorkflowFixture(t *testing.T, conn *sql.DB, issueID string) {
 }
 
 func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -218,6 +221,7 @@ func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.
 }
 
 func TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	configPath := filepath.Join(workspace, ".fid", "config.toml")

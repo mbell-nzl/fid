@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
@@ -132,7 +133,25 @@ type workspaceSnapshotEntry struct {
 	Data []byte
 }
 
+type commandExecutionResult struct {
+	stdout string
+	stderr string
+	err    error
+}
+
+func executeCommandForTest(workingDirectory string, args ...string) commandExecutionResult {
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workingDirectory)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	return commandExecutionResult{stdout: stdout.String(), stderr: stderr.String(), err: err}
+}
+
 func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) {
+	t.Parallel()
 	cloneA := clonePristineWorkspace(t)
 	cloneB := clonePristineWorkspace(t)
 	want := snapshotWorkspace(t, pristineWorkspaceRoot)
@@ -162,6 +181,50 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 	afterRebuild := readWorkspaceFixtureFile(t, databasePath)
 	if !bytes.Equal(afterRebuild, beforeRebuild) {
 		t.Fatal("cloned workspace projection bytes differ after rebuild")
+	}
+}
+
+func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
+	t.Parallel()
+	templateBefore := snapshotWorkspace(t, pristineWorkspaceRoot)
+	type fixture struct {
+		workspace string
+		title     string
+	}
+	fixtures := []fixture{
+		{clonePristineWorkspace(t), "Concurrent fixture alpha"},
+		{clonePristineWorkspace(t), "Concurrent fixture beta"},
+	}
+	start := make(chan struct{})
+	results := make(chan commandExecutionResult, len(fixtures))
+	for _, item := range fixtures {
+		item := item
+		go func() {
+			<-start
+			results <- executeCommandForTest(item.workspace,
+				"issue", "create", "--kind", "task", "--title", item.title, "--by", "developer")
+		}()
+	}
+	close(start)
+	for range fixtures {
+		result := <-results
+		if result.err != nil {
+			t.Fatalf("concurrent command error = %v, stderr = %q", result.err, result.stderr)
+		}
+	}
+
+	for index, item := range fixtures {
+		journal := string(readWorkspaceFixtureFile(t, mustJournalPath(t, item.workspace)))
+		if !strings.Contains(journal, item.title) {
+			t.Fatalf("workspace %d journal does not contain own title %q", index, item.title)
+		}
+		other := fixtures[(index+1)%len(fixtures)].title
+		if strings.Contains(journal, other) {
+			t.Fatalf("workspace %d journal contains sibling title %q", index, other)
+		}
+	}
+	if got := snapshotWorkspace(t, pristineWorkspaceRoot); !reflect.DeepEqual(got, templateBefore) {
+		t.Fatal("concurrent commands changed pristine template")
 	}
 }
 

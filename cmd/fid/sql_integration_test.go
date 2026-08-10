@@ -8,6 +8,7 @@ import (
 )
 
 func TestSQLCommandRejectsMutationAttemptsWithoutChangingProjectedCounts(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

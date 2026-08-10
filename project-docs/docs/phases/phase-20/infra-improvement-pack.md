@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `654da9dc77e5140cfb43c89267daf5e08e5746ee`
+- Last verified commit: `cc73b086d7ebd1d45fbaa86c939d92c60ca94f53`
 - Current task: Task 3j - bounded command-test parallelism
-- Next exact action: add the failing goroutine-safe concurrent clone command
-  regression, then classify and parallelize isolated top-level tests
+- Next exact action: commit Task 3j implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -103,6 +103,16 @@ no-match state `exit 1 (no output)`. All handlers consume the root context's
 explicit directory, including relative `--project` resolution. The exact
 five-count race stability gate stayed silent through nested session polling and
 then passed after 431.955s.
+
+Task 3j isolation inventory: 104 top-level tests in the 25 cloned-workspace
+files plus the fixture owner use `t.Parallel`; the package's protected real-init,
+journal, rebuild, maintenance durability, Issue/AC compatibility, and
+claim-list rebuild owners remain serial. No selected file uses `t.Setenv`,
+environment mutation, signals, or mutable package state. The Go scheduler is
+bounded by the host's six available CPUs (`GOMAXPROCS` unset). A concurrent
+two-workspace command regression is race-clean and proves journal/template
+isolation. Uncached package race time fell from 88.748s to 72.130s (18.7%);
+five-count time fell from 431.955s to 353.465s.
 
 ## Invariants
 

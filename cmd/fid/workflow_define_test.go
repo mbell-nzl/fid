@@ -15,6 +15,7 @@ import (
 )
 
 func TestWorkflowDefineProjectsDeclaredStatesTransitionsAndRules(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -73,6 +74,7 @@ func TestWorkflowDefineProjectsDeclaredStatesTransitionsAndRules(t *testing.T) {
 }
 
 func TestWorkflowDefineAuthorizesBeforeParsingAndDoesNotAppendOnDenial(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
@@ -104,6 +106,7 @@ func TestWorkflowDefineAuthorizesBeforeParsingAndDoesNotAppendOnDenial(t *testin
 }
 
 func TestWorkflowDefinePreservesJSONRequirementParametersAfterTheEdgeColon(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -138,6 +141,7 @@ func TestWorkflowDefinePreservesJSONRequirementParametersAfterTheEdgeColon(t *te
 }
 
 func TestWorkflowDefineRejectsWithoutMutatingJournalOrWorkflowTables(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		args    []string
@@ -201,6 +205,7 @@ func TestWorkflowDefineRejectsWithoutMutatingJournalOrWorkflowTables(t *testing.
 }
 
 func TestWorkflowDefineNormalizesArrowsAndAcceptsAppliesToVocabulary(t *testing.T) {
+	t.Parallel()
 	for _, arrow := range []string{"->", "-->", "→", "⟶"} {
 		t.Run("arrow "+arrow, func(t *testing.T) {
 			workspace := t.TempDir()

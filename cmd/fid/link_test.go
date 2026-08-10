@@ -11,6 +11,7 @@ import (
 )
 
 func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -112,6 +113,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 }
 
 func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testing.T) {
+	t.Parallel()
 	t.Run("implements requirement", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
@@ -244,6 +246,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 }
 
 func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -338,6 +341,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 }
 
 func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		setup         func(t *testing.T, workspace string) []string
@@ -398,6 +402,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 }
 
 func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -437,6 +442,7 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 }
 
 func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -524,6 +530,7 @@ func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParit
 }
 
 func TestLinkListEmptyResult(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

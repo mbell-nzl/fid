@@ -14,6 +14,7 @@ import (
 )
 
 func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -46,6 +47,7 @@ func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
 }
 
 func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -140,6 +142,7 @@ func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 }
 
 func TestStatsCostSupportsFormatsAndExcludesNullCostsFromSum(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

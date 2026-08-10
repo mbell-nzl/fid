@@ -11,6 +11,7 @@ import (
 )
 
 func TestWorkflowListRendersDocumentedJSONFieldSet(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -41,6 +42,7 @@ func TestWorkflowListRendersDocumentedJSONFieldSet(t *testing.T) {
 }
 
 func TestWorkflowListFormatsFiltersAndAssignments(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	conn := openWorkflowCommandDB(t, workspace)

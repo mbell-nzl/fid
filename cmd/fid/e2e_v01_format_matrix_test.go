@@ -7,6 +7,7 @@ import (
 )
 
 func TestV01ReadCommandsSupportAllFormatsWithStructuralParity(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	seed := seedV01FormatMatrixWorkspace(t, workspace)
 

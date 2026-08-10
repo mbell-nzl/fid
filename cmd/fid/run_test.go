@@ -10,6 +10,7 @@ import (
 )
 
 func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -68,6 +69,7 @@ func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -129,6 +131,7 @@ func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
 }
 
 func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -174,6 +177,7 @@ func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
 }
 
 func TestRunRecordPolicyShowMatchesAllowedRoles(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

@@ -10,6 +10,7 @@ import (
 )
 
 func TestIssueListFiltersAndOrdering(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -77,6 +78,7 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 }
 
 func TestIssueListDispatchesFormatsAndRejectsUnknownFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

@@ -9,6 +9,7 @@ import (
 )
 
 func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -122,6 +123,7 @@ func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -145,6 +147,7 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 }
 
 func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -289,6 +292,7 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -310,6 +314,7 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 }
 
 func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -374,6 +379,7 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 }
 
 func TestConcernListDispatchesFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

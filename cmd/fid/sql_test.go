@@ -10,6 +10,7 @@ import (
 )
 
 func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -95,6 +96,7 @@ func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 }
 
 func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -133,6 +135,7 @@ func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
 }
 
 func TestSQLCommandRequiresSingleQueryArgument(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

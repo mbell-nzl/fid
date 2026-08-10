@@ -10,6 +10,7 @@ import (
 )
 
 func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -107,6 +108,7 @@ func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
 }
 
 func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -301,6 +303,7 @@ func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 }
 
 func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -407,6 +410,7 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 }
 
 func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
+	t.Parallel()
 	selectedWorkspace := t.TempDir()
 	clonePristineWorkspaceInto(t, selectedWorkspace)
 

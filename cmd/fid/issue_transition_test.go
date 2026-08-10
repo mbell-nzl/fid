@@ -13,6 +13,7 @@ import (
 )
 
 func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -46,6 +47,7 @@ func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -92,6 +94,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 }
 
 func TestIssueTransitionRendersRuleFailures(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -145,6 +148,7 @@ func TestIssueTransitionRendersRuleFailures(t *testing.T) {
 }
 
 func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -192,6 +196,7 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 }
 
 func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name           string
 		claimRole      string
@@ -279,6 +284,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 }
 
 func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -335,6 +341,7 @@ func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 }
 
 func TestIssueTransitionReleasesCallerClaimWhenLeavingStartedState(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

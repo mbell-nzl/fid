@@ -11,6 +11,7 @@ import (
 )
 
 func TestIssueClaimCommandCreatesLiveClaimWithDefaultTTL(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -57,6 +58,7 @@ func TestIssueClaimCommandCreatesLiveClaimWithDefaultTTL(t *testing.T) {
 }
 
 func TestIssueClaimCommandRenewsHolderClaimAndPreservesTTL(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -123,6 +125,7 @@ func TestIssueClaimCommandRenewsHolderClaimAndPreservesTTL(t *testing.T) {
 }
 
 func TestIssueUnclaimCommandReleasesHolderClaim(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -153,6 +156,7 @@ func TestIssueUnclaimCommandReleasesHolderClaim(t *testing.T) {
 }
 
 func TestIssueClaimCommandForceAcquireReportsPreviousHolder(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -184,6 +188,7 @@ func TestIssueClaimCommandForceAcquireReportsPreviousHolder(t *testing.T) {
 }
 
 func TestIssueClaimCommandSupportsCustomTTLNoteAndHumanReadBack(t *testing.T) {
+	t.Parallel()
 	t.Run("custom ttl and note", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
@@ -238,6 +243,7 @@ func TestIssueClaimCommandSupportsCustomTTLNoteAndHumanReadBack(t *testing.T) {
 }
 
 func TestIssueClaimCommandRejectsInvalidTTLBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -265,6 +271,7 @@ func TestIssueClaimCommandRejectsInvalidTTLBeforeAppend(t *testing.T) {
 }
 
 func TestIssueClaimCommandRejectsLiveConflictBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -300,6 +307,7 @@ func TestIssueClaimCommandRejectsLiveConflictBeforeAppend(t *testing.T) {
 }
 
 func TestIssueClaimCommandRejectsDeniedForceBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -334,6 +342,7 @@ func TestIssueClaimCommandRejectsDeniedForceBeforeAppend(t *testing.T) {
 }
 
 func TestIssueClaimCommandRenewsWithOverrideTTLAndRejectsNonHolder(t *testing.T) {
+	t.Parallel()
 	t.Run("override ttl", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
@@ -393,6 +402,7 @@ func TestIssueClaimCommandRenewsWithOverrideTTLAndRejectsNonHolder(t *testing.T)
 }
 
 func TestIssueClaimCommandRejectsForceAndRenewTogetherBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -420,6 +430,7 @@ func TestIssueClaimCommandRejectsForceAndRenewTogetherBeforeAppend(t *testing.T)
 }
 
 func TestIssueClaimCommandTakesOverStaleClaimWithoutForce(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -447,6 +458,7 @@ func TestIssueClaimCommandTakesOverStaleClaimWithoutForce(t *testing.T) {
 }
 
 func TestIssueClaimCommandMatchesPolicyShowForForceAcquire(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -488,6 +500,7 @@ func TestIssueClaimCommandMatchesPolicyShowForForceAcquire(t *testing.T) {
 }
 
 func TestIssueUnclaimCommandRejectsWrongHolderRepeatAndRoleErrorsBeforeAppend(t *testing.T) {
+	t.Parallel()
 	t.Run("wrong holder", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
