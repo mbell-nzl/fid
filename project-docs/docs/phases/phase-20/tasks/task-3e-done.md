@@ -67,8 +67,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `af615cbb18abbf54130547f26e3d73c2625d73e5`
 
 ## Commit subject
 
-- Pending commit
+- `test(bootstrap): benchmark durable initialization`

@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `7f0bd70c80b0b4d40dbac89f9498dee2732523c2`
+- Last verified commit: `af615cbb18abbf54130547f26e3d73c2625d73e5`
 - Current task: Task 3e - production initialization benchmark
-- Next exact action: commit Task 3e implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3e's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 
