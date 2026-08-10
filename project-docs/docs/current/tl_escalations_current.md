@@ -9,7 +9,16 @@
 
 ## Open Escalations
 
-_None._
+- **ESC-20-004 — Canonical integration gate omits a retained tagged in-process
+  test.** Task 3f's inventory regression only scans the direct `cmd/fid`
+  parent, while `internal/issues/transition_rules_test.go` retains
+  `//go:build integration`. The ordinary race/coverage command excludes that
+  test, and the canonical dedicated command targets only `cmd/fid/integration`.
+  Reproduction: tagged targeted test PASS; ordinary targeted test PASS with
+  `[no tests to run]`; dedicated command PASS. This contradicts DEC-133's
+  complete tagged-test accounting and leaves a real concern-write transition
+  rule outside every accepted gate. Full Tech Lead resolution is required
+  before Task 4.
 
 ---
 
