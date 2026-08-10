@@ -189,3 +189,18 @@ Human-approved and QA-plan acceptance is next._
 - Focused benchmark: PASS, three samples with median 34.544 ms/op
 - Required gates: PASS with observed terminal results; report finalization and
   clean-path report-lint remain
+
+### 2026-08-10 TASK task-3e COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3e-done.md`
+- Report-lint: PASS on byte-identical rerun after the committed evidence-layout
+  correction recorded in the report
+- Next task: task-3f dedicated integration package and gate migration
+
+### 2026-08-10 TASK task-3f START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3f.md`
+- Boundary: classify every tagged test, preserve all assertions, move only four
+  real-binary journeys, and run old/new integration commands before migration
+- Next action: capture the complete before inventory and add the classification
+  regression

@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `af615cbb18abbf54130547f26e3d73c2625d73e5`
-- Current task: Task 3e - production initialization benchmark
-- Next exact action: commit Task 3e's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `9d00278a89c7620834ba1a6db700fc795a72af5a`
+- Current task: Task 3f - dedicated integration package and gate migration
+- Next exact action: capture the complete integration-tag/test-name and
+  real-binary journey inventory, then add the failing classification regression
 - Open blockers: none
 - Active command: none
 
@@ -78,8 +78,8 @@ production stages unchanged; later tasks reuse real initialized test state.
 |---|---|---|---|---|---|
 | Review 1c | COMPLETE | `cb5f1bf` | `qa/review-1c.md` | PASS | NON-BLOCK |
 | Planning / DEC-133 | COMPLETE | `81e1576` | this file | workflow-lint PASS | Human-approved |
-| Task 3e benchmark | IN_PROGRESS | - | `tasks/task-3e-done.md` | - | - |
-| Task 3f integration package/gate | PENDING | - | `tasks/task-3f-done.md` | - | - |
+| Task 3e benchmark | COMPLETE | `af615cb` | `tasks/task-3e-done.md` | PASS | report-lint PASS |
+| Task 3f integration package/gate | IN_PROGRESS | - | `tasks/task-3f-done.md` | - | - |
 | Task 3g shared binary | PENDING | - | `tasks/task-3g-done.md` | - | - |
 | Task 3h workspace fixture | PENDING | - | `tasks/task-3h-done.md` | - | - |
 | Task 3i remove `os.Chdir` | PENDING | - | `tasks/task-3i-done.md` | - | - |
