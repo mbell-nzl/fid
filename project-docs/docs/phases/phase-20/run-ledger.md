@@ -261,3 +261,16 @@ Human-approved and QA-plan acceptance is next._
   race time 150.540s before and 88.748s after
 - Required gates: PASS with observed terminal results; report finalization and
   report-lint remain
+
+### 2026-08-10 TASK task-3h COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3h-done.md`
+- Report-lint: PASS with all six required commands recorded
+- Next task: task-3i explicit command working directory
+
+### 2026-08-10 TASK task-3i START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3i.md`
+- Boundary: production captures the caller cwd once; tests inject isolated
+  roots; public workspace-selection semantics remain unchanged
+- Next action: capture the failing no-process-chdir regression

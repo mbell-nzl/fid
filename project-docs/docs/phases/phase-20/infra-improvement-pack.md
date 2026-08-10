@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `bca799f52f55286e8a45cc68c341cb539ba50481`
-- Current task: Task 3h - reusable pristine workspace fixture
-- Next exact action: commit Task 3h's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `cd4542e93691f1391316ddc9aca19aa13e497766`
+- Current task: Task 3i - explicit command working directory
+- Next exact action: add the failing no-process-chdir working-directory
+  regression, then implement the root-command directory dependency
 - Open blockers: none
 - Active command: none
 
@@ -123,8 +123,8 @@ time fell from 150.540s to 88.748s (41.0%); the exact coverage run reported
 | Task 3e benchmark | COMPLETE | `af615cb` | `tasks/task-3e-done.md` | PASS | report-lint PASS |
 | Task 3f integration package/gate | COMPLETE | `ec72fda` | `tasks/task-3f-done.md` | PASS | report-lint PASS |
 | Task 3g shared binary | COMPLETE | `1edb689` | `tasks/task-3g-done.md` | PASS | report-lint PASS |
-| Task 3h workspace fixture | IN_PROGRESS | - | `tasks/task-3h-done.md` | - | - |
-| Task 3i remove `os.Chdir` | PENDING | - | `tasks/task-3i-done.md` | - | - |
+| Task 3h workspace fixture | COMPLETE | `bca799f` | `tasks/task-3h-done.md` | PASS | report-lint PASS |
+| Task 3i remove `os.Chdir` | IN_PROGRESS | - | `tasks/task-3i-done.md` | - | - |
 | Task 3j bounded parallelism | PENDING | - | `tasks/task-3j-done.md` | - | - |
 | Task 3k claims clock | PENDING | - | `tasks/task-3k-done.md` | - | - |
 | Task 3l maintenance clock use | PENDING | - | `tasks/task-3l-done.md` | - | - |
