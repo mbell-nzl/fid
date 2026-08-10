@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `1ff0c7dbee27c01045b81d5260cb7bc2d2befe47`
+- Last verified commit: `1edb689b2df560a1f7ce60875458a3e639e60910`
 - Current task: Task 3g - reuse one integration binary
-- Next exact action: commit Task 3g implementation and draft report, finalize
-  the report from the observed commit, then run report-lint
+- Next exact action: commit Task 3g's finalized report, then run its exact
+  report-lint command
 - Open blockers: none
 - Active command: none
 

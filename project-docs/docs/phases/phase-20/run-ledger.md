@@ -227,3 +227,13 @@ Human-approved and QA-plan acceptance is next._
 - Boundary: one immutable binary per package run, real subprocesses and
   distinct workspaces preserved, no product source change
 - Next action: capture the failing package-harness inventory regression
+
+### 2026-08-10 TASK task-3g IMPLEMENTED
+
+- Task commit: `1edb689b2df560a1f7ce60875458a3e639e60910` - verified,
+  subject matched (`test(integration): reuse one package binary`)
+- Harness: one TestMain-owned binary, four isolated workspaces, no per-test
+  build function; dedicated race gate PASS at 8.228s
+- First full-gate harness failure and byte-identical passing rerun are recorded
+  in the task report
+- Next action: finalize the report and run report-lint

@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `1edb689b2df560a1f7ce60875458a3e639e60910`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): reuse one package binary`
