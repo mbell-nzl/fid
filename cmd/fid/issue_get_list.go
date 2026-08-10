@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
@@ -19,7 +18,7 @@ func newIssueGetCommand() *cobra.Command {
 		Short: "Get an issue by ID.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -81,7 +80,7 @@ func newIssueListCommand() *cobra.Command {
 		Short: "List issues.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

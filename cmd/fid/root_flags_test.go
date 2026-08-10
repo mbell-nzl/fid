@@ -2,9 +2,78 @@ package main
 
 import (
 	"bytes"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
+
+func TestRootCommandUsesInjectedWorkingDirectoryWithoutChangingProcess(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	originalDirectory, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd() error = %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"issue", "list"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	if strings.TrimSpace(stdout.String()) != "[]" {
+		t.Fatalf("stdout = %q, want empty issue list", stdout.String())
+	}
+	afterDirectory, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd() after command error = %v", err)
+	}
+	if afterDirectory != originalDirectory {
+		t.Fatalf("process working directory = %q, want unchanged %q", afterDirectory, originalDirectory)
+	}
+}
+
+func TestRootCommandCapturesCurrentWorkingDirectory(t *testing.T) {
+	want, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Getwd() error = %v", err)
+	}
+	cmd, err := newRootCommand()
+	if err != nil {
+		t.Fatalf("newRootCommand() error = %v", err)
+	}
+	got, err := commandWorkingDirectory(cmd)
+	if err != nil {
+		t.Fatalf("commandWorkingDirectory() error = %v", err)
+	}
+	if got != want {
+		t.Fatalf("command working directory = %q, want %q", got, want)
+	}
+}
+
+func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testing.T) {
+	base := t.TempDir()
+	workspace := filepath.Join(base, "relative-project")
+	if err := os.Mkdir(workspace, 0o755); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+	cmd := newRootCommandAt(base)
+	cmd.SetOut(&bytes.Buffer{})
+	cmd.SetErr(&bytes.Buffer{})
+	cmd.SetArgs([]string{"--project", "relative-project", "init", "--prefix", "FID"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(workspace, ".fid")); err != nil {
+		t.Fatalf("relative project workspace not initialized: %v", err)
+	}
+}
 
 func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 	for _, fixture := range []struct {
@@ -19,7 +88,7 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 		t.Run(fixture.name, func(t *testing.T) {
 			stdout := &bytes.Buffer{}
 			stderr := &bytes.Buffer{}
-			cmd := newRootCommand()
+			cmd := newRootCommandAt(t.TempDir())
 			cmd.SetOut(stdout)
 			cmd.SetErr(stderr)
 			cmd.SetArgs(fixture.args)

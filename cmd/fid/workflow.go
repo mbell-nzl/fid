@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
@@ -27,7 +26,7 @@ func newWorkflowListCommand() *cobra.Command {
 		Short: "List defined workflows.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -66,7 +65,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 		Short: "Assign a workflow.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -118,7 +117,7 @@ func newWorkflowDefineCommand() *cobra.Command {
 		Short: "Define a workflow.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

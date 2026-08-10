@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
@@ -21,7 +20,7 @@ func newReadyCommand() *cobra.Command {
 		Short: "Show the next ready task.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

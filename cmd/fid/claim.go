@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	fidformat "github.com/mbell-nzl/fid/internal/format"
@@ -31,7 +30,7 @@ func newClaimListCommand() *cobra.Command {
 		Short: "List current claims.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

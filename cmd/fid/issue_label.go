@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ func newIssueLabelAddCommand() *cobra.Command {
 		Short: "Add one label to an issue without replacing the rest.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -62,7 +61,7 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 		Short: "Remove one label from an issue without changing the rest.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

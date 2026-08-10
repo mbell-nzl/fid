@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -55,7 +54,7 @@ func newIssueACAddCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -121,7 +120,7 @@ func newIssueACVerifyCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -183,7 +182,7 @@ func newIssueACListCommand() *cobra.Command {
 		Short: "List acceptance criteria for an issue.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

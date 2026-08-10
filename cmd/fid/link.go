@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/links"
@@ -29,7 +28,7 @@ func newLinkAddCommand() *cobra.Command {
 		Short: "Add a typed link and its inverse.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -77,7 +76,7 @@ func newLinkRemoveCommand() *cobra.Command {
 		Short: "Remove a typed link and its inverse.",
 		Args:  cobra.ExactArgs(3),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -125,7 +124,7 @@ func newLinkListCommand() *cobra.Command {
 		Short: "List outgoing and incoming links for an entity.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

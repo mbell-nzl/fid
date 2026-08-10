@@ -25,19 +25,12 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
@@ -127,7 +120,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 	workspace := t.TempDir()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"--project", workspace, "--json", "init", "--prefix", "FID"})
@@ -186,7 +179,7 @@ func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
 
 	stdout.Reset()
 	stderr.Reset()
-	cmd = newRootCommand()
+	cmd = newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"--project", workspace, "--json", "init", "--prefix", "FID"})
@@ -275,7 +268,7 @@ func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
 	invalidWorkspace := t.TempDir()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(invalidWorkspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"--project", invalidWorkspace, "--json", "init", "--prefix", "fid"})
@@ -411,25 +404,16 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 	}
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"init"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-	if got, getwdErr := os.Getwd(); getwdErr != nil || got != workspace {
-		t.Fatalf("Getwd() = %q, %v; want %q", got, getwdErr, workspace)
-	}
 	if err := config.ValidateIssuePrefix(bootstrap.DefaultPrefix(workspace)); err == nil {
 		t.Fatal("test workspace unexpectedly has a valid default prefix")
 	}
 
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want explicit-prefix rejection")
 	}
@@ -511,19 +495,12 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want re-init rejection")
 	}
@@ -612,7 +589,7 @@ func executeInitCommand(t *testing.T, args ...string) (string, string, error) {
 	t.Helper()
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(commandRepositoryRoot())
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)
@@ -708,17 +685,10 @@ func runInitCommand(t *testing.T, workspace string, args ...string) (string, str
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute(%v) error = %v", args, err)

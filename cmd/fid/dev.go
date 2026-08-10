@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	internaldev "github.com/mbell-nzl/fid/internal/dev"
 	"github.com/spf13/cobra"
@@ -44,7 +43,7 @@ func newDevStartCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -106,7 +105,7 @@ func newDevGateCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -175,7 +174,7 @@ func newDevFinishCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -256,7 +255,7 @@ func newDevBlockCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

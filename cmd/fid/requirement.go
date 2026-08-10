@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mbell-nzl/fid/internal/requirements"
 	"github.com/spf13/cobra"
@@ -31,7 +30,7 @@ func newRequirementSyncCommand() *cobra.Command {
 		Short: "Sync requirement pointers from a source markdown document.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

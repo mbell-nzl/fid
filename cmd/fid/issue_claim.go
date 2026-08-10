@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/spf13/cobra"
@@ -30,7 +29,7 @@ func newIssueClaimCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -122,7 +121,7 @@ func newIssueUnclaimCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

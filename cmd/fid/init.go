@@ -75,11 +75,14 @@ func initWorkspaceRoot(cmd *cobra.Command) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read project flag: %w", err)
 	}
+	workingDirectory, err := commandWorkingDirectory(cmd)
+	if err != nil {
+		return "", err
+	}
 	if strings.TrimSpace(project) == "" {
-		project, err = os.Getwd()
-		if err != nil {
-			return "", fmt.Errorf("resolve workspace root: %w", err)
-		}
+		project = workingDirectory
+	} else if !filepath.IsAbs(project) {
+		project = filepath.Join(workingDirectory, project)
 	}
 	root, err := filepath.Abs(project)
 	if err != nil {

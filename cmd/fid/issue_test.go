@@ -1314,17 +1314,10 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute(%v) error = %v", args, err)
@@ -1339,19 +1332,12 @@ func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (s
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	return stdout.String(), stderr.String(), err
 }
 

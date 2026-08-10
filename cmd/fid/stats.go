@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/stats"
@@ -32,7 +31,7 @@ func newStatsTokensCommand() *cobra.Command {
 		Short: "Aggregate run tokens.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -78,7 +77,7 @@ func newStatsCostCommand() *cobra.Command {
 		Short: "Aggregate run costs.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}

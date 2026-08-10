@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
@@ -18,11 +19,25 @@ type rootFlagCapability struct {
 // available; until then both global flags fail closed for every leaf.
 var rootFlagCapabilities = map[string]rootFlagCapability{}
 
+type commandWorkingDirectoryKey struct{}
+
 func execute() error {
-	return newRootCommand().Execute()
+	cmd, err := newRootCommand()
+	if err != nil {
+		return err
+	}
+	return cmd.Execute()
 }
 
-func newRootCommand() *cobra.Command {
+func newRootCommand() (*cobra.Command, error) {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return nil, fmt.Errorf("resolve command working directory: %w", err)
+	}
+	return newRootCommandAt(workingDirectory), nil
+}
+
+func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:           "fid",
 		Short:         "Local-first, agent-first issue tracker for AI-assisted software development.",
@@ -33,6 +48,7 @@ func newRootCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
+	cmd.SetContext(context.WithValue(context.Background(), commandWorkingDirectoryKey{}, workingDirectory))
 	cmd.PersistentPreRunE = rejectUnavailableRootFlags(cmd)
 	cmd.PersistentFlags().String("project", "", "fid project root")
 	cmd.PersistentFlags().Bool("json", false, "emit fid-cli.v1 JSON")
@@ -62,6 +78,14 @@ func newRootCommand() *cobra.Command {
 	cmd.AddCommand(newWorkflowCommand())
 
 	return cmd
+}
+
+func commandWorkingDirectory(cmd *cobra.Command) (string, error) {
+	workingDirectory, ok := cmd.Root().Context().Value(commandWorkingDirectoryKey{}).(string)
+	if !ok || strings.TrimSpace(workingDirectory) == "" {
+		return "", fmt.Errorf("resolve workspace root: command working directory is unavailable")
+	}
+	return workingDirectory, nil
 }
 
 func rejectUnavailableRootFlags(root *cobra.Command) func(*cobra.Command, []string) error {

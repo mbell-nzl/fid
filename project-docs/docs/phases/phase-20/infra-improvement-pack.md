@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `cd4542e93691f1391316ddc9aca19aa13e497766`
+- Last verified commit: `9a251582f2d1d95e05f4c46b3d0c67186574b20b`
 - Current task: Task 3i - explicit command working directory
-- Next exact action: add the failing no-process-chdir working-directory
-  regression, then implement the root-command directory dependency
+- Next exact action: commit Task 3i implementation and draft report, finalize
+  the report from the observed commit, then run report-lint
 - Open blockers: none
 - Active command: none
 
@@ -95,6 +95,14 @@ rebuild, journal, maintenance durability, golden/rebuild scenario, and
 compatibility-heavy Issue/AC owners. Directly comparable uncached package race
 time fell from 150.540s to 88.748s (41.0%); the exact coverage run reported
 88.773s for `cmd/fid`.
+
+Task 3i working-directory inventory: production `os.Getwd` exists once, in
+`newRootCommand`; three test references prove capture and before/after process
+state. `rg -n 'os\.Chdir|mustChdir' cmd/fid --glob '*.go'` returns the passing
+no-match state `exit 1 (no output)`. All handlers consume the root context's
+explicit directory, including relative `--project` resolution. The exact
+five-count race stability gate stayed silent through nested session polling and
+then passed after 431.955s.
 
 ## Invariants
 

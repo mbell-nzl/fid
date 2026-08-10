@@ -19,17 +19,10 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -64,19 +57,12 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want corrupt journal error")
 	}
@@ -93,19 +79,12 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want precondition conflict")
 	}
@@ -160,14 +139,6 @@ func writeCommandFixture(t *testing.T, workspaceRoot, fixtureName, journalFileNa
 	journalPath := filepath.Join(workspaceRoot, ".fid", "journal", journalFileName)
 	if err := os.WriteFile(journalPath, payload, 0o644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", journalPath, err)
-	}
-}
-
-func mustChdir(t *testing.T, path string) {
-	t.Helper()
-
-	if err := os.Chdir(path); err != nil {
-		t.Fatalf("Chdir(%q) error = %v", path, err)
 	}
 }
 

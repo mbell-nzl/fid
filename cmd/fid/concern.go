@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -33,7 +32,7 @@ func newConcernListCommand() *cobra.Command {
 		Short: "List concerns.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -93,7 +92,7 @@ func newConcernAddressCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -158,7 +157,7 @@ func newConcernRaiseCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
