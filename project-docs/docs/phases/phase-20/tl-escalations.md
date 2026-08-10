@@ -8,6 +8,23 @@
 
 ### Resolved
 
+- **ESC-20-003 — Task 3d gate-evidence and report-lint recovery (raised
+  2026-08-09 via `TRG-20-003`; resolved 2026-08-10 by DEC-132).** The full-suite
+  Go command did not terminate without output. The Developer's execution
+  wrapper returned only the nested result's empty `output` field and discarded
+  its live `session_id`, so outer execution-cell completion was mistaken for
+  nested-command termination. The same recovery also fixed `report-lint.sh`
+  matching wrapped explanatory `go test` prose. The Human authorized a bounded
+  recovery super-agent to preserve Task 3d, repair canonical/generated Codex
+  prompts, add workflow-lint guardrails, capture every exact gate, and close
+  this escalation. Commit `d0bffbc` contains the recovery; the finalized Task
+  3d report verifies that commit and passes report-lint. The exact integration
+  command demonstrated the repaired protocol: it remained silent through the
+  initial yield and three retained-session polls, then exited 0 with
+  `cmd/fid` at 160.765s. No product code, contract, VAL, or test-performance
+  refactor changed. The broader performance work remains a separate
+  Human-requested follow-up pack before Task 4.
+
 - **ESC-20-002 — Review 1b BLOCK: missing `max_excerpt_bytes` rejection rows and
   a failing required integration gate (raised 2026-08-09 via `TRG-20-002`;
   resolved 2026-08-09 by DEC-131).** **The product was correct; the evidence

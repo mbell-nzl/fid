@@ -120,3 +120,35 @@ Human-approved and QA-plan acceptance is next._
 - Cause: Task 3d blocker report records `go test -race -coverprofile=coverage.out ./...` as UNVERIFIED because no output token was captured; report-lint independently failed three checks; TL-Lite `TRG-20-003` returned `VERDICT: BLOCK (escalated as ESC-20-003)`. This is the third BLOCK after DEC-131.
 - Triage: `TRG-20-003` (BLOCK, escalated as `ESC-20-003`)
 - Next human action: Human resolve `ESC-20-003` and authorize any further Task 3d recovery disposition; no review-1c or Task 4 work may start until the Human resumes the run.
+
+### 2026-08-10 19:16 RUN-RESUME
+
+- Branch: `phase-20`
+- Resuming from: Task 3d STOP and ESC-20-003, under the Human-authorized
+  recovery-super-agent override recorded in DEC-132
+- Reconciliation: Task 3c remains complete at `f978b6d`; Task 3d's partial
+  implementation and five historical report corrections were preserved. The
+  prior missing-output claim was traced to a discarded live nested session,
+  and the report-lint failure was reproduced as a wrapped-prose false match.
+- Recovery boundary: complete Task 3d and delivery-tooling repair only; no
+  broader test-performance refactor and no Task 4 work
+
+### 2026-08-10 19:16 TASK task-3d COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3d-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Commit: `d0bffbcd63d9a36474fde7a3da2c76facb604501` - verified, subject matched
+  (`fix(workflow): recover long-running gate evidence`)
+- Final-report commits: `bd183da`, `24daafc`, and `8270865`; the latter report
+  path is committed and clean
+- Exact gate evidence: all seven Task 3d commands PASS; the integration command
+  retained session `14845` through multiple silent polls and completed with
+  `ok  github.com/mbell-nzl/fid/cmd/fid  160.765s`
+- Conditional correction-report lints: Tasks 1, 2, 3, 3a, and 3b PASS; Task
+  3a's first harness run exposed an abbreviated historical token, which was
+  preserved as UNVERIFIED and passed on the byte-identical rerun per the
+  recorded deviation
+- Escalation: ESC-20-003 resolved by DEC-132 and moved to the phase archive;
+  updated Open ESC baseline is none
+- Next action: sequence bounded review-1c and the Human-requested infrastructure
+  follow-up pack before Task 4; no review or Task 4 work started in this recovery

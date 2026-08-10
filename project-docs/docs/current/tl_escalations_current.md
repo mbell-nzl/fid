@@ -9,22 +9,21 @@
 
 ## Open Escalations
 
-- **ESC-20-003 — Task 3d gate-evidence and report-lint failure
-  (2026-08-09).** The required `go test -race
-  -coverprofile=coverage.out ./...` gate terminated without captured terminal
-  output, so its result is UNVERIFIED and cannot be recorded PASS. The Task 3d
-  blocker report also records an independent `report-lint` failure: the new
-  go-test token control matched explanatory `go test` prose three times. No
-  task or finalized-report commit exists, and no attached verification evidence
-  resolves either failure. This is the third Phase 20 BLOCK following
-  DEC-131's recovery path; resolve the delivery-tooling/evidence recovery and
-  its authorized disposition before resuming Task 3d or starting review-1c.
-  Source: `project-docs/docs/phases/phase-20/tasks/task-3d-done.md`.
+_None._
 
 ---
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-003 resolved by DEC-132 (2026-08-10).**
+  The Go command had not terminated: a wrapper returned only empty `output`
+  and discarded the live nested `session_id`. Canonical Codex prompts now
+  preserve full results, poll yielded sessions, and require `exit_code` or an
+  explicit termination signal. `report-lint.sh` now ignores wrapped blocker
+  prose while retaining its token checks. Task 3d and all exact gates pass;
+  the integration gate proved the protocol by staying silent through multiple
+  polls before `cmd/fid` completed in 160.765s. Broader performance work is
+  deliberately deferred to the Human-requested pre-Task-4 follow-up pack.
 - **Phase 20 (in flight)** — **ESC-20-002 resolved by DEC-131 (2026-08-09).**
   Both Review 1b Blocking findings sustained; **no product defect**. Init's
   derived-prefix rejection is contract-correct (§3.2.1); three e2e journeys are
