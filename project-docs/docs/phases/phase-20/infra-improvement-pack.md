@@ -19,10 +19,10 @@
 
 - Pack status: `APPROVED`
 - Branch: `phase-20`
-- Last verified commit: `1edb689b2df560a1f7ce60875458a3e639e60910`
-- Current task: Task 3g - reuse one integration binary
-- Next exact action: commit Task 3g's finalized report, then run its exact
-  report-lint command
+- Last verified commit: `b08c9ddab22ff600a020695cdf6467708492d591`
+- Current task: Task 3h - reusable pristine workspace fixture
+- Next exact action: add the failing clone parity/isolation regression, then
+  implement the package-owned real-initialization template
 - Open blockers: none
 - Active command: none
 
@@ -112,8 +112,8 @@ distinct `t.TempDir()` workspace. The final fresh dedicated race run took
 | Planning / DEC-133 | COMPLETE | `81e1576` | this file | workflow-lint PASS | Human-approved |
 | Task 3e benchmark | COMPLETE | `af615cb` | `tasks/task-3e-done.md` | PASS | report-lint PASS |
 | Task 3f integration package/gate | COMPLETE | `ec72fda` | `tasks/task-3f-done.md` | PASS | report-lint PASS |
-| Task 3g shared binary | IN_PROGRESS | - | `tasks/task-3g-done.md` | - | - |
-| Task 3h workspace fixture | PENDING | - | `tasks/task-3h-done.md` | - | - |
+| Task 3g shared binary | COMPLETE | `1edb689` | `tasks/task-3g-done.md` | PASS | report-lint PASS |
+| Task 3h workspace fixture | IN_PROGRESS | - | `tasks/task-3h-done.md` | - | - |
 | Task 3i remove `os.Chdir` | PENDING | - | `tasks/task-3i-done.md` | - | - |
 | Task 3j bounded parallelism | PENDING | - | `tasks/task-3j-done.md` | - | - |
 | Task 3k claims clock | PENDING | - | `tasks/task-3k-done.md` | - | - |

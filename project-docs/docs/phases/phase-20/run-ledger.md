@@ -237,3 +237,16 @@ Human-approved and QA-plan acceptance is next._
 - First full-gate harness failure and byte-identical passing rerun are recorded
   in the task report
 - Next action: finalize the report and run report-lint
+
+### 2026-08-10 TASK task-3g COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-3g-done.md`
+- Report-lint: PASS with all six required commands recorded
+- Next task: task-3h reusable pristine workspace fixture
+
+### 2026-08-10 TASK task-3h START
+
+- Spec: `project-docs/docs/phases/phase-20/tasks/task-3h.md`
+- Boundary: clone one closed real initialized template only for tests whose
+  subject is not init/rebuild/migration/durability/compatibility
+- Next action: capture the failing fixture parity/isolation regression
