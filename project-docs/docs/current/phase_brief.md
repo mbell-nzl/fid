@@ -13,13 +13,17 @@ revision, and the retained Issue contract. Delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-3l, recovery Review 1c, and the
-independent infrastructure review are complete** (infra Blocking finding
-corrected, NON-BLOCK at `cd9e6bc`; record anchored in
-`../phases/phase-20/infra-improvement-pack.md`). **Task 4's implementation is
-committed at `e56b3a0`**; DEC-135 resolved ESC-20-005 (dead lock-holder
-formatter) and DEC-136 resolves ESC-20-006 by re-capturing the report's gate
-tokens and finalizing it against that commit. No code change remains in Task 4.
+**In flight on branch `phase-20`. Tasks 1-8 and the infrastructure pack are
+complete; Reviews 1c, infra-review-1, and 2 are NON-BLOCK** (record anchored in
+`../phases/phase-20/infra-improvement-pack.md`). ESC-20-005..008 are resolved by
+DEC-135..DEC-139, none in product code. **Task 8 closes at `4df4d66` under
+DEC-139**: its report met the token contract, and the missing `exit_code`
+annotation was a requirement published only in the Phase Runner prompt. That
+requirement is now canonical and **forward-effective** — every recorded result
+carries the verbatim token *and* the observed termination result — and no
+earlier report is reopened. Run `project-docs/tools/sync-agents.sh` and
+`project-docs/tools/workflow-lint.sh` before the next session; DEC-137/138/139
+prompt rules are inert until then. **Next: Task 9, then review window 3.**
 
 ## Operating Mode And Slice Contract
 
@@ -43,12 +47,12 @@ and legacy expiry ledger.
 | 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
 | 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
 | 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
-| 4 | Rebuild, authority, and lock failures | Code committed `e56b3a0`; report repair in progress (DEC-136) | 1-3, 3a-3l |
-| 5 | Remove orphaned Issue fields | Implementation done; classifier fix owed (DEC-137) | 4 |
-| 6 | Replayable Issue aggregate revision | Pending | 5 |
-| 7 | Issue hierarchy invariant | Pending | 5-6 |
-| 8 | Issue read contract | Pending | 5-7 |
-| 9 | Issue mutation and concurrency contract | Pending | 6-8 |
+| 4 | Rebuild, authority, and lock failures | Complete `e56b3a0` (DEC-135/136) | 1-3, 3a-3l |
+| 5 | Remove orphaned Issue fields | Complete `028855b` (DEC-137) | 4 |
+| 6 | Replayable Issue aggregate revision | Complete `29c5246` | 5 |
+| 7 | Issue hierarchy invariant | Complete `4950e94` | 5-6 |
+| 8 | Issue read contract | Complete `4df4d66` (DEC-139) | 5-7 |
+| 9 | Issue mutation and concurrency contract | Next | 6-8 |
 | 10 | Acceptance-criterion and label contracts | Pending | 8-9 |
 | 11 | Link contract and dependency invariants | Pending | 8-10 |
 | 12 | Workflow command contract | Pending | 8-11 |

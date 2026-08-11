@@ -1234,6 +1234,18 @@ the output token only then. A downstream reviewer or orchestrator rejects a
 termination claim that is supported only by completion of the outer wrapper,
 empty output, or absence of new output.
 
+The recorded result carries that termination result alongside the token —
+`(terminated exit_code: 0)`, or the explicit signal where the execution
+surface exposes no exit code — so termination is visible in the artifact
+rather than trusted. A printed last line proves the command produced output;
+for a silent success the observed exit status is the only evidence separating
+it from a discarded session. An `exit_code` asserted rather than copied from
+the command's own result is fabricated evidence, exactly like a fabricated
+token. A control that requires more of a completion report than this contract
+and the completion-report template do is a defect in the control: the
+canonical contract governs, and the Tech Lead fixes the divergence rather than
+failing a compliant report.
+
 The token is the command's real exit behavior, not the expected one. A search
 or inventory command (`rg`, `grep`) used to prove an *absence* — no production
 evaluator, no forbidden call site — terminates with **exit 1 and no output**

@@ -5,11 +5,13 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-3b are complete and Reviews 1 and 1b both
-returned BLOCK.** `ESC-20-001` (DEC-130) and `ESC-20-002` (DEC-131) are
-resolved with no weakened acceptance criterion and no product defect: the
-findings were missing evidence, a stale integration fixture, and — the real
-problem — full-suite gate records that were never captured from real output.
+**Phase 20 is in flight: Tasks 1-8 and the DEC-133 infrastructure pack are
+complete, with Reviews 1c, infra-review-1, and 2 all NON-BLOCK.** Eight
+escalations (`ESC-20-001..008`) are resolved by `DEC-130..DEC-139` with no
+weakened acceptance criterion and **no product defect**: every one landed in
+the verification apparatus or the evidence record — missing evidence, a stale
+integration fixture, uncaptured gate output, a stale classifier inventory, and
+two Tech Lead instruction defects.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -77,13 +79,18 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 
 ## Current work
 
-1. Review 1c is complete and NON-BLOCK at commit `cb5f1bf`.
-2. The Human-approved DEC-133 infrastructure pack Tasks 3e-3l is complete;
+1. The Human-approved DEC-133 infrastructure pack Tasks 3e-3l is complete and
+   independently NON-BLOCK at `cd9e6bc`;
    `../phases/phase-20/infra-improvement-pack.md` retains the execution record.
-3. Infrastructure Review 1's ESC-20-004 correction is independently NON-BLOCK
-   at `cd9e6bc`; all final post-review gates pass.
-4. Phase Runner resumes at Task 4, then continues Tasks 5-18 through the six
-   accepted review windows.
+2. Tasks 4-8 are complete; Review 2 (Tasks 4-6) is NON-BLOCK at `ae5782f`.
+   Task 8 closes at `4df4d66` under DEC-139 with no evidence recovery.
+3. Escalations ESC-20-005..008 are resolved (DEC-135..DEC-139); none is open.
+   Before the next Developer or Phase Runner session, run
+   `project-docs/tools/sync-agents.sh` then
+   `project-docs/tools/workflow-lint.sh` — DEC-137/138/139 prompt rules are
+   inert in the generated provider prompts until both run.
+4. Phase Runner resumes at Task 9, then continues Tasks 10-18 through the
+   remaining review windows (after Tasks 9, 12, 15, 17) and final review.
 5. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
@@ -98,6 +105,9 @@ wrap-up:
 - **CF-030** — make `report-lint.sh`'s rejected-token message state the expected
   shape (a real `ok`/`FAIL`/`PASS` line with package and duration), so a
   truncated-but-honest token is corrected without an escalation (DEC-136).
+- **CF-031** — extend `report-lint.sh` so every required-command row must carry
+  an observed termination result (`exit_code` or an explicit signal), with a
+  self-test case; until it lands the check is a Phase Runner read (DEC-139).
 
 All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
 are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is

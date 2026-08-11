@@ -87,12 +87,20 @@ skipped, narrower substituted, or failing commands. A narrower substituted
 command is a failed gate unless the report marks the required command
 `BLOCKED` with the reason.
 
-A completion report may claim that a command terminated only when its
-evidence includes the nested command's `exit_code` or an explicit
-signal/termination result. Completion of an outer execution cell proves only
-that its wrapper returned; it does not prove that a yielded nested command
+Per `AGENTS.md` (Commands) and `09_AI_WORKFLOW.md` §8, each recorded result
+carries a verbatim output token **and** the observed termination result — the
+nested command's `exit_code`, or the explicit signal where the execution
+surface exposes none. Completion of an outer execution cell proves only that
+its wrapper returned; it does not prove that a yielded nested command
 terminated. Treat missing termination evidence as a failed gate and route it
 through the normal triage-gated hard stop.
+
+Hold reports to the canonical contract in `AGENTS.md`, `09_AI_WORKFLOW.md`
+§8, and `project-docs/templates/completion-report-template.md` — no more and
+no less. Never fail a report for an artifact field none of those three
+require; that divergence is a Tech Lead defect, so record it as a concern for
+wrap-up and continue. Reports written before this rule reached the generated
+prompts are judged on their token evidence alone.
 
 ## Triage-Gated Hard Stops
 

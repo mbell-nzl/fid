@@ -15,6 +15,7 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-008 | 2026-08-11 | Task 8 report marks six required gates PASS without nested exit code or explicit termination evidence | `tasks/task-8-done.md`; report-lint output | BLOCK | ESC-20-008 | Genuine unresolved evidence failure: commit and report-lint verification do not prove command termination, and DEC-138 does not apply. |
 | TRG-20-007 | 2026-08-11 | Task 5 Developer blocker report: required dedicated integration gate failed because the fixed classification inventory omitted the newly added parity-fixture rebuild journey | `tasks/task-5-done.md` | BLOCK | ESC-20-007 | Genuine unresolved required-gate failure; no verified completion commit or accepted decision provides a RESUME ground. |
 | TRG-20-006 | 2026-08-11 | Task 4 recovery completion report fails report-lint after verified recovery commit: three invalid go-test evidence tokens and pending commit fields | `tasks/task-4-done.md`; report-lint output | BLOCK | ESC-20-006 | Genuine unresolved report-lint hard stop in the committed report; attached verification proves the faulty commit, not a correction. |
 | TRG-20-005 | 2026-08-11 | Task 4 Developer blocker report: required golangci-lint gate failed on unused `describeLockHolder`; no commit and downstream gates not run | `tasks/task-4-done.md` | BLOCK | ESC-20-005 | Genuine unresolved required-gate failure. No verified commit or accepted decision supplies a RESUME ground. |
@@ -24,6 +25,41 @@
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-008 - Task 8 has unverified gate-termination evidence
+
+- **Trigger:** Task 8 completion report records all six required quality gates
+  as PASS, but the exact quality-gate rows omit nested command `exit_code` or
+  an explicit termination result, so required gate termination evidence is
+  UNVERIFIED under `AGENTS.md`.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-8-done.md`; report-lint
+  output; attached commit-verification evidence for implementation commit
+  `4df4d6690a0562873c570ddaeba2140ad3adef81` and report-finalization commit
+  `ce282c25c617f103b4338b0de136318f82f1b8c3`.
+- **Verdict:** BLOCK
+- **Reasoning:** The report records PASS tokens but no nested `exit_code` or
+  explicit termination signal for any required gate. The prompt's verified
+  commits and clean report-lint result prove report/commit state, not that the
+  six commands terminated; outer completion and attestation are explicitly
+  insufficient. No accepted decision resolves it: DEC-138 applies only to a
+  named stale verification inventory and expressly leaves uncaptured tokens as
+  failed gates. This is therefore a genuine unresolved quality-gate failure.
+- **Local decisions made:** none
+- **References:** `tasks/task-8-done.md` (Exact quality-gate results);
+  `AGENTS.md` (Commands: termination and UNVERIFIED rules);
+  `project-docs/specs/09_AI_WORKFLOW.md` §2.3, §8 (nested termination and
+  evidence rules); `decisions.md` DEC-138 decision 5.
+- **If BLOCK:** ESC-20-008 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-008 and direct exact-
+  command evidence recovery before Task 8 or later work resumes.
+- **Tech Lead adjudication (DEC-139, 2026-08-11):** verdict sustained as correct
+  triage — the rule was in force and unmet, and DEC-138's fourth RESUME ground
+  correctly does not reach an evidence record. The escalation resolves against
+  the Tech Lead, not the Developer: the `exit_code` requirement existed only in
+  `project-docs/agents/phase-runner.md`, while `AGENTS.md`, `09_AI_WORKFLOW.md`
+  §8, and the completion-report template required only the verbatim token, which
+  Task 8 supplied for all six commands. Task 8 closes at `4df4d66` with no
+  evidence recovery; the requirement is promoted to canon forward-effective.
 
 ## TRG-20-007 - Task 5 blocked by incomplete integration-journey inventory
 

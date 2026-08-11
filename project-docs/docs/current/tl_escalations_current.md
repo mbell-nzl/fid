@@ -15,6 +15,20 @@ None.
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-008 resolved by DEC-139 (2026-08-11).**
+  The requirement Task 8's report missed lived only in the Phase Runner prompt:
+  `AGENTS.md`, `09_AI_WORKFLOW.md` §8, and the completion-report template asked
+  for a verbatim token, which the report supplied for all six commands, with
+  report-lint clean and both commits verified. Tasks 4-7 added
+  `(terminated exit_code: 0)` voluntarily; Task 8 followed the template. The
+  routing was correct — the rule was in force and unmet, and DEC-138's
+  bookkeeping ground genuinely does not reach an evidence record — but the
+  finding is a **Tech Lead drafting defect**, so **Task 8 closes at `4df4d66`
+  with no rerun**. The stricter rule is kept and promoted to canon: from now on
+  every recorded result carries the token **and** the observed termination
+  result. **Forward-effective only** — no earlier report is reopened. New
+  standing rule: a control may not require an artifact field the producing role
+  was never told to produce. **CF-031** opened for the report-lint check.
 - **Phase 20 (in flight)** — **ESC-20-007 resolved by DEC-137, with the
   systemic fix in DEC-138 (2026-08-11).** Task 5's work was finished and
   passing; the dedicated integration gate failed because

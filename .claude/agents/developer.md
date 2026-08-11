@@ -69,6 +69,14 @@ silently. The full role definition lives in `09_AI_WORKFLOW.md` §2.5
   A hung, interrupted, or killed command has no final line to copy, and
   inventing one is fabricated evidence. Record it as `BLOCKED` with the
   reason in a blocker report and stop.
+- Record the **observed termination result** next to every token — the real
+  `exit_code`, or the explicit signal your execution surface reported when it
+  exposes no exit code:
+  ``- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)``.
+  Copy it from the command's own result object. Wrapper completion, an empty
+  output field, and absence of new output are not termination, and an
+  `exit_code` you assert rather than observed is fabricated evidence exactly
+  like a fabricated token.
 - Where the task changes behavior with a runtime surface, exercise the
   changed behavior once through the real entrypoint (the `fid` CLI or other
   real interface) before writing the report, and record the command or

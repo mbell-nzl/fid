@@ -192,6 +192,18 @@ command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
 real status, `exit 1 (no output)`, and say that no-match is the pass condition.
 `exit 0 (no output)` means silent success and is fabricated evidence there.
 
+Record each result's **observed termination** next to its token — the nested
+command's real `exit_code`, or the explicit signal/termination result the
+execution surface reported:
+``- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)``.
+A printed last line proves the command produced output; it does not by itself
+prove the process exited, and for a silent success the exit status is the only
+thing that distinguishes one from a discarded session. Copy the termination
+result from the command's own result object. Wrapper completion, an empty
+output field, and absence of new output are not termination, and an `exit_code`
+asserted rather than observed is fabricated evidence exactly like a fabricated
+token.
+
 A gate result **not captured in the session that records it** is `UNVERIFIED`,
 never `PASS` — attestation from memory, transcription from another agent's
 report, and a promised future control are all `UNVERIFIED`, which is not a

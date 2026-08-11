@@ -563,3 +563,53 @@ Human-approved and QA-plan acceptance is next._
 - Cause: Task 5 blocker report and TRG-20-007; required `go test -tags integration -race ./cmd/fid/integration/...` failed on the fixed journey inventory.
 - Triage: TRG-20-007 (BLOCK, escalated as ESC-20-007)
 - Next human action: Resolve ESC-20-007 with Tech Lead direction for the compliant integration-classification recovery, then resume Task 5 before any downstream task.
+
+### 2026-08-11 18:05 RUN-START
+
+- Branch: `phase-20`
+- ESC baseline (Open at run start): none (ESC-20-007 resolved by DEC-137)
+- Warm-up/autonomous-resume state: autonomous per DEC-002
+- Starting task: `task-5`
+
+### 2026-08-11 18:15 TASK task-5 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-5-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Commit: `028855b807061b1d1c62a3c4d1b642b60d2f8107` - verified, subject matched (`feat(issue): remove retired issue fields`)
+- Report finalization commit: `433ed4ec8e85a8e32f29162b097e8bf2291f4763` - verified, subject matched (`docs(task): finalize completion report for phase-20 task-5`)
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-11 18:39 TASK task-6 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-6-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Commit: `29c52469be0277ac9e3e84cd0c5f63cd16a06066` - verified, subject matched (`feat(issue): add replayable aggregate revisions`)
+- Report finalization commit: `918b4d550d6e391bca123a2d5bfb69a0e02514f7` - verified, subject matched (`docs(task): finalize completion report for phase-20 task-6`)
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-11 18:50 REVIEW review-2
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-2.md`
+- Tasks covered: task-4 through task-6
+- Verdict: CONTINUE (NON-BLOCK); Blocking: 0 / Improvement: 1 / ESC raised: none
+- Commit: `ae5782ff0e693f95288b0f876cbf15c0cd0ea02c` - verified, subject matched (`docs(qa): review phase-20 tasks 4-6`)
+
+### 2026-08-11 19:09 TASK task-7 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-7-done.md`
+- report-lint: PASS (`PASS report-lint completed with no failures`)
+- Commit: `4950e946a31183cd5386a1a721fa8a2ca2f2988c` - verified, subject matched (`feat(issue): enforce hierarchy invariant`)
+- Report finalization commit: `e07355e153bd828694fd999f158d52c1650291f2` - verified, subject matched (`docs(task): finalize completion report for phase-20 task-7`)
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-11 19:55 TRIAGE TRG-20-008
+
+- Trigger: Task 8 completion report records all six required quality gates as PASS without nested command `exit_code` or explicit termination evidence.
+- Verdict: BLOCK (escalated as ESC-20-008)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` TRG-20-008 entry confirmed; `ESC-20-008` written to current escalations
+
+### 2026-08-11 19:55 STOP
+
+- Cause: Task 8 completion report has UNVERIFIED required gate-termination evidence; TL-Lite `TRG-20-008` returned `VERDICT: BLOCK (escalated as ESC-20-008)`.
+- Triage: TRG-20-008 (BLOCK, escalated as ESC-20-008)
+- Next human action: Resolve ESC-20-008 with Tech Lead-directed exact-command evidence recovery, preserving all six required commands and capturing each command's real termination result before resuming Task 8.

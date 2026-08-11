@@ -885,6 +885,90 @@
   retrospective); DEC-002; Human direction 2026-08-11 that the escalation
   overhead is disproportionate.
 
+### DEC-139: ESC-20-008 is an unpublished evidence requirement, not a failed gate
+
+- **Date:** 2026-08-11
+- **Context:** Task 8's completion report records all six required commands
+  `PASS`, each with one verbatim token from the command's own output
+  (`0 issues.`; `ok  …/internal/workflow  (cached)  coverage: 80.5% of
+  statements`; `total: … 77.5%`; `ok  …/cmd/fid/integration  4.971s`; and
+  `exit 0 (no output)` for the two silent-success commands). `report-lint.sh`
+  passed, implementation commit `4df4d66` and finalization commit `ce282c2`
+  both verified. The Phase Runner nonetheless treated the gates as failed
+  because `project-docs/agents/phase-runner.md` requires a completion report's
+  evidence to include the nested command's `exit_code` or an explicit
+  signal/termination result, and Task 8's rows carry no such annotation. Tasks
+  4-7 carry `(terminated \`exit_code: 0\`)`; Task 8 followed the
+  completion-report template, which has no field for it. TL-Lite returned BLOCK
+  because no RESUME ground fits: DEC-138's fourth ground covers a stale
+  inventory in the verification apparatus, not an evidence record.
+- **Decision:**
+  1. **The routing was correct and is sustained.** The Phase Runner and TL-Lite
+     each applied a rule that was in force and unmet, and TL-Lite was right that
+     DEC-138 does not reach this. `TRG-20-008` needed no different verdict from
+     the information it had.
+  2. **Task 8's report satisfies every canonical requirement in force when it
+     was written**, and Task 8 is complete at `4df4d66`. All six required
+     commands appear verbatim with one real token each, none of them in a
+     prohibited token class, the report is committed and clean, and both commits
+     verify. **No rerun, no re-recording, and no evidence-recovery session.**
+     The tokens are also mutually distinct and consistent with the task's own
+     diff — 77.5% total coverage against Task 7's 77.7%, integration 4.971s
+     against 4.767s — so nothing independent casts doubt on their capture.
+  3. **A downstream control may not demand an artifact field the producing role
+     was never told to produce.** DEC-136 decision 2 forbids a task spec from
+     restating process owned by `AGENTS.md` and the role prompts; the same rule
+     binds controls. Where a Phase Runner, QA, or lint rule is stricter than
+     `AGENTS.md`, `09_AI_WORKFLOW.md` §8, and the completion-report template,
+     the canonical contract governs and the divergence is a Tech Lead defect to
+     fix — not a Developer failure to correct. This is cause E of
+     `docs/reviews/2026-08-11-developer-stoppage-analysis.md` recurring in a
+     control instead of a task spec.
+  4. **Keep the stricter rule, promote it to canon, forward-effective.** It
+     carries real information. A real last-printed line proves a command
+     produced output; it does not by itself prove the process exited, and for an
+     `exit 0 (no output)` row the observed exit status is the *only* thing
+     separating a genuine silent success from the discarded-session failure mode
+     of ESC-20-003. From this decision onward, each recorded required-command
+     result carries both the verbatim token and the observed termination result,
+     in the shape Tasks 5-7 already use:
+     `` - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`) ``.
+     Where the execution surface exposes no exit code, record the explicit
+     termination signal it does expose and name it. Never infer termination from
+     wrapper completion, an empty output field, or absence of new output.
+  5. **Canonical docs updated now:** `AGENTS.md` (Commands),
+     `09_AI_WORKFLOW.md` §8, `project-docs/templates/completion-report-template.md`,
+     `project-docs/agents/developer.md`, and `project-docs/agents/phase-runner.md`
+     (which now cites the canonical rule instead of holding a private one).
+     Generated provider prompts require `project-docs/tools/sync-agents.sh` then
+     `project-docs/tools/workflow-lint.sh`; until both run, the rule is inert.
+  6. **No retroactive re-recording.** Every report written before this decision
+     — Phase 20 Tasks 1-8 and all Phase 17-19 reports — is judged on the token
+     contract in force when it was written and remains valid. This decision is
+     not grounds to reopen any of them. DEC-131's `UNVERIFIED` lines stay
+     `UNVERIFIED` for their own separate reason.
+  7. **Anti-gaming is unchanged.** UNVERIFIED-not-`PASS`, DEC-131's token rules,
+     `exit 0 (no output)` being invalid for any `go test`, coverage and
+     performance thresholds, the ban on weakening or re-pointing tests, and the
+     ban on mining a flaky green all stand. An `exit_code` asserted rather than
+     observed is fabricated evidence and a hard stop, exactly like a fabricated
+     token: copy it from the command's own result or record `BLOCKED`.
+  8. **CF-031 opened.** `report-lint.sh` should mechanically require a
+     termination result on every required-command row, with a self-test case,
+     alongside CF-030's token-shape message. Until it lands the check is a Phase
+     Runner read, and a missing annotation on a report written after the synced
+     prompts land is a normal triage-gated hard stop.
+- **Consequences:** Task 8 closes with no further work and Phase 20's eighth
+  escalation costs no Developer session. The permanent cost is one clause per
+  gate row, which three of the last four reports already paid voluntarily. The
+  evidence contract gets stronger, not weaker: termination becomes visible in
+  the artifact instead of trusted. The general lesson is recorded as decision 3
+  — controls are held to the same "no private process" rule as task specs.
+- **Refs:** `TRG-20-008`; `ESC-20-008`; `tasks/task-8-done.md`; `tasks/task-8.md`;
+  DEC-131; DEC-132; DEC-136 (decision 2); DEC-138; `AGENTS.md` (Commands);
+  `09_AI_WORKFLOW.md` §8; `project-docs/agents/phase-runner.md`;
+  `docs/reviews/2026-08-11-developer-stoppage-analysis.md` (cause E).
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.
