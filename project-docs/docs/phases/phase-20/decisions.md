@@ -787,6 +787,104 @@
   `project-docs/tools/report-lint.sh` (header, checks 4-6); `AGENTS.md`
   (Commands: evidence tokens); commit `e56b3a0`.
 
+### DEC-137: ESC-20-007 replaces the classification test's exact journey list with the invariant it actually protects
+
+- **Date:** 2026-08-11
+- **Context:** Task 5's implementation passed format, lint, race/coverage
+  (77.7%), and every focused test, then the required dedicated integration gate
+  failed: `TestIntegrationClassification` compares the dedicated package's test
+  inventory against a hardcoded `wantJourneys` list, and Task 5 legitimately
+  added `TestV01ParityFixtureRebuildPreservesEveryProjectionTable` to prove
+  VAL-012's rebuild parity. Nothing was wrong with the product or the new
+  journey; the list was stale by one name. This same test produced ESC-20-004.
+- **Decision:**
+  1. Sustain the gate failure as correct behavior — the list *was* stale — but
+     record the assertion itself as defective. Exact equality against a
+     hardcoded name list is a change-detector: it fails on legitimate growth,
+     and Tasks 14-18 (especially Task 18, journey acceptance) would trip it
+     again.
+  2. No accepted decision requires "no new integration journey may ever exist".
+     DEC-133's real invariants are that integration-tagged tests live only in
+     the dedicated package, that in-process tests stay in the ordinary suite,
+     and that the four journeys Task 3f migrated are not lost. Relaxing exact
+     equality removes an unintended assertion, it does not weaken an accepted
+     one.
+  3. Change `wantJourneys` from exact equality to **required presence**: the
+     four migrated journeys must still be there (a removal fails), additions
+     are allowed. Keep `taggedTestFilesOutside` and its repository-wide walk
+     exactly as DEC-134 left them, and keep `TestIntegrationBinaryOwnedByPackage`
+     and `TestClosureJourneyHasNoWallClockSleep` unchanged. Make the failure
+     message name the missing journey and the required action.
+  4. Dedicated-gate runtime stays a reviewed property, not a name list: each
+     report records the gate's own token, and the QA review windows read the
+     diff when a journey is added.
+  5. Task 5 resumes in a fresh session from the inherited tree, including the
+     regenerated parity fixtures and `SHA256SUMS`, and runs the full required
+     sequence. Under DEC-138 the classification edit would have been an
+     in-session bookkeeping repair; the semantic change in decision 3 is a Tech
+     Lead call and is authorized here.
+- **Consequences:** One recurring tripwire is removed for the remaining
+  thirteen tasks. No product code, contract, VAL, dependency, or gate command
+  changes, and the dedicated gate keeps every assertion that protects the
+  DEC-133/DEC-134 classification.
+- **Refs:** `TRG-20-007`; `ESC-20-007`; `cmd/fid/integration/classification_test.go`;
+  DEC-133; DEC-134; `tasks/task-5-done.md` (blocker).
+
+### DEC-138: A stale inventory in the verification apparatus is a bookkeeping repair, not a failed gate
+
+- **Date:** 2026-08-11
+- **Context:** ESC-20-005, ESC-20-006, and ESC-20-007 are three consecutive
+  escalations in which a Developer held finished, passing work and stopped
+  because it was forbidden to make a one-line, self-describing correction to
+  the verification apparatus: delete a function the linter named as unused, add
+  a test name the classifier named as missing. Each cost a blocker report, a
+  TL-Lite triage, a full Tech Lead invocation with a decision record, a Phase
+  Runner stop, and a human relay, then a fresh Developer session — for edits
+  smaller than the paperwork describing them. Across Phases 17-20, twenty-five
+  of twenty-five escalations landed in the verification apparatus and zero in
+  product behavior. DEC-100 already carved out a task-authored harness that
+  fails while being authored; its exclusion of "a pre-existing committed gate or
+  tool" is what these three hit.
+- **Decision:**
+  1. **Extend DEC-100 with a second narrow case.** A required command that fails
+     only because a **bookkeeping inventory in the verification apparatus is
+     stale with respect to a change the task's accepted scope legitimately made**
+     may be repaired in the same session and rerun to a pass, recorded `PASS`
+     with a mandatory deviation note giving the first failure's verbatim token,
+     the root cause, and the fix.
+  2. **All of these conditions must hold.** The failing assertion tracks an
+     inventory of the repository's own artifacts — a list of test names, files,
+     registered codes, or generated fixtures — and **not** product behavior. The
+     failure output **names the exact discrepancy**, so the repair needs no
+     judgment. The repair only reconciles the inventory with reality the task
+     was authorized to create: **no threshold, budget, or tolerance is changed;
+     no test or assertion is deleted, weakened, narrowed, or re-pointed; no
+     product-behavior assertion is touched**. The rerun command is
+     byte-identical. Both the failure and the final result are recorded with
+     their own tokens.
+  3. **Changing what a gate checks is still a hard stop.** Reconciling a stale
+     list is bookkeeping; altering the assertion's semantics, scope, or
+     strictness is a gate change and escalates. Where a task cannot tell which
+     it is facing, it stops. **You may fix the bookkeeping; you may never fix
+     the verdict.**
+  4. **TL-Lite gains a fourth RESUME ground** with the identical test: a hard
+     stop whose only unresolved element is a bookkeeping repair meeting
+     decision 2 resumes with a TRG record and no escalation. Any doubt is BLOCK.
+  5. **Anti-gaming is unchanged.** A failing product test, a coverage or
+     performance threshold, a flaky rerun, a narrowed command, and an uncaptured
+     token remain failed gates, and DEC-131's evidence-token rules are untouched.
+- **Consequences:** The most common escalation class in this project's history
+  resolves inside the session that hits it. Affected canonical docs: `AGENTS.md`
+  (Commands), `09_AI_WORKFLOW.md` §2.3 and §8, and the canonical Developer and
+  TL-Lite prompts; generated provider prompts need `sync-agents.sh` and
+  `workflow-lint.sh`. The trade is a real, bounded loss of friction: a Developer
+  can now edit apparatus a reviewer would previously have seen in an escalation,
+  so every such repair carries a mandatory deviation note and is read at the
+  next QA review window.
+- **Refs:** `ESC-20-005`; `ESC-20-006`; `ESC-20-007`; DEC-100 (Phase 19, kept at
+  retrospective); DEC-002; Human direction 2026-08-11 that the escalation
+  overhead is disproportionate.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

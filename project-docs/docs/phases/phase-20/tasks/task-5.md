@@ -1,5 +1,34 @@
 # Phase 20 - Task 5: Remove orphaned Issue fields
 
+## Recovery Directive (DEC-137)
+
+The first session completed this task's implementation and passed format, lint,
+race/coverage, and every focused test, then stopped because
+`TestIntegrationClassification` compares the dedicated package against a
+hardcoded journey list that omits the newly added
+`TestV01ParityFixtureRebuildPreservesEveryProjectionTable`. Scope, acceptance
+criteria, VAL coverage, and the command list below are unchanged. This session:
+
+1. Inherits the existing uncommitted working tree, including the regenerated
+   `cmd/fid/testdata/v01_parity/*.json`, `SHA256SUMS`, and
+   `testdata/format/issue-empty.golden.toon`. Do not discard or re-derive it,
+   and re-verify the fixture hashes recorded in `task-5-done.md` rather than
+   trusting them.
+2. Changes `wantJourneys` in `cmd/fid/integration/classification_test.go` from
+   exact equality to **required presence**: the four journeys Task 3f migrated
+   must still exist and their loss must still fail, while additional journeys
+   are allowed. Make the failure message name the missing journey. Leave
+   `taggedTestFilesOutside` and its repository-wide walk, along with
+   `TestIntegrationBinaryOwnedByPackage` and
+   `TestClosureJourneyHasNoWallClockSleep`, exactly as they are — DEC-134's
+   classification invariant is not being relaxed.
+3. Proves the relaxed check still fails on a real regression before relying on
+   it: red/green the presence assertion by removing a required journey name from
+   the expected set, observing the failure, and restoring it.
+4. Runs the full command list below and completes the task normally.
+
+Task 6 owns revision and concurrency; nothing here changes that boundary.
+
 ## Objective
 
 Remove `in_inbox`, `est_tokens`, and `due_date` from the projection, Issue

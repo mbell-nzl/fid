@@ -99,7 +99,19 @@ when it crosses one of these triggers.
   report-lint failure, missing report, blocker report, quality-gate failure,
   placeholder command, missing command, silently skipped command, narrower
   substituted command, or ad hoc gate substitution. The same three RESUME
-  grounds apply; a genuine unresolved failure is always BLOCK.
+  grounds apply, plus the fourth below; a genuine unresolved failure is always
+  BLOCK.
+- **Fourth RESUME ground - bookkeeping repair (DEC-138).** RESUME when the only
+  unresolved element is a stale inventory inside the verification apparatus and
+  every condition holds: the failure output names the exact discrepancy; the
+  assertion tracks the repository's own artifacts (test names, files, registered
+  codes, generated fixtures), not product behavior; the repair merely reconciles
+  that inventory with a change the task's accepted scope legitimately made; and
+  it changes no threshold, budget, or tolerance and deletes, weakens, narrows,
+  or re-points no test or assertion. Name the stale inventory and the
+  reconciling edit in the TRG entry. A failing product test, a threshold change,
+  or a change to what the gate checks is never eligible, and any doubt is BLOCK.
+  You may fix the bookkeeping; you may never fix the verdict.
 - You do not execute verification commands, so you never verify commits
   yourself. Treat a commit as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and

@@ -15,6 +15,7 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-007 | 2026-08-11 | Task 5 Developer blocker report: required dedicated integration gate failed because the fixed classification inventory omitted the newly added parity-fixture rebuild journey | `tasks/task-5-done.md` | BLOCK | ESC-20-007 | Genuine unresolved required-gate failure; no verified completion commit or accepted decision provides a RESUME ground. |
 | TRG-20-006 | 2026-08-11 | Task 4 recovery completion report fails report-lint after verified recovery commit: three invalid go-test evidence tokens and pending commit fields | `tasks/task-4-done.md`; report-lint output | BLOCK | ESC-20-006 | Genuine unresolved report-lint hard stop in the committed report; attached verification proves the faulty commit, not a correction. |
 | TRG-20-005 | 2026-08-11 | Task 4 Developer blocker report: required golangci-lint gate failed on unused `describeLockHolder`; no commit and downstream gates not run | `tasks/task-4-done.md` | BLOCK | ESC-20-005 | Genuine unresolved required-gate failure. No verified commit or accepted decision supplies a RESUME ground. |
 | TRG-20-004 | 2026-08-10 | Infrastructure Review 1 found a retained integration-tagged in-process test outside both accepted gates | `qa/infra-review-1.md` | BLOCK | ESC-20-004 | Task 3f's direct-parent inventory omitted `internal/issues/transition_rules_test.go`; repository-wide classification and ordinary ownership are required before Task 4. |
@@ -23,6 +24,31 @@
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-007 - Task 5 blocked by incomplete integration-journey inventory
+
+- **Trigger:** Phase 20 Task 5 Developer blocker report says the required
+  dedicated integration gate failed. TestIntegrationClassification has a fixed
+  journey inventory that omitted the newly added
+  TestV01ParityFixtureRebuildPreservesEveryProjectionTable journey. The first
+  four exact Task 5 gates passed; benchmark and build were not run; no task
+  commit was created.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-5-done.md`.
+- **Verdict:** BLOCK
+- **Reasoning:** The dedicated required integration gate genuinely failed; the
+  report identifies the omitted journey in the fixed classification inventory.
+  This is neither a misclassification nor covered by an accepted decision, and
+  the prompt supplies no verified completion commit (the report confirms none
+  exists). Correcting the test/gate classification apparatus is outside
+  local-decision authority.
+- **Local decisions made:** none
+- **References:** `project-docs/docs/phases/phase-20/tasks/task-5-done.md`
+  (Exact quality-gate results and blocker); `AGENTS.md` (Commands: required
+  gate failures are hard stops); `project-docs/specs/09_AI_WORKFLOW.md` §2.3
+  and §9.
+- **If BLOCK:** ESC-20-007 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-007 before Task 5
+  recovery or any subsequent task resumes.
 
 ## TRG-20-006 - Task 4 recovery report has invalid committed lint evidence
 

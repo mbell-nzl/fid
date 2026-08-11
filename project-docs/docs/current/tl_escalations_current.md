@@ -15,6 +15,22 @@ None.
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-007 resolved by DEC-137, with the
+  systemic fix in DEC-138 (2026-08-11).** Task 5's work was finished and
+  passing; the dedicated integration gate failed because
+  `TestIntegrationClassification` compares against a hardcoded journey list that
+  Task 5 legitimately grew by one. The list was stale, so the failure was
+  correct — but exact equality against a name list is a change-detector that
+  already caused ESC-20-004 and would trip again at Tasks 14-18. DEC-137
+  replaces it with required-presence (losing a migrated journey still fails,
+  additions are allowed) and leaves DEC-134's repository-wide tagged-test walk
+  untouched. **DEC-138** addresses the pattern: ESC-20-005/006/007 all stopped
+  finished work for a one-line, self-describing correction to the verification
+  apparatus, so a stale bookkeeping inventory is now an in-session repair with a
+  mandatory deviation note, and TL-Lite gains a matching fourth RESUME ground.
+  Thresholds, product assertions, and evidence-token rules are untouched: you
+  may fix the bookkeeping, never the verdict.
+
 - **Phase 20 (in flight)** — **ESC-20-006 resolved by DEC-136 (2026-08-11).**
   Two causes. The `Pending commit` fields were a **Tech Lead defect**: DEC-135
   ordered a single commit, contradicting the Developer prompt's Report And

@@ -248,8 +248,17 @@ Triage rules:
   placeholder command, missing command, silently skipped command, narrower
   substituted command, or ad hoc gate substitution. RESUME is allowed only when
   the failure is misclassified, already resolved by a verified commit with
-  attached evidence, or covered by an accepted decision. A genuine unresolved
-  failure is always BLOCK.
+  attached evidence, covered by an accepted decision, or resolvable as a
+  §8 bookkeeping repair (below). A genuine unresolved failure is always BLOCK.
+- **Fourth RESUME ground - bookkeeping repair.** A hard stop whose only
+  unresolved element is a stale inventory in the verification apparatus, meeting
+  every §8 bookkeeping condition, resumes with a TRG record and no escalation:
+  the failure output names the exact discrepancy, the assertion tracks the
+  repository's own artifacts rather than product behavior, and the repair
+  changes no threshold and weakens no test or assertion. State in the TRG which
+  inventory is stale and what reconciles it. Any doubt is BLOCK; a failing
+  product test, a threshold change, or a change to what the gate checks is
+  never eligible.
 - TL-Lite cannot run commands and never verifies commits itself. A commit
   counts as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and
@@ -1248,6 +1257,31 @@ substituted, or re-pointed; the final pass is **deterministic and reproducible
 by a third party from committed artifacts alone**; and both the failure and the
 final result are recorded with their own tokens. If any condition fails, the
 strict rule applies and the gate is failed.
+
+A second case behaves the same way. A required command may fail only because a
+**bookkeeping inventory inside the verification apparatus has gone stale**
+against a change the task's accepted scope legitimately made — a classifier
+whose hardcoded test list omits a newly added journey, a linter naming a symbol
+the task's own contract-correct narrowing orphaned, a registry inventory missing
+an entry the task was authorized to add. Reconciling that inventory is
+bookkeeping, not gate repair: it may be done in the same session and rerun to a
+pass, recorded `PASS` with the same mandatory deviation note. All of these
+conditions must hold: the failing assertion tracks an inventory of the
+repository's own artifacts and not product behavior; the failure output names
+the exact discrepancy, so no judgment is needed to repair it; the repair changes
+no threshold, budget, or tolerance and deletes, weakens, narrows, or re-points
+no test or assertion; the rerun command is byte-identical; and both the failure
+and the final result carry their own tokens. **You may fix the bookkeeping; you
+may never fix the verdict.** Changing what a gate checks — its semantics, scope,
+or strictness — is a gate change and remains a hard stop, as does any doubt
+about which of the two a failure is.
+
+This carve-out exists because the opposite policy was measured and found
+expensive: across Phases 17-20 every escalation landed in verification apparatus
+or evidence records rather than product behavior, and three consecutive Phase 20
+escalations held finished, passing work hostage to a one-line, self-describing
+correction. The friction it removes is real, so each such repair is recorded as
+a deviation and read at the next QA review window.
 
 The distinction matters at triage. **"The task is incomplete, stop"** and
 **"the evidence is tainted, restart"** are different verdicts with different

@@ -47,6 +47,19 @@ silently. The full role definition lives in `09_AI_WORKFLOW.md` §2.5
   a reason in a blocker report. Focused red/green commands do not substitute
   for the required gate; missing, silently skipped, or narrower substituted
   commands are failed gates.
+- A required command that fails only because a **bookkeeping inventory in the
+  verification apparatus is stale** against a change your accepted scope
+  legitimately made - a classifier's hardcoded test list missing a journey you
+  added, a linter naming a symbol your contract-correct change orphaned - is
+  repaired in this session and rerun, recorded `PASS` with a mandatory deviation
+  note giving the first failure's verbatim token, the root cause, and the fix.
+  Conditions: the assertion tracks the repository's own artifacts, not product
+  behavior; the failure output names the exact discrepancy; you change no
+  threshold, budget, or tolerance and delete, weaken, narrow, or re-point no
+  test or assertion; the rerun is byte-identical. **You may fix the bookkeeping;
+  you may never fix the verdict** - changing what a gate checks is a blocker
+  report, as is any doubt about which you are facing. See `AGENTS.md`
+  (Commands) and `09_AI_WORKFLOW.md` §8.
 - Record each command's result with one short verbatim token copied from its
   own terminal output: the last line it printed, or `exit 0 (no output)` for
   a silent success. **A command you did not watch terminate is never `PASS`.**

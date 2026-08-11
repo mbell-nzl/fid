@@ -216,6 +216,21 @@ fails against the product, or that passes only after the command, the test, or
 the assertion is weakened or narrowed, is a **failed gate**. Iterating a harness
 to green is the normal red/green loop; mining for a flaky green is not.
 
+A required command that fails only because a **bookkeeping inventory in the
+verification apparatus is stale** with respect to a change the task's accepted
+scope legitimately made may likewise be repaired in the same session and rerun,
+recorded `PASS` with the same **mandatory deviation note**. All of these must
+hold: the failing assertion tracks an inventory of the repository's own
+artifacts (test names, files, registered codes, generated fixtures) and **not**
+product behavior; the failure output **names the exact discrepancy**; the repair
+only reconciles the inventory with reality the task was authorized to create,
+changing **no threshold, budget, or tolerance** and leaving every test and
+assertion intact, unnarrowed, and un-re-pointed; the rerun command is
+byte-identical; and both the failure and the final result carry their own
+tokens. **You may fix the bookkeeping; you may never fix the verdict** —
+altering what a gate checks, rather than the inventory it tracks, remains a hard
+stop. If you cannot tell which one you are facing, stop and report.
+
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
 `.gopath/`, `.golangci-cache/`, `.cache/`). Do not request unsandboxed

@@ -536,3 +536,30 @@ Human-approved and QA-plan acceptance is next._
 - Cause: Task 4 report-lint failure and TRG-20-006; the committed completion report cannot close the task under the evidence contract.
 - Triage: TRG-20-006 (BLOCK, escalated as ESC-20-006)
 - Next human action: Resolve ESC-20-006 with a report-repair/recovery sequence, rerun report-lint against the corrected committed report, then resume the Phase Runner before Task 5.
+
+### 2026-08-11 17:04 RUN-START
+
+- Branch: `phase-20`
+- ESC baseline (Open at run start): none (ESC-20-006 resolved by DEC-136)
+- Warm-up/autonomous-resume state: autonomous per DEC-002
+- Starting task: `task-4`
+
+### 2026-08-11 17:12 TASK task-4 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-4-done.md`
+- report-lint: PASS; all required headings, fresh evidence tokens, task command coverage, commit verification, subject match, and report cleanliness passed
+- Commit: `e56b3a0ce0433f1044f70b7969c14e19234dfdf8` - verified, subject matched (`feat(rebuild): map typed authority and lock failures`)
+- Report finalization commits: `b867d686e5745ceec1b799813781962b6a0ce5bd`, `158c43fd8ab4b08e4ac512eeb84ed7241382e4cc`
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-11 17:35 TRIAGE TRG-20-007
+
+- Trigger: Task 5 Developer blocker report records a required dedicated integration-gate failure because `TestIntegrationClassification` omits the new parity-fixture rebuild journey; no task commit exists and later required gates were not run.
+- Verdict: BLOCK (escalated as ESC-20-007)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` TRG-20-007 entry confirmed
+
+### 2026-08-11 17:35 STOP
+
+- Cause: Task 5 blocker report and TRG-20-007; required `go test -tags integration -race ./cmd/fid/integration/...` failed on the fixed journey inventory.
+- Triage: TRG-20-007 (BLOCK, escalated as ESC-20-007)
+- Next human action: Resolve ESC-20-007 with Tech Lead direction for the compliant integration-classification recovery, then resume Task 5 before any downstream task.

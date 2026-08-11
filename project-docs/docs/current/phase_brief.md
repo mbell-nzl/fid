@@ -44,7 +44,7 @@ and legacy expiry ledger.
 | 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
 | 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
 | 4 | Rebuild, authority, and lock failures | Code committed `e56b3a0`; report repair in progress (DEC-136) | 1-3, 3a-3l |
-| 5 | Remove orphaned Issue fields | Pending | 4 |
+| 5 | Remove orphaned Issue fields | Implementation done; classifier fix owed (DEC-137) | 4 |
 | 6 | Replayable Issue aggregate revision | Pending | 5 |
 | 7 | Issue hierarchy invariant | Pending | 5-6 |
 | 8 | Issue read contract | Pending | 5-7 |

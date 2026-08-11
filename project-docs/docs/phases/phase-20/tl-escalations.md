@@ -8,6 +8,29 @@
 
 ### Resolved
 
+- **ESC-20-007 - Task 5 blocked by a stale journey inventory in the
+  classification test (raised 2026-08-11 via `TRG-20-007`; resolved 2026-08-11
+  by DEC-137, with DEC-138 as the systemic fix).** Task 5's implementation was
+  complete and passing — format, lint, race/coverage at 77.7%, every focused
+  test — when the dedicated integration gate failed because
+  `TestIntegrationClassification` compares the package's tests against a
+  hardcoded `wantJourneys` list that omitted the journey Task 5 added to prove
+  VAL-012 rebuild parity. The list was genuinely stale, so the gate was right to
+  fail, but the assertion is a **change-detector**: exact equality against a
+  name list fails on legitimate growth, it produced ESC-20-004, and Tasks 14-18
+  would have hit it again. No accepted decision requires "no new journey may
+  ever exist", so DEC-137 relaxes it to required-presence — losing one of the
+  four migrated journeys still fails — and leaves DEC-134's repository-wide
+  tagged-test walk and the binary-ownership and no-sleep assertions untouched.
+  The deeper problem is that this was the third consecutive escalation
+  (with ESC-20-005 and ESC-20-006) in which a Developer held finished work and
+  stopped for a one-line correction the tool itself had already named, at a cost
+  of a blocker report, a triage, a Tech Lead decision, a runner stop, a human
+  relay, and a fresh session apiece. **DEC-138** makes a stale bookkeeping
+  inventory an in-session repair under strict conditions and gives TL-Lite a
+  matching fourth RESUME ground, while leaving thresholds, product assertions,
+  and DEC-131's evidence rules exactly as they were.
+
 - **ESC-20-006 - Task 4 recovery report failed report-lint on pending commit
   metadata and three truncated go-test tokens (raised 2026-08-11 via
   `TRG-20-006`; resolved 2026-08-11 by DEC-136).** **Two causes, one of them
