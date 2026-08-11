@@ -54,8 +54,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `4950e946a31183cd5386a1a721fa8a2ca2f2988c`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issue): enforce hierarchy invariant`
