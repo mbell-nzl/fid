@@ -61,8 +61,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `4df4d66`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issue): migrate canonical issue read responses`
