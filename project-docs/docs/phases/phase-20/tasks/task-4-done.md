@@ -1,64 +1,52 @@
-# Phase 20 - Task 4: Rebuild, authority, and lock failures - Blocker Report
+# Phase 20 - Task 4: Rebuild, authority, and lock failures - Completion Report
 
 ## Summary of what was implemented
 
-- Implemented the in-progress Task 4 changes: rebuild root-flag/project selection, Response Envelope rendering, typed V1 authority mappings, projection-only JSON success, closed rebuild-request checks, and typed retryable rebuild lock handling.
-- The required lint gate failed before task completion; per the task protocol, this report records the blocker and the task is not claimed complete.
+- Completed the inherited Task 4 implementation: `fid rebuild` now follows project selection and the `fid-cli.v1` Response Envelope, maps retained V1 authority failures, returns projection-only success with `event:null`, and reports write-lock contention as typed, retryable `lock-unavailable`.
+- Deleted the dead private `describeLockHolder` formatter while retaining `.fid/write.lock/owner.json` metadata writing and `readLockMetadata` coverage.
 
 ## Files created or modified
 
-- `cmd/fid/rebuild.go`
-- `cmd/fid/response_errors.go`
-- `cmd/fid/rebuild_test.go`
-- `cmd/fid/root_flags_test.go`
-- `internal/journal/lock.go`
-- `internal/journal/lock_test.go`
-- `internal/journal/projection.go`
-- Direct rebuild channel assertions in `cmd/fid/claim_test.go`, `cmd/fid/issue_ac_test.go`, and the affected `cmd/fid/e2e_v01*.go` tests.
+- `cmd/fid/rebuild.go`, `cmd/fid/response_errors.go`, `cmd/fid/rebuild_test.go`, and `cmd/fid/root_flags_test.go`
+- `internal/journal/lock.go`, `internal/journal/lock_test.go`, and `internal/journal/projection.go`
+- Rebuild channel assertions in `cmd/fid/claim_test.go`, `cmd/fid/issue_ac_test.go`, and the affected `cmd/fid/e2e_v01*.go` tests.
 - `project-docs/docs/phases/phase-20/tasks/task-4-done.md`
 
 ## Documentation updated
 
-- None required; this blocker report is the required task artifact.
+- None required; this required completion report replaces the recovery blocker report.
 
 ## Validation Contract Coverage
 
-- VAL-001: BLOCKED - focused rebuild JSON success/rejection tests passed, but the required lint gate failed.
-- VAL-002: BLOCKED - `TestRebuildJSONMapsMissingAuthorityWithoutMutation`, `TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation`, and `TestRebuildJSONMapsReplayStopWithClosedDetails` passed in the focused package run; task closure is blocked by lint.
-- VAL-006: BLOCKED - the authority test matrix passed in `cmd/fid`; task closure is blocked by lint.
-- VAL-007: BLOCKED - `TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease` and `TestWithLockReturnsTypedUnavailableErrorForHeldLock` passed in focused runs; task closure is blocked by lint.
-- VAL-008: BLOCKED - direct rebuild Human-channel assertions were updated and passed in `go test ./cmd/fid ./internal/journal -count=1`; task closure is blocked by lint.
-- VAL-017: BLOCKED - rebuild JSON success asserts `event:null` in `TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease`; task closure is blocked by lint.
-- VAL-044 (rebuild row): BLOCKED - `TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork` and `TestRebuildJSONMapsExplicitMissingProjectToSelectedPath` passed in focused runs; task closure is blocked by lint.
+- VAL-001: PASS - `TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease` asserts the exact success-envelope keys on stdout with empty stderr; the real `/tmp/fid` run emitted `{"contract_version":"fid-cli.v1",...,"event":null}`.
+- VAL-002: PASS - `TestRebuildJSONMapsMissingAuthorityWithoutMutation`, `TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation`, and `TestRebuildJSONMapsReplayStopWithClosedDetails` assert closed JSON failure envelopes, exact code-specific details, stderr-only output, and non-mutation.
+- VAL-006: PASS - `TestRebuildJSONMapsMissingAuthorityWithoutMutation` and `TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation` cover missing, unknown, and denied authority before journal/projection work; `go test -race -coverprofile=coverage.out ./...` passed.
+- VAL-007: PASS - `TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease` asserts `lock-unavailable`, `conflict`, `retryable:true`, closed `{lock_path}` details, no journal append, then success after release; `TestWithLockReturnsTypedUnavailableErrorForHeldLock` proves the typed journal error.
+- VAL-008: PASS - `TestRebuildCommandReplaysJournalAndReportsCounts` asserts Human rebuild success on stdout with empty stderr; the JSON failure tests assert empty stdout and stderr-only failures.
+- VAL-017: PASS - `TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease` and `TestRootFlagsAllowRebuildForAnExplicitProject` assert `event == nil` for the projection-only rebuild read; the real CLI output also contained `"event":null`.
+- VAL-044 (rebuild row): PASS - `TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork` rejects positional input and `--json --verbose` before mutation, while `TestRootFlagsAllowRebuildForAnExplicitProject` and `TestRebuildJSONMapsExplicitMissingProjectToSelectedPath` cover the closed root request/project behavior.
 
 ## Tests run
 
-- `go test ./cmd/fid --run '^TestRebuildJSONMapsMissingAuthorityWithoutMutation$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.073s`
-- `go test ./internal/journal --run '^TestWithLockReturnsTypedUnavailableErrorForHeldLock$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	0.004s`
-- `go test ./cmd/fid --run '^TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.094s`
-- `go test ./cmd/fid --run '^TestRebuildJSONMapsReplayStopWithClosedDetails$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.085s`
-- `go test ./cmd/fid --run '^TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.073s`
-- `go test ./cmd/fid --run '^TestRebuildJSONMapsExplicitMissingProjectToSelectedPath$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.041s`
-- `go test ./cmd/fid ./internal/journal -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	1.740s`
-- `go test ./cmd/fid ./internal/journal -count=1 && git diff --check && git diff --stat && git status --short` - PASS - `?? cmd/fid/response_errors.go`
+- `go test ./cmd/fid ./internal/journal -run '^(TestRebuildJSONMapsMissingAuthorityWithoutMutation|TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation|TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork|TestRebuildJSONMapsExplicitMissingProjectToSelectedPath|TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease|TestRebuildCommandReplaysJournalAndReportsCounts|TestWithLockWritesOwnerMetadata|TestWithLockReturnsTypedUnavailableErrorForHeldLock)$' -count=1` - PASS - `0.009s`
+- `/tmp/fid --project "$task4_workspace" init --prefix FID; /tmp/fid --project "$task4_workspace" --json rebuild --by workflow_runner` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}`
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)`
-- `golangci-lint run ./...` - BLOCKED - `* unused: 1`
-- `go test -race -coverprofile=coverage.out ./...` - not run - blocked by the failed required lint gate.
-- `go tool cover -func=coverage.out` - not run - blocked because its required coverage producer did not run.
-- `go test -tags integration -race ./cmd/fid/integration/...` - not run - blocked by the failed required lint gate.
-- `go build -o /tmp/fid ./cmd/fid` - not run - blocked by the failed required lint gate.
+- `golangci-lint run ./...` - PASS - `0 issues.`
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `coverage: 80.5% of statements`
+- `go tool cover -func=coverage.out` - PASS - `77.8%`
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `4.625s`
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`
 
 ## Deviations from spec
 
-- None. The task is incomplete because the required lint gate failed.
+- The first session stopped at `internal/journal/lock.go:185:6: func describeLockHolder is unused (unused)`. In this later recovery session, the dead private formatter was deleted and the exact required gates passed; no contract, behavior, or test assertion was weakened.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Required lint failure: `internal/journal/lock.go:185:6: func describeLockHolder is unused (unused)`. The typed lock-unavailable path no longer reads or formats holder metadata. The task protocol prohibits repairing and rerunning a failed required gate in this session; a follow-up must resolve this before Task 4 can close.
-- `project-docs/docs/phases/phase-20/run-ledger.md` was already modified when this session began and was not edited.
+- None.
 
 ## Dependency-budget note
 
@@ -66,8 +54,8 @@
 
 ## Commit hash
 
-- No commit created - blocker report.
+- Pending commit
 
 ## Commit subject
 
-- No commit created - blocker report.
+- Pending commit

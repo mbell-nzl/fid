@@ -323,10 +323,10 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 	assertNoNestedLockFailure(t, rebuildStderr)
-	if !strings.Contains(rebuildStderr, "rebuild complete") {
-		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
+		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "rebuild")
 

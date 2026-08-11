@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -72,6 +73,35 @@ func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testi
 	}
 	if _, err := os.Stat(filepath.Join(workspace, ".fid")); err != nil {
 		t.Fatalf("relative project workspace not initialized: %v", err)
+	}
+}
+
+func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(t.TempDir())
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", workspace, "--json", "rebuild", "--by", "workflow_runner"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	var envelope struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Event     *any   `json:"event"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stdout) error = %v", err)
+	}
+	if !envelope.OK || envelope.Operation != "project.rebuild" || envelope.Event != nil {
+		t.Fatalf("rebuild envelope = %+v, want project.rebuild read response", envelope)
 	}
 }
 

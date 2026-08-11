@@ -162,9 +162,9 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
-	if !strings.Contains(rebuildStderr, "rebuild complete") {
-		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
+		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 
 	assertTask4ACRowsEqual(t, snapshotTask4ACRows(t, workspace), beforeAcceptanceRows)
