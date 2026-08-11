@@ -58,8 +58,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `29c52469be0277ac9e3e84cd0c5f63cd16a06066`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issue): add replayable aggregate revisions`
