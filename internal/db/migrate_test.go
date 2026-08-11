@@ -41,6 +41,35 @@ func TestIssuesTableExcludesRetiredPhase20Fields(t *testing.T) {
 	}
 }
 
+func TestIssueRevisionMigrationAddsAndRemovesRevision(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	defer closeMigrator(t, migrator, conn)
+
+	if err := migrator.Migrate(12); err != nil {
+		t.Fatalf("Migrate(12) error = %v", err)
+	}
+	assertIssueColumnsPresent(t, conn, "issues", "revision")
+	if _, err := conn.Exec(`
+		INSERT INTO issues (id, kind, title, workflow_id, status)
+		VALUES ('FID-revision-default', 'task', 'revision default', 'task-default', 'todo')
+	`); err != nil {
+		t.Fatalf("insert Issue with revision default: %v", err)
+	}
+	var revision int
+	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = 'FID-revision-default'`).Scan(&revision); err != nil {
+		t.Fatalf("query default revision: %v", err)
+	}
+	if revision != 1 {
+		t.Fatalf("default revision = %d, want 1", revision)
+	}
+
+	if err := migrator.Migrate(11); err != nil {
+		t.Fatalf("Migrate(11) error = %v", err)
+	}
+	assertIssueColumnsAbsent(t, conn, "issues", "revision")
+}
+
 func assertIssueColumnsAbsent(t *testing.T, conn *sql.DB, table string, names ...string) {
 	t.Helper()
 	columns := issueColumns(t, conn, table)

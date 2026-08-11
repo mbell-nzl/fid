@@ -77,6 +77,57 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 	}
 }
 
+func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Record revision",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	if _, err := Update(UpdateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ActorRole:     "developer",
+		Title:         stringPointer("Record updated revision"),
+	}); err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+
+	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	last := stored[len(stored)-1]
+	var revisionEffect *journal.Effect
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		if effect.Table == "issues" && effect.Op == "update" && len(effect.Values) == 1 {
+			revisionEffect = effect
+		}
+	}
+	if revisionEffect == nil {
+		t.Fatal("missing Issue revision effect")
+	}
+	if got := revisionEffect.PK["id"]; got != created.ID {
+		t.Fatalf("revision effect issue id = %#v, want %q", got, created.ID)
+	}
+	if got := revisionEffect.Values["revision"]; got != float64(2) {
+		t.Fatalf("revision effect value = %#v, want 2", got)
+	}
+	if got := revisionEffect.Prior["revision"]; got != float64(1) {
+		t.Fatalf("revision effect prior = %#v, want 1", got)
+	}
+	if got := revisionEffect.Preconditions["revision"]; got != float64(1) {
+		t.Fatalf("revision effect precondition = %#v, want 1", got)
+	}
+}
+
 func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 	t.Parallel()
 
@@ -293,7 +344,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	for index := range last.Effects {
 		effect := &last.Effects[index]
 		switch {
-		case effect.Table == "issues" && effect.Op == "update":
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["title"] != nil:
 			updateEffect = effect
 		case effect.Table == "activity_log" && effect.Op == "activity":
 			activityEffect = effect
@@ -336,6 +387,13 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
+	var liveRevision int
+	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, created.ID).Scan(&liveRevision); err != nil {
+		t.Fatalf("query live Issue revision: %v", err)
+	}
+	if liveRevision != 2 {
+		t.Fatalf("live Issue revision = %d, want 2", liveRevision)
+	}
 
 	var (
 		activityCount int
@@ -385,6 +443,15 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("Get(after rebuild) error = %v", err)
 	}
 	assertIssuesEqual(t, rebuilt, beforeRebuild)
+	rebuiltConn := openIssueDB(t, dbPath)
+	defer closeIssueTestDB(t, rebuiltConn)
+	var rebuiltRevision int
+	if err := rebuiltConn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, created.ID).Scan(&rebuiltRevision); err != nil {
+		t.Fatalf("query rebuilt Issue revision: %v", err)
+	}
+	if rebuiltRevision != liveRevision {
+		t.Fatalf("rebuilt Issue revision = %d, want live %d", rebuiltRevision, liveRevision)
+	}
 }
 
 func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {

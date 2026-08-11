@@ -101,6 +101,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 			"title":       options.Title,
 			"workflow_id": resolvedWorkflow.ID,
 			"status":      resolvedWorkflow.InitialState,
+			"revision":    1,
 			"owner_role":  defaultOwnerRole,
 			"created_at":  timestamp,
 			"updated_at":  timestamp,

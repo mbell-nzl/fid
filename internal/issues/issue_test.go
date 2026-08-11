@@ -870,6 +870,12 @@ func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
 			if effect.Table != "issues" || effect.PK["id"] != created.ID {
 				continue
 			}
+			if got := effect.Values["revision"]; got != float64(1) {
+				t.Fatalf("issue.created revision = %#v, want 1", got)
+			}
+			if len(effect.Prior) != 0 || len(effect.Preconditions) != 0 {
+				t.Fatalf("issue.created revision prior/preconditions = %#v / %#v, want omitted", effect.Prior, effect.Preconditions)
+			}
 			for _, key := range []string{"in_inbox", "est_tokens", "due_date"} {
 				if _, found := effect.Values[key]; found {
 					t.Fatalf("issue.created effect unexpectedly contains retired key %q", key)

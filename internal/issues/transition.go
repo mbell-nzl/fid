@@ -91,6 +91,7 @@ type issueTransitionState struct {
 	WorkflowID string
 	Status     string
 	UpdatedAt  string
+	Revision   int
 }
 
 func Transition(options TransitionOptions) (TransitionResult, error) {
@@ -208,6 +209,14 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				},
 			},
 		}
+		revisionEffects, err := BuildIssueRevisionEffects([]IssueRevision{{
+			IssueID:  current.ID,
+			Observed: current.Revision,
+		}})
+		if err != nil {
+			return err
+		}
+		event.Effects = append(event.Effects, revisionEffects...)
 		if leavesStartedCategory(registry, current.WorkflowID, current.Status, toState) {
 			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, options.ActorRole)
 			if err != nil {

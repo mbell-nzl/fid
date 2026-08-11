@@ -30,6 +30,7 @@ type issueState struct {
 	WorkflowID string
 	Status     string
 	UpdatedAt  string
+	Revision   int
 }
 
 type currentClaim struct {
@@ -100,10 +101,10 @@ func loadIssueState(conn *sql.DB, issueID string) (issueState, error) {
 		updatedAt sql.NullString
 	)
 	err := conn.QueryRow(`
-		SELECT id, kind, workflow_id, status, updated_at
+		SELECT id, kind, workflow_id, status, updated_at, revision
 		FROM issues
 		WHERE id = ?
-	`, issueID).Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt)
+	`, issueID).Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt, &state.Revision)
 	if err == sql.ErrNoRows {
 		return issueState{}, &issues.NotFoundError{IssueID: issueID}
 	}
@@ -287,8 +288,15 @@ func openRunID(conn *sql.DB, issueID string) (*string, error) {
 	return &runID.String, nil
 }
 
-func buildIssueTransitionEffects(current issueState, toState, actorRole, eventID, activityID, timestamp string) []journal.Effect {
-	return []journal.Effect{
+func buildIssueTransitionEffects(current issueState, toState, actorRole, eventID, activityID, timestamp string) ([]journal.Effect, error) {
+	revisionEffects, err := issues.BuildIssueRevisionEffects([]issues.IssueRevision{{
+		IssueID:  current.ID,
+		Observed: current.Revision,
+	}})
+	if err != nil {
+		return nil, err
+	}
+	effects := []journal.Effect{
 		{
 			Op:    "update",
 			Table: "issues",
@@ -323,6 +331,8 @@ func buildIssueTransitionEffects(current issueState, toState, actorRole, eventID
 			},
 		},
 	}
+	effects = append(effects[:1], append(revisionEffects, effects[1:]...)...)
+	return effects, nil
 }
 
 func issueStatusCategory(registry *workflow.Registry, workflowID, state string) (string, error) {

@@ -11,7 +11,7 @@ import (
 
 func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionState, error) {
 	row := conn.QueryRow(`
-		SELECT id, kind, workflow_id, status, updated_at
+		SELECT id, kind, workflow_id, status, updated_at, revision
 		FROM issues
 		WHERE id = ?
 	`, issueID)
@@ -20,7 +20,7 @@ func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionStat
 		state     issueTransitionState
 		updatedAt sql.NullString
 	)
-	if err := row.Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt); err != nil {
+	if err := row.Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt, &state.Revision); err != nil {
 		if err == sql.ErrNoRows {
 			return issueTransitionState{}, &NotFoundError{IssueID: issueID}
 		}

@@ -108,7 +108,11 @@ func Block(options BlockOptions) (BlockResult, error) {
 			return err
 		}
 		event.Effects = append(event.Effects, completionEffects...)
-		event.Effects = append(event.Effects, buildIssueTransitionEffects(current, "failed_gate", options.ActorRole, event.EventID, activityID, timestamp)...)
+		transitionEffects, err := buildIssueTransitionEffects(current, "failed_gate", options.ActorRole, event.EventID, activityID, timestamp)
+		if err != nil {
+			return err
+		}
+		event.Effects = append(event.Effects, transitionEffects...)
 		event.Effects = append(event.Effects, releaseEffect)
 
 		if err := appendAndProjectEvent(options.WorkspaceRoot, conn, lock, event); err != nil {

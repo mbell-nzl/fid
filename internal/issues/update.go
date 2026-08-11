@@ -47,6 +47,7 @@ type issueUpdateState struct {
 	OwnerRole  *string
 	OwnerActor *string
 	UpdatedAt  string
+	Revision   int
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
@@ -144,6 +145,14 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 				Preconditions: scalarPreconditions,
 			},
 		}
+		revisionEffects, err := BuildIssueRevisionEffects([]IssueRevision{{
+			IssueID:  current.ID,
+			Observed: current.Revision,
+		}})
+		if err != nil {
+			return err
+		}
+		effects = append(effects, revisionEffects...)
 		effects = append(effects, labelEffects...)
 		effects = append(effects, journal.Effect{
 			Op:    "activity",
@@ -209,7 +218,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {
 	row := conn.QueryRow(`
-		SELECT id, title, priority, spec_md_path, owner_role, owner_actor, updated_at
+		SELECT id, title, priority, spec_md_path, owner_role, owner_actor, updated_at, revision
 		FROM issues
 		WHERE id = ?
 	`, issueID)
@@ -228,6 +237,7 @@ func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error
 		&ownerRole,
 		&ownerActor,
 		&updatedAt,
+		&state.Revision,
 	); err != nil {
 		if err == sql.ErrNoRows {
 			return issueUpdateState{}, &NotFoundError{IssueID: issueID}

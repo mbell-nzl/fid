@@ -121,7 +121,11 @@ func Finish(options FinishOptions) (FinishResult, error) {
 			effects = append(effects, closeRunEffect(*runID, issueID, timestamp))
 		}
 		effects = append(effects, completionEffects...)
-		effects = append(effects, buildIssueTransitionEffects(current, "dev_complete", options.ActorRole, event.EventID, activityID, timestamp)...)
+		transitionEffects, err := buildIssueTransitionEffects(current, "dev_complete", options.ActorRole, event.EventID, activityID, timestamp)
+		if err != nil {
+			return err
+		}
+		effects = append(effects, transitionEffects...)
 		effects = append(effects, releaseEffect)
 		event.Effects = effects
 
