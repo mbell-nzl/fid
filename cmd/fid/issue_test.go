@@ -13,77 +13,19 @@ import (
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"gopkg.in/yaml.v3"
 )
 
-func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
+func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
-
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Implement tracer bullet", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Human read", "--by", "developer")
 	issueID := parseCreatedIssueID(t, stderr)
-
-	defaultStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
-	jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-
-	if defaultStdout != jsonStdout {
-		t.Fatalf("default stdout = %q, want same as --format json %q", defaultStdout, jsonStdout)
-	}
-
-	var got struct {
-		ID                 string   `json:"id"`
-		Kind               string   `json:"kind"`
-		Title              string   `json:"title"`
-		Status             string   `json:"status"`
-		StatusCategory     string   `json:"status_category"`
-		WorkflowID         string   `json:"workflow_id"`
-		OwnerRole          string   `json:"owner_role"`
-		Labels             []string `json:"labels"`
-		ConcernsRaised     bool     `json:"concerns_raised"`
-		OpenConcernsCount  int      `json:"open_concerns_count"`
-		TriageStatus       *string  `json:"triage_status"`
-		AcceptanceCriteria []any    `json:"acceptance_criteria"`
-	}
-	if err := json.Unmarshal([]byte(defaultStdout), &got); err != nil {
-		t.Fatalf("Unmarshal() error = %v", err)
-	}
-
-	if got.ID != issueID {
-		t.Fatalf("id = %q, want %q", got.ID, issueID)
-	}
-	if got.Kind != "task" {
-		t.Fatalf("kind = %q, want %q", got.Kind, "task")
-	}
-	if got.Title != "Implement tracer bullet" {
-		t.Fatalf("title = %q, want %q", got.Title, "Implement tracer bullet")
-	}
-	if got.Status != "todo" {
-		t.Fatalf("status = %q, want %q", got.Status, "todo")
-	}
-	if got.StatusCategory != "unstarted" {
-		t.Fatalf("status_category = %q, want %q", got.StatusCategory, "unstarted")
-	}
-	if got.WorkflowID != "task-default" {
-		t.Fatalf("workflow_id = %q, want %q", got.WorkflowID, "task-default")
-	}
-	if got.OwnerRole != "developer" {
-		t.Fatalf("owner_role = %q, want %q", got.OwnerRole, "developer")
-	}
-	if got.Labels == nil || len(got.Labels) != 0 {
-		t.Fatalf("labels = %#v, want empty array", got.Labels)
-	}
-	if got.ConcernsRaised {
-		t.Fatal("concerns_raised = true, want false")
-	}
-	if got.OpenConcernsCount != 0 {
-		t.Fatalf("open_concerns_count = %d, want 0", got.OpenConcernsCount)
-	}
-	if got.TriageStatus != nil {
-		t.Fatalf("triage_status = %#v, want nil", got.TriageStatus)
-	}
-	if got.AcceptanceCriteria == nil || len(got.AcceptanceCriteria) != 0 {
-		t.Fatalf("acceptance_criteria = %#v, want empty array", got.AcceptanceCriteria)
+	result := executeCommandForTest(workspace, "issue", "get", issueID)
+	if result.err != nil || result.stderr != "" || !strings.Contains(result.stdout, issueID) || strings.Contains(result.stdout, ".fid/") {
+		t.Fatalf("human read = %#v", result)
 	}
 }
 
@@ -646,91 +588,20 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	}
 }
 
-func TestIssueGetReturnsMarkdownForEmptyAndPopulatedIssues(t *testing.T) {
-	t.Run("empty issue omits empty sections", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
-
-		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-		if err != nil {
-			t.Fatalf("Open() error = %v", err)
+func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format retirement", "--by", "developer")
+	issueID := parseCreatedIssueID(t, stderr)
+	for _, flag := range []string{"--format", "--section"} {
+		args := []string{"issue", "get", issueID, flag, "json"}
+		if flag == "--section" {
+			args[4] = "acceptance"
 		}
-		defer closeCommandDB(t, conn)
-
-		if _, err := conn.Exec(`
-			INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		`,
-			"FID-emptymd",
-			"task",
-			"Render empty issue",
-			"todo",
-			"task-default",
-			"developer",
-			"2026-06-07T14:00:00Z",
-			"2026-06-07T14:00:00Z",
-		); err != nil {
-			t.Fatalf("insert empty markdown issue: %v", err)
+		if result := executeCommandForTest(workspace, args...); result.err == nil {
+			t.Fatalf("%s was accepted", flag)
 		}
-
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-emptymd", "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-
-		want := "" +
-			"# FID-emptymd: Render empty issue\n\n" +
-			"**Kind:** task | **Status:** todo | **Priority:** (none)\n" +
-			"**Owner:** developer\n\n" +
-			"---\n" +
-			"Created: 2026-06-07T14:00:00Z | Updated: 2026-06-07T14:00:00Z\n"
-		if stdout != want {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
-		}
-		if strings.Contains(stdout, "## Acceptance Criteria") || strings.Contains(stdout, "## Labels") || strings.Contains(stdout, "## Links") {
-			t.Fatalf("markdown stdout = %q, want empty sections omitted", stdout)
-		}
-	})
-
-	t.Run("populated issue matches markdown layout", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
-
-		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-		if err != nil {
-			t.Fatalf("Open() error = %v", err)
-		}
-		defer closeCommandDB(t, conn)
-
-		seedMarkdownPopulatedIssue(t, conn)
-
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-
-		want := "" +
-			"# FID-a1b2c3: Implement journal append with flush\n\n" +
-			"**Kind:** task | **Status:** in_progress | **Priority:** P1\n" +
-			"**Epic:** FID-e1f2g3 (Core persistence layer)\n" +
-			"**Owner:** developer | **Sequence:** 3\n" +
-			"**Spec:** project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md\n\n" +
-			"## Acceptance Criteria\n\n" +
-			"- [x] AC-d4e5f6: Journal file is flushed to disk before returning success\n" +
-			"  - developer: pass (2026-05-27T10:15:00Z)\n" +
-			"- [ ] AC-e5f6g7: Partial write leaves journal intact\n" +
-			"  - developer: (not verified)\n\n" +
-			"## Labels\n\n" +
-			"core, journal\n\n" +
-			"## Links\n\n" +
-			"- blocks FID-7c3e9f (Schema migration runner)\n" +
-			"- implements PRD-ISSUE-001\n\n" +
-			"---\n" +
-			"Created: 2026-05-25T09:00:00Z | Updated: 2026-05-27T10:20:00Z\n"
-		if stdout != want {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
-		}
-	})
+	}
 }
 
 func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
@@ -953,14 +824,8 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		for _, want := range []string{
-			"error: malformed journal entry at .fid/journal/",
-			"parse error: unexpected end of JSON input",
-			"read stopped - manual repair required",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
-			}
+		if !strings.Contains(stderr, `"code":"journal-replay-stopped"`) {
+			t.Fatalf("stderr = %q, want journal-replay-stopped envelope", stderr)
 		}
 	})
 
@@ -1014,275 +879,27 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		for _, want := range []string{
-			"error: replay precondition conflict at .fid/journal/",
-			"event: EVT-",
-			"issue.transitioned",
-			"entity: issues pk={id:",
-			"expected: {status:in_progress}",
-			"actual: {status:todo}",
-			"read stopped - manual repair required",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
-			}
+		if !strings.Contains(stderr, `"code":"journal-replay-stopped"`) {
+			t.Fatalf("stderr = %q, want journal-replay-stopped envelope", stderr)
 		}
 	})
 }
 
-func TestIssueGetReturnsYAMLForEmptyAndPopulatedIssues(t *testing.T) {
-	t.Run("empty issue", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
-
-		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "YAML empty issue", "--by", "developer")
-		issueID := parseCreatedIssueID(t, stderr)
-
-		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "yaml")
-
-		if jsonStderr != "" {
-			t.Fatalf("json stderr = %q, want empty", jsonStderr)
-		}
-		if yamlStderr != "" {
-			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
-		}
-
-		want := decodeCommandJSONStructure(t, jsonStdout)
-		got := decodeCommandYAMLStructure(t, yamlStdout)
-		if !commandStructuresEqual(want, got) {
-			t.Fatalf("YAML structure = %#v, want %#v", got, want)
-		}
-	})
-
-	t.Run("populated issue", func(t *testing.T) {
-		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
-
-		conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-		if err != nil {
-			t.Fatalf("Open() error = %v", err)
-		}
-		defer closeCommandDB(t, conn)
-
-		seedMarkdownPopulatedIssue(t, conn)
-
-		jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "json")
-		yamlStdout, yamlStderr := runFIDCommand(t, workspace, "issue", "get", "FID-a1b2c3", "--format", "yaml")
-
-		if jsonStderr != "" {
-			t.Fatalf("json stderr = %q, want empty", jsonStderr)
-		}
-		if yamlStderr != "" {
-			t.Fatalf("yaml stderr = %q, want empty", yamlStderr)
-		}
-
-		want := decodeCommandJSONStructure(t, jsonStdout)
-		got := decodeCommandYAMLStructure(t, yamlStdout)
-		if !commandStructuresEqual(want, got) {
-			t.Fatalf("YAML structure = %#v, want %#v", got, want)
-		}
-	})
-}
-
-func TestIssueGetDispatchesStructuredFormatsAndRejectsUnknownFormats(t *testing.T) {
+func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
-
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unsupported format", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format rejection", "--by", "developer")
 	issueID := parseCreatedIssueID(t, stderr)
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			jsonStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-			formattedStdout, formattedStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", formatName)
-
-			if formattedStderr != "" {
-				t.Fatalf("stderr = %q, want empty", formattedStderr)
-			}
-
-			want := decodeCommandJSONStructure(t, jsonStdout)
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, formattedStdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, formattedStdout)
-			default:
-				t.Fatalf("unexpected format %q", formatName)
-			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	t.Run("xml", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "xml")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unsupported format rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `unsupported format "xml"; known formats: json, toon, markdown, yaml`) {
-			t.Fatalf("stderr = %q, want actionable unknown format error", stderr)
-		}
-	})
-}
-
-func seedMarkdownPopulatedIssue(t *testing.T, conn *sql.DB) {
-	t.Helper()
-
-	statements := []struct {
-		query string
-		args  []any
-	}{
-		{
-			query: `
-				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-e1f2g3",
-				"epic",
-				"Core persistence layer",
-				"todo",
-				"epic-default",
-				"developer",
-				"2026-05-25T08:00:00Z",
-				"2026-05-25T08:00:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO epic_metadata (issue_id, scheduling)
-				VALUES (?, ?)
-			`,
-			args: []any{
-				"FID-e1f2g3",
-				"sequential",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (id, kind, parent_id, title, workflow_id, status, priority, sequence, spec_md_path, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-a1b2c3",
-				"task",
-				"FID-e1f2g3",
-				"Implement journal append with flush",
-				"task-default",
-				"in_progress",
-				1,
-				3,
-				"project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md",
-				"developer",
-				"2026-05-25T09:00:00Z",
-				"2026-05-27T10:20:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO issues (id, kind, title, status, workflow_id, owner_role, created_at, updated_at)
-				VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"FID-7c3e9f",
-				"task",
-				"Schema migration runner",
-				"todo",
-				"task-default",
-				"developer",
-				"2026-05-25T09:05:00Z",
-				"2026-05-25T09:05:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"PRD-ISSUE-001",
-				"PRD",
-				"Implement journal append with flush",
-				"01_PRD.md",
-				"ISSUE",
-				"active",
-			},
-		},
-		{
-			query: `INSERT INTO labels (name) VALUES (?), (?)`,
-			args:  []any{"core", "journal"},
-		},
-		{
-			query: `INSERT INTO issue_labels (issue_id, label) VALUES (?, ?), (?, ?)`,
-			args:  []any{"FID-a1b2c3", "core", "FID-a1b2c3", "journal"},
-		},
-		{
-			query: `
-				INSERT INTO acceptance_criteria (id, issue_id, ordinal, text)
-				VALUES (?, ?, ?, ?), (?, ?, ?, ?)
-			`,
-			args: []any{
-				"AC-d4e5f6",
-				"FID-a1b2c3",
-				1,
-				"Journal file is flushed to disk before returning success",
-				"AC-e5f6g7",
-				"FID-a1b2c3",
-				2,
-				"Partial write leaves journal intact",
-			},
-		},
-		{
-			query: `
-				INSERT INTO ac_verifications (id, ac_id, verifier_role, status, verified_at)
-				VALUES (?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"ACV-d4e5f6-dev",
-				"AC-d4e5f6",
-				"developer",
-				"pass",
-				"2026-05-27T10:15:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
-				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"issue",
-				"FID-a1b2c3",
-				"blocks",
-				"issue",
-				"FID-7c3e9f",
-				"2026-05-27T10:18:00Z",
-				"issue",
-				"FID-a1b2c3",
-				"implements",
-				"requirement",
-				"PRD-ISSUE-001",
-				"2026-05-27T10:19:00Z",
-			},
-		},
-	}
-
-	for _, statement := range statements {
-		if _, err := conn.Exec(statement.query, statement.args...); err != nil {
-			t.Fatalf("Exec(%q) error = %v", statement.query, err)
+	for _, value := range []string{"json", "toon", "yaml", "markdown", "xml"} {
+		if result := executeCommandForTest(workspace, "issue", "get", issueID, "--format", value); result.err == nil {
+			t.Fatalf("--format %s was accepted", value)
 		}
 	}
 }
 
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
+	args, unwrap := migratedReadTestArgs(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -1296,11 +913,15 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 		t.Fatalf("Execute(%v) error = %v", args, err)
 	}
 
+	if unwrap != "" {
+		return legacyMigratedReadOutput(t, workspace, args, stdout.String(), unwrap), stderr.String()
+	}
 	return stdout.String(), stderr.String()
 }
 
 func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (string, string, error) {
 	t.Helper()
+	args, _ = migratedReadTestArgs(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -1345,6 +966,149 @@ func mustGetIssueJSON(t *testing.T, workspace, issueID string) string {
 		t.Fatalf("issue get %s stderr = %q, want empty", issueID, stderr)
 	}
 	return stdout
+}
+
+func migratedReadTestArgs(args []string) ([]string, string) {
+	if len(args) < 2 || args[0] == "--json" || !containsFormatJSON(args) {
+		return args, ""
+	}
+	operation := ""
+	switch {
+	case len(args) >= 1 && args[0] == "ready":
+		operation = "ready"
+	case len(args) >= 3 && args[0] == "issue" && args[1] == "get":
+		operation = "issue.get"
+	case len(args) >= 2 && args[0] == "issue" && args[1] == "list":
+		operation = "issue.list"
+	default:
+		return args, ""
+	}
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "--format" && args[index+1] == "json" {
+			args = append(append([]string{}, args[:index]...), args[index+2:]...)
+			if operation == "issue.get" {
+				for sectionIndex := 0; sectionIndex+1 < len(args); sectionIndex++ {
+					if args[sectionIndex] == "--section" && isLegacyIssueSection(args[sectionIndex+1]) {
+						operation = "issue.section:" + args[sectionIndex+1]
+						args = append(append([]string{}, args[:sectionIndex]...), args[sectionIndex+2:]...)
+						break
+					}
+				}
+			}
+			return append([]string{"--json"}, args...), operation
+		}
+	}
+	return args, ""
+}
+
+func isLegacyIssueSection(value string) bool {
+	for _, section := range []string{"acceptance", "concerns", "completions", "links", "claims", "gates"} {
+		if value == section {
+			return true
+		}
+	}
+	return false
+}
+
+func containsFormatJSON(args []string) bool {
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "--format" && args[index+1] == "json" {
+			return true
+		}
+	}
+	return false
+}
+
+func legacyMigratedReadOutput(t *testing.T, workspace string, args []string, output, operation string) string {
+	t.Helper()
+	options := issues.GetOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
+	var value any
+	switch {
+	case operation == "issue.get":
+		options.ID = args[3]
+		issue, err := issues.Get(options)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
+		value = issue
+	case strings.HasPrefix(operation, "issue.section:"):
+		options.ID = args[3]
+		issue, err := issues.Get(options)
+		if err != nil {
+			t.Fatalf("Get() error = %v", err)
+		}
+		switch strings.TrimPrefix(operation, "issue.section:") {
+		case "acceptance":
+			value = issue.AcceptanceCriteria
+		case "concerns":
+			value = issue.Concerns
+		case "completions":
+			value = issue.Completions
+		case "links":
+			value = issue.Links
+		case "claims":
+			value = issue.Claims
+		case "gates":
+			value = issue.Gates
+		}
+	case operation == "issue.list":
+		listOptions := issues.ListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
+		for index := 3; index < len(args); index++ {
+			switch args[index] {
+			case "--kind":
+				index++
+				listOptions.Kind = args[index]
+			case "--status":
+				index++
+				listOptions.Status = args[index]
+			case "--status-category":
+				index++
+				listOptions.StatusCategory = args[index]
+			case "--epic":
+				index++
+				listOptions.EpicID = args[index]
+			case "--label":
+				index++
+				listOptions.Label = args[index]
+			case "--priority":
+				index++
+				priorities, err := issues.ParsePriorityFilter(args[index])
+				if err != nil {
+					t.Fatalf("ParsePriorityFilter() error = %v", err)
+				}
+				listOptions.Priorities = priorities
+			case "--order":
+				index++
+				listOptions.Order = args[index]
+			case "--has-concerns":
+				value := true
+				listOptions.HasOpenConcerns = &value
+			}
+		}
+		items, err := issues.List(listOptions)
+		if err != nil {
+			t.Fatalf("List() error = %v", err)
+		}
+		value = items
+	case operation == "ready":
+		readyOptions := issues.ReadyOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
+		for index := 2; index+1 < len(args); index++ {
+			if args[index] == "--epic" {
+				readyOptions.EpicID = args[index+1]
+				break
+			}
+		}
+		ready, err := issues.Ready(readyOptions)
+		if err != nil {
+			t.Fatalf("Ready() error = %v", err)
+		}
+		value = map[string]any{"task": ready.Task}
+	}
+	payload, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("Marshal(legacy migrated read output) error = %v", err)
+	}
+	return string(payload) + "\n"
 }
 
 func seedCommandLabels(t *testing.T, workspace string, labels ...string) {

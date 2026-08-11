@@ -375,8 +375,8 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 	if strings.TrimSpace(emptyReadyStdout) != `{"task":null}` {
 		t.Fatalf("empty ready stdout = %q, want exact null payload", emptyReadyStdout)
 	}
-	if !strings.Contains(emptyReadyStderr, "note: no ready tasks in project") {
-		t.Fatalf("empty ready stderr = %q, want project note", emptyReadyStderr)
+	if emptyReadyStderr != "" {
+		t.Fatalf("empty ready stderr = %q, want empty", emptyReadyStderr)
 	}
 }
 

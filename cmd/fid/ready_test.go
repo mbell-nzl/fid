@@ -9,99 +9,17 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
+func TestReadyHumanSuccessUsesStdout(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
 	defer closeCommandDB(t, conn)
-
-	seedReadyCommandRows(t, conn, []readyCommandRow{
-		{
-			id:         "FID-epic-seq",
-			kind:       "epic",
-			title:      "Phase 6 ready queue",
-			status:     "todo",
-			workflowID: "epic-default",
-			ownerRole:  "tl",
-			createdAt:  "2026-06-14T10:00:00Z",
-			updatedAt:  "2026-06-14T10:00:00Z",
-			scheduling: stringPointer("sequential"),
-		},
-		{
-			id:         "FID-task-01",
-			kind:       "task",
-			parentID:   stringPointer("FID-epic-seq"),
-			title:      "Complete prep",
-			status:     "done",
-			workflowID: "task-default",
-			ownerRole:  "developer",
-			sequence:   intPointer(1),
-			priority:   intPointer(2),
-			createdAt:  "2026-06-14T10:01:00Z",
-			updatedAt:  "2026-06-14T10:01:00Z",
-		},
-		{
-			id:         "FID-task-02",
-			kind:       "task",
-			parentID:   stringPointer("FID-epic-seq"),
-			title:      "Implement engine",
-			status:     "todo",
-			workflowID: "task-default",
-			ownerRole:  "developer",
-			sequence:   intPointer(2),
-			priority:   intPointer(1),
-			createdAt:  "2026-06-14T10:02:00Z",
-			updatedAt:  "2026-06-14T10:02:00Z",
-		},
-		{
-			id:         "FID-task-03",
-			kind:       "task",
-			parentID:   stringPointer("FID-epic-seq"),
-			title:      "Wire CLI",
-			status:     "todo",
-			workflowID: "task-default",
-			ownerRole:  "developer",
-			sequence:   intPointer(3),
-			priority:   intPointer(0),
-			createdAt:  "2026-06-14T10:03:00Z",
-			updatedAt:  "2026-06-14T10:03:00Z",
-		},
-	})
-
-	defaultStdout, defaultStderr := runFIDCommand(t, workspace, "ready")
-	if defaultStderr != "" {
-		t.Fatalf("default stderr = %q, want empty", defaultStderr)
-	}
-
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "ready", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
-	}
-
-	if defaultStdout != jsonStdout {
-		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
-	}
-
-	got := decodeCommandJSONStructure(t, defaultStdout)
-	want := map[string]any{
-		"task": map[string]any{
-			"id":         "FID-task-02",
-			"title":      "Implement engine",
-			"status":     "todo",
-			"epic_id":    "FID-epic-seq",
-			"epic_title": "Phase 6 ready queue",
-			"sequence":   "2",
-			"priority":   "1",
-		},
-	}
-
-	if !commandStructuresEqual(want, got) {
-		t.Fatalf("stdout structure = %#v, want %#v", got, want)
+	seedReadyCommandRows(t, conn, []readyCommandRow{{id: "FID-human-ready", kind: "task", title: "Human ready", status: "todo", workflowID: "task-default", ownerRole: "developer", createdAt: "2026-06-14T10:00:00Z", updatedAt: "2026-06-14T10:00:00Z"}})
+	result := executeCommandForTest(workspace, "ready")
+	if result.err != nil || result.stderr != "" || !strings.Contains(result.stdout, "FID-human-ready") || strings.Contains(result.stdout, ".fid/") {
+		t.Fatalf("human ready = %#v", result)
 	}
 }
 
@@ -277,10 +195,8 @@ func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 				if task != nil {
 					t.Fatalf("stdout task = %#v, want nil", task)
 				}
-				for _, part := range tt.wantNoteParts {
-					if !strings.Contains(stderr, part) {
-						t.Fatalf("stderr = %q, want substring %q", stderr, part)
-					}
+				if stderr != "" {
+					t.Fatalf("stderr = %q, want empty", stderr)
 				}
 				return
 			}
@@ -407,139 +323,11 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 	}
 }
 
-func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
-	t.Parallel()
-	selectedWorkspace := t.TempDir()
-	clonePristineWorkspaceInto(t, selectedWorkspace)
-
-	selectedConn, err := fiddb.Open(filepath.Join(selectedWorkspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open(selected) error = %v", err)
+func TestReadyRejectsRetiredFormatFlag(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	if result := executeCommandForTest(workspace, "ready", "--format", "json"); result.err == nil {
+		t.Fatal("--format was accepted")
 	}
-	defer closeCommandDB(t, selectedConn)
-
-	seedReadyCommandRows(t, selectedConn, []readyCommandRow{
-		{
-			id:         "FID-task-01",
-			kind:       "task",
-			title:      "Selected task",
-			status:     "todo",
-			workflowID: "task-default",
-			ownerRole:  "developer",
-			priority:   intPointer(1),
-			createdAt:  "2026-06-14T13:00:00Z",
-			updatedAt:  "2026-06-14T13:00:00Z",
-		},
-	})
-
-	emptyWorkspace := t.TempDir()
-	clonePristineWorkspaceInto(t, emptyWorkspace)
-
-	emptyConn, err := fiddb.Open(filepath.Join(emptyWorkspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open(empty) error = %v", err)
-	}
-	defer closeCommandDB(t, emptyConn)
-
-	seedReadyCommandRows(t, emptyConn, []readyCommandRow{
-		{
-			id:         "FID-task-02",
-			kind:       "task",
-			title:      "Started task",
-			status:     "in_progress",
-			workflowID: "task-default",
-			ownerRole:  "developer",
-			createdAt:  "2026-06-14T13:01:00Z",
-			updatedAt:  "2026-06-14T13:01:00Z",
-		},
-	})
-
-	selectedJSON, selectedJSONStderr := runFIDCommand(t, selectedWorkspace, "ready", "--format", "json")
-	if selectedJSONStderr != "" {
-		t.Fatalf("selected json stderr = %q, want empty", selectedJSONStderr)
-	}
-	wantSelected := decodeCommandJSONStructure(t, selectedJSON)
-
-	for _, formatName := range []string{"json", "toon", "yaml"} {
-		t.Run("selected "+formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, selectedWorkspace, "ready", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "json":
-				got = decodeCommandJSONStructure(t, stdout)
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(wantSelected, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, wantSelected)
-			}
-		})
-	}
-
-	t.Run("selected markdown", func(t *testing.T) {
-		stdout, stderr := runFIDCommand(t, selectedWorkspace, "ready", "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-
-		want := "" +
-			"# Ready Task\n\n" +
-			"- ID: FID-task-01\n" +
-			"- Title: Selected task\n" +
-			"- Status: todo\n" +
-			"- Epic: (none)\n" +
-			"- Sequence: (none)\n" +
-			"- Priority: P1\n"
-		if stdout != want {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
-		}
-	})
-
-	for _, formatName := range []string{"json", "toon", "yaml"} {
-		t.Run("empty "+formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, emptyWorkspace, "ready", "--format", formatName)
-			if !strings.Contains(stderr, "note:") {
-				t.Fatalf("stderr = %q, want note", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "json":
-				if strings.TrimSpace(stdout) != `{"task":null}` {
-					t.Fatalf("json stdout = %q, want exact null payload", stdout)
-				}
-				got = decodeCommandJSONStructure(t, stdout)
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			want := map[string]any{"task": nil}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	t.Run("empty markdown", func(t *testing.T) {
-		stdout, stderr := runFIDCommand(t, emptyWorkspace, "ready", "--format", "markdown")
-		if !strings.Contains(stderr, "note:") {
-			t.Fatalf("stderr = %q, want note", stderr)
-		}
-
-		want := "# Ready Task\n\n(no ready task)\n"
-		if stdout != want {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
-		}
-	})
 }
 
 type readyCommandRow struct {

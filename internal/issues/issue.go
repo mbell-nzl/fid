@@ -96,6 +96,7 @@ type Issue struct {
 	Priority           *int                  `json:"priority"`
 	Sequence           *int                  `json:"sequence"`
 	SpecMDPath         *string               `json:"spec_md_path"`
+	Revision           int                   `json:"-"`
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`

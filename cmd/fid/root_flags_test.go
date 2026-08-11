@@ -28,8 +28,8 @@ func TestRootCommandUsesInjectedWorkingDirectoryWithoutChangingProcess(t *testin
 	if stderr.Len() != 0 {
 		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
-	if strings.TrimSpace(stdout.String()) != "[]" {
-		t.Fatalf("stdout = %q, want empty issue list", stdout.String())
+	if stdout.String() != "" {
+		t.Fatalf("stdout = %q, want empty human issue list", stdout.String())
 	}
 	afterDirectory, err := os.Getwd()
 	if err != nil {

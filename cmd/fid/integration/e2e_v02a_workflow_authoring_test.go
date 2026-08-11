@@ -171,7 +171,7 @@ func assertWholeProjectionRebuildParity(t *testing.T, binary, workspace, journal
 
 func assertIssueWorkflow(t *testing.T, binary, workspace, issueID, workflowID, status string) {
 	t.Helper()
-	stdout, _ := closureRunFID(t, binary, workspace, "issue", "get", issueID, "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "--json", "issue", "get", issueID)
 	for _, value := range []string{`"workflow_id":"` + workflowID + `"`, `"status":"` + status + `"`} {
 		if !bytes.Contains([]byte(stdout), []byte(value)) {
 			t.Fatalf("issue get %s = %q, want %s", issueID, stdout, value)

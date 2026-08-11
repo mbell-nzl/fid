@@ -100,7 +100,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	if err := conn.Close(); err != nil {
 		t.Fatalf("close stale projection: %v", err)
 	}
-	closureRunFID(t, binary, workspace, "issue", "list", "--format", "json")
+	closureRunFID(t, binary, workspace, "--json", "issue", "list")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "stale-version refresh")
 
 	beforeTables := closureProjectedTableSnapshots(t, binary, workspace)

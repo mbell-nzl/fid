@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -76,80 +75,11 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 	}
 }
 
-func TestIssueListDispatchesFormatsAndRejectsUnknownFormats(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
+func TestIssueListRejectsRetiredFormatFlag(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	if result := executeCommandForTest(workspace, "issue", "list", "--format", "json"); result.err == nil {
+		t.Fatal("--format was accepted")
 	}
-	defer closeCommandDB(t, conn)
-
-	seedIssueListCommandFixture(t, conn)
-
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "list", "--kind", "task", "--order", "sequence", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
-	}
-
-	want := decodeCommandJSONStructure(t, jsonStdout)
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "issue", "list", "--kind", "task", "--order", "sequence", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	t.Run("markdown", func(t *testing.T) {
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "list", "--kind", "task", "--order", "sequence", "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-
-		want := "" +
-			"# Issues\n\n" +
-			"- FID-task02 | task | in_progress | started | epic FID-epic01 | P0 | concerns: 0\n" +
-			"  Started task\n" +
-			"- FID-task01 | task | todo | unstarted | epic FID-epic01 | P1 | concerns: 1\n" +
-			"  Inbox task\n" +
-			"- FID-task03 | task | done | completed | epic FID-epic01 | P2 | concerns: 0\n" +
-			"  Completed task\n" +
-			"- FID-task04 | task | qa_pass | completed | no epic | P1 | concerns: 0\n" +
-			"  Backlog task\n"
-		if stdout != want {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
-		}
-	})
-
-	t.Run("xml", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "list", "--format", "xml")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unsupported format rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `unsupported format "xml"; known formats: json, toon, markdown, yaml`) {
-			t.Fatalf("stderr = %q, want actionable unknown format error", stderr)
-		}
-	})
 }
 
 func seedIssueListCommandFixture(t *testing.T, conn *sql.DB) {

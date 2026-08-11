@@ -40,7 +40,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
-		       spec_md_path, owner_role, owner_actor,
+		       spec_md_path, revision, owner_role, owner_actor,
 		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
 		FROM issues_enriched
 		WHERE id = ?
@@ -62,6 +62,7 @@ func Get(options GetOptions) (Issue, error) {
 		&priority,
 		&sequence,
 		&specMDPath,
+		&record.Revision,
 		&ownerRole,
 		&ownerActor,
 		&record.ConcernsRaised,

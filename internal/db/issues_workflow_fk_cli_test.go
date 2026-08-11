@@ -40,6 +40,9 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 	`, "FID-cli-parity", "task", "CLI parity fixture", "task-default", "in_progress", 1, "2026-07-19T03:00:00Z", "2026-07-19T03:01:00Z"); err != nil {
 		t.Fatalf("insert issue fixture: %v", err)
 	}
+	if err := fiddb.MigrateUp(dbPath, sourceMigrationsDirectory(t)); err != nil {
+		t.Fatalf("MigrateUp(current schema before canonical read): %v", err)
+	}
 	writeMigrationReadCheckpoint(t, conn, workspace)
 
 	beforeGet := renderedIssueGet(t, workspace, v7Migrations, "FID-cli-parity")

@@ -205,17 +205,19 @@ func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, pee
 func assertClosureReadyTask(t *testing.T, binary, workspace, epicID, wantID string) {
 	t.Helper()
 
-	stdout, _ := closureRunFID(t, binary, workspace, "ready", "--epic", epicID, "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "--json", "ready", "--epic", epicID)
 	var payload struct {
-		Task struct {
-			ID string `json:"id"`
-		} `json:"task"`
+		Result struct {
+			Task struct {
+				ID string `json:"id"`
+			} `json:"task"`
+		} `json:"result"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &payload); err != nil {
 		t.Fatalf("decode ready output: %v", err)
 	}
-	if payload.Task.ID != wantID {
-		t.Fatalf("ready task for %s = %q, want %q", epicID, payload.Task.ID, wantID)
+	if payload.Result.Task.ID != wantID {
+		t.Fatalf("ready task for %s = %q, want %q", epicID, payload.Result.Task.ID, wantID)
 	}
 }
 
@@ -283,8 +285,8 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "decision guard")
 	for _, args := range [][]string{
-		{"issue", "list", "--format", "json"},
-		{"ready", "--format", "json"},
+		{"--json", "issue", "list"},
+		{"--json", "ready"},
 		{"link", "list", issueID, "--format", "json"},
 		{"stats", "cost", "--by", "role", "--format", "json"},
 		{"stats", "tokens", "--by", "role", "--format", "json"},

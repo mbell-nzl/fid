@@ -19,8 +19,8 @@ type ReadyOptions struct {
 }
 
 type ReadyResult struct {
-	Task        *ReadyTask
-	Explanation *ReadyExplanation
+	Task        *ReadyTask        `json:"task"`
+	Explanation *ReadyExplanation `json:"explanation"`
 }
 
 type ReadyTask struct {
@@ -34,12 +34,12 @@ type ReadyTask struct {
 }
 
 type ReadyExplanation struct {
-	Code               string
-	Scope              string
-	EpicID             *string
-	BlockingTaskID     *string
-	BlockingTaskTitle  *string
-	BlockingTaskStatus *string
+	Code               string  `json:"code"`
+	Scope              string  `json:"scope"`
+	EpicID             *string `json:"epic_id"`
+	BlockingTaskID     *string `json:"blocking_task_id"`
+	BlockingTaskTitle  *string `json:"blocking_task_title"`
+	BlockingTaskStatus *string `json:"blocking_task_status"`
 }
 
 type readyCandidate struct {
