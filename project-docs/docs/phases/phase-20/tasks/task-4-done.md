@@ -54,8 +54,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `e56b3a0ce0433f1044f70b7969c14e19234dfdf8`
 
 ## Commit subject
 
-- Pending commit
+- `feat(rebuild): map typed authority and lock failures`
