@@ -44,7 +44,6 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite finish path",
 		"--epic", epicID,
 		"--priority", "1",
-		"--est-tokens", "800",
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, finishCreateStderr)
@@ -61,7 +60,6 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite block path",
 		"--epic", epicID,
 		"--priority", "2",
-		"--est-tokens", "500",
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, blockCreateStderr)

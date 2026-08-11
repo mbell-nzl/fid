@@ -28,6 +28,43 @@ func TestReplayJournalRejectsNilConnection(t *testing.T) {
 	}
 }
 
+func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
+	workspace := newReplayWorkspace(t)
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	writeReplayEvents(t, journalPath, Event{
+		EventID:     "EVT-retired-effect-key",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
+		OccurredAt:  time.Date(2026, time.August, 11, 0, 0, 0, 0, time.UTC),
+		Actor:       Actor{Role: "developer"},
+		Command:     Command{Argv: []string{"fid", "issue", "create"}, CWD: ".", FIDVersion: "0.1.0"},
+		Effects: []Effect{{
+			Op:    "insert",
+			Table: "issues",
+			PK:    map[string]any{"id": "FID-retired-effect-key"},
+			Values: map[string]any{
+				"kind":        "task",
+				"title":       "retired key",
+				"workflow_id": "task-default",
+				"status":      "todo",
+				"in_inbox":    true,
+			},
+		}},
+	})
+
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
+	defer closeProjectDB(t, conn)
+
+	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	var corruptErr *CorruptJournalError
+	if !errors.As(err, &corruptErr) {
+		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)
+	}
+	if corruptErr.File != ".fid/journal/2026-08-11.jsonl" || corruptErr.Line != 1 {
+		t.Fatalf("replay stop location = %s:%d, want .fid/journal/2026-08-11.jsonl:1", corruptErr.File, corruptErr.Line)
+	}
+}
+
 func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 	t.Parallel()
 

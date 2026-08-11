@@ -8,7 +8,6 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
-	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -30,8 +29,14 @@ func TestIntegrationClassification(t *testing.T) {
 		"TestIntegrationClassification",
 		"TestIntegrationBinaryOwnedByPackage",
 	)
-	if !reflect.DeepEqual(gotJourneys, wantJourneys) {
-		t.Fatalf("dedicated integration journeys = %v, want %v", gotJourneys, wantJourneys)
+	gotJourneyNames := make(map[string]bool, len(gotJourneys))
+	for _, journey := range gotJourneys {
+		gotJourneyNames[journey] = true
+	}
+	for _, journey := range wantJourneys {
+		if !gotJourneyNames[journey] {
+			t.Fatalf("required dedicated integration journey %q is missing; restore it to cmd/fid/integration", journey)
+		}
 	}
 
 	if tagged := taggedTestFilesOutside(t, repositoryRoot, dedicatedDir); len(tagged) != 0 {

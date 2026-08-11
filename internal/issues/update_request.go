@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -14,16 +13,13 @@ type normalizedUpdateRequest struct {
 	priority   *int
 	labels     *[]string
 	specMDPath *string
-	estTokens  *int
-	dueDate    *string
 	ownerRole  *string
 	ownerActor *string
 }
 
 func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, error) {
 	request := normalizedUpdateRequest{
-		priority:  options.Priority,
-		estTokens: options.EstTokens,
+		priority: options.Priority,
 	}
 
 	if options.Title != nil {
@@ -50,16 +46,6 @@ func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, err
 			return normalizedUpdateRequest{}, fmt.Errorf("update issue: spec_md_path must not be blank")
 		}
 		request.specMDPath = &specMDPath
-	}
-	if options.DueDate != nil {
-		dueDate := strings.TrimSpace(*options.DueDate)
-		if dueDate == "" {
-			return normalizedUpdateRequest{}, fmt.Errorf("update issue: due_date must use YYYY-MM-DD")
-		}
-		if _, err := time.Parse("2006-01-02", dueDate); err != nil {
-			return normalizedUpdateRequest{}, fmt.Errorf("update issue: due_date must use YYYY-MM-DD")
-		}
-		request.dueDate = &dueDate
 	}
 	if options.OwnerRole != nil {
 		ownerRole := strings.TrimSpace(*options.OwnerRole)
@@ -106,12 +92,6 @@ func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest)
 	}
 	if request.specMDPath != nil {
 		argv = append(argv, "--spec-md", *request.specMDPath)
-	}
-	if request.estTokens != nil {
-		argv = append(argv, "--est-tokens", fmt.Sprintf("%d", *request.estTokens))
-	}
-	if request.dueDate != nil {
-		argv = append(argv, "--due-date", *request.dueDate)
 	}
 	argv = append(argv, "--by", actorRole)
 	return argv

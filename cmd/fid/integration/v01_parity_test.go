@@ -3,11 +3,15 @@
 package integration
 
 import (
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestV01ParityGoldenOutputs(t *testing.T) {
@@ -37,6 +41,92 @@ func TestV01ParityGoldenOutputs(t *testing.T) {
 				t.Fatalf("stdout differs from %s:\n%s", fixture.golden, parityDiff(want, []byte(got)))
 			}
 		})
+	}
+}
+
+func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
+	binary := integrationFIDBinary(t)
+	workspace := t.TempDir()
+	copyParityFixture(t, filepath.Join("..", "testdata", "v01_parity", "fixture"), workspace)
+
+	// A read materializes the live projection from the regenerated fixture journal.
+	closureRunFID(t, binary, workspace, "issue", "get", "FID-a10001", "--format", "json")
+	before := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+
+	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	after := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if before != after {
+		t.Fatalf("fixture projection after rebuild differs:\n%s", parityDiff([]byte(before), []byte(after)))
+	}
+}
+
+func parityProjectionDump(t *testing.T, dbPath string) string {
+	t.Helper()
+
+	conn, err := fiddb.Open(dbPath)
+	if err != nil {
+		t.Fatalf("open fixture projection: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+
+	tables, err := conn.Query(`
+		SELECT name FROM sqlite_schema
+		WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name != 'schema_migrations'
+		ORDER BY name
+	`)
+	if err != nil {
+		t.Fatalf("list projection tables: %v", err)
+	}
+	defer func() { _ = tables.Close() }()
+
+	var dump strings.Builder
+	for tables.Next() {
+		var table string
+		if err := tables.Scan(&table); err != nil {
+			t.Fatalf("scan projection table: %v", err)
+		}
+		fmt.Fprintf(&dump, "[%s]\n", table)
+		appendParityTableRows(t, &dump, conn, table)
+	}
+	if err := tables.Err(); err != nil {
+		t.Fatalf("iterate projection tables: %v", err)
+	}
+
+	return dump.String()
+}
+
+func appendParityTableRows(t *testing.T, dump *strings.Builder, conn *sql.DB, table string) {
+	t.Helper()
+	query := `SELECT * FROM "` + strings.ReplaceAll(table, `"`, `""`) + `" ORDER BY 1`
+	rows, err := conn.Query(query)
+	if err != nil {
+		t.Fatalf("read projection table %q: %v", table, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	columns, err := rows.Columns()
+	if err != nil {
+		t.Fatalf("read projection table %q columns: %v", table, err)
+	}
+	for rows.Next() {
+		values := make([]any, len(columns))
+		destinations := make([]any, len(columns))
+		for index := range values {
+			destinations[index] = &values[index]
+		}
+		if err := rows.Scan(destinations...); err != nil {
+			t.Fatalf("scan projection table %q: %v", table, err)
+		}
+		for index, value := range values {
+			if index > 0 {
+				dump.WriteByte('|')
+			}
+			fmt.Fprint(dump, value)
+		}
+		dump.WriteByte('\n')
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate projection table %q: %v", table, err)
 	}
 }
 

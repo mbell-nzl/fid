@@ -139,9 +139,6 @@ func writeIssueListMarkdown(writer io.Writer, view IssueListMarkdownView) error 
 		builder.WriteString(markdownListEpic(item.ParentID))
 		builder.WriteString(" | ")
 		builder.WriteString(markdownPriority(item.Priority))
-		if item.InInbox {
-			builder.WriteString(" | inbox")
-		}
 		builder.WriteString(" | concerns: ")
 		builder.WriteString(strconv.Itoa(item.OpenConcernsCount))
 		builder.WriteString("\n")

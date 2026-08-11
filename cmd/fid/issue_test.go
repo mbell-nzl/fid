@@ -40,7 +40,6 @@ func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
 		WorkflowID         string   `json:"workflow_id"`
 		OwnerRole          string   `json:"owner_role"`
 		Labels             []string `json:"labels"`
-		InInbox            bool     `json:"in_inbox"`
 		ConcernsRaised     bool     `json:"concerns_raised"`
 		OpenConcernsCount  int      `json:"open_concerns_count"`
 		TriageStatus       *string  `json:"triage_status"`
@@ -73,9 +72,6 @@ func TestIssueCreateThenGetReturnsJSONByDefaultAndWithFormatFlag(t *testing.T) {
 	}
 	if got.Labels == nil || len(got.Labels) != 0 {
 		t.Fatalf("labels = %#v, want empty array", got.Labels)
-	}
-	if got.InInbox {
-		t.Fatal("in_inbox = true, want false")
 	}
 	if got.ConcernsRaised {
 		t.Fatal("concerns_raised = true, want false")
@@ -117,7 +113,6 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 		ParentID       *string  `json:"parent_id"`
 		OwnerRole      *string  `json:"owner_role"`
 		Labels         []string `json:"labels"`
-		InInbox        bool     `json:"in_inbox"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
@@ -149,9 +144,6 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 	}
 	if got.Labels == nil || len(got.Labels) != 0 {
 		t.Fatalf("labels = %#v, want empty array", got.Labels)
-	}
-	if got.InInbox {
-		t.Fatal("in_inbox = true, want false")
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -196,11 +188,8 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		"--priority", "1",
 		"--sequence", "1",
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
-		"--est-tokens", "2100",
-		"--due-date", "2026-06-30",
 		"--label", "phase-4",
 		"--label", "core",
-		"--inbox",
 		"--owner-role", "qa_lead",
 		"--owner-actor", "human:mark",
 		"--by", "tl",
@@ -224,11 +213,9 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		Priority       *int     `json:"priority"`
 		Sequence       *int     `json:"sequence"`
 		SpecMDPath     *string  `json:"spec_md_path"`
-		EstTokens      *int     `json:"est_tokens"`
 		OwnerRole      *string  `json:"owner_role"`
 		OwnerActor     *string  `json:"owner_actor"`
 		Labels         []string `json:"labels"`
-		InInbox        bool     `json:"in_inbox"`
 	}
 
 	readIssue := func(issueID string) issueJSON {
@@ -273,17 +260,11 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
 		t.Fatalf("task spec_md_path = %#v", task.SpecMDPath)
 	}
-	if task.EstTokens == nil || *task.EstTokens != 2100 {
-		t.Fatalf("task est_tokens = %#v, want 2100", task.EstTokens)
-	}
 	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
 		t.Fatalf("task owner_role = %#v, want qa_lead", task.OwnerRole)
 	}
 	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
 		t.Fatalf("task owner_actor = %#v, want human:mark", task.OwnerActor)
-	}
-	if !task.InInbox {
-		t.Fatal("task in_inbox = false, want true")
 	}
 	if want := []string{"core", "phase-4"}; !reflect.DeepEqual(task.Labels, want) {
 		t.Fatalf("task labels = %#v, want %#v", task.Labels, want)
@@ -308,13 +289,6 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		t.Fatalf("subtask owner_role = %#v, want developer", subtask.OwnerRole)
 	}
 
-	var dueDate string
-	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskID).Scan(&dueDate); err != nil {
-		t.Fatalf("query task due_date: %v", err)
-	}
-	if dueDate != "2026-06-30" {
-		t.Fatalf("task due_date = %q, want 2026-06-30", dueDate)
-	}
 }
 
 func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
@@ -487,11 +461,8 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		"--priority", "1",
 		"--sequence", "1",
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
-		"--est-tokens", "2100",
-		"--due-date", "2026-06-30",
 		"--label", "phase-4",
 		"--label", "core",
-		"--inbox",
 		"--owner-role", "qa_lead",
 		"--owner-actor", "human:mark",
 		"--by", "tl",

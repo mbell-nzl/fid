@@ -16,10 +16,7 @@ func newIssueCreateCommand() *cobra.Command {
 	var priority int
 	var sequence int
 	var specMDPath string
-	var estTokens int
-	var dueDate string
 	var labels []string
-	var inbox bool
 	var ownerRole string
 	var ownerActor string
 	var scheduling string
@@ -51,10 +48,7 @@ func newIssueCreateCommand() *cobra.Command {
 				Priority:      issueCreateOptionalInt(cmd, "priority", priority),
 				Sequence:      issueCreateOptionalInt(cmd, "sequence", sequence),
 				SpecMDPath:    issueCreateOptionalString(cmd, "spec-md", specMDPath),
-				EstTokens:     issueCreateOptionalInt(cmd, "est-tokens", estTokens),
-				DueDate:       issueCreateOptionalString(cmd, "due-date", dueDate),
 				Labels:        labels,
-				InInbox:       inbox,
 				OwnerRole:     issueCreateOptionalString(cmd, "owner-role", ownerRole),
 				OwnerActor:    issueCreateOptionalString(cmd, "owner-actor", ownerActor),
 				Scheduling:    scheduling,
@@ -77,10 +71,7 @@ func newIssueCreateCommand() *cobra.Command {
 	cmd.Flags().IntVar(&priority, "priority", 0, "Issue priority")
 	cmd.Flags().IntVar(&sequence, "sequence", 0, "Issue sequence")
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "Spec markdown path")
-	cmd.Flags().IntVar(&estTokens, "est-tokens", 0, "Estimated tokens")
-	cmd.Flags().StringVar(&dueDate, "due-date", "", "Due date")
 	cmd.Flags().StringSliceVar(&labels, "label", nil, "Issue label")
-	cmd.Flags().BoolVar(&inbox, "inbox", false, "Add issue to inbox")
 	cmd.Flags().StringVar(&ownerRole, "owner-role", "", "Owner role")
 	cmd.Flags().StringVar(&ownerActor, "owner-actor", "", "Owner actor")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")

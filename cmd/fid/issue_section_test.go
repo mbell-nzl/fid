@@ -10,53 +10,30 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
+func TestIssueGetSectionsAndRetiredFieldAbsence(t *testing.T) {
 	t.Parallel()
-	t.Run("json read-back exposes populated and omitted due dates", func(t *testing.T) {
+	t.Run("json read-back omits retired fields", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, withDueDateStderr := runFIDCommand(
+		_, createdStderr := runFIDCommand(
 			t,
 			workspace,
 			"issue", "create",
 			"--kind", "task",
-			"--title", "Due date read-back",
-			"--due-date", "2026-06-30",
+			"--title", "Retired field read-back",
 			"--by", "developer",
 		)
-		withDueDateID := parseCreatedIssueID(t, withDueDateStderr)
+		issueID := parseCreatedIssueID(t, createdStderr)
 
-		_, withoutDueDateStderr := runFIDCommand(
-			t,
-			workspace,
-			"issue", "create",
-			"--kind", "task",
-			"--title", "No due date read-back",
-			"--by", "developer",
-		)
-		withoutDueDateID := parseCreatedIssueID(t, withoutDueDateStderr)
-
-		type issueJSON struct {
-			DueDate *string `json:"due_date"`
+		var payload map[string]any
+		if err := json.Unmarshal([]byte(mustGetIssueJSON(t, workspace, issueID)), &payload); err != nil {
+			t.Fatalf("Unmarshal(issue JSON) error = %v", err)
 		}
-
-		withDueDateJSON := mustGetIssueJSON(t, workspace, withDueDateID)
-		var withDueDate issueJSON
-		if err := json.Unmarshal([]byte(withDueDateJSON), &withDueDate); err != nil {
-			t.Fatalf("Unmarshal(with due date) error = %v", err)
-		}
-		if withDueDate.DueDate == nil || *withDueDate.DueDate != "2026-06-30" {
-			t.Fatalf("with due date JSON = %#v, want due_date 2026-06-30", withDueDate)
-		}
-
-		withoutDueDateJSON := mustGetIssueJSON(t, workspace, withoutDueDateID)
-		var withoutDueDate issueJSON
-		if err := json.Unmarshal([]byte(withoutDueDateJSON), &withoutDueDate); err != nil {
-			t.Fatalf("Unmarshal(without due date) error = %v", err)
-		}
-		if withoutDueDate.DueDate != nil {
-			t.Fatalf("without due date JSON = %#v, want due_date null", withoutDueDate)
+		for _, key := range []string{"in_inbox", "est_tokens", "due_date"} {
+			if _, found := payload[key]; found {
+				t.Fatalf("issue JSON unexpectedly contains retired key %q", key)
+			}
 		}
 	})
 
@@ -230,6 +207,29 @@ func TestIssueGetSectionsAndDueDateReadBack(t *testing.T) {
 			t.Fatalf("stderr = %q, want supported section list", stderr)
 		}
 	})
+}
+
+func TestIssueCommandsDoNotRegisterRetiredFieldFlags(t *testing.T) {
+	cmd := newRootCommandAt(t.TempDir())
+
+	for _, testCase := range []struct {
+		path  []string
+		flags []string
+	}{
+		{path: []string{"issue", "create"}, flags: []string{"est-tokens", "due-date", "inbox"}},
+		{path: []string{"issue", "update"}, flags: []string{"est-tokens", "due-date"}},
+		{path: []string{"issue", "list"}, flags: []string{"inbox"}},
+	} {
+		leaf, _, err := cmd.Find(testCase.path)
+		if err != nil {
+			t.Fatalf("Find(%v) error = %v", testCase.path, err)
+		}
+		for _, name := range testCase.flags {
+			if leaf.Flags().Lookup(name) != nil {
+				t.Fatalf("command %q unexpectedly registers retired flag --%s", leaf.CommandPath(), name)
+			}
+		}
+	}
 }
 
 func seedIssueGetSectionFixture(t *testing.T, conn *sql.DB) {

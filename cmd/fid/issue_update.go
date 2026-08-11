@@ -15,8 +15,6 @@ func newIssueUpdateCommand() *cobra.Command {
 		ownerRole  string
 		ownerActor string
 		specMDPath string
-		estTokens  int
-		dueDate    string
 		actorRole  string
 	)
 
@@ -39,8 +37,6 @@ func newIssueUpdateCommand() *cobra.Command {
 				Priority:      issueCreateOptionalInt(cmd, "priority", priority),
 				Labels:        issueOptionalStringSlice(cmd, "labels", labels),
 				SpecMDPath:    issueCreateOptionalString(cmd, "spec-md", specMDPath),
-				EstTokens:     issueCreateOptionalInt(cmd, "est-tokens", estTokens),
-				DueDate:       issueCreateOptionalString(cmd, "due-date", dueDate),
 				OwnerRole:     issueCreateOptionalString(cmd, "owner-role", ownerRole),
 				OwnerActor:    issueCreateOptionalString(cmd, "owner-actor", ownerActor),
 			})
@@ -61,8 +57,6 @@ func newIssueUpdateCommand() *cobra.Command {
 	cmd.Flags().StringVar(&ownerRole, "owner-role", "", "New owner role")
 	cmd.Flags().StringVar(&ownerActor, "owner-actor", "", "New owner actor")
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "New spec markdown path")
-	cmd.Flags().IntVar(&estTokens, "est-tokens", 0, "New estimated tokens")
-	cmd.Flags().StringVar(&dueDate, "due-date", "", "New due date")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	return cmd
 }

@@ -36,14 +36,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 	parentID := trimmedOptionalString(options.ParentID)
 	specMDPath := trimmedOptionalString(options.SpecMDPath)
-	dueDate := trimmedOptionalString(options.DueDate)
 	ownerRole := trimmedOptionalString(options.OwnerRole)
 	ownerActor := trimmedOptionalString(options.OwnerActor)
 	labels, err := normalizedLabels(options.Labels)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, options.EstTokens, dueDate, ownerRole, strings.TrimSpace(options.Scheduling), options.WorkspaceRoot); err != nil {
+	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, ownerRole, strings.TrimSpace(options.Scheduling), options.WorkspaceRoot); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -57,7 +56,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	var result CreateResult
-	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, options.EstTokens, dueDate, labels, ownerRole, ownerActor, strings.TrimSpace(options.Scheduling), options.InInbox)
+	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, labels, ownerRole, ownerActor, strings.TrimSpace(options.Scheduling))
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
@@ -117,15 +116,6 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 		if specMDPath != nil {
 			issueValues["spec_md_path"] = *specMDPath
-		}
-		if options.EstTokens != nil {
-			issueValues["est_tokens"] = *options.EstTokens
-		}
-		if dueDate != nil {
-			issueValues["due_date"] = *dueDate
-		}
-		if options.InInbox {
-			issueValues["in_inbox"] = true
 		}
 		if ownerActor != nil {
 			issueValues["owner_actor"] = *ownerActor
@@ -279,7 +269,7 @@ func defaultIssueOwnerRole(kind string) string {
 	return "developer"
 }
 
-func validateCreateOptions(kind string, parentID *string, priority, sequence, estTokens *int, dueDate, ownerRole *string, scheduling, workspaceRoot string) error {
+func validateCreateOptions(kind string, parentID *string, priority, sequence *int, ownerRole *string, scheduling, workspaceRoot string) error {
 	switch kind {
 	case "epic":
 		if parentID != nil {
@@ -303,14 +293,6 @@ func validateCreateOptions(kind string, parentID *string, priority, sequence, es
 	}
 	if sequence != nil && *sequence <= 0 {
 		return fmt.Errorf("create issue: sequence must be positive")
-	}
-	if kind == "epic" && estTokens != nil {
-		return fmt.Errorf("create issue: est_tokens is only valid for tasks and subtasks")
-	}
-	if dueDate != nil {
-		if _, err := time.Parse("2006-01-02", *dueDate); err != nil {
-			return fmt.Errorf("create issue: due_date must use YYYY-MM-DD")
-		}
 	}
 	if ownerRole != nil {
 		if err := policy.RequireKnownRole(workspaceRoot, *ownerRole); err != nil {
@@ -365,7 +347,7 @@ func requireExistingLabels(conn *sql.DB, labels []string) error {
 	return nil
 }
 
-func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, estTokens *int, dueDate *string, labels []string, ownerRole, ownerActor *string, scheduling string, inInbox bool) []string {
+func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, ownerRole, ownerActor *string, scheduling string) []string {
 	argv := []string{"fid", "issue", "create", "--kind", kind, "--title", title}
 	switch kind {
 	case "task":
@@ -386,12 +368,6 @@ func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, 
 	if specMDPath != nil {
 		argv = append(argv, "--spec-md", *specMDPath)
 	}
-	if estTokens != nil {
-		argv = append(argv, "--est-tokens", fmt.Sprintf("%d", *estTokens))
-	}
-	if dueDate != nil {
-		argv = append(argv, "--due-date", *dueDate)
-	}
 	for _, label := range labels {
 		argv = append(argv, "--label", label)
 	}
@@ -403,9 +379,6 @@ func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, 
 	}
 	if scheduling != "" {
 		argv = append(argv, "--scheduling", scheduling)
-	}
-	if inInbox {
-		argv = append(argv, "--inbox")
 	}
 	argv = append(argv, "--by", actorRole)
 	return argv

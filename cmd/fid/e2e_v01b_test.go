@@ -32,7 +32,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--epic", seqEpicID,
 		"--sequence", "1",
 		"--priority", "2",
-		"--est-tokens", "1200",
 		"--by", "developer",
 	)
 	seqCurrentID := parseCreatedIssueID(t, seqCurrentStderr)
@@ -46,7 +45,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--epic", seqEpicID,
 		"--sequence", "2",
 		"--priority", "1",
-		"--est-tokens", "900",
 		"--by", "developer",
 	)
 	seqNextID := parseCreatedIssueID(t, seqNextStderr)
@@ -70,7 +68,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--title", "Clean up backlog fallout",
 		"--epic", priEpicID,
 		"--priority", "2",
-		"--est-tokens", "700",
 		"--by", "developer",
 	)
 	priLowID := parseCreatedIssueID(t, priLowStderr)
@@ -83,7 +80,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--title", "Patch customer outage",
 		"--epic", priEpicID,
 		"--priority", "0",
-		"--est-tokens", "500",
 		"--by", "developer",
 	)
 	priHighID := parseCreatedIssueID(t, priHighStderr)
@@ -149,7 +145,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		OwnerRole:      "developer",
 		Sequence:       intPointer(1),
 		Priority:       intPointer(2),
-		EstTokens:      intPointer(1200),
 	})
 	assertIssueReadBack(t, workspace, priHighID, issueReadBack{
 		Kind:           "task",
@@ -160,7 +155,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		WorkflowID:     "task-default",
 		OwnerRole:      "developer",
 		Priority:       intPointer(0),
-		EstTokens:      intPointer(500),
 	})
 	assertIssueReadBack(t, workspace, subtaskID, issueReadBack{
 		Kind:           "subtask",
@@ -178,14 +172,12 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"issue", "update", seqCurrentID,
 		"--title", "Draft implementation plan v2",
 		"--priority", "1",
-		"--est-tokens", "1500",
 		"--by", "developer",
 	)
 	for _, want := range []string{
 		"updated " + seqCurrentID + ":",
 		`title "Draft implementation plan" -> "Draft implementation plan v2"`,
 		"priority 2 -> 1",
-		"est-tokens 1200 -> 1500",
 	} {
 		if !strings.Contains(updateStderr, want) {
 			t.Fatalf("update stderr = %q, want substring %q", updateStderr, want)
@@ -201,7 +193,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		OwnerRole:      "developer",
 		Sequence:       intPointer(1),
 		Priority:       intPointer(1),
-		EstTokens:      intPointer(1500),
 	})
 
 	_, transitionStderr := runFIDCommand(
@@ -224,7 +215,6 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		OwnerRole:      "developer",
 		Sequence:       intPointer(1),
 		Priority:       intPointer(1),
-		EstTokens:      intPointer(1500),
 	})
 
 	seqReadyStdout, seqReadyStderr := runFIDCommand(t, workspace, "ready", "--epic", seqEpicID, "--format", "json")
@@ -400,7 +390,6 @@ type issueReadBack struct {
 	OwnerRole      string
 	Sequence       *int
 	Priority       *int
-	EstTokens      *int
 }
 
 func assertIssueReadBack(t *testing.T, workspace, issueID string, want issueReadBack) {
@@ -417,7 +406,6 @@ func assertIssueReadBack(t *testing.T, workspace, issueID string, want issueRead
 		OwnerRole      *string `json:"owner_role"`
 		Sequence       *int    `json:"sequence"`
 		Priority       *int    `json:"priority"`
-		EstTokens      *int    `json:"est_tokens"`
 	}
 
 	if err := json.Unmarshal([]byte(mustGetIssueJSON(t, workspace, issueID)), &got); err != nil {
@@ -454,7 +442,6 @@ func assertIssueReadBack(t *testing.T, workspace, issueID string, want issueRead
 	}
 	assertOptionalInt(t, issueID, "sequence", got.Sequence, want.Sequence)
 	assertOptionalInt(t, issueID, "priority", got.Priority, want.Priority)
-	assertOptionalInt(t, issueID, "est_tokens", got.EstTokens, want.EstTokens)
 }
 
 func assertOptionalInt(t *testing.T, issueID, field string, got, want *int) {

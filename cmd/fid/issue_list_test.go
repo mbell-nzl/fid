@@ -44,7 +44,6 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 				"--epic", "FID-epic01",
 				"--label", "core",
 				"--priority", "1",
-				"--inbox",
 				"--has-concerns",
 				"--format", "json",
 			},
@@ -128,7 +127,7 @@ func TestIssueListDispatchesFormatsAndRejectsUnknownFormats(t *testing.T) {
 			"# Issues\n\n" +
 			"- FID-task02 | task | in_progress | started | epic FID-epic01 | P0 | concerns: 0\n" +
 			"  Started task\n" +
-			"- FID-task01 | task | todo | unstarted | epic FID-epic01 | P1 | inbox | concerns: 1\n" +
+			"- FID-task01 | task | todo | unstarted | epic FID-epic01 | P1 | concerns: 1\n" +
 			"  Inbox task\n" +
 			"- FID-task03 | task | done | completed | epic FID-epic01 | P2 | concerns: 0\n" +
 			"  Completed task\n" +
@@ -187,8 +186,8 @@ func seedIssueListCommandFixture(t *testing.T, conn *sql.DB) {
 		{
 			query: `
 				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, priority, sequence, in_inbox, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					id, kind, parent_id, title, status, workflow_id, priority, sequence, owner_role, created_at, updated_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`,
 			args: []any{
 				"FID-task01",
@@ -199,7 +198,6 @@ func seedIssueListCommandFixture(t *testing.T, conn *sql.DB) {
 				"task-default",
 				1,
 				2,
-				true,
 				"developer",
 				"2026-06-09T09:01:00Z",
 				"2026-06-09T09:03:00Z",

@@ -22,7 +22,6 @@ type ListOptions struct {
 	EpicID          string
 	Label           string
 	Priorities      []int
-	InInbox         *bool
 	HasOpenConcerns *bool
 	Order           string
 }
@@ -37,7 +36,6 @@ type ListItem struct {
 	Priority          *int    `json:"priority"`
 	ConcernsRaised    bool    `json:"concerns_raised"`
 	OpenConcernsCount int     `json:"open_concerns_count"`
-	InInbox           bool    `json:"-"`
 }
 
 type UnsupportedListOrderError struct {
@@ -105,7 +103,6 @@ func List(options ListOptions) ([]ListItem, error) {
 			&priority,
 			&item.ConcernsRaised,
 			&item.OpenConcernsCount,
-			&item.InInbox,
 		); err != nil {
 			return nil, fmt.Errorf("scan issue list row: %w", err)
 		}
@@ -164,10 +161,6 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 		}
 		whereParts = append(whereParts, "ie.priority IN ("+strings.Join(priorityPlaceholders, ", ")+")")
 	}
-	if options.InInbox != nil {
-		whereParts = append(whereParts, "ie.in_inbox = ?")
-		args = append(args, *options.InInbox)
-	}
 	if options.HasOpenConcerns != nil {
 		if *options.HasOpenConcerns {
 			whereParts = append(whereParts, "ie.open_concerns_count > 0")
@@ -187,8 +180,7 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 			ie.parent_id,
 			ie.priority,
 			ie.concerns_raised,
-			ie.open_concerns_count,
-			ie.in_inbox
+			ie.open_concerns_count
 		FROM issues_enriched ie
 	`)
 	if len(whereParts) > 0 {

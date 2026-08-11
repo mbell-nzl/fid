@@ -23,8 +23,6 @@ type UpdateOptions struct {
 	Priority      *int
 	Labels        *[]string
 	SpecMDPath    *string
-	EstTokens     *int
-	DueDate       *string
 	OwnerRole     *string
 	OwnerActor    *string
 }
@@ -46,8 +44,6 @@ type issueUpdateState struct {
 	Priority   *int
 	Labels     []string
 	SpecMDPath *string
-	EstTokens  *int
-	DueDate    *string
 	OwnerRole  *string
 	OwnerActor *string
 	UpdatedAt  string
@@ -213,24 +209,22 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {
 	row := conn.QueryRow(`
-		SELECT id, title, priority, spec_md_path, est_tokens, due_date, owner_role, owner_actor, updated_at
+		SELECT id, title, priority, spec_md_path, owner_role, owner_actor, updated_at
 		FROM issues
 		WHERE id = ?
 	`, issueID)
 
 	var (
-		state                                      issueUpdateState
-		priority, estTokens                        sql.NullInt64
-		specMDPath, dueDate, ownerRole, ownerActor sql.NullString
-		updatedAt                                  sql.NullString
+		state                             issueUpdateState
+		priority                          sql.NullInt64
+		specMDPath, ownerRole, ownerActor sql.NullString
+		updatedAt                         sql.NullString
 	)
 	if err := row.Scan(
 		&state.ID,
 		&state.Title,
 		&priority,
 		&specMDPath,
-		&estTokens,
-		&dueDate,
 		&ownerRole,
 		&ownerActor,
 		&updatedAt,
@@ -242,8 +236,6 @@ func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error
 	}
 	state.Priority = nullIntPointer(priority)
 	state.SpecMDPath = nullStringPointer(specMDPath)
-	state.EstTokens = nullIntPointer(estTokens)
-	state.DueDate = normalizeDateOnlyPointer(nullStringPointer(dueDate))
 	state.OwnerRole = nullStringPointer(ownerRole)
 	state.OwnerActor = nullStringPointer(ownerActor)
 	if !updatedAt.Valid || strings.TrimSpace(updatedAt.String) == "" {

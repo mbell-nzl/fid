@@ -361,7 +361,6 @@ func emptyIssueFixture() issues.Issue {
 		StatusCategory:     "unstarted",
 		WorkflowID:         "task-default",
 		Labels:             []string{},
-		InInbox:            false,
 		ConcernsRaised:     false,
 		OpenConcernsCount:  0,
 		AcceptanceCriteria: []issues.AcceptanceCriterion{},
@@ -374,7 +373,6 @@ func populatedIssueFixture() issues.Issue {
 	priority := 1
 	sequence := 2
 	specMDPath := "project-docs/specs/task-1.md"
-	estTokens := 987
 	ownerRole := "developer"
 	ownerActor := "mark"
 	triageStatus := "blocked"
@@ -392,11 +390,9 @@ func populatedIssueFixture() issues.Issue {
 		Priority:          &priority,
 		Sequence:          &sequence,
 		SpecMDPath:        &specMDPath,
-		EstTokens:         &estTokens,
 		OwnerRole:         &ownerRole,
 		OwnerActor:        &ownerActor,
 		Labels:            []string{"backend", "phase-3"},
-		InInbox:           true,
 		ConcernsRaised:    true,
 		OpenConcernsCount: 2,
 		TriageStatus:      &triageStatus,

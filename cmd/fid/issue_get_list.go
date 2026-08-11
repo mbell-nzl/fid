@@ -69,7 +69,6 @@ func newIssueListCommand() *cobra.Command {
 		epicID         string
 		label          string
 		priorityFilter string
-		inboxOnly      bool
 		hasConcerns    bool
 		order          string
 		formatName     string
@@ -104,9 +103,6 @@ func newIssueListCommand() *cobra.Command {
 				Priorities:     priorities,
 				Order:          order,
 			}
-			if cmd.Flags().Changed("inbox") {
-				listOptions.InInbox = &inboxOnly
-			}
 			if cmd.Flags().Changed("has-concerns") {
 				listOptions.HasOpenConcerns = &hasConcerns
 			}
@@ -135,7 +131,6 @@ func newIssueListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by parent epic ID")
 	cmd.Flags().StringVar(&label, "label", "", "Filter by label")
 	cmd.Flags().StringVar(&priorityFilter, "priority", "", "Filter by priority list")
-	cmd.Flags().BoolVar(&inboxOnly, "inbox", false, "Show only inbox items")
 	cmd.Flags().BoolVar(&hasConcerns, "has-concerns", false, "Show only issues with open concerns")
 	cmd.Flags().StringVar(&order, "order", "", "Ordering")
 	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")

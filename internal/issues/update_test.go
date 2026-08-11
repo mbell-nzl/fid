@@ -23,8 +23,6 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 		ActorRole:     "developer",
 		Priority:      intPointer(2),
 		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		EstTokens:     intPointer(1200),
-		DueDate:       stringPointer("2026-07-15"),
 		Labels:        []string{"core"},
 		OwnerActor:    stringPointer("agent:before"),
 	})
@@ -70,12 +68,6 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 	}
 	if !equalStringPointers(after.SpecMDPath, before.SpecMDPath) {
 		t.Fatalf("Get(after update) spec_md_path = %#v, want %#v", after.SpecMDPath, before.SpecMDPath)
-	}
-	if !equalIntPointers(after.EstTokens, before.EstTokens) {
-		t.Fatalf("Get(after update) est_tokens = %#v, want %#v", after.EstTokens, before.EstTokens)
-	}
-	if !equalStringPointers(after.DueDate, before.DueDate) {
-		t.Fatalf("Get(after update) due_date = %#v, want %#v", after.DueDate, before.DueDate)
 	}
 	if !equalStrings(after.Labels, before.Labels) {
 		t.Fatalf("Get(after update) labels = %#v, want %#v", after.Labels, before.Labels)
@@ -138,17 +130,6 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			},
 			wantErr: `role "intern" not in project profile`,
 		},
-		{
-			name: "malformed due date",
-			mutate: func(createdID string) UpdateOptions {
-				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					DueDate:   stringPointer("2026/07/20"),
-				}
-			},
-			wantErr: "update issue: due_date must use YYYY-MM-DD",
-		},
 	}
 
 	for _, tt := range tests {
@@ -164,7 +145,6 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 				ActorRole:     "developer",
 				Priority:      intPointer(2),
 				Labels:        []string{"core"},
-				DueDate:       stringPointer("2026-07-20"),
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -225,8 +205,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		ActorRole:     "developer",
 		Priority:      intPointer(2),
 		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
-		EstTokens:     intPointer(800),
-		DueDate:       stringPointer("2026-07-20"),
 		Labels:        []string{"core", "legacy"},
 		OwnerActor:    stringPointer("agent:before"),
 	})
@@ -255,8 +233,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		Priority:      intPointer(1),
 		Labels:        &labels,
 		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		EstTokens:     intPointer(900),
-		DueDate:       stringPointer("2026-07-22"),
 		OwnerRole:     stringPointer("qa_lead"),
 		OwnerActor:    stringPointer("human:mark"),
 	})
@@ -284,12 +260,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	}
 	if after.SpecMDPath == nil || *after.SpecMDPath != "project-docs/specs/06_DESIGN_PLAN_CLI.md" {
 		t.Fatalf("Get(after update) spec_md_path = %#v", after.SpecMDPath)
-	}
-	if after.EstTokens == nil || *after.EstTokens != 900 {
-		t.Fatalf("Get(after update) est_tokens = %#v, want 900", after.EstTokens)
-	}
-	if after.DueDate == nil || *after.DueDate != "2026-07-22" {
-		t.Fatalf("Get(after update) due_date = %#v, want 2026-07-22", after.DueDate)
 	}
 	if after.OwnerRole == nil || *after.OwnerRole != "qa_lead" {
 		t.Fatalf("Get(after update) owner_role = %#v, want qa_lead", after.OwnerRole)

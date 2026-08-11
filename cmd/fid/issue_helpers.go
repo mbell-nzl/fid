@@ -201,10 +201,6 @@ func issueUpdateFieldLabel(field string) string {
 	switch field {
 	case "spec_md_path":
 		return "spec-md"
-	case "est_tokens":
-		return "est-tokens"
-	case "due_date":
-		return "due-date"
 	case "owner_role":
 		return "owner-role"
 	case "owner_actor":

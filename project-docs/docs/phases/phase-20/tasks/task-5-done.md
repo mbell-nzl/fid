@@ -1,60 +1,54 @@
-# Phase 20 — Task 5: Remove orphaned Issue fields — Blocker Report
+# Phase 20 - Task 5: Remove orphaned Issue fields - Completion Report
 
 ## Summary of what was implemented
 
-- Prepared the Task 5 implementation in the working tree: migration `0011_p20_remove_issue_fields` removes `in_inbox`, `est_tokens`, and `due_date` from the Issue projection; the down migration restores the prior logical columns and the epic `est_tokens` CHECK behavior.
-- Removed the three fields from the scoped Issue domain, CLI flags and JSON, emitted Issue event effects, format fixtures, parity fixtures, and replay path. Replay now classifies a retired Issue effect key as a stopped journal replay instead of ignoring it.
-- BLOCKED before completion: the required integration gate failed because `TestIntegrationClassification` has a fixed inventory that does not include the new `TestV01ParityFixtureRebuildPreservesEveryProjectionTable` journey. Per the task instructions, no completion commit was created and the remaining required gates were not run.
+- Removed `in_inbox`, `est_tokens`, and `due_date` from the Issue projection, domain and CLI surfaces, newly emitted Issue effects, format fixtures, parity fixtures, and replay allowlists.
+- Added migration `0011_p20_remove_issue_fields`; its table rebuild removes the retired columns and dependent CHECK, recreates `issues_enriched`, and its down migration restores all three columns plus the former epic `est_tokens` CHECK.
+- Retired Issue effect keys now stop development-journal replay with `journal-replay-stopped` instead of being ignored.
+- Preserved the inherited regenerated parity fixtures and their manifest. Re-verification in this session found every `SHA256SUMS` entry valid, including the three changed Issue-get fixtures.
+- Applied DEC-137's scoped verification-apparatus repair: `TestIntegrationClassification` now verifies the four Task 3f journeys are present and reports the individual missing journey; additional integration journeys are permitted. The repository-wide tagged-test walk and the binary/sleep classification tests are unchanged.
 
 ## Files created or modified
 
-- Added `migrations/0011_p20_remove_issue_fields.up.sql` and `migrations/0011_p20_remove_issue_fields.down.sql`.
-- Added `internal/db/migrate_test.go` and updated scoped Issue, journal replay, format, CLI, parity-fixture, and test files under `internal/` and `cmd/fid/`.
-- Regenerated prepared fixture files (all remain uncommitted because the required gate blocked task completion):
-  - `cmd/fid/testdata/v01_parity/issue-get-epic.json`
-  - `cmd/fid/testdata/v01_parity/issue-get-subtask.json`
-  - `cmd/fid/testdata/v01_parity/issue-get-task.json`
-  - `cmd/fid/testdata/v01_parity/SHA256SUMS`
-  - `testdata/format/issue-empty.golden.toon`
-- Preserved the pre-existing unrelated modification to `project-docs/docs/phases/phase-20/run-ledger.md` without editing it.
+- Added `migrations/0011_p20_remove_issue_fields.up.sql`, `migrations/0011_p20_remove_issue_fields.down.sql`, and `internal/db/migrate_test.go`.
+- Updated the scoped Issue model, create/update/get/list/ready paths, journal replay, format renderers, and their tests under `internal/` and `cmd/fid/` to remove the three retired fields.
+- Updated `cmd/fid/integration/v01_parity_test.go` and `cmd/fid/integration/classification_test.go`.
+- Updated committed regression fixtures: `cmd/fid/testdata/v01_parity/issue-get-epic.json`, `issue-get-task.json`, `issue-get-subtask.json`, `SHA256SUMS`, and `testdata/format/issue-empty.golden.toon`.
+- Preserved but did not modify or stage the pre-existing out-of-scope `project-docs/docs/phases/phase-20/run-ledger.md` change.
 
 ## Documentation updated
 
-- This blocker report documents the incomplete task state and fixture-regeneration procedure. No product or architecture documentation change was required by the task spec.
+- Updated this completion report. No product or architecture documentation change was required by the task spec.
 
 ## Validation Contract Coverage
 
-- `VAL-009` — BLOCKED at the required integration gate. Focused evidence passed before the gate: `TestIssuesTableExcludesRetiredPhase20Fields` in `internal/db/migrate_test.go:10` verifies the up migration removes all three Issue projection columns and the down migration restores them plus the epic `est_tokens` CHECK; `TestIssueCommandsDoNotRegisterRetiredFieldFlags` in `cmd/fid/issue_section_test.go` verifies the removed CLI flags; `TestIssueGetSectionsAndRetiredFieldAbsence` in the same file verifies JSON omits all three fields.
-- `VAL-012` field-removal half — BLOCKED at the required integration gate. Focused evidence passed before the gate: `TestCreateEventOmitsRetiredPhase20Fields` in `internal/issues/issue_test.go` verifies new issue-created effects omit all three keys; `TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped` in `internal/journal/replay_test.go:31` verifies a development Event with a removed key becomes a stopped replay; `TestV01ParityFixtureRebuildPreservesEveryProjectionTable` in `cmd/fid/integration/v01_parity_test.go:47` compares every rebuilt projection table with the live projection.
+- `VAL-009` — PASS. `TestIssuesTableExcludesRetiredPhase20Fields` in `internal/db/migrate_test.go:10` proves the up migration omits all three columns and the down migration restores the columns and epic CHECK. `TestIssueCommandsDoNotRegisterRetiredFieldFlags` in `cmd/fid/issue_section_test.go:212`, `TestIssueGetSectionsAndRetiredFieldAbsence` in `cmd/fid/issue_section_test.go:13`, and `TestCreateEventOmitsRetiredPhase20Fields` in `internal/issues/issue_test.go:851` cover CLI, decoded JSON, and newly emitted effects. `TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped` in `internal/journal/replay_test.go:31` covers the non-ignored removed-key state. The current-session race suite passed with terminal token `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements`.
+- `VAL-012` (field-removal half) — PASS. `TestV01ParityFixtureRebuildPreservesEveryProjectionTable` in `cmd/fid/integration/v01_parity_test.go:47` compares each live projection table to its rebuilt counterpart; the required dedicated integration command passed in this session with terminal token `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.716s`. Fixture-manifest verification passed: `issue-get-epic.json`, `issue-get-task.json`, and `issue-get-subtask.json` are respectively `a4c4009e5394cd1f3ab717c52419422aed2e3c7302247ccefa27331cbdd05d6d`, `ff0063400ace3435be2d95460c40bd55305bc4c4a473b5935f4636f5377b52ec`, and `0069ccb123b3e941455dad9c93263072660c20acd6a791a6f3f5544d27fff78c`; `sha256sum -c SHA256SUMS` reported every parity fixture `OK`.
 
 ## Tests run
 
-- RED: `go test ./internal/db -run '^TestIssuesTableExcludesRetiredPhase20Fields$' -count=1` — expected failure before migration `0011`: `FAIL`.
-- GREEN: `go test ./internal/db -run '^TestIssuesTableExcludesRetiredPhase20Fields$' -count=1` — `ok  github.com/mbell-nzl/fid/internal/db 0.026s`.
-- RED: `go test ./internal/journal -run '^TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped$' -count=1` — expected failure before replay classification: `FAIL`.
-- GREEN: `go test ./internal/journal -run '^TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped$' -count=1` — `ok github.com/mbell-nzl/fid/internal/journal 0.023s`.
-- `go test ./internal/issues ./cmd/fid -run '^(TestCreateEventOmitsRetiredPhase20Fields|TestIssueCommandsDoNotRegisterRetiredFieldFlags|TestIssueGetSectionsAndRetiredFieldAbsence)$' -count=1` — `ok github.com/mbell-nzl/fid/cmd/fid 0.125s`.
-- `go test ./internal/db ./internal/issues ./internal/journal ./cmd/fid ./internal/format -count=1 && go test -tags integration ./cmd/fid/integration -run '^(TestV01ParityGoldenOutputs|TestV01ParityFixtureRebuildPreservesEveryProjectionTable)$' -count=1` — `ok github.com/mbell-nzl/fid/cmd/fid/integration 0.536s`.
-- Fixture regeneration procedure: `go build -o /tmp/fid-task5-fixture ./cmd/fid && fixture_out=$(mktemp -d) && cmd/fid/testdata/v01_parity/capture.sh /tmp/fid-task5-fixture "$fixture_out" && git diff --no-index -- cmd/fid/testdata/v01_parity "$fixture_out"`. The capture completed; the final `git diff --no-index` returned the expected non-zero result because it displayed the three regenerated `issue-get-*.json` field removals and `SHA256SUMS` changes. The prepared fixture hashes are `a4c4009e5394cd1f3ab717c52419422aed2e3c7302247ccefa27331cbdd05d6d` (epic), `0069ccb123b3e941455dad9c93263072660c20acd6a791a6f3f5544d27fff78c` (subtask), and `ff0063400ace3435be2d95460c40bd55305bc4c4a473b5935f4636f5377b52ec` (task).
-- Real entrypoint: `go build -o /tmp/fid-task5-runtime ./cmd/fid && task5_workspace=$(mktemp -d) && cp -R cmd/fid/testdata/v01_parity/fixture/. "$task5_workspace" && cd "$task5_workspace" && /tmp/fid-task5-runtime issue get FID-b20002 --format json` — emitted Issue JSON omitted `in_inbox`, `est_tokens`, and `due_date`.
+- `sha256sum -c SHA256SUMS` from `cmd/fid/testdata/v01_parity` — PASS — `issue-list-subtask.json: OK` (terminated `exit_code: 0`); the recorded three regenerated Issue-get hashes match the inherited manifest and fixture bytes.
+- RED, `go test -tags integration ./cmd/fid/integration -run '^TestIntegrationClassification$' -count=1` — expected failure after temporarily excluding the required observed journey `TestV01ParityGoldenOutputs` — `FAIL` (terminated `exit_code: 1`); diagnostic: `required dedicated integration journey "TestV01ParityGoldenOutputs" is missing; restore it to cmd/fid/integration`.
+- GREEN, same focused command after restoring that observed journey — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t0.430s` (terminated `exit_code: 0`).
+- Real entrypoint: created a fresh temporary workspace from `cmd/fid/testdata/v01_parity/fixture`, then ran `/tmp/fid issue get FID-b20002 --format json` — PASS — output contained the expected Issue and omitted `in_inbox`, `est_tokens`, and `due_date` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `PASS` — `gofmt -l cmd internal` — `exit 0 (no output)`.
-- `PASS` — `golangci-lint run ./...` — `0 issues.`
-- `PASS` — `go test -race -coverprofile=coverage.out ./...` — `ok  	github.com/mbell-nzl/fid/internal/workflow	9.525s	coverage: 80.5% of statements`.
-- `PASS` — `go tool cover -func=coverage.out` — `total: (statements) 77.7%`.
-- `BLOCKED` — `go test -tags integration -race ./cmd/fid/integration/...` — `FAIL`. `TestIntegrationClassification` reported its journey inventory as `[TestMaintenanceCheckReportsIncompatibleWorkflowAssignment TestV01ClosureJourneyAndRebuildParity TestV01ParityFixtureRebuildPreservesEveryProjectionTable TestV01ParityGoldenOutputs TestV02aWorkflowAuthoringExitScenarioAndRebuildParity]` while its expected list omitted `TestV01ParityFixtureRebuildPreservesEveryProjectionTable`.
-- `NOT RUN` — `go test -bench . -benchmem ./...` — stopped after the preceding required gate failed.
-- `NOT RUN` — `go build -o /tmp/fid ./cmd/fid` — stopped after the preceding required gate failed.
+- `gofmt -l cmd internal` — PASS — `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` — PASS — `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` — PASS — `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.7%` (terminated `exit_code: 0`).
+- `go test -tags integration -race ./cmd/fid/integration/...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.716s` (terminated `exit_code: 0`).
+- `go test -bench . -benchmem ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.573s` (terminated `exit_code: 0` after explicit polling of session `56859`).
+- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)` (terminated `exit_code: 0`).
 
 ## Deviations from spec
 
-- None. The task was not completed because the required quality gate failed; no exception or narrower substitute was used.
+- DEC-137/DEC-138 authorized verification-apparatus repair: the first dedicated-gate failure recorded in the inherited blocker report had verbatim terminal token `FAIL` and named the exact stale inventory discrepancy: `TestV01ParityFixtureRebuildPreservesEveryProjectionTable` was present in the dedicated package but absent from `wantJourneys`. Root cause: exact equality treated Task 5's legitimate new rebuild-parity journey as a failure, although the accepted invariant is preservation of the four Task 3f journeys. Fix: replace equality with a required-presence loop that names any missing journey and permits additions; `taggedTestFilesOutside`, its repository-wide walk, `TestIntegrationBinaryOwnedByPackage`, and `TestClosureJourneyHasNoWallClockSleep` were left unchanged. No product assertion, threshold, budget, tolerance, or command changed. The byte-identical required integration command was rerun in this session and passed with its own token `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.716s`.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The integration-classification inventory must be reconciled with the newly added parity-fixture rebuild journey before Task 5 can complete. This report leaves that repair uncommitted because the required gate failure requires a blocker stop.
+- None.
 
 ## Dependency-budget note
 
@@ -62,8 +56,8 @@
 
 ## Commit hash
 
-- No commit created — blocker report.
+- Pending commit
 
 ## Commit subject
 
-- No commit created — blocker report.
+- Pending commit

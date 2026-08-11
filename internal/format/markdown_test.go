@@ -96,7 +96,6 @@ func TestWriteMarkdownRendersReadyViewPointer(t *testing.T) {
 	epicTitle := "Formatter work"
 	priority := 2
 	sequence := 4
-	estTokens := 900
 	view := ReadyView{Task: &issues.ReadyTask{
 		ID:        "FID-task01",
 		Title:     "Split markdown formatter",
@@ -105,7 +104,6 @@ func TestWriteMarkdownRendersReadyViewPointer(t *testing.T) {
 		EpicTitle: &epicTitle,
 		Priority:  &priority,
 		Sequence:  &sequence,
-		EstTokens: &estTokens,
 	}}
 
 	var markdownOutput bytes.Buffer
@@ -120,8 +118,7 @@ func TestWriteMarkdownRendersReadyViewPointer(t *testing.T) {
 		"- Status: in_progress\n" +
 		"- Epic: FID-epic01 (Formatter work)\n" +
 		"- Sequence: 4\n" +
-		"- Priority: P2\n" +
-		"- Est. tokens: 900\n"
+		"- Priority: P2\n"
 	if markdownOutput.String() != want {
 		t.Fatalf("markdown output = %q, want %q", markdownOutput.String(), want)
 	}

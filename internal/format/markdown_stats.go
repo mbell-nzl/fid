@@ -35,9 +35,6 @@ func writeReadyMarkdown(writer io.Writer, view ReadyView) error {
 		builder.WriteString("- Priority: ")
 		builder.WriteString(markdownPriority(view.Task.Priority))
 		builder.WriteString("\n")
-		builder.WriteString("- Est. tokens: ")
-		builder.WriteString(markdownReadyOptionalInt(view.Task.EstTokens))
-		builder.WriteString("\n")
 	}
 
 	if _, err := io.WriteString(writer, builder.String()); err != nil {

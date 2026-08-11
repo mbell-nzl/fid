@@ -26,18 +26,6 @@ func buildIssueUpdateChanges(current issueUpdateState, request normalizedUpdateR
 		prior["spec_md_path"] = stringPointerValue(current.SpecMDPath)
 		changes = append(changes, FieldChange{Field: "spec_md_path", From: stringPointerValue(current.SpecMDPath), To: *request.specMDPath})
 	}
-	if request.estTokens != nil && !sameOptionalInt(current.EstTokens, request.estTokens) {
-		values["est_tokens"] = *request.estTokens
-		preconditions["est_tokens"] = intPointerValue(current.EstTokens)
-		prior["est_tokens"] = intPointerValue(current.EstTokens)
-		changes = append(changes, FieldChange{Field: "est_tokens", From: intPointerValue(current.EstTokens), To: *request.estTokens})
-	}
-	if request.dueDate != nil && !sameOptionalString(current.DueDate, request.dueDate) {
-		values["due_date"] = *request.dueDate
-		preconditions["due_date"] = stringPointerValue(current.DueDate)
-		prior["due_date"] = stringPointerValue(current.DueDate)
-		changes = append(changes, FieldChange{Field: "due_date", From: stringPointerValue(current.DueDate), To: *request.dueDate})
-	}
 	if request.ownerRole != nil && !sameOptionalString(current.OwnerRole, request.ownerRole) {
 		values["owner_role"] = *request.ownerRole
 		preconditions["owner_role"] = stringPointerValue(current.OwnerRole)

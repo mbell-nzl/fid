@@ -55,7 +55,6 @@ func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
 			ownerRole:  "developer",
 			sequence:   intPointer(2),
 			priority:   intPointer(1),
-			estTokens:  intPointer(2400),
 			createdAt:  "2026-06-14T10:02:00Z",
 			updatedAt:  "2026-06-14T10:02:00Z",
 		},
@@ -98,7 +97,6 @@ func TestReadyDefaultsToFrozenJSONShapeWithoutNote(t *testing.T) {
 			"epic_title": "Phase 6 ready queue",
 			"sequence":   "2",
 			"priority":   "1",
-			"est_tokens": "2400",
 		},
 	}
 
@@ -429,7 +427,6 @@ func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
 			workflowID: "task-default",
 			ownerRole:  "developer",
 			priority:   intPointer(1),
-			estTokens:  intPointer(900),
 			createdAt:  "2026-06-14T13:00:00Z",
 			updatedAt:  "2026-06-14T13:00:00Z",
 		},
@@ -499,8 +496,7 @@ func TestReadyFormatsRenderSelectedAndEmptyStates(t *testing.T) {
 			"- Status: todo\n" +
 			"- Epic: (none)\n" +
 			"- Sequence: (none)\n" +
-			"- Priority: P1\n" +
-			"- Est. tokens: 900\n"
+			"- Priority: P1\n"
 		if stdout != want {
 			t.Fatalf("markdown stdout = %q, want %q", stdout, want)
 		}
@@ -556,7 +552,6 @@ type readyCommandRow struct {
 	ownerRole  string
 	sequence   *int
 	priority   *int
-	estTokens  *int
 	createdAt  string
 	updatedAt  string
 	scheduling *string
@@ -568,8 +563,8 @@ func seedReadyCommandRows(t *testing.T, conn *sql.DB, rows []readyCommandRow) {
 	for _, row := range rows {
 		if _, err := conn.Exec(`
 			INSERT INTO issues (
-				id, kind, parent_id, title, status, workflow_id, owner_role, sequence, priority, est_tokens, created_at, updated_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				id, kind, parent_id, title, status, workflow_id, owner_role, sequence, priority, created_at, updated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 			row.id,
 			row.kind,
@@ -580,7 +575,6 @@ func seedReadyCommandRows(t *testing.T, conn *sql.DB, rows []readyCommandRow) {
 			row.ownerRole,
 			row.sequence,
 			row.priority,
-			row.estTokens,
 			row.createdAt,
 			row.updatedAt,
 		); err != nil {

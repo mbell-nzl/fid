@@ -22,10 +22,7 @@ type CreateOptions struct {
 	Priority      *int
 	Sequence      *int
 	SpecMDPath    *string
-	EstTokens     *int
-	DueDate       *string
 	Labels        []string
-	InInbox       bool
 	OwnerRole     *string
 	OwnerActor    *string
 	Scheduling    string
@@ -76,12 +73,9 @@ type Issue struct {
 	Priority           *int                  `json:"priority"`
 	Sequence           *int                  `json:"sequence"`
 	SpecMDPath         *string               `json:"spec_md_path"`
-	EstTokens          *int                  `json:"est_tokens"`
-	DueDate            *string               `json:"due_date"`
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
-	InInbox            bool                  `json:"in_inbox"`
 	ConcernsRaised     bool                  `json:"concerns_raised"`
 	OpenConcernsCount  int                   `json:"open_concerns_count"`
 	TriageStatus       *string               `json:"triage_status"`
