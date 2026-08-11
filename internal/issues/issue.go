@@ -62,6 +62,29 @@ func (err *NotFoundError) Error() string {
 	return fmt.Sprintf("issue %q not found", err.IssueID)
 }
 
+type HierarchyInvalidError struct {
+	Kind       string
+	ParentID   *string
+	ParentKind *string
+	Rule       string
+}
+
+func (err *HierarchyInvalidError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	switch err.Kind {
+	case "epic":
+		return "issues: epic parent_id must be NULL"
+	case "task":
+		return "issues: task parent_id must reference an epic or be NULL"
+	case "subtask":
+		return "issues: subtask parent_id must reference a task"
+	default:
+		return fmt.Sprintf("issue hierarchy is invalid: %s", err.Rule)
+	}
+}
+
 type Issue struct {
 	ID                 string                `json:"id"`
 	Kind               string                `json:"kind"`

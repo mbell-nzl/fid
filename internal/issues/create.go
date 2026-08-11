@@ -273,9 +273,6 @@ func defaultIssueOwnerRole(kind string) string {
 func validateCreateOptions(kind string, parentID *string, priority, sequence *int, ownerRole *string, scheduling, workspaceRoot string) error {
 	switch kind {
 	case "epic":
-		if parentID != nil {
-			return fmt.Errorf("issues: epic parent_id must be NULL")
-		}
 		if scheduling == "" {
 			return fmt.Errorf("create issue: epic scheduling is required")
 		}
@@ -309,7 +306,7 @@ func validateCreateOptions(kind string, parentID *string, priority, sequence *in
 func validateParentConstraint(conn *sql.DB, kind string, parentID *string) error {
 	if parentID == nil {
 		if kind == "subtask" {
-			return fmt.Errorf("issues: subtask parent_id must reference a task")
+			return hierarchyInvalidError(kind, nil, nil)
 		}
 		return nil
 	}
@@ -318,19 +315,40 @@ func validateParentConstraint(conn *sql.DB, kind string, parentID *string) error
 	if err != nil {
 		return err
 	}
+	if !found {
+		return &NotFoundError{IssueID: *parentID}
+	}
 	switch kind {
 	case "epic":
-		return fmt.Errorf("issues: epic parent_id must be NULL")
+		return hierarchyInvalidError(kind, parentID, &parentKind)
 	case "task":
-		if !found || parentKind != "epic" {
-			return fmt.Errorf("issues: task parent_id must reference an epic or be NULL")
+		if parentKind != "epic" {
+			return hierarchyInvalidError(kind, parentID, &parentKind)
 		}
 	case "subtask":
-		if !found || parentKind != "task" {
-			return fmt.Errorf("issues: subtask parent_id must reference a task")
+		if parentKind != "task" {
+			return hierarchyInvalidError(kind, parentID, &parentKind)
 		}
 	}
 	return nil
+}
+
+func hierarchyInvalidError(kind string, parentID, parentKind *string) *HierarchyInvalidError {
+	rule := ""
+	switch kind {
+	case "epic":
+		rule = "epics must not have a parent"
+	case "task":
+		rule = "tasks must have an epic parent or no parent"
+	case "subtask":
+		rule = "subtasks must have a task parent"
+	}
+	return &HierarchyInvalidError{
+		Kind:       kind,
+		ParentID:   parentID,
+		ParentKind: parentKind,
+		Rule:       rule,
+	}
 }
 
 func requireExistingLabels(conn *sql.DB, labels []string) error {
