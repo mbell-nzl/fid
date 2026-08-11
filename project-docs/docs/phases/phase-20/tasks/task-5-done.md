@@ -56,8 +56,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `028855b`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issue): remove retired issue fields`
