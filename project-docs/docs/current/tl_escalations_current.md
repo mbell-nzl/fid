@@ -9,47 +9,48 @@
 
 ## Open Escalations
 
-- None.
+None.
 
 ---
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-005 resolved by DEC-135 (2026-08-11).**
+  Task 4's required lint gate correctly failed on dead code: the typed
+  `LockUnavailableError` carries only `LockPath` per contracts §2.4/§2.5, so
+  `describeLockHolder` lost its caller. No product defect. DEC-135 deletes the
+  formatter, refuses `//nolint` suppression and any holder data in the closed
+  detail object, and re-runs Task 4 unchanged in one fresh session that inherits
+  the uncommitted tree, completes the exact gate sequence with captured tokens,
+  commits once, and rewrites `task-4-done.md` with a deviation note quoting the
+  original failing token. All seven `BLOCKED` VAL rows re-record from that
+  session's own evidence.
 - **Phase 20 (in flight)** — **ESC-20-004 resolved by DEC-134 (2026-08-10).**
-  Infrastructure Review 1 found Task 3f's direct-parent classifier omitted an
-  integration-tagged in-process test in `internal/issues`, leaving it outside
-  both accepted gates. Correction `75c856a` makes the inventory
-  repository-wide and removes only the misplaced build constraint. Complete
-  post-fix gates passed; the same reviewer independently verified ordinary
-  ownership, classification, race/coverage, and dedicated integration and
-  returned NON-BLOCK at `cd9e6bc`. No product behavior or assertion changed.
+  Task 3f's direct-parent classifier omitted an integration-tagged in-process
+  test in `internal/issues`, leaving it outside both accepted gates. Correction
+  `75c856a` makes the inventory repository-wide and removes only the misplaced
+  build constraint; the same reviewer returned NON-BLOCK at `cd9e6bc`. No
+  product behavior or assertion changed.
 - **Phase 20 (in flight)** — **ESC-20-003 resolved by DEC-132 (2026-08-10).**
-  The Go command had not terminated: a wrapper returned only empty `output`
-  and discarded the live nested `session_id`. Canonical Codex prompts now
-  preserve full results, poll yielded sessions, and require `exit_code` or an
-  explicit termination signal. `report-lint.sh` now ignores wrapped blocker
-  prose while retaining its token checks. Task 3d and all exact gates pass;
-  the integration gate proved the protocol by staying silent through multiple
-  polls before `cmd/fid` completed in 160.765s. Broader performance work is
-  deliberately deferred to the Human-requested pre-Task-4 follow-up pack.
+  The Go command had not terminated: a wrapper returned only empty `output` and
+  discarded the live nested `session_id`. Canonical Codex prompts now preserve
+  full results, poll yielded sessions, and require `exit_code` or an explicit
+  termination signal; `report-lint.sh` ignores wrapped blocker prose while
+  keeping its token checks. Broader performance work became the approved
+  infrastructure pack.
 - **Phase 20 (in flight)** — **ESC-20-002 resolved by DEC-131 (2026-08-09).**
-  Both Review 1b Blocking findings sustained; **no product defect**. Init's
-  derived-prefix rejection is contract-correct (§3.2.1); three e2e journeys are
-  stale fixtures that never converged, hidden because every Phase 20 full-suite
-  `go test` gate was recorded with the impossible token `exit 0 (no output)`.
-  Those lines are now **UNVERIFIED**. Recovery: **task-3c** (fixture
-  convergence, `max_excerpt_bytes` rows, real-token full gate) and **task-3d**
-  (report-lint token control, report corrections), then `qa/review-1c.md`, then
-  Task 4. A third BLOCK returns to the Human. **CF-029** extends the control to
-  QA review artifacts.
+  Both Review 1b findings sustained; **no product defect**. Init's
+  derived-prefix rejection is contract-correct (§3.2.1); three e2e journeys were
+  stale fixtures, hidden because every Phase 20 full-suite `go test` gate was
+  recorded with the impossible token `exit 0 (no output)`. Those lines are now
+  **UNVERIFIED**. Recovered by tasks 3c/3d and `qa/review-1c.md`. **CF-029**
+  extends the token control to QA review artifacts.
 - **Phase 20 (in flight)** — **ESC-20-001 resolved by DEC-130 (2026-08-09).**
-  Review 1's two Blocking findings were sustained without weakening VAL-002 or
-  VAL-043. Recovery is two bounded test-led tasks, **task-3a** (exhaustive
-  reason-code detail/subject/redaction matrix) and **task-3b** (strict-config
-  and init boundary matrix, dangling-symlink collision regression, config file
-  split), then a bounded re-review `qa/review-1b.md`, then Task 4. Detail lives
-  in `../phases/phase-20/decisions.md` DEC-130 and
-  `../phases/phase-20/tl-escalations.md`.
+  Review 1's two findings were sustained without weakening VAL-002 or VAL-043.
+  Recovered by bounded test-led tasks 3a (reason-code detail/subject/redaction
+  matrix) and 3b (strict-config and init boundary matrix, symlink regression,
+  config split) plus re-review `qa/review-1b.md`. Detail lives in
+  `../phases/phase-20/decisions.md` and `../phases/phase-20/tl-escalations.md`.
 
 - **Phase 19** — **eight escalations, ESC-19-001..008, all resolved, zero
   product defects.** Every one landed in verification apparatus or evidence

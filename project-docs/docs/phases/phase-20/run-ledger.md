@@ -498,3 +498,22 @@ Human-approved and QA-plan acceptance is next._
   reduction and above the approved 40% target
 - Open blockers: none
 - Recovery authority ends here; next normal workflow action is Task 4
+
+### 2026-08-11 16:00 RUN-START
+
+- Branch: `phase-20`
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: autonomous per DEC-002
+- Starting task: `task-4`
+
+### 2026-08-11 16:16 TRIAGE TRG-20-005
+
+- Trigger: Task 4 Developer blocker report records a required lint-gate failure at `internal/journal/lock.go:185` for unused `describeLockHolder`; no commit exists and downstream required gates were not run.
+- Verdict: BLOCK (escalated as ESC-20-005)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` TRG-20-005 entry confirmed
+
+### 2026-08-11 16:16 STOP
+
+- Cause: Task 4 blocker report and TRG-20-005; required `golangci-lint run ./...` failed, so Task 4 has no verified commit and cannot close.
+- Triage: TRG-20-005 (BLOCK, escalated as ESC-20-005)
+- Next human action: Resolve ESC-20-005 through a scoped Task 4 recovery, complete the exact required gate sequence with captured terminal evidence, and then resume the Phase Runner.

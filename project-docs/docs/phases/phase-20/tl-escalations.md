@@ -8,6 +8,29 @@
 
 ### Resolved
 
+- **ESC-20-005 - Task 4 required lint gate failed on an orphaned lock-holder
+  formatter (raised 2026-08-11 via `TRG-20-005`; resolved 2026-08-11 by
+  DEC-135).** **No product defect and no contract gap.** Task 4's typed
+  `LockUnavailableError` carries only `LockPath`, because `contracts.md`
+  §2.4/§2.5 close `lock-unavailable` to `conflict` / `retryable: true` with the
+  exact detail object `{lock_path: string}` and forbid environment values in
+  detail objects. That contract-correct narrowing left the pre-existing
+  `describeLockHolder` formatter without a caller, and `golangci-lint run ./...`
+  correctly reported `internal/journal/lock.go:185:6: func describeLockHolder is
+  unused (unused)`. Because `AGENTS.md` forbids repairing and rerunning a failed
+  required gate in the same session, the Developer stopped with a blocker
+  report, no commit, and four unrun downstream gates; the escalation was
+  therefore correct rather than avoidable. DEC-135 deletes the dead formatter,
+  refuses `//nolint` suppression and any envelope change that would smuggle
+  holder PID/hostname/command/actor into a closed detail object, keeps the
+  `owner.json` metadata write and its `readLockMetadata` test caller, and re-runs
+  Task 4 unchanged in one fresh session that inherits the uncommitted tree,
+  completes the exact gate sequence with captured tokens, commits once, and
+  rewrites `task-4-done.md` with a deviation note quoting the original failing
+  token. No task was re-sliced, no assertion, gate command, VAL, dependency, or
+  product behavior was weakened, and all seven `BLOCKED` VAL rows are
+  re-recorded from the new session's own evidence.
+
 - **ESC-20-004 - Infrastructure Review 1 gate-accounting correction (raised
   2026-08-10 via `TRG-20-004`; resolved 2026-08-10 by DEC-134).** Task 3f's
   classifier inspected only the direct `cmd/fid` parent and missed

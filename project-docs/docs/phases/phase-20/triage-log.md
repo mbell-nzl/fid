@@ -15,12 +15,36 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-005 | 2026-08-11 | Task 4 Developer blocker report: required golangci-lint gate failed on unused `describeLockHolder`; no commit and downstream gates not run | `tasks/task-4-done.md` | BLOCK | ESC-20-005 | Genuine unresolved required-gate failure. No verified commit or accepted decision supplies a RESUME ground. |
 | TRG-20-004 | 2026-08-10 | Infrastructure Review 1 found a retained integration-tagged in-process test outside both accepted gates | `qa/infra-review-1.md` | BLOCK | ESC-20-004 | Task 3f's direct-parent inventory omitted `internal/issues/transition_rules_test.go`; repository-wide classification and ordinary ownership are required before Task 4. |
 | TRG-20-003 | 2026-08-09 | Task 3d blocker report: required full-suite coverage gate has no captured terminal output and report-lint fails on three go-test prose false matches | `tasks/task-3d-done.md` | BLOCK | ESC-20-003 | The required gate is UNVERIFIED, not PASS; the new report-lint control also has an unresolved three-failure false-match defect. |
 | TRG-20-002 | 2026-08-09 | Bounded QA re-review review-1b returned BLOCK with two unresolved findings before Task 4 | `qa/review-1b.md` | BLOCK | ESC-20-002 | VAL-043 has an exhaustive evidence gap and the required integration gate fails in three init scenarios. |
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-005 - Task 4 blocked by unused lock-holder helper
+
+- **Trigger:** Phase 20 Task 4 Developer blocker report says the required
+  `golangci-lint run ./...` gate failed on an unused function at
+  `internal/journal/lock.go:185` (`describeLockHolder`); the Developer did not
+  commit, and the remaining required gates were not run.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-4-done.md`
+- **Verdict:** BLOCK
+- **Reasoning:** This is a genuine unresolved required quality-gate failure,
+  which is a Phase Runner hard stop. It is not misclassified; no commit exists,
+  so no attached verification evidence can establish resolution; and no
+  accepted decision authorizes a lint failure or skipped downstream gates. The
+  partial Task 4 recovery must be directed by the full Tech Lead before the
+  Phase Runner resumes.
+- **Local decisions made:** none
+- **References:** `project-docs/docs/phases/phase-20/tasks/task-4-done.md`
+  (Exact quality-gate results; Concerns, technical debt, or notes for the Tech
+  Lead); `AGENTS.md` (Commands; Hard Stops); `project-docs/specs/09_AI_WORKFLOW.md`
+  §2.3 and §9.
+- **If BLOCK:** ESC-20-005 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-005 before any Task 4
+  recovery or subsequent task resumes.
 
 ## TRG-20-004 - Infrastructure Review 1 found an orphaned tagged test
 

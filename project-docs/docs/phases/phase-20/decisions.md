@@ -666,6 +666,62 @@
 - **Refs:** `TRG-20-004`; `ESC-20-004`; `qa/infra-review-1.md`; DEC-133;
   correction `75c856a`; `infra-improvement-pack.md`.
 
+### DEC-135: ESC-20-005 deletes the orphaned lock-holder formatter and re-runs Task 4 in a fresh session
+
+- **Date:** 2026-08-11
+- **Context:** Task 4's Developer implemented rebuild project selection,
+  Response Envelope rendering, typed V1 authority mapping, and typed retryable
+  lock handling, then the required `golangci-lint run ./...` gate failed with
+  `internal/journal/lock.go:185:6: func describeLockHolder is unused (unused)`.
+  The typed `LockUnavailableError` carries only `LockPath`, so the pre-existing
+  holder formatter lost its only caller. `AGENTS.md` forbids repairing and
+  rerunning a failed required gate in the session that failed it, so the
+  session produced a blocker report with no commit, and the coverage,
+  coverage-report, dedicated integration, and build gates never ran. TL-Lite
+  escalated as `TRG-20-005` / `ESC-20-005`.
+- **Decision:**
+  1. Sustain the hard stop. A real required gate failed and no commit exists.
+     This is dead code left by a contract-correct narrowing, not a product
+     defect, and it is not grounds to weaken any assertion, gate, or VAL.
+  2. Delete `describeLockHolder` from `internal/journal/lock.go`. `contracts.md`
+     §2.4/§2.5 close `lock-unavailable` to `conflict` / `retryable: true` with
+     the exact detail object `{lock_path: string}`, and §2.5 forbids
+     environment values in detail objects; holder PID, hostname, command, and
+     actor role therefore have no contracted destination in Phase 20.
+     Suppressing the finding with `//nolint`, a blank assignment, or any other
+     fake reference is prohibited. Adding holder identity to the envelope would
+     be a closed-contract change requiring a spec amendment plus Human
+     approval and is not authorized here.
+  3. Keep `.fid/write.lock/owner.json` behavior. Writing lock metadata is
+     retained operator diagnostics, `readLockMetadata` keeps its `lock_test.go`
+     caller, and lint reported exactly one unused symbol, so the deletion is
+     minimal and complete. If deletion cascades to further unexported symbols
+     in `lock.go`, delete those too; if it reaches exported API or another
+     package, stop and report a blocker instead of widening scope.
+  4. Task 4 is re-run, not re-sliced: no `task-4a`, and `task-4.md` scope,
+     acceptance criteria, VAL coverage, and command list are unchanged. The
+     recovery session inherits the existing uncommitted working tree, makes the
+     deletion, confirms the inherited tests still assert every acceptance
+     criterion, runs the exact command sequence in order with captured
+     verbatim tokens under the DEC-131/DEC-132 evidence rules, and produces one
+     commit. Discarding the inherited tree is prohibited.
+  5. `task-4-done.md` is rewritten in place as the completion report. It must
+     carry a deviation note quoting the first session's failing token verbatim,
+     naming the fix, and stating that the repair and the passing gates happened
+     in a later session. The blocker version is preserved by Git history, the
+     run ledger, and `TRG-20-005`.
+  6. Human-mode rebuild failure prose is unchanged and out of scope. `contracts.md`
+     §2.3 makes no Human message substring load-bearing, and §2.5 governs JSON
+     detail objects only.
+- **Consequences:** Task 4 costs one extra Developer session and no scope,
+  contract, VAL, dependency, product behavior, or gate command changes. All
+  seven `BLOCKED` rows in the blocker report (VAL-001, 002, 006, 007, 008, 017,
+  and the VAL-044 rebuild row) must be re-recorded from the fresh session's own
+  full-gate evidence; the earlier focused-run tokens do not carry over.
+- **Refs:** `TRG-20-005`; `ESC-20-005`; `tasks/task-4.md`; `tasks/task-4-done.md`
+  (blocker version); `contracts.md` §2.4-§2.5; `AGENTS.md` (Commands; Hard
+  Stops); DEC-131; DEC-132.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

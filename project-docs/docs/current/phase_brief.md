@@ -14,10 +14,11 @@ revision, and the retained Issue contract. Delete universal formatters,
 ## Status
 
 **In flight on branch `phase-20`. Tasks 1-3l, recovery Review 1c, and the
-independent infrastructure review are complete.** Infrastructure Review 1's
-only Blocking finding was corrected and independently returned NON-BLOCK at
-`cd9e6bc`. Task 4 is next. The completed execution record is anchored in
-`../phases/phase-20/infra-improvement-pack.md`.
+independent infrastructure review are complete** (infra Blocking finding
+corrected, NON-BLOCK at `cd9e6bc`; record anchored in
+`../phases/phase-20/infra-improvement-pack.md`). **Task 4 is in recovery:** its
+first session stopped on the required lint gate with no commit; DEC-135 resolves
+ESC-20-005 and re-runs Task 4 unchanged from the inherited working tree.
 
 ## Operating Mode And Slice Contract
 
@@ -41,7 +42,7 @@ and legacy expiry ledger.
 | 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
 | 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
 | 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
-| 4 | Rebuild, authority, and lock failures | Pending; next | 1-3, 3a-3l |
+| 4 | Rebuild, authority, and lock failures | Re-run in progress (DEC-135) | 1-3, 3a-3l |
 | 5 | Remove orphaned Issue fields | Pending | 4 |
 | 6 | Replayable Issue aggregate revision | Pending | 5 |
 | 7 | Issue hierarchy invariant | Pending | 5-6 |
@@ -85,7 +86,7 @@ Full contract: `../phases/phase-20/qa/validation-contract.md`.
 | Validation contract | `../phases/phase-20/qa/validation-contract.md` | Human-approved; VAL-002/VAL-043 windows extended to tasks 3a-3c (DEC-130/131) |
 | QA plan | `../phases/phase-20/qa/qa-plan.md` | Accepted; unchanged by DEC-130/131 |
 | Mid-phase reviews | `../phases/phase-20/qa/review-M.md` | After Tasks 3, 6, 9, 12, 15, 17; review 6 includes independent contract/spec consistency |
-| Recovery reviews | `../phases/phase-20/qa/review-1b.md`, `review-1c.md`, `infra-review-1.md` | 1b BLOCK corrected; 1c NON-BLOCK; infrastructure review BLOCK corrected and re-reviewed NON-BLOCK |
+| Recovery reviews | `../phases/phase-20/qa/review-1b.md`, `review-1c.md`, `infra-review-1.md` | 1b BLOCK corrected; 1c NON-BLOCK; infra BLOCK corrected, re-reviewed NON-BLOCK |
 | Final review / Human checklist | `../phases/phase-20/qa/` | Pending; must re-run the full gate with real tokens |
 
 ## Active Constraints
@@ -128,12 +129,10 @@ reject root flags. Evidence: VAL-001..005, VAL-008, VAL-029, VAL-044, VAL-045.
 
 - **Realized in Review 1:** wide tasks produce representative rather than
   exhaustive evidence. Where a VAL names a domain or matrix, every
-  just-inside/just-outside pair and every registry member must be asserted;
-  sampling is a Blocking finding (DEC-130).
-- **Realized in Review 1b:** gate records were not captured from real output.
-  Record each gate with a verbatim token from that command; `exit 0 (no output)`
-  is never valid for `go test ./...`, and an uncaptured gate is `UNVERIFIED`,
-  never `PASS` (DEC-131).
+  just-inside/outside pair and registry member must be asserted (DEC-130).
+- **Realized in Review 1b:** record each gate with a verbatim token from that
+  command; `exit 0 (no output)` is never valid for `go test`, and an uncaptured
+  gate is `UNVERIFIED`, never `PASS` (DEC-131/132).
 - Schema/fixture churn is isolated in Tasks 5-6; formatter removal is high-churn
   across Tasks 14-16. Exact VAL-035 inventories include `fid issue ac verify`;
   family ellipses are prohibited.
