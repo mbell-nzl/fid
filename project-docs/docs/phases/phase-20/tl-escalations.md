@@ -8,6 +8,32 @@
 
 ### Resolved
 
+- **ESC-20-006 - Task 4 recovery report failed report-lint on pending commit
+  metadata and three truncated go-test tokens (raised 2026-08-11 via
+  `TRG-20-006`; resolved 2026-08-11 by DEC-136).** **Two causes, one of them
+  mine.** (1) The `Pending commit` fields are a **Tech Lead defect**: DEC-135
+  decision 5 ordered "exactly one commit containing the code, tests, and
+  `task-4-done.md`", which contradicts the canonical Developer prompt's Report
+  And Commit Sequence steps 3-6 and the protocol documented inside
+  `report-lint.sh` — a report cannot carry the hash of the commit that
+  introduces its own final content, so a `docs(task): ...` commit must follow
+  the task commit. The task spec binds the Developer, so it complied and
+  stopped at step 2 with the placeholders intact; the Developer behaved
+  correctly. DEC-135 decision 5 is withdrawn, `task-4.md` is corrected, and
+  DEC-136 decision 2 adds the standing rule that a task spec never restates or
+  overrides process owned by `AGENTS.md` and the role prompts. (2) The tokens
+  `0.009s`, `coverage: 80.5% of statements`, and `4.625s` are **sustained**
+  failures: `AGENTS.md` requires the command's own last printed line, and these
+  truncations drop the `ok`/`FAIL`/`PASS` marker that makes a token checkable,
+  so the DEC-131 control fired correctly. Relaxing the heuristic or granting a
+  one-off exception was refused. Because a later session may not expand a
+  remembered fragment, the repair session re-runs the exact sequence itself
+  after verifying `HEAD` is `e56b3a0` with a clean tree, records its own lines,
+  finalizes the report against that hash and subject, and lands it in a
+  `docs(task): ...` commit. Task 4's commit stands unamended; no code, contract,
+  VAL, dependency, gate command, or tooling threshold changed. **CF-030** holds
+  the optional report-lint message improvement.
+
 - **ESC-20-005 - Task 4 required lint gate failed on an orphaned lock-holder
   formatter (raised 2026-08-11 via `TRG-20-005`; resolved 2026-08-11 by
   DEC-135).** **No product defect and no contract gap.** Task 4's typed

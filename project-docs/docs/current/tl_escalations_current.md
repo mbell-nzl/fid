@@ -15,6 +15,18 @@ None.
 
 ## Recent Archive Notes
 
+- **Phase 20 (in flight)** — **ESC-20-006 resolved by DEC-136 (2026-08-11).**
+  Two causes. The `Pending commit` fields were a **Tech Lead defect**: DEC-135
+  ordered a single commit, contradicting the Developer prompt's Report And
+  Commit Sequence and `report-lint.sh`'s two-step protocol, so the compliant
+  Developer left the placeholders. DEC-135 decision 5 is withdrawn, `task-4.md`
+  is corrected, and task specs may no longer restate process owned by
+  `AGENTS.md` and the role prompts. The truncated tokens `0.009s`,
+  `coverage: 80.5% of statements`, and `4.625s` are **sustained**: they drop the
+  `ok`/`FAIL`/`PASS` marker, so the DEC-131 control fired correctly and is not
+  being relaxed. The repair session re-runs the exact sequence itself, since a
+  remembered fragment may not be expanded, then finalizes the report against
+  commit `e56b3a0` in a `docs(task): ...` commit. **CF-030** opened.
 - **Phase 20 (in flight)** — **ESC-20-005 resolved by DEC-135 (2026-08-11).**
   Task 4's required lint gate correctly failed on dead code: the typed
   `LockUnavailableError` carries only `LockPath` per contracts §2.4/§2.5, so

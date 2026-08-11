@@ -721,6 +721,71 @@
 - **Refs:** `TRG-20-005`; `ESC-20-005`; `tasks/task-4.md`; `tasks/task-4-done.md`
   (blocker version); `contracts.md` §2.4-§2.5; `AGENTS.md` (Commands; Hard
   Stops); DEC-131; DEC-132.
+- **Superseded in part:** decision 5's single-commit instruction is wrong and is
+  replaced by DEC-136. Decisions 1-4 and 6 stand.
+
+### DEC-136: ESC-20-006 corrects a Tech Lead commit-protocol error and re-captures Task 4's gate tokens
+
+- **Date:** 2026-08-11
+- **Context:** The Task 4 recovery session produced verified commit
+  `e56b3a0ce0433f1044f70b7969c14e19234dfdf8`
+  (`feat(rebuild): map typed authority and lock failures`), but
+  `report-lint.sh` returned four failures against the committed report:
+  `## Commit hash` and `## Commit subject` still read `Pending commit`, and
+  three `go test` records carry the fragments `0.009s`,
+  `coverage: 80.5% of statements`, and `4.625s`. TL-Lite escalated as
+  `TRG-20-006` / `ESC-20-006`.
+- **Decision:**
+  1. **The pending-commit failure is a Tech Lead defect, not a Developer
+     defect.** DEC-135 decision 5 ordered "exactly one commit containing the
+     code, tests, and `task-4-done.md`". That contradicts the canonical
+     Developer prompt's Report And Commit Sequence steps 3-6 and the protocol
+     documented in `report-lint.sh` itself: a report cannot carry the hash of
+     the commit that introduces its own final content, so the task commit is
+     followed by a `docs(task): ...` commit that finalizes the hash-bearing
+     report. The task spec binds the Developer, so it complied and stopped at
+     step 2 with the placeholders intact. DEC-135 decision 5 is withdrawn and
+     `tasks/task-4.md` is corrected.
+  2. **Standing rule:** a task spec never restates, paraphrases, or overrides
+     the commit, report, or gate-evidence sequence owned by `AGENTS.md` and the
+     role prompts. Task specs carry scope, acceptance criteria, VAL coverage,
+     and the exact command list only. A future conflict between a task spec and
+     a role prompt on process is a Tech Lead defect to be fixed in the spec.
+  3. **Sustain the three token failures.** `AGENTS.md` requires one short
+     verbatim token from the command's own output — its last printed line.
+     `0.009s`, `coverage: 80.5% of statements`, and `4.625s` are truncations
+     that drop the `ok`/`FAIL`/`PASS` marker, so `report-lint.sh` cannot
+     distinguish them from a token copied from elsewhere. The control is
+     working as DEC-131 intended.
+  4. **Do not weaken the control.** Relaxing the token heuristic to accept a
+     bare duration or coverage fragment, or granting Task 4 an exception, is
+     refused; it would reopen precisely the gap DEC-131 closed.
+  5. **Re-run, do not reconstruct.** A later session may not expand a fragment
+     into the full line it remembers; `AGENTS.md` classifies attestation from
+     memory and transcription as `UNVERIFIED`. The repair session therefore
+     re-runs the exact required command sequence itself and records its own
+     captured lines. This is now cheap: DEC-133 cut the combined gate to a
+     75-second median. Real re-run values will differ from the earlier
+     fragments; the new values are authoritative and must never be reconciled
+     to the old ones.
+  6. **The evidence must apply to the reviewed commit.** Before running gates,
+     the repair session verifies `git rev-parse HEAD` is `e56b3a0` and that
+     `git status --porcelain` reports no source modification. If the tree is not
+     identical to the reviewed commit, it stops with a blocker instead of
+     recording gate results against a different state.
+  7. **Task 4's commit stands.** No code change, revert, amend, or force-push.
+     The repair is report-only: rewrite `task-4-done.md`, name `e56b3a0` and its
+     exact subject, then land it in `docs(task): finalize completion report for
+     phase-20 task-4` and rerun `report-lint.sh` against the committed file.
+- **Consequences:** Task 4 costs a third session, all of it evidence capture.
+  No product code, contract, VAL, dependency, gate command, or tooling
+  threshold changes. The corrected `task-4.md` and the standing rule in
+  decision 2 stop the same conflict from recurring in Tasks 5-18. **CF-030**
+  records the optional tooling follow-up.
+- **Refs:** `TRG-20-006`; `ESC-20-006`; DEC-135 (decision 5 withdrawn); DEC-131;
+  DEC-133; `project-docs/agents/developer.md` (Report And Commit Sequence);
+  `project-docs/tools/report-lint.sh` (header, checks 4-6); `AGENTS.md`
+  (Commands: evidence tokens); commit `e56b3a0`.
 
 ## Spec Sync Verdict
 

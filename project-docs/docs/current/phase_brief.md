@@ -16,9 +16,10 @@ revision, and the retained Issue contract. Delete universal formatters,
 **In flight on branch `phase-20`. Tasks 1-3l, recovery Review 1c, and the
 independent infrastructure review are complete** (infra Blocking finding
 corrected, NON-BLOCK at `cd9e6bc`; record anchored in
-`../phases/phase-20/infra-improvement-pack.md`). **Task 4 is in recovery:** its
-first session stopped on the required lint gate with no commit; DEC-135 resolves
-ESC-20-005 and re-runs Task 4 unchanged from the inherited working tree.
+`../phases/phase-20/infra-improvement-pack.md`). **Task 4's implementation is
+committed at `e56b3a0`**; DEC-135 resolved ESC-20-005 (dead lock-holder
+formatter) and DEC-136 resolves ESC-20-006 by re-capturing the report's gate
+tokens and finalizing it against that commit. No code change remains in Task 4.
 
 ## Operating Mode And Slice Contract
 
@@ -42,7 +43,7 @@ and legacy expiry ledger.
 | 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
 | 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
 | 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
-| 4 | Rebuild, authority, and lock failures | Re-run in progress (DEC-135) | 1-3, 3a-3l |
+| 4 | Rebuild, authority, and lock failures | Code committed `e56b3a0`; report repair in progress (DEC-136) | 1-3, 3a-3l |
 | 5 | Remove orphaned Issue fields | Pending | 4 |
 | 6 | Replayable Issue aggregate revision | Pending | 5 |
 | 7 | Issue hierarchy invariant | Pending | 5-6 |

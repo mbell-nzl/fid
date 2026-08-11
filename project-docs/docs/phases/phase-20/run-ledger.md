@@ -517,3 +517,22 @@ Human-approved and QA-plan acceptance is next._
 - Cause: Task 4 blocker report and TRG-20-005; required `golangci-lint run ./...` failed, so Task 4 has no verified commit and cannot close.
 - Triage: TRG-20-005 (BLOCK, escalated as ESC-20-005)
 - Next human action: Resolve ESC-20-005 through a scoped Task 4 recovery, complete the exact required gate sequence with captured terminal evidence, and then resume the Phase Runner.
+
+### 2026-08-11 16:29 RUN-START
+
+- Branch: `phase-20`
+- ESC baseline (Open at run start): none (ESC-20-005 resolved by DEC-135)
+- Warm-up/autonomous-resume state: autonomous per DEC-002
+- Starting task: `task-4`
+
+### 2026-08-11 16:38 TRIAGE TRG-20-006
+
+- Trigger: Task 4 recovery report fails `project-docs/tools/report-lint.sh` with three invalid go-test evidence tokens and pending commit metadata, despite the recovery commit verifying successfully.
+- Verdict: BLOCK (escalated as ESC-20-006)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` TRG-20-006 entry confirmed
+
+### 2026-08-11 16:38 STOP
+
+- Cause: Task 4 report-lint failure and TRG-20-006; the committed completion report cannot close the task under the evidence contract.
+- Triage: TRG-20-006 (BLOCK, escalated as ESC-20-006)
+- Next human action: Resolve ESC-20-006 with a report-repair/recovery sequence, rerun report-lint against the corrected committed report, then resume the Phase Runner before Task 5.

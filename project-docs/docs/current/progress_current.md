@@ -95,6 +95,9 @@ wrap-up:
   for another reason.
 - **CF-029** — extend the evidence-token control to QA review artifacts, so a
   review cannot record a token its command could not have produced.
+- **CF-030** — make `report-lint.sh`'s rejected-token message state the expected
+  shape (a real `ok`/`FAIL`/`PASS` line with package and duration), so a
+  truncated-but-honest token is corrected without an escalation (DEC-136).
 
 All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
 are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is

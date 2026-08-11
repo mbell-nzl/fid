@@ -15,6 +15,7 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-006 | 2026-08-11 | Task 4 recovery completion report fails report-lint after verified recovery commit: three invalid go-test evidence tokens and pending commit fields | `tasks/task-4-done.md`; report-lint output | BLOCK | ESC-20-006 | Genuine unresolved report-lint hard stop in the committed report; attached verification proves the faulty commit, not a correction. |
 | TRG-20-005 | 2026-08-11 | Task 4 Developer blocker report: required golangci-lint gate failed on unused `describeLockHolder`; no commit and downstream gates not run | `tasks/task-4-done.md` | BLOCK | ESC-20-005 | Genuine unresolved required-gate failure. No verified commit or accepted decision supplies a RESUME ground. |
 | TRG-20-004 | 2026-08-10 | Infrastructure Review 1 found a retained integration-tagged in-process test outside both accepted gates | `qa/infra-review-1.md` | BLOCK | ESC-20-004 | Task 3f's direct-parent inventory omitted `internal/issues/transition_rules_test.go`; repository-wide classification and ordinary ownership are required before Task 4. |
 | TRG-20-003 | 2026-08-09 | Task 3d blocker report: required full-suite coverage gate has no captured terminal output and report-lint fails on three go-test prose false matches | `tasks/task-3d-done.md` | BLOCK | ESC-20-003 | The required gate is UNVERIFIED, not PASS; the new report-lint control also has an unresolved three-failure false-match defect. |
@@ -22,6 +23,34 @@
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-006 - Task 4 recovery report has invalid committed lint evidence
+
+- **Trigger:** Task 4 recovery completion report fails
+  `project-docs/tools/report-lint.sh` after recovery commit
+  `e56b3a0ce0433f1044f70b7969c14e19234dfdf8`: the focused test token
+  `0.009s`, ordinary race/coverage token `coverage: 80.5% of statements`, and
+  dedicated integration token `4.625s` do not look like `go test` output; its
+  Commit hash and Commit subject sections still say `Pending commit`.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-4-done.md`; Phase
+  Runner report-lint output and attached commit-verification evidence.
+- **Verdict:** BLOCK
+- **Reasoning:** This is a genuine unresolved report-lint hard stop. The
+  attached evidence verifies that commit
+  `e56b3a0ce0433f1044f70b7969c14e19234dfdf8` exists and has subject
+  `feat(rebuild): map typed authority and lock failures`, but the prompt also
+  establishes that its committed completion report retains all four defects.
+  It therefore does not establish the only applicable RESUME ground—an
+  already-resolved failure in a verified commit. No accepted decision permits
+  invalid evidence tokens or pending commit metadata.
+- **Local decisions made:** none
+- **References:** `tasks/task-4-done.md` (Tests run; Exact quality-gate
+  results; Commit hash; Commit subject); `AGENTS.md` (Commands: evidence-token
+  rules); `project-docs/specs/09_AI_WORKFLOW.md` §2.3 (report-lint triage and
+  verified-commit rule), §2.4 (report-lint hard stop).
+- **If BLOCK:** ESC-20-006 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve the committed Task 4 report
+  correction and recovery path before the Phase Runner resumes.
 
 ## TRG-20-005 - Task 4 blocked by unused lock-holder helper
 

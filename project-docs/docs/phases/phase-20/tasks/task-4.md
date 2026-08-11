@@ -1,42 +1,53 @@
 # Phase 20 - Task 4: Rebuild, authority, and lock failures
 
-## Recovery Directive (DEC-135, supersedes nothing below)
+## Recovery Directive (DEC-136; replaces the withdrawn DEC-135 directive)
 
-The first Task 4 session implemented this task but stopped on the required lint
-gate with `internal/journal/lock.go:185:6: func describeLockHolder is unused
-(unused)`, produced no commit, and left the work uncommitted in the tree. Scope,
-acceptance criteria, VAL coverage, and the command list below are unchanged.
-This session:
+Task 4's implementation is **done and committed** as
+`e56b3a0ce0433f1044f70b7969c14e19234dfdf8`
+(`feat(rebuild): map typed authority and lock failures`). Scope, acceptance
+criteria, VAL coverage, and the command list below are unchanged, and **no code
+change is in scope**. This session repairs the completion report's evidence,
+which failed `report-lint.sh` on four checks.
 
-1. Inherits the existing uncommitted working tree. Do not `stash`, `checkout`,
-   `reset`, or otherwise discard it, and do not re-implement from scratch.
-2. Deletes `describeLockHolder` from `internal/journal/lock.go`. It is dead code:
-   `contracts.md` §2.4/§2.5 close `lock-unavailable` to the exact detail object
-   `{lock_path: string}` and forbid environment values in details, so holder
-   PID/hostname/command/actor has no contracted destination. Do not suppress the
-   finding with `//nolint`, a blank assignment, or any other fake reference, and
-   do not add holder identity to the envelope. Keep the `owner.json` metadata
-   write and `readLockMetadata`. If the deletion cascades to further unexported
-   symbols inside `lock.go`, delete those as well; if it reaches exported API or
-   another package, stop and file a blocker report.
-3. Before running gates, re-reads the inherited tests and confirms each
-   acceptance criterion below is actually asserted. Add the missing test first,
-   red then green, if any criterion is unproven.
-4. Runs `## Exact Commands To Run` in the listed order, complete, from a clean
-   start. Record each with one verbatim token from that command's own output
-   under the DEC-131/DEC-132 rules: `exit 0 (no output)` is never valid for a
-   `go test` command, and a command with no captured `exit_code` or explicit
-   termination signal is `UNVERIFIED`/`BLOCKED`, never `PASS`. The race and
-   dedicated integration gates can run silently for minutes; wait for them.
-5. Produces exactly one commit containing the code, tests, and `task-4-done.md`.
-   Do not commit `run-ledger.md`, `triage-log.md`, or
-   `tl_escalations_current.md`; those belong to the Phase Runner and Tech Lead.
-6. Rewrites `task-4-done.md` in place as the full completion report, replacing
-   the blocker report. Its `## Deviations from spec` section must quote the
-   first session's failing token verbatim, name the fix, and state that the
-   repair and passing gates happened in a later session. Every VAL row below
-   must be re-recorded from this session's own evidence; the earlier
-   focused-run tokens do not carry over.
+Follow your own role prompt's Report And Commit Sequence exactly. This spec does
+not restate or override it (DEC-136 decision 2). This session:
+
+1. Verifies the evidence will apply to the reviewed tree: `git rev-parse HEAD`
+   is `e56b3a0`, and `git status --porcelain` shows no source modification. If
+   the tree differs, stop with a blocker instead of recording gate results
+   against a different state.
+2. Re-runs `## Exact Commands To Run` below, in order and complete, plus the
+   focused test command recorded under `## Tests run`. Do **not** reconstruct,
+   expand, or reuse the previously recorded fragments `0.009s`,
+   `coverage: 80.5% of statements`, or `4.625s`; recalling evidence from an
+   earlier session is `UNVERIFIED`, never `PASS`. Real values from this run will
+   differ from those fragments — record what your terminal actually printed and
+   never reconcile it to the old numbers.
+3. Records each result with one short verbatim token copied from that command's
+   own last printed line. For any `go test` command the line must carry its real
+   marker (`ok`, `FAIL`, `PASS`, `---`, or `no test files`) with its package
+   path and duration, not a bare duration or a bare `coverage:` fragment; for
+   `go tool cover -func=coverage.out` copy the whole final `total:` line.
+   `exit 0 (no output)` remains valid for `gofmt` and `go build`, never for
+   `go test`. The race and dedicated integration gates print nothing for
+   minutes before finishing; wait for them and capture `exit_code` or an
+   explicit termination signal.
+4. Rewrites `task-4-done.md` with those tokens, re-records every VAL row from
+   this session's own evidence, and names `e56b3a0ce0433f1044f70b7969c14e19234dfdf8`
+   under `## Commit hash` with its exact subject under `## Commit subject`.
+5. Keeps the existing deviation note about the first session's lint stop and
+   adds one entry that quotes the three superseded fragments verbatim, states
+   they were replaced by a fresh capture at the same tree state, and cites
+   DEC-136.
+6. Commits the finalized report as
+   `docs(task): finalize completion report for phase-20 task-4`, then runs
+   `project-docs/tools/report-lint.sh` against the committed file and iterates
+   with a further `docs(task): ...` commit if it still fails. Do not amend,
+   revert, or force-push `e56b3a0`, and do not commit `run-ledger.md`,
+   `triage-log.md`, or `tl_escalations_current.md`.
+
+If a re-run gate now fails, that is a genuine finding: stop and file a blocker
+report rather than repairing code under a report-repair task.
 
 ## Objective
 
