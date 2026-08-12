@@ -72,8 +72,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `86d927da88f0fc070709a02ce39a3d68e560e2a6`
 
 ## Commit subject
 
-- Pending commit
+- `feat(issue): migrate canonical mutation envelopes`
