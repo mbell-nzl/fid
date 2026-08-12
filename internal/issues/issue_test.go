@@ -377,8 +377,6 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		Sequence:      intPointer(1),
 		SpecMDPath:    stringPointer("project-docs/docs/phases/phase-4/tasks/task-2.md"),
 		Labels:        []string{"phase-4", "core"},
-		OwnerRole:     stringPointer("qa_lead"),
-		OwnerActor:    stringPointer("human:mark"),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -410,11 +408,8 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
 		t.Fatalf("Get(task) spec_md_path = %#v", task.SpecMDPath)
 	}
-	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
-		t.Fatalf("Get(task) owner_role = %#v, want qa_lead", task.OwnerRole)
-	}
-	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
-		t.Fatalf("Get(task) owner_actor = %#v, want human:mark", task.OwnerActor)
+	if task.OwnerRole == nil || *task.OwnerRole != "developer" || task.OwnerActor != nil {
+		t.Fatalf("Get(task) internal owner defaults = (%#v, %#v), want developer and nil", task.OwnerRole, task.OwnerActor)
 	}
 	if want := []string{"core", "phase-4"}; !equalStrings(task.Labels, want) {
 		t.Fatalf("Get(task) labels = %#v, want %#v", task.Labels, want)
@@ -723,7 +718,6 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		Sequence:      intPointer(1),
 		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
 		Labels:        []string{"ready", "phase-4"},
-		OwnerActor:    stringPointer("agent"),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)

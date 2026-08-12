@@ -173,6 +173,10 @@ func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]workflow.ChildTaskSt
 	return children, nil
 }
 
-func issueTransitionArgv(issueID, toState, actorRole string) []string {
-	return []string{"fid", "issue", "transition", issueID, "--to", toState, "--by", actorRole}
+func issueTransitionArgv(issueID, toState, actorRole string, expectedRevision *int) []string {
+	argv := []string{"fid", "issue", "transition", issueID, "--to", toState}
+	if expectedRevision != nil {
+		argv = append(argv, "--expected-revision", fmt.Sprintf("%d", *expectedRevision))
+	}
+	return append(argv, "--by", actorRole)
 }

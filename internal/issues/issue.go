@@ -23,15 +23,21 @@ type CreateOptions struct {
 	Sequence      *int
 	SpecMDPath    *string
 	Labels        []string
-	OwnerRole     *string
-	OwnerActor    *string
-	Scheduling    string
+	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
+	// in-process callers. Canonical Issue commands never populate them.
+	OwnerRole  *string
+	OwnerActor *string
+	Scheduling string
 }
 
 type CreateResult struct {
-	ID    string
-	Kind  string
-	Title string
+	ID         string
+	Kind       string
+	Title      string
+	Status     string
+	Revision   int
+	EventID    string
+	OccurredAt string
 }
 
 type GetOptions struct {
@@ -67,6 +73,21 @@ type HierarchyInvalidError struct {
 	ParentID   *string
 	ParentKind *string
 	Rule       string
+}
+
+// StateConflictError records an optimistic-concurrency mismatch observed while
+// the Issue mutation lock is held.
+type StateConflictError struct {
+	IssueID          string
+	ExpectedRevision int
+	ActualRevision   int
+}
+
+func (err *StateConflictError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("issue %q revision is %d, not expected revision %d", err.IssueID, err.ActualRevision, err.ExpectedRevision)
 }
 
 func (err *HierarchyInvalidError) Error() string {

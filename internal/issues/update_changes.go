@@ -26,19 +26,6 @@ func buildIssueUpdateChanges(current issueUpdateState, request normalizedUpdateR
 		prior["spec_md_path"] = stringPointerValue(current.SpecMDPath)
 		changes = append(changes, FieldChange{Field: "spec_md_path", From: stringPointerValue(current.SpecMDPath), To: *request.specMDPath})
 	}
-	if request.ownerRole != nil && !sameOptionalString(current.OwnerRole, request.ownerRole) {
-		values["owner_role"] = *request.ownerRole
-		preconditions["owner_role"] = stringPointerValue(current.OwnerRole)
-		prior["owner_role"] = stringPointerValue(current.OwnerRole)
-		changes = append(changes, FieldChange{Field: "owner_role", From: stringPointerValue(current.OwnerRole), To: *request.ownerRole})
-	}
-	if request.ownerActor != nil && !sameOptionalString(current.OwnerActor, request.ownerActor) {
-		values["owner_actor"] = *request.ownerActor
-		preconditions["owner_actor"] = stringPointerValue(current.OwnerActor)
-		prior["owner_actor"] = stringPointerValue(current.OwnerActor)
-		changes = append(changes, FieldChange{Field: "owner_actor", From: stringPointerValue(current.OwnerActor), To: *request.ownerActor})
-	}
-
 	return values, preconditions, prior, changes
 }
 

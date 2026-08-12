@@ -127,8 +127,11 @@ func closureCreateIssue(t *testing.T, binary, workspace, kind, title string, sch
 		actor = "tl"
 	}
 	args = append(args, "--by", actor)
-	_, stderr := closureRunFID(t, binary, workspace, args...)
-	return closureIDAfterWord(t, stderr, "issue")
+	stdout, stderr := closureRunFID(t, binary, workspace, args...)
+	if stderr != "" {
+		t.Fatalf("issue create stderr = %q, want empty", stderr)
+	}
+	return closureIDAfterWord(t, stdout, "issue")
 }
 
 func closureAddAcceptanceCriterion(t *testing.T, binary, workspace, issueID string) string {

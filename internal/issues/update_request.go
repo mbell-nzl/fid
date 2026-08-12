@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 type normalizedUpdateRequest struct {
@@ -13,8 +11,6 @@ type normalizedUpdateRequest struct {
 	priority   *int
 	labels     *[]string
 	specMDPath *string
-	ownerRole  *string
-	ownerActor *string
 }
 
 func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, error) {
@@ -47,28 +43,10 @@ func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, err
 		}
 		request.specMDPath = &specMDPath
 	}
-	if options.OwnerRole != nil {
-		ownerRole := strings.TrimSpace(*options.OwnerRole)
-		if ownerRole == "" {
-			return normalizedUpdateRequest{}, fmt.Errorf("update issue: owner_role must not be blank")
-		}
-		if err := policy.RequireKnownRole(options.WorkspaceRoot, ownerRole); err != nil {
-			return normalizedUpdateRequest{}, err
-		}
-		request.ownerRole = &ownerRole
-	}
-	if options.OwnerActor != nil {
-		ownerActor := strings.TrimSpace(*options.OwnerActor)
-		if ownerActor == "" {
-			return normalizedUpdateRequest{}, fmt.Errorf("update issue: owner_actor must not be blank")
-		}
-		request.ownerActor = &ownerActor
-	}
-
 	return request, nil
 }
 
-func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest) []string {
+func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest, expectedRevision *int) []string {
 	argv := []string{"fid", "issue", "update", issueID}
 	if request.title != nil {
 		argv = append(argv, "--title", *request.title)
@@ -84,14 +62,11 @@ func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest)
 			argv = append(argv, "--labels", label)
 		}
 	}
-	if request.ownerRole != nil {
-		argv = append(argv, "--owner-role", *request.ownerRole)
-	}
-	if request.ownerActor != nil {
-		argv = append(argv, "--owner-actor", *request.ownerActor)
-	}
 	if request.specMDPath != nil {
 		argv = append(argv, "--spec-md", *request.specMDPath)
+	}
+	if expectedRevision != nil {
+		argv = append(argv, "--expected-revision", fmt.Sprintf("%d", *expectedRevision))
 	}
 	argv = append(argv, "--by", actorRole)
 	return argv

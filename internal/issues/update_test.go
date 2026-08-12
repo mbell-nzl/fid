@@ -170,17 +170,6 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			},
 			wantErr: `update issue: label "missing" does not exist`,
 		},
-		{
-			name: "unknown owner role",
-			mutate: func(createdID string) UpdateOptions {
-				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					OwnerRole: stringPointer("intern"),
-				}
-			},
-			wantErr: `role "intern" not in project profile`,
-		},
 	}
 
 	for _, tt := range tests {
@@ -257,7 +246,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		Priority:      intPointer(2),
 		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
 		Labels:        []string{"core", "legacy"},
-		OwnerActor:    stringPointer("agent:before"),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -284,8 +272,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		Priority:      intPointer(1),
 		Labels:        &labels,
 		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		OwnerRole:     stringPointer("qa_lead"),
-		OwnerActor:    stringPointer("human:mark"),
 	})
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -312,11 +298,8 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if after.SpecMDPath == nil || *after.SpecMDPath != "project-docs/specs/06_DESIGN_PLAN_CLI.md" {
 		t.Fatalf("Get(after update) spec_md_path = %#v", after.SpecMDPath)
 	}
-	if after.OwnerRole == nil || *after.OwnerRole != "qa_lead" {
-		t.Fatalf("Get(after update) owner_role = %#v, want qa_lead", after.OwnerRole)
-	}
-	if after.OwnerActor == nil || *after.OwnerActor != "human:mark" {
-		t.Fatalf("Get(after update) owner_actor = %#v, want human:mark", after.OwnerActor)
+	if !equalStringPointers(after.OwnerRole, before.OwnerRole) || !equalStringPointers(after.OwnerActor, before.OwnerActor) {
+		t.Fatalf("Get(after update) owner fields = (%#v, %#v), want unchanged (%#v, %#v)", after.OwnerRole, after.OwnerActor, before.OwnerRole, before.OwnerActor)
 	}
 	if want := []string{"api", "core"}; !equalStrings(after.Labels, want) {
 		t.Fatalf("Get(after update) labels = %#v, want %#v", after.Labels, want)
@@ -369,12 +352,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if updateEffect.Preconditions["priority"] != float64(2) {
 		t.Fatalf("priority precondition = %#v, want 2", updateEffect.Preconditions["priority"])
 	}
-	if updateEffect.Preconditions["owner_role"] != "developer" {
-		t.Fatalf("owner_role precondition = %#v, want developer", updateEffect.Preconditions["owner_role"])
-	}
-	if updateEffect.Preconditions["owner_actor"] != "agent:before" {
-		t.Fatalf("owner_actor precondition = %#v, want agent:before", updateEffect.Preconditions["owner_actor"])
-	}
 	if updateEffect.Preconditions["updated_at"] != *before.UpdatedAt {
 		t.Fatalf("updated_at precondition = %#v, want %#v", updateEffect.Preconditions["updated_at"], before.UpdatedAt)
 	}
@@ -418,7 +395,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if eventName != "issue_updated" {
 		t.Fatalf("activity_log event = %q, want issue_updated", eventName)
 	}
-	for _, want := range []string{`"field":"owner_role"`, `"from":"developer"`, `"to":"qa_lead"`, `"field":"labels"`} {
+	for _, want := range []string{`"field":"labels"`, `"field":"priority"`, `"field":"spec_md_path"`, `"field":"title"`} {
 		if !strings.Contains(detailsRaw, want) {
 			t.Fatalf("activity_log details = %q, want substring %q", detailsRaw, want)
 		}

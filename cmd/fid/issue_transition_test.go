@@ -12,6 +12,55 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+func TestIssueTransitionJSONRejectsUnsatisfiedClaimPrecondition(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+
+	create := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Claim precondition", "--by", "developer")
+	if create.err != nil {
+		t.Fatalf("issue create error = %v, stderr = %q", create.err, create.stderr)
+	}
+	var created struct {
+		Result struct {
+			Issue struct {
+				ID string `json:"id"`
+			} `json:"issue"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(create.stdout), &created); err != nil {
+		t.Fatalf("Unmarshal(create stdout) error = %v", err)
+	}
+
+	transition := executeCommandForTest(workspace, "--json", "issue", "transition", created.Result.Issue.ID, "--to", "in_progress", "--by", "developer")
+	if transition.err == nil {
+		t.Fatal("issue transition error = nil, want precondition rejection")
+	}
+	if transition.stdout != "" {
+		t.Fatalf("transition stdout = %q, want empty", transition.stdout)
+	}
+	var failure struct {
+		Operation string `json:"operation"`
+		Error     struct {
+			Code    string `json:"code"`
+			Details struct {
+				FromState   string   `json:"from_state"`
+				ToState     string   `json:"to_state"`
+				Unsatisfied []string `json:"unsatisfied"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(transition.stderr), &failure); err != nil {
+		t.Fatalf("Unmarshal(transition stderr) error = %v; stderr = %q", err, transition.stderr)
+	}
+	if failure.Operation != "issue.transition" || failure.Error.Code != "transition-not-permitted" {
+		t.Fatalf("failure = %+v, want issue.transition transition-not-permitted", failure)
+	}
+	if failure.Error.Details.FromState != "todo" || failure.Error.Details.ToState != "in_progress" || strings.Join(failure.Error.Details.Unsatisfied, ",") != "live_claim_held" {
+		t.Fatalf("transition details = %+v, want todo/in_progress/live_claim_held", failure.Error.Details)
+	}
+}
+
 func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()

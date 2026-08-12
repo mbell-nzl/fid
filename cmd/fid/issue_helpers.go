@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/claims"
 	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/policy"
@@ -45,6 +46,11 @@ func renderIssueError(writer io.Writer, err error) error {
 			return err
 		}
 		return writeIssueLine(writer, "  check `fid policy show` for permitted role/action combinations\n")
+	}
+
+	var claimNotHeldErr *claims.ClaimNotHeldError
+	if errors.As(err, &claimNotHeldErr) {
+		return writeIssueLine(writer, "error: %s\n", claimNotHeldErr.Error())
 	}
 
 	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {

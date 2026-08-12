@@ -36,13 +36,11 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 	parentID := trimmedOptionalString(options.ParentID)
 	specMDPath := trimmedOptionalString(options.SpecMDPath)
-	ownerRole := trimmedOptionalString(options.OwnerRole)
-	ownerActor := trimmedOptionalString(options.OwnerActor)
 	labels, err := normalizedLabels(options.Labels)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, ownerRole, strings.TrimSpace(options.Scheduling), options.WorkspaceRoot); err != nil {
+	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, strings.TrimSpace(options.Scheduling)); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -56,7 +54,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	var result CreateResult
-	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, labels, ownerRole, ownerActor, strings.TrimSpace(options.Scheduling))
+	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, labels, strings.TrimSpace(options.Scheduling))
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
@@ -92,9 +90,6 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 		defaultOwnerRole := defaultIssueOwnerRole(kind)
-		if ownerRole != nil {
-			defaultOwnerRole = *ownerRole
-		}
 		timestamp := time.Now().UTC().Format(time.RFC3339)
 		issueValues := map[string]any{
 			"kind":        kind,
@@ -117,9 +112,6 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 		if specMDPath != nil {
 			issueValues["spec_md_path"] = *specMDPath
-		}
-		if ownerActor != nil {
-			issueValues["owner_actor"] = *ownerActor
 		}
 
 		effects := []journal.Effect{
@@ -222,9 +214,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 
 		result = CreateResult{
-			ID:    issueID,
-			Kind:  kind,
-			Title: options.Title,
+			ID:         issueID,
+			Kind:       kind,
+			Title:      options.Title,
+			Status:     resolvedWorkflow.InitialState,
+			Revision:   1,
+			EventID:    appended.EventID,
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339),
 		}
 		return nil
 	})
@@ -270,7 +266,7 @@ func defaultIssueOwnerRole(kind string) string {
 	return "developer"
 }
 
-func validateCreateOptions(kind string, parentID *string, priority, sequence *int, ownerRole *string, scheduling, workspaceRoot string) error {
+func validateCreateOptions(kind string, parentID *string, priority, sequence *int, scheduling string) error {
 	switch kind {
 	case "epic":
 		if scheduling == "" {
@@ -291,11 +287,6 @@ func validateCreateOptions(kind string, parentID *string, priority, sequence *in
 	}
 	if sequence != nil && *sequence <= 0 {
 		return fmt.Errorf("create issue: sequence must be positive")
-	}
-	if ownerRole != nil {
-		if err := policy.RequireKnownRole(workspaceRoot, *ownerRole); err != nil {
-			return err
-		}
 	}
 	if scheduling != "" && scheduling != "sequential" && scheduling != "prioritised" {
 		return fmt.Errorf("create issue: scheduling must be sequential or prioritised")
@@ -366,7 +357,7 @@ func requireExistingLabels(conn *sql.DB, labels []string) error {
 	return nil
 }
 
-func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, ownerRole, ownerActor *string, scheduling string) []string {
+func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, scheduling string) []string {
 	argv := []string{"fid", "issue", "create", "--kind", kind, "--title", title}
 	switch kind {
 	case "task":
@@ -389,12 +380,6 @@ func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, 
 	}
 	for _, label := range labels {
 		argv = append(argv, "--label", label)
-	}
-	if ownerRole != nil {
-		argv = append(argv, "--owner-role", *ownerRole)
-	}
-	if ownerActor != nil {
-		argv = append(argv, "--owner-actor", *ownerActor)
 	}
 	if scheduling != "" {
 		argv = append(argv, "--scheduling", scheduling)

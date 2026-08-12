@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -23,13 +24,19 @@ type UpdateOptions struct {
 	Priority      *int
 	Labels        *[]string
 	SpecMDPath    *string
-	OwnerRole     *string
-	OwnerActor    *string
+	// OwnerRole and OwnerActor are retained only for source compatibility with
+	// V1 in-process callers. Canonical Issue updates deliberately ignore them.
+	OwnerRole        *string
+	OwnerActor       *string
+	ExpectedRevision *int
 }
 
 type UpdateResult struct {
-	ID      string
-	Changes []FieldChange
+	ID         string
+	Revision   int
+	Changes    []FieldChange
+	EventID    string
+	OccurredAt string
 }
 
 type FieldChange struct {
@@ -44,8 +51,6 @@ type issueUpdateState struct {
 	Priority   *int
 	Labels     []string
 	SpecMDPath *string
-	OwnerRole  *string
-	OwnerActor *string
 	UpdatedAt  string
 	Revision   int
 }
@@ -73,7 +78,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		return UpdateResult{}, err
 	}
 
-	commandArgv := issueUpdateArgv(options.ID, options.ActorRole, request)
+	commandArgv := issueUpdateArgv(options.ID, options.ActorRole, request, options.ExpectedRevision)
 	var result UpdateResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
@@ -90,6 +95,9 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		if err != nil {
 			return err
 		}
+		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
+			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+		}
 		if request.labels != nil {
 			if err := requireExistingLabels(conn, *request.labels); err != nil {
 				return fmt.Errorf("%s", strings.Replace(err.Error(), "create issue:", "update issue:", 1))
@@ -101,6 +109,9 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		if labelChanged {
 			changes = append(changes, labelChange)
 		}
+		sort.Slice(changes, func(left, right int) bool {
+			return changes[left].Field < changes[right].Field
+		})
 		if len(changes) == 0 {
 			return fmt.Errorf("update issue: at least one field must change")
 		}
@@ -204,8 +215,11 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		}
 
 		result = UpdateResult{
-			ID:      current.ID,
-			Changes: changes,
+			ID:         current.ID,
+			Revision:   current.Revision + 1,
+			Changes:    changes,
+			EventID:    appended.EventID,
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339),
 		}
 		return nil
 	})
@@ -218,24 +232,22 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {
 	row := conn.QueryRow(`
-		SELECT id, title, priority, spec_md_path, owner_role, owner_actor, updated_at, revision
+		SELECT id, title, priority, spec_md_path, updated_at, revision
 		FROM issues
 		WHERE id = ?
 	`, issueID)
 
 	var (
-		state                             issueUpdateState
-		priority                          sql.NullInt64
-		specMDPath, ownerRole, ownerActor sql.NullString
-		updatedAt                         sql.NullString
+		state      issueUpdateState
+		priority   sql.NullInt64
+		specMDPath sql.NullString
+		updatedAt  sql.NullString
 	)
 	if err := row.Scan(
 		&state.ID,
 		&state.Title,
 		&priority,
 		&specMDPath,
-		&ownerRole,
-		&ownerActor,
 		&updatedAt,
 		&state.Revision,
 	); err != nil {
@@ -246,8 +258,6 @@ func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error
 	}
 	state.Priority = nullIntPointer(priority)
 	state.SpecMDPath = nullStringPointer(specMDPath)
-	state.OwnerRole = nullStringPointer(ownerRole)
-	state.OwnerActor = nullStringPointer(ownerActor)
 	if !updatedAt.Valid || strings.TrimSpace(updatedAt.String) == "" {
 		return issueUpdateState{}, fmt.Errorf("query issue %q: updated_at is required", issueID)
 	}

@@ -132,8 +132,6 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
 		"--label", "phase-4",
 		"--label", "core",
-		"--owner-role", "qa_lead",
-		"--owner-actor", "human:mark",
 		"--by", "tl",
 	)
 	taskID := parseCreatedIssueID(t, taskStderr)
@@ -202,11 +200,8 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
 		t.Fatalf("task spec_md_path = %#v", task.SpecMDPath)
 	}
-	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
-		t.Fatalf("task owner_role = %#v, want qa_lead", task.OwnerRole)
-	}
-	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
-		t.Fatalf("task owner_actor = %#v, want human:mark", task.OwnerActor)
+	if task.OwnerRole == nil || *task.OwnerRole != "developer" || task.OwnerActor != nil {
+		t.Fatalf("task internal owner defaults = (%#v, %#v), want developer and nil", task.OwnerRole, task.OwnerActor)
 	}
 	if want := []string{"core", "phase-4"}; !reflect.DeepEqual(task.Labels, want) {
 		t.Fatalf("task labels = %#v, want %#v", task.Labels, want)
@@ -405,8 +400,6 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
 		"--label", "phase-4",
 		"--label", "core",
-		"--owner-role", "qa_lead",
-		"--owner-actor", "human:mark",
 		"--by", "tl",
 	)
 	taskID := parseCreatedIssueID(t, taskStderr)
@@ -915,6 +908,12 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 
 	if unwrap != "" {
 		return legacyMigratedReadOutput(t, workspace, args, stdout.String(), unwrap), stderr.String()
+	}
+	if len(args) >= 2 && args[0] == "issue" && (args[1] == "create" || args[1] == "update" || args[1] == "transition") {
+		// Pre-convergence callers shared this helper expecting mutation
+		// confirmations on stderr. Canonical mutations now write Human success to
+		// stdout; focused transport tests exercise the real streams directly.
+		return "", stdout.String() + stderr.String()
 	}
 	return stdout.String(), stderr.String()
 }
