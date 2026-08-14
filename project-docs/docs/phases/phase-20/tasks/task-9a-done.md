@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `1f196a94b064554fbc8bae1b0d9238125e2ab1d4`
 
 ## Commit subject
 
-- Pending commit
+- `fix(issue): recover mutation contract evidence`
