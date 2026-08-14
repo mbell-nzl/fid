@@ -365,7 +365,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 	}
 }
 
-func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
+func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -400,8 +400,15 @@ func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
 		ToState:       "in_progress",
 		ActorRole:     "developer",
 	})
-	if err == nil || !strings.Contains(err.Error(), `unsupported workflow rule "required_gates_current"`) {
-		t.Fatalf("Transition() error = %v, want unevaluated reserved-rule rejection", err)
+	if err == nil {
+		t.Fatal("Transition() error = nil, want reserved-rule rejection")
+	}
+	var blocked *BlockedTransitionError
+	if !errors.As(err, &blocked) {
+		t.Fatalf("Transition() error = %T, want *BlockedTransitionError", err)
+	}
+	if blocked.CurrentState != "todo" || blocked.RequestedState != "in_progress" || len(blocked.Unmet) != 1 || blocked.Unmet[0].Rule != workflow.RuleRequiredGatesCurrent {
+		t.Fatalf("BlockedTransitionError = %+v, want todo/in_progress/%q", blocked, workflow.RuleRequiredGatesCurrent)
 	}
 	after, readErr := os.ReadFile(journalPath)
 	if readErr != nil {

@@ -74,7 +74,7 @@ func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule wor
 		}
 		return workflow.AllChildTasksDoneOrCancelled(children), nil
 	default:
-		return workflow.RuleResult{}, fmt.Errorf("transition issue %q: unsupported workflow rule %q", current.ID, rule.Name)
+		return workflow.RuleResult{Unmet: []workflow.UnmetCondition{{Rule: rule.Name}}}, nil
 	}
 }
 

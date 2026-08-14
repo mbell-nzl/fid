@@ -121,10 +121,6 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if toState == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: target state is required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
-		return TransitionResult{}, err
-	}
-
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return TransitionResult{}, err
 	}
@@ -151,6 +147,16 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		}
 		registry, err := workflow.Load(conn)
 		if err != nil {
+			return err
+		}
+		if _, known := registry.CategoryForState(current.WorkflowID, toState); !known {
+			return &InvalidTransitionError{
+				IssueID:        current.ID,
+				CurrentState:   current.Status,
+				RequestedState: toState,
+			}
+		}
+		if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
 			return err
 		}
 
