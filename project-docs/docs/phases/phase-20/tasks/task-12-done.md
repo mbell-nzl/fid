@@ -64,8 +64,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `f081929cfed7a7be737010c2fb14403c61dac7da`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): migrate command contract`
