@@ -77,8 +77,8 @@
 
 ## Commit hash
 
-- Pending checkpoint commit
+- `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`
 
 ## Commit subject
 
-- Pending checkpoint commit
+- `refactor(cli): remove universal formatter framework`
