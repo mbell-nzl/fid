@@ -775,3 +775,15 @@ Human-approved and QA-plan acceptance is next._
 - QA-plan commands beyond the task spec: none required
 - Gate judgment: all six exact Task 10 commands recorded PASS from committed `62a3e46` with verbatim tokens and observed termination; the report retains every failed attempt and causal repair, including the independent-review request-envelope finding.
 - Next action: independent integrated re-review, then continue normally at Task 11; Review 4 remains due after Task 12.
+
+### 2026-08-15 15:12 TASK-RECOVERY task-10
+
+- Source: final independent integrated re-review at `0b10b46`; accepted contract §2.4 maps missing/blank `--by` to `authority-missing`, while the request repair returned `invalid-argument`
+- Category: in-scope-implementation
+- Trigger signature: `task-10:in-scope-implementation:missing-actor-authority-envelope`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: `0b10b460f9169f216724baeee26d4022ee175ee9`; prior request-error defect closed, reviewer verdict REPAIR with one bounded reason-code finding
+- Resolution evidence: PENDING - exact missing/blank actor matrix, causal product repair, exact six-command gate, report-lint, and independent re-review
+- Next action: keep Task 10 open; let actor absence reach the existing policy/authority renderer and preserve canonical invalid-request handling for parse, arity, and non-authority required flags
+- Human attention required: no
