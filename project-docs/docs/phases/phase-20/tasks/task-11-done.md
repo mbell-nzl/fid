@@ -81,8 +81,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `cf096da6391c020c24e3392996548158271bc080`
 
 ## Commit subject
 
-- Pending commit
+- `fix(links): complete typed link evidence matrix`
