@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 1
+- Recovery attempts: 3
 - Next action: None.
 - Human attention required: no
 
@@ -26,9 +26,9 @@
 - Preserved the appended Event's RFC3339 nanosecond timestamp in every migrated
   Issue mutation response and strengthened create/update/transition and Task 10
   identity assertions against the journal tail.
-- Routed arity, unknown-flag, and missing/blank required-actor failures for all
-  six Task 10 leaves through exact stderr-only `invalid-argument` envelopes,
-  while retaining concise Human error prose.
+- Routed arity, unknown-flag, and non-authority required-flag failures through
+  exact stderr-only `invalid-argument` envelopes. Missing/blank actors retain
+  the accepted `authority-missing` code, while Human errors remain concise.
 
 ## Files created or modified
 
@@ -47,7 +47,8 @@
 - `cmd/fid/integration/e2e_v01_closure_helpers_test.go` for the accepted
   stdout-only AC success channel.
 - `cmd/fid/canonical_request.go` and `task10_contract_test.go` for canonical
-  request-error rendering and the exhaustive six-operation negative matrix.
+  request-error rendering and separate invalid-request, missing-authority, and
+  Human-channel matrices across all six operations.
 
 ## Documentation updated
 
@@ -98,8 +99,9 @@
 - `VAL-044`: PASS - `TestTask10OperationsUseSelectedProjectOutsideWorkingDirectory`
   covers all six selected-project leaves;
   `TestIssueACVerifyRemainsGuardedLegacyLeaf` covers the legacy exclusion;
-  `TestTask10JSONRequestErrorsUseCanonicalEnvelope` covers arity and unknown
-  flags for all six leaves plus every missing/blank required Task 10 flag;
+  `TestTask10JSONRequestErrorsUseCanonicalEnvelope` covers arity, unknown flags,
+  and non-authority required flags; `TestTask10JSONMissingActorsUseAuthorityEnvelope`
+  covers missing/blank actors on all four Task 10 mutations;
   removed `--format`, explicit-empty option, UTF-8/control, and every
   just-inside/outside byte/ordinal cell are covered by the named request and
   domain tables.
@@ -120,6 +122,10 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 - `go test ./cmd/fid -run '^TestTask10JSONRequestErrorsUseCanonicalEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -run '^TestTask10(JSONRequestErrorsUseCanonicalEnvelope|RequiredActorHumanErrorsRemainProse)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.060s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestTask10JSONMissingActorsUseAuthorityEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test ./cmd/fid -run '^TestTask10(JSONRequestErrorsUseCanonicalEnvelope|JSONMissingActorsUseAuthorityEnvelope|RequiredActorHumanErrorsRemainProse)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.063s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	6.843s` (terminated `exit_code: 0`)
+- `go test ./... -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.767s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  6.577s` (terminated `exit_code: 0`)
 - `go test ./internal/issues ./internal/labels -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/labels  0.598s` (terminated `exit_code: 0`)
 - `go test ./internal/validation ./internal/issues ./internal/labels ./internal/journal ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  6.564s` (terminated `exit_code: 0`)
@@ -129,9 +135,9 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	10.031s	coverage: 80.5% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.193s` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	9.974s	coverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.6%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.216s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
@@ -151,7 +157,7 @@ Event/atomicity tables. No named operation is represented by sampling another.
   VCS status: exit status 128` and `Use -buildvcs=false to disable VCS
   stamping.` (both terminated `exit_code: 1`). No command flag was changed.
   Every final gate above ran byte-identically against committed HEAD
-  `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e` in a normal local clone with VCS
+  `627ca9dea9bdef451260022718b7bfcfcae9186a` in a normal local clone with VCS
   stamping enabled.
 - The first normal-clone race/coverage run failed with `FAIL` (terminated
   `exit_code: 1`) because `TestIssueTransitionCanonicalOutcomeTable` compared
@@ -172,11 +178,19 @@ Event/atomicity tables. No named operation is represented by sampling another.
   binary probes showed empty stderr for JSON arity/unknown-flag failures and
   Human prose for AC required-flag failures. The new exhaustive request test
   initially failed all 18 original cells with `FAIL` (terminated `exit_code: 1`).
-  Commit `62a3e46` added the domain-neutral canonical request renderer,
-  wired all six leaves through it, enforced missing/blank required actors as
-  input errors, and expanded the final matrix to 22 JSON cells plus three Human
-  channel regressions. The focused rerun and the byte-identical full gate pass;
-  no error schema, request rule, assertion, or command was weakened.
+  Commit `62a3e46` added the domain-neutral canonical request renderer and wired
+  all six leaves through it. Its 22-cell JSON matrix incorrectly grouped eight
+  missing/blank actor cases with request syntax, while three Human cases kept
+  concise prose.
+- Final re-review at `0b10b46` returned `REPAIR` because contract §2.4 maps
+  missing `--by` to `authority-missing`, not `invalid-argument`. The new exact
+  eight-cell authority matrix first failed with `FAIL` (terminated `exit_code: 1`).
+  Commit `627ca9d` removed only the adapter-level actor interception, allowing
+  the existing policy and authority renderer to produce exact operation/null-
+  actor details. Final coverage separates 14 invalid-request JSON cells, eight
+  missing-authority JSON cells, and eight Human missing-authority cells. The
+  focused rerun and byte-identical full gate pass; no schema, request rule,
+  assertion, or command was weakened.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -190,8 +204,8 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 ## Commit hash
 
-- `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e`
+- `627ca9dea9bdef451260022718b7bfcfcae9186a`
 
 ## Commit subject
 
-- `fix(cli): envelope task 10 request failures`
+- `fix(cli): preserve missing actor authority code`
