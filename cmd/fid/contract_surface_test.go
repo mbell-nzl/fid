@@ -73,6 +73,17 @@ func TestLiveCobraTreeContainsNoUniversalFormatFlags(t *testing.T) {
 	}
 }
 
+func TestProductSourceContainsNoUniversalSerializers(t *testing.T) {
+	repoRoot := commandTestRepositoryRoot(t)
+	violations, err := universalSerializerSourceViolations(repoRoot)
+	if err != nil {
+		t.Fatalf("universalSerializerSourceViolations() error = %v", err)
+	}
+	if len(violations) != 0 {
+		t.Fatalf("product source universal serializer violations = %v, want none", violations)
+	}
+}
+
 func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
 	t.Run("inherited persistent flag", func(t *testing.T) {
 		root := newRootCommandAt(t.TempDir())
@@ -142,6 +153,62 @@ func containsUniversalFormatViolation(violations []string, want string) bool {
 		}
 	}
 	return false
+}
+
+func universalSerializerSourceViolations(repoRoot string) ([]string, error) {
+	formatterImportSuffix := "/internal/" + "format"
+	formatterDirectory := filepath.Join(repoRoot, "internal", "format")
+	serializerNames := map[string]struct{}{
+		"write" + "TOON":     {},
+		"write" + "YAML":     {},
+		"write" + "Markdown": {},
+	}
+	yamlPackage := "ya" + "ml"
+	yamlMarshal := "Mar" + "shal"
+	violations := []string{}
+	if _, err := os.Stat(formatterDirectory); err == nil {
+		violations = append(violations, formatterDirectory)
+	}
+	for _, directory := range []string{"cmd", "internal"} {
+		root := filepath.Join(repoRoot, directory)
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() || filepath.Ext(path) != ".go" || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			parsed, err := parser.ParseFile(token.NewFileSet(), path, nil, 0)
+			if err != nil {
+				return err
+			}
+			for _, imported := range parsed.Imports {
+				pathValue := strings.Trim(imported.Path.Value, "\"")
+				if strings.HasSuffix(pathValue, formatterImportSuffix) || pathValue == "gopkg.in/yaml.v3" {
+					violations = append(violations, path+":import "+pathValue)
+				}
+			}
+			ast.Inspect(parsed, func(node ast.Node) bool {
+				switch typed := node.(type) {
+				case *ast.Ident:
+					if _, forbidden := serializerNames[typed.Name]; forbidden {
+						violations = append(violations, path+":"+typed.Name)
+					}
+				case *ast.SelectorExpr:
+					if packageName, ok := typed.X.(*ast.Ident); ok && packageName.Name == yamlPackage && typed.Sel.Name == yamlMarshal {
+						violations = append(violations, path+":"+yamlPackage+"."+yamlMarshal)
+					}
+				}
+				return true
+			})
+			return nil
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	sort.Strings(violations)
+	return violations, nil
 }
 
 func commandTestRepositoryRoot(t *testing.T) string {

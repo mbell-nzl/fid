@@ -12,7 +12,6 @@ import (
 	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -86,7 +85,9 @@ func renderMigrationRead(t *testing.T, value any) string {
 	t.Helper()
 
 	var output bytes.Buffer
-	if err := fidformat.Write(&output, fidformat.JSON, value); err != nil {
+	encoder := json.NewEncoder(&output)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
 		t.Fatalf("render JSON: %v", err)
 	}
 	return output.String()

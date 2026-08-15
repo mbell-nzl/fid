@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/mbell-nzl/fid/internal/claims"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
@@ -58,11 +57,6 @@ func renderIssueError(writer io.Writer, err error) error {
 	}, err, "read stopped - manual repair required")
 	if handled {
 		return renderErr
-	}
-
-	var unsupportedFormatErr *fidformat.UnsupportedFormatError
-	if errors.As(err, &unsupportedFormatErr) {
-		return writeIssueLine(writer, "error: %s\n", unsupportedFormatErr.Error())
 	}
 
 	var unsupportedKindErr *issues.UnsupportedKindError

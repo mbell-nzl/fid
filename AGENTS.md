@@ -29,7 +29,7 @@ they must not begin implementation that depends on that choice.
 
 ## Architecture
 
-- User-facing adapters: `cmd/fid/`, `internal/format/`,
+- User-facing adapters: `cmd/fid/`, `internal/cli/`, `internal/project/`,
   `internal/export/`.
 - Core/domain/business logic: `internal/issues/`, `internal/claims/`,
   `internal/workflow/`, `internal/policy/`, `internal/qa/`,
