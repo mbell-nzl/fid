@@ -8,6 +8,64 @@
 
 ### Resolved
 
+- **ESC-20-012 - Task 16 could not close because two controls rejected truthful
+  evidence (raised 2026-08-16 via `TRG-20-012`; resolved 2026-08-16 by
+  DEC-143).** Both halves are **sustained**, and both defects are mine, not the
+  Developer's. (1) The QA-plan command `rg -n "gopkg.in/yaml.v3" go.mod go.sum`
+  was **unsatisfiable from the day it was written**: `go mod tidy` deterministically
+  restores the `go.sum` checksum that the retained, accepted dependency
+  `github.com/golang-migrate/migrate/v4@v4.19.1` requires, so the only ways to
+  reach exit 1 were to drop an approved dependency, hand-edit `go.sum`, or leave
+  the module files untidy — each of which the phase forbids. Planning validated
+  only that the pattern *currently matched*, never that its finished-work state
+  was reachable. The row is withdrawn and replaced by a **stronger** pair:
+  `rg -ni "yaml" go.mod` rejects any yaml module requirement rather than one
+  module path, and `go mod why -vendor -m gopkg.in/yaml.v3` proves build-graph
+  absence with tests of dependencies excluded. `go.sum` is module-graph
+  bookkeeping; a checksum line there is not a fid dependency, and the deleted
+  direct requirement plus the empty build graph is what VAL-032 always meant. No
+  dependency change was approved and the dependency budget is unchanged.
+  (2) `report-lint.sh` failed three rows that `AGENTS.md` and `09_AI_WORKFLOW.md`
+  §8 **require** a Developer to write: an absence command's real non-zero status
+  recorded as `PASS`. The failure count was exactly three — the two `rg` no-match
+  rows and `ls internal/format` — which is the whole diagnosis. §8's own rule
+  says a control demanding more than the canonical contract and template is a
+  defect in the control, and DEC-139 already banned requiring a field the
+  producing role was never told to produce, so the control is amended, not the
+  evidence. A task spec now pre-declares expected non-zero statuses and the
+  report records the observed one beside the declared one; an undeclared
+  non-zero `PASS`, a zero declaration, and a mismatch all stay failures, so
+  nothing is laundered. Task 16's product work at `afb262d` stands, its failed
+  attempts stay immutable, and the withdrawn command is never rerun. `task-16a`
+  lands the control amendment red-first before the Task 16 continuation, and
+  Task 17's spec gained the QA-plan absence command it had always been required
+  to run — the same conflict, one task later, caught before it fired. No product
+  behavior, contract, schema, VAL window, review trigger, or threshold changed.
+
+- **ESC-20-011 - Task 14's exact gate conflicted with the Task 15 caller-cleanup
+  boundary (raised 2026-08-15 via `TRG-20-011`; resolved 2026-08-16 by
+  DEC-142).** The contradiction was real and the triage was correct: Task 14
+  removed `--format` from eight legacy leaves, its lint, race/coverage, and
+  integration commands then failed on the broken callers and orphaned formatter
+  test helpers, and its own spec assigned exactly that repair to Task 15.
+  Repairing the gate would have consumed another task's scope; changing the gate
+  would have altered a protected gate definition. The defect is in the plan, not
+  the code: the 14/15 split drew a task boundary through a single compile-level
+  change. Resolved by moving the boundary, not by weakening a gate — Task 14 now
+  owns the callers its own conversions invalidate, and all six exact commands,
+  thresholds, and assertions are unchanged for both tasks. Investigation
+  surfaced the fact the split had hidden: `migratedReadTestArgs` in
+  `cmd/fid/issue_test.go` is a deliberate `--format json` → `--json` harness
+  shim covering `ready`, `issue get`, and `issue list`, so those callers still
+  compile and were never Task 14's red set. Task 15 keeps a genuine red-first
+  scope — delete that shim, rewrite its callers, drop `--format` from the parity
+  suites, and add the source and command-tree guards, with retained
+  flag-rejection tests exempted as required VAL-016/VAL-031 negative evidence.
+  Task 14 resumes as a same-task continuation on the preserved uncommitted
+  edits; its three `BLOCKED` results stay as immutable failed attempts. No
+  product, contract, schema, dependency, threshold, or validation change was
+  accepted, and no VAL window or QA-plan review moved.
+
 - **ESC-20-010 - Task 10 stopped on incomplete in-scope migration work (raised
   2026-08-15 via `TRG-20-010`; resolved 2026-08-15 by DEC-141).** The preserved
   Developer session completed normally after 616 seconds and was not killed or

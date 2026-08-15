@@ -870,3 +870,408 @@ Human-approved and QA-plan acceptance is next._
 - Outcome: RESOLVED
 - Resolution evidence: the bounded link matrix now covers canonical JSON add/remove Event identity, typed opaque endpoints and atomic failures, self/two/three/pre-existing cycles, diamond success, list bounds/order, and three revealed in-scope defects; all six exact Task 11 commands and report-lint pass with observed termination
 - Next checkpoint: VERIFY/REVIEW
+
+### 2026-08-15 20:03 TASK task-11 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-11-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `cf096da6391c020c24e3392996548158271bc080` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`fix(links): complete typed link evidence matrix`)
+- Report finalization commit: `d98a8593` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-11`)
+- Report evidence correction commit: `463f2e37` and `42856fd3` - verified via committed history; subject matched (`docs(task): correct phase-20 task-11 completion report`, `docs(task): record phase-20 task-11 report lint repair`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the bounded Review 4 MF-01 repair is complete; all six exact Task 11 commands and report-lint are recorded PASS with observed termination, and the current worktree is clean before this ledger append.
+- Next action: obtain a fresh independent QA re-review of Review 4 MF-01 before dispatching the pending Task 12 MF-02 repair.
+
+### 2026-08-15 20:08 REVIEW review-4b
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-4b.md`
+- Tasks covered: task-11 MF-01 re-review
+- Outcome: PASS
+- Owning task: task-11
+- Re-review of: review-4
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+- Prior finding resolution: Review 4 MF-01 is resolved; Review 4 MF-02 remains pending for task-12 and was intentionally not dispositioned by this task-11-only re-review.
+- Review commit: `1f6051471943be18e975c15252bf87c1465edb86` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): pass phase 20 task 11 re-review`)
+- QA focused mutation/type matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.099s` (terminated `exit_code: 0`)
+- QA dependency traversal matrix: PASS - `ok github.com/mbell-nzl/fid/internal/links 0.261s` (terminated `exit_code: 0`)
+- QA cycle/collection-limit matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 1.972s` (terminated `exit_code: 0`)
+- QA required integration command: PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.636s` (terminated `exit_code: 0`)
+- QA report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Next action: open the bounded task-12 recovery for Review 4 MF-02.
+
+### 2026-08-15 20:09 TASK-RECOVERY task-12
+
+- Source: `project-docs/docs/phases/phase-20/qa/review-4.md` finding MF-02
+- Category: qa-rework
+- Trigger signature: `review-4:qa-rework:MF-02-workflow-list-bound-and-contract-matrix`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Review 4 MF-01 is independently closed by `review-4b`; Task 12 report/commits remain complete and clean except the Phase Runner run ledger; Review 4 MF-02 remains pending and is bounded to Task 12.
+- Resolution evidence: PENDING - workflow-list 10,000/10,001 cap behavior, assignment Event identity, root `--project` plus `--project-wide` matrix, exact Task 12 six-command gate, report update/finalization, and fresh independent QA re-review.
+- Next action: dispatch the same task-12 Developer continuation within the Review 4 MF-02 repair boundary, then run the unchanged exact Task 12 gate, report-lint, and fresh independent re-review.
+- Human attention required: no
+
+### 2026-08-15 21:44 TASK-RECOVERY task-12
+
+- Source: prior Task 12 Developer continuation session for Review 4 MF-02
+- Category: session-recovery
+- Trigger signature: `review-4:qa-rework:MF-02-workflow-list-bound-and-contract-matrix`
+- Attempt count: 2
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: durable MF-02 product and test edits are present in `cmd/fid/workflow.go`, workflow command tests, `internal/workflow/errors.go`, `internal/workflow/list.go`, and `internal/workflow/list_test.go`; all six unchanged Task 12 commands passed with observed `exit_code: 0`; the child session ended before report finalization and commits.
+- Resolution evidence: PENDING - update `task-12-done.md` with MF-02 evidence and recovery history, commit the Task 12 repair and report finalization, run report-lint, and verify the committed report/worktree.
+- Progress: the workflow-list cap, 10,000/10,001 command matrix, deterministic ordering, assignment Event identity, root project/project-wide boundary, and invalid scope/no-append cells are implemented and focused tests pass.
+- Next action: dispatch a same-task Task 12 continuation to finalize the report, commit the bounded repair, run report-lint, and return a typed outcome.
+- Human attention required: no
+
+### 2026-08-15 21:49 REPAIR task-12
+
+- Trigger signature: `review-4:qa-rework:MF-02-workflow-list-bound-and-contract-matrix`
+- Attempt count: 2
+- Starting checkpoint: Task 12 MF-02 source/test edits and all six exact gates were complete after the interrupted continuation; report finalization and commit sequence remained pending.
+- Ending checkpoint: product repair `49c179add40724871bae582fc3812ffc0aff04fc`; report finalization/correction `899c445c8e5fc7d71dba23a0fd871128a2fe3acc` and `bac3a5045c8d3d75f8ed55ec9f0fe4616228eb84`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: Task 12 MF-02 now enforces the 10,000 workflow-list bound and exact typed 10,001 rejection, adds deterministic ordering, Event identity, root-project/project-wide, invalid-scope, and no-append evidence; all six exact Task 12 commands and report-lint pass with observed `exit_code: 0`.
+- Next checkpoint: VERIFY/REVIEW
+
+### 2026-08-15 21:50 TASK task-12 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-12-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `49c179add40724871bae582fc3812ffc0aff04fc` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`fix(workflow): enforce workflow list limit`)
+- Report finalization commit: `899c445c8e5fc7d71dba23a0fd871128a2fe3acc` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-12`)
+- Report correction commit: `bac3a5045c8d3d75f8ed55ec9f0fe4616228eb84` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): correct phase-20 task-12 completion report`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the bounded Review 4 MF-02 repair is complete; all six exact Task 12 commands are recorded PASS with observed termination, report-lint is PASS, and the worktree is clean except the Phase Runner ledger.
+- Next action: obtain a fresh independent QA re-review of Review 4 MF-02.
+
+### 2026-08-15 21:54 REVIEW review-4c
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-4c.md`
+- Tasks covered: task-12 MF-02 re-review
+- Outcome: PASS
+- Owning task: task-12
+- Re-review of: review-4
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+- Prior finding resolution: Review 4 MF-02 is resolved; Review 4 MF-01 was independently resolved in review-4b and was not reopened.
+- Review commit: `7dc0536c067d036fc202c96a99a45e08e5cc5d5a` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): pass phase 20 task 12 re-review`)
+- QA focused CLI workflow matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 1.431s` (terminated `exit_code: 0`)
+- QA workflow domain matrix: PASS - `ok github.com/mbell-nzl/fid/internal/workflow 1.459s` (terminated `exit_code: 0`)
+- QA required integration command: PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.646s` (terminated `exit_code: 0`)
+- QA report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Next action: continue Phase 20 at the next approved task after the completed Review 4 window.
+
+### 2026-08-15 22:08 TASK task-13 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-13-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `161f89ca18256cdc2a0ed3c9da6df094cdb8f427` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`feat(maintenance): migrate inspection response contract`)
+- Report finalization commit: `f9ebcf93fbe4e6f19f2220040760a2a1f34d03ef` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-13`)
+- Report correction commit: `3687a260b5f06adad48111571e899b8c5a0553ee` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): correct task-13 gate evidence formatting`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 13 commands are recorded PASS with observed termination; report-lint is PASS; the worktree is clean except the Phase Runner ledger.
+- Next action: continue in order at Task 14; Review 5 remains due after Task 15.
+
+### 2026-08-15 22:27 TRIAGE
+
+- Trigger: Task 14 exact full gate conflicts with the approved Task 14/Task 15 caller-cleanup boundary after eight legacy handlers removed `--format`.
+- Source: `project-docs/docs/phases/phase-20/tasks/task-14-done.md` and `project-docs/docs/phases/phase-20/tasks/task-15.md`
+- Verdict: BLOCK (escalated as `ESC-20-011`)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` entry `TRG-20-011` confirmed.
+- Escalation: `project-docs/docs/current/tl_escalations_current.md` entry `ESC-20-011` confirmed.
+- Commit-verification evidence: none; Task 14 has no commit because the blocker report stopped before commit.
+- Protected category: specification contradiction / protected task-boundary and gate-definition authority.
+- Resolution required: Full Tech Lead must reconcile the Task 14/15 scope ordering and exact-gate authority without weakening commands, thresholds, or behavioral assertions, then direct authorized recovery.
+
+### 2026-08-15 22:28 STOP
+
+- Cause: Task 14 blocker report records the exact lint, race/coverage, and integration gates failing on Task 15-owned caller/helper cleanup after the approved eight-handler conversion.
+- Task: task-14
+- Triage: `TRG-20-011` BLOCK
+- Escalation: `ESC-20-011`
+- Next human action: Full Tech Lead must reconcile the Task 14/Task 15 scope ordering and exact-gate authority, preserve the six commands and assertion strength, then direct the authorized Task 14 recovery/commit/report sequence before Phase 20 resumes.
+- Worktree state: uncommitted Task 14 edits and task-14-done.md blocker report remain preserved; no product or report changes were reverted.
+
+### 2026-08-16 07:15 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-15 Task 14 STOP / TRG-20-011 / ESC-20-011
+- Trigger signature: `task-14:specification-contradiction:task-14-task-15-format-convergence-split`
+- Attempt count: 2
+- Checkpoint: branch `phase-20` at `3687a260b5f06adad48111571e899b8c5a0553ee`; preserved uncommitted Task 14 handler/test edits and `task-14-done.md` blocker report; no Task 14 commit exists.
+- Resolution evidence: DEC-142 in `project-docs/docs/phases/phase-20/decisions.md` moved the Task 14/15 boundary; `ESC-20-011` is archived and `tl_escalations_current.md` has no open items; no command, threshold, assertion, VAL window, or QA-plan review changed.
+- Continuing task: task-14 same-task continuation
+
+### 2026-08-16 07:16 TASK-RECOVERY task-14
+
+- Source: `project-docs/docs/phases/phase-20/decisions.md` DEC-142 (resolves ESC-20-011 / TRG-20-011)
+- Category: specification-contradiction - resolved by spec amendment, now in-scope repair
+- Trigger signature: `task-14:specification-contradiction:task-14-task-15-format-convergence-split`
+- Attempt count: 2
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: uncommitted Task 14 handler/test edits and the `task-14-done.md` blocker report are preserved; no commit exists.
+- Resolution evidence: DEC-142 moved the Task 14/15 boundary; Task 14 now owns the callers its eight conversions invalidate. No command, threshold, assertion, VAL window, or QA-plan review changed.
+- Next action: resume the same Task 14 Developer continuation to converge the eight-leaf callers and orphaned formatter test helpers, rerun the unchanged six-command gate, finalize the report, run report-lint, and commit.
+- Human attention required: no
+
+### 2026-08-16 07:28 REPAIR task-14
+
+- Trigger signature: `task-14:specification-contradiction:task-14-task-15-format-convergence-split`
+- Attempt count: 2
+- Starting checkpoint: preserved uncommitted Task 14 handler/test edits and `task-14-done.md` blocker report after the DEC-142-resolved STOP.
+- Ending checkpoint: product commit `f712c277b4debea077f0ae4173fad9a3590443c2`; report finalization commits `f7d8bd0` and `64c20704`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: DEC-142 moved the eight invalidated caller/helper obligations into Task 14; all six unchanged exact commands recorded PASS with observed `exit_code: 0`; report-lint returned `OUTCOME COMPLETE` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`). The three original BLOCKED gate results remain immutable and the required deviation note records their byte-identical passing reruns.
+- Commit verification: `f712c277b4debea077f0ae4173fad9a3590443c2` resolved via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched `feat(cli): convert legacy JSON reads directly`.
+- Next checkpoint: TASK task-14 COMPLETE, then continue in order at Task 15.
+
+### 2026-08-16 07:29 TASK task-14 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-14-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `f712c277b4debea077f0ae4173fad9a3590443c2` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`feat(cli): convert legacy JSON reads directly`)
+- Report finalization commit: `f7d8bd000d39f6a05c2a4500f3f12aad1c96360c` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-14`)
+- Report lint evidence commit: `64c20704ba771b62b3869f62dfef5e2bbde69678` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): record final report lint evidence`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 14 commands are recorded PASS with verbatim tokens and observed termination; the three original BLOCKED attempts and mandatory DEC-142 deviation note remain preserved; the worktree is clean except pre-existing Phase Runner and user-authored DEC-142 documentation changes.
+- Next action: continue in order at Task 15; Review 5 remains due after Task 15.
+
+### 2026-08-16 07:36 TASK-RECOVERY task-15
+
+- Source: `project-docs/docs/phases/phase-20/tasks/task-15-done.md`
+- Trigger signature: `task-15:in-scope-implementation:format-shim-removal-caller-convergence`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: the Task 15 shim removal and red-first AST guard are committed at `ad693228a9e1df57cab1d8f37159b47ecdb08e29`; the recovery report is finalized at `9d8fa1dc21b099fc54f6bb6e0440144820f1a83a`; the report is committed and clean. Remaining caller convergence is incomplete.
+- Evidence: focused `TestLiveTestsContainNoUniversalFormatInvocation` recorded `FAIL` with observed `exit_code: 1`; report-lint returned `OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`). The exact six-command gate was not run because the in-scope sweep is incomplete.
+- Progress: removed `migratedReadTestArgs`, `containsFormatJSON`, `isLegacyIssueSection`, `legacyMigratedReadOutput`, and the argument/output rewriting shim; added the red-first source guard and began direct canonical JSON conversion.
+- Next action: dispatch the same Task 15 Developer continuation to convert the remaining `ready`, `issue get`, `issue list`, and retained legacy-section callers while preserving semantic assertions, then run the unchanged six-command gate and finalize the report.
+- Human attention required: no
+
+### 2026-08-16 08:02 REPAIR task-15
+
+- Trigger signature: `task-15:in-scope-implementation:format-shim-removal-caller-convergence`
+- Attempt count: 2
+- Starting checkpoint: Task 15 shim-removal checkpoint `ad693228a9e1df57cab1d8f37159b47ecdb08e29`, recovery report `9d8fa1dc21b099fc54f6bb6e0440144820f1a83a`, and recorded `TASK-RECOVERY task-15` entry.
+- Ending checkpoint: product commit `f95db81f938e15d59357a35936e43a24c708b653`; report finalization `c13c733c5adfd95f47ad2bf15647a225f193d62d`; report evidence repair `32928508cb12337d316556becbf500372abb9116`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: remaining ready, issue get/list, legacy-section, V1/V2a, and e2e callers were converged without weakening semantic or retired-format rejection assertions. The focused source guard passed after its immutable prior FAIL. All six unchanged exact commands recorded PASS with observed termination; the report preserves the first lint and race/coverage failures and their causal repairs. Report-lint returned `OUTCOME COMPLETE` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Commit verification: `f95db81f938e15d59357a35936e43a24c708b653` resolved via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched `test(cli): converge format shim callers`.
+- Next checkpoint: TASK task-15 COMPLETE, then mandatory Review 5.
+
+### 2026-08-16 08:03 TASK task-15 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-15-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `f95db81f938e15d59357a35936e43a24c708b653` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`test(cli): converge format shim callers`)
+- Report finalization commit: `c13c733c5adfd95f47ad2bf15647a225f193d62d` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize task-15 completion report`)
+- Report evidence repair commit: `32928508cb12337d316556becbf500372abb9116` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): repair task-15 report evidence`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 15 commands are recorded PASS with verbatim tokens and observed termination; the focused source guard passed after its immutable failed attempt; report-lint is PASS; the worktree is clean except pre-existing Phase Runner and user-authored DEC-142 documentation changes.
+- Next action: mandatory Review 5 for Tasks 13-15.
+
+### 2026-08-16 08:09 REVIEW review-5
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-5.md`
+- Tasks covered: tasks/reports 13-15
+- Outcome: REPAIR
+- Owning task: task-13
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0
+- MF-01: Task 13 must add exact command-level 299/300-second maintenance boundary evidence while preserving config-independence and same-fixture warning/promotion equality; required Task 13 gate and fresh independent re-review.
+- MF-02: Task 15 must add a dynamic full-Cobra-tree guard for universal format flags, retain source/rejection guards, correct the report claim, rerun the unchanged gate, and receive fresh independent re-review.
+- Repair dispatch: MF-01 is owned by task-13 and is dispatched first; MF-02 is owned by task-15 and remains pending for the next repair/re-review window. Both are bounded in-scope QA repairs and require fresh independent re-review.
+- Review commit: `ee7208b2c6fea6279c6ec82c59d4477cf3d0c1e2` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): review phase 20 tasks 13-15`).
+- QA required command: `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.992s` (terminated `exit_code: 0`).
+- Next action: record QA recovery for MF-01 and dispatch the same task-13 Developer continuation; after its fresh independent re-review closes MF-01, record QA recovery for MF-02 and dispatch task-15, then obtain fresh independent re-review.
+
+### 2026-08-16 08:10 TASK-RECOVERY task-13
+
+- Source: `project-docs/docs/phases/phase-20/qa/review-5.md` finding MF-01
+- Category: qa-rework
+- Trigger signature: `review-5:qa-rework:MF-01-maintenance-299-300-boundary`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 13 report and commits are complete and clean except the Phase Runner run ledger; Review 5 commit `ee7208b2c6fea6279c6ec82c59d4477cf3d0c1e2` records MF-01.
+- Resolution evidence: PENDING - bounded command-level 299/300-second maintenance evidence, unchanged six-command Task 13 gate, report update/finalization, and fresh independent QA re-review.
+- Next action: dispatch the same task-13 Developer continuation to add MF-01 evidence within the reviewed Task 13 boundary, then rerun exact verification.
+- Human attention required: no
+
+### 2026-08-16 08:20 REPAIR task-13
+
+- Trigger signature: `review-5:qa-rework:MF-01-maintenance-299-300-boundary`
+- Attempt count: 1
+- Starting checkpoint: Task 13 report and commits were complete and clean except the Phase Runner run ledger; Review 5 commit `ee7208b2c6fea6279c6ec82c59d4477cf3d0c1e2` recorded MF-01.
+- Ending checkpoint: bounded test repair `78f2ed7ebaa9078579e42f4e71493f4d0cad114a`; report finalization `c529a786e257ec104c19d1a5a0a05e2f6e255300`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: the command-level maintenance fixture now seeds exact 299-second non-qualifying and 300-second qualifying cases after Attempt-config grace is overridden to zero, and compares the same fixture errors, warnings, and info across warn-success and promoted-failure branches. All six unchanged Task 13 commands recorded PASS with observed exit_code 0; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0).
+- Commit verification: `78f2ed7ebaa9078579e42f4e71493f4d0cad114a` resolved via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched `test(maintenance): prove exact grace boundary`.
+- Next checkpoint: renewed TASK task-13 COMPLETE, then fresh independent re-review of Review 5 MF-01.
+
+### 2026-08-16 08:21 TASK task-13 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-13-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `78f2ed7ebaa9078579e42f4e71493f4d0cad114a` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`test(maintenance): prove exact grace boundary`)
+- Report finalization commit: `c529a786e257ec104c19d1a5a0a05e2f6e255300` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-13`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the bounded Review 5 MF-01 repair is complete; all six exact Task 13 commands are recorded PASS with verbatim tokens and observed termination, exact 299/300 evidence is present, report-lint is PASS, and the worktree is clean except pre-existing Phase Runner and user-authored documentation changes.
+- Next action: obtain a fresh independent QA re-review of Review 5 MF-01 before dispatching the pending task-15 MF-02 repair.
+
+### 2026-08-16 08:24 REVIEW review-5b
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-5b.md`
+- Tasks covered: task-13 MF-01 re-review
+- Outcome: PASS
+- Owning task: task-13
+- Re-review of: review-5
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+- Prior finding resolution: Review 5 MF-01 is resolved; exact command-level 299/300 maintenance evidence and same-fixture warning/promotion equality are independently confirmed. Review 5 MF-02 remains pending for task-15 and was intentionally not dispositioned.
+- Review commit: `1cc6e76d81b0f7c5e55336da10e3f98ae5f75e6a` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): re-review phase 20 maintenance boundary`).
+- QA focused maintenance matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.290s` (terminated `exit_code: 0`).
+- QA required integration command: PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.725s` (terminated `exit_code: 0`).
+- QA report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Next action: open the bounded task-15 recovery for Review 5 MF-02.
+
+### 2026-08-16 08:25 TASK-RECOVERY task-15
+
+- Source: `project-docs/docs/phases/phase-20/qa/review-5.md` finding MF-02
+- Category: qa-rework
+- Trigger signature: `review-5:qa-rework:MF-02-dynamic-cobra-format-guard`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 15 report and commits are complete and clean except the Phase Runner run ledger; Review 5 MF-02 remains pending after MF-01 was independently closed by review-5b.
+- Resolution evidence: PENDING - bounded dynamic full-Cobra-tree universal-format guard, retained source/rejection guards, corrected Task 15 report, unchanged six-command gate, report finalization, and fresh independent QA re-review.
+- Next action: dispatch the same task-15 Developer continuation to add MF-02 evidence within the reviewed Task 15 boundary, then rerun exact verification.
+- Human attention required: no
+
+### 2026-08-16 08:31 REPAIR task-15
+
+- Trigger signature: `review-5:qa-rework:MF-02-dynamic-cobra-format-guard`
+- Attempt count: 1
+- Starting checkpoint: Task 15 report and commits were complete and clean except the Phase Runner run ledger; Review 5 MF-02 remained pending after MF-01 was independently closed by review-5b.
+- Ending checkpoint: dynamic guard product/test commit `b720fd174fae806449be6ff28cf3ec8a9d237f07`; report finalization `d7db9fce9e627df823f8f5687f2d8c6d79ae1f78`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: the live `newRootCommandAt` Cobra tree is recursively traversed across local non-persistent, persistent, and inherited flags for `format`, `toon`, `yaml`, and `markdown`; inherited and local injected-flag negative controls pass; existing AST and retired-format rejection guards remain. All six unchanged Task 15 commands recorded PASS with observed exit_code 0; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0).
+- Commit verification: `b720fd174fae806449be6ff28cf3ec8a9d237f07` resolved via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched `test(cli): add dynamic Cobra format guard`.
+- Next checkpoint: renewed TASK task-15 COMPLETE, then fresh independent re-review of Review 5 MF-02.
+
+### 2026-08-16 08:32 TASK task-15 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-15-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `b720fd174fae806449be6ff28cf3ec8a9d237f07` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`test(cli): add dynamic Cobra format guard`)
+- Report finalization commit: `d7db9fce9e627df823f8f5687f2d8c6d79ae1f78` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize MF-02 repair report`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the bounded Review 5 MF-02 repair is complete; the dynamic full-Cobra-tree guard and negative controls are present, all six exact Task 15 commands are recorded PASS with verbatim tokens and observed termination, report-lint is PASS, and the worktree is clean except pre-existing Phase Runner and user-authored documentation changes.
+- Next action: obtain a fresh independent QA re-review of Review 5 MF-02.
+
+### 2026-08-16 08:36 REVIEW review-5c
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-5c.md`
+- Tasks covered: task-15 MF-02 re-review
+- Outcome: REPAIR
+- Owning task: task-15
+- Re-review of: review-5
+- Must-fix: 1 / Improvement: 0 / blocker candidates: 0
+- MF-02 remains open: the root persistent-flag negative control accepts the root violation `fid --format`, so it does not prove a descendant inherited-flag violation. The walker itself calls local, persistent, and inherited accessors; the repair is limited to making the control require a descendant inherited violation and correcting the Task 15 report evidence claim.
+- Repair boundary: retain the recursive full-tree walker, local-leaf control, AST source guard, retired-format rejection tests, and Task 14 guards; require the injected root persistent flag on a descendant inherited flag set; rerun the unchanged six-command Task 15 gate and obtain fresh independent re-review.
+- Review commit: `9649cc2a69ce8844e4d2a17f7b255cafde748c1b` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): record phase 20 review 5c`).
+- QA dynamic guard: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.053s` (terminated `exit_code: 0`).
+- QA retained rejection/root-flag/Task 14 matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.554s` (terminated `exit_code: 0`).
+- QA required integration command: PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.822s` (terminated `exit_code: 0`).
+- QA report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Next action: record QA recovery for MF-02 and dispatch the same task-15 Developer continuation, then obtain fresh independent re-review.
+
+### 2026-08-16 08:37 TASK-RECOVERY task-15
+
+- Source: `project-docs/docs/phases/phase-20/qa/review-5c.md` finding MF-02
+- Category: qa-rework
+- Trigger signature: `review-5:qa-rework:MF-02-dynamic-cobra-format-guard`
+- Attempt count: 2
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 15 dynamic guard repair and report are complete at `b720fd174fae806449be6ff28cf3ec8a9d237f07` and `d7db9fce9e627df823f8f5687f2d8c6d79ae1f78`; review-5c `9649cc2a69ce8844e4d2a17f7b255cafde748c1b` found the inherited-control evidence incomplete; no product or report changes are pending outside this bounded repair.
+- Resolution evidence: PENDING - strengthen the root persistent-flag negative control to require a descendant inherited violation, correct the Task 15 report claim, rerun the unchanged six-command gate, report-lint, and fresh independent QA re-review.
+- Next action: dispatch the same task-15 Developer continuation for the category-specific inherited-flag control and report correction.
+- Human attention required: no
+
+### 2026-08-16 08:44 REPAIR task-15
+
+- Trigger signature: `review-5:qa-rework:MF-02-dynamic-cobra-format-guard`
+- Attempt count: 2
+- Starting checkpoint: Review 5c `9649cc2a69ce8844e4d2a17f7b255cafde748c1b` found the root-only inherited negative control insufficient; prior dynamic guard/report commits `b720fd174fae806449be6ff28cf3ec8a9d237f07` and `d7db9fce9e627df823f8f5687f2d8c6d79ae1f78` remain preserved.
+- Ending checkpoint: strengthened guard commit `24f50aef13ae7a23a080a87920f396242b30f911`; report repair `97d0aaf4c68bb86cbe568a3016ced5c1b36203f1`; committed report is clean.
+- Outcome: RESOLVED
+- Resolution evidence: the inherited-root control now requires the injected root persistent `format` flag at descendant path `fid issue --format`, proving descendant inherited inspection; the local-leaf control and complete recursive walker remain. Focused guard and retained matrix pass. All six unchanged Task 15 commands recorded PASS with observed exit_code 0; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0).
+- Commit verification: `24f50aef13ae7a23a080a87920f396242b30f911` resolved via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched `test(cli): strengthen inherited format guard`.
+- Next checkpoint: renewed TASK task-15 COMPLETE, then fresh independent re-review of Review 5c MF-02.
+
+### 2026-08-16 08:45 TASK task-15 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-15-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `24f50aef13ae7a23a080a87920f396242b30f911` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`test(cli): strengthen inherited format guard`)
+- Report finalization commit: `97d0aaf4c68bb86cbe568a3016ced5c1b36203f1` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): record inherited format guard repair`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the bounded Review 5c MF-02 repair is complete; the inherited negative control now proves descendant traversal, all six exact Task 15 commands are recorded PASS with verbatim tokens and observed termination, report-lint is PASS, and the worktree is clean except pre-existing Phase Runner and user-authored documentation changes.
+- Next action: obtain fresh independent QA re-review of Review 5c MF-02.
+
+### 2026-08-16 08:47 REVIEW review-5d
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-5d.md`
+- Tasks covered: task-15 MF-02 re-review
+- Outcome: PASS
+- Owning task: task-15
+- Re-review of: review-5c
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+- Prior finding resolution: Review 5c MF-02 is resolved; the root persistent `format` injection is independently observed at descendant path `fid issue --format`, proving inherited-flag inspection. Review 5 MF-01 remains closed by review-5b.
+- Review commit: `efd2bfc1d2ec2ab67f2c6c581cf6bb9afbbae629` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): close review 5c MF-02`).
+- QA inherited/local control: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.052s` (terminated `exit_code: 0`).
+- QA retained guard/rejection and Task 14 regression matrix: PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.494s` (terminated `exit_code: 0`).
+- QA required integration command: PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.762s` (terminated `exit_code: 0`).
+- QA report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Next action: continue Phase 20 at Task 16; Review 6 remains due after Task 17.
+
+### 2026-08-16 09:01 TASK-RECOVERY task-16
+
+- Source: `project-docs/docs/phases/phase-20/tasks/task-16-done.md` and QA plan YAML absence row
+- Category: qa-plan-command-applicability / potential protected gate contradiction
+- Trigger signature: `task-16:qa-plan-command-applicability:yaml-transitive-go-sum-and-report-lint-no-match`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 16 product commit `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`; report/recovery evidence commits `6ada9f0`, `8828a86`, and `72e8683`; the report is committed and clean. All nine Task 16 exact commands completed, including expected nonzero absence checks.
+- Evidence: QA-plan command `rg -n "gopkg.in/yaml.v3" go.mod go.sum` returned the retained migration module checksum entry with observed `exit_code: 0` after `go mod tidy`; `go mod graph` identifies `github.com/golang-migrate/migrate/v4@v4.19.1` as the source. Report-lint returned `OUTCOME RECOVERY_REQUIRED` with observed `exit_code: 3` because it rejects truthful PASS rows whose expected no-match/absence commands terminate nonzero.
+- Progress: universal formatter package, format matrix, direct YAML requirement, product imports, and architecture listing were removed; the Task 16 exact gate commands otherwise pass.
+- Next action: obtain TL-Lite triage on the concrete QA-plan/gate applicability and report-lint contract conflict before dispatching a same-task continuation; no command, threshold, or assertion will be narrowed without recorded authority.
+- Human attention required: no
+
+### 2026-08-16 09:03 TRIAGE
+
+- Trigger: Task 16 cannot satisfy the QA-plan YAML absence assertion or report-lint truthfully under the retained migration dependency and accepted no-match evidence rules.
+- Source: `project-docs/docs/phases/phase-20/tasks/task-16-done.md` and `project-docs/docs/phases/phase-20/qa/qa-plan.md` YAML module absence row.
+- Verdict: BLOCK (escalated as `ESC-20-012`)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` entry `TRG-20-012` confirmed.
+- Escalation: `project-docs/docs/current/tl_escalations_current.md` entry `ESC-20-012` confirmed.
+- Commit-verification evidence: product commit `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb` resolved via `git rev-parse --verify` (observed `exit_code: 0`), subject matched `refactor(cli): remove universal formatter framework`; report-lint returned `OUTCOME RECOVERY_REQUIRED` with observed `exit_code: 3`.
+- Protected category: specification contradiction requiring dependency and quality-gate/workflow authority.
+- Resolution required: Full Tech Lead must decide the direct-versus-transitive YAML absence proof, reconcile the QA-plan command and report-lint expected-nonzero rule, preserve immutable failed evidence, then authorize the bounded Task 16 continuation.
+
+### 2026-08-16 09:04 STOP
+
+- Cause: Task 16 completion is blocked by the protected contradiction between the QA-plan YAML no-match requirement, retained transitive go.sum evidence after go mod tidy, and report-lint rejection of truthful expected-nonzero absence rows.
+- Task: task-16
+- Triage: `TRG-20-012` BLOCK
+- Escalation: `ESC-20-012`
+- Next human action: Full Tech Lead must resolve ESC-20-012 by deciding the VAL-032 direct-versus-transitive YAML absence authority, reconciling the QA-plan command and report-lint expected-nonzero validation, then direct the bounded Task 16 continuation and any required independent re-review.
+- Worktree state: Task 16 formatter/YAML deletion is committed at `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`; the recovery report and report-lint evidence are committed; only pre-existing Phase Runner/user-authored documentation changes remain dirty.
+
+### 2026-08-16 11:53 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-16 Task 16 STOP / TRG-20-012 / ESC-20-012
+- Trigger signature: `task-16:specification-contradiction:yaml-module-absence-and-expected-nonzero-report-lint`
+- Attempt count: 1
+- Checkpoint: branch `phase-20` at `72e86831be32569a09a77a2897272a711a50883f`; Task 16 formatter/YAML deletion remains committed at `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`, with its recovery report and immutable failed evidence committed.
+- Resolution evidence: DEC-143 in `project-docs/docs/phases/phase-20/decisions.md` resolves `ESC-20-012` by defining VAL-032 as module-requirement/build-graph proof, replacing the withdrawn go.sum text search with `rg -ni "yaml" go.mod` and `go mod why -vendor -m gopkg.in/yaml.v3`, and amending report-lint for declared expected-non-zero rows. The escalation register is clear; no dependency change is approved.
+- Open escalation baseline: none; `ESC-20-012` is archived and resolved by DEC-143.
+- Next action: dispatch task-16a as a separate Developer session, then the Task 16 same-task continuation, followed by task-17, Review 6, and task-18.

@@ -328,3 +328,102 @@ Phase wrap-up checklist:
       that every BLOCK names the ESC it raised.
 - [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
 -->
+
+---
+
+## TRG-20-011 - Task 14 gate cannot close within the assigned Task 14/15 split
+
+- **Trigger:** Task 14 required exact full gate cannot pass after the approved
+  eight legacy handlers remove `--format` because remaining `--format` callers
+  and formatter-test helpers are explicitly assigned to Task 15.
+- **Trigger signature:** `task-14:specification-contradiction:task-14-task-15-format-convergence-split`
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-14-done.md`;
+  `project-docs/docs/phases/phase-20/tasks/task-15.md`.
+- **Candidate:** blocker candidate.
+- **Attempt count:** 1.
+- **Checkpoint:** uncommitted Task 14 edits and the Phase Runner-owned
+  run-ledger append; no Task 14 commit-verification evidence was supplied.
+- **Verdict:** BLOCK.
+- **Reasoning:** The Task 14 report records that its exact lint, race/coverage,
+  and integration commands fail because legacy formatter helpers and test
+  callers became invalid when the eight in-scope handlers removed `--format`.
+  Task 15 explicitly owns those remaining caller and test-convergence changes,
+  so repairing the failed Task 14 gate would consume another task's assigned
+  scope; alternatively changing the Task 14 gate/disposition would alter a
+  protected gate definition. This is a binding specification contradiction,
+  not an in-scope failed-gate repair.
+- **Local decisions made:** none.
+- **Resolution evidence:** no accepted decision or verified corrective commit
+  clears the contradiction; the prompt supplies no commit-verification
+  evidence, so RESUME is unavailable.
+- **If BLOCK:** category specification contradiction / protected task-boundary
+  and gate-definition authority; ESC-20-011 raised in
+  `tl_escalations_current.md`; resolution condition: full Tech Lead reconciles
+  the Task 14/15 ordering and scope authority without weakening the six exact
+  commands, thresholds, or behavioral assertions.
+- **Human attention required:** yes.
+- **References:** `tasks/task-14-done.md` (Workflow outcome; Exact
+  quality-gate results; Deviations from spec); `tasks/task-15.md` (Objective;
+  Scope; Acceptance Criteria; Exact Commands To Run);
+  `project-docs/specs/09_AI_WORKFLOW.md` §2.3 and §9; `AGENTS.md` (Commands;
+  Hard Stops).
+
+---
+
+## TRG-20-012 - Task 16 YAML absence and report-lint rules cannot both close truthfully
+
+- **Trigger:** Phase 20 Task 16 cannot truthfully close because the QA-plan
+  YAML-module absence command and report-lint applicability conflict with the
+  accepted no-match evidence rules.
+- **Trigger signature:** `task-16:specification-contradiction:yaml-module-absence-and-expected-nonzero-report-lint`
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-16-done.md`;
+  `project-docs/docs/phases/phase-20/qa/qa-plan.md` YAML module absence row;
+  attached commit and report-lint evidence.
+- **Candidate:** typed `RECOVERY_REQUIRED` / report-lint failure.
+- **Attempt count:** 1.
+- **Checkpoint:** Product commit
+  `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb` is verified by the supplied
+  `git rev-parse --verify` result (`exit_code: 0`) and subject match
+  `refactor(cli): remove universal formatter framework`; the Task 16 recovery
+  evidence is committed through `72e8683`; report-lint returned
+  `OUTCOME RECOVERY_REQUIRED` (`exit_code: 3`).
+- **Verdict:** BLOCK.
+- **Reasoning:** The Task 16 report records that `go mod tidy` retains
+  `gopkg.in/yaml.v3` checksum entries because the accepted retained
+  `github.com/golang-migrate/migrate/v4@v4.19.1` dependency requires it.
+  Therefore the QA-plan command `rg -n "gopkg.in/yaml.v3" go.mod go.sum`
+  cannot produce its required exit 1/no-output state without changing a
+  dependency or the accepted QA assertion. Separately, the report-lint result
+  rejects truthful PASS rows for expected nonzero absence commands, directly
+  conflicting with `AGENTS.md`'s required real `exit 1 (no output)` evidence.
+  Neither correction is a decision-free Task 16 repair: it requires dependency
+  approval or QA/gate-definition and workflow authority.
+- **Local decisions made:** none.
+- **Resolution evidence:** The verified product commit establishes that direct
+  YAML use and the direct `go.mod` requirement were removed, but it does not
+  resolve the still-failing accepted QA-plan command or report-lint conflict;
+  the supplied report-lint recovery result confirms the issue remains open.
+- **If BLOCK:** category specification contradiction / dependency and
+  quality-gate-definition authority; ESC-20-012 raised in
+  `tl_escalations_current.md`; resolution condition: full Tech Lead reconciles
+  VAL-032 and the Task 16 YAML absence evidence with retained migration-module
+  requirements, and authorizes a compatible report-lint treatment of explicit
+  expected-nonzero absence commands without weakening their real-status rule.
+- **Human attention required:** yes.
+- **References:** `tasks/task-16.md` (Acceptance Criteria; Exact Commands To
+  Run; Notes For Developer); `tasks/task-16-done.md` (VAL-032; Exact
+  quality-gate results; Deviations from spec); `qa/qa-plan.md` §5 (YAML module
+  absence); `AGENTS.md` (Commands: no-match evidence rule);
+  `project-docs/specs/09_AI_WORKFLOW.md` §2.3 (BLOCK and protected triggers).
+- **Tech Lead adjudication (DEC-143, 2026-08-16):** verdict **sustained on both
+  halves**, and both are correctly protected rather than repairable. The QA-plan
+  YAML command was unsatisfiable while an accepted retained dependency requires
+  the module, so any local fix would have needed dependency authority; the
+  report-lint conflict needed gate-definition and workflow authority. Neither
+  belonged to a Developer session. This escalation resolves **against the Tech
+  Lead**, like ESC-20-008 and unlike ESC-20-009: planning validated only that
+  the search pattern currently matched, never that its finished-work state was
+  reachable, and the report-lint rule demanded evidence that `AGENTS.md` and §8
+  forbid producing. VAL-032 keeps its assertion with a stronger proof, the
+  control is amended rather than the evidence, Task 16 resumes as a same-task
+  continuation after `task-16a`, and its failed attempts stay immutable.

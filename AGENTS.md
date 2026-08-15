@@ -205,6 +205,17 @@ output field, and absence of new output are not termination, and an `exit_code`
 asserted rather than observed is fabricated evidence exactly like a fabricated
 token.
 
+A command whose pass condition is a **non-zero** exit — an `rg`/`grep` absence
+proof, an `ls` on a path that must not exist — records that real status in the
+declared form, and its task spec pre-declares the expected status under
+`## Expected Non-Zero Commands`:
+``- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)``.
+The status field stays exactly `PASS`; the expectation is what the spec
+declared, and the termination is what the command actually did. An undeclared
+non-zero `PASS`, a declared expectation of zero, and an observed status that
+differs from the declared one are all failed gates. Never convert a non-zero
+absence result into `exit 0 (no output)` to satisfy a control.
+
 A gate result **not captured in the session that records it** is `UNVERIFIED`,
 never `PASS` — attestation from memory, transcription from another agent's
 report, and a promised future control are all `UNVERIFIED`, which is not a

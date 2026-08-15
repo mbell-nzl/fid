@@ -66,6 +66,18 @@ A real example row:
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 ```
 
+A command whose pass condition is a non-zero exit (an `rg`/`grep` absence
+proof, an `ls` on a path that must not exist) must be declared in the task
+spec's `## Expected Non-Zero Commands` section, and its row carries the
+declared expectation beside the real observed termination:
+
+```text
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+```
+
+The status stays exactly `PASS`. Never rewrite a non-zero absence result as
+`exit 0 (no output)`.
+
 Every required command from the task spec and QA plan must appear here or in
 `## Tests run`. If a command is blocked, record the reason. Do not substitute a
 narrower command for a required gate without a blocker report; silently skipped

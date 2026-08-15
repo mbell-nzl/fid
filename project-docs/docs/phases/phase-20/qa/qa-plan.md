@@ -138,6 +138,17 @@ Unless stated otherwise, commands run from repository root
 commands. Commands added here for Task 16/17 absence proof are also required
 and must appear in those completion reports with their real exit behavior.
 
+**Absence-command notation (DEC-143).** A search or inventory command that
+proves an absence terminates non-zero. Its owning task spec declares the
+expected status under `## Expected Non-Zero Commands`, and the report records
+the real observed status in the declared form
+``- `<cmd>` - PASS - `<token>` (expected `exit_code: N`; terminated `exit_code: M`)``.
+`go.sum` checksum lines retained for the module graph of an accepted retained
+dependency are module-graph bookkeeping, not fid dependencies, so no gate here
+searches `go.sum`. The withdrawn row `rg -n "gopkg.in/yaml.v3" go.mod go.sum`
+is superseded by the two YAML rows below, which prove requirement-level and
+build-graph absence instead of textual absence.
+
 | Gate | Command | Expected Result | Required When |
 |---|---|---|---|
 | Format | `gofmt -l cmd internal` | Exit 0; no files listed | Every task; phase end |
@@ -152,7 +163,8 @@ and must appear in those completion reports with their real exit behavior.
 | Formatter directory absence | `ls internal/format` | Expected failure: non-zero with directory absent | Task 16; review 6; phase end |
 | Formatter import absence | `rg -n "internal/format" cmd internal` | Expected no-match: exit 1, no output | Task 16; review 6; phase end |
 | Serializer absence | `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` | Expected no-match: exit 1, no output | Task 16; review 6; phase end |
-| YAML module absence | `rg -n "gopkg.in/yaml.v3" go.mod go.sum` | Expected no-match: exit 1, no output | Task 16; review 6; phase end |
+| YAML module requirement absence | `rg -ni "yaml" go.mod` | Expected no-match: exit 1, no output | Task 16; review 6; phase end |
+| YAML build-graph absence | `go mod why -vendor -m gopkg.in/yaml.v3` | Exit 0 whose last line is `(main module does not need module gopkg.in/yaml.v3)` | Task 16; review 6; phase end |
 | Stub/promise absence | `rg -n "newDecisionCommand|newEscalationCommand|newTriageCommand|versionGateError|ships in v0\\.2" cmd/fid` | Expected no-match: exit 1, no output | Task 17; review 6; phase end |
 | Full phase gate | The seven-command block below | Every command terminates and passes with its own current-session token | Phase end |
 
@@ -193,7 +205,9 @@ pass condition remains real exit 1 with no output.
 | `ls internal/format` | Executed exactly against current tree | PASS | Current exit 0 and directory listing prove a real existing deletion target; finished-work expectation is non-zero because Task 16 deletes it. |
 | `rg -n "internal/format" cmd internal` | Executed exactly against current tree | PASS | Current exit 0 listed 16 live imports, proving concrete targets; finished-work expectation is exit 1/no output. |
 | `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` | Executed exactly against current tree | PASS | Current exit 0 listed serializer definitions/calls/tests; finished-work expectation is exit 1/no output. |
-| `rg -n "gopkg.in/yaml.v3" go.mod go.sum` | Executed exactly against current module files | PASS | Current exit 0 listed one `go.mod` and two `go.sum` rows; Task 16 owns removal and future exit 1/no output. |
+| ~~`rg -n "gopkg.in/yaml.v3" go.mod go.sum`~~ | Withdrawn 2026-08-16 by DEC-143 | WITHDRAWN | Planning validated only that the pattern currently matched. It could never reach exit 1: `go mod tidy` deterministically restores the `go.sum` checksum required by the retained `github.com/golang-migrate/migrate/v4@v4.19.1`. Superseded by the two rows below. |
+| `rg -ni "yaml" go.mod` | Read the committed `go.mod` after Task 16's tidy | PASS | `go.mod` contains no yaml requirement, direct or indirect, so the finished-work expectation exit 1/no output is reachable; the broader pattern also rejects any other yaml module. |
+| `go mod why -vendor -m gopkg.in/yaml.v3` | `go help mod why` semantics plus module-file state | PASS | `-vendor` excludes tests of dependencies, which is the asserted boundary; a module outside that graph prints `(main module does not need module <path>)` and exits 0. An import chain instead is a real VAL-032 failure. |
 | Stub/promise absence search | Executed the exact planned `rg` against `cmd/fid` | PASS | Current exit 0 listed `versionGateError`, three constructors, and root registrations; Task 17 owns removal and future exit 1/no output. |
 | Task-spec command completeness/placeholders | Parsed all 18 `## Exact Commands To Run` blocks and searched phase contract/task command text | PASS | Every command is concrete; no required command placeholder. Angle-bracket tokens found only in contract JSON examples, not command blocks. |
 | VAL/task acceptance coverage | Compared contract IDs with IDs inside every task's `## Acceptance Criteria` | PASS | Both inventories are exactly sequential `VAL-001..VAL-046`. |
@@ -235,7 +249,7 @@ but are rechecked for complete evidence and assigned final outcomes by QA Lead.
 | QA-11 | Verify exact workflow schemas/grammar/assignment precedence and absence of V1 rule authoring or flag collision `(qa-lead)` | VAL-026 | Request/result/value-domain, forbidden-flag/result, precedence, and typed-failure output. |
 | QA-12 | Verify closed maintenance registry, fixed 299/300 behavior, and identical warn findings/info across success and promoted failure `(qa-lead)` | VAL-027 | Config-independent clock fixtures, decoded branch comparison, channel/exit output. |
 | QA-13 | Verify all eight legacy reads retain semantic valid JSON and journal inspect remains unenveloped, no-revert, and rejects `--json` `(qa-lead)` | VAL-028, VAL-029 | Decoded outputs/semantic fields, command-tree sentinel, source-absence tests. |
-| QA-14 | Verify formatter directory/imports/serializers/YAML, universal flags, and governance promises are absent while module/test/build gates pass `(qa-lead)` | VAL-030, VAL-031, VAL-032, VAL-033, VAL-034 | Required `ls`/`rg` real exit statuses, command-tree tests, tidy diff, full gate. |
+| QA-14 | Verify formatter directory/imports/serializers/YAML, universal flags, and governance promises are absent while module/test/build gates pass `(qa-lead)` | VAL-030, VAL-031, VAL-032, VAL-033, VAL-034 | Required `ls`/`rg` real exit statuses in declared expected-non-zero form, `go mod why -vendor` build-graph absence, command-tree tests, tidy diff, full gate. |
 | QA-15 | Verify exactly 42 executable leaves form one disjoint 21-retained/21-legacy partition with correct root-flag transport behavior `(qa-lead)` | VAL-035 | Literal-list Cobra drift test output; no family ellipses or inferred membership. |
 | QA-16 | Verify the complete canonical JSON journey, specified typed failure, rebuild, and byte-identical Issue reads `(qa-lead)` | VAL-036 | Task 18 integration output and captured pre/post byte comparison artifact. |
 | QA-17 | Verify architecture, playbook, and changelog describe the delivered tree and no current formatter/stub promise survives `(qa-lead)` | VAL-037 | Live command/source tree, rendered/file review, and exact cited doc locations. |

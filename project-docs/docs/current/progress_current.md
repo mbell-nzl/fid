@@ -5,13 +5,12 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-9a and the DEC-133 infrastructure pack are
-complete, with Reviews 1c, infra-review-1, 2, and bounded Review 3b all
-NON-BLOCK.** Review 3's three sustained Task 9 evidence gaps were closed by
-Task 9a without reopening Task 9. Ten escalations (`ESC-20-001..010`) are
-resolved by `DEC-130..DEC-141`; ESC-20-010 is now correctly classified as
-decision-free same-task recovery rather than a Human blocker. No product,
-architecture, data-model, or public-interface decision is open.
+**Phase 20 is in flight: Tasks 1-15 and the DEC-133 infrastructure pack are
+complete, with every cadence and bounded review through `review-5d` closed.**
+Twelve escalations (`ESC-20-001..012`) are resolved by `DEC-130..DEC-143`. Task
+16's formatter/YAML deletion is committed at `afb262d` and owes a continuation
+after `task-16a`. No product, architecture, data-model, public-interface, or
+dependency decision is open.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -88,18 +87,20 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 3. Bounded Review 3b is NON-BLOCK at `db36832`, closing all three sustained
    Review 3 evidence findings. It does not reset cadence; Review 4 remains due
    after Task 12.
-4. Task 10 is complete at `627ca9d` under DEC-141. All six exact commands
-   passed against that committed tree in a normal clone, the completion report
-   is finalized at `f5a0c6f`, and report-lint is PASS. The independent-review
-   request-envelope and reason-code findings are repaired; ESC-20-010 remains
-   closed.
+4. Tasks 10-15 are complete: `627ca9d` (DEC-141), `49c179a`, `161f89c`, the
+   DEC-142 Task 14 continuation, and `24f50aef`. Reviews 4/4b/4c and 5/5b/5c/5d
+   closed every Blocking and Must-fix finding.
 5. The workflow reliability overhaul is implemented and independently PASS.
    It supplies typed repair routing, bounded same-task continuation, strict
    sequence/report checks, QA repair/re-review, and retained polling for silent
    live commands. Generated prompts and canonical controls are synchronized.
-6. A fresh Phase Runner resumes at Task 11 and continues Tasks 11-18 through
-   review windows after Tasks 12, 15, and 17.
-7. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+6. Task 16's deletion is committed at `afb262d` but the task is open: DEC-143
+   withdrew an unsatisfiable QA-plan YAML `go.sum` search for a stronger
+   requirement/build-graph pair, and amended `report-lint.sh` to accept declared
+   expected-non-zero absence rows. `task-16a` lands that control change, then the
+   Task 16 continuation reruns its own gate.
+7. The Phase Runner then continues Task 17, Review 6, and Task 18.
+8. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
 Carry-forward opened this phase, all registered in `decisions_active.md` at
@@ -113,9 +114,10 @@ wrap-up:
 - **CF-030** — make `report-lint.sh`'s rejected-token message state the expected
   shape (a real `ok`/`FAIL`/`PASS` line with package and duration), so a
   truncated-but-honest token is corrected without an escalation (DEC-136).
-- **CF-031** — extend `report-lint.sh` so every required-command row must carry
-  an observed termination result (`exit_code` or an explicit signal), with a
-  self-test case; until it lands the check is a Phase Runner read (DEC-139).
+- **CF-031** — landed as `validate_pass_termination` in `report-lint.sh`: every
+  `PASS` row carries an observed termination result with self-test coverage
+  (DEC-139). `task-16a` amends the same check to accept declared expected
+  non-zero absence rows without weakening it (DEC-143).
 
 All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
 are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is

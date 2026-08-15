@@ -9,7 +9,8 @@
 
 ## Open Escalations
 
-None.
+None. `ESC-20-012` was resolved on 2026-08-16 by DEC-143; its record is in
+`project-docs/docs/phases/phase-20/tl-escalations.md`.
 
 ## Archive Pointers
 

@@ -1103,6 +1103,189 @@
   `docs/reviews/2026-08-15-workflow-reliability-overhaul-audit.md`;
   `docs/reviews/2026-08-15-workflow-reliability-overhaul-plan.md`.
 
+### DEC-142: A removal task owns its own invalidated callers; move the Task 14/15 boundary and close ESC-20-011
+
+- **Date:** 2026-08-16
+- **Context:** Task 14 removed `--format` from the eight legacy JSON leaves and
+  then could not pass its own required lint, race/coverage, and integration
+  commands, because its Out Of Scope section assigned the resulting broken test
+  callers and newly unused formatter test helpers to Task 15. `TRG-20-011` and
+  `ESC-20-011` correctly refused to resolve this locally: repairing the gate
+  would have consumed another task's assigned scope, and changing the gate would
+  have altered a protected gate definition. The contradiction is real and it is
+  mine — the planned 14/15 split drew a task boundary through a single
+  compile-level change. Investigation also found the relevant fact the split
+  obscured: earlier tasks left a deliberate test-harness shim,
+  `migratedReadTestArgs` in `cmd/fid/issue_test.go`, that rewrites
+  `--format json` into `--json` and unwraps the envelope for `ready`,
+  `issue get`, and `issue list`. Those shimmed callers still compile and pass, so
+  they are *not* what breaks Task 14. Only direct callers of the eight leaves
+  Task 14 converted (policy, claim, activity, concern, stats tokens/cost, sql,
+  journal inspect) and the helpers those callers used are red.
+- **Decision:**
+  1. `ESC-20-011` is sustained as a planning defect and resolved by moving the
+     task boundary, not by weakening a gate. Both tasks keep the same six exact
+     commands, thresholds, coverage gate, and assertion strength. No validation
+     assertion is relaxed and no task is deleted.
+  2. **General rule, binding for the rest of the phase and recorded for future
+     planning:** a task that removes a flag, field, handler, or symbol owns every
+     caller that removal invalidates, including test callers and helpers that
+     become unused as a direct result. A downstream cleanup task may never be
+     assigned work that an upstream task needs in order to pass its own required
+     gate. "Leave it for the next task" is only valid when the tree is green
+     without it.
+  3. Task 14 is amended to include caller convergence for exactly the eight
+     leaves it converts: rewrite every remaining `--format` invocation that
+     targets `policy show`, `claim list`, `activity list`, `concern list`,
+     `stats tokens`, `stats cost`, `sql`, or `journal inspect` in unit, e2e, and
+     `cmd/fid/integration` tests to the converted surface, and delete the
+     formatter test helpers those callers leave unused. Ownership is per
+     invocation, not per file; a file may hold both Task 14 and Task 15
+     invocations.
+  4. Task 14 may not extend `migratedReadTestArgs` or any equivalent shim to the
+     eight legacy leaves, may not delete or weaken a behavioral assertion in
+     order to drop a flag, and may not touch `internal/format`, which stays until
+     Task 16 so the compiler keeps surfacing missed callers.
+  5. Task 15 keeps a real, red-first scope: delete the `migratedReadTestArgs`
+     compatibility shim and rewrite the `ready`, `issue get`, `issue list`, and
+     legacy `--section` callers routed through it; drop `--format` from
+     `internal/db/issues_workflow_fk_cli_test.go` and the retained parity suites;
+     and add the repository source guard plus the command-tree zero-format-flag
+     guard. Its source guard must exempt invocations whose assertion is that the
+     flag is **rejected** — those are required VAL-016 and VAL-031 negative
+     evidence and survive until `e2e_v01_format_matrix_test.go` is deleted in
+     Task 16. A guard that forbids them would force Task 15 to destroy accepted
+     evidence.
+  6. Task 14 resumes as a same-task continuation on the preserved uncommitted
+     edits, not a fresh start. Its three `BLOCKED` gate results are immutable
+     failed attempts and stay in the report; the continuation reruns the
+     byte-identical six commands, records the passing attempts, and adds the
+     mandatory deviation note with each first failure's verbatim token and
+     observed termination, root cause, repair, and later result.
+  7. No validation-contract edit is required. VAL-028 and VAL-029 already name
+     task 14 and VAL-031 already names tasks 14-16, so the moved boundary changes
+     no VAL window, owner, or evidence rule. The QA plan is unchanged: Review 5
+     still triggers after Task 15 and still covers tasks/reports 13-15.
+- **Consequences:** Phase Runner resumes at Task 14 with a same-task
+  continuation and the unchanged exact gate; `ESC-20-011` is resolved with no
+  product, contract, schema, dependency, or threshold exception. Task 15 stays a
+  separate task with an honest failing first test. Task 16's boundary is
+  untouched: it still deletes `internal/format`, the YAML dependency, and
+  `e2e_v01_format_matrix_test.go`. `contracts.md` §5 caller ownership is made
+  explicit rather than changed.
+- **Refs:** `TRG-20-011`; `ESC-20-011`; `tasks/task-14.md`;
+  `tasks/task-14-done.md`; `tasks/task-15.md`; `contracts.md` §§5, 5.2, 5.3, 6;
+  `qa/validation-contract.md` VAL-016/028/029/030/031; `qa/qa-plan.md` Review 5;
+  `run-ledger.md` 2026-08-15 TRIAGE and STOP; `AGENTS.md` (Commands; Hard Stops);
+  `project-docs/specs/09_AI_WORKFLOW.md` §6, §9.
+
+### DEC-143: VAL-032's YAML absence is a module-requirement and build-graph proof, not a `go.sum` text match; report-lint accepts declared expected-nonzero rows. Closes ESC-20-012
+
+- **Date:** 2026-08-16
+- **Context:** Task 16 deleted `internal/format`, the format-matrix suite, and the
+  direct `gopkg.in/yaml.v3` requirement, and then could not close. Two separate
+  controls rejected truthful evidence.
+  (1) The accepted QA-plan command `rg -n "gopkg.in/yaml.v3" go.mod go.sum`
+  requires exit 1 with no output, but `go mod tidy` deterministically recreates
+  two `go.sum` checksum lines because the retained, accepted dependency
+  `github.com/golang-migrate/migrate/v4@v4.19.1` requires that module. The
+  command can therefore never reach its pass state while the migration
+  dependency stands; `go mod graph` in the Task 16 report names the source.
+  (2) `report-lint.sh` `validate_pass_termination` fails any `PASS` row that
+  does not end in an observed termination of exit_code 0, so the three truthful absence
+  rows (`rg` no-match exit 1 twice, `ls internal/format` exit 2) produced
+  `OUTCOME RECOVERY_REQUIRED` with exactly three failures — the precise count
+  confirms the diagnosis. `AGENTS.md` (Commands) and `09_AI_WORKFLOW.md` §8
+  *require* recording that real non-zero status; the control forbids it. No
+  truthful report could pass.
+- **Decision:**
+  1. `TRG-20-012` is **sustained on both halves**. Neither condition was a
+     decision-free Task 16 repair: one needs dependency authority, the other
+     needs quality-gate-definition and workflow authority. The Developer
+     preserved the failing evidence, changed no command, threshold, or
+     assertion, and named the root cause correctly in both cases.
+  2. **VAL-032 absence authority.** The YAML dependency is absent when all of:
+     (a) `go.mod` requires no yaml module, direct or indirect;
+     (b) no yaml package is in the main module's package graph, including this
+     module's own tests; (c) no universal YAML serializer remains in product
+     source (already VAL-033); and (d) `go mod tidy`, the full race/coverage
+     suite, and `go build` exit 0. **A `go.sum` checksum line retained for the
+     module graph of an accepted retained dependency is not a fid dependency.**
+     `go.sum` records checksums across the module graph, including tests of
+     dependencies, and tidy recreates them deterministically; a text match there
+     proves module-graph bookkeeping, not that fid links or imports YAML. The
+     accepted removal inventory agrees: `contracts.md` §5.3 asks only that
+     `gopkg.in/yaml.v3` be dropped **from the require block**, and says nothing
+     about `go.sum`. The QA plan, not the contract, invented the wider claim.
+  3. **No dependency change is approved.** Removing, replacing, downgrading, or
+     pinning `github.com/golang-migrate/migrate/v4@v4.19.1`, adding `exclude`
+     or `replace` directives, hand-editing `go.sum`, or leaving the module files
+     untidy to satisfy a search are all refused. The dependency budget is
+     unchanged: Phase 20 removes one direct dependency and adds none.
+  4. **The QA-plan YAML row is replaced, not relaxed.** The withdrawn command is
+     superseded by a strictly stronger pair, still required for Task 16, review
+     6, and phase end:
+     `rg -ni "yaml" go.mod` — expected `exit_code: 1`, no output, which rejects
+     *any* yaml module requirement rather than one module path; and
+     `go mod why -vendor -m gopkg.in/yaml.v3` — exit 0 whose last line must read
+     `(main module does not need module gopkg.in/yaml.v3)`, where `-vendor`
+     excludes tests of dependencies, which is exactly the boundary being
+     asserted. The retired command could pass only by textual accident; the
+     replacement pair proves requirement-level and build-graph absence. If
+     `go mod why -vendor` instead prints an import chain, that is a genuine
+     VAL-032 failure and a blocker candidate, never a notation problem.
+  5. **Report-lint is a defective control and is amended, not the evidence.**
+     `09_AI_WORKFLOW.md` §8 already binds: a control that requires more of a
+     completion report than the canonical contract and the template do is a
+     defect in the control, and DEC-139's standing rule forbids requiring an
+     artifact field the producing role was never told to produce. The amended
+     rule is:
+     - A task spec may declare an optional `## Expected Non-Zero Commands`
+       section whose rows read ``- `<command>` - expected `exit_code: <N>` ``
+       with `N` greater than zero.
+     - A `PASS` row may record a non-zero termination **only** as
+       ``- `<cmd>` - PASS - `<token>` (expected `exit_code: N`; terminated `exit_code: M`)``
+       where that exact command is declared in the spec with the same `N`, and
+       the observed `M` equals `N`.
+     - An undeclared non-zero `PASS`, a declared `N` of zero, and any `M` that
+       differs from `N` all remain failures. Absent the section, current
+       behavior is unchanged.
+     The expectation is pre-committed by the Tech Lead in the spec and the
+     observed status stays verbatim in the report, so the real termination is
+     never laundered into a bare `PASS`.
+  6. **Canon is single-sourced on one row grammar.** `AGENTS.md` (Commands),
+     `09_AI_WORKFLOW.md` §8, the completion-report template, and the task-spec
+     template carry the same notation. §8's `PASS (no match) - exit 1 (no
+     output)` phrasing is corrected: the status field is machine-parsed and must
+     be exactly `PASS`, with the no-match claim in the explicit `expected` field.
+  7. **Task 16 resumes as a same-task continuation**, on the DEC-141/DEC-142
+     model. The `BLOCKED` row for `rg -n "gopkg.in/yaml.v3" go.mod go.sum` and
+     both report-lint failures stay in `task-16-done.md` as immutable failed
+     attempts with the mandatory deviation note. The withdrawn command is
+     **not** rerun; it is recorded `WITHDRAWN by DEC-143` with the replacement
+     rows beside it. The continuation reruns the full amended command list in
+     its own session and records its own tokens, because a result not captured
+     in the session that records it is `UNVERIFIED`.
+  8. **Task 17's spec omission is corrected now.** The QA plan has always
+     required the stub/promise absence search at Task 17, but `task-17.md` never
+     listed it, which would have reproduced this same conflict one task later.
+     It is added with its expected-non-zero declaration, per the standing rule
+     that a task spec lists the full gate the Developer must run.
+  9. No product behavior, contract, schema, VAL window, review trigger, task
+     boundary, threshold, or assertion strength changes. `afb262d` stands.
+- **Consequences:** Phase Runner resumes at the Task 16 continuation, then Task
+  17, Review 6, and Task 18. `report-lint.sh` gains one accepted state and four
+  new self-test rejections, written red-first. VAL-032 keeps a stronger proof
+  than the one it replaces, and every future absence command in this repository
+  has one lawful, machine-checkable notation.
+- **Refs:** `TRG-20-012`; `ESC-20-012`; `tasks/task-16.md`;
+  `tasks/task-16-done.md`; `tasks/task-17.md`; `qa/qa-plan.md` §§5-6, QA-14;
+  `qa/validation-contract.md` VAL-030/031/032/033; `go.mod`; `go.sum`;
+  `project-docs/tools/report-lint.sh` (`validate_pass_termination`,
+  `required_commands`, self-test); `AGENTS.md` (Commands);
+  `project-docs/specs/09_AI_WORKFLOW.md` §8; DEC-136 decision 2; DEC-139;
+  DEC-141; DEC-142; `run-ledger.md` 2026-08-16 TASK-RECOVERY/TRIAGE/STOP.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

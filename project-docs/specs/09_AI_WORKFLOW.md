@@ -1351,11 +1351,23 @@ failing a compliant report.
 The token is the command's real exit behavior, not the expected one. A search
 or inventory command (`rg`, `grep`) used to prove an *absence* — no production
 evaluator, no forbidden call site — terminates with **exit 1 and no output**
-when it finds nothing, which is the pass condition for that assertion. Record
-`PASS (no match) - exit 1 (no output)` and name the assertion; `exit 0 (no
-output)` is reserved for a silent success and is fabricated evidence here. A
-task spec or QA plan that relies on such an inventory states its expected exit
-status, so the Developer never has to infer one.
+when it finds nothing, which is the pass condition for that assertion;
+`exit 0 (no output)` is reserved for a silent success and is fabricated
+evidence here. A task spec that relies on such a command declares its expected
+status under an `## Expected Non-Zero Commands` section, so the Developer never
+infers one, and the report records the real observed status in that declared
+form:
+
+```text
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+```
+
+The status field is machine-parsed and stays exactly `PASS`; the no-match claim
+lives in the explicit `expected` field beside the observed termination. An
+undeclared non-zero `PASS`, a declared expectation of zero, and an observed
+status that differs from the declared one are all failed gates. This keeps one
+lawful notation for absence evidence rather than a status word a control cannot
+parse.
 
 A required-command failure is an immutable failed attempt, not automatically a
 failed task or Human blocker. When its causal repair is inside accepted task
