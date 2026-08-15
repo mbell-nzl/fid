@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 1
+- Recovery attempts: 2
 - Next action: None.
 - Human attention required: no
 
@@ -25,6 +25,11 @@
   ordering and rebuild parity. The live command tree remains free of universal
   format flags; all named retired-format rejection tests and the V1 format
   matrix remain in place.
+- Added the missing dynamic full-Cobra-tree guard in
+  `cmd/fid/contract_surface_test.go`. It recursively inspects every live
+  command's local non-persistent, persistent, and inherited flag sets for
+  `format`, `toon`, `yaml`, and `markdown`, with injected inherited and local
+  flags proving the guard detects violations.
 - Left `internal/format` and the eight Task 14 leaves unchanged.
 
 ## Files created or modified
@@ -62,17 +67,23 @@
   assertions for concern, acceptance-criterion verification, completion, ready,
   issue get, and issue list behavior. The exact race/coverage gate and the
   integration gate both pass.
-- VAL-031: PASS. `TestLiveTestsContainNoUniversalFormatInvocation` passes after
-  the full caller conversion; the live source contains no shim helper names,
-  and remaining `--format` literals are confined to retained rejection tests,
-  including `e2e_v01_format_matrix_test.go`. The root command-tree guard is
-  included in the passing full suite.
+- VAL-031: PASS. `TestLiveCobraTreeContainsNoUniversalFormatFlags` recursively
+  walks the complete `newRootCommandAt` Cobra tree and checks local,
+  persistent, and inherited flag sets for all four universal-format names.
+  `TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags` proves both an
+  inherited root flag and a local leaf flag are detected. The existing
+  `TestLiveTestsContainNoUniversalFormatInvocation` AST guard also passes; no
+  shim helper names remain, and remaining `--format` literals are confined to
+  retained rejection tests including `e2e_v01_format_matrix_test.go`.
 - Retained VAL-016 negative evidence remains covered by the named rejection
   tests and `TestV01ReadCommandsRejectRetiredFormats`; explicit root flags on
   legacy leaves remain rejected.
 
 ## Tests run
 
+- `go test ./cmd/fid -run '^TestLiveCobraTree' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - red-first compile failure before the dynamic walker was added; the new tests referenced the not-yet-defined guard helper.
+- `go test ./cmd/fid -run '^TestLiveCobraTree' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.050s` - dynamic live-tree guard and injected inherited/local negative controls (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^(TestLiveCobraTreeContainsNoUniversalFormatFlags|TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags|TestLiveTestsContainNoUniversalFormatInvocation|TestIssueGetRejectsRetiredFormatFlags|TestIssueGetRejectsAllFormatValues|TestIssueListRejectsRetiredFormatFlag|TestLabelListRejectsLegacyFormatFlag|TestReadyRejectsRetiredFormatFlag|TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues|TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat|TestV01ReadCommandsRejectRetiredFormats|TestIssueReadRejectsRetiredAndMalformedInputs)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.292s` - dynamic guard, AST source guard, and retained rejection matrix (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - immutable prior focused guard failure before caller convergence; the report checkpoint records the earlier inventory.
 - `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.080s` - later byte-identical guard pass (terminated `exit_code: 0`)
 - `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - initial convergence exposed retired owner, concern, acceptance-verification, and completion read assumptions.
@@ -93,6 +104,12 @@
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t77.4%` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 5.136s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6%` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t77.4%` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.734s` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` - MF-02 repair rerun (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -111,6 +128,12 @@
   fixture was moved to 298 seconds; the fixed-300-second positive assertion and
   retired-format rejection assertion were retained. The unchanged command then
   ended with the recorded passing package token and `exit_code: 0`.
+- Review 5 MF-02 recovery deviation: the red-first dynamic guard test initially
+  ended with `FAIL` and `exit_code: 1` because the walker helper was not yet
+  defined. The repair added the test-only recursive Cobra traversal and its
+  inherited/local injected-flag negative controls. The existing AST guard and
+  retained rejection tests were not weakened or changed; the focused matrix
+  and all unchanged Task 15 gates then passed.
 - No product, architecture, public-interface, dependency, gate-definition, or
   assertion-strength decision was changed.
 
