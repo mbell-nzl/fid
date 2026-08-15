@@ -11,6 +11,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+const linkListLimit = 10000
+
 func List(options ListOptions) ([]ListItem, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return nil, fmt.Errorf("link list: workspace root is required")
@@ -21,6 +23,10 @@ func List(options ListOptions) ([]ListItem, error) {
 	entityID := strings.TrimSpace(options.EntityID)
 	if entityID == "" {
 		return nil, fmt.Errorf("link list: entity id is required")
+	}
+	entityType, err := endpointType(options.EntityType, "type", "link list")
+	if err != nil {
+		return nil, err
 	}
 
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
@@ -33,10 +39,17 @@ func List(options ListOptions) ([]ListItem, error) {
 	}
 	defer closeLinksConn(conn)
 
-	return queryLinkList(conn, entityID)
+	entityType, err = resolveEndpointType(conn, entityType, entityID)
+	if err != nil {
+		return nil, err
+	}
+	if err := assertEndpointExists(conn, "link list", entityType, entityID, "", "", ""); err != nil {
+		return nil, err
+	}
+	return queryLinkList(conn, entityType, entityID)
 }
 
-func queryLinkList(conn *sql.DB, entityID string) ([]ListItem, error) {
+func queryLinkList(conn *sql.DB, entityType, entityID string) ([]ListItem, error) {
 	rows, err := conn.Query(`
 		WITH entity_links AS (
 			SELECT
@@ -46,7 +59,7 @@ func queryLinkList(conn *sql.DB, entityID string) ([]ListItem, error) {
 				to_id AS entity_id,
 				COALESCE(created_at, '') AS created_at
 			FROM links
-			WHERE from_id = ?
+			WHERE from_type = ? AND from_id = ?
 			UNION ALL
 			SELECT
 				'incoming' AS direction,
@@ -55,7 +68,7 @@ func queryLinkList(conn *sql.DB, entityID string) ([]ListItem, error) {
 				from_id AS entity_id,
 				COALESCE(created_at, '') AS created_at
 			FROM links
-			WHERE to_id = ?
+			WHERE to_type = ? AND to_id = ?
 		)
 		SELECT
 			el.direction,
@@ -74,11 +87,11 @@ func queryLinkList(conn *sql.DB, entityID string) ([]ListItem, error) {
 			ON el.entity_type = 'requirement' AND requirement.id = el.entity_id
 		ORDER BY
 			CASE el.direction WHEN 'outgoing' THEN 0 ELSE 1 END,
-			el.created_at,
 			el.relation,
 			el.entity_type,
 			el.entity_id
-	`, entityID, entityID)
+		LIMIT ?
+	`, entityType, entityID, entityType, entityID, linkListLimit+1)
 	if err != nil {
 		return nil, fmt.Errorf("query link list for %q: %w", entityID, err)
 	}
@@ -102,6 +115,9 @@ func queryLinkList(conn *sql.DB, entityID string) ([]ListItem, error) {
 			continue
 		}
 		items = append(items, item)
+		if len(items) > linkListLimit {
+			return nil, &ResultLimitExceededError{Collection: "links", Limit: linkListLimit, Observed: len(items)}
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate link list rows for %q: %w", entityID, err)

@@ -2,7 +2,7 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
+	"encoding/json"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -24,16 +24,16 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 	for _, want := range []string{
 		"linked " + firstIssueID + " blocks " + secondIssueID,
 		"inverse: " + secondIssueID + " blocked_by " + firstIssueID,
 	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr = %q, want substring %q", stderr, want)
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout = %q, want substring %q", stdout, want)
 		}
 	}
 
@@ -64,8 +64,8 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	}
 
 	event := mustReadLastJournalEvent(t, journalPath)
-	if len(event.Effects) != 3 {
-		t.Fatalf("effect count = %d, want 3", len(event.Effects))
+	if len(event.Effects) != 5 {
+		t.Fatalf("effect count = %d, want 5", len(event.Effects))
 	}
 	insertEffects := 0
 	activityEffects := 0
@@ -75,6 +75,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 			insertEffects++
 		case effect.Op == "activity" && effect.Table == "activity_log":
 			activityEffects++
+		case effect.Op == "update" && effect.Table == "issues":
 		default:
 			t.Fatalf("unexpected effect = %#v", effect)
 		}
@@ -121,16 +122,16 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 		issueID := createCommandIssue(t, workspace, "Implements issue")
 		syncCommandRequirement(t, workspace, "PRD-LINK-002")
 
-		stdout, stderr := runFIDCommand(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--by", "developer")
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
+		stdout, stderr := runFIDCommand(t, workspace, "link", "add", issueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
 		}
 		for _, want := range []string{
 			"linked " + issueID + " implements PRD-LINK-002",
 			"inverse: PRD-LINK-002 implemented_by " + issueID,
 		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			if !strings.Contains(stdout, want) {
+				t.Fatalf("stdout = %q, want substring %q", stdout, want)
 			}
 		}
 
@@ -161,10 +162,10 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 				setup: func(t *testing.T, workspace string) []string {
 					firstIssueID := createCommandIssue(t, workspace, "First issue")
 					secondIssueID := createCommandIssue(t, workspace, "Second issue")
-					runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+					runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 					return []string{firstIssueID, secondIssueID}
 				},
-				command:       []string{"link", "add", "", "blocks", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 				wantSubstring: "error: link add: link already exists:",
 			},
 			{
@@ -172,7 +173,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 				setup: func(t *testing.T, workspace string) []string {
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
-				command:       []string{"link", "add", "", "parent_of", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "parent_of", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 				wantSubstring: `error: link add: unknown relation "parent_of"`,
 			},
 			{
@@ -181,7 +182,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 					issueID := createCommandIssue(t, workspace, "Self issue")
 					return []string{issueID, issueID}
 				},
-				command:       []string{"link", "add", "", "relates_to", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "relates_to", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 				wantSubstring: "error: link add: self link is not allowed:",
 			},
 			{
@@ -189,7 +190,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 				setup: func(t *testing.T, workspace string) []string {
 					return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 				},
-				command:       []string{"link", "add", "", "implements", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 				wantSubstring: `error: link add: relation "implements" is not valid between issue`,
 			},
 			{
@@ -199,7 +200,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 					syncCommandRequirement(t, workspace, "PRD-LINK-002")
 					return []string{issueID, "PRD-LINK-002"}
 				},
-				command:       []string{"link", "add", "", "blocks", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "blocks", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
 				wantSubstring: `error: link add: relation "blocks" is not valid between issue`,
 			},
 			{
@@ -207,7 +208,7 @@ func TestLinkAddImplementsRequirementAndRejectsInvalidInputBeforeAppend(t *testi
 				setup: func(t *testing.T, workspace string) []string {
 					return []string{createCommandIssue(t, workspace, "Issue"), "PRD-LINK-002"}
 				},
-				command:       []string{"link", "add", "", "implements", "", "--by", "developer"},
+				command:       []string{"link", "add", "", "implements", "", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
 				wantSubstring: `error: link add: requirement "PRD-LINK-002" does not resolve`,
 			},
 		}
@@ -252,7 +253,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 
 	firstIssueID := createCommandIssue(t, workspace, "First issue")
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
-	runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -265,16 +266,16 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 
 	activityBefore := countActivityLogRows(t, conn)
 
-	stdout, stderr := runFIDCommand(t, workspace, "link", "remove", firstIssueID, "blocks", secondIssueID, "--by", "developer")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	stdout, stderr := runFIDCommand(t, workspace, "link", "remove", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 	for _, want := range []string{
 		"removed link " + firstIssueID + " blocks " + secondIssueID,
 		"inverse removed: " + secondIssueID + " blocked_by " + firstIssueID,
 	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr = %q, want substring %q", stderr, want)
+		if !strings.Contains(stdout, want) {
+			t.Fatalf("stdout = %q, want substring %q", stdout, want)
 		}
 	}
 
@@ -291,8 +292,8 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 	}
 
 	event := mustReadLastJournalEvent(t, journalPath)
-	if len(event.Effects) != 3 {
-		t.Fatalf("effect count = %d, want 3", len(event.Effects))
+	if len(event.Effects) != 5 {
+		t.Fatalf("effect count = %d, want 5", len(event.Effects))
 	}
 
 	deleteEffects := 0
@@ -303,6 +304,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 			deleteEffects++
 		case effect.Op == "activity" && effect.Table == "activity_log":
 			activityEffects++
+		case effect.Op == "update" && effect.Table == "issues":
 		default:
 			t.Fatalf("unexpected effect = %#v", effect)
 		}
@@ -353,7 +355,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 			setup: func(t *testing.T, workspace string) []string {
 				return []string{createCommandIssue(t, workspace, "First issue"), createCommandIssue(t, workspace, "Second issue")}
 			},
-			command:       []string{"link", "remove", "", "blocks", "", "--by", "developer"},
+			command:       []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 			wantSubstring: "error: link remove: link does not exist:",
 		},
 		{
@@ -361,10 +363,10 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 			setup: func(t *testing.T, workspace string) []string {
 				firstIssueID := createCommandIssue(t, workspace, "First issue")
 				secondIssueID := createCommandIssue(t, workspace, "Second issue")
-				runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "developer")
+				runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 				return []string{firstIssueID, secondIssueID}
 			},
-			command:       []string{"link", "remove", "", "blocks", "", "--by", "intern"},
+			command:       []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "intern"},
 			wantSubstring: `error: role "intern" not in project profile`,
 		},
 	}
@@ -426,7 +428,7 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	rejectedStdout, rejectedStderr, err := runFIDCommandExpectError(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--by", "intern")
+	rejectedStdout, rejectedStderr, err := runFIDCommandExpectError(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "intern")
 	if err == nil {
 		t.Fatal("Execute() error = nil, want unknown-role rejection")
 	}
@@ -441,7 +443,7 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	}
 }
 
-func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParity(t *testing.T) {
+func TestLinkListReturnsTypedCanonicalJSONInContractOrder(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -451,44 +453,24 @@ func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParit
 	incomingIssueID := createCommandIssue(t, workspace, "Add index on concerns(issue_id, status)")
 	syncCommandRequirementWithSummary(t, workspace, "PRD-LINK-002", "Unified polymorphic issue table")
 
-	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "blocks", outgoingIssueID, "--by", "developer")
-	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--by", "developer")
-	runFIDCommand(t, workspace, "link", "add", incomingIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "blocks", outgoingIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+	runFIDCommand(t, workspace, "link", "add", incomingIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", "json")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "--json", "link", "list", primaryIssueID, "--type", "issue")
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
 
-	want := decodeCommandJSONStructure(t, jsonStdout)
-	if got := decodeCommandLinkMarkdownRows(t, mustLinkListMarkdown(t, workspace, primaryIssueID)); !commandStructuresEqual(want, got) {
-		t.Fatalf("markdown structure = %#v, want %#v", got, want)
+	envelope := decodeCommandJSONStructure(t, jsonStdout).(map[string]any)
+	if envelope["operation"] != "link.list" || envelope["event"] != nil {
+		t.Fatalf("link list envelope = %#v, want link.list read with null event", envelope)
 	}
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		formatName := formatName
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			default:
-				t.Fatalf("unsupported format test %q", formatName)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
+	result := envelope["result"].(map[string]any)
+	if result["entity_type"] != "issue" || result["entity_id"] != primaryIssueID || result["count"] != json.Number("3") {
+		t.Fatalf("link list result header = %#v", result)
 	}
-
-	rows := want.([]any)
+	rows := result["links"].([]any)
 	if len(rows) != 3 {
 		t.Fatalf("link list rows = %#v, want 3 rows", rows)
 	}
@@ -522,7 +504,7 @@ func TestLinkListReturnsOutgoingAndIncomingLinksWithResolvedTitlesAndFormatParit
 			t.Fatalf("row %d = %#v, want object", index, rows[index])
 		}
 		for key, wantValue := range wantRow {
-			if gotValue := fmt.Sprintf("%v", gotRow[key]); gotValue != fmt.Sprintf("%v", wantValue) {
+			if gotValue := gotRow[key]; gotValue != wantValue {
 				t.Fatalf("row %d field %s = %v, want %v", index, key, gotRow[key], wantValue)
 			}
 		}
@@ -536,32 +518,13 @@ func TestLinkListEmptyResult(t *testing.T) {
 
 	issueID := createCommandIssue(t, workspace, "Unlinked issue")
 
-	for _, formatName := range []string{"json", "toon", "yaml"} {
-		stdout, stderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", formatName)
-		if stderr != "" {
-			t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
-		}
-
-		var got any
-		switch formatName {
-		case "json":
-			got = decodeCommandJSONStructure(t, stdout)
-		case "toon":
-			got = decodeCommandTOONStructure(t, stdout)
-		case "yaml":
-			got = decodeCommandYAMLStructure(t, stdout)
-		}
-		if !commandStructuresEqual([]any{}, got) {
-			t.Fatalf("%s structure = %#v, want empty array", formatName, got)
-		}
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "link", "list", issueID, "--type", "issue")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	if got := decodeCommandLinkMarkdownRows(t, markdownStdout); !commandStructuresEqual([]any{}, got) {
-		t.Fatalf("markdown structure = %#v, want empty array", got)
+	result := decodeCommandJSONStructure(t, stdout).(map[string]any)["result"].(map[string]any)
+	if result["count"] != json.Number("0") || len(result["links"].([]any)) != 0 {
+		t.Fatalf("empty link result = %#v, want no links", result)
 	}
 }
 
@@ -638,51 +601,6 @@ func syncCommandRequirementWithSummary(t *testing.T, workspace, requirementID, s
 	if !strings.Contains(stderr, "synced requirements from project-docs/specs/link_requirements.md") {
 		t.Fatalf("stderr = %q, want requirement sync confirmation", stderr)
 	}
-}
-
-func mustLinkListMarkdown(t *testing.T, workspace, issueID string) string {
-	t.Helper()
-
-	stdout, stderr := runFIDCommand(t, workspace, "link", "list", issueID, "--format", "markdown")
-	if stderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", stderr)
-	}
-	return stdout
-}
-
-func decodeCommandLinkMarkdownRows(t *testing.T, value string) any {
-	t.Helper()
-
-	lines := strings.Split(strings.TrimSpace(value), "\n")
-	if len(lines) == 0 || lines[0] != "# Links" {
-		t.Fatalf("markdown output = %q, want # Links header", value)
-	}
-	if len(lines) >= 3 && strings.TrimSpace(lines[2]) == "(no links)" {
-		return []any{}
-	}
-	if len(lines) < 5 {
-		t.Fatalf("markdown output = %q, want links table", value)
-	}
-
-	rows := []any{}
-	for _, line := range lines[4:] {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-		cells := splitMarkdownTableRow(trimmed)
-		if len(cells) != 5 {
-			t.Fatalf("markdown row = %q, want 5 cells", line)
-		}
-		rows = append(rows, map[string]any{
-			"direction":    cells[0],
-			"relation":     cells[1],
-			"entity_type":  cells[2],
-			"entity_id":    cells[3],
-			"entity_title": cells[4],
-		})
-	}
-	return rows
 }
 
 func splitMarkdownTableRow(line string) []string {

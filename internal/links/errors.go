@@ -1,6 +1,9 @@
 package links
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type UnknownRelationError struct {
 	Operation string
@@ -19,6 +22,44 @@ type SelfLinkError struct {
 	FromID    string
 	Relation  string
 	ToID      string
+}
+
+type DependencyCycleError struct {
+	Operation string
+	Path      []string
+}
+
+type InvalidEndpointTypeError struct {
+	Operation string
+	Argument  string
+	Value     string
+}
+
+type ResultLimitExceededError struct {
+	Collection string
+	Limit      int
+	Observed   int
+}
+
+func (err *ResultLimitExceededError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%s exceeds limit %d with %d items", err.Collection, err.Limit, err.Observed)
+}
+
+func (err *InvalidEndpointTypeError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%s: %s must be issue or requirement, got %q", linkOperationName(err.Operation), err.Argument, err.Value)
+}
+
+func (err *DependencyCycleError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%s: dependency cycle: %s", linkOperationName(err.Operation), strings.Join(err.Path, " -> "))
 }
 
 func (err *SelfLinkError) Error() string {
@@ -94,8 +135,10 @@ func (err *DuplicateLinkError) Error() string {
 
 type MissingLinkError struct {
 	Operation string
+	FromType  string
 	FromID    string
 	Relation  string
+	ToType    string
 	ToID      string
 }
 

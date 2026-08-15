@@ -196,13 +196,13 @@ func assertClosureRejectedWithoutJournalAppend(t *testing.T, binary, workspace, 
 func assertClosureLinkReadback(t *testing.T, binary, workspace, mainIssueID, peerIssueID string) {
 	t.Helper()
 
-	mainLinks, _ := closureRunFID(t, binary, workspace, "link", "list", mainIssueID, "--format", "json")
+	mainLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", mainIssueID, "--type", "issue")
 	for _, want := range []string{"PRD-LINK-002", peerIssueID, "implements", "discovered_from"} {
 		if !strings.Contains(mainLinks, want) {
 			t.Fatalf("main link list = %q, want %q", mainLinks, want)
 		}
 	}
-	peerLinks, _ := closureRunFID(t, binary, workspace, "link", "list", peerIssueID, "--format", "json")
+	peerLinks, _ := closureRunFID(t, binary, workspace, "--json", "link", "list", peerIssueID, "--type", "issue")
 	if !strings.Contains(peerLinks, mainIssueID) || !strings.Contains(peerLinks, "discovered_from") {
 		t.Fatalf("peer link list = %q, want inverse to %q", peerLinks, mainIssueID)
 	}
@@ -293,7 +293,7 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
 		{"--json", "ready"},
-		{"link", "list", issueID, "--format", "json"},
+		{"--json", "link", "list", issueID, "--type", "issue"},
 		{"stats", "cost", "--by", "role", "--format", "json"},
 		{"stats", "tokens", "--by", "role", "--format", "json"},
 		{"policy", "show", "--format", "json"},

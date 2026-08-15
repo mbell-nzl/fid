@@ -51,11 +51,11 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	}
 	closureRunFID(t, binary, workspace, "issue", "unclaim", mainIssueID, "--by", "developer")
 
-	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--by", "developer")
-	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--by", "developer")
+	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
+	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--by", "developer"},
+		[]string{"link", "add", mainIssueID, "implements", peerIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
 		"relation")
 
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)

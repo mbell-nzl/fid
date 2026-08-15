@@ -9,6 +9,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -29,6 +30,14 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		return RemoveResult{}, err
 	}
 
+	fromType, err := endpointType(options.FromType, "from-type", "link remove")
+	if err != nil {
+		return RemoveResult{}, err
+	}
+	toType, err := endpointType(options.ToType, "to-type", "link remove")
+	if err != nil {
+		return RemoveResult{}, err
+	}
 	fromID := strings.TrimSpace(options.FromID)
 	relation := strings.TrimSpace(options.Relation)
 	toID := strings.TrimSpace(options.ToID)
@@ -39,9 +48,9 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		return RemoveResult{}, &SelfLinkError{Operation: "link remove", FromID: fromID, Relation: relation, ToID: toID}
 	}
 
-	commandArgv := linkRemoveArgv(fromID, relation, toID, options.ActorRole)
+	commandArgv := linkRemoveArgv(fromID, fromType, relation, toID, toType, options.ActorRole)
 	var result RemoveResult
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
@@ -55,8 +64,14 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		}
 		defer closeLinksConn(conn)
 
-		declared, inverse, err := plannedRemoval(fromID, relation, toID)
+		declared, inverse, err := plannedRemoval(conn, fromType, fromID, relation, toType, toID)
 		if err != nil {
+			return err
+		}
+		if err := assertEndpointExists(conn, "link remove", declared.FromType, declared.FromID, relation, declared.ToType, declared.ToID); err != nil {
+			return err
+		}
+		if err := assertEndpointExists(conn, "link remove", declared.ToType, declared.ToID, relation, declared.FromType, declared.FromID); err != nil {
 			return err
 		}
 		storedDeclared, err := loadStoredLink(conn, declared)
@@ -90,11 +105,20 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		}
 
 		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
+		observedRevisions, err := linkIssueRevisions(conn, declared)
+		if err != nil {
+			return err
+		}
+		revisionEffects, err := issues.BuildIssueRevisionEffects(observedRevisions)
+		if err != nil {
+			return err
+		}
 		event.Effects = []journal.Effect{
 			linkDeleteEffect(storedDeclared),
 			linkDeleteEffect(storedInverse),
-			linkRemoveActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse),
 		}
+		event.Effects = append(event.Effects, revisionEffects...)
+		event.Effects = append(event.Effects, linkRemoveActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse))
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
 			return err
@@ -108,7 +132,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 			return err
 		}
 
-		result = RemoveResult{Declared: declared, Inverse: inverse}
+		result = RemoveResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339)}
 		return nil
 	})
 	if err != nil {
@@ -123,12 +147,20 @@ type storedLink struct {
 	CreatedAt string
 }
 
-func plannedRemoval(fromID, relation, toID string) (Link, Link, error) {
+func plannedRemoval(conn *sql.DB, fromType, fromID, relation, toType, toID string) (Link, Link, error) {
+	resolvedFromType, err := resolveEndpointType(conn, fromType, fromID)
+	if err != nil {
+		return Link{}, Link{}, err
+	}
+	resolvedToType, err := resolveEndpointType(conn, toType, toID)
+	if err != nil {
+		return Link{}, Link{}, err
+	}
 	declared := Link{
-		FromType: endpointTypeForID(fromID),
+		FromType: resolvedFromType,
 		FromID:   fromID,
 		Relation: relation,
-		ToType:   endpointTypeForID(toID),
+		ToType:   resolvedToType,
 		ToID:     toID,
 	}
 	if !relationAllowedForTypes(declared.Relation, declared.FromType, declared.ToType) {
@@ -141,7 +173,6 @@ func plannedRemoval(fromID, relation, toID string) (Link, Link, error) {
 			ToID:      declared.ToID,
 		}
 	}
-
 	inverseRelationName, _ := inverseRelation(relation)
 	inverse := Link{
 		FromType: declared.ToType,
@@ -167,16 +198,18 @@ func loadStoredLink(conn *sql.DB, link Link) (storedLink, error) {
 	if err == sql.ErrNoRows {
 		return storedLink{}, &MissingLinkError{
 			Operation: "link remove",
+			FromType:  link.FromType,
 			FromID:    link.FromID,
 			Relation:  link.Relation,
+			ToType:    link.ToType,
 			ToID:      link.ToID,
 		}
 	}
 	return storedLink{}, fmt.Errorf("link remove: query existing link %s %s %s: %w", link.FromID, link.Relation, link.ToID, err)
 }
 
-func linkRemoveArgv(fromID, relation, toID, actorRole string) []string {
-	return []string{"fid", "link", "remove", fromID, relation, toID, "--by", actorRole}
+func linkRemoveArgv(fromID, fromType, relation, toID, toType, actorRole string) []string {
+	return []string{"fid", "link", "remove", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--by", actorRole}
 }
 
 func linkDeleteEffect(link storedLink) journal.Effect {

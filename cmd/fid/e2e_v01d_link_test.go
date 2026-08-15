@@ -22,40 +22,40 @@ func TestV01DLinkFlowAndRebuildParity(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBeforePhase12Writes := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	_, linkIssueStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	_, linkIssueStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, linkIssueStderr)
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+1 {
 		t.Fatalf("journal lines after issue link add = %d, want %d", got, linesBeforePhase12Writes+1)
 	}
 
-	_, linkRequirementStderr := runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--by", "developer")
+	_, linkRequirementStderr := runFIDCommand(t, workspace, "link", "add", primaryIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 	assertNoNestedLockFailure(t, linkRequirementStderr)
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+2 {
 		t.Fatalf("journal lines after requirement link add = %d, want %d", got, linesBeforePhase12Writes+2)
 	}
 
-	primaryListStdout, primaryListStderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", "json")
+	primaryListStdout, primaryListStderr := runFIDCommand(t, workspace, "--json", "link", "list", primaryIssueID, "--type", "issue")
 	if primaryListStderr != "" {
 		t.Fatalf("primary list stderr = %q, want empty", primaryListStderr)
 	}
-	primaryList := decodeCommandJSONStructure(t, primaryListStdout).([]any)
+	primaryList := decodeCommandJSONStructure(t, primaryListStdout).(map[string]any)["result"].(map[string]any)["links"].([]any)
 	if len(primaryList) != 2 {
 		t.Fatalf("primary link list = %#v, want 2 rows", primaryList)
 	}
 	assertCommandLinkListRow(t, primaryList[0], "outgoing", "implements", "requirement", "PRD-LINK-002", "Unified polymorphic issue table")
 	assertCommandLinkListRow(t, primaryList[1], "incoming", "discovered_from", "issue", peerIssueID, "Add index on concerns(issue_id, status)")
 
-	requirementListStdout, requirementListStderr := runFIDCommand(t, workspace, "link", "list", "PRD-LINK-002", "--format", "json")
+	requirementListStdout, requirementListStderr := runFIDCommand(t, workspace, "--json", "link", "list", "PRD-LINK-002", "--type", "requirement")
 	if requirementListStderr != "" {
 		t.Fatalf("requirement list stderr = %q, want empty", requirementListStderr)
 	}
-	requirementList := decodeCommandJSONStructure(t, requirementListStdout).([]any)
+	requirementList := decodeCommandJSONStructure(t, requirementListStdout).(map[string]any)["result"].(map[string]any)["links"].([]any)
 	if len(requirementList) != 1 {
 		t.Fatalf("requirement link list = %#v, want 1 row", requirementList)
 	}
 	assertCommandLinkListRow(t, requirementList[0], "incoming", "implements", "issue", primaryIssueID, "Primary issue")
 
-	_, removeStderr := runFIDCommand(t, workspace, "link", "remove", peerIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	_, removeStderr := runFIDCommand(t, workspace, "link", "remove", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, removeStderr)
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforePhase12Writes+3 {
 		t.Fatalf("journal lines after link remove = %d, want %d", got, linesBeforePhase12Writes+3)

@@ -122,16 +122,16 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue transition to in_progress")
 	assertClosureIssueState(t, workspace, primaryIssueID, "in_progress", "started", []string{"lifecycle"})
 
-	_, linkStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--by", "developer")
+	_, linkStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, linkStderr)
 	expectedJournalLines++
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "link add")
 
-	linkListStdout, linkListStderr := runFIDCommand(t, workspace, "link", "list", primaryIssueID, "--format", "json")
+	linkListStdout, linkListStderr := runFIDCommand(t, workspace, "--json", "link", "list", primaryIssueID, "--type", "issue")
 	if linkListStderr != "" {
 		t.Fatalf("link list stderr = %q, want empty", linkListStderr)
 	}
-	linkList := decodeCommandJSONStructure(t, linkListStdout).([]any)
+	linkList := decodeCommandJSONStructure(t, linkListStdout).(map[string]any)["result"].(map[string]any)["links"].([]any)
 	if len(linkList) != 1 {
 		t.Fatalf("link list = %#v, want 1 row", linkList)
 	}

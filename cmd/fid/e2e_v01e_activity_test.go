@@ -96,7 +96,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	_, linkStderr := runFIDCommand(
 		t,
 		workspace,
-		"link", "add", finishIssueID, "blocks", peerIssueID,
+		"link", "add", finishIssueID, "blocks", peerIssueID, "--from-type", "issue", "--to-type", "issue",
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, linkStderr)

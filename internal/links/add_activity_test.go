@@ -45,8 +45,11 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 		if last.EventType != "link.added" {
 			t.Fatalf("last event type = %q, want link.added", last.EventType)
 		}
-		if len(last.Effects) != 3 {
-			t.Fatalf("effect count = %d, want 3", len(last.Effects))
+		if len(last.Effects) != 5 {
+			t.Fatalf("effect count = %d, want 5", len(last.Effects))
+		}
+		if got := result.IssueRevisions; len(got) != 2 || got[0].Revision != 2 || got[1].Revision != 2 {
+			t.Fatalf("IssueRevisions = %#v, want two Issue revisions at 2", got)
 		}
 
 		var activityFound bool
