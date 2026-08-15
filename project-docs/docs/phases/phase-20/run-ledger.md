@@ -723,3 +723,23 @@ Human-approved and QA-plan acceptance is next._
 - Resolution evidence: PENDING - focused suite, exact six-command task gate, report-lint, and commit identity
 - Next action: migrate remaining Task 10 test assertions without weakening behavior, then run exact verification
 - Human attention required: no
+
+### 2026-08-15 14:49 REPAIR task-10
+
+- Trigger signature: `task-10:in-scope-implementation:cmd-fid-contract-tests`
+- Attempt count: 1
+- Starting checkpoint: stash `779beab1` and the 14:02 TASK-RECOVERY entry
+- Ending checkpoint: Task commit `802e32b53c6b054a703405b12077d9d792d12b3e`; report finalization `7fba45a37536945bcd446f074092de6f436c4747`
+- Outcome: RESOLVED
+- Resolution evidence: all six exact Task 10 commands passed with observed `exit_code: 0` against committed `802e32b` in a normal local clone; `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-10-done.md project-docs/docs/phases/phase-20/tasks/task-10.md` passed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`); the report preserves the focused, VCS-stamping, race timestamp, and stale integration-fixture failures and their causal repairs.
+- Next checkpoint: VERIFY
+
+### 2026-08-15 14:50 TASK task-10 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-10-done.md`
+- report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `802e32b53c6b054a703405b12077d9d792d12b3e` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`test(integration): align acceptance output channel`)
+- Report finalization commit: `7fba45a37536945bcd446f074092de6f436c4747` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-10`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 10 commands recorded PASS from committed `802e32b` with verbatim tokens and observed termination; every failed attempt and causal repair remains in the report.
+- Next action: continue normally at Task 11; Review 4 remains due after Task 12.

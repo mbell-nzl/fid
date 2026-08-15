@@ -88,16 +88,15 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 3. Bounded Review 3b is NON-BLOCK at `db36832`, closing all three sustained
    Review 3 evidence findings. It does not reset cadence; Review 4 remains due
    after Task 12.
-4. Task 10 product work and the ordinary suite are complete under DEC-141. Its
-   report remains `RECOVERY_REQUIRED` only while the exact candidate gate is
-   reproduced from a normal clone; Go VCS stamping misresolves the linked
-   worktree to `/tmp` for integration/build commands.
+4. Task 10 is complete at `802e32b` under DEC-141. All six exact commands
+   passed against that committed tree in a normal clone, the completion report
+   is finalized at `7fba45a`, and report-lint is PASS. ESC-20-010 is closed.
 5. The workflow reliability overhaul is implemented and independently PASS.
    It supplies typed repair routing, bounded same-task continuation, strict
    sequence/report checks, QA repair/re-review, and retained polling for silent
    live commands. Generated prompts and canonical controls are synchronized.
-6. After Task 10's gate/report closes, a fresh Phase Runner resumes at Task 11
-   and continues Tasks 11-18 through review windows after Tasks 12, 15, and 17.
+6. A fresh Phase Runner resumes at Task 11 and continues Tasks 11-18 through
+   review windows after Tasks 12, 15, and 17.
 7. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
