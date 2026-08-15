@@ -4,8 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"path/filepath"
+	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -526,6 +528,276 @@ func TestLinkListEmptyResult(t *testing.T) {
 	if result["count"] != json.Number("0") || len(result["links"].([]any)) != 0 {
 		t.Fatalf("empty link result = %#v, want no links", result)
 	}
+}
+
+func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+
+	issueID := createCommandIssue(t, workspace, "Issue and requirement share an opaque ID")
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	if _, err := conn.Exec(`
+		INSERT INTO requirements (id, type, summary, source_doc, source_section, status)
+		VALUES (?, 'PRD', 'Requirement with the same opaque ID', 'project-docs/specs/link_requirements.md', '3.8', 'active')
+	`, issueID); err != nil {
+		t.Fatalf("insert same-ID requirement: %v", err)
+	}
+	journalPath := mustJournalPath(t, workspace)
+	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	result := executeCommandForTest(workspace,
+		"--json", "link", "add", issueID, "implements", issueID,
+		"--from-type", "issue", "--to-type", "requirement", "--by", "developer",
+	)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("link.add result = %#v, want JSON success on stdout only", result)
+	}
+
+	envelope := decodeCommandJSONStructure(t, result.stdout).(map[string]any)
+	if envelope["operation"] != "link.add" || envelope["event"] == nil {
+		t.Fatalf("link.add envelope = %#v, want mutation event", envelope)
+	}
+	link := envelope["result"].(map[string]any)["link"].(map[string]any)
+	if link["from_type"] != "issue" || link["to_type"] != "requirement" || link["from_id"] != issueID || link["to_id"] != issueID {
+		t.Fatalf("declared link = %#v, want supplied issue/requirement types for %q", link, issueID)
+	}
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before+1 {
+		t.Fatalf("journal lines after typed ambiguous add = %d, want %d", got, before+1)
+	}
+}
+
+func TestLinkMutationsJSONMatchContract(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	firstID := createCommandIssue(t, workspace, "First JSON link issue")
+	secondID := createCommandIssue(t, workspace, "Second JSON link issue")
+	journalPath := mustJournalPath(t, workspace)
+
+	add := executeCommandForTest(workspace,
+		"--json", "link", "add", firstID, "blocks", secondID,
+		"--from-type", "issue", "--to-type", "issue", "--by", "developer",
+	)
+	assertLinkMutationEnvelope(t, add, journalPath, "link.add", "link.added", firstID, "blocks", secondID, 2)
+
+	remove := executeCommandForTest(workspace,
+		"--json", "link", "remove", firstID, "blocks", secondID,
+		"--from-type", "issue", "--to-type", "issue", "--by", "developer",
+	)
+	assertLinkMutationEnvelope(t, remove, journalPath, "link.remove", "link.removed", firstID, "blocks", secondID, 3)
+}
+
+func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	firstID := createCommandIssue(t, workspace, "First link failure issue")
+	secondID := createCommandIssue(t, workspace, "Second link failure issue")
+	journalPath := mustJournalPath(t, workspace)
+
+	tests := []struct {
+		name      string
+		operation string
+		args      []string
+		assert    func(t *testing.T, output string)
+	}{
+		{
+			name: "add omitted from type", operation: "link.add",
+			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+		},
+		{
+			name: "add omitted to type", operation: "link.add",
+			args:   []string{"--json", "link", "add", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.add") },
+		},
+		{
+			name: "remove omitted from type", operation: "link.remove",
+			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+		},
+		{
+			name: "remove omitted to type", operation: "link.remove",
+			args:   []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.remove") },
+		},
+		{
+			name: "list omitted type", operation: "link.list",
+			args:   []string{"--json", "link", "list", firstID},
+			assert: func(t *testing.T, output string) { assertLinkInvalidRequestEnvelope(t, output, "link.list") },
+		},
+		{
+			name: "self link", operation: "link.add",
+			args: []string{"--json", "link", "add", firstID, "relates_to", firstID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkFailure(t, output, "link.add", "invalid-argument", nil, map[string]any{
+					"argument": "link", "value": firstID, "allowed": []any{"distinct endpoint ids"},
+				})
+			},
+		},
+		{
+			name: "missing link", operation: "link.remove",
+			args: []string{"--json", "link", "remove", firstID, "blocks", secondID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkFailure(t, output, "link.remove", "link-not-found", map[string]any{"type": "link", "id": firstID}, map[string]any{
+					"from_type": "issue", "from_id": firstID, "relation": "blocks", "to_type": "issue", "to_id": secondID,
+				})
+			},
+		},
+		{
+			name: "missing issue endpoint", operation: "link.add",
+			args: []string{"--json", "link", "add", "FID-missing", "blocks", secondID, "--from-type", "issue", "--to-type", "issue", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkFailure(t, output, "link.add", "issue-not-found", map[string]any{"type": "issue", "id": "FID-missing"}, map[string]any{"id": "FID-missing"})
+			},
+		},
+		{
+			name: "missing requirement endpoint", operation: "link.add",
+			args: []string{"--json", "link", "add", firstID, "implements", "PRD-missing", "--from-type", "issue", "--to-type", "requirement", "--by", "developer"},
+			assert: func(t *testing.T, output string) {
+				assertLinkFailure(t, output, "link.add", "requirement-not-found", map[string]any{"type": "requirement", "id": "PRD-missing"}, map[string]any{"id": "PRD-missing"})
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			result := executeCommandForTest(workspace, test.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("%s result = %#v, want stderr-only rejection", test.operation, result)
+			}
+			test.assert(t, result.stderr)
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+				t.Fatalf("journal lines after %s rejection = %d, want %d", test.name, got, before)
+			}
+		})
+	}
+}
+
+func TestLinkJSONDependencyCycleHasExactPathAndNoAppend(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	firstID := createCommandIssue(t, workspace, "First cycle issue")
+	secondID := createCommandIssue(t, workspace, "Second cycle issue")
+	runFIDCommand(t, workspace, "link", "add", firstID, "blocks", secondID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
+	journalPath := mustJournalPath(t, workspace)
+	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	result := executeCommandForTest(workspace,
+		"--json", "link", "add", secondID, "blocks", firstID,
+		"--from-type", "issue", "--to-type", "issue", "--by", "developer",
+	)
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("dependency-cycle result = %#v, want stderr-only rejection", result)
+	}
+	assertLinkFailure(t, result.stderr, "link.add", "dependency-cycle", nil, map[string]any{
+		"path": []any{secondID, firstID, secondID},
+	})
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+		t.Fatalf("journal lines after dependency-cycle rejection = %d, want %d", got, before)
+	}
+}
+
+func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, journalPath, operation, eventType, fromID, relation, toID string, revision int) {
+	t.Helper()
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("%s result = %#v, want JSON success on stdout only", operation, result)
+	}
+	var envelope struct {
+		ContractVersion string         `json:"contract_version"`
+		OK              bool           `json:"ok"`
+		Operation       string         `json:"operation"`
+		Result          map[string]any `json:"result"`
+		Event           map[string]any `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+		t.Fatalf("Unmarshal(%s stdout) error = %v; stdout = %q", operation, err, result.stdout)
+	}
+	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertExactKeys(t, envelope.Result, []string{"issue_revisions", "link"})
+	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
+	link := envelope.Result["link"].(map[string]any)
+	assertExactKeys(t, link, []string{"from_id", "from_type", "relation", "to_id", "to_type"})
+	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation ||
+		link["from_type"] != "issue" || link["from_id"] != fromID || link["relation"] != relation || link["to_type"] != "issue" || link["to_id"] != toID {
+		t.Fatalf("%s envelope = %#v, want exact typed link result", operation, envelope)
+	}
+
+	issueRevisions := envelope.Result["issue_revisions"].([]any)
+	if len(issueRevisions) != 2 {
+		t.Fatalf("issue_revisions = %#v, want two sorted revisions", issueRevisions)
+	}
+	wantIDs := []string{fromID, toID}
+	sort.Strings(wantIDs)
+	for index, wantID := range wantIDs {
+		item := issueRevisions[index].(map[string]any)
+		assertExactKeys(t, item, []string{"id", "revision"})
+		if item["id"] != wantID || item["revision"] != float64(revision) {
+			t.Fatalf("issue_revisions[%d] = %#v, want id %q revision %d", index, item, wantID, revision)
+		}
+	}
+
+	last := mustReadLastJournalEvent(t, journalPath)
+	if last.EventType != eventType || last.Actor.Role != "developer" || envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("%s envelope event = %#v, journal tail = %#v", operation, envelope.Event, last)
+	}
+	if len(last.Effects) != 5 {
+		t.Fatalf("%s effect count = %d, want 5", operation, len(last.Effects))
+	}
+	for _, effect := range last.Effects {
+		if effect.Table == "evidence" || effect.Table == "outcomes" || effect.Table == "claims" {
+			t.Fatalf("%s created protected/trusted effect %#v", operation, effect)
+		}
+	}
+}
+
+func assertLinkInvalidRequestEnvelope(t *testing.T, output, operation string) {
+	t.Helper()
+	assertLinkFailure(t, output, operation, "invalid-argument", nil, map[string]any{
+		"argument": "request", "value": nil, "allowed": []any{"accepted " + operation + " input"},
+	})
+}
+
+func assertLinkFailure(t *testing.T, output, operation, code string, wantSubject, wantDetails map[string]any) {
+	t.Helper()
+	envelope := decodeCommandJSONStructure(t, output).(map[string]any)
+	assertExactKeys(t, envelope, []string{"contract_version", "error", "ok", "operation"})
+	errorObject := envelope["error"].(map[string]any)
+	assertExactKeys(t, errorObject, []string{"category", "code", "details", "message", "retryable", "subject"})
+	if envelope["contract_version"] != "fid-cli.v1" || envelope["ok"] != false || envelope["operation"] != operation || errorObject["code"] != code || errorObject["retryable"] != false {
+		t.Fatalf("failure envelope = %#v, want %s %s", envelope, operation, code)
+	}
+	if wantSubject == nil {
+		if errorObject["subject"] != nil {
+			t.Fatalf("failure subject = %#v, want null", errorObject["subject"])
+		}
+	} else if got := errorObject["subject"].(map[string]any); !sameJSONMap(got, wantSubject) {
+		t.Fatalf("failure subject = %#v, want %#v", got, wantSubject)
+	}
+	if got := errorObject["details"].(map[string]any); !sameJSONMap(got, wantDetails) {
+		t.Fatalf("failure details = %#v, want %#v", got, wantDetails)
+	}
+}
+
+func sameJSONMap(got, want map[string]any) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for key, wantValue := range want {
+		gotValue, ok := got[key]
+		if !ok || !sameJSONValue(gotValue, wantValue) {
+			return false
+		}
+	}
+	return true
+}
+
+func sameJSONValue(got, want any) bool {
+	gotJSON, gotErr := json.Marshal(got)
+	wantJSON, wantErr := json.Marshal(want)
+	return gotErr == nil && wantErr == nil && string(gotJSON) == string(wantJSON)
 }
 
 type commandLinkRow struct {

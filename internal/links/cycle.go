@@ -32,6 +32,10 @@ func normalizedBlocksEndpoints(link Link) (string, string, bool) {
 	}
 }
 
+func isDependencyRelation(relation string) bool {
+	return relation == "blocks" || relation == "blocked_by"
+}
+
 func blocksPath(conn *sql.DB, fromID, targetID string) ([]string, bool, error) {
 	type pathNode struct {
 		id   string

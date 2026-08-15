@@ -49,7 +49,10 @@ func Add(options AddOptions) (AddResult, error) {
 
 	fromID := strings.TrimSpace(options.FromID)
 	toID := strings.TrimSpace(options.ToID)
-	if fromID == toID {
+	if fromType == "issue" && toType == "issue" && fromID == toID && isDependencyRelation(declaredRelation) {
+		return AddResult{}, &DependencyCycleError{Operation: "link add", Path: []string{fromID, toID}}
+	}
+	if fromType == toType && fromID == toID {
 		return AddResult{}, &SelfLinkError{Operation: "link add", FromID: fromID, Relation: declaredRelation, ToID: toID}
 	}
 
@@ -124,7 +127,7 @@ func Add(options AddOptions) (AddResult, error) {
 			return err
 		}
 
-		result = AddResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339)}
+		result = AddResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano)}
 		return nil
 	})
 	if err != nil {

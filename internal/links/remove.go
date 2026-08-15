@@ -44,7 +44,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	if _, ok := inverseRelation(relation); !ok {
 		return RemoveResult{}, &UnknownRelationError{Operation: "link remove", Relation: relation}
 	}
-	if fromID == toID {
+	if fromType == toType && fromID == toID {
 		return RemoveResult{}, &SelfLinkError{Operation: "link remove", FromID: fromID, Relation: relation, ToID: toID}
 	}
 
@@ -132,7 +132,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 			return err
 		}
 
-		result = RemoveResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339)}
+		result = RemoveResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano)}
 		return nil
 	})
 	if err != nil {
