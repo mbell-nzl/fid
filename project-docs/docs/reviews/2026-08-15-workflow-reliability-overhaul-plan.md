@@ -164,6 +164,8 @@ Cover at least:
 | 2026-08-15 checkpoint 2 | IN PROGRESS | Created branch `workflow-reliability-overhaul` and worktree `/tmp/fid-workflow-overhaul` from `8951011`. Started independent audits of stoppage history, v1 workflow mechanics, and v2 adoption deltas. | Draft the audit and binding workflow decision. |
 | 2026-08-15 checkpoint 3 | COMPLETE | Three independent read-only audits completed. Historical result: 31 formal STOPs, only four requiring direct Human input and none caused by implementation/gate/report/incomplete-task work. Accepted `RESUME | REPAIR | BLOCK` architecture and recorded V2 adoption deltas in `2026-08-15-workflow-reliability-overhaul-audit.md`. | Implement the v1 state model and mechanical controls. |
 | 2026-08-15 checkpoint 4 | COMPLETE | Added typed report outcomes, closed recovery/blocker categories, invalid-blocker rejection, and PASS termination enforcement to `report-lint.sh`. Red self-test failed five new cases before implementation; final self-test and mechanical drills pass. | Implement role/spec routing and recovery ledger semantics. |
+| 2026-08-15 checkpoint 5 | COMPLETE | Canonical spec, root instructions, five role prompts, QA/recovery templates, playbook, glossary, generated provider files, and workflow lint now implement `RESUME | REPAIR | BLOCK`, same-task continuation, independent QA re-review, protected-only stops, and append-only recovery state. Committed as `56440d6`; workflow lint and report-lint self-test pass. | Add deterministic routing and scenario drills. |
+| 2026-08-15 checkpoint 6 | COMPLETE | Added `workflow-route.sh` as the Phase Runner's deterministic action reducer and expanded mechanical drills through drill 17. All outcome, live-command, incomplete-blocker, report-repair, QA-repair, protected-stop, and recovery-budget scenarios pass. Committed as `4d71746`. | Obtain final independent review, then integrate and recover Task 10. |
 
 ## Checkpoints
 
@@ -173,9 +175,11 @@ Cover at least:
 | Durable plan commit | `6517c81` | COMPLETE |
 | Dirty-tree recovery stash | `779beab1` (`recovery/phase-20-task-10-and-runner-2026-08-15`) | COMPLETE |
 | Overhaul branch/worktree | `workflow-reliability-overhaul` at `/tmp/fid-workflow-overhaul` | COMPLETE |
-| Audit and decision commit | pending | READY TO COMMIT |
-| V1 implementation commits | report-lint slice pending commit | IN PROGRESS |
-| Independent review | pending | NOT STARTED |
+| Audit and decision commit | `295d6c3` | COMPLETE |
+| Typed report outcome commit | `615eda1` | COMPLETE |
+| V1 recovery routing commit | `56440d6` | COMPLETE |
+| Deterministic route/drill commit | `4d71746` | COMPLETE |
+| Independent review | `/root/final_workflow_review` active | IN PROGRESS |
 | Task 10 recovery commit(s) | pending | NOT STARTED |
 | Final HTML report | pending | NOT STARTED |
 
