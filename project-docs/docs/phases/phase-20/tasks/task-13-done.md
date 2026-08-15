@@ -42,23 +42,23 @@
 ## Tests run
 
 - `go test ./cmd/fid -run '^TestMaintenanceCheckJSONMatchesContract$' -count=1` - RED - `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.047s` (terminated `exit_code: 1`). Cause: `maintenance check` had not registered the migrated root JSON transport; repair: registered its capability and added the Response Envelope branch.
-- `go test ./cmd/fid -run '^TestMaintenanceCheckJSONMatchesContract$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.056s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid -run '^TestMaintenanceCheckJSONMatchesContract$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.056s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestMaintenanceCheck' -count=1` - RED - `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.177s` (terminated `exit_code: 1`). Cause: the refresh integration test still expected default formatter JSON; repair: changed that test to request and assert the canonical JSON envelope explicitly.
-- `go test ./cmd/fid -run '^TestMaintenanceCheck' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.201s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid -run '^TestMaintenanceCheck' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.201s` (terminated `exit_code: 0`)
 - `go test ./internal/maintenance -run '^TestCheckRejectsMoreThanOneThousandWarningsWithoutTruncating$' -count=1` - RED - `FAIL	github.com/mbell-nzl/fid/internal/maintenance	0.231s` (terminated `exit_code: 1`). Cause: the checker returned all 1,001 warnings; repair: added a typed per-severity limit before response construction.
-- `go test ./cmd/fid ./internal/maintenance -run '^TestMaintenanceCheck|^TestCheckRejectsMoreThanOneThousandWarningsWithoutTruncating$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.227s` (terminated `exit_code: 0`).
-- `go test ./cmd/fid ./internal/maintenance` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.685s` (terminated `exit_code: 0`).
-- `go test -tags integration ./cmd/fid/integration/... -run 'Maintenance' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.659s` (terminated `exit_code: 0`).
-- `/tmp/fid --project /tmp/tmp.xtkPKxfIiI --json maintenance check` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"maintenance.check","result":{"errors":[],"info":{"claim_count_live":0,"issue_count":0,"recent_activity_7d":0},"status":"pass","warnings":[]},"event":null}` (terminated `exit_code: 0`).
+- `go test ./cmd/fid ./internal/maintenance -run '^TestMaintenanceCheck|^TestCheckRejectsMoreThanOneThousandWarningsWithoutTruncating$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.227s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid ./internal/maintenance` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.685s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration/... -run 'Maintenance' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.659s` (terminated `exit_code: 0`)
+- `/tmp/fid --project /tmp/tmp.xtkPKxfIiI --json maintenance check` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"maintenance.check","result":{"errors":[],"info":{"claim_count_live":0,"issue_count":0,"recent_activity_7d":0},"status":"pass","warnings":[]},"event":null}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.6%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.390s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.6%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.390s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
