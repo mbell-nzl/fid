@@ -383,6 +383,52 @@ missing_outcome="$workspace/missing-review-outcome.md"
 sed '/^- Outcome: REPAIR$/d' "$valid_qa" > "$missing_outcome"
 run_invalid_sequence "drill-16 strict review outcome is mandatory" "missing or invalid Outcome" "$missing_outcome"
 
+missing_task_id="$workspace/missing-task-id.md"
+cat > "$missing_task_id" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY
+EOF
+run_invalid_sequence "drill-16 strict recovery task ID is mandatory" "missing or invalid task ID" "$missing_task_id"
+
+missing_review_id="$workspace/missing-review-id.md"
+cat > "$missing_review_id" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW
+- Outcome: PASS
+- Owning task: none
+- Re-review of: none
+EOF
+run_invalid_sequence "drill-16 strict review ID is mandatory" "missing or invalid review ID" "$missing_review_id"
+
+overlapping_recovery="$workspace/overlapping-recovery.md"
+cat > "$overlapping_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+### 2026-08-15 10:02 TASK-RECOVERY task-2
+### 2026-08-15 10:03 REPAIR task-2
+### 2026-08-15 10:04 TASK task-2 COMPLETE
+EOF
+run_invalid_sequence "drill-16 overlapping recovery cannot change task" "overlapping recovery changes task identity" "$overlapping_recovery"
+
+qa_without_recovery="$workspace/qa-without-recovery.md"
+cat > "$qa_without_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 TASK task-1 COMPLETE
+### 2026-08-15 10:03 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_invalid_sequence "drill-16 QA repair requires recovery events" "completed without TASK-RECOVERY and REPAIR" "$qa_without_recovery"
+
 triage_repair="$workspace/triage-repair-pending.md"
 cat > "$triage_repair" <<'EOF'
 ### 2026-08-15 10:00 RUN-START

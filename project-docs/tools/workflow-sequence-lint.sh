@@ -33,11 +33,17 @@ function finish_event() {
   if (strict && event == "REVIEW" && event_outcome !~ /^(PASS|REPAIR|BLOCK)$/) {
     invalid("REVIEW has missing or invalid Outcome: " event_id)
   }
+  if (strict && event == "REVIEW" && event_id !~ /^(review-[0-9]+[a-z]*|infra-review-[0-9]+[a-z]*)$/) {
+    invalid("REVIEW has missing or invalid review ID")
+  }
   if (strict && event == "REVIEW" && (event_owner == "" || event_rereview == "")) {
     invalid("REVIEW is missing Owning task or Re-review of: " event_id)
   }
   if (strict && event == "TRIAGE" && event_verdict !~ /^(RESUME|REPAIR|BLOCK)/) {
     invalid("TRIAGE has missing or invalid Verdict")
+  }
+  if (strict && (event == "TASK-RECOVERY" || event == "REPAIR" || event == "TASK-COMPLETE") && event_task !~ /^task-[0-9]+[a-z]*$/) {
+    invalid(event " has missing or invalid task ID")
   }
   if (strict && (event == "RUN-START" || event == "RUN-RESUME") && event_contract != "v2") {
     invalid(event " is missing Sequence contract: v2")
@@ -47,9 +53,16 @@ function finish_event() {
     if (review_open && event_task != review_owner) {
       invalid("QA repair owner " review_owner " does not match recovery task " event_task)
     }
-    recovery_task = event_task
+    if (recovery_task != "" && recovery_task != event_task) {
+      invalid("overlapping recovery changes task identity from " recovery_task " to " event_task)
+    } else {
+      recovery_task = event_task
+    }
     recovery_stage = "needs-repair"
     triage_repair_pending = 0
+    if (review_open && event_task == review_owner) {
+      review_recovery_seen = 1
+    }
   } else if (event == "REPAIR") {
     if (recovery_task == "") {
       invalid("REPAIR has no preceding TASK-RECOVERY")
@@ -57,6 +70,9 @@ function finish_event() {
       invalid("REPAIR task " event_task " does not match recovery task " recovery_task)
     } else {
       recovery_stage = "needs-complete"
+      if (review_open && event_task == review_owner) {
+        review_repair_seen = 1
+      }
     }
   } else if (event == "TASK-COMPLETE") {
     if (recovery_task != "") {
@@ -70,7 +86,11 @@ function finish_event() {
       }
     }
     if (review_open && event_task == review_owner) {
-      review_task_complete = 1
+      if (!review_recovery_seen || !review_repair_seen) {
+        invalid("QA repair owner completed without TASK-RECOVERY and REPAIR: " event_task)
+      } else {
+        review_task_complete = 1
+      }
     }
   } else if (event == "REVIEW") {
     if (event_outcome == "REPAIR") {
@@ -81,6 +101,8 @@ function finish_event() {
       review_id = event_id
       review_owner = event_owner
       review_task_complete = 0
+      review_recovery_seen = 0
+      review_repair_seen = 0
     } else if (event_outcome == "PASS" && review_open) {
       if (!review_task_complete) {
         invalid("QA re-review passed before owning task completed: " review_owner)
@@ -95,6 +117,8 @@ function finish_event() {
       review_id = ""
       review_owner = ""
       review_task_complete = 0
+      review_recovery_seen = 0
+      review_repair_seen = 0
     } else if (event_outcome == "BLOCK") {
       triage_needed = 1
     }
