@@ -807,3 +807,66 @@ Human-approved and QA-plan acceptance is next._
 - QA-plan commands beyond the task spec: none required
 - Gate judgment: all six exact Task 10 commands recorded PASS from committed `627ca9d`; request syntax and missing authority now retain their distinct accepted reason codes, and all failed attempts remain preserved.
 - Next action: final independent integrated re-review, then continue normally at Task 11; Review 4 remains due after Task 12.
+
+### 2026-08-15 17:07 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-15 Task 10 COMPLETE / Review 3b CONTINUE / prior Phase Runner session
+- Trigger signature: `task-11:phase-resume:verified-task-10-closure`
+- Attempt count: 1
+- Checkpoint: branch `phase-20` at `d924061`; clean worktree; Task 10 product `627ca9d`, report finalization `f5a0c6f`, recovery closure `0e4a999`; Review 3b `db368329`
+- Resolution evidence: Task 10 report-lint `OUTCOME COMPLETE` (terminated `exit_code: 0`); workflow sequence `VALID state=ADVANCEABLE`; current Open ESC baseline none; Review 3b `VERDICT: CONTINUE` with no blockers; exact Task 10 gates are recorded and Task 10 will not be reopened
+- Continuing task: `task-11`
+
+### 2026-08-15 17:29 TASK task-11 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-11-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `4155acee3037614762d0cfc0d6710f540b3f6441` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`feat(links): enforce typed link invariants`)
+- Report finalization commit: `2e6f8bdf9c68b5b0f21329bdbfa711dbe0f2d162` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-11`)
+- Report evidence correction commit: `f5b9fb98ebbb80caa615f041b114de84407612b3` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): correct phase-20 task-11 gate evidence`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 11 commands are recorded PASS with observed termination in the committed report; independent report-lint is PASS; the only remaining worktree change is the Phase Runner run ledger
+
+### 2026-08-15 17:47 TASK task-12 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-12-done.md`
+- report-lint: PASS - `OUTCOME COMPLETE`; `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `f081929cfed7a7be737010c2fb14403c61dac7da` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`feat(workflow): migrate command contract`)
+- Report finalization commit: `b25a27543e1e1aec48323c2121a73ef036ca5d58` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-12`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 12 commands are recorded PASS with observed termination in the committed report; independent report-lint is PASS; the only remaining worktree change is the Phase Runner run ledger
+
+### 2026-08-15 17:54 REVIEW review-4
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-4.md`
+- Tasks covered: tasks/reports 10-12
+- Outcome: REPAIR
+- Owning task: task-11
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0
+- Repair dispatch: MF-01 is owned by task-11 and is dispatched first; MF-02 is owned by task-12 and remains pending for the next repair/re-review window
+- Review commit: `e9fcfa48d0135240cf660157b171dcd2f1e4fcca` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): record phase 20 review 4`)
+- QA required command: `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.543s` (terminated `exit_code: 0`)
+
+### 2026-08-15 17:55 TASK-RECOVERY task-11
+
+- Source: `project-docs/docs/phases/phase-20/qa/review-4.md` finding MF-01
+- Category: qa-rework
+- Trigger signature: `review-4:qa-rework:MF-01-typed-link-evidence-matrix`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 11 report/commits are complete and clean except the Phase Runner run ledger; Review 4 commit `e9fcfa4` records MF-01
+- Resolution evidence: PENDING - bounded link evidence matrix, unchanged six-command Task 11 gate, report update/finalization, and fresh independent QA re-review
+- Next action: dispatch the same task-11 Developer continuation to add MF-01 evidence within the reviewed Task 11 boundary, then rerun exact verification
+- Human attention required: no
+
+### 2026-08-15 18:09 REPAIR task-11
+
+- Trigger signature: `review-4:qa-rework:MF-01-typed-link-evidence-matrix`
+- Attempt count: 1
+- Starting checkpoint: Review 4 MF-01 and the 2026-08-15 17:55 TASK-RECOVERY task-11 entry
+- Ending checkpoint: product repair `cf096da6`; report finalization/correction `d98a8593`, `463f2e37`, and `42856fd3`; clean committed report
+- Outcome: RESOLVED
+- Resolution evidence: the bounded link matrix now covers canonical JSON add/remove Event identity, typed opaque endpoints and atomic failures, self/two/three/pre-existing cycles, diamond success, list bounds/order, and three revealed in-scope defects; all six exact Task 11 commands and report-lint pass with observed termination
+- Next checkpoint: VERIFY/REVIEW

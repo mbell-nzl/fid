@@ -354,16 +354,26 @@ Responsibilities:
     input is an orchestration defect to repair, not permission to invent a
     route.
     Every new RUN-START/RUN-RESUME carries `Sequence contract: v2`; older events
-    remain legacy-tolerant. Before append, pipe the exact candidate entry to
-    `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`
-    and require exit zero. Append only a valid candidate, then run the tool on
-    the ledger as a postcondition. This validator does not choose the next
-    action; `workflow-route.sh` does. Require literal
-    `VALID state=ADVANCEABLE` before an actual advance. The validator preserves
-    task identity and requires recovery completion plus an explicitly linked,
-    differently identified QA re-review. Never append an `INVALID` candidate;
-    retain and stop on a post-append integrity mismatch rather than rewriting
-    history.
+    remain legacy-tolerant. Pipe each exact candidate entry, beginning with its
+    single `###` event heading, to
+    `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
+    The tool validates and atomically appends the entry at EOF; an `INVALID`
+    result leaves the ledger byte-for-byte unchanged. Require exit zero and
+    literal `APPEND_CONFIRMED state=<state>`. If termination or receipt is
+    missing, retry the byte-identical candidate; an exact EOF match confirms it
+    without another append. Do not advance, submit a different entry, or perform
+    a separate `apply_patch`, redirect, or editor mutation. This validator and
+    append transaction does not choose
+    the next action; `workflow-route.sh` does. Run it without `--append-stdin`
+    to read current state, and require literal `VALID state=ADVANCEABLE` before
+    an actual advance. It preserves task identity and requires recovery
+    completion plus an explicitly linked, differently identified QA re-review.
+    A linked re-review may transfer repair ownership to another task only after
+    the current owner completes; it cannot overwrite an unresolved owner. An
+    `INVALID` candidate is recoverable while the ledger remains valid. A
+    missing receipt is an ambiguous result resolved only by byte-identical
+    retry; retain and stop only if standalone validation fails after a confirmed
+    append.
 11. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
     result, and verified commit. On `OUTCOME RECOVERY_REQUIRED` or a
     recoverable lint, report, gate, or session defect, append

@@ -259,6 +259,13 @@ else
   fail "run-drills.sh is not executable"
 fi
 
+for file in project-docs/docs/playbook.md project-docs/templates/run-ledger-template.md; do
+  check_contains "$file" 'workflow-sequence-lint\.sh' "transactional ledger append reference"
+  check_contains "$file" 'APPEND_CONFIRMED state=' "transactional ledger append receipt"
+  check_contains "$file" 'atomic' "transactional ledger append behavior"
+  check_contains "$file" 'byte-identical' "lost append receipt recovery"
+done
+
 # Phase Runner surfaces must reference report-lint and the run ledger instead
 # of prose-parsing/chat-state equivalents.
 
@@ -273,7 +280,13 @@ for file in $runner_surfaces; do
   check_contains "$file" 'report-lint\.sh' "report-lint reference"
   check_contains "$file" 'workflow-route\.sh' "workflow route reference"
   check_contains "$file" 'workflow-sequence-lint\.sh' "workflow sequence reference"
-  check_contains "$file" 'append-stdin' "workflow sequence pre-append validation"
+  check_contains "$file" 'append-stdin' "workflow sequence append transaction"
+  check_contains "$file" 'APPEND_CONFIRMED state=' "workflow append receipt"
+  check_contains "$file" 'atomic' "atomic ledger append contract"
+  check_contains "$file" 'byte-identical' "lost append receipt recovery"
+  check_contains "$file" 'transfer repair' "linked sequential QA repair"
+  check_contains "$file" 'apply_patch' "generic ledger mutation prohibition"
+  check_absent "$file" 'Append only a valid candidate, then run' "split ledger validation and mutation"
   check_contains "$file" 'Sequence contract: v2' "strict sequence marker"
   check_contains "$file" 'run-ledger' "run-ledger reference"
   check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"

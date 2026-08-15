@@ -1,5 +1,5 @@
 #!/bin/sh
-# workflow-sequence-lint.sh - validate recovery ordering in a v1 run ledger.
+# workflow-sequence-lint.sh - validate or transactionally append a ledger event.
 set -eu
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ ! -f "$1" ]; then
@@ -7,19 +7,17 @@ if [ "$#" -lt 1 ] || [ "$#" -gt 2 ] || [ ! -f "$1" ]; then
   exit 2
 fi
 
-input=$1
-tmp=""
+ledger=$1
+mode=validate
 if [ "$#" -eq 2 ]; then
   [ "$2" = "--append-stdin" ] || {
     echo "Usage: workflow-sequence-lint.sh <run-ledger.md> [--append-stdin]" >&2
     exit 2
   }
-  tmp=$(mktemp -d "${TMPDIR:-/tmp}/workflow-sequence.XXXXXX")
-  trap 'rm -rf "$tmp"' EXIT HUP INT TERM
-  { cat "$1"; cat; } > "$tmp/combined-ledger.md"
-  input="$tmp/combined-ledger.md"
+  mode=append
 fi
 
+validate_sequence() {
 awk '
 function invalid(message) {
   print "INVALID " message > "/dev/stderr"
@@ -96,6 +94,17 @@ function finish_event() {
     if (event_outcome == "REPAIR") {
       if (event_owner == "" || event_owner == "none") {
         invalid("REVIEW REPAIR has no owning task: " event_id)
+      }
+      if (review_open) {
+        if (!review_task_complete) {
+          invalid("QA repair was replaced before owning task completed: " review_owner)
+        }
+        if (event_id == review_id) {
+          invalid("QA repair was self-replaced by the same review identity: " event_id)
+        }
+        if (event_rereview != review_id) {
+          invalid("QA REPAIR does not reference required re-review " review_id ": " event_id)
+        }
       }
       review_open = 1
       review_id = event_id
@@ -230,4 +239,75 @@ END {
     print "VALID state=ADVANCEABLE"
   }
 }
-' "$input"
+' "$1"
+}
+
+print_append_receipt() {
+  case "$1" in
+    'VALID state='*) state=${1#VALID state=} ;;
+    *)
+      echo "INVALID validator returned an unexpected result: $1" >&2
+      exit 1
+      ;;
+  esac
+  printf 'APPEND_CONFIRMED state=%s\n' "$state"
+}
+
+if [ "$mode" = validate ]; then
+  validate_sequence "$ledger"
+  exit $?
+fi
+
+ledger_dir=$(CDPATH= cd "$(dirname "$ledger")" && pwd)
+ledger="$ledger_dir/$(basename "$ledger")"
+tmp=$(mktemp -d "$ledger_dir/.workflow-sequence.XXXXXX")
+trap 'rm -rf "$tmp"' EXIT HUP INT TERM
+candidate="$tmp/candidate.md"
+framed="$tmp/framed-candidate.md"
+combined="$tmp/combined-ledger.md"
+cat > "$candidate"
+
+if [ ! -s "$candidate" ]; then
+  echo "INVALID append candidate is empty" >&2
+  exit 1
+fi
+if ! sed -n '1p' "$candidate" | grep -q '^### '; then
+  echo "INVALID append candidate must start with an event heading" >&2
+  exit 1
+fi
+heading_count=$(awk '/^### / { count++ } END { print count + 0 }' "$candidate")
+if [ "$heading_count" -ne 1 ]; then
+  echo "INVALID append candidate must contain exactly one event heading" >&2
+  exit 1
+fi
+
+printf '\n' > "$framed"
+cat "$candidate" >> "$framed"
+
+# An earlier invocation may have committed the event but lost its stdout
+# receipt. An exact EOF match makes retrying the same candidate idempotent.
+framed_size=$(wc -c < "$framed" | tr -d ' ')
+tail -c "$framed_size" "$ledger" > "$tmp/current-suffix.md"
+if cmp -s "$framed" "$tmp/current-suffix.md"; then
+  if output=$(validate_sequence "$ledger"); then
+    print_append_receipt "$output"
+    exit $?
+  else
+    code=$?
+    exit "$code"
+  fi
+fi
+
+# Build beside the ledger so the validated replacement stays on one filesystem.
+cp -p "$ledger" "$combined"
+cat "$framed" >> "$combined"
+
+if output=$(validate_sequence "$combined"); then
+  :
+else
+  code=$?
+  exit "$code"
+fi
+
+mv "$combined" "$ledger"
+print_append_receipt "$output"

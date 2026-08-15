@@ -371,6 +371,89 @@ cat > "$valid_qa" <<'EOF'
 EOF
 run_sequence "drill-16 lifecycle: QA repair closes on linked fresh re-review" ADVANCEABLE "$valid_qa"
 
+valid_sequential_qa="$workspace/valid-sequential-qa-repair.md"
+cat > "$valid_sequential_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+### 2026-08-15 10:03 REPAIR task-1
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 REVIEW review-1b
+- Outcome: REPAIR
+- Owning task: task-2
+- Re-review of: review-1
+### 2026-08-15 10:06 TASK-RECOVERY task-2
+### 2026-08-15 10:07 REPAIR task-2
+### 2026-08-15 10:08 TASK task-2 COMPLETE
+### 2026-08-15 10:09 REVIEW review-1c
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1b
+EOF
+run_sequence "drill-16 lifecycle: linked re-review transfers repair ownership" ADVANCEABLE "$valid_sequential_qa"
+
+overwritten_qa="$workspace/overwritten-qa-repair.md"
+cat > "$overwritten_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 REVIEW review-2
+- Outcome: REPAIR
+- Owning task: task-2
+- Re-review of: none
+### 2026-08-15 10:03 TASK-RECOVERY task-2
+### 2026-08-15 10:04 REPAIR task-2
+### 2026-08-15 10:05 TASK task-2 COMPLETE
+### 2026-08-15 10:06 REVIEW review-3
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-2
+EOF
+run_invalid_sequence "drill-16 unresolved QA repair owner cannot be overwritten" "replaced before owning task completed" "$overwritten_qa"
+
+self_replaced_qa="$workspace/self-replaced-qa-repair.md"
+cat > "$self_replaced_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+### 2026-08-15 10:03 REPAIR task-1
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-2
+- Re-review of: review-1
+EOF
+run_invalid_sequence "drill-16 QA repair transfer requires a fresh review ID" "self-replaced by the same review identity" "$self_replaced_qa"
+
+unlinked_transfer_qa="$workspace/unlinked-qa-repair-transfer.md"
+cat > "$unlinked_transfer_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+### 2026-08-15 10:03 REPAIR task-1
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 REVIEW review-1b
+- Outcome: REPAIR
+- Owning task: task-2
+- Re-review of: none
+EOF
+run_invalid_sequence "drill-16 QA repair transfer requires explicit linkage" "does not reference required re-review" "$unlinked_transfer_qa"
+
 missing_rereview="$workspace/missing-qa-rereview.md"
 sed '/^### 2026-08-15 10:05 REVIEW review-1b$/,$d' "$valid_qa" > "$missing_rereview"
 run_sequence "drill-16 QA repair cannot advance before re-review" REREVIEW_PENDING "$missing_rereview"
@@ -438,7 +521,7 @@ cat > "$triage_repair" <<'EOF'
 EOF
 run_sequence "drill-16 TRIAGE REPAIR cannot advance before recovery" REPAIR_PENDING "$triage_repair"
 
-# Pre-append validation rejects a bad candidate without contaminating the
+# Transactional append rejects a bad candidate without contaminating the
 # append-only ledger.
 pending_ledger="$workspace/pending-recovery.md"
 cat > "$pending_ledger" <<'EOF'
@@ -446,16 +529,80 @@ cat > "$pending_ledger" <<'EOF'
 - Sequence contract: v2
 ### 2026-08-15 10:01 TASK-RECOVERY task-1
 EOF
+cp "$pending_ledger" "$pending_ledger.before"
 proposed_output=$(printf '%s\n' '### 2026-08-15 10:02 REPAIR task-2' \
   | "$sequence_lint" "$pending_ledger" --append-stdin 2>&1)
 proposed_code=$?
 current_output=$("$sequence_lint" "$pending_ledger" 2>&1)
 if [ "$proposed_code" -ne 0 ] && \
    printf '%s\n' "$proposed_output" | grep -qF 'does not match recovery task' && \
+   cmp -s "$pending_ledger.before" "$pending_ledger" && \
    [ "$current_output" = 'VALID state=REPAIR_PENDING' ]; then
   drill_pass "drill-16 invalid proposed append leaves ledger usable"
 else
-  drill_fail "drill-16 proposed-append validation (candidate=$proposed_output, current=$current_output)"
+  drill_fail "drill-16 rejected append is non-mutating (candidate=$proposed_output, current=$current_output)"
+fi
+
+# The append command, not a later generic patch, must own the validated write.
+# Repeated field text makes an anchor-based insertion land in the wrong event.
+atomic_ledger="$workspace/atomic-append.md"
+cat > "$atomic_ledger" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Human attention required: no
+### 2026-08-15 10:01 TASK task-1 COMPLETE
+- Human attention required: no
+### 2026-08-15 10:02 TASK-RECOVERY task-2
+- Human attention required: no
+EOF
+atomic_candidate="$workspace/atomic-candidate.md"
+cat > "$atomic_candidate" <<'EOF'
+### 2026-08-15 10:03 REPAIR task-2
+- Outcome: RESOLVED
+EOF
+cp "$atomic_ledger" "$atomic_ledger.expected"
+printf '\n' >> "$atomic_ledger.expected"
+cat "$atomic_candidate" >> "$atomic_ledger.expected"
+atomic_output=$("$sequence_lint" "$atomic_ledger" --append-stdin < "$atomic_candidate" 2>&1)
+atomic_code=$?
+current_output=$("$sequence_lint" "$atomic_ledger" 2>&1)
+if [ "$atomic_code" -eq 0 ] && \
+   [ "$atomic_output" = 'APPEND_CONFIRMED state=COMPLETION_PENDING' ] && \
+   cmp -s "$atomic_ledger.expected" "$atomic_ledger" && \
+   [ "$current_output" = 'VALID state=COMPLETION_PENDING' ]; then
+  drill_pass "drill-16 valid candidate is atomically appended at EOF"
+else
+  drill_fail "drill-16 atomic EOF append (append=$atomic_output, current=$current_output)"
+fi
+
+# A receipt can be lost after the atomic rename. Retrying the byte-identical
+# candidate must confirm the existing EOF event rather than append a duplicate.
+ack_ledger="$workspace/acknowledgment-retry.md"
+cat > "$ack_ledger" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY task-3
+EOF
+ack_candidate="$workspace/acknowledgment-candidate.md"
+cat > "$ack_candidate" <<'EOF'
+### 2026-08-15 10:02 REPAIR task-3
+- Outcome: RESOLVED
+EOF
+cp "$ack_ledger" "$ack_ledger.expected"
+printf '\n' >> "$ack_ledger.expected"
+cat "$ack_candidate" >> "$ack_ledger.expected"
+"$sequence_lint" "$ack_ledger" --append-stdin < "$ack_candidate" \
+  1>&- 2> "$workspace/lost-receipt.err"
+lost_receipt_code=$?
+retry_output=$("$sequence_lint" "$ack_ledger" --append-stdin < "$ack_candidate" 2>&1)
+retry_code=$?
+if [ "$lost_receipt_code" -ne 0 ] && \
+   [ "$retry_code" -eq 0 ] && \
+   [ "$retry_output" = 'APPEND_CONFIRMED state=COMPLETION_PENDING' ] && \
+   cmp -s "$ack_ledger.expected" "$ack_ledger"; then
+  drill_pass "drill-16 lost append receipt is safely confirmed by exact retry"
+else
+  drill_fail "drill-16 append acknowledgment retry (first=$lost_receipt_code, retry=$retry_output)"
 fi
 
 # Restore and commit the clean report so agent-drill bases start valid.

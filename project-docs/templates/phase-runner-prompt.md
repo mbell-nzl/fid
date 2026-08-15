@@ -32,9 +32,9 @@ Execution rules:
   project-docs/docs/phases/phase-<PHASE_NUMBER>/run-ledger.md using
   project-docs/templates/run-ledger-template.md. Append one entry per event
   (RUN-START, RUN-RESUME, TASK complete, TASK-RECOVERY, REPAIR, REVIEW,
-  TRIAGE, STOP, RUN-END); never edit or
-  delete prior entries. The ledger is the only file you write and it, not chat
-  notes, is the durable run state.
+  TRIAGE, STOP, RUN-END) only through workflow-sequence-lint.sh
+  --append-stdin; never edit or delete prior entries. The ledger is the only
+  file you write and it, not chat notes, is the durable run state.
 - Append a RUN-START entry recording the current Open ESC-NNN IDs before task
   execution; only newly appearing Open ESC IDs trigger TL-Lite triage. If the
   source is already an ESC, do not create a duplicate; reference the existing
@@ -78,15 +78,24 @@ Execution rules:
   EVALUATE inspects the observed terminated result. Invalid router input is a
   recoverable orchestration defect, not permission to invent a route.
 - Put `Sequence contract: v2` in every new RUN-START/RUN-RESUME; older entries
-  stay legacy-tolerant. Before each append, pipe the exact proposed entry to
-  project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin and
-  require exit zero. Append only a valid candidate, then run the tool on the
-  ledger as a postcondition. workflow-route.sh still chooses the action.
-  Require literal VALID state=ADVANCEABLE before actual advancement. The
-  validator requires the same task across recovery, a recorded REPAIR before
-  task completion, and a differently identified QA PASS review whose Re-review
-  of field names the original REPAIR review. Never append an INVALID candidate
-  or rewrite ledger history; retain and stop on a post-append integrity mismatch.
+  stay legacy-tolerant. Pipe each exact candidate entry, beginning with its
+  single ### event heading, to project-docs/tools/workflow-sequence-lint.sh
+  <run-ledger> --append-stdin. The tool validates and atomically appends at EOF;
+  INVALID leaves the ledger byte-for-byte unchanged. Require exit zero and
+  literal APPEND_CONFIRMED state=<state>. If termination or receipt is missing,
+  retry the byte-identical candidate; an exact EOF match confirms it without a
+  duplicate. Do not advance, submit a different event, or separately mutate the
+  ledger with apply_patch, redirection, or another editor. workflow-route.sh
+  still chooses the action.
+  Run sequence lint without --append-stdin to read current state and require
+  literal VALID state=ADVANCEABLE before actual advancement. The validator
+  requires the same task across recovery, a recorded REPAIR before task
+  completion, and a differently identified QA PASS review whose Re-review of
+  field names the original REPAIR review. A linked re-review may transfer repair
+  ownership only after the current owner completes; it cannot overwrite an
+  unresolved owner. An INVALID candidate is recoverable;
+  a missing receipt is resolved only by byte-identical retry. Retain and stop
+  only if standalone validation fails after a confirmed append.
 - Read the report for judgment items report-lint cannot check: blocker
   semantics, deviation content, concerns needing triage, and QA-plan commands
   required for that task beyond the task spec. Every QA-plan required command

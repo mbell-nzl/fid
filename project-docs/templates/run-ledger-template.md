@@ -3,9 +3,14 @@
 > Maintainer: Phase Runner
 > Location: `project-docs/docs/phases/phase-<N>/run-ledger.md`
 >
-> Append-only. The Phase Runner appends one entry per event and never edits or
-> deletes prior entries. This file, not chat notes, is the durable run state:
-> a resumed or replacement runner session reads it first and reconciles it
+> Append-only. The Phase Runner appends one entry per event through
+> `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`
+> and never edits or deletes prior accepted entries. The command validates and
+> atomically appends at EOF, returning `APPEND_CONFIRMED state=<state>`; an
+> `INVALID` result leaves the ledger unchanged. If the receipt or termination is
+> missing, retry the byte-identical candidate to confirm the exact EOF event
+> without duplicating it. This file, not chat notes, is the durable run state: a
+> resumed or replacement runner session reads it first and reconciles it
 > against completion reports and git history before continuing.
 
 Entry types, in the order they typically occur. Timestamps are
@@ -14,10 +19,12 @@ wall-clock order, one entry per event.
 
 Before appending, read the last entry. If the new entry would duplicate it or
 carry an earlier timestamp, you have lost track of run state: reconcile against
-completion reports and git history first. Never edit or delete a prior entry to
-fix an ordering or duplication mistake — append a `CORRECTION` entry naming the
-entries it supersedes and why. The ledger is evidence; its errors are part of
-the record.
+completion reports and git history first. Submit the event Markdown beginning
+with its single `###` heading to the transactional append command; do not use
+`apply_patch`, redirection, or another editor. Never edit or delete a prior
+accepted entry to fix an ordering or duplication mistake — append a `CORRECTION`
+entry naming the entries it supersedes and why. The ledger is evidence; its
+errors are part of the record.
 
 ### <YYYY-MM-DD HH:MM> RUN-START
 

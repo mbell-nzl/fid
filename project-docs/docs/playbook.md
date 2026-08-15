@@ -83,7 +83,12 @@ phase-specific exception.
 `RESUME` never means repair later, and `BLOCK` is not a synonym for incomplete,
 red, failed, or must-fix. Human attention is required only for `BLOCK`.
 
-Record recovery in the append-only run ledger:
+Record recovery in the append-only run ledger. Submit each single event to
+`project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
+validates and atomically appends at EOF with an
+`APPEND_CONFIRMED state=<state>` receipt. `INVALID` leaves the ledger unchanged;
+if the receipt is lost, retry the byte-identical candidate to confirm it without
+duplication. Do not mutate the ledger separately.
 
 1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
    checkpoint, recovery boundary, and next action.
