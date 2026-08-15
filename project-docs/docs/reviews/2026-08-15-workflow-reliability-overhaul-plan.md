@@ -161,6 +161,7 @@ Cover at least:
 |---|---|---|---|
 | 2026-08-15 start | IN PROGRESS | User authorized autonomous overhaul, independent review, regular commits, and final HTML report. | Commit this plan and preserve the dirty tree. |
 | 2026-08-15 checkpoint 1 | COMPLETE | Plan committed as `6517c81`; all remaining tracked and untracked changes preserved in stash `779beab1` (`stash@{0}` at capture), covering 28 files with 1,052 insertions and 230 deletions. Original worktree verified clean. | Create the isolated overhaul branch/worktree. |
+| 2026-08-15 checkpoint 2 | IN PROGRESS | Created branch `workflow-reliability-overhaul` and worktree `/tmp/fid-workflow-overhaul` from `8951011`. Started independent audits of stoppage history, v1 workflow mechanics, and v2 adoption deltas. | Draft the audit and binding workflow decision. |
 
 ## Checkpoints
 
@@ -169,7 +170,7 @@ Cover at least:
 | Phase 20 base commit | `db36832` | RECORDED |
 | Durable plan commit | `6517c81` | COMPLETE |
 | Dirty-tree recovery stash | `779beab1` (`recovery/phase-20-task-10-and-runner-2026-08-15`) | COMPLETE |
-| Overhaul branch/worktree | pending | NOT STARTED |
+| Overhaul branch/worktree | `workflow-reliability-overhaul` at `/tmp/fid-workflow-overhaul` | COMPLETE |
 | Audit and decision commit | pending | NOT STARTED |
 | V1 implementation commits | pending | NOT STARTED |
 | Independent review | pending | NOT STARTED |
