@@ -46,6 +46,7 @@
 - `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
 - `go test ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  10.052s` (terminated `exit_code: 0`)
 - `/tmp/fid policy show` (working directory: `/home/mark/projects/fid`) - PASS - `]` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-14-done.md project-docs/docs/phases/phase-20/tasks/task-14.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
