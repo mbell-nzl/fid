@@ -18,8 +18,9 @@ complete; Reviews 1c, infra-review-1, 2, and bounded Review 3b are NON-BLOCK**
 (record anchored in `../phases/phase-20/infra-improvement-pack.md`). Review 3's
 three sustained Task 9 evidence findings were closed by test-led Task 9a at
 `1f196a9` and independently re-reviewed in `qa/review-3b.md`. Task 10 is
-complete at `802e32b` under DEC-141 with all six exact gates and report-lint
-verified; its prior STOP is retained as a decision-free same-task recovery.
+complete at `62a3e46` under DEC-141 with all six exact gates and report-lint
+verified at `a219052`; its prior STOP and integrated-review repair are retained
+as decision-free same-task recovery.
 ESC-20-001..010 are resolved; no product or architecture decision is open.
 **Next: Task 11.**
 
@@ -49,7 +50,7 @@ and legacy expiry ledger.
 | 8 | Issue read contract | Complete `4df4d66` (DEC-139) | 5-7 |
 | 9 | Issue mutation and concurrency contract | Complete `86d927d`; evidence owed by 9a (DEC-140) | 6-8 |
 | 9a | Mutation concurrency/transition/attribution evidence | Complete `1f196a9`; Review 3b NON-BLOCK `db36832` (DEC-140) | 9 |
-| 10 | Acceptance-criterion and label contracts | Complete `802e32b` (DEC-141) | 8-9a |
+| 10 | Acceptance-criterion and label contracts | Complete `62a3e46` (DEC-141) | 8-9a |
 | 11 | Link contract and dependency invariants | Pending | 8-10 |
 | 12 | Workflow command contract | Pending | 8-11 |
 | 13 | Maintenance inspection contract | Pending | 8-12 |

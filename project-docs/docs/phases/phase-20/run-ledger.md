@@ -755,3 +755,23 @@ Human-approved and QA-plan acceptance is next._
 - Resolution evidence: PENDING - exhaustive six-operation request-error tests, causal product repair, exact six-command gate, report-lint, and independent re-review
 - Next action: keep Task 10 open; route JSON parse/arity/required-flag failures through canonical `invalid-argument` envelopes while preserving Human errors, then verify exactly
 - Human attention required: no
+
+### 2026-08-15 15:09 REPAIR task-10
+
+- Trigger signature: `task-10:in-scope-implementation:json-request-failure-envelope`
+- Attempt count: 1
+- Starting checkpoint: independent integrated review at `4ae80e4` and recovery declaration `3841d82`
+- Ending checkpoint: product repair `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e`; report finalization `a219052fae51283e50c1173ec10b17ffec4e2491`
+- Outcome: RESOLVED
+- Resolution evidence: the initial exhaustive request test failed all 18 original JSON cells; the final matrix passes 22 JSON request-error cells and three Human-channel regressions. All six exact Task 10 commands passed with observed `exit_code: 0` against committed `62a3e46` in a normal local clone, and report-lint passed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Next checkpoint: VERIFY
+
+### 2026-08-15 15:10 TASK task-10 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-10-done.md`
+- report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`fix(cli): envelope task 10 request failures`)
+- Report finalization commit: `a219052fae51283e50c1173ec10b17ffec4e2491` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-10`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 10 commands recorded PASS from committed `62a3e46` with verbatim tokens and observed termination; the report retains every failed attempt and causal repair, including the independent-review request-envelope finding.
+- Next action: independent integrated re-review, then continue normally at Task 11; Review 4 remains due after Task 12.
