@@ -148,8 +148,8 @@
 
 ## Commit hash
 
-- `f95db81f938e15d59357a35936e43a24c708b653`
+- `b720fd174fae806449be6ff28cf3ec8a9d237f07`
 
 ## Commit subject
 
-- `test(cli): converge format shim callers`
+- `test(cli): add dynamic Cobra format guard`
