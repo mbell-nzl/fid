@@ -132,7 +132,7 @@ Cover at least:
 - Full gate exposing a stale in-scope assertion.
 - Completion-report or inventory repair.
 - Long silent command with a live session handle.
-- Developer returning an invalid “incomplete work” blocker.
+- Developer returning an invalid "incomplete work" blocker.
 - Fresh-session continuation of the same task.
 - Bounded, decision-free QA rework and re-review.
 - Genuine protected decision requiring a human stop.
@@ -162,6 +162,7 @@ Cover at least:
 | 2026-08-15 start | IN PROGRESS | User authorized autonomous overhaul, independent review, regular commits, and final HTML report. | Commit this plan and preserve the dirty tree. |
 | 2026-08-15 checkpoint 1 | COMPLETE | Plan committed as `6517c81`; all remaining tracked and untracked changes preserved in stash `779beab1` (`stash@{0}` at capture), covering 28 files with 1,052 insertions and 230 deletions. Original worktree verified clean. | Create the isolated overhaul branch/worktree. |
 | 2026-08-15 checkpoint 2 | IN PROGRESS | Created branch `workflow-reliability-overhaul` and worktree `/tmp/fid-workflow-overhaul` from `8951011`. Started independent audits of stoppage history, v1 workflow mechanics, and v2 adoption deltas. | Draft the audit and binding workflow decision. |
+| 2026-08-15 checkpoint 3 | COMPLETE | Three independent read-only audits completed. Historical result: 31 formal STOPs, only four requiring direct Human input and none caused by implementation/gate/report/incomplete-task work. Accepted `RESUME | REPAIR | BLOCK` architecture and recorded V2 adoption deltas in `2026-08-15-workflow-reliability-overhaul-audit.md`. | Implement the v1 state model and mechanical controls. |
 
 ## Checkpoints
 
@@ -171,7 +172,7 @@ Cover at least:
 | Durable plan commit | `6517c81` | COMPLETE |
 | Dirty-tree recovery stash | `779beab1` (`recovery/phase-20-task-10-and-runner-2026-08-15`) | COMPLETE |
 | Overhaul branch/worktree | `workflow-reliability-overhaul` at `/tmp/fid-workflow-overhaul` | COMPLETE |
-| Audit and decision commit | pending | NOT STARTED |
+| Audit and decision commit | pending | READY TO COMMIT |
 | V1 implementation commits | pending | NOT STARTED |
 | Independent review | pending | NOT STARTED |
 | Task 10 recovery commit(s) | pending | NOT STARTED |
