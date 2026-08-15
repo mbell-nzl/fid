@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -13,27 +16,23 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
+func TestMaintenanceCheckJSONMatchesContract(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
-	if err != nil {
-		t.Fatalf("healthy maintenance check error = %v", err)
+	healthy := executeCommandForTest(workspace, "--json", "maintenance", "check")
+	if healthy.err != nil || healthy.stderr != "" {
+		t.Fatalf("healthy maintenance.check = %+v, want successful stdout-only envelope", healthy)
 	}
-	if stderr != "" {
-		t.Fatalf("healthy maintenance check stderr = %q, want empty", stderr)
+	healthyEnvelope := decodeMaintenanceEnvelope(t, healthy.stdout)
+	assertExactMaintenanceEnvelopeKeys(t, healthyEnvelope, []string{"contract_version", "ok", "operation", "result", "event"})
+	if healthyEnvelope["contract_version"] != "fid-cli.v1" || healthyEnvelope["ok"] != true || healthyEnvelope["operation"] != "maintenance.check" || healthyEnvelope["event"] != nil {
+		t.Fatalf("healthy maintenance.check envelope = %#v, want fid-cli.v1 read success", healthyEnvelope)
 	}
-
-	var healthy struct {
-		Status string `json:"status"`
-	}
-	if err := json.Unmarshal([]byte(stdout), &healthy); err != nil {
-		t.Fatalf("decode healthy maintenance output: %v", err)
-	}
-	if healthy.Status != "pass" {
-		t.Fatalf("healthy status = %q, want pass", healthy.Status)
+	healthyResult := maintenanceResultFromEnvelope(t, healthyEnvelope, "result")
+	if healthyResult["status"] != "pass" {
+		t.Fatalf("healthy maintenance.check result = %#v, want status pass", healthyResult)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -43,70 +42,82 @@ func TestMaintenanceCheckCommandRendersHealthyAndFailingResults(t *testing.T) {
 	defer closeCommandDB(t, conn)
 	seedCorruptWorkflowFixture(t, conn, "FID-bad001")
 
-	stdout, stderr, err = runFIDCommandExpectError(t, workspace, "maintenance", "check")
-	if err == nil {
-		t.Fatal("failing maintenance check error = nil, want non-zero outcome")
+	failing := executeCommandForTest(workspace, "--json", "maintenance", "check")
+	if failing.err == nil || failing.stdout != "" {
+		t.Fatalf("failing maintenance.check = %+v, want failing stderr-only envelope", failing)
 	}
-	if stderr != "" {
-		t.Fatalf("failing maintenance check stderr = %q, want empty", stderr)
+	failingEnvelope := decodeMaintenanceEnvelope(t, failing.stderr)
+	assertExactMaintenanceEnvelopeKeys(t, failingEnvelope, []string{"contract_version", "ok", "operation", "error"})
+	if failingEnvelope["contract_version"] != "fid-cli.v1" || failingEnvelope["ok"] != false || failingEnvelope["operation"] != "maintenance.check" {
+		t.Fatalf("failing maintenance.check envelope = %#v, want fid-cli.v1 failure", failingEnvelope)
 	}
-
-	var failing struct {
-		Status string `json:"status"`
-		Errors []struct {
-			Check string `json:"check"`
-		} `json:"errors"`
+	errorObject, ok := failingEnvelope["error"].(map[string]any)
+	if !ok {
+		t.Fatalf("failing maintenance.check error = %#v, want object", failingEnvelope["error"])
 	}
-	if err := json.Unmarshal([]byte(stdout), &failing); err != nil {
-		t.Fatalf("decode failing maintenance output: %v", err)
+	if errorObject["code"] != "projection-divergence" || errorObject["category"] != "integrity" || errorObject["retryable"] != false || errorObject["subject"] != nil {
+		t.Fatalf("maintenance.check failure error = %#v, want projection-divergence integrity failure", errorObject)
 	}
-	if failing.Status != "fail" {
-		t.Fatalf("failing status = %q, want fail", failing.Status)
+	details, ok := errorObject["details"].(map[string]any)
+	if !ok {
+		t.Fatalf("maintenance.check failure details = %#v, want result object", errorObject["details"])
 	}
-	gotChecks := make([]string, len(failing.Errors))
-	for index, finding := range failing.Errors {
-		gotChecks[index] = finding.Check
+	if details["status"] != "fail" {
+		t.Fatalf("maintenance.check failure details = %#v, want status fail", details)
 	}
-	if want := []string{"foreign_key_integrity", "foreign_key_integrity", "workflow_state"}; !reflect.DeepEqual(gotChecks, want) {
-		t.Fatalf("failing checks = %#v, want %#v", gotChecks, want)
-	}
+	assertMaintenanceFindings(t, details, "errors")
 }
 
-func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
+func TestMaintenanceCheckWarningPromotionPreservesFindingsAndInfo(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check", "--format", formatName)
-			if err != nil {
-				t.Fatalf("healthy maintenance check error = %v", err)
-			}
-			if stderr != "" {
-				t.Fatalf("healthy maintenance check stderr = %q, want empty", stderr)
-			}
-			switch formatName {
-			case "json":
-				if got := decodeCommandJSONStructure(t, stdout); got.(map[string]any)["status"] != "pass" {
-					t.Fatalf("json status = %v, want pass", got.(map[string]any)["status"])
-				}
-			case "toon":
-				if got := decodeCommandTOONStructure(t, stdout); got.(map[string]any)["status"] != "pass" {
-					t.Fatalf("toon status = %v, want pass", got.(map[string]any)["status"])
-				}
-			case "yaml":
-				if got := decodeCommandYAMLStructure(t, stdout); got.(map[string]any)["status"] != "pass" {
-					t.Fatalf("yaml status = %v, want pass", got.(map[string]any)["status"])
-				}
-			case "markdown":
-				for _, want := range []string{"# Maintenance Check", "**Status:** pass", "## Errors", "## Warnings", "## Info"} {
-					if !strings.Contains(stdout, want) {
-						t.Fatalf("markdown output = %q, want substring %q", stdout, want)
-					}
-				}
-			}
-		})
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	seedStartedIssue(t, conn, "FID-warn001", time.Now().UTC().Add(-301*time.Second))
+
+	warn := executeCommandForTest(workspace, "--json", "maintenance", "check")
+	if warn.err != nil || warn.stderr != "" {
+		t.Fatalf("warn-only maintenance.check = %+v, want successful stdout envelope", warn)
+	}
+	warnResult := maintenanceResultFromEnvelope(t, decodeMaintenanceEnvelope(t, warn.stdout), "result")
+	if warnResult["status"] != "warn" {
+		t.Fatalf("warn-only result = %#v, want status warn", warnResult)
+	}
+
+	promoted := executeCommandForTest(workspace, "--json", "maintenance", "check", "--warn-as-error")
+	if promoted.err == nil || promoted.stdout != "" {
+		t.Fatalf("promoted maintenance.check = %+v, want failing stderr envelope", promoted)
+	}
+	promotedEnvelope := decodeMaintenanceEnvelope(t, promoted.stderr)
+	promotedError := promotedEnvelope["error"].(map[string]any)
+	promotedResult, ok := promotedError["details"].(map[string]any)
+	if !ok || promotedError["code"] != "projection-divergence" || promotedResult["status"] != "fail" {
+		t.Fatalf("promoted maintenance.check = %#v, want projection-divergence with status fail", promotedEnvelope)
+	}
+	for _, key := range []string{"errors", "warnings", "info"} {
+		if !reflect.DeepEqual(warnResult[key], promotedResult[key]) {
+			t.Fatalf("maintenance %s differs across warning branches: warn=%#v promoted=%#v", key, warnResult[key], promotedResult[key])
+		}
+	}
+}
+
+func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	configPath := filepath.Join(workspace, ".fid", "config.toml")
+	configBytes, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("ReadFile(config) error = %v", err)
+	}
+	updatedConfig := strings.Replace(string(configBytes), "abandoned_attempt_grace_seconds = 300", "abandoned_attempt_grace_seconds = 0", 1)
+	if err := os.WriteFile(configPath, []byte(updatedConfig), 0o644); err != nil {
+		t.Fatalf("WriteFile(config) error = %v", err)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -114,36 +125,86 @@ func TestMaintenanceCheckCommandRendersAllFormats(t *testing.T) {
 		t.Fatalf("open projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	seedCorruptWorkflowFixture(t, conn, "FID-bad002")
+	seedStartedIssue(t, conn, "FID-299", time.Now().UTC().Add(-299*time.Second))
+	seedStartedIssue(t, conn, "FID-300", time.Now().UTC().Add(-300*time.Second))
 
-	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
-		t.Run("failing "+formatName, func(t *testing.T) {
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check", "--format", formatName)
-			if err == nil {
-				t.Fatal("failing maintenance check error = nil, want non-zero outcome")
-			}
-			if stderr != "" {
-				t.Fatalf("failing maintenance check stderr = %q, want empty", stderr)
-			}
-			switch formatName {
-			case "json":
-				if got := decodeCommandJSONStructure(t, stdout).(map[string]any)["status"]; got != "fail" {
-					t.Fatalf("json status = %v, want fail", got)
-				}
-			case "toon":
-				if got := decodeCommandTOONStructure(t, stdout).(map[string]any)["status"]; got != "fail" {
-					t.Fatalf("toon status = %v, want fail", got)
-				}
-			case "yaml":
-				if got := decodeCommandYAMLStructure(t, stdout).(map[string]any)["status"]; got != "fail" {
-					t.Fatalf("yaml status = %v, want fail", got)
-				}
-			case "markdown":
-				if !strings.Contains(stdout, "**Status:** fail") || !strings.Contains(stdout, "workflow_state") {
-					t.Fatalf("markdown output = %q, want fail status and workflow finding", stdout)
-				}
-			}
-		})
+	checked := executeCommandForTest(workspace, "--json", "maintenance", "check")
+	if checked.err != nil {
+		t.Fatalf("maintenance.check = %+v, want warn success", checked)
+	}
+	result := maintenanceResultFromEnvelope(t, decodeMaintenanceEnvelope(t, checked.stdout), "result")
+	if hasMaintenanceFinding(t, result, "warnings", "started_without_claim", "FID-299") || !hasMaintenanceFinding(t, result, "warnings", "started_without_claim", "FID-300") {
+		t.Fatalf("started-without-claim warnings = %#v, want only fixed 300-second boundary", result["warnings"])
+	}
+
+	format := executeCommandForTest(workspace, "--json", "maintenance", "check", "--format", "json")
+	if format.err == nil || format.stdout != "" {
+		t.Fatalf("maintenance.check --format = %+v, want rejected request", format)
+	}
+	formatError := decodeMaintenanceEnvelope(t, format.stderr)["error"].(map[string]any)
+	if formatError["code"] != "invalid-argument" {
+		t.Fatalf("maintenance.check --format error = %#v, want invalid-argument", formatError)
+	}
+}
+
+func TestMaintenanceCheckHumanSuccessAndVacuumJSONRejection(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+
+	human := executeCommandForTest(workspace, "maintenance", "check")
+	if human.err != nil || human.stderr != "" || !strings.Contains(human.stdout, "maintenance check: pass") {
+		t.Fatalf("human maintenance.check = %+v, want stdout-only success", human)
+	}
+	vacuum := executeCommandForTest(workspace, "--json", "maintenance", "vacuum", "--by", "tl")
+	if vacuum.err == nil || vacuum.stdout != "" || !strings.Contains(vacuum.stderr, "--json is not available for maintenance vacuum") {
+		t.Fatalf("maintenance.vacuum --json = %+v, want legacy root-flag rejection", vacuum)
+	}
+}
+
+func TestMaintenanceCheckUsesExplicitProjectRoot(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(t.TempDir())
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", workspace, "--json", "maintenance", "check"})
+	if err := cmd.Execute(); err != nil || stderr.Len() != 0 {
+		t.Fatalf("explicit-root maintenance.check = (%v, %q), want stdout-only success", err, stderr.String())
+	}
+	envelope := decodeMaintenanceEnvelope(t, stdout.String())
+	if envelope["operation"] != "maintenance.check" || envelope["event"] != nil {
+		t.Fatalf("explicit-root maintenance envelope = %#v, want maintenance.check read response", envelope)
+	}
+}
+
+func TestMaintenanceCheckRejectsFindingLimitWithoutTruncation(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	startedAt := time.Now().UTC().Add(-301 * time.Second)
+	for index := 0; index < 1001; index++ {
+		seedStartedIssue(t, conn, "FID-limit-"+strconv.Itoa(index), startedAt)
+	}
+
+	checked := executeCommandForTest(workspace, "--json", "maintenance", "check")
+	if checked.err == nil || checked.stdout != "" {
+		t.Fatalf("maintenance.check over limit = %+v, want stderr-only failure", checked)
+	}
+	errorObject := decodeMaintenanceEnvelope(t, checked.stderr)["error"].(map[string]any)
+	details := errorObject["details"].(map[string]any)
+	if errorObject["code"] != "result-limit-exceeded" || details["collection"] != "maintenance.warnings" || details["limit"] != json.Number("1000") || details["observed"] != json.Number("1001") {
+		t.Fatalf("maintenance.check over-limit error = %#v, want exact finding limit details", errorObject)
+	}
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM issues`).Scan(&count); err != nil || count != 1001 {
+		t.Fatalf("issues after over-limit maintenance check = %d, err = %v; want 1001 unchanged rows", count, err)
 	}
 }
 
@@ -168,100 +229,84 @@ func seedCorruptWorkflowFixture(t *testing.T, conn *sql.DB, issueID string) {
 	}
 }
 
-func TestMaintenanceCheckCommandPromotesWarningsWithoutRewritingThem(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open projection: %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES ('FID-warn001', 'task', 'Started without claim', 'task-default', 'in_progress', '2020-01-01T00:00:00Z', '2020-01-01T00:00:00Z')`); err != nil {
+func seedStartedIssue(t *testing.T, conn *sql.DB, id string, startedAt time.Time) {
+	t.Helper()
+	value := startedAt.UTC().Format(time.RFC3339)
+	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES (?, 'task', 'Started without claim', 'task-default', 'in_progress', ?, ?)`, id, value, value); err != nil {
 		t.Fatalf("seed warning issue: %v", err)
-	}
-
-	defaultOutput, defaultStderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
-	if err != nil {
-		t.Fatalf("default warning maintenance check error = %v", err)
-	}
-	if defaultStderr != "" {
-		t.Fatalf("default warning maintenance check stderr = %q, want empty", defaultStderr)
-	}
-
-	promotedOutput, promotedStderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check", "--warn-as-error")
-	if err == nil {
-		t.Fatal("promoted warning maintenance check error = nil, want non-zero outcome")
-	}
-	if promotedStderr != "" {
-		t.Fatalf("promoted warning maintenance check stderr = %q, want empty", promotedStderr)
-	}
-
-	var defaultResult, promotedResult struct {
-		Status   string            `json:"status"`
-		Errors   []json.RawMessage `json:"errors"`
-		Warnings []json.RawMessage `json:"warnings"`
-	}
-	if err := json.Unmarshal([]byte(defaultOutput), &defaultResult); err != nil {
-		t.Fatalf("decode default warning output: %v", err)
-	}
-	if err := json.Unmarshal([]byte(promotedOutput), &promotedResult); err != nil {
-		t.Fatalf("decode promoted warning output: %v", err)
-	}
-	if defaultResult.Status != "warn" || promotedResult.Status != "fail" {
-		t.Fatalf("warning statuses = %q, %q; want warn, fail", defaultResult.Status, promotedResult.Status)
-	}
-	if len(defaultResult.Errors) != 0 || len(promotedResult.Errors) != 0 {
-		t.Fatalf("warning errors = %v, %v; want no errors", defaultResult.Errors, promotedResult.Errors)
-	}
-	if len(defaultResult.Warnings) == 0 || !reflect.DeepEqual(defaultResult.Warnings, promotedResult.Warnings) {
-		t.Fatalf("warning payloads = %s, %s; want identical non-empty warnings", defaultResult.Warnings, promotedResult.Warnings)
 	}
 }
 
-func TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-	configPath := filepath.Join(workspace, ".fid", "config.toml")
-	configBytes, err := os.ReadFile(configPath)
-	if err != nil {
-		t.Fatalf("ReadFile(config) error = %v", err)
+func decodeMaintenanceEnvelope(t *testing.T, output string) map[string]any {
+	t.Helper()
+	decoder := json.NewDecoder(strings.NewReader(output))
+	decoder.UseNumber()
+	var envelope map[string]any
+	if err := decoder.Decode(&envelope); err != nil {
+		t.Fatalf("decode maintenance envelope %q: %v", output, err)
 	}
-	updatedConfig := strings.Replace(string(configBytes), "abandoned_attempt_grace_seconds = 300", "abandoned_attempt_grace_seconds = 0", 1)
-	if err := os.WriteFile(configPath, []byte(updatedConfig), 0o644); err != nil {
-		t.Fatalf("WriteFile(config) error = %v", err)
-	}
+	return envelope
+}
 
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open projection: %v", err)
+func assertExactMaintenanceEnvelopeKeys(t *testing.T, envelope map[string]any, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(envelope))
+	for key := range envelope {
+		got = append(got, key)
 	}
-	defer closeCommandDB(t, conn)
-	startedAt := time.Now().UTC().Add(-5 * time.Second).Format(time.RFC3339)
-	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES ('FID-fixed-grace', 'task', 'Started without claim', 'task-default', 'in_progress', ?, ?)`, startedAt, startedAt); err != nil {
-		t.Fatalf("seed warning issue: %v", err)
+	if !reflect.DeepEqual(sortedStrings(got), sortedStrings(want)) {
+		t.Fatalf("envelope keys = %#v, want %#v", got, want)
 	}
+}
 
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
-	if err != nil {
-		t.Fatalf("maintenance check error = %v", err)
+func maintenanceResultFromEnvelope(t *testing.T, envelope map[string]any, key string) map[string]any {
+	t.Helper()
+	result, ok := envelope[key].(map[string]any)
+	if !ok {
+		t.Fatalf("maintenance envelope %s = %#v, want object", key, envelope[key])
 	}
-	if stderr != "" {
-		t.Fatalf("stderr = %q, want empty", stderr)
+	return result
+}
+
+func assertMaintenanceFindings(t *testing.T, result map[string]any, key string) {
+	t.Helper()
+	findings, ok := result[key].([]any)
+	if !ok || len(findings) == 0 {
+		t.Fatalf("maintenance result %s = %#v, want non-empty finding list", key, result[key])
 	}
-	var result struct {
-		Warnings []struct {
-			Check string `json:"check"`
-		} `json:"warnings"`
-	}
-	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatalf("decode maintenance output: %v", err)
-	}
-	for _, warning := range result.Warnings {
-		if warning.Check == "started_without_claim" {
-			t.Fatalf("warnings = %#v, want fixed 300-second grace", result.Warnings)
+	for _, value := range findings {
+		finding, ok := value.(map[string]any)
+		if !ok || !reflect.DeepEqual(sortedStrings(mapKeys(finding)), []string{"check", "entity_id", "message"}) {
+			t.Fatalf("maintenance finding = %#v, want exact Finding schema", value)
 		}
 	}
+}
+
+func hasMaintenanceFinding(t *testing.T, result map[string]any, severity, check, entityID string) bool {
+	t.Helper()
+	findings, ok := result[severity].([]any)
+	if !ok {
+		t.Fatalf("maintenance result %s = %#v, want array", severity, result[severity])
+	}
+	for _, value := range findings {
+		finding := value.(map[string]any)
+		if finding["check"] == check && finding["entity_id"] == entityID {
+			return true
+		}
+	}
+	return false
+}
+
+func mapKeys(values map[string]any) []string {
+	keys := make([]string, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	return keys
+}
+
+func sortedStrings(values []string) []string {
+	result := append([]string(nil), values...)
+	sort.Strings(result)
+	return result
 }

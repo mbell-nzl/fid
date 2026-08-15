@@ -278,7 +278,7 @@ func assertClosureTelemetry(t *testing.T, binary, workspace, issueID, completion
 func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, issueID string, journalBefore []byte) {
 	t.Helper()
 
-	check, _ := closureRunFID(t, binary, workspace, "maintenance", "check", "--format", "json")
+	check, _ := closureRunFID(t, binary, workspace, "--json", "maintenance", "check")
 	if !strings.Contains(check, `"status":"pass"`) {
 		t.Fatalf("maintenance check = %q, want pass", check)
 	}

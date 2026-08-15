@@ -37,6 +37,18 @@ type Finding struct {
 	EntityID string `json:"entity_id"`
 }
 
+const MaxFindingsPerSeverity = 1000
+
+type ResultLimitExceededError struct {
+	Collection string
+	Limit      int
+	Observed   int
+}
+
+func (err *ResultLimitExceededError) Error() string {
+	return fmt.Sprintf("maintenance result %s has %d items, maximum is %d", err.Collection, err.Observed, err.Limit)
+}
+
 type structuralCheck func(*sql.DB, string) ([]Finding, error)
 
 func Check(options CheckOptions) (Result, error) {
@@ -86,7 +98,20 @@ func Check(options CheckOptions) (Result, error) {
 	result.Info = info
 	sortFindings(result.Errors)
 	sortFindings(result.Warnings)
+	if err := enforceFindingLimit("maintenance.errors", result.Errors); err != nil {
+		return Result{}, err
+	}
+	if err := enforceFindingLimit("maintenance.warnings", result.Warnings); err != nil {
+		return Result{}, err
+	}
 	return result, nil
+}
+
+func enforceFindingLimit(collection string, findings []Finding) error {
+	if len(findings) <= MaxFindingsPerSeverity {
+		return nil
+	}
+	return &ResultLimitExceededError{Collection: collection, Limit: MaxFindingsPerSeverity, Observed: len(findings)}
 }
 
 func sortFindings(findings []Finding) {

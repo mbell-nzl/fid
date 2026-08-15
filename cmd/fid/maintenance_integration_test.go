@@ -54,15 +54,16 @@ func TestMaintenanceCheckRefreshesProjectionWithoutChangingJournal(t *testing.T)
 
 			journalPath := mustJournalPath(t, workspace)
 			before := mustReadCommandFile(t, journalPath)
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "check")
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "maintenance", "check")
 			if err != nil {
 				t.Fatalf("maintenance check error = %v", err)
 			}
 			if stderr != "" {
 				t.Fatalf("maintenance check stderr = %q, want empty", stderr)
 			}
-			if got := decodeCommandJSONStructure(t, stdout).(map[string]any)["status"]; got != "pass" {
-				t.Fatalf("maintenance status = %v, want pass", got)
+			envelope := decodeCommandJSONStructure(t, stdout).(map[string]any)
+			if envelope["event"] != nil || envelope["operation"] != "maintenance.check" || envelope["result"].(map[string]any)["status"] != "pass" {
+				t.Fatalf("maintenance envelope = %#v, want successful maintenance.check read envelope", envelope)
 			}
 			if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
 				t.Fatal("maintenance check changed journal bytes")

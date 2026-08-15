@@ -4,17 +4,29 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/maintenance"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
 )
 
-var errMaintenanceCheckFailed = errors.New("maintenance check failed")
+var errMaintenanceCheckFailed = errors.New("maintenance check found integrity divergence")
 
 const legacyStartedWithoutClaimGraceSeconds = 300
+
+type maintenanceCheckResult struct {
+	Status   string                `json:"status"`
+	Errors   []maintenance.Finding `json:"errors"`
+	Warnings []maintenance.Finding `json:"warnings"`
+	Info     maintenance.Info      `json:"info"`
+}
+
+func init() {
+	rootFlagCapabilities["maintenance check"] = rootFlagCapability{Project: true, JSON: true}
+}
 
 func newMaintenanceCommand() *cobra.Command {
 	cmd := &cobra.Command{
@@ -61,19 +73,20 @@ func renderMaintenanceVacuumError(cmd *cobra.Command, err error) error {
 }
 
 func newMaintenanceCheckCommand() *cobra.Command {
-	var (
-		formatName  string
-		warnAsError bool
-	)
+	var warnAsError bool
 
 	cmd := &cobra.Command{
 		Use:   "check",
 		Short: "Audit projected workspace integrity without changing the journal.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("maintenance.check"),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			jsonMode, err := readJSONMode(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return err
+			}
+			workspaceRoot, err := maintenanceCheckWorkspaceRoot(cmd)
+			if err != nil {
+				return renderMaintenanceCheckError(cmd, err)
 			}
 			if _, err := journal.EnsureProjectionFresh(workspaceRoot, issueMigrationsDir()); err != nil {
 				return renderMaintenanceCheckError(cmd, err)
@@ -95,38 +108,140 @@ func newMaintenanceCheckCommand() *cobra.Command {
 				return renderMaintenanceCheckError(cmd, err)
 			}
 
-			view := fidformat.MaintenanceCheckView{
-				Status: maintenanceCheckStatus(result, warnAsError),
-				Result: result,
+			response := maintenanceCheckResponse(result, warnAsError)
+			if response.Status == "fail" {
+				return renderMaintenanceDivergence(cmd, response)
 			}
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, view); err != nil {
-				return renderMaintenanceCheckError(cmd, err)
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "maintenance.check", maintenanceResultMap(response), nil)
 			}
-			if view.Status == "fail" {
-				return errMaintenanceCheckFailed
-			}
-			return nil
+			return writeIssueLine(cmd.OutOrStdout(), "maintenance check: %s\n", response.Status)
 		},
 	}
 
 	cmd.Flags().BoolVar(&warnAsError, "warn-as-error", false, "Promote warning findings to a failing outcome")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
+	cmd.SetFlagErrorFunc(canonicalFlagError("maintenance.check"))
 	return cmd
 }
 
-func maintenanceCheckStatus(result maintenance.Result, warnAsError bool) string {
-	if len(result.Errors) > 0 || (warnAsError && len(result.Warnings) > 0) {
-		return "fail"
+func maintenanceCheckWorkspaceRoot(cmd *cobra.Command) (string, error) {
+	workingDirectory, err := commandWorkingDirectory(cmd)
+	if err != nil {
+		return "", err
 	}
-	if len(result.Warnings) > 0 {
-		return "warn"
+	projectPath, err := rebuildProjectCandidate(cmd, workingDirectory)
+	if err != nil {
+		return "", err
 	}
-	return "pass"
+	return project.Resolve(workingDirectory, projectPath)
 }
 
-func renderMaintenanceCheckError(cmd *cobra.Command, err error) error {
-	if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-		return renderErr
+func maintenanceCheckResponse(result maintenance.Result, warnAsError bool) maintenanceCheckResult {
+	response := maintenanceCheckResult{Errors: result.Errors, Warnings: result.Warnings, Info: result.Info}
+	if len(result.Errors) > 0 || warnAsError && len(result.Warnings) > 0 {
+		response.Status = "fail"
+		return response
 	}
-	return err
+	if len(result.Warnings) > 0 {
+		response.Status = "warn"
+		return response
+	}
+	response.Status = "pass"
+	return response
+}
+
+func maintenanceResultMap(result maintenanceCheckResult) map[string]any {
+	return map[string]any{
+		"status": result.Status, "errors": findingsMap(result.Errors), "warnings": findingsMap(result.Warnings),
+		"info": map[string]any{"issue_count": result.Info.IssueCount, "claim_count_live": result.Info.ClaimCountLive, "recent_activity_7d": result.Info.RecentActivity},
+	}
+}
+
+func findingsMap(findings []maintenance.Finding) []map[string]any {
+	result := make([]map[string]any, 0, len(findings))
+	for _, finding := range findings {
+		result = append(result, map[string]any{"check": finding.Check, "message": finding.Message, "entity_id": finding.EntityID})
+	}
+	return result
+}
+
+func renderMaintenanceDivergence(cmd *cobra.Command, result maintenanceCheckResult) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	if !jsonMode {
+		if err := writeIssueLine(cmd.ErrOrStderr(), "error: %s\n", errMaintenanceCheckFailed); err != nil {
+			return err
+		}
+		return errMaintenanceCheckFailed
+	}
+	failure, err := cli.NewFailure(cli.CodeProjectionDivergence, "maintenance check found integrity divergence", nil, maintenanceResultMap(result))
+	if err != nil {
+		return err
+	}
+	if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
+		return err
+	}
+	return errMaintenanceCheckFailed
+}
+
+func renderMaintenanceCheckError(cmd *cobra.Command, cause error) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+			return err
+		}
+		return cause
+	}
+	if errors.Is(cause, project.ErrNotFound) {
+		workingDirectory, err := commandWorkingDirectory(cmd)
+		if err != nil {
+			return err
+		}
+		projectPath, err := rebuildProjectCandidate(cmd, workingDirectory)
+		if err != nil {
+			return err
+		}
+		failure, err := cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: projectPath}, map[string]any{"path": projectPath})
+		if err != nil {
+			return err
+		}
+		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
+			return err
+		}
+		return cause
+	}
+	if failure, handled, err := journalReplayStoppedFailure(cause); err != nil {
+		return err
+	} else if handled {
+		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
+			return err
+		}
+		return cause
+	}
+	var limit *maintenance.ResultLimitExceededError
+	if errors.As(cause, &limit) {
+		failure, err := cli.NewFailure(cli.CodeResultLimitExceeded, "maintenance findings exceed their collection limit", nil, map[string]any{
+			"collection": limit.Collection, "limit": limit.Limit, "observed": limit.Observed,
+		})
+		if err != nil {
+			return err
+		}
+		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
+			return err
+		}
+		return cause
+	}
+	failure, err := cli.NewFailure(cli.CodeInternalError, "maintenance check failed", nil, map[string]any{})
+	if err != nil {
+		return err
+	}
+	if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
+		return err
+	}
+	return cause
 }

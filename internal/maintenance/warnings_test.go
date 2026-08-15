@@ -1,6 +1,8 @@
 package maintenance
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -102,5 +104,29 @@ func TestCheckStartedWithoutClaimGraceBoundary(t *testing.T) {
 				t.Fatalf("started_without_claim finding = %t, want %t", got, test.wantFinding)
 			}
 		})
+	}
+}
+
+func TestCheckRejectsMoreThanOneThousandWarningsWithoutTruncating(t *testing.T) {
+	t.Parallel()
+
+	now := time.Date(2040, time.January, 2, 3, 10, 5, 0, time.UTC)
+	fixture := newMaintenanceFixture(t)
+	for index := 0; index < 1001; index++ {
+		seedIssueAt(t, fixture.db, fmt.Sprintf("FID-warning-%04d", index), "task", "in_progress", now.Add(-300*time.Second))
+	}
+
+	result, err := Check(CheckOptions{
+		DB:                              fixture.db,
+		JournalDir:                      fixture.journalDir,
+		Now:                             now,
+		StartedWithoutClaimGraceSeconds: 300,
+	})
+	if err == nil {
+		t.Fatalf("Check() result = %#v, want an over-limit error for 1001 warnings", result)
+	}
+	var limit *ResultLimitExceededError
+	if !errors.As(err, &limit) || limit.Collection != "maintenance.warnings" || limit.Limit != 1000 || limit.Observed != 1001 {
+		t.Fatalf("Check() error = %v, want maintenance.warnings limit 1000 observed 1001", err)
 	}
 }

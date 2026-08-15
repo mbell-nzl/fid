@@ -56,8 +56,8 @@ func TestMaintenanceCheckReportsIncompatibleWorkflowAssignment(t *testing.T) {
 		t.Fatalf("close projection: %v", err)
 	}
 
-	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "maintenance", "check", "--warn-as-error", "--format", "json")
-	if err == nil || stderr != "" || !strings.Contains(stdout, `"check":"workflow_assignment"`) || !strings.Contains(stdout, `"entity_id":"kind:epic"`) {
+	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "--json", "maintenance", "check", "--warn-as-error")
+	if err == nil || stdout != "" || !strings.Contains(stderr, `"check":"workflow_assignment"`) || !strings.Contains(stderr, `"entity_id":"kind:epic"`) {
 		t.Fatalf("maintenance check = (%v, %q, %q), want non-zero workflow_assignment finding", err, stdout, stderr)
 	}
 }
