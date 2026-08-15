@@ -26,6 +26,9 @@
 - Preserved the appended Event's RFC3339 nanosecond timestamp in every migrated
   Issue mutation response and strengthened create/update/transition and Task 10
   identity assertions against the journal tail.
+- Routed arity, unknown-flag, and missing/blank required-actor failures for all
+  six Task 10 leaves through exact stderr-only `invalid-argument` envelopes,
+  while retaining concise Human error prose.
 
 ## Files created or modified
 
@@ -43,6 +46,8 @@
   behavior.
 - `cmd/fid/integration/e2e_v01_closure_helpers_test.go` for the accepted
   stdout-only AC success channel.
+- `cmd/fid/canonical_request.go` and `task10_contract_test.go` for canonical
+  request-error rendering and the exhaustive six-operation negative matrix.
 
 ## Documentation updated
 
@@ -93,6 +98,8 @@
 - `VAL-044`: PASS - `TestTask10OperationsUseSelectedProjectOutsideWorkingDirectory`
   covers all six selected-project leaves;
   `TestIssueACVerifyRemainsGuardedLegacyLeaf` covers the legacy exclusion;
+  `TestTask10JSONRequestErrorsUseCanonicalEnvelope` covers arity and unknown
+  flags for all six leaves plus every missing/blank required Task 10 flag;
   removed `--format`, explicit-empty option, UTF-8/control, and every
   just-inside/outside byte/ordinal cell are covered by the named request and
   domain tables.
@@ -111,6 +118,8 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 ## Tests run
 
+- `go test ./cmd/fid -run '^TestTask10JSONRequestErrorsUseCanonicalEnvelope$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test ./cmd/fid -run '^TestTask10(JSONRequestErrorsUseCanonicalEnvelope|RequiredActorHumanErrorsRemainProse)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.060s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  6.577s` (terminated `exit_code: 0`)
 - `go test ./internal/issues ./internal/labels -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/labels  0.598s` (terminated `exit_code: 0`)
 - `go test ./internal/validation ./internal/issues ./internal/labels ./internal/journal ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  6.564s` (terminated `exit_code: 0`)
@@ -120,9 +129,9 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	9.832s	coverage: 80.5% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.6%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.120s` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	10.031s	coverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.193s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
@@ -142,7 +151,7 @@ Event/atomicity tables. No named operation is represented by sampling another.
   VCS status: exit status 128` and `Use -buildvcs=false to disable VCS
   stamping.` (both terminated `exit_code: 1`). No command flag was changed.
   Every final gate above ran byte-identically against committed HEAD
-  `802e32b53c6b054a703405b12077d9d792d12b3e` in a normal local clone with VCS
+  `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e` in a normal local clone with VCS
   stamping enabled.
 - The first normal-clone race/coverage run failed with `FAIL` (terminated
   `exit_code: 1`) because `TestIssueTransitionCanonicalOutcomeTable` compared
@@ -159,6 +168,15 @@ Event/atomicity tables. No named operation is represented by sampling another.
   stderr channel. Commit `802e32b` changed only that fixture to require empty
   stderr and parse the accepted stdout success. The byte-identical integration
   command then passed. No product assertion, threshold, or gate was narrowed.
+- Final independent integrated review at `4ae80e4` returned `REPAIR` after real
+  binary probes showed empty stderr for JSON arity/unknown-flag failures and
+  Human prose for AC required-flag failures. The new exhaustive request test
+  initially failed all 18 original cells with `FAIL` (terminated `exit_code: 1`).
+  Commit `62a3e46` added the domain-neutral canonical request renderer,
+  wired all six leaves through it, enforced missing/blank required actors as
+  input errors, and expanded the final matrix to 22 JSON cells plus three Human
+  channel regressions. The focused rerun and the byte-identical full gate pass;
+  no error schema, request rule, assertion, or command was weakened.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -172,8 +190,8 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 ## Commit hash
 
-- `802e32b53c6b054a703405b12077d9d792d12b3e`
+- `62a3e46ebb69b76b93b5a559dc82d9bc9c0ccd3e`
 
 ## Commit subject
 
-- `test(integration): align acceptance output channel`
+- `fix(cli): envelope task 10 request failures`
