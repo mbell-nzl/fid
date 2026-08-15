@@ -79,8 +79,8 @@ func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
 		root.PersistentFlags().String("format", "", "injected test flag")
 
 		violations := liveUniversalFormatFlagViolations(root)
-		if !containsUniversalFormatViolation(violations, "fid --format") {
-			t.Fatalf("injected inherited format flag violations = %v, want fid --format", violations)
+		if !containsUniversalFormatViolation(violations, "fid issue --format") {
+			t.Fatalf("injected inherited format flag violations = %v, want descendant fid issue --format", violations)
 		}
 	})
 
