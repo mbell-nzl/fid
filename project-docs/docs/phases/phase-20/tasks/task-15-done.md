@@ -58,8 +58,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ad693228a9e1df57cab1d8f37159b47ecdb08e29`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): checkpoint format shim removal`
