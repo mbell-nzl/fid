@@ -743,3 +743,15 @@ Human-approved and QA-plan acceptance is next._
 - QA-plan commands beyond the task spec: none required
 - Gate judgment: all six exact Task 10 commands recorded PASS from committed `802e32b` with verbatim tokens and observed termination; every failed attempt and causal repair remains in the report.
 - Next action: continue normally at Task 11; Review 4 remains due after Task 12.
+
+### 2026-08-15 14:59 TASK-RECOVERY task-10
+
+- Source: final independent integrated review at `4ae80e4`; real binary probes showed empty stderr for Task 10 JSON arity/unknown-flag errors and Human prose for AC required-flag errors
+- Category: in-scope-implementation
+- Trigger signature: `task-10:in-scope-implementation:json-request-failure-envelope`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: `4ae80e4665c797fc7aa071873792225a2b5056db`; Task 10 recorded complete, reviewer verdict REPAIR with one bounded exact-request finding
+- Resolution evidence: PENDING - exhaustive six-operation request-error tests, causal product repair, exact six-command gate, report-lint, and independent re-review
+- Next action: keep Task 10 open; route JSON parse/arity/required-flag failures through canonical `invalid-argument` envelopes while preserving Human errors, then verify exactly
+- Human attention required: no
