@@ -88,10 +88,11 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 3. Bounded Review 3b is NON-BLOCK at `db36832`, closing all three sustained
    Review 3 evidence findings. It does not reset cadence; Review 4 remains due
    after Task 12.
-4. Task 10 is complete at `62a3e46` under DEC-141. All six exact commands
+4. Task 10 is complete at `627ca9d` under DEC-141. All six exact commands
    passed against that committed tree in a normal clone, the completion report
-   is finalized at `a219052`, and report-lint is PASS. The independent-review
-   request-envelope finding is repaired and ESC-20-010 remains closed.
+   is finalized at `f5a0c6f`, and report-lint is PASS. The independent-review
+   request-envelope and reason-code findings are repaired; ESC-20-010 remains
+   closed.
 5. The workflow reliability overhaul is implemented and independently PASS.
    It supplies typed repair routing, bounded same-task continuation, strict
    sequence/report checks, QA repair/re-review, and retained polling for silent

@@ -787,3 +787,23 @@ Human-approved and QA-plan acceptance is next._
 - Resolution evidence: PENDING - exact missing/blank actor matrix, causal product repair, exact six-command gate, report-lint, and independent re-review
 - Next action: keep Task 10 open; let actor absence reach the existing policy/authority renderer and preserve canonical invalid-request handling for parse, arity, and non-authority required flags
 - Human attention required: no
+
+### 2026-08-15 15:21 REPAIR task-10
+
+- Trigger signature: `task-10:in-scope-implementation:missing-actor-authority-envelope`
+- Attempt count: 1
+- Starting checkpoint: independent re-review at `0b10b46` and recovery declaration `431d3f0`
+- Ending checkpoint: product repair `627ca9dea9bdef451260022718b7bfcfcae9186a`; report finalization `f5a0c6fb97bae53f82f113e82462a226c5057e52`
+- Outcome: RESOLVED
+- Resolution evidence: the exact eight-cell missing/blank actor matrix first failed with `FAIL` (terminated `exit_code: 1`), then passed after actor absence reached the existing policy/authority renderer. Final coverage separates 14 invalid-request JSON cells, eight missing-authority JSON cells, and eight Human cases. All six exact Task 10 commands passed against committed `627ca9d`, and report-lint passed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- Next checkpoint: VERIFY
+
+### 2026-08-15 15:22 TASK task-10 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-10-done.md`
+- report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `627ca9dea9bdef451260022718b7bfcfcae9186a` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`fix(cli): preserve missing actor authority code`)
+- Report finalization commit: `f5a0c6fb97bae53f82f113e82462a226c5057e52` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-10`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 10 commands recorded PASS from committed `627ca9d`; request syntax and missing authority now retain their distinct accepted reason codes, and all failed attempts remain preserved.
+- Next action: final independent integrated re-review, then continue normally at Task 11; Review 4 remains due after Task 12.
