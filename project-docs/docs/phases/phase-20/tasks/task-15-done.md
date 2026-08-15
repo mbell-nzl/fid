@@ -74,22 +74,22 @@
 ## Tests run
 
 - `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - immutable prior focused guard failure before caller convergence; the report checkpoint records the earlier inventory.
-- `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.080s` (terminated `exit_code: 0`) - later byte-identical guard pass.
+- `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.080s` - later byte-identical guard pass (terminated `exit_code: 0`)
 - `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - initial convergence exposed retired owner, concern, acceptance-verification, and completion read assumptions.
 - `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - an intermediate completion-order repair temporarily changed the agent-run query to use a nonexistent column.
-- `go test ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  10.051s` (terminated `exit_code: 0`) - final focused command suite.
+- `go test ./cmd/fid -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  10.051s` - final focused command suite (terminated `exit_code: 0`)
 - `go test ./...` - FAIL - `FAIL` (terminated `exit_code: 1`) - first full non-race run exposed completion ordering after replacing the retired read section.
 - `rg -n --glob '*.go' 'migratedReadTestArgs|containsFormatJSON|isLegacyIssueSection|legacyMigratedReadOutput' cmd internal` - PASS no-match inventory - `exit 1 (no output)` (terminated `exit_code: 1`); no-match is the pass condition.
-- `/tmp/fid init --prefix FID` - PASS - `initialized fid project in .fid/` (terminated `exit_code: 0`); real built CLI entrypoint.
-- `/tmp/fid --json issue list` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"issue.list","result":{"count":0,"issues":[]},"event":null}` (terminated `exit_code: 0`); real built CLI entrypoint.
+- `/tmp/fid init --prefix FID` - PASS - `initialized fid project in .fid/` - real built CLI entrypoint (terminated `exit_code: 0`)
+- `/tmp/fid --json issue list` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"issue.list","result":{"count":0,"issues":[]},"event":null}` - real built CLI entrypoint (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* unused: 2` (terminated `exit_code: 1`) - first exact attempt.
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`) - byte-identical rerun after removing two dead helpers.
+- `golangci-lint run ./...` - PASS - `0 issues.` - byte-identical rerun after removing two dead helpers (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`) - first exact attempt; the race/coverage timing crossed the RFC3339-truncated 299-second fixture boundary.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6%` (terminated `exit_code: 0`) - byte-identical rerun after moving only the negative fixture to 298 seconds.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6%` - byte-identical rerun after moving only the negative fixture to 298 seconds (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t77.4%` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 5.136s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
