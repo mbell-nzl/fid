@@ -166,6 +166,7 @@ Cover at least:
 | 2026-08-15 checkpoint 4 | COMPLETE | Added typed report outcomes, closed recovery/blocker categories, invalid-blocker rejection, and PASS termination enforcement to `report-lint.sh`. Red self-test failed five new cases before implementation; final self-test and mechanical drills pass. | Implement role/spec routing and recovery ledger semantics. |
 | 2026-08-15 checkpoint 5 | COMPLETE | Canonical spec, root instructions, five role prompts, QA/recovery templates, playbook, glossary, generated provider files, and workflow lint now implement `RESUME | REPAIR | BLOCK`, same-task continuation, independent QA re-review, protected-only stops, and append-only recovery state. Committed as `56440d6`; workflow lint and report-lint self-test pass. | Add deterministic routing and scenario drills. |
 | 2026-08-15 checkpoint 6 | COMPLETE | Added `workflow-route.sh` as the Phase Runner's deterministic action reducer and expanded mechanical drills through drill 17. All outcome, live-command, incomplete-blocker, report-repair, QA-repair, protected-stop, and recovery-budget scenarios pass. Committed as `4d71746`. | Obtain final independent review, then integrate and recover Task 10. |
+| 2026-08-15 checkpoint 7 | COMPLETE | Independent review found unsafe substring/nonzero PASS handling, a legacy multi-session escalation clause, and sequence-validation bypasses. Repairs `846b667` and `06a413a` added exact final-status/exit-zero checks, strict pre-append v2 ledger validation, task/review identity and QA recovery ordering, relevant-progress budgets, and executable lifecycle drills. Independent re-review at `06a413a` returned PASS with no blocking or material findings; all canonical checks exited 0. | Restore the Task 10 checkpoint and complete its exact gates. |
 
 ## Checkpoints
 
@@ -179,7 +180,8 @@ Cover at least:
 | Typed report outcome commit | `615eda1` | COMPLETE |
 | V1 recovery routing commit | `56440d6` | COMPLETE |
 | Deterministic route/drill commit | `4d71746` | COMPLETE |
-| Independent review | `/root/final_workflow_review` active | IN PROGRESS |
+| Review repair commits | `846b667`, `06a413a` | COMPLETE |
+| Independent review | PASS at `06a413a` | COMPLETE |
 | Task 10 recovery commit(s) | pending | NOT STARTED |
 | Final HTML report | pending | NOT STARTED |
 
