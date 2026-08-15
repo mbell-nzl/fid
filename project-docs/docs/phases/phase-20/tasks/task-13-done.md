@@ -51,7 +51,8 @@
 - `go test ./cmd/fid ./internal/maintenance` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	0.685s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration/... -run 'Maintenance' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.659s` (terminated `exit_code: 0`)
 - `/tmp/fid --project /tmp/tmp.xtkPKxfIiI --json maintenance check` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"maintenance.check","result":{"errors":[],"info":{"claim_count_live":0,"issue_count":0,"recent_activity_7d":0},"status":"pass","warnings":[]},"event":null}` (terminated `exit_code: 0`)
-- `go test ./cmd/fid -run '^TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.058s` (terminated `exit_code: 0`). The bounded MF-01 repair is test/evidence-only: production already satisfied the exact boundary, so this corrected fixture was green without a production-code change.
+- `go test ./cmd/fid -run '^TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.058s` (terminated `exit_code: 0`)
+- The bounded MF-01 repair is test/evidence-only: production already satisfied the exact boundary, so this corrected fixture was green without a production-code change.
 - `go test ./cmd/fid -run '^(TestMaintenanceCheckJSONMatchesContract|TestMaintenanceCheckWarningPromotionPreservesFindingsAndInfo|TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat|TestMaintenanceCheckHumanSuccessAndVacuumJSONRejection|TestMaintenanceCheckUsesExplicitProjectRoot|TestMaintenanceCheckRejectsFindingLimitWithoutTruncation)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.295s` (terminated `exit_code: 0`)
 - `/tmp/fid --project /tmp/fid-task13-mf01.9Qcsg7 --json init` - FAIL - `{"contract_version":"fid-cli.v1","ok":false,"operation":"project.init","error":{"code":"invalid-argument","category":"invalid-input","retryable":false,"message":"invalid project initialization argument","subject":null,"details":{"allowed":["valid project.init input"],"argument":"prefix","value":"FID-TASK13-MF01.9QCSG7"}}}` (terminated `exit_code: 1`). Cause: the temporary directory's derived prefix contained a dot; repair: retried the real-entrypoint check with a valid generated prefix.
 - `/tmp/fid --project /tmp/fidtask13H9DsyG --json init` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-15.jsonl","project":{"id":"project-d67f2a9e36d26b9415df5522d536af9c","issue_prefix":"FIDTASK13H9DSYG","root":"/tmp/fidtask13H9DsyG"}},"event":{"id":"EVT-20260815-000001","occurred_at":"2026-08-15T20:15:26.680131112Z"}}` (terminated `exit_code: 0`)
@@ -81,8 +82,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `78f2ed7ebaa9078579e42f4e71493f4d0cad114a`
 
 ## Commit subject
 
-- Pending commit
+- `test(maintenance): prove exact grace boundary`
