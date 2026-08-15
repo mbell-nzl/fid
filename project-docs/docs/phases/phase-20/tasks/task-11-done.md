@@ -88,8 +88,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `4155acee3037614762d0cfc0d6710f540b3f6441`
 
 ## Commit subject
 
-- Pending commit
+- `feat(links): enforce typed link invariants`
