@@ -76,8 +76,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `49c179add40724871bae582fc3812ffc0aff04fc`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): enforce workflow list limit`
