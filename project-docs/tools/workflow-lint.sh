@@ -245,6 +245,13 @@ else
   fail "workflow-route.sh is not executable"
 fi
 
+check_file "project-docs/tools/workflow-sequence-lint.sh" "workflow sequence tool"
+if [ -x "project-docs/tools/workflow-sequence-lint.sh" ]; then
+  pass "workflow-sequence-lint.sh is executable"
+else
+  fail "workflow-sequence-lint.sh is not executable"
+fi
+
 check_file "project-docs/tools/drills/run-drills.sh" "evidence-chain drills harness"
 if [ -x "project-docs/tools/drills/run-drills.sh" ]; then
   pass "run-drills.sh is executable"
@@ -265,6 +272,9 @@ project-docs/templates/phase-runner-prompt.md
 for file in $runner_surfaces; do
   check_contains "$file" 'report-lint\.sh' "report-lint reference"
   check_contains "$file" 'workflow-route\.sh' "workflow route reference"
+  check_contains "$file" 'workflow-sequence-lint\.sh' "workflow sequence reference"
+  check_contains "$file" 'append-stdin' "workflow sequence pre-append validation"
+  check_contains "$file" 'Sequence contract: v2' "strict sequence marker"
   check_contains "$file" 'run-ledger' "run-ledger reference"
   check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"
   check_contains "$file" 'no TRIAGE entry exists' "untriaged-STOP resume rule"
@@ -426,6 +436,14 @@ project-docs/templates/phase-runner-prompt.md
 for file in $same_task_recovery_files; do
   check_contains "$file" 'same-task.*continuation|continuation.*same task' "same-task recovery dispatch"
   check_contains "$file" 'incomplete.*not.*blocker|not.*blocker.*incomplete' "incomplete-work blocker rejection"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
+  check_absent "$file" 'multiple Developer sessions' "multi-session escalation trigger"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
+  check_contains "$file" 'no-op churn is not progress' "recovery progress anti-churn rule"
 done
 
 for file in project-docs/templates/run-ledger-template.md project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do

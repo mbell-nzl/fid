@@ -118,6 +118,8 @@ validate_pass_termination() {
 
     if ! printf '%s\n' "$line" | grep -Eq '[(]terminated `exit_code: [0-9][0-9]*`[)]'; then
       fail "PASS result missing observed termination: $line"
+    elif ! printf '%s\n' "$line" | grep -Eq '[(]terminated `exit_code: 0`[)][[:space:]]*$'; then
+      fail "PASS result did not terminate successfully with exit_code 0: $line"
     fi
 
     # Backtick fields are: command, token, and termination result. Requiring
@@ -298,21 +300,44 @@ EOF
         continue
         ;;
     esac
-    match=$(printf '%s\n' "$results" | grep -F "\`$cmd\`" || true)
+    match=$(printf '%s\n' "$results" | awk -F '`' -v cmd="$cmd" '$1 == "- " && $2 == cmd { print }')
     if [ -z "$match" ]; then
       fail "required command missing from report (skipped or substituted; must appear verbatim in backticks): $cmd"
-    elif printf '%s\n' "$match" | grep -q 'PASS'; then
-      pass "required command recorded PASS: $cmd"
-    elif printf '%s\n' "$match" | grep -q 'BLOCKED'; then
-      if $blocker || $recovery; then
-        pass "required command recorded BLOCKED in non-complete report: $cmd"
-      else
-        fail "required command BLOCKED outside a blocker report: $cmd"
-      fi
-    elif printf '%s\n' "$match" | grep -q 'UNVERIFIED' && has_dec131_go_test_correction "$report" "$cmd"; then
-      pass "required go test command recorded UNVERIFIED in DEC-131 historical correction: $cmd"
     else
-      fail "required command present but has no PASS/BLOCKED result: $cmd"
+      final_status=""
+      while IFS= read -r result_line; do
+        status=$(printf '%s\n' "$result_line" | awk -F '`' '{ value=$3; sub(/^ - /, "", value); sub(/ - .*$/, "", value); print value }')
+        case "$status" in
+          PASS|FAIL|BLOCKED|UNVERIFIED) ;;
+          *) fail "required command has invalid result status '$status': $cmd" ;;
+        esac
+        final_status=$status
+      done <<EOF_MATCHES
+$match
+EOF_MATCHES
+
+      case "$final_status" in
+        PASS)
+          pass "required command recorded PASS: $cmd"
+          ;;
+        BLOCKED)
+          if $blocker || $recovery; then
+            pass "required command recorded BLOCKED in non-complete report: $cmd"
+          else
+            fail "required command BLOCKED outside a blocker report: $cmd"
+          fi
+          ;;
+        UNVERIFIED)
+          if has_dec131_go_test_correction "$report" "$cmd"; then
+            pass "required go test command recorded UNVERIFIED in DEC-131 historical correction: $cmd"
+          else
+            fail "required command recorded UNVERIFIED without an accepted historical correction: $cmd"
+          fi
+          ;;
+        *)
+          fail "required command final result is not PASS/BLOCKED: $cmd (final status: $final_status)"
+          ;;
+      esac
     fi
   done <<EOF
 $cmds
@@ -448,14 +473,14 @@ EOF
 
 ## Tests run
 
-- \`echo coverage-fixture\` - PASS - \`coverage-fixture\` (terminated \`exit_code: 0\`)
-- \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\` (terminated \`exit_code: 0\`)
-- \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\` (terminated \`exit_code: 0\`)
 
 ## Exact quality-gate results
 
 - \`echo format-fixture\` - PASS - \`format-fixture\` (terminated \`exit_code: 0\`)
 - \`echo lint-fixture\` - PASS - \`lint-fixture\` (terminated \`exit_code: 0\`)
+- \`echo coverage-fixture\` - PASS - \`coverage-fixture\` (terminated \`exit_code: 0\`)
+- \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\` (terminated \`exit_code: 0\`)
+- \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\` (terminated \`exit_code: 0\`)
 
 ## Deviations from spec
 
@@ -522,6 +547,24 @@ EOF
   sed 's/ (terminated `exit_code: 0`)//' "$tmp/clean.md" > "$tmp/missing-termination.md"
   commit_fixture missing-termination.md
   expect "PASS without termination evidence fails" nonzero "PASS result missing observed termination" "$tmp/missing-termination.md"
+
+  # PASS is an exact state and can only accompany observed exit code zero.
+  sed '0,/exit_code: 0/s//exit_code: 1/' "$tmp/clean.md" > "$tmp/pass-nonzero.md"
+  commit_fixture pass-nonzero.md
+  expect "PASS with nonzero exit fails" nonzero "PASS result did not terminate successfully with exit_code 0" "$tmp/pass-nonzero.md"
+
+  # Status parsing is exact; explanatory or negated PASS text is not success.
+  sed 's/`echo format-fixture` - PASS -/`echo format-fixture` - NOT PASS -/' "$tmp/clean.md" > "$tmp/not-pass-status.md"
+  commit_fixture not-pass-status.md
+  expect "NOT PASS does not satisfy command coverage" nonzero "invalid result status 'NOT PASS'" "$tmp/not-pass-status.md"
+
+  # A failed attempt remains visible, while a later byte-identical PASS is the
+  # current required-command result. The command text is exact in both rows.
+  sed '/^- `echo lint-fixture` - PASS -/i\
+- `echo lint-fixture` - FAIL - `FAIL lint-fixture first attempt` (terminated `exit_code: 1`)\
+' "$tmp/clean.md" > "$tmp/fail-then-pass.md"
+  commit_fixture fail-then-pass.md
+  expect "byte-identical FAIL then PASS preserves history and completes" zero "required command recorded PASS: echo lint-fixture" "$tmp/fail-then-pass.md"
 
   # A full go test run can print nothing until packages finish. A silent token
   # therefore cannot prove it terminated successfully.

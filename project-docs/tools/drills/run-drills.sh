@@ -38,6 +38,7 @@ script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
 fixtures="$script_dir/fixtures"
 report_lint="$script_dir/../report-lint.sh"
 workflow_route="$script_dir/../workflow-route.sh"
+sequence_lint="$script_dir/../workflow-sequence-lint.sh"
 
 usage() {
   cat <<'EOF'
@@ -167,6 +168,36 @@ run_route() {
   fi
 }
 
+route_value() {
+  "$workflow_route" "$@" | sed 's/^ACTION //'
+}
+
+run_sequence() {
+  label=$1
+  want=$2
+  ledger=$3
+  output=$("$sequence_lint" "$ledger" 2>&1)
+  code=$?
+  if [ "$code" -eq 0 ] && [ "$output" = "VALID state=$want" ]; then
+    drill_pass "$label"
+  else
+    drill_fail "$label (exit=$code, output=$output)"
+  fi
+}
+
+run_invalid_sequence() {
+  label=$1
+  match=$2
+  ledger=$3
+  output=$("$sequence_lint" "$ledger" 2>&1)
+  code=$?
+  if [ "$code" -ne 0 ] && printf '%s\n' "$output" | grep -qF "$match"; then
+    drill_pass "$label"
+  else
+    drill_fail "$label (exit=$code, output=$output)"
+  fi
+}
+
 render_report "$good_hash" "$good_subject" > "$report"
 git -C "$base" add "$phase_dir/tasks/task-1-done.md"
 git_fixture "$base" commit "docs(task): finalize completion report fixture"
@@ -190,6 +221,10 @@ run_mechanical "drill-04 narrower substituted command detected" nonzero "require
 render_report "$good_hash" "$good_subject" \
   | sed '0,/ (terminated `exit_code: 0`)/s///' > "$report"
 run_mechanical "drill-09 missing command termination detected" nonzero "PASS result missing observed termination"
+
+render_report "$good_hash" "$good_subject" \
+  | sed '0,/exit_code: 0/s//exit_code: 1/' > "$report"
+run_mechanical "drill-09 PASS with nonzero exit detected" nonzero "PASS result did not terminate successfully with exit_code 0"
 
 render_report "$good_hash" "$good_subject" \
   | sed -e 's/- Task outcome: COMPLETE/- Task outcome: RECOVERY_REQUIRED/' \
@@ -225,6 +260,157 @@ run_route "drill-17 protected candidate routes through triage" TRIAGE developer 
 run_route "drill-17 protected triage verdict stops" STOP triage BLOCK
 run_route "drill-17 first no-progress attempt continues repair" REPAIR recovery NO_PROGRESS 1
 run_route "drill-17 exhausted no-progress budget routes to triage" TRIAGE recovery NO_PROGRESS 2
+
+# Multi-step conformance: execute a byte-identical command red, repair its
+# fixture causally, rerun it green, then route the preserved attempt sequence.
+causal="$workspace/causal-repair"
+mkdir -p "$causal/src" "$causal/test"
+cp "$fixtures/src/greet.sh" "$causal/src/greet.sh"
+cp "$fixtures/test/greet_test.sh" "$causal/test/greet_test.sh"
+sed 's/hello, /broken, /' "$causal/src/greet.sh" > "$causal/src/greet.sh.tmp"
+mv "$causal/src/greet.sh.tmp" "$causal/src/greet.sh"
+causal_command='sh test/greet_test.sh'
+if (cd "$causal" && sh -c "$causal_command") > "$causal/first.out" 2>&1; then
+  first_code=0
+else
+  first_code=$?
+fi
+cp "$fixtures/src/greet.sh" "$causal/src/greet.sh"
+if (cd "$causal" && sh -c "$causal_command") > "$causal/second.out" 2>&1; then
+  second_code=0
+else
+  second_code=$?
+fi
+task_sequence="RED"
+if [ "$first_code" -ne 0 ] && [ "$(route_value developer RECOVERY_REQUIRED)" = REPAIR ]; then
+  task_sequence="$task_sequence>TASK-RECOVERY>REPAIR>VERIFY"
+fi
+if [ "$second_code" -eq 0 ] && [ "$(route_value recovery PROGRESS)" = REPAIR ] && \
+   [ "$(route_value developer COMPLETE)" = ADVANCE ]; then
+  task_sequence="$task_sequence>COMPLETE"
+fi
+if [ "$task_sequence" = "RED>TASK-RECOVERY>REPAIR>VERIFY>COMPLETE" ]; then
+  drill_pass "drill-13 lifecycle: red, causal repair, verify, complete"
+else
+  drill_fail "drill-13 lifecycle sequence ($task_sequence)"
+fi
+
+# Report repair is its own loop and does not imply a product gate passed.
+report_sequence="REPORT"
+if [ "$(route_value report-lint INVALID)" = REPAIR ]; then
+  report_sequence="$report_sequence>TASK-RECOVERY>REPORT"
+fi
+if [ "$(route_value report-lint COMPLETE)" = ADVANCE ]; then
+  report_sequence="$report_sequence>COMPLETE"
+fi
+if [ "$report_sequence" = "REPORT>TASK-RECOVERY>REPORT>COMPLETE" ]; then
+  drill_pass "drill-14 lifecycle: report repair then complete"
+else
+  drill_fail "drill-14 lifecycle sequence ($report_sequence)"
+fi
+
+# Exercise a genuinely live, initially silent process. Silence while the PID
+# is live maps to WAIT; only observed process completion maps to EVALUATE.
+silent_output="$workspace/silent-command.out"
+(sleep 1; printf '%s\n' 'terminal receipt') > "$silent_output" &
+silent_pid=$!
+sleep 0.1
+silent_ok=true
+kill -0 "$silent_pid" 2>/dev/null || silent_ok=false
+[ ! -s "$silent_output" ] || silent_ok=false
+[ "$(route_value command LIVE)" = WAIT ] || silent_ok=false
+while kill -0 "$silent_pid" 2>/dev/null; do
+  sleep 0.1
+done
+wait "$silent_pid" || silent_ok=false
+[ "$(route_value command TERMINATED)" = EVALUATE ] || silent_ok=false
+[ "$(sed -n '1p' "$silent_output")" = "terminal receipt" ] || silent_ok=false
+if $silent_ok; then
+  drill_pass "drill-15 lifecycle: silent live command polled to termination"
+else
+  drill_fail "drill-15 live-command lifecycle"
+fi
+
+# Ledger fixtures exercise the validator the Phase Runner invokes. They prove
+# task identity survives a fresh run and QA repair needs an explicitly linked,
+# differently identified PASS re-review.
+valid_continuation="$workspace/valid-continuation.md"
+cat > "$valid_continuation" <<'EOF'
+### 2026-08-15 10:00 RUN-RESUME
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+### 2026-08-15 10:02 REPAIR task-1
+### 2026-08-15 10:03 TASK task-1 COMPLETE
+EOF
+run_sequence "drill-16 lifecycle: fresh session retains task identity" ADVANCEABLE "$valid_continuation"
+
+wrong_task="$workspace/wrong-task.md"
+cat > "$wrong_task" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+### 2026-08-15 10:02 REPAIR task-2
+EOF
+run_invalid_sequence "drill-16 changed recovery task identity rejected" "does not match recovery task" "$wrong_task"
+
+valid_qa="$workspace/valid-qa-rereview.md"
+cat > "$valid_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+### 2026-08-15 10:03 REPAIR task-1
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_sequence "drill-16 lifecycle: QA repair closes on linked fresh re-review" ADVANCEABLE "$valid_qa"
+
+missing_rereview="$workspace/missing-qa-rereview.md"
+sed '/^### 2026-08-15 10:05 REVIEW review-1b$/,$d' "$valid_qa" > "$missing_rereview"
+run_sequence "drill-16 QA repair cannot advance before re-review" REREVIEW_PENDING "$missing_rereview"
+
+self_rereview="$workspace/self-qa-rereview.md"
+sed -e 's/REVIEW review-1b/REVIEW review-1/' "$valid_qa" > "$self_rereview"
+run_invalid_sequence "drill-16 same review identity cannot self-close" "self-closed by the same review identity" "$self_rereview"
+
+missing_outcome="$workspace/missing-review-outcome.md"
+sed '/^- Outcome: REPAIR$/d' "$valid_qa" > "$missing_outcome"
+run_invalid_sequence "drill-16 strict review outcome is mandatory" "missing or invalid Outcome" "$missing_outcome"
+
+triage_repair="$workspace/triage-repair-pending.md"
+cat > "$triage_repair" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TRIAGE TRG-1-001
+- Verdict: REPAIR
+EOF
+run_sequence "drill-16 TRIAGE REPAIR cannot advance before recovery" REPAIR_PENDING "$triage_repair"
+
+# Pre-append validation rejects a bad candidate without contaminating the
+# append-only ledger.
+pending_ledger="$workspace/pending-recovery.md"
+cat > "$pending_ledger" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+EOF
+proposed_output=$(printf '%s\n' '### 2026-08-15 10:02 REPAIR task-2' \
+  | "$sequence_lint" "$pending_ledger" --append-stdin 2>&1)
+proposed_code=$?
+current_output=$("$sequence_lint" "$pending_ledger" 2>&1)
+if [ "$proposed_code" -ne 0 ] && \
+   printf '%s\n' "$proposed_output" | grep -qF 'does not match recovery task' && \
+   [ "$current_output" = 'VALID state=REPAIR_PENDING' ]; then
+  drill_pass "drill-16 invalid proposed append leaves ledger usable"
+else
+  drill_fail "drill-16 proposed-append validation (candidate=$proposed_output, current=$current_output)"
+fi
 
 # Restore and commit the clean report so agent-drill bases start valid.
 render_report "$good_hash" "$good_subject" > "$report"

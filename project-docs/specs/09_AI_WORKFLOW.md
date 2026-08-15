@@ -210,9 +210,10 @@ Must escalate if the issue:
 6. Changes testing strategy or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria. Design
    ambiguity that changes behavior also escalates.
-8. Resumes a context-exhausted or partial task where remaining or completed
-   work spans schema/data model, dependency/platform configuration, public
-   interfaces, canonical docs, or multiple Developer sessions.
+8. Requires an unapproved protected change to recover partial task work, such
+   as a schema/data-model, dependency/platform, public-interface, or canonical
+   workflow change. Context exhaustion and same-task continuation alone are
+   `REPAIR`, for any number of continuation sessions.
 
 When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
@@ -352,6 +353,17 @@ Responsibilities:
     session; `EVALUATE` inspects its observed terminated result. Invalid router
     input is an orchestration defect to repair, not permission to invent a
     route.
+    Every new RUN-START/RUN-RESUME carries `Sequence contract: v2`; older events
+    remain legacy-tolerant. Before append, pipe the exact candidate entry to
+    `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`
+    and require exit zero. Append only a valid candidate, then run the tool on
+    the ledger as a postcondition. This validator does not choose the next
+    action; `workflow-route.sh` does. Require literal
+    `VALID state=ADVANCEABLE` before an actual advance. The validator preserves
+    task identity and requires recovery completion plus an explicitly linked,
+    differently identified QA re-review. Never append an `INVALID` candidate;
+    retain and stop on a post-append integrity mismatch rather than rewriting
+    history.
 11. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
     result, and verified commit. On `OUTCOME RECOVERY_REQUIRED` or a
     recoverable lint, report, gate, or session defect, append
@@ -390,8 +402,10 @@ Responsibilities:
 16. Apply a default budget of two consecutive Phase Runner-mediated
     continuation attempts for the same trigger signature with no material
     progress. Same-session red/green iterations do not consume this budget. A
-    changed tree, newly satisfied obligation, or narrower new failure is
-    progress; an unchanged rerun is not. On exhaustion, triage the protected
+    relevant in-scope change tied to the trigger is progress only when it newly
+    satisfies or removes an obligation, or verification demonstrably narrows
+    the failure. Formatting and metadata-only or unrelated changes do not
+    qualify; no-op churn is not progress. On exhaustion, triage the protected
     `recovery-budget-exhausted` candidate.
 17. After all tasks complete, spawn QA Lead for final review and human
     checklist.

@@ -81,9 +81,10 @@ Escalate if the issue:
 5. Introduces a dependency, tool, quality gate, or workflow.
 6. Changes testing strategy or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria.
-8. Requires recovery of partial task work after context exhaustion and the
-   recovery spans schema/data model, dependencies/platform config, public
-   interfaces, canonical docs, or multiple Developer sessions.
+8. Requires an unapproved protected change to recover partial task work, such
+   as a schema/data-model, dependency/platform, public-interface, or canonical
+   workflow change. Context exhaustion and same-task continuation alone are
+   `REPAIR`, for any number of continuation sessions.
 
 When in doubt, escalate. Never paraphrase a question to make it appear local
 when it crosses one of these triggers.

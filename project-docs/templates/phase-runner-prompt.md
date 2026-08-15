@@ -77,6 +77,16 @@ Execution rules:
   its literal ACTION. WAIT retains and polls the live command session;
   EVALUATE inspects the observed terminated result. Invalid router input is a
   recoverable orchestration defect, not permission to invent a route.
+- Put `Sequence contract: v2` in every new RUN-START/RUN-RESUME; older entries
+  stay legacy-tolerant. Before each append, pipe the exact proposed entry to
+  project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin and
+  require exit zero. Append only a valid candidate, then run the tool on the
+  ledger as a postcondition. workflow-route.sh still chooses the action.
+  Require literal VALID state=ADVANCEABLE before actual advancement. The
+  validator requires the same task across recovery, a recorded REPAIR before
+  task completion, and a differently identified QA PASS review whose Re-review
+  of field names the original REPAIR review. Never append an INVALID candidate
+  or rewrite ledger history; retain and stop on a post-append integrity mismatch.
 - Read the report for judgment items report-lint cannot check: blocker
   semantics, deviation content, concerns needing triage, and QA-plan commands
   required for that task beyond the task spec. Every QA-plan required command
@@ -88,7 +98,10 @@ Execution rules:
   evidence, progress, and next action; then dispatch a same-task continuation.
   Use two consecutive no-progress continuation attempts per trigger signature
   as the default budget. Same-session red/green iterations do not consume it;
-  incomplete work is not a blocker.
+  incomplete work is not a blocker. Count progress only when a relevant
+  in-scope change tied to the trigger satisfies/removes an obligation or
+  verification demonstrably narrows the failure. Formatting, metadata-only,
+  unrelated, or no-op churn is not progress.
 - Treat OUTCOME BLOCKED as a blocker candidate, never authoritative state.
   Before STOP, spawn `tl_lite` as the first-step triager. RESUME advances
   only when cleared; VERDICT: REPAIR dispatches recovery without advancing;

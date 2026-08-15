@@ -87,6 +87,21 @@ session; `EVALUATE` means inspect the observed terminated result; `ADVANCE`,
 `REPAIR`, `TRIAGE`, and `STOP` have their meanings below. Invalid tool input is
 an orchestration defect to repair, never a reason to invent a route.
 
+Every new `RUN-START` or `RUN-RESUME` carries `Sequence contract: v2`; entries
+before that marker remain legacy-tolerant. Before appending an event, pipe its
+exact proposed Markdown to
+`project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin` and
+require exit zero. Append only a valid candidate, then run the tool against the
+ledger as a postcondition. This is a validator, not an action router;
+`workflow-route.sh` remains authoritative for the next action. Require literal
+`VALID state=ADVANCEABLE` before an actual advance. The validator mechanically
+keeps task identity across continuation,
+requires `TASK-RECOVERY -> REPAIR -> TASK COMPLETE`, and prevents QA repair
+from closing without a differently identified review whose `Re-review of:`
+field names the original review. Never append an `INVALID` candidate. If a
+strict ledger fails despite successful prevalidation, retain it and stop as an
+orchestration-integrity failure; never rewrite earlier ledger entries.
+
 Report-lint deterministically verifies typed outcome, required headings,
 task-spec command coverage, observed termination, commit identity, and that the
 report is committed and clean. A nonzero exit is `report-repair` and
@@ -131,9 +146,11 @@ attempt. Never convert it to PASS.
 
 Use a default budget of two consecutive runner-mediated continuation attempts
 for the same trigger signature with no material progress. Same-session
-red/green loops do not consume it. A changed tree, newly satisfied obligation,
-or narrower new failure is progress; an unchanged rerun is not. Context
-refresh never resets the count.
+red/green loops do not consume it. Progress requires a relevant in-scope change
+tied to the trigger that newly satisfies or removes an obligation, or a
+verification result that demonstrably narrows the failure. Formatting,
+metadata-only, unrelated, or no-op churn is not progress. Context refresh never
+resets the count.
 
 ## Protected Blocker Candidates
 

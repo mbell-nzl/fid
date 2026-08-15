@@ -21,6 +21,7 @@ the record.
 
 ### <YYYY-MM-DD HH:MM> RUN-START
 
+- Sequence contract: v2
 - Branch: `<phase branch>`
 - ESC baseline (Open at run start): <ESC-NNN list or "none">
 - Warm-up/autonomous-resume state: <warm-up | autonomous per DEC-NNN>
@@ -30,6 +31,7 @@ the record.
 
 Append before a replacement or resumed Phase Runner takes another action.
 
+- Sequence contract: v2
 - Prior run/session or STOP: <reference>
 - Trigger signature: `<task/review>:<category>:<stable source identity>`
 - Attempt count: <total Phase Runner-mediated continuations for this signature>
@@ -49,6 +51,8 @@ Append before a replacement or resumed Phase Runner takes another action.
 - Path: `project-docs/docs/phases/phase-<N>/qa/review-<M>.md`
 - Tasks covered: <task range>
 - Outcome: <PASS | REPAIR | BLOCK>
+- Owning task: <task-M for REPAIR | none>
+- Re-review of: <prior review ID for a repair-closing PASS | none>
 - Must-fix: <n> / Improvement: <n> / blocker candidates: <n; QA minted no ESC>
 
 ### <YYYY-MM-DD HH:MM> TASK-RECOVERY task-<M>
@@ -79,8 +83,10 @@ evidence; this event records what the continuation changed and proved.
 - Starting checkpoint: <TASK-RECOVERY checkpoint>
 - Ending checkpoint: <commit or exact durable tree/report/review state>
 - Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
-- Resolution evidence: <changed tree, newly satisfied obligation, narrower
-  failure, or byte-identical rerun result with observed termination>
+- Resolution evidence: <relevant in-scope change tied to the trigger that
+  satisfies/removes an obligation; narrower failure; or byte-identical rerun
+  result with observed termination. Formatting/metadata/unrelated churn is not
+  progress>
 - Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
   recovery-budget-exhausted>
 

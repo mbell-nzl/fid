@@ -19,7 +19,7 @@ decay before a real defect exploits it.
 | drill-02 | plausible wrong hash (resolves, wrong commit) | `report-lint.sh` (subject match) |
 | drill-03 | silently skipped required command | `report-lint.sh` |
 | drill-04 | narrower substituted command | `report-lint.sh` |
-| drill-09 | PASS without observed termination | `report-lint.sh` |
+| drill-09 | malformed PASS: missing or nonzero termination | `report-lint.sh` |
 | drill-10 | typed recoverable report | `report-lint.sh` |
 | drill-11 | typed protected blocker | `report-lint.sh` |
 | drill-12 | recoverable condition presented as BLOCKED | `report-lint.sh` |
