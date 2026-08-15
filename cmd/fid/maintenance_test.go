@@ -125,8 +125,9 @@ func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
 		t.Fatalf("open projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	seedStartedIssue(t, conn, "FID-299", time.Now().UTC().Add(-298*time.Second))
-	seedStartedIssue(t, conn, "FID-300", time.Now().UTC().Add(-300*time.Second))
+	fixtureNow := time.Now().UTC()
+	seedStartedIssue(t, conn, "FID-299", fixtureNow.Add(-299*time.Second))
+	seedStartedIssue(t, conn, "FID-300", fixtureNow.Add(-300*time.Second))
 
 	checked := executeCommandForTest(workspace, "--json", "maintenance", "check")
 	if checked.err != nil {
@@ -135,6 +136,21 @@ func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
 	result := maintenanceResultFromEnvelope(t, decodeMaintenanceEnvelope(t, checked.stdout), "result")
 	if hasMaintenanceFinding(t, result, "warnings", "started_without_claim", "FID-299") || !hasMaintenanceFinding(t, result, "warnings", "started_without_claim", "FID-300") {
 		t.Fatalf("started-without-claim warnings = %#v, want only fixed 300-second boundary", result["warnings"])
+	}
+
+	promoted := executeCommandForTest(workspace, "--json", "maintenance", "check", "--warn-as-error")
+	if promoted.err == nil || promoted.stdout != "" {
+		t.Fatalf("promoted maintenance.check = %+v, want failing stderr envelope", promoted)
+	}
+	promotedError := decodeMaintenanceEnvelope(t, promoted.stderr)["error"].(map[string]any)
+	promotedResult, ok := promotedError["details"].(map[string]any)
+	if !ok || promotedError["code"] != "projection-divergence" || promotedResult["status"] != "fail" {
+		t.Fatalf("promoted maintenance.check = %#v, want projection-divergence with status fail", promotedError)
+	}
+	for _, key := range []string{"errors", "warnings", "info"} {
+		if !reflect.DeepEqual(result[key], promotedResult[key]) {
+			t.Fatalf("maintenance %s differs across fixed-grace branches: warn=%#v promoted=%#v", key, result[key], promotedResult[key])
+		}
 	}
 
 	format := executeCommandForTest(workspace, "--json", "maintenance", "check", "--format", "json")
@@ -231,7 +247,7 @@ func seedCorruptWorkflowFixture(t *testing.T, conn *sql.DB, issueID string) {
 
 func seedStartedIssue(t *testing.T, conn *sql.DB, id string, startedAt time.Time) {
 	t.Helper()
-	value := startedAt.UTC().Format(time.RFC3339)
+	value := startedAt.UTC().Format(time.RFC3339Nano)
 	if _, err := conn.Exec(`INSERT INTO issues (id, kind, title, workflow_id, status, created_at, updated_at) VALUES (?, 'task', 'Started without claim', 'task-default', 'in_progress', ?, ?)`, id, value, value); err != nil {
 		t.Fatalf("seed warning issue: %v", err)
 	}
