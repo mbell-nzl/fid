@@ -80,8 +80,8 @@
 
 ## Commit hash
 
-- Pending task commit finalization.
+- `f712c277b4debea077f0ae4173fad9a3590443c2`
 
 ## Commit subject
 
-- Pending task commit finalization.
+- `feat(cli): convert legacy JSON reads directly`
