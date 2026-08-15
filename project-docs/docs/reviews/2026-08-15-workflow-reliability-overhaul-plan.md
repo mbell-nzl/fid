@@ -163,6 +163,7 @@ Cover at least:
 | 2026-08-15 checkpoint 1 | COMPLETE | Plan committed as `6517c81`; all remaining tracked and untracked changes preserved in stash `779beab1` (`stash@{0}` at capture), covering 28 files with 1,052 insertions and 230 deletions. Original worktree verified clean. | Create the isolated overhaul branch/worktree. |
 | 2026-08-15 checkpoint 2 | IN PROGRESS | Created branch `workflow-reliability-overhaul` and worktree `/tmp/fid-workflow-overhaul` from `8951011`. Started independent audits of stoppage history, v1 workflow mechanics, and v2 adoption deltas. | Draft the audit and binding workflow decision. |
 | 2026-08-15 checkpoint 3 | COMPLETE | Three independent read-only audits completed. Historical result: 31 formal STOPs, only four requiring direct Human input and none caused by implementation/gate/report/incomplete-task work. Accepted `RESUME | REPAIR | BLOCK` architecture and recorded V2 adoption deltas in `2026-08-15-workflow-reliability-overhaul-audit.md`. | Implement the v1 state model and mechanical controls. |
+| 2026-08-15 checkpoint 4 | COMPLETE | Added typed report outcomes, closed recovery/blocker categories, invalid-blocker rejection, and PASS termination enforcement to `report-lint.sh`. Red self-test failed five new cases before implementation; final self-test and mechanical drills pass. | Implement role/spec routing and recovery ledger semantics. |
 
 ## Checkpoints
 
@@ -173,7 +174,7 @@ Cover at least:
 | Dirty-tree recovery stash | `779beab1` (`recovery/phase-20-task-10-and-runner-2026-08-15`) | COMPLETE |
 | Overhaul branch/worktree | `workflow-reliability-overhaul` at `/tmp/fid-workflow-overhaul` | COMPLETE |
 | Audit and decision commit | pending | READY TO COMMIT |
-| V1 implementation commits | pending | NOT STARTED |
+| V1 implementation commits | report-lint slice pending commit | IN PROGRESS |
 | Independent review | pending | NOT STARTED |
 | Task 10 recovery commit(s) | pending | NOT STARTED |
 | Final HTML report | pending | NOT STARTED |

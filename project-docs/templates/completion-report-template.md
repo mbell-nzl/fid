@@ -1,5 +1,27 @@
 # Phase <N> - Task <M>: <Title> - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
+
+Use `COMPLETE` only after every required gate passes and the task is ready to
+advance. Use `RECOVERY_REQUIRED` for real, local, in-scope work that a same-task
+Developer continuation must finish; choose one of `in-scope-implementation`,
+`gate-repair`, `report-repair`, `qa-rework`, `session-continuation`, or
+`local-environment`, keep Human attention `no`, and name the condition and next
+action. Use `BLOCKED` only for a protected condition; choose one of
+`product-decision`, `architecture-decision`, `data-model-decision`,
+`public-interface-decision`, `dependency-approval`, `security-or-data-loss`,
+`external-infrastructure`, `specification-contradiction`, or
+`recovery-budget-exhausted`, set Human attention to `yes`, and name the
+resolution action. Incomplete work, a red test, or a failed gate is not a
+protected blocker by itself.
+
 ## Summary of what was implemented
 
 - <summary>
@@ -66,9 +88,10 @@ evidence exactly like a fabricated token.
 **A command you did not watch terminate is never `PASS`.** A command that hung,
 was interrupted, was killed, or whose output you never saw complete has no
 final line to copy, and inventing one is fabricated evidence. Record it as
-`BLOCKED` with the reason in a blocker report and stop. A gate recorded `PASS`
-without terminating is invisible to every downstream review until someone
-re-runs it independently.
+`BLOCKED` with the reason in a `RECOVERY_REQUIRED` report when a continuation
+can recover it, or a `BLOCKED` report only when a protected condition prevents
+recovery. A gate recorded `PASS` without terminating is invisible to every
+downstream review until someone re-runs it independently.
 
 ## Deviations from spec
 
@@ -84,7 +107,7 @@ re-runs it independently.
 
 ## Commit hash
 
-- `<hash or "No commit created - blocker report">`
+- `<hash or "No commit created - protected blocker report">`
 
 Draft this section as `- Pending commit` until the task commit exists. Then,
 while `HEAD` is still the task commit, copy the hash verbatim from
@@ -93,7 +116,7 @@ complete, or recall a hash from memory.
 
 ## Commit subject
 
-- `<subject or "No commit created - blocker report">`
+- `<subject or "No commit created - protected blocker report">`
 
 Copy the subject verbatim from `git log -1 --format=%s`.
 

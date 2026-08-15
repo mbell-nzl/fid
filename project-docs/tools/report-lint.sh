@@ -3,7 +3,8 @@
 #
 # Verifies the mechanical evidence rules that the workflow previously asked
 # the Phase Runner to check by prose-parsing:
-#   1. Required completion-report headings, present and in order.
+#   1. Required completion-report headings, present and in order, including a
+#      typed workflow outcome for deterministic orchestration.
 #   2. Non-empty sentinel sections (concerns, dependency-budget note).
 #   3. Command coverage: every command in the task spec's
 #      `## Exact Commands To Run` required block appears in the report's
@@ -19,9 +20,9 @@
 #      introduces its final content.
 #
 # Judgment items stay with agents and humans: QA-plan commands beyond the task
-# spec, conditional-command applicability, deviation content, and whether a
-# blocker is acceptable. A well-formed blocker report passes lint but the
-# orchestrator must still stop on it.
+# spec, conditional-command applicability, deviation content, and whether the
+# evidence supports a protected blocker. Mechanical lint returns one typed
+# outcome: COMPLETE, RECOVERY_REQUIRED, or BLOCKED.
 #
 # Coverage matching requires each required command to appear verbatim inside
 # backticks in the report (the completion-report template's format). A
@@ -41,6 +42,7 @@ EOF
 }
 
 failures=0
+report_outcome=""
 
 pass() { echo "PASS $1"; }
 note() { echo "NOTE $1"; }
@@ -107,6 +109,81 @@ $1
 EOF
 }
 
+validate_pass_termination() {
+  while IFS= read -r line; do
+    case "$line" in
+      '- `'*'` - PASS - '*) ;;
+      *) continue ;;
+    esac
+
+    if ! printf '%s\n' "$line" | grep -Eq '[(]terminated `exit_code: [0-9][0-9]*`[)]'; then
+      fail "PASS result missing observed termination: $line"
+    fi
+
+    # Backtick fields are: command, token, and termination result. Requiring
+    # all three prevents a bare PASS plus exit code from masquerading as
+    # command-output evidence.
+    token=$(printf '%s\n' "$line" | awk -F '`' 'NF >= 6 { print $4 }')
+    if [ -z "$token" ]; then
+      fail "PASS result missing verbatim output token: $line"
+    fi
+  done <<EOF
+$1
+EOF
+}
+
+validate_workflow_outcome() {
+  report=$1
+  body=$(section_body "$report" '## Workflow outcome')
+  report_outcome=$(printf '%s\n' "$body" | sed -n 's/^- Task outcome: //p' | head -n1)
+  category=$(printf '%s\n' "$body" | sed -n 's/^- Category: //p' | head -n1)
+  condition=$(printf '%s\n' "$body" | sed -n 's/^- Condition: //p' | head -n1)
+  attempts=$(printf '%s\n' "$body" | sed -n 's/^- Recovery attempts: //p' | head -n1)
+  next_action=$(printf '%s\n' "$body" | sed -n 's/^- Next action: //p' | head -n1)
+  human=$(printf '%s\n' "$body" | sed -n 's/^- Human attention required: //p' | head -n1)
+
+  [ -n "$report_outcome" ] || fail "workflow outcome field missing: report_outcome"
+  [ -n "$category" ] || fail "workflow outcome field missing: category"
+  [ -n "$condition" ] || fail "workflow outcome field missing: condition"
+  [ -n "$attempts" ] || fail "workflow outcome field missing: attempts"
+  [ -n "$next_action" ] || fail "workflow outcome field missing: next_action"
+  [ -n "$human" ] || fail "workflow outcome field missing: human"
+
+  case "$attempts" in
+    ''|*[!0-9]*) fail "Recovery attempts must be a non-negative integer: $attempts" ;;
+  esac
+
+  case "$report_outcome" in
+    COMPLETE)
+      [ "$category" = "none" ] || fail "COMPLETE category must be none: $category"
+      [ "$human" = "no" ] || fail "COMPLETE cannot require Human attention"
+      ;;
+    RECOVERY_REQUIRED)
+      case "$category" in
+        in-scope-implementation|gate-repair|report-repair|qa-rework|session-continuation|local-environment) ;;
+        *) fail "invalid RECOVERY_REQUIRED category: $category" ;;
+      esac
+      [ "$human" = "no" ] || fail "RECOVERY_REQUIRED cannot require Human attention"
+      [ "$condition" != "None." ] || fail "RECOVERY_REQUIRED must name its condition"
+      [ "$next_action" != "None." ] || fail "RECOVERY_REQUIRED must name its next action"
+      ;;
+    BLOCKED)
+      case "$category" in
+        product-decision|architecture-decision|data-model-decision|public-interface-decision|dependency-approval|security-or-data-loss|external-infrastructure|specification-contradiction|recovery-budget-exhausted) ;;
+        *) fail "invalid BLOCKED category: $category" ;;
+      esac
+      [ "$human" = "yes" ] || fail "BLOCKED must require Human attention"
+      [ "$condition" != "None." ] || fail "BLOCKED must name its condition"
+      [ "$next_action" != "None." ] || fail "BLOCKED must name its resolution action"
+      ;;
+    *)
+      fail "invalid Task outcome: $report_outcome"
+      ;;
+  esac
+
+  [ -n "$report_outcome" ] && echo "OUTCOME $report_outcome"
+}
+
 # DEC-131 requires an additive correction to five already-complete Phase 20
 # reports. The exception is deliberately narrower than normal gate coverage:
 # only a corrected go test record can remain UNVERIFIED, and only when the
@@ -140,7 +217,8 @@ run_lint() {
   fi
 
   # --- 1. Required headings, present and in order ---
-  required_headings='## Summary of what was implemented
+  required_headings='## Workflow outcome
+## Summary of what was implemented
 ## Files created or modified
 ## Documentation updated
 ## Validation Contract Coverage
@@ -176,7 +254,7 @@ EOF
     fail "required headings out of order"
   fi
 
-  # --- 2. Sentinel sections must be non-empty ---
+  # --- 2. Sentinel sections and typed workflow outcome ---
   for heading in \
     '## Concerns, technical debt, or notes for the Tech Lead' \
     '## Dependency-budget note' \
@@ -190,13 +268,16 @@ EOF
     fi
   done
 
-  # --- 3. Blocker-report detection ---
+  validate_workflow_outcome "$report"
+
+  # --- 3. Workflow disposition ---
   hash_body=$(section_body "$report" '## Commit hash')
   blocker=false
-  if printf '%s\n' "$hash_body" | grep -qi 'No commit created'; then
-    blocker=true
-    note "blocker report detected: orchestrator must stop regardless of lint result"
-  fi
+  recovery=false
+  case "$report_outcome" in
+    BLOCKED) blocker=true ;;
+    RECOVERY_REQUIRED) recovery=true ;;
+  esac
 
   # --- 4. Command coverage vs task spec ---
   cmds=$(required_commands "$spec")
@@ -208,6 +289,7 @@ EOF
       section_body "$report" '## Exact quality-gate results'; } | grep -v '^[[:space:]]*$' || true
   )
   validate_go_test_tokens "$results"
+  validate_pass_termination "$results"
   while IFS= read -r cmd; do
     [ -n "$cmd" ] || continue
     case "$cmd" in
@@ -222,8 +304,8 @@ EOF
     elif printf '%s\n' "$match" | grep -q 'PASS'; then
       pass "required command recorded PASS: $cmd"
     elif printf '%s\n' "$match" | grep -q 'BLOCKED'; then
-      if $blocker; then
-        pass "required command recorded BLOCKED in blocker report: $cmd"
+      if $blocker || $recovery; then
+        pass "required command recorded BLOCKED in non-complete report: $cmd"
       else
         fail "required command BLOCKED outside a blocker report: $cmd"
       fi
@@ -237,8 +319,8 @@ $cmds
 EOF
 
   # --- 5 & 6. Commit hash validity and subject match ---
-  if $blocker; then
-    note "commit hash/subject and report-committed checks skipped for blocker report"
+  if $blocker && printf '%s\n' "$hash_body" | grep -qi 'No commit created'; then
+    note "commit hash/subject and report-committed checks skipped for no-commit protected blocker"
     return
   fi
 
@@ -339,6 +421,15 @@ EOF
     cat > "$out" <<EOF
 # Phase 1 - Task 1: Fixture task - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Fixture summary.
@@ -357,14 +448,14 @@ EOF
 
 ## Tests run
 
-- \`echo coverage-fixture\` - PASS
-- \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\`
-- \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\`
+- \`echo coverage-fixture\` - PASS - \`coverage-fixture\` (terminated \`exit_code: 0\`)
+- \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\` (terminated \`exit_code: 0\`)
+- \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\` (terminated \`exit_code: 0\`)
 
 ## Exact quality-gate results
 
-- \`echo format-fixture\` - PASS
-- \`echo lint-fixture\` - PASS
+- \`echo format-fixture\` - PASS - \`format-fixture\` (terminated \`exit_code: 0\`)
+- \`echo lint-fixture\` - PASS - \`lint-fixture\` (terminated \`exit_code: 0\`)
 
 ## Deviations from spec
 
@@ -424,8 +515,13 @@ EOF
   git -C "$tmp" add clean.md task-spec.md
   git -C "$tmp" -c user.name=fixture -c user.email=fixture@example.invalid \
     commit -q -m "docs(task): finalize completion report fixture"
-  expect "clean report passes" zero "" "$tmp/clean.md"
+  expect "clean report passes with COMPLETE outcome" zero "OUTCOME COMPLETE" "$tmp/clean.md"
   expect "accepted real go test tokens pass" zero "" "$tmp/clean.md"
+
+  # Every PASS must carry observed termination, not merely an output token.
+  sed 's/ (terminated `exit_code: 0`)//' "$tmp/clean.md" > "$tmp/missing-termination.md"
+  commit_fixture missing-termination.md
+  expect "PASS without termination evidence fails" nonzero "PASS result missing observed termination" "$tmp/missing-termination.md"
 
   # A full go test run can print nothing until packages finish. A silent token
   # therefore cannot prove it terminated successfully.
@@ -475,7 +571,7 @@ EOF
   expect "narrowing-arguments substitution fails" nonzero "required command missing from report" "$tmp/narrow-args.md"
 
   # BLOCKED outside a blocker report.
-  sed 's|`echo lint-fixture` - PASS|`echo lint-fixture` - BLOCKED|' "$tmp/clean.md" > "$tmp/blocked-non-blocker.md"
+  sed 's|`echo lint-fixture` - PASS - `lint-fixture` (terminated `exit_code: 0`)|`echo lint-fixture` - BLOCKED - `FAIL` (terminated `exit_code: 1`)|' "$tmp/clean.md" > "$tmp/blocked-non-blocker.md"
   expect "BLOCKED outside blocker report fails" nonzero "BLOCKED outside a blocker report" "$tmp/blocked-non-blocker.md"
 
   # Fabricated commit hash (well-formed, resolves nowhere).
@@ -490,16 +586,34 @@ EOF
   write_report "$tmp/subject-mismatch.md" "$good_hash" "feat: add widget summary line polished"
   expect "subject mismatch fails" nonzero "commit subject mismatch" "$tmp/subject-mismatch.md"
 
-  # Well-formed blocker report passes lint (orchestrator still stops on it).
+  # A durable partial checkpoint is a typed recovery state, not a blocker.
+  write_report "$tmp/recovery.md" "$good_hash" "$good_subject"
+  sed -e 's|- Task outcome: COMPLETE|- Task outcome: RECOVERY_REQUIRED|' \
+      -e 's|- Category: none|- Category: in-scope-implementation|' \
+      -e 's|- Condition: None\.|- Condition: Focused tests still expose an in-scope migration gap.|' \
+      -e 's|- Recovery attempts: 0|- Recovery attempts: 1|' \
+      -e 's|- Next action: None\.|- Next action: Continue the same task and rerun the exact failed command.|' \
+      -e 's| - PASS - | - BLOCKED - |g' \
+      "$tmp/recovery.md" > "$tmp/recovery-final.md"
+  commit_fixture recovery-final.md
+  expect "recovery report returns typed recovery outcome" zero "OUTCOME RECOVERY_REQUIRED" "$tmp/recovery-final.md"
+
+  # A well-formed protected blocker passes mechanical lint with a typed outcome.
   write_report "$tmp/blocker.md" "$good_hash" "$good_subject"
-  sed -e 's|- `'"$good_hash"'`|- `No commit created - blocker report`|' \
-      -e 's|`echo lint-fixture` - PASS|`echo lint-fixture` - BLOCKED|' \
-      -e '/^- `go test \.\/\.\.\.` - PASS/c\
-- `go test ./...` - BLOCKED - the command\
-  terminated in this session with no captured terminal output. For `go test`,\
-  no PASS can be recorded.' \
+  sed -e 's|- Task outcome: COMPLETE|- Task outcome: BLOCKED|' \
+      -e 's|- Category: none|- Category: product-decision|' \
+      -e 's|- Condition: None\.|- Condition: The accepted behavior is contradictory.|' \
+      -e 's|- Next action: None\.|- Next action: Human selects the product behavior.|' \
+      -e 's|- Human attention required: no|- Human attention required: yes|' \
+      -e 's|- `'"$good_hash"'`|- `No commit created - blocker report`|' \
+      -e 's| - PASS - | - BLOCKED - |g' \
       "$tmp/blocker.md" > "$tmp/blocker-final.md"
-  expect "wrapped go test blocker explanation passes lint" zero "blocker report detected" "$tmp/blocker-final.md"
+  expect "protected blocker returns typed blocked outcome" zero "OUTCOME BLOCKED" "$tmp/blocker-final.md"
+
+  # Incomplete in-scope work cannot be presented as a protected blocker.
+  sed 's|- Category: product-decision|- Category: in-scope-implementation|' \
+    "$tmp/blocker-final.md" > "$tmp/invalid-blocker.md"
+  expect "recoverable category cannot masquerade as blocker" nonzero "invalid BLOCKED category" "$tmp/invalid-blocker.md"
 
   # Finalized report never committed.
   cp "$tmp/clean.md" "$tmp/uncommitted.md"
