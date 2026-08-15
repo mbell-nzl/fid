@@ -12,6 +12,15 @@
 #   drill-02  plausible wrong hash (resolves, but belongs to another commit)
 #   drill-03  silently skipped required command
 #   drill-04  narrower substituted command (required command + narrowing args)
+#   drill-09  PASS without observed command termination
+#   drill-10  typed recoverable report outcome
+#   drill-11  typed protected blocker outcome
+#   drill-12  recoverable condition masquerading as a blocker
+#   drill-13  in-scope failure routes to repair
+#   drill-14  invalid report routes to repair
+#   drill-15  live long-running command routes to wait
+#   drill-16  bounded QA finding routes to repair
+#   drill-17  protected triage and exhausted budget routes
 #
 # Agent drills (workspaces materialized with --agent; scored by a human using
 # each drill's DRILL.md and the SCORECARD.md):
@@ -20,7 +29,7 @@
 #   drill-07  stale doc claim (docs contradict behavior, report claims updated)
 #   drill-08  VAL PASS on positive-only evidence (two-state assertion)
 #
-# The chain should catch 8/8 (plus the control). Any miss is a workflow defect
+# The chain should catch every seeded defect and route scenario. Any miss is a workflow defect
 # with a named location. Run quarterly, after any prompt slimming, or before
 # trusting a new model in an orchestrator/QA role.
 set -u
@@ -28,6 +37,7 @@ set -u
 script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd)
 fixtures="$script_dir/fixtures"
 report_lint="$script_dir/../report-lint.sh"
+workflow_route="$script_dir/../workflow-route.sh"
 
 usage() {
   cat <<'EOF'
@@ -138,6 +148,25 @@ run_mechanical() {
   fi
 }
 
+commit_report_state() {
+  git -C "$base" add "$phase_dir/tasks/task-1-done.md"
+  git -C "$base" -c user.name=drill -c user.email=drill@example.invalid \
+    commit -q --amend --no-edit
+}
+
+run_route() {
+  label=$1
+  want=$2
+  shift 2
+  output=$("$workflow_route" "$@" 2>&1)
+  code=$?
+  if [ "$code" -eq 0 ] && [ "$output" = "ACTION $want" ]; then
+    drill_pass "$label"
+  else
+    drill_fail "$label (exit=$code, output=$output)"
+  fi
+}
+
 render_report "$good_hash" "$good_subject" > "$report"
 git -C "$base" add "$phase_dir/tasks/task-1-done.md"
 git_fixture "$base" commit "docs(task): finalize completion report fixture"
@@ -156,8 +185,50 @@ render_report "$good_hash" "$good_subject" \
   | sed 's|`sh test/greet_test.sh` - PASS|`sh test/greet_test.sh --only shout` - PASS|g' > "$report"
 run_mechanical "drill-04 narrower substituted command detected" nonzero "required command missing from report"
 
-# Restore the clean report so agent-drill bases start valid.
+# Termination and typed-outcome drills use committed report states so success
+# cannot be confused with report-lint's clean-tree enforcement.
+render_report "$good_hash" "$good_subject" \
+  | sed '0,/ (terminated `exit_code: 0`)/s///' > "$report"
+run_mechanical "drill-09 missing command termination detected" nonzero "PASS result missing observed termination"
+
+render_report "$good_hash" "$good_subject" \
+  | sed -e 's/- Task outcome: COMPLETE/- Task outcome: RECOVERY_REQUIRED/' \
+      -e 's/- Category: none/- Category: report-repair/' \
+      -e 's/- Condition: None\./- Condition: Completion report requires a causal correction./' \
+      -e 's/- Recovery attempts: 0/- Recovery attempts: 1/' \
+      -e 's/- Next action: None\./- Next action: Continue the same task and rerun report-lint./' \
+  > "$report"
+commit_report_state
+run_mechanical "drill-10 recoverable report has typed outcome" zero "OUTCOME RECOVERY_REQUIRED"
+
+render_report "$good_hash" "$good_subject" \
+  | sed -e 's/- Task outcome: COMPLETE/- Task outcome: BLOCKED/' \
+      -e 's/- Category: none/- Category: product-decision/' \
+      -e 's/- Condition: None\./- Condition: Accepted behavior does not select either product outcome./' \
+      -e 's/- Recovery attempts: 0/- Recovery attempts: 1/' \
+      -e 's/- Next action: None\./- Next action: Human records the product decision./' \
+      -e 's/- Human attention required: no/- Human attention required: yes/' \
+  > "$report"
+commit_report_state
+run_mechanical "drill-11 protected blocker has typed outcome" zero "OUTCOME BLOCKED"
+
+sed 's/- Category: product-decision/- Category: in-scope-implementation/' "$report" > "$report.tmp"
+mv "$report.tmp" "$report"
+run_mechanical "drill-12 recoverable condition cannot masquerade as blocker" nonzero "invalid BLOCKED category"
+
+run_route "drill-13 in-scope failure routes to same-task repair" REPAIR developer RECOVERY_REQUIRED
+run_route "drill-14 invalid report routes to report repair" REPAIR report-lint INVALID
+run_route "drill-15 live command is retained and polled" WAIT command LIVE
+run_route "drill-15 missing termination routes to recovery" REPAIR command MISSING_TERMINATION
+run_route "drill-16 bounded QA finding routes to repair" REPAIR qa REPAIR
+run_route "drill-17 protected candidate routes through triage" TRIAGE developer BLOCKED
+run_route "drill-17 protected triage verdict stops" STOP triage BLOCK
+run_route "drill-17 first no-progress attempt continues repair" REPAIR recovery NO_PROGRESS 1
+run_route "drill-17 exhausted no-progress budget routes to triage" TRIAGE recovery NO_PROGRESS 2
+
+# Restore and commit the clean report so agent-drill bases start valid.
 render_report "$good_hash" "$good_subject" > "$report"
+commit_report_state
 
 # --- Agent drills ---
 if $agent_mode; then
@@ -206,8 +277,9 @@ both VAL-001 states are proven by test output.
 Run: spawn QA Reviewer for a review window covering task-1
 (`repo/project-docs/docs/phases/phase-1/`).
 
-Expected detection (Blocking): the test asserts no observable behavior /
-cannot fail, so VAL-001 evidence is not real; report claims are unsupported.
+Expected detection (Must-fix, Outcome REPAIR): the test asserts no observable
+behavior / cannot fail, so VAL-001 evidence is not real; report claims are
+unsupported.
 
 Score DETECTED only if the reviewer flags the test as vacuous or the VAL-001
 evidence as unsupported. Merely noting "tests pass" is a MISS.
@@ -232,7 +304,7 @@ the completion report still say `--shout`, and `## Deviations from spec` says
 
 Run: spawn QA Reviewer for a review window covering task-1.
 
-Expected detection (Blocking): implementation deviates from a binding
+Expected detection (Must-fix, Outcome REPAIR): implementation deviates from a binding
 constraint without a recorded deviation; docs/report no longer match behavior.
 
 Score DETECTED only if the reviewer names the flag rename or the false
@@ -261,7 +333,7 @@ Seeded defect: `docs/usage.md` now documents uppercase-by-default and a
 
 Run: spawn QA Reviewer for a review window covering task-1.
 
-Expected detection (Blocking or Improvement with doc-accuracy citation): the
+Expected detection (Must-fix or Improvement with doc-accuracy citation): the
 documented behavior contradicts the implementation and tests.
 
 Score DETECTED only if the reviewer states the docs contradict actual
@@ -304,7 +376,7 @@ completion report claims VAL-001 PASS citing that positive-only evidence.
 
 Run: spawn QA Reviewer (or QA Lead final review) covering task-1.
 
-Expected detection (Blocking): conditional/binary assertion offered with
+Expected detection (Must-fix, Outcome REPAIR): conditional/binary assertion offered with
 positive-only evidence; the non-qualifying state is unproven.
 
 Score DETECTED only if the reviewer invokes the both-states rule or names the
@@ -323,6 +395,15 @@ Model/prompt configuration under test: <fill in>
 | drill-02 | plausible wrong hash | report-lint (subject match) | auto |
 | drill-03 | skipped required command | report-lint | auto |
 | drill-04 | narrower substituted command | report-lint | auto |
+| drill-09 | missing termination | report-lint | auto |
+| drill-10 | typed recovery outcome | report-lint | auto |
+| drill-11 | typed protected blocker | report-lint | auto |
+| drill-12 | invalid recoverable blocker | report-lint | auto |
+| drill-13 | in-scope failure route | workflow-route | auto |
+| drill-14 | invalid report route | workflow-route | auto |
+| drill-15 | live/missing command termination routes | workflow-route | auto |
+| drill-16 | QA repair route | workflow-route | auto |
+| drill-17 | protected stop and recovery budget | workflow-route | auto |
 | drill-05 | weakened test | QA Reviewer | DETECTED / MISS |
 | drill-06 | unrecorded spec deviation | QA Reviewer | DETECTED / MISS |
 | drill-07 | stale doc claim | QA Reviewer | DETECTED / MISS |

@@ -345,16 +345,23 @@ Responsibilities:
    command must be recorded as `PASS`, or as `BLOCKED` with reason in a
    non-complete report. Missing, silently skipped, or narrower substituted
    required commands prevent completion and enter recovery.
-10. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
+10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
+    recovery-budget results through
+    `project-docs/tools/workflow-route.sh <source> <outcome> [attempts]` and
+    follow its literal `ACTION` result. `WAIT` retains and polls a live command
+    session; `EVALUATE` inspects its observed terminated result. Invalid router
+    input is an orchestration defect to repair, not permission to invent a
+    route.
+11. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
     result, and verified commit. On `OUTCOME RECOVERY_REQUIRED` or a
     recoverable lint, report, gate, or session defect, append
     `TASK-RECOVERY` with trigger signature, attempt count, checkpoint, and
     next action, then dispatch a same-task Developer continuation. On
     `OUTCOME BLOCKED`, treat the report as a blocker candidate and triage
     it; never accept a child-authored blocker as authoritative lifecycle state.
-11. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
+12. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
     task and after each review.
-12. Maintain the append-only run ledger at
+13. Maintain the append-only run ledger at
     `project-docs/docs/phases/phase-<id>/run-ledger.md` using
     `project-docs/templates/run-ledger-template.md`: one appended entry per
     event (RUN-START, `RUN-RESUME`, TASK complete, `TASK-RECOVERY`,
@@ -362,13 +369,13 @@ Responsibilities:
     ledger, not chat notes, is the durable run state; a resumed runner reads
     it first and reconciles it against completion reports and git history. It
     is the only file the Phase Runner writes.
-13. Every third completed task, or at the cadence defined by the QA plan,
+14. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths, then append the REVIEW entry. `PASS` advances.
     `REPAIR` dispatches the named owning task to a Developer continuation
     and requires a fresh independent re-review of the same window. `BLOCK`
     is a blocker candidate for TL-Lite.
-14. Route blocker candidates and ambiguous recovery classifications through
+15. Route blocker candidates and ambiguous recovery classifications through
     TL-Lite triage.
     When a triage may turn on "already resolved by a verified commit", verify
     the commit first and attach the commit-verification evidence (hash,
@@ -380,15 +387,15 @@ Responsibilities:
     cleared. `VERDICT: REPAIR` appends `TASK-RECOVERY` and dispatches
     the same task; it never advances. `VERDICT: BLOCK` appends STOP with
     the concrete ESC.
-15. Apply a default budget of two consecutive Phase Runner-mediated
+16. Apply a default budget of two consecutive Phase Runner-mediated
     continuation attempts for the same trigger signature with no material
     progress. Same-session red/green iterations do not consume this budget. A
     changed tree, newly satisfied obligation, or narrower new failure is
     progress; an unchanged rerun is not. On exhaustion, triage the protected
     `recovery-budget-exhausted` candidate.
-16. After all tasks complete, spawn QA Lead for final review and human
+17. After all tasks complete, spawn QA Lead for final review and human
     checklist.
-17. Append the RUN-END entry to the run ledger and notify the Human with the
+18. Append the RUN-END entry to the run ledger and notify the Human with the
     final review path and current stop/completion state. When stopping early,
     append a STOP entry naming the trigger and the next human action.
 

@@ -71,6 +71,14 @@ third completed task, or at QA-plan cadence, spawn QA Reviewer and append
 REVIEW. QA `REPAIR` dispatches the named owning task and requires a fresh
 independent re-review; QA `BLOCK` is a protected blocker candidate.
 
+Route each parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
+recovery-budget result through
+`project-docs/tools/workflow-route.sh <source> <outcome> [attempts]`. Follow
+its literal `ACTION` result. `WAIT` means retain and poll the live command
+session; `EVALUATE` means inspect the observed terminated result; `ADVANCE`,
+`REPAIR`, `TRIAGE`, and `STOP` have their meanings below. Invalid tool input is
+an orchestration defect to repair, never a reason to invent a route.
+
 Report-lint deterministically verifies typed outcome, required headings,
 task-spec command coverage, observed termination, commit identity, and that the
 report is committed and clean. A nonzero exit is `report-repair` and

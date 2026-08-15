@@ -238,6 +238,13 @@ else
   fail "report-lint self-test failed"
 fi
 
+check_file "project-docs/tools/workflow-route.sh" "workflow route tool"
+if [ -x "project-docs/tools/workflow-route.sh" ]; then
+  pass "workflow-route.sh is executable"
+else
+  fail "workflow-route.sh is not executable"
+fi
+
 check_file "project-docs/tools/drills/run-drills.sh" "evidence-chain drills harness"
 if [ -x "project-docs/tools/drills/run-drills.sh" ]; then
   pass "run-drills.sh is executable"
@@ -257,6 +264,7 @@ project-docs/templates/phase-runner-prompt.md
 
 for file in $runner_surfaces; do
   check_contains "$file" 'report-lint\.sh' "report-lint reference"
+  check_contains "$file" 'workflow-route\.sh' "workflow route reference"
   check_contains "$file" 'run-ledger' "run-ledger reference"
   check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"
   check_contains "$file" 'no TRIAGE entry exists' "untriaged-STOP resume rule"

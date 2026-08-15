@@ -71,6 +71,12 @@ Execution rules:
   BLOCKED line. It verifies typed state, command coverage, observed
   termination, commit identity, and that the report is committed and clean.
   A nonzero exit is report-repair. Do not re-derive failed checks by prose.
+- Route every parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
+  recovery-budget result through
+  project-docs/tools/workflow-route.sh <source> <outcome> [attempts]. Follow
+  its literal ACTION. WAIT retains and polls the live command session;
+  EVALUATE inspects the observed terminated result. Invalid router input is a
+  recoverable orchestration defect, not permission to invent a route.
 - Read the report for judgment items report-lint cannot check: blocker
   semantics, deviation content, concerns needing triage, and QA-plan commands
   required for that task beyond the task spec. Every QA-plan required command
