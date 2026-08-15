@@ -5,7 +5,8 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 1 (`review-4:qa-rework:MF-01-typed-link-evidence-matrix`)
+- Recovery attempts: 1
+- Recovery trigger: `review-4:qa-rework:MF-01-typed-link-evidence-matrix`
 - Next action: Independent QA re-review of MF-01.
 - Human attention required: no
 
