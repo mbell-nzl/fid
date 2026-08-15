@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: local-environment
-- Condition: Go VCS stamping resolves a linked worktree to `/tmp`, so the exact integration and build commands cannot obtain repository status there.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
 - Recovery attempts: 1
-- Next action: Commit the candidate tree, run every exact command byte-identically from a normal local clone of that commit, then finalize this report.
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -23,6 +23,9 @@
   only from the two migrated list leaves.
 - Fixed a restored concurrency defect by registering root-flag capabilities at
   package initialization rather than while parallel tests construct commands.
+- Preserved the appended Event's RFC3339 nanosecond timestamp in every migrated
+  Issue mutation response and strengthened create/update/transition and Task 10
+  identity assertions against the journal tail.
 
 ## Files created or modified
 
@@ -38,6 +41,8 @@
   aggregate revision advance.
 - Affected `cmd/fid` e2e helpers and assertions for migrated stdout/envelope
   behavior.
+- `cmd/fid/integration/e2e_v01_closure_helpers_test.go` for the accepted
+  stdout-only AC success channel.
 
 ## Documentation updated
 
@@ -115,10 +120,10 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  9.902s  coverage: 80.5% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:  (statements)  77.6%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`); linked-worktree Go VCS root defect, normal-clone rerun pending.
-- `go build -o /tmp/fid ./cmd/fid` - BLOCKED - `Use -buildvcs=false to disable VCS stamping.` (terminated `exit_code: 1`); normal-clone rerun pending without changing the command.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	9.832s	coverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.6%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.120s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -132,19 +137,34 @@ Event/atomicity tables. No named operation is represented by sampling another.
   0. The first exact lint gate named only the obsolete label Markdown decoder;
   removing that unreachable helper produced `0 issues.` on the byte-identical
   rerun. No suppression was added.
-- The exact integration and build commands fail only in the linked worktree
-  because Go runs VCS status from `/tmp`. The candidate commit will be rerun
-  byte-identically in a normal local clone with VCS stamping enabled; this
-  report remains `RECOVERY_REQUIRED` until those observed results replace the
-  blocked rows.
+- Go VCS stamping resolved the linked worktree's `.git` indirection to `/tmp`,
+  so the exact integration and build commands first failed with `error obtaining
+  VCS status: exit status 128` and `Use -buildvcs=false to disable VCS
+  stamping.` (both terminated `exit_code: 1`). No command flag was changed.
+  Every final gate above ran byte-identically against committed HEAD
+  `802e32b53c6b054a703405b12077d9d792d12b3e` in a normal local clone with VCS
+  stamping enabled.
+- The first normal-clone race/coverage run failed with `FAIL` (terminated
+  `exit_code: 1`) because `TestIssueTransitionCanonicalOutcomeTable` compared
+  the whole-second Response Envelope timestamp with the journal's nanosecond
+  timestamp. The TRD requires sub-second precision where available and VAL-017
+  requires matching Event identity. Commit `32ce0f1` changed returned mutation
+  identity timestamps to `RFC3339Nano` and strengthened create, update,
+  transition, AC, catalog-label, and Issue-label comparisons. Ten repeated
+  focused race runs passed before the byte-identical full gate passed on the
+  repaired commit.
+- The next exact integration run failed with
+  `FAIL github.com/mbell-nzl/fid/cmd/fid/integration` (terminated `exit_code: 1`)
+  because its closure fixture discarded AC-add stdout and parsed the legacy
+  stderr channel. Commit `802e32b` changed only that fixture to require empty
+  stderr and parse the accepted stdout success. The byte-identical integration
+  command then passed. No product assertion, threshold, or gate was narrowed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The linked-worktree VCS-stamping behavior is a Go/tooling environment defect,
-  not a fid product failure. Task evidence is intentionally not finalized from
-  that environment.
 - The broader test-performance refactors remain outside this recovery per
-  DEC-141.
+  DEC-141. The canonical integration gate already uses only
+  `./cmd/fid/integration/...`, avoiding the former tagged `./...` duplication.
 
 ## Dependency-budget note
 
@@ -152,8 +172,8 @@ Event/atomicity tables. No named operation is represented by sampling another.
 
 ## Commit hash
 
-- Pending commit
+- `802e32b53c6b054a703405b12077d9d792d12b3e`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): align acceptance output channel`
