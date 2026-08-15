@@ -28,8 +28,10 @@
 - Added the missing dynamic full-Cobra-tree guard in
   `cmd/fid/contract_surface_test.go`. It recursively inspects every live
   command's local non-persistent, persistent, and inherited flag sets for
-  `format`, `toon`, `yaml`, and `markdown`, with injected inherited and local
-  flags proving the guard detects violations.
+  `format`, `toon`, `yaml`, and `markdown`. Its inherited-root negative
+  control injects a root persistent `format` flag and requires the violation
+  on the descendant path `fid issue --format`; the local-leaf control remains
+  in place.
 - Left `internal/format` and the eight Task 14 leaves unchanged.
 
 ## Files created or modified
@@ -70,8 +72,9 @@
 - VAL-031: PASS. `TestLiveCobraTreeContainsNoUniversalFormatFlags` recursively
   walks the complete `newRootCommandAt` Cobra tree and checks local,
   persistent, and inherited flag sets for all four universal-format names.
-  `TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags` proves both an
-  inherited root flag and a local leaf flag are detected. The existing
+  `TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags` now proves the
+  inherited-root injection is observed on the descendant path `fid issue
+  --format`, as well as proving a local leaf flag is detected. The existing
   `TestLiveTestsContainNoUniversalFormatInvocation` AST guard also passes; no
   shim helper names remain, and remaining `--format` literals are confined to
   retained rejection tests including `e2e_v01_format_matrix_test.go`.
@@ -84,6 +87,12 @@
 - `go test ./cmd/fid -run '^TestLiveCobraTree' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - red-first compile failure before the dynamic walker was added; the new tests referenced the not-yet-defined guard helper.
 - `go test ./cmd/fid -run '^TestLiveCobraTree' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.050s` - dynamic live-tree guard and injected inherited/local negative controls (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^(TestLiveCobraTreeContainsNoUniversalFormatFlags|TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags|TestLiveTestsContainNoUniversalFormatInvocation|TestIssueGetRejectsRetiredFormatFlags|TestIssueGetRejectsAllFormatValues|TestIssueListRejectsRetiredFormatFlag|TestLabelListRejectsLegacyFormatFlag|TestReadyRejectsRetiredFormatFlag|TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues|TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat|TestV01ReadCommandsRejectRetiredFormats|TestIssueReadRejectsRetiredAndMalformedInputs)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.292s` - dynamic guard, AST source guard, and retained rejection matrix (terminated `exit_code: 0`)
+- Review 5c MF-02 category evidence (immutable red finding): the prior
+  inherited negative control accepted only the root violation `fid
+  --format`, which did not prove that descendant inherited flags were
+  inspected. The repaired control requires `fid issue --format`.
+- `go test ./cmd/fid -run '^TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.050s` - strengthened inherited-root descendant control and retained local-leaf control (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^(TestLiveCobraTreeContainsNoUniversalFormatFlags|TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags|TestLiveTestsContainNoUniversalFormatInvocation|TestIssueGetRejectsRetiredFormatFlags|TestIssueGetRejectsAllFormatValues|TestIssueListRejectsRetiredFormatFlag|TestLabelListRejectsLegacyFormatFlag|TestReadyRejectsRetiredFormatFlag|TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues|TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat|TestV01ReadCommandsRejectRetiredFormats|TestIssueReadRejectsRetiredAndMalformedInputs)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.294s` - strengthened dynamic guard, AST source guard, and retained rejection matrix (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - immutable prior focused guard failure before caller convergence; the report checkpoint records the earlier inventory.
 - `go test ./cmd/fid -run '^TestLiveTestsContainNoUniversalFormatInvocation$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  0.080s` - later byte-identical guard pass (terminated `exit_code: 0`)
 - `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - initial convergence exposed retired owner, concern, acceptance-verification, and completion read assumptions.
@@ -110,6 +119,12 @@
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t77.4%` - MF-02 repair rerun (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.734s` - MF-02 repair rerun (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` - MF-02 repair rerun (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6%` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t77.4%` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.776s` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` - Review 5c inherited-control repair rerun (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -134,6 +149,14 @@
   inherited/local injected-flag negative controls. The existing AST guard and
   retained rejection tests were not weakened or changed; the focused matrix
   and all unchanged Task 15 gates then passed.
+- Review 5c MF-02 repair deviation: the prior root-only inherited negative
+  control was insufficient because it could pass from the root persistent flag
+  set without proving descendant inherited inspection. The test-only control
+  was strengthened to require the injected flag at `fid issue --format`; the
+  complete recursive walker, local-leaf control, AST guard, retained rejection
+  tests, root-flag tests, and Task 14 guards were preserved. The focused
+  strengthened control, retained matrix, and unchanged Task 15 gates ended
+  with the passing evidence recorded above.
 - No product, architecture, public-interface, dependency, gate-definition, or
   assertion-strength decision was changed.
 
@@ -148,8 +171,8 @@
 
 ## Commit hash
 
-- `b720fd174fae806449be6ff28cf3ec8a9d237f07`
+- `24f50aef13ae7a23a080a87920f396242b30f911`
 
 ## Commit subject
 
-- `test(cli): add dynamic Cobra format guard`
+- `test(cli): strengthen inherited format guard`
