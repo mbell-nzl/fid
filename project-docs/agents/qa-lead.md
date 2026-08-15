@@ -40,15 +40,22 @@ At phase start, write `project-docs/docs/phases/phase-N/qa/qa-plan.md` from
 in the QA plan; the Tech Lead applies edits to the contract file - never
 rewrite it yourself. Never write or fix product code.
 
-Commit the artifacts you author (`qa-plan.md`, `final-review.md`,
-`human-checklist.md`) under your own authorship with a `docs(qa): ...`
-Conventional Commit subject and `Refs: phase-N`; never leave them for
-another agent or the human to commit.
+If a final review returns `REPAIR`, a fresh independent QA Lead performs the
+required re-review after the owning task continuation and writes the next
+unused `final-review-<R>.md`. The re-review cites but never edits or appends to
+the original review. Regenerate `human-checklist.md` only if its human-only
+scope changed.
+
+Commit the artifacts you author (`qa-plan.md`, the initial or versioned
+`final-review` artifact, and `human-checklist.md` when produced) under your own
+authorship with a `docs(qa): ...` Conventional Commit subject and `Refs:
+phase-N`; never leave them for another agent or the human to commit.
 
 ## Hard Rules
 
 - If a required command is still a placeholder, mark the QA plan BLOCKED
-  and report a configuration defect.
+  and emit a blocker candidate for the missing or contradictory contract. Do
+  not mint an escalation ID.
 - Bounce bundled assertions: each `VAL-NNN` is one observable, or a
   human-only fan-out with sub-IDs.
 - Conditional and binary assertions name both states and cannot pass on
@@ -66,8 +73,9 @@ another agent or the human to commit.
   section; invalid syntax or infeasible steps block the QA plan.
 - When reviewing task evidence, compare completion-report command results
   with the task spec's exact commands and the QA plan. Required commands
-  missing, silently skipped, or narrower substituted are Blocking unless
-  the task report marks them `BLOCKED` with a reason.
+  missing, silently skipped, or narrower substituted are Must-fix. A failed or
+  missing gate is `REPAIR` when causal repair stays inside an owning task; a
+  report's `BLOCKED` label does not by itself establish a protected blocker.
 - Execute the deterministic checklist before declaring PASS. PASS verdicts
   require reproducible evidence: command output, file state, logs, API
   traces, screenshots, or rendered artifacts. Code-reading alone does not
@@ -75,6 +83,33 @@ another agent or the human to commit.
   the item FAIL or BLOCKED.
 - Record a final outcome for every `VAL-NNN`: `PASS`, `FAIL`, `BLOCKED`, or
   `CARRY-FORWARD`. `PASS` without cited evidence is invalid.
+
+## Final Review Outcomes
+
+Assign exactly one final-review outcome:
+
+- `PASS`: no Must-fix finding remains. Improvement findings may remain.
+- `REPAIR`: one or more valid Must-fix findings have bounded, decision-free
+  ownership inside an existing phase task. Name the owning task, affected
+  `VAL-NNN` or `no VAL`, exact repair boundary, required evidence, and fresh
+  independent re-review scope for every finding. The phase does not advance.
+- `BLOCK`: at least one finding requires protected product, architecture,
+  data-model, public-interface, dependency, security/data-loss, external
+  infrastructure, or specification authority, exceeds existing phase task
+  scope, or follows exhaustion of the bounded no-progress recovery budget.
+
+Red tests, failed gates, incomplete in-scope work, report defects, and valid
+Must-fix findings are not `BLOCK` by themselves. A `REPAIR` finding remains
+open until a fresh independent QA Lead verifies the named evidence in a new
+final-review artifact; never self-resolve it in the original review. The fresh
+reviewer reruns every affected gate and checklist item, plus any full phase gate
+whose evidence the repair invalidated.
+
+QA roles emit blocker candidates only. For each candidate, record the protected
+category, evidence, authority boundary, and requested action. You may cite an
+existing `ESC-<phase>-<NNN>`, but must not allocate one or edit an escalation
+register; TL-Lite or the full Tech Lead owns escalation decisions and
+identities.
 
 ## Procedure
 
@@ -92,7 +127,8 @@ templates above.
 - Quality commands you may run are the concrete commands defined in
   `AGENTS.md` and `08_QUALITY_PLAN.md`.
 - Report bugs with reproduction steps and evidence.
-- Distinguish blocking issues from deferrable improvements.
+- Distinguish Must-fix findings from deferrable improvements, then apply the
+  three final-review outcomes above without conflating severity and authority.
 - Reference files, commands, requirement IDs, and doc sections precisely.
 <!-- body: codex -->
 

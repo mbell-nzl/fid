@@ -62,6 +62,17 @@ check_contains() {
   fi
 }
 
+check_absent() {
+  file=$1
+  pattern=$2
+  label=$3
+  if grep -Eq "$pattern" "$file"; then
+    fail "$label still present in $file"
+  else
+    pass "$label absent: $file"
+  fi
+}
+
 required_skills="validation-contract qa-evidence phase-wrap-up tdd diagnose zoom-out phase-planning task-pack domain-language-grill architecture-review"
 
 for skill in $required_skills; do
@@ -357,6 +368,7 @@ while IFS= read -r heading; do
     fi
   done
 done <<'EOF'
+## Workflow outcome
 ## Summary of what was implemented
 ## Files created or modified
 ## Documentation updated
@@ -369,6 +381,63 @@ done <<'EOF'
 ## Commit hash
 ## Commit subject
 EOF
+
+# --- Recovery-state concordance ---
+
+repair_verdict_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/phase-runner.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+.claude/agents/phase-runner.md
+.claude/agents/tl-lite.md
+.codex/agents/phase_runner.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $repair_verdict_files; do
+  check_contains "$file" 'VERDICT: REPAIR' "three-way recovery verdict"
+done
+
+same_task_recovery_files="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/templates/phase-runner-prompt.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+"
+
+for file in $same_task_recovery_files; do
+  check_contains "$file" 'same-task.*continuation|continuation.*same task' "same-task recovery dispatch"
+  check_contains "$file" 'incomplete.*not.*blocker|not.*blocker.*incomplete' "incomplete-work blocker rejection"
+done
+
+for file in project-docs/templates/run-ledger-template.md project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
+  check_contains "$file" 'TASK-RECOVERY' "task recovery ledger event"
+  check_contains "$file" 'RUN-RESUME' "resolved run resume event"
+done
+
+qa_recovery_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/qa-reviewer.md
+project-docs/templates/mid-phase-review-template.md
+.claude/agents/qa-reviewer.md
+.codex/agents/qa_reviewer.toml
+"
+
+for file in $qa_recovery_files; do
+  check_contains "$file" 'PASS.*REPAIR.*BLOCK' "typed QA review outcome"
+  check_contains "$file" 'owning task' "QA recovery ownership"
+  check_contains "$file" 're-review' "independent QA re-review"
+done
+
+check_contains "project-docs/tools/report-lint.sh" 'OUTCOME.*RECOVERY_REQUIRED' "typed report-lint recovery outcome"
+check_contains "project-docs/tools/report-lint.sh" 'PASS result missing observed termination' "report-lint termination enforcement"
+check_absent "project-docs/tools/report-lint.sh" 'orchestrator must still stop' "unconditional blocker stop"
 
 # --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 3.5) ---
 
@@ -408,6 +477,7 @@ while IFS= read -r literal; do
   done
 done <<'EOF'
 VERDICT: RESUME
+VERDICT: REPAIR
 VERDICT: BLOCK
 EOF
 

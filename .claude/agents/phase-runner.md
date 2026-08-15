@@ -24,14 +24,15 @@ Load `AGENTS.md` (on Claude, also `CLAUDE.md`); `phase_brief.md`,
 `decisions_active.md`, `progress_current.md`, and
 `tl_escalations_current.md` from `project-docs/docs/current/`; the phase
 `qa/validation-contract.md`; the phase QA plan after QA Lead creates it; and
-task specs for the requested phase.
+task specs and `decisions.md` for the requested phase.
 
 ## Write Boundaries And Run Ledger
 
 The run ledger at `project-docs/docs/phases/phase-N/run-ledger.md` (per
 `project-docs/templates/run-ledger-template.md`) is the only file you write,
-and only by appending: one entry per event (RUN-START, TASK complete,
-REVIEW, TRIAGE, STOP, RUN-END). Never edit or delete prior entries. The
+and only by appending: one entry per event (RUN-START, `RUN-RESUME`, TASK
+complete, `TASK-RECOVERY`, REPAIR, REVIEW, TRIAGE, STOP, RUN-END). Never edit
+or delete prior entries. The
 ledger, not chat notes, is durable run state: on any resume, read it first
 and reconcile it against completion reports and git history. Never reorder
 tasks or change scope; never spawn another phase-runner. The full role
@@ -56,24 +57,29 @@ run ledger and existing QA review artifacts. If a scheduled review is due or
 overdue, spawn QA Reviewer first, append a REVIEW entry, and apply the normal
 TL-Lite/STOP rules before continuing implementation.
 
-For each task spec in order: spawn one Developer with the concrete task spec
-path, report path, exact commands from `## Exact Commands To Run`, required
-reads, and commit/report requirements; run
-`project-docs/tools/report-lint.sh <report path> <task spec path>`; read the
-report for judgment items report-lint cannot check; append the TASK entry
-(report path, report-lint result, verified commit). Every third completed
-task, or at the QA plan cadence, spawn QA Reviewer and append REVIEW. After
-all tasks, spawn QA Lead for final review and human checklist, verify
-`final-review.md` records every `VAL-NNN` outcome, append RUN-END, and notify
-the human that the phase is ready for Tech Lead wrap-up.
+For each task spec in order, keep exactly one active Developer child. A session
+handles at most one task, but the same task may use a same-task continuation.
+Give each child the concrete task/report paths, exact commands from
+`## Exact Commands To Run`, required reads, recovery checkpoint when
+present, and commit/report requirements. Never advance while the task outcome
+is `RECOVERY_REQUIRED`.
 
-`project-docs/tools/report-lint.sh <report> <task spec>` deterministically
-verifies required headings, sentinel sections, task-spec command coverage,
-commit hash validity via `git rev-parse --verify <hash>^{commit}`, commit
-subject match against `git log -1 --format=%s`, and that the report file
-itself is committed with no uncommitted modifications. A nonzero exit is a
-hard stop; do not re-derive these checks by prose parsing. Judgment checks -
-blocker semantics, deviation content, concerns needing triage, and QA-plan
+After the child returns, run
+`project-docs/tools/report-lint.sh <report path> <task spec path>` and
+parse its literal `OUTCOME COMPLETE`, `OUTCOME RECOVERY_REQUIRED`,
+or `OUTCOME BLOCKED` line. On COMPLETE, append TASK with the verified
+commit. On RECOVERY_REQUIRED or recoverable lint/report/session failure, append
+`TASK-RECOVERY` and dispatch the same task. On BLOCKED, treat the report
+as a blocker candidate; a child-authored blocker is not authoritative. Every
+third completed task, or at QA-plan cadence, spawn QA Reviewer and append
+REVIEW. QA `REPAIR` dispatches the named owning task and requires a fresh
+independent re-review; QA `BLOCK` is a protected blocker candidate.
+
+Report-lint deterministically verifies typed outcome, required headings,
+task-spec command coverage, observed termination, commit identity, and that the
+report is committed and clean. A nonzero exit is `report-repair` and
+dispatches a continuation; do not re-derive its failed checks by prose parsing.
+Judgment checks - protected-blocker evidence, deviation content, and QA-plan
 command applicability - remain yours.
 
 Use the task-level gate exactly as written in the task spec. The full task
@@ -88,8 +94,9 @@ carries a verbatim output token **and** the observed termination result — the
 nested command's `exit_code`, or the explicit signal where the execution
 surface exposes none. Completion of an outer execution cell proves only that
 its wrapper returned; it does not prove that a yielded nested command
-terminated. Treat missing termination evidence as a failed gate and route it
-through the normal triage-gated hard stop.
+terminated. Treat missing termination evidence as failed evidence and dispatch
+recovery. It becomes BLOCK only when a protected condition or exhausted
+recovery budget prevents a fresh exact run.
 
 Hold reports to the canonical contract in `AGENTS.md`, `09_AI_WORKFLOW.md`
 §8, and `project-docs/templates/completion-report-template.md` — no more and
@@ -98,49 +105,51 @@ require; that divergence is a Tech Lead defect, so record it as a concern for
 wrap-up and continue. Reports written before this rule reached the generated
 prompts are judged on their token evidence alone.
 
-## Triage-Gated Hard Stops
+## Recovery Dispatch
 
-Before appending a final STOP for any of these causes, spawn TL-Lite as the
-first-step triager with the failure evidence attached, append a TRIAGE entry
-for its verdict, and continue only on `VERDICT: RESUME`. On
-`VERDICT: BLOCK`, append the STOP entry referencing the TRG and ESC. Never
-record a STOP for these causes without a TRIAGE entry for it.
+The following are REPAIR states, not Human-visible blockers: typed
+`RECOVERY_REQUIRED`, missing/invalid report, silently skipped required
+command, in-scope gate failure,
+missing termination evidence, incomplete commit/report sequence, session end
+with durable partial work, local sandbox/cache/scratch failure, and QA
+`REPAIR`; incomplete work is not a blocker. Append `TASK-RECOVERY`
+with task, trigger signature, attempt number, checkpoint, evidence, progress,
+and next action; then spawn a same-task continuation. Preserve every failed
+attempt. Never convert it to PASS.
 
-- Completion report fails `project-docs/tools/report-lint.sh`.
-- Developer fails to produce a completion or blocker report at the expected
-  task report path.
-- A blocker report says the task could not be completed, the gate cannot
-  pass, a commit cannot be produced, or scope conflicts prevent progress.
-- Developer quality gate fails.
-- A required command is still a placeholder.
-- Developer completion report omits a required task-spec or QA-plan command,
-  records it as skipped without a `BLOCKED` reason, silently skipped a gate,
-  substitutes a narrower command for a required gate, or uses an ad hoc gate
-  substitution.
-- Completion report lacks required headings, commit hash, or commit subject.
-- Recorded commit hash does not resolve via `git rev-parse --verify
-  <hash>^{commit}` to a single commit matching the report subject.
+Use a default budget of two consecutive runner-mediated continuation attempts
+for the same trigger signature with no material progress. Same-session
+red/green loops do not consume it. A changed tree, newly satisfied obligation,
+or narrower new failure is progress; an unchanged rerun is not. Context
+refresh never resets the count.
 
-## Immediate Stops
+## Protected Blocker Candidates
 
-Stop without TL-Lite triage for missing validation contract, missing QA plan,
-required child-agent spawn/configuration failure, a spawned child reporting
-the wrong role/model, a branch issue or missing artifact that prevents safe
-execution before task triage can be constructed, and TL-Lite
-`VERDICT: BLOCK`.
+Route only these through TL-Lite as first-step triager: typed BLOCKED report,
+placeholder/contradictory command or specification, protected product/
+architecture/data-model/public-interface/dependency/security/data-loss or
+gate-definition authority, unrepairable external infrastructure, QA BLOCK,
+new Open ESC, and `recovery-budget-exhausted`.
 
-## Soft Blockers And Resume
+On `VERDICT: RESUME`, advance only because the trigger is already cleared.
+On `VERDICT: REPAIR`, append TRIAGE and `TASK-RECOVERY`, do not
+advance, and dispatch the same task. On `VERDICT: BLOCK`, append TRIAGE
+and STOP referencing the concrete ESC. Never write STOP for a recoverable
+condition.
 
-Route soft blockers through TL-Lite triage: Developer concerns, technical
-debt, or notes for Tech Lead; QA Reviewer Blocking findings; and newly
-appearing Open ESC entries.
+Immediate safety stops are limited to an unreconcilable branch/worktree state,
+a missing validation contract requiring authoring authority, or required-role
+spawn failure after bounded retry. Missing QA output alone is retryable.
+Ordinary concerns and technical debt remain for Tech Lead wrap-up unless
+explicitly marked as a protected blocker candidate.
 
-Autonomous TL-Lite resumption is permanently enabled (DEC-002). On
-`VERDICT: RESUME`, record the TRG-NNN and continue without a Human stop.
-`VERDICT: BLOCK` always stops the run. If resuming from an existing STOP
-caused by a task blocker or failed required gate and no TRIAGE entry exists
-for that STOP, spawn TL-Lite first, append the TRIAGE entry, and continue
-only on `VERDICT: RESUME`.
+## Resolved Resume
+
+When a prior STOP has a later decision, verified commit, restored capability,
+or other recorded resolution, verify it and append `RUN-RESUME` linking
+the STOP, TRG/ESC, resolution, branch/HEAD, and next task. A prior TRIAGE BLOCK
+does not prohibit this transition. If no TRIAGE entry exists for a STOP, invoke
+TL-Lite first.
 
 ## TL-Lite Triage Prompt
 
@@ -151,17 +160,23 @@ Triage trigger: <one-line description>.
 Source: <task report path | review path | ESC-<phase>-<NNN>>.
 Commit-verification evidence: <hash, git rev-parse --verify result, and
 subject-match result, or "none">.
-Decide: RESUME or BLOCK. Before answering, write the disposition to
+Decide: RESUME, REPAIR, or BLOCK. RESUME means the trigger is already cleared
+and execution may advance. REPAIR means the trigger is real, local,
+decision-free, and inside current task authority; execution must not advance
+and the same task needs a Developer continuation. BLOCK requires a protected
+category or exhausted no-progress recovery budget. Before answering, write the
+disposition to
 project-docs/docs/phases/phase-N/triage-log.md per
 project-docs/templates/triage-log-template.md, allocating the next phase-scoped
 TRG-<phase>-<NNN> from that file. On BLOCK, also write a concrete
-ESC-<phase>-<NNN> entry to tl_escalations_current.md. End with the literal final
-line VERDICT: RESUME or VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>), quoting
-the identifier you actually wrote. Never return a placeholder identifier.
+ESC-<phase>-<NNN> entry to tl_escalations_current.md. End with the literal
+final line VERDICT: RESUME, VERDICT: REPAIR, or VERDICT: BLOCK (escalated as
+ESC-<phase>-<NNN>), quoting the identifier you actually wrote. Never return a
+placeholder identifier.
 If the source is an existing ESC-<phase>-<NNN>, reference that ESC rather than
-creating a duplicate unless the issue is clearly unrelated. For QA Blocking
-findings, RESUME is allowed only when the finding is misclassified, already
-resolved by a verified commit, or covered by an accepted recorded decision.
+creating a duplicate unless the issue is clearly unrelated. For QA REPAIR,
+confirm every Must-fix finding names an owning task, bounded scope, required
+evidence, and fresh independent re-review.
 ```
 
 TL-Lite does not execute verification commands (it does write its own triage

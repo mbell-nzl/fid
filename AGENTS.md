@@ -54,7 +54,8 @@ Rules:
 - Tests must assert behavior, not implementation trivia.
 - Do not delete or weaken tests to make a failing gate pass.
 - Keep changes small and scoped to one task.
-- A Developer session implements exactly one task.
+- A Developer session implements at most one task. A task may span a same-task
+  continuation session when recovery or context renewal is required.
 - Use file artifacts as shared memory. Do not rely on chat history.
 - Update impacted documentation in the same task as the code change.
 - Normal and heavy planned phases use `VAL-NNN` validation assertions in
@@ -216,32 +217,24 @@ evidence**: commands that only remove or prune scratch state are never recorded
 attempt (`mktemp -d`), and declare the working directory for any command whose
 result depends on it.
 
-A required command whose **harness is a deliverable of the task being authored**
-(a fixture, capture/measurement script, or golden generator) may fail, be
-repaired, and be rerun to a pass. Record it `PASS` **with a mandatory deviation
-note** stating the first failure's verbatim token, the root cause, and the fix —
-provided the rerun command is **byte-identical**, the pass is **deterministic
-and third-party reproducible from committed artifacts**, and the failing
-artifact is not the product under test, a test asserting product behavior, or a
-pre-existing gate or tool. Otherwise the strict rule stands: a command that
-fails against the product, or that passes only after the command, the test, or
-the assertion is weakened or narrowed, is a **failed gate**. Iterating a harness
-to green is the normal red/green loop; mining for a flaky green is not.
+A required-command failure is an immutable failed attempt, not automatically a
+Human-visible blocker. When the causal repair is inside the accepted task scope,
+changes no protected product/architecture/public-interface/dependency decision,
+and leaves the command, threshold, test intent, and assertion strength intact,
+repair it in the same session and rerun the **byte-identical** command. Record
+both attempts and a mandatory deviation note containing the first failure's
+verbatim token and termination, root cause, repair, and later result. A product
+bug, stale expectation, authored harness defect, or bookkeeping inventory may
+all be repaired under this general rule. The first attempt remains failed
+evidence; the later passing attempt is the evidence used to close the task.
 
-A required command that fails only because a **bookkeeping inventory in the
-verification apparatus is stale** with respect to a change the task's accepted
-scope legitimately made may likewise be repaired in the same session and rerun,
-recorded `PASS` with the same **mandatory deviation note**. All of these must
-hold: the failing assertion tracks an inventory of the repository's own
-artifacts (test names, files, registered codes, generated fixtures) and **not**
-product behavior; the failure output **names the exact discrepancy**; the repair
-only reconciles the inventory with reality the task was authorized to create,
-changing **no threshold, budget, or tolerance** and leaving every test and
-assertion intact, unnarrowed, and un-re-pointed; the rerun command is
-byte-identical; and both the failure and the final result carry their own
-tokens. **You may fix the bookkeeping; you may never fix the verdict** —
-altering what a gate checks, rather than the inventory it tracks, remains a hard
-stop. If you cannot tell which one you are facing, stop and report.
+Never delete, weaken, narrow, re-point, or mine a flaky green. Changing what a
+gate checks, its threshold, budget, tolerance, or accepted command is a
+protected gate-definition change, not causal repair. If the needed change is
+outside task scope or requires protected authority, record a typed `BLOCKED`
+outcome. If the work is real and in scope but cannot finish in the current
+session, record `RECOVERY_REQUIRED`; incomplete work is not a blocker by
+itself, and the Phase Runner dispatches a same-task continuation.
 
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
@@ -351,17 +344,19 @@ See `project-docs/docs/playbook.md` for a concise operator runbook.
 
 ## Hard Stops
 
-Agents must stop and notify the human when:
+Agents stop for Human or protected-authority input only when:
 
-- A deterministic quality gate fails and cannot be fixed inside the assigned
-  task scope.
+- A deterministic quality gate cannot be fixed inside the assigned task scope
+  without changing a protected decision, gate definition, threshold, or
+  assertion strength.
 - A required project command is still a placeholder.
 - A task requires an architectural, product, data-model, or public-interface
   decision not already recorded in specs.
 - A task depends on ambiguous terminology that is not resolved or flagged in
   `project-docs/specs/GLOSSARY.md`.
 - A dependency addition lacks documented budget rationale.
-- A required completion report, QA plan, review, or human checklist is missing.
+- A required artifact or external capability remains unavailable after its
+  bounded recovery budget is exhausted.
 - A required phase validation contract is missing, has uncovered `VAL-NNN`
   assertions, or needs a product/architecture decision before evidence can be
   produced.
@@ -369,3 +364,8 @@ Agents must stop and notify the human when:
   prompts that are meant to stay outside agent context.
 - A release-readiness phase lacks the required threat model, pre-release
   checklist, or scenario/audit decision for its maturity level.
+
+A red test, failed command, report-lint defect, bounded QA finding, interrupted
+session, or incomplete in-scope implementation is `REPAIR`, not a Human-visible
+stop. Preserve the failed evidence, checkpoint the work, and continue through
+the recovery state machine in `project-docs/specs/09_AI_WORKFLOW.md`.

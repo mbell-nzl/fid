@@ -104,6 +104,20 @@ invalid.
   `project-docs/templates/mid-phase-review-template.md`.
 - Each mid-phase review verifies in-window `VAL-NNN` assertions and records
   gate evidence or why a gate was not run.
+- Each review records exactly one outcome: `PASS`, `REPAIR`, or `BLOCK`.
+- `REPAIR` is required when a valid Must-fix finding has bounded,
+  decision-free ownership inside an existing reviewed task. The review names
+  the owning task, affected assertion, exact repair boundary, required evidence,
+  and fresh re-review scope. The window does not advance.
+- After repair, the Phase Runner dispatches a Developer continuation for the
+  owning task and then a fresh independent QA Reviewer for the same window. The
+  new review uses the next unused review path, cites the prior review, and
+  verifies each original finding; the original reviewer does not append a
+  correction or resolve its own finding.
+- `BLOCK` is reserved for a protected authority boundary, work outside the
+  reviewed task/window scope, or exhaustion of the bounded no-progress recovery
+  budget. QA records a blocker candidate but does not allocate an `ESC` ID or
+  edit the escalation register.
 
 ## 9. Human Verification Scope
 
@@ -120,9 +134,16 @@ several observables, use sub-IDs that cite the same parent assertion.
 
 The phase can proceed to final review only when:
 
-- Required deterministic gates pass or are recorded BLOCKED with escalation.
+- Required deterministic gates pass with observed termination evidence.
 - Every `VAL-NNN` has planned evidence and a final-review outcome slot.
 - Every `(qa-lead)` item has reproducible evidence.
 - Human checks are human-judgment-only and mapped to the human checklist.
-- No unresolved blocking defects remain.
+- Every mid-phase review is `PASS`; each earlier `REPAIR` has a fresh
+  independent `PASS` re-review that resolves the original Must-fix findings.
+- No unresolved Must-fix finding or blocker candidate remains.
 - Required documentation updates are named.
+
+An in-scope failed gate or incomplete evidence triggers repair; it is not made
+acceptable by recording `BLOCKED`. A protected missing or contradictory
+contract prevents final review and is emitted as a blocker candidate for
+TL-Lite or the full Tech Lead, which alone may allocate an `ESC` identity.

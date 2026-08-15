@@ -26,10 +26,21 @@ the record.
 - Warm-up/autonomous-resume state: <warm-up | autonomous per DEC-NNN>
 - Starting task: <task-M>
 
+### <YYYY-MM-DD HH:MM> RUN-RESUME
+
+Append before a replacement or resumed Phase Runner takes another action.
+
+- Prior run/session or STOP: <reference>
+- Trigger signature: `<task/review>:<category>:<stable source identity>`
+- Attempt count: <total Phase Runner-mediated continuations for this signature>
+- Checkpoint: <commit/tree state, report, review, and last ledger entry>
+- Resolution evidence: <state reconciliation or protected-condition resolution>
+- Continuing task: <task-M>
+
 ### <YYYY-MM-DD HH:MM> TASK task-<M> COMPLETE
 
 - Report: `project-docs/docs/phases/phase-<N>/tasks/task-<M>-done.md`
-- report-lint: <PASS | FAIL (n failures) - hard stop>
+- report-lint: <PASS - OUTCOME COMPLETE>
 - Commit: `<hash>` - verified, subject matched
 - QA-plan commands beyond the task spec: <recorded PASS | none required>
 
@@ -37,12 +48,51 @@ the record.
 
 - Path: `project-docs/docs/phases/phase-<N>/qa/review-<M>.md`
 - Tasks covered: <task range>
-- Blocking: <n> / Improvement: <n> / ESC raised: <list or "none">
+- Outcome: <PASS | REPAIR | BLOCK>
+- Must-fix: <n> / Improvement: <n> / blocker candidates: <n; QA minted no ESC>
+
+### <YYYY-MM-DD HH:MM> TASK-RECOVERY task-<M>
+
+Append when a report, review, or interrupted session exposes real unfinished
+work that remains local, in scope, and decision-free. This event authorizes a
+same-task Developer continuation; it does not close the task or finding.
+
+- Source: <report, review finding, command attempt, or session reference>
+- Category: <in-scope-implementation | gate-repair | report-repair | qa-rework |
+  session-continuation | local-environment>
+- Trigger signature: `<task/review>:<category>:<stable source identity>`
+- Attempt count: <next total mediated continuation number for this signature>
+- Consecutive no-progress attempts: <n>/2
+- Checkpoint: <commit or exact dirty-tree/report/review state>
+- Resolution evidence: <PENDING - exact verification and any independent
+  re-review required to prove this trigger resolved>
+- Next action: <bounded repair and exact verification/re-review>
+- Human attention required: no
+
+### <YYYY-MM-DD HH:MM> REPAIR task-<M>
+
+Append after one Phase Runner-mediated continuation. Preserve earlier failed
+evidence; this event records what the continuation changed and proved.
+
+- Trigger signature: `<same signature as TASK-RECOVERY>`
+- Attempt count: <completed mediated continuation number for this signature>
+- Starting checkpoint: <TASK-RECOVERY checkpoint>
+- Ending checkpoint: <commit or exact durable tree/report/review state>
+- Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
+- Resolution evidence: <changed tree, newly satisfied obligation, narrower
+  failure, or byte-identical rerun result with observed termination>
+- Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
+  recovery-budget-exhausted>
 
 ### <YYYY-MM-DD HH:MM> TRIAGE TRG-<phase>-<NNN>
 
 - Trigger: <one line>
-- Verdict: <RESUME | BLOCK (escalated as ESC-<phase>-<NNN>)>
+- Trigger signature: `<stable signature>`
+- Attempt count: <total mediated continuations for this signature>
+- Checkpoint: <current durable state>
+- Verdict: <RESUME | REPAIR | BLOCK (escalated as ESC-<phase>-<NNN>)>
+- Resolution evidence: <required for RESUME; repair boundary for REPAIR;
+  protected/exhausted condition for BLOCK>
 - Triage log: <`.../triage-log.md` entry confirmed | "MISSING - TL-Lite
   returned a verdict without writing the entry">
 
@@ -55,12 +105,12 @@ leave the gap only in prose.
 ### <YYYY-MM-DD HH:MM> STOP
 
 - Cause: <task/review/TRG/ESC reference and one-line reason>
-- Triage: <TRG-<phase>-<NNN> (BLOCK, escalated as ESC-<phase>-<NNN>) |
-  "immediate stop - no triage required">. Triage-gated causes (report-lint
-  failure, missing report, blocker report, gate failure,
-  placeholder/missing/skipped/narrower/ad hoc command) must carry a TRG
-  reference; a STOP for those causes without one means TL-Lite was skipped.
-- Next human action: <one line>
+- Triage: <TRG-<phase>-<NNN> (BLOCK, escalated as or referencing
+  ESC-<phase>-<NNN>)>. Every STOP carries a triage and ESC reference. Ordinary
+  incomplete work, report defects, and gate failures are `REPAIR`, not STOP
+  causes.
+- Protected category: <closed blocker category>
+- Next Human or external-authority action: <one line>
 
 ### <YYYY-MM-DD HH:MM> RUN-END
 

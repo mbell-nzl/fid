@@ -65,16 +65,49 @@ phase-specific exception.
 
 ## 4. Run The Tasks
 
-- One Developer session handles one task.
+- One Developer session handles at most one task. The same task may span
+  multiple continuation sessions from a durable checkpoint.
 - Each task produces one completion report and one traceable commit.
 - Run deterministic gates before QA review.
-- Phase Runner routes soft blockers through TL-Lite triage.
-- Hard failures stop immediately.
+- Treat a Developer or QA `BLOCKED` response as a candidate to classify, not an
+  authoritative lifecycle decision. Those roles never mint `ESC` IDs.
+- Phase Runner routes unresolved candidates through TL-Lite using three
+  dispositions:
+
+| Disposition | Meaning | Action |
+|---|---|---|
+| `RESUME` | The trigger is cleared, misclassified, or already resolved with verified evidence. | Advance from the recorded checkpoint. |
+| `REPAIR` | The trigger is real, local, in scope, authorized, and decision-free. | Do not advance; record recovery and dispatch a same-task Developer continuation. |
+| `BLOCK` | A protected decision, unsafe condition, unrecoverable external dependency, contradictory contract, or exhausted recovery budget prevents progress. | Mint/reference an ESC, append STOP, and request the named authority action. |
+
+`RESUME` never means repair later, and `BLOCK` is not a synonym for incomplete,
+red, failed, or must-fix. Human attention is required only for `BLOCK`.
+
+Record recovery in the append-only run ledger:
+
+1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
+   checkpoint, recovery boundary, and next action.
+2. `REPAIR` captures the same-task continuation outcome and resolution
+   evidence without erasing any earlier failed attempt.
+3. `RUN-RESUME` captures state reconciliation before a resumed or replacement
+   Phase Runner performs another action.
+
+These are temporary V1 repository-delivery entries, not forward fid product
+Events, Runs, or recovery entities.
+
+The default budget is two consecutive Phase Runner-mediated continuations for
+one trigger signature with no material progress. Same-session red/green work
+does not consume it. A changed tree, newly satisfied obligation, or narrower
+failure is progress; a context refresh never resets recorded attempts.
 - If a task mixes logic/data with UI/wiring, re-slice before execution.
 
 ## 5. Review And Close
 
 - Use QA Reviewer for mid-phase reviews every 3 tasks or at named checkpoints.
+- QA review outcomes are `PASS`, `REPAIR`, or `BLOCK`. For `REPAIR`, name the
+  owning task, repair boundary, assertion, and required evidence; Phase Runner
+  dispatches that task and obtains a fresh independent re-review. The original
+  finding remains in history until that re-review resolves it.
 - QA Lead final review must include deterministic evidence for checklist items
   and verify `VAL-NNN` outcomes.
 - Human checklist should contain only human-judgment or dogfooding items.
@@ -113,9 +146,19 @@ phase-specific exception.
   not weakened or silently adapted.
 - Deterministic claims require reproducible evidence.
 - A required command that did not terminate is never `PASS`; it is `BLOCKED`.
+- Failed evidence remains failed after repair; append the byte-identical rerun
+  and its observed termination rather than replacing history.
+- Incomplete work, a failed gate, report repair, local environment recovery,
+  or bounded QA rework is `REPAIR` unless a separate protected condition
+  exists.
+- Human attention and STOP are reserved for a protected blocker category or
+  `recovery-budget-exhausted`.
 - Triage and escalation identifiers are phase-scoped (`TRG-<phase>-<NNN>`,
-  `ESC-<phase>-<NNN>`), allocated from the phase triage log, and written to
-  disk before the verdict is reported. Never a placeholder.
+  `ESC-<phase>-<NNN>`), allocated from the phase triage log, and written to disk
+  before the verdict is reported. Only TL-Lite or the full Tech Lead allocates
+  ESC IDs; Developer and QA candidates never do. Never use a placeholder.
+- Run-ledger and triage entries are append-only in wall-clock order. Correct an
+  earlier entry by appending a labelled correction, never by rewriting history.
 - Keep held-out scenario material outside normal implementation context.
 
 ## 8. Audit A Workspace

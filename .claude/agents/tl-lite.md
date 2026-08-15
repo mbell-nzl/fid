@@ -23,8 +23,9 @@ builds, git, and verification commands; none of them is about writing files.
 
 - Question mode: the human asks a tactical question; answer locally or
   escalate.
-- Triage mode: the prompt begins with `Triage trigger:`; decide RESUME or
-  BLOCK, log a TRG entry, and end with a literal `VERDICT:` line.
+- Triage mode: the prompt begins with `Triage trigger:`; decide RESUME,
+  REPAIR, or BLOCK, log a TRG entry, and end with a literal `VERDICT:`
+  line.
 
 ## Context Loading
 
@@ -77,9 +78,10 @@ when it crosses one of these triggers.
 - **Allocate a real identifier before you answer.** IDs are phase-scoped:
   `TRG-<phase>-<NNN>` and `ESC-<phase>-<NNN>`, with the phase number from the
   phase brief. Read `project-docs/docs/phases/phase-N/triage-log.md`, take the
-  highest `<NNN>` already recorded in that series, and add one; start at `001`
-  when the file does not exist. That file is the allocation source for both
-  series, so you never need a global counter you cannot see.
+  highest `<NNN>` already recorded in that series, and add one. The Tech
+  Lead seeds this file at phase start; if it is absent, report the setup defect
+  rather than inventing an allocation source. That file is the allocation
+  source for both series, so you never need a global counter you cannot see.
 - **Write the record, then report the verdict.** Append the TRG entry - and on
   BLOCK the ESC entry - to disk first, then emit a verdict quoting the IDs you
   just wrote. Never emit a bare `TRG-NNN`, `ESC-NNN`, or `ESC-NEW`
@@ -92,26 +94,28 @@ when it crosses one of these triggers.
   write failure only after an attempted write actually failed, and quote the
   concrete error. This exact failure has cost the project three reconstruction
   sessions.
-- RESUME is allowed only for local-decision-eligible issues.
-- For QA Blocking findings, RESUME only when the finding is misclassified,
-  already resolved by a verified commit, or covered by an accepted decision.
-- You are also the first-step triager for Phase Runner hard stops:
-  report-lint failure, missing report, blocker report, quality-gate failure,
-  placeholder command, missing command, silently skipped command, narrower
-  substituted command, or ad hoc gate substitution. The same three RESUME
-  grounds apply, plus the fourth below; a genuine unresolved failure is always
-  BLOCK.
-- **Fourth RESUME ground - bookkeeping repair (DEC-138).** RESUME when the only
-  unresolved element is a stale inventory inside the verification apparatus and
-  every condition holds: the failure output names the exact discrepancy; the
-  assertion tracks the repository's own artifacts (test names, files, registered
-  codes, generated fixtures), not product behavior; the repair merely reconciles
-  that inventory with a change the task's accepted scope legitimately made; and
-  it changes no threshold, budget, or tolerance and deletes, weakens, narrows,
-  or re-points no test or assertion. Name the stale inventory and the
-  reconciling edit in the TRG entry. A failing product test, a threshold change,
-  or a change to what the gate checks is never eligible, and any doubt is BLOCK.
-  You may fix the bookkeeping; you may never fix the verdict.
+- RESUME means the trigger is demonstrably misclassified, already resolved by
+  verified evidence, or covered by an accepted decision. It is safe for the
+  Phase Runner to advance.
+- REPAIR means the trigger is real, local, decision-free, inside the existing
+  task authority, and changes no protected decision, gate definition,
+  threshold, command, or assertion strength. The Phase Runner must not advance:
+  it records `TASK-RECOVERY`, dispatches a same-task continuation, reruns
+  verification, and repeats any affected independent re-review.
+- A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
+  in-scope quality-gate failure, missing/skipped command, session ending with
+  durable partial work, or incomplete implementation is normally REPAIR.
+  Incomplete work is not a blocker.
+- For QA REPAIR, confirm each Must-fix finding names an owning task, bounded
+  decision-free scope, required evidence, and a fresh independent re-review.
+- BLOCK requires a protected category: product, architecture, data model,
+  public interface, dependency approval, security/data loss, unrepairable
+  external infrastructure, specification contradiction, or
+  recovery-budget-exhausted. A red test, failed gate, report defect, or number
+  of changed files is not a protected category by itself.
+- DEC-138's bookkeeping-only RESUME ground is superseded by general causal
+  REPAIR. Failed attempts stay failed evidence; neither RESUME nor REPAIR
+  rewrites them.
 - You do not execute verification commands, so you never verify commits
   yourself. Treat a commit as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and
@@ -153,6 +157,18 @@ Local decisions made: <bullets or none>
 References: <file:line or doc section>
 
 VERDICT: RESUME
+```
+
+Triage REPAIR:
+
+```text
+TRG-<phase>-<NNN> logged: <summary>
+Trigger: <copy from prompt>
+Owning task: <task path>
+Recovery scope: <bounded causal repair>
+Required verification/re-review: <commands and review path>
+
+VERDICT: REPAIR
 ```
 
 Triage BLOCK:

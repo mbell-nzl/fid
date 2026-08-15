@@ -320,6 +320,57 @@ handoffs defined by the binding V1 repository workflow.
 Use when: operating the current fid build pipeline.
 Avoid: encoding them in fid's forward domain model or backend contract.
 
+**RESUME (V1 disposition)**
+Definition: A triage verdict that the trigger is cleared, demonstrably
+misclassified, or already resolved with verified evidence, so orchestration may
+advance from the recorded checkpoint.
+Use when: no repair or protected decision remains.
+Avoid: “advance now and repair later.”
+
+**REPAIR (V1 disposition)**
+Definition: A triage verdict that a real condition is local, in scope,
+authorized, and decision-free, requiring a same-task Developer continuation
+and verification before orchestration advances.
+Use when: incomplete work, a gate/report defect, local recovery, or bounded QA
+rework can be completed under the accepted task contract.
+Avoid: closing the task/finding or requesting Human attention.
+
+**BLOCK (V1 disposition)**
+Definition: A triage verdict that a protected decision, unsafe condition,
+unrecoverable external dependency, specification contradiction, or exhausted
+bounded recovery prevents progress.
+Use when: TL-Lite or the full Tech Lead must allocate or reference an ESC and
+request the named Human or external-authority action.
+Avoid: using it as a synonym for red, incomplete, failed, or must-fix.
+
+**Trigger signature (V1)**
+Definition: The stable identity of one recovery condition, composed from the
+owning task or review, recovery/blocker category, and durable source identity.
+Use when: correlating triage, continuation attempts, checkpoints, and evidence.
+Avoid: changing it merely because a session or orchestrator changed.
+
+**Recovery attempt (V1)**
+Definition: One Phase Runner-mediated Developer continuation for one Trigger
+signature. Same-session red/green work is not an orchestration Recovery attempt.
+Use when: recording total and consecutive no-progress attempts.
+Avoid: resetting the count for context refresh or planned handoff.
+
+**V1 recovery ledger event**
+Definition: An append-only run-ledger entry: `TASK-RECOVERY` records a
+classified recovery need and checkpoint; `REPAIR` records one continuation and
+its resolution evidence; `RUN-RESUME` records runner-state reconciliation
+before orchestration continues.
+Use when: recovering the current repository delivery workflow from files.
+Avoid: treating these Markdown entries as forward fid product **Events**.
+
+**Protected blocker category (V1)**
+Definition: The closed reason permitting `BLOCK`: `product-decision`,
+`architecture-decision`, `data-model-decision`, `public-interface-decision`,
+`dependency-approval`, `security-or-data-loss`, `external-infrastructure`,
+`specification-contradiction`, or `recovery-budget-exhausted`.
+Use when: Human or named external-authority attention is genuinely required.
+Avoid: classifying ordinary implementation, verification, report, or QA repair.
+
 ## Machine Interface
 
 **Response Envelope**
@@ -358,4 +409,4 @@ forward fid entities. They may appear in historical phase records, the current
 V1 repository delivery process, or the external kit's temporary engineering
 memory. New fid product specifications must use the retained terms above.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+*Last updated: 2026-08-15 (workflow recovery dispositions; ADR-0011 boundary preserved)*

@@ -2,10 +2,20 @@
 
 Reviewer: QA Lead
 Date: <YYYY-MM-DD>
+Review type: INITIAL / FRESH INDEPENDENT RE-REVIEW
+Prior review: <path or none>
 
 ## Verdict
 
-PASS / PASS WITH IMPROVEMENTS / BLOCK
+PASS / REPAIR / BLOCK
+
+- `PASS`: no Must-fix finding remains; Improvements may remain.
+- `REPAIR`: valid Must-fix work has bounded, decision-free ownership in an
+  existing phase task. The phase does not advance.
+- `BLOCK`: protected authority is required, repair exceeds existing phase task
+  scope, or the bounded no-progress recovery budget is exhausted. A failed gate,
+  incomplete in-scope work, or a valid Must-fix finding is not `BLOCK` by
+  itself.
 
 ## Scope And Evidence
 
@@ -64,9 +74,12 @@ evidence.
 
 ## Mid-Phase Review Disposition
 
-| Review | Verdict | Blocking Fixed? | Improvement Disposition | ESC References |
+| Review | Outcome | Must-fix disposition | Fresh re-review evidence | Blocker candidate / existing ESC |
 |---|---|---|---|---|
-| review-<R>.md | CONTINUE / BLOCK | YES/NO/N/A | <fixed/carry-forward/cancelled> | <ESC-NNN or none> |
+| review-<R>.md | PASS / REPAIR / BLOCK | <none, owning repair task, or protected boundary> | <resolving review and evidence or N/A> | <candidate summary, ESC-<phase>-<NNN>, or none> |
+
+No mid-phase `REPAIR` is closed by implementation evidence alone. Cite the
+fresh independent review that resolved each original Must-fix finding.
 
 ## Documentation Review
 
@@ -102,11 +115,7 @@ remain unconfirmed until the Human checklist records outcomes.
 
 ## Findings
 
-### Blocking
-
-- None.
-
-### Major
+### Must-fix
 
 - None.
 
@@ -114,6 +123,44 @@ remain unconfirmed until the Human checklist records outcomes.
 
 - None.
 
+## Prior Finding Resolution
+
+Required for a fresh independent final re-review. Preserve every Must-fix
+finding from the prior final review and resolve it only from newly inspected
+evidence. Rerun the representative affected verification; do not modify or
+append corrections to the prior review.
+
+| Prior finding | Owning task | Result | Fresh evidence |
+|---|---|---|---|
+| <finding ID> | task-<M> | RESOLVED / STILL OPEN / PROTECTED BLOCKER CANDIDATE | <command result, diff, commit, or artifact> |
+
+## Repair Plan
+
+Required for outcome `REPAIR`. Every Must-fix finding needs one row. The owning
+task must already exist in the phase, and repair must not change accepted
+product, architecture, data-model, public-interface, dependency, security, or
+validation-contract decisions.
+
+| Finding | Owning task | Affected assertion | Exact repair boundary | Required evidence | Fresh re-review scope |
+|---|---|---|---|---|---|
+| <finding ID> | task-<M> | VAL-NNN / no VAL | <bounded files/behavior> | <exact test, gate, report, or file-state proof> | <what the new QA Lead must inspect and rerun> |
+
+## Blocker Candidates
+
+- None.
+
+Required for outcome `BLOCK`. Each candidate names a protected category,
+evidence, why it is outside existing repair authority, the authority or external
+action required, and any existing `ESC-<phase>-<NNN>`. QA roles do not allocate
+`ESC` identities or edit escalation registers.
+
 ## Unresolved Risks And Carry-Forward Candidates
 
 - None.
+
+## Final Decision
+
+```text
+Must-fix: <count>  Improvement: <count>  Blocker candidates: <count>
+VERDICT: PASS | REPAIR | BLOCK
+```
