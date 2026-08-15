@@ -25,7 +25,7 @@ func TestIssueClaimCommandCreatesLiveClaimWithDefaultTTL(t *testing.T) {
 		t.Fatalf("stderr = %q, want claim confirmation", stderr)
 	}
 
-	claimsStdout, claimsStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "claims", "--format", "json")
+	claimsStdout, claimsStderr := runFIDCommand(t, workspace, "claim", "list", "--by", "developer")
 	if claimsStderr != "" {
 		t.Fatalf("claims stderr = %q, want empty", claimsStderr)
 	}
@@ -639,7 +639,7 @@ type issueClaimSectionEntry struct {
 func mustReadIssueClaimsSection(t *testing.T, workspace, issueID string) []issueClaimSectionEntry {
 	t.Helper()
 
-	claimsStdout, claimsStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "claims", "--format", "json")
+	claimsStdout, claimsStderr := runFIDCommand(t, workspace, "claim", "list")
 	if claimsStderr != "" {
 		t.Fatalf("claims stderr = %q, want empty", claimsStderr)
 	}

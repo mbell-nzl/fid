@@ -46,10 +46,7 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 		}
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
-	}
+	issueStdout := mustGetIssueJSON(t, workspace, issueID)
 	var got struct {
 		Status string `json:"status"`
 	}
@@ -252,10 +249,7 @@ func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 		}
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
-	}
+	issueStdout := mustGetIssueJSON(t, workspace, issueID)
 	var got struct {
 		Status string `json:"status"`
 	}

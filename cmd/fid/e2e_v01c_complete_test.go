@@ -195,11 +195,37 @@ type task3GateRunRow struct {
 func mustGetTask3CompletionsJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "completions", "--format", "json")
-	if stderr != "" {
-		t.Fatalf("completions stderr = %q, want empty", stderr)
+	rows := mustReadV01ECompletionsForIssue(t, workspace, issueID)
+	views := make([]task3CompletionView, 0, len(rows))
+	for _, row := range rows {
+		var gateResults []task3GateResultView
+		if err := json.Unmarshal([]byte(row.GateResults), &gateResults); err != nil {
+			t.Fatalf("Unmarshal(gate_results) error = %v", err)
+		}
+		var status *string
+		if row.Status != "" {
+			status = &row.Status
+		}
+		var interventionNote *string
+		if row.HumanInterventionNote != "" {
+			interventionNote = &row.HumanInterventionNote
+		}
+		views = append(views, task3CompletionView{
+			ID:                    row.ID,
+			AttemptNumber:         row.AttemptNumber,
+			Status:                status,
+			GatesPassed:           row.GatesPassed,
+			GatesFailed:           row.GatesFailed,
+			GateResults:           gateResults,
+			HumanIntervention:     row.HumanIntervention,
+			HumanInterventionNote: interventionNote,
+		})
 	}
-	return stdout
+	payload, err := json.Marshal(views)
+	if err != nil {
+		t.Fatalf("Marshal(completions) error = %v", err)
+	}
+	return string(payload)
 }
 
 func assertTask3CompletionSnapshot(t *testing.T, completionsJSON string) {

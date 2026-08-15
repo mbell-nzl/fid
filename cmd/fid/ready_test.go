@@ -183,8 +183,8 @@ func TestReadyEpicScopesSelectionAndBlockerStates(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "ready", "--epic", tt.epicID, "--format", "json")
-			got := decodeCommandJSONStructure(t, stdout).(map[string]any)
+			stdout, stderr := runFIDCommand(t, workspace, "--json", "ready", "--epic", tt.epicID)
+			got := decodeCanonicalResult(t, stdout)
 
 			task, hasTask := got["task"]
 			if !hasTask {
@@ -311,12 +311,12 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 		},
 	})
 
-	stdout, stderr := runFIDCommand(t, workspace, "ready", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "ready")
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
-	got := decodeCommandJSONStructure(t, stdout).(map[string]any)
+	got := decodeCanonicalResult(t, stdout)
 	task := got["task"].(map[string]any)
 	if task["id"] != "FID-unattached-top" {
 		t.Fatalf("stdout task id = %#v, want %q", task["id"], "FID-unattached-top")

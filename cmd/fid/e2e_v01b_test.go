@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.T) {
@@ -98,32 +100,30 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	seqListStdout, seqListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", seqEpicID,
 		"--kind", "task",
 		"--order", "sequence",
-		"--format", "json",
 	)
 	if seqListStderr != "" {
 		t.Fatalf("sequential list stderr = %q, want empty", seqListStderr)
 	}
-	if gotIDs := commandIssueListIDs(decodeCommandJSONStructure(t, seqListStdout).([]any)); !equalIssueIDs(gotIDs, []string{seqCurrentID, seqNextID}) {
+	if gotIDs := commandIssueListIDs(decodeCanonicalResult(t, seqListStdout)["issues"].([]any)); !equalIssueIDs(gotIDs, []string{seqCurrentID, seqNextID}) {
 		t.Fatalf("sequential list ids = %#v, want %#v", gotIDs, []string{seqCurrentID, seqNextID})
 	}
 
 	priListStdout, priListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", priEpicID,
 		"--kind", "task",
 		"--order", "priority",
-		"--format", "json",
 	)
 	if priListStderr != "" {
 		t.Fatalf("prioritised list stderr = %q, want empty", priListStderr)
 	}
-	if gotIDs := commandIssueListIDs(decodeCommandJSONStructure(t, priListStdout).([]any)); !equalIssueIDs(gotIDs, []string{priHighID, priLowID}) {
+	if gotIDs := commandIssueListIDs(decodeCanonicalResult(t, priListStdout)["issues"].([]any)); !equalIssueIDs(gotIDs, []string{priHighID, priLowID}) {
 		t.Fatalf("prioritised list ids = %#v, want %#v", gotIDs, []string{priHighID, priLowID})
 	}
 
@@ -217,19 +217,19 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		Priority:       intPointer(1),
 	})
 
-	seqReadyStdout, seqReadyStderr := runFIDCommand(t, workspace, "ready", "--epic", seqEpicID, "--format", "json")
+	seqReadyStdout, seqReadyStderr := runFIDCommand(t, workspace, "--json", "ready", "--epic", seqEpicID)
 	if seqReadyStderr != "" {
 		t.Fatalf("sequential ready stderr = %q, want empty", seqReadyStderr)
 	}
 	assertReadyTaskID(t, seqReadyStdout, seqNextID)
 
-	priReadyStdout, priReadyStderr := runFIDCommand(t, workspace, "ready", "--epic", priEpicID, "--format", "json")
+	priReadyStdout, priReadyStderr := runFIDCommand(t, workspace, "--json", "ready", "--epic", priEpicID)
 	if priReadyStderr != "" {
 		t.Fatalf("prioritised ready stderr = %q, want empty", priReadyStderr)
 	}
 	assertReadyTaskID(t, priReadyStdout, priHighID)
 
-	projectReadyStdout, projectReadyStderr := runFIDCommand(t, workspace, "ready", "--format", "json")
+	projectReadyStdout, projectReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
 	if projectReadyStderr != "" {
 		t.Fatalf("project ready stderr = %q, want empty", projectReadyStderr)
 	}
@@ -248,11 +248,10 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	finalSeqListStdout, finalSeqListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", seqEpicID,
 		"--kind", "task",
 		"--order", "sequence",
-		"--format", "json",
 	)
 	if finalSeqListStderr != "" {
 		t.Fatalf("final sequential list stderr = %q, want empty", finalSeqListStderr)
@@ -261,11 +260,10 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	finalPriListStdout, finalPriListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", priEpicID,
 		"--kind", "task",
 		"--order", "priority",
-		"--format", "json",
 	)
 	if finalPriListStderr != "" {
 		t.Fatalf("final prioritised list stderr = %q, want empty", finalPriListStderr)
@@ -295,11 +293,10 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	afterSeqListStdout, afterSeqListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", seqEpicID,
 		"--kind", "task",
 		"--order", "sequence",
-		"--format", "json",
 	)
 	if afterSeqListStderr != "" {
 		t.Fatalf("sequential list after rebuild stderr = %q, want empty", afterSeqListStderr)
@@ -311,11 +308,10 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	afterPriListStdout, afterPriListStderr := runFIDCommand(
 		t,
 		workspace,
-		"issue", "list",
+		"--json", "issue", "list",
 		"--epic", priEpicID,
 		"--kind", "task",
 		"--order", "priority",
-		"--format", "json",
 	)
 	if afterPriListStderr != "" {
 		t.Fatalf("prioritised list after rebuild stderr = %q, want empty", afterPriListStderr)
@@ -325,9 +321,9 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 	}
 
 	for key, args := range map[string][]string{
-		"seq_ready":     {"ready", "--epic", seqEpicID, "--format", "json"},
-		"pri_ready":     {"ready", "--epic", priEpicID, "--format", "json"},
-		"project_ready": {"ready", "--format", "json"},
+		"seq_ready":     {"--json", "ready", "--epic", seqEpicID},
+		"pri_ready":     {"--json", "ready", "--epic", priEpicID},
+		"project_ready": {"--json", "ready"},
 	} {
 		stdout, stderr := runFIDCommand(t, workspace, args...)
 		if stderr != "" {
@@ -354,7 +350,7 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	beforeReadyStdout, beforeReadyStderr := runFIDCommand(t, workspace, "ready", "--format", "json")
+	beforeReadyStdout, beforeReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
 	if beforeReadyStderr != "" {
 		t.Fatalf("ready before completion stderr = %q, want empty", beforeReadyStderr)
 	}
@@ -371,8 +367,8 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
 	}
 
-	emptyReadyStdout, emptyReadyStderr := runFIDCommand(t, workspace, "ready", "--format", "json")
-	if strings.TrimSpace(emptyReadyStdout) != `{"task":null}` {
+	emptyReadyStdout, emptyReadyStderr := runFIDCommand(t, workspace, "--json", "ready")
+	if decodeCanonicalResult(t, emptyReadyStdout)["task"] != nil {
 		t.Fatalf("empty ready stdout = %q, want exact null payload", emptyReadyStdout)
 	}
 	if emptyReadyStderr != "" {
@@ -437,11 +433,28 @@ func assertIssueReadBack(t *testing.T, workspace, issueID string, want issueRead
 	if got.WorkflowID != want.WorkflowID {
 		t.Fatalf("issue %s workflow_id = %q, want %q", issueID, got.WorkflowID, want.WorkflowID)
 	}
-	if got.OwnerRole == nil || *got.OwnerRole != want.OwnerRole {
-		t.Fatalf("issue %s owner_role = %#v, want %q", issueID, got.OwnerRole, want.OwnerRole)
+	if got.OwnerRole != nil {
+		t.Fatalf("issue %s canonical owner_role = %#v, want field absent", issueID, got.OwnerRole)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, issueID); gotRole != want.OwnerRole {
+		t.Fatalf("issue %s stored owner_role = %q, want %q", issueID, gotRole, want.OwnerRole)
 	}
 	assertOptionalInt(t, issueID, "sequence", got.Sequence, want.Sequence)
 	assertOptionalInt(t, issueID, "priority", got.Priority, want.Priority)
+}
+
+func mustIssueOwnerRole(t *testing.T, workspace, issueID string) string {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	var role string
+	if err := conn.QueryRow("SELECT owner_role FROM issues WHERE id = ?", issueID).Scan(&role); err != nil {
+		t.Fatalf("query owner_role for %s: %v", issueID, err)
+	}
+	return role
 }
 
 func assertOptionalInt(t *testing.T, issueID, field string, got, want *int) {
@@ -461,7 +474,7 @@ func assertOptionalInt(t *testing.T, issueID, field string, got, want *int) {
 func assertReadyTaskID(t *testing.T, stdout, wantTaskID string) {
 	t.Helper()
 
-	payload := decodeCommandJSONStructure(t, stdout).(map[string]any)
+	payload := decodeCanonicalResult(t, stdout)
 	task, ok := payload["task"].(map[string]any)
 	if !ok {
 		t.Fatalf("ready payload = %#v, want task object", payload)

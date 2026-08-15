@@ -60,10 +60,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 		t.Fatalf("activity_log rows after label add = %d, want %d", got, activityBefore+1)
 	}
 
-	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
+	getStdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var issue struct {
 		Labels []string `json:"labels"`
@@ -402,10 +399,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 		t.Fatalf("activity_log rows after label remove = %d, want %d", got, activityBefore+1)
 	}
 
-	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
+	getStdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var issue struct {
 		Labels []string `json:"labels"`

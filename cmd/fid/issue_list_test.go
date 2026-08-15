@@ -28,34 +28,33 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 	}{
 		{
 			name:    "kind and status",
-			args:    []string{"issue", "list", "--kind", "task", "--status", "todo", "--format", "json"},
+			args:    []string{"--json", "issue", "list", "--kind", "task", "--status", "todo"},
 			wantIDs: []string{"FID-task01"},
 		},
 		{
 			name:    "status category",
-			args:    []string{"issue", "list", "--status-category", "started", "--format", "json"},
+			args:    []string{"--json", "issue", "list", "--status-category", "started"},
 			wantIDs: []string{"FID-task02"},
 		},
 		{
 			name: "combined filters",
 			args: []string{
-				"issue", "list",
+				"--json", "issue", "list",
 				"--epic", "FID-epic01",
 				"--label", "core",
 				"--priority", "1",
 				"--has-concerns",
-				"--format", "json",
 			},
 			wantIDs: []string{"FID-task01"},
 		},
 		{
 			name:    "deterministic order",
-			args:    []string{"issue", "list", "--kind", "task", "--order", "priority", "--format", "json"},
+			args:    []string{"--json", "issue", "list", "--kind", "task", "--order", "priority"},
 			wantIDs: []string{"FID-task02", "FID-task01", "FID-task04", "FID-task03"},
 		},
 		{
 			name:    "empty result",
-			args:    []string{"issue", "list", "--kind", "task", "--status", "cancelled", "--format", "json"},
+			args:    []string{"--json", "issue", "list", "--kind", "task", "--status", "cancelled"},
 			wantIDs: []string{},
 		},
 	}
@@ -67,7 +66,7 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 				t.Fatalf("stderr = %q, want empty", stderr)
 			}
 
-			rows := decodeCommandJSONStructure(t, stdout).([]any)
+			rows := decodeCanonicalResult(t, stdout)["issues"].([]any)
 			if gotIDs := commandIssueListIDs(rows); !equalIssueIDs(gotIDs, tt.wantIDs) {
 				t.Fatalf("stdout ids = %#v, want %#v", gotIDs, tt.wantIDs)
 			}

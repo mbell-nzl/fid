@@ -153,10 +153,11 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 		t.Fatalf("stdout = %q, want quoted criterion text", stdout)
 	}
 
-	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	getStdout, getStderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
+		t.Fatalf("issue ac list stderr = %q, want empty", getStderr)
 	}
+	getStdout = mustCanonicalAcceptanceCriteriaJSON(t, getStdout)
 
 	var got []struct {
 		ID      string `json:"id"`
@@ -943,14 +944,62 @@ type commandAcceptanceCriterion struct {
 func mustGetAcceptanceCriteria(t *testing.T, workspace, issueID string) []commandAcceptanceCriterion {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if stderr != "" {
-		t.Fatalf("issue get acceptance stderr = %q, want empty", stderr)
+		t.Fatalf("issue ac list stderr = %q, want empty", stderr)
 	}
+	stdout = mustCanonicalAcceptanceCriteriaJSON(t, stdout)
 
 	var got []commandAcceptanceCriterion
 	if err := json.Unmarshal([]byte(stdout), &got); err != nil {
 		t.Fatalf("Unmarshal() error = %v", err)
 	}
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	for index := range got {
+		got[index].LatestVerifications = make(map[string]map[string]any)
+		rows, err := conn.Query(`
+			SELECT verifier_role, status, verified_at
+			FROM ac_verifications
+			WHERE ac_id = ?
+			ORDER BY rowid
+		`, got[index].ID)
+		if err != nil {
+			t.Fatalf("query verifications for %s: %v", got[index].ID, err)
+		}
+		for rows.Next() {
+			var role, status, verifiedAt string
+			if err := rows.Scan(&role, &status, &verifiedAt); err != nil {
+				closeRows(t, rows)
+				t.Fatalf("scan verification for %s: %v", got[index].ID, err)
+			}
+			got[index].LatestVerifications[role] = map[string]any{
+				"status":      status,
+				"verified_at": verifiedAt,
+			}
+		}
+		if err := rows.Err(); err != nil {
+			closeRows(t, rows)
+			t.Fatalf("iterate verifications for %s: %v", got[index].ID, err)
+		}
+		closeRows(t, rows)
+	}
 	return got
+}
+
+func mustCanonicalAcceptanceCriteriaJSON(t *testing.T, output string) string {
+	t.Helper()
+	result := decodeCanonicalResult(t, output)
+	criteria, ok := result["acceptance_criteria"]
+	if !ok {
+		t.Fatalf("issue ac list result = %#v, missing acceptance_criteria", result)
+	}
+	payload, err := json.Marshal(criteria)
+	if err != nil {
+		t.Fatalf("Marshal(acceptance criteria) error = %v", err)
+	}
+	return string(payload)
 }

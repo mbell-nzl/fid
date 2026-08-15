@@ -182,11 +182,8 @@ func TestV01CClosureSmoke(t *testing.T) {
 		t.Fatalf("ac list criteria len = %d, want 1", len(criteria))
 	}
 
-	if got := decodeIssueConcernState(t, mustGetIssueJSON(t, workspace, issueID)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
+	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
 		t.Fatalf("before raise concern state = %#v, want false/0", got)
-	}
-	if got := decodeIssueListConcernState(t, mustGetIssueListJSON(t, workspace), issueID); got.ConcernsRaised || got.OpenConcernsCount != 0 {
-		t.Fatalf("issue list before raise concern state = %#v, want false/0", got)
 	}
 
 	_, firstCompleteStderr := runFIDCommand(
@@ -209,11 +206,8 @@ func TestV01CClosureSmoke(t *testing.T) {
 	)
 	concernID := parseConcernID(t, raiseStderr)
 
-	if got := decodeIssueConcernState(t, mustGetIssueJSON(t, workspace, issueID)); !got.ConcernsRaised || got.OpenConcernsCount != 1 {
+	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); !got.ConcernsRaised || got.OpenConcernsCount != 1 {
 		t.Fatalf("after raise concern state = %#v, want true/1", got)
-	}
-	if got := decodeIssueListConcernState(t, mustGetIssueListJSON(t, workspace), issueID); !got.ConcernsRaised || got.OpenConcernsCount != 1 {
-		t.Fatalf("issue list after raise concern state = %#v, want true/1", got)
 	}
 
 	openConcernsStdout, openConcernsStderr := runFIDCommand(
@@ -254,11 +248,8 @@ func TestV01CClosureSmoke(t *testing.T) {
 		t.Fatalf("address stderr = %q, want concern confirmation", addressStderr)
 	}
 
-	if got := decodeIssueConcernState(t, mustGetIssueJSON(t, workspace, issueID)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
+	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
 		t.Fatalf("after address concern state = %#v, want false/0", got)
-	}
-	if got := decodeIssueListConcernState(t, mustGetIssueListJSON(t, workspace), issueID); got.ConcernsRaised || got.OpenConcernsCount != 0 {
-		t.Fatalf("issue list after address concern state = %#v, want false/0", got)
 	}
 
 	addressedConcernsStdout, addressedConcernsStderr := runFIDCommand(
@@ -285,13 +276,7 @@ func TestV01CClosureSmoke(t *testing.T) {
 		t.Fatalf("addressed concern addressed_in_completion_id = %v, want %q", got, secondCompletionID)
 	}
 
-	issueConcernsStdout, issueConcernsStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "get", issueID,
-		"--section", "concerns",
-		"--format", "json",
-	)
+	issueConcernsStdout, issueConcernsStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
 	if issueConcernsStderr != "" {
 		t.Fatalf("issue concerns stderr = %q, want empty", issueConcernsStderr)
 	}
@@ -371,46 +356,29 @@ func mustGetConcernListJSON(t *testing.T, workspace string) string {
 func mustGetIssueListJSON(t *testing.T, workspace string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "list", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "list")
 	if stderr != "" {
 		t.Fatalf("issue list stderr = %q, want empty", stderr)
 	}
-	return stdout
-}
-
-func decodeIssueConcernState(t *testing.T, issueJSON string) issueConcernState {
-	t.Helper()
-
-	var result issueConcernState
-	if err := json.Unmarshal([]byte(issueJSON), &result); err != nil {
-		t.Fatalf("Unmarshal(issue) error = %v", err)
+	result := decodeCanonicalResult(t, stdout)
+	payload, err := json.Marshal(result["issues"])
+	if err != nil {
+		t.Fatalf("Marshal(issue list result) error = %v", err)
 	}
-	return result
+	return string(payload)
 }
 
-func decodeIssueListConcernState(t *testing.T, listJSON, issueID string) issueConcernState {
+func decodeConcernListState(t *testing.T, listJSON string) issueConcernState {
 	t.Helper()
-
 	rows := decodeCommandJSONStructure(t, listJSON).([]any)
+	open := 0
 	for _, row := range rows {
 		object, ok := row.(map[string]any)
-		if !ok {
-			continue
-		}
-		if object["id"] != issueID {
-			continue
-		}
-		openConcernsCount, err := object["open_concerns_count"].(json.Number).Int64()
-		if err != nil {
-			t.Fatalf("open_concerns_count for %q error = %v", issueID, err)
-		}
-		return issueConcernState{
-			ConcernsRaised:    object["concerns_raised"].(bool),
-			OpenConcernsCount: int(openConcernsCount),
+		if ok && object["status"] == "open" {
+			open++
 		}
 	}
-	t.Fatalf("issue %q not found in issue list", issueID)
-	return issueConcernState{}
+	return issueConcernState{ConcernsRaised: open > 0, OpenConcernsCount: open}
 }
 
 func concernRowByID(t *testing.T, rows []concernParityRow, concernID string) concernParityRow {

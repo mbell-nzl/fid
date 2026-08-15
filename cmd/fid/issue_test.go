@@ -76,8 +76,11 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 	if got.ParentID != nil {
 		t.Fatalf("parent_id = %#v, want nil", got.ParentID)
 	}
-	if got.OwnerRole == nil || *got.OwnerRole != "tl" {
-		t.Fatalf("owner_role = %#v, want tl", got.OwnerRole)
+	if got.OwnerRole != nil {
+		t.Fatalf("canonical owner_role = %#v, want field absent", got.OwnerRole)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, issueID); gotRole != "tl" {
+		t.Fatalf("stored owner_role = %q, want tl", gotRole)
 	}
 	if got.Labels == nil || len(got.Labels) != 0 {
 		t.Fatalf("labels = %#v, want empty array", got.Labels)
@@ -172,8 +175,11 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if epic.ParentID != nil {
 		t.Fatalf("epic parent_id = %#v, want nil", epic.ParentID)
 	}
-	if epic.OwnerRole == nil || *epic.OwnerRole != "tl" {
-		t.Fatalf("epic owner_role = %#v, want tl", epic.OwnerRole)
+	if epic.OwnerRole != nil {
+		t.Fatalf("epic canonical owner_role = %#v, want field absent", epic.OwnerRole)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, epicID); gotRole != "tl" {
+		t.Fatalf("epic stored owner_role = %q, want tl", gotRole)
 	}
 
 	task := readIssue(taskID)
@@ -192,8 +198,11 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
 		t.Fatalf("task spec_md_path = %#v", task.SpecMDPath)
 	}
-	if task.OwnerRole == nil || *task.OwnerRole != "developer" || task.OwnerActor != nil {
-		t.Fatalf("task internal owner defaults = (%#v, %#v), want developer and nil", task.OwnerRole, task.OwnerActor)
+	if task.OwnerRole != nil || task.OwnerActor != nil {
+		t.Fatalf("task canonical owner fields = (%#v, %#v), want fields absent", task.OwnerRole, task.OwnerActor)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, taskID); gotRole != "developer" {
+		t.Fatalf("task stored owner_role = %q, want developer", gotRole)
 	}
 	if want := []string{"core", "phase-4"}; !reflect.DeepEqual(task.Labels, want) {
 		t.Fatalf("task labels = %#v, want %#v", task.Labels, want)
@@ -203,8 +212,11 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if unattachedTask.ParentID != nil {
 		t.Fatalf("unattached task parent_id = %#v, want nil", unattachedTask.ParentID)
 	}
-	if unattachedTask.OwnerRole == nil || *unattachedTask.OwnerRole != "developer" {
-		t.Fatalf("unattached task owner_role = %#v, want developer", unattachedTask.OwnerRole)
+	if unattachedTask.OwnerRole != nil {
+		t.Fatalf("unattached task canonical owner_role = %#v, want field absent", unattachedTask.OwnerRole)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, unattachedTaskID); gotRole != "developer" {
+		t.Fatalf("unattached task stored owner_role = %q, want developer", gotRole)
 	}
 
 	subtask := readIssue(subtaskID)
@@ -214,8 +226,11 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	if subtask.ParentID == nil || *subtask.ParentID != taskID {
 		t.Fatalf("subtask parent_id = %#v, want %q", subtask.ParentID, taskID)
 	}
-	if subtask.OwnerRole == nil || *subtask.OwnerRole != "developer" {
-		t.Fatalf("subtask owner_role = %#v, want developer", subtask.OwnerRole)
+	if subtask.OwnerRole != nil {
+		t.Fatalf("subtask canonical owner_role = %#v, want field absent", subtask.OwnerRole)
+	}
+	if gotRole := mustIssueOwnerRole(t, workspace, subtaskID); gotRole != "developer" {
+		t.Fatalf("subtask stored owner_role = %q, want developer", gotRole)
 	}
 
 }
@@ -541,23 +556,12 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	})
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
-
-	var before struct {
-		ConcernsRaised    bool    `json:"concerns_raised"`
-		OpenConcernsCount int     `json:"open_concerns_count"`
-		TriageStatus      *string `json:"triage_status"`
+	beforeConcerns := mustGetConcernListJSONForIssue(t, workspace, issueID)
+	if len(beforeConcerns) != 1 || beforeConcerns[0].Status != "open" {
+		t.Fatalf("before concerns = %#v, want one open concern", beforeConcerns)
 	}
-	if err := json.Unmarshal([]byte(beforeStdout), &before); err != nil {
-		t.Fatalf("Unmarshal(before) error = %v", err)
-	}
-	if !before.ConcernsRaised {
-		t.Fatal("before concerns_raised = false, want true")
-	}
-	if before.OpenConcernsCount != 1 {
-		t.Fatalf("before open_concerns_count = %d, want 1", before.OpenConcernsCount)
-	}
-	if before.TriageStatus == nil || *before.TriageStatus != "blocked" {
-		t.Fatalf("before triage_status = %#v, want blocked", before.TriageStatus)
+	if got := mustIssueTriageStatus(t, workspace, issueID); got == nil || *got != "blocked" {
+		t.Fatalf("before triage_status = %#v, want blocked", got)
 	}
 
 	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
@@ -570,6 +574,12 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if beforeStdout != afterStdout {
 		t.Fatalf("issue JSON after rebuild = %q, want %q", afterStdout, beforeStdout)
+	}
+	if afterConcerns := mustGetConcernListJSONForIssue(t, workspace, issueID); !reflect.DeepEqual(afterConcerns, beforeConcerns) {
+		t.Fatalf("concerns after rebuild = %#v, want %#v", afterConcerns, beforeConcerns)
+	}
+	if got := mustIssueTriageStatus(t, workspace, issueID); got == nil || *got != "blocked" {
+		t.Fatalf("after triage_status = %#v, want blocked", got)
 	}
 }
 
@@ -952,6 +962,44 @@ func mustGetIssueJSON(t *testing.T, workspace, issueID string) string {
 	return string(payload)
 }
 
+type issueConcernListItem struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+}
+
+func mustGetConcernListJSONForIssue(t *testing.T, workspace, issueID string) []issueConcernListItem {
+	t.Helper()
+
+	stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
+	if stderr != "" {
+		t.Fatalf("concern list for %s stderr = %q, want empty", issueID, stderr)
+	}
+	var concerns []issueConcernListItem
+	if err := json.Unmarshal([]byte(stdout), &concerns); err != nil {
+		t.Fatalf("Unmarshal(concern list for %s) error = %v", issueID, err)
+	}
+	return concerns
+}
+
+func mustIssueTriageStatus(t *testing.T, workspace, issueID string) *string {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	var status sql.NullString
+	if err := conn.QueryRow(`SELECT triage_status FROM issues_enriched WHERE id = ?`, issueID).Scan(&status); err != nil {
+		t.Fatalf("query triage_status for %s: %v", issueID, err)
+	}
+	if !status.Valid {
+		return nil
+	}
+	return &status.String
+}
+
 func seedCommandLabels(t *testing.T, workspace string, labels ...string) {
 	t.Helper()
 
@@ -1022,6 +1070,20 @@ func decodeCommandJSONStructure(t *testing.T, value string) any {
 	var result any
 	if err := decoder.Decode(&result); err != nil {
 		t.Fatalf("Decode JSON structure error = %v", err)
+	}
+	return result
+}
+
+func decodeCanonicalResult(t *testing.T, value string) map[string]any {
+	t.Helper()
+
+	envelope, ok := decodeCommandJSONStructure(t, value).(map[string]any)
+	if !ok {
+		t.Fatalf("canonical response = %#v, want envelope object", value)
+	}
+	result, ok := envelope["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("canonical response result = %#v, want result object", envelope["result"])
 	}
 	return result
 }

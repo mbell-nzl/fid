@@ -587,10 +587,7 @@ func TestIssueTransitionChangesStateAndPrintsConfirmation(t *testing.T) {
 		t.Fatalf("stderr = %q, want transition confirmation", transitionStderr)
 	}
 
-	stdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
+	stdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var got struct {
 		Status         string `json:"status"`
@@ -615,10 +612,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI invalid transition", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	beforeStdout, beforeStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if beforeStderr != "" {
-		t.Fatalf("issue get before stderr = %q, want empty", beforeStderr)
-	}
+	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -640,10 +634,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 		}
 	}
 
-	afterStdout, afterStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if afterStderr != "" {
-		t.Fatalf("issue get after stderr = %q, want empty", afterStderr)
-	}
+	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if afterStdout != beforeStdout {
 		t.Fatalf("issue JSON after rejected transition = %q, want %q", afterStdout, beforeStdout)
 	}
@@ -809,10 +800,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 				expireTransitionClaimCLI(t, workspace, issueID, 2*time.Hour)
 			}
 
-			beforeStdout, beforeStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-			if beforeStderr != "" {
-				t.Fatalf("issue get before stderr = %q, want empty", beforeStderr)
-			}
+			beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
 			journalPath := mustJournalPath(t, workspace)
 			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -830,10 +818,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 				}
 			}
 
-			afterStdout, afterStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-			if afterStderr != "" {
-				t.Fatalf("issue get after stderr = %q, want empty", afterStderr)
-			}
+			afterStdout := mustGetIssueJSON(t, workspace, issueID)
 			if afterStdout != beforeStdout {
 				t.Fatalf("issue JSON after rejected transition = %q, want %q", afterStdout, beforeStdout)
 			}

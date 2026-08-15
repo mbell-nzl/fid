@@ -369,6 +369,7 @@ type v01ECompletionRow struct {
 	ID                    string
 	IssueID               string
 	AttemptNumber         int
+	DeveloperRole         string
 	Status                string
 	NotesMDPath           string
 	ActualTokens          int
@@ -525,12 +526,12 @@ func mustReadV01ECompletionsForIssue(t *testing.T, workspace, issueID string) []
 	defer closeCommandDB(t, conn)
 
 	rows, err := conn.Query(`
-		SELECT id, issue_id, attempt_number, COALESCE(status, ''), COALESCE(notes_md_path, ''), COALESCE(actual_tokens, -1),
+		SELECT id, issue_id, attempt_number, COALESCE(developer_role, ''), COALESCE(status, ''), COALESCE(notes_md_path, ''), COALESCE(actual_tokens, -1),
 			COALESCE(commit_hashes, ''), COALESCE(files_touched, ''), gates_passed, gates_failed, COALESCE(gate_results, ''),
 			human_intervention, COALESCE(human_intervention_note, ''), COALESCE(completed_at, '')
 		FROM task_completions
 		WHERE issue_id = ?
-		ORDER BY id
+		ORDER BY attempt_number DESC, id DESC
 	`, issueID)
 	if err != nil {
 		t.Fatalf("query task_completions for %s: %v", issueID, err)
@@ -544,6 +545,7 @@ func mustReadV01ECompletionsForIssue(t *testing.T, workspace, issueID string) []
 			&row.ID,
 			&row.IssueID,
 			&row.AttemptNumber,
+			&row.DeveloperRole,
 			&row.Status,
 			&row.NotesMDPath,
 			&row.ActualTokens,

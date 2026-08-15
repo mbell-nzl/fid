@@ -58,13 +58,7 @@ func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 		t.Fatalf("stderr = %q, want summary", stderr)
 	}
 
-	concernsStdout, concernsStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "get", issueID,
-		"--section", "concerns",
-		"--format", "json",
-	)
+	concernsStdout, concernsStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
 	if concernsStderr != "" {
 		t.Fatalf("issue get concerns stderr = %q, want empty", concernsStderr)
 	}
@@ -102,23 +96,14 @@ func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 		t.Fatalf("status = %q, want open", concerns[0].Status)
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
+	openConcerns := 0
+	for _, concern := range concerns {
+		if concern.Status == "open" {
+			openConcerns++
+		}
 	}
-
-	var issue struct {
-		ConcernsRaised    bool `json:"concerns_raised"`
-		OpenConcernsCount int  `json:"open_concerns_count"`
-	}
-	if err := json.Unmarshal([]byte(issueStdout), &issue); err != nil {
-		t.Fatalf("Unmarshal(issue) error = %v", err)
-	}
-	if !issue.ConcernsRaised {
-		t.Fatal("concerns_raised = false, want true")
-	}
-	if issue.OpenConcernsCount != 1 {
-		t.Fatalf("open_concerns_count = %d, want 1", issue.OpenConcernsCount)
+	if openConcerns != 1 {
+		t.Fatalf("open concerns = %d, want 1", openConcerns)
 	}
 }
 
@@ -205,13 +190,7 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 		t.Fatalf("stderr = %q, want addressing completion id", addressStderr)
 	}
 
-	concernsStdout, concernsStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "get", issueID,
-		"--section", "concerns",
-		"--format", "json",
-	)
+	concernsStdout, concernsStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
 	if concernsStderr != "" {
 		t.Fatalf("issue get concerns stderr = %q, want empty", concernsStderr)
 	}
@@ -270,23 +249,14 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 		t.Fatalf("listed addressed_in_completion_id = %#v, want %q", listedConcerns[0].AddressedInCompletionID, addressCompletionID)
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
+	openConcerns := 0
+	for _, concern := range listedConcerns {
+		if concern.Status == "open" {
+			openConcerns++
+		}
 	}
-
-	var issue struct {
-		ConcernsRaised    bool `json:"concerns_raised"`
-		OpenConcernsCount int  `json:"open_concerns_count"`
-	}
-	if err := json.Unmarshal([]byte(issueStdout), &issue); err != nil {
-		t.Fatalf("Unmarshal(issue) error = %v", err)
-	}
-	if issue.ConcernsRaised {
-		t.Fatal("concerns_raised = true, want false")
-	}
-	if issue.OpenConcernsCount != 0 {
-		t.Fatalf("open_concerns_count = %d, want 0", issue.OpenConcernsCount)
+	if openConcerns != 0 {
+		t.Fatalf("open concerns = %d, want 0", openConcerns)
 	}
 }
 

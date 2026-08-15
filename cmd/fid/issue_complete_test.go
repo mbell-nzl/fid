@@ -45,32 +45,11 @@ func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *
 		t.Fatalf("stderr = %q, want commits line", stderr)
 	}
 
-	jsonStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
+	completions := mustGetIssueCompletionViews(t, workspace, issueID)
+	if len(completions) != 1 {
+		t.Fatalf("completions = %#v, want one completion", completions)
 	}
-
-	var got struct {
-		Completions []struct {
-			ID                    string   `json:"id"`
-			AttemptNumber         int      `json:"attempt_number"`
-			DeveloperRole         *string  `json:"developer_role"`
-			Status                *string  `json:"status"`
-			NotesMDPath           *string  `json:"notes_md_path"`
-			ActualTokens          *int     `json:"actual_tokens"`
-			CommitHashes          []string `json:"commit_hashes"`
-			FilesTouched          []string `json:"files_touched"`
-			HumanIntervention     bool     `json:"human_intervention"`
-			HumanInterventionNote *string  `json:"human_intervention_note"`
-		} `json:"completions"`
-	}
-	if err := json.Unmarshal([]byte(jsonStdout), &got); err != nil {
-		t.Fatalf("Unmarshal() error = %v", err)
-	}
-	if len(got.Completions) != 1 {
-		t.Fatalf("completions = %#v, want one completion", got.Completions)
-	}
-	completion := got.Completions[0]
+	completion := completions[0]
 	if !strings.HasPrefix(completion.ID, "TC-") {
 		t.Fatalf("completion id = %q, want TC- prefix", completion.ID)
 	}
@@ -168,53 +147,100 @@ func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t
 		t.Fatalf("second stderr = %q, want attempt 2 confirmation", secondStderr)
 	}
 
-	jsonStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
+	completions := mustGetIssueCompletionViews(t, workspace, issueID)
+	if len(completions) != 2 {
+		t.Fatalf("completions len = %d, want 2", len(completions))
 	}
-
-	var got struct {
-		Completions []struct {
-			AttemptNumber         int     `json:"attempt_number"`
-			Status                *string `json:"status"`
-			ActualTokens          *int    `json:"actual_tokens"`
-			HumanIntervention     bool    `json:"human_intervention"`
-			HumanInterventionNote *string `json:"human_intervention_note"`
-		} `json:"completions"`
+	if completions[0].AttemptNumber != 2 {
+		t.Fatalf("latest attempt_number = %d, want 2", completions[0].AttemptNumber)
 	}
-	if err := json.Unmarshal([]byte(jsonStdout), &got); err != nil {
-		t.Fatalf("Unmarshal() error = %v", err)
+	if completions[0].Status == nil || *completions[0].Status != "dev_complete" {
+		t.Fatalf("latest status = %#v, want dev_complete", completions[0].Status)
 	}
-	if len(got.Completions) != 2 {
-		t.Fatalf("completions len = %d, want 2", len(got.Completions))
+	if completions[0].ActualTokens == nil || *completions[0].ActualTokens != 5000 {
+		t.Fatalf("latest actual_tokens = %#v, want 5000", completions[0].ActualTokens)
 	}
-	if got.Completions[0].AttemptNumber != 2 {
-		t.Fatalf("latest attempt_number = %d, want 2", got.Completions[0].AttemptNumber)
-	}
-	if got.Completions[0].Status == nil || *got.Completions[0].Status != "dev_complete" {
-		t.Fatalf("latest status = %#v, want dev_complete", got.Completions[0].Status)
-	}
-	if got.Completions[0].ActualTokens == nil || *got.Completions[0].ActualTokens != 5000 {
-		t.Fatalf("latest actual_tokens = %#v, want 5000", got.Completions[0].ActualTokens)
-	}
-	if !got.Completions[0].HumanIntervention {
+	if !completions[0].HumanIntervention {
 		t.Fatal("latest human_intervention = false, want true")
 	}
-	if got.Completions[0].HumanInterventionNote == nil || *got.Completions[0].HumanInterventionNote != "paired on final review" {
-		t.Fatalf("latest human_intervention_note = %#v, want paired on final review", got.Completions[0].HumanInterventionNote)
+	if completions[0].HumanInterventionNote == nil || *completions[0].HumanInterventionNote != "paired on final review" {
+		t.Fatalf("latest human_intervention_note = %#v, want paired on final review", completions[0].HumanInterventionNote)
 	}
-	if got.Completions[1].AttemptNumber != 1 {
-		t.Fatalf("prior attempt_number = %d, want 1", got.Completions[1].AttemptNumber)
+	if completions[1].AttemptNumber != 1 {
+		t.Fatalf("prior attempt_number = %d, want 1", completions[1].AttemptNumber)
 	}
-	if got.Completions[1].Status == nil || *got.Completions[1].Status != "superseded" {
-		t.Fatalf("prior status = %#v, want superseded", got.Completions[1].Status)
+	if completions[1].Status == nil || *completions[1].Status != "superseded" {
+		t.Fatalf("prior status = %#v, want superseded", completions[1].Status)
 	}
-	if got.Completions[1].HumanIntervention {
+	if completions[1].HumanIntervention {
 		t.Fatal("prior human_intervention = true, want false")
 	}
-	if got.Completions[1].HumanInterventionNote != nil {
-		t.Fatalf("prior human_intervention_note = %#v, want nil", got.Completions[1].HumanInterventionNote)
+	if completions[1].HumanInterventionNote != nil {
+		t.Fatalf("prior human_intervention_note = %#v, want nil", completions[1].HumanInterventionNote)
 	}
+}
+
+type commandCompletionView struct {
+	ID                    string   `json:"id"`
+	AttemptNumber         int      `json:"attempt_number"`
+	DeveloperRole         *string  `json:"developer_role"`
+	Status                *string  `json:"status"`
+	NotesMDPath           *string  `json:"notes_md_path"`
+	ActualTokens          *int     `json:"actual_tokens"`
+	CommitHashes          []string `json:"commit_hashes"`
+	FilesTouched          []string `json:"files_touched"`
+	HumanIntervention     bool     `json:"human_intervention"`
+	HumanInterventionNote *string  `json:"human_intervention_note"`
+}
+
+func mustGetIssueCompletionViews(t *testing.T, workspace, issueID string) []commandCompletionView {
+	t.Helper()
+
+	rows := mustReadV01ECompletionsForIssue(t, workspace, issueID)
+	views := make([]commandCompletionView, 0, len(rows))
+	for _, row := range rows {
+		var commitHashes, filesTouched []string
+		if row.CommitHashes != "" {
+			if err := json.Unmarshal([]byte(row.CommitHashes), &commitHashes); err != nil {
+				t.Fatalf("Unmarshal(commit_hashes) error = %v", err)
+			}
+		}
+		if row.FilesTouched != "" {
+			if err := json.Unmarshal([]byte(row.FilesTouched), &filesTouched); err != nil {
+				t.Fatalf("Unmarshal(files_touched) error = %v", err)
+			}
+		}
+		var developerRole, status, notesMDPath, interventionNote *string
+		if row.DeveloperRole != "" {
+			developerRole = &row.DeveloperRole
+		}
+		if row.Status != "" {
+			status = &row.Status
+		}
+		if row.NotesMDPath != "" {
+			notesMDPath = &row.NotesMDPath
+		}
+		if row.HumanInterventionNote != "" {
+			interventionNote = &row.HumanInterventionNote
+		}
+		var actualTokens *int
+		if row.ActualTokens >= 0 {
+			actualTokens = &row.ActualTokens
+		}
+		views = append(views, commandCompletionView{
+			ID:                    row.ID,
+			AttemptNumber:         row.AttemptNumber,
+			DeveloperRole:         developerRole,
+			Status:                status,
+			NotesMDPath:           notesMDPath,
+			ActualTokens:          actualTokens,
+			CommitHashes:          commitHashes,
+			FilesTouched:          filesTouched,
+			HumanIntervention:     row.HumanIntervention,
+			HumanInterventionNote: interventionNote,
+		})
+	}
+	return views
 }
 
 func TestIssueCompleteCommandRejectsEpicBeforeAppend(t *testing.T) {

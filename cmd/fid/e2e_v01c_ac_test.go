@@ -301,11 +301,11 @@ func snapshotTask4VerificationRows(t *testing.T, workspace string) []task4Verifi
 func mustGetAcceptanceSectionJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if stderr != "" {
-		t.Fatalf("issue get acceptance stderr = %q, want empty", stderr)
+		t.Fatalf("issue ac list stderr = %q, want empty", stderr)
 	}
-	return canonicalJSON(t, stdout)
+	return mustCanonicalAcceptanceCriteriaJSON(t, stdout)
 }
 
 func mustGetTask4ACListJSON(t *testing.T, workspace, issueID string) string {

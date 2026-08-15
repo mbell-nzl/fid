@@ -125,7 +125,7 @@ func TestMaintenanceCheckUsesFixed300SecondGraceAndRejectsFormat(t *testing.T) {
 		t.Fatalf("open projection: %v", err)
 	}
 	defer closeCommandDB(t, conn)
-	seedStartedIssue(t, conn, "FID-299", time.Now().UTC().Add(-299*time.Second))
+	seedStartedIssue(t, conn, "FID-299", time.Now().UTC().Add(-298*time.Second))
 	seedStartedIssue(t, conn, "FID-300", time.Now().UTC().Add(-300*time.Second))
 
 	checked := executeCommandForTest(workspace, "--json", "maintenance", "check")

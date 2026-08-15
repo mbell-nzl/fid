@@ -42,10 +42,7 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 		}
 	}
 
-	stdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
+	stdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var got struct {
 		Title    string `json:"title"`
@@ -101,10 +98,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Reject invalid update", "--priority", "2", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	beforeStdout, beforeStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if beforeStderr != "" {
-		t.Fatalf("issue get before stderr = %q, want empty", beforeStderr)
-	}
+	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -120,10 +114,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 		t.Fatalf("stderr = %q, want invalid priority error", stderr)
 	}
 
-	afterStdout, afterStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if afterStderr != "" {
-		t.Fatalf("issue get after stderr = %q, want empty", afterStderr)
-	}
+	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if afterStdout != beforeStdout {
 		t.Fatalf("issue JSON after rejected update = %q, want %q", afterStdout, beforeStdout)
 	}
