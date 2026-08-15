@@ -41,32 +41,37 @@
 
 - `go test ./cmd/fid -run '^TestProductSourceContainsNoUniversalSerializers$' -count=1` - EXPECTED RED - `FAIL` (terminated exit_code: 1); the new guard reported the live formatter imports, serializers, and YAML implementation before deletion.
 - `go test ./cmd/fid -run '^Test(ProductSourceContainsNoUniversalSerializers|LiveCobraTreeContainsNoUniversalFormatFlags|LiveCobraTreeUniversalFormatGuardDetectsInjectedFlags)$' -count=1` - EXPECTED RED - `FAIL` (terminated exit_code: 1); after file deletion it correctly found the remaining empty `internal/format` directory, which was then removed.
-- `go test ./cmd/fid -run '^Test(ProductSourceContainsNoUniversalSerializers$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.072s` (terminated exit_code: 0).
-- `go test ./cmd/fid -run '^Test(ProductSourceContainsNoUniversalSerializers|LiveCobraTreeContainsNoUniversalFormatFlags|LiveCobraTreeUniversalFormatGuardDetectsInjectedFlags)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.071s` (terminated exit_code: 0).
-- `/tmp/fid ready --help` - PASS - `      --project string   fid project root` (terminated exit_code: 0); real-process entrypoint evidence that the retained leaf exposes no universal format flag.
+- `go test ./cmd/fid -run '^Test(ProductSourceContainsNoUniversalSerializers$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.072s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^Test(ProductSourceContainsNoUniversalSerializers|LiveCobraTreeContainsNoUniversalFormatFlags|LiveCobraTreeUniversalFormatGuardDetectsInjectedFlags)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.071s` (terminated `exit_code: 0`)
+- `/tmp/fid ready --help` - PASS - `      --project string   fid project root` (terminated `exit_code: 0`)
+  Real-process entrypoint evidence: the retained leaf exposes no universal format flag.
 - `go mod graph | rg 'gopkg\.in/yaml\.v3'` - DIAGNOSTIC - `github.com/golang-migrate/migrate/v4@v4.19.1 gopkg.in/yaml.v3@v3.0.1` (terminated exit_code: 0).
 - `go mod why -m gopkg.in/yaml.v3` - DIAGNOSTIC - `gopkg.in/yaml.v3` (terminated exit_code: 0); the path passes through the retained migration module's test graph.
 
 ## Exact quality-gate results
 
-- `go mod tidy` - PASS - `exit 0 (no output)` (terminated exit_code: 0).
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated exit_code: 0).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated exit_code: 0).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6% of statements` (terminated exit_code: 0).
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 78.7%` (terminated exit_code: 0).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.658s` (terminated exit_code: 0).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated exit_code: 0).
-- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (terminated exit_code: 1). Expected no-match condition.
-- `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` - PASS - `exit 1 (no output)` (terminated exit_code: 1). Expected no-match condition.
-- `ls internal/format` - PASS - `ls: cannot access 'internal/format': No such file or directory` (terminated exit_code: 2). Expected absent-directory condition required by the QA plan.
-- `rg -n "gopkg.in/yaml.v3" go.mod go.sum` - BLOCKED - `go.sum:45:gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=` (terminated exit_code: 0). Expected no-match condition is incompatible with the retained migration module after `go mod tidy`.
+- `go mod tidy` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.658s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (terminated `exit_code: 1`)
+  Expected no-match condition.
+- `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` - PASS - `exit 1 (no output)` (terminated `exit_code: 1`)
+  Expected no-match condition.
+- `ls internal/format` - PASS - `ls: cannot access 'internal/format': No such file or directory` (terminated `exit_code: 2`)
+  Expected absent-directory condition required by the QA plan.
+- `rg -n "gopkg.in/yaml.v3" go.mod go.sum` - BLOCKED - `go.sum:45:gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=` (terminated `exit_code: 0`)
+  Expected no-match condition is incompatible with the retained migration module after `go mod tidy`.
 - QA-plan commands beyond the Task 16 spec: the two absence commands above were run; no other Task 16-specific QA-plan command exists.
 
 ## Deviations from spec
 
 - No implementation or assertion-strength deviation. TDD preserved the initial red guard failure and the empty-directory follow-up failure; deleting the confirmed empty directory was the causal repair, after which the focused guard passed.
 - Immutable QA-plan failure: `rg -n "gopkg.in/yaml.v3" go.mod go.sum` ended with the cited `go.sum` line and `exit_code: 0`. Root cause is the retained migration module's explicit YAML requirement; no in-scope repair can remove it while keeping `go mod tidy` stable. No gate, threshold, command, dependency, or assertion was changed.
-- Immutable report-lint failure: the first run ended `FAIL report-lint found 13 failure(s)` (terminated exit_code: 13) because the report used backticked termination text the validator does not parse. The causal repair changed only report notation to `terminated exit_code: N`; the next identical report-lint command is required to prove the repair.
+- Immutable report-lint failures: the first run ended `FAIL report-lint found 13 failure(s)` with `exit_code: 13` because each PASS row had prose after the termination marker; the second ended `FAIL report-lint found 26 failure(s)` with `exit_code: 26` after report-only notation omitted the required backticks. The causal repair restored the validator's exact backticked termination notation with no trailing prose on PASS rows. Its rule still rejects the Task 16/QA-plan expected non-zero absence checks even though the task defines those exits as PASS, so no truthful report-only repair can make that validator exit zero.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
