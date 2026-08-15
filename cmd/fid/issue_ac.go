@@ -38,9 +38,6 @@ func newIssueACAddCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.ac.add", "ordinal"); err != nil {
 				return err
 			}
-			if err := requireCanonicalStringFlag(cmd, "issue.ac.add", "by", actorRole); err != nil {
-				return err
-			}
 
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {

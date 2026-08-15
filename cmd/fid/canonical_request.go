@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/spf13/cobra"
@@ -30,13 +29,6 @@ func canonicalFlagError(operation string) func(*cobra.Command, error) error {
 	return func(cmd *cobra.Command, flagErr error) error {
 		return renderCanonicalRequestError(cmd, operation, flagErr)
 	}
-}
-
-func requireCanonicalStringFlag(cmd *cobra.Command, operation, name, value string) error {
-	if cmd.Flags().Changed(name) && strings.TrimSpace(value) != "" {
-		return nil
-	}
-	return renderCanonicalRequestError(cmd, operation, fmt.Errorf("--%s is required", name))
 }
 
 func requireCanonicalFlag(cmd *cobra.Command, operation, name string) error {

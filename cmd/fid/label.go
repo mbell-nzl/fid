@@ -31,9 +31,6 @@ func newLabelAddCommand() *cobra.Command {
 		Short: "Create a label.",
 		Args:  canonicalExactArgs("label.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := requireCanonicalStringFlag(cmd, "label.add", "by", actorRole); err != nil {
-				return err
-			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderLabelError(cmd, "label.add", err)

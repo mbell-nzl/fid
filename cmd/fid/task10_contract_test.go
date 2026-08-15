@@ -20,24 +20,16 @@ func TestTask10JSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 		{"issue ac add unknown flag", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--by", "developer", "--unknown", "value"}},
 		{"issue ac add missing text", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--ordinal", "1", "--by", "developer"}},
 		{"issue ac add missing ordinal", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--by", "developer"}},
-		{"issue ac add missing by", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1"}},
-		{"issue ac add blank by", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--by", " "}},
 		{"issue ac list arity", "issue.ac.list", []string{"--json", "issue", "ac", "list"}},
 		{"issue ac list unknown flag", "issue.ac.list", []string{"--json", "issue", "ac", "list", "FID-any", "--unknown", "value"}},
 		{"label add arity", "label.add", []string{"--json", "label", "add"}},
 		{"label add unknown flag", "label.add", []string{"--json", "label", "add", "core", "--by", "developer", "--unknown", "value"}},
-		{"label add missing by", "label.add", []string{"--json", "label", "add", "core"}},
-		{"label add blank by", "label.add", []string{"--json", "label", "add", "core", "--by", " "}},
 		{"label list arity", "label.list", []string{"--json", "label", "list", "extra"}},
 		{"label list unknown flag", "label.list", []string{"--json", "label", "list", "--unknown", "value"}},
 		{"issue label add arity", "issue.label.add", []string{"--json", "issue", "label", "add"}},
 		{"issue label add unknown flag", "issue.label.add", []string{"--json", "issue", "label", "add", "FID-any", "core", "--by", "developer", "--unknown", "value"}},
-		{"issue label add missing by", "issue.label.add", []string{"--json", "issue", "label", "add", "FID-any", "core"}},
-		{"issue label add blank by", "issue.label.add", []string{"--json", "issue", "label", "add", "FID-any", "core", "--by", " "}},
 		{"issue label remove arity", "issue.label.remove", []string{"--json", "issue", "label", "remove"}},
 		{"issue label remove unknown flag", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core", "--by", "developer", "--unknown", "value"}},
-		{"issue label remove missing by", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core"}},
-		{"issue label remove blank by", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core", "--by", " "}},
 	}
 
 	for _, tt := range tests {
@@ -84,6 +76,67 @@ func TestTask10JSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 	}
 }
 
+func TestTask10JSONMissingActorsUseAuthorityEnvelope(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	journalPath := mustJournalPath(t, workspace)
+
+	for _, tt := range []struct {
+		name      string
+		operation string
+		args      []string
+	}{
+		{"issue ac add missing by", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1"}},
+		{"issue ac add blank by", "issue.ac.add", []string{"--json", "issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--by", " "}},
+		{"label add missing by", "label.add", []string{"--json", "label", "add", "core"}},
+		{"label add blank by", "label.add", []string{"--json", "label", "add", "core", "--by", " "}},
+		{"issue label add missing by", "issue.label.add", []string{"--json", "issue", "label", "add", "FID-any", "core"}},
+		{"issue label add blank by", "issue.label.add", []string{"--json", "issue", "label", "add", "FID-any", "core", "--by", " "}},
+		{"issue label remove missing by", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core"}},
+		{"issue label remove blank by", "issue.label.remove", []string{"--json", "issue", "label", "remove", "FID-any", "core", "--by", " "}},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			result := executeCommandForTest(workspace, tt.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("result = %#v, want stderr-only authority rejection", result)
+			}
+
+			var failure struct {
+				ContractVersion string `json:"contract_version"`
+				OK              bool   `json:"ok"`
+				Operation       string `json:"operation"`
+				Error           struct {
+					Code      string `json:"code"`
+					Category  string `json:"category"`
+					Retryable bool   `json:"retryable"`
+					Message   string `json:"message"`
+					Subject   any    `json:"subject"`
+					Details   struct {
+						Operation string `json:"operation"`
+						Actor     any    `json:"actor"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal([]byte(result.stderr), &failure); err != nil {
+				t.Fatalf("Unmarshal(stderr) error = %v; stderr = %q", err, result.stderr)
+			}
+			assertEnvelopeKeySet(t, []byte(result.stderr), []string{"contract_version", "error", "ok", "operation"})
+			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
+			assertNestedEnvelopeKeySet(t, []byte(result.stderr), "error.details", []string{"actor", "operation"})
+			if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != tt.operation || failure.Error.Code != "authority-missing" || failure.Error.Category != "authority" || failure.Error.Retryable || failure.Error.Message != "acting authority is required" || failure.Error.Subject != nil {
+				t.Fatalf("failure = %+v, want canonical %s authority-missing", failure, tt.operation)
+			}
+			if failure.Error.Details.Operation != tt.operation || failure.Error.Details.Actor != nil {
+				t.Fatalf("details = %+v, want operation and null actor", failure.Error.Details)
+			}
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
+
 func TestTask10RequiredActorHumanErrorsRemainProse(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -93,9 +146,14 @@ func TestTask10RequiredActorHumanErrorsRemainProse(t *testing.T) {
 		name string
 		args []string
 	}{
-		{"label add", []string{"label", "add", "core"}},
-		{"issue label add", []string{"issue", "label", "add", "FID-any", "core"}},
-		{"issue label remove", []string{"issue", "label", "remove", "FID-any", "core"}},
+		{"issue ac add missing by", []string{"issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1"}},
+		{"issue ac add blank by", []string{"issue", "ac", "add", "FID-any", "--text", "criterion", "--ordinal", "1", "--by", " "}},
+		{"label add missing by", []string{"label", "add", "core"}},
+		{"label add blank by", []string{"label", "add", "core", "--by", " "}},
+		{"issue label add missing by", []string{"issue", "label", "add", "FID-any", "core"}},
+		{"issue label add blank by", []string{"issue", "label", "add", "FID-any", "core", "--by", " "}},
+		{"issue label remove missing by", []string{"issue", "label", "remove", "FID-any", "core"}},
+		{"issue label remove blank by", []string{"issue", "label", "remove", "FID-any", "core", "--by", " "}},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
