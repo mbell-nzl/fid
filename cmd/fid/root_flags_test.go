@@ -139,3 +139,46 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 		})
 	}
 }
+
+func TestRootFlagsRejectBeforeEachConvertedLegacyJSONRead(t *testing.T) {
+	for _, fixture := range []struct {
+		name    string
+		command []string
+	}{
+		{"policy show", []string{"policy", "show"}},
+		{"claim list", []string{"claim", "list"}},
+		{"activity list", []string{"activity", "list"}},
+		{"concern list", []string{"concern", "list"}},
+		{"stats tokens", []string{"stats", "tokens"}},
+		{"stats cost", []string{"stats", "cost"}},
+		{"sql", []string{"sql", "SELECT 1"}},
+		{"journal inspect", []string{"journal", "inspect", "EVT-missing"}},
+	} {
+		for _, rootFlag := range []string{"--json", "--project"} {
+			t.Run(fixture.name+" "+rootFlag, func(t *testing.T) {
+				stdout := &bytes.Buffer{}
+				stderr := &bytes.Buffer{}
+				cmd := newRootCommandAt(t.TempDir())
+				cmd.SetOut(stdout)
+				cmd.SetErr(stderr)
+
+				args := append([]string{rootFlag}, fixture.command...)
+				if rootFlag == "--project" {
+					args = append([]string{rootFlag, t.TempDir()}, fixture.command...)
+				}
+				cmd.SetArgs(args)
+
+				err := cmd.Execute()
+				if err == nil {
+					t.Fatal("Execute() error = nil, want root-flag rejection")
+				}
+				if stdout.Len() != 0 {
+					t.Fatalf("stdout = %q, want no handler output", stdout.String())
+				}
+				if !strings.Contains(stderr.String(), "error: "+rootFlag+" is not available") {
+					t.Fatalf("stderr = %q, want explicit %s rejection", stderr.String(), rootFlag)
+				}
+			})
+		}
+	}
+}

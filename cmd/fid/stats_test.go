@@ -2,9 +2,7 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -46,7 +44,7 @@ func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
 	}
 }
 
-func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
+func TestStatsTokensUsesDirectLegacyJSONAndEpicFilter(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -61,7 +59,7 @@ func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 	recordStatsCommandRun(t, workspace, epicID, "tl", "gemini-2.5-pro", 70, 7)
 	recordStatsCommandRun(t, workspace, standaloneTaskID, "developer", "gpt-5", 30, 5)
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "epic", "--format", "json")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "epic")
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
@@ -84,35 +82,7 @@ func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 		t.Fatalf("stats tokens by epic json = %#v, want %#v", got, want)
 	}
 
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "epic", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "epic", "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	if markdownStdout != expectedTokensMarkdown(wantRows) {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, expectedTokensMarkdown(wantRows))
-	}
-
-	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "role", "--epic", epicID, "--format", "json")
+	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "role", "--epic", epicID)
 	if filteredStderr != "" {
 		t.Fatalf("filtered stderr = %q, want empty", filteredStderr)
 	}
@@ -141,7 +111,7 @@ func TestStatsTokensSupportsFormatsAndEpicFilter(t *testing.T) {
 	}
 }
 
-func TestStatsCostSupportsFormatsAndExcludesNullCostsFromSum(t *testing.T) {
+func TestStatsCostUsesDirectLegacyJSONAndExcludesNullCostsFromSum(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -154,7 +124,7 @@ func TestStatsCostSupportsFormatsAndExcludesNullCostsFromSum(t *testing.T) {
 	recordStatsCommandRun(t, workspace, taskID, "developer", "mystery-model", 80, 20)
 	knownStandaloneRun := recordStatsCommandRun(t, workspace, standaloneTaskID, "developer", "gpt-5", 40, 10)
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "epic", "--format", "json")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "epic")
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
@@ -179,35 +149,7 @@ func TestStatsCostSupportsFormatsAndExcludesNullCostsFromSum(t *testing.T) {
 		t.Fatalf("stats cost by epic json = %#v, want %#v", got, want)
 	}
 
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "epic", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "epic", "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	if markdownStdout != expectedCostMarkdown(wantRows) {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, expectedCostMarkdown(wantRows))
-	}
-
-	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "role", "--epic", epicID, "--format", "json")
+	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "cost", "--by", "role", "--epic", epicID)
 	if filteredStderr != "" {
 		t.Fatalf("filtered stderr = %q, want empty", filteredStderr)
 	}
@@ -290,53 +232,6 @@ func expectedCommandStructure(t *testing.T, value any) any {
 		t.Fatalf("Decode(expected structure) error = %v", err)
 	}
 	return result
-}
-
-func expectedTokensMarkdown(rows []internalstats.TokensRow) string {
-	var builder strings.Builder
-
-	builder.WriteString("# Token Stats\n\n")
-	builder.WriteString("| Group | Total Tokens In | Total Tokens Out | Run Count |\n")
-	builder.WriteString("| --- | ---: | ---: | ---: |\n")
-	for _, row := range rows {
-		fmt.Fprintf(&builder, "| %s | %d | %d | %d |\n", statsGroupLabel(row.Role, row.Model, row.EpicID), row.TotalTokensIn, row.TotalTokensOut, row.RunCount)
-	}
-	return builder.String()
-}
-
-func expectedCostMarkdown(rows []internalstats.CostRow) string {
-	var builder strings.Builder
-
-	builder.WriteString("# Cost Stats\n\n")
-	builder.WriteString("| Group | Total Cost (USD) | Total Tokens In | Total Tokens Out | Run Count |\n")
-	builder.WriteString("| --- | ---: | ---: | ---: | ---: |\n")
-	for _, row := range rows {
-		fmt.Fprintf(&builder, "| %s | %s | %d | %d | %d |\n", statsGroupLabel(row.Role, row.Model, row.EpicID), formatStatsCost(row.TotalCostUSD), row.TotalTokensIn, row.TotalTokensOut, row.RunCount)
-	}
-	return builder.String()
-}
-
-func statsGroupLabel(role, model, epicID *string) string {
-	switch {
-	case role != nil:
-		return *role
-	case model != nil:
-		return *model
-	case epicID != nil:
-		return *epicID
-	default:
-		return "(none)"
-	}
-}
-
-func formatStatsCost(value float64) string {
-	text := strconv.FormatFloat(value, 'f', 6, 64)
-	text = strings.TrimRight(text, "0")
-	text = strings.TrimRight(text, ".")
-	if text == "" {
-		return "0"
-	}
-	return text
 }
 
 func derefFloat(value *float64) float64 {

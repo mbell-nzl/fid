@@ -230,7 +230,7 @@ func assertClosureReadyTask(t *testing.T, binary, workspace, epicID, wantID stri
 func assertClosureTelemetry(t *testing.T, binary, workspace, issueID, completionID string) {
 	t.Helper()
 
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT tokens_in, tokens_out, price_in_per_mtok, price_out_per_mtok, cost_usd, completion_id FROM agent_runs WHERE issue_id = '"+issueID+"' ORDER BY id", "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT tokens_in, tokens_out, price_in_per_mtok, price_out_per_mtok, cost_usd, completion_id FROM agent_runs WHERE issue_id = '"+issueID+"' ORDER BY id")
 	var rows []struct {
 		TokensIn   int     `json:"tokens_in"`
 		TokensOut  int     `json:"tokens_out"`
@@ -265,8 +265,8 @@ func assertClosureTelemetry(t *testing.T, binary, workspace, issueID, completion
 	if primary.PriceIn <= 0 || primary.PriceOut <= 0 || math.Abs(primary.CostUSD-wantCost) > 1e-12 {
 		t.Fatalf("run snapshot = %#v, want priced cost %v", primary, wantCost)
 	}
-	cost, _ := closureRunFID(t, binary, workspace, "stats", "cost", "--by", "role", "--format", "json")
-	tokens, _ := closureRunFID(t, binary, workspace, "stats", "tokens", "--by", "role", "--format", "json")
+	cost, _ := closureRunFID(t, binary, workspace, "stats", "cost", "--by", "role")
+	tokens, _ := closureRunFID(t, binary, workspace, "stats", "tokens", "--by", "role")
 	if !strings.Contains(cost, "developer") || !strings.Contains(cost, fmt.Sprintf("%g", primary.CostUSD)) {
 		t.Fatalf("cost stats = %q, want developer cost %g", cost, primary.CostUSD)
 	}
@@ -294,9 +294,9 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		{"--json", "issue", "list"},
 		{"--json", "ready"},
 		{"--json", "link", "list", issueID, "--type", "issue"},
-		{"stats", "cost", "--by", "role", "--format", "json"},
-		{"stats", "tokens", "--by", "role", "--format", "json"},
-		{"policy", "show", "--format", "json"},
+		{"stats", "cost", "--by", "role"},
+		{"stats", "tokens", "--by", "role"},
+		{"policy", "show"},
 	} {
 		closureRunFID(t, binary, workspace, args...)
 		assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, strings.Join(args, " "))
@@ -462,7 +462,7 @@ func closureProjectedTableSnapshots(t *testing.T, binary, workspace string) map[
 
 	snapshot := make(map[string]string, len(closureProjectedTableQueries))
 	for _, table := range closureProjectedTableQueries {
-		stdout, _ := closureRunFID(t, binary, workspace, "sql", table.query, "--format", "json")
+		stdout, _ := closureRunFID(t, binary, workspace, "sql", table.query)
 		snapshot[table.name] = stdout
 	}
 	return snapshot
@@ -481,7 +481,7 @@ func assertClosureProjectedTablesEqual(t *testing.T, got, want map[string]string
 func assertClosureRolesAfterRebuild(t *testing.T, binary, workspace string) {
 	t.Helper()
 
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT name FROM roles WHERE active = 1 ORDER BY name", "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT name FROM roles WHERE active = 1 ORDER BY name")
 	for _, role := range []string{"developer", "human", "qa_lead", "qa_reviewer", "tl", "tl_lite", "workflow_runner"} {
 		if !strings.Contains(stdout, `"name":"`+role+`"`) {
 			t.Fatalf("roles after rebuild = %q, want %q", stdout, role)
@@ -527,13 +527,13 @@ func assertClosureJournalFilesEqual(t *testing.T, got, want map[string][]byte, s
 
 func closureSchemaSnapshot(t *testing.T, binary, workspace string) string {
 	t.Helper()
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", `SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name`, "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", `SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name NOT LIKE 'sqlite_%' ORDER BY type, name`)
 	return stdout
 }
 
 func assertClosureForeignKeysClean(t *testing.T, binary, workspace string) {
 	t.Helper()
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", "PRAGMA foreign_key_check", "--format", "json")
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", "PRAGMA foreign_key_check")
 	if strings.TrimSpace(stdout) != "[]" {
 		t.Fatalf("foreign_key_check = %s, want []", stdout)
 	}

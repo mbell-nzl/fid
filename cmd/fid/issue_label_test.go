@@ -520,7 +520,7 @@ func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}

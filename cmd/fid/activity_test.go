@@ -60,17 +60,17 @@ func TestActivityListAppliesFilters(t *testing.T) {
 	}{
 		{
 			name:    "on filter",
-			args:    []string{"activity", "list", "--on", "issue/" + primaryIssueID, "--format", "json"},
+			args:    []string{"activity", "list", "--on", "issue/" + primaryIssueID},
 			wantIDs: []string{firstEntry.activityID, secondEntry.activityID},
 		},
 		{
 			name:    "since filter",
-			args:    []string{"activity", "list", "--since", secondEntry.occurredAt, "--format", "json"},
+			args:    []string{"activity", "list", "--since", secondEntry.occurredAt},
 			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
 		},
 		{
 			name:    "event filter",
-			args:    []string{"activity", "list", "--event", "issue_updated", "--format", "json"},
+			args:    []string{"activity", "list", "--event", "issue_updated"},
 			wantIDs: []string{thirdEntry.activityID},
 		},
 	}
@@ -94,7 +94,7 @@ func TestActivityListAppliesFilters(t *testing.T) {
 	}
 }
 
-func TestActivityListDispatchesFormats(t *testing.T) {
+func TestActivityListUsesDirectLegacyJSON(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -111,9 +111,9 @@ func TestActivityListDispatchesFormats(t *testing.T) {
 		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "activity", "list", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	stdout, stderr := runFIDCommand(t, workspace, "activity", "list")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
 	want := expectedCommandStructure(t, []internalactivity.Entry{
@@ -128,43 +128,8 @@ func TestActivityListDispatchesFormats(t *testing.T) {
 			Details:        map[string]any{"from": "todo", "to": "in_progress"},
 		},
 	})
-	if got := decodeCommandJSONStructure(t, jsonStdout); !reflect.DeepEqual(got, want) {
+	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("activity list json = %#v, want %#v", got, want)
-	}
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "activity", "list", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "activity", "list", "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-
-	wantMarkdown := "" +
-		"# Activity\n\n" +
-		"| Occurred At | Event | Ref | Actor | ID | Details |\n" +
-		"| --- | --- | --- | --- | --- | --- |\n" +
-		fmt.Sprintf("| %s | status_changed | issue/%s | developer | %s | {\"from\":\"todo\",\"to\":\"in_progress\"} |\n", entry.occurredAt, issueID, entry.activityID)
-	if markdownStdout != wantMarkdown {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, wantMarkdown)
 	}
 }
 

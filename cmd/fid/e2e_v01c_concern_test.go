@@ -222,7 +222,6 @@ func TestV01CClosureSmoke(t *testing.T) {
 		"concern", "list",
 		"--issue", issueID,
 		"--status", "open",
-		"--format", "json",
 	)
 	if openConcernsStderr != "" {
 		t.Fatalf("open concern list stderr = %q, want empty", openConcernsStderr)
@@ -268,7 +267,6 @@ func TestV01CClosureSmoke(t *testing.T) {
 		"concern", "list",
 		"--issue", issueID,
 		"--status", "addressed",
-		"--format", "json",
 	)
 	if addressedConcernsStderr != "" {
 		t.Fatalf("addressed concern list stderr = %q, want empty", addressedConcernsStderr)
@@ -363,7 +361,7 @@ func snapshotConcernRows(t *testing.T, workspace string) []concernParityRow {
 func mustGetConcernListJSON(t *testing.T, workspace string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "concern", "list")
 	if stderr != "" {
 		t.Fatalf("concern list stderr = %q, want empty", stderr)
 	}

@@ -3,10 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 
 	internalactivity "github.com/mbell-nzl/fid/internal/activity"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +20,9 @@ func newActivityCommand() *cobra.Command {
 
 func newActivityListCommand() *cobra.Command {
 	var (
-		on         string
-		since      string
-		eventName  string
-		formatName string
+		on        string
+		since     string
+		eventName string
 	)
 
 	cmd := &cobra.Command{
@@ -52,7 +49,9 @@ func newActivityListCommand() *cobra.Command {
 				return err
 			}
 
-			if err := writeActivityListOutput(cmd, formatName, items); err != nil {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(items); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}
@@ -65,59 +64,5 @@ func newActivityListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&on, "on", "", "Filter to one entity reference, e.g. issue/FID-a1b2c3")
 	cmd.Flags().StringVar(&since, "since", "", "Include entries on or after this timestamp")
 	cmd.Flags().StringVar(&eventName, "event", "", "Filter by projected activity event name")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
-}
-
-func writeActivityListOutput(cmd *cobra.Command, formatName string, items []internalactivity.Entry) error {
-	if fidformat.Normalize(formatName) == fidformat.Markdown {
-		return writeActivityMarkdown(cmd.OutOrStdout(), items)
-	}
-	return fidformat.Write(cmd.OutOrStdout(), formatName, items)
-}
-
-func writeActivityMarkdown(writer interface{ Write([]byte) (int, error) }, items []internalactivity.Entry) error {
-	var builder strings.Builder
-
-	builder.WriteString("# Activity\n\n")
-	builder.WriteString("| Occurred At | Event | Ref | Actor | ID | Details |\n")
-	builder.WriteString("| --- | --- | --- | --- | --- | --- |\n")
-	for _, item := range items {
-		fmt.Fprintf(
-			&builder,
-			"| %s | %s | %s/%s | %s | %s | %s |\n",
-			markdownCell(item.OccurredAt),
-			markdownCell(item.Event),
-			markdownCell(item.RefType),
-			markdownCell(item.RefID),
-			markdownCell(item.Actor),
-			markdownCell(item.ID),
-			markdownCell(activityDetailsMarkdown(item.Details)),
-		)
-	}
-
-	if _, err := writer.Write([]byte(builder.String())); err != nil {
-		return fmt.Errorf("write markdown output: %w", err)
-	}
-	return nil
-}
-
-func activityDetailsMarkdown(details any) string {
-	if details == nil {
-		return "null"
-	}
-
-	payload, err := json.Marshal(details)
-	if err != nil {
-		return fmt.Sprintf("%v", details)
-	}
-	return string(payload)
-}
-
-func markdownCell(value string) string {
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return "(none)"
-	}
-	return strings.ReplaceAll(trimmed, "|", "\\|")
 }

@@ -244,7 +244,6 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 		workspace,
 		"concern", "list",
 		"--issue", issueID,
-		"--format", "json",
 	)
 	if listStderr != "" {
 		t.Fatalf("concern list stderr = %q, want empty", listStderr)
@@ -328,27 +327,27 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 	}{
 		{
 			name:    "all concerns",
-			args:    []string{"concern", "list", "--format", "json"},
+			args:    []string{"concern", "list"},
 			wantIDs: []string{secondConcernID, firstConcernID},
 		},
 		{
 			name:    "filter by issue",
-			args:    []string{"concern", "list", "--issue", firstIssueID, "--format", "json"},
+			args:    []string{"concern", "list", "--issue", firstIssueID},
 			wantIDs: []string{firstConcernID},
 		},
 		{
 			name:    "filter by status",
-			args:    []string{"concern", "list", "--status", "open", "--format", "json"},
+			args:    []string{"concern", "list", "--status", "open"},
 			wantIDs: []string{secondConcernID},
 		},
 		{
 			name:    "combined filters",
-			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "open", "--format", "json"},
+			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "open"},
 			wantIDs: []string{secondConcernID},
 		},
 		{
 			name:    "empty result",
-			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "addressed", "--format", "json"},
+			args:    []string{"concern", "list", "--issue", secondIssueID, "--status", "addressed"},
 			wantIDs: []string{},
 		},
 	}
@@ -378,7 +377,7 @@ func TestConcernListFiltersByIssueAndStatus(t *testing.T) {
 	}
 }
 
-func TestConcernListDispatchesFormats(t *testing.T) {
+func TestConcernListUsesDirectLegacyJSON(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -386,80 +385,21 @@ func TestConcernListDispatchesFormats(t *testing.T) {
 	_, _ = seedConcernListIssueAndConcern(t, workspace, "First concern", true)
 	secondIssueID, _ := seedConcernListIssueAndConcern(t, workspace, "Second concern", false)
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "concern", "list", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	stdout, stderr := runFIDCommand(t, workspace, "concern", "list")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	want := decodeCommandJSONStructure(t, jsonStdout)
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
+	want := decodeCommandJSONStructure(t, stdout)
+	if got := want.([]any); len(got) != 2 {
+		t.Fatalf("concern list length = %d, want 2", len(got))
 	}
 
-	t.Run("markdown", func(t *testing.T) {
-		stdout, stderr := runFIDCommand(t, workspace, "concern", "list", "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-
-		rows := want.([]any)
-		expected := concernListMarkdownExpectation(t, rows)
-		if stdout != expected {
-			t.Fatalf("markdown stdout = %q, want %q", stdout, expected)
-		}
-	})
-
-	for _, formatName := range []string{"json", "toon", "yaml", "markdown"} {
-		t.Run("empty_"+formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(
-				t,
-				workspace,
-				"concern", "list",
-				"--issue", secondIssueID,
-				"--status", "addressed",
-				"--format", formatName,
-			)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			switch formatName {
-			case "json":
-				if got := decodeCommandJSONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
-					t.Fatalf("empty json structure = %#v, want empty list", got)
-				}
-			case "toon":
-				if got := decodeCommandTOONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
-					t.Fatalf("empty toon structure = %#v, want empty list", got)
-				}
-			case "yaml":
-				if got := decodeCommandYAMLStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
-					t.Fatalf("empty yaml structure = %#v, want empty list", got)
-				}
-			case "markdown":
-				expected := concernListMarkdownExpectation(t, nil)
-				if stdout != expected {
-					t.Fatalf("empty markdown stdout = %q, want %q", stdout, expected)
-				}
-			}
-		})
+	emptyStdout, emptyStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", secondIssueID, "--status", "addressed")
+	if emptyStderr != "" {
+		t.Fatalf("empty stderr = %q, want empty", emptyStderr)
+	}
+	if got := decodeCommandJSONStructure(t, emptyStdout); !commandStructuresEqual([]any{}, got) {
+		t.Fatalf("empty JSON structure = %#v, want empty list", got)
 	}
 }
 
@@ -559,42 +499,4 @@ func commandConcernListIDs(rows []any) []string {
 		}
 	}
 	return ids
-}
-
-func concernListMarkdownExpectation(t *testing.T, rows []any) string {
-	t.Helper()
-
-	var builder strings.Builder
-	builder.WriteString("# Concerns\n\n")
-	if len(rows) == 0 {
-		builder.WriteString("(no concerns)\n")
-		return builder.String()
-	}
-
-	for _, row := range rows {
-		item, ok := row.(map[string]any)
-		if !ok {
-			t.Fatalf("row = %#v, want object", row)
-		}
-		builder.WriteString("- ")
-		builder.WriteString(item["id"].(string))
-		builder.WriteString(" | issue ")
-		builder.WriteString(item["issue_id"].(string))
-		builder.WriteString(" | ")
-		builder.WriteString(item["status"].(string))
-		builder.WriteString(" | by ")
-		builder.WriteString(item["raised_by_role"].(string))
-		builder.WriteString(" | completion ")
-		builder.WriteString(item["raised_in_completion_id"].(string))
-		builder.WriteString("\n")
-		builder.WriteString("  ")
-		builder.WriteString(item["summary"].(string))
-		builder.WriteString("\n")
-		if bodyMDPath, ok := item["body_md_path"].(string); ok && bodyMDPath != "" {
-			builder.WriteString("  Body: ")
-			builder.WriteString(bodyMDPath)
-			builder.WriteString("\n")
-		}
-	}
-	return builder.String()
 }

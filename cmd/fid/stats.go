@@ -1,9 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/stats"
 	"github.com/spf13/cobra"
 )
@@ -21,9 +21,8 @@ func newStatsCommand() *cobra.Command {
 
 func newStatsTokensCommand() *cobra.Command {
 	var (
-		by         string
-		epicID     string
-		formatName string
+		by     string
+		epicID string
 	)
 
 	cmd := &cobra.Command{
@@ -49,7 +48,9 @@ func newStatsTokensCommand() *cobra.Command {
 				return err
 			}
 
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(items); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}
@@ -61,15 +62,13 @@ func newStatsTokensCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&by, "by", string(stats.GroupByRole), "Group by role, model, or epic")
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by owning epic ID")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }
 
 func newStatsCostCommand() *cobra.Command {
 	var (
-		by         string
-		epicID     string
-		formatName string
+		by     string
+		epicID string
 	)
 
 	cmd := &cobra.Command{
@@ -95,7 +94,9 @@ func newStatsCostCommand() *cobra.Command {
 				return err
 			}
 
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(items); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}
@@ -107,6 +108,5 @@ func newStatsCostCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&by, "by", string(stats.GroupByRole), "Group by role, model, or epic")
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by owning epic ID")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }

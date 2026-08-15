@@ -181,7 +181,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	)
 	assertNoNestedLockFailure(t, addressConcernStderr)
 
-	activityStdout, activityStderr := runFIDCommand(t, workspace, "activity", "list", "--format", "json")
+	activityStdout, activityStderr := runFIDCommand(t, workspace, "activity", "list")
 	if activityStderr != "" {
 		t.Fatalf("activity list stderr = %q, want empty", activityStderr)
 	}
@@ -290,7 +290,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 
-	afterStdout, afterStderr := runFIDCommand(t, workspace, "activity", "list", "--format", "json")
+	afterStdout, afterStderr := runFIDCommand(t, workspace, "activity", "list")
 	if afterStderr != "" {
 		t.Fatalf("activity list stderr after rebuild = %q, want empty", afterStderr)
 	}
@@ -386,7 +386,7 @@ func closeActivityLifecycleRows(t *testing.T, rows *sql.Rows) {
 func assertActivityEventsForIssue(t *testing.T, workspace, issueID string, want []string) {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "activity", "list", "--on", "issue/"+issueID, "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "activity", "list", "--on", "issue/"+issueID)
 	if stderr != "" {
 		t.Fatalf("activity list stderr for %s = %q, want empty", issueID, stderr)
 	}

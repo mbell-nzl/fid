@@ -10,7 +10,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-func TestJournalInspectCommandReportsKnownEventAcrossFormats(t *testing.T) {
+func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -48,55 +48,21 @@ func TestJournalInspectCommandReportsKnownEventAcrossFormats(t *testing.T) {
 		Actor:       event.Actor,
 		Command:     event.Command,
 		Effects:     event.Effects,
-		Revert:      journal.RevertVerdict(event),
 	})
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID, "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	stdout, stderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if got := decodeCommandJSONStructure(t, jsonStdout); !reflect.DeepEqual(got, want) {
-		t.Fatalf("json structure = %#v, want %#v", got, want)
+	if !strings.HasSuffix(stdout, "\n") {
+		t.Fatalf("stdout = %q, want one trailing newline", stdout)
 	}
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID, "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID, "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	for _, wantSubstring := range []string{
-		"# Journal Event " + event.EventID,
-		event.EventType,
-		journalFile + ":",
-		"## Revert",
-		"reverts this transition to the prior status",
-	} {
-		if !strings.Contains(markdownStdout, wantSubstring) {
-			t.Fatalf("markdown stdout = %q, want substring %q", markdownStdout, wantSubstring)
-		}
+	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
+		t.Fatalf("JSON structure = %#v, want %#v", got, want)
 	}
 }
 
-func TestJournalInspectCommandReportsCorrectionForNonEligibleEvents(t *testing.T) {
+func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -111,7 +77,7 @@ func TestJournalInspectCommandReportsCorrectionForNonEligibleEvents(t *testing.T
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	event := mustReadCommandEventByType(t, mustJournalPath(t, workspace), "issue.created")
-	stdout, stderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID, "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "journal", "inspect", event.EventID)
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
@@ -121,18 +87,10 @@ func TestJournalInspectCommandReportsCorrectionForNonEligibleEvents(t *testing.T
 		t.Fatalf("event_type = %#v, want %q", got, "issue.created")
 	}
 
-	revertPayload, ok := payload["revert"].(map[string]any)
-	if !ok {
-		t.Fatalf("revert = %#v, want object", payload["revert"])
-	}
-	if got := revertPayload["eligible"]; got != false {
-		t.Fatalf("revert.eligible = %#v, want false", got)
-	}
-	if got := revertPayload["correction"]; got != "cancel the issue with fid issue transition <id> --to cancelled --by <role>" {
-		t.Fatalf("revert.correction = %#v, want cancellation guidance", got)
-	}
-	if got := revertPayload["note"]; !strings.Contains(got.(string), "append-only history") {
-		t.Fatalf("revert.note = %#v, want append-only explanation", got)
+	for _, forbidden := range []string{"revert", "contract_version", "event"} {
+		if _, ok := payload[forbidden]; ok {
+			t.Fatalf("journal inspect JSON includes %q: %#v", forbidden, payload)
+		}
 	}
 
 	if issueID == "" {

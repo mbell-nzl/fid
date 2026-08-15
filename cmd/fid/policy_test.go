@@ -2,8 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -11,66 +9,51 @@ import (
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	internalpolicy "github.com/mbell-nzl/fid/internal/policy"
+	"github.com/spf13/cobra"
 )
 
-func TestPolicyShowDefaultsToJSONAndDispatchesFormats(t *testing.T) {
+func TestPolicyShowUsesDirectLegacyJSONWithoutFormatFlag(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	defaultStdout, defaultStderr := runFIDCommand(t, workspace, "policy", "show")
-	if defaultStderr != "" {
-		t.Fatalf("default stderr = %q, want empty", defaultStderr)
+	if flag := newPolicyShowCommand().Flags().Lookup("format"); flag != nil {
+		t.Fatalf("policy show --format flag = %#v, want absent", flag)
 	}
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
+	}
+	if !strings.HasSuffix(stdout, "\n") {
+		t.Fatalf("stdout = %q, want one trailing newline", stdout)
 	}
 
-	if defaultStdout != jsonStdout {
-		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
-	}
-
-	want := decodeCommandJSONStructure(t, mustMarshalPolicyRowsJSON(t, internalpolicy.MatrixRows()))
-	got := decodeCommandJSONStructure(t, jsonStdout)
-	if !commandStructuresEqual(want, got) {
-		t.Fatalf("json structure = %#v, want %#v", got, want)
-	}
-
-	if gotActions := commandPolicyActions(got.([]any)); !equalIssueIDs(gotActions, expectedPolicyActions()) {
+	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	if gotActions := commandPolicyActions(rows); !equalIssueIDs(gotActions, expectedPolicyActions()) {
 		t.Fatalf("policy actions = %#v, want %#v", gotActions, expectedPolicyActions())
 	}
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var structured any
-			switch formatName {
-			case "toon":
-				structured = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				structured = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(want, structured) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, structured, want)
-			}
-		})
+	if _, enveloped := decodeCommandJSONStructure(t, stdout).(map[string]any); enveloped {
+		t.Fatalf("policy show JSON = %s, want unenveloped legacy rows", stdout)
 	}
+}
 
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "policy", "show", "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
+func TestRemainingLegacyJSONReadsDoNotDeclareFormatFlags(t *testing.T) {
+	t.Parallel()
+
+	commands := map[string]*cobra.Command{
+		"activity list":   newActivityListCommand(),
+		"claim list":      newClaimListCommand(),
+		"concern list":    newConcernListCommand(),
+		"journal inspect": newJournalInspectCommand(),
+		"sql":             newSQLCommand(),
+		"stats cost":      newStatsCostCommand(),
+		"stats tokens":    newStatsTokensCommand(),
 	}
-
-	wantMarkdown := expectedPolicyMarkdown(internalpolicy.MatrixRows())
-	if markdownStdout != wantMarkdown {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, wantMarkdown)
+	for name, command := range commands {
+		if flag := command.Flags().Lookup("format"); flag != nil {
+			t.Fatalf("%s --format flag = %#v, want absent", name, flag)
+		}
 	}
 }
 
@@ -94,7 +77,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 
 	activityBefore := countActivityLogRows(t, conn)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
@@ -136,7 +119,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}
@@ -196,53 +179,21 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 	}
 }
 
-func TestPolicyShowIncludesWorkflowAuthoringRowsInEveryFormat(t *testing.T) {
+func TestPolicyShowIncludesWorkflowAuthoringRows(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	for _, formatName := range []string{"json", "toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-			var rows []any
-			switch formatName {
-			case "json":
-				rows = decodeCommandJSONStructure(t, stdout).([]any)
-			case "toon":
-				rows = decodeCommandTOONStructure(t, stdout).([]any)
-			case "yaml":
-				rows = decodeCommandYAMLStructure(t, stdout).([]any)
-			}
-			for _, action := range []string{"workflow.define", "workflow.assign"} {
-				if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
-					t.Fatalf("policy show %s missing allowed %s row", formatName, action)
-				}
-			}
-		})
-	}
-
-	markdown, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "markdown")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", stderr)
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
+	rows := decodeCommandJSONStructure(t, stdout).([]any)
 	for _, action := range []string{"workflow.define", "workflow.assign"} {
-		if !strings.Contains(markdown, "| "+action+" | false | false | false | false | true | false | true |") {
-			t.Fatalf("markdown = %q, want %s row", markdown, action)
+		if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
+			t.Fatalf("policy show missing allowed %s row", action)
 		}
 	}
-}
-
-func mustMarshalPolicyRowsJSON(t *testing.T, rows []internalpolicy.MatrixRow) string {
-	t.Helper()
-
-	payload, err := json.Marshal(rows)
-	if err != nil {
-		t.Fatalf("Marshal() error = %v", err)
-	}
-	return string(payload)
 }
 
 func expectedPolicyActions() []string {
@@ -265,30 +216,6 @@ func commandPolicyActions(rows []any) []string {
 		actions = append(actions, action)
 	}
 	return actions
-}
-
-func expectedPolicyMarkdown(rows []internalpolicy.MatrixRow) string {
-	var builder strings.Builder
-
-	builder.WriteString("# Policy\n\n")
-	builder.WriteString("| action | developer | qa_reviewer | qa_lead | tl_lite | tl | workflow_runner | human |\n")
-	builder.WriteString("| --- | --- | --- | --- | --- | --- | --- | --- |\n")
-
-	for _, row := range rows {
-		_, _ = fmt.Fprintf(&builder,
-			"| %s | %t | %t | %t | %t | %t | %t | %t |\n",
-			row.Action,
-			row.Developer,
-			row.QAReviewer,
-			row.QALead,
-			row.TLLite,
-			row.TL,
-			row.WorkflowRunner,
-			row.Human,
-		)
-	}
-
-	return builder.String()
 }
 
 func countActivityLogRows(t *testing.T, conn *sql.DB) int {
