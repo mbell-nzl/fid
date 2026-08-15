@@ -160,14 +160,15 @@ Cover at least:
 | Time (NZST) | State | Evidence / result | Next action |
 |---|---|---|---|
 | 2026-08-15 start | IN PROGRESS | User authorized autonomous overhaul, independent review, regular commits, and final HTML report. | Commit this plan and preserve the dirty tree. |
+| 2026-08-15 checkpoint 1 | COMPLETE | Plan committed as `6517c81`; all remaining tracked and untracked changes preserved in stash `779beab1` (`stash@{0}` at capture), covering 28 files with 1,052 insertions and 230 deletions. Original worktree verified clean. | Create the isolated overhaul branch/worktree. |
 
 ## Checkpoints
 
 | Checkpoint | Reference | Status |
 |---|---|---|
 | Phase 20 base commit | `db36832` | RECORDED |
-| Durable plan commit | pending | IN PROGRESS |
-| Dirty-tree recovery stash | pending | NOT STARTED |
+| Durable plan commit | `6517c81` | COMPLETE |
+| Dirty-tree recovery stash | `779beab1` (`recovery/phase-20-task-10-and-runner-2026-08-15`) | COMPLETE |
 | Overhaul branch/worktree | pending | NOT STARTED |
 | Audit and decision commit | pending | NOT STARTED |
 | V1 implementation commits | pending | NOT STARTED |
@@ -184,4 +185,3 @@ On any compaction or fresh session:
 3. Verify branch, worktree, stash, and commit state before editing.
 4. Continue the first incomplete workstream; do not restart completed analysis.
 5. Update this ledger and commit at each material boundary.
-
