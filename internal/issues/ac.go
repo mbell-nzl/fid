@@ -197,7 +197,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 			Ordinal:       options.Ordinal,
 			IssueRevision: issueRevision + 1,
 			EventID:       appended.EventID,
-			OccurredAt:    appended.OccurredAt.UTC().Format(time.RFC3339),
+			OccurredAt:    appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})

@@ -104,7 +104,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, name string, co
 		return err
 	}
 
-	*result = AddResult{Label: Label{Name: name, Colour: colour, Description: description}, EventID: event.EventID, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339)}
+	*result = AddResult{Label: Label{Name: name, Colour: colour, Description: description}, EventID: event.EventID, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano)}
 	return nil
 }
 

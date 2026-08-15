@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -361,11 +362,20 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 				ID string `json:"id"`
 			} `json:"issue"`
 		} `json:"result"`
+		Event struct {
+			ID         string `json:"id"`
+			OccurredAt string `json:"occurred_at"`
+		} `json:"event"`
 	}
 	if err := json.Unmarshal([]byte(created.stdout), &createEnvelope); err != nil {
 		t.Fatalf("Unmarshal(create stdout) error = %v", err)
 	}
 	issueID := createEnvelope.Result.Issue.ID
+	journalPath := mustJournalPath(t, workspace)
+	createTail := lastCommandJournalEvent(t, journalPath)
+	if createEnvelope.Event.ID != createTail.EventID || createEnvelope.Event.OccurredAt != createTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("create event = %+v, want journal tail %q at %s", createEnvelope.Event, createTail.EventID, createTail.OccurredAt)
+	}
 	runFIDCommand(t, workspace, "label", "add", "api", "--by", "developer")
 
 	beforeRole, beforeActor := commandIssueOwners(t, workspace, issueID)
@@ -386,6 +396,10 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 				Field string `json:"field"`
 			} `json:"changes"`
 		} `json:"result"`
+		Event struct {
+			ID         string `json:"id"`
+			OccurredAt string `json:"occurred_at"`
+		} `json:"event"`
 	}
 	if err := json.Unmarshal([]byte(updated.stdout), &updateEnvelope); err != nil {
 		t.Fatalf("Unmarshal(update stdout) error = %v", err)
@@ -399,6 +413,10 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 	}
 	if got, want := strings.Join(fields, ","), "labels,priority,spec_md_path,title"; got != want {
 		t.Fatalf("update change fields = %q, want %q", got, want)
+	}
+	updateTail := lastCommandJournalEvent(t, journalPath)
+	if updateEnvelope.Event.ID != updateTail.EventID || updateEnvelope.Event.OccurredAt != updateTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("update event = %+v, want journal tail %q at %s", updateEnvelope.Event, updateTail.EventID, updateTail.OccurredAt)
 	}
 	afterRole, afterActor := commandIssueOwners(t, workspace, issueID)
 	if !sameCommandOptionalString(afterRole, beforeRole) || !sameCommandOptionalString(afterActor, beforeActor) {

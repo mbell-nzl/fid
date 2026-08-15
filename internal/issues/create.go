@@ -220,7 +220,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 			Status:     resolvedWorkflow.InitialState,
 			Revision:   1,
 			EventID:    appended.EventID,
-			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339),
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})

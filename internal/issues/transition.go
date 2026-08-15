@@ -310,7 +310,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			FromState:  current.Status,
 			ToState:    toState,
 			EventID:    appended.EventID,
-			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339),
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})

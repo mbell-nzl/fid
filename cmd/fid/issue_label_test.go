@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -254,7 +255,7 @@ func assertIssueLabelMutationEnvelope(t *testing.T, result commandExecutionResul
 		t.Fatalf("result = %#v, want issue %q label %q revision %d", envelope.Result, issueID, label, revision)
 	}
 	last := mustReadLastJournalEvent(t, journalPath)
-	if envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format("2006-01-02T15:04:05Z") {
+	if envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("envelope event = %#v, journal tail = %#v", envelope.Event, last)
 	}
 }

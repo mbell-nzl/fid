@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
@@ -87,7 +88,7 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 		t.Fatalf("journal lines = %d, want %d", got, before+1)
 	}
 	last := mustReadLastJournalEvent(t, journalPath)
-	if last.EventID != envelope.Event.ID || last.OccurredAt.UTC().Format("2006-01-02T15:04:05Z") != envelope.Event.OccurredAt {
+	if last.EventID != envelope.Event.ID || last.OccurredAt.UTC().Format(time.RFC3339Nano) != envelope.Event.OccurredAt {
 		t.Fatalf("envelope event = %+v, journal tail = %+v", envelope.Event, last)
 	}
 }

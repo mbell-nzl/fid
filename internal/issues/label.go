@@ -212,7 +212,7 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 		return err
 	}
 
-	*result = issueLabelWriteResult{issueID: request.issueID, label: request.label, revision: revision + 1, eventID: event.EventID, occurredAt: event.OccurredAt.UTC().Format(time.RFC3339)}
+	*result = issueLabelWriteResult{issueID: request.issueID, label: request.label, revision: revision + 1, eventID: event.EventID, occurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano)}
 	return nil
 }
 
