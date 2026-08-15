@@ -30,27 +30,15 @@ func newIssueACAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <issue-id>",
 		Short: "Add an acceptance criterion to a task or subtask.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("issue.ac.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("text") {
-				err := fmt.Errorf("--text is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "text"); err != nil {
 				return err
 			}
-			if !cmd.Flags().Changed("ordinal") {
-				err := fmt.Errorf("--ordinal is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "ordinal"); err != nil {
 				return err
 			}
-			if !cmd.Flags().Changed("by") {
-				err := fmt.Errorf("--by is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			if err := requireCanonicalStringFlag(cmd, "issue.ac.add", "by", actorRole); err != nil {
 				return err
 			}
 
@@ -95,6 +83,7 @@ func newIssueACAddCommand() *cobra.Command {
 	cmd.Flags().StringVar(&text, "text", "", "Acceptance criterion text")
 	cmd.Flags().IntVar(&ordinal, "ordinal", 0, "Acceptance criterion display order")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.add"))
 	return cmd
 }
 
@@ -190,7 +179,7 @@ func newIssueACListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list <issue-id>",
 		Short: "List acceptance criteria for an issue.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("issue.ac.list", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
@@ -224,6 +213,7 @@ func newIssueACListCommand() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.list"))
 
 	return cmd
 }

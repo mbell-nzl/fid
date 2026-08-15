@@ -29,8 +29,11 @@ func newLabelAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <name>",
 		Short: "Create a label.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("label.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalStringFlag(cmd, "label.add", "by", actorRole); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderLabelError(cmd, "label.add", err)
@@ -64,6 +67,7 @@ func newLabelAddCommand() *cobra.Command {
 	cmd.Flags().StringVar(&colour, "colour", "", "Label colour")
 	cmd.Flags().StringVar(&description, "description", "", "Label description")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("label.add"))
 	return cmd
 }
 
@@ -78,7 +82,7 @@ func newLabelListCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List labels.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("label.list"),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
@@ -107,6 +111,7 @@ func newLabelListCommand() *cobra.Command {
 			return nil
 		},
 	}
+	cmd.SetFlagErrorFunc(canonicalFlagError("label.list"))
 
 	return cmd
 }

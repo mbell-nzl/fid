@@ -23,8 +23,11 @@ func newIssueLabelAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <issue-id> <label>",
 		Short: "Add one label to an issue without replacing the rest.",
-		Args:  cobra.ExactArgs(2),
+		Args:  canonicalExactArgs("issue.label.add", 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalStringFlag(cmd, "issue.label.add", "by", actorRole); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.add", args[0], err)
@@ -52,6 +55,7 @@ func newIssueLabelAddCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.label.add"))
 	return cmd
 }
 
@@ -61,8 +65,11 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "remove <issue-id> <label>",
 		Short: "Remove one label from an issue without changing the rest.",
-		Args:  cobra.ExactArgs(2),
+		Args:  canonicalExactArgs("issue.label.remove", 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalStringFlag(cmd, "issue.label.remove", "by", actorRole); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.remove", args[0], err)
@@ -90,6 +97,7 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.label.remove"))
 	return cmd
 }
 

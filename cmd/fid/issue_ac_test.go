@@ -840,8 +840,8 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 			if stdout != "" {
 				t.Fatalf("stdout = %q, want empty", stdout)
 			}
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want no rendered legacy-format output", stderr)
+			if stderr != "error: unknown flag: --format\n" {
+				t.Fatalf("stderr = %q, want concise removed-flag error", stderr)
 			}
 			if !strings.Contains(err.Error(), "unknown flag: --format") {
 				t.Fatalf("error = %q, want removed --format rejection", err)
