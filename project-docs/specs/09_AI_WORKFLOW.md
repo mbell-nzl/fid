@@ -937,9 +937,12 @@ Per-phase run state:
 Escalations:
 - `tl_escalations_current.md` carries unresolved escalations only; it is not a
   running log.
-- New ESC entries use globally sequential ESC-NNN numbering.
+- New ESC entries use phase-scoped `ESC-<phase>-<NNN>` numbering allocated from
+  that phase's seeded `triage-log.md`. TL-Lite or the full Tech Lead is the
+  allocator; QA roles emit blocker candidates only.
 - Resolved entries move to
-  `project-docs/docs/phases/phase-<id>/tl-escalations.md` at phase wrap-up.
+  `project-docs/docs/phases/phase-<id>/tl-escalations.md`; the current
+  projection retains unresolved entries only.
 
 Phase brief required sections:
 - Goal
@@ -1073,11 +1076,11 @@ loads:
 | Agent | Default Load | On Demand | Writes |
 |---|---|---|---|
 | Tech Lead | `project-docs/docs/current/*`, workflow doc | Roadmap, PRD/TRD, principles, phase archives | task specs, phase brief, validation contract, decisions, current state, specs, handoff |
-| TL-Lite | `project-docs/docs/current/*`, trigger source | principles, specific task, referenced archives | ESC append, TRG append/create |
-| Phase Runner | `project-docs/docs/current/*`, phase task list, validation contract, QA plan after creation | triage log, reports, reviews | git branch operations only |
+| TL-Lite | `project-docs/docs/current/*`, trigger source | principles, specific task, referenced archives | append TRG; append ESC on BLOCK |
+| Phase Runner | `project-docs/docs/current/*`, phase task list, validation contract, QA plan after creation | triage log, reports, reviews | append-only run ledger; git branch operations |
 | Developer | `project-docs/docs/current/*`, assigned task, validation contract, scoped files | principles, referenced archives | code, tests, docs, report, commit |
 | QA Lead | `project-docs/docs/current/*`, quality plan, validation contract, phase tasks/reports | PRD/TRD sections, principles, archives | QA plan (refines contract), final review (records VAL outcomes), human checklist |
-| QA Reviewer | `project-docs/docs/current/*`, QA plan, validation contract, named tasks/reports, quality plan | Design Plan, principles, archives | review artifact, ESC append |
+| QA Reviewer | `project-docs/docs/current/*`, QA plan, validation contract, named tasks/reports, quality plan | Design Plan, principles, archives | review artifact only; blocker candidates are routed to TL-Lite |
 
 ## 6. Task Specification Contract
 

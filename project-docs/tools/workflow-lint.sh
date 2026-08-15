@@ -283,6 +283,10 @@ for file in $report_lint_check_surfaces; do
 done
 
 check_contains "project-docs/templates/run-ledger-template.md" '^- Triage:' "run-ledger STOP triage field"
+check_contains "project-docs/specs/09_AI_WORKFLOW.md" 'phase-scoped.*ESC-' "phase-scoped escalation identity"
+check_absent "project-docs/specs/09_AI_WORKFLOW.md" 'globally sequential ESC-' "global escalation numbering"
+check_absent "project-docs/specs/09_AI_WORKFLOW.md" 'QA Reviewer.*ESC append' "QA Reviewer escalation-write authority"
+check_contains "project-docs/specs/09_AI_WORKFLOW.md" 'append-only run ledger; git branch operations' "Phase Runner write boundary"
 
 codex_runner_surfaces="
 project-docs/specs/09_AI_WORKFLOW.md
