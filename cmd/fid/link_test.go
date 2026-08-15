@@ -602,14 +602,3 @@ func syncCommandRequirementWithSummary(t *testing.T, workspace, requirementID, s
 		t.Fatalf("stderr = %q, want requirement sync confirmation", stderr)
 	}
 }
-
-func splitMarkdownTableRow(line string) []string {
-	trimmed := strings.TrimSpace(line)
-	trimmed = strings.TrimPrefix(trimmed, "|")
-	trimmed = strings.TrimSuffix(trimmed, "|")
-	parts := strings.Split(trimmed, "|")
-	for index := range parts {
-		parts[index] = strings.TrimSpace(parts[index])
-	}
-	return parts
-}

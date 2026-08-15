@@ -48,7 +48,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			stringDetail("from_type"), stringDetail("from_id"), stringDetail("relation"), stringDetail("to_type"), stringDetail("to_id"),
 		}},
 		{CodeWorkflowNotFound, CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringDetails("id")},
-		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink}, []detailExpectation{
+		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow}, []detailExpectation{
 			stringDetail("entity_type"),
 			{name: "identity", kind: detailObjectKind, children: []detailExpectation{
 				{name: "fields", kind: detailStringsKind, value: []string{"name", "colour"}},

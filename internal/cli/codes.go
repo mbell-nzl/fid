@@ -149,7 +149,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeLinkNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectLink},
 		stringField("from_type"), stringField("from_id"), stringField("relation"), stringField("to_type"), stringField("to_id")),
 	CodeWorkflowNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringField("id")),
-	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink},
+	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow},
 		stringField("entity_type"), objectField("identity", stringsField("fields"), stringsField("values"))),
 	CodeStateConflict:   definition(CategoryConflict, false, []SubjectType{SubjectIssue}, integerField("expected_revision"), integerField("actual_revision")),
 	CodeLockUnavailable: definition(CategoryConflict, true, nil, stringField("lock_path")),

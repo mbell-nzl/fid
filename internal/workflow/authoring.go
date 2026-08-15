@@ -77,7 +77,7 @@ func rejectExistingWorkflow(conn *sql.DB, name string) error {
 	if err != nil {
 		return fmt.Errorf("check workflow slug %q: %w", name, err)
 	}
-	return fmt.Errorf("workflow slug %q already exists", name)
+	return &DuplicateError{ID: name}
 }
 
 func validateStates(request DefinitionRequest) (map[string]bool, []string, error) {

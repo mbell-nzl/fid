@@ -110,7 +110,7 @@ func workflowListQuery(options ListOptions) string {
 			(SELECT COUNT(*) FROM workflow_transitions t WHERE t.workflow_id = w.id)
 		FROM workflows w
 		` + where + `
-		ORDER BY w.id`
+		ORDER BY w.name, w.id`
 }
 
 func workflowListArgs(options ListOptions) []any {

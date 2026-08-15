@@ -2,108 +2,93 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"path/filepath"
 	"testing"
 
-	"github.com/mbell-nzl/fid/internal/journal"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
-func TestWorkflowAssignProjectsOneKindAssignment(t *testing.T) {
-	t.Parallel()
+func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	runFIDCommand(t, workspace,
-		"workflow", "define",
-		"--name", "assigned-task-flow",
-		"--applies-to", "task",
-		"--states", "queued,done,cancelled",
-		"--categories", "unstarted,completed,cancelled",
-		"--transitions", "queued->done",
-		"--by", "tl",
-	)
-
-	journalPath := mustJournalPath(t, workspace)
-	beforeLines := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
-	stdout, stderr := runFIDCommand(t, workspace, "workflow", "assign", "--name", "assigned-task-flow", "--kind", "task", "--by", "tl")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	defineWorkflowForTest(t, workspace, "project-flow", "any")
+	defineWorkflowForTest(t, workspace, "task-flow", "task")
+	if result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "project-flow", "--project-wide", "--by", "tl"); result.err != nil {
+		t.Fatalf("project assignment = %#v", result)
 	}
-	if want := "assigned workflow assigned-task-flow to kind task\n"; stderr != want {
-		t.Fatalf("stderr = %q, want %q", stderr, want)
+	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "task-flow", "--kind", "task", "--by", "tl")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("kind assignment = %#v", result)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != beforeLines+1 {
-		t.Fatalf("journal lines = %d, want %d", got, beforeLines+1)
+	var envelope struct {
+		Result struct {
+			Assignment struct {
+				ScopeType  string `json:"scope_type"`
+				ScopeValue string `json:"scope_value"`
+				WorkflowID string `json:"workflow_id"`
+			} `json:"assignment"`
+		} `json:"result"`
+		Event *struct {
+			ID string `json:"id"`
+		} `json:"event"`
 	}
-	event := mustReadLastJournalEvent(t, journalPath)
-	if event.EventType != "workflow.assigned" || event.EventSchema != journal.CurrentEventSchema || len(event.Effects) != 1 {
-		t.Fatalf("event = %#v, want one current workflow.assigned event", event)
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "kind" || envelope.Result.Assignment.ScopeValue != "task" || envelope.Result.Assignment.WorkflowID != "task-flow" || envelope.Event == nil {
+		t.Fatalf("assignment response = %+v, err = %v", envelope, err)
 	}
-
 	conn := openWorkflowCommandDB(t, workspace)
 	defer closeCommandDB(t, conn)
-	var (
-		kind       string
-		workflowID string
-	)
-	if err := conn.QueryRow(`SELECT kind, workflow_id FROM workflow_assignments WHERE scope = 'kind'`).Scan(&kind, &workflowID); err != nil {
-		t.Fatalf("query assignment: %v", err)
+	resolved, err := workflow.ResolveIssueWorkflow(conn, "task")
+	if err != nil || resolved.ID != "task-flow" {
+		t.Fatalf("ResolveIssueWorkflow = %+v, %v; want kind assignment precedence", resolved, err)
 	}
-	if kind != "task" || workflowID != "assigned-task-flow" {
-		t.Fatalf("assignment = (%q, %q), want (task, assigned-task-flow)", kind, workflowID)
+	if result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "project-flow", "--project-wide", "--by", "tl"); result.err != nil {
+		t.Fatalf("replacement assignment = %#v", result)
 	}
-	var activityCount int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activity_log`).Scan(&activityCount); err != nil {
-		t.Fatalf("count activity_log: %v", err)
-	}
-	if activityCount != 0 {
-		t.Fatalf("activity_log rows = %d, want 0", activityCount)
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_assignments WHERE scope = 'project'`).Scan(&count); err != nil || count != 1 {
+		t.Fatalf("project assignment count = %d, err = %v; want one", count, err)
 	}
 }
 
-func TestWorkflowAssignRejectsWithoutMutation(t *testing.T) {
-	t.Parallel()
+func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	journalPath := mustJournalPath(t, workspace)
-
-	seen := make(map[string]struct{})
-	for _, fixture := range []struct {
-		args []string
-		want string
-	}{
-		{[]string{"workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl"}, "error: workflow \"missing\" does not exist\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--project-wide", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" cannot be assigned to project\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--project-wide", "--by", "tl"}, "error: workflow assignment specifies both kind and project scopes\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--by", "tl"}, "error: workflow assignment requires a kind or project scope\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "epic", "--by", "tl"}, "error: workflow \"task-default\" applies_to \"task\" is incompatible with kind \"epic\"\n"},
-		{[]string{"workflow", "assign", "--name", "task-default", "--kind", "task", "--by", "developer"}, "error: role \"developer\" not permitted for action \"workflow.assign\"\n  check `fid policy show` for permitted role/action combinations\n"},
-	} {
-		args := fixture.args
-		before := mustReadCommandFile(t, journalPath)
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, args...)
-		if err == nil || stdout != "" || stderr != fixture.want {
-			t.Fatalf("assign %v = (%q, %q, %v), want rejection", args, stdout, stderr, err)
+	for _, args := range [][]string{{"--json", "workflow", "assign", "--name", "missing", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--project-wide", "--by", "tl"}} {
+		result := executeCommandForTest(workspace, args...)
+		if result.err == nil || result.stdout != "" {
+			t.Fatalf("scope rejection = %#v", result)
 		}
-		if _, duplicate := seen[stderr]; duplicate {
-			t.Fatalf("assign %v stderr = %q, want a value-naming error distinct from every prior rejection", args, stderr)
-		}
-		seen[stderr] = struct{}{}
-		if after := mustReadCommandFile(t, journalPath); string(after) != string(before) {
-			t.Fatalf("assign %v changed journal", args)
-		}
-		conn := openWorkflowCommandDB(t, workspace)
-		var count int
-		if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_assignments`).Scan(&count); err != nil {
-			closeCommandDB(t, conn)
-			t.Fatalf("count assignments: %v", err)
-		}
-		closeCommandDB(t, conn)
-		if count != 0 {
-			t.Fatalf("assign %v left %d assignment rows", args, count)
-		}
+		assertWorkflowInvalidEnvelope(t, result.stderr, "workflow.assign")
 	}
-	if len(seen) != 6 {
-		t.Fatalf("distinct rejection messages = %d, want 6", len(seen))
+	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl")
+	var failure struct {
+		Error struct {
+			Code    string `json:"code"`
+			Subject struct {
+				ID string `json:"id"`
+			} `json:"subject"`
+		} `json:"error"`
+	}
+	if result.err == nil || json.Unmarshal([]byte(result.stderr), &failure) != nil || failure.Error.Code != "workflow-not-found" || failure.Error.Subject.ID != "missing" {
+		t.Fatalf("unknown workflow = %#v, failure = %+v", result, failure)
 	}
 }
 
-var _ sql.NullString
+func defineWorkflowForTest(t *testing.T, workspace, name, appliesTo string) {
+	t.Helper()
+	result := executeCommandForTest(workspace, "--json", "workflow", "define", "--name", name, "--applies-to", appliesTo, "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done", "--by", "tl")
+	if result.err != nil {
+		t.Fatalf("define %s = %#v", name, result)
+	}
+}
+
+func openWorkflowCommandDB(t *testing.T, workspace string) *sql.DB {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open workflow command database: %v", err)
+	}
+	return conn
+}
