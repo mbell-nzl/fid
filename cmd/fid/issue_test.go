@@ -13,7 +13,6 @@ import (
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
@@ -39,10 +38,7 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 		t.Fatalf("stderr = %q, want create confirmation", stderr)
 	}
 
-	stdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
+	stdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var got struct {
 		ID             string   `json:"id"`
@@ -160,10 +156,7 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 	readIssue := func(issueID string) issueJSON {
 		t.Helper()
 
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-		if stderr != "" {
-			t.Fatalf("issue get %s stderr = %q, want empty", issueID, stderr)
-		}
+		stdout := mustGetIssueJSON(t, workspace, issueID)
 
 		var got issueJSON
 		if err := json.Unmarshal([]byte(stdout), &got); err != nil {
@@ -547,7 +540,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 		},
 	})
 
-	beforeStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
 
 	var before struct {
 		ConcernsRaised    bool    `json:"concerns_raised"`
@@ -574,7 +567,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 
 	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 
-	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
+	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if beforeStdout != afterStdout {
 		t.Fatalf("issue JSON after rebuild = %q, want %q", afterStdout, beforeStdout)
 	}
@@ -799,17 +792,14 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--by", "developer")
 		issueID := parseCreatedIssueID(t, stderr)
 
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-		if stderr != "" {
-			t.Fatalf("stderr before corruption = %q, want empty", stderr)
-		}
+		stdout := mustGetIssueJSON(t, workspace, issueID)
 		if !strings.Contains(stdout, issueID) {
 			t.Fatalf("stdout before corruption = %q, want issue payload", stdout)
 		}
 
 		appendRawJournalLine(t, mustJournalPath(t, workspace), `{"event_id":"EVT-20260607-999999"`)
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "issue", "get", issueID)
 		if err == nil {
 			t.Fatal("Execute() error = nil, want corruption error")
 		}
@@ -828,10 +818,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--by", "developer")
 		issueID := parseCreatedIssueID(t, stderr)
 
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-		if stderr != "" {
-			t.Fatalf("stderr before conflict = %q, want empty", stderr)
-		}
+		stdout := mustGetIssueJSON(t, workspace, issueID)
 		if !strings.Contains(stdout, issueID) {
 			t.Fatalf("stdout before conflict = %q, want issue payload", stdout)
 		}
@@ -864,7 +851,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 			},
 		})
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "get", issueID, "--format", "json")
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "issue", "get", issueID)
 		if err == nil {
 			t.Fatal("Execute() error = nil, want precondition conflict")
 		}
@@ -891,7 +878,6 @@ func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
-	args, unwrap := migratedReadTestArgs(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -905,9 +891,6 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 		t.Fatalf("Execute(%v) error = %v", args, err)
 	}
 
-	if unwrap != "" {
-		return legacyMigratedReadOutput(t, workspace, args, stdout.String(), unwrap), stderr.String()
-	}
 	if len(args) >= 2 && args[0] == "issue" && (args[1] == "create" || args[1] == "update" || args[1] == "transition") {
 		// Pre-convergence callers shared this helper expecting mutation
 		// confirmations on stderr. Canonical mutations now write Human success to
@@ -919,7 +902,6 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 
 func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (string, string, error) {
 	t.Helper()
-	args, _ = migratedReadTestArgs(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -959,154 +941,15 @@ func mustReadCommandFile(t *testing.T, path string) []byte {
 func mustGetIssueJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if stderr != "" {
-		t.Fatalf("issue get %s stderr = %q, want empty", issueID, stderr)
+	result := executeCommandForTest(workspace, "--json", "issue", "get", issueID)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("issue get %s = %#v, want JSON stdout success", issueID, result)
 	}
-	return stdout
-}
-
-func migratedReadTestArgs(args []string) ([]string, string) {
-	if len(args) < 2 || args[0] == "--json" || !containsFormatJSON(args) {
-		return args, ""
-	}
-	operation := ""
-	switch {
-	case len(args) >= 1 && args[0] == "ready":
-		operation = "ready"
-	case len(args) >= 3 && args[0] == "issue" && args[1] == "get":
-		operation = "issue.get"
-	case len(args) >= 2 && args[0] == "issue" && args[1] == "list":
-		operation = "issue.list"
-	default:
-		return args, ""
-	}
-	for index := 0; index+1 < len(args); index++ {
-		if args[index] == "--format" && args[index+1] == "json" {
-			args = append(append([]string{}, args[:index]...), args[index+2:]...)
-			if operation == "issue.get" {
-				for sectionIndex := 0; sectionIndex+1 < len(args); sectionIndex++ {
-					if args[sectionIndex] == "--section" && isLegacyIssueSection(args[sectionIndex+1]) {
-						operation = "issue.section:" + args[sectionIndex+1]
-						args = append(append([]string{}, args[:sectionIndex]...), args[sectionIndex+2:]...)
-						break
-					}
-				}
-			}
-			return append([]string{"--json"}, args...), operation
-		}
-	}
-	return args, ""
-}
-
-func isLegacyIssueSection(value string) bool {
-	for _, section := range []string{"acceptance", "concerns", "completions", "links", "claims", "gates"} {
-		if value == section {
-			return true
-		}
-	}
-	return false
-}
-
-func containsFormatJSON(args []string) bool {
-	for index := 0; index+1 < len(args); index++ {
-		if args[index] == "--format" && args[index+1] == "json" {
-			return true
-		}
-	}
-	return false
-}
-
-func legacyMigratedReadOutput(t *testing.T, workspace string, args []string, output, operation string) string {
-	t.Helper()
-	options := issues.GetOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
-	var value any
-	switch {
-	case operation == "issue.get":
-		options.ID = args[3]
-		issue, err := issues.Get(options)
-		if err != nil {
-			t.Fatalf("Get() error = %v", err)
-		}
-		value = issue
-	case strings.HasPrefix(operation, "issue.section:"):
-		options.ID = args[3]
-		issue, err := issues.Get(options)
-		if err != nil {
-			t.Fatalf("Get() error = %v", err)
-		}
-		switch strings.TrimPrefix(operation, "issue.section:") {
-		case "acceptance":
-			value = issue.AcceptanceCriteria
-		case "concerns":
-			value = issue.Concerns
-		case "completions":
-			value = issue.Completions
-		case "links":
-			value = issue.Links
-		case "claims":
-			value = issue.Claims
-		case "gates":
-			value = issue.Gates
-		}
-	case operation == "issue.list":
-		listOptions := issues.ListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
-		for index := 3; index < len(args); index++ {
-			switch args[index] {
-			case "--kind":
-				index++
-				listOptions.Kind = args[index]
-			case "--status":
-				index++
-				listOptions.Status = args[index]
-			case "--status-category":
-				index++
-				listOptions.StatusCategory = args[index]
-			case "--epic":
-				index++
-				listOptions.EpicID = args[index]
-			case "--label":
-				index++
-				listOptions.Label = args[index]
-			case "--priority":
-				index++
-				priorities, err := issues.ParsePriorityFilter(args[index])
-				if err != nil {
-					t.Fatalf("ParsePriorityFilter() error = %v", err)
-				}
-				listOptions.Priorities = priorities
-			case "--order":
-				index++
-				listOptions.Order = args[index]
-			case "--has-concerns":
-				value := true
-				listOptions.HasOpenConcerns = &value
-			}
-		}
-		items, err := issues.List(listOptions)
-		if err != nil {
-			t.Fatalf("List() error = %v", err)
-		}
-		value = items
-	case operation == "ready":
-		readyOptions := issues.ReadyOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir()}
-		for index := 2; index+1 < len(args); index++ {
-			if args[index] == "--epic" {
-				readyOptions.EpicID = args[index+1]
-				break
-			}
-		}
-		ready, err := issues.Ready(readyOptions)
-		if err != nil {
-			t.Fatalf("Ready() error = %v", err)
-		}
-		value = map[string]any{"task": ready.Task}
-	}
-	payload, err := json.Marshal(value)
+	payload, err := json.Marshal(decodeReadEnvelope(t, result.stdout, "issue.get").Result["issue"])
 	if err != nil {
-		t.Fatalf("Marshal(legacy migrated read output) error = %v", err)
+		t.Fatalf("Marshal(issue.get result) error = %v", err)
 	}
-	return string(payload) + "\n"
+	return string(payload)
 }
 
 func seedCommandLabels(t *testing.T, workspace string, labels ...string) {
