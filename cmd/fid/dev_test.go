@@ -383,7 +383,7 @@ func seedCommandDevFinishReadyIssue(t *testing.T, workspace string) string {
 	t.Helper()
 
 	issueID := seedCommandStartedIssue(t, workspace, "CLI dev finish")
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -391,7 +391,7 @@ func seedCommandDevFinishReadyIssue(t *testing.T, workspace string) string {
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	acID := parseAddedAcceptanceCriterionID(t, addStderr)
+	acID := parseAddedAcceptanceCriterionID(t, addStdout)
 	runFIDCommand(
 		t,
 		workspace,

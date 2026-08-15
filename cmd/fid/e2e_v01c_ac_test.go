@@ -65,7 +65,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("dev_complete -> qa_review stderr = %q, want confirmation", transitionStderr)
 	}
 
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -73,9 +73,9 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	firstACID := parseAddedAcceptanceCriterionID(t, addStderr)
+	firstACID := parseAddedAcceptanceCriterionID(t, addStdout)
 
-	_, addStderr = runFIDCommand(
+	addStdout, _ = runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -83,7 +83,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"--ordinal", "2",
 		"--by", "developer",
 	)
-	secondACID := parseAddedAcceptanceCriterionID(t, addStderr)
+	secondACID := parseAddedAcceptanceCriterionID(t, addStdout)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBeforeReject := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -311,7 +311,7 @@ func mustGetAcceptanceSectionJSON(t *testing.T, workspace, issueID string) strin
 func mustGetTask4ACListJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if stderr != "" {
 		t.Fatalf("issue ac list stderr = %q, want empty", stderr)
 	}

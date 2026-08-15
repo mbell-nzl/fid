@@ -66,7 +66,7 @@ func TestFinishClosesRunCompletesTransitionsAndReleasesClaimInOneEvent(t *testin
 	if last.EventType != "dev.finished" {
 		t.Fatalf("last event type = %q, want dev.finished", last.EventType)
 	}
-	assertDevReplayableRevisionEffect(t, last, issueID, 2, 3)
+	assertDevReplayableRevisionEffect(t, last, issueID, 3, 4)
 
 	var (
 		statusChangedEffects int

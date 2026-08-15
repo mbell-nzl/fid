@@ -143,7 +143,7 @@ func TestV01CClosureSmoke(t *testing.T) {
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -151,7 +151,7 @@ func TestV01CClosureSmoke(t *testing.T) {
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	acID := parseAddedAcceptanceCriterionID(t, addStderr)
+	acID := parseAddedAcceptanceCriterionID(t, addStdout)
 
 	_, verifyStderr := runFIDCommand(
 		t,
@@ -168,12 +168,16 @@ func TestV01CClosureSmoke(t *testing.T) {
 		t,
 		workspace,
 		"issue", "ac", "list", issueID,
-		"--format", "json",
+		"--json",
 	)
 	if acListStderr != "" {
 		t.Fatalf("ac list stderr = %q, want empty", acListStderr)
 	}
-	criteria := decodeCommandJSONStructure(t, acListStdout).([]any)
+	criteriaValue := decodeReadEnvelope(t, acListStdout, "issue.ac.list").Result["acceptance_criteria"]
+	criteria, ok := criteriaValue.([]any)
+	if !ok {
+		t.Fatalf("acceptance_criteria = %#v, want array", criteriaValue)
+	}
 	if len(criteria) != 1 {
 		t.Fatalf("ac list criteria len = %d, want 1", len(criteria))
 	}

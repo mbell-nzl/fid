@@ -1,8 +1,7 @@
 package main
 
 import (
-	"fmt"
-
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
@@ -26,9 +25,9 @@ func newIssueLabelAddCommand() *cobra.Command {
 		Short: "Add one label to an issue without replacing the rest.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueMutationError(cmd, "issue.label.add", args[0], err)
 			}
 
 			result, err := issues.AddLabel(issues.AddLabelOptions{
@@ -39,13 +38,16 @@ func newIssueLabelAddCommand() *cobra.Command {
 				ActorRole:     actorRole,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderIssueMutationError(cmd, "issue.label.add", args[0], err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			return writeIssueLine(cmd.ErrOrStderr(), "added label %q to %s\n", result.Label, result.IssueID)
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.add", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+			}
+			return writeIssueLine(cmd.OutOrStdout(), "added label %q to %s\n", result.Label, result.IssueID)
 		},
 	}
 
@@ -61,9 +63,9 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 		Short: "Remove one label from an issue without changing the rest.",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueMutationError(cmd, "issue.label.remove", args[0], err)
 			}
 
 			result, err := issues.RemoveLabel(issues.RemoveLabelOptions{
@@ -74,16 +76,24 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 				ActorRole:     actorRole,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderIssueMutationError(cmd, "issue.label.remove", args[0], err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			return writeIssueLine(cmd.ErrOrStderr(), "removed label %q from %s\n", result.Label, result.IssueID)
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.remove", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+			}
+			return writeIssueLine(cmd.OutOrStdout(), "removed label %q from %s\n", result.Label, result.IssueID)
 		},
 	}
 
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	return cmd
+}
+
+func init() {
+	rootFlagCapabilities["issue label add"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["issue label remove"] = rootFlagCapability{Project: true, JSON: true}
 }

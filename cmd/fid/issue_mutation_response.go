@@ -173,6 +173,22 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	if errors.As(mutationErr, &notFound) {
 		return cli.NewFailure(cli.CodeIssueNotFound, "issue was not found", &cli.Subject{Type: cli.SubjectIssue, ID: notFound.IssueID}, map[string]any{"id": notFound.IssueID})
 	}
+	var labelNotFound *issues.LabelNotFoundError
+	if errors.As(mutationErr, &labelNotFound) {
+		return cli.NewFailure(cli.CodeLabelNotFound, "label was not found", &cli.Subject{Type: cli.SubjectLabel, ID: labelNotFound.Label}, map[string]any{"id": labelNotFound.Label})
+	}
+	var duplicateLabel *issues.DuplicateIssueLabelError
+	if errors.As(mutationErr, &duplicateLabel) {
+		return cli.NewFailure(cli.CodeDuplicateEntity, "entity already exists", &cli.Subject{Type: cli.SubjectIssue, ID: duplicateLabel.IssueID}, map[string]any{"entity_type": "issue_label", "identity": map[string]any{"fields": []string{"issue_id", "label"}, "values": []string{duplicateLabel.IssueID, duplicateLabel.Label}}})
+	}
+	var duplicateAC *issues.DuplicateAcceptanceCriterionError
+	if errors.As(mutationErr, &duplicateAC) {
+		return cli.NewFailure(cli.CodeDuplicateEntity, "entity already exists", &cli.Subject{Type: cli.SubjectIssue, ID: duplicateAC.IssueID}, map[string]any{"entity_type": "acceptance_criterion", "identity": map[string]any{"fields": []string{"issue_id", "ordinal"}, "values": []string{duplicateAC.IssueID, fmt.Sprintf("%d", duplicateAC.Ordinal)}}})
+	}
+	var limit *issues.ResultLimitExceededError
+	if errors.As(mutationErr, &limit) {
+		return cli.NewFailure(cli.CodeResultLimitExceeded, "result exceeds its collection limit", nil, map[string]any{"collection": limit.Collection, "limit": limit.Limit, "observed": limit.Observed})
+	}
 	var unsupportedKind *issues.UnsupportedKindError
 	if errors.As(mutationErr, &unsupportedKind) {
 		return cli.NewFailure(cli.CodeUnsupportedKind, "issue kind is unsupported", nil, map[string]any{"argument": "kind", "value": unsupportedKind.Kind, "allowed": []string{"epic", "task", "subtask"}})

@@ -38,7 +38,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	)
 	assertNoNestedLockFailure(t, startFinishStderr)
 
-	_, addACStderr := runFIDCommand(
+	addACStdout, addACStderr := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", finishIssueID,
@@ -47,7 +47,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, addACStderr)
-	finishACID := parseAddedAcceptanceCriterionID(t, addACStderr)
+	finishACID := parseAddedAcceptanceCriterionID(t, addACStdout)
 
 	_, verifyACStderr := runFIDCommand(
 		t,

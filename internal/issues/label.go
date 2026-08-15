@@ -11,7 +11,10 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/validation"
 )
+
+const IssueLabelsLimit = 100
 
 type AddLabelOptions struct {
 	WorkspaceRoot string
@@ -22,8 +25,11 @@ type AddLabelOptions struct {
 }
 
 type AddLabelResult struct {
-	IssueID string
-	Label   string
+	IssueID       string
+	Label         string
+	IssueRevision int
+	EventID       string
+	OccurredAt    string
 }
 
 type RemoveLabelOptions struct {
@@ -35,8 +41,11 @@ type RemoveLabelOptions struct {
 }
 
 type RemoveLabelResult struct {
-	IssueID string
-	Label   string
+	IssueID       string
+	Label         string
+	IssueRevision int
+	EventID       string
+	OccurredAt    string
 }
 
 func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
@@ -65,7 +74,7 @@ func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 	if err != nil {
 		return AddLabelResult{}, err
 	}
-	return AddLabelResult{IssueID: result.issueID, Label: result.label}, nil
+	return AddLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt}, nil
 }
 
 func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
@@ -94,7 +103,7 @@ func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
 	if err != nil {
 		return RemoveLabelResult{}, err
 	}
-	return RemoveLabelResult{IssueID: result.issueID, Label: result.label}, nil
+	return RemoveLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt}, nil
 }
 
 type issueLabelOperationSpec struct {
@@ -116,8 +125,11 @@ type issueLabelWriteRequest struct {
 }
 
 type issueLabelWriteResult struct {
-	issueID string
-	label   string
+	issueID    string
+	label      string
+	revision   int
+	eventID    string
+	occurredAt string
 }
 
 func prepareIssueLabelWrite(
@@ -137,9 +149,12 @@ func prepareIssueLabelWrite(
 	if trimmedIssueID == "" {
 		return issueLabelWriteRequest{}, fmt.Errorf("%s: issue id is required", opName)
 	}
-	trimmedLabel := strings.TrimSpace(label)
-	if trimmedLabel == "" {
+	if strings.TrimSpace(label) == "" {
 		return issueLabelWriteRequest{}, fmt.Errorf("%s: label is required", opName)
+	}
+	trimmedLabel, err := validation.NormalizeText("issue label", label, 255)
+	if err != nil {
+		return issueLabelWriteRequest{}, err
 	}
 	if err := policy.Authorize(workspaceRoot, actorRole, action); err != nil {
 		return issueLabelWriteRequest{}, err
@@ -181,11 +196,15 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 	}
 	defer closeIssueDB(conn)
 
+	revision, err := issueLabelCurrentRevision(conn, request.issueID)
+	if err != nil {
+		return err
+	}
 	if err := request.spec.validate(conn, request.issueID, request.label); err != nil {
 		return err
 	}
 
-	event, err := prepareIssueLabelEvent(lock, conn, request)
+	event, err := prepareIssueLabelEvent(lock, conn, request, revision)
 	if err != nil {
 		return err
 	}
@@ -193,7 +212,7 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 		return err
 	}
 
-	*result = issueLabelWriteResult{issueID: request.issueID, label: request.label}
+	*result = issueLabelWriteResult{issueID: request.issueID, label: request.label, revision: revision + 1, eventID: event.EventID, occurredAt: event.OccurredAt.UTC().Format(time.RFC3339)}
 	return nil
 }
 
@@ -201,7 +220,7 @@ func openIssueLabelDB(workspaceRoot string) (*sql.DB, error) {
 	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
 }
 
-func prepareIssueLabelEvent(lock *journal.WriteLock, conn *sql.DB, request issueLabelWriteRequest) (journal.Event, error) {
+func prepareIssueLabelEvent(lock *journal.WriteLock, conn *sql.DB, request issueLabelWriteRequest, revision int) (journal.Event, error) {
 	activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
 		return activityIDExists(conn, candidate)
 	})
@@ -226,11 +245,14 @@ func prepareIssueLabelEvent(lock *journal.WriteLock, conn *sql.DB, request issue
 	}
 
 	timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
-	event.Effects = issueLabelEffects(request, activityID, event.EventID, timestamp)
+	event.Effects, err = issueLabelEffects(request, activityID, event.EventID, timestamp, revision)
+	if err != nil {
+		return journal.Event{}, err
+	}
 	return event, nil
 }
 
-func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, timestamp string) []journal.Effect {
+func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, timestamp string, revision int) ([]journal.Effect, error) {
 	effects := []journal.Effect{
 		{
 			Op:    request.spec.effectOp,
@@ -244,6 +266,11 @@ func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, time
 	if request.spec.effectOp == "insert" {
 		effects[0].Values = map[string]any{}
 	}
+	revisionEffects, err := BuildIssueRevisionEffects([]IssueRevision{{IssueID: request.issueID, Observed: revision}})
+	if err != nil {
+		return nil, err
+	}
+	effects = append(effects, revisionEffects...)
 	effects = append(effects, issueLabelActivityEffect(
 		activityID,
 		eventID,
@@ -254,7 +281,7 @@ func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, time
 		request.spec.direction,
 		request.spec.eventName,
 	))
-	return effects
+	return effects, nil
 }
 
 func appendAndProjectIssueLabelEvent(conn *sql.DB, workspaceRoot string, lock *journal.WriteLock, event journal.Event) error {
@@ -276,8 +303,8 @@ func assertIssueLabelAddable(conn *sql.DB, issueID, label string) error {
 		return &NotFoundError{IssueID: issueID}
 	}
 
-	if err := requireExistingLabels(conn, []string{label}); err != nil {
-		return fmt.Errorf("%s", strings.Replace(err.Error(), "create issue:", "issue label add:", 1))
+	if err := issueLabelExists(conn, label); err != nil {
+		return err
 	}
 
 	labels, err := issueLabels(conn, issueID)
@@ -286,8 +313,11 @@ func assertIssueLabelAddable(conn *sql.DB, issueID, label string) error {
 	}
 	for _, existing := range labels {
 		if existing == label {
-			return fmt.Errorf("issue label add: issue %q already has label %q", issueID, label)
+			return &DuplicateIssueLabelError{IssueID: issueID, Label: label}
 		}
+	}
+	if len(labels) >= IssueLabelsLimit {
+		return &ResultLimitExceededError{Collection: "issue_labels", Limit: IssueLabelsLimit, Observed: len(labels) + 1}
 	}
 	return nil
 }
@@ -308,7 +338,25 @@ func assertIssueLabelRemovable(conn *sql.DB, issueID, label string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("issue label remove: issue %q does not have label %q", issueID, label)
+	return &LabelNotFoundError{Label: label}
+}
+
+func issueLabelCurrentRevision(conn *sql.DB, issueID string) (int, error) {
+	var revision int
+	err := conn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, issueID).Scan(&revision)
+	if err == sql.ErrNoRows {
+		return 0, &NotFoundError{IssueID: issueID}
+	}
+	return revision, err
+}
+
+func issueLabelExists(conn *sql.DB, label string) error {
+	var name string
+	err := conn.QueryRow(`SELECT name FROM labels WHERE name = ?`, label).Scan(&name)
+	if err == sql.ErrNoRows {
+		return &LabelNotFoundError{Label: label}
+	}
+	return err
 }
 
 func issueLabelAddArgv(issueID, label, actorRole string) []string {

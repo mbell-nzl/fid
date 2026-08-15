@@ -969,6 +969,140 @@
   `09_AI_WORKFLOW.md` §8; `project-docs/agents/phase-runner.md`;
   `docs/reviews/2026-08-11-developer-stoppage-analysis.md` (cause E).
 
+### DEC-140: ESC-20-009 sustains all three Review 3 findings and recovers them in one bounded test-led task
+
+- **Date:** 2026-08-12
+- **Context:** Review 3 covered Tasks 7-9 and returned BLOCK with three Task 9
+  Blocking findings and zero findings against Tasks 7 and 8. Independent
+  verification of the tree confirms each one. `--expected-revision` is wired on
+  transition (`cmd/fid/issue_transition.go:28,39,50`), but no test anywhere in
+  the repository references it outside `cmd/fid/issue_update_test.go` and
+  `internal/cli/codes_test.go`, so the transition side of the three-state matrix
+  has no assertion at all. The only canonical `--json` transition test is
+  `TestIssueTransitionJSONRejectsUnsatisfiedClaimPrecondition`; the remaining
+  transition tests are legacy Human-mode substring checks, and no test compares
+  a transition envelope's Event identity against the journal tail.
+  `TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure` loops both flags over
+  `issue create` only. `internal/issues/update_test.go:244` asserts a projected
+  activity actor and unchanged owner fields but makes no forbidden-table or
+  Event-effect assertion. The Task 9 gates, report-lint, commit verification,
+  and the independent integration run all pass; none of them can prove a
+  conditional state that was never asserted.
+- **Decision:**
+  1. **All three findings are sustained and `TRG-20-009`'s BLOCK was correct.**
+     None is misclassified, no verified corrective commit exists, and no accepted
+     decision covers them. This is the escalation path working as designed.
+  2. **Nothing is weakened.** VAL-018's three-state update *and* transition
+     matrix with journal counts, VAL-019's four-way transition table with journal
+     counts, VAL-040's flag-tree plus mutation-result plus retained-path
+     evidence, and VAL-041's forbidden-table/journal-effect assertions stand
+     exactly as Human-approved.
+  3. **This is an evidence gap, not a demonstrated product defect** — and the
+     distinction is the point. The implementation exists; whether it is correct
+     is precisely what is unproven. Task 9a is test-led: an assertion that fails
+     reveals a real defect, fixed in the same session inside the existing
+     contract under red/green with a mandatory deviation note. A contract that
+     looks wrong is a hard stop, not a local edit.
+  4. **Task 9 is not reopened.** Its implementation commit `86d927d` stands and
+     its report is not rewritten. Task 9a is additive evidence on top of it, in
+     the same shape as Tasks 3a-3d. The affected VAL rows — VAL-017 transition
+     portion, VAL-018, VAL-019, VAL-040, VAL-041, and the owner/transition rows
+     of VAL-044 — re-record from Task 9a's own session evidence.
+  5. **Responsibility: this is a Developer evidence shortfall, and DEC-139
+     decision 3 does not apply.** The requirement was published in three places
+     the Developer independently loads: the Task 9 acceptance criteria naming
+     VAL-018/019/040/041, the validation contract's Evidence and Pass columns
+     (which `project-docs/agents/developer.md` requires loading for every VAL the
+     task spec names), and the phase brief's Known Risk restating DEC-130's
+     no-sampling rule. Unlike ESC-20-008, no control demanded something the
+     producing role was never told to produce.
+  6. **Contributing Tech Lead factor, corrected forward.** Task 9 is the phase's
+     widest product task: eleven VAL IDs and three commands, expressed as
+     one-line acceptance criteria with a single update-only First Failing Test.
+     A one-line criterion that summarizes a matrix reads like a replacement for
+     it. The fix is **not** to copy each matrix into each task spec — that
+     duplication is its own defect source, per DEC-136 decision 2 — but to make
+     the precedence explicit. New standing constraint, added to the phase brief
+     and effective for Tasks 10-18: **a task spec's acceptance criterion
+     summarizes the validation contract row, it never replaces it.** Where a VAL's
+     Evidence or Pass column names a matrix, table, or "every X", assert one
+     observable case per cell for every named operation, and cite the
+     cell-to-test mapping in the completion report. Representative or
+     single-operation evidence is a failed acceptance criterion.
+  7. **Recovery path.** `tasks/task-9a.md` is the single bounded recovery task.
+     After it closes, the same reviewer performs a bounded re-review written to
+     `qa/review-3b.md`, scoped to the three Review 3 Blocking findings and the
+     Task 9a gate record only. `qa/review-3.md` stays as written. Phase Runner
+     resumes at Task 9a, then review-3b, then Task 10.
+  8. **Anti-gaming unchanged.** DEC-131's token rules, DEC-132's termination
+     rules, DEC-139's forward-effective termination annotation, the ban on
+     weakening or re-pointing tests, and UNVERIFIED-not-`PASS` all apply. New
+     assertions must be observable at a real boundary — decoded canonical JSON,
+     journal line counts, projection reads — never source constants or
+     unexported internals that merely restate the implementation.
+- **Consequences:** One extra Developer session plus one bounded re-review, and
+  Task 10 starts from a mutation surface whose conditional states are actually
+  proven rather than assumed. The standing constraint in decision 6 costs each
+  remaining task a short cell-to-test mapping in its report and removes the
+  reading under which a compressed criterion looks complete. This is the second
+  occurrence of DEC-130's realized risk — a wide task producing representative
+  rather than exhaustive evidence — so the correction targets that pattern, not
+  this instance.
+- **Refs:** `TRG-20-009`; `ESC-20-009`; `qa/review-3.md`; `tasks/task-9.md`;
+  `tasks/task-9-done.md`; `tasks/task-9a.md`; DEC-130; DEC-136 (decision 2);
+  DEC-139 (decision 3); `qa/validation-contract.md` VAL-017/018/019/040/041/044;
+  `contracts.md` §2.4, §3.2, §3.6.
+
+### DEC-141: Recover Task 10 under the typed workflow-repair model and close ESC-20-010
+
+- **Date:** 2026-08-15
+- **Context:** The Task 10 Developer session ended normally after 616 seconds;
+  no timeout, cancellation, kill, or Phase Runner interrupt occurred. It left a
+  durable partial migration and a focused package failure caused by remaining
+  contract-obsolete tests, then classified that incomplete in-scope state as a
+  blocker. `TRG-20-010` and `ESC-20-010` faithfully applied the old binary
+  `RESUME | BLOCK` process, but no product, architecture, data-model,
+  public-interface, dependency, security, specification, or external
+  infrastructure decision was required. The Human authorized an isolated
+  principal-engineer recovery and a systemic workflow-reliability overhaul.
+- **Decision:**
+  1. `ESC-20-010` is reclassified as a decision-free same-task recovery. The
+     original red suite and incomplete report remain truthful evidence, but
+     neither condition requires Human attention under the accepted
+     `RESUME | REPAIR | BLOCK` model.
+  2. Recovery uses the preserved stash `779beab1` on the isolated
+     `workflow-reliability-overhaul` branch. The v2-marked run ledger records
+     `RUN-RESUME`, `TASK-RECOVERY`, `REPAIR`, and Task 10 completion in order;
+     failed attempts are retained rather than rewritten.
+  3. Task 10 remains one task. Its accepted contract and VAL rows are unchanged.
+     Recovery completes the six operation transports, exact response/error
+     shapes, aggregate revisions, Event identities and golden replay, closed
+     value domains, deterministic ordering, collection limits, selected-project
+     routing, Human channels, and the guarded legacy `issue ac verify` leaf.
+  4. The first restored focused failures are causal red/green evidence. Every
+     obsolete assertion is migrated to the accepted contract; no test,
+     threshold, command, or acceptance criterion is weakened or narrowed.
+  5. The repository workflow overhaul is accepted as the v1 reliability patch:
+     typed report outcomes, protected blocker categories, same-task continuation,
+     strict recovery-ledger validation, bounded QA repair/re-review, exact PASS
+     termination parsing, anti-churn progress accounting, and retained polling
+     of silent live commands. Independent review at `06a413a` returned PASS
+     after all Must-fix findings were repaired.
+  6. Broader test-performance refactors and edits to the separate v2 starter kit
+     remain out of this recovery. The audit's v2 adoption deltas are recorded for
+     a later isolated workstream.
+- **Consequences:** Task 10 may close after its exact six-command gate,
+  candidate commit verification, report finalization, and report-lint pass.
+  `ESC-20-010` is resolved without a product exception and Phase Runner may
+  continue at Task 11 in a fresh session. Future ordinary red tests, in-scope
+  gate repairs, report defects, bounded QA rework, and session continuation use
+  `REPAIR`; only protected or budget-exhausted conditions produce a STOP.
+- **Refs:** `TRG-20-010`; `ESC-20-010`; `tasks/task-10.md`;
+  `tasks/task-10-done.md`; `run-ledger.md`; `contracts.md` §§2.4, 3, 7;
+  `qa/validation-contract.md` VAL-008/010/011/017/021/022/041/044/045;
+  `docs/reviews/2026-08-15-workflow-reliability-overhaul-audit.md`;
+  `docs/reviews/2026-08-15-workflow-reliability-overhaul-plan.md`.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

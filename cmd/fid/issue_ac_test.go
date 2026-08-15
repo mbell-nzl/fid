@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +11,117 @@ import (
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
+
+func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+
+	created := executeCommandForTest(workspace,
+		"--json", "issue", "create", "--kind", "task", "--title", "AC envelope target", "--by", "developer",
+	)
+	if created.err != nil || created.stderr != "" {
+		t.Fatalf("issue create = %#v, want stdout-only success", created)
+	}
+	var createEnvelope struct {
+		Result struct {
+			Issue struct {
+				ID string `json:"id"`
+			} `json:"issue"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(created.stdout), &createEnvelope); err != nil {
+		t.Fatalf("Unmarshal(create stdout) error = %v", err)
+	}
+
+	journalPath := mustJournalPath(t, workspace)
+	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	result := executeCommandForTest(workspace,
+		"--json", "issue", "ac", "add", createEnvelope.Result.Issue.ID,
+		"--text", "Response envelope has the exact AC result", "--ordinal", "1", "--by", "developer",
+	)
+	if result.err != nil {
+		t.Fatalf("issue ac add error = %v, stderr = %q", result.err, result.stderr)
+	}
+	if result.stderr != "" {
+		t.Fatalf("stderr = %q, want empty", result.stderr)
+	}
+
+	var envelope struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Result          struct {
+			AcceptanceCriterion struct {
+				ID      string `json:"id"`
+				IssueID string `json:"issue_id"`
+				Ordinal int    `json:"ordinal"`
+				Text    string `json:"text"`
+			} `json:"acceptance_criterion"`
+			IssueRevision int `json:"issue_revision"`
+		} `json:"result"`
+		Event struct {
+			ID         string `json:"id"`
+			OccurredAt string `json:"occurred_at"`
+		} `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stdout) error = %v; stdout = %q", err, result.stdout)
+	}
+	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result", []string{"acceptance_criterion", "issue_revision"})
+	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result.acceptance_criterion", []string{"id", "issue_id", "ordinal", "text"})
+	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "event", []string{"id", "occurred_at"})
+	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "issue.ac.add" {
+		t.Fatalf("envelope = %+v, want fid-cli.v1 issue.ac.add success", envelope)
+	}
+	if envelope.Result.AcceptanceCriterion.IssueID != createEnvelope.Result.Issue.ID || envelope.Result.AcceptanceCriterion.Ordinal != 1 || envelope.Result.AcceptanceCriterion.Text != "Response envelope has the exact AC result" || !strings.HasPrefix(envelope.Result.AcceptanceCriterion.ID, "AC-") {
+		t.Fatalf("acceptance criterion = %+v, want exact contract values", envelope.Result.AcceptanceCriterion)
+	}
+	if envelope.Result.IssueRevision != 2 {
+		t.Fatalf("issue_revision = %d, want 2", envelope.Result.IssueRevision)
+	}
+	if envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
+		t.Fatalf("event = %+v, want identity", envelope.Event)
+	}
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before+1 {
+		t.Fatalf("journal lines = %d, want %d", got, before+1)
+	}
+	last := mustReadLastJournalEvent(t, journalPath)
+	if last.EventID != envelope.Event.ID || last.OccurredAt.UTC().Format("2006-01-02T15:04:05Z") != envelope.Event.OccurredAt {
+		t.Fatalf("envelope event = %+v, journal tail = %+v", envelope.Event, last)
+	}
+}
+
+func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC JSON failures", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+	runFIDCommand(t, workspace, "issue", "ac", "add", issueID, "--text", "existing", "--ordinal", "1", "--by", "developer")
+
+	journalPath := mustJournalPath(t, workspace)
+	tests := []struct {
+		name string
+		args []string
+		code string
+	}{
+		{name: "duplicate ordinal", args: []string{"--json", "issue", "ac", "add", issueID, "--text", "duplicate", "--ordinal", "1", "--by", "developer"}, code: "duplicate-entity"},
+		{name: "missing issue", args: []string{"--json", "issue", "ac", "add", "FID-missing", "--text", "missing", "--ordinal", "1", "--by", "developer"}, code: "issue-not-found"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			result := executeCommandForTest(workspace, test.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("result = %#v, want stderr-only rejection", result)
+			}
+			assertJSONFailureCode(t, result.stderr, "issue.ac.add", test.code)
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
 
 func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
@@ -27,17 +139,17 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(stderr, "added AC AC-") {
-		t.Fatalf("stderr = %q, want AC confirmation prefix", stderr)
+	if !strings.Contains(stdout, "added AC AC-") {
+		t.Fatalf("stdout = %q, want AC confirmation prefix", stdout)
 	}
-	if !strings.Contains(stderr, "on "+issueID+" (ordinal 1)") {
-		t.Fatalf("stderr = %q, want issue id and ordinal", stderr)
+	if !strings.Contains(stdout, "on "+issueID+" (ordinal 1)") {
+		t.Fatalf("stdout = %q, want issue id and ordinal", stdout)
 	}
-	if !strings.Contains(stderr, `"Journal file is flushed to disk before returning success"`) {
-		t.Fatalf("stderr = %q, want quoted criterion text", stderr)
+	if !strings.Contains(stdout, `"Journal file is flushed to disk before returning success"`) {
+		t.Fatalf("stdout = %q, want quoted criterion text", stdout)
 	}
 
 	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
@@ -227,7 +339,7 @@ func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testin
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC verify", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -235,7 +347,7 @@ func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testin
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	criterionID := parseAddedAcceptanceCriterionID(t, addStderr)
+	criterionID := parseAddedAcceptanceCriterionID(t, addStdout)
 
 	stdout, stderr := runFIDCommand(
 		t,
@@ -641,12 +753,12 @@ func TestIssueACVerifyCommandUsesRoleSpecificPermissionsAndHumanAttribution(t *t
 	}
 }
 
-func TestIssueACListCommandDefaultsToJSONAndMatchesIssueGetAcceptance(t *testing.T) {
+func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC list")
-	_, secondCriterionStderr := runFIDCommand(
+	secondCriterionStdout, secondCriterionStderr := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -654,7 +766,10 @@ func TestIssueACListCommandDefaultsToJSONAndMatchesIssueGetAcceptance(t *testing
 		"--ordinal", "2",
 		"--by", "developer",
 	)
-	secondCriterionID := parseAddedAcceptanceCriterionID(t, secondCriterionStderr)
+	if secondCriterionStderr != "" {
+		t.Fatalf("second add stderr = %q, want empty", secondCriterionStderr)
+	}
+	secondCriterionID := parseAddedAcceptanceCriterionID(t, secondCriterionStdout)
 
 	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "fail")
 	runFIDCommand(
@@ -672,129 +787,134 @@ func TestIssueACListCommandDefaultsToJSONAndMatchesIssueGetAcceptance(t *testing
 	if defaultStderr != "" {
 		t.Fatalf("default stderr = %q, want empty", defaultStderr)
 	}
+	for _, want := range []string{"1. Criterion for CLI AC list", "2. Second criterion for CLI AC list"} {
+		if !strings.Contains(defaultStdout, want) {
+			t.Fatalf("default stdout = %q, want line %q", defaultStdout, want)
+		}
+	}
+	if strings.Contains(defaultStdout, criterionID) || strings.Contains(defaultStdout, secondCriterionID) {
+		t.Fatalf("default stdout = %q, want concise human output without IDs", defaultStdout)
+	}
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
-	if defaultStdout != jsonStdout {
-		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
+	envelope := decodeReadEnvelope(t, jsonStdout, "issue.ac.list")
+	assertExactKeys(t, envelope.Result, []string{"issue_id", "acceptance_criteria"})
+	if envelope.Result["issue_id"] != issueID {
+		t.Fatalf("issue_id = %#v, want %q", envelope.Result["issue_id"], issueID)
 	}
-
-	getStdout, getStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
-	if getStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", getStderr)
-	}
-
-	listStructure := decodeCommandJSONStructure(t, jsonStdout)
-	getStructure := decodeCommandJSONStructure(t, getStdout)
-	if !commandStructuresEqual(listStructure, getStructure) {
-		t.Fatalf("ac list structure = %#v, want issue get acceptance structure %#v", listStructure, getStructure)
-	}
-
-	rows, ok := listStructure.([]any)
+	rows, ok := envelope.Result["acceptance_criteria"].([]any)
 	if !ok {
-		t.Fatalf("ac list structure = %T, want []any", listStructure)
+		t.Fatalf("acceptance_criteria = %T, want []any", envelope.Result["acceptance_criteria"])
 	}
 	if len(rows) != 2 {
 		t.Fatalf("ac list rows len = %d, want 2", len(rows))
 	}
 	firstRow := rows[0].(map[string]any)
+	assertExactKeys(t, firstRow, []string{"id", "ordinal", "text"})
 	if firstRow["id"] != criterionID {
 		t.Fatalf("first row id = %#v, want %q", firstRow["id"], criterionID)
 	}
 	secondRow := rows[1].(map[string]any)
+	assertExactKeys(t, secondRow, []string{"id", "ordinal", "text"})
 	if secondRow["id"] != secondCriterionID {
 		t.Fatalf("second row id = %#v, want %q", secondRow["id"], secondCriterionID)
 	}
 }
 
-func TestIssueACListCommandDispatchesFormatsAndHandlesEmptyAndMissingIssues(t *testing.T) {
+func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "CLI AC format dispatch")
-	runFIDCommand(t, workspace, "issue", "ac", "verify", issueID, criterionID, "--by", "developer", "--status", "pass")
+	issueID, _ := seedIssueAcceptanceCriterion(t, workspace, "CLI AC transport replacement")
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
-	}
-	want := decodeCommandJSONStructure(t, jsonStdout)
-
-	for _, formatName := range []string{"toon", "yaml"} {
+	for _, formatName := range []string{"json", "toon", "yaml", "markdown"} {
 		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", formatName)
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "ac", "list", issueID, "--format", formatName)
+			if err == nil {
+				t.Fatal("Execute() error = nil, want removed --format rejection")
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
 			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
+				t.Fatalf("stderr = %q, want no rendered legacy-format output", stderr)
 			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
+			if !strings.Contains(err.Error(), "unknown flag: --format") {
+				t.Fatalf("error = %q, want removed --format rejection", err)
 			}
 		})
 	}
-
-	t.Run("markdown", func(t *testing.T) {
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "markdown")
-		if stderr != "" {
-			t.Fatalf("stderr = %q, want empty", stderr)
-		}
-		if !strings.Contains(stdout, "# Acceptance Criteria") {
-			t.Fatalf("markdown stdout = %q, want heading", stdout)
-		}
-		if !strings.Contains(stdout, criterionID) {
-			t.Fatalf("markdown stdout = %q, want criterion id", stdout)
-		}
-		if !strings.Contains(stdout, "developer: pass") {
-			t.Fatalf("markdown stdout = %q, want latest verification status", stdout)
-		}
-	})
 
 	t.Run("empty list", func(t *testing.T) {
 		_, emptyIssueStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Empty AC list", "--by", "developer")
 		emptyIssueID := parseCreatedIssueID(t, emptyIssueStderr)
 
-		stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", emptyIssueID, "--format", "json")
+		stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", emptyIssueID)
 		if stderr != "" {
 			t.Fatalf("stderr = %q, want empty", stderr)
 		}
-		if got := decodeCommandJSONStructure(t, stdout); !commandStructuresEqual([]any{}, got) {
-			t.Fatalf("empty json structure = %#v, want empty list", got)
+		envelope := decodeReadEnvelope(t, stdout, "issue.ac.list")
+		assertExactKeys(t, envelope.Result, []string{"issue_id", "acceptance_criteria"})
+		if got := envelope.Result["acceptance_criteria"]; !commandStructuresEqual([]any{}, got) {
+			t.Fatalf("empty acceptance_criteria = %#v, want named empty array", got)
 		}
 	})
 
 	t.Run("missing issue", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "ac", "list", "FID-missing", "--format", "json")
+		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "--json", "issue", "ac", "list", "FID-missing")
 		if err == nil {
 			t.Fatal("Execute() error = nil, want missing issue rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: issue "FID-missing" not found`) {
-			t.Fatalf("stderr = %q, want missing issue error", stderr)
-		}
+		assertJSONFailureCode(t, stderr, "issue.ac.list", "issue-not-found")
 	})
 }
 
-func parseAddedAcceptanceCriterionID(t *testing.T, stderr string) string {
+func TestIssueACListJSONReportsOverLimitWithoutOutput(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC list limit", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	tx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	for ordinal := 1; ordinal <= 1001; ordinal++ {
+		if _, err := tx.Exec(`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text) VALUES (?, ?, ?, ?)`, fmt.Sprintf("AC-cli-limit-%04d", ordinal), issueID, ordinal, "criterion"); err != nil {
+			t.Fatalf("insert criterion %d: %v", ordinal, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	closeCommandDB(t, conn)
+
+	result := executeCommandForTest(workspace, "--json", "issue", "ac", "list", issueID)
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("result = %#v, want stderr-only limit rejection", result)
+	}
+	assertJSONFailureCode(t, result.stderr, "issue.ac.list", "result-limit-exceeded")
+}
+
+func parseAddedAcceptanceCriterionID(t *testing.T, output string) string {
 	t.Helper()
 
-	fields := strings.Fields(stderr)
+	fields := strings.Fields(output)
 	for index := range fields {
 		if fields[index] == "AC" && index+1 < len(fields) {
 			return fields[index+1]
 		}
 	}
-	t.Fatalf("stderr = %q, want added AC line with id", stderr)
+	t.Fatalf("output = %q, want added AC line with id", output)
 	return ""
 }
 
@@ -803,7 +923,7 @@ func seedIssueAcceptanceCriterion(t *testing.T, workspace string, title string) 
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -811,7 +931,7 @@ func seedIssueAcceptanceCriterion(t *testing.T, workspace string, title string) 
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	return issueID, parseAddedAcceptanceCriterionID(t, addStderr)
+	return issueID, parseAddedAcceptanceCriterionID(t, addStdout)
 }
 
 type commandAcceptanceCriterion struct {

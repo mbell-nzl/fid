@@ -5,13 +5,13 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-8 and the DEC-133 infrastructure pack are
-complete, with Reviews 1c, infra-review-1, and 2 all NON-BLOCK.** Eight
-escalations (`ESC-20-001..008`) are resolved by `DEC-130..DEC-139` with no
-weakened acceptance criterion and **no product defect**: every one landed in
-the verification apparatus or the evidence record — missing evidence, a stale
-integration fixture, uncaptured gate output, a stale classifier inventory, and
-two Tech Lead instruction defects.
+**Phase 20 is in flight: Tasks 1-9a and the DEC-133 infrastructure pack are
+complete, with Reviews 1c, infra-review-1, 2, and bounded Review 3b all
+NON-BLOCK.** Review 3's three sustained Task 9 evidence gaps were closed by
+Task 9a without reopening Task 9. Ten escalations (`ESC-20-001..010`) are
+resolved by `DEC-130..DEC-141`; ESC-20-010 is now correctly classified as
+decision-free same-task recovery rather than a Human blocker. No product,
+architecture, data-model, or public-interface decision is open.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -82,19 +82,26 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
 1. The Human-approved DEC-133 infrastructure pack Tasks 3e-3l is complete and
    independently NON-BLOCK at `cd9e6bc`;
    `../phases/phase-20/infra-improvement-pack.md` retains the execution record.
-2. Tasks 4-8 are complete; Review 2 (Tasks 4-6) is NON-BLOCK at `ae5782f`.
-   Task 8 closes at `4df4d66` under DEC-139 with no evidence recovery.
-3. Escalations ESC-20-005..008 are resolved (DEC-135..DEC-139); none is open.
-   Before the next Developer or Phase Runner session, run
-   `project-docs/tools/sync-agents.sh` then
-   `project-docs/tools/workflow-lint.sh` — DEC-137/138/139 prompt rules are
-   inert in the generated provider prompts until both run.
-4. Phase Runner resumes at Task 9, then continues Tasks 10-18 through the
-   remaining review windows (after Tasks 9, 12, 15, 17) and final review.
-5. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+2. Tasks 4-9a are complete. Review 2 (Tasks 4-6) is NON-BLOCK at `ae5782f`;
+   Task 8 closes at `4df4d66` under DEC-139; Task 9 closes at `86d927d`; and
+   Task 9a closes at `1f196a9` under DEC-140.
+3. Bounded Review 3b is NON-BLOCK at `db36832`, closing all three sustained
+   Review 3 evidence findings. It does not reset cadence; Review 4 remains due
+   after Task 12.
+4. Task 10 product work and the ordinary suite are complete under DEC-141. Its
+   report remains `RECOVERY_REQUIRED` only while the exact candidate gate is
+   reproduced from a normal clone; Go VCS stamping misresolves the linked
+   worktree to `/tmp` for integration/build commands.
+5. The workflow reliability overhaul is implemented and independently PASS.
+   It supplies typed repair routing, bounded same-task continuation, strict
+   sequence/report checks, QA repair/re-review, and retained polling for silent
+   live commands. Generated prompts and canonical controls are synchronized.
+6. After Task 10's gate/report closes, a fresh Phase Runner resumes at Task 11
+   and continues Tasks 11-18 through review windows after Tasks 12, 15, and 17.
+7. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
-Carry-forward opened this phase, both registered in `decisions_active.md` at
+Carry-forward opened this phase, all registered in `decisions_active.md` at
 wrap-up:
 
 - **CF-028** — `internal/bootstrap/init.go` is 427 lines against the 400-line

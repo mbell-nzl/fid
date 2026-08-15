@@ -340,7 +340,7 @@
       <div class="meta">
         <span>11 August 2026</span>
         <span>Branch: <strong>phase-20</strong></span>
-        <span class="status">Verdict: patch before continuing</span>
+        <span class="status">Verdict: DEC-139 fixes Task 8; broader patch remains</span>
       </div>
     </header>
 
@@ -358,7 +358,7 @@
         <h2>Executive summary</h2>
         <div class="verdict">
           <strong>Do not carry DEC-138 into V2 as written.</strong>
-          <p>Keep DEC-136. Replace DEC-138's narrow bookkeeping exception with a general, bounded same-session repair rule. First fix the V1 command-evidence handoff exposed by Task 8, then recover Task 8's six exact gates and resume the phase.</p>
+          <p>Keep DEC-136. Replace DEC-138's narrow bookkeeping exception with a general, bounded same-session repair rule. DEC-139 has now resolved Task 8's command-evidence mismatch forward-effectively, with no Task 8 rerun.</p>
         </div>
 
         <div class="summary-grid">
@@ -373,9 +373,9 @@
             <p>It solves a real routing problem, but starts from a false premise and defines a category too narrow and internally inconsistent for reliable use.</p>
           </article>
           <article class="card warn">
-            <span class="label">Repair now</span>
+            <span class="label">Resolved by DEC-139</span>
             <h3>Task 8 evidence handoff</h3>
-            <p>The executor must observe an exit code, while the report template records only an output token. The Phase Runner then rejects the report for omitting a field it was never told to contain.</p>
+            <p>The executor had to observe an exit code, while the report template recorded only an output token. DEC-139 made terminal status a forward-effective report field and closed Task 8 without a rerun.</p>
           </article>
           <article class="card info">
             <span class="label">V2 direction</span>
@@ -431,15 +431,19 @@
             <div class="when">19:55</div>
             <div class="event"><strong>The Phase Runner stopped at ESC-20-008.</strong> None of the six rows contains a nested <code>exit_code</code> or explicit termination result.</div>
           </li>
+          <li>
+            <div class="when">20:12</div>
+            <div class="event"><strong>DEC-139 resolved the stop.</strong> Commit <code>f434f41</code> promoted terminal status into the canonical report contract, applied the rule only to future reports, and closed Task 8 without rerunning its gates.</div>
+          </li>
         </ul>
 
         <div class="callout">
-          <strong>Assessment:</strong> the Phase Runner followed its current prompt correctly, and the Task 8 report cannot prove termination under that rule. However, the rule is not implementable through the current completion-report template. This is a workflow interface defect, not evidence that Task 8 product code or tests failed.
+          <strong>Assessment:</strong> DEC-139 is a suitable resolution. The Phase Runner followed its current prompt correctly, but the Task 8 Developer followed the canonical producer contract correctly too. A downstream private requirement should not retroactively fail a compliant artifact. Keeping the stronger rule forward-effectively fixes the interface without inventing a product or gate failure.
         </div>
 
         <p>This defect is directly related to the earlier ESC-20-003 recovery change in commit <code>d0bffbc</code>. That change correctly taught Codex agents to retain nested sessions and wait for a real terminal result. It also told the Phase Runner to reject reports without that result, but it did not add a termination field to the report template or make <code>report-lint.sh</code> enforce one.</p>
 
-        <p>A final Go package line is a useful output token, but it is not by itself proof that the entire process exited. The correct fix is to carry the observed terminal status through the evidence interface, not to weaken the Phase Runner back to accepting output alone.</p>
+        <p>A final Go package line is a useful output token, but it is not by itself proof that the entire process exited. DEC-139 takes the correct forward path: carry observed terminal status through the evidence interface instead of weakening the Phase Runner back to accepting output alone. CF-031 still tracks mechanical <code>report-lint.sh</code> enforcement.</p>
       </section>
 
       <section id="findings">
@@ -482,11 +486,11 @@
 
       <section id="actions">
         <h2>Recommended action plan</h2>
-        <h3>Immediate V1 recovery</h3>
+        <h3>Immediate V1 follow-through</h3>
         <ol>
-          <li><strong>Fix the evidence handoff before restarting.</strong> Add a compact terminal-status field to every required command record, for example <code>termination: exit_code=0</code>, while retaining the separate verbatim output token.</li>
-          <li><strong>Update all owners of that contract together.</strong> Change the completion-report template, Developer prompt, Phase Runner prompt, binding workflow spec, report-lint checks and self-tests, then sync generated prompts.</li>
-          <li><strong>Recover Task 8 honestly.</strong> Re-run the exact six commands in one recording session, preserve each terminal result and token, amend the completion report in a new docs commit, and resolve ESC-20-008.</li>
+          <li><strong>Accept DEC-139's Task 8 close.</strong> Do not rerun Task 8. Its producer followed the canonical contract that existed at the time, and no independent evidence casts doubt on the recorded tokens.</li>
+          <li><strong>Finish the forward contract.</strong> DEC-139 updated the completion-report template, canonical prompts, generated prompts and binding workflow. Commit the matching Phase Runner prompt-template update and keep those sources aligned.</li>
+          <li><strong>Implement CF-031 promptly.</strong> Make <code>report-lint.sh</code> check the terminal-status field and add self-tests, so a future omission fails locally before the Phase Runner has to interpret prose.</li>
           <li><strong>Supersede DEC-138.</strong> State the general rule: a Developer may make a causal repair in the same session when it is inside accepted task scope and changes no protected decision or gate criterion.</li>
           <li><strong>Restore the exact journey manifest.</strong> Include the current fifth journey and permit authorized additions to update it without escalation.</li>
           <li><strong>Archive current escalation history.</strong> Return <code>tl_escalations_current.md</code> to open-items-only scope so <code>workflow-lint.sh</code> is green.</li>
@@ -546,7 +550,8 @@
               <li>ESC-20-003 recovery commit that introduced the evidence mismatch: <code>d0bffbc</code>.</li>
               <li>DEC-137/138 prompt patch and classifier commit: <code>8533c50</code>.</li>
               <li>Current workflow-lint failure: <code>line budget exceeded (142 &gt; 107 tripwire): tl_escalations_current.md</code>.</li>
-              <li>Current Task 8 stop: <code>ESC-20-008</code>.</li>
+              <li>Task 8 stop <code>ESC-20-008</code> was resolved by DEC-139 in <code>f434f41</code>, with no rerun.</li>
+              <li>The matching human Phase Runner prompt-template edit remained uncommitted at the final evidence check.</li>
             </ul>
           </div>
         </details>

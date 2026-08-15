@@ -56,6 +56,9 @@ func List(options ListOptions) ([]Label, error) {
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate label list rows: %w", err)
 	}
+	if len(labels) > ReadCollectionLimit {
+		return nil, &ResultLimitExceededError{Collection: "labels", Limit: ReadCollectionLimit, Observed: len(labels)}
+	}
 
 	return labels, nil
 }

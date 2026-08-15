@@ -3,6 +3,7 @@ package labels
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -45,6 +46,9 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 	if dereferenceTestString(result.Label.Description) != description {
 		t.Fatalf("result label description = %q, want %q", dereferenceTestString(result.Label.Description), description)
 	}
+	if result.EventID == "" || result.OccurredAt == "" {
+		t.Fatalf("result Event identity = (%q, %q), want populated", result.EventID, result.OccurredAt)
+	}
 
 	conn := openLabelsDB(t, workspace)
 	defer closeLabelsDB(t, conn)
@@ -86,6 +90,87 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 	}
 	if got := countLabelJournalEvents(t, workspace); got != duplicateBefore {
 		t.Fatalf("journal events after duplicate Add() = %d, want %d", got, duplicateBefore)
+	}
+}
+
+func TestAddAppliesClosedLabelValueBoundariesBeforeAppend(t *testing.T) {
+	t.Parallel()
+
+	t.Run("accepts exact maxima", func(t *testing.T) {
+		workspace := newLabelsWorkspace(t)
+		colour := strings.Repeat("c", 64)
+		description := strings.Repeat("d", 4096)
+		result, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: strings.Repeat("n", 255), Colour: &colour, Description: &description, ActorRole: "developer"})
+		if err != nil || len(result.Label.Name) != 255 || len(*result.Label.Colour) != 64 || len(*result.Label.Description) != 4096 {
+			t.Fatalf("Add() = (%#v, %v), want exact maxima", result, err)
+		}
+	})
+
+	validName := "core"
+	tests := []struct {
+		name        string
+		label       string
+		colour      *string
+		description *string
+		wantErr     string
+	}{
+		{name: "name over maximum", label: strings.Repeat("n", 256), wantErr: "label name exceeds 255 bytes"},
+		{name: "name control character", label: "bad\x00name", wantErr: "label name contains ASCII control character"},
+		{name: "name invalid UTF-8", label: string([]byte{0xff}), wantErr: "label name must be valid UTF-8"},
+		{name: "colour explicitly empty", label: validName, colour: testStringPointer(" "), wantErr: "label colour is required"},
+		{name: "colour over maximum", label: validName, colour: testStringPointer(strings.Repeat("c", 65)), wantErr: "label colour exceeds 64 bytes"},
+		{name: "colour control character", label: validName, colour: testStringPointer("red\x1f"), wantErr: "label colour contains ASCII control character"},
+		{name: "description explicitly empty", label: validName, description: testStringPointer(" "), wantErr: "label description is required"},
+		{name: "description over maximum", label: validName, description: testStringPointer(strings.Repeat("d", 4097)), wantErr: "label description exceeds 4096 bytes"},
+		{name: "description invalid UTF-8", label: validName, description: testStringPointer(string([]byte{0xff})), wantErr: "label description must be valid UTF-8"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			workspace := newLabelsWorkspace(t)
+			before := countLabelJournalEvents(t, workspace)
+			_, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: test.label, Colour: test.colour, Description: test.description, ActorRole: "developer"})
+			if err == nil || err.Error() != test.wantErr {
+				t.Fatalf("Add() error = %v, want %q", err, test.wantErr)
+			}
+			if got := countLabelJournalEvents(t, workspace); got != before {
+				t.Fatalf("journal events after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
+
+func TestListRejectsOverTopLevelCollectionLimit(t *testing.T) {
+	t.Parallel()
+	workspace := newLabelsWorkspace(t)
+	conn := openLabelsDB(t, workspace)
+	tx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	for index := 0; index < 10000; index++ {
+		if _, err := tx.Exec(`INSERT INTO labels (name) VALUES (?)`, fmt.Sprintf("label-%05d", index)); err != nil {
+			t.Fatalf("insert label %d: %v", index, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	closeLabelsDB(t, conn)
+	atLimit, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t)})
+	if err != nil || len(atLimit) != 10000 {
+		t.Fatalf("List(at limit) = (%d, %v), want (10000, nil)", len(atLimit), err)
+	}
+
+	conn = openLabelsDB(t, workspace)
+	if _, err := conn.Exec(`INSERT INTO labels (name) VALUES (?)`, "label-10000"); err != nil {
+		t.Fatalf("insert over-limit label: %v", err)
+	}
+	closeLabelsDB(t, conn)
+
+	_, err = List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t)})
+	var limit *ResultLimitExceededError
+	if !errors.As(err, &limit) || limit.Collection != "labels" || limit.Limit != 10000 || limit.Observed != 10001 {
+		t.Fatalf("List() error = %#v, want labels 10001/10000 limit", err)
 	}
 }
 
@@ -305,6 +390,8 @@ func dereferenceTestString(value *string) string {
 	}
 	return *value
 }
+
+func testStringPointer(value string) *string { return &value }
 
 func equalLabels(left, right Label) bool {
 	return left.Name == right.Name &&

@@ -37,6 +37,26 @@ func decodeReadEnvelope(t *testing.T, output, operation string) readEnvelope {
 	return envelope
 }
 
+func assertJSONFailureCode(t *testing.T, output, operation, code string) {
+	t.Helper()
+	var envelope struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Error           struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(output), &envelope); err != nil {
+		t.Fatalf("Unmarshal(failure envelope) error = %v; output = %q", err, output)
+	}
+	assertEnvelopeKeySet(t, []byte(output), []string{"contract_version", "error", "ok", "operation"})
+	assertNestedEnvelopeKeySet(t, []byte(output), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
+	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != operation || envelope.Error.Code != code {
+		t.Fatalf("failure envelope = %#v, want %s failure code %q", envelope, operation, code)
+	}
+}
+
 func requireObject(t *testing.T, object map[string]any, key string) map[string]any {
 	t.Helper()
 	value, ok := object[key]

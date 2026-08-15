@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -44,11 +45,11 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	activityBefore := countActivityLogRows(t, conn)
 
 	stdout, stderr := runFIDCommand(t, workspace, "issue", "label", "add", issueID, "api", "--by", "developer")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(stderr, `added label "api" to `+issueID) {
-		t.Fatalf("stderr = %q, want add confirmation", stderr)
+	if !strings.Contains(stdout, `added label "api" to `+issueID) {
+		t.Fatalf("stdout = %q, want add confirmation", stdout)
 	}
 
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
@@ -137,6 +138,127 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	}
 }
 
+func TestIssueLabelMutationsJSONMatchContract(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label envelope", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	journalPath := mustJournalPath(t, workspace)
+	add := executeCommandForTest(workspace, "--json", "issue", "label", "add", issueID, "core", "--by", "developer")
+	assertIssueLabelMutationEnvelope(t, add, journalPath, "issue.label.add", issueID, "core", 2)
+
+	remove := executeCommandForTest(workspace, "--json", "issue", "label", "remove", issueID, "core", "--by", "developer")
+	assertIssueLabelMutationEnvelope(t, remove, journalPath, "issue.label.remove", issueID, "core", 3)
+}
+
+func TestIssueLabelJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON failures", "--label", "core", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+
+	journalPath := mustJournalPath(t, workspace)
+	tests := []struct {
+		name      string
+		operation string
+		args      []string
+		code      string
+	}{
+		{name: "add missing issue", operation: "issue.label.add", args: []string{"--json", "issue", "label", "add", "FID-missing", "core", "--by", "developer"}, code: "issue-not-found"},
+		{name: "add missing label", operation: "issue.label.add", args: []string{"--json", "issue", "label", "add", issueID, "missing", "--by", "developer"}, code: "label-not-found"},
+		{name: "add duplicate label", operation: "issue.label.add", args: []string{"--json", "issue", "label", "add", issueID, "core", "--by", "developer"}, code: "duplicate-entity"},
+		{name: "remove missing issue", operation: "issue.label.remove", args: []string{"--json", "issue", "label", "remove", "FID-missing", "core", "--by", "developer"}, code: "issue-not-found"},
+		{name: "remove absent label", operation: "issue.label.remove", args: []string{"--json", "issue", "label", "remove", issueID, "missing", "--by", "developer"}, code: "label-not-found"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			result := executeCommandForTest(workspace, test.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("result = %#v, want stderr-only rejection", result)
+			}
+			assertJSONFailureCode(t, result.stderr, test.operation, test.code)
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
+
+func TestIssueLabelAddJSONReportsNestedLimitWithoutAppend(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--by", "developer")
+	issueID := parseCreatedIssueID(t, createStderr)
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	tx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	for index := 0; index <= 100; index++ {
+		label := fmt.Sprintf("limit-%03d", index)
+		if _, err := tx.Exec(`INSERT INTO labels (name) VALUES (?)`, label); err != nil {
+			t.Fatalf("insert label %d: %v", index, err)
+		}
+		if index < 100 {
+			if _, err := tx.Exec(`INSERT INTO issue_labels (issue_id, label) VALUES (?, ?)`, issueID, label); err != nil {
+				t.Fatalf("insert issue label %d: %v", index, err)
+			}
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	closeCommandDB(t, conn)
+
+	journalPath := mustJournalPath(t, workspace)
+	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+	result := executeCommandForTest(workspace, "--json", "issue", "label", "add", issueID, "limit-100", "--by", "developer")
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("result = %#v, want stderr-only limit rejection", result)
+	}
+	assertJSONFailureCode(t, result.stderr, "issue.label.add", "result-limit-exceeded")
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+		t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+	}
+}
+
+func assertIssueLabelMutationEnvelope(t *testing.T, result commandExecutionResult, journalPath, operation, issueID, label string, revision int) {
+	t.Helper()
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("%s result = %#v, want JSON success on stdout only", operation, result)
+	}
+	var envelope struct {
+		ContractVersion string         `json:"contract_version"`
+		OK              bool           `json:"ok"`
+		Operation       string         `json:"operation"`
+		Result          map[string]any `json:"result"`
+		Event           map[string]any `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+		t.Fatalf("Unmarshal(%s stdout) error = %v; stdout = %q", operation, err, result.stdout)
+	}
+	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertExactKeys(t, envelope.Result, []string{"issue_id", "label", "issue_revision"})
+	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
+	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
+		t.Fatalf("envelope = %#v, want fid-cli.v1 %s success", envelope, operation)
+	}
+	if envelope.Result["issue_id"] != issueID || envelope.Result["label"] != label || envelope.Result["issue_revision"] != float64(revision) {
+		t.Fatalf("result = %#v, want issue %q label %q revision %d", envelope.Result, issueID, label, revision)
+	}
+	last := mustReadLastJournalEvent(t, journalPath)
+	if envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format("2006-01-02T15:04:05Z") {
+		t.Fatalf("envelope event = %#v, journal tail = %#v", envelope.Event, last)
+	}
+}
+
 func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 	t.Parallel()
 	t.Run("add rejects missing and duplicate label", func(t *testing.T) {
@@ -165,7 +287,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("missing label stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: issue label add: label "missing" does not exist`) {
+		if !strings.Contains(stderr, `error: label "missing" not found`) {
 			t.Fatalf("missing label stderr = %q, want missing-label error", stderr)
 		}
 
@@ -176,7 +298,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		if stdout != "" {
 			t.Fatalf("duplicate label stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: issue label add: issue "`+issueID+`" already has label "core"`) {
+		if !strings.Contains(stderr, `error: issue "`+issueID+`" already has label "core"`) {
 			t.Fatalf("duplicate label stderr = %q, want duplicate-label error", stderr)
 		}
 
@@ -265,11 +387,11 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 	activityBefore := countActivityLogRows(t, conn)
 
 	stdout, stderr := runFIDCommand(t, workspace, "issue", "label", "remove", issueID, "legacy", "--by", "developer")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(stderr, `removed label "legacy" from `+issueID) {
-		t.Fatalf("stderr = %q, want remove confirmation", stderr)
+	if !strings.Contains(stdout, `removed label "legacy" from `+issueID) {
+		t.Fatalf("stdout = %q, want remove confirmation", stdout)
 	}
 
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
@@ -384,7 +506,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, `error: issue label remove: issue "`+issueID+`" does not have label "legacy"`) {
+	if !strings.Contains(stderr, `error: label "legacy" not found`) {
 		t.Fatalf("stderr = %q, want absent-label error", stderr)
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {

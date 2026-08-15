@@ -8,6 +8,62 @@
 
 ### Resolved
 
+- **ESC-20-010 - Task 10 stopped on incomplete in-scope migration work (raised
+  2026-08-15 via `TRG-20-010`; resolved 2026-08-15 by DEC-141).** The preserved
+  Developer session completed normally after 616 seconds and was not killed or
+  timed out. Its red focused suite, incomplete six-operation contract, missing
+  full gate, and failing report-lint were real, but none required protected
+  authority. Under the accepted typed recovery model this is
+  `in-scope-implementation`, not a Human blocker. Recovery restored stash
+  `779beab1`, preserved both failed focused attempts, completed the exact
+  response/error/value-domain/order/limit/revision/Event matrix without
+  weakening a test or contract, and discovered one additional concurrency bug:
+  Task 10 constructors wrote the root capability registry while parallel tests
+  read it. Registration now occurs only during package initialization. The
+  exact task gates and report-lint close the task; no product exception,
+  dependency, threshold change, or broader performance refactor was accepted.
+
+- **ESC-20-009 - Review 3 found Task 9's mutation evidence short of the approved
+  matrix (raised 2026-08-12 via `TRG-20-009`; resolved 2026-08-12 by DEC-140).**
+  Three Blocking findings, all **sustained** and each independently confirmed
+  against the tree. `--expected-revision` is wired on `issue transition`
+  (`cmd/fid/issue_transition.go:28,39,50`), yet no test in the repository
+  references it outside `cmd/fid/issue_update_test.go` and
+  `internal/cli/codes_test.go` — the transition half of VAL-018's three-state
+  matrix has no assertion at all. The only canonical `--json` transition test is
+  the unsatisfied-precondition rejection, so VAL-019's legal success, unknown
+  target, absent edge, and unsupported precondition are unproven and no test
+  compares a transition envelope's Event identity against the journal tail. The
+  owner-flag test loops both flags over `issue create` only, and the attribution
+  test asserts a projected actor with no forbidden-table or Event-effect check.
+  Six passing gates, clean report-lint, verified commits, and a green
+  independent integration run were all true and none of them can prove a
+  conditional state nobody asserted — a broad green command is not evidence of a
+  missing negative case. Nothing is weakened. Because the implementation exists
+  and only its proof is missing, `tasks/task-9a.md` is test-led: a failing
+  assertion is a real defect fixed in place under the existing contract, and a
+  contract that looks wrong is a hard stop. Task 9 closes at `86d927d` and is not
+  reopened. Unlike ESC-20-008 this one resolves against the evidence record
+  rather than the Tech Lead — the requirement was published in the task spec, in
+  the validation contract rows the Developer prompt requires loading, and in the
+  brief's DEC-130 Known Risk. The contributing Tech Lead factor, the phase's
+  widest task compressed into one-line criteria, is corrected by a standing rule
+  rather than by duplicating each matrix into each spec: **a task acceptance
+  criterion summarizes a validation contract row, it never replaces it.**
+
+- **ESC-20-008 - Task 8's gate rows carried verbatim tokens but no observed
+  termination result (raised 2026-08-11 via `TRG-20-008`; resolved 2026-08-11 by
+  DEC-139).** The routing was correct and is sustained — the rule was in force
+  and unmet — but the requirement lived only in
+  `project-docs/agents/phase-runner.md`, while `AGENTS.md`, `09_AI_WORKFLOW.md`
+  §8, and the completion-report template asked only for the verbatim token, which
+  Task 8 supplied for all six commands. **Tech Lead drafting defect**, so Task 8
+  closes at `4df4d66` with no rerun. The stricter rule is kept and promoted to
+  canon, **forward-effective only**: every recorded result now carries the token
+  *and* the observed termination result. New standing rule — a control may not
+  require an artifact field the producing role was never told to produce.
+  **CF-031** opened for the mechanical report-lint check.
+
 - **ESC-20-007 - Task 5 blocked by a stale journey inventory in the
   classification test (raised 2026-08-11 via `TRG-20-007`; resolved 2026-08-11
   by DEC-137, with DEC-138 as the systemic fix).** Task 5's implementation was

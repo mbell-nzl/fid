@@ -130,7 +130,7 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(payload)), "\n")
-	wantTypes := []string{"issue.created", "issue.updated", "issue.transitioned", "dev.started", "dev.finished", "dev.blocked"}
+	wantTypes := []string{"issue.created", "issue.updated", "issue.transitioned", "dev.started", "dev.finished", "dev.blocked", "issue.ac_added", "label.added", "issue.label.added", "issue.label.removed"}
 	if len(lines) != len(wantTypes) {
 		t.Fatalf("golden Event count = %d, want %d", len(lines), len(wantTypes))
 	}
@@ -149,14 +149,40 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 			}
 			continue
 		}
-		prior := float64(index)
-		if got := effect.Values["revision"]; got != prior+1 {
+		if event.EventType == "label.added" {
+			if effect.Table != "labels" || effect.Op != "insert" {
+				t.Fatalf("label.added Effect = %#v, want labels insert", effect)
+			}
+			continue
+		}
+		priorByType := map[string]float64{
+			"issue.updated":       1,
+			"issue.transitioned":  2,
+			"dev.started":         3,
+			"dev.finished":        4,
+			"dev.blocked":         5,
+			"issue.ac_added":      6,
+			"issue.label.added":   7,
+			"issue.label.removed": 8,
+		}
+		prior := priorByType[event.EventType]
+		var revisionEffect *Effect
+		for effectIndex := range event.Effects {
+			candidate := &event.Effects[effectIndex]
+			if candidate.Table == "issues" && candidate.Op == "update" {
+				revisionEffect = candidate
+			}
+		}
+		if revisionEffect == nil {
+			t.Fatalf("%s has no Issue revision Effect: %#v", event.EventType, event.Effects)
+		}
+		if got := revisionEffect.Values["revision"]; got != prior+1 {
 			t.Fatalf("%s revision value = %#v, want %v", event.EventType, got, prior+1)
 		}
-		if got := effect.Prior["revision"]; got != prior {
+		if got := revisionEffect.Prior["revision"]; got != prior {
 			t.Fatalf("%s revision prior = %#v, want %v", event.EventType, got, prior)
 		}
-		if got := effect.Preconditions["revision"]; got != prior {
+		if got := revisionEffect.Preconditions["revision"]; got != prior {
 			t.Fatalf("%s revision precondition = %#v, want %v", event.EventType, got, prior)
 		}
 	}
@@ -170,8 +196,18 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = 'FID-p20-revision'`).Scan(&revision); err != nil {
 		t.Fatalf("query golden Issue revision: %v", err)
 	}
-	if revision != 6 {
-		t.Fatalf("golden replay revision = %d, want 6", revision)
+	if revision != 9 {
+		t.Fatalf("golden replay revision = %d, want 9", revision)
+	}
+	var criterionCount, issueLabelCount int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM acceptance_criteria WHERE issue_id = 'FID-p20-revision'`).Scan(&criterionCount); err != nil {
+		t.Fatalf("count golden acceptance criteria: %v", err)
+	}
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM issue_labels WHERE issue_id = 'FID-p20-revision'`).Scan(&issueLabelCount); err != nil {
+		t.Fatalf("count golden Issue labels: %v", err)
+	}
+	if criterionCount != 1 || issueLabelCount != 0 {
+		t.Fatalf("golden domain counts = (AC %d, labels %d), want (1, 0)", criterionCount, issueLabelCount)
 	}
 }
 

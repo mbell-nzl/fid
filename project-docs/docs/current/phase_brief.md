@@ -13,24 +13,23 @@ revision, and the retained Issue contract. Delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-8 and the infrastructure pack are
-complete; Reviews 1c, infra-review-1, and 2 are NON-BLOCK** (record anchored in
-`../phases/phase-20/infra-improvement-pack.md`). ESC-20-005..008 are resolved by
-DEC-135..DEC-139, none in product code. **Task 8 closes at `4df4d66` under
-DEC-139**: its report met the token contract, and the missing `exit_code`
-annotation was a requirement published only in the Phase Runner prompt. That
-requirement is now canonical and **forward-effective** — every recorded result
-carries the verbatim token *and* the observed termination result — and no
-earlier report is reopened. Run `project-docs/tools/sync-agents.sh` and
-`project-docs/tools/workflow-lint.sh` before the next session; DEC-137/138/139
-prompt rules are inert until then. **Next: Task 9, then review window 3.**
+**In flight on branch `phase-20`. Tasks 1-9a and the infrastructure pack are
+complete; Reviews 1c, infra-review-1, 2, and bounded Review 3b are NON-BLOCK**
+(record anchored in `../phases/phase-20/infra-improvement-pack.md`). Review 3's
+three sustained Task 9 evidence findings were closed by test-led Task 9a at
+`1f196a9` and independently re-reviewed in `qa/review-3b.md`. Task 10 is in a
+decision-free same-task recovery under DEC-141: its product work and ordinary
+suite are complete, while the candidate commit still requires the exact gate
+from a normal clone because Go VCS stamping misresolves this linked worktree.
+ESC-20-001..010 are resolved; no product or architecture decision is open.
+**Next: finish Task 10's exact gate and report, then Task 11.**
 
 ## Operating Mode And Slice Contract
 
 **Heavy** (DEC-107/DEC-118/DEC-127): schema/persistence, public-interface, and
-dependency changes. The binding process is `project-docs/specs/09_AI_WORKFLOW.md`.
-Required: Phase Runner, QA plan, six mid-phase reviews, final review, Human
-checklist, full spec sync, run ledger, and triage log.
+dependency changes. The binding process is `project-docs/specs/09_AI_WORKFLOW.md`;
+required artifacts are Phase Runner, QA plan, six mid-phase reviews, final
+review, Human checklist, full spec sync, run ledger, and triage log.
 `../phases/phase-20/contracts.md` defines the accepted CLI behavior, Response
 Envelope, leaf schemas, reason codes, DDL/Event semantics, removal inventory,
 and legacy expiry ledger.
@@ -42,18 +41,16 @@ and legacy expiry ledger.
 | 1 | Response contract foundation | Complete; VAL-002 evidence owed by 3a | None |
 | 2 | Project selection and config namespace | Complete; VAL-043 evidence owed by 3b | 1 |
 | 3 | Atomic project initialization | Complete | 1-2 |
-| 3a | Reason-code schema and redaction evidence | Complete (DEC-130) | 1 |
-| 3b | Strict-config and init boundary evidence | Complete; VAL-043 gap owed by 3c | 2-3, 3a |
-| 3c | Integration-journey convergence and honest gate baseline | Complete (DEC-131) | 3b |
-| 3d | Evidence-token control and gate-record correction | Complete (DEC-131/132) | 3c |
+| 3a-3d | Reason-code, strict-config, journey, and gate-record evidence recovery | Complete (DEC-130/131/132) | 1-3 |
 | 3e-3l | Infrastructure performance pack | Complete (DEC-133/134) | review-1c |
 | 4 | Rebuild, authority, and lock failures | Complete `e56b3a0` (DEC-135/136) | 1-3, 3a-3l |
 | 5 | Remove orphaned Issue fields | Complete `028855b` (DEC-137) | 4 |
 | 6 | Replayable Issue aggregate revision | Complete `29c5246` | 5 |
 | 7 | Issue hierarchy invariant | Complete `4950e94` | 5-6 |
 | 8 | Issue read contract | Complete `4df4d66` (DEC-139) | 5-7 |
-| 9 | Issue mutation and concurrency contract | Next | 6-8 |
-| 10 | Acceptance-criterion and label contracts | Pending | 8-9 |
+| 9 | Issue mutation and concurrency contract | Complete `86d927d`; evidence owed by 9a (DEC-140) | 6-8 |
+| 9a | Mutation concurrency/transition/attribution evidence | Complete `1f196a9`; Review 3b NON-BLOCK `db36832` (DEC-140) | 9 |
+| 10 | Acceptance-criterion and label contracts | Recovery in progress (DEC-141); exact candidate gate/report pending | 8-9a |
 | 11 | Link contract and dependency invariants | Pending | 8-10 |
 | 12 | Workflow command contract | Pending | 8-11 |
 | 13 | Maintenance inspection contract | Pending | 8-12 |
@@ -65,9 +62,11 @@ and legacy expiry ledger.
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
 12, 15, and 17; Task 18 follows the sixth review. Tasks 3a-3d are DEC-130/131
-recovery sessions. Tasks 3e-3l are the DEC-133 infrastructure pack and add no
-product VAL; `review-1b/1c.md` and `infra-review-1.md` are bounded artifacts,
-not cadence reviews.
+recovery sessions and 9a is the DEC-140 recovery session. Tasks 3e-3l are the
+DEC-133 infrastructure pack and add no product VAL; `review-1b/1c.md`,
+`infra-review-1.md`, and `review-3b.md` are bounded artifacts, not cadence
+reviews. Review 3b is NON-BLOCK; the next cadence review remains Review 4 after
+Task 12.
 
 ## Validation Contract
 
@@ -86,16 +85,22 @@ Full contract: `../phases/phase-20/qa/validation-contract.md`.
 
 ## QA Artifacts
 
-| Artifact | Path | Status |
-|---|---|---|
-| Validation contract | `../phases/phase-20/qa/validation-contract.md` | Human-approved; VAL-002/VAL-043 windows extended to tasks 3a-3c (DEC-130/131) |
-| QA plan | `../phases/phase-20/qa/qa-plan.md` | Accepted; unchanged by DEC-130/131 |
-| Mid-phase reviews | `../phases/phase-20/qa/review-M.md` | After Tasks 3, 6, 9, 12, 15, 17; review 6 includes independent contract/spec consistency |
-| Recovery reviews | `../phases/phase-20/qa/review-1b.md`, `review-1c.md`, `infra-review-1.md` | 1b BLOCK corrected; 1c NON-BLOCK; infra BLOCK corrected, re-reviewed NON-BLOCK |
-| Final review / Human checklist | `../phases/phase-20/qa/` | Pending; must re-run the full gate with real tokens |
+All under `../phases/phase-20/qa/`. `validation-contract.md` is Human-approved
+(VAL-002/VAL-043 windows extended to tasks 3a-3c) and `qa-plan.md` is accepted
+and unchanged. Cadence reviews `review-M.md` close after Tasks 3, 6, 9, 12, 15,
+17; review 3 is BLOCK (DEC-140) and review 6 adds independent contract/spec
+consistency. Bounded reviews: `review-1b.md` (BLOCK, corrected), `review-1c.md`
+(NON-BLOCK), `infra-review-1.md` (BLOCK, re-reviewed NON-BLOCK), `review-3b.md`
+(NON-BLOCK after Task 9a). Final review and Human checklist are pending and must
+re-run the full gate with real tokens.
 
 ## Active Constraints
 
+- **A task acceptance criterion summarizes a validation contract row; it never
+  replaces it (DEC-140).** Where a VAL's Evidence or Pass column names a matrix,
+  table, or "every X", assert one observable case per cell for every named
+  operation and cite the cell-to-test mapping in the completion report.
+  Representative or single-operation evidence is a failed criterion.
 - Implement the approved form of `contracts.md` literally; divergence escalates.
 - Preserve fail-closed V1 authority until Phase 21 replaces it; Phase 20 maps
   errors and weakens no check.
@@ -115,26 +120,26 @@ Full contract: `../phases/phase-20/qa/validation-contract.md`.
   `09_AI_WORKFLOW.md` stays the binding V1 process; product target concepts do
   not replace its roles or artifacts.
 - No open questions; a new contract/data-model ambiguity is a hard stop for the Human.
-
-## Parity Matrix
-
-Retained JSON leaves get the closed envelope/request/order contract; Human mode
-keeps concise stdout/stderr; legacy leaves keep their unenveloped mode and
-reject root flags. Evidence: VAL-001..005, VAL-008, VAL-029, VAL-044, VAL-045.
+- **Parity matrix:** retained JSON leaves get the closed envelope/request/order
+  contract; Human mode keeps concise stdout/stderr; legacy leaves keep their
+  unenveloped mode and reject root flags. Evidence: VAL-001..005, VAL-008,
+  VAL-029, VAL-044, VAL-045.
 
 ## Interfaces / Subsystems In Scope
 
-- `cmd/fid/`, `internal/cli/`, `internal/project/` - dispatch and transport;
-  `internal/config/`, `internal/bootstrap/` - strict config and atomic init.
-- Issue/label/link/workflow/maintenance packages - journey behavior;
-  `internal/journal/`, `internal/db/`, `migrations/` - revision and rebuild;
-  `internal/format/` and command tests - formatter removal.
+`cmd/fid/`, `internal/cli/`, `internal/project/` (dispatch and transport);
+`internal/config/`, `internal/bootstrap/` (strict config and atomic init);
+Issue/label/link/workflow/maintenance packages (journey behavior);
+`internal/journal/`, `internal/db/`, `migrations/` (revision and rebuild);
+`internal/format/` and command tests (formatter removal).
 
 ## Known Risks
 
-- **Realized in Review 1:** wide tasks produce representative rather than
-  exhaustive evidence. Where a VAL names a domain or matrix, every
-  just-inside/outside pair and registry member must be asserted (DEC-130).
+- **Realized in Review 1 and again in Review 3:** wide tasks produce
+  representative rather than exhaustive evidence. Where a VAL names a domain or
+  matrix, every just-inside/outside pair and registry member must be asserted
+  (DEC-130), for every operation the row names (DEC-140). A green broad command
+  never evidences a conditional state nobody asserted.
 - **Realized in Review 1b:** record each gate with a verbatim token from that
   command; `exit 0 (no output)` is never valid for `go test`, and an uncaptured
   gate is `UNVERIFIED`, never `PASS` (DEC-131/132).
@@ -144,7 +149,7 @@ reject root flags. Evidence: VAL-001..005, VAL-008, VAL-029, VAL-044, VAL-045.
 
 ## Success / Exit Criteria
 
-- [ ] All eighteen tasks plus recovery tasks 3a/3b complete with exact-command evidence.
+- [ ] All eighteen tasks plus recovery tasks 3a-3d and 9a complete with exact-command evidence.
 - [ ] Every accepted VAL has a phase-end outcome with cited evidence.
 - [ ] Complete standalone Issue journey passes and survives rebuild unchanged.
 - [ ] Universal formatters/flags/dependency, promised stubs, and retired Issue fields are absent.

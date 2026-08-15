@@ -68,7 +68,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "block task create")
 	assertV01EIssueState(t, workspace, blockIssueID, "todo", "unstarted")
 
-	_, addACStderr := runFIDCommand(
+	addACStdout, addACStderr := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", finishIssueID,
@@ -77,7 +77,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, addACStderr)
-	finishACID := parseAddedAcceptanceCriterionID(t, addACStderr)
+	finishACID := parseAddedAcceptanceCriterionID(t, addACStdout)
 	expectedJournalLines++
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "finish task ac add")
 

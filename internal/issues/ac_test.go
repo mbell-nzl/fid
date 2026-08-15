@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -60,6 +61,12 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 	if !strings.HasPrefix(first.ID, "AC-") {
 		t.Fatalf("AddAcceptanceCriterion(first) ID = %q, want AC- prefix", first.ID)
 	}
+	if second.IssueRevision != 2 || first.IssueRevision != 3 {
+		t.Fatalf("result revisions = (%d, %d), want (2, 3)", second.IssueRevision, first.IssueRevision)
+	}
+	if second.EventID == "" || second.OccurredAt == "" || first.EventID == "" || first.OccurredAt == "" {
+		t.Fatalf("result Event identities = (%#v, %#v), want populated", second, first)
+	}
 
 	if got := countJournalLines(journalPathForWorkspace(t, workspace)); got != linesBefore+2 {
 		t.Fatalf("journal line count = %d, want %d", got, linesBefore+2)
@@ -90,6 +97,9 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 	last := stored[len(stored)-1]
 	if last.EventType != "issue.ac_added" {
 		t.Fatalf("last event type = %q, want issue.ac_added", last.EventType)
+	}
+	if last.Actor.Role != "developer" || len(last.Effects) != 3 {
+		t.Fatalf("AC Event actor/effects = (%q, %d), want (developer, 3)", last.Actor.Role, len(last.Effects))
 	}
 
 	var (
@@ -366,6 +376,107 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 	}
 }
 
+func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
+	t.Parallel()
+
+	t.Run("accepts exact maxima", func(t *testing.T) {
+		workspace := newIssueWorkspace(t)
+		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC boundaries", ActorRole: "developer"})
+		if err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+		result, err := AddAcceptanceCriterion(AddAcceptanceCriterionOptions{
+			WorkspaceRoot: workspace,
+			MigrationsDir: testIssueMigrationsDir(t),
+			IssueID:       created.ID,
+			Text:          strings.Repeat("x", 4096),
+			Ordinal:       2147483647,
+			ActorRole:     "developer",
+		})
+		if err != nil || len(result.Text) != 4096 || result.Ordinal != 2147483647 {
+			t.Fatalf("AddAcceptanceCriterion() = (%#v, %v), want exact maxima", result, err)
+		}
+	})
+
+	tests := []struct {
+		name    string
+		text    string
+		ordinal int
+		wantErr string
+	}{
+		{name: "text over maximum", text: strings.Repeat("x", 4097), ordinal: 1, wantErr: "acceptance criterion text exceeds 4096 bytes"},
+		{name: "text control character", text: "invalid\x00text", ordinal: 1, wantErr: "acceptance criterion text contains ASCII control character"},
+		{name: "text invalid UTF-8", text: string([]byte{0xff}), ordinal: 1, wantErr: "acceptance criterion text must be valid UTF-8"},
+		{name: "ordinal over maximum", text: "valid", ordinal: 2147483648, wantErr: "add acceptance criterion: ordinal must be between 1 and 2147483647"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			workspace := newIssueWorkspace(t)
+			created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC rejection", ActorRole: "developer"})
+			if err != nil {
+				t.Fatalf("Create() error = %v", err)
+			}
+			journalPath := journalPathForWorkspace(t, workspace)
+			before := countJournalLines(journalPath)
+			_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: test.text, Ordinal: test.ordinal, ActorRole: "developer"})
+			if err == nil || err.Error() != test.wantErr {
+				t.Fatalf("AddAcceptanceCriterion() error = %v, want %q", err, test.wantErr)
+			}
+			if got := countJournalLines(journalPath); got != before {
+				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
+
+func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *testing.T) {
+	t.Parallel()
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC limit", ActorRole: "developer"})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	tx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	for ordinal := 1; ordinal <= 1000; ordinal++ {
+		if _, err := tx.Exec(`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text) VALUES (?, ?, ?, ?)`, fmt.Sprintf("AC-limit-%04d", ordinal), created.ID, ordinal, "criterion"); err != nil {
+			t.Fatalf("insert acceptance criterion %d: %v", ordinal, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	closeIssueTestDB(t, conn)
+
+	journalPath := journalPathForWorkspace(t, workspace)
+	before := countJournalLines(journalPath)
+	_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: "over limit", Ordinal: 1001, ActorRole: "developer"})
+	var limit *ResultLimitExceededError
+	if !errors.As(err, &limit) || limit.Collection != "acceptance_criteria" || limit.Limit != 1000 || limit.Observed != 1001 {
+		t.Fatalf("AddAcceptanceCriterion() error = %#v, want acceptance_criteria 1001/1000 limit", err)
+	}
+	if got := countJournalLines(journalPath); got != before {
+		t.Fatalf("journal lines after limit rejection = %d, want %d", got, before)
+	}
+	atLimit, err := ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID})
+	if err != nil || len(atLimit.Criteria) != 1000 {
+		t.Fatalf("ListAcceptanceCriteria(at limit) = (%d, %v), want (1000, nil)", len(atLimit.Criteria), err)
+	}
+
+	conn = openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if _, err := conn.Exec(`INSERT INTO acceptance_criteria (id, issue_id, ordinal, text) VALUES (?, ?, ?, ?)`, "AC-limit-1001", created.ID, 1001, "legacy over-limit row"); err != nil {
+		t.Fatalf("insert over-limit acceptance criterion: %v", err)
+	}
+	closeIssueTestDB(t, conn)
+	_, err = ListAcceptanceCriteria(ListAcceptanceCriteriaOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID})
+	if !errors.As(err, &limit) || limit.Collection != "acceptance_criteria" || limit.Limit != 1000 || limit.Observed != 1001 {
+		t.Fatalf("ListAcceptanceCriteria() error = %#v, want acceptance_criteria 1001/1000 limit", err)
+	}
+}
+
 func TestAddAcceptanceCriterionTieBreaksByID(t *testing.T) {
 	t.Parallel()
 
@@ -443,9 +554,12 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	var roundTripped struct {
 		EventType string `json:"event_type"`
 		Effects   []struct {
-			Op    string         `json:"op"`
-			Table string         `json:"table"`
-			PK    map[string]any `json:"pk"`
+			Op            string         `json:"op"`
+			Table         string         `json:"table"`
+			PK            map[string]any `json:"pk"`
+			Values        map[string]any `json:"values"`
+			Prior         map[string]any `json:"prior"`
+			Preconditions map[string]any `json:"preconditions"`
 		} `json:"effects"`
 	}
 	if err := json.Unmarshal(payload, &roundTripped); err != nil {
@@ -454,14 +568,18 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	if roundTripped.EventType != "issue.ac_added" {
 		t.Fatalf("round-tripped event type = %q, want issue.ac_added", roundTripped.EventType)
 	}
-	if len(roundTripped.Effects) != 2 {
-		t.Fatalf("round-tripped event effects = %#v, want insert plus activity", roundTripped.Effects)
+	if len(roundTripped.Effects) != 3 {
+		t.Fatalf("round-tripped event effects = %#v, want insert, revision, and activity", roundTripped.Effects)
 	}
 	if roundTripped.Effects[0].PK["id"] != result.ID {
 		t.Fatalf("round-tripped insert effect PK = %#v, want %q", roundTripped.Effects[0].PK, result.ID)
 	}
-	if roundTripped.Effects[1].Table != "activity_log" || roundTripped.Effects[1].Op != "activity" {
-		t.Fatalf("round-tripped activity effect = %#v, want activity_log activity", roundTripped.Effects[1])
+	revision := roundTripped.Effects[1]
+	if revision.Table != "issues" || revision.Op != "update" || revision.PK["id"] != taskCreated.ID || revision.Values["revision"] != float64(2) || revision.Prior["revision"] != float64(1) || revision.Preconditions["revision"] != float64(1) {
+		t.Fatalf("round-tripped revision effect = %#v, want exact 1 -> 2 Issue revision", revision)
+	}
+	if roundTripped.Effects[2].Table != "activity_log" || roundTripped.Effects[2].Op != "activity" {
+		t.Fatalf("round-tripped activity effect = %#v, want activity_log activity", roundTripped.Effects[2])
 	}
 }
 

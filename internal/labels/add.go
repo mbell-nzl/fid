@@ -7,11 +7,13 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/validation"
 )
 
 const (
@@ -57,16 +59,25 @@ func prepareLabelAdd(options AddOptions) (string, *string, *string, []string, er
 		return "", nil, nil, nil, fmt.Errorf("label add: migrations dir is required")
 	}
 
-	name := strings.TrimSpace(options.Name)
-	if name == "" {
+	if strings.TrimSpace(options.Name) == "" {
 		return "", nil, nil, nil, fmt.Errorf("label add: label name is required")
+	}
+	name, err := validation.NormalizeText("label name", options.Name, 255)
+	if err != nil {
+		return "", nil, nil, nil, err
 	}
 	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionLabelAdd); err != nil {
 		return "", nil, nil, nil, err
 	}
 
-	colour := trimmedOptionalString(options.Colour)
-	description := trimmedOptionalString(options.Description)
+	colour, err := normalizeOptionalLabelText("label colour", options.Colour, 64)
+	if err != nil {
+		return "", nil, nil, nil, err
+	}
+	description, err := normalizeOptionalLabelText("label description", options.Description, 4096)
+	if err != nil {
+		return "", nil, nil, nil, err
+	}
 	return name, colour, description, labelAddArgv(name, colour, description, options.ActorRole), nil
 }
 
@@ -93,7 +104,7 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, name string, co
 		return err
 	}
 
-	*result = AddResult{Label: Label{Name: name, Colour: colour, Description: description}}
+	*result = AddResult{Label: Label{Name: name, Colour: colour, Description: description}, EventID: event.EventID, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339)}
 	return nil
 }
 
@@ -204,15 +215,15 @@ func countJournalLines(path string) int {
 	return len(strings.Split(trimmed, "\n"))
 }
 
-func trimmedOptionalString(value *string) *string {
+func normalizeOptionalLabelText(field string, value *string, maximumBytes int) (*string, error) {
 	if value == nil {
-		return nil
+		return nil, nil
 	}
-	trimmed := strings.TrimSpace(*value)
-	if trimmed == "" {
-		return nil
+	normalized, err := validation.NormalizeText(field, *value, maximumBytes)
+	if err != nil {
+		return nil, err
 	}
-	return &trimmed
+	return &normalized, nil
 }
 
 func closeLabelsConn(conn *sql.DB) {

@@ -613,3 +613,113 @@ Human-approved and QA-plan acceptance is next._
 - Cause: Task 8 completion report has UNVERIFIED required gate-termination evidence; TL-Lite `TRG-20-008` returned `VERDICT: BLOCK (escalated as ESC-20-008)`.
 - Triage: TRG-20-008 (BLOCK, escalated as ESC-20-008)
 - Next human action: Resolve ESC-20-008 with Tech Lead-directed exact-command evidence recovery, preserving all six required commands and capturing each command's real termination result before resuming Task 8.
+
+### 2026-08-12 RUN-RESUME
+
+- Branch: `phase-20`
+- Resuming from: prior Task 8 STOP, resolved by DEC-139; no re-triage or Task 8 rerun authorized
+- Reconciliation: Task 8 report `project-docs/docs/phases/phase-20/tasks/task-8-done.md` is present and committed; `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-8-done.md project-docs/docs/phases/phase-20/tasks/task-8.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Verified Task 8 implementation commit: `4df4d6690a0562873c570ddaeba2140ad3adef81` - `git rev-parse --verify` resolved (terminated `exit_code: 0`); subject matched `feat(issue): migrate canonical issue read responses`
+- Verified Task 8 report-finalization commit: `ce282c25c617f103b4338b0de136318f82f1b8c3` - `git rev-parse --verify` resolved (terminated `exit_code: 0`); subject matched `docs(task): finalize completion report for phase-20 task-8`
+- Open ESC baseline: none; ESC-20-008 is resolved by DEC-139
+- QA cadence audit: Review 3 is scheduled to close after Task 9; no review is due before Task 9, and it must run before Task 10
+- Reconciled ledger omission: append the Task 8 COMPLETE state above through this resume record; do not rerun or re-record Task 8
+- Starting task: `task-9`
+
+### 2026-08-12 TASK task-9 COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-9-done.md`
+- report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `86d927da88f0fc070709a02ce39a3d68e560e2a6` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`feat(issue): migrate canonical mutation envelopes`)
+- Report finalization commit: `dc19a01f34eb74717885c4118030251f6a8cf015` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-9`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 9 commands recorded PASS with verbatim tokens and observed termination evidence; no blocker, deviation, or Tech Lead concern reported
+- Next action: mandatory Review 3 for Tasks/reports 7-9 before Task 10
+
+### 2026-08-12 REVIEW review-3
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-3.md`
+- Tasks covered: task-7 through task-9
+- Verdict: BLOCK; Blocking: 3 / Improvement: 0 / ESC raised: none
+- Commit: `0da39ddd89dd645474dbb337cb21ff2112c4a96a` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): record phase 20 review 3`)
+- Required QA-plan command: `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  8.949s` (terminated `exit_code: 0`)
+- Blocking findings: Task 9 lacks deterministic transition expected-revision absent/matching/stale evidence; lacks the complete legal/unknown/absent/unsupported-or-unsatisfied transition matrix with exact details, zero-append rejection proof, and canonical Event identity; and lacks complete owner-flag and attribution negative-state assertions
+- Next action: TL-Lite triage required before any Task 10 work or continuation
+
+### 2026-08-12 TRIAGE TRG-20-009
+
+- Trigger: Review 3 returned three unresolved Task 9 evidence findings covering transition optimistic-concurrency states, the canonical transition outcome/detail/zero-append/Event-identity matrix, and owner/attribution negative-state assertions
+- Verdict: BLOCK (escalated as `ESC-20-009`)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` entry `TRG-20-009` confirmed; `ESC-20-009` written to `project-docs/docs/current/tl_escalations_current.md`
+- Commit-verification evidence supplied to TL-Lite: review commit `0da39ddd89dd645474dbb337cb21ff2112c4a96a` resolved via `git rev-parse --verify` with observed `exit_code: 0`; subject matched; independent integration command passed with observed `exit_code: 0`
+
+### 2026-08-12 STOP
+
+- Cause: Review 3 Blocking findings remain unresolved; TL-Lite `TRG-20-009` returned the literal `VERDICT: BLOCK (escalated as ESC-20-009)`
+- Triage: `TRG-20-009` (BLOCK, escalated as `ESC-20-009`)
+- Next human action: direct and complete the bounded Task 9 evidence recovery required by `ESC-20-009`, rerun Task 9's exact required gates with current-session evidence, obtain the prescribed re-review, then resume the Phase Runner
+
+### 2026-08-15 RUN-RESUME
+
+- Branch: `phase-20`
+- Resuming from: Review 3 STOP, resolved by DEC-140; `TRG-20-009` and `ESC-20-009` are resolved and must not be re-triaged or duplicated
+- Reconciliation: Task 9 remains complete at `86d927da88f0fc070709a02ce39a3d68e560e2a6` and is not reopened; Task 9a is the single bounded test-led evidence recovery authorized by DEC-140
+- Open ESC baseline: none
+- Recovery scope: close Review 3's three sustained Task 9 evidence findings only; preserve `qa/review-3.md` and do not modify Tasks 7-9 product implementation outside the Task 9a defect clause
+- QA cadence: Review 3b is bounded re-review only and does not reset cadence; the next mandatory cadence review remains Review 4 after Task 12
+- Starting task: `task-9a`
+
+### 2026-08-15 TASK task-9a COMPLETE
+
+- Report: `project-docs/docs/phases/phase-20/tasks/task-9a-done.md`
+- report-lint: PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- Commit: `1f196a94b064554fbc8bae1b0d9238125e2ab1d4` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`fix(issue): recover mutation contract evidence`)
+- Report finalization commit: `764745785c6530e00021ded8f8a8d331ac1cf034` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(task): finalize completion report for phase-20 task-9a`)
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: all six exact Task 9a commands recorded PASS with verbatim tokens and observed termination evidence; first-run failures and authorized in-scope fixes are documented as deviations; no blocker or unresolved Tech Lead concern reported
+- Next action: bounded Review 3b re-review of the three sustained Review 3 findings only
+
+### 2026-08-15 REVIEW review-3b
+
+- Path: `project-docs/docs/phases/phase-20/qa/review-3b.md`
+- Scope: bounded re-review of the three Review 3 Task 9 Blocking findings and the Task 9a gate record; Tasks 7 and 8 were not re-reviewed and `review-3.md` was not modified
+- Verdict: CONTINUE (NON-BLOCK); Blocking: 0 / Improvement: 0 / ESC raised: none
+- Commit: `db3683298a3d3598dce883f44e3d98e98d63541c` - verified via `git rev-parse --verify` (terminated `exit_code: 0`), subject matched (`docs(qa): record phase-20 review-3b`)
+- Required independent command: `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  5.174s` (terminated `exit_code: 0`)
+- Cadence: bounded Review 3b does not reset the mandatory cadence; next cadence review is Review 4 after Task 12
+- Next action: continue normally at Task 10
+
+### 2026-08-15 TRIAGE TRG-20-010
+
+- Trigger: Task 10 Developer blocker report records a red focused package suite, an incomplete full gate, no task commit, and report-lint failure
+- Verdict: BLOCK (escalated as `ESC-20-010`)
+- Triage log: `project-docs/docs/phases/phase-20/triage-log.md` entry `TRG-20-010` confirmed; `ESC-20-010` written to `project-docs/docs/current/tl_escalations_current.md`
+- Failure evidence: focused `go test ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); report-lint - FAIL - `report-lint found 9 failure(s)` (terminated `exit_code: 9`); no commit verification evidence exists
+
+### 2026-08-15 STOP
+
+- Cause: Task 10 blocker report, red focused suite, incomplete required gate, and report-lint failure; TL-Lite `TRG-20-010` returned the literal `VERDICT: BLOCK (escalated as ESC-20-010)`
+- Triage: `TRG-20-010` (BLOCK, escalated as `ESC-20-010`)
+- Next human action: invoke the full Tech Lead to resolve `ESC-20-010`, direct the bounded Task 10 continuation/recovery, then require the exact six-command gate, task and report-finalization commits, and clean report-lint evidence before resuming the Phase Runner
+
+### 2026-08-15 14:01 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-15 Task 10 STOP / TRG-20-010 / ESC-20-010
+- Trigger signature: `task-10:in-scope-implementation:cmd-fid-contract-tests`
+- Attempt count: 1
+- Checkpoint: recovery stash `779beab1` restored on `workflow-reliability-overhaul` at `9584b8b`
+- Resolution evidence: independent workflow review PASS at `06a413a`; ESC-20-010 reclassified as decision-free same-task recovery
+- Continuing task: task-10
+
+### 2026-08-15 14:02 TASK-RECOVERY task-10
+
+- Source: preserved Task 10 Developer checkpoint and focused `go test ./cmd/fid -count=1` rerun
+- Category: in-scope-implementation
+- Trigger signature: `task-10:in-scope-implementation:cmd-fid-contract-tests`
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: stash `779beab1`; focused suite panics in `TestV01CClosureSmoke` because a migrated Response Envelope is decoded as a legacy array
+- Resolution evidence: PENDING - focused suite, exact six-command task gate, report-lint, and commit identity
+- Next action: migrate remaining Task 10 test assertions without weakening behavior, then run exact verification
+- Human attention required: no

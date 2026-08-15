@@ -15,6 +15,8 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-010 | 2026-08-15 | Task 10 blocker report, focused suite failure, and report-lint failure | `tasks/task-10-done.md`; attached failure output | BLOCK | ESC-20-010 | Genuine unresolved product-facing command-test, required-gate, and report-lint failures; no verified corrective commit or accepted exception applies. |
+| TRG-20-009 | 2026-08-12 | Review 3 returned three unresolved Task 9 evidence findings | `qa/review-3.md` | BLOCK | ESC-20-009 | Genuine unresolved QA Blocking findings; supplied review verification and integration PASS do not resolve missing deterministic evidence matrices. |
 | TRG-20-008 | 2026-08-11 | Task 8 report marks six required gates PASS without nested exit code or explicit termination evidence | `tasks/task-8-done.md`; report-lint output | BLOCK | ESC-20-008 | Genuine unresolved evidence failure: commit and report-lint verification do not prove command termination, and DEC-138 does not apply. |
 | TRG-20-007 | 2026-08-11 | Task 5 Developer blocker report: required dedicated integration gate failed because the fixed classification inventory omitted the newly added parity-fixture rebuild journey | `tasks/task-5-done.md` | BLOCK | ESC-20-007 | Genuine unresolved required-gate failure; no verified completion commit or accepted decision provides a RESUME ground. |
 | TRG-20-006 | 2026-08-11 | Task 4 recovery completion report fails report-lint after verified recovery commit: three invalid go-test evidence tokens and pending commit fields | `tasks/task-4-done.md`; report-lint output | BLOCK | ESC-20-006 | Genuine unresolved report-lint hard stop in the committed report; attached verification proves the faulty commit, not a correction. |
@@ -25,6 +27,74 @@
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-010 - Task 10 partial migration has unresolved command and report-gate failures
+
+- **Trigger:** Task 10 Developer produced a blocker report because the focused
+  command suite remains red; no task commit or report-finalization commit
+  exists, and the full required gate was not run. The required report-lint also
+  failed.
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-10-done.md`; prompt
+  failure evidence for `project-docs/tools/report-lint.sh` and
+  `go test ./cmd/fid -count=1`.
+- **Verdict:** BLOCK
+- **Reasoning:** The focused package command terminated `exit_code: 1` with
+  `FAIL` because AC/label/e2e assertions still expect obsolete stderr-success
+  output and `--format` behavior; this is a product-command and behavioral-test
+  failure, not a stale verification inventory. Report-lint independently
+  terminated `exit_code: 9` after nine failures, including missing
+  PASS/BLOCKED required-command results and no commit hash. The report confirms
+  that the full gate was not run and that no task or report-finalization commit
+  exists; no attached verification evidence or accepted decision supplies a
+  RESUME ground. Completing the contract migration and its DEC-140 matrix spans
+  several Task 10 command/test surfaces, exceeding local authority.
+- **Local decisions made:** none
+- **References:** `tasks/task-10-done.md` (Tests run; Exact quality-gate
+  results; Concerns; Commit hash and subject);
+  `project-docs/docs/current/phase_brief.md` (Task 10; Active Constraints);
+  `AGENTS.md` (Commands; Hard Stops); `project-docs/specs/09_AI_WORKFLOW.md`
+  §2.3, §8, §9.
+- **If BLOCK:** ESC-20-010 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-010 and direct bounded
+  Task 10 recovery, including complete DEC-140 evidence, exact required-gate
+  execution, commits, and clean report-lint before Phase Runner resumes.
+
+## TRG-20-009 - Review 3 has unresolved Task 9 evidence gaps
+
+- **Trigger:** Phase 20 Review 3 returned BLOCK with three bounded Task 9
+  evidence findings: missing deterministic transition expected-revision
+  absent/matching/stale coverage; incomplete canonical transition
+  outcome/detail/zero-append/Event-identity matrix; and incomplete owner-flag
+  plus attribution negative-state assertions.
+- **Source:** `project-docs/docs/phases/phase-20/qa/review-3.md`; attached
+  verification for review commit `0da39ddd89dd645474dbb337cb21ff2112c4a96a`
+  and the independent integration result
+  `ok  github.com/mbell-nzl/fid/cmd/fid/integration  8.949s` (terminated
+  `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Reasoning:** The three findings are explicit QA Blocking findings against
+  Task 9's deterministic transition, closed-request, and negative-state
+  evidence. They are not misclassified. The supplied verification proves the
+  Review 3 record and a broad integration command, not that the missing
+  contract-specific assertions have been added in a verified corrective commit;
+  no such commit is supplied. No accepted recorded decision closes or weakens
+  these requirements. The only permitted QA-blocking RESUME grounds therefore
+  do not apply.
+- **Local decisions made:** none
+- **References:** `qa/review-3.md` (Task 9 Blocking findings; Gate And Evidence
+  Checks); `project-docs/specs/09_AI_WORKFLOW.md` §2.3 (TL-Lite QA-review
+  triage); `AGENTS.md` (Hard Stops; deterministic evidence rules).
+- **If BLOCK:** ESC-20-009 raised in `tl_escalations_current.md`; recommended
+  next action: invoke full Tech Lead to resolve ESC-20-009 and direct bounded
+  Task 9 evidence recovery plus the required re-review before Phase Runner
+  resumes.
+- **Tech Lead adjudication (DEC-140, 2026-08-12):** verdict sustained as correct
+  triage on all three findings, each independently confirmed against the tree.
+  Unlike `TRG-20-008` this resolves against the evidence record, not the Tech
+  Lead: the requirement was published in the task spec, the validation contract
+  rows the Developer prompt requires loading, and the phase brief's DEC-130
+  Known Risk. Task 9 closes at `86d927d` and is not reopened; `tasks/task-9a.md`
+  recovers the missing assertions and `qa/review-3b.md` re-reviews them.
 
 ## TRG-20-008 - Task 8 has unverified gate-termination evidence
 
@@ -234,6 +304,19 @@
 - **If BLOCK:** ESC-20-001 raised in `tl_escalations_current.md`; recommended
   next action: invoke full Tech Lead to resolve the cross-task evidence
   recovery before Task 4 starts.
+
+## TRG-20-010 Recovery adjudication (DEC-141)
+
+- **Original verdict preserved:** `BLOCK (escalated as ESC-20-010)` was the
+  literal outcome available under the then-current binary router.
+- **Typed reclassification:** `REPAIR` / `in-scope-implementation`.
+- **Evidence:** The Developer session ended normally after 616 seconds with no
+  kill or timeout; the remaining failures were contract-obsolete Task 10 tests
+  and incomplete accepted-scope implementation. No protected decision or
+  external capability was required. Stash `779beab1` preserved the exact tree.
+- **Resolution:** DEC-141 authorizes the same-task continuation. The v2-marked
+  run ledger carries the repair lifecycle and exact completion evidence.
+- **Human attention required:** no.
 
 <!--
 Phase wrap-up checklist:
