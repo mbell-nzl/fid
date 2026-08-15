@@ -136,8 +136,11 @@ func closureCreateIssue(t *testing.T, binary, workspace, kind, title string, sch
 
 func closureAddAcceptanceCriterion(t *testing.T, binary, workspace, issueID string) string {
 	t.Helper()
-	_, stderr := closureRunFID(t, binary, workspace, "issue", "ac", "add", issueID, "--text", "Closure acceptance criterion", "--ordinal", "1", "--by", "developer")
-	return closureIDAfterWord(t, stderr, "AC")
+	stdout, stderr := closureRunFID(t, binary, workspace, "issue", "ac", "add", issueID, "--text", "Closure acceptance criterion", "--ordinal", "1", "--by", "developer")
+	if stderr != "" {
+		t.Fatalf("issue ac add stderr = %q, want empty", stderr)
+	}
+	return closureIDAfterWord(t, stdout, "AC")
 }
 
 func closureCompleteIssue(t *testing.T, binary, workspace, issueID string) string {
