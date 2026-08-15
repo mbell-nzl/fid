@@ -70,7 +70,8 @@
 
 ## Deviations from spec
 
-- None. The Review 4 repair stayed within Task 11 link implementation/tests and conformed to the accepted typed-endpoint, cycle, Event, and collection contracts.
+- No behavioral/spec deviation. The Review 4 repair stayed within Task 11 link implementation/tests and conformed to the accepted typed-endpoint, cycle, Event, and collection contracts.
+- Report-lint correction: the first lint of the finalized report emitted `FAIL Recovery attempts must be a non-negative integer: 1 (...)` (terminated `exit_code: 1`) because the trigger text shared the integer field. Repair: moved the trigger to its own line; the rerun passed with `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
