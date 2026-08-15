@@ -264,6 +264,17 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 		}
 		return cause
 	}
+	var limit *workflow.ResultLimitExceededError
+	if errors.As(cause, &limit) {
+		failure, err := cli.NewFailure(cli.CodeResultLimitExceeded, "read result exceeds its collection limit", nil, map[string]any{"collection": limit.Collection, "limit": limit.Limit, "observed": limit.Observed})
+		if err != nil {
+			return err
+		}
+		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
+			return err
+		}
+		return cause
+	}
 	return renderIssueMutationError(cmd, operation, "", cause)
 }
 

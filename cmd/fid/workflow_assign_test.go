@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/workflow"
@@ -31,11 +32,16 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 			} `json:"assignment"`
 		} `json:"result"`
 		Event *struct {
-			ID string `json:"id"`
+			ID         string `json:"id"`
+			OccurredAt string `json:"occurred_at"`
 		} `json:"event"`
 	}
-	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "kind" || envelope.Result.Assignment.ScopeValue != "task" || envelope.Result.Assignment.WorkflowID != "task-flow" || envelope.Event == nil {
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "kind" || envelope.Result.Assignment.ScopeValue != "task" || envelope.Result.Assignment.WorkflowID != "task-flow" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
 		t.Fatalf("assignment response = %+v, err = %v", envelope, err)
+	}
+	tail := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
+	if tail.EventID != envelope.Event.ID || tail.OccurredAt.UTC().Format(time.RFC3339) != envelope.Event.OccurredAt {
+		t.Fatalf("assignment event = %+v, journal tail = %#v; want matching identity", envelope.Event, tail)
 	}
 	conn := openWorkflowCommandDB(t, workspace)
 	defer closeCommandDB(t, conn)
@@ -55,12 +61,17 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	for _, args := range [][]string{{"--json", "workflow", "assign", "--name", "missing", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--project-wide", "--by", "tl"}} {
+	journal := mustJournalPath(t, workspace)
+	before := mustReadCommandFile(t, journal)
+	for _, args := range [][]string{{"--json", "workflow", "assign", "--name", "missing", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--project-wide", "--by", "tl"}, {"--json", "workflow", "assign", "--name", "missing", "--kind", "qa_review", "--by", "tl"}} {
 		result := executeCommandForTest(workspace, args...)
 		if result.err == nil || result.stdout != "" {
 			t.Fatalf("scope rejection = %#v", result)
 		}
 		assertWorkflowInvalidEnvelope(t, result.stderr, "workflow.assign")
+		if after := mustReadCommandFile(t, journal); string(after) != string(before) {
+			t.Fatal("rejected assignment appended an event")
+		}
 	}
 	result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "missing", "--kind", "task", "--by", "tl")
 	var failure struct {
@@ -73,6 +84,37 @@ func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.
 	}
 	if result.err == nil || json.Unmarshal([]byte(result.stderr), &failure) != nil || failure.Error.Code != "workflow-not-found" || failure.Error.Subject.ID != "missing" {
 		t.Fatalf("unknown workflow = %#v, failure = %+v", result, failure)
+	}
+	if after := mustReadCommandFile(t, journal); string(after) != string(before) {
+		t.Fatal("unknown workflow assignment appended an event")
+	}
+}
+
+func TestWorkflowAssignCombinesRootProjectSelectorAndProjectWideScope(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	defineWorkflowForTest(t, workspace, "root-project-flow", "any")
+
+	assign := newWorkflowAssignCommand()
+	if assign.Flags().Lookup("project") != nil {
+		t.Fatal("workflow assign registers a local --project flag, want only root --project <path>")
+	}
+	result := executeCommandForTest(t.TempDir(), "--project", workspace, "--json", "workflow", "assign", "--name", "root-project-flow", "--project-wide", "--by", "tl")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("root project plus project-wide assignment = %#v", result)
+	}
+	var envelope struct {
+		Result struct {
+			Assignment struct {
+				ScopeType  string `json:"scope_type"`
+				ScopeValue any    `json:"scope_value"`
+				WorkflowID string `json:"workflow_id"`
+			} `json:"assignment"`
+		} `json:"result"`
+		Event any `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || envelope.Result.Assignment.ScopeType != "project" || envelope.Result.Assignment.ScopeValue != nil || envelope.Result.Assignment.WorkflowID != "root-project-flow" || envelope.Event == nil {
+		t.Fatalf("root project assignment envelope = %+v, err = %v", envelope, err)
 	}
 }
 

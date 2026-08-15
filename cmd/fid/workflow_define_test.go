@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestWorkflowDefineJSONMatchesContract(t *testing.T) {
@@ -41,7 +42,7 @@ func TestWorkflowDefineJSONMatchesContract(t *testing.T) {
 		t.Fatalf("envelope = %+v, want closed workflow.define success", envelope)
 	}
 	event := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
-	if event.EventID != envelope.Event.ID || event.Actor.Role != "tl" || len(event.Effects) != 7 {
+	if event.EventID != envelope.Event.ID || event.OccurredAt.UTC().Format(time.RFC3339) != envelope.Event.OccurredAt || event.Actor.Role != "tl" || len(event.Effects) != 7 {
 		t.Fatalf("event = %#v, want supplied attribution and no requirement effects", event)
 	}
 }

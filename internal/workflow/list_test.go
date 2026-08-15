@@ -2,6 +2,8 @@ package workflow
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -53,6 +55,72 @@ func TestListReturnsEmptySliceForNoMatch(t *testing.T) {
 	}
 	if items == nil || len(items) != 0 {
 		t.Fatalf("items = %#v, want empty slice", items)
+	}
+}
+
+func TestListOrdersWorkflowsByNameThenID(t *testing.T) {
+	workspace, migrationsDir := initializedWorkflowWorkspace(t)
+	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open workflow database: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	clearListedWorkflows(t, conn)
+	for _, workflow := range []struct{ id, name string }{
+		{"zulu", "Zulu"},
+		{"second", "Shared"},
+		{"first", "Shared"},
+		{"alpha", "Alpha"},
+	} {
+		if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES (?, ?, 'task', 1)`, workflow.id, workflow.name); err != nil {
+			t.Fatalf("insert workflow %q: %v", workflow.id, err)
+		}
+	}
+
+	items, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir})
+	if err != nil {
+		t.Fatalf("List() error = %v", err)
+	}
+	if got, want := workflowListIDs(items), []string{"alpha", "first", "second", "zulu"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("ordered workflow IDs = %v, want %v", got, want)
+	}
+}
+
+func TestListRejectsCollectionAboveLimit(t *testing.T) {
+	workspace, migrationsDir := initializedWorkflowWorkspace(t)
+	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open workflow database: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	clearListedWorkflows(t, conn)
+	for index := 0; index < workflowListLimit; index++ {
+		id := fmt.Sprintf("limit-%05d", index)
+		if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES (?, ?, 'task', 1)`, id, id); err != nil {
+			t.Fatalf("insert workflow %q: %v", id, err)
+		}
+	}
+
+	items, err := List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir})
+	if err != nil || len(items) != workflowListLimit {
+		t.Fatalf("at-limit List() = %d items, %v; want %d items and nil", len(items), err, workflowListLimit)
+	}
+	if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES ('limit-over', 'limit-over', 'task', 1)`); err != nil {
+		t.Fatalf("insert over-limit workflow: %v", err)
+	}
+	items, err = List(ListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir})
+	var limit *ResultLimitExceededError
+	if !errors.As(err, &limit) || limit.Collection != "workflows" || limit.Limit != workflowListLimit || limit.Observed != workflowListLimit+1 || items != nil {
+		t.Fatalf("over-limit List() = %#v, %v; want typed limit error and nil items", items, err)
+	}
+}
+
+func clearListedWorkflows(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	for _, table := range []string{"workflow_transition_requires", "workflow_transitions", "workflow_states", "workflow_assignments", "workflows"} {
+		if _, err := conn.Exec("DELETE FROM " + table); err != nil {
+			t.Fatalf("clear %s: %v", table, err)
+		}
 	}
 }
 
