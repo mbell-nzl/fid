@@ -125,8 +125,8 @@
 
 ## Commit hash
 
-- `PENDING_PRODUCT_COMMIT`
+- `f95db81f938e15d59357a35936e43a24c708b653`
 
 ## Commit subject
 
-- `PENDING_PRODUCT_SUBJECT`
+- `test(cli): converge format shim callers`
