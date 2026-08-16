@@ -10,8 +10,9 @@
 #      `## Exact Commands To Run` required block appears in the report's
 #      `## Tests run` or `## Exact quality-gate results` with a PASS result,
 #      or BLOCKED inside a blocker report.
-#   4. Declared expected-non-zero commands are pre-committed in the task spec,
-#      then reported with the matching observed non-zero termination.
+#   4. Backtick-bullet declarations in the task spec's optional expected-non-zero
+#      section are pre-committed; its other lines are explanatory prose. Declared
+#      commands are then reported with the matching observed non-zero termination.
 #   5. Commit hash resolves via `git rev-parse --verify <hash>^{commit}`.
 #   6. Commit subject matches `git log -1 --format=%s <hash>` exactly, which
 #      also catches plausible-but-wrong hash prefixes.
@@ -80,12 +81,13 @@ required_commands() {
   ' "$1"
 }
 
-# Print non-empty declaration rows from the optional task-spec section.
+# Print declaration rows from the optional task-spec section. A declaration starts
+# at column 0 with a hyphen, space, and backtick; other section text is prose.
 expected_nonzero_declaration_lines() {
   awk '
     $0 == "## Expected Non-Zero Commands" { in_section = 1; next }
     in_section && /^## / { exit }
-    in_section && NF > 0 { print }
+    in_section && /^- `/ { print }
   ' "$1"
 }
 
@@ -501,7 +503,13 @@ rg -n absence-fixture cmd
 
 ## Expected Non-Zero Commands
 
+Each declaration is one line: the exact command in backticks, then
+`- expected \`exit_code: <N>\``. Any trailing prose is ignored.
+
 - `rg -n absence-fixture cmd` - expected `exit_code: 1` - verifies the fixture absence proof.
+  This trailing explanation wraps onto an indented continuation line.
+
+- This prose bullet does not open with a backtick and is not a declaration.
 
 ## Notes For Developer
 
@@ -647,6 +655,10 @@ EOF
   # Zero is never a declared expected non-zero exit status.
   sed 's|expected `exit_code: 1`|expected `exit_code: 0`|' "$tmp/task-spec.md" > "$tmp/zero-declaration-task-spec.md"
   expect "zero expected-nonzero declaration fails" nonzero "expected exit_code must be non-zero" "$tmp/clean.md" "$tmp/zero-declaration-task-spec.md"
+
+  # A backtick bullet is a declaration, so malformed grammar must not be ignored.
+  sed 's|expected `exit_code: 1`|expected exit_code: 1|' "$tmp/task-spec.md" > "$tmp/malformed-declaration-task-spec.md"
+  expect "malformed expected-nonzero declaration fails" nonzero "expected non-zero declaration has invalid grammar" "$tmp/clean.md" "$tmp/malformed-declaration-task-spec.md"
 
   # Every declaration must correspond to a command in the exact command block.
   sed '/^rg -n absence-fixture cmd$/d' "$tmp/task-spec.md" > "$tmp/undeclared-in-gate-task-spec.md"
