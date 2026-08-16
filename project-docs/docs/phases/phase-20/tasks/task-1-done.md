@@ -1,5 +1,14 @@
 # Phase 20 - Task 1: Response contract foundation - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added the domain-neutral `internal/cli` `fid-cli.v1` Response Envelope writer for success and failure payloads using `encoding/json`.
@@ -25,24 +34,45 @@
 
 ## Tests run
 
+Historical Task 1 test evidence is preserved below. Its original direct-test and
+unchanged-surface PASS records predate the required termination syntax and are
+not used as current gate evidence.
+
 - `go test ./internal/cli -run '^TestWriteSuccessUsesExactContractKeys$'` — EXPECTED RED — `FAIL`
 - `go test ./internal/cli` — EXPECTED RED — `FAIL`
-- `go test ./internal/cli` — PASS — `ok  	github.com/mbell-nzl/fid/internal/cli	0.003s`
-- `go test ./internal/cli` — PASS — `ok  	github.com/mbell-nzl/fid/internal/cli	0.002s`
-- `/tmp/fid --help` — PASS (unchanged-surface check) — `Use "fid [command] --help" for more information about a command.` The CLI has no Task 1 envelope integration by design; this task changed no live Cobra surface.
+> - `go test ./internal/cli` — PASS — `ok  	github.com/mbell-nzl/fid/internal/cli	0.003s`
+> - `go test ./internal/cli` — PASS — `ok  	github.com/mbell-nzl/fid/internal/cli	0.002s`
+> - `/tmp/fid --help` — PASS (unchanged-surface check) — `Use "fid [command] --help" for more information about a command.` The CLI has no Task 1 envelope integration by design; this task changed no live Cobra surface.
 - QA-plan applicability: QA-01 applies through the five exact task gates below. QA-02 and QA-21 apply to this task's deterministic unit foundation through the envelope, registry, null-field, and redaction tests cited above; their command-channel, path-containment, and all-leaf evidence remains assigned to later tasks. The QA plan schedules integration from Task 2 and benchmarks only for Tasks 5, 6, and 18, so neither is applicable to Task 1.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
-- `golangci-lint run ./...` — PASS — `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
-- `go tool cover -func=coverage.out` — PASS — `total:										(statements)				74.6%`
-- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+> - `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
+> - `golangci-lint run ./...` — PASS — `0 issues.`
+> - `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go tool cover -func=coverage.out` — PASS — `total:										(statements)				74.6%`
+> - `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None.
+- Historical Task 1 implementation had no product or specification deviations.
+- DEC-131 gate-evidence correction remains immutable historical context: the
+  original full-suite record was UNVERIFIED because its silent token could not
+  prove termination. This continuation preserves that record and adds a fresh,
+  session-captured PASS result without rewriting it.
+- MF-01 report/control-conformance repair: the initial exact report-lint
+  attempt failed with `FAIL report-lint found 19 failure(s)` (terminated
+  `exit_code: 19`) because the report lacked the canonical typed workflow
+  outcome and used legacy evidence punctuation/termination syntax. This
+  report-only repair adds the required typed fields, preserves historical
+  evidence verbatim as quoted context, and records fresh terminal evidence for
+  every exact Task 1 command.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
