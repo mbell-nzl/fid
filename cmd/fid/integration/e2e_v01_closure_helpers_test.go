@@ -285,11 +285,11 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance check")
 	closureRunFID(t, binary, workspace, "maintenance", "vacuum", "--by", "tl")
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
-	_, stderr, err := closureRunFIDExpectError(t, binary, workspace, "decision", "get")
-	if err == nil || stderr != "error: commands for decision ship in v0.2\n" {
-		t.Fatalf("decision guard = (%v, %q), want version gate", err, stderr)
+	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "decision", "get")
+	if err == nil || stdout != "" || stderr != "" {
+		t.Fatalf("decision command = (%v, %q, %q), want unknown command with empty output", err, stdout, stderr)
 	}
-	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "decision guard")
+	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "unknown decision command")
 	for _, args := range [][]string{
 		{"--json", "issue", "list"},
 		{"--json", "ready"},
