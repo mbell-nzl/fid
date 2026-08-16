@@ -78,7 +78,6 @@
 - Repaired one-count diagnostic - UNVERIFIED historical focused-pass record - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t57.903s` (the original report did not retain an observed termination result).
 - Claim sleep inventory - UNVERIFIED historical no-match record - `exit 1 (no output)` (the original report did not retain an observed termination result).
 - `/tmp/fid --help` - PASS - `Use "fid [command] --help" for more information about a command.` (terminated `exit_code: 0`)
-- `go test -race -count=1 -json ./cmd/fid | rg '"Elapsed":([1-9][0-9]*|0\\.[5-9])'` - PASS - `{"Time":"2026-08-16T23:29:51.187093695+12:00","Action":"pass","Package":"github.com/mbell-nzl/fid/cmd/fid","Elapsed":104.318}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -117,6 +116,13 @@
   Editing those tests, their scheduler classification, or the gate timeout is
   outside this task and would require new bounded authority; the immutable
   failed exact-gate evidence is retained unchanged.
+- The first recovery report-lint attempt failed with `FAIL report-lint found 1
+  failure(s)` (terminated `exit_code: 1`) because its Go-test token guard does
+  not accept the optional JSON timing-event row. The timing observation remains
+  recorded in this deviation; removing that non-required row is the report
+  repair. The byte-identical report-lint command will be rerun against this
+  committed correction and must return `OUTCOME RECOVERY_REQUIRED` with
+  `exit_code: 0`.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
