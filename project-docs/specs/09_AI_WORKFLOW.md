@@ -298,7 +298,7 @@ Triage rules:
   subject match, or report-lint output). Without attached evidence, do not
   RESUME on the already-resolved-by-a-verified-commit ground.
 - The final line in triage mode must be exactly `VERDICT: RESUME`,
-  `VERDICT: REPAIR`, or
+  `VERDICT: REPAIR`, `VERDICT: REPAIR / control-conformance`, or
   `VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>)`, with the concrete
   identifier substituted.
 
@@ -395,8 +395,15 @@ Responsibilities:
     an actual advance. A v2 ledger with no v1 recovery-directive marker is
     invalid. After the marker, the validator requires complete typed recovery
     authority/budget fields, binds control-conformance authority to the latest
-    same-trigger TRIAGE, and rejects STOP without a preceding TRIAGE BLOCK and
-    concrete ESC. It preserves task identity and requires recovery completion
+    same-trigger `REPAIR / control-conformance` TRIAGE or a resolved BLOCK whose
+    cited decision exists. Every strict TRIAGE ID and verdict must match its
+    real phase triage-log entry; TRG/ESC identity is bound to the ledger phase.
+    It rejects STOP without its exact preceding TRIAGE BLOCK/ESC. A resume must
+    retain that TRG/ESC, trigger, next attempt, and continuing task, and any
+    cited phase decision must exist. `MATERIAL-PROGRESS` and `NO-PROGRESS` preserve task,
+    trigger, monotonic attempt, and the two-attempt no-progress budget; only
+    `RESOLVED` permits completion or the linked control-to-report continuation.
+    It preserves task identity and requires recovery completion
     plus an explicitly linked, differently identified QA re-review.
     A linked re-review may transfer repair ownership to another task only after
     the current owner completes; it cannot overwrite an unresolved owner. An
@@ -438,9 +445,10 @@ Responsibilities:
     parse the literal final `VERDICT:` line and append a TRIAGE entry to the
     run ledger. `VERDICT: RESUME` advances only when the trigger is
     cleared. `VERDICT: REPAIR` appends `TASK-RECOVERY` and dispatches the same
-    task; it never advances. A control-conformance verdict requires the complete
-    written directive above and dispatches a dedicated same-task control-repair
-    continuation. `VERDICT: BLOCK` appends STOP with the concrete ESC.
+    task; it never advances. `VERDICT: REPAIR / control-conformance` requires
+    the complete written directive above and dispatches a dedicated same-task
+    control-repair continuation. `VERDICT: BLOCK` appends STOP with the concrete
+    ESC.
 16. Apply a default budget of two consecutive Phase Runner-mediated
     continuation attempts for the same trigger signature with no material
     progress. Same-session red/green iterations do not consume this budget. A
@@ -487,31 +495,39 @@ Protected blocker candidates:
 
 Before appending STOP for a blocker candidate, spawn TL-Lite as the first-step triager,
 append TRIAGE for its verdict, and stop only on
-`VERDICT: BLOCK`. `VERDICT: REPAIR` keeps the current task open and
-dispatches recovery; `VERDICT: RESUME` advances only when the trigger is
+`VERDICT: BLOCK`. `VERDICT: REPAIR` keeps the current task open and dispatches
+ordinary recovery; `VERDICT: REPAIR / control-conformance` dispatches only its
+guarded worktree route. `VERDICT: RESUME` advances only when the trigger is
 already cleared.
 
 Control-conformance dispatch is a recovery mode, not a new planned product
 task. The Phase Runner appends `TASK-RECOVERY` under the originating task and
 trigger budget, records the TL-Lite directive as authority, and names exact
-allowlisted `project-docs/tools/` paths. It sends a dedicated same-task
-Developer continuation the directive verbatim. That continuation records its
-starting and ending commits and produces one isolated control-repair commit.
+allowlisted `project-docs/tools/` paths. Because the runner-owned ledger is now
+dirty by design, the Phase Runner creates a dedicated clean temporary git
+worktree and repair branch at the committed phase `HEAD`; no other dirty phase
+path is permitted. It sends a dedicated same-task Developer continuation that
+worktree path and the directive verbatim. That continuation records its starting
+and ending commits and produces one isolated control-repair commit there.
 Before appending the `REPAIR` ledger event, the runner must observe PASS from:
 
 ```text
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-Here `<base>` and `<head>` are the Developer-recorded commits and `<allowed...>`
-is the directive's exact tools-only allowlist. Product, spec, prompt, template,
-dependency, task, QA-contract, and originating-report paths are forbidden in
-that commit. The scope check also requires the claimed repair commit to be the
-checked-out `HEAD`, a clean index/worktree, and regular-file control artifacts;
-later commits, dirty state, symlinks, and gitlinks fail. A necessary provider
-sync is a separate authorized maintenance step, never part of the isolated
+Here `<repo>` is the dedicated repair worktree, `<base>` and `<head>` are the
+Developer-recorded commits, and `<allowed...>` is the directive's exact
+tools-only allowlist. Product, spec, prompt, template, dependency, task,
+QA-contract, and originating-report paths are forbidden in that commit. The
+scope check requires the claimed repair commit to be checked-out `HEAD`, a
+clean index/worktree with no assume-unchanged/skip-worktree paths, and
+regular-file control artifacts; later commits, dirty state, symlinks, and
+gitlinks fail. The runner then fast-forwards the unchanged phase branch to the
+verified repair commit while its only dirty path is the runner-owned ledger,
+and confirms the phase `HEAD` equals that commit. A necessary provider sync is
+a separate authorized maintenance step, never part of the isolated
 control-repair commit. The runner does not advance or ask the Human. After the
-scope check passes, it appends `REPAIR` and
+scope and integration checks pass, it appends `REPAIR` and
 dispatches an ordinary same-task continuation to rerun the originating exact
 verification and update the originating report while preserving the first
 failure. If either Developer discovers ambiguity or needs any forbidden
@@ -1592,8 +1608,8 @@ in-scope work, and bounded QA findings are `REPAIR` by default. In Phase
 Runner mode they dispatch a same-task continuation and preserve failed
 evidence. They become `BLOCK` only when a separate protected category or
 exhausted recovery budget is demonstrated. `RESUME` means the trigger is
-already cleared and it is safe to advance; `VERDICT: REPAIR` means do not
-advance.
+already cleared and it is safe to advance; `VERDICT: REPAIR` and
+`VERDICT: REPAIR / control-conformance` mean do not advance.
 
 ## 10. Continuous Improvement
 

@@ -306,6 +306,18 @@ printf '%s\n' 'dirty product' > "$scope_repo/cmd/product.go"
 run_control_scope "drill-18 dirty product state invalidates control repair scope" nonzero "worktree is not clean" \
   "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
 git -C "$scope_repo" checkout -q -- cmd/product.go
+git -C "$scope_repo" update-index --assume-unchanged cmd/product.go
+printf '%s\n' 'hidden product' > "$scope_repo/cmd/product.go"
+run_control_scope "drill-18 assume-unchanged cannot hide forbidden product state" nonzero "assume-unchanged or skip-worktree" \
+  "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
+git -C "$scope_repo" update-index --no-assume-unchanged cmd/product.go
+git -C "$scope_repo" checkout -q -- cmd/product.go
+git -C "$scope_repo" update-index --skip-worktree cmd/product.go
+printf '%s\n' 'hidden product' > "$scope_repo/cmd/product.go"
+run_control_scope "drill-18 skip-worktree cannot hide forbidden product state" nonzero "assume-unchanged or skip-worktree" \
+  "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
+git -C "$scope_repo" update-index --no-skip-worktree cmd/product.go
+git -C "$scope_repo" checkout -q -- cmd/product.go
 printf '%s\n' 'changed product' > "$scope_repo/cmd/product.go"
 git -C "$scope_repo" add -A
 git_fixture "$scope_repo" commit "test: contaminate control repair"
@@ -338,6 +350,54 @@ git_fixture "$symlink_repo" commit "test: replace control with product symlink"
 symlink_head=$(git -C "$symlink_repo" rev-parse HEAD)
 run_control_scope "drill-18 symlink cannot masquerade as an allowed control" nonzero "allowed control is not a regular file" \
   "$symlink_repo" "$symlink_base" "$symlink_head" project-docs/tools/control.sh
+
+# Exercise the actual control-repair topology: the Phase Runner ledger remains
+# dirty in the main worktree while a separate clean repair worktree owns the
+# isolated commit. Only the verified commit is fast-forwarded back.
+lifecycle_repo="$workspace/control-lifecycle-main"
+lifecycle_repair="$workspace/control-lifecycle-repair"
+mkdir -p "$lifecycle_repo/project-docs/tools" \
+  "$lifecycle_repo/project-docs/docs/phases/phase-1"
+printf '%s\n' 'old control' > "$lifecycle_repo/project-docs/tools/control.sh"
+printf '%s\n' '# Phase 1 Run Ledger' > \
+  "$lifecycle_repo/project-docs/docs/phases/phase-1/run-ledger.md"
+git -C "$lifecycle_repo" init -q
+git -C "$lifecycle_repo" add -A
+git_fixture "$lifecycle_repo" commit "test: establish control lifecycle fixture"
+lifecycle_base=$(git -C "$lifecycle_repo" rev-parse HEAD)
+printf '%s\n' 'TASK-RECOVERY remains runner-owned and uncommitted' >> \
+  "$lifecycle_repo/project-docs/docs/phases/phase-1/run-ledger.md"
+git -C "$lifecycle_repo" worktree add -q -b control-repair-test \
+  "$lifecycle_repair" "$lifecycle_base"
+printf '%s\n' 'repaired control' > \
+  "$lifecycle_repair/project-docs/tools/control.sh"
+git -C "$lifecycle_repair" add -A
+git_fixture "$lifecycle_repair" commit "fix: repair control in dedicated worktree"
+lifecycle_head=$(git -C "$lifecycle_repair" rev-parse HEAD)
+lifecycle_scope_output=$("$control_scope_lint" "$lifecycle_repair" \
+  "$lifecycle_base" "$lifecycle_head" project-docs/tools/control.sh 2>&1)
+lifecycle_scope_code=$?
+if [ "$lifecycle_scope_code" -eq 0 ]; then
+  git -C "$lifecycle_repo" merge --ff-only -q control-repair-test
+  lifecycle_merge_code=$?
+else
+  lifecycle_merge_code=1
+fi
+lifecycle_main_head=$(git -C "$lifecycle_repo" rev-parse HEAD)
+lifecycle_main_status=$(git -C "$lifecycle_repo" status --porcelain=v1 \
+  --untracked-files=all)
+lifecycle_repair_status=$(git -C "$lifecycle_repair" status --porcelain=v1 \
+  --untracked-files=all)
+if [ "$lifecycle_scope_code" -eq 0 ] && \
+   printf '%s\n' "$lifecycle_scope_output" | grep -qF 'PASS control repair scope' && \
+   [ "$lifecycle_merge_code" -eq 0 ] && \
+   [ "$lifecycle_main_head" = "$lifecycle_head" ] && \
+   [ "$lifecycle_main_status" = ' M project-docs/docs/phases/phase-1/run-ledger.md' ] && \
+   [ -z "$lifecycle_repair_status" ]; then
+  drill_pass "drill-18 dirty main ledger and clean repair worktree integrate safely"
+else
+  drill_fail "drill-18 dedicated repair worktree lifecycle (scope=$lifecycle_scope_output, main=$lifecycle_main_status, repair=$lifecycle_repair_status)"
+fi
 
 # Multi-step conformance: execute a byte-identical command red, repair its
 # fixture causally, rerun it green, then route the preserved attempt sequence.
@@ -444,7 +504,22 @@ cat > "$valid_continuation" <<'EOF'
 EOF
 run_sequence "drill-16 lifecycle: fresh session retains task identity" ADVANCEABLE "$valid_continuation"
 
-valid_control_repair="$workspace/valid-control-repair.md"
+control_phase="$workspace/control-fixture/phase-1"
+mkdir -p "$control_phase"
+cat > "$control_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-001 - byte-exact control mismatch
+- **Verdict:** REPAIR / control-conformance
+
+## TRG-1-002 - ordinary task-scope repair
+- **Verdict:** REPAIR
+
+## TRG-1-003 - protected product decision
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-003
+EOF
+valid_control_repair="$control_phase/valid-control-repair.md"
 cat > "$valid_control_repair" <<'EOF'
 ### 2026-08-15 10:00 RUN-RESUME
 - Sequence contract: v2
@@ -484,55 +559,89 @@ cat > "$valid_control_repair" <<'EOF'
 EOF
 run_sequence "drill-18 scoped control repair retains originating task identity" ADVANCEABLE "$valid_control_repair"
 
-schema_omitted="$workspace/schema-omitted.md"
+schema_omitted="$control_phase/schema-omitted.md"
 sed '/^- Recovery directive schema: /d' "$valid_continuation" > "$schema_omitted"
 run_invalid_sequence "drill-18 fresh v2 ledger cannot omit directive schema" "without Recovery directive schema: v1" "$schema_omitted"
 
-untriaged_control_repair="$workspace/untriaged-control-repair.md"
+untriaged_control_repair="$control_phase/untriaged-control-repair.md"
 sed '/^### 2026-08-15 10:00 TRIAGE TRG-1-001$/,/^- Triage log: /d' "$valid_control_repair" > "$untriaged_control_repair"
 run_invalid_sequence "drill-18 control repair requires preceding triage authority" "has no preceding TRIAGE authority" "$untriaged_control_repair"
 
-self_authorized_control_repair="$workspace/self-authorized-control-repair.md"
+self_authorized_control_repair="$control_phase/self-authorized-control-repair.md"
 sed 's/Repair authority: TRG-1-001/Repair authority: SELF-AUTHORIZED/' "$valid_control_repair" > "$self_authorized_control_repair"
 run_invalid_sequence "drill-18 control repair authority binds the latest triage" "does not reference latest TRIAGE TRG-1-001" "$self_authorized_control_repair"
 
-unbudgeted_control_repair="$workspace/unbudgeted-control-repair.md"
+fabricated_triage_id="$control_phase/fabricated-triage-id.md"
+sed 's/TRG-1-001/SELF-AUTHORIZED/g' "$valid_control_repair" > "$fabricated_triage_id"
+run_invalid_sequence "drill-18 triage authority requires a concrete TRG ID" "TRIAGE has missing or invalid TRG ID" "$fabricated_triage_id"
+
+incomplete_triage="$control_phase/incomplete-triage.md"
+sed '/^- Triage log: /d' "$valid_control_repair" > "$incomplete_triage"
+run_invalid_sequence "drill-18 control authority requires a complete triage record" "TRIAGE is missing Triage log" "$incomplete_triage"
+
+unrecorded_phase="$workspace/unrecorded-control/phase-1"
+mkdir -p "$unrecorded_phase"
+unrecorded_triage="$unrecorded_phase/run-ledger.md"
+cp "$valid_control_repair" "$unrecorded_triage"
+run_invalid_sequence "drill-18 control authority must exist in the phase triage log" "TRIAGE ID is not recorded in the phase triage log" "$unrecorded_triage"
+
+misbound_phase="$workspace/misbound-control/phase-1"
+mkdir -p "$misbound_phase"
+cat > "$misbound_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-001 - ordinary repair only
+- **Verdict:** REPAIR
+EOF
+misbound_triage="$misbound_phase/run-ledger.md"
+cp "$valid_control_repair" "$misbound_triage"
+run_invalid_sequence "drill-18 ledger verdict must match the recorded triage verdict" "TRIAGE verdict does not match the phase triage log" "$misbound_triage"
+
+ordinary_triage_control="$control_phase/ordinary-triage-control.md"
+sed 's/Verdict: REPAIR \/ control-conformance/Verdict: REPAIR/' "$valid_control_repair" > "$ordinary_triage_control"
+run_invalid_sequence "drill-18 ordinary REPAIR cannot authorize cross-scope control edits" "not REPAIR / control-conformance or resolved BLOCK" "$ordinary_triage_control"
+
+unbound_attempt="$control_phase/unbound-control-attempt.md"
+sed '0,/Attempt count: 1/! s/Attempt count: 1/Attempt count: 99/g' "$valid_control_repair" > "$unbound_attempt"
+run_invalid_sequence "drill-18 control attempt remains within triaged budget" "Attempt count exceeds latest TRIAGE authority" "$unbound_attempt"
+
+unbudgeted_control_repair="$control_phase/unbudgeted-control-repair.md"
 sed '/^- Consecutive no-progress attempts: /d' "$valid_control_repair" > "$unbudgeted_control_repair"
 run_invalid_sequence "drill-18 control repair cannot discard its recovery budget" "missing or invalid Consecutive no-progress attempts" "$unbudgeted_control_repair"
 
-missing_control_contract="$workspace/missing-control-contract.md"
+missing_control_contract="$control_phase/missing-control-contract.md"
 sed '/^- Control contract: /d' "$valid_control_repair" > "$missing_control_contract"
 run_invalid_sequence "drill-18 control repair requires accepted contract authority" "missing Control contract" "$missing_control_contract"
 
-missing_repair_authority="$workspace/missing-repair-authority.md"
+missing_repair_authority="$control_phase/missing-repair-authority.md"
 sed '/^- Repair authority: /d' "$valid_control_repair" > "$missing_repair_authority"
 run_invalid_sequence "drill-18 marked recovery requires recorded authority" "missing Repair authority" "$missing_repair_authority"
 
-missing_control_mismatch="$workspace/missing-control-mismatch.md"
+missing_control_mismatch="$control_phase/missing-control-mismatch.md"
 sed '/^- Control mismatch: /d' "$valid_control_repair" > "$missing_control_mismatch"
 run_invalid_sequence "drill-18 control repair requires exact mismatch evidence" "missing Control mismatch" "$missing_control_mismatch"
 
-missing_control_files="$workspace/missing-control-files.md"
+missing_control_files="$control_phase/missing-control-files.md"
 sed '/^- Allowed files: /d' "$valid_control_repair" > "$missing_control_files"
 run_invalid_sequence "drill-18 control repair requires bounded file authority" "missing Allowed files" "$missing_control_files"
 
-missing_control_guard="$workspace/missing-control-guard.md"
+missing_control_guard="$control_phase/missing-control-guard.md"
 sed '/^- Forbidden changes: /d' "$valid_control_repair" > "$missing_control_guard"
 run_invalid_sequence "drill-18 control repair requires semantic guardrails" "missing Forbidden changes" "$missing_control_guard"
 
-missing_repair_mode="$workspace/missing-repair-mode.md"
+missing_repair_mode="$control_phase/missing-repair-mode.md"
 sed '/^- Repair mode: /d' "$valid_control_repair" > "$missing_repair_mode"
 run_invalid_sequence "drill-18 marked recovery requires an explicit repair mode" "missing or invalid Repair mode" "$missing_repair_mode"
 
-invalid_directive_schema="$workspace/invalid-directive-schema.md"
+invalid_directive_schema="$control_phase/invalid-directive-schema.md"
 sed 's/Recovery directive schema: v1/Recovery directive schema: v2/' "$valid_control_repair" > "$invalid_directive_schema"
 run_invalid_sequence "drill-18 unknown recovery directive schema is rejected" "invalid Recovery directive schema" "$invalid_directive_schema"
 
-missing_sequence_contract="$workspace/missing-control-sequence-contract.md"
+missing_sequence_contract="$control_phase/missing-control-sequence-contract.md"
 sed '/^- Sequence contract: /d' "$valid_control_repair" > "$missing_sequence_contract"
 run_invalid_sequence "drill-18 directive schema requires sequence contract" "missing Sequence contract: v2" "$missing_sequence_contract"
 
-schema_dropped_on_resume="$workspace/schema-dropped-on-resume.md"
+schema_dropped_on_resume="$control_phase/schema-dropped-on-resume.md"
 cat "$valid_control_repair" > "$schema_dropped_on_resume"
 cat >> "$schema_dropped_on_resume" <<'EOF'
 ### 2026-08-15 10:04 RUN-RESUME
@@ -557,6 +666,265 @@ cat > "$fabricated_stop" <<'EOF'
 ### 2026-08-15 10:03 TASK task-18 COMPLETE
 EOF
 run_invalid_sequence "drill-18 STOP requires a preceding triaged BLOCK" "STOP has no preceding TRIAGE BLOCK" "$fabricated_stop"
+
+skipped_stop="$control_phase/triage-block-skips-stop.md"
+cat > "$skipped_stop" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TRIAGE TRG-1-003
+- Trigger: protected product decision
+- Trigger signature: task-18:product-decision:ambiguous-output
+- Attempt count: 1
+- Checkpoint: task-18 blocker candidate
+- Verdict: BLOCK (escalated as ESC-1-003)
+- Resolution evidence: product authority required
+- Triage log: phase triage entry and ESC confirmed
+### 2026-08-15 10:02 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v1
+- Resolution evidence: DEC-200 selected the output
+### 2026-08-15 10:03 TASK task-18 COMPLETE
+EOF
+run_invalid_sequence "drill-18 TRIAGE BLOCK cannot skip its STOP event" "TRIAGE BLOCK must be followed by STOP" "$skipped_stop"
+
+blocked_phase="$workspace/phase-1"
+mkdir -p "$blocked_phase"
+cat > "$blocked_phase/decisions.md" <<'EOF'
+# Phase 1 Decisions
+
+### DEC-200: Authorize the bounded control repair
+EOF
+cat > "$blocked_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-010 - protected control classification
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-010
+
+## TRG-1-020 - recovery budget exhausted
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-020
+EOF
+valid_blocked_control="$blocked_phase/run-ledger.md"
+cat > "$valid_blocked_control" <<'EOF'
+# Phase 1 Run Ledger
+
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TRIAGE TRG-1-010
+- Trigger: protected control classification
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 1
+- Checkpoint: exact control reproducer failed
+- Verdict: BLOCK (escalated as ESC-1-010)
+- Resolution evidence: protected authority required
+- Triage log: phase triage entry and ESC confirmed
+### 2026-08-15 10:02 STOP
+- Cause: TRG-1-010 / ESC-1-010 requires authority
+- Triage: TRG-1-010 (BLOCK, escalated as ESC-1-010)
+- Protected category: gate/control definition authority
+- Next Human or external-authority action: record a decision
+### 2026-08-15 10:03 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v1
+- Prior run/session or STOP: TRG-1-010 / ESC-1-010 STOP
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 2
+- Checkpoint: DEC-200 recorded
+- Resolution evidence: DEC-200 authorizes only conformance repair
+- Continuing task: task-1
+### 2026-08-15 10:04 TASK-RECOVERY task-1
+- Source: TRG-1-010 / DEC-200
+- Category: gate-repair
+- Repair mode: control-conformance
+- Repair authority: TRG-1-010 and DEC-200
+- Control contract: exact commands remain opaque
+- Control mismatch: exact reproducer false-rejects opaque text
+- Allowed files: project-docs/tools/control.sh
+- Forbidden changes: product, specification, assertion, status, scope, threshold, budget, or policy
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 2
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: DEC-200 resolution checkpoint
+- Resolution evidence: PENDING - repair and verify exact reproducer
+- Next action: use clean repair worktree, run workflow-control-scope-lint.sh, and rerun reproducer
+- Human attention required: no
+### 2026-08-15 10:05 REPAIR task-1
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 2
+- Control scope check: PASS - clean scope (terminated exit_code: 0)
+- Outcome: RESOLVED
+- Resolution evidence: exact reproducer passed
+- Next checkpoint: VERIFY
+### 2026-08-15 10:06 TASK task-1 COMPLETE
+EOF
+run_sequence "drill-18 resolved BLOCK binds phase TRG ESC and existing decision" ADVANCEABLE "$valid_blocked_control"
+
+invented_decision="$blocked_phase/invented-decision.md"
+sed 's/DEC-200/DEC-999999/g' "$valid_blocked_control" > "$invented_decision"
+run_invalid_sequence "drill-18 invented decision cannot authorize blocked control repair" "RUN-RESUME cites an unrecorded phase decision" "$invented_decision"
+
+mismatched_stop_esc="$blocked_phase/mismatched-stop-esc.md"
+sed 's/Triage: TRG-1-010 (BLOCK, escalated as ESC-1-010)/Triage: TRG-1-010 (BLOCK, escalated as ESC-1-999)/' "$valid_blocked_control" > "$mismatched_stop_esc"
+run_invalid_sequence "drill-18 STOP ESC must match its governing TRIAGE" "does not reference its TRIAGE BLOCK and concrete ESC" "$mismatched_stop_esc"
+
+wrong_phase_authority="$blocked_phase/wrong-phase-authority.md"
+sed 's/TRG-1-/TRG-999-/g; s/ESC-1-/ESC-999-/g' "$valid_blocked_control" > "$wrong_phase_authority"
+run_invalid_sequence "drill-18 TRG and ESC authority must match ledger phase" "does not match ledger phase-1" "$wrong_phase_authority"
+
+unresolved_resume="$blocked_phase/unresolved-resume.md"
+sed '/^- Resolution evidence: DEC-200 authorizes only conformance repair$/d' "$valid_blocked_control" > "$unresolved_resume"
+run_invalid_sequence "drill-18 RUN-RESUME after STOP requires resolution evidence" "missing reconciliation authority" "$unresolved_resume"
+
+wrong_resume_trigger="$blocked_phase/wrong-resume-trigger.md"
+sed '/^### 2026-08-15 10:03 RUN-RESUME/,/^### 2026-08-15 10:04 TASK-RECOVERY/ s/task-1:quality-gate-control-defect:blocked-control/task-1:quality-gate-control-defect:unrelated/' "$valid_blocked_control" > "$wrong_resume_trigger"
+run_invalid_sequence "drill-18 RUN-RESUME retains its governing trigger" "Trigger signature does not match its governing TRIAGE" "$wrong_resume_trigger"
+
+wrong_resume_reference="$blocked_phase/wrong-resume-reference.md"
+sed 's/Prior run\/session or STOP: TRG-1-010 \/ ESC-1-010 STOP/Prior run\/session or STOP: TRG-1-999 \/ ESC-1-999 STOP/' "$valid_blocked_control" > "$wrong_resume_reference"
+run_invalid_sequence "drill-18 RUN-RESUME names its governing TRIAGE and ESC" "does not reference its governing TRIAGE and ESC" "$wrong_resume_reference"
+
+reused_resume_attempt="$blocked_phase/reused-resume-attempt.md"
+sed '/^### 2026-08-15 10:03 RUN-RESUME/,/^### 2026-08-15 10:04 TASK-RECOVERY/ s/Attempt count: 2/Attempt count: 1/' "$valid_blocked_control" > "$reused_resume_attempt"
+run_invalid_sequence "drill-18 RUN-RESUME increments the governing attempt" "Attempt count must increment its governing TRIAGE" "$reused_resume_attempt"
+
+wrong_resume_task="$blocked_phase/wrong-resume-task.md"
+sed 's/Continuing task: task-1/Continuing task: task-2/' "$valid_blocked_control" > "$wrong_resume_task"
+run_invalid_sequence "drill-18 RUN-RESUME binds the continuing task" "Continuing task does not match its Trigger signature" "$wrong_resume_task"
+
+unresolved_repair_complete="$workspace/unresolved-repair-complete.md"
+sed 's/Outcome: RESOLVED/Outcome: NO-PROGRESS/' "$valid_continuation" > "$unresolved_repair_complete"
+run_invalid_sequence "drill-18 NO-PROGRESS repair cannot complete a task" "task completed before a resolved REPAIR event" "$unresolved_repair_complete"
+
+valid_budget_recovery="$workspace/valid-budget-recovery.md"
+cat > "$valid_budget_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: failed exact gate
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: first failed exact gate
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: NO-PROGRESS
+- Resolution evidence: exact failure is unchanged
+- Next checkpoint: another TASK-RECOVERY
+### 2026-08-15 10:03 TASK-RECOVERY task-1
+- Source: first no-progress repair
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first no-progress outcome
+- Resolution evidence: PENDING - causal second repair and exact rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:04 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact gate passed
+- Next checkpoint: VERIFY
+### 2026-08-15 10:05 TASK task-1 COMPLETE
+EOF
+run_sequence "drill-18 no-progress continuation preserves and resolves its budget" ADVANCEABLE "$valid_budget_recovery"
+
+changed_budget_trigger="$workspace/changed-budget-trigger.md"
+sed '/^### 2026-08-15 10:03 TASK-RECOVERY/,/^### 2026-08-15 10:05 TASK/ s/task-1:gate-repair:exact-gate/task-1:gate-repair:new-trigger/' "$valid_budget_recovery" > "$changed_budget_trigger"
+run_invalid_sequence "drill-18 continuation cannot replace its trigger" "must preserve task and Trigger signature" "$changed_budget_trigger"
+
+reused_budget_attempt="$workspace/reused-budget-attempt.md"
+sed '/^### 2026-08-15 10:03 TASK-RECOVERY/,/^### 2026-08-15 10:05 TASK/ s/Attempt count: 2/Attempt count: 1/' "$valid_budget_recovery" > "$reused_budget_attempt"
+run_invalid_sequence "drill-18 continuation must increment total attempt" "Attempt count must increment by one" "$reused_budget_attempt"
+
+reset_no_progress="$workspace/reset-no-progress.md"
+sed '0,/Consecutive no-progress attempts: 1\/2/s//Consecutive no-progress attempts: 0\/2/' "$valid_budget_recovery" > "$reset_no_progress"
+run_invalid_sequence "drill-18 continuation cannot reset no-progress count" "expected 1/2" "$reset_no_progress"
+
+exhausted_budget="$workspace/exhausted-budget.md"
+sed -e '/^### 2026-08-15 10:05 TASK task-1 COMPLETE$/d' \
+    -e '/^### 2026-08-15 10:04 REPAIR task-1$/,$ s/Outcome: RESOLVED/Outcome: NO-PROGRESS/' \
+    "$valid_budget_recovery" > "$exhausted_budget"
+run_sequence "drill-18 second consecutive NO-PROGRESS requires triage" TRIAGE_PENDING "$exhausted_budget"
+
+exhausted_repair_triage="$blocked_phase/exhausted-repair-triage.md"
+cat "$exhausted_budget" > "$exhausted_repair_triage"
+cat >> "$exhausted_repair_triage" <<'EOF'
+### 2026-08-15 10:06 TRIAGE TRG-1-020
+- Trigger: two consecutive no-progress outcomes exhausted recovery
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Checkpoint: second no-progress outcome
+- Verdict: REPAIR
+- Resolution evidence: try the same recovery again
+- Triage log: phase triage entry confirmed
+EOF
+run_invalid_sequence "drill-18 exhausted no-progress triage cannot authorize another repair" "must BLOCK" "$exhausted_repair_triage"
+
+exhausted_blocked="$blocked_phase/exhausted-budget-blocked.md"
+cat "$exhausted_budget" > "$exhausted_blocked"
+cat >> "$exhausted_blocked" <<'EOF'
+### 2026-08-15 10:06 TRIAGE TRG-1-020
+- Trigger: two consecutive no-progress outcomes exhausted recovery
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Checkpoint: second no-progress outcome
+- Verdict: BLOCK (escalated as ESC-1-020)
+- Resolution evidence: recovery-budget-exhausted requires Human authority
+- Triage log: phase triage entry and ESC confirmed
+### 2026-08-15 10:07 STOP
+- Cause: TRG-1-020 / ESC-1-020 exhausted recovery
+- Triage: TRG-1-020 (BLOCK, escalated as ESC-1-020)
+- Protected category: recovery-budget-exhausted
+- Next Human or external-authority action: decide whether to authorize another approach
+EOF
+run_sequence "drill-18 exhausted no-progress recovery stops through triage" STOPPED "$exhausted_blocked"
+
+third_no_progress_recovery="$workspace/third-no-progress-recovery.md"
+cat "$exhausted_budget" > "$third_no_progress_recovery"
+cat >> "$third_no_progress_recovery" <<'EOF'
+### 2026-08-15 10:06 TASK-RECOVERY task-1
+- Source: exhausted no-progress budget
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 3
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: second no-progress outcome
+- Resolution evidence: PENDING
+- Next action: retry without triage
+- Human attention required: no
+EOF
+run_invalid_sequence "drill-18 exhausted no-progress budget cannot dispatch again" "requires TRIAGE" "$third_no_progress_recovery"
 
 wrong_task="$workspace/wrong-task.md"
 cat > "$wrong_task" <<'EOF'
@@ -791,13 +1159,19 @@ cat > "$qa_without_recovery" <<'EOF'
 EOF
 run_invalid_sequence "drill-16 QA repair requires recovery events" "completed without TASK-RECOVERY and REPAIR" "$qa_without_recovery"
 
-triage_repair="$workspace/triage-repair-pending.md"
+triage_repair="$control_phase/triage-repair-pending.md"
 cat > "$triage_repair" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
 - Recovery directive schema: v1
-### 2026-08-15 10:01 TRIAGE TRG-1-001
+### 2026-08-15 10:01 TRIAGE TRG-1-002
+- Trigger: task-1 needs bounded repair
+- Trigger signature: task-1:gate-repair:focused-test
+- Attempt count: 1
+- Checkpoint: focused test failed
 - Verdict: REPAIR
+- Resolution evidence: task-scope repair is authorized
+- Triage log: phase triage entry confirmed
 EOF
 run_sequence "drill-16 TRIAGE REPAIR cannot advance before recovery" REPAIR_PENDING "$triage_repair"
 

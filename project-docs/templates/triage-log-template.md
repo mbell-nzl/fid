@@ -47,7 +47,7 @@ Phase wrap-up checklist:
 - **Candidate:** <RECOVERY_REQUIRED / QA REPAIR / blocker candidate / other>
 - **Attempt count:** <total mediated continuations for this signature>
 - **Checkpoint:** <commit/tree/report/review state>
-- **Verdict:** RESUME | REPAIR | BLOCK
+- **Verdict:** RESUME | REPAIR | REPAIR / control-conformance | BLOCK
 - **Reasoning:** <2-4 lines>
 - **Local decisions made:** <bullets or "none">
 - **Resolution evidence:** <why cleared; bounded repair evidence; or exact

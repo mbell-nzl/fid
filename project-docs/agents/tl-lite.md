@@ -142,9 +142,25 @@ when it crosses one of these triggers.
   command/assertion/status/semantics/scope/threshold/budget/tolerance/policy
   changes; and the exact control verification required. Any ambiguity or
   proposed protected change is BLOCK.
+- The control-conformance directive must require a dedicated clean temporary
+  repair worktree and branch supplied by the Phase Runner. The Developer works
+  only there; the phase worktree retains only its uncommitted run-ledger dirt.
+  Scope is checked in the repair worktree before the phase branch is
+  fast-forwarded and before `REPAIR` is appended. Using `assume-unchanged`,
+  `skip-worktree`, or an equivalent index flag to conceal dirt is forbidden.
 - The directive authority is the concrete TRG you write. It must retain the
   originating task, exact trigger signature, attempt count, and two-attempt
-  no-progress budget; `SELF-AUTHORIZED` or an unrelated TRG is invalid.
+  no-progress budget; `SELF-AUTHORIZED` or an unrelated TRG is invalid. Both
+  the attempt count and consecutive no-progress count are monotonic for that
+  trigger across sessions, branches, and worktrees. Material progress may
+  reset only the consecutive no-progress count to `0/2`; a second consecutive
+  no-progress outcome exhausts the budget and must return to triage.
+- A prior `BLOCK` is not resolved by a repair directive alone. Resume from a
+  resolved BLOCK requires an existing `DEC-<NNN>` that resolves the protected
+  issue; cite that decision and the phase-scoped `ESC-<phase>-<NNN>` in the new
+  phase-scoped `TRG-<phase>-<NNN>`. A `RESOLVED` repair outcome only permits the
+  ordinary completion/report continuation. It does not complete the task or
+  permit the Phase Runner to advance.
 - A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
   in-scope quality-gate failure, missing/skipped command, session ending with
   durable partial work, or incomplete implementation is normally REPAIR.
@@ -169,8 +185,8 @@ when it crosses one of these triggers.
   commit-verification evidence (hash, `git rev-parse --verify` result, and
   subject match, or report-lint output). Without attached evidence, do not
   RESUME on the already-resolved-by-a-verified-commit ground.
-- If source is an existing ESC-NNN, do not create a duplicate unless clearly
-  unrelated; log the TRG entry pointing to the existing ESC.
+- If the source is an existing `ESC-<phase>-<NNN>`, do not create a duplicate
+  unless clearly unrelated; log the TRG entry pointing to that existing ESC.
 
 Use `09_AI_WORKFLOW.md` §2.3 (TL-Lite) for the full triage workflow and
 `09_AI_WORKFLOW.md` §9 (Stop And Escalate) for escalation routing.
@@ -207,7 +223,7 @@ References: <file:line or doc section>
 VERDICT: RESUME
 ```
 
-Triage REPAIR:
+Triage ordinary REPAIR:
 
 ```text
 TRG-<phase>-<NNN> logged: <summary>
@@ -221,6 +237,13 @@ Trigger/budget: <signature and unchanged attempt count/budget>
 Required verification/re-review: <commands and review path>
 
 VERDICT: REPAIR
+```
+
+Triage control-conformance REPAIR uses the same fields, but the disposition is
+literal and exact:
+
+```text
+VERDICT: REPAIR / control-conformance
 ```
 
 Triage BLOCK:

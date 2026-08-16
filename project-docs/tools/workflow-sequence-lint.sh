@@ -18,7 +18,28 @@ if [ "$#" -eq 2 ]; then
 fi
 
 validate_sequence() {
-awk '
+ledger_path=$1
+phase_dir=$(dirname "$ledger_path")
+phase_name=$(basename "$phase_dir")
+phase_number=""
+decisions_file=""
+triage_file=""
+case "$phase_name" in
+  phase-*)
+    candidate_phase=${phase_name#phase-}
+    case "$candidate_phase" in
+      ''|*[!0-9]*) ;;
+      *)
+        phase_number=$candidate_phase
+        decisions_file="$phase_dir/decisions.md"
+        triage_file="$phase_dir/triage-log.md"
+        ;;
+    esac
+    ;;
+esac
+
+awk -v phase_number="$phase_number" -v decisions_file="$decisions_file" \
+    -v triage_file="$triage_file" '
 function invalid(message) {
   print "INVALID " message > "/dev/stderr"
   errors++
@@ -35,9 +56,106 @@ function decision_id(text) {
   return ""
 }
 
+function escalation_id(text) {
+  if (match(text, /ESC-[0-9]+-[0-9]+/)) {
+    return substr(text, RSTART, RLENGTH)
+  }
+  return ""
+}
+
+function decision_exists(id, line) {
+  if (id == "" || decisions_file == "") {
+    return 0
+  }
+  while ((getline line < decisions_file) > 0) {
+    if (index(line, "### " id ":") == 1) {
+      close(decisions_file)
+      return 1
+    }
+  }
+  close(decisions_file)
+  return 0
+}
+
+function triage_exists(id, line, prefix, following) {
+  if (id == "" || triage_file == "") {
+    return 0
+  }
+  prefix = "## " id
+  while ((getline line < triage_file) > 0) {
+    if (index(line, prefix) == 1) {
+      following = substr(line, length(prefix) + 1, 1)
+      if (following == "" || following == " " || following == "-") {
+        close(triage_file)
+        return 1
+      }
+    }
+  }
+  close(triage_file)
+  return 0
+}
+
+function triage_verdict_matches(id, verdict, line, prefix, following, in_section,
+                                marker, value, esc, found_verdict, found_esc) {
+  if (id == "" || triage_file == "") {
+    return 0
+  }
+  prefix = "## " id
+  esc = escalation_id(verdict)
+  found_esc = (esc == "")
+  while ((getline line < triage_file) > 0) {
+    if (index(line, "## TRG-") == 1) {
+      if (in_section) {
+        break
+      }
+      if (index(line, prefix) == 1) {
+        following = substr(line, length(prefix) + 1, 1)
+        in_section = (following == "" || following == " " || following == "-")
+      }
+      continue
+    }
+    if (!in_section) {
+      continue
+    }
+    if (!found_esc && references_id(line, esc)) {
+      found_esc = 1
+    }
+    marker = index(line, "**Final verdict:**")
+    if (marker) {
+      value = substr(line, marker + length("**Final verdict:**"))
+    } else {
+      marker = index(line, "**Verdict:**")
+      if (marker) {
+        value = substr(line, marker + length("**Verdict:**"))
+      }
+    }
+    if (marker) {
+      sub(/^[[:space:]]+/, "", value)
+      if (verdict == "REPAIR / control-conformance") {
+        found_verdict = (index(value, verdict) == 1)
+      } else if (verdict == "REPAIR") {
+        found_verdict = (index(value, "REPAIR") == 1 &&
+                         index(value, "REPAIR / control-conformance") != 1)
+      } else if (verdict == "RESUME") {
+        found_verdict = (index(value, "RESUME") == 1)
+      } else if (verdict ~ /^BLOCK/) {
+        found_verdict = (index(value, "BLOCK") == 1)
+      }
+    }
+  }
+  close(triage_file)
+  return found_verdict && found_esc
+}
+
 function finish_event() {
   if (strict && event == "") {
     invalid("unrecognized or malformed event heading")
+  }
+  if (stop_entry_pending && event != "" && event != "STOP") {
+    invalid("TRIAGE BLOCK must be followed by STOP before " event)
+  }
+  if (recovery_stage == "needs-triage" && event != "" && event != "TRIAGE") {
+    invalid("recovery no-progress budget requires TRIAGE before " event)
   }
   if (strict && event == "REVIEW" && event_outcome !~ /^(PASS|REPAIR|BLOCK)$/) {
     invalid("REVIEW has missing or invalid Outcome: " event_id)
@@ -103,6 +221,33 @@ function finish_event() {
     if (event_human_attention != "no") {
       invalid("TASK-RECOVERY must record Human attention required: no")
     }
+    if (recovery_task != "" && recovery_stage == "needs-repair") {
+      invalid("overlapping TASK-RECOVERY precedes required REPAIR")
+    } else if (recovery_task != "" && recovery_stage == "needs-continuation") {
+      if (event_task != recovery_task || event_trigger_signature != recovery_trigger) {
+        invalid("continuing recovery must preserve task and Trigger signature")
+      }
+      if (event_attempt !~ /^[1-9][0-9]*$/ || event_attempt + 0 != recovery_attempt + 1) {
+        invalid("continuing recovery Attempt count must increment by one")
+      }
+      if (recovery_last_outcome == "NO-PROGRESS") {
+        expected_no_progress = (substr(recovery_no_progress, 1, 1) + 1) "/2"
+      } else {
+        expected_no_progress = "0/2"
+      }
+      if (event_no_progress != expected_no_progress) {
+        invalid("continuing recovery has invalid Consecutive no-progress attempts; expected " expected_no_progress)
+      }
+    } else if (recovery_task != "" && recovery_stage == "needs-triage") {
+      invalid("recovery budget is exhausted; TASK-RECOVERY cannot precede TRIAGE")
+    } else if (recovery_task != "" && recovery_stage == "needs-complete") {
+      if (recovery_mode != "control-conformance" || event_repair_mode != "task-scope" ||
+          event_task != recovery_task || event_trigger_signature != recovery_trigger ||
+          event_attempt !~ /^[1-9][0-9]*$/ || event_attempt + 0 != recovery_attempt + 1 ||
+          event_no_progress != "0/2") {
+        invalid("resolved recovery permits only its linked ordinary report continuation")
+      }
+    }
   }
   if (strict && directive_strict && event == "TASK-RECOVERY" && event_repair_mode == "control-conformance") {
     if (event_control_contract == "") {
@@ -129,16 +274,21 @@ function finish_event() {
       if (index(event_trigger_signature, event_task ":") != 1) {
         invalid("control-conformance Trigger signature does not bind originating task " event_task)
       }
-      if (latest_triage_verdict ~ /^REPAIR/) {
+      if (latest_triage_verdict == "REPAIR / control-conformance") {
         # TL-Lite directly authorized this bounded repair.
       } else if (latest_triage_verdict ~ /^BLOCK/) {
         authority_decision = decision_id(event_repair_authority)
         if (resolved_block_triage != latest_triage_id || authority_decision == "" ||
-            !references_id(resolved_block_evidence, authority_decision)) {
+            !references_id(resolved_block_evidence, authority_decision) ||
+            !decision_exists(authority_decision)) {
           invalid("control-conformance BLOCK authority lacks a bound RUN-RESUME decision for " latest_triage_id)
         }
       } else {
-        invalid("control-conformance latest TRIAGE is not REPAIR or resolved BLOCK: " latest_triage_id)
+        invalid("control-conformance latest TRIAGE is not REPAIR / control-conformance or resolved BLOCK: " latest_triage_id)
+      }
+      if (event_attempt ~ /^[1-9][0-9]*$/ && latest_triage_attempt ~ /^[1-9][0-9]*$/ &&
+          (event_attempt + 0 < latest_triage_attempt + 0 || event_attempt + 0 > latest_triage_attempt + 1)) {
+        invalid("control-conformance Attempt count exceeds latest TRIAGE authority " latest_triage_id)
       }
     }
     if (event_next_action !~ /workflow-control-scope-lint\.sh/) {
@@ -169,10 +319,77 @@ function finish_event() {
       invalid("control-conformance REPAIR lacks a passing terminated scope check")
     }
   }
+  if (strict && directive_strict && event == "TRIAGE") {
+    if (event_id !~ /^TRG-[0-9]+-[0-9]+$/) {
+      invalid("TRIAGE has missing or invalid TRG ID")
+    } else if (event_id in triage_seen) {
+      invalid("TRIAGE reuses an existing TRG ID: " event_id)
+    } else if (phase_number != "" && index(event_id, "TRG-" phase_number "-") != 1) {
+      invalid("TRIAGE ID does not match ledger phase-" phase_number ": " event_id)
+    }
+    if (phase_number == "") {
+      invalid("strict TRIAGE ledger is not under a phase-N directory")
+    } else if (!triage_exists(event_id)) {
+      invalid("TRIAGE ID is not recorded in the phase triage log: " event_id)
+    } else if (!triage_verdict_matches(event_id, event_verdict)) {
+      invalid("TRIAGE verdict does not match the phase triage log: " event_id)
+    }
+    if (event_verdict !~ /^(RESUME|REPAIR( \/ control-conformance)?|BLOCK \(escalated as ESC-[0-9]+-[0-9]+\))$/) {
+      invalid("TRIAGE has missing or invalid strict Verdict")
+    }
+    triage_esc = escalation_id(event_verdict)
+    if (triage_esc != "" && phase_number != "" && index(triage_esc, "ESC-" phase_number "-") != 1) {
+      invalid("TRIAGE ESC does not match ledger phase-" phase_number ": " triage_esc)
+    }
+    if (event_trigger_signature == "") {
+      invalid("TRIAGE is missing Trigger signature")
+    }
+    if (event_attempt !~ /^[1-9][0-9]*$/) {
+      invalid("TRIAGE has missing or invalid Attempt count")
+    }
+    if (event_checkpoint == "") {
+      invalid("TRIAGE is missing Checkpoint")
+    }
+    if (event_resolution_evidence == "") {
+      invalid("TRIAGE is missing Resolution evidence")
+    }
+    if (event_triage_log == "") {
+      invalid("TRIAGE is missing Triage log")
+    }
+    if (recovery_stage == "needs-triage" && event_verdict !~ /^BLOCK/) {
+      invalid("exhausted no-progress recovery TRIAGE must BLOCK")
+    }
+  }
+  if (strict && directive_strict && event == "RUN-RESUME" && stopped) {
+    if (event_prior_run == "" || event_trigger_signature == "" ||
+        event_attempt !~ /^[1-9][0-9]*$/ || event_checkpoint == "" ||
+        event_resolution_evidence == "" || event_continuing_task !~ /^task-[0-9]+[a-z]*$/) {
+      invalid("RUN-RESUME after STOP is missing reconciliation authority or continuing task")
+    } else {
+      if (!references_id(event_prior_run, latest_triage_id) ||
+          latest_triage_esc == "" || !references_id(event_prior_run, latest_triage_esc)) {
+        invalid("RUN-RESUME does not reference its governing TRIAGE and ESC")
+      }
+      if (event_trigger_signature != latest_triage_trigger) {
+        invalid("RUN-RESUME Trigger signature does not match its governing TRIAGE")
+      }
+      if (event_attempt + 0 != latest_triage_attempt + 1) {
+        invalid("RUN-RESUME Attempt count must increment its governing TRIAGE")
+      }
+      if (index(event_trigger_signature, event_continuing_task ":") != 1) {
+        invalid("RUN-RESUME Continuing task does not match its Trigger signature")
+      }
+      resume_decision = decision_id(event_resolution_evidence)
+      if (resume_decision != "" && !decision_exists(resume_decision)) {
+        invalid("RUN-RESUME cites an unrecorded phase decision: " resume_decision)
+      }
+    }
+  }
   if (strict && directive_strict && event == "STOP") {
     if (latest_triage_id == "" || latest_triage_verdict !~ /^BLOCK/) {
       invalid("STOP has no preceding TRIAGE BLOCK")
-    } else if (!references_id(event_triage_reference, latest_triage_id) || event_triage_reference !~ /ESC-[0-9]+-[0-9]+/) {
+    } else if (!references_id(event_triage_reference, latest_triage_id) ||
+               latest_triage_esc == "" || !references_id(event_triage_reference, latest_triage_esc)) {
       invalid("STOP does not reference its TRIAGE BLOCK and concrete ESC")
     }
     if (event_protected_category == "" || event_next_human_action == "") {
@@ -193,6 +410,7 @@ function finish_event() {
     recovery_trigger = event_trigger_signature
     recovery_attempt = event_attempt
     recovery_mode = event_repair_mode
+    recovery_no_progress = event_no_progress
     triage_repair_pending = 0
     if (review_open && event_task == review_owner) {
       review_recovery_seen = 1
@@ -203,7 +421,15 @@ function finish_event() {
     } else if (event_task != recovery_task) {
       invalid("REPAIR task " event_task " does not match recovery task " recovery_task)
     } else {
-      recovery_stage = "needs-complete"
+      if (event_outcome == "RESOLVED") {
+        recovery_stage = "needs-complete"
+      } else if (event_outcome == "NO-PROGRESS" && recovery_no_progress == "1/2") {
+        recovery_stage = "needs-triage"
+        triage_needed = 1
+      } else {
+        recovery_stage = "needs-continuation"
+      }
+      recovery_last_outcome = event_outcome
       if (review_open && event_task == review_owner) {
         review_repair_seen = 1
       }
@@ -213,7 +439,7 @@ function finish_event() {
       if (event_task != recovery_task) {
         invalid("completed task " event_task " does not match recovery task " recovery_task)
       } else if (recovery_stage != "needs-complete") {
-        invalid("task completed before a REPAIR event: " event_task)
+        invalid("task completed before a resolved REPAIR event: " event_task)
       } else {
         recovery_task = ""
         recovery_stage = ""
@@ -271,17 +497,26 @@ function finish_event() {
     latest_triage_id = event_id
     latest_triage_trigger = event_trigger_signature
     latest_triage_verdict = event_verdict
+    latest_triage_attempt = event_attempt
+    latest_triage_esc = escalation_id(event_verdict)
+    triage_seen[event_id] = 1
     if (event_verdict ~ /^RESUME/) {
       triage_needed = 0
     } else if (event_verdict ~ /^REPAIR/) {
       triage_needed = 0
       triage_repair_pending = 1
     } else if (event_verdict ~ /^BLOCK/) {
+      if (recovery_stage == "needs-triage") {
+        recovery_task = ""
+        recovery_stage = ""
+      }
       stopped = 1
+      stop_entry_pending = 1
       triage_needed = 0
     }
   } else if (event == "STOP") {
     stopped = 1
+    stop_entry_pending = 0
   } else if (event == "RUN-RESUME") {
     if (stopped && latest_triage_verdict ~ /^BLOCK/) {
       resolved_block_triage = latest_triage_id
@@ -336,6 +571,9 @@ function finish_event() {
   event_triage_reference = ""
   event_protected_category = ""
   event_next_human_action = ""
+  event_triage_log = ""
+  event_prior_run = ""
+  event_continuing_task = ""
 }
 
 /^### / {
@@ -383,6 +621,9 @@ event == "REVIEW" && /^- Re-review of: / {
 event == "TRIAGE" && /^- Verdict: / {
   event_verdict = substr($0, length("- Verdict: ") + 1)
 }
+event == "TRIAGE" && /^- Triage log: / {
+  event_triage_log = substr($0, length("- Triage log: ") + 1)
+}
 (event == "TASK-RECOVERY" || event == "REPAIR" || event == "TRIAGE" || event == "RUN-RESUME") && /^- Trigger signature: / {
   event_trigger_signature = substr($0, length("- Trigger signature: ") + 1)
 }
@@ -400,6 +641,12 @@ event == "TRIAGE" && /^- Verdict: / {
 }
 (event == "RUN-START" || event == "RUN-RESUME") && /^- Recovery directive schema: / {
   event_directive_schema = substr($0, length("- Recovery directive schema: ") + 1)
+}
+event == "RUN-RESUME" && /^- Prior run\/session or STOP: / {
+  event_prior_run = substr($0, length("- Prior run/session or STOP: ") + 1)
+}
+event == "RUN-RESUME" && /^- Continuing task: / {
+  event_continuing_task = substr($0, length("- Continuing task: ") + 1)
 }
 event == "TASK-RECOVERY" && /^- Repair mode: / {
   event_repair_mode = substr($0, length("- Repair mode: ") + 1)
@@ -468,7 +715,7 @@ END {
   } else if (triage_repair_pending) {
     print "VALID state=REPAIR_PENDING"
   } else if (recovery_task != "") {
-    if (recovery_stage == "needs-repair") {
+    if (recovery_stage != "needs-complete") {
       print "VALID state=REPAIR_PENDING"
     } else {
       print "VALID state=COMPLETION_PENDING"

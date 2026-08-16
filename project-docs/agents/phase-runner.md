@@ -111,8 +111,12 @@ authoritative for the next action. Run the tool without `--append-stdin` when
 reading current state, and require literal `VALID state=ADVANCEABLE` before an
 actual advance. A v2 ledger with no v1 directive marker is invalid. After the
 marker, the validator binds typed recovery authority/budget to the latest
-same-trigger TRIAGE and rejects STOP without a preceding TRIAGE BLOCK and
-concrete ESC. It mechanically keeps task identity across continuation,
+same-trigger `REPAIR / control-conformance` TRIAGE or resolved BLOCK with an
+existing decision. It requires each strict TRIAGE ID and verdict to match the
+phase triage log, binds phase TRG/ESC identity and exact STOP authority, and
+requires resume to retain that identity, trigger, next attempt, and continuing
+task. Non-resolved repair preserves the trigger and monotonic
+two-attempt budget. It mechanically keeps task identity across continuation,
 requires `TASK-RECOVERY -> REPAIR -> TASK COMPLETE`, and prevents QA repair
 from closing without a differently identified review whose `Re-review of:`
 field names the original review. A linked re-review may transfer repair
@@ -179,8 +183,11 @@ unchanged attempt budget, exact tools-only allowed files, forbidden protected
 files/semantic changes, and exact verification. Append `TASK-RECOVERY` with
 `Repair mode: control-conformance`, the TRG as authority, and the allowed paths;
 keep the originating task identity and budget. Then dispatch a dedicated
-same-task control-repair continuation. It is recovery, not a new planned task,
-and you neither advance nor ask the Human.
+same-task control-repair continuation. Before dispatch, require the main phase
+tree to have no dirty path except your runner-owned ledger, then create a unique
+clean temporary git worktree and repair branch at the committed phase `HEAD`.
+Pass that worktree path with the directive; the Developer works only there. It
+is recovery, not a new planned task, and you neither advance nor ask the Human.
 
 The dedicated Developer records starting and ending commits, edits only the
 directive's named control/self-test artifacts under `project-docs/tools/`, uses
@@ -192,13 +199,17 @@ termination from:
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-Use the Developer-recorded commits for `<base>`/`<head>` and the directive's
-exact paths for `<allowed...>`. Product, spec, prompt, template, dependency,
-task, QA-contract, generated, and report files are forbidden. Necessary
-provider sync is a separate authorized maintenance action, not part of the
-isolated commit. Require `<head>` to equal checked-out `HEAD`, a clean
-index/worktree, and regular-file allowlisted artifacts; later commits, dirty
-state, symlinks, and gitlinks fail. After scope PASS, append `REPAIR` with that evidence and
+Use the dedicated repair worktree for `<repo>`, the Developer-recorded commits
+for `<base>`/`<head>`, and the directive's exact paths for `<allowed...>`.
+Product, spec, prompt, template, dependency, task, QA-contract, generated, and
+report files are forbidden. Necessary provider sync is a separate authorized
+maintenance action, not part of the isolated commit. Require `<head>` to equal
+that repair worktree's checked-out `HEAD`, a clean index/worktree with no
+assume-unchanged/skip-worktree paths, and regular-file allowlisted artifacts;
+later commits, dirty state, symlinks, and gitlinks fail. Then fast-forward the
+unchanged phase branch to the verified commit while the only dirty main-tree
+path is the runner-owned ledger, and confirm phase `HEAD` equals `<head>`. After
+both checks PASS, append `REPAIR` with that evidence and
 dispatch an ordinary same-task continuation to rerun the originating exact
 verification and update its report while preserving the original failure. Any
 ambiguity or forbidden semantic/definition change is a protected blocker
@@ -224,9 +235,10 @@ they are not blocker candidates merely because their tools are canonical.
 
 On `VERDICT: RESUME`, advance only because the trigger is already cleared.
 On `VERDICT: REPAIR`, append TRIAGE and `TASK-RECOVERY`, do not
-advance, and dispatch the same task. On `VERDICT: BLOCK`, append TRIAGE
-and STOP referencing the concrete ESC. Never write STOP for a recoverable
-condition.
+advance, and dispatch the same task. On exact
+`VERDICT: REPAIR / control-conformance`, use only the guarded temporary
+repair-worktree route. On `VERDICT: BLOCK`, append TRIAGE and STOP referencing
+the concrete ESC. Never write STOP for a recoverable condition.
 
 Immediate safety stops are limited to an unreconcilable branch/worktree state,
 a missing validation contract requiring authoring authority, or required-role
@@ -270,8 +282,9 @@ project-docs/templates/triage-log-template.md, allocating the next phase-scoped
 TRG-<phase>-<NNN> from that file. On BLOCK, also write a concrete
 ESC-<phase>-<NNN> entry to tl_escalations_current.md. End with the literal
 final line VERDICT: RESUME, VERDICT: REPAIR, or VERDICT: BLOCK (escalated as
-ESC-<phase>-<NNN>), quoting the identifier you actually wrote. Never return a
-placeholder identifier.
+ESC-<phase>-<NNN>), quoting the identifier you actually wrote. For the guarded
+control route, the final line is instead exactly
+VERDICT: REPAIR / control-conformance. Never return a placeholder identifier.
 If the source is an existing ESC-<phase>-<NNN>, reference that ESC rather than
 creating a duplicate unless the issue is clearly unrelated. For QA REPAIR,
 confirm every Must-fix finding names an owning task, bounded scope, required

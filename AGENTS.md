@@ -249,11 +249,13 @@ exact reproduced mismatch, originating task/trigger/budget, exact allowed paths
 `project-docs/tools/`), forbidden semantic changes, and required exact reruns.
 Product, spec, prompt, template, dependency, task, and QA-contract files are
 never eligible. The Phase Runner keeps the originating task identity and budget
-and dispatches a dedicated same-task continuation. The Developer may edit only
-the named tool paths, uses red/green, preserves all failed evidence, reruns the
-exact control verification, and records starting/ending commits. Necessary
-provider sync is a separate authorized workflow-maintenance step, never part of
-the isolated control-repair commit.
+and creates a dedicated clean temporary git worktree at the committed phase
+`HEAD` before dispatching a same-task continuation into that path. The dirty
+runner-owned ledger stays in the main phase worktree. The Developer may edit
+only the named tool paths in the repair worktree, uses red/green, preserves all
+failed evidence, reruns the exact control verification, and records
+starting/ending commits. Necessary provider sync is a separate authorized
+workflow-maintenance step, never part of the isolated control-repair commit.
 
 Before recording the `REPAIR` ledger event, the Phase Runner runs this exact
 scope check over the dedicated commit:
@@ -262,12 +264,16 @@ scope check over the dedicated commit:
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-The claimed `<head>` must be the checked-out `HEAD`, the worktree and index must
-be clean, and every allowlisted artifact must remain a regular file rather than
-a symlink or gitlink. Only after the check passes does the runner append
-`REPAIR` and dispatch the ordinary same-task continuation to rerun the
-originating exact verification and update the originating report. Any ambiguity
-or proposed definition/policy change is `BLOCK`.
+The claimed `<head>` must be the repair worktree's checked-out `HEAD`, its
+worktree/index must be clean with no `assume-unchanged` or `skip-worktree`
+tracked-file index flags, and every
+allowlisted artifact must remain a regular file rather than a symlink or
+gitlink. After it passes, fast-forward the unchanged phase branch to that
+verified commit while its only dirty path is the runner-owned ledger, and
+confirm phase `HEAD`. Only then append `REPAIR` and dispatch the ordinary
+same-task continuation to rerun the originating exact verification and update
+the originating report. Any ambiguity or proposed definition/policy change is
+`BLOCK`.
 
 No failed test, gate, or control grants generic permission to edit its test,
 command, or implementation. Authority comes from the task scope or the written

@@ -50,6 +50,9 @@ Append before a replacement or resumed Phase Runner takes another action.
 - Attempt count: <total Phase Runner-mediated continuations for this signature>
 - Checkpoint: <commit/tree state, report, review, and last ledger entry>
 - Resolution evidence: <state reconciliation or protected-condition resolution>
+- Resolution authority: <existing DEC-<NNN> when a decision resolves the prior
+  BLOCK | verified commit/restored capability/other recorded external authority
+  | N/A when no prior BLOCK is being resolved>
 - Continuing task: <task-M>
 
 ### <YYYY-MM-DD HH:MM> TASK task-<M> COMPLETE
@@ -80,6 +83,8 @@ same-task Developer continuation; it does not close the task or finding.
 - Repair mode: <task-scope | control-conformance>
 - Repair authority: <task spec / QA review / TRG-<phase>-<NNN> written
   control-conformance directive>
+- Triage disposition: <N/A for task-scope | exact
+  REPAIR / control-conformance>
 - Control contract: <for control-conformance, binding source and uniquely
   required behavior; otherwise N/A>
 - Control mismatch: <for control-conformance, exact reproducer, expected and
@@ -93,6 +98,11 @@ same-task Developer continuation; it does not close the task or finding.
 - Attempt count: <next total mediated continuation number for this signature>
 - Consecutive no-progress attempts: <n>/2
 - Checkpoint: <commit or exact dirty-tree/report/review state>
+- Phase worktree: <path and branch; for control-conformance, status proving the
+  run ledger is the only dirty path>
+- Temporary repair worktree: <N/A for task-scope | dedicated path, temporary
+  branch, and starting commit supplied to the Developer>
+- Hidden-index flags: <none; assume-unchanged and skip-worktree are forbidden>
 - Resolution evidence: <PENDING - exact verification and any independent
   re-review required to prove this trigger resolved>
 - Next action: <bounded repair and exact verification/re-review>
@@ -108,8 +118,11 @@ evidence; this event records what the continuation changed and proved.
 - Starting checkpoint: <TASK-RECOVERY checkpoint>
 - Ending checkpoint: <commit or exact durable tree/report/review state>
 - Control scope check: <N/A for task-scope | PASS token and observed
-  termination, with Developer-recorded base/head commits, from>
+  termination from the repair worktree, with Developer-recorded base/head
+  commits, from>
   `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`
+- Phase-branch integration: <N/A for task-scope | fast-forward-only from base
+  to repair HEAD after scope PASS, with phase worktree still ledger-only dirty>
 - Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
 - Resolution evidence: <relevant in-scope change tied to the trigger that
   satisfies/removes an obligation; narrower failure; or byte-identical rerun
@@ -118,14 +131,25 @@ evidence; this event records what the continuation changed and proved.
 - Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
   recovery-budget-exhausted>
 
-For control-conformance, the ending checkpoint is one isolated tools-only
-control commit. The scope check requires that commit to be checked-out HEAD, a
-clean index/worktree, and regular-file allowlisted artifacts; it rejects later
-commits, dirty state, symlinks, and gitlinks. Append this REPAIR only after the
-scope check passes, then
-dispatch an ordinary continuation under the same task/trigger/budget to rerun
-the originating exact verification and update its report. Necessary provider
-sync is separate and is not part of the isolated control commit.
+For `REPAIR / control-conformance`, leave the dirty run ledger in the phase
+worktree, with no other dirt, and create a dedicated clean temporary repair
+branch/worktree from the recorded starting commit. The Developer works only in
+that supplied repair worktree. The ending checkpoint is one isolated tools-only
+control commit. Run the scope check there; it requires that commit to be
+checked-out HEAD, a clean index/worktree, and regular-file allowlisted
+artifacts, and rejects later commits, dirty state, symlinks, and gitlinks. Never
+use `assume-unchanged`, `skip-worktree`, or an equivalent index flag to conceal
+dirt. Only after scope PASS, fast-forward the phase branch to repair HEAD,
+verify the phase worktree remains ledger-only dirty, and append this REPAIR.
+Clean up the temporary worktree/branch only after the append receipt.
+
+`RESOLVED` only permits an ordinary continuation under the same
+task/trigger/budget to rerun the originating exact verification and update its
+report; it does not complete the task or authorize phase advance. Attempt count
+is monotonic for a trigger. Material progress may reset only consecutive
+no-progress to `0/2`; a second consecutive `NO-PROGRESS` exhausts the budget
+and returns to triage. Necessary provider sync is separate and is not part of
+the isolated control commit.
 
 ### <YYYY-MM-DD HH:MM> TRIAGE TRG-<phase>-<NNN>
 
@@ -133,7 +157,8 @@ sync is separate and is not part of the isolated control commit.
 - Trigger signature: `<stable signature>`
 - Attempt count: <total mediated continuations for this signature>
 - Checkpoint: <current durable state>
-- Verdict: <RESUME | REPAIR | BLOCK (escalated as ESC-<phase>-<NNN>)>
+- Verdict: <RESUME | REPAIR | REPAIR / control-conformance | BLOCK
+  (escalated as ESC-<phase>-<NNN>)>
 - Resolution evidence: <required for RESUME; repair boundary for REPAIR;
   protected/exhausted condition for BLOCK>
 - Triage log: <`.../triage-log.md` entry confirmed | "MISSING - TL-Lite
@@ -144,6 +169,12 @@ Record the concrete IDs TL-Lite wrote, never the literal placeholders
 writes no triage-log entry, say so verbatim in the `Triage log:` field. That
 field is the durable signal for the Tech Lead's wrap-up triage audit; do not
 leave the gap only in prose.
+
+If this TRIAGE resolves a prior BLOCK, reference its phase-scoped
+`ESC-<phase>-<NNN>` and the recorded resolution authority. If that authority is
+a `DEC-<NNN>`, it must exist. A control-conformance repair after a
+decision-bound protected BLOCK requires that existing decision; a new repair
+directive is not authority to erase or reinterpret a BLOCK.
 
 ### <YYYY-MM-DD HH:MM> STOP
 

@@ -63,18 +63,26 @@ lives in `09_AI_WORKFLOW.md` §2.5
   threshold/budget/tolerance, or policy and is not repair. Record both attempts
   and the mandatory deviation note required by `AGENTS.md`. Never weaken,
   narrow, re-point, substitute, or mine a flaky green.
-- For a dedicated control-conformance continuation, confirm the accepted
-  contract uniquely determines behavior and copy the directive's originating
-  task, trigger, unchanged budget, allowed paths, forbidden changes, and exact
-  verification into your working notes. Use red/green in only the allowlisted
-  `project-docs/tools/` control/self-test paths, preserve the original failure,
-  run the exact control verification, create one isolated commit, and report
-  the starting and ending commit hashes. Leave that ending commit checked out
-  with a clean index/worktree, and keep every allowlisted artifact a regular
-  file rather than a symlink or gitlink. Do not edit product, spec, prompt,
-  template, dependency, task, QA-contract, generated, or report files. Do not
-  hand edit generated files. Any ambiguity or semantic/definition change
-  becomes a typed protected `BLOCKED` candidate.
+- For a dedicated `REPAIR / control-conformance` continuation, confirm the
+  accepted contract uniquely determines behavior and copy the directive's
+  originating task, phase-scoped `TRG-<phase>-<NNN>`, trigger, unchanged
+  monotonic two-attempt no-progress budget, allowed paths, forbidden changes,
+  and exact verification into your working notes. A directive resolving a
+  prior BLOCK must also cite an existing `DEC-<NNN>` and its phase-scoped
+  `ESC-<phase>-<NNN>`. Work only in the dedicated clean
+  temporary repair worktree and branch supplied by the Phase Runner; never
+  modify the phase worktree, where the uncommitted run-ledger update remains as
+  its only permitted dirt.
+  Do not use `assume-unchanged`, `skip-worktree`, or any equivalent index flag
+  to conceal dirt. Use red/green in only the allowlisted `project-docs/tools/`
+  control/self-test paths, preserve the original failure, run the exact control
+  verification, create one isolated commit, and report the repair worktree
+  path plus starting and ending commit hashes. Leave that ending commit checked
+  out in the repair worktree with a clean index/worktree, and keep every
+  allowlisted artifact a regular file rather than a symlink or gitlink. Do not
+  edit product, spec, prompt, template, dependency, task, QA-contract,
+  generated, or report files. Do not hand edit generated files. Any ambiguity
+  or semantic/definition change becomes a typed protected `BLOCKED` candidate.
 - Record each command's result with one short verbatim token copied from its
   own terminal output: the last line it printed, or `exit 0 (no output)` for
   a silent success. **A command you did not watch terminate is never `PASS`.**
@@ -108,9 +116,13 @@ lives in `09_AI_WORKFLOW.md` §2.5
 
 This sequence applies to an ordinary task or ordinary same-task continuation.
 A dedicated control-conformance continuation instead returns its isolated
-tools-only commit, starting/ending hashes, red/green evidence, and exact control
-verification to the Phase Runner without editing the originating report. The
-ordinary report continuation follows only after the runner's scope check.
+tools-only commit, repair worktree path, starting/ending hashes, red/green
+evidence, and exact control verification to the Phase Runner without editing
+the originating report or phase worktree. The ordinary report continuation
+follows only after the runner checks scope in the repair worktree with
+`project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
+fast-forwards the phase branch to the repair commit, and appends `REPAIR` to the
+run ledger.
 
 Once the required gate is green, do not keep iterating; run this exact
 sequence and stop:
@@ -184,11 +196,14 @@ same-task continuation; do not present task incompleteness as a blocker.
 
 A control-conformance continuation remains the originating task and consumes
 the same trigger budget; it is not a new planned product task. Return the
-isolated control commit and exact verification evidence to the Phase Runner.
-After the runner validates its scope and records `REPAIR`, a later ordinary
-same-task continuation reruns the originating exact verification and updates
-the originating report while retaining the first failed attempt. Do not combine
-that report update with the isolated control commit.
+isolated control commit and exact verification evidence from the supplied
+repair worktree to the Phase Runner. `RESOLVED` only permits the subsequent
+completion/report continuation; it does not complete the task or authorize
+advance. After the runner validates scope in that worktree, fast-forwards the
+phase branch, and records `REPAIR`, a later ordinary same-task continuation
+reruns the originating exact verification and updates the originating report
+while retaining the first failed attempt. Do not combine that report update
+with the isolated control commit.
 
 Use `Task outcome: BLOCKED` only for a protected category from the
 completion template. Explain why task authority cannot resolve it, list

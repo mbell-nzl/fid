@@ -14,6 +14,32 @@ dependencies.
 | `workflow-sequence-lint.sh <run-ledger> [--append-stdin]` | Validate schema, triage/STOP authority, typed recovery budgets and ordering, or idempotently validate/append one stdin event at EOF; a byte-identical retry confirms a lost receipt without duplication. Reports state but never chooses the next action. |
 | `drills/run-drills.sh` | Evidence-chain drills: seed known defects into a fixture mini-phase and verify the QA chain catches them. Mechanical drills score automatically; agent drills produce workspaces plus a scoring sheet. |
 
+## Control-Conformance Repair
+
+`workflow-control-scope-lint.sh` verifies a bounded repair; it does not grant
+repair authority. The authority must be a phase-scoped
+`TRG-<phase>-<NNN>` with exact disposition
+`REPAIR / control-conformance`, an accepted contract and reproduced mismatch,
+an unchanged trigger/budget, exact `project-docs/tools/` allowlist, forbidden
+changes, and exact verification. Resolving a prior BLOCK additionally requires
+an existing DEC and its phase-scoped `ESC-<phase>-<NNN>`.
+
+Keep the uncommitted run ledger in the phase worktree, with no other dirt.
+Create a dedicated clean temporary repair branch/worktree at the recorded base
+and supply that worktree to the Developer; the Developer works only there.
+Never use `assume-unchanged`, `skip-worktree`, or equivalent index flags to
+conceal dirt. Run the scope linter in the repair worktree while its isolated
+repair commit is checked-out `HEAD` and its index/worktree is clean. Only after
+scope PASS, fast-forward the phase branch to repair `HEAD`, confirm the phase
+worktree is still ledger-only dirty, then append `REPAIR`. Remove the temporary
+worktree/branch after the append receipt.
+
+`RESOLVED` permits only the ordinary same-task completion/report continuation;
+it does not complete the task or authorize phase advance. Attempt counts stay
+monotonic per trigger across sessions, branches, and worktrees. Material
+progress resets only consecutive no-progress to `0/2`; a second consecutive
+no-progress result exhausts the two-attempt budget and returns to triage.
+
 Run from the repository root:
 
 ```sh

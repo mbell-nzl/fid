@@ -70,8 +70,17 @@ implementation with a change to the protected gate definition and emitted
   prompt drift. Initial verdict `REPAIR`: the reviewer reproduced missing
   schema enforcement, self-authorized/unbudgeted recovery, stale/dirty/symlink
   scope-check bypasses, untriaged STOP/resume, and literal-tab command
-  false-rejection. Add red regressions, repair every Must-fix, and obtain
-  `PASS` on re-review.
+  false-rejection. Commit `f71abe6` closed that first set, but the reviewer
+  then reproduced five deeper bypass classes: self-attested TRIAGE/decision
+  authority, non-resolved repair completion and budget reset, incompatibility
+  between the dirty runner ledger and a clean repair verifier, STOP/resume
+  identity loss, and hidden index flags. The second repair round now requires a
+  dedicated clean temporary repair worktree, binds strict TRIAGE to the real
+  phase TRG/verdict and STOP/resume identity, verifies cited decisions, rejects
+  `assume-unchanged`/`skip-worktree`, and preserves the monotonic two-attempt
+  no-progress budget. The mechanical drills exercise those negative cases and
+  the actual dirty-main/clean-repair/fast-forward lifecycle. Obtain `PASS` on
+  re-review before closing this item.
 - [ ] **P6 - Exact verification and handoff.** Run all workflow gates and the
   relevant repository gate, capture exact termination, commit the final review,
   and provide a copy-paste Phase Runner restart prompt with branch, HEAD,

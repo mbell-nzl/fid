@@ -89,19 +89,32 @@ protected. A `control-conformance` repair instead restores a canonical
 verification/workflow tool to an already accepted contract that uniquely
 determines its behavior. TL-Lite records the contract, reproducer, tools-only
 allowlist, forbidden changes, originating task/trigger/budget, and exact
-verification. Phase Runner dispatches one isolated same-task control repair,
-then requires:
+verification and returns the exact disposition
+`REPAIR / control-conformance`. Phase Runner uses this lifecycle:
+
+1. Confirm the phase worktree has no dirt except its uncommitted run ledger,
+   append `TASK-RECOVERY` there, and leave the ledger dirt in place.
+2. Create a dedicated clean temporary repair branch/worktree from the recorded
+   base. Supply it to the Developer, who works only there and produces one
+   isolated tools-only commit.
+3. In that repair worktree, require observed PASS from:
 
 ```text
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-Only after that check passes does the ordinary same-task continuation rerun the
-originating verification and update its report. The claimed repair commit must
-be checked-out `HEAD`, the tree clean, and allowlisted controls regular files;
-later commits, dirty state, symlinks, and gitlinks fail. Ambiguity or any
-definition change is `BLOCK`; canonical location or ordinary task-file scope
-alone is not.
+4. Only after scope PASS, fast-forward the phase branch to repair `HEAD`,
+   verify the phase worktree remains ledger-only dirty, append `REPAIR`, and
+   then remove the temporary worktree/branch.
+5. Dispatch the ordinary same-task completion/report continuation. A
+   `RESOLVED` repair outcome permits only this continuation; it does not
+   complete the task or authorize phase advance.
+
+Never use `assume-unchanged`, `skip-worktree`, or an equivalent index flag to
+conceal dirt. The claimed repair commit must be checked-out `HEAD` in its repair
+worktree, that worktree clean, and allowlisted controls regular files; later
+commits, dirty state, symlinks, and gitlinks fail. Ambiguity or any definition
+change is `BLOCK`; canonical location or ordinary task-file scope alone is not.
 
 Record recovery in the append-only run ledger. Submit each single event to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
@@ -121,7 +134,10 @@ duplication. Do not mutate the ledger separately.
    Phase Runner performs another action.
 
 `STOP` requires a preceding TRIAGE BLOCK and concrete ESC; a later resume
-cannot legitimize an untriaged STOP.
+cannot legitimize an untriaged STOP. A resolved prior BLOCK requires recorded
+authority and the same phase-scoped `TRG-<phase>-<NNN>` /
+`ESC-<phase>-<NNN>` identity in the resume record. Verify any cited DEC exists;
+a decision-bound control-conformance repair requires that existing DEC.
 
 These are temporary V1 repository-delivery entries, not forward fid product
 Events, Runs, or recovery entities.
@@ -129,7 +145,10 @@ Events, Runs, or recovery entities.
 The default budget is two consecutive Phase Runner-mediated continuations for
 one trigger signature with no material progress. Same-session red/green work
 does not consume it. A changed tree, newly satisfied obligation, or narrower
-failure is progress; a context refresh never resets recorded attempts.
+failure is progress. Attempt counts are monotonic across sessions, branches,
+and worktrees; material progress resets only consecutive no-progress to `0/2`.
+A second consecutive no-progress result exhausts the budget, and a context
+refresh or renamed recovery cannot reset it.
 - If a task mixes logic/data with UI/wiring, re-slice before execution.
 
 ## 5. Review And Close

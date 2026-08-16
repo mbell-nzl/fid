@@ -38,6 +38,15 @@ if [ "$checked_out_head" != "$head_commit" ]; then
   echo "FAIL repair commit is not the checked-out HEAD: claimed $head_commit, actual $checked_out_head" >&2
   exit 1
 fi
+special_index=$(git -C "$repo" ls-files -v | awk '
+  substr($0, 1, 1) == "S" || substr($0, 1, 1) ~ /[a-z]/ { print }
+')
+if [ -n "$special_index" ]; then
+  echo "FAIL control repair index contains assume-unchanged or skip-worktree paths" >&2
+  printf '%s\n' "$special_index" | sed 's/^/  /' >&2
+  exit 1
+fi
+git -C "$repo" update-index --really-refresh -q >/dev/null 2>&1 || true
 dirty=$(git -C "$repo" status --porcelain=v1 --untracked-files=all)
 if [ -n "$dirty" ]; then
   echo "FAIL control repair worktree is not clean at $head_commit" >&2

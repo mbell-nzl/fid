@@ -114,6 +114,11 @@ Execution rules:
   in-scope change tied to the trigger satisfies/removes an obligation or
   verification demonstrably narrows the failure. Formatting, metadata-only,
   unrelated, or no-op churn is not progress.
+- Keep attempt count and consecutive no-progress count monotonic for a trigger
+  signature across runner sessions, branches, and worktrees. Material progress
+  resets only consecutive no-progress to 0/2. A second consecutive no-progress
+  outcome exhausts the budget and returns to triage; never start another
+  continuation by resetting or renaming the trigger.
 - Distinguish a protected gate/control definition change from control
   conformance. Definition changes alter a command, assertion's accepted
   pass/fail semantics, accepted status/scope, threshold/budget/tolerance, or
@@ -127,23 +132,38 @@ Execution rules:
   originating task/trigger/unchanged budget, exact named control/self-test paths
   under project-docs/tools/, forbidden product/spec/prompt/template/dependency/
   task/QA-contract/report and semantic changes, and exact verification.
-  Ambiguity or a protected definition change is BLOCK.
-- For a control-conformance REPAIR, append TASK-RECOVERY with repair mode,
-  TRG authority, and allowed paths, preserve the originating task identity and
-  budget, and dispatch a dedicated same-task control-repair continuation with
-  the directive verbatim. It records starting/ending commits, uses red/green,
-  and creates one isolated tools-only commit. Do not advance or ask the Human.
+  Accept only the exact verdict `VERDICT: REPAIR / control-conformance` for
+  this route. Ambiguity or a protected definition change is BLOCK.
+- For `REPAIR / control-conformance`, first verify that the phase worktree has
+  no dirt except the run ledger, then append TASK-RECOVERY there with repair
+  mode, phase-scoped `TRG-<phase>-<NNN>` authority, allowed paths, originating
+  task identity, trigger, and unchanged budget. Leave that ledger dirt in the
+  phase worktree.
+  Create a dedicated clean temporary repair branch and worktree at the recorded
+  starting commit, and supply its path, branch, base, allowlist, and directive
+  verbatim to a dedicated same-task control-repair continuation. The Developer
+  works only in that repair worktree, uses red/green, and creates one isolated
+  tools-only commit. Do not advance or ask the Human.
+- Never use `git update-index --assume-unchanged`, `--skip-worktree`, or an
+  equivalent index flag to conceal phase- or repair-worktree dirt. Before and
+  after the repair, the phase worktree may be dirty only at the run ledger; the
+  repair worktree must be clean at its checked-out ending commit.
 - Before appending the REPAIR ledger event for that commit, require PASS with
   observed termination from
   `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
-  using the Developer-recorded commits and exact directive allowlist. Product,
-  spec, prompt, template, dependency, task, QA-contract, generated, and report
-  files are forbidden. The claimed repair commit must be checked-out HEAD, the
-  index/worktree clean, and every allowlisted artifact a regular file; later
-  commits, dirty state, symlinks, and gitlinks fail. Provider sync is a
-  separate authorized maintenance step. After scope PASS, append REPAIR and
-  dispatch an ordinary same-task continuation to rerun the originating exact
-  verification and update its report while preserving the first failure.
+  run in the repair worktree using the Developer-recorded commits and exact
+  directive allowlist. Product, spec, prompt, template, dependency, task,
+  QA-contract, generated, and report files are forbidden. The claimed repair
+  commit must be checked-out HEAD, the index/worktree clean, and every
+  allowlisted artifact a regular file; later commits, dirty state, symlinks,
+  and gitlinks fail. Provider sync is a separate authorized maintenance step.
+- Only after scope PASS, fast-forward the phase branch to the repair commit
+  without a merge commit or cherry-pick, verify the phase worktree still has no
+  dirt except the run ledger, and append REPAIR. Clean up the temporary repair
+  worktree/branch only after the append receipt. `RESOLVED` permits only an
+  ordinary same-task completion/report continuation to rerun the originating
+  exact verification and update its report while preserving the first failure;
+  it does not complete the task or authorize phase advance.
 - Treat OUTCOME BLOCKED as a blocker candidate, never authoritative state.
   Before STOP, spawn `tl_lite` as the first-step triager. RESUME advances
   only when cleared; VERDICT: REPAIR dispatches recovery without advancing;
@@ -162,7 +182,8 @@ Execution rules:
   bounded repair, required evidence, and fresh independent re-review; dispatch
   it directly. QA Outcome: BLOCK is a blocker candidate.
 - Parse only the literal final TL-Lite verdict line:
-  VERDICT: RESUME, VERDICT: REPAIR, or
+  VERDICT: RESUME, VERDICT: REPAIR,
+  VERDICT: REPAIR / control-conformance, or
   VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>).
   Identifiers are phase-scoped and allocated from the phase triage log. Record
   the concrete IDs in the TRIAGE entry's `Triage log:` field; if TL-Lite
@@ -212,8 +233,11 @@ Execution rules:
   apply the normal TL-Lite/STOP rules before continuing implementation.
 - If a prior STOP has a later decision, verified commit, restored capability,
   or other recorded resolution, verify it and append RUN-RESUME linking STOP,
-  TRG/ESC, resolution, branch/HEAD, and next task. A prior TRIAGE BLOCK does not
-  prohibit resolved resume.
+  phase-scoped TRG/ESC, resolution, branch/HEAD, and next task. If the resolution
+  cites a DEC, verify that decision exists. A control-conformance repair after
+  a decision-bound protected BLOCK requires and cites the existing DEC that
+  authorizes it. A prior TRIAGE BLOCK does not prohibit a resume backed by
+  recorded authority.
 - If no TRIAGE entry exists for an existing STOP, spawn `tl_lite` first. RESUME
   advances only if cleared; REPAIR dispatches the same task; BLOCK stops.
 - Do not recreate the branch.
