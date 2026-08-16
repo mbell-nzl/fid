@@ -1,5 +1,14 @@
 # Phase 20 - Task 3j: Bounded command-test parallelism - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added a goroutine-safe command execution result helper and a race-enabled
@@ -36,24 +45,42 @@
 ## Tests run
 
 - `go test -run '^TestConcurrentClonedWorkspaceCommandsRemainIsolated$' ./cmd/fid` - EXPECTED RED - `FAIL`.
-- `go test -race -run '^TestConcurrentClonedWorkspaceCommandsRemainIsolated$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.493s`.
-- Post-parallel `go test -race -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	72.130s`.
-- `nproc && go env GOMAXPROCS` - PASS - `6` (the following empty value means
+- `go test -race -run '^TestConcurrentClonedWorkspaceCommandsRemainIsolated$' ./cmd/fid` - UNVERIFIED - original token `ok  	github.com/mbell-nzl/fid/cmd/fid	1.493s`; no observed termination was retained.
+- Post-parallel `go test -race -count=1 ./cmd/fid` - UNVERIFIED - original token `ok  	github.com/mbell-nzl/fid/cmd/fid	72.130s`; no observed termination was retained.
+- `nproc && go env GOMAXPROCS` - UNVERIFIED - original token `6`; no observed termination was retained (the following empty value means
   `GOMAXPROCS` is unset).
 
 ## Exact quality-gate results
 
-- `go test -race -count=5 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	353.465s`.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.406s`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+Historical records below are retained unchanged in substance. They lacked
+session-captured termination results, so they are UNVERIFIED rather than PASS.
+
+- `go test -race -count=5 ./cmd/fid` - UNVERIFIED - original token `ok  	github.com/mbell-nzl/fid/cmd/fid	353.465s`; no observed termination was retained.
+- `gofmt -l cmd internal` - UNVERIFIED - original token `exit 0 (no output)`; no observed termination was retained.
+- `golangci-lint run ./...` - UNVERIFIED - original token `0 issues.`; no observed termination was retained.
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - original token `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`; no observed termination was retained.
+- `go tool cover -func=coverage.out` - UNVERIFIED - original token `total:										(statements)					77.7%`; no observed termination was retained.
+- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED - original token `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.406s`; no observed termination was retained.
+- `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - original token `exit 0 (no output)`; no observed termination was retained.
+
+Fresh report-repair evidence (2026-08-16):
+
+- `go test -race -count=5 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	513.141s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.522s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None.
+- The original completion report predated the canonical typed workflow-outcome
+  and observed-termination syntax. This report-only repair preserves its
+  historical failed and previously claimed PASS evidence as UNVERIFIED where
+  no termination result was retained, then records fresh runs of the exact
+  seven required commands with observed terminations. No task command,
+  assertion, threshold, product behavior, or test was changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
