@@ -2,21 +2,22 @@
 
 ## Status
 
-**Implementation pack Human-approved; QA planning is next.** No implementation
-has started. Branch: `main`.
+**Tasks 1-17 complete; Review 6 is next.** Task 18 has not started. Branch:
+`phase-20`. The ESC-20-015 recovery is closed in the run ledger; the workflow
+control hardening is undergoing its final independent infrastructure review.
 
 ## Planning artifacts
 
 | Artifact | Path | State |
 |---|---|---|
 | Slice contract and removal inventory | `contracts.md` | Accepted |
-| Validation contract | `qa/validation-contract.md` | Human-approved; Draft pending QA-plan acceptance (VAL-001..VAL-046) |
+| Validation contract | `qa/validation-contract.md` | Accepted and active (VAL-001..VAL-046) |
 | Task specs | `tasks/task-1.md` .. `tasks/task-18.md` | Accepted |
-| Phase decisions | `decisions.md` | DEC-107..DEC-129 |
-| QA plan | `qa/qa-plan.md` | Missing - QA Lead |
-| Triage log | `triage-log.md` | Seeded |
-| Escalations | `tl-escalations.md` | Seeded |
-| Run ledger | `run-ledger.md` | Seeded |
+| Phase decisions | `decisions.md` | Active through DEC-146 |
+| QA plan | `qa/qa-plan.md` | Accepted and in execution |
+| Triage log | `triage-log.md` | Current through TRG-20-015 |
+| Escalations | `tl-escalations.md` | ESC-20-015 resolved; no open escalation |
+| Run ledger | `run-ledger.md` | `ADVANCEABLE`; Task 17 complete |
 
 ## Accepted planning-time spec edits
 
@@ -33,25 +34,31 @@ has started. Branch: `main`.
 
 | Task | Title | Status |
 |---|---|---|
-| 1 | Response contract foundation | Pending |
-| 2 | Project selection and config namespace | Pending |
-| 3 | Atomic project initialization | Pending |
-| 4 | Rebuild, authority, and lock failures | Pending |
-| 5 | Remove orphaned Issue fields | Pending |
-| 6 | Replayable Issue aggregate revision | Pending |
-| 7 | Issue hierarchy invariant | Pending |
-| 8 | Issue read contract | Pending |
-| 9 | Issue mutation and concurrency contract | Pending |
-| 10 | Acceptance-criterion and label contracts | Pending |
-| 11 | Link contract and dependency invariants | Pending |
-| 12 | Workflow command contract | Pending |
-| 13 | Maintenance inspection contract | Pending |
-| 14 | Legacy JSON renderer conversion | Pending |
-| 15 | Remaining format caller/test convergence | Pending |
-| 16 | Delete universal formatters and YAML | Pending |
-| 17 | Delete promised-command stubs | Pending |
+| 1 | Response contract foundation | Complete |
+| 2 | Project selection and config namespace | Complete |
+| 3 | Atomic project initialization | Complete |
+| 4 | Rebuild, authority, and lock failures | Complete |
+| 5 | Remove orphaned Issue fields | Complete |
+| 6 | Replayable Issue aggregate revision | Complete |
+| 7 | Issue hierarchy invariant | Complete |
+| 8 | Issue read contract | Complete |
+| 9 | Issue mutation and concurrency contract | Complete |
+| 10 | Acceptance-criterion and label contracts | Complete |
+| 11 | Link contract and dependency invariants | Complete |
+| 12 | Workflow command contract | Complete |
+| 13 | Maintenance inspection contract | Complete |
+| 14 | Legacy JSON renderer conversion | Complete |
+| 15 | Remaining format caller/test convergence | Complete |
+| 16 | Delete universal formatters and YAML | Complete |
+| 17 | Delete promised-command stubs | Complete |
 | 18 | Journey acceptance and documentation | Pending |
+
+Recovery slices `task-3a`..`task-3l`, `task-9a`, `task-16a`, and `task-16b`
+are complete. Reviews 1-5 and their linked re-reviews are closed. Task 17 is
+complete at product commit `95ee13d` and report finalization `0c1094c`.
 
 ## Next action
 
-QA Lead writes and validates `qa/qa-plan.md`; Phase Runner then starts Task 1.
+Start a fresh Phase Runner session on `phase-20`, append a full schema-v2 normal
+`RUN-RESUME`, and obtain Review 6 covering Tasks 16-17. If Review 6 passes,
+dispatch Task 18. Do not reopen Task 17 or rerun its completed product work.

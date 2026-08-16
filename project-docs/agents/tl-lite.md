@@ -32,8 +32,9 @@ builds, git, and verification commands; none of them is about writing files.
   line.
 - Directive-amendment mode: the prompt begins with `Control directive
   amendment:` and names an existing governing TRG/ESC plus the DEC that
-  resolves its BLOCK. Append the schema-v2 directive to that existing triage
-  record without allocating a new TRG or ESC.
+  resolves its BLOCK. Append one unique separate H2 schema-v2 directive
+  amendment whose heading names that TRG, without allocating a new TRG or ESC.
+  Do not nest it in or rewrite the original TRG section.
 
 ## Context Loading
 
@@ -113,6 +114,11 @@ when it crosses one of these triggers.
   placeholder: an escalation without an identifier leaves the Phase Runner
   nothing to resume from and the Tech Lead nothing to audit, and it forces a
   full reconstruction session.
+- Every schema-v2 TRG section carries exactly one `Originating task`, `Trigger
+  signature`, `Attempt count`, `Repair category`, and `Repair authority`.
+  Direct REPAIR binds all five byte-for-byte to ledger TRIAGE and the ensuing
+  TASK-RECOVERY; `Repair category` maps to its `Category`. Use `N/A` for the
+  latter two fields on RESUME/BLOCK when no repair authority applies.
 - **Attempt the write before claiming you cannot.** "I have no write
   mechanism" is not a conclusion you may reach by reading your own
   instructions - the command prohibition is not a write prohibition. Report a
@@ -140,7 +146,10 @@ when it crosses one of these triggers.
   directive using these exact labels: `Originating task`, `Control trigger
   signature`, `Control attempt count`, `Control contract`, `Control mismatch`,
   `Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
-  report`, and `Control repair base`. Put each value on one physical line. Copy
+  report`, and `Control repair base`. Each label occurs exactly once and each
+  value occupies one physical line. Labels may appear in any order and need not
+  be contiguous. `Allowed files` is one comma-separated ordered list of exact
+  repo-relative paths with no spaces around commas. Copy
   the task, trigger, attempt, full repair-base commit, and exact report path
   from the Phase Runner's prompt. Limit allowed paths to the named control and
   its self-test artifacts under `project-docs/tools/`; forbid product, spec,
@@ -148,10 +157,13 @@ when it crosses one of these triggers.
   plus command/assertion/status/semantics/scope/threshold/budget/tolerance/
   policy changes. `Exact verification` records the exact command bytes and
   working directory that prove the control and originating report. Any missing
-  field, ambiguity, or proposed protected change is BLOCK.
+  field, ambiguity, or proposed protected change is BLOCK. Never authorize
+  `workflow-control-scope-lint.sh` or `workflow-sequence-lint.sh` for normal
+  control-conformance self-repair; either requires protected decision
+  authority.
 - The typed directive in the triage log is authority. The Phase Runner must
   copy its values byte-for-byte into the initial TASK-RECOVERY; a paraphrased,
-  reordered, widened, or runner-authored value is invalid. You do not choose or
+  widened, or runner-authored value is invalid. You do not choose or
   verify `Control repair base`: the Phase Runner records the full phase HEAD
   before triage and dispatch, and you copy that supplied value exactly.
 - The control-conformance directive must require a dedicated clean temporary
@@ -169,14 +181,17 @@ when it crosses one of these triggers.
   no-progress outcome exhausts the budget and must return to triage.
 - A prior `BLOCK` is not resolved by a repair directive alone. When an existing
   `DEC-<NNN>` resolves its protected condition into control-conformance repair,
-  append a labelled directive amendment to the existing governing
-  `TRG-<phase>-<NNN>` after verifying the prompt's DEC evidence. Retain that
-  TRG and its `ESC-<phase>-<NNN>`; do not allocate a new TRG or rewrite the
-  original BLOCK. The Phase Runner then uses RUN-RESUME and binds its next
-  recovery to those same IDs.
-- Every boundary-valid DEC citation in the evidence and amendment must exist in
-  the phase decisions file. Validate all citations, not only the first; text
-  such as `NOTDEC-123X` is not a decision citation.
+  append one unique separate `## Control Directive Amendment For
+  TRG-<phase>-<NNN>` section after verifying the prompt's DEC evidence. The
+  amendment is parsed independently and has its own exactly-once verdict and
+  ten directive fields. Retain the original TRG's BLOCK verdict and its
+  `ESC-<phase>-<NNN>`; do not allocate a new TRG or rewrite the original. The
+  Phase Runner then uses RUN-RESUME and binds its next recovery to those same
+  IDs.
+- Every boundary-valid DEC citation in a `Repair authority` or
+  `Resolution authority` field must exist in the phase decisions file.
+  Validate all citations, not only the first; text such as `NOTDEC-123X` is not
+  a decision citation.
 - A control `RESOLVED` outcome permits only a linked `report-repair`
   continuation restricted to the directive's exact `Originating report` and
   `Exact verification`, retaining the resolved attempt's `Control repair base`.
@@ -243,6 +258,11 @@ Triage RESUME:
 ```text
 TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
+Originating task: <task-M>
+Trigger signature: <exact stable signature>
+Attempt count: <next mediated attempt>
+Repair category: N/A
+Repair authority: N/A
 Local decisions made: <bullets or none>
 References: <file:line or doc section>
 
@@ -254,7 +274,11 @@ Triage ordinary REPAIR:
 ```text
 TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
-Owning task: <task path>
+Originating task: <task-M>
+Trigger signature: <exact stable signature>
+Attempt count: <next mediated attempt>
+Repair category: <recovery category>
+Repair authority: <task spec / QA review / concrete accepted authority>
 Repair mode: <task-scope | control-conformance>
 Accepted contract and mismatch: <citation and exact reproduced evidence>
 Recovery scope: <bounded causal repair and exact allowed files>
@@ -271,11 +295,15 @@ before returning this exact output:
 ```text
 TRG-<phase>-<NNN> logged: <summary>
 Originating task: <task-M>
+Trigger signature: <exact stable signature>
+Attempt count: <next mediated attempt>
+Repair category: <recovery category>
+Repair authority: TRG-<phase>-<NNN> typed control directive
 Control trigger signature: <exact stable signature>
 Control attempt count: <next attempt>
 Control contract: <accepted source and uniquely required behavior>
 Control mismatch: <exact reproduced expected/observed result and termination>
-Allowed files: <exact ordered project-docs/tools/ paths>
+Allowed files: <exact comma-separated ordered project-docs/tools/ paths>
 Forbidden changes: <exact protected paths and semantics>
 Exact verification: <exact command bytes and working directory>
 Originating report: <exact repo-relative completion-report path>
@@ -284,22 +312,32 @@ Control repair base: <full runner-supplied phase HEAD>
 VERDICT: REPAIR / control-conformance
 ```
 
-Resolved-BLOCK directive amendment output retains the existing IDs:
+Resolved-BLOCK directive amendment output records the unique separate H2 and
+retains the existing IDs:
 
 ```text
-Control directive amendment appended for TRG-<phase>-<NNN> / ESC-<phase>-<NNN>
+## Control Directive Amendment For TRG-<phase>-<NNN>
+Governing TRG: TRG-<phase>-<NNN>
+Governing ESC: ESC-<phase>-<NNN>
 Resolution authority: DEC-<NNN>
+Verdict: REPAIR / control-conformance
 Originating task: <task-M>
 Control trigger signature: <exact stable signature retained from STOP>
 Control attempt count: <next attempt>
 Control contract: <accepted source and uniquely required behavior>
 Control mismatch: <exact reproduced expected/observed result and termination>
-Allowed files: <exact ordered project-docs/tools/ paths>
+Allowed files: <exact comma-separated ordered project-docs/tools/ paths>
 Forbidden changes: <exact protected paths and semantics>
 Exact verification: <exact command bytes and working directory>
 Originating report: <exact repo-relative completion-report path>
 Control repair base: <full runner-supplied phase HEAD>
+```
 
+The `Verdict:` above is the amendment section's single verdict field. After
+writing that H2, return the following response terminator; do not append it as
+a second triage-log verdict field:
+
+```text
 VERDICT: REPAIR / control-conformance
 ```
 
@@ -308,6 +346,11 @@ Triage BLOCK:
 ```text
 TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
+Originating task: <task-M>
+Trigger signature: <exact stable signature>
+Attempt count: <next mediated attempt>
+Repair category: N/A
+Repair authority: N/A
 Escalation reason: <trigger>
 ESC-<phase>-<NNN> raised in tl_escalations_current.md
 References: <file:line or doc section>

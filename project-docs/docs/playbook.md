@@ -100,14 +100,25 @@ schema-v2 directive labels, then returns the exact disposition
    `Control attempt count`, `Control contract`, `Control mismatch`,
    `Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
    report`, and `Control repair base`. Append ledger TRIAGE referencing that
-   record, then copy the directive byte-for-byte into TASK-RECOVERY.
+   record, then copy the directive byte-for-byte into TASK-RECOVERY. Each label
+   occurs exactly once; field order and contiguity do not matter. `Allowed
+   files` is an exact comma-separated ordered list with no spaces around
+   commas.
 3. Create a dedicated clean temporary repair branch/worktree at that exact
    base. The Developer works only there and cannot rebaseline.
-4. In that repair worktree, require observed PASS from:
+   Treat that repair worktree as dedicated to the one bounded control repair.
+4. Materialize the scope verifier from the trusted base into fresh scratch
+   storage, never from repair HEAD, and require observed PASS from that blob:
 
 ```text
-project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+git -C <repo> show <base>:project-docs/tools/workflow-control-scope-lint.sh > <fresh-scratch>/workflow-control-scope-lint.sh
+chmod 700 <fresh-scratch>/workflow-control-scope-lint.sh
+<fresh-scratch>/workflow-control-scope-lint.sh <repo> <base> <head> <allowed-1> ...
 ```
+
+   Pass allowed paths in CSV order and require the PASS receipt to bind the
+   exact comma-separated `Allowed files` value byte-for-byte as
+   `PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`.
 
 5. After every scope PASS, fast-forward, verify the phase worktree remains
    ledger-only dirty, append REPAIR, and then clean up.
@@ -124,6 +135,9 @@ conceal dirt. The claimed repair `HEAD` must be checked out in its repair
 worktree, that worktree clean, and allowlisted controls regular files; later
 commits, dirty state, symlinks, and gitlinks fail. Ambiguity or any definition
 change is `BLOCK`; canonical location or ordinary task-file scope alone is not.
+Normal control-conformance cannot repair `workflow-control-scope-lint.sh` or
+`workflow-sequence-lint.sh`; either verifier needs separate protected decision
+authority.
 
 Record recovery in the append-only run ledger. Submit each single event to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
@@ -133,10 +147,13 @@ if the receipt is lost, retry the byte-identical candidate to confirm it without
 duplication. Do not mutate the ledger separately.
 
 1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
-   checkpoint, repair mode/authority, allowed files, and next action. New runs
-   use `Recovery directive schema: v2` in the same RUN event; historical v1
-   entries remain readable and retain general identity/STOP/DEC/state checks.
-   Typed control authority binds byte-for-byte to the governing triage record.
+   checkpoint, repair mode/authority, allowed files, and next action. Every
+   newly appended RUN contains exactly one `Sequence contract: v2` and one
+   `Recovery directive schema: v2` in that same event. A standalone historical
+   v1 ledger remains readable, but its next RUN uses v2 and retains general
+   identity/STOP/authority/state checks. Every mandatory schema-v2 event field
+   occurs exactly once; `N/A` is explicit where permitted. Typed control
+   authority binds byte-for-byte to the governing triage record.
 2. `REPAIR` captures the same-task continuation outcome and resolution
    evidence without erasing any earlier failed attempt.
 3. `RUN-RESUME` captures state reconciliation before a resumed or replacement
@@ -145,9 +162,20 @@ duplication. Do not mutate the ledger separately.
 `STOP` requires a preceding TRIAGE BLOCK and concrete ESC; a later resume
 cannot legitimize an untriaged STOP. RUN-RESUME retains the governing
 phase-scoped TRG/ESC and binds the exact next task, trigger, category, mode, and
-attempt. A DEC-resolved BLOCK uses a typed directive amendment under the
-existing TRG and then RUN-RESUME, never a new TRG. Verify every boundary-valid
-DEC citation exists; one real DEC cannot mask a nonexistent or embedded ID.
+attempt. Its authority is exactly `verified-commit:<40hex>`,
+`restored-capability:<stable-id>`, or `DEC-<NNN>`; evidence remains
+Runner-verified, the next recovery's source and repair authority retain that
+exact value, and a protected decision change/resolution requires DEC. A
+normal resume uses `N/A` governing IDs and `Next recovery`. A DEC-resolved
+BLOCK uses one unique separate H2 directive amendment naming the existing TRG,
+parsed independently from its retained BLOCK verdict, and then RUN-RESUME,
+never a new TRG. Verify every boundary-valid DEC citation in an authority field
+exists; one real DEC cannot mask a nonexistent or embedded ID.
+
+Every schema-v2 external TRG and ledger TRIAGE contains exactly one
+`Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
+and `Repair authority`. Direct REPAIR binds all five through to TASK-RECOVERY;
+RESUME/BLOCK uses `N/A` for repair category/authority when none applies.
 
 These are temporary V1 repository-delivery entries, not forward fid product
 Events, Runs, or recovery entities.

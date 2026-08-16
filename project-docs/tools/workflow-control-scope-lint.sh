@@ -10,7 +10,8 @@ Allowed paths must be exact repository-relative regular files under
 project-docs/tools/. The repair must be checked-out HEAD in a clean worktree,
 with the Phase Runner's full canonical pre-dispatch base as its sole parent.
 It must change at least one file and must not delete or modify anything outside
-the explicit allowlist.
+the explicit allowlist. The allowlist order is authoritative and is preserved
+in the success receipt.
 EOF
   exit 2
 }
@@ -84,6 +85,7 @@ if [ "$commit_count" -ne 1 ]; then
 fi
 
 allowed=""
+allowed_receipt=""
 for path in "$@"; do
   case "$path" in
     *'
@@ -96,6 +98,12 @@ for path in "$@"; do
     echo "FAIL allowed path contains LF, CR, or control bytes" >&2
     exit 1
   fi
+  case "$path" in
+    *,*)
+      echo "FAIL allowed path contains comma: $path" >&2
+      exit 1
+      ;;
+  esac
   case "$path" in
     project-docs/tools/*)
       case "/$path/" in
@@ -110,12 +118,23 @@ for path in "$@"; do
       exit 1
       ;;
   esac
+  case "$path" in
+    project-docs/tools/workflow-control-scope-lint.sh|project-docs/tools/workflow-sequence-lint.sh)
+      echo "FAIL trusted verifier cannot be allowlisted: $path" >&2
+      exit 1
+      ;;
+  esac
   if printf '%s\n' "$allowed" | grep -Fqx -- "$path"; then
     echo "FAIL duplicate allowed path: $path" >&2
     exit 1
   fi
   allowed="${allowed}${path}
 "
+  if [ -z "$allowed_receipt" ]; then
+    allowed_receipt=$path
+  else
+    allowed_receipt="${allowed_receipt},${path}"
+  fi
 done
 
 changed=$(git -C "$repo" diff --name-only --no-renames "$trusted_base_commit" "$current_head_commit")
@@ -161,4 +180,5 @@ if [ "$failures" -ne 0 ]; then
   exit 1
 fi
 
-printf 'PASS control repair scope: %s -> %s\n' "$trusted_base_commit" "$current_head_commit"
+printf 'PASS control repair scope: %s -> %s; allowed=%s\n' \
+  "$trusted_base_commit" "$current_head_commit" "$allowed_receipt"

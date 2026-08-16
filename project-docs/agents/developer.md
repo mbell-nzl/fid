@@ -29,7 +29,9 @@ closed phase archives only when the task points there.
 For a continuation, also load the latest `TASK-RECOVERY` run-ledger entry
 and the owning QA review when one triggered recovery. A dedicated control
 repair also loads the governing triage-log entry and its complete typed
-control-conformance directive. Confirm the ledger values are exact copies,
+control-conformance directive. For a resolved BLOCK, load the unique separate
+H2 amendment named for the governing TRG and do not treat the original BLOCK
+section as the repair directive. Confirm the ledger values are exact copies,
 not paraphrases.
 
 ## Write Boundaries
@@ -77,10 +79,15 @@ lives in `09_AI_WORKFLOW.md` §2.5
   `Originating task`, `Control trigger signature`, `Control attempt count`,
   `Control contract`, `Control mismatch`, `Allowed files`, `Forbidden changes`,
   `Exact verification`, `Originating report`, and `Control repair base`. The
+  ten labels each occur exactly once in the governing authority section and
+  each value occupies one physical line; label order and contiguity do not
+  matter. `Allowed files` is a comma-separated ordered list of exact paths with
+  no spaces around commas. The
   ledger task, trigger, initial attempt, and remaining values must map to the
   governing triage-log directive byte-for-byte. A directive resolving a prior
-  BLOCK must retain its existing phase-scoped TRG/ESC and cite an existing
-  `DEC-<NNN>`; it never uses a newly allocated TRG. Work only in the dedicated clean
+  BLOCK must come from the unique separate H2 amendment naming its existing
+  phase-scoped TRG/ESC and cite an existing `DEC-<NNN>`; the original TRG keeps
+  its BLOCK verdict and no new TRG is allocated. Work only in the dedicated clean
   temporary repair worktree and branch supplied by the Phase Runner; never
   modify the phase worktree, where the uncommitted run-ledger update remains as
   its only permitted dirt.
@@ -97,6 +104,10 @@ lives in `09_AI_WORKFLOW.md` §2.5
   edit product, spec, prompt, template, dependency, task, QA-contract,
   generated, or report files. Do not hand edit generated files. Any ambiguity
   or semantic/definition change becomes a typed protected `BLOCKED` candidate.
+  Normal control-conformance never authorizes edits to
+  `workflow-control-scope-lint.sh` or `workflow-sequence-lint.sh`, even when
+  either validator is the failing control; their repair requires separate
+  protected decision authority.
 - Record each command's result with one short verbatim token copied from its
   own terminal output: the last line it printed, or `exit 0 (no output)` for
   a silent success. **A command you did not watch terminate is never `PASS`.**
@@ -134,7 +145,10 @@ tools-only history, repair worktree path, directive base/ending hashes, red/gree
 evidence, and exact control verification to the Phase Runner without editing
 the originating report or phase worktree. The ordinary report continuation
 follows only after the runner checks scope in the repair worktree with
-`project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
+the `workflow-control-scope-lint.sh` blob materialized from the trusted
+`Control repair base`, not the repair HEAD, and obtains a PASS receipt binding
+the exact comma-separated ordered `Allowed files` as
+`PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`,
 fast-forwards the phase branch to the repair commit, and appends `REPAIR` to the
 run ledger.
 

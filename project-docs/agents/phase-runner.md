@@ -94,11 +94,14 @@ session; `EVALUATE` means inspect the observed terminated result; `ADVANCE`,
 `REPAIR`, `TRIAGE`, and `STOP` have their meanings below. Invalid tool input is
 an orchestration defect to repair, never a reason to invent a route.
 
-Every new `RUN-START` or `RUN-RESUME` carries `Sequence contract: v2` and
-`Recovery directive schema: v2` in that same event; the schema is effective
-immediately and cannot be downgraded. Historical v1 markers and the entries
-they govern remain valid, while general identity, STOP, DEC, budget, and state
-checks still apply to them. To append an event, pipe its exact Markdown, beginning with the
+Every newly appended `RUN-START` or `RUN-RESUME` carries exactly one
+`Sequence contract: v2` and exactly one `Recovery directive schema: v2` in
+that same event; both are effective immediately and cannot be downgraded. A
+standalone historical v1 ledger remains valid, while general identity, STOP,
+authority, budget, and state checks still apply to it; its next appended RUN
+uses v2. Every mandatory field for every schema-v2 event occurs exactly once,
+using `N/A` only where the ledger template permits it. Field order and
+contiguity do not carry authority. To append an event, pipe its exact Markdown, beginning with the
 single `###` event heading, to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
 The tool validates and atomically appends the candidate at EOF, or leaves the
@@ -116,12 +119,15 @@ control directive byte-for-byte to the governing phase triage-log entry. The
 initial ledger `Trigger signature` and `Attempt count` map to `Control trigger
 signature` and `Control attempt count`; the originating task, contract,
 mismatch, allowlist, forbidden set, exact verification, originating report,
-and runner-recorded repair base must also match. It requires each TRIAGE ID and
-exact verdict to match the phase triage log, binds phase TRG/ESC identity and
+and runner-recorded repair base must also match. It requires each field exactly
+once but does not require directive-label order or contiguity. It binds every
+ordinary TRIAGE's `Originating task`, `Trigger signature`, `Attempt count`,
+`Repair category`, and `Repair authority` byte-for-byte to its external TRG
+record. It requires each TRIAGE ID and exact verdict to match the phase triage log, binds phase TRG/ESC identity and
 exact STOP authority, and requires a STOP resume's recorded next recovery to
 retain its task, trigger, category, mode, next attempt, and governing TRG/ESC.
-Every boundary-valid DEC citation must exist; one real DEC cannot mask another
-invalid citation. Nonresolved control repair increments only attempt state and
+Every boundary-valid DEC citation in an authority field must exist; one real
+DEC cannot mask another invalid citation. Nonresolved control repair increments only attempt state and
 preserves every other directive value byte-for-byte. It mechanically keeps
 task identity across continuation, requires `TASK-RECOVERY -> REPAIR`, forbids
 direct completion after control RESOLVED, and requires the exact linked
@@ -197,10 +203,13 @@ Accept only a triage-log entry containing these exact authoritative labels:
 `Originating task`, `Control trigger signature`, `Control attempt count`,
 `Control contract`, `Control mismatch`, `Allowed files`, `Forbidden changes`,
 `Exact verification`, `Originating report`, and `Control repair base`. Each
-value must be one physical line. Append the ledger TRIAGE referencing that
+label occurs exactly once and each value occupies one physical line; label
+order and contiguity do not matter. `Allowed files` is one comma-separated
+ordered list of exact repo-relative paths with no spaces around commas. Append
+the ledger TRIAGE referencing that
 confirmed entry, then append the initial `TASK-RECOVERY` by copying its values
 byte-for-byte; map ledger `Trigger signature` and `Attempt count` to the
-corresponding control fields. Do not paraphrase, reorder, widen, or self-author
+corresponding control fields. Do not paraphrase, widen, or self-author
 any directive value.
 
 Create a unique clean temporary git worktree and repair branch at the exact
@@ -209,19 +218,30 @@ repair with the worktree path and directive verbatim. The Developer works only
 there and cannot rebaseline. It edits only the named control/self-test paths
 under `project-docs/tools/`, uses red/green, runs `Exact verification`, commits
 the repair, and returns the ending `HEAD`. This is recovery, not a new planned
-task, and you neither advance nor ask the Human.
+task, and you neither advance nor ask the Human. The ordinary guarded route
+must never authorize changes to `workflow-control-scope-lint.sh` or
+`workflow-sequence-lint.sh`; self-repair of either verifier is a protected
+definition change requiring separate decision authority.
 
-Before each control `REPAIR` event, run and require PASS with observed
-termination from:
+Before each control `REPAIR` event, materialize the scope verifier from the
+trusted `Control repair base` into fresh scratch storage, never from repair
+HEAD, then execute that materialized blob and require PASS with observed
+termination:
 
 ```text
-project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+git -C <repo> show <base>:project-docs/tools/workflow-control-scope-lint.sh > <fresh-scratch>/workflow-control-scope-lint.sh
+chmod 700 <fresh-scratch>/workflow-control-scope-lint.sh
+<fresh-scratch>/workflow-control-scope-lint.sh <repo> <base> <head> <allowed-1> ...
 ```
 
 Use the dedicated repair worktree for `<repo>`, your immutable directive value
 for `<base>`, the Developer-produced ending HEAD for `<head>`, and the
-directive's exact paths for `<allowed...>`. Never accept a Developer-selected
-base.
+directive's comma-separated ordered paths as individual arguments in that same
+order. Never accept a Developer-selected base or execute the verifier from
+`<head>`. The PASS receipt must repeat an exact comma-separated ordered
+allowlist byte-identical to `Allowed files` and have the exact form
+`PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`; reject missing, reordered, normalized, or different
+receipt data.
 Product, spec, prompt, template, dependency, task, QA-contract, generated, and
 report files are forbidden. Necessary provider sync is separate authorized
 maintenance, not part of the isolated history. Require `<head>` to equal the
@@ -282,17 +302,25 @@ explicitly marked as a protected blocker candidate.
 
 ## Resolved Resume
 
-When a prior STOP has a later decision, verified commit, restored capability,
-or other recorded resolution, verify it and append `RUN-RESUME` retaining the
+When a prior STOP has a later decision, verified commit, or restored
+capability, verify it and append `RUN-RESUME` retaining the
 STOP's governing TRG/ESC, trigger, continuing task, next attempt, and exact next
-recovery tuple. The immediately following TASK-RECOVERY must match that tuple.
-A resolved BLOCK never gets a new TRG. If it becomes control-conformance under
-an existing DEC, record the full repair base yourself, then have TL-Lite append
-a typed directive amendment to the existing governing TRG before RUN-RESUME;
-retain the existing ESC and cite the DEC. Validate every boundary-valid DEC
-citation against the phase decisions file; one real citation cannot mask a
-nonexistent citation, and embedded pseudo-IDs do not count. If no TRIAGE entry
-exists for a STOP, invoke TL-Lite first.
+recovery tuple. The next TASK-RECOVERY must match that tuple. Record exactly one
+typed `Resolution authority`: `verified-commit:<40hex>`,
+`restored-capability:<stable-id>`, or `DEC-<NNN>`, while `Resolution evidence`
+records your observed verification. Copy that exact typed authority into the
+next recovery's `Source` and `Repair authority`. Use DEC authority whenever a protected
+decision changed or was resolved; a commit or restored capability can clear
+only a factual condition under an unchanged accepted contract. A resolved
+BLOCK never gets a new TRG. If a DEC converts it to control-conformance, record
+the full repair base yourself, then have TL-Lite append one unique separate H2
+directive amendment naming the existing governing TRG before RUN-RESUME. Parse
+that amendment independently from the original TRG and its retained BLOCK
+verdict; retain the existing ESC and cite the DEC. Validate every
+boundary-valid DEC citation in an authority field against the phase decisions
+file; one real citation cannot mask a nonexistent citation, and embedded
+pseudo-IDs do not count. If no TRIAGE entry exists for a STOP, invoke TL-Lite
+first. A normal RUN-RESUME uses `N/A` for governing TRG/ESC and `Next recovery`.
 
 ## TL-Lite Triage Prompt
 
@@ -301,6 +329,11 @@ Use a self-contained prompt:
 ```text
 Triage trigger: <one-line description>.
 Source: <task report path | review path | ESC-<phase>-<NNN>>.
+Originating task: <task-M>.
+Trigger signature: <exact stable signature>.
+Attempt count: <next mediated attempt>.
+Repair category: <recovery category | N/A for RESUME/BLOCK>.
+Repair authority: <task spec / QA review / typed TRG directive | N/A for RESUME/BLOCK>.
 Commit-verification evidence: <hash, git rev-parse --verify result, and
 subject-match result, or "none">.
 For a possible control-conformance repair, attached reproduced mismatch:
@@ -311,7 +344,7 @@ Control trigger signature: <exact stable signature>.
 Control attempt count: <next mediated attempt>.
 Control contract: <accepted source and uniquely required behavior>.
 Control mismatch: <exact expected/observed reproducer and termination>.
-Allowed files: <exact ordered project-docs/tools/ paths>.
+Allowed files: <exact comma-separated ordered project-docs/tools/ paths with no spaces around commas>.
 Forbidden changes: <exact protected paths and semantics>.
 Exact verification: <exact command bytes and working directory>.
 Originating report: <exact repo-relative completion-report path>.
@@ -339,12 +372,21 @@ confirm every Must-fix finding names an owning task, bounded scope, required
 evidence, and fresh independent re-review.
 ```
 
+For every direct `REPAIR`, require the external TRG section to carry exactly
+one `Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
+and `Repair authority` matching the ledger TRIAGE and ensuing TASK-RECOVERY.
+For RESUME/BLOCK, the latter two fields use `N/A` when no repair authority
+applies.
+
 For an existing BLOCK resolved by a DEC into control-conformance repair, use a
 separate prompt beginning `Control directive amendment:`. Supply the same ten
-fields plus the governing TRG/ESC and existing DEC. Require TL-Lite to append a
-labelled amendment under the existing TRG without allocating a new identifier,
-then require exact `VERDICT: REPAIR / control-conformance`. Append RUN-RESUME,
-not a new TRIAGE event, and bind its `Next recovery` to the amended directive.
+fields plus the governing TRG/ESC and existing DEC. Require TL-Lite to append
+one unique separate H2 amendment whose heading names that TRG, without
+allocating a new identifier. The amendment has its own exactly-once typed
+fields and verdict and is parsed independently from the original TRG's BLOCK
+verdict. Then require exact `VERDICT: REPAIR / control-conformance`. Append
+RUN-RESUME, not a new TRIAGE event, and bind its `Next recovery` to the amended
+directive.
 
 TL-Lite does not execute verification commands (it does write its own triage
 records). When a triage may turn on "already resolved by a

@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-16  
 **Owner:** Recovery super-agent  
-**Status:** In progress  
+**Status:** Implementation complete; final independent re-review pending
 **Baseline:** `phase-20` at `7c74edc`; the append-only Phase 20 ledger is
 `STOPPED` at `TRG-20-015` / `ESC-20-015`.
 
@@ -89,8 +89,19 @@ implementation with a change to the protected gate definition and emitted
   externally bound schema-v2 directives, Runner-owned base/head checkpoints,
   exact report-only continuation, monotonic control retries, full DEC and
   resume identity checks, transactional authority preservation, and expanded
-  adversarial drills. Canonical prompt/spec alignment and final independent
-  re-review remain in progress.
+  adversarial drills. A later pass against `a50d8e4` found that scope evidence
+  did not bind its allowlist, repair HEAD could weaken its own verifier,
+  resolved-BLOCK amendments were not separately consumable, v2 records could
+  contain ambiguous or missing fields, new RUN events could stay on v1,
+  external TRIAGE identity was incomplete, and decision/restored-capability
+  authority was inconsistent. The current repair materializes the scope
+  verifier from the trusted base, protects both validators, binds the ordered
+  allowlist into the receipt, forces new RUN events to schema v2, enforces
+  exact-one typed fields, parses unique original TRGs and unique decision
+  amendments separately, binds ordinary TRIAGE identity, and validates every
+  decision citation plus typed STOP resolution authority. Dedicated negative
+  drills reproduce each bypass. Final independent re-review remains required
+  before this item closes.
 - [ ] **P6 - Exact verification and handoff.** Run all workflow gates and the
   relevant repository gate, capture exact termination, commit the final review,
   and provide a copy-paste Phase Runner restart prompt with branch, HEAD,

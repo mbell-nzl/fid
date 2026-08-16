@@ -352,6 +352,64 @@ run_control_scope "drill-18 reverted intermediate edit cannot hide a non-isolate
   "trusted base is not the sole parent of current HEAD" \
   "$scope_repo" "$scope_base" "$scope_reverted_head" project-docs/tools/control.sh
 
+receipt_repo="$workspace/control-receipt"
+mkdir -p "$receipt_repo/project-docs/tools"
+printf '%s\n' 'old alpha' > "$receipt_repo/project-docs/tools/alpha.sh"
+printf '%s\n' 'old beta' > "$receipt_repo/project-docs/tools/beta.sh"
+printf '%s\n' 'unchanged' > "$receipt_repo/project-docs/tools/unused.sh"
+git -C "$receipt_repo" init -q
+git -C "$receipt_repo" add -A
+git_fixture "$receipt_repo" commit "test: establish ordered receipt fixture"
+receipt_base=$(git -C "$receipt_repo" rev-parse HEAD)
+printf '%s\n' 'new alpha' > "$receipt_repo/project-docs/tools/alpha.sh"
+printf '%s\n' 'new beta' > "$receipt_repo/project-docs/tools/beta.sh"
+git -C "$receipt_repo" add -A
+git_fixture "$receipt_repo" commit "fix: change two allowed controls"
+receipt_head=$(git -C "$receipt_repo" rev-parse HEAD)
+receipt_alpha=project-docs/tools/alpha.sh
+receipt_beta=project-docs/tools/beta.sh
+receipt_unused=project-docs/tools/unused.sh
+authoritative_receipt="PASS control repair scope: $receipt_base -> $receipt_head; allowed=$receipt_alpha,$receipt_beta"
+receipt_output=$("$control_scope_lint" "$receipt_repo" "$receipt_base" \
+  "$receipt_head" "$receipt_alpha" "$receipt_beta" 2>&1)
+receipt_code=$?
+if [ "$receipt_code" -eq 0 ] && [ "$receipt_output" = "$authoritative_receipt" ]; then
+  drill_pass "drill-18 receipt binds the exact authoritative ordered allowlist"
+else
+  drill_fail "drill-18 authoritative allowlist receipt (exit=$receipt_code, output=$receipt_output)"
+fi
+run_control_scope "drill-18 receipt scope rejects a missing changed path" nonzero \
+  "outside allowed control scope: $receipt_beta" \
+  "$receipt_repo" "$receipt_base" "$receipt_head" "$receipt_alpha"
+additional_receipt="PASS control repair scope: $receipt_base -> $receipt_head; allowed=$receipt_alpha,$receipt_beta,$receipt_unused"
+additional_output=$("$control_scope_lint" "$receipt_repo" "$receipt_base" \
+  "$receipt_head" "$receipt_alpha" "$receipt_beta" "$receipt_unused" 2>&1)
+additional_code=$?
+if [ "$additional_code" -eq 0 ] && [ "$additional_output" = "$additional_receipt" ] && \
+   [ "$additional_output" != "$authoritative_receipt" ]; then
+  drill_pass "drill-18 additional allowlist entry produces a distinct receipt"
+else
+  drill_fail "drill-18 additional allowlist receipt (exit=$additional_code, output=$additional_output)"
+fi
+reordered_receipt="PASS control repair scope: $receipt_base -> $receipt_head; allowed=$receipt_beta,$receipt_alpha"
+reordered_output=$("$control_scope_lint" "$receipt_repo" "$receipt_base" \
+  "$receipt_head" "$receipt_beta" "$receipt_alpha" 2>&1)
+reordered_code=$?
+if [ "$reordered_code" -eq 0 ] && [ "$reordered_output" = "$reordered_receipt" ] && \
+   [ "$reordered_output" != "$authoritative_receipt" ]; then
+  drill_pass "drill-18 reordered allowlist produces a distinct receipt"
+else
+  drill_fail "drill-18 reordered allowlist receipt (exit=$reordered_code, output=$reordered_output)"
+fi
+run_control_scope "drill-18 comma is rejected in allowlist argv" nonzero \
+  "allowed path contains comma" \
+  "$receipt_repo" "$receipt_base" "$receipt_head" \
+  "$receipt_alpha,$receipt_beta"
+run_control_scope "drill-18 duplicate allowlist entry is rejected" nonzero \
+  "duplicate allowed path: $receipt_alpha" \
+  "$receipt_repo" "$receipt_base" "$receipt_head" \
+  "$receipt_alpha" "$receipt_beta" "$receipt_alpha"
+
 symlink_repo="$workspace/control-symlink"
 mkdir -p "$symlink_repo/project-docs/tools" "$symlink_repo/cmd"
 printf '%s\n' '#!/bin/sh' 'exit 0' > "$symlink_repo/project-docs/tools/control.sh"
@@ -389,6 +447,63 @@ run_control_scope "drill-18 symbolic rebaseline cannot hide a forbidden intermed
 run_control_scope "drill-18 authoritative pre-dispatch base detects rebaseline bypass" nonzero \
   "trusted base is not the sole parent of current HEAD" \
   "$rebaseline_repo" "$rebaseline_trusted_base" "$rebaseline_head" project-docs/tools/control.sh
+
+verifier_repo="$workspace/control-trusted-verifier"
+mkdir -p "$verifier_repo/project-docs/tools"
+cp "$control_scope_lint" \
+  "$verifier_repo/project-docs/tools/workflow-control-scope-lint.sh"
+cp "$sequence_lint" \
+  "$verifier_repo/project-docs/tools/workflow-sequence-lint.sh"
+printf '%s\n' 'old control product' > \
+  "$verifier_repo/project-docs/tools/product-control.sh"
+git -C "$verifier_repo" init -q
+git -C "$verifier_repo" add -A
+git_fixture "$verifier_repo" commit "test: establish trusted verifier fixture"
+verifier_base=$(git -C "$verifier_repo" rev-parse HEAD)
+printf '%s\n' '#!/bin/sh' 'echo "PASS weakened HEAD verifier"' > \
+  "$verifier_repo/project-docs/tools/workflow-control-scope-lint.sh"
+printf '%s\n' '#!/bin/sh' 'echo "VALID state=COMPLETE"' > \
+  "$verifier_repo/project-docs/tools/workflow-sequence-lint.sh"
+printf '%s\n' 'changed control product' > \
+  "$verifier_repo/project-docs/tools/product-control.sh"
+git -C "$verifier_repo" add -A
+git_fixture "$verifier_repo" commit "test: weaken verifier with control product"
+verifier_head=$(git -C "$verifier_repo" rev-parse HEAD)
+weakened_output=$("$verifier_repo/project-docs/tools/workflow-control-scope-lint.sh" 2>&1)
+weakened_code=$?
+if [ "$weakened_code" -eq 0 ] && [ "$weakened_output" = 'PASS weakened HEAD verifier' ]; then
+  drill_pass "drill-18 weakened HEAD verifier demonstrates the self-repair threat"
+else
+  drill_fail "drill-18 weakened HEAD verifier threat fixture (exit=$weakened_code, output=$weakened_output)"
+fi
+
+# Phase Runner materialization is exact: read the verifier blob from the
+# authoritative pre-dispatch base, write it to a fresh path, chmod it executable,
+# and execute that path rather than the repair candidate's HEAD copy.
+trusted_verifier="$workspace/trusted-workflow-control-scope-lint.sh"
+git -C "$verifier_repo" show \
+  "$verifier_base:project-docs/tools/workflow-control-scope-lint.sh" > \
+  "$trusted_verifier"
+chmod 700 "$trusted_verifier"
+run_control_scope "drill-18 trusted verifier rejects scope-verifier self-repair" nonzero \
+  "trusted verifier cannot be allowlisted: project-docs/tools/workflow-control-scope-lint.sh" \
+  "$verifier_repo" "$verifier_base" "$verifier_head" \
+  project-docs/tools/workflow-control-scope-lint.sh \
+  project-docs/tools/workflow-sequence-lint.sh \
+  project-docs/tools/product-control.sh
+trusted_sequence_output=$("$trusted_verifier" "$verifier_repo" \
+  "$verifier_base" "$verifier_head" \
+  project-docs/tools/workflow-sequence-lint.sh \
+  project-docs/tools/workflow-control-scope-lint.sh \
+  project-docs/tools/product-control.sh 2>&1)
+trusted_sequence_code=$?
+if [ "$trusted_sequence_code" -ne 0 ] && \
+   printf '%s\n' "$trusted_sequence_output" | grep -qF \
+     'trusted verifier cannot be allowlisted: project-docs/tools/workflow-sequence-lint.sh'; then
+  drill_pass "drill-18 trusted verifier rejects sequence-verifier self-repair"
+else
+  drill_fail "drill-18 trusted sequence-verifier protection (exit=$trusted_sequence_code, output=$trusted_sequence_output)"
+fi
 
 # Exercise the actual control-repair topology: the Phase Runner ledger remains
 # dirty in the main worktree while a separate clean repair worktree owns the
@@ -511,37 +626,118 @@ fi
 # Ledger fixtures exercise the validator the Phase Runner invokes. They prove
 # task identity survives a fresh run and QA repair needs an explicitly linked,
 # differently identified PASS re-review.
-valid_continuation="$workspace/valid-continuation.md"
+continuation_phase="$workspace/continuation/phase-1"
+mkdir -p "$continuation_phase"
+valid_continuation="$continuation_phase/valid-continuation.md"
 cat > "$valid_continuation" <<'EOF'
-### 2026-08-15 10:00 RUN-RESUME
+### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
 - Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
 ### 2026-08-15 10:01 TASK-RECOVERY task-1
 - Source: interrupted task-1 session
 - Category: session-continuation
 - Repair mode: task-scope
 - Repair authority: task-1 spec
+- Triage disposition: N/A
 - Control contract: N/A
 - Control mismatch: N/A
 - Allowed files: ordinary task scope
 - Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
 - Trigger signature: task-1:session-continuation:interrupted-session
 - Attempt count: 1
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: committed partial task-1 implementation
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
 - Resolution evidence: PENDING - complete and verify task-1
 - Next action: complete task-1 and rerun its exact gate
 - Human attention required: no
 ### 2026-08-15 10:02 REPAIR task-1
 - Trigger signature: task-1:session-continuation:interrupted-session
 - Attempt count: 1
+- Starting checkpoint: committed partial task-1 implementation
+- Ending checkpoint: verified task-1 implementation
+- Control repair base: N/A
+- Control repair head: N/A
 - Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
 - Outcome: RESOLVED
 - Resolution evidence: exact task gate passed
 - Next checkpoint: VERIFY
 ### 2026-08-15 10:03 TASK task-1 COMPLETE
+- Report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - verified, subject matched
+- QA-plan commands beyond the task spec: none required
 EOF
 run_sequence "drill-16 lifecycle: fresh session retains task identity" ADVANCEABLE "$valid_continuation"
+
+duplicate_completion_report="$continuation_phase/duplicate-completion-report.md"
+sed '/^- Report: project-docs\/docs\/phases\/phase-1\/tasks\/task-1-done.md$/a\
+- Report: project-docs/docs/phases/phase-1/tasks/task-9-done.md
+' "$valid_continuation" > "$duplicate_completion_report"
+run_invalid_sequence "drill-18 schema v2 TASK COMPLETE rejects duplicate report authority" \
+  "TASK COMPLETE must contain each completion field exactly once" \
+  "$duplicate_completion_report"
+
+review_phase="$workspace/review-schema/phase-1"
+mkdir -p "$review_phase"
+valid_review="$review_phase/run-ledger.md"
+cat > "$valid_review" <<'EOF'
+### 2026-08-15 09:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 09:01 REVIEW review-1
+- Path: project-docs/docs/phases/phase-1/qa/review-1.md
+- Tasks covered: task-1
+- Outcome: PASS
+- Owning task: none
+- Re-review of: none
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+EOF
+run_sequence "drill-18 schema v2 REVIEW accepts one complete typed record" \
+  ADVANCEABLE "$valid_review"
+duplicate_review_owner="$review_phase/duplicate-review-owner.md"
+sed '/^- Owning task: none$/i\
+- Owning task: task-9
+' "$valid_review" > "$duplicate_review_owner"
+run_invalid_sequence "drill-18 schema v2 REVIEW rejects duplicate ownership" \
+  "REVIEW must contain each review field exactly once" "$duplicate_review_owner"
+
+run_end_phase="$workspace/run-end-schema/phase-1"
+mkdir -p "$run_end_phase"
+valid_run_end="$run_end_phase/run-ledger.md"
+cat > "$valid_run_end" <<'EOF'
+### 2026-08-15 09:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 09:02 RUN-END
+- All tasks complete. Final review: project-docs/docs/phases/phase-1/qa/final-review.md
+- Human checklist: project-docs/docs/phases/phase-1/qa/human-checklist.md
+- Phase ready for Tech Lead wrap-up.
+EOF
+run_sequence "drill-18 schema v2 RUN-END accepts one complete closure record" \
+  ADVANCEABLE "$valid_run_end"
+missing_run_end_field="$run_end_phase/missing-run-end-field.md"
+sed '/^- Human checklist: /d' "$valid_run_end" > "$missing_run_end_field"
+run_invalid_sequence "drill-18 schema v2 RUN-END cannot omit closure fields" \
+  "RUN-END must contain each closure field exactly once" "$missing_run_end_field"
 
 control_phase="$workspace/control-fixture/phase-1"
 mkdir -p "$control_phase"
@@ -549,8 +745,12 @@ cat > "$control_phase/triage-log.md" <<'EOF'
 # Phase 1 Triage Log
 
 ## TRG-1-001 - byte-exact control mismatch
-- **Verdict:** REPAIR / control-conformance
 - **Originating task:** task-1
+- **Trigger signature:** task-1:quality-gate-control-defect:literal-command
+- **Repair category:** report-repair
+- **Repair authority:** TRG-1-001 typed directive
+- **Attempt count:** 1
+- **Verdict:** REPAIR / control-conformance
 - **Control trigger signature:** task-1:quality-gate-control-defect:literal-command
 - **Control attempt count:** 1
 - **Control contract:** exact commands are compared byte-for-byte
@@ -562,21 +762,38 @@ cat > "$control_phase/triage-log.md" <<'EOF'
 - **Control repair base:** aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
 ## TRG-1-002 - ordinary task-scope repair
+- **Originating task:** task-1
+- **Trigger signature:** task-1:focused-test:ordinary
+- **Repair category:** gate-repair
+- **Repair authority:** TRG-1-002
+- **Attempt count:** 1
 - **Verdict:** REPAIR
 
 ## TRG-1-003 - protected product decision
+- **Originating task:** task-1
+- **Trigger signature:** task-1:product-decision:protected
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Attempt count:** 1
 - **Verdict:** BLOCK
 - **Escalation:** ESC-1-003
 EOF
 valid_control_repair="$control_phase/valid-control-repair.md"
 cat > "$valid_control_repair" <<'EOF'
-### 2026-08-15 10:00 RUN-RESUME
+### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
 - Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
 ### 2026-08-15 10:00 TRIAGE TRG-1-001
 - Trigger: report-lint violates its byte-exact command contract
+- Originating task: task-1
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 1
+- Repair category: report-repair
+- Repair authority: TRG-1-001 typed directive
 - Checkpoint: exact reproducer failed
 - Verdict: REPAIR / control-conformance
 - Resolution evidence: bounded tools-only repair
@@ -585,7 +802,8 @@ cat > "$valid_control_repair" <<'EOF'
 - Source: TRG-1-001
 - Category: report-repair
 - Repair mode: control-conformance
-- Repair authority: TRG-1-001
+- Repair authority: TRG-1-001 typed directive
+- Triage disposition: REPAIR / control-conformance
 - Control contract: exact commands are compared byte-for-byte
 - Control mismatch: exact reproducer false-rejects a literal backslash-dot
 - Allowed files: project-docs/tools/report-lint.sh
@@ -597,15 +815,20 @@ cat > "$valid_control_repair" <<'EOF'
 - Attempt count: 1
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: committed failing control fixture
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: workspace/control-repair on control-repair at aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- Hidden-index flags: none
 - Resolution evidence: PENDING - repair and rerun the exact reproducer
 - Next action: repair the control, run workflow-control-scope-lint.sh, and rerun the exact reproducer
 - Human attention required: no
 ### 2026-08-15 10:02 REPAIR task-1
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 1
+- Starting checkpoint: committed failing control fixture
+- Ending checkpoint: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 - Control repair base: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 - Control repair head: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
-- Control scope check: PASS control repair scope: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb (terminated exit_code: 0)
+- Control scope check: PASS control repair scope: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -> bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb; allowed=project-docs/tools/report-lint.sh (terminated exit_code: 0)
 - Phase-branch integration: PASS fast-forwarded to bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 - Outcome: RESOLVED
 - Resolution evidence: exact reproducer passed
@@ -615,6 +838,7 @@ cat > "$valid_control_repair" <<'EOF'
 - Category: report-repair
 - Repair mode: task-scope
 - Repair authority: TRG-1-001 report continuation
+- Triage disposition: N/A
 - Control contract: N/A
 - Control mismatch: N/A
 - Allowed files: project-docs/docs/phases/phase-1/tasks/task-1-done.md
@@ -626,19 +850,441 @@ cat > "$valid_control_repair" <<'EOF'
 - Attempt count: 2
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: control repair integrated at bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
 - Resolution evidence: PENDING - rerun exact verification and finalize report
 - Next action: rerun exact verification and update only the originating report
 - Human attention required: no
 ### 2026-08-15 10:04 REPAIR task-1
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 2
+- Starting checkpoint: control repair integrated at bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+- Ending checkpoint: exact report finalized
+- Control repair base: N/A
+- Control repair head: N/A
 - Control scope check: N/A for task-scope report continuation
+- Phase-branch integration: N/A for task-scope
 - Outcome: RESOLVED
 - Resolution evidence: exact verification passed and report finalized
 - Next checkpoint: COMPLETE
 ### 2026-08-15 10:05 TASK task-1 COMPLETE
+- Report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb - verified, subject matched
+- QA-plan commands beyond the task spec: none required
 EOF
 run_sequence "drill-18 scoped control repair retains originating task identity" ADVANCEABLE "$valid_control_repair"
+
+# A protected BLOCK keeps its original verdict. A unique, decision-authorized
+# amendment supplies the later control directive without rewriting that record.
+amended_phase="$workspace/amended-control/phase-1"
+mkdir -p "$amended_phase"
+cat > "$amended_phase/decisions.md" <<'EOF'
+# Phase 1 Decisions
+
+### DEC-200: Authorize the bounded control repair
+EOF
+cat > "$amended_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-010 - protected control definition
+- **Originating task:** task-1
+- **Trigger signature:** task-1:quality-gate-control-defect:blocked-control
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Attempt count:** 1
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-010
+
+## Control Directive Amendment For TRG-1-010
+- **Governing TRG:** TRG-1-010
+- **Governing ESC:** ESC-1-010
+- **Resolution authority:** DEC-200
+- **Verdict:** REPAIR / control-conformance
+- **Originating task:** task-1
+- **Control trigger signature:** task-1:quality-gate-control-defect:blocked-control
+- **Control attempt count:** 2
+- **Control contract:** exact commands remain opaque
+- **Control mismatch:** exact reproducer rejects accepted output
+- **Allowed files:** project-docs/tools/report-lint.sh
+- **Forbidden changes:** product, specification, assertion, threshold, budget, or verifier
+- **Exact verification:** project-docs/tools/report-lint.sh --self-test
+- **Originating report:** project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- **Control repair base:** aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- **References:** DEC-200 and ESC-1-010
+EOF
+valid_amended_control="$amended_phase/run-ledger.md"
+cat > "$valid_amended_control" <<'EOF'
+### 2026-08-15 11:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 11:01 TRIAGE TRG-1-010
+- Originating task: task-1
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: exact control reproducer failed
+- Verdict: BLOCK (escalated as ESC-1-010)
+- Resolution evidence: protected control definition requires a decision
+- Triage log: unique phase triage entry and ESC confirmed
+### 2026-08-15 11:02 STOP
+- Cause: TRG-1-010 / ESC-1-010 requires protected authority
+- Triage: TRG-1-010 (BLOCK, escalated as ESC-1-010)
+- Protected category: gate/control definition authority
+- Next Human or external-authority action: record a phase decision
+### 2026-08-15 11:03 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: TRG-1-010 / ESC-1-010 STOP
+- Governing TRG: TRG-1-010
+- Governing ESC: ESC-1-010
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 2
+- Checkpoint: DEC-200 and amendment recorded
+- Resolution evidence: DEC-200 authorizes the exact amendment
+- Resolution authority: DEC-200
+- Continuing task: task-1
+- Next recovery: task-1 | gate-repair | control-conformance | task-1:quality-gate-control-defect:blocked-control | 2
+### 2026-08-15 11:04 TASK-RECOVERY task-1
+- Source: TRG-1-010 / DEC-200
+- Category: gate-repair
+- Repair mode: control-conformance
+- Repair authority: TRG-1-010 / DEC-200
+- Triage disposition: REPAIR / control-conformance
+- Trigger signature: task-1:quality-gate-control-defect:blocked-control
+- Attempt count: 2
+- Control contract: exact commands remain opaque
+- Control mismatch: exact reproducer rejects accepted output
+- Allowed files: project-docs/tools/report-lint.sh
+- Forbidden changes: product, specification, assertion, threshold, budget, or verifier
+- Originating report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- Exact verification: project-docs/tools/report-lint.sh --self-test
+- Control repair base: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: DEC-200 resolution checkpoint
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: workspace/control-repair on control-repair at aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun exact verification
+- Next action: run trusted-base workflow-control-scope-lint.sh and exact verification
+- Human attention required: no
+EOF
+run_sequence "drill-18 unique resolved-BLOCK amendment authorizes exact control recovery" REPAIR_PENDING "$valid_amended_control"
+
+missing_amendment_phase="$workspace/missing-amendment/phase-1"
+mkdir -p "$missing_amendment_phase"
+cp "$amended_phase/decisions.md" "$missing_amendment_phase/decisions.md"
+sed '/^## Control Directive Amendment For TRG-1-010$/,$d' \
+  "$amended_phase/triage-log.md" > "$missing_amendment_phase/triage-log.md"
+cp "$valid_amended_control" "$missing_amendment_phase/run-ledger.md"
+run_invalid_sequence "drill-18 resolved BLOCK requires its unique control amendment" \
+  "lacks one exact decision-authorized control amendment" \
+  "$missing_amendment_phase/run-ledger.md"
+
+duplicate_amendment_phase="$workspace/duplicate-amendment/phase-1"
+mkdir -p "$duplicate_amendment_phase"
+cp "$amended_phase/decisions.md" "$duplicate_amendment_phase/decisions.md"
+cp "$amended_phase/triage-log.md" "$duplicate_amendment_phase/triage-log.md"
+sed -n '/^## Control Directive Amendment For TRG-1-010$/,$p' \
+  "$amended_phase/triage-log.md" >> "$duplicate_amendment_phase/triage-log.md"
+cp "$valid_amended_control" "$duplicate_amendment_phase/run-ledger.md"
+run_invalid_sequence "drill-18 duplicate control amendments are ambiguous" \
+  "lacks one exact decision-authorized control amendment" \
+  "$duplicate_amendment_phase/run-ledger.md"
+
+trailing_directive_phase="$workspace/trailing-directive/phase-1"
+mkdir -p "$trailing_directive_phase"
+sed 's/^- \*\*Control contract:\*\* exact commands are compared byte-for-byte$/&   /' \
+  "$control_phase/triage-log.md" > "$trailing_directive_phase/triage-log.md"
+cp "$valid_control_repair" "$trailing_directive_phase/run-ledger.md"
+run_invalid_sequence "drill-18 authoritative directive whitespace is byte-exact" \
+  "does not match its authoritative TRIAGE record" \
+  "$trailing_directive_phase/run-ledger.md"
+
+duplicate_trg_phase="$workspace/duplicate-trg/phase-1"
+mkdir -p "$duplicate_trg_phase"
+cp "$control_phase/triage-log.md" "$duplicate_trg_phase/triage-log.md"
+cat >> "$duplicate_trg_phase/triage-log.md" <<'EOF'
+
+## TRG-1-001 - conflicting duplicate
+- **Verdict:** BLOCK
+EOF
+cp "$valid_control_repair" "$duplicate_trg_phase/run-ledger.md"
+run_invalid_sequence "drill-18 duplicate external TRG identity is rejected" \
+  "TRIAGE ID is not recorded in the phase triage log" \
+  "$duplicate_trg_phase/run-ledger.md"
+
+nonexistent_contract_decision_phase="$workspace/nonexistent-contract-decision/phase-1"
+mkdir -p "$nonexistent_contract_decision_phase"
+sed 's/exact commands are compared byte-for-byte/DEC-999999 says exact commands are compared byte-for-byte/' \
+  "$control_phase/triage-log.md" > "$nonexistent_contract_decision_phase/triage-log.md"
+sed 's/exact commands are compared byte-for-byte/DEC-999999 says exact commands are compared byte-for-byte/g' \
+  "$valid_control_repair" > "$nonexistent_contract_decision_phase/run-ledger.md"
+run_invalid_sequence "drill-18 every directive decision citation must exist" \
+  "unrecorded or malformed phase decision" \
+  "$nonexistent_contract_decision_phase/run-ledger.md"
+
+duplicate_report_continuation="$control_phase/duplicate-report-continuation.md"
+sed '/^### 2026-08-15 10:03 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:04 REPAIR task-1$/ {
+  /- Originating report: project-docs\/docs\/phases\/phase-1\/tasks\/task-1-done.md/a\
+- Originating report: cmd/product.go
+}' "$valid_control_repair" > "$duplicate_report_continuation"
+run_invalid_sequence "drill-18 report continuation rejects duplicate report authority" \
+  "TASK-RECOVERY must contain each typed field exactly once" \
+  "$duplicate_report_continuation"
+
+duplicate_stop_triage="$amended_phase/duplicate-stop-triage.md"
+sed '/^- Triage: TRG-1-010 (BLOCK, escalated as ESC-1-010)$/i\
+- Triage: TRG-1-999 (BLOCK, escalated as ESC-1-999)
+' "$valid_amended_control" > "$duplicate_stop_triage"
+run_invalid_sequence "drill-18 STOP rejects duplicate governing triage fields" \
+  "STOP must contain each authority field exactly once" "$duplicate_stop_triage"
+
+wrong_scope_allowlist="$control_phase/wrong-scope-allowlist.md"
+sed 's/; allowed=project-docs\/tools\/report-lint.sh (terminated/; allowed=project-docs\/tools\/workflow-lint.sh (terminated/' \
+  "$valid_control_repair" > "$wrong_scope_allowlist"
+run_invalid_sequence "drill-18 scope receipt must repeat the authoritative allowlist" \
+  "exact allowlist receipt" "$wrong_scope_allowlist"
+
+protected_verifier_phase="$workspace/protected-verifier/phase-1"
+mkdir -p "$protected_verifier_phase"
+sed 's#project-docs/tools/report-lint.sh#project-docs/tools/workflow-sequence-lint.sh#g' \
+  "$control_phase/triage-log.md" > "$protected_verifier_phase/triage-log.md"
+sed 's#project-docs/tools/report-lint.sh#project-docs/tools/workflow-sequence-lint.sh#g' \
+  "$valid_control_repair" > "$protected_verifier_phase/run-ledger.md"
+run_invalid_sequence "drill-18 control repair cannot authorize a protected verifier" \
+  "cannot authorize a protected workflow verifier" \
+  "$protected_verifier_phase/run-ledger.md"
+
+blank_run_start="$workspace/blank-v2-run-start.md"
+cat > "$blank_run_start" <<'EOF'
+### 2026-08-15 12:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+EOF
+run_invalid_sequence "drill-18 schema v2 RUN-START requires its checkpoint" \
+  "RUN-START must contain each checkpoint field exactly once" "$blank_run_start"
+
+normal_resume="$workspace/normal-v2-resume.md"
+cat > "$normal_resume" <<'EOF'
+### 2026-08-15 12:00 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: prior Phase Runner session ended cleanly
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: task-17 complete; Review 6 next
+- Resolution evidence: committed reports and ledger reconcile
+- Resolution authority: N/A
+- Continuing task: task-17
+- Next recovery: N/A
+EOF
+run_sequence "drill-18 normal schema v2 RUN-RESUME uses explicit N/A authority" \
+  ADVANCEABLE "$normal_resume"
+
+missing_normal_resume_field="$workspace/missing-normal-resume-field.md"
+sed '/^- Prior run\/session or STOP: /d' "$normal_resume" > "$missing_normal_resume_field"
+run_invalid_sequence "drill-18 normal RUN-RESUME cannot omit reconciliation fields" \
+  "RUN-RESUME must contain each reconciliation field exactly once" \
+  "$missing_normal_resume_field"
+
+wrong_normal_resume_authority="$workspace/wrong-normal-resume-authority.md"
+sed 's/^- Resolution authority: N\/A$/- Resolution authority: restored-capability:invented/' \
+  "$normal_resume" > "$wrong_normal_resume_authority"
+run_invalid_sequence "drill-18 normal RUN-RESUME cannot imply STOP authority" \
+  "normal schema v2 RUN-RESUME must use N/A" "$wrong_normal_resume_authority"
+
+v1_append_ledger="$workspace/v1-run-append.md"
+cp "$normal_resume" "$v1_append_ledger"
+cp "$v1_append_ledger" "$v1_append_ledger.before"
+if v1_append_output=$(cat <<'EOF' | "$sequence_lint" "$v1_append_ledger" --append-stdin 2>&1
+### 2026-08-15 12:01 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v1
+- Prior run/session or STOP: prior Runner
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: unchanged
+- Resolution evidence: unchanged
+- Resolution authority: N/A
+- Continuing task: task-17
+- Next recovery: N/A
+EOF
+); then
+  v1_append_code=0
+else
+  v1_append_code=$?
+fi
+if [ "$v1_append_code" -ne 0 ] && \
+   printf '%s\n' "$v1_append_output" | grep -qF 'every newly appended RUN' && \
+   cmp -s "$v1_append_ledger.before" "$v1_append_ledger"; then
+  drill_pass "drill-18 transactional append forces every new RUN to schema v2"
+else
+  drill_fail "drill-18 transactional RUN schema adoption (exit=$v1_append_code, output=$v1_append_output)"
+fi
+
+ordinary_phase="$workspace/ordinary-triage/phase-1"
+mkdir -p "$ordinary_phase"
+cat > "$ordinary_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-030 - bounded ordinary repair
+- **Originating task:** task-1
+- **Trigger signature:** task-1:focused-test:legacy-assertion
+- **Repair category:** gate-repair
+- **Repair authority:** TRG-1-030 task spec
+- **Attempt count:** 1
+- **Verdict:** REPAIR
+EOF
+ordinary_repair="$ordinary_phase/run-ledger.md"
+cat > "$ordinary_repair" <<'EOF'
+### 2026-08-15 12:10 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 12:11 TRIAGE TRG-1-030
+- Originating task: task-1
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Repair category: gate-repair
+- Repair authority: TRG-1-030 task spec
+- Checkpoint: focused test failed on in-scope legacy assertion
+- Verdict: REPAIR
+- Resolution evidence: bounded same-task repair is authorized
+- Triage log: unique phase triage entry confirmed
+### 2026-08-15 12:12 TASK-RECOVERY task-1
+- Source: TRG-1-030
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: TRG-1-030 task spec
+- Triage disposition: REPAIR
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: focused test failure preserved
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun the exact test
+- Next action: same-task repair and exact test rerun
+- Human attention required: no
+EOF
+run_sequence "drill-18 schema v2 ordinary TRIAGE binds exact recovery identity" \
+  REPAIR_PENDING "$ordinary_repair"
+
+misbound_ordinary_phase="$workspace/misbound-ordinary/phase-1"
+mkdir -p "$misbound_ordinary_phase"
+sed -e 's/task-1:focused-test:legacy-assertion/task-9:focused-test:other/' \
+    -e 's/\*\*Attempt count:\*\* 1/**Attempt count:** 9/' \
+  "$ordinary_phase/triage-log.md" > "$misbound_ordinary_phase/triage-log.md"
+cp "$ordinary_repair" "$misbound_ordinary_phase/run-ledger.md"
+run_invalid_sequence "drill-18 ordinary TRIAGE cannot redirect external task trigger or attempt" \
+  "identity does not match its unique external record" \
+  "$misbound_ordinary_phase/run-ledger.md"
+
+capability_phase="$workspace/restored-capability/phase-1"
+mkdir -p "$capability_phase"
+cat > "$capability_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-040 - required local capability unavailable
+- **Originating task:** task-1
+- **Trigger signature:** task-1:local-environment:required-tool
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Attempt count:** 1
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-040
+EOF
+restored_capability="$capability_phase/run-ledger.md"
+cat > "$restored_capability" <<'EOF'
+### 2026-08-15 12:20 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 12:21 TRIAGE TRG-1-040
+- Originating task: task-1
+- Trigger signature: task-1:local-environment:required-tool
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: required tool unavailable
+- Verdict: BLOCK (escalated as ESC-1-040)
+- Resolution evidence: external capability must be restored
+- Triage log: unique phase triage entry and ESC confirmed
+### 2026-08-15 12:22 STOP
+- Cause: TRG-1-040 / ESC-1-040 required capability unavailable
+- Triage: TRG-1-040 (BLOCK, escalated as ESC-1-040)
+- Protected category: external capability unavailable
+- Next Human or external-authority action: restore the required tool capability
+### 2026-08-15 12:23 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: TRG-1-040 / ESC-1-040 STOP
+- Governing TRG: TRG-1-040
+- Governing ESC: ESC-1-040
+- Trigger signature: task-1:local-environment:required-tool
+- Attempt count: 2
+- Checkpoint: required tool is available and its probe passed
+- Resolution evidence: capability probe terminated exit_code: 0
+- Resolution authority: restored-capability:required-tool-v1
+- Continuing task: task-1
+- Next recovery: task-1 | local-environment | task-scope | task-1:local-environment:required-tool | 2
+### 2026-08-15 12:24 TASK-RECOVERY task-1
+- Source: TRG-1-040 / restored-capability:required-tool-v1
+- Category: local-environment
+- Repair mode: task-scope
+- Repair authority: TRG-1-040 / restored-capability:required-tool-v1
+- Triage disposition: N/A
+- Trigger signature: task-1:local-environment:required-tool
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: restored capability checkpoint
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - resume the exact interrupted task gate
+- Next action: rerun the exact task gate
+- Human attention required: no
+EOF
+run_sequence "drill-18 restored capability can resume an unchanged protected contract" \
+  REPAIR_PENDING "$restored_capability"
+
+invalid_capability_authority="$capability_phase/invalid-capability-authority.md"
+sed 's/restored-capability:required-tool-v1/restored by someone/g' \
+  "$restored_capability" > "$invalid_capability_authority"
+run_invalid_sequence "drill-18 STOP resume requires a typed resolution authority" \
+  "invalid or unverifiable Resolution authority" "$invalid_capability_authority"
 
 duplicate_schema="$control_phase/duplicate-schema.md"
 sed '0,/^- Recovery directive schema: v2$/s//&\
@@ -685,7 +1331,8 @@ cat >> "$valid_control_retry" <<'EOF'
 - Source: TRG-1-001 material-progress control retry
 - Category: report-repair
 - Repair mode: control-conformance
-- Repair authority: TRG-1-001
+- Repair authority: TRG-1-001 typed directive
+- Triage disposition: REPAIR / control-conformance
 - Control contract: exact commands are compared byte-for-byte
 - Control mismatch: exact reproducer false-rejects a literal backslash-dot
 - Allowed files: project-docs/tools/report-lint.sh
@@ -697,15 +1344,20 @@ cat >> "$valid_control_retry" <<'EOF'
 - Attempt count: 2
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: first isolated control commit integrated
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: workspace/control-retry on control-retry at bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+- Hidden-index flags: none
 - Resolution evidence: PENDING - finish the same bounded control repair
 - Next action: repair the same control, run workflow-control-scope-lint.sh, and rerun exact verification
 - Human attention required: no
 ### 2026-08-15 10:04 REPAIR task-1
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 2
+- Starting checkpoint: first isolated control commit integrated
+- Ending checkpoint: cccccccccccccccccccccccccccccccccccccccc
 - Control repair base: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 - Control repair head: cccccccccccccccccccccccccccccccccccccccc
-- Control scope check: PASS control repair scope: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> cccccccccccccccccccccccccccccccccccccccc (terminated exit_code: 0)
+- Control scope check: PASS control repair scope: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb -> cccccccccccccccccccccccccccccccccccccccc; allowed=project-docs/tools/report-lint.sh (terminated exit_code: 0)
 - Phase-branch integration: PASS fast-forwarded to cccccccccccccccccccccccccccccccccccccccc
 - Outcome: RESOLVED
 - Resolution evidence: exact reproducer passed
@@ -715,6 +1367,7 @@ cat >> "$valid_control_retry" <<'EOF'
 - Category: report-repair
 - Repair mode: task-scope
 - Repair authority: TRG-1-001 report continuation
+- Triage disposition: N/A
 - Control contract: N/A
 - Control mismatch: N/A
 - Allowed files: project-docs/docs/phases/phase-1/tasks/task-1-done.md
@@ -726,17 +1379,29 @@ cat >> "$valid_control_retry" <<'EOF'
 - Attempt count: 3
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: control repair integrated at cccccccccccccccccccccccccccccccccccccccc
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
 - Resolution evidence: PENDING - rerun exact verification and finalize report
 - Next action: rerun exact verification and update only the originating report
 - Human attention required: no
 ### 2026-08-15 10:06 REPAIR task-1
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 3
+- Starting checkpoint: control repair integrated at cccccccccccccccccccccccccccccccccccccccc
+- Ending checkpoint: exact report finalized
+- Control repair base: N/A
+- Control repair head: N/A
 - Control scope check: N/A for task-scope report continuation
+- Phase-branch integration: N/A for task-scope
 - Outcome: RESOLVED
 - Resolution evidence: exact verification passed and report finalized
 - Next checkpoint: COMPLETE
 ### 2026-08-15 10:07 TASK task-1 COMPLETE
+- Report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: cccccccccccccccccccccccccccccccccccccccc - verified, subject matched
+- QA-plan commands beyond the task spec: none required
 EOF
 run_sequence "drill-18 material-progress control retry preserves directive and advances base" ADVANCEABLE "$valid_control_retry"
 
@@ -1215,25 +1880,41 @@ cat >> "$resumed_budget" <<'EOF'
 - Category: gate-repair
 - Repair mode: task-scope
 - Repair authority: TRG-1-020 / DEC-200
+- Triage disposition: N/A
 - Control contract: N/A
 - Control mismatch: N/A
 - Allowed files: ordinary task scope
 - Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
 - Trigger signature: task-1:gate-repair:exact-gate
 - Attempt count: 3
 - Consecutive no-progress attempts: 0/2
 - Checkpoint: DEC-200 renewed recovery
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
 - Resolution evidence: PENDING - execute the renewed approach
 - Next action: repair and rerun exact gate
 - Human attention required: no
 ### 2026-08-15 10:10 REPAIR task-1
 - Trigger signature: task-1:gate-repair:exact-gate
 - Attempt count: 3
+- Starting checkpoint: DEC-200 renewed recovery
+- Ending checkpoint: exact gate passed
+- Control repair base: N/A
+- Control repair head: N/A
 - Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
 - Outcome: RESOLVED
 - Resolution evidence: exact gate passed
 - Next checkpoint: COMPLETE
 ### 2026-08-15 10:11 TASK task-1 COMPLETE
+- Report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa - verified, subject matched
+- QA-plan commands beyond the task spec: none required
 EOF
 run_sequence "drill-18 decision-authorized exhausted recovery preserves identity" ADVANCEABLE "$resumed_budget"
 
