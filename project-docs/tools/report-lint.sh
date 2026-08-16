@@ -126,7 +126,31 @@ EOF
 
 declared_expected_exit() {
   command=$1
-  printf '%s\n' "$expected_nonzero_commands" | awk -F '\t' -v command="$command" '$1 == command { print $2; exit }'
+  tab=$(printf '\t')
+  while IFS="$tab" read -r declared_command declared_exit; do
+    if [ "$declared_command" = "$command" ]; then
+      printf '%s\n' "$declared_exit"
+      return
+    fi
+  done <<EOF
+$expected_nonzero_commands
+EOF
+}
+
+# Commands are opaque text. Extract the backtick field from report rows and
+# compare it in the shell so awk -v cannot reinterpret backslash escapes.
+matching_command_result_lines() {
+  command=$1
+  while IFS= read -r line; do
+    case "$line" in
+      '- `'*'`'*) ;;
+      *) continue ;;
+    esac
+    reported_command=$(printf '%s\n' "$line" | cut -d '`' -f 2)
+    if [ "$reported_command" = "$command" ]; then
+      printf '%s\n' "$line"
+    fi
+  done
 }
 
 # Reject evidence tokens that cannot have been printed by the recorded go test
@@ -366,7 +390,7 @@ EOF
         continue
         ;;
     esac
-    match=$(printf '%s\n' "$results" | awk -F '`' -v cmd="$cmd" '$1 == "- " && $2 == cmd { print }')
+    match=$(printf '%s\n' "$results" | matching_command_result_lines "$cmd")
     if [ -z "$match" ]; then
       fail "required command missing from report (skipped or substituted; must appear verbatim in backticks): $cmd"
     else
@@ -499,6 +523,8 @@ echo coverage-fixture
 go test ./...
 go test -tags integration ./...
 rg -n absence-fixture cmd
+rg -n "ships in v0\.2" cmd
+rg -n 'tab\tmarker' cmd
 ```
 
 ## Expected Non-Zero Commands
@@ -508,6 +534,8 @@ Each declaration is one line: the exact command in backticks, then
 
 - `rg -n absence-fixture cmd` - expected `exit_code: 1` - verifies the fixture absence proof.
   This trailing explanation wraps onto an indented continuation line.
+- `rg -n "ships in v0\.2" cmd` - expected `exit_code: 1`
+- `rg -n 'tab\tmarker' cmd` - expected `exit_code: 1`
 
 - This prose bullet does not open with a backtick and is not a declaration.
 
@@ -559,6 +587,8 @@ EOF
 - \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\` (terminated \`exit_code: 0\`)
 - \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\` (terminated \`exit_code: 0\`)
 - \`rg -n absence-fixture cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
+- \`rg -n "ships in v0\.2" cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
+- \`rg -n 'tab\tmarker' cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
 
 ## Deviations from spec
 
@@ -621,6 +651,22 @@ EOF
     commit -q -m "docs(task): finalize completion report fixture"
   expect "declared expected-non-zero PASS row passes" zero "OUTCOME COMPLETE" "$tmp/clean.md"
   expect "accepted real go test tokens pass" zero "" "$tmp/clean.md"
+  expect "literal backslash-dot command passes declaration lookup and coverage" zero \
+    'required command recorded PASS: rg -n "ships in v0\.2" cmd' "$tmp/clean.md"
+  expect "literal backslash-t command passes declaration lookup and coverage" zero \
+    "OUTCOME COMPLETE" "$tmp/clean.md"
+
+  # Normalizing an escape changes the command and must fail both declaration
+  # lookup and exact required-command coverage.
+  sed 's|v0\\.2|v0.2|' "$tmp/clean.md" > "$tmp/normalized-backslash-dot.md"
+  commit_fixture normalized-backslash-dot.md
+  expect "normalized backslash-dot command is not byte-identical" nonzero \
+    'not declared in the task spec: rg -n "ships in v0.2" cmd' "$tmp/normalized-backslash-dot.md"
+
+  sed 's|tab\\tmarker|tabtmarker|' "$tmp/clean.md" > "$tmp/normalized-backslash-t.md"
+  commit_fixture normalized-backslash-t.md
+  expect "normalized backslash-t command does not satisfy coverage" nonzero \
+    "required command missing from report" "$tmp/normalized-backslash-t.md"
 
   # Every PASS must carry observed termination, not merely an output token.
   sed 's/ (terminated `exit_code: 0`)//' "$tmp/clean.md" > "$tmp/missing-termination.md"
