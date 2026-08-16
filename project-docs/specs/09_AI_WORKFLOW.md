@@ -1381,10 +1381,14 @@ Two standing rules follow from how those literals and controls have failed. An
 exact-output literal required by a spec, QA plan, or decision is transcribed
 from an observed run of that exact command with those exact flags, or stated as
 a semantic pass condition; documentation wording and a sibling flag's output are
-not evidence of what a command prints. A control that parses an artifact section
-is self-tested against every real shape of that section in the repository at the
-time the control lands; a fixture invented for the control only proves the
-control agrees with itself.
+not evidence of what a command prints. The same rule governs a claim about the
+*complete* output — line count, first line, last line, "the whole output is X":
+it is transcribed from the complete observed output, including protocol framing
+the tool always emits, such as stanza headers, separators, and summary lines.
+Pinning the interesting line is not pinning the output. A control that parses
+an artifact section is self-tested against every real shape of that section in
+the repository at the time the control lands; a fixture invented for the control
+only proves the control agrees with itself.
 
 A required-command failure is an immutable failed attempt, not automatically a
 failed task or Human blocker. When its causal repair is inside accepted task

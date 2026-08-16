@@ -1303,3 +1303,42 @@ Human-approved and QA-plan acceptance is next._
 - Triage: TRG-20-013 (BLOCK, escalated as ESC-20-013)
 - Protected category: specification contradiction / quality-gate-definition authority
 - Next human action: resolve ESC-20-013 by recording the accepted go mod why -vendor output literal or an authorized command/spec correction without changing dependencies; then authorize the separate Task 16a report-lint parser repair and renewed Task 16 continuation. No Task 17, Review 6, or Task 18 dispatch may proceed before resolution.
+
+### 2026-08-16 13:19 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-16 12:13 STOP / TRG-20-013 / ESC-20-013
+- Trigger signature: task-16:specification-contradiction:dec-143-go-mod-why-vendor-literal-and-parser-regression
+- Attempt count: 2
+- Checkpoint: branch phase-20 at b37850c; Task 16 product deletion remains committed at afb262d; Task 16 blocker evidence and immutable failed rows remain in task-16-done.md; Task 16a report-lint repair is committed at d9d6add and its report at 73edab0.
+- Resolution evidence: DEC-144 in project-docs/docs/phases/phase-20/decisions.md resolves ESC-20-013. It accepts the observed vendor-mode output from go mod why -vendor -m gopkg.in/yaml.v3 when the whole output is one parenthesized does-not-need line, and defines declaration-line selection for report-lint. The escalation register is empty; no dependency, VAL, command, threshold, assertion, or task boundary changed.
+- Open escalation baseline: none; ESC-20-013 is archived and resolved by DEC-144.
+- Next action: dispatch the new task-16b Developer session, then the second Task 16 same-task continuation, followed by task-17, Review 6, and task-18.
+
+### 2026-08-16 13:24 REPAIR task-16
+
+- Trigger signature: task-16:specification-contradiction:dec-143-go-mod-why-vendor-literal-and-parser-regression
+- Attempt count: 2
+- Starting checkpoint: the 2026-08-16 12:13 STOP for TRG-20-013 / ESC-20-013; Task 16 blocker report commits e09b98c7dc9900d50372da8a5234858ef00d5566 and 1f93513000586dfd339e4ccd3ac03f57f8fc36fe remain preserved.
+- Ending checkpoint: separate Task 16b Developer session completed implementation commit d8388d5c605750694004d446ffdc32f676e1521f and report-finalization commit 8972eaa0fd61a077eb55b9b808295d7566037598.
+- Outcome: RESOLVED
+- Resolution evidence: DEC-144 corrected the accepted vendor-mode go mod why wording and the Task 16b selector-only parser repair now ignores prose, wrapped continuation lines, and non-backtick bullets while preserving declaration grammar. Task 16b's sh -n, self-test, and workflow-lint commands passed with observed termination; its report-lint returned OUTCOME COMPLETE. The prior Task 16 go mod why BLOCKED row remains immutable and the Task 16 continuation must rerun the command in its own session.
+- Next checkpoint: VERIFY the second Task 16 same-task continuation on the committed tree, including the full amended command list and the observed vendor-mode go mod why output.
+
+### 2026-08-16 13:31 TRIAGE TRG-20-014
+
+- Trigger: Task 16's fresh vendor-mode module-absence output includes a module-header line that its current contract declares a real VAL-032 failure.
+- Trigger signature: task-16:specification-contradiction:go-mod-why-vendor-complete-output
+- Attempt count: 1
+- Checkpoint: second Task 16 continuation report commit 8d347a3a959716696472b5432241dcb4f75eb80e is verified; independent go mod why -vendor -m gopkg.in/yaml.v3 terminated exit_code: 0 and emitted a module-header line followed by the DEC-144 parenthesized vendor-mode line; report-lint passed with typed OUTCOME BLOCKED.
+- Verdict: BLOCK (escalated as ESC-20-014)
+- Resolution evidence: DEC-144 corrects the parenthesized vendor-mode wording but Task 16 and the QA plan require the entire output to be one parenthesized does-not-need line and explicitly classify any extra line as a real VAL-032 failure. Accepting the header or changing the complete-output criterion requires protected specification/quality-gate authority; no dependency or command substitution is permitted.
+- Triage log: project-docs/docs/phases/phase-20/triage-log.md entry TRG-20-014 confirmed; escalation project-docs/docs/current/tl_escalations_current.md entry ESC-20-014 confirmed.
+
+### 2026-08-16 13:32 STOP
+
+- Cause: Task 16 is blocked by TRG-20-014: the exact required go mod why -vendor command exits 0 but emits a module-header line in addition to its lawful DEC-144 does-not-need line, and the current contract treats any extra line as a real VAL-032 failure.
+- Task: task-16
+- Triage: TRG-20-014 (BLOCK, escalated as ESC-20-014)
+- Protected category: specification contradiction / quality-gate authority
+- Next human action: resolve ESC-20-014 by reconciling the Task 16 and QA-plan complete-output requirement with the observed two-line vendor-mode result, without changing dependencies, substituting the command, weakening VAL-032, or altering thresholds; then authorize the Task 16 completion and continue to Task 17, Review 6, and Task 18.

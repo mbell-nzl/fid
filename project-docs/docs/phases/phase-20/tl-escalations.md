@@ -8,6 +8,35 @@
 
 ### Resolved
 
+- **ESC-20-014 - DEC-144's replacement complete-output condition was itself
+  unsatisfiable: `go mod why` prints stanzas, and every stanza has a mandatory
+  header (raised 2026-08-16 via `TRG-20-014`; resolved 2026-08-16 by DEC-145).**
+  **Sustained.** The exact required `go mod why -vendor -m gopkg.in/yaml.v3`
+  lawfully emits one two-line stanza — `# gopkg.in/yaml.v3` then
+  `(main module does not need to vendor module gopkg.in/yaml.v3)` — and exits 0.
+  `go help mod why` states that every output stanza begins with a `# package` or
+  `# module` header, so that header is mandatory protocol framing of the answer,
+  not an import-chain line and not a VAL-032 failure. DEC-144 fixed the wording
+  of the salient line and then re-asserted a whole-output claim about an output
+  nobody had counted; that is my drafting failure at one level up, and the third
+  on this single row. The pass condition is now stated as the tool states it:
+  exit 0, exactly one stanza, first non-empty line `# gopkg.in/yaml.v3`, second
+  non-empty line the parenthesized vendor-mode does-not-need result. Any
+  import-path line, any further non-empty line or second stanza header, or a
+  non-zero exit fails. The command, dependencies, module files, coverage
+  threshold, VAL-032 assertion, and failing state are unchanged, and the passing
+  state is now *tighter* because the header literal and the one-stanza bound are
+  pinned. The `BLOCKED` row, the two-line note, `TRG-20-014`, and the ledger
+  `STOP` remain immutable history; the continuation re-records the command from
+  its own session because a result captured elsewhere is `UNVERIFIED`.
+  `task-16a` and `task-16b` are classified as recovery-support slices of Task 16
+  represented by the `REPAIR task-16` ledger entries, so no ledger correction is
+  needed and Task 16 still owes the single `TASK task-16 COMPLETE` event. The
+  third same-task continuation is authorized: distinct trigger signature,
+  material progress at every stop, so `recovery-budget-exhausted` does not apply.
+  Standing rule: a claim about a command's *complete* output is transcribed from
+  the complete observed output, protocol framing included.
+
 - **ESC-20-013 - DEC-143's replacement command required a literal the tool never
   prints, and the amended control parsed prose as declarations (raised
   2026-08-16 via `TRG-20-013`; resolved 2026-08-16 by DEC-144).** Both halves are

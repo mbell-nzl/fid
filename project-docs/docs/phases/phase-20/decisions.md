@@ -1293,6 +1293,10 @@
 ### DEC-144: `go mod why -vendor` proves absence in the tool's own vendor-mode wording; report-lint parses declaration lines, not every line in the section. Closes ESC-20-013
 
 - **Date:** 2026-08-16
+- **Amended by DEC-145 (2026-08-16):** decision 2's complete-output condition is
+  corrected from "one parenthesized line" to the tool's one-stanza protocol,
+  which mandates the `# gopkg.in/yaml.v3` header line, and standing rule 6 is
+  extended to whole-output claims. Everything else stands.
 - **Context:** The Task 16 continuation ran the full DEC-143 command list and
   stopped twice more, both times on my drafting, not on its work.
   (1) `go mod why -vendor -m gopkg.in/yaml.v3` terminated `exit_code: 0` and
@@ -1390,6 +1394,116 @@
   `validate_expected_nonzero_declarations`, self-test);
   `project-docs/templates/task-spec-template.md`;
   `project-docs/specs/09_AI_WORKFLOW.md` §8; DEC-139; DEC-143.
+
+### DEC-145: `go mod why` prints stanzas, so VAL-032's evidence is one stanza with its mandatory module header, not one line. Closes ESC-20-014
+
+- **Date:** 2026-08-16
+- **Amends DEC-144 decision 2 only.** DEC-144's root-cause attribution and every
+  other clause stand, including both standing rules, the report-lint declaration
+  grammar, and the unchanged command.
+- **Context:** The second Task 16 continuation ran the exact required
+  `go mod why -vendor -m gopkg.in/yaml.v3`. It terminated `exit_code: 0` and
+  printed **two** lines:
+
+  ```text
+  # gopkg.in/yaml.v3
+  (main module does not need to vendor module gopkg.in/yaml.v3)
+  ```
+
+  DEC-144 decision 2, `task-16.md`, and the QA plan all require the command's
+  *entire* output to be one parenthesized `does not need` line and declare any
+  additional line a real VAL-032 failure. `go help mod why` states that the
+  command prints a stanza per named argument and that **every stanza begins with
+  a `# package` or `# module` header line**. The header is therefore mandatory
+  protocol framing of the tool's answer, not an import-chain line and not
+  evidence that anything imports the module. My replacement complete-output
+  condition was itself unsatisfiable for the command it governs: DEC-144 fixed
+  the wording of the salient line and then re-asserted a whole-output claim about
+  an output nobody had counted. This is the same drafting failure at one level
+  up, and it is mine for the third time on this row.
+- **Decision:**
+  1. `TRG-20-014` is **sustained**. This was not a decision-free Task 16 repair:
+     rewriting an accepted complete-output failure criterion is quality-gate and
+     specification authority. The Developer correctly refused to substitute the
+     command, touch the migration dependency, edit module files, or reformat a
+     truthful two-line result, and the blocker report names the contradiction
+     exactly.
+  2. **The command is unchanged; its complete-output criterion is corrected to
+     the tool's stanza protocol.** `go mod why -vendor -m gopkg.in/yaml.v3`
+     passes when **all** of the following hold:
+     - it terminates `exit_code: 0`;
+     - its output is **exactly one stanza**;
+     - the first non-empty line is exactly `# gopkg.in/yaml.v3`;
+     - the second non-empty line is the parenthesized vendor-mode does-not-need
+       result, on this toolchain
+       `(main module does not need to vendor module gopkg.in/yaml.v3)` (the
+       non-vendor wording `(main module does not need module gopkg.in/yaml.v3)`
+       remains equally lawful if a future toolchain prints it for this command).
+
+     It **fails** when any import-path line appears, when any further non-empty
+     line or a second stanza header appears, or when it terminates non-zero. A
+     failure is a real VAL-032 failure and a blocker candidate, never a notation
+     question.
+  3. **Assertion strength is unchanged and marginally sharper.** The failing
+     state is identical — an import path proves the module is in the main
+     module's package graph — and the passing state now also pins the header
+     literal and the one-stanza bound, so a truncated, merged, or multi-module
+     result cannot pass unnoticed. Nothing about VAL-032's assertion, its
+     `go.mod` requirement half, the dependency budget, the migration dependency,
+     the coverage threshold, the review triggers, or the module files changes.
+  4. **The already-observed Task 16 result satisfies the corrected condition.**
+     The `BLOCKED` row for this command and the `ESC-20-014` / `TRG-20-014`
+     evidence remain immutable history in `task-16-done.md`, the triage log, and
+     the run ledger; none of it is edited or reinterpreted in place. Because a
+     result not captured in the session that records it is `UNVERIFIED`, the
+     continuation re-records the command from its own run.
+  5. **`task-16a` and `task-16b` are recovery-support slices of Task 16, not
+     independent tasks.** The Phase Runner represented them with `REPAIR task-16`
+     ledger entries (2026-08-16 12:03 `MATERIAL-PROGRESS`; 2026-08-16 13:24
+     `RESOLVED`) rather than separate `TASK <id> COMPLETE` events. **That
+     convention is accepted as recorded and the ledger needs no correction
+     entry.** Both slices carry their own spec and committed report
+     (`task-16a` `d9d6add` / `73edab0`; `task-16b` `d8388d5` / `8972eaa`), both
+     are scoped to `report-lint.sh` and its self-test, and neither adds or owns a
+     product `VAL`. Task 16's own `TASK task-16 COMPLETE` event is still owed and
+     is the only completion event for this row; phase wrap-up audits `16a`/`16b`
+     through the `REPAIR task-16` entries.
+  6. **The Task 16 same-task continuation is authorized now**, on the unchanged
+     tree at `afb262d`, with the unchanged twelve-command list. It is the third
+     continuation of this task and its trigger signature
+     (`task-16:specification-contradiction:go-mod-why-vendor-complete-output`) is
+     distinct from both predecessors. `recovery-budget-exhausted` does **not**
+     apply: each stop had a different root cause, each produced material
+     progress, and every stop was caused by a defect in my drafting or in a
+     control, never by the task's work. Required verification is unchanged: run
+     every command in this session, record each with its own verbatim token and
+     observed termination, keep every immutable failed attempt with its deviation
+     note, add a deviation note citing DEC-145 for this row, and finalize the
+     report to `OUTCOME COMPLETE` with report-lint passing.
+  7. **DEC-144's standing rule 6 is extended to whole-output claims.** When a
+     spec, QA plan, or decision constrains a command's *complete* output — line
+     count, first line, last line, "whole output is X" — that constraint is
+     transcribed from the complete observed output of that exact command with
+     those exact flags, including protocol framing the tool always emits
+     (stanza headers, separators, summary lines). Pinning the interesting line
+     is not pinning the output. Where the framing is not known from an observed
+     run, state a semantic pass condition instead.
+  8. No product behavior, contract, schema, dependency, VAL assertion, VAL
+     window, threshold, review trigger, or task boundary changes. `afb262d`,
+     `d9d6add`, and `d8388d5` all stand, and DEC-143 and DEC-144 remain in force
+     as amended.
+- **Consequences:** Phase Runner resumes at the Task 16 same-task continuation,
+  then Task 17, Review 6, Task 18. `task-16.md`, `qa/qa-plan.md`, and the
+  VAL-032 revision log carry the corrected stanza criterion; `09_AI_WORKFLOW.md`
+  §8 carries the extended standing rule so the next author states a whole-output
+  claim only from an observed whole output.
+- **Refs:** `TRG-20-014`; `ESC-20-014`; `tasks/task-16.md`;
+  `tasks/task-16-done.md` (`OUTCOME BLOCKED` row and its two-line note);
+  `tasks/task-16a.md`; `tasks/task-16b.md`; `qa/qa-plan.md` §5 and the
+  feasibility table; `qa/validation-contract.md` VAL-032 and its revision log;
+  `run-ledger.md` 2026-08-16 12:03 and 13:24 `REPAIR task-16`, 13:31 `TRIAGE
+  TRG-20-014`, 13:32 `STOP`; `project-docs/specs/09_AI_WORKFLOW.md` §8;
+  DEC-143; DEC-144.
 
 ## Spec Sync Verdict
 

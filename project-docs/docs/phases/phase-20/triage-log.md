@@ -15,6 +15,7 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-014 | 2026-08-16 | Task 16's fresh vendor-mode module-absence output includes a module-header line that its current contract declares a real VAL-032 failure | `tasks/task-16-done.md`; attached independent command and report-lint evidence | BLOCK | ESC-20-014 | DEC-144 corrects the parenthesized vendor-mode wording but leaves the mandatory module-header line outside Task 16's one-line complete-output pass condition; reconciling that protected specification/quality-gate contract is required before Task 16 can resume. |
 | TRG-20-013 | 2026-08-16 | Task 16 cannot satisfy DEC-143's exact `go mod why -vendor` output literal; amended report-lint rejects valid declaration explanations | `tasks/task-16-done.md`; attached commit and command evidence | BLOCK | ESC-20-013 | DEC-143's replacement build-graph command has a documented exact-literal contradiction with the observed Go output; correcting that protected specification/quality-gate authority conflict is required before the separate parser regression can be a local repair. |
 | TRG-20-010 | 2026-08-15 | Task 10 blocker report, focused suite failure, and report-lint failure | `tasks/task-10-done.md`; attached failure output | BLOCK | ESC-20-010 | Genuine unresolved product-facing command-test, required-gate, and report-lint failures; no verified corrective commit or accepted exception applies. |
 | TRG-20-009 | 2026-08-12 | Review 3 returned three unresolved Task 9 evidence findings | `qa/review-3.md` | BLOCK | ESC-20-009 | Genuine unresolved QA Blocking findings; supplied review verification and integration PASS do not resolve missing deterministic evidence matrices. |
@@ -28,6 +29,45 @@
 | TRG-20-001 | 2026-08-09 | QA Review 1 has two unresolved Blocking evidence gaps before Task 4 can start | `qa/review-1.md` | BLOCK | ESC-20-001 | VAL-002 and VAL-043 lack required exhaustive boundary evidence across Tasks 1-3. |
 
 ---
+
+## TRG-20-014 - Task 16's complete-output rule conflicts with the observed vendor-mode result
+
+- **Trigger:** the second Task 16 continuation's fresh `go mod why -vendor`
+  output has an extra module-header line, while the current Task 16/DEC-144
+  contract treats any extra line beyond one parenthesized does-not-need line as
+  a real VAL-032 failure.
+- **Trigger signature:** `task-16:specification-contradiction:go-mod-why-vendor-complete-output`
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-16-done.md`;
+  attached independent `go mod why -vendor -m gopkg.in/yaml.v3` and report-lint
+  evidence; attached verification for `8d347a3a959716696472b5432241dcb4f75eb80e`
+  and `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`.
+- **Candidate:** blocker candidate
+- **Attempt count:** 2 same-task continuations for this Task 16 control;
+  the complete-output contradiction is newly exposed by the second.
+- **Checkpoint:** Product deletion is committed at `afb262d`; the report update
+  is committed at `8d347a3`; independent report-lint exits 0 with
+  `OUTCOME BLOCKED`. The fresh exact command exits 0 with two lines:
+  `# gopkg.in/yaml.v3` followed by the DEC-144 vendor-mode does-not-need line.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-144 resolves the earlier parenthesized-line wording
+  conflict only. Task 16 and the QA plan still require the *whole output* to be
+  one parenthesized line and declare any extra line a real VAL-032 failure.
+  The tool's module-header line therefore leaves a binding output-contract
+  contradiction; accepting it, changing the command/evidence, or weakening
+  the assertion requires protected specification/quality-gate authority.
+- **Local decisions made:** none.
+- **Resolution evidence:** No recorded decision accepts the documented
+  two-line vendor-mode result. The attached commit verification establishes the
+  blocker report and product state, not resolution of the contradiction.
+- **If BLOCK:** category specification contradiction / quality-gate authority;
+  ESC-20-014 raised in `tl_escalations_current.md`; resolution condition: full
+  Tech Lead reconciles the Task 16, QA-plan, and DEC-144 evidence contract
+  without weakening VAL-032, then directs the same-task continuation.
+- **Human attention required:** yes.
+- **References:** `tasks/task-16.md:121-128`; `tasks/task-16-done.md:5-10`,
+  `73-87`, `96-100`; `decisions.md` DEC-144; `qa/qa-plan.md:167`;
+  `qa/validation-contract.md:55,97`; `project-docs/specs/09_AI_WORKFLOW.md`
+  §§2.3, 9.
 
 ## TRG-20-010 - Task 10 partial migration has unresolved command and report-gate failures
 

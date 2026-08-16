@@ -5,16 +5,19 @@
 Delete `internal/format`, the format-matrix suite, and `gopkg.in/yaml.v3`, then
 add source/module guards that keep universal serialization removed.
 
-## Continuation Status (DEC-143, DEC-144)
+## Continuation Status (DEC-143, DEC-144, DEC-145)
 
 The deletion work is **done and committed** at
 `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`
 (`refactor(cli): remove universal formatter framework`). The task has stopped
-twice, both times because a control or a spec literal rejected truthful
-evidence, never because the work was incomplete. `ESC-20-012` (DEC-143) and
-`ESC-20-013` (DEC-144) resolved every cause. This is the **second same-task
-continuation**, not a fresh start, and it runs after `task-16b` repairs the
-report-lint declaration parser.
+three times, every time because a control or a spec literal rejected truthful
+evidence, never because the work was incomplete. `ESC-20-012` (DEC-143),
+`ESC-20-013` (DEC-144), and `ESC-20-014` (DEC-145) resolved every cause. This is
+the **third same-task continuation**, not a fresh start, and it runs after
+`task-16b` (`d8388d5`) repaired the report-lint declaration parser.
+`task-16a` and `task-16b` are recovery-support slices of this task, recorded as
+`REPAIR task-16` ledger entries; the only `TASK task-16 COMPLETE` event is the
+one this continuation earns (DEC-145).
 
 Preserved as immutable failed attempts in `task-16-done.md`:
 
@@ -24,10 +27,11 @@ Preserved as immutable failed attempts in `task-16-done.md`:
   the two replacement commands below beside it.
 - All three report-lint failures (13, 26, and 6 failures). Keep them; the last
   two were control defects that DEC-143 and DEC-144 fixed, not report defects.
-- The `BLOCKED` row for `go mod why -vendor -m gopkg.in/yaml.v3` with the
-  observed `exit_code: 0` and its vendor-mode line. **DEC-144 corrected the
-  literal, not the evidence:** that observed output is a lawful pass, and this
-  session re-records the command from its own run.
+- Both `BLOCKED` rows for `go mod why -vendor -m gopkg.in/yaml.v3` with their
+  observed `exit_code: 0`, vendor-mode line, and two-line note. **DEC-144 and
+  DEC-145 corrected the literal and then the complete-output rule, not the
+  evidence:** that observed two-line output is a lawful pass, and this session
+  re-records the command from its own run.
 
 What changes here: run the amended command list in **this** session, record
 this session's own tokens for every command, and finalize the report. A result
@@ -68,8 +72,9 @@ though the product tree is unchanged since `afb262d`.
 ### Files To Read For Context
 
 - `../contracts.md` sections 5.1 and 5.3; PRD-FOUND-006.
-- `../decisions.md` DEC-143 (VAL-032 authority and the absence-command notation)
-  and DEC-144 (the corrected `go mod why -vendor` pass condition).
+- `../decisions.md` DEC-143 (VAL-032 authority and the absence-command notation),
+  DEC-144 (the corrected `go mod why -vendor` line wording), and DEC-145 (the
+  corrected one-stanza complete-output criterion).
 
 ### Out Of Scope
 
@@ -119,13 +124,24 @@ The last five are the QA plan's Task 16 absence gates; they are required here so
 the spec lists the full gate. `-vendor` excludes tests of dependencies, which is
 exactly the boundary being asserted.
 
-`go mod why -vendor -m gopkg.in/yaml.v3` passes when it exits 0 and its whole
-output is one parenthesized `does not need` line naming the module. Under
-`-vendor` the Go tool prints
-`(main module does not need to vendor module gopkg.in/yaml.v3)`; the non-vendor
-wording `(main module does not need module gopkg.in/yaml.v3)` is equally lawful
-(DEC-144). Record the line you actually observe as the token. An import chain,
-any extra line, or a non-zero exit is a **real VAL-032 failure**.
+`go mod why` prints one **stanza** per named argument and every stanza opens with
+a `# package` or `# module` header line, so the lawful complete output here is
+two lines, not one (DEC-145).
+`go mod why -vendor -m gopkg.in/yaml.v3` **passes** when all of these hold:
+
+- it terminates `exit_code: 0`;
+- its output is exactly one stanza;
+- the first non-empty line is exactly `# gopkg.in/yaml.v3`;
+- the second non-empty line is the parenthesized vendor-mode does-not-need
+  result — on this toolchain
+  `(main module does not need to vendor module gopkg.in/yaml.v3)`, with the
+  non-vendor wording `(main module does not need module gopkg.in/yaml.v3)`
+  equally lawful (DEC-144).
+
+Record the parenthesized line you actually observe as the token, and note the
+header line beside it. It **fails** on any import-path line, any further
+non-empty line or second stanza header, or a non-zero exit; each of those is a
+**real VAL-032 failure**.
 
 List any conditional command required by this task and why:
 
@@ -152,11 +168,13 @@ Each declaration is one line: the exact command in backticks, then
   with nothing after the closing parenthesis. Put any explanation on the next
   indented line.
 - If `go mod why -vendor` prints an import chain instead of the
-  `does not need` line, that is a **real VAL-032 failure**: record it, stop, and
+  `does not need` line, or prints a further non-empty line or a second stanza
+  header after it, that is a **real VAL-032 failure**: record it, stop, and
   raise a blocker candidate. Do not substitute another command, and do not touch
-  the migration dependency. A `does not need` line whose wording differs from
-  both forms above is a notation question, not a failure: record it verbatim as
-  `PASS` and add a note.
+  the migration dependency. The `# gopkg.in/yaml.v3` header is required stanza
+  framing, not an extra line (DEC-145). A `does not need` line whose wording
+  differs from both forms above is a notation question, not a failure: record it
+  verbatim as `PASS` and add a note.
 - Before finalizing, you may run
   `project-docs/tools/report-lint.sh <report> <spec>` against the committed
   report as a self-check. It is not a gate row here and the Phase Runner still
