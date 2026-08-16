@@ -1,5 +1,14 @@
 # Phase 20 - Task 3f: Dedicated integration package and gate migration - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: The MF-01 report-only repair records fresh terminating evidence for every exact Task 3f command, preserves historical failed and UNVERIFIED evidence, and completes canonical report conformance.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added a source-level classification regression that requires exactly four
@@ -52,18 +61,19 @@
 ## Tests run
 
 - `go test -tags integration ./cmd/fid/integration` - EXPECTED RED - `FAIL`.
-- `go test -tags integration -run '^TestIntegrationClassification$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.007s`.
+- `go test -tags integration -run '^TestIntegrationClassification$' ./cmd/fid/integration` - UNVERIFIED - Historical focused-test token retained from the original report without an observed termination; this report-only continuation did not rerun the non-required focused command.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3f-done.md project-docs/docs/phases/phase-20/tasks/task-3f.md` - FAIL - `FAIL report-lint found 27 failure(s)` (terminated `exit_code: 27`)
 
 ## Exact quality-gate results
 
-- `project-docs/tools/workflow-lint.sh` - PASS - `PASS workflow-lint completed with no failures`.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	(cached)`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+- `project-docs/tools/workflow-lint.sh` - PASS - `PASS workflow-lint completed with no failures` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration	(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -75,6 +85,13 @@
 - The task scope named only `qa-plan-template.md` and the Phase Runner template,
   but `final-review-template.md` is also an active canonical gate surface. It
   was updated to avoid reintroducing the retired repository-wide command.
+- The MF-01 pre-repair report-lint invocation failed with `FAIL report-lint
+  found 27 failure(s)` (terminated `exit_code: 27`). Root cause: this
+  historical report lacked the canonical typed workflow outcome and current
+  evidence-row syntax. This report-only continuation adds fresh terminating
+  evidence for every required command, retains the historical expected-red and
+  marks the prior focused PASS without captured termination as UNVERIFIED; it
+  changes no task command, product behavior, test, assertion, or validator.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
