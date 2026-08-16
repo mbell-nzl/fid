@@ -1,5 +1,14 @@
 # Phase 20 - Task 3e: Production initialization benchmark - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: The MF-01 report-only repair records fresh terminating evidence for every exact Task 3e command, and the repaired report passes the canonical checker.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added `BenchmarkInitializeWorkspace`, which exercises the complete production
@@ -33,18 +42,18 @@
 
 - `rg -n '^func BenchmarkInitializeWorkspace' internal/bootstrap` - EXPECTED
   RED - `exit 1 (no output)`.
-- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3e-done.md project-docs/docs/phases/phase-20/tasks/task-3e.md` - FAIL - `FAIL report-lint found 25 failure(s)` (terminated `exit_code: 25`)
+- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.588s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
-- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.539s`.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS -
-  `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+- `go test -run '^$' -bench '^BenchmarkInitializeWorkspace$' -benchmem -count=3 ./internal/bootstrap` - PASS - `ok  	github.com/mbell-nzl/fid/internal/bootstrap	3.588s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -54,6 +63,12 @@
   result bullet. The report formatting was corrected without changing any
   command, result, test, assertion, or validator; the byte-identical lint
   command is rerun after this correction is committed.
+- The MF-01 pre-repair report-lint run failed with `FAIL report-lint found 25
+  failure(s)` (terminated `exit_code: 25`). Root cause: this historical report
+  lacked the canonical typed workflow outcome and current evidence-row syntax.
+  This report-only continuation adds current-session terminating evidence and
+  preserves the prior expected-red evidence and deviations without changing any
+  task command, product behavior, test, assertion, or validator.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
