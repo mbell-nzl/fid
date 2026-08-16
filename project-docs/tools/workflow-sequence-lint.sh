@@ -346,6 +346,9 @@ function finish_event() {
   if (event_strict && event == "") {
     invalid("unrecognized or malformed event heading")
   }
+  if (event_directive_v2 && event != "" && !event_heading_canonical) {
+    invalid(event " must use its canonical heading shape")
+  }
   if (stop_entry_pending && event != "" && event != "STOP") {
     invalid("TRIAGE BLOCK must be followed by STOP before " event)
   }
@@ -1181,6 +1184,7 @@ function finish_event() {
   event_run_end_complete = ""
   event_human_checklist = ""
   event_wrapup_ready = ""
+  event_heading_canonical = 0
   event_contract_count = 0
   event_directive_schema_count = 0
   event_trigger_count = 0
@@ -1248,31 +1252,54 @@ function finish_event() {
 
 /^### / {
   finish_event()
+  heading_prefix_canonical = $1 == "###" &&
+    $2 ~ /^[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/ &&
+    $3 ~ /^[0-9][0-9]:[0-9][0-9]$/
   if ($4 == "TASK-RECOVERY") {
     event = "TASK-RECOVERY"
     event_task = $5
+    event_heading_canonical = heading_prefix_canonical && NF == 5 &&
+      $0 == "### " $2 " " $3 " " $4 " " $5
   } else if ($4 == "REPAIR") {
     event = "REPAIR"
     event_task = $5
+    event_heading_canonical = heading_prefix_canonical && NF == 5 &&
+      $0 == "### " $2 " " $3 " " $4 " " $5
   } else if ($4 == "TASK" && $6 == "COMPLETE") {
     event = "TASK-COMPLETE"
     event_task = $5
+    event_heading_canonical = heading_prefix_canonical && NF == 6 &&
+      $0 == "### " $2 " " $3 " TASK " $5 " COMPLETE"
   } else if ($4 == "REVIEW") {
     event = "REVIEW"
     event_id = $5
+    event_heading_canonical = heading_prefix_canonical && NF == 5 &&
+      $0 == "### " $2 " " $3 " REVIEW " $5
   } else if ($4 == "TRIAGE") {
     event = "TRIAGE"
     event_id = $5
+    event_heading_canonical = heading_prefix_canonical && NF == 5 &&
+      $0 == "### " $2 " " $3 " TRIAGE " $5
   } else if ($4 == "STOP") {
     event = "STOP"
+    event_heading_canonical = heading_prefix_canonical && NF == 4 &&
+      $0 == "### " $2 " " $3 " STOP"
   } else if ($4 == "RUN-RESUME") {
     event = "RUN-RESUME"
+    event_heading_canonical = heading_prefix_canonical && NF == 4 &&
+      $0 == "### " $2 " " $3 " RUN-RESUME"
   } else if ($4 == "RUN-START") {
     event = "RUN-START"
+    event_heading_canonical = heading_prefix_canonical && NF == 4 &&
+      $0 == "### " $2 " " $3 " RUN-START"
   } else if ($4 == "RUN-END") {
     event = "RUN-END"
+    event_heading_canonical = heading_prefix_canonical && NF == 4 &&
+      $0 == "### " $2 " " $3 " RUN-END"
   } else if ($4 == "CORRECTION") {
     event = "CORRECTION"
+    event_heading_canonical = heading_prefix_canonical && NF == 4 &&
+      $0 == "### " $2 " " $3 " CORRECTION"
   } else {
     event = ""
   }
@@ -1611,7 +1638,7 @@ if [ "$heading_count" -ne 1 ]; then
   echo "INVALID append candidate must contain exactly one event heading" >&2
   exit 1
 fi
-if sed -n '1p' "$candidate" | grep -Eq ' RUN-(START|RESUME)$'; then
+if awk 'NR == 1 { exit !($4 == "RUN-START" || $4 == "RUN-RESUME") }' "$candidate"; then
   contract_count=$(grep -c '^- Sequence contract: v2$' "$candidate" || true)
   schema_count=$(grep -c '^- Recovery directive schema: v2$' "$candidate" || true)
   if [ "$contract_count" -ne 1 ] || [ "$schema_count" -ne 1 ]; then

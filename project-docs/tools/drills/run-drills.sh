@@ -200,6 +200,23 @@ run_invalid_sequence() {
   fi
 }
 
+run_invalid_append() {
+  label=$1
+  match=$2
+  ledger=$3
+  candidate=$4
+  before="$workspace/invalid-append.before"
+  cp "$ledger" "$before"
+  output=$("$sequence_lint" "$ledger" --append-stdin < "$candidate" 2>&1)
+  code=$?
+  if [ "$code" -ne 0 ] && printf '%s\n' "$output" | grep -qF "$match" &&
+     cmp -s "$before" "$ledger"; then
+    drill_pass "$label"
+  else
+    drill_fail "$label (exit=$code, output=$output)"
+  fi
+}
+
 run_control_scope() {
   label=$1
   want=$2
@@ -1139,6 +1156,40 @@ if [ "$v1_append_code" -ne 0 ] && \
 else
   drill_fail "drill-18 transactional RUN schema adoption (exit=$v1_append_code, output=$v1_append_output)"
 fi
+
+canonical_resume_candidate="$workspace/canonical-resume-candidate.md"
+cat > "$canonical_resume_candidate" <<'EOF'
+### 2026-08-15 12:02 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: prior Runner
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: unchanged
+- Resolution evidence: unchanged
+- Resolution authority: N/A
+- Continuing task: task-17
+- Next recovery: N/A
+EOF
+
+trailing_v1_run="$workspace/trailing-v1-run-candidate.md"
+sed -e '1s/$/ trailing-token/' \
+    -e 's/^- Recovery directive schema: v2$/- Recovery directive schema: v1/' \
+  "$canonical_resume_candidate" > "$trailing_v1_run"
+run_invalid_append "drill-18 trailing RUN token cannot bypass append-time v2 adoption" \
+  "every newly appended RUN" "$v1_append_ledger" "$trailing_v1_run"
+
+trailing_v2_run="$workspace/trailing-v2-run-candidate.md"
+sed '1s/$/ trailing-token/' "$canonical_resume_candidate" > "$trailing_v2_run"
+run_invalid_append "drill-18 schema v2 RUN rejects a trailing heading token" \
+  "must use its canonical heading shape" "$v1_append_ledger" "$trailing_v2_run"
+
+whitespace_v2_run="$workspace/whitespace-v2-run-candidate.md"
+sed '1s/$/ /' "$canonical_resume_candidate" > "$whitespace_v2_run"
+run_invalid_append "drill-18 schema v2 RUN rejects trailing heading whitespace" \
+  "must use its canonical heading shape" "$v1_append_ledger" "$whitespace_v2_run"
 
 ordinary_phase="$workspace/ordinary-triage/phase-1"
 mkdir -p "$ordinary_phase"
