@@ -2,7 +2,7 @@
 
 **Date:** 2026-08-16  
 **Owner:** Recovery super-agent  
-**Status:** Implementation complete; final independent re-review pending
+**Status:** Complete; independently reviewed and ready for Phase Runner handoff
 **Baseline:** `phase-20` at `7c74edc`; the append-only Phase 20 ledger is
 `STOPPED` at `TRG-20-015` / `ESC-20-015`.
 
@@ -64,7 +64,7 @@ implementation with a change to the protected gate definition and emitted
   archive ESC-20-015, append validated RUN-RESUME / recovery events, finalize
   Task 17's report from unchanged evidence at `0c1094c`, and left the ledger
   `ADVANCEABLE` with Review 6 next.
-- [ ] **P5 - Independent adversarial review.** Ask an agent that did not
+- [x] **P5 - Independent adversarial review.** Asked agents that did not
   implement the repair to probe literal edge cases, unsafe gate weakening,
   cross-scope ownership, recovery budgets, ledger sequencing, and generated
   prompt drift. Initial verdict `REPAIR`: the reviewer reproduced missing
@@ -100,12 +100,15 @@ implementation with a change to the protected gate definition and emitted
   exact-one typed fields, parses unique original TRGs and unique decision
   amendments separately, binds ordinary TRIAGE identity, and validates every
   decision citation plus typed STOP resolution authority. Dedicated negative
-  drills reproduce each bypass. Final independent re-review remains required
-  before this item closes.
-- [ ] **P6 - Exact verification and handoff.** Run all workflow gates and the
-  relevant repository gate, capture exact termination, commit the final review,
-  and provide a copy-paste Phase Runner restart prompt with branch, HEAD,
-  ledger state, and first required action.
+  drills reproduce each bypass. The final fresh bounded review at `2b93a041`
+  returned `PASS` with no repair findings; its durable report is
+  `2026-08-16-esc-20-015-final-independent-review.md`.
+- [x] **P6 - Exact verification and handoff.** Ran all workflow gates and the
+  relevant repository gate, captured exact termination, committed the final review,
+  and prepared a copy-paste Phase Runner restart prompt with branch, final
+  closeout HEAD, ledger state, and first required action. The disposable
+  handoff rehearsal appended the full schema-v2 normal `RUN-RESUME` and
+  remained `VALID state=ADVANCEABLE`.
 
 ## Required Verification
 
