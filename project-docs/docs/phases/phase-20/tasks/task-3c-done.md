@@ -1,10 +1,20 @@
 # Phase 20 - Task 3c: Integration-journey convergence and honest gate baseline - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added explicit rejected `executor_limits.max_excerpt_bytes` rows for zero, negative, over-`MaxInt64`, float, and quoted values.
 - Converged all three binary-driven integration initializations on the accepted explicit `--prefix FID` form, preserving their scenarios and assertions.
 - No product code changed. Derived-prefix rejection remains contract-correct, and the accepted `runInitCommand` `--prefix FID` injection remains unchanged.
+- Report-only continuation: added the canonical workflow disposition and current-session gate termination evidence required by MF-01, without changing product, tests, task scope, or historical evidence.
 
 ## Files created or modified
 
@@ -39,18 +49,21 @@
 - Repaired real-entrypoint journeys: `go test -tags integration -race ./cmd/fid -run 'TestV01ClosureJourneyAndRebuildParity|TestV02aWorkflowAuthoringExitScenarioAndRebuildParity|TestMaintenanceCheckReportsIncompatibleWorkflowAssignment' -count=1 -v` — PASS — `ok   github.com/mbell-nzl/fid/cmd/fid 10.675s`.
 - Binary-init fixture sweep: `rg -n -U '(?:RunFID|runFID|closureRunFID)\\([\\s\\S]{0,180}"init"' cmd/fid --glob '*_test.go'` — PASS — final matching line: `cmd/fid/e2e_v01_closure_test.go:19:\tclosureRunFID(t, binary, workspace, "init", "--prefix", "FID")`.
 
+- MF-01 initial report conformance check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3c-done.md project-docs/docs/phases/phase-20/tasks/task-3c.md` - FAIL - `FAIL report-lint found 21 failure(s)` (terminated `exit_code: 21`).
+- Current provenance verification: `git log --oneline -S 'TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename' -- cmd/fid` - PASS - `cd53c43 feat(project): add strict project selection config` (terminated `exit_code: 0`).
+
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)`.
-- `golangci-lint run ./...` — PASS — `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok   github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` — PASS — `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./...` — PASS — `ok   github.com/mbell-nzl/fid/internal/format	1.059s`.
-- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`).
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`).
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
 
 ## Deviations from spec
 
-- None.
+- None. The initial canonical report-lint failure is preserved above as MF-01 repair evidence; this continuation changed only the completion report and reran the exact Task 3c commands.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
