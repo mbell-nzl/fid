@@ -120,9 +120,9 @@
   failure(s)` (terminated `exit_code: 1`) because its Go-test token guard does
   not accept the optional JSON timing-event row. The timing observation remains
   recorded in this deviation; removing that non-required row is the report
-  repair. The byte-identical report-lint command will be rerun against this
-  committed correction and must return `OUTCOME RECOVERY_REQUIRED` with
-  `exit_code: 0`.
+  repair. The byte-identical report-lint rerun returned `OUTCOME
+  RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`
+  (terminated `exit_code: 0`) against the committed correction.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
