@@ -101,8 +101,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `20813fc1052d0730113c3b1a2a2716a8a94a8488`
 
 ## Commit subject
 
-- Pending commit
+- `docs(task): record Task 16 completion evidence`
