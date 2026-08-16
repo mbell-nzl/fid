@@ -109,8 +109,10 @@ event, or separately mutate the ledger with
 append transaction, not an action router; `workflow-route.sh` remains
 authoritative for the next action. Run the tool without `--append-stdin` when
 reading current state, and require literal `VALID state=ADVANCEABLE` before an
-actual advance. The validator mechanically
-keeps task identity across continuation,
+actual advance. A v2 ledger with no v1 directive marker is invalid. After the
+marker, the validator binds typed recovery authority/budget to the latest
+same-trigger TRIAGE and rejects STOP without a preceding TRIAGE BLOCK and
+concrete ESC. It mechanically keeps task identity across continuation,
 requires `TASK-RECOVERY -> REPAIR -> TASK COMPLETE`, and prevents QA repair
 from closing without a differently identified review whose `Re-review of:`
 field names the original review. A linked re-review may transfer repair
@@ -194,7 +196,9 @@ Use the Developer-recorded commits for `<base>`/`<head>` and the directive's
 exact paths for `<allowed...>`. Product, spec, prompt, template, dependency,
 task, QA-contract, generated, and report files are forbidden. Necessary
 provider sync is a separate authorized maintenance action, not part of the
-isolated commit. After scope PASS, append `REPAIR` with that evidence and
+isolated commit. Require `<head>` to equal checked-out `HEAD`, a clean
+index/worktree, and regular-file allowlisted artifacts; later commits, dirty
+state, symlinks, and gitlinks fail. After scope PASS, append `REPAIR` with that evidence and
 dispatch an ordinary same-task continuation to rerun the originating exact
 verification and update its report while preserving the original failure. Any
 ambiguity or forbidden semantic/definition change is a protected blocker

@@ -392,8 +392,12 @@ Responsibilities:
     append transaction does not choose
     the next action; `workflow-route.sh` does. Run it without `--append-stdin`
     to read current state, and require literal `VALID state=ADVANCEABLE` before
-    an actual advance. It preserves task identity and requires recovery
-    completion plus an explicitly linked, differently identified QA re-review.
+    an actual advance. A v2 ledger with no v1 recovery-directive marker is
+    invalid. After the marker, the validator requires complete typed recovery
+    authority/budget fields, binds control-conformance authority to the latest
+    same-trigger TRIAGE, and rejects STOP without a preceding TRIAGE BLOCK and
+    concrete ESC. It preserves task identity and requires recovery completion
+    plus an explicitly linked, differently identified QA re-review.
     A linked re-review may transfer repair ownership to another task only after
     the current owner completes; it cannot overwrite an unresolved owner. An
     `INVALID` candidate is recoverable while the ledger remains valid. A
@@ -502,9 +506,12 @@ project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed.
 Here `<base>` and `<head>` are the Developer-recorded commits and `<allowed...>`
 is the directive's exact tools-only allowlist. Product, spec, prompt, template,
 dependency, task, QA-contract, and originating-report paths are forbidden in
-that commit. A necessary provider sync is a separate authorized maintenance
-step, never part of the isolated control-repair commit. The runner does not
-advance or ask the Human. After the scope check passes, it appends `REPAIR` and
+that commit. The scope check also requires the claimed repair commit to be the
+checked-out `HEAD`, a clean index/worktree, and regular-file control artifacts;
+later commits, dirty state, symlinks, and gitlinks fail. A necessary provider
+sync is a separate authorized maintenance step, never part of the isolated
+control-repair commit. The runner does not advance or ask the Human. After the
+scope check passes, it appends `REPAIR` and
 dispatches an ordinary same-task continuation to rerun the originating exact
 verification and update the originating report while preserving the first
 failure. If either Developer discovers ambiguity or needs any forbidden

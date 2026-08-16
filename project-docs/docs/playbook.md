@@ -97,8 +97,11 @@ project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed.
 ```
 
 Only after that check passes does the ordinary same-task continuation rerun the
-originating verification and update its report. Ambiguity or any definition
-change is `BLOCK`; canonical location or ordinary task-file scope alone is not.
+originating verification and update its report. The claimed repair commit must
+be checked-out `HEAD`, the tree clean, and allowlisted controls regular files;
+later commits, dirty state, symlinks, and gitlinks fail. Ambiguity or any
+definition change is `BLOCK`; canonical location or ordinary task-file scope
+alone is not.
 
 Record recovery in the append-only run ledger. Submit each single event to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
@@ -109,11 +112,16 @@ duplication. Do not mutate the ledger separately.
 
 1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
    checkpoint, repair mode/authority, allowed files, and next action. New runs
-   use `Recovery directive schema: v1`; older ledger entries remain readable.
+   use `Recovery directive schema: v1`; a v2 ledger with no v1 marker is
+   invalid, while entries before an existing marker remain readable. Typed
+   control authority must bind the latest same-trigger TRIAGE.
 2. `REPAIR` captures the same-task continuation outcome and resolution
    evidence without erasing any earlier failed attempt.
 3. `RUN-RESUME` captures state reconciliation before a resumed or replacement
    Phase Runner performs another action.
+
+`STOP` requires a preceding TRIAGE BLOCK and concrete ESC; a later resume
+cannot legitimize an untriaged STOP.
 
 These are temporary V1 repository-delivery entries, not forward fid product
 Events, Runs, or recovery entities.

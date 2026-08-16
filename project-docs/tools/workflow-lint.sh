@@ -488,6 +488,9 @@ done
 for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md .claude/agents/phase-runner.md .codex/agents/phase_runner.toml; do
   check_contains "$file" 'workflow-control-scope-lint\.sh' "isolated control repair scope verification"
   check_contains "$file" 'originating task' "control repair task identity"
+  check_contains "$file" 'checked-out.*HEAD' "control repair checkpoint binding"
+  check_contains "$file" 'symlink' "control repair artifact-type guard"
+  check_contains "$file" 'STOP.*TRIAGE BLOCK|TRIAGE BLOCK.*STOP' "triaged STOP authority"
 done
 
 for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md project-docs/templates/triage-log-template.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
@@ -501,6 +504,19 @@ check_contains "project-docs/templates/run-ledger-template.md" 'Repair mode:.*co
 check_contains "project-docs/templates/run-ledger-template.md" 'Control contract:' "control repair ledger contract"
 check_contains "project-docs/templates/run-ledger-template.md" 'Control mismatch:' "control repair ledger reproducer"
 check_contains "project-docs/templates/run-ledger-template.md" 'Repair authority:' "control repair ledger authority"
+check_contains "project-docs/templates/run-ledger-template.md" 'v2 ledger.*Recovery directive schema: v1' "mandatory recovery directive schema"
+
+for file in project-docs/tools/workflow-control-scope-lint.sh project-docs/tools/drills/run-drills.sh; do
+  check_contains "$file" 'worktree is not clean' "control repair clean-tree enforcement"
+  check_contains "$file" 'regular file' "control repair regular-file enforcement"
+done
+check_contains "project-docs/tools/workflow-control-scope-lint.sh" 'repair commit is not the checked-out HEAD' "control repair HEAD enforcement"
+
+for file in project-docs/tools/workflow-sequence-lint.sh project-docs/tools/drills/run-drills.sh; do
+  check_contains "$file" 'without Recovery directive schema: v1' "directive schema downgrade rejection"
+  check_contains "$file" 'preceding TRIAGE' "control/STOP triage binding"
+  check_contains "$file" 'Consecutive no-progress attempts' "recovery budget enforcement"
+done
 
 for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
   check_contains "$file" 'no-op churn is not progress' "recovery progress anti-churn rule"

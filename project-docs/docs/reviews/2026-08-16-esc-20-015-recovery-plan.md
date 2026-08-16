@@ -67,7 +67,11 @@ implementation with a change to the protected gate definition and emitted
 - [ ] **P5 - Independent adversarial review.** Ask an agent that did not
   implement the repair to probe literal edge cases, unsafe gate weakening,
   cross-scope ownership, recovery budgets, ledger sequencing, and generated
-  prompt drift. Repair every Must-fix and obtain `PASS`.
+  prompt drift. Initial verdict `REPAIR`: the reviewer reproduced missing
+  schema enforcement, self-authorized/unbudgeted recovery, stale/dirty/symlink
+  scope-check bypasses, untriaged STOP/resume, and literal-tab command
+  false-rejection. Add red regressions, repair every Must-fix, and obtain
+  `PASS` on re-review.
 - [ ] **P6 - Exact verification and handoff.** Run all workflow gates and the
   relevant repository gate, capture exact termination, commit the final review,
   and provide a copy-paste Phase Runner restart prompt with branch, HEAD,

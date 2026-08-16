@@ -91,13 +91,13 @@ expected_nonzero_declaration_lines() {
   ' "$1"
 }
 
-# Check declaration grammar and pre-commit each expected non-zero exit status.
-# The entries use a tab delimiter because the command itself may contain spaces.
-expected_nonzero_commands=""
+# Check declaration grammar and retain each validated declaration verbatim.
+# Commands are opaque text, so no byte is safe to reuse as a tuple delimiter.
+expected_nonzero_declarations=""
 validate_expected_nonzero_declarations() {
   spec=$1
   required=$2
-  expected_nonzero_commands=""
+  expected_nonzero_declarations=""
 
   while IFS= read -r line; do
     [ -n "$line" ] || continue
@@ -117,7 +117,7 @@ validate_expected_nonzero_declarations() {
       fail "declared expected non-zero command is not a required command: $declared_command"
       continue
     fi
-    expected_nonzero_commands="${expected_nonzero_commands}${declared_command}	${declared_exit}
+    expected_nonzero_declarations="${expected_nonzero_declarations}${line}
 "
   done <<EOF
 $(expected_nonzero_declaration_lines "$spec")
@@ -126,14 +126,16 @@ EOF
 
 declared_expected_exit() {
   command=$1
-  tab=$(printf '\t')
-  while IFS="$tab" read -r declared_command declared_exit; do
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    declared_command=$(printf '%s\n' "$line" | sed -n 's/^- `\([^`]*\)` - expected `exit_code: \([0-9][0-9]*\)`.*/\1/p')
     if [ "$declared_command" = "$command" ]; then
+      declared_exit=$(printf '%s\n' "$line" | sed -n 's/^- `\([^`]*\)` - expected `exit_code: \([0-9][0-9]*\)`.*/\2/p')
       printf '%s\n' "$declared_exit"
       return
     fi
   done <<EOF
-$expected_nonzero_commands
+$expected_nonzero_declarations
 EOF
 }
 
@@ -525,6 +527,7 @@ go test -tags integration ./...
 rg -n absence-fixture cmd
 rg -n "ships in v0\.2" cmd
 rg -n 'tab\tmarker' cmd
+rg -n 'literal@HT@marker' cmd
 ```
 
 ## Expected Non-Zero Commands
@@ -536,6 +539,7 @@ Each declaration is one line: the exact command in backticks, then
   This trailing explanation wraps onto an indented continuation line.
 - `rg -n "ships in v0\.2" cmd` - expected `exit_code: 1`
 - `rg -n 'tab\tmarker' cmd` - expected `exit_code: 1`
+- `rg -n 'literal@HT@marker' cmd` - expected `exit_code: 1`
 
 - This prose bullet does not open with a backtick and is not a declaration.
 
@@ -543,6 +547,9 @@ Each declaration is one line: the exact command in backticks, then
 
 - Fixture.
 EOF
+  literal_tab=$(printf '\t')
+  sed "s/@HT@/$literal_tab/g" "$tmp/task-spec.md" > "$tmp/task-spec.with-tab.md"
+  mv "$tmp/task-spec.with-tab.md" "$tmp/task-spec.md"
 
   write_report() {
     out=$1
@@ -589,6 +596,7 @@ EOF
 - \`rg -n absence-fixture cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
 - \`rg -n "ships in v0\.2" cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
 - \`rg -n 'tab\tmarker' cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
+- \`rg -n 'literal@HT@marker' cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
 
 ## Deviations from spec
 
@@ -610,6 +618,8 @@ EOF
 
 - \`$r_subject\`
 EOF
+    sed "s/@HT@/$literal_tab/g" "$out" > "$out.with-tab"
+    mv "$out.with-tab" "$out"
   }
 
   expect() {
@@ -655,6 +665,8 @@ EOF
     'required command recorded PASS: rg -n "ships in v0\.2" cmd' "$tmp/clean.md"
   expect "literal backslash-t command passes declaration lookup and coverage" zero \
     "OUTCOME COMPLETE" "$tmp/clean.md"
+  expect "literal horizontal-tab command passes declaration lookup and coverage" zero \
+    "required command recorded PASS: rg -n 'literal${literal_tab}marker' cmd" "$tmp/clean.md"
 
   # Normalizing an escape changes the command and must fail both declaration
   # lookup and exact required-command coverage.

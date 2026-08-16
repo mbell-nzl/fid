@@ -24,6 +24,17 @@ function invalid(message) {
   errors++
 }
 
+function references_id(text, id) {
+  return id != "" && text ~ ("(^|[^[:alnum:]_-])" id "([^[:alnum:]_-]|$)")
+}
+
+function decision_id(text) {
+  if (match(text, /DEC-[0-9]+/)) {
+    return substr(text, RSTART, RLENGTH)
+  }
+  return ""
+}
+
 function finish_event() {
   if (strict && event == "") {
     invalid("unrecognized or malformed event heading")
@@ -52,13 +63,48 @@ function finish_event() {
   if (directive_strict && (event == "RUN-START" || event == "RUN-RESUME") && event_directive_schema != "v1") {
     invalid(event " is missing Recovery directive schema: v1")
   }
-  if (strict && directive_strict && event == "TASK-RECOVERY" && event_repair_mode !~ /^(task-scope|control-conformance)$/) {
-    invalid("TASK-RECOVERY has missing or invalid Repair mode")
+  if (strict && directive_strict && event == "TASK-RECOVERY") {
+    if (event_source == "") {
+      invalid("TASK-RECOVERY is missing Source")
+    }
+    if (event_category !~ /^(in-scope-implementation|gate-repair|report-repair|qa-rework|session-continuation|local-environment)$/) {
+      invalid("TASK-RECOVERY has missing or invalid Category")
+    }
+    if (event_repair_mode !~ /^(task-scope|control-conformance)$/) {
+      invalid("TASK-RECOVERY has missing or invalid Repair mode")
+    }
+    if (event_repair_authority == "") {
+      invalid("TASK-RECOVERY is missing Repair authority")
+    }
+    if (event_allowed_files == "") {
+      invalid("TASK-RECOVERY is missing Allowed files")
+    }
+    if (event_forbidden_changes == "") {
+      invalid("TASK-RECOVERY is missing Forbidden changes")
+    }
+    if (event_trigger_signature == "") {
+      invalid("TASK-RECOVERY is missing Trigger signature")
+    }
+    if (event_attempt !~ /^[1-9][0-9]*$/) {
+      invalid("TASK-RECOVERY has missing or invalid Attempt count")
+    }
+    if (event_no_progress !~ /^[01]\/2$/) {
+      invalid("TASK-RECOVERY has missing or invalid Consecutive no-progress attempts")
+    }
+    if (event_checkpoint == "") {
+      invalid("TASK-RECOVERY is missing Checkpoint")
+    }
+    if (event_resolution_evidence == "") {
+      invalid("TASK-RECOVERY is missing Resolution evidence")
+    }
+    if (event_next_action == "") {
+      invalid("TASK-RECOVERY is missing Next action")
+    }
+    if (event_human_attention != "no") {
+      invalid("TASK-RECOVERY must record Human attention required: no")
+    }
   }
   if (strict && directive_strict && event == "TASK-RECOVERY" && event_repair_mode == "control-conformance") {
-    if (event_repair_authority == "") {
-      invalid("control-conformance TASK-RECOVERY is missing Repair authority")
-    }
     if (event_control_contract == "") {
       invalid("control-conformance TASK-RECOVERY is missing Control contract")
     }
@@ -70,6 +116,67 @@ function finish_event() {
     }
     if (event_forbidden_changes == "") {
       invalid("control-conformance TASK-RECOVERY is missing Forbidden changes")
+    }
+    if (latest_triage_id == "") {
+      invalid("control-conformance TASK-RECOVERY has no preceding TRIAGE authority")
+    } else {
+      if (!references_id(event_repair_authority, latest_triage_id)) {
+        invalid("control-conformance Repair authority does not reference latest TRIAGE " latest_triage_id)
+      }
+      if (event_trigger_signature != latest_triage_trigger) {
+        invalid("control-conformance Trigger signature does not match latest TRIAGE " latest_triage_id)
+      }
+      if (index(event_trigger_signature, event_task ":") != 1) {
+        invalid("control-conformance Trigger signature does not bind originating task " event_task)
+      }
+      if (latest_triage_verdict ~ /^REPAIR/) {
+        # TL-Lite directly authorized this bounded repair.
+      } else if (latest_triage_verdict ~ /^BLOCK/) {
+        authority_decision = decision_id(event_repair_authority)
+        if (resolved_block_triage != latest_triage_id || authority_decision == "" ||
+            !references_id(resolved_block_evidence, authority_decision)) {
+          invalid("control-conformance BLOCK authority lacks a bound RUN-RESUME decision for " latest_triage_id)
+        }
+      } else {
+        invalid("control-conformance latest TRIAGE is not REPAIR or resolved BLOCK: " latest_triage_id)
+      }
+    }
+    if (event_next_action !~ /workflow-control-scope-lint\.sh/) {
+      invalid("control-conformance TASK-RECOVERY Next action is missing exact scope verification")
+    }
+  }
+  if (strict && directive_strict && event == "REPAIR") {
+    if (event_trigger_signature == "" || event_trigger_signature != recovery_trigger) {
+      invalid("REPAIR Trigger signature does not match TASK-RECOVERY")
+    }
+    if (event_attempt !~ /^[1-9][0-9]*$/ || event_attempt != recovery_attempt) {
+      invalid("REPAIR Attempt count does not match TASK-RECOVERY")
+    }
+    if (event_control_scope_check == "") {
+      invalid("REPAIR is missing Control scope check")
+    }
+    if (event_outcome !~ /^(RESOLVED|MATERIAL-PROGRESS|NO-PROGRESS)$/) {
+      invalid("REPAIR has missing or invalid Outcome")
+    }
+    if (event_resolution_evidence == "") {
+      invalid("REPAIR is missing Resolution evidence")
+    }
+    if (event_next_checkpoint == "") {
+      invalid("REPAIR is missing Next checkpoint")
+    }
+    if (recovery_mode == "control-conformance" &&
+        (event_control_scope_check !~ /^PASS/ || event_control_scope_check !~ /exit_code: 0/)) {
+      invalid("control-conformance REPAIR lacks a passing terminated scope check")
+    }
+  }
+  if (strict && directive_strict && event == "STOP") {
+    if (latest_triage_id == "" || latest_triage_verdict !~ /^BLOCK/) {
+      invalid("STOP has no preceding TRIAGE BLOCK")
+    } else if (!references_id(event_triage_reference, latest_triage_id) || event_triage_reference !~ /ESC-[0-9]+-[0-9]+/) {
+      invalid("STOP does not reference its TRIAGE BLOCK and concrete ESC")
+    }
+    if (event_protected_category == "" || event_next_human_action == "") {
+      invalid("STOP is missing protected category or next Human action")
     }
   }
 
@@ -83,6 +190,9 @@ function finish_event() {
       recovery_task = event_task
     }
     recovery_stage = "needs-repair"
+    recovery_trigger = event_trigger_signature
+    recovery_attempt = event_attempt
+    recovery_mode = event_repair_mode
     triage_repair_pending = 0
     if (review_open && event_task == review_owner) {
       review_recovery_seen = 1
@@ -158,6 +268,9 @@ function finish_event() {
       triage_needed = 1
     }
   } else if (event == "TRIAGE") {
+    latest_triage_id = event_id
+    latest_triage_trigger = event_trigger_signature
+    latest_triage_verdict = event_verdict
     if (event_verdict ~ /^RESUME/) {
       triage_needed = 0
     } else if (event_verdict ~ /^REPAIR/) {
@@ -170,19 +283,27 @@ function finish_event() {
   } else if (event == "STOP") {
     stopped = 1
   } else if (event == "RUN-RESUME") {
+    if (stopped && latest_triage_verdict ~ /^BLOCK/) {
+      resolved_block_triage = latest_triage_id
+      resolved_block_evidence = event_resolution_evidence
+    }
     stopped = 0
     if (event_contract == "v2") {
       strict = 1
+      saw_v2 = 1
     }
     if (event_directive_schema == "v1") {
       directive_strict = 1
+      saw_directive_schema = 1
     }
   } else if (event == "RUN-START") {
     if (event_contract == "v2") {
       strict = 1
+      saw_v2 = 1
     }
     if (event_directive_schema == "v1") {
       directive_strict = 1
+      saw_directive_schema = 1
     }
   }
 
@@ -195,12 +316,26 @@ function finish_event() {
   event_verdict = ""
   event_contract = ""
   event_directive_schema = ""
+  event_source = ""
+  event_category = ""
   event_repair_mode = ""
   event_repair_authority = ""
   event_control_contract = ""
   event_control_mismatch = ""
   event_allowed_files = ""
   event_forbidden_changes = ""
+  event_trigger_signature = ""
+  event_attempt = ""
+  event_no_progress = ""
+  event_checkpoint = ""
+  event_resolution_evidence = ""
+  event_next_action = ""
+  event_human_attention = ""
+  event_control_scope_check = ""
+  event_next_checkpoint = ""
+  event_triage_reference = ""
+  event_protected_category = ""
+  event_next_human_action = ""
 }
 
 /^### / {
@@ -219,6 +354,7 @@ function finish_event() {
     event_id = $5
   } else if ($4 == "TRIAGE") {
     event = "TRIAGE"
+    event_id = $5
   } else if ($4 == "STOP") {
     event = "STOP"
   } else if ($4 == "RUN-RESUME") {
@@ -247,6 +383,18 @@ event == "REVIEW" && /^- Re-review of: / {
 event == "TRIAGE" && /^- Verdict: / {
   event_verdict = substr($0, length("- Verdict: ") + 1)
 }
+(event == "TASK-RECOVERY" || event == "REPAIR" || event == "TRIAGE" || event == "RUN-RESUME") && /^- Trigger signature: / {
+  event_trigger_signature = substr($0, length("- Trigger signature: ") + 1)
+}
+(event == "TASK-RECOVERY" || event == "REPAIR" || event == "TRIAGE" || event == "RUN-RESUME") && /^- Attempt count: / {
+  event_attempt = substr($0, length("- Attempt count: ") + 1)
+}
+(event == "TASK-RECOVERY" || event == "TRIAGE" || event == "RUN-RESUME") && /^- Checkpoint: / {
+  event_checkpoint = substr($0, length("- Checkpoint: ") + 1)
+}
+(event == "TASK-RECOVERY" || event == "REPAIR" || event == "TRIAGE" || event == "RUN-RESUME") && /^- Resolution evidence: / {
+  event_resolution_evidence = substr($0, length("- Resolution evidence: ") + 1)
+}
 (event == "RUN-START" || event == "RUN-RESUME") && /^- Sequence contract: / {
   event_contract = substr($0, length("- Sequence contract: ") + 1)
 }
@@ -255,6 +403,12 @@ event == "TRIAGE" && /^- Verdict: / {
 }
 event == "TASK-RECOVERY" && /^- Repair mode: / {
   event_repair_mode = substr($0, length("- Repair mode: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Source: / {
+  event_source = substr($0, length("- Source: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Category: / {
+  event_category = substr($0, length("- Category: ") + 1)
 }
 event == "TASK-RECOVERY" && /^- Repair authority: / {
   event_repair_authority = substr($0, length("- Repair authority: ") + 1)
@@ -271,9 +425,39 @@ event == "TASK-RECOVERY" && /^- Allowed files: / {
 event == "TASK-RECOVERY" && /^- Forbidden changes: / {
   event_forbidden_changes = substr($0, length("- Forbidden changes: ") + 1)
 }
+event == "TASK-RECOVERY" && /^- Consecutive no-progress attempts: / {
+  event_no_progress = substr($0, length("- Consecutive no-progress attempts: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Next action: / {
+  event_next_action = substr($0, length("- Next action: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Human attention required: / {
+  event_human_attention = substr($0, length("- Human attention required: ") + 1)
+}
+event == "REPAIR" && /^- Control scope check: / {
+  event_control_scope_check = substr($0, length("- Control scope check: ") + 1)
+}
+event == "REPAIR" && /^- Outcome: / {
+  event_outcome = substr($0, length("- Outcome: ") + 1)
+}
+event == "REPAIR" && /^- Next checkpoint: / {
+  event_next_checkpoint = substr($0, length("- Next checkpoint: ") + 1)
+}
+event == "STOP" && /^- Triage: / {
+  event_triage_reference = substr($0, length("- Triage: ") + 1)
+}
+event == "STOP" && /^- Protected category: / {
+  event_protected_category = substr($0, length("- Protected category: ") + 1)
+}
+event == "STOP" && (/^- Next Human or external-authority action: / || /^- Next human action: /) {
+  event_next_human_action = substr($0, index($0, ": ") + 2)
+}
 
 END {
   finish_event()
+  if (saw_v2 && !saw_directive_schema) {
+    invalid("ledger uses Sequence contract v2 without Recovery directive schema: v1")
+  }
   if (errors) {
     exit 1
   }

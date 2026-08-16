@@ -76,7 +76,9 @@ lives in `09_AI_WORKFLOW.md` §2.5
   verification into your working notes. Use red/green in only the allowlisted
   `project-docs/tools/` control/self-test paths, preserve the original failure,
   run the exact control verification, create one isolated commit, and report
-  the starting and ending commit hashes. Do not edit product, spec, prompt,
+  the starting and ending commit hashes. Leave that ending commit checked out
+  with a clean index/worktree, and keep every allowlisted artifact a regular
+  file rather than a symlink or gitlink. Do not edit product, spec, prompt,
   template, dependency, task, QA-contract, generated, or report files. Do not
   hand edit generated files. Any ambiguity or semantic/definition change
   becomes a typed protected `BLOCKED` candidate.

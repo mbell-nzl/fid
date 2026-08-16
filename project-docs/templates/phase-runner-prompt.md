@@ -89,8 +89,10 @@ Execution rules:
   ledger with apply_patch, redirection, or another editor. workflow-route.sh
   still chooses the action.
   Run sequence lint without --append-stdin to read current state and require
-  literal VALID state=ADVANCEABLE before actual advancement. The validator
-  requires the same task across recovery, a recorded REPAIR before task
+  literal VALID state=ADVANCEABLE before actual advancement. A v2 ledger with
+  no v1 directive marker is invalid. After the marker, the validator binds
+  typed recovery authority/budget to the latest same-trigger TRIAGE and rejects
+  STOP without a preceding TRIAGE BLOCK and concrete ESC. It requires the same task across recovery, a recorded REPAIR before task
   completion, and a differently identified QA PASS review whose Re-review of
   field names the original REPAIR review. A linked re-review may transfer repair
   ownership only after the current owner completes; it cannot overwrite an
@@ -136,7 +138,9 @@ Execution rules:
   `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
   using the Developer-recorded commits and exact directive allowlist. Product,
   spec, prompt, template, dependency, task, QA-contract, generated, and report
-  files are forbidden. Provider sync is a
+  files are forbidden. The claimed repair commit must be checked-out HEAD, the
+  index/worktree clean, and every allowlisted artifact a regular file; later
+  commits, dirty state, symlinks, and gitlinks fail. Provider sync is a
   separate authorized maintenance step. After scope PASS, append REPAIR and
   dispatch an ordinary same-task continuation to rerun the originating exact
   verification and update its report while preserving the first failure.

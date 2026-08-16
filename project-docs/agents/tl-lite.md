@@ -142,6 +142,9 @@ when it crosses one of these triggers.
   command/assertion/status/semantics/scope/threshold/budget/tolerance/policy
   changes; and the exact control verification required. Any ambiguity or
   proposed protected change is BLOCK.
+- The directive authority is the concrete TRG you write. It must retain the
+  originating task, exact trigger signature, attempt count, and two-attempt
+  no-progress budget; `SELF-AUTHORIZED` or an unrelated TRG is invalid.
 - A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
   in-scope quality-gate failure, missing/skipped command, session ending with
   durable partial work, or incomplete implementation is normally REPAIR.

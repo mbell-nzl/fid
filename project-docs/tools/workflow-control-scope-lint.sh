@@ -6,9 +6,10 @@ usage() {
   cat >&2 <<'EOF'
 Usage: workflow-control-scope-lint.sh <repo> <base-commit> <repair-commit> <allowed-path>...
 
-Allowed paths must be exact repository-relative files under project-docs/tools/.
-The repair must be exactly one commit after the base, change at least one file, and
-must not delete or modify anything outside the explicit allowlist.
+Allowed paths must be exact repository-relative regular files under
+project-docs/tools/. The repair must be checked-out HEAD in a clean worktree,
+exactly one commit after the base, change at least one file, and must not delete
+or modify anything outside the explicit allowlist.
 EOF
   exit 2
 }
@@ -31,6 +32,18 @@ git -C "$repo" rev-parse --verify --quiet "$head^{commit}" >/dev/null || {
   echo "FAIL repair commit does not resolve: $head" >&2
   exit 1
 }
+head_commit=$(git -C "$repo" rev-parse "$head^{commit}")
+checked_out_head=$(git -C "$repo" rev-parse HEAD)
+if [ "$checked_out_head" != "$head_commit" ]; then
+  echo "FAIL repair commit is not the checked-out HEAD: claimed $head_commit, actual $checked_out_head" >&2
+  exit 1
+fi
+dirty=$(git -C "$repo" status --porcelain=v1 --untracked-files=all)
+if [ -n "$dirty" ]; then
+  echo "FAIL control repair worktree is not clean at $head_commit" >&2
+  printf '%s\n' "$dirty" | sed 's/^/  /' >&2
+  exit 1
+fi
 git -C "$repo" merge-base --is-ancestor "$base" "$head" || {
   echo "FAIL repair commit does not descend from base commit" >&2
   exit 1
@@ -88,7 +101,18 @@ while IFS= read -r path; do
   if ! printf '%s\n' "$allowed" | grep -Fqx -- "$path"; then
     echo "FAIL changed path is outside allowed control scope: $path" >&2
     failures=$((failures + 1))
+    continue
   fi
+  entry=$(git -C "$repo" ls-tree "$head_commit" -- "$path")
+  mode=$(printf '%s\n' "$entry" | awk '{ print $1 }')
+  type=$(printf '%s\n' "$entry" | awk '{ print $2 }')
+  case "$mode:$type" in
+    100644:blob|100755:blob) ;;
+    *)
+      echo "FAIL allowed control is not a regular file at repair commit: $path ($mode:$type)" >&2
+      failures=$((failures + 1))
+      ;;
+  esac
 done <<EOF
 $changed
 EOF

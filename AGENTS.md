@@ -262,10 +262,12 @@ scope check over the dedicated commit:
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-Only after it passes does the runner append `REPAIR` and dispatch the ordinary
-same-task continuation to rerun the originating exact verification and update
-the originating report. Any ambiguity or proposed definition/policy change is
-`BLOCK`.
+The claimed `<head>` must be the checked-out `HEAD`, the worktree and index must
+be clean, and every allowlisted artifact must remain a regular file rather than
+a symlink or gitlink. Only after the check passes does the runner append
+`REPAIR` and dispatch the ordinary same-task continuation to rerun the
+originating exact verification and update the originating report. Any ambiguity
+or proposed definition/policy change is `BLOCK`.
 
 No failed test, gate, or control grants generic permission to edit its test,
 command, or implementation. Authority comes from the task scope or the written

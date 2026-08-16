@@ -26,6 +26,10 @@ accepted entry to fix an ordering or duplication mistake — append a `CORRECTIO
 entry naming the entries it supersedes and why. The ledger is evidence; its
 errors are part of the record.
 
+Every v2 ledger must contain a `Recovery directive schema: v1` marker. After
+that marker, recovery entries require the complete typed authority, trigger,
+attempt, no-progress budget, verification, and disposition fields below.
+
 ### <YYYY-MM-DD HH:MM> RUN-START
 
 - Sequence contract: v2
@@ -115,7 +119,10 @@ evidence; this event records what the continuation changed and proved.
   recovery-budget-exhausted>
 
 For control-conformance, the ending checkpoint is one isolated tools-only
-control commit. Append this REPAIR only after the scope check passes, then
+control commit. The scope check requires that commit to be checked-out HEAD, a
+clean index/worktree, and regular-file allowlisted artifacts; it rejects later
+commits, dirty state, symlinks, and gitlinks. Append this REPAIR only after the
+scope check passes, then
 dispatch an ordinary continuation under the same task/trigger/budget to rerun
 the originating exact verification and update its report. Necessary provider
 sync is separate and is not part of the isolated control commit.
@@ -147,6 +154,10 @@ leave the gap only in prose.
   causes.
 - Protected category: <closed blocker category>
 - Next Human or external-authority action: <one line>
+
+The sequence validator rejects a STOP without the immediately governing
+TRIAGE BLOCK and concrete ESC reference. A later RUN-RESUME records the
+resolution; it does not retroactively legitimize an untriaged STOP.
 
 ### <YYYY-MM-DD HH:MM> RUN-END
 

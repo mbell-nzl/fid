@@ -302,10 +302,16 @@ git_fixture "$scope_repo" commit "fix: repair control implementation"
 scope_control_head=$(git -C "$scope_repo" rev-parse HEAD)
 run_control_scope "drill-18 isolated control commit satisfies allowlist" zero "PASS control repair scope" \
   "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
+printf '%s\n' 'dirty product' > "$scope_repo/cmd/product.go"
+run_control_scope "drill-18 dirty product state invalidates control repair scope" nonzero "worktree is not clean" \
+  "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
+git -C "$scope_repo" checkout -q -- cmd/product.go
 printf '%s\n' 'changed product' > "$scope_repo/cmd/product.go"
 git -C "$scope_repo" add -A
 git_fixture "$scope_repo" commit "test: contaminate control repair"
 scope_product_head=$(git -C "$scope_repo" rev-parse HEAD)
+run_control_scope "drill-18 stale claimed repair checkpoint is rejected" nonzero "repair commit is not the checked-out HEAD" \
+  "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
 run_control_scope "drill-18 product edit invalidates control repair scope" nonzero "outside allowed control scope: cmd/product.go" \
   "$scope_repo" "$scope_control_head" "$scope_product_head" project-docs/tools/control.sh
 run_control_scope "drill-18 protected path cannot be allowlisted" nonzero "allowed path is not a workflow control" \
@@ -316,6 +322,22 @@ git_fixture "$scope_repo" commit "test: hide product edit in final diff"
 scope_reverted_head=$(git -C "$scope_repo" rev-parse HEAD)
 run_control_scope "drill-18 reverted intermediate edit cannot hide a non-isolated repair" nonzero "exactly one commit" \
   "$scope_repo" "$scope_base" "$scope_reverted_head" project-docs/tools/control.sh
+
+symlink_repo="$workspace/control-symlink"
+mkdir -p "$symlink_repo/project-docs/tools" "$symlink_repo/cmd"
+printf '%s\n' '#!/bin/sh' 'exit 0' > "$symlink_repo/project-docs/tools/control.sh"
+printf '%s\n' 'package product' > "$symlink_repo/cmd/product.go"
+git -C "$symlink_repo" init -q
+git -C "$symlink_repo" add -A
+git_fixture "$symlink_repo" commit "test: establish regular control fixture"
+symlink_base=$(git -C "$symlink_repo" rev-parse HEAD)
+rm "$symlink_repo/project-docs/tools/control.sh"
+ln -s ../../cmd/product.go "$symlink_repo/project-docs/tools/control.sh"
+git -C "$symlink_repo" add -A
+git_fixture "$symlink_repo" commit "test: replace control with product symlink"
+symlink_head=$(git -C "$symlink_repo" rev-parse HEAD)
+run_control_scope "drill-18 symlink cannot masquerade as an allowed control" nonzero "allowed control is not a regular file" \
+  "$symlink_repo" "$symlink_base" "$symlink_head" project-docs/tools/control.sh
 
 # Multi-step conformance: execute a byte-identical command red, repair its
 # fixture causally, rerun it green, then route the preserved attempt sequence.
@@ -394,8 +416,30 @@ valid_continuation="$workspace/valid-continuation.md"
 cat > "$valid_continuation" <<'EOF'
 ### 2026-08-15 10:00 RUN-RESUME
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: interrupted task-1 session
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:session-continuation:interrupted-session
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: committed partial task-1 implementation
+- Resolution evidence: PENDING - complete and verify task-1
+- Next action: complete task-1 and rerun its exact gate
+- Human attention required: no
 ### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:session-continuation:interrupted-session
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact task gate passed
+- Next checkpoint: VERIFY
 ### 2026-08-15 10:03 TASK task-1 COMPLETE
 EOF
 run_sequence "drill-16 lifecycle: fresh session retains task identity" ADVANCEABLE "$valid_continuation"
@@ -405,17 +449,56 @@ cat > "$valid_control_repair" <<'EOF'
 ### 2026-08-15 10:00 RUN-RESUME
 - Sequence contract: v2
 - Recovery directive schema: v1
+### 2026-08-15 10:00 TRIAGE TRG-1-001
+- Trigger: report-lint violates its byte-exact command contract
+- Trigger signature: task-1:quality-gate-control-defect:literal-command
+- Attempt count: 1
+- Checkpoint: exact reproducer failed
+- Verdict: REPAIR / control-conformance
+- Resolution evidence: bounded tools-only repair
+- Triage log: phase triage entry confirmed
 ### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: TRG-1-001
+- Category: report-repair
 - Repair mode: control-conformance
 - Repair authority: TRG-1-001
 - Control contract: exact commands are compared byte-for-byte
 - Control mismatch: exact reproducer false-rejects a literal backslash-dot
 - Allowed files: project-docs/tools/report-lint.sh
 - Forbidden changes: command, assertion, accepted status, scope, threshold, budget, or tolerance
+- Trigger signature: task-1:quality-gate-control-defect:literal-command
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: committed failing control fixture
+- Resolution evidence: PENDING - repair and rerun the exact reproducer
+- Next action: repair the control, run workflow-control-scope-lint.sh, and rerun the exact reproducer
+- Human attention required: no
 ### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:quality-gate-control-defect:literal-command
+- Attempt count: 1
+- Control scope check: PASS - control repair scope (terminated exit_code: 0)
+- Outcome: RESOLVED
+- Resolution evidence: exact reproducer passed
+- Next checkpoint: VERIFY
 ### 2026-08-15 10:03 TASK task-1 COMPLETE
 EOF
 run_sequence "drill-18 scoped control repair retains originating task identity" ADVANCEABLE "$valid_control_repair"
+
+schema_omitted="$workspace/schema-omitted.md"
+sed '/^- Recovery directive schema: /d' "$valid_continuation" > "$schema_omitted"
+run_invalid_sequence "drill-18 fresh v2 ledger cannot omit directive schema" "without Recovery directive schema: v1" "$schema_omitted"
+
+untriaged_control_repair="$workspace/untriaged-control-repair.md"
+sed '/^### 2026-08-15 10:00 TRIAGE TRG-1-001$/,/^- Triage log: /d' "$valid_control_repair" > "$untriaged_control_repair"
+run_invalid_sequence "drill-18 control repair requires preceding triage authority" "has no preceding TRIAGE authority" "$untriaged_control_repair"
+
+self_authorized_control_repair="$workspace/self-authorized-control-repair.md"
+sed 's/Repair authority: TRG-1-001/Repair authority: SELF-AUTHORIZED/' "$valid_control_repair" > "$self_authorized_control_repair"
+run_invalid_sequence "drill-18 control repair authority binds the latest triage" "does not reference latest TRIAGE TRG-1-001" "$self_authorized_control_repair"
+
+unbudgeted_control_repair="$workspace/unbudgeted-control-repair.md"
+sed '/^- Consecutive no-progress attempts: /d' "$valid_control_repair" > "$unbudgeted_control_repair"
+run_invalid_sequence "drill-18 control repair cannot discard its recovery budget" "missing or invalid Consecutive no-progress attempts" "$unbudgeted_control_repair"
 
 missing_control_contract="$workspace/missing-control-contract.md"
 sed '/^- Control contract: /d' "$valid_control_repair" > "$missing_control_contract"
@@ -457,6 +540,24 @@ cat >> "$schema_dropped_on_resume" <<'EOF'
 EOF
 run_invalid_sequence "drill-18 marked ledger cannot drop directive schema on resume" "missing Recovery directive schema: v1" "$schema_dropped_on_resume"
 
+fabricated_stop="$workspace/fabricated-stop-resume.md"
+cat > "$fabricated_stop" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 STOP
+- Cause: fabricated stop
+- Triage: none
+- Protected category: none
+- Next Human or external-authority action: none
+### 2026-08-15 10:02 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v1
+- Resolution evidence: fabricated resume
+### 2026-08-15 10:03 TASK task-18 COMPLETE
+EOF
+run_invalid_sequence "drill-18 STOP requires a preceding triaged BLOCK" "STOP has no preceding TRIAGE BLOCK" "$fabricated_stop"
+
 wrong_task="$workspace/wrong-task.md"
 cat > "$wrong_task" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
@@ -470,12 +571,34 @@ valid_qa="$workspace/valid-qa-rereview.md"
 cat > "$valid_qa" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 REVIEW review-1
 - Outcome: REPAIR
 - Owning task: task-1
 - Re-review of: none
 ### 2026-08-15 10:02 TASK-RECOVERY task-1
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-1 and obtain linked re-review
+- Human attention required: no
 ### 2026-08-15 10:03 REPAIR task-1
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: review finding repaired
+- Next checkpoint: REVIEW
 ### 2026-08-15 10:04 TASK task-1 COMPLETE
 ### 2026-08-15 10:05 REVIEW review-1b
 - Outcome: PASS
@@ -488,19 +611,62 @@ valid_sequential_qa="$workspace/valid-sequential-qa-repair.md"
 cat > "$valid_sequential_qa" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 REVIEW review-1
 - Outcome: REPAIR
 - Owning task: task-1
 - Re-review of: none
 ### 2026-08-15 10:02 TASK-RECOVERY task-1
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-1 and obtain linked re-review
+- Human attention required: no
 ### 2026-08-15 10:03 REPAIR task-1
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: review-1 finding repaired
+- Next checkpoint: REVIEW
 ### 2026-08-15 10:04 TASK task-1 COMPLETE
 ### 2026-08-15 10:05 REVIEW review-1b
 - Outcome: REPAIR
 - Owning task: task-2
 - Re-review of: review-1
 ### 2026-08-15 10:06 TASK-RECOVERY task-2
+- Source: review-1b
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1b
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-2:qa-rework:review-1b
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1b repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-2 and obtain linked re-review
+- Human attention required: no
 ### 2026-08-15 10:07 REPAIR task-2
+- Trigger signature: task-2:qa-rework:review-1b
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: review-1b finding repaired
+- Next checkpoint: REVIEW
 ### 2026-08-15 10:08 TASK task-2 COMPLETE
 ### 2026-08-15 10:09 REVIEW review-1c
 - Outcome: PASS
@@ -629,6 +795,7 @@ triage_repair="$workspace/triage-repair-pending.md"
 cat > "$triage_repair" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 TRIAGE TRG-1-001
 - Verdict: REPAIR
 EOF
@@ -640,7 +807,23 @@ pending_ledger="$workspace/pending-recovery.md"
 cat > "$pending_ledger" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: interrupted task-1 session
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:session-continuation:interrupted-session
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: committed partial task-1 implementation
+- Resolution evidence: PENDING - complete task-1
+- Next action: complete task-1 and rerun its exact gate
+- Human attention required: no
 EOF
 cp "$pending_ledger" "$pending_ledger.before"
 proposed_output=$(printf '%s\n' '### 2026-08-15 10:02 REPAIR task-2' \
@@ -662,16 +845,36 @@ atomic_ledger="$workspace/atomic-append.md"
 cat > "$atomic_ledger" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 - Human attention required: no
 ### 2026-08-15 10:01 TASK task-1 COMPLETE
 - Human attention required: no
 ### 2026-08-15 10:02 TASK-RECOVERY task-2
+- Source: incomplete task-2
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-2 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-2:session-continuation:atomic-append
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: committed partial task-2 implementation
+- Resolution evidence: PENDING - complete task-2
+- Next action: complete task-2 and rerun its exact gate
 - Human attention required: no
 EOF
 atomic_candidate="$workspace/atomic-candidate.md"
 cat > "$atomic_candidate" <<'EOF'
 ### 2026-08-15 10:03 REPAIR task-2
+- Trigger signature: task-2:session-continuation:atomic-append
+- Attempt count: 1
+- Control scope check: N/A for task-scope
 - Outcome: RESOLVED
+- Resolution evidence: exact task-2 gate passed
+- Next checkpoint: VERIFY
 EOF
 cp "$atomic_ledger" "$atomic_ledger.expected"
 printf '\n' >> "$atomic_ledger.expected"
@@ -694,12 +897,33 @@ ack_ledger="$workspace/acknowledgment-retry.md"
 cat > "$ack_ledger" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
 - Sequence contract: v2
+- Recovery directive schema: v1
 ### 2026-08-15 10:01 TASK-RECOVERY task-3
+- Source: incomplete task-3
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-3 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-3:session-continuation:lost-receipt
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: committed partial task-3 implementation
+- Resolution evidence: PENDING - complete task-3
+- Next action: complete task-3 and rerun its exact gate
+- Human attention required: no
 EOF
 ack_candidate="$workspace/acknowledgment-candidate.md"
 cat > "$ack_candidate" <<'EOF'
 ### 2026-08-15 10:02 REPAIR task-3
+- Trigger signature: task-3:session-continuation:lost-receipt
+- Attempt count: 1
+- Control scope check: N/A for task-scope
 - Outcome: RESOLVED
+- Resolution evidence: exact task-3 gate passed
+- Next checkpoint: VERIFY
 EOF
 cp "$ack_ledger" "$ack_ledger.expected"
 printf '\n' >> "$ack_ledger.expected"
