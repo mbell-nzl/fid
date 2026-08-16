@@ -50,20 +50,21 @@
 - Binary-init fixture sweep: `rg -n -U '(?:RunFID|runFID|closureRunFID)\\([\\s\\S]{0,180}"init"' cmd/fid --glob '*_test.go'` — PASS — final matching line: `cmd/fid/e2e_v01_closure_test.go:19:\tclosureRunFID(t, binary, workspace, "init", "--prefix", "FID")`.
 
 - MF-01 initial report conformance check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3c-done.md project-docs/docs/phases/phase-20/tasks/task-3c.md` - FAIL - `FAIL report-lint found 21 failure(s)` (terminated `exit_code: 21`).
+- MF-01 first post-commit conformance attempt: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3c-done.md project-docs/docs/phases/phase-20/tasks/task-3c.md` - FAIL - `FAIL report-lint found 6 failure(s)` (terminated `exit_code: 6`).
 - Current provenance verification: `git log --oneline -S 'TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename' -- cmd/fid` - PASS - `cd53c43 feat(project): add strict project selection config` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None. The initial canonical report-lint failure is preserved above as MF-01 repair evidence; this continuation changed only the completion report and reran the exact Task 3c commands.
+- None. The initial canonical report-lint failure is preserved above as MF-01 repair evidence; this continuation changed only the completion report and reran the exact Task 3c commands. The first post-commit lint attempt failed with `FAIL report-lint found 6 failure(s)` (terminated `exit_code: 6`) because each termination annotation had trailing punctuation; the report-only repair removes that punctuation and reruns the identical control.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
