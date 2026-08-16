@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: gate-repair
-- Condition: The current exact repeated claims/CLI race gate timed out after Go's 10-minute limit in `cmd/fid`; this report-only continuation cannot repair product tests or their harness.
-- Recovery attempts: 1
-- Next action: Dispatch a same-task continuation with ordinary Task 3k source/test scope to diagnose the timeout, preserve this failed attempt, and rerun the byte-identical gate.
+- Condition: The unchanged exact repeated claims/CLI race gate cannot finish on the expanded current `cmd/fid` package: one count takes 104.318s, exceeding Go's 10-minute timeout when repeated ten times. The dominant serial fixtures belong to post-Task-3k Task 11 and Task 12 test files outside this recovery's allowlist.
+- Recovery attempts: 2
+- Next action: The Phase Runner must obtain bounded authority for the post-Task-3k serial command-test owners, or dispatch their owning task repair, before rerunning the byte-identical gate. Task 3k must not change its exact command, accepted timeout, or unrelated test files.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -27,6 +27,11 @@
   Rebuild, durability, and compatibility owners remain real-init and serial.
 - This bounded continuation changes only completion-report evidence syntax and
   records the current gate attempt; it does not reopen product implementation.
+- The second recovery's per-test trace establishes that the current package
+  surface, not the deterministic-claims seam, exceeds the unchanged gate
+  budget: one `cmd/fid` count took 104.318s, so ten counts exceed Go's
+  10-minute timeout before package setup. The Task 3k claim tests completed in
+  at most 1.27s, while post-Task-3k serial limit tests took 10.17s and 9.21s.
 
 ## Files created or modified
 
@@ -55,6 +60,9 @@
 - This report preserves the historical test/deviation evidence, marks records
   without captured termination as `UNVERIFIED`, and records this continuation's
   observed results in canonical syntax.
+- This recovery update records the causal package-timing trace and the
+  post-Task-3k provenance of the dominant serial test owners; it changes no
+  product, test, command, or gate definition.
 
 ## Validation Contract Coverage
 
@@ -70,6 +78,7 @@
 - Repaired one-count diagnostic - UNVERIFIED historical focused-pass record - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t57.903s` (the original report did not retain an observed termination result).
 - Claim sleep inventory - UNVERIFIED historical no-match record - `exit 1 (no output)` (the original report did not retain an observed termination result).
 - `/tmp/fid --help` - PASS - `Use "fid [command] --help" for more information about a command.` (terminated `exit_code: 0`)
+- `go test -race -count=1 -json ./cmd/fid | rg '"Elapsed":([1-9][0-9]*|0\\.[5-9])'` - PASS - `{"Time":"2026-08-16T23:29:51.187093695+12:00","Action":"pass","Package":"github.com/mbell-nzl/fid/cmd/fid","Elapsed":104.318}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -97,12 +106,25 @@
   `cmd/fid/issue_ac_test.go` to the task's planned file list. Only
   validation-only rejection matrices changed harness setup; rebuild,
   durability, and compatibility owners remain unchanged.
+- The second recovery established that the required command remains
+  unsatisfiable under its current Task 3k allowlist. A current one-count
+  `cmd/fid` timing trace terminated successfully at 104.318s; ten counts would
+  require at least 1043.18s before package overhead, exceeding the fixed
+  10-minute Go timeout. The Task 3k claim tests were 1.27s or less. The two
+  dominant serial fixtures were introduced after Task 3k by Task 11 commit
+  `cf096da6391c020c24e3392996548158271bc080` (link limit, 10.17s) and Task 12
+  commit `49c179add40724871bae582fc3812ffc0aff04fc` (workflow limit, 9.21s).
+  Editing those tests, their scheduler classification, or the gate timeout is
+  outside this task and would require new bounded authority; the immutable
+  failed exact-gate evidence is retained unchanged.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The current repeated claims/CLI race gate again exceeded Go's ten-minute
-  timeout. A same-task source/test continuation must determine whether this is
-  a reproducible harness regression before Task 3k can return to COMPLETE.
+- The current repeated claims/CLI race gate cannot pass within Go's ten-minute
+  timeout on the expanded post-Task-3k `cmd/fid` package. The next repair must
+  be authorized for the later serial limit-test owners or their scheduling
+  boundary; Task 3k's deterministic-claims code and allowed tests are not the
+  causal bottleneck.
 
 ## Dependency-budget note
 
