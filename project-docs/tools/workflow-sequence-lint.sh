@@ -43,8 +43,34 @@ function finish_event() {
   if (strict && (event == "TASK-RECOVERY" || event == "REPAIR" || event == "TASK-COMPLETE") && event_task !~ /^task-[0-9]+[a-z]*$/) {
     invalid(event " has missing or invalid task ID")
   }
-  if (strict && (event == "RUN-START" || event == "RUN-RESUME") && event_contract != "v2") {
+  if ((strict || event_contract != "" || event_directive_schema != "") && (event == "RUN-START" || event == "RUN-RESUME") && event_contract != "v2") {
     invalid(event " is missing Sequence contract: v2")
+  }
+  if ((strict || event_contract == "v2" || event_directive_schema != "") && (event == "RUN-START" || event == "RUN-RESUME") && event_directive_schema != "" && event_directive_schema != "v1") {
+    invalid(event " has invalid Recovery directive schema")
+  }
+  if (directive_strict && (event == "RUN-START" || event == "RUN-RESUME") && event_directive_schema != "v1") {
+    invalid(event " is missing Recovery directive schema: v1")
+  }
+  if (strict && directive_strict && event == "TASK-RECOVERY" && event_repair_mode !~ /^(task-scope|control-conformance)$/) {
+    invalid("TASK-RECOVERY has missing or invalid Repair mode")
+  }
+  if (strict && directive_strict && event == "TASK-RECOVERY" && event_repair_mode == "control-conformance") {
+    if (event_repair_authority == "") {
+      invalid("control-conformance TASK-RECOVERY is missing Repair authority")
+    }
+    if (event_control_contract == "") {
+      invalid("control-conformance TASK-RECOVERY is missing Control contract")
+    }
+    if (event_control_mismatch == "") {
+      invalid("control-conformance TASK-RECOVERY is missing Control mismatch")
+    }
+    if (event_allowed_files == "") {
+      invalid("control-conformance TASK-RECOVERY is missing Allowed files")
+    }
+    if (event_forbidden_changes == "") {
+      invalid("control-conformance TASK-RECOVERY is missing Forbidden changes")
+    }
   }
 
   if (event == "TASK-RECOVERY") {
@@ -148,9 +174,15 @@ function finish_event() {
     if (event_contract == "v2") {
       strict = 1
     }
+    if (event_directive_schema == "v1") {
+      directive_strict = 1
+    }
   } else if (event == "RUN-START") {
     if (event_contract == "v2") {
       strict = 1
+    }
+    if (event_directive_schema == "v1") {
+      directive_strict = 1
     }
   }
 
@@ -162,6 +194,13 @@ function finish_event() {
   event_rereview = ""
   event_verdict = ""
   event_contract = ""
+  event_directive_schema = ""
+  event_repair_mode = ""
+  event_repair_authority = ""
+  event_control_contract = ""
+  event_control_mismatch = ""
+  event_allowed_files = ""
+  event_forbidden_changes = ""
 }
 
 /^### / {
@@ -210,6 +249,27 @@ event == "TRIAGE" && /^- Verdict: / {
 }
 (event == "RUN-START" || event == "RUN-RESUME") && /^- Sequence contract: / {
   event_contract = substr($0, length("- Sequence contract: ") + 1)
+}
+(event == "RUN-START" || event == "RUN-RESUME") && /^- Recovery directive schema: / {
+  event_directive_schema = substr($0, length("- Recovery directive schema: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Repair mode: / {
+  event_repair_mode = substr($0, length("- Repair mode: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Repair authority: / {
+  event_repair_authority = substr($0, length("- Repair authority: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Control contract: / {
+  event_control_contract = substr($0, length("- Control contract: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Control mismatch: / {
+  event_control_mismatch = substr($0, length("- Control mismatch: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Allowed files: / {
+  event_allowed_files = substr($0, length("- Allowed files: ") + 1)
+}
+event == "TASK-RECOVERY" && /^- Forbidden changes: / {
+  event_forbidden_changes = substr($0, length("- Forbidden changes: ") + 1)
 }
 
 END {

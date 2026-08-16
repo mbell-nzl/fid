@@ -229,23 +229,58 @@ attempt (`mktemp -d`), and declare the working directory for any command whose
 result depends on it.
 
 A required-command failure is an immutable failed attempt, not automatically a
-Human-visible blocker. When the causal repair is inside the accepted task scope,
-changes no protected product/architecture/public-interface/dependency decision,
-and leaves the command, threshold, test intent, and assertion strength intact,
-repair it in the same session and rerun the **byte-identical** command. Record
-both attempts and a mandatory deviation note containing the first failure's
-verbatim token and termination, root cause, repair, and later result. A product
-bug, stale expectation, authored harness defect, or bookkeeping inventory may
-all be repaired under this general rule. The first attempt remains failed
-evidence; the later passing attempt is the evidence used to close the task.
+Human-visible blocker. Two cases are distinct:
 
-Never delete, weaken, narrow, re-point, or mine a flaky green. Changing what a
-gate checks, its threshold, budget, tolerance, or accepted command is a
-protected gate-definition change, not causal repair. If the needed change is
-outside task scope or requires protected authority, record a typed `BLOCKED`
-outcome. If the work is real and in scope but cannot finish in the current
-session, record `RECOVERY_REQUIRED`; incomplete work is not a blocker by
-itself, and the Phase Runner dispatches a same-task continuation.
+- A **protected gate/control definition change** changes the command, the
+  assertion's accepted pass/fail semantics, accepted status, scope,
+  threshold/budget/tolerance, or governing policy. It is not repair and needs
+  the authority that owns the definition.
+- A **control-conformance repair** fixes an implementation bug in a canonical
+  verification/workflow control when an already accepted contract uniquely
+  determines its behavior. It changes none of the protected items above. The
+  fact that the control is canonical or outside the originating task's ordinary
+  file list does not make this case `BLOCK`.
+
+Ordinary causal repair stays inside accepted task scope and leaves the
+gate/control definition intact. A cross-scope control-conformance repair
+requires a written TL-Lite recovery directive citing the accepted contract,
+exact reproduced mismatch, originating task/trigger/budget, exact allowed paths
+(only the named control and its self-test artifacts under
+`project-docs/tools/`), forbidden semantic changes, and required exact reruns.
+Product, spec, prompt, template, dependency, task, and QA-contract files are
+never eligible. The Phase Runner keeps the originating task identity and budget
+and dispatches a dedicated same-task continuation. The Developer may edit only
+the named tool paths, uses red/green, preserves all failed evidence, reruns the
+exact control verification, and records starting/ending commits. Necessary
+provider sync is a separate authorized workflow-maintenance step, never part of
+the isolated control-repair commit.
+
+Before recording the `REPAIR` ledger event, the Phase Runner runs this exact
+scope check over the dedicated commit:
+
+```text
+project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+```
+
+Only after it passes does the runner append `REPAIR` and dispatch the ordinary
+same-task continuation to rerun the originating exact verification and update
+the originating report. Any ambiguity or proposed definition/policy change is
+`BLOCK`.
+
+No failed test, gate, or control grants generic permission to edit its test,
+command, or implementation. Authority comes from the task scope or the written
+control-conformance directive. After a causal repair, rerun the
+**byte-identical** command and record both attempts plus a mandatory deviation
+note containing the first failure's verbatim token and termination, root cause,
+repair, and later result. The first attempt remains failed evidence; the later
+passing attempt is the evidence used to close the task.
+
+Never delete, weaken, narrow, re-point, or mine a flaky green. If the needed
+change is protected or ambiguous, record a typed `BLOCKED` outcome. If work is
+decision-free but outside ordinary task files, return `RECOVERY_REQUIRED` so
+the Phase Runner can obtain the bounded directive above; do not self-authorize
+the edit. If in-scope work cannot finish in the current session, also record
+`RECOVERY_REQUIRED`; incomplete work is not a blocker by itself.
 
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
@@ -357,9 +392,10 @@ See `project-docs/docs/playbook.md` for a concise operator runbook.
 
 Agents stop for Human or protected-authority input only when:
 
-- A deterministic quality gate cannot be fixed inside the assigned task scope
-  without changing a protected decision, gate definition, threshold, or
-  assertion strength.
+- A deterministic quality gate cannot be fixed under the assigned task scope
+  or a bounded control-conformance directive without changing a protected
+  command, assertion semantics, accepted status/scope,
+  threshold/budget/tolerance, or policy.
 - A required project command is still a placeholder.
 - A task requires an architectural, product, data-model, or public-interface
   decision not already recorded in specs.

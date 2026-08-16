@@ -335,6 +335,17 @@ Use when: incomplete work, a gate/report defect, local recovery, or bounded QA
 rework can be completed under the accepted task contract.
 Avoid: closing the task/finding or requesting Human attention.
 
+**Control-conformance repair (V1)**
+Definition: A bounded recovery that fixes an implementation defect in a
+canonical verification/workflow control when an already accepted contract
+uniquely determines behavior, without changing the command, assertion
+semantics, accepted status/scope, threshold/budget/tolerance, or policy.
+Use when: TL-Lite can record an exact reproducer and tools-only allowlist, and
+the Phase Runner can verify one isolated commit before the originating task
+continues.
+Avoid: using a failing control as generic authority to edit tests, product,
+specs, prompts, templates, dependencies, or the gate/control definition.
+
 **BLOCK (V1 disposition)**
 Definition: A triage verdict that a protected decision, unsafe condition,
 unrecoverable external dependency, specification contradiction, or exhausted

@@ -27,17 +27,21 @@ and the source files in the task spec scope. On demand:
 `decisions_principles.md`, relevant `project-docs/specs/` sections, and
 closed phase archives only when the task points there.
 For a continuation, also load the latest `TASK-RECOVERY` run-ledger entry
-and the owning QA review when one triggered recovery.
+and the owning QA review when one triggered recovery. A dedicated control
+repair also loads its complete written control-conformance recovery directive.
 
 ## Write Boundaries
 
 Write only in-scope source files, tests, required documentation, and the
-completion report `project-docs/docs/phases/phase-N/tasks/task-M-done.md`.
-Never modify out-of-scope files except required docs; never delete or weaken
-tests to pass; never make architectural or product decisions - record
-concerns instead. One session handles at most one task; finish or create a
-durable typed recovery checkpoint, then stop. Never stop silently. The full
-role definition lives in `09_AI_WORKFLOW.md` §2.5
+completion report `project-docs/docs/phases/phase-N/tasks/task-M-done.md`. A
+written control-conformance directive replaces that file list only for its
+dedicated continuation and allows only the enumerated named control/self-test
+paths under `project-docs/tools/`; do not edit the report in that isolated
+commit. Never otherwise modify out-of-scope files; never delete or weaken tests
+to pass; never make architectural or product decisions - record concerns
+instead. One session handles at most one task; finish or create a durable typed
+recovery checkpoint, then stop. Never stop silently. The full role definition
+lives in `09_AI_WORKFLOW.md` §2.5
 (Developer).
 
 ## Hard Rules
@@ -59,13 +63,23 @@ role definition lives in `09_AI_WORKFLOW.md` §2.5
   for the required gate; missing, silently skipped, or narrower substituted
   commands are failed gates.
 - A required-command failure is an immutable failed attempt, not automatically
-  a blocker. Diagnose it, make a causal repair inside accepted task scope, and
-  rerun the byte-identical command when no protected decision, gate definition,
-  threshold, command, or assertion strength changes. This includes product
-  defects, stale expectations, authored harnesses, and bookkeeping inventories.
-  Record both attempts and the mandatory deviation note required by
-  `AGENTS.md`. Never weaken, narrow, re-point, substitute, or mine a flaky
-  green.
+  a blocker. Diagnose it, but repair only under accepted task scope or a written
+  control-conformance directive; failure alone never authorizes editing a test,
+  gate, or control. A protected definition change alters the command,
+  assertion's accepted pass/fail semantics, accepted status/scope,
+  threshold/budget/tolerance, or policy and is not repair. Record both attempts
+  and the mandatory deviation note required by `AGENTS.md`. Never weaken,
+  narrow, re-point, substitute, or mine a flaky green.
+- For a dedicated control-conformance continuation, confirm the accepted
+  contract uniquely determines behavior and copy the directive's originating
+  task, trigger, unchanged budget, allowed paths, forbidden changes, and exact
+  verification into your working notes. Use red/green in only the allowlisted
+  `project-docs/tools/` control/self-test paths, preserve the original failure,
+  run the exact control verification, create one isolated commit, and report
+  the starting and ending commit hashes. Do not edit product, spec, prompt,
+  template, dependency, task, QA-contract, generated, or report files. Do not
+  hand edit generated files. Any ambiguity or semantic/definition change
+  becomes a typed protected `BLOCKED` candidate.
 - Record each command's result with one short verbatim token copied from its
   own terminal output: the last line it printed, or `exit 0 (no output)` for
   a silent success. **A command you did not watch terminate is never `PASS`.**
@@ -96,6 +110,12 @@ role definition lives in `09_AI_WORKFLOW.md` §2.5
   spec.
 
 ## Report And Commit Sequence
+
+This sequence applies to an ordinary task or ordinary same-task continuation.
+A dedicated control-conformance continuation instead returns its isolated
+tools-only commit, starting/ending hashes, red/green evidence, and exact control
+verification to the Phase Runner without editing the originating report. The
+ordinary report continuation follows only after the runner's scope check.
 
 Once the required gate is green, do not keep iterating; run this exact
 sequence and stop:
@@ -166,6 +186,14 @@ end with in-scope work remaining, checkpoint the current tree and report, set
 condition and next action, finalize the report against the checkpoint commit,
 and confirm `OUTCOME RECOVERY_REQUIRED`. The Phase Runner will dispatch a
 same-task continuation; do not present task incompleteness as a blocker.
+
+A control-conformance continuation remains the originating task and consumes
+the same trigger budget; it is not a new planned product task. Return the
+isolated control commit and exact verification evidence to the Phase Runner.
+After the runner validates its scope and records `REPAIR`, a later ordinary
+same-task continuation reruns the originating exact verification and updates
+the originating report while retaining the first failed attempt. Do not combine
+that report update with the isolated control commit.
 
 Use `Task outcome: BLOCKED` only for a protected category from the
 completion template. Explain why task authority cannot resolve it, list

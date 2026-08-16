@@ -1,7 +1,7 @@
 # AI Workflow - fid
 
 **Status:** Binding V1 repository delivery workflow
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-16
 
 This document is the canonical agentic engineering workflow for
 `fid`. Agent prompts, `AGENTS.md`, `CLAUDE.md`, Codex config, and
@@ -205,15 +205,20 @@ Must escalate if the issue:
    schema, migrations, journal replay semantics, and storage invariants.
 3. Contradicts `decisions_active.md`, `decisions_principles.md`, or
    `AGENTS.md`.
-4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, quality gate, or workflow.
-6. Changes testing strategy or coverage policy.
+4. Changes accepted behavior across more than one task or subsystem. Restoring
+   one canonical control implementation to uniquely accepted behavior for all
+   callers does not trigger this rule by itself.
+5. Introduces/removes a dependency, tool, quality gate, or workflow, or changes
+   its accepted definition or policy. A decision-free implementation repair
+   that restores a canonical verification/workflow control to an already
+   accepted contract is handled by the control-conformance rule below.
+6. Changes testing strategy, assertion semantics, or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria. Design
    ambiguity that changes behavior also escalates.
 8. Requires an unapproved protected change to recover partial task work, such
    as a schema/data-model, dependency/platform, public-interface, or canonical
-   workflow change. Context exhaustion and same-task continuation alone are
-   `REPAIR`, for any number of continuation sessions.
+   workflow definition change. Context exhaustion, same-task continuation, and
+   a qualifying control-conformance repair are `REPAIR`.
 
 When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
@@ -243,12 +248,31 @@ Triage rules:
 - Triage `RESUME` means the trigger is demonstrably misclassified,
   already resolved by verified evidence, or covered by an accepted decision.
   The Phase Runner may advance from the current checkpoint.
-- Triage `REPAIR` means the trigger is real but the causal work is local,
-  decision-free, inside the existing task authority, and changes no protected
-  decision, gate definition, threshold, command, or assertion strength. The
-  Phase Runner must not advance: it appends `TASK-RECOVERY`, dispatches a
-  same-task Developer continuation, reruns the required verification, and
-  repeats any affected independent review.
+- Triage `REPAIR` means the trigger is real and causal work is decision-free
+  under either the originating task's ordinary scope or a bounded
+  control-conformance directive. The Phase Runner must not advance: it appends
+  `TASK-RECOVERY`, keeps the originating task identity and trigger budget,
+  dispatches the matching same-task continuation, reruns required verification,
+  and repeats any affected independent review.
+- A **protected gate/control definition change** changes a command, assertion's
+  accepted pass/fail semantics, accepted status, scope,
+  threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless
+  an existing accepted decision already authorizes that exact definition.
+- A **control-conformance repair** fixes an implementation bug in a canonical
+  verification/workflow control where an already accepted contract uniquely
+  determines behavior and the proposed edit changes no protected item. It is
+  `REPAIR`, never `BLOCK` merely because the control is canonical or outside
+  the originating task's ordinary files.
+- Before returning control-conformance `REPAIR`, TL-Lite must write a recovery
+  directive that cites: the accepted contract and uniquely required behavior;
+  the exact reproduced mismatch and attached evidence; the originating task,
+  trigger signature, and unchanged attempt budget; the bounded allowed file
+  set (only the named control and its self-test artifacts under
+  `project-docs/tools/`); forbidden changes to product/spec/prompt/template/
+  dependency/task/QA-contract/report files and to command/assertion/status/
+  semantics/scope/threshold/budget/tolerance/policy; and the exact verification
+  plus originating report update required. Ambiguous semantics or any proposed
+  protected change is `BLOCK`.
 - Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
   `project-docs/docs/current/tl_escalations_current.md` when no existing ESC
   covers the issue, then logs the TRG entry with BLOCK.
@@ -328,7 +352,8 @@ Responsibilities:
    current task outcome is `RECOVERY_REQUIRED`.
 7. Use explicit child prompts. Each prompt must restate the required reads,
    task path, report path, exact gate commands, stop conditions, and
-   commit/report requirements.
+   commit/report requirements. A control-repair continuation also receives the
+   complete written control-conformance recovery directive.
    Codex child spawns must set `spawn_agent.agent_type` exactly to the intended
    project custom agent (`qa_lead`, `developer`, `qa_reviewer`, or `tl_lite`).
    Do not omit `agent_type`, do not use `default`, `worker`, or `explorer`, and
@@ -353,8 +378,9 @@ Responsibilities:
     session; `EVALUATE` inspects its observed terminated result. Invalid router
     input is an orchestration defect to repair, not permission to invent a
     route.
-    Every new RUN-START/RUN-RESUME carries `Sequence contract: v2`; older events
-    remain legacy-tolerant. Pipe each exact candidate entry, beginning with its
+    Every new RUN-START/RUN-RESUME carries `Sequence contract: v2` and
+    `Recovery directive schema: v1`; older events remain legacy-tolerant. Pipe
+    each exact candidate entry, beginning with its
     single `###` event heading, to
     `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
     The tool validates and atomically appends the entry at EOF; an `INVALID`
@@ -377,8 +403,9 @@ Responsibilities:
 11. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
     result, and verified commit. On `OUTCOME RECOVERY_REQUIRED` or a
     recoverable lint, report, gate, or session defect, append
-    `TASK-RECOVERY` with trigger signature, attempt count, checkpoint, and
-    next action, then dispatch a same-task Developer continuation. On
+    `TASK-RECOVERY` with trigger signature, attempt count, checkpoint, repair
+    mode/authority, allowed files, and next action, then dispatch a same-task
+    Developer continuation. On
     `OUTCOME BLOCKED`, treat the report as a blocker candidate and triage
     it; never accept a child-authored blocker as authoritative lifecycle state.
 12. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
@@ -397,8 +424,8 @@ Responsibilities:
     `REPAIR` dispatches the named owning task to a Developer continuation
     and requires a fresh independent re-review of the same window. `BLOCK`
     is a blocker candidate for TL-Lite.
-15. Route blocker candidates and ambiguous recovery classifications through
-    TL-Lite triage.
+15. Route blocker candidates, ambiguous recovery classifications, and proposed
+    cross-scope control-conformance repairs through TL-Lite triage.
     When a triage may turn on "already resolved by a verified commit", verify
     the commit first and attach the commit-verification evidence (hash,
     `git rev-parse --verify` result, subject match) to the triage trigger;
@@ -406,9 +433,10 @@ Responsibilities:
     returns, read the triage log to confirm the TRG-NNN entry exists, then
     parse the literal final `VERDICT:` line and append a TRIAGE entry to the
     run ledger. `VERDICT: RESUME` advances only when the trigger is
-    cleared. `VERDICT: REPAIR` appends `TASK-RECOVERY` and dispatches
-    the same task; it never advances. `VERDICT: BLOCK` appends STOP with
-    the concrete ESC.
+    cleared. `VERDICT: REPAIR` appends `TASK-RECOVERY` and dispatches the same
+    task; it never advances. A control-conformance verdict requires the complete
+    written directive above and dispatches a dedicated same-task control-repair
+    continuation. `VERDICT: BLOCK` appends STOP with the concrete ESC.
 16. Apply a default budget of two consecutive Phase Runner-mediated
     continuation attempts for the same trigger signature with no material
     progress. Same-session red/green iterations do not consume this budget. A
@@ -433,6 +461,9 @@ Recovery conditions:
   changing the accepted command.
 - Child session ending while durable in-scope work remains.
 - QA `REPAIR` with an owning task and bounded decision-free repair.
+- A canonical verification/workflow control implementation that demonstrably
+  violates an already accepted, uniquely determining contract and has a
+  TL-Lite control-conformance recovery directive.
 - Recoverable local sandbox, cache, or scratch-state failure.
 
 Protected blocker candidates:
@@ -441,7 +472,10 @@ Protected blocker candidates:
   evidence.
 - Placeholder or contradictory required command/specification.
 - Product, architecture, data-model, public-interface, dependency, security,
-  data-loss, or gate-definition authority is required.
+  data-loss, or gate/control definition authority is required. Definition
+  changes include command, assertion semantics, accepted status/scope,
+  threshold/budget/tolerance, and policy changes; merely repairing a canonical
+  control implementation to a uniquely accepted contract is not in this list.
 - Unrepairable external infrastructure/capability failure.
 - Recovery budget exhausted for an identical no-progress trigger.
 - QA `BLOCK`.
@@ -452,6 +486,30 @@ append TRIAGE for its verdict, and stop only on
 `VERDICT: BLOCK`. `VERDICT: REPAIR` keeps the current task open and
 dispatches recovery; `VERDICT: RESUME` advances only when the trigger is
 already cleared.
+
+Control-conformance dispatch is a recovery mode, not a new planned product
+task. The Phase Runner appends `TASK-RECOVERY` under the originating task and
+trigger budget, records the TL-Lite directive as authority, and names exact
+allowlisted `project-docs/tools/` paths. It sends a dedicated same-task
+Developer continuation the directive verbatim. That continuation records its
+starting and ending commits and produces one isolated control-repair commit.
+Before appending the `REPAIR` ledger event, the runner must observe PASS from:
+
+```text
+project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+```
+
+Here `<base>` and `<head>` are the Developer-recorded commits and `<allowed...>`
+is the directive's exact tools-only allowlist. Product, spec, prompt, template,
+dependency, task, QA-contract, and originating-report paths are forbidden in
+that commit. A necessary provider sync is a separate authorized maintenance
+step, never part of the isolated control-repair commit. The runner does not
+advance or ask the Human. After the scope check passes, it appends `REPAIR` and
+dispatches an ordinary same-task continuation to rerun the originating exact
+verification and update the originating report while preserving the first
+failure. If either Developer discovers ambiguity or needs any forbidden
+semantic/definition change, it returns a protected `BLOCKED` candidate rather
+than expanding scope.
 
 Immediate safety stops are limited to a branch/worktree state that cannot be
 reconciled non-destructively, a missing validation contract that requires
@@ -490,11 +548,14 @@ Default context:
   `VAL-NNN` assertions the task is expected to satisfy)
 - scoped source, test, and doc files
 - for a continuation: the latest `TASK-RECOVERY` ledger entry and owning QA
-  review, when applicable
+  review, when applicable; for control repair, the complete written
+  control-conformance recovery directive
 
 Responsibilities:
 1. Confirm task scope, allowed files, and the `VAL-NNN` assertions listed in
-   the task spec acceptance criteria.
+   the task spec acceptance criteria. A written control-conformance recovery
+   directive may replace the ordinary allowed-file list only for that
+   continuation; it does not change task identity or create a product task.
 2. Inspect existing in-scope partial work and continue from that state.
 3. Write failing tests first for behavior changes.
 4. Implement minimum code to pass, then refactor only while tests stay green.
@@ -505,11 +566,14 @@ Responsibilities:
    loop and does not substitute for the full gate at close. If the task spec
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
 7. If any gate fails, preserve its token and observed termination, diagnose the
-   cause, make a causal in-scope repair, and rerun the byte-identical failed
-   command. Product defects, stale expectations, harness defects, and
-   bookkeeping drift are all repairable when the task owns the change and no
-   protected decision or gate definition changes. Never weaken, narrow,
-   re-point, substitute, or mine a flaky green.
+   cause, and repair only when authorized by ordinary task scope or a written
+   control-conformance directive. A failure alone never grants permission to
+   edit a test, gate, or control. A dedicated control-repair continuation edits
+   only the directive's named `project-docs/tools/` control/self-test paths,
+   uses red/green, records its starting and ending commits, and produces an
+   isolated commit. It runs the directive's exact control verification but does
+   not edit the originating report. Never weaken, narrow, re-point, substitute,
+   change accepted semantics, or mine a flaky green.
 8. Where the task changes behavior with a runtime surface, exercise the
    changed behavior once through the real entrypoint (the `fid` CLI or other
    real interface) before writing the report, and record the command or
@@ -549,6 +613,13 @@ Responsibilities:
 14. Verify the report path is committed and clean:
     `git status --porcelain -- <report path>` prints nothing. Then stop.
 
+Responsibilities 8-14 apply to an ordinary task or ordinary same-task
+continuation. A dedicated control-conformance continuation instead returns its
+isolated tools-only commit, starting/ending hashes, red/green evidence, and
+exact control verification to the Phase Runner without editing the originating
+report. The ordinary report continuation follows only after the runner's scope
+check.
+
 Required completion report headings, in order:
 - `## Workflow outcome`
 - `## Summary of what was implemented`
@@ -580,6 +651,17 @@ Recovery and blocker behavior:
   external infrastructure, specification contradiction, or exhausted recovery
   budget. Name why current task authority cannot resolve it and the exact
   resolution action.
+- A control-conformance directive is assigned recovery scope. Keep the
+  originating task ID, trigger, and attempt budget. Edit only its exact
+  tools-only allowlist; product, spec, prompt, template, dependency, task,
+  QA-contract, generated, and report files remain protected in the isolated
+  commit. After the Phase Runner validates that commit and records `REPAIR`, a
+  later ordinary same-task continuation reruns the originating exact
+  verification and updates the originating report, preserving the first failed
+  attempt. If the accepted contract does not uniquely determine the fix or the
+  repair would change a command, assertion semantics, accepted status/scope,
+  threshold/budget/tolerance, or policy, return a typed protected `BLOCKED`
+  candidate. Do not reinterpret the directive or create a new task.
 - Never stop silently. Return a typed report even when no task commit can be
   produced; the Phase Runner classifies the observation and decides lifecycle
   state.
@@ -587,7 +669,9 @@ Recovery and blocker behavior:
 Constraints:
 - Never skip TDD for logic changes.
 - Never delete or weaken tests to pass.
-- Never modify files outside task scope unless the task requires related docs.
+- Never modify files outside task scope except the exact tools-only paths in a
+  written control-conformance directive; a failing control is not generic
+  authority.
 - Never make architectural or product decisions; record concerns instead.
 - Never hand edit generated files.
 
@@ -1391,20 +1475,23 @@ the repository at the time the control lands; a fixture invented for the control
 only proves the control agrees with itself.
 
 A required-command failure is an immutable failed attempt, not automatically a
-failed task or Human blocker. When its causal repair is inside accepted task
-scope, changes no protected decision, gate definition, threshold, command, or
-assertion strength, the Developer repairs it and reruns the byte-identical
-command. This general rule includes product defects, stale expectations,
-task-authored harnesses, and bookkeeping inventories. Record a mandatory
-deviation note with the first attempt's token and termination, root cause,
-repair, and later result. The final pass must be deterministic and reproducible
-from committed artifacts.
+failed task or Human blocker. The Developer may repair it only under ordinary
+task scope or a written control-conformance recovery directive; failure itself
+grants no license to edit a test, gate, or control. Record a mandatory deviation
+note with the first attempt's token and termination, root cause, repair, and
+later result. The final pass must be deterministic and reproducible from
+committed artifacts.
 
-Changing what a gate checks, deleting or weakening a test, narrowing or
-re-pointing a command, altering a threshold/budget/tolerance, or mining a flaky
-green is not repair. It requires the authority that owns the gate or
-specification. DEC-138's bookkeeping-only carve-out is superseded by this
-general causal-repair rule; its anti-gaming constraints remain.
+A gate/control **definition** is protected: its command, assertion's accepted
+pass/fail semantics, accepted status, scope, threshold/budget/tolerance, and
+governing policy. Changing any of these, deleting or weakening a test,
+narrowing/re-pointing a command, or mining a flaky green is not repair. By
+contrast, a canonical verification/workflow control implementation that
+violates an already accepted contract with one uniquely determined behavior is
+eligible for the bounded tools-only control-conformance route in sections 2.3
+and 2.4. Canonical location or ordinary task-file scope alone does not turn it
+into `BLOCK`. DEC-138's bookkeeping-only carve-out is superseded by this
+general causal-repair distinction; its anti-gaming constraints remain.
 
 The distinction matters at triage. **"The task is incomplete, stop"** and
 **"the evidence is tainted, restart"** are different verdicts with different

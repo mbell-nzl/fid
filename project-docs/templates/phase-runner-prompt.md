@@ -77,8 +77,9 @@ Execution rules:
   its literal ACTION. WAIT retains and polls the live command session;
   EVALUATE inspects the observed terminated result. Invalid router input is a
   recoverable orchestration defect, not permission to invent a route.
-- Put `Sequence contract: v2` in every new RUN-START/RUN-RESUME; older entries
-  stay legacy-tolerant. Pipe each exact candidate entry, beginning with its
+- Put `Sequence contract: v2` and `Recovery directive schema: v1` in every new
+  RUN-START/RUN-RESUME; older entries stay legacy-tolerant. Pipe each exact
+  candidate entry, beginning with its
   single ### event heading, to project-docs/tools/workflow-sequence-lint.sh
   <run-ledger> --append-stdin. The tool validates and atomically appends at EOF;
   INVALID leaves the ledger byte-for-byte unchanged. Require exit zero and
@@ -111,6 +112,34 @@ Execution rules:
   in-scope change tied to the trigger satisfies/removes an obligation or
   verification demonstrably narrows the failure. Formatting, metadata-only,
   unrelated, or no-op churn is not progress.
+- Distinguish a protected gate/control definition change from control
+  conformance. Definition changes alter a command, assertion's accepted
+  pass/fail semantics, accepted status/scope, threshold/budget/tolerance, or
+  policy. A canonical verification/workflow control implementation that
+  violates an already accepted, uniquely determining contract is eligible for
+  REPAIR; it is not BLOCK merely because the control is canonical or outside
+  the originating task's ordinary files. A failure alone never authorizes edits
+  to a test, gate, or control.
+- Route a proposed cross-scope control-conformance repair to TL-Lite. Require a
+  written directive citing the accepted contract, exact reproduced mismatch,
+  originating task/trigger/unchanged budget, exact named control/self-test paths
+  under project-docs/tools/, forbidden product/spec/prompt/template/dependency/
+  task/QA-contract/report and semantic changes, and exact verification.
+  Ambiguity or a protected definition change is BLOCK.
+- For a control-conformance REPAIR, append TASK-RECOVERY with repair mode,
+  TRG authority, and allowed paths, preserve the originating task identity and
+  budget, and dispatch a dedicated same-task control-repair continuation with
+  the directive verbatim. It records starting/ending commits, uses red/green,
+  and creates one isolated tools-only commit. Do not advance or ask the Human.
+- Before appending the REPAIR ledger event for that commit, require PASS with
+  observed termination from
+  `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
+  using the Developer-recorded commits and exact directive allowlist. Product,
+  spec, prompt, template, dependency, task, QA-contract, generated, and report
+  files are forbidden. Provider sync is a
+  separate authorized maintenance step. After scope PASS, append REPAIR and
+  dispatch an ordinary same-task continuation to rerun the originating exact
+  verification and update its report while preserving the first failure.
 - Treat OUTCOME BLOCKED as a blocker candidate, never authoritative state.
   Before STOP, spawn `tl_lite` as the first-step triager. RESUME advances
   only when cleared; VERDICT: REPAIR dispatches recovery without advancing;

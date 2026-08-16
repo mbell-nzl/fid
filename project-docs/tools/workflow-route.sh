@@ -13,6 +13,7 @@ Sources and outcomes:
   triage      RESUME | REPAIR | BLOCK
   command     LIVE | TERMINATED | INTERRUPTED | MISSING_TERMINATION
   recovery    PROGRESS | NO_PROGRESS (requires attempt count for NO_PROGRESS)
+  control     CONFORMANCE_DEFECT | DEFINITION_CHANGE | AMBIGUOUS
 
 Prints exactly one ACTION line. Exit 2 means invalid input.
 EOF
@@ -46,6 +47,12 @@ case "$source:$outcome" in
     ;;
   command:INTERRUPTED|command:MISSING_TERMINATION|recovery:PROGRESS)
     action=REPAIR
+    ;;
+  control:CONFORMANCE_DEFECT)
+    action=REPAIR
+    ;;
+  control:DEFINITION_CHANGE|control:AMBIGUOUS)
+    action=TRIAGE
     ;;
   recovery:NO_PROGRESS)
     case "$attempts" in

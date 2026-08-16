@@ -61,8 +61,9 @@ For each task spec in order, keep exactly one active Developer child. A session
 handles at most one task, but the same task may use a same-task continuation.
 Give each child the concrete task/report paths, exact commands from
 `## Exact Commands To Run`, required reads, recovery checkpoint when
-present, and commit/report requirements. Never advance while the task outcome
-is `RECOVERY_REQUIRED`.
+present, and commit/report requirements. A dedicated control repair also gets
+the complete written control-conformance recovery directive. Never advance
+while the task outcome is `RECOVERY_REQUIRED`.
 
 After the child returns, run
 `project-docs/tools/report-lint.sh <report path> <task spec path>` and
@@ -75,6 +76,12 @@ third completed task, or at QA-plan cadence, spawn QA Reviewer and append
 REVIEW. QA `REPAIR` dispatches the named owning task and requires a fresh
 independent re-review; QA `BLOCK` is a protected blocker candidate.
 
+If attached evidence shows that a canonical verification/workflow control
+implementation, rather than the originating product/report, violates an
+already accepted contract, do not grant generic out-of-scope access. Invoke
+TL-Lite to classify a possible control-conformance repair and require the
+written directive in `Recovery Dispatch` below.
+
 Route each parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
 recovery-budget result through
 `project-docs/tools/workflow-route.sh <source> <outcome> [attempts]`. Follow
@@ -83,9 +90,10 @@ session; `EVALUATE` means inspect the observed terminated result; `ADVANCE`,
 `REPAIR`, `TRIAGE`, and `STOP` have their meanings below. Invalid tool input is
 an orchestration defect to repair, never a reason to invent a route.
 
-Every new `RUN-START` or `RUN-RESUME` carries `Sequence contract: v2`; entries
-before that marker remain legacy-tolerant. To append an event, pipe its exact
-Markdown, beginning with the single `###` event heading, to
+Every new `RUN-START` or `RUN-RESUME` carries `Sequence contract: v2` and
+`Recovery directive schema: v1`; entries before those markers remain
+legacy-tolerant. To append an event, pipe its exact Markdown, beginning with the
+single `###` event heading, to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
 The tool validates and atomically appends the candidate at EOF, or leaves the
 ledger byte-for-byte unchanged when it reports `INVALID`. Require exit zero and
@@ -151,6 +159,43 @@ with task, trigger signature, attempt number, checkpoint, evidence, progress,
 and next action; then spawn a same-task continuation. Preserve every failed
 attempt. Never convert it to PASS.
 
+A protected gate/control definition change alters a command, assertion's
+accepted pass/fail semantics, accepted status/scope,
+threshold/budget/tolerance, or policy. A control-conformance repair instead
+fixes a canonical verification/workflow control implementation when an already
+accepted contract uniquely determines behavior and no protected item changes.
+The latter is REPAIR even though the named control is canonical and outside the
+originating task's ordinary file list.
+
+For control-conformance REPAIR, require TL-Lite's written directive to cite the
+accepted contract, exact reproduced mismatch, originating task and trigger,
+unchanged attempt budget, exact tools-only allowed files, forbidden protected
+files/semantic changes, and exact verification. Append `TASK-RECOVERY` with
+`Repair mode: control-conformance`, the TRG as authority, and the allowed paths;
+keep the originating task identity and budget. Then dispatch a dedicated
+same-task control-repair continuation. It is recovery, not a new planned task,
+and you neither advance nor ask the Human.
+
+The dedicated Developer records starting and ending commits, edits only the
+directive's named control/self-test artifacts under `project-docs/tools/`, uses
+red/green, runs exact control verification, and produces an isolated commit.
+Before appending the `REPAIR` ledger event, run and require PASS with observed
+termination from:
+
+```text
+project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+```
+
+Use the Developer-recorded commits for `<base>`/`<head>` and the directive's
+exact paths for `<allowed...>`. Product, spec, prompt, template, dependency,
+task, QA-contract, generated, and report files are forbidden. Necessary
+provider sync is a separate authorized maintenance action, not part of the
+isolated commit. After scope PASS, append `REPAIR` with that evidence and
+dispatch an ordinary same-task continuation to rerun the originating exact
+verification and update its report while preserving the original failure. Any
+ambiguity or forbidden semantic/definition change is a protected blocker
+candidate.
+
 Use a default budget of two consecutive runner-mediated continuation attempts
 for the same trigger signature with no material progress. Same-session
 red/green loops do not consume it. Progress requires a relevant in-scope change
@@ -164,8 +209,10 @@ resets the count.
 Route only these through TL-Lite as first-step triager: typed BLOCKED report,
 placeholder/contradictory command or specification, protected product/
 architecture/data-model/public-interface/dependency/security/data-loss or
-gate-definition authority, unrepairable external infrastructure, QA BLOCK,
-new Open ESC, and `recovery-budget-exhausted`.
+gate/control definition authority, unrepairable external infrastructure, QA
+BLOCK, new Open ESC, and `recovery-budget-exhausted`. Also route proposed
+cross-scope control-conformance repairs through TL-Lite for a bounded directive;
+they are not blocker candidates merely because their tools are canonical.
 
 On `VERDICT: RESUME`, advance only because the trigger is already cleared.
 On `VERDICT: REPAIR`, append TRIAGE and `TASK-RECOVERY`, do not
@@ -196,11 +243,19 @@ Triage trigger: <one-line description>.
 Source: <task report path | review path | ESC-<phase>-<NNN>>.
 Commit-verification evidence: <hash, git rev-parse --verify result, and
 subject-match result, or "none">.
+For a possible control-conformance repair, attached reproduced mismatch:
+<exact control command, required result, observed result, and termination>.
 Decide: RESUME, REPAIR, or BLOCK. RESUME means the trigger is already cleared
 and execution may advance. REPAIR means the trigger is real, local,
-decision-free, and inside current task authority; execution must not advance
-and the same task needs a Developer continuation. BLOCK requires a protected
-category or exhausted no-progress recovery budget. Before answering, write the
+decision-free, and authorized by current task scope or a bounded
+control-conformance directive; execution must not advance and the same task
+needs a Developer continuation. For control-conformance REPAIR, cite the
+accepted uniquely determining contract and exact reproduced mismatch; name the
+originating task, trigger, unchanged budget, exact `project-docs/tools/`
+control/self-test allowlist, forbidden product/spec/prompt/template/dependency/
+task/QA-contract/report and semantic changes, and exact verification. BLOCK
+requires a protected definition change, ambiguity, or exhausted no-progress
+recovery budget. Before answering, write the
 disposition to
 project-docs/docs/phases/phase-N/triage-log.md per
 project-docs/templates/triage-log-template.md, allocating the next phase-scoped

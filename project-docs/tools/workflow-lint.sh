@@ -245,6 +245,15 @@ else
   fail "workflow-route.sh is not executable"
 fi
 
+check_file "project-docs/tools/workflow-control-scope-lint.sh" "control repair scope tool"
+if [ -x "project-docs/tools/workflow-control-scope-lint.sh" ]; then
+  pass "workflow-control-scope-lint.sh is executable"
+else
+  fail "workflow-control-scope-lint.sh is not executable"
+fi
+check_contains "project-docs/tools/workflow-route.sh" 'control:CONFORMANCE_DEFECT' "control conformance repair route"
+check_contains "project-docs/tools/workflow-route.sh" 'control:DEFINITION_CHANGE.*control:AMBIGUOUS' "protected control change route"
+
 check_file "project-docs/tools/workflow-sequence-lint.sh" "workflow sequence tool"
 if [ -x "project-docs/tools/workflow-sequence-lint.sh" ]; then
   pass "workflow-sequence-lint.sh is executable"
@@ -455,6 +464,44 @@ for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md 
   check_absent "$file" 'multiple Developer sessions' "multi-session escalation trigger"
 done
 
+control_conformance_surfaces="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/templates/triage-log-template.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.claude/agents/tl-lite.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $control_conformance_surfaces; do
+  check_contains "$file" 'control-conformance' "bounded control conformance repair"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md .claude/agents/phase-runner.md .codex/agents/phase_runner.toml; do
+  check_contains "$file" 'workflow-control-scope-lint\.sh' "isolated control repair scope verification"
+  check_contains "$file" 'originating task' "control repair task identity"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md project-docs/templates/triage-log-template.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
+  check_contains "$file" 'accepted (control )?contract' "control repair contract authority"
+  check_contains "$file" 'allowed file|allowed path' "control repair file allowlist"
+  check_contains "$file" 'forbidden change' "control repair semantic guardrails"
+done
+
+check_contains "project-docs/templates/run-ledger-template.md" 'Recovery directive schema: v1' "recovery directive schema marker"
+check_contains "project-docs/templates/run-ledger-template.md" 'Repair mode:.*control-conformance' "control repair ledger mode"
+check_contains "project-docs/templates/run-ledger-template.md" 'Control contract:' "control repair ledger contract"
+check_contains "project-docs/templates/run-ledger-template.md" 'Control mismatch:' "control repair ledger reproducer"
+check_contains "project-docs/templates/run-ledger-template.md" 'Repair authority:' "control repair ledger authority"
+
 for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
   check_contains "$file" 'no-op churn is not progress' "recovery progress anti-churn rule"
 done
@@ -555,8 +602,8 @@ while IFS= read -r trigger; do
 done <<'EOF'
 Changes a public interface
 Changes the data model or persistence contract
-Affects more than one task or subsystem
-Introduces a dependency, tool, quality gate, or workflow
+Changes accepted behavior across more than one task or subsystem
+Introduces/removes a dependency, tool, quality gate, or workflow
 Exposes ambiguity in product intent or acceptance criteria
 EOF
 

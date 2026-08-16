@@ -54,6 +54,12 @@ Phase wrap-up checklist:
   protected/exhausted condition>
 - **If REPAIR:** owning task <task-M>; category <recovery category>; next action
   <same-task continuation plus exact verification/re-review>; no ESC.
+- **If REPAIR / control-conformance:** accepted control contract <binding
+  citation>; deterministic mismatch <exact reproducer>; allowed files <named
+  control implementation and self-tests>; forbidden changes <commands,
+  assertions, accepted status/semantics, scope, thresholds, budgets,
+  tolerances, prompts/specs/templates, dependencies, and product files>;
+  originating task and trigger retain their existing recovery budget.
 - **If BLOCK:** category <protected blocker category>;
   ESC-<phase>-<NNN> <raised or referenced> in `tl_escalations_current.md`;
   resolution condition <named Human or external-authority action>.

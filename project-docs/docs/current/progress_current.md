@@ -125,7 +125,6 @@ wrap-up:
   (DEC-139). `task-16a` amended the same check to accept declared expected
   non-zero absence rows without weakening it (DEC-143); `task-16b` fixed that
   amendment's declaration-line parser at `d8388d5` (DEC-144).
-
 All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
 are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is
 the phase's verified gate baseline.

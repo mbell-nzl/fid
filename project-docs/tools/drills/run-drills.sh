@@ -21,6 +21,7 @@
 #   drill-15  live long-running command routes to wait
 #   drill-16  bounded QA finding routes to repair
 #   drill-17  protected triage and exhausted budget routes
+#   drill-18  bounded control-conformance routing, scope, and ledger directive
 #
 # Agent drills (workspaces materialized with --agent; scored by a human using
 # each drill's DRILL.md and the SCORECARD.md):
@@ -39,6 +40,7 @@ fixtures="$script_dir/fixtures"
 report_lint="$script_dir/../report-lint.sh"
 workflow_route="$script_dir/../workflow-route.sh"
 sequence_lint="$script_dir/../workflow-sequence-lint.sh"
+control_scope_lint="$script_dir/../workflow-control-scope-lint.sh"
 
 usage() {
   cat <<'EOF'
@@ -198,6 +200,28 @@ run_invalid_sequence() {
   fi
 }
 
+run_control_scope() {
+  label=$1
+  want=$2
+  match=$3
+  shift 3
+  output=$("$control_scope_lint" "$@" 2>&1)
+  code=$?
+  ok=true
+  case "$want" in
+    zero) [ "$code" -eq 0 ] || ok=false ;;
+    nonzero) [ "$code" -ne 0 ] || ok=false ;;
+  esac
+  if [ -n "$match" ] && ! printf '%s\n' "$output" | grep -qF "$match"; then
+    ok=false
+  fi
+  if $ok; then
+    drill_pass "$label"
+  else
+    drill_fail "$label (exit=$code, output=$output)"
+  fi
+}
+
 render_report "$good_hash" "$good_subject" > "$report"
 git -C "$base" add "$phase_dir/tasks/task-1-done.md"
 git_fixture "$base" commit "docs(task): finalize completion report fixture"
@@ -260,6 +284,38 @@ run_route "drill-17 protected candidate routes through triage" TRIAGE developer 
 run_route "drill-17 protected triage verdict stops" STOP triage BLOCK
 run_route "drill-17 first no-progress attempt continues repair" REPAIR recovery NO_PROGRESS 1
 run_route "drill-17 exhausted no-progress budget routes to triage" TRIAGE recovery NO_PROGRESS 2
+run_route "drill-18 control conformance defect routes to bounded repair" REPAIR control CONFORMANCE_DEFECT
+run_route "drill-18 control definition change routes through triage" TRIAGE control DEFINITION_CHANGE
+run_route "drill-18 ambiguous control change routes through triage" TRIAGE control AMBIGUOUS
+
+scope_repo="$workspace/control-scope"
+mkdir -p "$scope_repo/project-docs/tools" "$scope_repo/cmd"
+printf '%s\n' 'old control' > "$scope_repo/project-docs/tools/control.sh"
+printf '%s\n' 'old product' > "$scope_repo/cmd/product.go"
+git -C "$scope_repo" init -q
+git -C "$scope_repo" add -A
+git_fixture "$scope_repo" commit "test: establish control scope fixture"
+scope_base=$(git -C "$scope_repo" rev-parse HEAD)
+printf '%s\n' 'repaired control' > "$scope_repo/project-docs/tools/control.sh"
+git -C "$scope_repo" add -A
+git_fixture "$scope_repo" commit "fix: repair control implementation"
+scope_control_head=$(git -C "$scope_repo" rev-parse HEAD)
+run_control_scope "drill-18 isolated control commit satisfies allowlist" zero "PASS control repair scope" \
+  "$scope_repo" "$scope_base" "$scope_control_head" project-docs/tools/control.sh
+printf '%s\n' 'changed product' > "$scope_repo/cmd/product.go"
+git -C "$scope_repo" add -A
+git_fixture "$scope_repo" commit "test: contaminate control repair"
+scope_product_head=$(git -C "$scope_repo" rev-parse HEAD)
+run_control_scope "drill-18 product edit invalidates control repair scope" nonzero "outside allowed control scope: cmd/product.go" \
+  "$scope_repo" "$scope_control_head" "$scope_product_head" project-docs/tools/control.sh
+run_control_scope "drill-18 protected path cannot be allowlisted" nonzero "allowed path is not a workflow control" \
+  "$scope_repo" "$scope_control_head" "$scope_product_head" project-docs/tools/control.sh cmd/product.go
+printf '%s\n' 'old product' > "$scope_repo/cmd/product.go"
+git -C "$scope_repo" add -A
+git_fixture "$scope_repo" commit "test: hide product edit in final diff"
+scope_reverted_head=$(git -C "$scope_repo" rev-parse HEAD)
+run_control_scope "drill-18 reverted intermediate edit cannot hide a non-isolated repair" nonzero "exactly one commit" \
+  "$scope_repo" "$scope_base" "$scope_reverted_head" project-docs/tools/control.sh
 
 # Multi-step conformance: execute a byte-identical command red, repair its
 # fixture causally, rerun it green, then route the preserved attempt sequence.
@@ -343,6 +399,63 @@ cat > "$valid_continuation" <<'EOF'
 ### 2026-08-15 10:03 TASK task-1 COMPLETE
 EOF
 run_sequence "drill-16 lifecycle: fresh session retains task identity" ADVANCEABLE "$valid_continuation"
+
+valid_control_repair="$workspace/valid-control-repair.md"
+cat > "$valid_control_repair" <<'EOF'
+### 2026-08-15 10:00 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Repair mode: control-conformance
+- Repair authority: TRG-1-001
+- Control contract: exact commands are compared byte-for-byte
+- Control mismatch: exact reproducer false-rejects a literal backslash-dot
+- Allowed files: project-docs/tools/report-lint.sh
+- Forbidden changes: command, assertion, accepted status, scope, threshold, budget, or tolerance
+### 2026-08-15 10:02 REPAIR task-1
+### 2026-08-15 10:03 TASK task-1 COMPLETE
+EOF
+run_sequence "drill-18 scoped control repair retains originating task identity" ADVANCEABLE "$valid_control_repair"
+
+missing_control_contract="$workspace/missing-control-contract.md"
+sed '/^- Control contract: /d' "$valid_control_repair" > "$missing_control_contract"
+run_invalid_sequence "drill-18 control repair requires accepted contract authority" "missing Control contract" "$missing_control_contract"
+
+missing_repair_authority="$workspace/missing-repair-authority.md"
+sed '/^- Repair authority: /d' "$valid_control_repair" > "$missing_repair_authority"
+run_invalid_sequence "drill-18 marked recovery requires recorded authority" "missing Repair authority" "$missing_repair_authority"
+
+missing_control_mismatch="$workspace/missing-control-mismatch.md"
+sed '/^- Control mismatch: /d' "$valid_control_repair" > "$missing_control_mismatch"
+run_invalid_sequence "drill-18 control repair requires exact mismatch evidence" "missing Control mismatch" "$missing_control_mismatch"
+
+missing_control_files="$workspace/missing-control-files.md"
+sed '/^- Allowed files: /d' "$valid_control_repair" > "$missing_control_files"
+run_invalid_sequence "drill-18 control repair requires bounded file authority" "missing Allowed files" "$missing_control_files"
+
+missing_control_guard="$workspace/missing-control-guard.md"
+sed '/^- Forbidden changes: /d' "$valid_control_repair" > "$missing_control_guard"
+run_invalid_sequence "drill-18 control repair requires semantic guardrails" "missing Forbidden changes" "$missing_control_guard"
+
+missing_repair_mode="$workspace/missing-repair-mode.md"
+sed '/^- Repair mode: /d' "$valid_control_repair" > "$missing_repair_mode"
+run_invalid_sequence "drill-18 marked recovery requires an explicit repair mode" "missing or invalid Repair mode" "$missing_repair_mode"
+
+invalid_directive_schema="$workspace/invalid-directive-schema.md"
+sed 's/Recovery directive schema: v1/Recovery directive schema: v2/' "$valid_control_repair" > "$invalid_directive_schema"
+run_invalid_sequence "drill-18 unknown recovery directive schema is rejected" "invalid Recovery directive schema" "$invalid_directive_schema"
+
+missing_sequence_contract="$workspace/missing-control-sequence-contract.md"
+sed '/^- Sequence contract: /d' "$valid_control_repair" > "$missing_sequence_contract"
+run_invalid_sequence "drill-18 directive schema requires sequence contract" "missing Sequence contract: v2" "$missing_sequence_contract"
+
+schema_dropped_on_resume="$workspace/schema-dropped-on-resume.md"
+cat "$valid_control_repair" > "$schema_dropped_on_resume"
+cat >> "$schema_dropped_on_resume" <<'EOF'
+### 2026-08-15 10:04 RUN-RESUME
+- Sequence contract: v2
+EOF
+run_invalid_sequence "drill-18 marked ledger cannot drop directive schema on resume" "missing Recovery directive schema: v1" "$schema_dropped_on_resume"
 
 wrong_task="$workspace/wrong-task.md"
 cat > "$wrong_task" <<'EOF'

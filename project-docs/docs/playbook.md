@@ -83,6 +83,23 @@ phase-specific exception.
 `RESUME` never means repair later, and `BLOCK` is not a synonym for incomplete,
 red, failed, or must-fix. Human attention is required only for `BLOCK`.
 
+A gate/control definition change alters a command, assertion semantics,
+accepted status/scope, threshold/budget/tolerance, or policy and remains
+protected. A `control-conformance` repair instead restores a canonical
+verification/workflow tool to an already accepted contract that uniquely
+determines its behavior. TL-Lite records the contract, reproducer, tools-only
+allowlist, forbidden changes, originating task/trigger/budget, and exact
+verification. Phase Runner dispatches one isolated same-task control repair,
+then requires:
+
+```text
+project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
+```
+
+Only after that check passes does the ordinary same-task continuation rerun the
+originating verification and update its report. Ambiguity or any definition
+change is `BLOCK`; canonical location or ordinary task-file scope alone is not.
+
 Record recovery in the append-only run ledger. Submit each single event to
 `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
 validates and atomically appends at EOF with an
@@ -91,7 +108,8 @@ if the receipt is lost, retry the byte-identical candidate to confirm it without
 duplication. Do not mutate the ledger separately.
 
 1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
-   checkpoint, recovery boundary, and next action.
+   checkpoint, repair mode/authority, allowed files, and next action. New runs
+   use `Recovery directive schema: v1`; older ledger entries remain readable.
 2. `REPAIR` captures the same-task continuation outcome and resolution
    evidence without erasing any earlier failed attempt.
 3. `RUN-RESUME` captures state reconciliation before a resumed or replacement
@@ -156,6 +174,9 @@ failure is progress; a context refresh never resets recorded attempts.
 - Incomplete work, a failed gate, report repair, local environment recovery,
   or bounded QA rework is `REPAIR` unless a separate protected condition
   exists.
+- A tools-only control implementation defect is also `REPAIR` when an accepted
+  contract uniquely determines the fix and the scope verifier proves the
+  isolated commit stayed inside its directive.
 - Human attention and STOP are reserved for a protected blocker category or
   `recovery-budget-exhausted`.
 - Triage and escalation identifiers are phase-scoped (`TRG-<phase>-<NNN>`,

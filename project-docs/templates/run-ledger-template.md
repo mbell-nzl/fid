@@ -29,6 +29,7 @@ errors are part of the record.
 ### <YYYY-MM-DD HH:MM> RUN-START
 
 - Sequence contract: v2
+- Recovery directive schema: v1
 - Branch: `<phase branch>`
 - ESC baseline (Open at run start): <ESC-NNN list or "none">
 - Warm-up/autonomous-resume state: <warm-up | autonomous per DEC-NNN>
@@ -39,6 +40,7 @@ errors are part of the record.
 Append before a replacement or resumed Phase Runner takes another action.
 
 - Sequence contract: v2
+- Recovery directive schema: v1
 - Prior run/session or STOP: <reference>
 - Trigger signature: `<task/review>:<category>:<stable source identity>`
 - Attempt count: <total Phase Runner-mediated continuations for this signature>
@@ -71,6 +73,18 @@ same-task Developer continuation; it does not close the task or finding.
 - Source: <report, review finding, command attempt, or session reference>
 - Category: <in-scope-implementation | gate-repair | report-repair | qa-rework |
   session-continuation | local-environment>
+- Repair mode: <task-scope | control-conformance>
+- Repair authority: <task spec / QA review / TRG-<phase>-<NNN> written
+  control-conformance directive>
+- Control contract: <for control-conformance, binding source and uniquely
+  required behavior; otherwise N/A>
+- Control mismatch: <for control-conformance, exact reproducer, expected and
+  observed result, and termination; otherwise N/A>
+- Allowed files: <ordinary task scope | exact named control/self-test paths
+  under project-docs/tools/>
+- Forbidden changes: <for control-conformance, product/spec/prompt/template/
+  dependency/task/QA-contract/report files and command/assertion/status/
+  semantics/scope/threshold/budget/tolerance/policy changes>
 - Trigger signature: `<task/review>:<category>:<stable source identity>`
 - Attempt count: <next total mediated continuation number for this signature>
 - Consecutive no-progress attempts: <n>/2
@@ -89,6 +103,9 @@ evidence; this event records what the continuation changed and proved.
 - Attempt count: <completed mediated continuation number for this signature>
 - Starting checkpoint: <TASK-RECOVERY checkpoint>
 - Ending checkpoint: <commit or exact durable tree/report/review state>
+- Control scope check: <N/A for task-scope | PASS token and observed
+  termination, with Developer-recorded base/head commits, from>
+  `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`
 - Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
 - Resolution evidence: <relevant in-scope change tied to the trigger that
   satisfies/removes an obligation; narrower failure; or byte-identical rerun
@@ -96,6 +113,12 @@ evidence; this event records what the continuation changed and proved.
   progress>
 - Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
   recovery-budget-exhausted>
+
+For control-conformance, the ending checkpoint is one isolated tools-only
+control commit. Append this REPAIR only after the scope check passes, then
+dispatch an ordinary continuation under the same task/trigger/budget to rerun
+the originating exact verification and update its report. Necessary provider
+sync is separate and is not part of the isolated control commit.
 
 ### <YYYY-MM-DD HH:MM> TRIAGE TRG-<phase>-<NNN>
 

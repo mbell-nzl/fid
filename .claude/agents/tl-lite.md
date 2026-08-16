@@ -62,14 +62,19 @@ Escalate if the issue:
 1. Changes a public interface.
 2. Changes the data model or persistence contract.
 3. Overrides or contradicts a standing decision.
-4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, quality gate, or workflow.
-6. Changes testing strategy or coverage policy.
+4. Changes accepted behavior across more than one task or subsystem. Restoring
+   one canonical control implementation to uniquely accepted behavior for all
+   callers does not trigger this rule by itself.
+5. Introduces/removes a dependency, tool, quality gate, or workflow, or changes
+   its accepted definition or policy. A decision-free implementation repair
+   restoring a canonical verification/workflow control to an already accepted
+   contract follows the control-conformance rule below.
+6. Changes testing strategy, assertion semantics, or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria.
 8. Requires an unapproved protected change to recover partial task work, such
    as a schema/data-model, dependency/platform, public-interface, or canonical
-   workflow change. Context exhaustion and same-task continuation alone are
-   `REPAIR`, for any number of continuation sessions.
+   workflow definition change. Context exhaustion, same-task continuation, and
+   a qualifying control-conformance repair are `REPAIR`.
 
 When in doubt, escalate. Never paraphrase a question to make it appear local
 when it crosses one of these triggers.
@@ -98,11 +103,30 @@ when it crosses one of these triggers.
 - RESUME means the trigger is demonstrably misclassified, already resolved by
   verified evidence, or covered by an accepted decision. It is safe for the
   Phase Runner to advance.
-- REPAIR means the trigger is real, local, decision-free, inside the existing
-  task authority, and changes no protected decision, gate definition,
-  threshold, command, or assertion strength. The Phase Runner must not advance:
-  it records `TASK-RECOVERY`, dispatches a same-task continuation, reruns
+- REPAIR means the trigger is real and decision-free under ordinary task scope
+  or a bounded control-conformance recovery directive. The Phase Runner must
+  not advance: it records `TASK-RECOVERY`, preserves the originating task and
+  trigger budget, dispatches the appropriate same-task continuation, reruns
   verification, and repeats any affected independent re-review.
+- A protected gate/control definition change changes a command, assertion's
+  accepted pass/fail semantics, accepted status, scope,
+  threshold/budget/tolerance, or governing policy. That is BLOCK unless an
+  accepted decision already authorizes the exact definition.
+- A control-conformance repair fixes a canonical verification/workflow control
+  implementation whose reproduced behavior violates an already accepted
+  contract that uniquely determines the result. It changes no protected item
+  and is REPAIR, never BLOCK merely because the control is canonical or outside
+  the originating task's ordinary files.
+- Before returning control-conformance REPAIR, cite in the TRG record and
+  verdict: the accepted contract and uniquely required behavior; the exact
+  reproduced mismatch from attached evidence; the originating task, trigger
+  signature, and unchanged attempt budget; exact allowlisted paths limited to
+  the named control and its self-test artifacts under `project-docs/tools/`;
+  the forbidden changes: product/spec/prompt/template/dependency/task/
+  QA-contract/report and
+  command/assertion/status/semantics/scope/threshold/budget/tolerance/policy
+  changes; and the exact control verification required. Any ambiguity or
+  proposed protected change is BLOCK.
 - A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
   in-scope quality-gate failure, missing/skipped command, session ending with
   durable partial work, or incomplete implementation is normally REPAIR.
@@ -114,6 +138,11 @@ when it crosses one of these triggers.
   external infrastructure, specification contradiction, or
   recovery-budget-exhausted. A red test, failed gate, report defect, or number
   of changed files is not a protected category by itself.
+- Never grant generic permission to edit a failing test, gate, or control. A
+  control-conformance directive authorizes only its exact tools-only paths and
+  isolated commit. Necessary provider sync is a separate authorized maintenance
+  step. The originating report is updated only by the ordinary same-task
+  continuation after the Phase Runner's scope check passes.
 - DEC-138's bookkeeping-only RESUME ground is superseded by general causal
   REPAIR. Failed attempts stay failed evidence; neither RESUME nor REPAIR
   rewrites them.
@@ -166,7 +195,11 @@ Triage REPAIR:
 TRG-<phase>-<NNN> logged: <summary>
 Trigger: <copy from prompt>
 Owning task: <task path>
-Recovery scope: <bounded causal repair>
+Repair mode: <task-scope | control-conformance>
+Accepted contract and mismatch: <citation and exact reproduced evidence>
+Recovery scope: <bounded causal repair and exact allowed files>
+Forbidden changes: <protected files and semantics>
+Trigger/budget: <signature and unchanged attempt count/budget>
 Required verification/re-review: <commands and review path>
 
 VERDICT: REPAIR

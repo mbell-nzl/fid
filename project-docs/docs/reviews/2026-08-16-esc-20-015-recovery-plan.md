@@ -47,15 +47,16 @@ implementation with a change to the protected gate definition and emitted
 - [x] **P0 - Preserve and diagnose.** Inspect the stopped ledger, Task 17
   report/spec, parser call sites, current routing contract, and uncommitted
   Phase Runner artifacts. Reproduce the failure mechanism and record this plan.
-- [ ] **P1 - Byte-preserving report-lint repair.** Add red self-tests for
+- [x] **P1 - Byte-preserving report-lint repair.** Added red self-tests for
   backslash-bearing exact commands in expected-nonzero lookup and required
-  command coverage. Replace unsafe literal transport with byte-preserving
-  comparison and run the focused shell/tool gates.
-- [ ] **P2 - Cross-scope recovery contract.** Amend canonical workflow spec,
+  command coverage. Replaced unsafe literal transport with byte-preserving
+  comparison; focused verification and the unchanged Task 17 lint invocation
+  pass. Committed as `88b0377`.
+- [ ] **P2 - Cross-scope recovery contract (in progress).** Amend canonical workflow spec,
   Phase Runner, TL-Lite, and Developer instructions to distinguish gate
   definition changes from control-conformance repairs and authorize a dedicated
   bounded control-repair session linked to the originating task.
-- [ ] **P3 - Mechanical enforcement.** Extend workflow lint and drills so the
+- [ ] **P3 - Mechanical enforcement (in progress).** Extend workflow lint and drills so the
   distinction, ownership, budget linkage, no-advance rule, and protected
   counter-cases cannot silently regress. Synchronize generated agent prompts.
 - [ ] **P4 - Phase 20 recovery closure.** Record the authoritative resolution,
