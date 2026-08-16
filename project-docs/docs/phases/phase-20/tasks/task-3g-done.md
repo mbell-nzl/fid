@@ -1,5 +1,14 @@
 # Phase 20 - Task 3g: Reuse one integration binary - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: MF-01 report-conformance repair is complete; every exact Task 3g command has current-session termination evidence.
+- Recovery attempts: 1
+- Next action: Phase Runner may verify this committed report-repair continuation.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added a package-owned `TestMain` lifecycle that builds one immutable `fid`
@@ -37,17 +46,17 @@
 ## Tests run
 
 - `go test -tags integration -run '^TestIntegrationBinaryOwnedByPackage$' ./cmd/fid/integration` - EXPECTED RED - `FAIL`.
-- `go test -tags integration -run '^TestIntegration(Classification|BinaryOwnedByPackage)$' ./cmd/fid/integration` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.409s`.
-- Source build/workspace inventory - PASS - `workspace_inventory_status=0`.
+- `go test -tags integration -run '^TestIntegration(Classification|BinaryOwnedByPackage)$' ./cmd/fid/integration` - UNVERIFIED - the historical report retained its output token `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.409s`, but no session-captured termination record is available.
+- Source build/workspace inventory - UNVERIFIED - the historical report retained `workspace_inventory_status=0`, but no session-captured termination record is available.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS on byte-identical rerun - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.228s`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.527s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -58,6 +67,15 @@
   signatures and explicitly excludes its two infrastructure tests. No journey,
   product assertion, command, tag, or validator was removed or narrowed; the
   byte-identical full gate passed deterministically after the harness repair.
+- MF-01 report-conformance continuation: the required pre-repair
+  `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3g-done.md project-docs/docs/phases/phase-20/tasks/task-3g.md`
+  failed with final token `FAIL report-lint found 23 failure(s)` (terminated
+  `exit_code: 23`). Root cause: this historical report lacked the required typed
+  workflow outcome, current termination syntax, and an exact `PASS` status for
+  the dedicated integration gate. Repair: added the typed outcome, retained the
+  historical expected-red and UNVERIFIED records, and recorded the exact six
+  Task 3g commands from this continuation. The post-repair canonical control
+  result is recorded under `## Tests run` after it terminates.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
