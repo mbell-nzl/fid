@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: report-repair
-- Condition: `report-lint.sh` rewrites the required Task 17 absence command's `\.` through `awk -v`, so it rejects the byte-identical declared/report row; recording the different spelling it accepts would weaken exact-command evidence.
-- Recovery attempts: 1
-- Next action: Repair the out-of-scope report-lint literal-command comparison, then rerun it against this committed report and the unchanged Task 17 spec.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 3
+- Next action: Review 6 covering Tasks 16-17.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -56,6 +56,7 @@
 - Required integration-gate first attempt: `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`). Root cause: `cmd/fid/integration/e2e_v01_closure_helpers_test.go` still asserted the removed decision version-gate stderr. Causal repair: preserved its real-process maintenance and journal-immutability assertions while changing only the now-invalidated expectation to a non-zero unknown command with empty streams. The byte-identical command later passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.435s` (terminated `exit_code: 0`).
 - No product, architecture, data-model, public-interface, dependency, command, threshold, or assertion-strength deviation.
 - Report-lint recovery: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-17-done.md project-docs/docs/phases/phase-20/tasks/task-17.md` - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`). The diagnostic byte comparison found the declared task command and report row are both 104 bytes and literally equal. The failure is caused by report-lint's `awk -v cmd="$cmd"` comparisons normalizing the command's required `\.` regex escape, as shown by its own `awk: warning: escape sequence \\.` output. Task 17 is not authorized to edit `report-lint.sh`; no fabricated alternate command row was added.
+- Control-conformance resolution (DEC-146): the failed report-lint attempt above remains immutable. Isolated commit `88b0377` replaced only the control's interpreting comparisons and added red/green escape fixtures; `workflow-control-scope-lint.sh . 9edb337 88b0377 project-docs/tools/report-lint.sh` returned `PASS control repair scope: 9edb337 -> 88b0377` (terminated `exit_code: 0`). The unchanged report-lint invocation then accepted the literal command and completed with no failures. No Task 17 product gate, command, expected exit, token, assertion, threshold, or dependency was changed or re-recorded by the recovery session.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
