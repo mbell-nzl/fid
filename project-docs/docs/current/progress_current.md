@@ -5,13 +5,12 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-15 and the DEC-133 infrastructure pack are
+**Phase 20 is in flight: Tasks 1-17 and the DEC-133 infrastructure pack are
 complete, with every cadence and bounded review through `review-5d` closed.**
-Fourteen escalations (`ESC-20-001..014`) are resolved by `DEC-130..DEC-145`.
-Task 16's formatter/YAML deletion is committed at `afb262d`; its two
-recovery-support slices are closed and its third same-task continuation is
-authorized by DEC-145. No product, architecture, data-model, public-interface,
-or dependency decision is open.
+Fifteen escalations (`ESC-20-001..015`) are resolved by `DEC-130..DEC-146`.
+Task 16 is complete; Task 17's product commit stands at `95ee13d` and its
+control-recovery report is complete at `0c1094c`. No product, architecture,
+data-model, public-interface, dependency, or workflow decision is open.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -95,17 +94,13 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
    It supplies typed repair routing, bounded same-task continuation, strict
    sequence/report checks, QA repair/re-review, and retained polling for silent
    live commands. Generated prompts and canonical controls are synchronized.
-6. Task 16's deletion is committed at `afb262d` but the task is open: DEC-143
-   withdrew an unsatisfiable QA-plan YAML `go.sum` search for a stronger
-   requirement/build-graph pair and amended `report-lint.sh` (`task-16a`,
-   `d9d6add`); DEC-144 then corrected that pair's `go mod why -vendor` literal to
-   the tool's real vendor-mode wording and ordered `task-16b` (`d8388d5`) to
-   parse only declaration lines; DEC-145 finally corrected the same row's
-   complete-output rule to the tool's one-stanza protocol, so the mandatory
-   `# gopkg.in/yaml.v3` header is lawful. `16a`/`16b` are recovery-support slices
-   recorded as `REPAIR task-16`. The Task 16 continuation runs next and reruns
-   its own full gate.
-7. The Phase Runner then continues Task 17, Review 6, and Task 18.
+6. Task 16 is complete at `20813fc` / `d0f9cea`; DEC-143/144/145 and recovery
+   slices `task-16a` / `task-16b` retain the three control/spec-literal
+   corrections and immutable failed evidence.
+7. Task 17 is complete at `95ee13d` with report `0c1094c`. DEC-146 repaired
+   report-lint's byte-unsafe command comparison at `88b0377` and added the
+   guarded control-conformance workflow at `92cb0f4`; Review 6 is next, then
+   Task 18.
 8. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 

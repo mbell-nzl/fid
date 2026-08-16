@@ -1381,3 +1381,82 @@ Human-approved and QA-plan acceptance is next._
 - Triage: TRG-20-015 (BLOCK, escalated as ESC-20-015)
 - Protected category: quality-gate definition / workflow authority
 - Next human action: authorize and land the bounded report-lint control repair without rewording exact evidence, then dispatch the Task 17 same-task continuation, obtain Review 6 for Tasks 16-17, and continue to Task 18.
+
+### 2026-08-16 15:04 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v1
+- Prior run/session or STOP: 2026-08-16 14:37 STOP / TRG-20-015 / ESC-20-015
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 2
+- Checkpoint: branch phase-20 at b8cf09c; Task 17 product commit 95ee13d, finalized/recovery report commits 26fabda and 7c74edc, isolated control repair 88b0377, and workflow architecture 92cb0f4 are committed; the historical report-lint failure remains immutable.
+- Resolution evidence: DEC-146 closes ESC-20-015, classifies the defect as tools-only control-conformance REPAIR, and preserves Task 17 command/evidence semantics. The open escalation register is clear.
+- Continuing task: task-17
+
+### 2026-08-16 15:04 TASK-RECOVERY task-17
+
+- Source: task-17-done.md report-lint failure / TRG-20-015 / DEC-146
+- Category: report-repair
+- Repair mode: control-conformance
+- Repair authority: TRG-20-015 adjudication and DEC-146
+- Control contract: required task commands and report command rows compare as opaque byte-exact text; accepted status and evidence semantics remain unchanged
+- Control mismatch: the unchanged Task 17 invocation false-rejected its byte-identical 104-byte backslash-dot command after awk -v escape interpretation (OUTCOME RECOVERY_REQUIRED; terminated exit_code: 2)
+- Allowed files: project-docs/tools/report-lint.sh
+- Forbidden changes: Task 17 command, expected exit, evidence row, VAL-034, product files, specs, prompts, templates, dependencies, accepted status/scope/semantics, thresholds, budgets, tolerances, and policy
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 2
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: STOP baseline 9edb337; isolated control repair commit 88b0377; workflow architecture commit 92cb0f4; DEC-146 commit b8cf09c
+- Resolution evidence: PENDING - verify the isolated commit scope, report-lint self-test, and unchanged Task 17 report-lint invocation
+- Next action: run workflow-control-scope-lint.sh over 9edb337..88b0377, then independently rerun the control self-test and unchanged Task 17 lint invocation
+- Human attention required: no
+
+### 2026-08-16 15:04 REPAIR task-17
+
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 2
+- Starting checkpoint: preserved STOP baseline 9edb337 with Task 17 report-lint terminating exit_code 2
+- Ending checkpoint: isolated tools-only control commit 88b0377; DEC-146 and guarded workflow architecture committed through b8cf09c
+- Control scope check: PASS - PASS control repair scope: 9edb337 -> 88b0377 (terminated exit_code: 0)
+- Outcome: RESOLVED
+- Resolution evidence: report-lint self-test completed with no failures (terminated exit_code: 0); the unchanged Task 17 invocation returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0), proving the two false matches are gone while the report still truthfully requests finalization
+- Next checkpoint: append ordinary task-scope TASK-RECOVERY for the Task 17 report continuation; preserve the original failed lint deviation
+
+### 2026-08-16 15:04 TASK-RECOVERY task-17
+
+- Source: DEC-146 control repair resolution and committed RECOVERY_REQUIRED Task 17 report
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: Task 17 report next action, TRG-20-015 adjudication, and DEC-146
+- Control contract: N/A - the control implementation repair is already isolated and scope-verified
+- Control mismatch: N/A - this continuation only finalizes the originating report after the unchanged lint invocation passed
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-17-done.md
+- Forbidden changes: Task 17 product files, task command, expected exit, evidence tokens, VAL-034, thresholds, dependencies, and the immutable original lint failure
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 3
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 17 product commit 95ee13d and historical report commits remain; control repair 88b0377 is resolved; current report is committed with OUTCOME RECOVERY_REQUIRED
+- Resolution evidence: PENDING - commit the outcome-only report continuation, rerun the unchanged report-lint invocation to OUTCOME COMPLETE, and verify the report commit
+- Next action: update only Task 17 workflow outcome/deviation recovery note, commit it, and rerun exact report-lint
+- Human attention required: no
+
+### 2026-08-16 15:05 REPAIR task-17
+
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 3
+- Starting checkpoint: committed Task 17 report at 7c74edc with OUTCOME RECOVERY_REQUIRED after the historical report-lint false rejection
+- Ending checkpoint: outcome-only Task 17 report continuation committed at 0c1094c; product commit 95ee13d and every original command/token row remain unchanged
+- Control scope check: N/A for task-scope report continuation; the preceding control-conformance commit already passed its isolated scope check
+- Outcome: RESOLVED
+- Resolution evidence: the unchanged report-lint invocation returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); product commit and report commit both resolve and their subjects match
+- Next checkpoint: append renewed TASK task-17 COMPLETE, then obtain Review 6 covering Tasks 16-17
+
+### 2026-08-16 15:05 TASK task-17 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-17-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 95ee13d090b424ad541971d7fafe2ce295f09143 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched feat(cli): remove promised governance command stubs
+- Report finalization commit: 0c1094cbcd8cc53d2e4d3244571d30a43286c212 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched docs(task): complete Task 17 control recovery
+- QA-plan commands beyond the task spec: none required; the Task 17 absence command is already in the exact task gate under DEC-143
+- Gate judgment: Task 17 product evidence is unchanged and complete; DEC-146 control-conformance recovery removed only the false report-lint comparisons, preserved the failed attempt, and the exact report now lints COMPLETE
+- Next action: obtain fresh independent Review 6 covering Tasks 16-17 before Task 18

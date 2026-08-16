@@ -13,13 +13,13 @@ revision, and the retained Issue contract; delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-15 and the infrastructure pack are
+**In flight on branch `phase-20`. Tasks 1-17 and the infrastructure pack are
 complete; every review through `review-5d` is closed**
-(`../phases/phase-20/infra-improvement-pack.md`). Task 16's deletion is committed
-at `afb262d` and has stopped three times on control/spec-literal defects, all
-resolved (DEC-143/144/145); its recovery-support slices `task-16a` (`d9d6add`)
-and `task-16b` (`d8388d5`) are closed. ESC-20-001..014 are resolved; nothing is
-open. **Next: the Task 16 continuation, Task 17, Review 6, Task 18.**
+(`../phases/phase-20/infra-improvement-pack.md`). Task 16 closed after its
+control/spec-literal recoveries (DEC-143/144/145); Task 17 closed after the
+tools-only report-lint control-conformance recovery (DEC-146). ESC-20-001..015
+are resolved; nothing is open. **Next: Review 6 covering Tasks 16-17, then Task
+18.**
 
 ## Operating Mode And Slice Contract
 
@@ -42,16 +42,16 @@ Envelope, leaf schemas, reason codes, DDL/Event semantics, and removals.
 | 10-13 | AC/labels, links, workflow, maintenance | Complete `627ca9d`, `49c179a`, `161f89c` (DEC-141); reviews 4b/4c/5b closed | 8-9a |
 | 14 | Legacy JSON conversion **and its caller convergence** | Complete (DEC-142) | 13 |
 | 15 | Format shim removal and whole-tree convergence | Complete `24f50aef`; review-5d closed MF-02 | 14 |
-| 16 | Delete universal formatters and YAML | Deletion committed `afb262d`; **third continuation authorized** (DEC-143, DEC-144, DEC-145) | 15, 16a, 16b |
+| 16 | Delete universal formatters and YAML | Complete `20813fc` / `d0f9cea` (DEC-143, DEC-144, DEC-145) | 15, 16a, 16b |
 | 16a, 16b | report-lint accepts declared expected-non-zero rows, then parses declaration lines not prose | Complete `d9d6add`, `d8388d5`; Task 16 recovery-support slices (DEC-143/144) | 15 |
-| 17 | Delete promised-command stubs | Pending | 16 |
+| 17 | Delete promised-command stubs | Complete `95ee13d`; control recovery report `0c1094c` (DEC-146) | 16 |
 | 18 | Journey acceptance and documentation | Pending | 1-17 |
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
 12, 15, and 17; Task 18 follows the sixth review, and Review 6 is next. Tasks
 3a-3d, 9a, 16a, 16b are recovery sessions and 3e-3l is the DEC-133 infrastructure
-pack; none adds a product VAL. `16a`/`16b` ride the ledger as `REPAIR task-16`,
-so Task 16 still owes the only `TASK task-16 COMPLETE` event (DEC-145).
+pack; none adds a product VAL. `16a`/`16b` ride the ledger as `REPAIR task-16`;
+Task 16 and Task 17 now have their single renewed completion events.
 
 ## Validation Contract
 

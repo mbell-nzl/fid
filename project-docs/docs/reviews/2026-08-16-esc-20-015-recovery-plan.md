@@ -60,10 +60,10 @@ implementation with a change to the protected gate definition and emitted
   distinction, ownership, budget linkage, no-advance rule, and protected
   counter-cases cannot silently regress. Generated prompts are synchronized;
   workflow commit `92cb0f4` passes lint, drills, and sequence validation.
-- [ ] **P4 - Phase 20 recovery closure (in progress).** Record the authoritative resolution,
+- [x] **P4 - Phase 20 recovery closure.** Recorded the authoritative resolution,
   archive ESC-20-015, append validated RUN-RESUME / recovery events, finalize
-  Task 17's report from the unchanged evidence, and leave the ledger at the
-  correct next checkpoint for Review 6.
+  Task 17's report from unchanged evidence at `0c1094c`, and left the ledger
+  `ADVANCEABLE` with Review 6 next.
 - [ ] **P5 - Independent adversarial review.** Ask an agent that did not
   implement the repair to probe literal edge cases, unsafe gate weakening,
   cross-scope ownership, recovery budgets, ledger sequencing, and generated
