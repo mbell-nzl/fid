@@ -1,5 +1,14 @@
 # Phase 20 - Task 3h: Reusable pristine workspace fixture - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: MF-01 report conformance repaired with fresh current-session Task 3h gate evidence.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added a package-lifecycle pristine workspace created once through the full
@@ -37,19 +46,30 @@
 ## Tests run
 
 - `go test -run '^TestPristineWorkspaceClonePreservesRebuildParityAndIsolation$' ./cmd/fid` - EXPECTED RED - `FAIL`.
-- `go test -run '^TestPristineWorkspaceClonePreservesRebuildParityAndIsolation$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.062s`.
-- Pre-migration `go test -race -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	150.540s`.
-- Post-migration `go test -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	9.809s`.
-- Post-migration `go test -race -count=1 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	88.748s`.
+- `go test -run '^TestPristineWorkspaceClonePreservesRebuildParityAndIsolation$' ./cmd/fid` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.062s`.
+- Pre-migration `go test -race -count=1 ./cmd/fid` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid	150.540s`.
+- Post-migration `go test -count=1 ./cmd/fid` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid	9.809s`.
+- Post-migration `go test -race -count=1 ./cmd/fid` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid	88.748s`.
+
+The historical PASS rows above did not retain observed process termination and
+are therefore preserved as UNVERIFIED evidence. The current-session exact gate
+results below are the passing evidence for this report continuation.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.325s`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+- `gofmt -l cmd internal` - UNVERIFIED - `exit 0 (no output)`.
+- `golangci-lint run ./...` - UNVERIFIED - `0 issues.`.
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
+- `go tool cover -func=coverage.out` - UNVERIFIED - `total:										(statements)					77.7%`.
+- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.325s`.
+- `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - `exit 0 (no output)`.
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.515s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
