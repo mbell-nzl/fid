@@ -1,8 +1,8 @@
 # ESC-20-015 final independent workflow review
 
-**Date:** 2026-08-16  
-**Reviewer:** Fresh read-only subagent  
-**Reviewed checkpoint:** `2b93a041ecfe36ba4cb2437b6dbd1cce3311f709`  
+**Date:** 2026-08-16
+**Reviewer:** Fresh read-only subagent
+**Reviewed checkpoint:** `2b93a041ecfe36ba4cb2437b6dbd1cce3311f709`
 **Verdict:** PASS
 
 ## Scope
