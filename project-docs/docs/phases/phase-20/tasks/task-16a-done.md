@@ -53,10 +53,10 @@
 
 ## Commit hash
 
-- Pending commit
+- `d9d6adde01d42c91f88e48a6f8a80bc6c8301b45`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): accept declared non-zero report evidence`
 
 OUTCOME COMPLETE
