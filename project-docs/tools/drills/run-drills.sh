@@ -924,6 +924,7 @@ cat > "$valid_amended_control" <<'EOF'
 - Warm-up/autonomous-resume state: warm-up complete
 - Starting task: task-1
 ### 2026-08-15 11:01 TRIAGE TRG-1-010
+- Trigger: protected control definition requires authority
 - Originating task: task-1
 - Trigger signature: task-1:quality-gate-control-defect:blocked-control
 - Attempt count: 1
@@ -1062,6 +1063,12 @@ run_invalid_sequence "drill-18 control repair cannot authorize a protected verif
   "cannot authorize a protected workflow verifier" \
   "$protected_verifier_phase/run-ledger.md"
 
+wrong_control_disposition="$control_phase/wrong-control-disposition.md"
+sed '0,/^- Triage disposition: REPAIR \/ control-conformance$/s//- Triage disposition: N\/A/' \
+  "$valid_control_repair" > "$wrong_control_disposition"
+run_invalid_sequence "drill-18 TASK-RECOVERY disposition must match control mode" \
+  "Triage disposition does not match Repair mode" "$wrong_control_disposition"
+
 blank_run_start="$workspace/blank-v2-run-start.md"
 cat > "$blank_run_start" <<'EOF'
 ### 2026-08-15 12:00 RUN-START
@@ -1156,6 +1163,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Warm-up/autonomous-resume state: warm-up complete
 - Starting task: task-1
 ### 2026-08-15 12:11 TRIAGE TRG-1-030
+- Trigger: focused test failed on a legacy assertion
 - Originating task: task-1
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
@@ -1170,7 +1178,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Category: gate-repair
 - Repair mode: task-scope
 - Repair authority: TRG-1-030 task spec
-- Triage disposition: REPAIR
+- Triage disposition: N/A
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
 - Control contract: N/A
@@ -1226,6 +1234,7 @@ cat > "$restored_capability" <<'EOF'
 - Warm-up/autonomous-resume state: warm-up complete
 - Starting task: task-1
 ### 2026-08-15 12:21 TRIAGE TRG-1-040
+- Trigger: required local capability unavailable
 - Originating task: task-1
 - Trigger signature: task-1:local-environment:required-tool
 - Attempt count: 1
@@ -1286,6 +1295,33 @@ sed 's/restored-capability:required-tool-v1/restored by someone/g' \
 run_invalid_sequence "drill-18 STOP resume requires a typed resolution authority" \
   "invalid or unverifiable Resolution authority" "$invalid_capability_authority"
 
+expanded_capability_authority="$capability_phase/expanded-capability-authority.md"
+sed '/^### 2026-08-15 12:24 TASK-RECOVERY task-1$/,$ s/restored-capability:required-tool-v1/restored-capability:required-tool-v1-expanded/g' \
+  "$restored_capability" > "$expanded_capability_authority"
+run_invalid_sequence "drill-18 restored-capability authority cannot be suffix-expanded" \
+  "does not retain its typed RUN-RESUME resolution authority" \
+  "$expanded_capability_authority"
+
+verified_commit="$capability_phase/verified-commit.md"
+sed 's/restored-capability:required-tool-v1/verified-commit:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/g' \
+  "$restored_capability" > "$verified_commit"
+run_sequence "drill-18 verified commit can resume an unchanged protected contract" \
+  REPAIR_PENDING "$verified_commit"
+
+expanded_verified_commit="$capability_phase/expanded-verified-commit.md"
+sed '/^### 2026-08-15 12:24 TASK-RECOVERY task-1$/,$ s/verified-commit:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/verified-commit:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-expanded/g' \
+  "$verified_commit" > "$expanded_verified_commit"
+run_invalid_sequence "drill-18 verified-commit authority cannot be suffix-expanded" \
+  "does not retain its typed RUN-RESUME resolution authority" \
+  "$expanded_verified_commit"
+
+expanded_decision_authority="$amended_phase/expanded-decision-authority.md"
+sed '/^### 2026-08-15 11:04 TASK-RECOVERY task-1$/,$ s/DEC-200/DEC-200-expanded/g' \
+  "$valid_amended_control" > "$expanded_decision_authority"
+run_invalid_sequence "drill-18 decision authority cannot be suffix-expanded" \
+  "cites an unrecorded or malformed phase decision" \
+  "$expanded_decision_authority"
+
 duplicate_schema="$control_phase/duplicate-schema.md"
 sed '0,/^- Recovery directive schema: v2$/s//&\
 - Recovery directive schema: v2/' "$valid_control_repair" > "$duplicate_schema"
@@ -1295,6 +1331,19 @@ duplicate_directive_field="$control_phase/duplicate-directive-field.md"
 sed '0,/^- Allowed files: project-docs\/tools\/report-lint.sh$/s//&\
 - Allowed files: project-docs\/tools\/report-lint.sh/' "$valid_control_repair" > "$duplicate_directive_field"
 run_invalid_sequence "drill-18 schema v2 directive fields must be singular" "directive fields must each occur exactly once" "$duplicate_directive_field"
+
+missing_triage_trigger="$control_phase/missing-triage-trigger.md"
+sed '/^- Trigger: report-lint violates its byte-exact command contract$/d' \
+  "$valid_control_repair" > "$missing_triage_trigger"
+run_invalid_sequence "drill-18 schema v2 TRIAGE requires its trigger" \
+  "TRIAGE must contain each authority field exactly once" "$missing_triage_trigger"
+
+duplicate_triage_trigger="$control_phase/duplicate-triage-trigger.md"
+sed '/^- Trigger: report-lint violates its byte-exact command contract$/a\
+- Trigger: conflicting duplicate trigger
+' "$valid_control_repair" > "$duplicate_triage_trigger"
+run_invalid_sequence "drill-18 schema v2 TRIAGE rejects duplicate triggers" \
+  "TRIAGE must contain each authority field exactly once" "$duplicate_triage_trigger"
 
 premature_control_complete="$control_phase/premature-control-complete.md"
 sed '/^### 2026-08-15 10:03 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:05 TASK task-1 COMPLETE$/ {

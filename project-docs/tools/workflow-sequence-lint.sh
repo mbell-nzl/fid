@@ -50,6 +50,23 @@ function references_id(text, id) {
   return id != "" && text ~ ("(^|[^[:alnum:]_-])" id "([^[:alnum:]_-]|$)")
 }
 
+function references_exact_token(text, token, rest, position, before, after) {
+  if (token == "") {
+    return 0
+  }
+  rest = text
+  while ((position = index(rest, token)) > 0) {
+    before = position > 1 ? substr(rest, position - 1, 1) : ""
+    after = substr(rest, position + length(token), 1)
+    if ((before == "" || before !~ /[[:alnum:]_.:-]/) &&
+        (after == "" || after !~ /[[:alnum:]_.:-]/)) {
+      return 1
+    }
+    rest = substr(rest, position + 1)
+  }
+  return 0
+}
+
 function bounded_id_at(text, start, token_length, before, after) {
   before = start > 1 ? substr(text, start - 1, 1) : ""
   after = substr(text, start + token_length, 1)
@@ -453,7 +470,8 @@ function finish_event() {
     }
   }
   if (event_directive_v2 && event == "TRIAGE") {
-    if (!exact_once(event_originating_task_count, event_originating_task) ||
+    if (!exact_once(event_triage_trigger_count, event_triage_trigger) ||
+        !exact_once(event_originating_task_count, event_originating_task) ||
         !exact_once(event_trigger_count, event_trigger_signature) ||
         !exact_once(event_attempt_count, event_attempt) ||
         !exact_once(event_repair_category_count, event_repair_category) ||
@@ -509,6 +527,12 @@ function finish_event() {
     }
     if (event_repair_mode !~ /^(task-scope|control-conformance)$/) {
       invalid("TASK-RECOVERY has missing or invalid Repair mode")
+    }
+    if (event_directive_v2 &&
+        ((event_repair_mode == "control-conformance" &&
+          event_triage_disposition != "REPAIR / control-conformance") ||
+         (event_repair_mode == "task-scope" && event_triage_disposition != "N/A"))) {
+      invalid("TASK-RECOVERY Triage disposition does not match Repair mode")
     }
     if (event_repair_authority == "") {
       invalid("TASK-RECOVERY is missing Repair authority")
@@ -571,8 +595,8 @@ function finish_event() {
         invalid("TASK-RECOVERY does not retain its RUN-RESUME decision authority")
       }
       if (event_directive_v2 && resume_resolution_authority != "" &&
-          (index(event_repair_authority, resume_resolution_authority) == 0 ||
-           index(event_source, resume_resolution_authority) == 0)) {
+          (!references_exact_token(event_repair_authority, resume_resolution_authority) ||
+           !references_exact_token(event_source, resume_resolution_authority))) {
         invalid("TASK-RECOVERY does not retain its typed RUN-RESUME resolution authority")
       }
       if (event_no_progress != "0/2") {
@@ -1139,6 +1163,7 @@ function finish_event() {
   event_originating_task = ""
   event_repair_category = ""
   event_triage_authority = ""
+  event_triage_trigger = ""
   event_triage_disposition = ""
   event_phase_worktree = ""
   event_temporary_worktree = ""
@@ -1192,6 +1217,7 @@ function finish_event() {
   event_originating_task_count = 0
   event_repair_category_count = 0
   event_triage_authority_count = 0
+  event_triage_trigger_count = 0
   event_branch_count = 0
   event_esc_baseline_count = 0
   event_warmup_state_count = 0
@@ -1280,6 +1306,10 @@ event == "REVIEW" && /^- Must-fix: / {
 event == "TRIAGE" && /^- Verdict: / {
   event_verdict_count++
   event_verdict = substr($0, length("- Verdict: ") + 1)
+}
+event == "TRIAGE" && /^- Trigger: / {
+  event_triage_trigger_count++
+  event_triage_trigger = substr($0, length("- Trigger: ") + 1)
 }
 event == "TRIAGE" && /^- Triage log: / {
   event_triage_log_count++
