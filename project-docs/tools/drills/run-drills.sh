@@ -1044,9 +1044,28 @@ sed 's/exact commands are compared byte-for-byte/DEC-999999 says exact commands 
   "$control_phase/triage-log.md" > "$nonexistent_contract_decision_phase/triage-log.md"
 sed 's/exact commands are compared byte-for-byte/DEC-999999 says exact commands are compared byte-for-byte/g' \
   "$valid_control_repair" > "$nonexistent_contract_decision_phase/run-ledger.md"
-run_invalid_sequence "drill-18 every directive decision citation must exist" \
-  "unrecorded or malformed phase decision" \
-  "$nonexistent_contract_decision_phase/run-ledger.md"
+run_sequence "drill-18 non-authority directive prose does not become decision authority" \
+  ADVANCEABLE "$nonexistent_contract_decision_phase/run-ledger.md"
+
+nonexistent_repair_authority_phase="$workspace/nonexistent-repair-authority/phase-1"
+mkdir -p "$nonexistent_repair_authority_phase"
+sed 's/TRG-1-001 typed directive/TRG-1-001 typed directive \/ DEC-999999/g' \
+  "$control_phase/triage-log.md" > "$nonexistent_repair_authority_phase/triage-log.md"
+sed 's/TRG-1-001 typed directive/TRG-1-001 typed directive \/ DEC-999999/g' \
+  "$valid_control_repair" > "$nonexistent_repair_authority_phase/run-ledger.md"
+run_invalid_sequence "drill-18 nonexistent DEC cannot enter Repair authority" \
+  "cites an unrecorded or malformed phase decision" \
+  "$nonexistent_repair_authority_phase/run-ledger.md"
+
+embedded_repair_authority_phase="$workspace/embedded-repair-authority/phase-1"
+mkdir -p "$embedded_repair_authority_phase"
+sed 's/TRG-1-001 typed directive/TRG-1-001 typed directive \/ NOTDEC-999X/g' \
+  "$control_phase/triage-log.md" > "$embedded_repair_authority_phase/triage-log.md"
+sed 's/TRG-1-001 typed directive/TRG-1-001 typed directive \/ NOTDEC-999X/g' \
+  "$valid_control_repair" > "$embedded_repair_authority_phase/run-ledger.md"
+run_invalid_sequence "drill-18 embedded pseudo-ID cannot enter Repair authority" \
+  "cites an unrecorded or malformed phase decision" \
+  "$embedded_repair_authority_phase/run-ledger.md"
 
 duplicate_report_continuation="$control_phase/duplicate-report-continuation.md"
 sed '/^### 2026-08-15 10:03 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:04 REPAIR task-1$/ {
@@ -1113,6 +1132,13 @@ cat > "$normal_resume" <<'EOF'
 EOF
 run_sequence "drill-18 normal schema v2 RUN-RESUME uses explicit N/A authority" \
   ADVANCEABLE "$normal_resume"
+
+normal_resume_with_dec_prose="$workspace/normal-v2-resume-with-dec-prose.md"
+sed -e 's/^- Checkpoint: task-17 complete; Review 6 next$/- Checkpoint: retained NOTDEC-999X diagnostic text; task-17 complete; Review 6 next/' \
+    -e 's/^- Resolution evidence: committed reports and ledger reconcile$/- Resolution evidence: diagnostic command rg -n "DEC-[0-9]+" exited as expected; DEC-999999 is reproduced prose, not authority/' \
+  "$normal_resume" > "$normal_resume_with_dec_prose"
+run_sequence "drill-18 checkpoint and command prose do not become decision authority" \
+  ADVANCEABLE "$normal_resume_with_dec_prose"
 
 missing_normal_resume_field="$workspace/missing-normal-resume-field.md"
 sed '/^- Prior run\/session or STOP: /d' "$normal_resume" > "$missing_normal_resume_field"

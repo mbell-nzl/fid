@@ -268,7 +268,7 @@ function authority_field_matches(id, verdict, label, expected) {
   return triage_field_matches(id, label, expected)
 }
 
-function section_decisions_exist(id, section_kind, line, in_section) {
+function section_decisions_exist(id, section_kind, line, in_section, value) {
   if (id == "" || triage_file == "") {
     return 0
   }
@@ -284,9 +284,18 @@ function section_decisions_exist(id, section_kind, line, in_section) {
       }
       continue
     }
-    if (in_section && !all_decisions_exist(line)) {
-      close(triage_file)
-      return 0
+    if (in_section) {
+      if (index(line, "- **Repair authority:** ") == 1) {
+        value = substr(line, length("- **Repair authority:** ") + 1)
+      } else if (index(line, "- **Resolution authority:** ") == 1) {
+        value = substr(line, length("- **Resolution authority:** ") + 1)
+      } else {
+        continue
+      }
+      if (!all_decisions_exist(value)) {
+        close(triage_file)
+        return 0
+      }
     }
   }
   close(triage_file)
@@ -311,23 +320,8 @@ function valid_resolution_authority(value) {
 }
 
 function event_decisions_exist(ledger_authority) {
-  ledger_authority = event_source " " event_category " " event_repair_mode " " \
-    event_repair_authority " " event_control_contract " " event_control_mismatch " " \
-    event_allowed_files " " event_forbidden_changes " " event_trigger_signature " " \
-    event_checkpoint " " event_resolution_evidence " " event_next_action " " \
-    event_control_scope_check " " event_next_checkpoint " " event_triage_reference " " \
-    event_protected_category " " event_next_human_action " " event_triage_log " " \
-    event_prior_run " " event_continuing_task " " event_originating_report " " \
-    event_exact_verification " " event_phase_integration " " event_governing_trg " " \
-    event_governing_esc " " event_resolution_authority " " event_next_recovery " " \
-    event_branch " " event_esc_baseline " " event_warmup_state " " event_starting_task " " \
-    event_originating_task " " event_repair_category " " event_triage_authority " " \
-    event_triage_disposition " " event_phase_worktree " " event_temporary_worktree " " \
-    event_hidden_flags " " event_cause " " event_starting_checkpoint " " \
-    event_ending_checkpoint " " event_outcome " " event_verdict " " \
-    event_report " " event_report_lint " " event_commit " " event_qa_commands " " \
-    event_review_path " " event_tasks_covered " " event_must_fix " " \
-    event_run_end_complete " " event_human_checklist " " event_wrapup_ready
+  ledger_authority = event_repair_authority " " event_triage_authority " " \
+    event_resolution_authority
   return all_decisions_exist(ledger_authority)
 }
 
@@ -705,11 +699,11 @@ function finish_event() {
         # TL-Lite directly authorized this bounded repair.
       } else if (latest_triage_verdict ~ /^BLOCK/) {
         authority_decision = decision_id(event_repair_authority)
+        resolved_authority_text = event_directive_v2 ? resolved_block_authority : resolved_block_evidence
         if (resolved_block_triage != latest_triage_id || authority_decision == "" ||
-            !references_id(resolved_block_evidence, authority_decision) ||
             !decision_exists(authority_decision) ||
             !all_decisions_exist(event_repair_authority) ||
-            !all_decisions_exist(resolved_block_evidence)) {
+            !all_decisions_exist(resolved_authority_text)) {
           invalid("control-conformance BLOCK authority lacks a bound RUN-RESUME decision for " latest_triage_id)
         }
         if (event_directive_v2) {
@@ -906,7 +900,7 @@ function finish_event() {
            event_resolution_authority_count != 1 || event_next_recovery_count != 1)) {
         invalid("schema v2 RUN-RESUME authority fields must each occur exactly once")
       }
-      decision_text = event_resolution_evidence " " event_resolution_authority
+      decision_text = event_directive_v2 ? event_resolution_authority : event_resolution_evidence
       resume_decision = decision_id(event_resolution_authority)
       if (!all_decisions_exist(decision_text)) {
         invalid("RUN-RESUME cites an unrecorded or malformed phase decision")
