@@ -1342,3 +1342,42 @@ Human-approved and QA-plan acceptance is next._
 - Triage: TRG-20-014 (BLOCK, escalated as ESC-20-014)
 - Protected category: specification contradiction / quality-gate authority
 - Next human action: resolve ESC-20-014 by reconciling the Task 16 and QA-plan complete-output requirement with the observed two-line vendor-mode result, without changing dependencies, substituting the command, weakening VAL-032, or altering thresholds; then authorize the Task 16 completion and continue to Task 17, Review 6, and Task 18.
+
+### 2026-08-16 14:15 RUN-RESUME
+
+- Sequence contract: v2
+- Prior run/session or STOP: 2026-08-16 13:32 STOP / TRG-20-014 / ESC-20-014
+- Trigger signature: task-16:specification-contradiction:go-mod-why-vendor-complete-output
+- Attempt count: 3
+- Checkpoint: branch phase-20 at DEC-145 documentation commit 4eddaf4; Task 16 deletion remains committed at afb262d; task-16a d9d6add and task-16b d8388d5 remain committed; Task 16 blocker evidence stays immutable.
+- Resolution evidence: DEC-145 in project-docs/docs/phases/phase-20/decisions.md corrects the go mod why -vendor complete-output criterion to the tool's one-stanza protocol: the required module header followed by the parenthesized vendor-mode does-not-need result. No dependency, command, VAL, window, threshold, assertion, review trigger, or task boundary changed.
+- Open escalation baseline: none; ESC-20-014 is resolved and archived by DEC-145.
+- Next action: dispatch the third Task 16 same-task continuation, then task-17, Review 6, and task-18.
+
+### 2026-08-16 14:22 TASK task-16 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-16-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 20813fc1052d0730113c3b1a2a2716a8a94a8488 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched docs(task): record Task 16 completion evidence
+- Report finalization commit: d0f9cea6e436ae76ff603da895a62439f620e9ff - verified via git rev-parse --verify (terminated exit_code: 0), subject matched docs(task): finalize completion report for phase-20 task-16
+- QA-plan commands beyond the task spec: none required
+- Gate judgment: the third Task 16 same-task continuation recorded all twelve unchanged commands with current-session tokens and observed termination; the four declared non-zero absence checks and the DEC-145 one-stanza go mod why evidence passed. The withdrawn go.sum search, all three report-lint failures, both earlier go mod why BLOCKED rows, and their deviation notes remain immutable. Task-16a and task-16b remain represented by the existing REPAIR task-16 entries; this is the single Task 16 completion event.
+- Next action: dispatch Task 17, then obtain Review 6 covering Tasks 16-17, then continue to Task 18.
+
+### 2026-08-16 14:36 TRIAGE TRG-20-015
+
+- Trigger: Task 17's truthful expected-non-zero absence command is byte-identical in the task spec and committed report, but report-lint's awk -v comparison normalizes the required backslash-dot escape and rejects it.
+- Trigger signature: task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization
+- Attempt count: 1
+- Checkpoint: Task 17 product commit 95ee13d090b424ad541971d7fafe2ce295f09143, report finalization 26fabda6c944a2f3835f5b75ab80c5e2ec68efc3, and recovery evidence 7c74edcdbd7e2ff53e84c353b89ce4b8db83d7ce are verified; report-lint terminated exit_code: 2 with OUTCOME RECOVERY_REQUIRED and two false comparison failures.
+- Verdict: BLOCK (escalated as ESC-20-015)
+- Resolution evidence: the task-spec command and committed report row are literally equal, but report-lint passes the regex-bearing command through awk -v and normalizes backslash-dot. Repair requires modifying report-lint.sh outside Task 17 authority; rewording the command would violate exact-command coverage. No evidence, command, threshold, assertion, or dependency change is permitted.
+- Triage log: project-docs/docs/phases/phase-20/triage-log.md entry TRG-20-015 confirmed; escalation project-docs/docs/current/tl_escalations_current.md entry ESC-20-015 confirmed.
+
+### 2026-08-16 14:37 STOP
+
+- Cause: Task 17 report-lint rejected a byte-identical truthful expected-non-zero command/report row after awk -v normalized its required backslash-dot escape; TL-Lite recorded TRG-20-015 and ESC-20-015.
+- Task: task-17
+- Triage: TRG-20-015 (BLOCK, escalated as ESC-20-015)
+- Protected category: quality-gate definition / workflow authority
+- Next human action: authorize and land the bounded report-lint control repair without rewording exact evidence, then dispatch the Task 17 same-task continuation, obtain Review 6 for Tasks 16-17, and continue to Task 18.

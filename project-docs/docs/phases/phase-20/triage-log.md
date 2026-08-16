@@ -225,6 +225,47 @@
   next action: invoke full Tech Lead to resolve the committed Task 4 report
   correction and recovery path before the Phase Runner resumes.
 
+## TRG-20-015 - Task 17 report-lint false-rejects byte-identical absence evidence
+
+- **Trigger:** Task 17's truthful expected-non-zero absence command is
+  byte-identical in the task spec and committed report, but report-lint's
+  `awk -v` comparison normalizes the required backslash-dot escape and rejects
+  it.
+- **Trigger signature:** `task-17:quality-gate-control-defect:awk-v-backslash-dot-normalization`
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-17-done.md`; the
+  prompt's independent `project-docs/tools/report-lint.sh` output and attached
+  commit-verification evidence.
+- **Candidate:** `RECOVERY_REQUIRED` / report-lint control defect.
+- **Attempt count:** 1 mediated Task 17 report-recovery attempt for this
+  signature.
+- **Checkpoint:** product commit
+  `95ee13d090b424ad541971d7fafe2ce295f09143`, report-finalization commit
+  `26fabda6c944a2f3835f5b75ab80c5e2ec68efc3`, and report-recovery evidence
+  commit `7c74edcdbd7e2ff53e84c353b89ce4b8db83d7ce` are attached as verified;
+  independent report-lint still terminates `exit_code: 2` with
+  `OUTCOME RECOVERY_REQUIRED` and two false missing-command failures.
+- **Verdict:** BLOCK
+- **Reasoning:** The command in Task 17's declaration and report row is
+  literally equal at 104 bytes. The control's `awk -v` handling turns its
+  required `\\.` escape into `.`, so the rejection is real and cannot be
+  repaired by rewording without violating exact command coverage. Repairing
+  `report-lint.sh` is outside Task 17 authority and changes a canonical
+  quality-gate/workflow control; it requires full Tech Lead authority.
+- **Local decisions made:** none.
+- **Resolution evidence:** The supplied commit verification proves the product
+  and report-recovery checkpoints, not resolution: the independently attached
+  report-lint failure remains. The prompt expressly prohibits changing the
+  truthful command spelling, command, threshold, assertion strength, or report
+  evidence.
+- **If BLOCK:** category quality-gate definition / workflow authority;
+  ESC-20-015 raised in `tl_escalations_current.md`; resolution condition: full
+  Tech Lead authorizes and directs a byte-exact report-lint control repair,
+  then routes the resulting recovery without changing Task 17 evidence.
+- **Human attention required:** yes.
+- **References:** `tasks/task-17.md:45-62`; `tasks/task-17-done.md:45-54,
+  62-65`; `project-docs/specs/09_AI_WORKFLOW.md` §§2.3, 9;
+  `project-docs/templates/triage-log-template.md`.
+
 ## TRG-20-005 - Task 4 blocked by unused lock-holder helper
 
 - **Trigger:** Phase 20 Task 4 Developer blocker report says the required
