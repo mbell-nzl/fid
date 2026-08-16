@@ -1,5 +1,14 @@
 # Phase 20 - Task 3d: Evidence-token control and gate-record correction
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added a POSIX `sh`, dependency-free `report-lint.sh` control that rejects an
@@ -16,6 +25,9 @@
   and added deterministic workflow-lint coverage.
 - Recorded the Human-authorized ESC-20-003 recovery and its explicit exclusion
   of broader test-performance work in DEC-132.
+- Report-only MF-01 continuation: added canonical workflow disposition and
+  current-session termination evidence without changing product code, tests,
+  task scope, historical evidence, DEC-131, or DEC-132.
 
 ## Files created or modified
 
@@ -55,6 +67,8 @@
 - Captured the diagnosis for posterity in the requested review document.
 - Preserved the Phase Runner's append-only STOP, triage, and escalation state;
   closure is recorded after the finalized report passes report-lint.
+- This continuation updates only this completion report for canonical
+  report-lint conformance.
 
 ## Validation Contract Coverage
 
@@ -63,7 +77,7 @@
   Phase 20 DEC-131, and the Human-authorized DEC-132 recovery, not product
   behavior.
 
-## Tests run
+## Historical tests run (preserved)
 
 - Pre-existing Task 3d red: `project-docs/tools/report-lint.sh --self-test` -
   EXPECTED RED before the original token control -
@@ -83,7 +97,11 @@
   `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3a-done.md project-docs/docs/phases/phase-20/tasks/task-3a.md` -
   EXPECTED HARNESS RED - `FAIL report-lint found 1 failure(s)`.
 
-## Exact quality-gate results
+## Tests run
+
+- MF-01 initial report conformance check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3d-done.md project-docs/docs/phases/phase-20/tasks/task-3d.md` - FAIL - `FAIL report-lint found 23 failure(s)` (terminated `exit_code: 23`)
+
+## Historical exact quality-gate results (preserved)
 
 - `project-docs/tools/report-lint.sh --self-test` - PASS -
   `SELF-TEST PASS report-lint self-test completed with no failures`.
@@ -105,6 +123,16 @@
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3b-done.md project-docs/docs/phases/phase-20/tasks/task-3b.md` - PASS -
   `PASS report-lint completed with no failures`.
 
+## Exact quality-gate results
+
+- `project-docs/tools/report-lint.sh --self-test` - PASS - `SELF-TEST PASS report-lint self-test completed with no failures` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - The Human explicitly authorized a recovery super-agent to cross the normal
@@ -124,6 +152,13 @@
   The validator and command are not weakened or narrowed; the byte-identical
   rerun passed with `PASS report-lint completed with no failures` after the
   finalized-report commit made both corrected reports clean.
+- MF-01 report-conformance repair: the initial exact Task 3d report-lint
+  invocation failed with `FAIL report-lint found 23 failure(s)` (terminated
+  `exit_code: 23`). Root cause: this historical report predates the canonical
+  typed workflow outcome and observed-termination syntax. Repair: preserve the
+  historical sections and add only this session's observed exact command
+  results. The later exact report-lint result is recorded after the corrected
+  report is committed and checked.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
