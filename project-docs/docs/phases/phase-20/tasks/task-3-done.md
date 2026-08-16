@@ -1,5 +1,14 @@
 # Phase 20 - Task 3: Atomic project initialization - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 2
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Replaced direct `.fid/` creation with a unique sibling staging protocol: validate, stage strict bootstrap files, initialize the schema, append/project genesis, rebuild and byte-compare the projection, fsync files/directories, and atomically activate `.fid/`.
@@ -33,27 +42,49 @@
 
 ## Tests run
 
-- `go test ./internal/bootstrap -run '^TestInitializeFailureBeforeActivationLeavesNoWorkspace$'` — EXPECTED RED — `FAIL`
-- `go test ./cmd/fid -run '^TestInitCommandUsesExactProjectInitResponseEnvelope$'` — EXPECTED RED — `FAIL`
-- `go test ./cmd/fid -run '^TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging$'` — EXPECTED RED — `FAIL`
-- `go test ./internal/bootstrap ./cmd/fid -run '^(TestInitializeFailureBeforeActivationLeavesNoWorkspace|TestInitCommand|TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers$)'` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.297s`
-- `go test ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.534s`
-- `go test ./cmd/fid -run '^TestInitCommandUsesExactProjectInitResponseEnvelope$'` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.043s`
-- `/tmp/fid --project /tmp/fid-task3-final-cli-qIt4Jx --json init --prefix TASK3` — PASS — `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-09.jsonl","project":{"id":"project-c76cb9c33e5fc1a2210fa32a6ea2ff13","issue_prefix":"TASK3","root":"/tmp/fid-task3-final-cli-qIt4Jx"}},"event":{"id":"EVT-20260809-000001","occurred_at":"2026-08-09T04:32:32.893716987Z"}}`
-- QA-plan applicability: QA-01 is covered by the exact gate below; QA-02, QA-03, QA-18, QA-19, and QA-21 have the envelope, explicit-target, strict-config/prefix, atomic-stage, and collision/no-residue evidence cited above. The Task-3-required integration command passed in the exact gate below.
+Historical Task 3 test and entrypoint evidence is preserved below. Its original
+direct-test, unchanged-surface, and gate records predate the required
+termination syntax and are not used as current gate evidence.
+
+> - `go test ./internal/bootstrap -run '^TestInitializeFailureBeforeActivationLeavesNoWorkspace$'` — EXPECTED RED — `FAIL`
+> - `go test ./cmd/fid -run '^TestInitCommandUsesExactProjectInitResponseEnvelope$'` — EXPECTED RED — `FAIL`
+> - `go test ./cmd/fid -run '^TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging$'` — EXPECTED RED — `FAIL`
+> - `go test ./internal/bootstrap ./cmd/fid -run '^(TestInitializeFailureBeforeActivationLeavesNoWorkspace|TestInitCommand|TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers$)'` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.297s`
+> - `go test ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.534s`
+> - `go test ./cmd/fid -run '^TestInitCommandUsesExactProjectInitResponseEnvelope$'` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.043s`
+> - `/tmp/fid --project /tmp/fid-task3-final-cli-qIt4Jx --json init --prefix TASK3` — PASS — `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-09.jsonl","project":{"id":"project-c76cb9c33e5fc1a2210fa32a6ea2ff13","issue_prefix":"TASK3","root":"/tmp/fid-task3-final-cli-qIt4Jx"}},"event":{"id":"EVT-20260809-000001","occurred_at":"2026-08-09T04:32:32.893716987Z"}}`
+> - QA-plan applicability: QA-01 is covered by the exact gate below; QA-02, QA-03, QA-18, QA-19, and QA-21 have the envelope, explicit-target, strict-config/prefix, atomic-stage, and collision/no-residue evidence cited above. The Task-3-required integration command passed in the exact gate below.
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
-- `golangci-lint run ./...` — PASS — `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
-- `go tool cover -func=coverage.out` — PASS — `total:									(statements)					77.1%`
-- `go test -tags integration -race ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
-- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+> - `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
+> - `golangci-lint run ./...` — PASS — `0 issues.`
+> - `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go tool cover -func=coverage.out` — PASS — `total:									(statements)					77.1%`
+> - `go test -tags integration -race ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:									(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None.
+- Historical Task 3 implementation had no product or specification deviations.
+- DEC-131 gate-evidence correction remains immutable historical context: the
+  original full-suite records were UNVERIFIED because their silent tokens could
+  not prove termination. This continuation preserves those records and adds
+  fresh, session-captured PASS results without rewriting them.
+- MF-01 report/control-conformance repair: the initial exact report-lint
+  attempt failed with `FAIL report-lint found 21 failure(s)` (terminated
+  `exit_code: 21`) because the report lacked the canonical typed workflow
+  outcome and used legacy evidence punctuation/termination syntax. This
+  report-only repair adds the required typed fields, preserves historical
+  evidence verbatim as quoted context, and records fresh terminal evidence for
+  every exact Task 3 command.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
