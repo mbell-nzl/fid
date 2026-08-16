@@ -100,6 +100,7 @@
 ## Tests run
 
 - MF-01 initial report conformance check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3d-done.md project-docs/docs/phases/phase-20/tasks/task-3d.md` - FAIL - `FAIL report-lint found 23 failure(s)` (terminated `exit_code: 23`)
+- MF-01 post-repair report conformance check: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3d-done.md project-docs/docs/phases/phase-20/tasks/task-3d.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 
 ## Historical exact quality-gate results (preserved)
 
@@ -157,8 +158,9 @@
   `exit_code: 23`). Root cause: this historical report predates the canonical
   typed workflow outcome and observed-termination syntax. Repair: preserve the
   historical sections and add only this session's observed exact command
-  results. The later exact report-lint result is recorded after the corrected
-  report is committed and checked.
+  results. The byte-identical later invocation passed with
+  `PASS report-lint completed with no failures` (terminated `exit_code: 0`) on
+  the committed corrected report.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
