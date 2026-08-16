@@ -4,38 +4,58 @@ set -eu
 
 usage() {
   cat >&2 <<'EOF'
-Usage: workflow-control-scope-lint.sh <repo> <base-commit> <repair-commit> <allowed-path>...
+Usage: workflow-control-scope-lint.sh <repo> <trusted-base-commit> <current-head-commit> <allowed-path>...
 
 Allowed paths must be exact repository-relative regular files under
 project-docs/tools/. The repair must be checked-out HEAD in a clean worktree,
-exactly one commit after the base, change at least one file, and must not delete
-or modify anything outside the explicit allowlist.
+with the Phase Runner's full canonical pre-dispatch base as its sole parent.
+It must change at least one file and must not delete or modify anything outside
+the explicit allowlist.
 EOF
   exit 2
 }
 
 [ "$#" -ge 4 ] || usage
 repo=$1
-base=$2
-head=$3
+trusted_base=$2
+claimed_head=$3
 shift 3
 
 git -C "$repo" rev-parse --git-dir >/dev/null 2>&1 || {
   echo "FAIL not a git repository: $repo" >&2
   exit 1
 }
-git -C "$repo" rev-parse --verify --quiet "$base^{commit}" >/dev/null || {
-  echo "FAIL base commit does not resolve: $base" >&2
+trusted_base_commit=$(git -C "$repo" rev-parse --verify --quiet "$trusted_base^{commit}") || {
+  echo "FAIL trusted base commit does not resolve: $trusted_base" >&2
   exit 1
 }
-git -C "$repo" rev-parse --verify --quiet "$head^{commit}" >/dev/null || {
-  echo "FAIL repair commit does not resolve: $head" >&2
+if [ "$trusted_base" != "$trusted_base_commit" ]; then
+  echo "FAIL trusted base must be a full canonical commit ID: $trusted_base" >&2
+  exit 1
+fi
+current_head_commit=$(git -C "$repo" rev-parse --verify --quiet "$claimed_head^{commit}") || {
+  echo "FAIL current head commit does not resolve: $claimed_head" >&2
   exit 1
 }
-head_commit=$(git -C "$repo" rev-parse "$head^{commit}")
+if [ "$claimed_head" != "$current_head_commit" ]; then
+  echo "FAIL current head must be a full canonical commit ID: $claimed_head" >&2
+  exit 1
+fi
 checked_out_head=$(git -C "$repo" rev-parse HEAD)
-if [ "$checked_out_head" != "$head_commit" ]; then
-  echo "FAIL repair commit is not the checked-out HEAD: claimed $head_commit, actual $checked_out_head" >&2
+if [ "$checked_out_head" != "$current_head_commit" ]; then
+  echo "FAIL repair commit is not the checked-out HEAD: claimed $current_head_commit, actual $checked_out_head" >&2
+  exit 1
+fi
+if ! current_parent=$(git -C "$repo" rev-parse --verify --quiet "$current_head_commit^"); then
+  echo "FAIL current HEAD does not have the trusted base as its sole parent" >&2
+  exit 1
+fi
+if git -C "$repo" rev-parse --verify --quiet "$current_head_commit^2" >/dev/null; then
+  echo "FAIL current HEAD does not have the trusted base as its sole parent" >&2
+  exit 1
+fi
+if [ "$current_parent" != "$trusted_base_commit" ]; then
+  echo "FAIL trusted base is not the sole parent of current HEAD: trusted $trusted_base_commit, parent $current_parent" >&2
   exit 1
 fi
 special_index=$(git -C "$repo" ls-files -v | awk '
@@ -49,15 +69,15 @@ fi
 git -C "$repo" update-index --really-refresh -q >/dev/null 2>&1 || true
 dirty=$(git -C "$repo" status --porcelain=v1 --untracked-files=all)
 if [ -n "$dirty" ]; then
-  echo "FAIL control repair worktree is not clean at $head_commit" >&2
+  echo "FAIL control repair worktree is not clean at $current_head_commit" >&2
   printf '%s\n' "$dirty" | sed 's/^/  /' >&2
   exit 1
 fi
-git -C "$repo" merge-base --is-ancestor "$base" "$head" || {
+git -C "$repo" merge-base --is-ancestor "$trusted_base_commit" "$current_head_commit" || {
   echo "FAIL repair commit does not descend from base commit" >&2
   exit 1
 }
-commit_count=$(git -C "$repo" rev-list --count "$base..$head")
+commit_count=$(git -C "$repo" rev-list --count "$trusted_base_commit..$current_head_commit")
 if [ "$commit_count" -ne 1 ]; then
   echo "FAIL control-conformance repair must be exactly one commit after its base: found $commit_count" >&2
   exit 1
@@ -65,6 +85,17 @@ fi
 
 allowed=""
 for path in "$@"; do
+  case "$path" in
+    *'
+'*)
+      echo "FAIL allowed path contains LF, CR, or control bytes" >&2
+      exit 1
+      ;;
+  esac
+  if printf '%s' "$path" | LC_ALL=C grep -q '[[:cntrl:]]'; then
+    echo "FAIL allowed path contains LF, CR, or control bytes" >&2
+    exit 1
+  fi
   case "$path" in
     project-docs/tools/*)
       case "/$path/" in
@@ -87,13 +118,13 @@ for path in "$@"; do
 "
 done
 
-changed=$(git -C "$repo" diff --name-only --no-renames "$base" "$head")
+changed=$(git -C "$repo" diff --name-only --no-renames "$trusted_base_commit" "$current_head_commit")
 if [ -z "$changed" ]; then
   echo "FAIL control repair commit changes no files" >&2
   exit 1
 fi
 
-deleted=$(git -C "$repo" diff --name-only --no-renames --diff-filter=D "$base" "$head")
+deleted=$(git -C "$repo" diff --name-only --no-renames --diff-filter=D "$trusted_base_commit" "$current_head_commit")
 if [ -n "$deleted" ]; then
   while IFS= read -r path; do
     [ -n "$path" ] || continue
@@ -112,7 +143,7 @@ while IFS= read -r path; do
     failures=$((failures + 1))
     continue
   fi
-  entry=$(git -C "$repo" ls-tree "$head_commit" -- "$path")
+  entry=$(git -C "$repo" ls-tree "$current_head_commit" -- "$path")
   mode=$(printf '%s\n' "$entry" | awk '{ print $1 }')
   type=$(printf '%s\n' "$entry" | awk '{ print $2 }')
   case "$mode:$type" in
@@ -130,4 +161,4 @@ if [ "$failures" -ne 0 ]; then
   exit 1
 fi
 
-printf 'PASS control repair scope: %s -> %s\n' "$base" "$head"
+printf 'PASS control repair scope: %s -> %s\n' "$trusted_base_commit" "$current_head_commit"
