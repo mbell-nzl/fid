@@ -28,7 +28,9 @@ and the source files in the task spec scope. On demand:
 closed phase archives only when the task points there.
 For a continuation, also load the latest `TASK-RECOVERY` run-ledger entry
 and the owning QA review when one triggered recovery. A dedicated control
-repair also loads its complete written control-conformance recovery directive.
+repair also loads the governing triage-log entry and its complete typed
+control-conformance directive. Confirm the ledger values are exact copies,
+not paraphrases.
 
 ## Write Boundaries
 
@@ -71,22 +73,27 @@ lives in `09_AI_WORKFLOW.md` §2.5
   and the mandatory deviation note required by `AGENTS.md`. Never weaken,
   narrow, re-point, substitute, or mine a flaky green.
 - For a dedicated `REPAIR / control-conformance` continuation, confirm the
-  accepted contract uniquely determines behavior and copy the directive's
-  originating task, phase-scoped `TRG-<phase>-<NNN>`, trigger, unchanged
-  monotonic two-attempt no-progress budget, allowed paths, forbidden changes,
-  and exact verification into your working notes. A directive resolving a
-  prior BLOCK must also cite an existing `DEC-<NNN>` and its phase-scoped
-  `ESC-<phase>-<NNN>`. Work only in the dedicated clean
+  accepted contract uniquely determines behavior and require all typed fields:
+  `Originating task`, `Control trigger signature`, `Control attempt count`,
+  `Control contract`, `Control mismatch`, `Allowed files`, `Forbidden changes`,
+  `Exact verification`, `Originating report`, and `Control repair base`. The
+  ledger task, trigger, initial attempt, and remaining values must map to the
+  governing triage-log directive byte-for-byte. A directive resolving a prior
+  BLOCK must retain its existing phase-scoped TRG/ESC and cite an existing
+  `DEC-<NNN>`; it never uses a newly allocated TRG. Work only in the dedicated clean
   temporary repair worktree and branch supplied by the Phase Runner; never
   modify the phase worktree, where the uncommitted run-ledger update remains as
   its only permitted dirt.
   Do not use `assume-unchanged`, `skip-worktree`, or any equivalent index flag
   to conceal dirt. Use red/green in only the allowlisted `project-docs/tools/`
-  control/self-test paths, preserve the original failure, run the exact control
-  verification, create one isolated commit, and report the repair worktree
-  path plus starting and ending commit hashes. Leave that ending commit checked
-  out in the repair worktree with a clean index/worktree, and keep every
-  allowlisted artifact a regular file rather than a symlink or gitlink. Do not
+  control/self-test paths, preserve the original failure, and run `Exact
+  verification` byte-for-byte in its stated working directory. Before editing,
+  verify the repair worktree's `HEAD` equals the full runner-recorded `Control
+  repair base`. Never substitute, advance, or otherwise rebaseline that base.
+  Commit the repair and report the worktree path, immutable directive base, and
+  ending commit hash. Leave that ending commit checked out in the repair
+  worktree with a clean index/worktree, and keep every allowlisted artifact a
+  regular file rather than a symlink or gitlink. Do not
   edit product, spec, prompt, template, dependency, task, QA-contract,
   generated, or report files. Do not hand edit generated files. Any ambiguity
   or semantic/definition change becomes a typed protected `BLOCKED` candidate.
@@ -123,13 +130,22 @@ lives in `09_AI_WORKFLOW.md` §2.5
 
 This sequence applies to an ordinary task or ordinary same-task continuation.
 A dedicated control-conformance continuation instead returns its isolated
-tools-only commit, repair worktree path, starting/ending hashes, red/green
+tools-only history, repair worktree path, directive base/ending hashes, red/green
 evidence, and exact control verification to the Phase Runner without editing
 the originating report or phase worktree. The ordinary report continuation
 follows only after the runner checks scope in the repair worktree with
 `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`,
 fast-forwards the phase branch to the repair commit, and appends `REPAIR` to the
 run ledger.
+
+A report continuation after control `RESOLVED` is narrower than an ordinary
+task continuation. Accept it only when TASK-RECOVERY says `Category:
+report-repair`, `Repair mode: task-scope`, and `Allowed files` is exactly the
+directive's `Originating report`. It must also retain the resolved attempt's
+`Control repair base` and exact verification. Edit only that path, preserve all original
+failed evidence, and run only the directive's `Exact verification` exactly as
+recorded. Do not change product, tests, controls, task/QA contracts, or any
+other report. This report-repair must resolve before task completion.
 
 Once the required gate is green, do not keep iterating; run this exact
 sequence and stop:
@@ -203,14 +219,17 @@ same-task continuation; do not present task incompleteness as a blocker.
 
 A control-conformance continuation remains the originating task and consumes
 the same trigger budget; it is not a new planned product task. Return the
-isolated control commit and exact verification evidence from the supplied
-repair worktree to the Phase Runner. `RESOLVED` only permits the subsequent
-completion/report continuation; it does not complete the task or authorize
-advance. After the runner validates scope in that worktree, fast-forwards the
-phase branch, and records `REPAIR`, a later ordinary same-task continuation
-reruns the originating exact verification and updates the originating report
-while retaining the first failed attempt. Do not combine that report update
-with the isolated control commit.
+isolated control history and exact verification evidence from the supplied
+repair worktree to the Phase Runner. On `MATERIAL-PROGRESS` or `NO-PROGRESS`,
+leave the worktree clean at its ending HEAD for Phase Runner scope check and
+integration. A later control continuation receives a new runner-recorded base
+equal to that integrated HEAD and a monotonic attempt count; every semantic
+directive value remains byte-identical. You still cannot choose or change that
+base, broaden scope, or switch to ordinary task mode. A control `RESOLVED` only permits the exact report-repair
+continuation described above; it does not complete the task or authorize
+advance. After that report repair records its own `RESOLVED`, the Phase Runner
+may record task completion. Do not combine the report update with the isolated
+control history.
 
 Use `Task outcome: BLOCKED` only for a protected category from the
 completion template. Explain why task authority cannot resolve it, list

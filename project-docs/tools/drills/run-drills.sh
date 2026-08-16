@@ -640,6 +640,16 @@ cat > "$valid_control_repair" <<'EOF'
 EOF
 run_sequence "drill-18 scoped control repair retains originating task identity" ADVANCEABLE "$valid_control_repair"
 
+duplicate_schema="$control_phase/duplicate-schema.md"
+sed '0,/^- Recovery directive schema: v2$/s//&\
+- Recovery directive schema: v2/' "$valid_control_repair" > "$duplicate_schema"
+run_invalid_sequence "drill-18 schema v2 marker must be singular" "exactly one Recovery directive schema field" "$duplicate_schema"
+
+duplicate_directive_field="$control_phase/duplicate-directive-field.md"
+sed '0,/^- Allowed files: project-docs\/tools\/report-lint.sh$/s//&\
+- Allowed files: project-docs\/tools\/report-lint.sh/' "$valid_control_repair" > "$duplicate_directive_field"
+run_invalid_sequence "drill-18 schema v2 directive fields must be singular" "directive fields must each occur exactly once" "$duplicate_directive_field"
+
 premature_control_complete="$control_phase/premature-control-complete.md"
 sed '/^### 2026-08-15 10:03 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:05 TASK task-1 COMPLETE$/ {
   /^### 2026-08-15 10:05 TASK task-1 COMPLETE$/!d
@@ -654,7 +664,7 @@ run_invalid_sequence "drill-18 control continuation cannot redirect its report" 
 wrong_report_verification="$control_phase/wrong-report-verification.md"
 sed '/^### 2026-08-15 10:03 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:04 REPAIR task-1$/ s#report-lint.sh --self-test#workflow-lint.sh#' \
   "$valid_control_repair" > "$wrong_report_verification"
-run_invalid_sequence "drill-18 control continuation preserves exact verification" "changed its report, verification, or governing TRIAGE" "$wrong_report_verification"
+run_invalid_sequence "drill-18 control continuation preserves exact verification" "schema v2 report continuation changed" "$wrong_report_verification"
 
 control_escape="$control_phase/control-escape.md"
 sed '0,/Outcome: RESOLVED/s//Outcome: MATERIAL-PROGRESS/' \
@@ -711,6 +721,7 @@ cat >> "$valid_control_retry" <<'EOF'
 - Forbidden changes: product, task command, evidence, assertion, threshold, or control files
 - Exact verification: project-docs/tools/report-lint.sh --self-test
 - Originating report: project-docs/docs/phases/phase-1/tasks/task-1-done.md
+- Control repair base: bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
 - Trigger signature: task-1:quality-gate-control-defect:literal-command
 - Attempt count: 3
 - Consecutive no-progress attempts: 0/2
@@ -1188,13 +1199,17 @@ cat "$exhausted_blocked" > "$resumed_budget"
 cat >> "$resumed_budget" <<'EOF'
 ### 2026-08-15 10:08 RUN-RESUME
 - Sequence contract: v2
-- Recovery directive schema: v1
+- Recovery directive schema: v2
 - Prior run/session or STOP: TRG-1-020 / ESC-1-020 STOP
+- Governing TRG: TRG-1-020
+- Governing ESC: ESC-1-020
 - Trigger signature: task-1:gate-repair:exact-gate
 - Attempt count: 3
 - Checkpoint: DEC-200 authorizes one renewed approach
 - Resolution evidence: DEC-200 authorizes one renewed approach
+- Resolution authority: DEC-200
 - Continuing task: task-1
+- Next recovery: task-1 | gate-repair | task-scope | task-1:gate-repair:exact-gate | 3
 ### 2026-08-15 10:09 TASK-RECOVERY task-1
 - Source: TRG-1-020 / DEC-200
 - Category: gate-repair
@@ -1226,6 +1241,11 @@ reset_resumed_budget="$blocked_phase/reset-resumed-budget.md"
 sed '/^### 2026-08-15 10:09 TASK-RECOVERY task-1$/,/^### 2026-08-15 10:11 TASK task-1 COMPLETE$/ s/task-1:gate-repair:exact-gate/task-1:gate-repair:new-trigger/' \
   "$resumed_budget" > "$reset_resumed_budget"
 run_invalid_sequence "drill-18 resolved budget STOP cannot reset trigger identity" "does not preserve its RUN-RESUME checkpoint" "$reset_resumed_budget"
+
+wrong_resume_tuple="$blocked_phase/wrong-resume-tuple.md"
+sed 's/Next recovery: task-1 | gate-repair | task-scope/Next recovery: task-1 | report-repair | task-scope/' \
+  "$resumed_budget" > "$wrong_resume_tuple"
+run_invalid_sequence "drill-18 schema v2 resume binds exact recovery tuple" "does not match the exact schema v2 RUN-RESUME recovery tuple" "$wrong_resume_tuple"
 
 third_no_progress_recovery="$workspace/third-no-progress-recovery.md"
 cat "$exhausted_budget" > "$third_no_progress_recovery"

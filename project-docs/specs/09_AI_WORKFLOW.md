@@ -263,22 +263,38 @@ Triage rules:
   determines behavior and the proposed edit changes no protected item. It is
   `REPAIR`, never `BLOCK` merely because the control is canonical or outside
   the originating task's ordinary files.
-- Before returning control-conformance `REPAIR`, TL-Lite must write a recovery
-  directive that cites: the accepted contract and uniquely required behavior;
-  the exact reproduced mismatch and attached evidence; the originating task,
-  trigger signature, and unchanged attempt budget; the bounded allowed file
-  set (only the named control and its self-test artifacts under
-  `project-docs/tools/`); forbidden changes to product/spec/prompt/template/
-  dependency/task/QA-contract/report files and to command/assertion/status/
-  semantics/scope/threshold/budget/tolerance/policy; and the exact verification
-  plus originating report update required. Ambiguous semantics or any proposed
-  protected change is `BLOCK`.
+- Before returning control-conformance `REPAIR`, TL-Lite writes an
+  authoritative triage-log directive with these exact labels:
+  `Originating task`, `Control trigger signature`, `Control attempt count`,
+  `Control contract`, `Control mismatch`, `Allowed files`, `Forbidden changes`,
+  `Exact verification`, `Originating report`, and `Control repair base`. Each
+  value is one physical line. The Phase Runner supplies the task,
+  trigger, attempt, exact report, and full verified pre-dispatch phase HEAD;
+  TL-Lite copies them and cannot select or verify another base. Allowed files
+  are only the named
+  control/self-test paths under `project-docs/tools/`; forbidden changes include
+  product/spec/prompt/template/dependency/task/QA-contract/report/generated
+  paths and command/assertion/status/semantics/scope/threshold/budget/tolerance/
+  policy. `Exact verification` records exact command bytes and working
+  directory. Missing fields, ambiguous semantics, or any proposed protected
+  change is `BLOCK`.
+- The confirmed triage-log directive is authority. The initial control
+  TASK-RECOVERY maps ledger `Trigger signature` and `Attempt count` to
+  `Control trigger signature` and `Control attempt count` and copies every
+  other directive value byte-for-byte. Neither the runner nor Developer may
+  paraphrase, reorder, widen, or rebaseline it.
 - Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
   `project-docs/docs/current/tl_escalations_current.md` when no existing ESC
   covers the issue, then logs the TRG entry with BLOCK.
 - If the source is an existing `ESC-<phase>-<NNN>`, do not create a duplicate.
   Log the TRG entry with BLOCK pointing to the existing ESC unless the new
-  issue is clearly unrelated.
+  issue is clearly unrelated. If a later existing DEC resolves that BLOCK into
+  control-conformance repair, append a labelled typed directive amendment to
+  the existing governing TRG and retain its ESC; do not allocate a new TRG.
+  The Phase Runner then uses RUN-RESUME with those governing IDs.
+- Every boundary-valid DEC citation must exist in the phase decisions file.
+  Validate all citations, not only the first; embedded text such as
+  `NOTDEC-123X` is not a decision citation.
 - For a QA `REPAIR` outcome, verify that every must-fix finding names an
   owning task, bounded repair scope, unchanged acceptance criterion, and
   required re-review evidence. If so, return `REPAIR`. If the finding is
@@ -379,7 +395,10 @@ Responsibilities:
     input is an orchestration defect to repair, not permission to invent a
     route.
     Every new RUN-START/RUN-RESUME carries `Sequence contract: v2` and
-    `Recovery directive schema: v1`; older events remain legacy-tolerant. Pipe
+    `Recovery directive schema: v2` in that same event; both become effective
+    immediately and schema cannot downgrade. Historical v1 entries remain
+    valid, while general identity, STOP, DEC, budget, and state checks still
+    apply to them. Pipe
     each exact candidate entry, beginning with its
     single `###` event heading, to
     `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
@@ -392,18 +411,19 @@ Responsibilities:
     append transaction does not choose
     the next action; `workflow-route.sh` does. Run it without `--append-stdin`
     to read current state, and require literal `VALID state=ADVANCEABLE` before
-    an actual advance. A v2 ledger with no v1 recovery-directive marker is
-    invalid. After the marker, the validator requires complete typed recovery
-    authority/budget fields, binds control-conformance authority to the latest
-    same-trigger `REPAIR / control-conformance` TRIAGE or a resolved BLOCK whose
-    cited decision exists. Every strict TRIAGE ID and verdict must match its
-    real phase triage-log entry; TRG/ESC identity is bound to the ledger phase.
-    It rejects STOP without its exact preceding TRIAGE BLOCK/ESC. A resume must
-    retain that TRG/ESC, trigger, next attempt, and continuing task, and any
-    cited phase decision must exist. `MATERIAL-PROGRESS` and `NO-PROGRESS` preserve task,
-    trigger, monotonic attempt, and the two-attempt no-progress budget; only
-    `RESOLVED` permits completion or the linked control-to-report continuation.
-    It preserves task identity and requires recovery completion
+    an actual advance. After a schema-v2 marker, the validator requires the
+    complete typed control directive and binds its values byte-for-byte to the
+    governing real phase triage-log entry. Every TRIAGE ID and exact verdict
+    must match that log; TRG/ESC identity is bound to the ledger phase. It
+    rejects STOP without its exact preceding TRIAGE BLOCK/ESC and binds
+    RUN-RESUME to the exact next task, trigger, category, mode, and attempt.
+    Every boundary-valid DEC citation must exist. After `MATERIAL-PROGRESS` or
+    `NO-PROGRESS`, only the monotonic attempt and runner-owned base advance to
+    the prior integrated HEAD; every semantic directive value is byte-identical
+    and the two-attempt no-progress budget remains enforced. Control
+    `RESOLVED` forbids direct completion and permits only the exact originating
+    report-repair; its later `RESOLVED` permits task completion. It preserves
+    task identity and requires recovery completion
     plus an explicitly linked, differently identified QA re-review.
     A linked re-review may transfer repair ownership to another task only after
     the current owner completes; it cannot overwrite an unresolved owner. An
@@ -501,38 +521,47 @@ guarded worktree route. `VERDICT: RESUME` advances only when the trigger is
 already cleared.
 
 Control-conformance dispatch is a recovery mode, not a new planned product
-task. The Phase Runner appends `TASK-RECOVERY` under the originating task and
-trigger budget, records the TL-Lite directive as authority, and names exact
-allowlisted `project-docs/tools/` paths. Because the runner-owned ledger is now
-dirty by design, the Phase Runner creates a dedicated clean temporary git
-worktree and repair branch at the committed phase `HEAD`; no other dirty phase
-path is permitted. It sends a dedicated same-task Developer continuation that
-worktree path and the directive verbatim. That continuation records its starting
-and ending commits and produces one isolated control-repair commit there.
-Before appending the `REPAIR` ledger event, the runner must observe PASS from:
+task. Before TL-Lite or Developer dispatch, the Phase Runner verifies that the
+runner-owned ledger is the only dirty phase path, rejects hidden index flags,
+and records the full current phase HEAD as immutable `Control repair base`.
+TL-Lite writes the ten-field typed directive in the triage log. The runner
+confirms it, appends TRIAGE, and copies its values byte-for-byte into
+TASK-RECOVERY under the originating task and trigger budget.
+
+The runner creates a dedicated clean temporary git worktree and repair branch
+at the exact directive base. It sends a same-task Developer continuation that
+worktree path and directive verbatim. The Developer verifies HEAD equals the
+base, cannot rebaseline it, edits only the exact tools-only allowlist, runs
+`Exact verification`, commits, and returns the ending HEAD. Before every
+control `REPAIR`, the runner observes PASS from:
 
 ```text
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-Here `<repo>` is the dedicated repair worktree, `<base>` and `<head>` are the
-Developer-recorded commits, and `<allowed...>` is the directive's exact
-tools-only allowlist. Product, spec, prompt, template, dependency, task,
-QA-contract, and originating-report paths are forbidden in that commit. The
-scope check requires the claimed repair commit to be checked-out `HEAD`, a
-clean index/worktree with no assume-unchanged/skip-worktree paths, and
-regular-file control artifacts; later commits, dirty state, symlinks, and
-gitlinks fail. The runner then fast-forwards the unchanged phase branch to the
-verified repair commit while its only dirty path is the runner-owned ledger,
-and confirms the phase `HEAD` equals that commit. A necessary provider sync is
-a separate authorized maintenance step, never part of the isolated
-control-repair commit. The runner does not advance or ask the Human. After the
-scope and integration checks pass, it appends `REPAIR` and
-dispatches an ordinary same-task continuation to rerun the originating exact
-verification and update the originating report while preserving the first
-failure. If either Developer discovers ambiguity or needs any forbidden
-semantic/definition change, it returns a protected `BLOCKED` candidate rather
-than expanding scope.
+Here `<repo>` is the repair worktree, `<base>` is the runner-recorded directive
+value, `<head>` is the Developer-produced checked-out HEAD, and `<allowed...>`
+is the directive's exact allowlist. Product, spec, prompt, template,
+dependency, task, QA-contract, originating-report, and generated paths are
+forbidden. The worktree/index must be clean with no assume-unchanged/
+skip-worktree paths, and allowed artifacts must be regular files.
+
+After every control scope PASS, the runner fast-forwards the unchanged phase
+branch to verified HEAD while the ledger remains its only dirt, confirms phase
+HEAD, appends REPAIR, and cleans up. After `MATERIAL-PROGRESS` or
+`NO-PROGRESS`, the next control TASK-RECOVERY increments attempt count, records
+the prior integrated HEAD as the new runner-owned base, and preserves authority,
+contract, mismatch, allowlist, forbidden set, report, and verification
+byte-for-byte.
+
+Control `RESOLVED` never permits direct task completion. It permits only one
+linked task-scope `report-repair` whose allowlist is exactly `Originating
+report` and whose trigger, report, `Exact verification`, and resolved attempt
+base are unchanged. The
+Developer edits only that report and preserves the first failure. Only the
+report-repair's later `RESOLVED` permits TASK COMPLETE. Provider sync remains a
+separate authorized maintenance step. Ambiguity or forbidden definition
+changes return a protected `BLOCKED` candidate rather than expanding scope.
 
 Immediate safety stops are limited to a branch/worktree state that cannot be
 reconciled non-destructively, a missing validation contract that requires
@@ -545,9 +574,14 @@ Autonomous triage and resolved resume:
 - Autonomous TL-Lite `RESUME` and `REPAIR` are enabled. Only
   `BLOCK` creates a Human-visible STOP.
 - When a prior STOP has a later decision, verified commit, restored capability,
-  or other recorded resolution, verify that reference, append `RUN-RESUME`
-  linking STOP, TRG/ESC, and resolution, and continue at the unresolved task.
-  A prior TRIAGE entry does not prohibit a resolved resume.
+  or other recorded resolution, verify it and append `RUN-RESUME` retaining the
+  governing TRG/ESC, trigger, next attempt, continuing task, and exact next
+  recovery. That tuple binds the immediately following TASK-RECOVERY. Do not
+  allocate a new TRG for a resolved BLOCK. When a DEC converts it to
+  control-conformance repair, append the typed directive amendment to the
+  existing governing TRG before RUN-RESUME and retain its ESC.
+- Validate every boundary-valid DEC citation against the phase decisions file;
+  a real citation cannot mask another nonexistent or embedded pseudo-ID.
 - If no TRIAGE entry exists for an existing STOP, invoke TL-Lite before
   resuming.
 - Ordinary concerns and technical debt remain in the report for Tech Lead
@@ -572,7 +606,7 @@ Default context:
 - scoped source, test, and doc files
 - for a continuation: the latest `TASK-RECOVERY` ledger entry and owning QA
   review, when applicable; for control repair, the complete written
-  control-conformance recovery directive
+  control-conformance recovery directive and governing triage-log entry
 
 Responsibilities:
 1. Confirm task scope, allowed files, and the `VAL-NNN` assertions listed in
@@ -592,11 +626,14 @@ Responsibilities:
    cause, and repair only when authorized by ordinary task scope or a written
    control-conformance directive. A failure alone never grants permission to
    edit a test, gate, or control. A dedicated control-repair continuation edits
-   only the directive's named `project-docs/tools/` control/self-test paths,
-   uses red/green, records its starting and ending commits, and produces an
-   isolated commit. It runs the directive's exact control verification but does
-   not edit the originating report. Never weaken, narrow, re-point, substitute,
-   change accepted semantics, or mine a flaky green.
+   only the directive's named `project-docs/tools/` control/self-test paths.
+   Require all ten typed fields and confirm the ledger values map to the
+   governing triage-log directive byte-for-byte. Before editing, verify HEAD is
+   the full runner-recorded `Control repair base`; never select, advance, or
+   rebaseline it. Use red/green, run `Exact verification` in its recorded
+   working directory, commit, and leave the ending HEAD clean. Do not edit the
+   originating report. Never weaken, narrow, re-point, substitute, change
+   accepted semantics, or mine a flaky green.
 8. Where the task changes behavior with a runtime surface, exercise the
    changed behavior once through the real entrypoint (the `fid` CLI or other
    real interface) before writing the report, and record the command or
@@ -638,10 +675,10 @@ Responsibilities:
 
 Responsibilities 8-14 apply to an ordinary task or ordinary same-task
 continuation. A dedicated control-conformance continuation instead returns its
-isolated tools-only commit, starting/ending hashes, red/green evidence, and
-exact control verification to the Phase Runner without editing the originating
-report. The ordinary report continuation follows only after the runner's scope
-check.
+isolated tools-only history, directive base/ending hashes, red/green evidence,
+and exact control verification to the Phase Runner without editing the
+originating report. A control `RESOLVED` permits only the linked report-repair
+described below after the runner's scope and integration checks.
 
 Required completion report headings, in order:
 - `## Workflow outcome`
@@ -675,16 +712,23 @@ Recovery and blocker behavior:
   budget. Name why current task authority cannot resolve it and the exact
   resolution action.
 - A control-conformance directive is assigned recovery scope. Keep the
-  originating task ID, trigger, and attempt budget. Edit only its exact
-  tools-only allowlist; product, spec, prompt, template, dependency, task,
-  QA-contract, generated, and report files remain protected in the isolated
-  commit. After the Phase Runner validates that commit and records `REPAIR`, a
-  later ordinary same-task continuation reruns the originating exact
-  verification and updates the originating report, preserving the first failed
-  attempt. If the accepted contract does not uniquely determine the fix or the
-  repair would change a command, assertion semantics, accepted status/scope,
-  threshold/budget/tolerance, or policy, return a typed protected `BLOCKED`
-  candidate. Do not reinterpret the directive or create a new task.
+  originating task ID, trigger, attempt budget, and typed directive. Edit only
+  its exact tools-only allowlist; product, spec, prompt, template, dependency,
+  task, QA-contract, generated, and report files remain protected in the
+  isolated history. After a nonresolved attempt, leave the worktree clean for
+  scope check and integration. The next control continuation increments attempt
+  count, receives the prior integrated HEAD as its new runner-owned base, and
+  preserves every semantic directive value byte-for-byte. It cannot switch
+  mode or authority, and the Developer never chooses the new base.
+- After control `RESOLVED`, accept only a linked TASK-RECOVERY with `Category:
+  report-repair`, `Repair mode: task-scope`, and `Allowed files` exactly equal
+  to `Originating report`. Edit only that report, preserve the first failed
+  attempt, and run `Exact verification` unchanged. This report repair must
+  resolve before task completion. If the accepted contract does not uniquely
+  determine the fix or the repair would change a command, assertion semantics,
+  accepted status/scope, threshold/budget/tolerance, or policy, return a typed
+  protected `BLOCKED` candidate. Do not reinterpret the directive or create a
+  new task.
 - Never stop silently. Return a typed report even when no task commit can be
   produced; the Phase Runner classifies the observation and decides lifecycle
   state.

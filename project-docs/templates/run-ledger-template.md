@@ -26,14 +26,16 @@ accepted entry to fix an ordering or duplication mistake — append a `CORRECTIO
 entry naming the entries it supersedes and why. The ledger is evidence; its
 errors are part of the record.
 
-Every v2 ledger must contain a `Recovery directive schema: v1` marker. After
-that marker, recovery entries require the complete typed authority, trigger,
-attempt, no-progress budget, verification, and disposition fields below.
+Every new v2 `RUN-START` or `RUN-RESUME` event must itself contain
+`Recovery directive schema: v2`; the schema becomes effective at that event
+and cannot be downgraded. Historical `Recovery directive schema: v1` events
+and the entries governed by them remain valid. General identity, STOP, DEC,
+budget, and state-transition checks still apply to historical v1 entries.
 
 ### <YYYY-MM-DD HH:MM> RUN-START
 
 - Sequence contract: v2
-- Recovery directive schema: v1
+- Recovery directive schema: v2
 - Branch: `<phase branch>`
 - ESC baseline (Open at run start): <ESC-NNN list or "none">
 - Warm-up/autonomous-resume state: <warm-up | autonomous per DEC-NNN>
@@ -44,16 +46,28 @@ attempt, no-progress budget, verification, and disposition fields below.
 Append before a replacement or resumed Phase Runner takes another action.
 
 - Sequence contract: v2
-- Recovery directive schema: v1
+- Recovery directive schema: v2
 - Prior run/session or STOP: <reference>
+- Governing TRG: <TRG-<phase>-<NNN> retained from STOP | N/A>
+- Governing ESC: <ESC-<phase>-<NNN> retained from STOP | N/A>
 - Trigger signature: `<task/review>:<category>:<stable source identity>`
-- Attempt count: <total Phase Runner-mediated continuations for this signature>
+- Attempt count: <next Phase Runner-mediated continuation number for this
+  trigger>
 - Checkpoint: <commit/tree state, report, review, and last ledger entry>
 - Resolution evidence: <state reconciliation or protected-condition resolution>
 - Resolution authority: <existing DEC-<NNN> when a decision resolves the prior
   BLOCK | verified commit/restored capability/other recorded external authority
   | N/A when no prior BLOCK is being resolved>
 - Continuing task: <task-M>
+- Next recovery: <task-M | category | repair mode | exact trigger | attempt>
+
+For a STOP resume, `Governing TRG`, `Governing ESC`, `Trigger signature`,
+`Attempt count`, `Continuing task`, and `Next recovery` bind the immediately
+following `TASK-RECOVERY`; a different task, trigger, mode, category, or
+attempt is invalid. Retain the governing TRG/ESC. Do not create a new TRG
+merely because an existing DEC resolves the BLOCK. Every boundary-valid
+`DEC-<NNN>` cited in the event must exist in this phase's `decisions.md`;
+embedded strings such as `NOTDEC-123X` are not decision citations.
 
 ### <YYYY-MM-DD HH:MM> TASK task-<M> COMPLETE
 
@@ -85,17 +99,15 @@ same-task Developer continuation; it does not close the task or finding.
   control-conformance directive>
 - Triage disposition: <N/A for task-scope | exact
   REPAIR / control-conformance>
-- Control contract: <for control-conformance, binding source and uniquely
-  required behavior; otherwise N/A>
-- Control mismatch: <for control-conformance, exact reproducer, expected and
-  observed result, and termination; otherwise N/A>
-- Allowed files: <ordinary task scope | exact named control/self-test paths
-  under project-docs/tools/>
-- Forbidden changes: <for control-conformance, product/spec/prompt/template/
-  dependency/task/QA-contract/report files and command/assertion/status/
-  semantics/scope/threshold/budget/tolerance/policy changes>
 - Trigger signature: `<task/review>:<category>:<stable source identity>`
-- Attempt count: <next total mediated continuation number for this signature>
+- Attempt count: <next total mediated continuation number for this trigger>
+- Control contract: <exact directive value for control-conformance | N/A>
+- Control mismatch: <exact directive value for control-conformance | N/A>
+- Allowed files: <ordinary task scope | exact directive tools-only paths>
+- Forbidden changes: <exact directive protected paths/semantics | N/A>
+- Originating report: <exact directive report path | N/A>
+- Exact verification: <exact directive command bytes and working directory | N/A>
+- Control repair base: <runner base for control/linked report-repair | N/A>
 - Consecutive no-progress attempts: <n>/2
 - Checkpoint: <commit or exact dirty-tree/report/review state>
 - Phase worktree: <path and branch; for control-conformance, status proving the
@@ -108,21 +120,38 @@ same-task Developer continuation; it does not close the task or finding.
 - Next action: <bounded repair and exact verification/re-review>
 - Human attention required: no
 
+Under schema v2, a control-conformance entry is valid only when its
+`Repair authority` names the governing TRIAGE. For the initial attempt, its
+`Trigger signature` and `Attempt count` map exactly to that triage record's
+`Control trigger signature` and `Control attempt count`; `Control contract`,
+`Control mismatch`, `Allowed files`, `Forbidden changes`, `Originating report`,
+`Exact verification`, and `Control repair base` match their same-named
+directive values byte-for-byte. The heading's task must match
+`Originating task`. Each directive value is one physical line so copying cannot
+normalize wrapping.
+After `MATERIAL-PROGRESS` or the first `NO-PROGRESS`, the next
+control-conformance `TASK-RECOVERY` increments `Attempt count`, records the
+prior integrated HEAD as its new runner-owned `Control repair base`, and keeps
+authority, contract, mismatch, allowlist, forbidden set, report, and
+verification byte-identical. A Developer never supplies or changes that base.
+
 ### <YYYY-MM-DD HH:MM> REPAIR task-<M>
 
 Append after one Phase Runner-mediated continuation. Preserve earlier failed
 evidence; this event records what the continuation changed and proved.
 
 - Trigger signature: `<same signature as TASK-RECOVERY>`
-- Attempt count: <completed mediated continuation number for this signature>
+- Attempt count: <completed mediated continuation number for this trigger>
 - Starting checkpoint: <TASK-RECOVERY checkpoint>
 - Ending checkpoint: <commit or exact durable tree/report/review state>
+- Control repair base: <same runner-owned TASK-RECOVERY base | N/A>
+- Control repair head: <full Developer-produced checked-out HEAD | N/A>
 - Control scope check: <N/A for task-scope | PASS token and observed
-  termination from the repair worktree, with Developer-recorded base/head
-  commits, from>
+  termination from the repair worktree, using the runner-recorded directive
+  base and Developer-produced ending HEAD, from>
   `project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>`
-- Phase-branch integration: <N/A for task-scope | fast-forward-only from base
-  to repair HEAD after scope PASS, with phase worktree still ledger-only dirty>
+- Phase-branch integration: <N/A for task-scope | PASS fast-forward from
+  directive base to repair HEAD after scope PASS, phase worktree ledger-only>
 - Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
 - Resolution evidence: <relevant in-scope change tied to the trigger that
   satisfies/removes an obligation; narrower failure; or byte-identical rerun
@@ -133,29 +162,36 @@ evidence; this event records what the continuation changed and proved.
 
 For `REPAIR / control-conformance`, leave the dirty run ledger in the phase
 worktree, with no other dirt, and create a dedicated clean temporary repair
-branch/worktree from the recorded starting commit. The Developer works only in
-that supplied repair worktree. The ending checkpoint is one isolated tools-only
-control commit. Run the scope check there; it requires that commit to be
-checked-out HEAD, a clean index/worktree, and regular-file allowlisted
-artifacts, and rejects later commits, dirty state, symlinks, and gitlinks. Never
-use `assume-unchanged`, `skip-worktree`, or an equivalent index flag to conceal
-dirt. Only after scope PASS, fast-forward the phase branch to repair HEAD,
-verify the phase worktree remains ledger-only dirty, and append this REPAIR.
-Clean up the temporary worktree/branch only after the append receipt.
+branch/worktree from `Control repair base`. The Developer works only in that
+supplied worktree and cannot rebaseline it. Run the scope check there from the
+immutable directive base to the Developer-produced ending `HEAD`; the repair
+worktree must be clean and every allowlisted artifact a regular file. Dirty
+state, symlinks, gitlinks, hidden index flags, and any path outside the exact
+allowlist fail. Never use `assume-unchanged`, `skip-worktree`, or an equivalent
+index flag to conceal dirt.
 
-`RESOLVED` only permits an ordinary continuation under the same
-task/trigger/budget to rerun the originating exact verification and update its
-report; it does not complete the task or authorize phase advance. Attempt count
-is monotonic for a trigger. Material progress may reset only consecutive
-no-progress to `0/2`; a second consecutive `NO-PROGRESS` exhausts the budget
-and returns to triage. Necessary provider sync is separate and is not part of
-the isolated control commit.
+After every scope PASS, fast-forward the phase branch to repair HEAD, verify it
+remains ledger-only dirty, append REPAIR, and clean up after the append receipt.
+After `MATERIAL-PROGRESS` or `NO-PROGRESS`, issue the next control recovery as
+specified above, using that integrated HEAD as its runner-owned base.
+
+A control `RESOLVED` never permits direct task completion. It permits exactly
+one linked `TASK-RECOVERY` with `Category: report-repair`, `Repair mode:
+task-scope`, `Allowed files` equal only the exact `Originating report`, and the
+same `Trigger signature`, `Originating report`, `Exact verification`, and
+resolved attempt's `Control repair base`. That Developer may edit only that
+report and must run the exact verification. Only a
+subsequent report-repair `REPAIR` with `Outcome: RESOLVED` permits the task's
+completion event. Attempt count remains monotonic. Material progress resets
+only consecutive no-progress to `0/2`; a second consecutive `NO-PROGRESS`
+exhausts the budget and returns to triage. Necessary provider sync is separate
+and is not part of the isolated control history.
 
 ### <YYYY-MM-DD HH:MM> TRIAGE TRG-<phase>-<NNN>
 
 - Trigger: <one line>
 - Trigger signature: `<stable signature>`
-- Attempt count: <total mediated continuations for this signature>
+- Attempt count: <next mediated continuation number for this trigger>
 - Checkpoint: <current durable state>
 - Verdict: <RESUME | REPAIR | REPAIR / control-conformance | BLOCK
   (escalated as ESC-<phase>-<NNN>)>
@@ -170,11 +206,18 @@ writes no triage-log entry, say so verbatim in the `Triage log:` field. That
 field is the durable signal for the Tech Lead's wrap-up triage audit; do not
 leave the gap only in prose.
 
-If this TRIAGE resolves a prior BLOCK, reference its phase-scoped
-`ESC-<phase>-<NNN>` and the recorded resolution authority. If that authority is
-a `DEC-<NNN>`, it must exist. A control-conformance repair after a
-decision-bound protected BLOCK requires that existing decision; a new repair
-directive is not authority to erase or reinterpret a BLOCK.
+For `REPAIR / control-conformance`, the external triage-log entry's ten typed
+fields are authoritative. The Phase Runner copies their values byte-for-byte
+into the initial `TASK-RECOVERY`; it may not paraphrase, widen, reorder, or
+self-author them. `Control repair base` is the full phase HEAD recorded by the
+Phase Runner before triage and dispatch, never a Developer-selected base.
+
+When an existing DEC resolves a prior BLOCK into control-conformance repair,
+do not append a new TRIAGE/TRG. Append a labelled directive amendment to the
+existing governing TRG in the phase triage log, retaining its TRG/ESC and
+citing the DEC, then append RUN-RESUME with those same IDs. Every
+boundary-valid DEC citation must resolve to this phase's decisions file; one
+real citation cannot mask another nonexistent or embedded pseudo-ID.
 
 ### <YYYY-MM-DD HH:MM> STOP
 

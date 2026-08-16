@@ -80,7 +80,17 @@ implementation with a change to the protected gate definition and emitted
   `assume-unchanged`/`skip-worktree`, and preserves the monotonic two-attempt
   no-progress budget. The mechanical drills exercise those negative cases and
   the actual dirty-main/clean-repair/fast-forward lifecycle. Obtain `PASS` on
-  re-review before closing this item.
+  re-review before closing this item. A third adversarial pass against
+  `c133cb0` found transactional-append authority loss, delayed schema
+  activation, prefix-matched and self-selected TRIAGE authority, premature
+  control completion, control-scope escape, unbound STOP/resume and recovery
+  budgets, partial DEC validation, allowlist injection, and caller-selected
+  repair bases. Commit `173c484` replaces those loose transitions with
+  externally bound schema-v2 directives, Runner-owned base/head checkpoints,
+  exact report-only continuation, monotonic control retries, full DEC and
+  resume identity checks, transactional authority preservation, and expanded
+  adversarial drills. Canonical prompt/spec alignment and final independent
+  re-review remain in progress.
 - [ ] **P6 - Exact verification and handoff.** Run all workflow gates and the
   relevant repository gate, capture exact termination, commit the final review,
   and provide a copy-paste Phase Runner restart prompt with branch, HEAD,

@@ -24,6 +24,11 @@
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
 > Append new entries at the end in wall-clock order. Never insert, edit, delete,
 > or renumber an earlier entry; append a labelled correction instead.
+>
+> Under `Recovery directive schema: v2`, every value in the typed
+> control-conformance directive is written on one physical line. The Phase
+> Runner copies those values byte-for-byte into the run ledger; prose elsewhere
+> in the entry does not grant or widen repair authority.
 
 <!--
 Phase wrap-up checklist:
@@ -54,14 +59,51 @@ Phase wrap-up checklist:
   protected/exhausted condition>
 - **If REPAIR:** owning task <task-M>; category <recovery category>; next action
   <same-task continuation plus exact verification/re-review>; no ESC.
-- **If REPAIR / control-conformance:** accepted control contract <binding
-  citation>; deterministic mismatch <exact reproducer>; allowed files <named
-  control implementation and self-tests>; forbidden changes <commands,
-  assertions, accepted status/semantics, scope, thresholds, budgets,
-  tolerances, prompts/specs/templates, dependencies, and product files>;
-  originating task and trigger retain their existing recovery budget.
+- **Originating task:** <task-M for REPAIR / control-conformance | N/A>
+- **Control trigger signature:** <exact stable signature | N/A>
+- **Control attempt count:** <exact next mediated attempt | N/A>
+- **Control contract:** <binding accepted source and required behavior | N/A>
+- **Control mismatch:** <exact reproduced mismatch and termination | N/A>
+- **Allowed files:** <exact ordered project-docs/tools/ paths | N/A>
+- **Forbidden changes:** <exact protected paths and semantics | N/A>
+- **Exact verification:** <exact command bytes and working directory | N/A>
+- **Originating report:** <exact repo-relative completion-report path | N/A>
+- **Control repair base:** <full runner-supplied pre-triage phase HEAD | N/A>
 - **If BLOCK:** category <protected blocker category>;
   ESC-<phase>-<NNN> <raised or referenced> in `tl_escalations_current.md`;
   resolution condition <named Human or external-authority action>.
 - **Human attention required:** <no for RESUME/REPAIR | yes for BLOCK>
 - **References:** <file:line, doc section, DEC-NNN>
+
+For `REPAIR / control-conformance`, the ten fields from `Originating task`
+through `Control repair base` are the authoritative typed directive. The
+ordinary `Trigger signature` and `Attempt count` must equal `Control trigger
+signature` and `Control attempt count`. TL-Lite copies the runner-supplied full
+`Control repair base`; it never selects or verifies a different base.
+
+## Control Directive Amendment For TRG-<phase>-<NNN>
+
+Use this append-only form only when an existing `DEC-<NNN>` resolves the
+governing BLOCK into `REPAIR / control-conformance`. Do not edit the original
+BLOCK entry and do not allocate a new TRG. TL-Lite or the full Tech Lead
+appends the amendment after the decision exists and before RUN-RESUME.
+
+- **Governing TRG:** TRG-<phase>-<NNN>
+- **Governing ESC:** ESC-<phase>-<NNN>
+- **Resolution authority:** DEC-<NNN>
+- **Verdict:** REPAIR / control-conformance
+- **Originating task:** <task-M>
+- **Control trigger signature:** <exact stable signature retained from STOP>
+- **Control attempt count:** <exact next mediated attempt number>
+- **Control contract:** <binding accepted source and uniquely required behavior>
+- **Control mismatch:** <exact expected/observed reproducer and termination>
+- **Allowed files:** <exact ordered project-docs/tools/ paths>
+- **Forbidden changes:** <exact protected paths and semantics>
+- **Exact verification:** <exact command bytes and working directory>
+- **Originating report:** <exact repo-relative completion-report path>
+- **Control repair base:** <full phase HEAD supplied and verified by Phase Runner>
+- **References:** <existing DEC, task/report, control contract, and evidence>
+
+Every boundary-valid DEC citation in an entry or amendment must exist in the
+phase decisions file. One real DEC does not validate another nonexistent
+citation, and embedded text such as `NOTDEC-123X` is not a citation.

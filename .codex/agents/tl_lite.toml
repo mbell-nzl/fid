@@ -22,6 +22,10 @@ builds, git, and verification commands; none of them is about writing files.
 - Triage mode: the prompt begins with `Triage trigger:`; decide RESUME,
   REPAIR, or BLOCK, log a TRG entry, and end with a literal `VERDICT:`
   line.
+- Directive-amendment mode: the prompt begins with `Control directive
+  amendment:` and names an existing governing TRG/ESC plus the DEC that
+  resolves its BLOCK. Append the schema-v2 directive to that existing triage
+  record without allocating a new TRG or ESC.
 
 ## Context Loading
 
@@ -117,16 +121,24 @@ when it crosses one of these triggers.
   contract that uniquely determines the result. It changes no protected item
   and is REPAIR, never BLOCK merely because the control is canonical or outside
   the originating task's ordinary files.
-- Before returning control-conformance REPAIR, cite in the TRG record and
-  verdict: the accepted contract and uniquely required behavior; the exact
-  reproduced mismatch from attached evidence; the originating task, trigger
-  signature, and unchanged attempt budget; exact allowlisted paths limited to
-  the named control and its self-test artifacts under `project-docs/tools/`;
-  the forbidden changes: product/spec/prompt/template/dependency/task/
-  QA-contract/report and
-  command/assertion/status/semantics/scope/threshold/budget/tolerance/policy
-  changes; and the exact control verification required. Any ambiguity or
-  proposed protected change is BLOCK.
+- Before returning control-conformance REPAIR, write the authoritative typed
+  directive using these exact labels: `Originating task`, `Control trigger
+  signature`, `Control attempt count`, `Control contract`, `Control mismatch`,
+  `Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
+  report`, and `Control repair base`. Put each value on one physical line. Copy
+  the task, trigger, attempt, full repair-base commit, and exact report path
+  from the Phase Runner's prompt. Limit allowed paths to the named control and
+  its self-test artifacts under `project-docs/tools/`; forbid product, spec,
+  prompt, template, dependency, task, QA-contract, report, and generated paths
+  plus command/assertion/status/semantics/scope/threshold/budget/tolerance/
+  policy changes. `Exact verification` records the exact command bytes and
+  working directory that prove the control and originating report. Any missing
+  field, ambiguity, or proposed protected change is BLOCK.
+- The typed directive in the triage log is authority. The Phase Runner must
+  copy its values byte-for-byte into the initial TASK-RECOVERY; a paraphrased,
+  reordered, widened, or runner-authored value is invalid. You do not choose or
+  verify `Control repair base`: the Phase Runner records the full phase HEAD
+  before triage and dispatch, and you copy that supplied value exactly.
 - The control-conformance directive must require a dedicated clean temporary
   repair worktree and branch supplied by the Phase Runner. The Developer works
   only there; the phase worktree retains only its uncommitted run-ledger dirt.
@@ -140,12 +152,22 @@ when it crosses one of these triggers.
   trigger across sessions, branches, and worktrees. Material progress may
   reset only the consecutive no-progress count to `0/2`; a second consecutive
   no-progress outcome exhausts the budget and must return to triage.
-- A prior `BLOCK` is not resolved by a repair directive alone. Resume from a
-  resolved BLOCK requires an existing `DEC-<NNN>` that resolves the protected
-  issue; cite that decision and the phase-scoped `ESC-<phase>-<NNN>` in the new
-  phase-scoped `TRG-<phase>-<NNN>`. A `RESOLVED` repair outcome only permits the
-  ordinary completion/report continuation. It does not complete the task or
-  permit the Phase Runner to advance.
+- A prior `BLOCK` is not resolved by a repair directive alone. When an existing
+  `DEC-<NNN>` resolves its protected condition into control-conformance repair,
+  append a labelled directive amendment to the existing governing
+  `TRG-<phase>-<NNN>` after verifying the prompt's DEC evidence. Retain that
+  TRG and its `ESC-<phase>-<NNN>`; do not allocate a new TRG or rewrite the
+  original BLOCK. The Phase Runner then uses RUN-RESUME and binds its next
+  recovery to those same IDs.
+- Every boundary-valid DEC citation in the evidence and amendment must exist in
+  the phase decisions file. Validate all citations, not only the first; text
+  such as `NOTDEC-123X` is not a decision citation.
+- A control `RESOLVED` outcome permits only a linked `report-repair`
+  continuation restricted to the directive's exact `Originating report` and
+  `Exact verification`, retaining the resolved attempt's `Control repair base`.
+  It does not permit direct task completion or phase
+  advance. Only that report-repair's later `RESOLVED` outcome permits task
+  completion.
 - A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
   in-scope quality-gate failure, missing/skipped command, session ending with
   durable partial work, or incomplete implementation is normally REPAIR.
@@ -159,9 +181,13 @@ when it crosses one of these triggers.
   of changed files is not a protected category by itself.
 - Never grant generic permission to edit a failing test, gate, or control. A
   control-conformance directive authorizes only its exact tools-only paths and
-  isolated commit. Necessary provider sync is a separate authorized maintenance
-  step. The originating report is updated only by the ordinary same-task
-  continuation after the Phase Runner's scope check passes.
+  isolated repair history from the runner-recorded base. Necessary provider
+  sync is a separate authorized maintenance step. After a nonresolved control
+  attempt, the next control recovery increments attempt count, uses the prior
+  integrated HEAD as its new runner-recorded base, and preserves every semantic
+  directive value byte-for-byte. The originating report is
+  updated only by the exact linked report-repair continuation after the Phase
+  Runner's scope check passes.
 - DEC-138's bookkeeping-only RESUME ground is superseded by general causal
   REPAIR. Failed attempts stay failed evidence; neither RESUME nor REPAIR
   rewrites them.
@@ -224,10 +250,41 @@ Required verification/re-review: <commands and review path>
 VERDICT: REPAIR
 ```
 
-Triage control-conformance REPAIR uses the same fields, but the disposition is
-literal and exact:
+Triage control-conformance REPAIR records the typed directive in the triage log
+before returning this exact output:
 
 ```text
+TRG-<phase>-<NNN> logged: <summary>
+Originating task: <task-M>
+Control trigger signature: <exact stable signature>
+Control attempt count: <next attempt>
+Control contract: <accepted source and uniquely required behavior>
+Control mismatch: <exact reproduced expected/observed result and termination>
+Allowed files: <exact ordered project-docs/tools/ paths>
+Forbidden changes: <exact protected paths and semantics>
+Exact verification: <exact command bytes and working directory>
+Originating report: <exact repo-relative completion-report path>
+Control repair base: <full runner-supplied phase HEAD>
+
+VERDICT: REPAIR / control-conformance
+```
+
+Resolved-BLOCK directive amendment output retains the existing IDs:
+
+```text
+Control directive amendment appended for TRG-<phase>-<NNN> / ESC-<phase>-<NNN>
+Resolution authority: DEC-<NNN>
+Originating task: <task-M>
+Control trigger signature: <exact stable signature retained from STOP>
+Control attempt count: <next attempt>
+Control contract: <accepted source and uniquely required behavior>
+Control mismatch: <exact reproduced expected/observed result and termination>
+Allowed files: <exact ordered project-docs/tools/ paths>
+Forbidden changes: <exact protected paths and semantics>
+Exact verification: <exact command bytes and working directory>
+Originating report: <exact repo-relative completion-report path>
+Control repair base: <full runner-supplied phase HEAD>
+
 VERDICT: REPAIR / control-conformance
 ```
 

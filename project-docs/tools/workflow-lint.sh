@@ -299,7 +299,7 @@ for file in $runner_surfaces; do
   check_contains "$file" 'Sequence contract: v2' "strict sequence marker"
   check_contains "$file" 'run-ledger' "run-ledger reference"
   check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"
-  check_contains "$file" 'no TRIAGE entry exists' "untriaged-STOP resume rule"
+  check_contains "$file" 'no TRIAGE entry' "untriaged-STOP resume rule"
 done
 
 report_lint_check_surfaces="
@@ -490,21 +490,21 @@ for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runne
   check_contains "$file" 'originating task' "control repair task identity"
   check_contains "$file" 'checked-out.*HEAD' "control repair checkpoint binding"
   check_contains "$file" 'symlink' "control repair artifact-type guard"
-  check_contains "$file" 'STOP.*TRIAGE BLOCK|TRIAGE BLOCK.*STOP' "triaged STOP authority"
+  check_contains "$file" 'preceding TRIAGE BLOCK|governing TRG/ESC' "triaged STOP authority"
 done
 
 for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md project-docs/templates/triage-log-template.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
-  check_contains "$file" 'accepted (control )?contract' "control repair contract authority"
-  check_contains "$file" 'allowed file|allowed path' "control repair file allowlist"
-  check_contains "$file" 'forbidden change' "control repair semantic guardrails"
+  check_contains "$file" '[Aa]ccepted (control )?contract|Control contract' "control repair contract authority"
+  check_contains "$file" '[Aa]llowed file|[Aa]llowed path' "control repair file allowlist"
+  check_contains "$file" '[Ff]orbidden change' "control repair semantic guardrails"
 done
 
-check_contains "project-docs/templates/run-ledger-template.md" 'Recovery directive schema: v1' "recovery directive schema marker"
+check_contains "project-docs/templates/run-ledger-template.md" 'Recovery directive schema: v2' "recovery directive schema marker"
 check_contains "project-docs/templates/run-ledger-template.md" 'Repair mode:.*control-conformance' "control repair ledger mode"
 check_contains "project-docs/templates/run-ledger-template.md" 'Control contract:' "control repair ledger contract"
 check_contains "project-docs/templates/run-ledger-template.md" 'Control mismatch:' "control repair ledger reproducer"
 check_contains "project-docs/templates/run-ledger-template.md" 'Repair authority:' "control repair ledger authority"
-check_contains "project-docs/templates/run-ledger-template.md" 'v2 ledger.*Recovery directive schema: v1' "mandatory recovery directive schema"
+check_contains "project-docs/templates/run-ledger-template.md" '[Ee]very new v2.*RUN|same RUN event' "mandatory recovery directive schema"
 
 for file in project-docs/tools/workflow-control-scope-lint.sh project-docs/tools/drills/run-drills.sh; do
   check_contains "$file" 'worktree is not clean' "control repair clean-tree enforcement"
@@ -578,9 +578,9 @@ project-docs/tools/README.md
 
 for file in $control_repair_authority_surfaces; do
   check_contains "$file" 'REPAIR / control-conformance' "exact control-conformance disposition"
-  check_contains "$file" 'TRG-<phase>-<NNN>' "phase-scoped control repair trigger"
-  check_contains "$file" 'ESC-<phase>-<NNN>' "phase-scoped resolved-BLOCK escalation"
-  check_contains "$file" 'existing.*DEC|DEC-<NNN>.*existing' "existing decision authority for resolved BLOCK"
+  check_contains "$file" 'Control trigger signature' "bound control repair trigger"
+  check_contains "$file" 'phase-scoped TRG/ESC|existing.*TRG/ESC|retains? the governing' "resolved-BLOCK identity retention"
+  check_contains "$file" 'existing DEC|DEC-<NNN>|DEC-resolved BLOCK|resolved by a DEC' "existing decision authority for resolved BLOCK"
 done
 
 control_repair_resolution_surfaces="
@@ -597,20 +597,20 @@ project-docs/tools/README.md
 "
 
 for file in $control_repair_resolution_surfaces; do
-  check_contains "$file" 'RESOLVED.*(only permits|permits only)' "RESOLVED permits only report continuation"
+  check_contains "$file" 'RESOLVED.*permit' "RESOLVED permits only report continuation"
 done
 
 for file in project-docs/agents/tl-lite.md project-docs/templates/phase-runner-prompt.md project-docs/templates/run-ledger-template.md project-docs/docs/playbook.md project-docs/tools/README.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
   check_contains "$file" 'monotonic' "monotonic recovery attempt budget"
-  check_contains "$file" 'second consecutive|two consecutive' "two-attempt no-progress exhaustion"
+  check_contains "$file" 'second|two consecutive' "two-attempt no-progress exhaustion"
 done
 
 for file in project-docs/tools/workflow-sequence-lint.sh project-docs/tools/drills/run-drills.sh; do
-  check_contains "$file" 'without Recovery directive schema: v1' "directive schema downgrade rejection"
+  check_contains "$file" 'downgrade Recovery directive schema|cannot drop directive schema' "directive schema downgrade rejection"
   check_contains "$file" 'preceding TRIAGE' "control/STOP triage binding"
   check_contains "$file" 'Consecutive no-progress attempts' "recovery budget enforcement"
   check_contains "$file" 'phase triage log' "durable phase triage authority"
-  check_contains "$file" 'unrecorded phase decision' "recorded decision authority"
+  check_contains "$file" 'unrecorded or malformed phase decision|every cited resolution decision must exist' "recorded decision authority"
   check_contains "$file" 'RUN-RESUME.*governing TRIAGE' "STOP/resume authority continuity"
   check_contains "$file" 'exhausted no-progress.*must BLOCK' "exhausted recovery cannot restart"
 done

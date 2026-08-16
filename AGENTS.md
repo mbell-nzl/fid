@@ -243,19 +243,25 @@ Human-visible blocker. Two cases are distinct:
 
 Ordinary causal repair stays inside accepted task scope and leaves the
 gate/control definition intact. A cross-scope control-conformance repair
-requires a written TL-Lite recovery directive citing the accepted contract,
-exact reproduced mismatch, originating task/trigger/budget, exact allowed paths
-(only the named control and its self-test artifacts under
-`project-docs/tools/`), forbidden semantic changes, and required exact reruns.
-Product, spec, prompt, template, dependency, task, and QA-contract files are
-never eligible. The Phase Runner keeps the originating task identity and budget
-and creates a dedicated clean temporary git worktree at the committed phase
-`HEAD` before dispatching a same-task continuation into that path. The dirty
-runner-owned ledger stays in the main phase worktree. The Developer may edit
-only the named tool paths in the repair worktree, uses red/green, preserves all
-failed evidence, reruns the exact control verification, and records
-starting/ending commits. Necessary provider sync is a separate authorized
-workflow-maintenance step, never part of the isolated control-repair commit.
+requires an authoritative TL-Lite triage-log directive with these exact typed
+fields: `Originating task`, `Control trigger signature`,
+`Control attempt count`, `Control contract`, `Control mismatch`,
+`Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
+report`, and `Control repair base`.
+Each value is one physical line. The Phase Runner records and verifies
+the full pre-dispatch phase HEAD as `Control repair base`; the Developer cannot
+select, replace, or rebaseline it. The initial TASK-RECOVERY maps its ledger
+trigger/attempt to the control fields and copies every other directive value
+byte-for-byte. Product, spec, prompt, template, dependency, task, QA-contract,
+report, and generated files are never eligible for the isolated repair.
+
+The Phase Runner creates a dedicated clean temporary git worktree at the
+recorded base before dispatching a same-task continuation into that path. The
+dirty runner-owned ledger stays in the main phase worktree as its only dirt.
+The Developer edits only the named tool paths in the repair worktree, uses
+red/green, preserves all failed evidence, runs `Exact verification`, and leaves
+the ending HEAD clean. Necessary provider sync is a separate authorized
+workflow-maintenance step, never part of the isolated control repair.
 
 Before recording the `REPAIR` ledger event, the Phase Runner runs this exact
 scope check over the dedicated commit:
@@ -264,16 +270,31 @@ scope check over the dedicated commit:
 project-docs/tools/workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>
 ```
 
-The claimed `<head>` must be the repair worktree's checked-out `HEAD`, its
+The `<base>` is always the runner-recorded directive value and `<head>` is the
+Developer-produced repair worktree HEAD. The claimed `<head>` must be that
+worktree's checked-out `HEAD`, its
 worktree/index must be clean with no `assume-unchanged` or `skip-worktree`
 tracked-file index flags, and every
 allowlisted artifact must remain a regular file rather than a symlink or
-gitlink. After it passes, fast-forward the unchanged phase branch to that
-verified commit while its only dirty path is the runner-owned ledger, and
-confirm phase `HEAD`. Only then append `REPAIR` and dispatch the ordinary
-same-task continuation to rerun the originating exact verification and update
-the originating report. Any ambiguity or proposed definition/policy change is
-`BLOCK`.
+gitlink. After any scope PASS, fast-forward the unchanged phase branch to
+verified HEAD while its only dirt is the ledger, confirm phase HEAD, append
+REPAIR, and clean up the temporary worktree. For a nonresolved control attempt,
+the next recovery increments attempt count and uses that prior integrated HEAD
+as the new runner-recorded base; every semantic directive value remains
+byte-identical. A control `RESOLVED` permits only a linked
+`report-repair` limited to the exact `Originating report` and `Exact
+verification`, retaining the resolved attempt's `Control repair base`; direct
+task completion is invalid. Only that report repair's
+later `RESOLVED` permits completion. Any ambiguity or proposed
+definition/policy change is `BLOCK`.
+
+Every new v2 RUN-START/RUN-RESUME event carries
+`Recovery directive schema: v2` in that same event; historical v1 entries
+remain valid, but no new event may emit or downgrade to v1. A RUN-RESUME after
+STOP retains the governing TRG/ESC and binds its exact next recovery. When an
+existing DEC resolves a BLOCK, amend the existing triage record and use
+RUN-RESUME; do not mint a new TRG. Every boundary-valid DEC citation must exist
+in the phase decisions file.
 
 No failed test, gate, or control grants generic permission to edit its test,
 command, or implementation. Authority comes from the task scope or the written
