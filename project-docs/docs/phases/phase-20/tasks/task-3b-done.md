@@ -1,5 +1,14 @@
 # Phase 20 - Task 3b: Strict-config and init boundary evidence - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh QA Lead re-review of final-review MF-01.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added the table-driven strict project-config boundary matrix required to close
@@ -64,26 +73,28 @@
 ## Tests run
 
 - `go test ./internal/config -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape' -count=1` - RED - `FAIL` (the first 4,096-byte fixture used one host-invalid filename component; the assertion was retained using a normalized 4,096-byte path with valid components).
-- `go test ./internal/config -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape' -count=1` - PASS - `ok   github.com/mbell-nzl/fid/internal/config	0.010s`
+- `go test ./internal/config -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape' -count=1` - UNVERIFIED - `ok   github.com/mbell-nzl/fid/internal/config	0.010s` (the historical report retained no observed termination result).
 - `go test ./cmd/fid -run 'TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - RED - `FAIL` (the new helper captured output before executing Cobra; it was corrected without changing a behavior assertion).
-- `go test ./cmd/fid -run 'TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - PASS - `ok   github.com/mbell-nzl/fid/cmd/fid	0.141s`
+- `go test ./cmd/fid -run 'TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - UNVERIFIED - `ok   github.com/mbell-nzl/fid/cmd/fid	0.141s` (the historical report retained no observed termination result).
 - `go test ./internal/config ./cmd/fid -run 'TestParseProjectConfigBoundaryDomains|TestProjectConfigWriterRoundTripsByteStableAtInt64Boundaries|TestReadProjectConfigRejectsArtifactRootSymlinkComponentEscape|TestInitCommandPrefixBoundaryMatrix|TestInitCommandPreservesDanglingWorkspaceSymlinkCollision' -count=1` - UNVERIFIED - see Gate-evidence correction (DEC-131).
-- `/tmp/fid --project <fresh>/FID --json init` (after creating a fresh `<fresh>/FID` directory) - PASS - stdout contained one successful `project.init` Response Envelope with `issue_prefix:"FID"`, stderr was empty, and exit status was 0.
+- `/tmp/fid --project /tmp/fid-task-3b-init-SGiAG5/FID --json init` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-16.jsonl","project":{"id":"project-ae05ace1a4595085351e55a567072d2d","issue_prefix":"FID","root":"/tmp/fid-task-3b-init-SGiAG5/FID"}},"event":{"id":"EVT-20260816-000001","occurred_at":"2026-08-16T09:56:40.883006675Z"}}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`
-- `golangci-lint run ./...` - PASS - `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131).
-- `go tool cover -func=coverage.out` - PASS - `76.2%`
-- `go test -tags integration -race ./...` - UNVERIFIED - see Gate-evidence correction (DEC-131).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
 - None. The two initial focused-test failures were test-fixture/helper repairs
   during normal red/green work; the matrix assertions and accepted contract
   remained unchanged.
+- Report-conformance recovery (MF-01): before this report-only continuation,
+  `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-20/tasks/task-3b-done.md project-docs/docs/phases/phase-20/tasks/task-3b.md` failed with `FAIL report-lint found 21 failure(s)` (terminated `exit_code: 21`). The failure is preserved; this repair adds the required typed outcome and replaces only the six required-gate records with current-session observed results. The historical focused PASS records without observed terminations are retained as UNVERIFIED rather than upgraded.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
