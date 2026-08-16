@@ -80,8 +80,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `37b59d629b296b7b5383454170f9f017fdd94253`
 
 ## Commit subject
 
-- Pending commit
+- `test(cli): add Phase 20 issue journey acceptance`
