@@ -52,14 +52,15 @@ implementation with a change to the protected gate definition and emitted
   command coverage. Replaced unsafe literal transport with byte-preserving
   comparison; focused verification and the unchanged Task 17 lint invocation
   pass. Committed as `88b0377`.
-- [ ] **P2 - Cross-scope recovery contract (in progress).** Amend canonical workflow spec,
+- [x] **P2 - Cross-scope recovery contract.** Amended canonical workflow spec,
   Phase Runner, TL-Lite, and Developer instructions to distinguish gate
   definition changes from control-conformance repairs and authorize a dedicated
   bounded control-repair session linked to the originating task.
-- [ ] **P3 - Mechanical enforcement (in progress).** Extend workflow lint and drills so the
+- [x] **P3 - Mechanical enforcement.** Extended workflow lint and drills so the
   distinction, ownership, budget linkage, no-advance rule, and protected
-  counter-cases cannot silently regress. Synchronize generated agent prompts.
-- [ ] **P4 - Phase 20 recovery closure.** Record the authoritative resolution,
+  counter-cases cannot silently regress. Generated prompts are synchronized;
+  workflow commit `92cb0f4` passes lint, drills, and sequence validation.
+- [ ] **P4 - Phase 20 recovery closure (in progress).** Record the authoritative resolution,
   archive ESC-20-015, append validated RUN-RESUME / recovery events, finalize
   Task 17's report from the unchanged evidence, and leave the ledger at the
   correct next checkpoint for Review 6.

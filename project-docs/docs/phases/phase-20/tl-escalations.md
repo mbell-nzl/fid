@@ -8,6 +8,22 @@
 
 ### Resolved
 
+- **ESC-20-015 - report-lint false-rejected Task 17's byte-identical literal
+  command (raised 2026-08-16 via `TRG-20-015`; resolved 2026-08-16 by
+  DEC-146).** The control diagnosis is sustained, but the protected `BLOCK`
+  classification is not. `awk -v` interpreted the command's required `\.`
+  escape before comparison even though the task declaration and report row
+  were the same 104 bytes. The accepted byte-exact contract uniquely determines
+  the fix, so this is a tools-only control-conformance `REPAIR`, not a gate
+  definition change. Commit `88b0377` replaces both unsafe comparisons with
+  opaque quoted equality and adds red/green escape fixtures; the unchanged Task
+  17 report-lint invocation passes. The isolated commit passes
+  `workflow-control-scope-lint.sh` from `9edb337` and changes only
+  `project-docs/tools/report-lint.sh`. Commit `92cb0f4` adds the guarded V1
+  recovery route, directive schema, scope verifier, and adversarial drills.
+  Task 17's command, expected exit, evidence, VAL-034, product commit, and task
+  boundary remain unchanged. Human attention is not required.
+
 - **ESC-20-014 - DEC-144's replacement complete-output condition was itself
   unsatisfiable: `go mod why` prints stanzas, and every stanza has a mandatory
   header (raised 2026-08-16 via `TRG-20-014`; resolved 2026-08-16 by DEC-145).**

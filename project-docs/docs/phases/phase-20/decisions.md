@@ -1505,6 +1505,66 @@
   TRG-20-014`, 13:32 `STOP`; `project-docs/specs/09_AI_WORKFLOW.md` §8;
   DEC-143; DEC-144.
 
+### DEC-146: A canonical control implementation defect is bounded control-conformance REPAIR, not a protected gate-definition BLOCK. Closes ESC-20-015
+
+- **Date:** 2026-08-16
+- **Context:** Task 17's expected-non-zero declaration and completion-report
+  row contain the same 104-byte command, including the literal `v0\.2` regex
+  escape. The accepted report-lint contract requires byte-exact command
+  coverage. `report-lint.sh` nevertheless passed the command through `awk -v`,
+  which interpreted the escape before comparing it and false-rejected both the
+  declaration lookup and required-command coverage. Task 17's product commit,
+  command, expected exit, evidence row, and VAL-034 assertion were not
+  defective. The Phase Runner entered recovery correctly, but TL-Lite treated
+  any edit to a canonical workflow control as protected gate-definition
+  authority because the workflow had no bounded cross-scope repair route.
+- **Decision:**
+  1. `TRG-20-015`'s diagnosis is **sustained**; its `BLOCK` classification and
+     `ESC-20-015` are **not sustained**. Fixing an implementation so it enforces
+     an already accepted, uniquely determining contract is control-conformance
+     `REPAIR`. Changing the command, expected status, assertion semantics,
+     accepted scope, threshold/budget/tolerance, or policy remains a protected
+     gate/control definition change.
+  2. Task 17's spec and recorded command remain byte-identical and unchanged.
+     `report-lint.sh` now treats commands as opaque text and compares them with
+     quoted shell equality. Red fixtures prove the old implementation
+     false-rejected literal `\.` and `\t`; normalized near-misses remain
+     rejected. The isolated implementation commit is `88b0377`.
+  3. The isolated commit is valid recovery evidence only because
+     `workflow-control-scope-lint.sh . 9edb337 88b0377
+     project-docs/tools/report-lint.sh` returns PASS. It is exactly one commit
+     after the preserved STOP baseline and changes only the named control file.
+  4. The V1 workflow now gives TL-Lite and Phase Runner a bounded tools-only
+     control-conformance route. Its directive cites the accepted contract,
+     exact mismatch, originating task/trigger/budget, allowed files, forbidden
+     changes, and verification. The Developer produces one isolated commit;
+     the Phase Runner scope-checks it before `REPAIR`; an ordinary same-task
+     continuation then reruns the originating verification and updates the
+     report. The originating task identity and no-progress budget do not reset.
+  5. `Recovery directive schema: v1`, workflow lint, sequence validation, and
+     drills mechanically protect the route. Definition changes and ambiguity
+     still route through protected triage. The workflow architecture commit is
+     `92cb0f4`.
+  6. The historical Task 17 report-lint failure, `TRG-20-015`, ESC entry, and
+     STOP remain immutable. The recovery appends `RUN-RESUME`, tools-only
+     `TASK-RECOVERY`/`REPAIR`, ordinary report-repair
+     `TASK-RECOVERY`/`REPAIR`, and the renewed Task 17 completion event. Review
+     6 remains next, followed by Task 18.
+  7. No product behavior, public interface, data model, dependency, command,
+     expected exit, VAL assertion, threshold, review trigger, or Phase 20 task
+     boundary changes.
+- **Consequences:** ESC-20-015 is archived and Human attention is no longer
+  required. Task 17 may finalize its existing evidence to `OUTCOME COMPLETE`
+  after the unchanged report-lint invocation passes on the repaired control.
+  Future canonical-control location alone cannot manufacture a Human stop; the
+  guarded tools-only route applies only when accepted semantics are unique.
+- **Refs:** `TRG-20-015`; `ESC-20-015`; `tasks/task-17.md`;
+  `tasks/task-17-done.md`; `project-docs/tools/report-lint.sh`;
+  `project-docs/tools/workflow-control-scope-lint.sh`;
+  `project-docs/tools/workflow-sequence-lint.sh`; `AGENTS.md` Commands;
+  `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 8-9;
+  `project-docs/docs/reviews/2026-08-16-esc-20-015-recovery-plan.md`.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

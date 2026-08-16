@@ -578,3 +578,26 @@ Phase wrap-up checklist:
   and the dependency policy are unchanged. `task-16b` repairs the parser
   red-first, then Task 16 continues in a fresh session and re-records every
   command, including the one whose `BLOCKED` row this triage correctly protected.
+
+---
+
+## TRG-20-015 adjudication - control defect sustained; BLOCK overturned
+
+- **Date:** 2026-08-16
+- **Decision:** DEC-146 sustains the reproduced `awk -v` literal-transport
+  defect but overturns the protected classification. The accepted byte-exact
+  report contract uniquely determines the behavior, so repairing only the
+  canonical tool implementation and self-tests is `control-conformance`
+  REPAIR. Canonical location or ordinary task-file scope alone is not a
+  protected trigger.
+- **Resolution evidence:** `88b0377` changes only `report-lint.sh`, adds
+  red/green `\.` and `\t` fixtures, and makes the unchanged Task 17 lint
+  invocation pass. The scope verifier returns PASS for `9edb337..88b0377` with
+  only `project-docs/tools/report-lint.sh` allowed. `92cb0f4` adds the guarded
+  route, directive schema, generated prompts, workflow lint, sequence checks,
+  and drills.
+- **Final verdict:** REPAIR / control-conformance; no ESC and no Human attention
+  would be allocated under the corrected workflow. `ESC-20-015` is retained as
+  historical evidence and closed by DEC-146.
+- **Next action:** append the resolved recovery sequence, finalize Task 17's
+  unchanged evidence to `OUTCOME COMPLETE`, then run Review 6.
