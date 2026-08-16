@@ -10,10 +10,12 @@
 #      `## Exact Commands To Run` required block appears in the report's
 #      `## Tests run` or `## Exact quality-gate results` with a PASS result,
 #      or BLOCKED inside a blocker report.
-#   4. Commit hash resolves via `git rev-parse --verify <hash>^{commit}`.
-#   5. Commit subject matches `git log -1 --format=%s <hash>` exactly, which
+#   4. Declared expected-non-zero commands are pre-committed in the task spec,
+#      then reported with the matching observed non-zero termination.
+#   5. Commit hash resolves via `git rev-parse --verify <hash>^{commit}`.
+#   6. Commit subject matches `git log -1 --format=%s <hash>` exactly, which
 #      also catches plausible-but-wrong hash prefixes.
-#   6. The report file itself is committed with no uncommitted modifications.
+#   7. The report file itself is committed with no uncommitted modifications.
 #      A report is evidence only once committed; the finalized hash-bearing
 #      report lands in a `docs(task): ...` commit immediately after the task
 #      commit, because a report cannot carry the hash of the same commit that
@@ -78,6 +80,53 @@ required_commands() {
   ' "$1"
 }
 
+# Print non-empty declaration rows from the optional task-spec section.
+expected_nonzero_declaration_lines() {
+  awk '
+    $0 == "## Expected Non-Zero Commands" { in_section = 1; next }
+    in_section && /^## / { exit }
+    in_section && NF > 0 { print }
+  ' "$1"
+}
+
+# Check declaration grammar and pre-commit each expected non-zero exit status.
+# The entries use a tab delimiter because the command itself may contain spaces.
+expected_nonzero_commands=""
+validate_expected_nonzero_declarations() {
+  spec=$1
+  required=$2
+  expected_nonzero_commands=""
+
+  while IFS= read -r line; do
+    [ -n "$line" ] || continue
+    declared_command=$(printf '%s\n' "$line" | sed -n 's/^- `\([^`]*\)` - expected `exit_code: \([0-9][0-9]*\)`.*/\1/p')
+    declared_exit=$(printf '%s\n' "$line" | sed -n 's/^- `\([^`]*\)` - expected `exit_code: \([0-9][0-9]*\)`.*/\2/p')
+    if [ -z "$declared_command" ] || [ -z "$declared_exit" ]; then
+      fail "expected non-zero declaration has invalid grammar: $line"
+      continue
+    fi
+    case "$declared_exit" in
+      0)
+        fail "expected exit_code must be non-zero for declared command: $declared_command"
+        continue
+        ;;
+    esac
+    if ! printf '%s\n' "$required" | grep -Fqx "$declared_command"; then
+      fail "declared expected non-zero command is not a required command: $declared_command"
+      continue
+    fi
+    expected_nonzero_commands="${expected_nonzero_commands}${declared_command}	${declared_exit}
+"
+  done <<EOF
+$(expected_nonzero_declaration_lines "$spec")
+EOF
+}
+
+declared_expected_exit() {
+  command=$1
+  printf '%s\n' "$expected_nonzero_commands" | awk -F '\t' -v command="$command" '$1 == command { print $2; exit }'
+}
+
 # Reject evidence tokens that cannot have been printed by the recorded go test
 # command. This is intentionally mechanical: it cannot prove the command ran,
 # but it can catch a silent-success or unrelated token copied into its record.
@@ -116,10 +165,24 @@ validate_pass_termination() {
       *) continue ;;
     esac
 
-    if ! printf '%s\n' "$line" | grep -Eq '[(]terminated `exit_code: [0-9][0-9]*`[)]'; then
+    if ! printf '%s\n' "$line" | grep -Eq 'terminated `exit_code: [0-9][0-9]*`[)]'; then
       fail "PASS result missing observed termination: $line"
     elif ! printf '%s\n' "$line" | grep -Eq '[(]terminated `exit_code: 0`[)][[:space:]]*$'; then
-      fail "PASS result did not terminate successfully with exit_code 0: $line"
+      if printf '%s\n' "$line" | grep -Eq '[(]expected `exit_code: [0-9][0-9]*`; terminated `exit_code: [0-9][0-9]*`[)][[:space:]]*$'; then
+        command=$(printf '%s\n' "$line" | awk -F '`' 'NF >= 2 { print $2 }')
+        reported_expected=$(printf '%s\n' "$line" | sed -n 's/.*(expected `exit_code: \([0-9][0-9]*\)`; terminated `exit_code: [0-9][0-9]*`)\([[:space:]]*\)$/\1/p')
+        observed_exit=$(printf '%s\n' "$line" | sed -n 's/.*(expected `exit_code: [0-9][0-9]*`; terminated `exit_code: \([0-9][0-9]*\)`)\([[:space:]]*\)$/\1/p')
+        declared_exit=$(declared_expected_exit "$command")
+        if [ -z "$declared_exit" ]; then
+          fail "PASS result expected non-zero command is not declared in the task spec: $command"
+        elif [ "$reported_expected" != "$declared_exit" ]; then
+          fail "PASS result expected exit_code does not match the declared exit_code for command $command: reported $reported_expected, declared $declared_exit"
+        elif [ "$observed_exit" != "$reported_expected" ]; then
+          fail "PASS result observed termination does not match expected exit_code for command $command: expected $reported_expected, observed $observed_exit"
+        fi
+      else
+        fail "PASS result did not terminate successfully with exit_code 0: $line"
+      fi
     fi
 
     # Backtick fields are: command, token, and termination result. Requiring
@@ -286,6 +349,7 @@ EOF
   if [ -z "$cmds" ]; then
     fail "task spec has no required-command block under '## Exact Commands To Run': $spec"
   fi
+  validate_expected_nonzero_declarations "$spec" "$cmds"
   results=$(
     { section_body "$report" '## Tests run'
       section_body "$report" '## Exact quality-gate results'; } | grep -v '^[[:space:]]*$' || true
@@ -432,7 +496,12 @@ echo lint-fixture
 echo coverage-fixture
 go test ./...
 go test -tags integration ./...
+rg -n absence-fixture cmd
 ```
+
+## Expected Non-Zero Commands
+
+- `rg -n absence-fixture cmd` - expected `exit_code: 1` - verifies the fixture absence proof.
 
 ## Notes For Developer
 
@@ -481,6 +550,7 @@ EOF
 - \`echo coverage-fixture\` - PASS - \`coverage-fixture\` (terminated \`exit_code: 0\`)
 - \`go test ./...\` - PASS - \`ok  example.com/fixture  0.001s\` (terminated \`exit_code: 0\`)
 - \`go test -tags integration ./...\` - PASS - \`ok  example.com/fixture/integration  0.002s\` (terminated \`exit_code: 0\`)
+- \`rg -n absence-fixture cmd\` - PASS - \`exit 1 (no output)\` (expected \`exit_code: 1\`; terminated \`exit_code: 1\`)
 
 ## Deviations from spec
 
@@ -509,7 +579,8 @@ EOF
     want=$2   # zero | nonzero
     match=$3  # required output substring, empty to skip
     file=$4
-    output=$("$self" "$file" "$tmp/task-spec.md" --repo "$tmp" 2>&1)
+    spec_file=${5:-"$tmp/task-spec.md"}
+    output=$("$self" "$file" "$spec_file" --repo "$tmp" 2>&1)
     code=$?
     ok=true
     case "$want" in
@@ -540,7 +611,7 @@ EOF
   git -C "$tmp" add clean.md task-spec.md
   git -C "$tmp" -c user.name=fixture -c user.email=fixture@example.invalid \
     commit -q -m "docs(task): finalize completion report fixture"
-  expect "clean report passes with COMPLETE outcome" zero "OUTCOME COMPLETE" "$tmp/clean.md"
+  expect "declared expected-non-zero PASS row passes" zero "OUTCOME COMPLETE" "$tmp/clean.md"
   expect "accepted real go test tokens pass" zero "" "$tmp/clean.md"
 
   # Every PASS must carry observed termination, not merely an output token.
@@ -552,6 +623,34 @@ EOF
   sed '0,/exit_code: 0/s//exit_code: 1/' "$tmp/clean.md" > "$tmp/pass-nonzero.md"
   commit_fixture pass-nonzero.md
   expect "PASS with nonzero exit fails" nonzero "PASS result did not terminate successfully with exit_code 0" "$tmp/pass-nonzero.md"
+
+  # A declared expected non-zero result must report the same observed exit.
+  sed 's|terminated `exit_code: 1`)|terminated `exit_code: 2`)|' "$tmp/clean.md" > "$tmp/expected-nonzero-observation-mismatch.md"
+  commit_fixture expected-nonzero-observation-mismatch.md
+  expect "declared expected-nonzero observation mismatch fails" nonzero "observed termination does not match expected exit_code" "$tmp/expected-nonzero-observation-mismatch.md"
+
+  # The report cannot self-authorize a non-zero PASS with an undeclared command.
+  sed 's|rg -n absence-fixture cmd|rg -n undeclared-fixture cmd|g' "$tmp/clean.md" > "$tmp/expected-nonzero-undeclared.md"
+  commit_fixture expected-nonzero-undeclared.md
+  expect "undeclared expected-nonzero command fails" nonzero "not declared in the task spec" "$tmp/expected-nonzero-undeclared.md"
+
+  # Reported expectation and task-spec declaration must agree exactly.
+  sed 's|expected `exit_code: 1`; terminated `exit_code: 1`|expected `exit_code: 2`; terminated `exit_code: 1`|' "$tmp/clean.md" > "$tmp/expected-nonzero-declaration-mismatch.md"
+  commit_fixture expected-nonzero-declaration-mismatch.md
+  expect "reported expected-nonzero declaration mismatch fails" nonzero "does not match the declared exit_code" "$tmp/expected-nonzero-declaration-mismatch.md"
+
+  # The expected-nonzero grammar is anchored; prose cannot follow its marker.
+  sed 's|terminated `exit_code: 1`)|terminated `exit_code: 1`) extra prose|' "$tmp/clean.md" > "$tmp/expected-nonzero-trailing-prose.md"
+  commit_fixture expected-nonzero-trailing-prose.md
+  expect "expected-nonzero trailing prose fails" nonzero "did not terminate successfully with exit_code 0" "$tmp/expected-nonzero-trailing-prose.md"
+
+  # Zero is never a declared expected non-zero exit status.
+  sed 's|expected `exit_code: 1`|expected `exit_code: 0`|' "$tmp/task-spec.md" > "$tmp/zero-declaration-task-spec.md"
+  expect "zero expected-nonzero declaration fails" nonzero "expected exit_code must be non-zero" "$tmp/clean.md" "$tmp/zero-declaration-task-spec.md"
+
+  # Every declaration must correspond to a command in the exact command block.
+  sed '/^rg -n absence-fixture cmd$/d' "$tmp/task-spec.md" > "$tmp/undeclared-in-gate-task-spec.md"
+  expect "expected-nonzero declaration outside command gate fails" nonzero "not a required command" "$tmp/clean.md" "$tmp/undeclared-in-gate-task-spec.md"
 
   # Status parsing is exact; explanatory or negated PASS text is not success.
   sed 's/`echo format-fixture` - PASS -/`echo format-fixture` - NOT PASS -/' "$tmp/clean.md" > "$tmp/not-pass-status.md"
