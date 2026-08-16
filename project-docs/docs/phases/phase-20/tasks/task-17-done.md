@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `95ee13d090b424ad541971d7fafe2ce295f09143`
 
 ## Commit subject
 
-- Pending commit
+- `feat(cli): remove promised governance command stubs`
