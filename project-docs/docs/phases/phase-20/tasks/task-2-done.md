@@ -1,5 +1,14 @@
 # Phase 20 - Task 2: Project selection and config namespace - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added Git-bounded project-root resolution with direct explicit-root selection and `.fid` symlink rejection.
@@ -52,16 +61,38 @@
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
-- `golangci-lint run ./...` — PASS — `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
-- `go tool cover -func=coverage.out` — PASS — `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t76.6%`
-- `go test -tags integration -race ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
-- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+Historical Task 2 gate evidence is preserved below. Its original PASS and
+UNVERIFIED records predate the required termination syntax and are not used as
+the current required-gate evidence.
+
+> - `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
+> - `golangci-lint run ./...` — PASS — `0 issues.`
+> - `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go tool cover -func=coverage.out` — PASS — `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t76.6%`
+> - `go test -tags integration -race ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t20.320s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None.
+- Historical Task 2 implementation had no product or specification deviations.
+- DEC-131 gate-evidence correction remains immutable historical context: the
+  original full-suite records were UNVERIFIED because their silent tokens could
+  not prove termination. This continuation preserves those records and adds
+  fresh, session-captured PASS results without rewriting them.
+- MF-01 report/control-conformance repair: the initial exact report-lint
+  attempt failed with `FAIL report-lint found 21 failure(s)` (terminated
+  `exit_code: 21`) because the report lacked the canonical typed workflow
+  outcome and used legacy evidence punctuation/termination syntax. This
+  report-only repair adds the required typed fields, preserves historical
+  evidence verbatim as quoted context, and records fresh terminal evidence for
+  every exact Task 2 command.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
