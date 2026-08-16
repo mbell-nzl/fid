@@ -52,8 +52,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `d8388d5c605750694004d446ffdc32f676e1521f`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): parse expected-nonzero declarations`
