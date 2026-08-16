@@ -2,12 +2,12 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: gate-repair
-- Condition: The QA-plan YAML absence command cannot reach its required no-match state: `go mod tidy` restores `gopkg.in/yaml.v3` checksum entries required transitively by the retained `github.com/golang-migrate/migrate/v4@v4.19.1` module.
+- Task outcome: BLOCKED
+- Category: specification-contradiction
+- Condition: The required `go mod why -vendor -m gopkg.in/yaml.v3` command exits 0 and proves the module is not vendored, but its observed final line is `(main module does not need to vendor module gopkg.in/yaml.v3)`, not the task spec's required literal `(main module does not need module gopkg.in/yaml.v3)`.
 - Recovery attempts: 1
-- Next action: Obtain direction on whether VAL-032/QA-14 treats the removed direct `go.mod` requirement as sufficient, or authorize an explicitly scoped migration-dependency change; then rerun the exact YAML absence command and the full Task 16 gate.
-- Human attention required: no
+- Next action: Tech Lead must reconcile the task/QA-plan literal expected `go mod why -vendor` output with the Go tool's vendor-mode output without changing VAL-032's module-requirement/build-graph assertion, then direct the same-task continuation.
+- Human attention required: yes
 
 ## Summary of what was implemented
 
@@ -15,6 +15,7 @@
 - Removed the last formatter product import and changed the retained migration parity test to use direct canonical JSON encoding.
 - Added a product-source guard for the deleted package, imports, and universal serializer symbols; retained the Task 15 whole-Cobra-tree universal-flag guard.
 - Removed the direct YAML requirement with `go mod tidy`, and updated the architecture adapter list to name `internal/cli` and `internal/project`.
+- Same-task continuation reran every current Task 16 command against the committed tree. The full gate and four declared absence checks passed; the protected `go mod why -vendor` result exposed the exact-output contradiction recorded above.
 
 ## Files created or modified
 
@@ -31,10 +32,10 @@
 
 ## Validation Contract Coverage
 
-- VAL-030: PASS - `TestProductSourceContainsNoUniversalSerializers` at `cmd/fid/contract_surface_test.go:76` checks the `internal/format` directory and imports; `ls internal/format` produced `No such file or directory` with expected `exit_code: 2`, and `rg -n "internal/format" cmd internal` produced no output with expected `exit_code: 1`.
-- VAL-031: PASS - `TestLiveCobraTreeContainsNoUniversalFormatFlags` at `cmd/fid/contract_surface_test.go:69` traverses the live Cobra tree, while its inherited/local injected-flag controls remain in the same file; the focused guard test passed and `/tmp/fid ready --help` lists only `--epic`, `--json`, and `--project`.
-- VAL-032: BLOCKED - the direct `gopkg.in/yaml.v3` requirement is removed from `go.mod`, and `go mod tidy`, the race suite, and build pass, but required QA-plan command `rg -n "gopkg.in/yaml.v3" go.mod go.sum` still finds the two transitive `go.sum` lines recreated by tidy. `go mod graph` identifies `github.com/golang-migrate/migrate/v4@v4.19.1` as their source.
-- VAL-033: PASS - `TestProductSourceContainsNoUniversalSerializers` at `cmd/fid/contract_surface_test.go:76` scans product ASTs, and `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` produced no output with expected `exit_code: 1`.
+- VAL-030: PASS - this continuation's `ls internal/format` returned the absent-directory diagnostic with declared/observed `exit_code: 2`, and `rg -n "internal/format" cmd internal` returned no output with declared/observed `exit_code: 1`; `TestProductSourceContainsNoUniversalSerializers` remains at `cmd/fid/contract_surface_test.go:76`.
+- VAL-031: PASS - `TestLiveCobraTreeContainsNoUniversalFormatFlags` remains at `cmd/fid/contract_surface_test.go:69`; this continuation also exercised the built entrypoint as `/tmp/fid ready --format json`, which rejected with `exit_code: 1`.
+- VAL-032: BLOCKED - `rg -ni "yaml" go.mod` returned the declared no-match result and the required `go mod why -vendor -m gopkg.in/yaml.v3` command exited 0 with a no-need result, but the latter's vendor-mode literal differs from the task/QA-plan's required final line. The withdrawn `go.sum` text search remains immutable history and is not rerun.
+- VAL-033: PASS - this continuation's `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` returned no output with declared/observed `exit_code: 1`; `TestProductSourceContainsNoUniversalSerializers` at `cmd/fid/contract_surface_test.go:76` remains the source guard.
 - VAL-037: PASS (architecture-doc portion) - `AGENTS.md:32` names `cmd/fid/`, `internal/cli/`, `internal/project/`, and `internal/export/` as the user-facing adapters; the removed formatter package is no longer listed.
 
 ## Tests run
@@ -47,6 +48,8 @@
   Real-process entrypoint evidence: the retained leaf exposes no universal format flag.
 - `go mod graph | rg 'gopkg\.in/yaml\.v3'` - DIAGNOSTIC - `github.com/golang-migrate/migrate/v4@v4.19.1 gopkg.in/yaml.v3@v3.0.1` (terminated exit_code: 0).
 - `go mod why -m gopkg.in/yaml.v3` - DIAGNOSTIC - `gopkg.in/yaml.v3` (terminated exit_code: 0); the path passes through the retained migration module's test graph.
+- `/tmp/fid ready --format json` - PASS (expected rejection) - `exit 1 (no output)` (terminated `exit_code: 1`)
+  Real-process entrypoint evidence from this continuation: the removed universal format flag is rejected.
 
 ## Exact quality-gate results
 
@@ -55,27 +58,28 @@
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 80.6% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 78.7%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 4.658s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 5.022s` (terminated `exit_code: 0`)
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
-- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (terminated `exit_code: 1`)
-  Expected no-match condition.
-- `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` - PASS - `exit 1 (no output)` (terminated `exit_code: 1`)
-  Expected no-match condition.
-- `ls internal/format` - PASS - `ls: cannot access 'internal/format': No such file or directory` (terminated `exit_code: 2`)
-  Expected absent-directory condition required by the QA plan.
-- `rg -n "gopkg.in/yaml.v3" go.mod go.sum` - BLOCKED - `go.sum:45:gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=` (terminated `exit_code: 0`)
-  Expected no-match condition is incompatible with the retained migration module after `go mod tidy`.
-- QA-plan commands beyond the Task 16 spec: the two absence commands above were run; no other Task 16-specific QA-plan command exists.
+- `ls internal/format` - PASS - `ls: cannot access 'internal/format': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -ni "writeTOON|writeYAML|writeMarkdown|yaml.Marshal" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -ni "yaml" go.mod` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `go mod why -vendor -m gopkg.in/yaml.v3` - BLOCKED - `(main module does not need to vendor module gopkg.in/yaml.v3)` (terminated `exit_code: 0`)
+  Protected literal-output mismatch: the task requires `(main module does not need module gopkg.in/yaml.v3)` exactly; this is not an import chain.
+- `rg -n "gopkg.in/yaml.v3" go.mod go.sum` - BLOCKED / WITHDRAWN by DEC-143 - `go.sum:45:gopkg.in/yaml.v3 v3.0.1/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=` (terminated `exit_code: 0`)
+  Immutable failed attempt. DEC-143 replaced this unreachable `go.sum` text search with the `go.mod` absence and `go mod why -vendor` build-graph checks above; it was not rerun.
+- QA-plan commands beyond the Task 16 spec: none; the current spec includes every Task 16-specific absence gate.
 
 ## Deviations from spec
 
 - No implementation or assertion-strength deviation. TDD preserved the initial red guard failure and the empty-directory follow-up failure; deleting the confirmed empty directory was the causal repair, after which the focused guard passed.
-- Immutable QA-plan failure: `rg -n "gopkg.in/yaml.v3" go.mod go.sum` ended with the cited `go.sum` line and `exit_code: 0`. Root cause is the retained migration module's explicit YAML requirement; no in-scope repair can remove it while keeping `go mod tidy` stable. No gate, threshold, command, dependency, or assertion was changed.
-- Immutable report-lint failures: the first run ended `FAIL report-lint found 13 failure(s)` with `exit_code: 13` because each PASS row had prose after the termination marker; the second ended `FAIL report-lint found 26 failure(s)` with `exit_code: 26` after report-only notation omitted the required backticks. The causal repair restored the validator's exact backticked termination notation with no trailing prose on PASS rows. Its rule still rejects the Task 16/QA-plan expected non-zero absence checks even though the task defines those exits as PASS, so no truthful report-only repair can make that validator exit zero.
+- Immutable QA-plan failure: `rg -n "gopkg.in/yaml.v3" go.mod go.sum` ended with the cited `go.sum` line and `exit_code: 0`. **WITHDRAWN by DEC-143:** it could not reach no-match while `go mod tidy` retained the accepted migration module's module-graph checksum. The withdrawn command was not rerun; DEC-143 replaces it with `rg -ni "yaml" go.mod` and `go mod why -vendor -m gopkg.in/yaml.v3`, and changes the four declared absence rows to the expected/observed PASS notation without weakening a VAL, threshold, or dependency rule.
+- Immutable report-lint failures: the first run ended `FAIL report-lint found 13 failure(s)` with `exit_code: 13` because each PASS row had prose after the termination marker; the second ended `FAIL report-lint found 26 failure(s)` with `exit_code: 26` after report-only notation omitted the required backticks. The causal repair restored the validator's exact backticked termination notation with no trailing prose on PASS rows. DEC-143 then corrected the control to accept task-spec-declared expected-non-zero PASS rows; those failure tokens and terminations remain immutable evidence.
+- Continuation blocker: the newly required `go mod why -vendor` command returned the real no-need vendor-mode line with `exit_code: 0`, but not the exact literal written in the task and QA plan. No source, dependency, module-file, command, threshold, or assertion change was attempted.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- VAL-032's direct-dependency intent is satisfied in `go.mod`, but QA plan section 5 requires no YAML checksum in `go.sum`, which contradicts the tidy result for the retained migration module. Resolve this before same-task completion.
+- The current `go mod why -vendor` exact-output requirement says `does not need module`, while the Go tool reports `does not need to vendor module`. Resolve this specification/evidence wording conflict before same-task completion.
 
 ## Dependency-budget note
 
