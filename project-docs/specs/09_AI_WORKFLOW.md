@@ -1369,6 +1369,23 @@ status that differs from the declared one are all failed gates. This keeps one
 lawful notation for absence evidence rather than a status word a control cannot
 parse.
 
+In that spec section a **declaration** is a line beginning at column 0 with a
+backtick bullet (`` - ` ``): the exact command in backticks, then
+``- expected `exit_code: <N>` ``, then optional trailing prose. Every other line
+there — instructional prose, an indented continuation of that trailing prose, a
+bullet that does not open with a backtick — is explanatory and is not parsed as
+a declaration. A backtick bullet that does not match the grammar is a failure,
+not prose, and a declaration never wraps before the end of its `expected` field.
+
+Two standing rules follow from how those literals and controls have failed. An
+exact-output literal required by a spec, QA plan, or decision is transcribed
+from an observed run of that exact command with those exact flags, or stated as
+a semantic pass condition; documentation wording and a sibling flag's output are
+not evidence of what a command prints. A control that parses an artifact section
+is self-tested against every real shape of that section in the repository at the
+time the control lands; a fixture invented for the control only proves the
+control agrees with itself.
+
 A required-command failure is an immutable failed attempt, not automatically a
 failed task or Human blocker. When its causal repair is inside accepted task
 scope, changes no protected decision, gate definition, threshold, command, or

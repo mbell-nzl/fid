@@ -1275,3 +1275,31 @@ Human-approved and QA-plan acceptance is next._
 - Resolution evidence: DEC-143 in `project-docs/docs/phases/phase-20/decisions.md` resolves `ESC-20-012` by defining VAL-032 as module-requirement/build-graph proof, replacing the withdrawn go.sum text search with `rg -ni "yaml" go.mod` and `go mod why -vendor -m gopkg.in/yaml.v3`, and amending report-lint for declared expected-non-zero rows. The escalation register is clear; no dependency change is approved.
 - Open escalation baseline: none; `ESC-20-012` is archived and resolved by DEC-143.
 - Next action: dispatch task-16a as a separate Developer session, then the Task 16 same-task continuation, followed by task-17, Review 6, and task-18.
+
+### 2026-08-16 12:03 REPAIR task-16
+
+- Trigger signature: `task-16:qa-plan-command-applicability:yaml-transitive-go-sum-and-report-lint-no-match`
+- Attempt count: 1
+- Starting checkpoint: Task 16 recovery at product commit `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb`, with immutable failed gate and report-lint evidence preserved; DEC-143 is recorded and the run resumed.
+- Ending checkpoint: separate Task 16a Developer session completed implementation commit `d9d6adde01d42c91f88e48a6f8a80bc6c8301b45` and report-finalization commit `73edab08db119fbf47acc0e6d1f9e0e5f281669e`.
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: Task 16a amended `report-lint.sh` to accept only task-spec-declared expected non-zero PASS rows under DEC-143; its exact `sh -n`, `--self-test`, and `workflow-lint.sh` commands passed with observed termination, and report-lint returned `OUTCOME COMPLETE`. The Task 16 continuation remains a separate Developer session and must run the full amended gate; the withdrawn YAML command remains unrerun.
+- Next checkpoint: VERIFY the Task 16 same-task continuation on the committed tree, including all amended commands and the exact `go mod why -vendor -m gopkg.in/yaml.v3` result.
+
+### 2026-08-16 12:12 TRIAGE TRG-20-013
+
+- Trigger: Task 16 cannot satisfy DEC-143's exact go mod why -vendor output literal; amended report-lint rejects valid declaration explanations.
+- Trigger signature: task-16:specification-contradiction:dec-143-go-mod-why-vendor-literal-and-parser-regression
+- Attempt count: 1
+- Checkpoint: Task 16 continuation committed the gate-blocker report at e09b98c7dc9900d50372da8a5234858ef00d5566 and report-lint evidence at 1f93513000586dfd339e4ccd3ac03f57f8fc36fe; independent go mod why -vendor -m gopkg.in/yaml.v3 terminated exit_code: 0 but ended with the vendor-qualified literal.
+- Verdict: BLOCK (escalated as ESC-20-013)
+- Resolution evidence: DEC-143, the Task 16 spec, and the QA plan require (main module does not need module gopkg.in/yaml.v3), but the successful Go command outputs (main module does not need to vendor module gopkg.in/yaml.v3). Changing that accepted literal or substituting a command is protected authority. The separate report-lint parser regression remains a bounded repair only after the protected contradiction is resolved.
+- Triage log: project-docs/docs/phases/phase-20/triage-log.md entry TRG-20-013 confirmed; escalation project-docs/docs/current/tl_escalations_current.md entry ESC-20-013 confirmed.
+
+### 2026-08-16 12:13 STOP
+
+- Cause: Task 16 is blocked by TRG-20-013: DEC-143's exact go mod why -vendor output literal conflicts with the observed successful Go command; the amended report-lint parser also needs a later bounded repair.
+- Task: task-16
+- Triage: TRG-20-013 (BLOCK, escalated as ESC-20-013)
+- Protected category: specification contradiction / quality-gate-definition authority
+- Next human action: resolve ESC-20-013 by recording the accepted go mod why -vendor output literal or an authorized command/spec correction without changing dependencies; then authorize the separate Task 16a report-lint parser repair and renewed Task 16 continuation. No Task 17, Review 6, or Task 18 dispatch may proceed before resolution.

@@ -7,10 +7,10 @@
 
 **Phase 20 is in flight: Tasks 1-15 and the DEC-133 infrastructure pack are
 complete, with every cadence and bounded review through `review-5d` closed.**
-Twelve escalations (`ESC-20-001..012`) are resolved by `DEC-130..DEC-143`. Task
-16's formatter/YAML deletion is committed at `afb262d` and owes a continuation
-after `task-16a`. No product, architecture, data-model, public-interface, or
-dependency decision is open.
+Thirteen escalations (`ESC-20-001..013`) are resolved by `DEC-130..DEC-144`.
+Task 16's formatter/YAML deletion is committed at `afb262d` and owes a
+continuation after `task-16b`. No product, architecture, data-model,
+public-interface, or dependency decision is open.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -96,9 +96,11 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
    live commands. Generated prompts and canonical controls are synchronized.
 6. Task 16's deletion is committed at `afb262d` but the task is open: DEC-143
    withdrew an unsatisfiable QA-plan YAML `go.sum` search for a stronger
-   requirement/build-graph pair, and amended `report-lint.sh` to accept declared
-   expected-non-zero absence rows. `task-16a` lands that control change, then the
-   Task 16 continuation reruns its own gate.
+   requirement/build-graph pair and amended `report-lint.sh` (`task-16a`,
+   `d9d6add`); DEC-144 then corrected that pair's `go mod why -vendor` literal to
+   the tool's real vendor-mode wording and ordered `task-16b` to parse only
+   declaration lines. `task-16b` runs next, then the Task 16 continuation reruns
+   its own gate.
 7. The Phase Runner then continues Task 17, Review 6, and Task 18.
 8. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
@@ -116,8 +118,9 @@ wrap-up:
   truncated-but-honest token is corrected without an escalation (DEC-136).
 - **CF-031** — landed as `validate_pass_termination` in `report-lint.sh`: every
   `PASS` row carries an observed termination result with self-test coverage
-  (DEC-139). `task-16a` amends the same check to accept declared expected
-  non-zero absence rows without weakening it (DEC-143).
+  (DEC-139). `task-16a` amended the same check to accept declared expected
+  non-zero absence rows without weakening it (DEC-143); `task-16b` fixes that
+  amendment's declaration-line parser (DEC-144).
 
 All Phase 20 full-suite `go test` gate lines recorded as `exit 0 (no output)`
 are **UNVERIFIED**, not `PASS` (DEC-131). Task-3c's run on the current tree is

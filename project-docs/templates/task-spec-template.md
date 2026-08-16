@@ -82,6 +82,12 @@ before the expected field. Every declared command must also appear in
 `## Exact Commands To Run`. Omit the section entirely when every required
 command must exit 0.
 
+A declaration is a line starting at column 0 with a backtick bullet (`` - ` ``);
+every other line here - this prose, an indented continuation of a declaration's
+trailing explanation, a bullet that does not open with a backtick - is
+explanatory and is not parsed (DEC-144). A backtick bullet that does not match
+the grammar is a failure, not prose.
+
 ## Notes For Developer
 
 - <constraints, ordering, pitfalls, escalation tripwires; completion-report

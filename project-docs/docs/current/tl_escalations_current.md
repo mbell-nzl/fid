@@ -9,8 +9,10 @@
 
 ## Open Escalations
 
-None. `ESC-20-012` was resolved on 2026-08-16 by DEC-143; its record is in
-`project-docs/docs/phases/phase-20/tl-escalations.md`.
+None. `ESC-20-013` was resolved on 2026-08-16 by DEC-144: the
+`go mod why -vendor` pass condition now carries the tool's real vendor-mode
+wording, and `task-16b` repairs the report-lint declaration parser before the
+Task 16 continuation reruns its own gate.
 
 ## Archive Pointers
 

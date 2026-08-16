@@ -15,6 +15,7 @@
 
 | TRG-20-NNN | Date | Trigger | Source | Verdict | ESC-20-NNN (if BLOCK) | Summary |
 |---|---|---|---|---|---|---|
+| TRG-20-013 | 2026-08-16 | Task 16 cannot satisfy DEC-143's exact `go mod why -vendor` output literal; amended report-lint rejects valid declaration explanations | `tasks/task-16-done.md`; attached commit and command evidence | BLOCK | ESC-20-013 | DEC-143's replacement build-graph command has a documented exact-literal contradiction with the observed Go output; correcting that protected specification/quality-gate authority conflict is required before the separate parser regression can be a local repair. |
 | TRG-20-010 | 2026-08-15 | Task 10 blocker report, focused suite failure, and report-lint failure | `tasks/task-10-done.md`; attached failure output | BLOCK | ESC-20-010 | Genuine unresolved product-facing command-test, required-gate, and report-lint failures; no verified corrective commit or accepted exception applies. |
 | TRG-20-009 | 2026-08-12 | Review 3 returned three unresolved Task 9 evidence findings | `qa/review-3.md` | BLOCK | ESC-20-009 | Genuine unresolved QA Blocking findings; supplied review verification and integration PASS do not resolve missing deterministic evidence matrices. |
 | TRG-20-008 | 2026-08-11 | Task 8 report marks six required gates PASS without nested exit code or explicit termination evidence | `tasks/task-8-done.md`; report-lint output | BLOCK | ESC-20-008 | Genuine unresolved evidence failure: commit and report-lint verification do not prove command termination, and DEC-138 does not apply. |
@@ -427,3 +428,72 @@ Phase wrap-up checklist:
   forbid producing. VAL-032 keeps its assertion with a stronger proof, the
   control is amended rather than the evidence, Task 16 resumes as a same-task
   continuation after `task-16a`, and its failed attempts stay immutable.
+
+---
+
+## TRG-20-013 - DEC-143's replacement YAML build-graph literal is unsatisfiable
+
+- **Trigger:** Task 16 cannot satisfy the protected DEC-143 exact output
+  literal for `go mod why -vendor -m gopkg.in/yaml.v3`; the attached independent
+  result exits 0 but ends `(main module does not need to vendor module
+  gopkg.in/yaml.v3)`, while DEC-143, the Task 16 spec, and the QA plan require
+  `(main module does not need module gopkg.in/yaml.v3)`. The amended
+  report-lint also exits 6 because its expected-nonzero declaration parser
+  treats valid instructional and wrapped explanation lines in Task 16's section
+  as grammar declarations.
+- **Trigger signature:**
+  `task-16:specification-contradiction:dec-143-go-mod-why-vendor-literal-and-parser-regression`
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-16-done.md`;
+  attached commit-verification and independent command evidence.
+- **Candidate:** typed `BLOCKED` / report-lint failure.
+- **Attempt count:** 1.
+- **Checkpoint:** Product commit
+  `afb262ddc3636f6a4c9a05d6b9e77b4aeac276eb` is verified by the supplied
+  `git rev-parse --verify` result (`exit_code: 0`) and subject match
+  `refactor(cli): remove universal formatter framework`; documentation commits
+  `e09b98c7dc9900d50372da8a5234858ef00d5566` and
+  `1f93513000586dfd339e4ccd3ac03f57f8fc36fe` are likewise supplied as verified.
+  The independent `go mod why -vendor` result terminates `exit_code: 0` with
+  the contradictory vendor-mode literal, and independent report-lint terminates
+  `exit_code: 6` with `OUTCOME BLOCKED` and six declaration-grammar failures.
+- **Verdict:** BLOCK.
+- **Reasoning:** DEC-143 correctly established that YAML absence is a
+  requirement/build-graph proof and forbids any dependency change, but its
+  replacement's required exact literal omits the Go tool's vendor-mode wording.
+  The attached successful command proves that the prescribed literal cannot be
+  truthfully recorded. Altering the exact expected output, command, or
+  quality-gate acceptance requires protected specification and quality-gate
+  authority; TL-Lite cannot substitute a literal or direct a dependency change.
+  The report-lint parser failure is a separate local workflow-control defect,
+  but the trigger expressly allows that repair only after the protected mismatch
+  has been resolved by recorded authority. It therefore cannot independently
+  make this event REPAIR or permit advancement.
+- **Local decisions made:** none.
+- **Resolution evidence:** The supplied verified commits establish committed
+  deletion work and documentation, not resolution of the new exact-literal
+  contradiction. DEC-143's authority does not cover its own divergent required
+  literal, and the supplied report-lint result confirms the parser is still
+  failing. RESUME is unavailable.
+- **If BLOCK:** category specification contradiction / quality-gate-definition
+  authority; ESC-20-013 raised in `tl_escalations_current.md`; resolution
+  condition: full Tech Lead records the lawful accepted vendor-mode output (or
+  another authority-approved exact proof) without changing the command, VAL-032
+  assertion strength, or dependency policy, then directs bounded Task 16a parser
+  repair and the Task 16 same-task continuation with fresh verification and any
+  affected independent re-review.
+- **Human attention required:** yes.
+- **References:** `tasks/task-16-done.md` (Workflow outcome; VAL-032; Exact
+  quality-gate results; Deviations); `tasks/task-16.md` (Exact Commands To Run;
+  Expected Non-Zero Commands; Notes For Developer);
+  `decisions.md` DEC-143 decisions 2-7; `project-docs/specs/09_AI_WORKFLOW.md`
+  §8-9; `AGENTS.md` (Commands; Hard Stops).
+- **Tech Lead adjudication (DEC-144, 2026-08-16):** verdict **sustained on both
+  halves**, and the sequencing judgment — protected literal first, bounded parser
+  repair second — was right. Both defects are Tech Lead drafting, like ESC-20-008
+  and ESC-20-012: DEC-143 transcribed `go mod why`'s non-vendor message for a
+  command it required to run with `-vendor`, and the Task 16a fixture used a
+  section shape no real spec uses. The observed vendor-mode line at `exit_code: 0`
+  is a lawful pass under the corrected condition; the command, `-vendor`, VAL-032,
+  and the dependency policy are unchanged. `task-16b` repairs the parser
+  red-first, then Task 16 continues in a fresh session and re-records every
+  command, including the one whose `BLOCKED` row this triage correctly protected.

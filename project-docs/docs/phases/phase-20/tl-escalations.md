@@ -8,6 +8,36 @@
 
 ### Resolved
 
+- **ESC-20-013 - DEC-143's replacement command required a literal the tool never
+  prints, and the amended control parsed prose as declarations (raised
+  2026-08-16 via `TRG-20-013`; resolved 2026-08-16 by DEC-144).** Both halves are
+  **sustained**, and both defects are mine again. (1) `cmd/go` prints
+  `(main module does not need to vendor module <path>)` under `-vendor` and
+  `(main module does not need module <path>)` without it. DEC-143 added the flag
+  for its test-exclusion semantics and then copied the **non-vendor** message as
+  the required literal, so the command it prescribed could never print the line
+  it demanded. The Developer's observed `exit_code: 0` with the vendor-mode line
+  is a lawful pass; the command, the `-vendor` flag, VAL-032's assertion, the
+  failing state (any import chain), and the dependency policy are all unchanged,
+  and only the accepted wording of the passing state is corrected. (2) The
+  amended `report-lint.sh` returned exactly six failures because
+  `expected_nonzero_declaration_lines` returns every non-empty line in the
+  section, and `task-16.md`'s section has two instructional prose lines and four
+  wrapped continuations — six, which is the whole diagnosis. Task 16a's fixture
+  used one bare declaration with no prose, a shape that appears nowhere in this
+  repository: not in `task-16.md`, not in `task-17.md`, not in the task-spec
+  template that generates them. The parser now treats only backtick-bullet lines
+  as declarations and ignores prose; a malformed backtick bullet still fails, and
+  no accepted declaration changes. `task-16b` lands it red-first, then Task 16
+  reruns its full gate in one fresh session. Two standing rules follow: an
+  exact-output literal is transcribed from an observed run of that exact command
+  with those exact flags, never inferred from documentation or a sibling flag;
+  and a control that parses an artifact section is self-tested against every real
+  shape of that section in the repository at the time it lands. `afb262d` and
+  `d9d6add` stand, Task 16's failed attempts stay immutable, and no product,
+  contract, schema, dependency, VAL, threshold, review trigger, or task boundary
+  moved.
+
 - **ESC-20-012 - Task 16 could not close because two controls rejected truthful
   evidence (raised 2026-08-16 via `TRG-20-012`; resolved 2026-08-16 by
   DEC-143).** Both halves are **sustained**, and both defects are mine, not the

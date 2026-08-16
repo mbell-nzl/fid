@@ -1182,6 +1182,10 @@
 ### DEC-143: VAL-032's YAML absence is a module-requirement and build-graph proof, not a `go.sum` text match; report-lint accepts declared expected-nonzero rows. Closes ESC-20-012
 
 - **Date:** 2026-08-16
+- **Amended by DEC-144 (2026-08-16):** decision 4's expected literal for
+  `go mod why -vendor -m gopkg.in/yaml.v3` is corrected to the tool's real
+  vendor-mode wording, and decision 5's declaration grammar gains the
+  line-selection rule its parser was missing. Everything else stands.
 - **Context:** Task 16 deleted `internal/format`, the format-matrix suite, and the
   direct `gopkg.in/yaml.v3` requirement, and then could not close. Two separate
   controls rejected truthful evidence.
@@ -1285,6 +1289,107 @@
   `required_commands`, self-test); `AGENTS.md` (Commands);
   `project-docs/specs/09_AI_WORKFLOW.md` §8; DEC-136 decision 2; DEC-139;
   DEC-141; DEC-142; `run-ledger.md` 2026-08-16 TASK-RECOVERY/TRIAGE/STOP.
+
+### DEC-144: `go mod why -vendor` proves absence in the tool's own vendor-mode wording; report-lint parses declaration lines, not every line in the section. Closes ESC-20-013
+
+- **Date:** 2026-08-16
+- **Context:** The Task 16 continuation ran the full DEC-143 command list and
+  stopped twice more, both times on my drafting, not on its work.
+  (1) `go mod why -vendor -m gopkg.in/yaml.v3` terminated `exit_code: 0` and
+  printed `(main module does not need to vendor module gopkg.in/yaml.v3)`, but
+  DEC-143 decision 4, `task-16.md`, and the QA plan all require the last line to
+  be exactly `(main module does not need module gopkg.in/yaml.v3)`. That literal
+  is the **non-vendor** message. `cmd/go` prints
+  `(main module does not need to vendor module <path>)` when `-vendor` is set and
+  `(main module does not need module <path>)` when it is not; both are the same
+  negative answer. I transcribed the wrong branch while adding the flag whose
+  test-exclusion semantics the decision relies on, so the prescribed literal was
+  unreachable for the prescribed command.
+  (2) The amended `report-lint.sh` terminated `exit_code: 6` with `OUTCOME
+  BLOCKED`. `expected_nonzero_declaration_lines` returns **every** non-empty line
+  under `## Expected Non-Zero Commands`, and
+  `validate_expected_nonzero_declarations` then rejects each one that is not a
+  declaration. `task-16.md`'s section has two instructional prose lines and four
+  wrapped continuation lines: exactly six, which is the whole diagnosis. The
+  Task 16a self-test fixture used a single unwrapped declaration with no prose,
+  a shape no real spec in this repository uses — including the task-spec
+  template and `task-17.md`, which would have failed the same way one task later.
+- **Decision:**
+  1. `TRG-20-013` is **sustained on both halves**. Neither was a decision-free
+     Task 16 repair: changing an accepted exact-output literal is specification
+     authority, and the Developer correctly declined to substitute a command,
+     touch the migration dependency, or reformat truthful evidence to evade a
+     control. The blocker report names both root causes precisely, down to the
+     script line numbers.
+  2. **The command is unchanged; its pass condition is corrected.**
+     `go mod why -vendor -m gopkg.in/yaml.v3` passes when it exits 0 and its
+     entire output is one parenthesized `does not need` line naming
+     `gopkg.in/yaml.v3`. On the toolchain in use that line is
+     `(main module does not need to vendor module gopkg.in/yaml.v3)`; the
+     non-vendor wording `(main module does not need module gopkg.in/yaml.v3)` is
+     equally lawful if a future toolchain prints it. Any import chain, any
+     additional line, or a non-zero exit is a **real VAL-032 failure** and a
+     blocker candidate, never a notation problem. Assertion strength is
+     unchanged: the failing state is identical, only the accepted wording of the
+     passing state is corrected.
+  3. **The already-observed Task 16 result satisfies that condition.** The
+     recorded `(main module does not need to vendor module gopkg.in/yaml.v3)` at
+     `exit_code: 0` is a lawful pass, so the `BLOCKED` row is an artifact of my
+     literal, not of the tree. It still stays in `task-16-done.md` as an
+     immutable attempt, and the continuation re-records the command from its own
+     session, because a result not captured in the session that records it is
+     `UNVERIFIED`.
+  4. **Report-lint's declaration parser gains the line-selection rule it never
+     had.** Inside `## Expected Non-Zero Commands`, a **declaration line** is a
+     line beginning at column 0 with ``- ` `` (hyphen, space, backtick). Every
+     other line — blank, prose paragraph, indented continuation, or a bullet that
+     does not open with a backtick — is explanatory and ignored. Every
+     declaration line must still satisfy the DEC-143 grammar, its `N` must still
+     be greater than zero, and its command must still appear in
+     `## Exact Commands To Run`; a malformed backtick bullet still fails with
+     today's message. A declaration may carry trailing prose and that prose may
+     wrap onto the following indented line, but it may never wrap before the end
+     of its `expected` field. Nothing is relaxed: the set of accepted
+     *declarations* is unchanged, and only non-declaration text stops being
+     parsed as one.
+  5. **`task-16b` lands that parser repair, red first, then Task 16 resumes.**
+     Scope is `report-lint.sh` and its self-test only. The self-test fixture spec
+     must reproduce the real shapes: a leading instructional paragraph, a
+     declaration with wrapped trailing prose, and a non-backtick prose bullet,
+     plus a new rejection proving a malformed backtick bullet still fails. All
+     seven current cases keep their exact behavior and messages. Task 16's
+     continuation then reruns the full amended list in one fresh session and
+     finalizes its report.
+  6. **New standing rule — an exact-output literal is transcribed from an
+     observed run, never inferred.** Any spec, QA plan, or decision that requires
+     an exact output line must quote it from a run of that exact command with
+     those exact flags, or state a semantic pass condition instead. Documentation
+     wording, a sibling flag's output, and a remembered message are not evidence.
+     This is the second failure of the same kind after ESC-20-012: planning
+     asserted what a command would print in a state nobody had observed.
+  7. **New standing rule — a control that parses an artifact section is
+     self-tested against every real shape of that section in the repository at
+     the time it lands.** A fixture invented for the control proves the control
+     agrees with itself. Task 16a's fixture passed while the only two real
+     sections in the tree, and the template that generates them, would all have
+     failed.
+  8. No product behavior, contract, schema, dependency, VAL assertion, VAL
+     window, threshold, review trigger, or task boundary changes. `afb262d` and
+     `d9d6add` both stand.
+- **Consequences:** Phase Runner resumes at `task-16b`, then the Task 16
+  continuation, then Task 17, Review 6, Task 18. `task-16.md` and the QA plan
+  carry the corrected pass condition; `task-17.md` needs no edit because the
+  parser, not the section, was wrong. `09_AI_WORKFLOW.md` §8 and the task-spec
+  template state the declaration-line rule so the next author and the next
+  control agree.
+- **Refs:** `TRG-20-013`; `ESC-20-013`; `tasks/task-16.md`;
+  `tasks/task-16-done.md`; `tasks/task-16a.md`; `tasks/task-16b.md`;
+  `tasks/task-17.md`; `qa/qa-plan.md` §5 and the feasibility table;
+  `qa/validation-contract.md` VAL-032;
+  `project-docs/tools/report-lint.sh` (`expected_nonzero_declaration_lines`,
+  `validate_expected_nonzero_declarations`, self-test);
+  `project-docs/templates/task-spec-template.md`;
+  `project-docs/specs/09_AI_WORKFLOW.md` §8; DEC-139; DEC-143.
 
 ## Spec Sync Verdict
 

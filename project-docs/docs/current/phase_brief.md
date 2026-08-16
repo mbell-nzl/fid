@@ -16,9 +16,10 @@ revision, and the retained Issue contract. Delete universal formatters,
 **In flight on branch `phase-20`. Tasks 1-15 and the infrastructure pack are
 complete; every cadence and bounded review through `review-5d` is closed** (infra
 record: `../phases/phase-20/infra-improvement-pack.md`). Task 16's deletion work
-is committed at `afb262d`; it stopped because two controls rejected truthful
-evidence, resolved by DEC-143. ESC-20-001..012 are resolved; nothing is open.
-**Next: `task-16a`, the Task 16 continuation, Task 17, Review 6, Task 18.**
+is committed at `afb262d`; it has stopped twice on control and spec-literal
+defects, resolved by DEC-143 and DEC-144. `task-16a` closed at `d9d6add`.
+ESC-20-001..013 are resolved; nothing is open.
+**Next: `task-16b`, the Task 16 continuation, Task 17, Review 6, Task 18.**
 
 ## Operating Mode And Slice Contract
 
@@ -41,15 +42,17 @@ Envelope, leaf schemas, reason codes, DDL/Event semantics, and removals.
 | 10-13 | AC/labels, links, workflow, maintenance | Complete `627ca9d`, `49c179a`, `161f89c` (DEC-141); reviews 4b/4c/5b closed | 8-9a |
 | 14 | Legacy JSON conversion **and its caller convergence** | Complete (DEC-142) | 13 |
 | 15 | Format shim removal and whole-tree convergence | Complete `24f50aef`; review-5d closed MF-02 | 14 |
-| 16 | Delete universal formatters and YAML | Deletion committed `afb262d`; continuation owed (DEC-143) | 15, 16a |
-| 16a | report-lint accepts declared expected-non-zero commands | **Next** (DEC-143) | 15 |
+| 16 | Delete universal formatters and YAML | Deletion committed `afb262d`; continuation owed (DEC-143, DEC-144) | 15, 16a, 16b |
+| 16a | report-lint accepts declared expected-non-zero commands | Complete `d9d6add` (DEC-143) | 15 |
+| 16b | report-lint parses declaration lines, not prose | **Next** (DEC-144) | 16a |
 | 17 | Delete promised-command stubs | Pending | 16 |
 | 18 | Journey acceptance and documentation | Pending | 1-17 |
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
-12, 15, and 17; Task 18 follows the sixth review. Tasks 3a-3d, 9a, and 16a are
-DEC-130/131/140/143 recovery sessions and 3e-3l is the DEC-133 infrastructure
-pack; none adds a product VAL. Review 6 is the next cadence review.
+12, 15, and 17; Task 18 follows the sixth review. Tasks 3a-3d, 9a, 16a, and 16b
+are DEC-130/131/140/143/144 recovery sessions and 3e-3l is the DEC-133
+infrastructure pack; none adds a product VAL. Review 6 is the next cadence
+review.
 
 ## Validation Contract
 
@@ -85,7 +88,10 @@ re-run the full gate with real tokens.
   `exit 0 (no output)`. VAL-032's YAML absence is a `go.mod` requirement and
   build-graph proof; a `go.sum` checksum retained for an accepted dependency's
   module graph is bookkeeping, not a fid dependency, and the migration
-  dependency does not change.
+  dependency does not change. That proof passes on the tool's own wording -
+  `(main module does not need to vendor module ...)` under `-vendor` (DEC-144);
+  an import chain is still a real failure. Only backtick-bullet lines in
+  `## Expected Non-Zero Commands` are declarations; other lines are prose.
 - **A removal task owns its own invalidated callers (DEC-142).** A task that
   removes a flag, field, handler, or symbol owns every caller that removal
   breaks, including test callers and helpers it orphans. Never defer to a later
@@ -133,10 +139,14 @@ Issue/label/link/workflow/maintenance packages (journey behavior);
   today" may be unreachable in its finished state, and a control may reject
   evidence canon requires. Before adding an absence gate, state the reachable
   pass condition and check no accepted dependency or rule prevents it (DEC-143).
+- **Realized in ESC-20-013:** transcribe an exact-output literal from an observed
+  run of that exact command with those exact flags, never from documentation or a
+  sibling flag; and self-test any section-parsing control against every real
+  shape of that section in the repository (DEC-144).
 
 ## Success / Exit Criteria
 
-- [ ] All eighteen tasks plus recovery tasks 3a-3d, 9a, and 16a complete with exact-command evidence.
+- [ ] All eighteen tasks plus recovery tasks 3a-3d, 9a, 16a, and 16b complete with exact-command evidence.
 - [ ] Every accepted VAL has a phase-end outcome with cited evidence.
 - [ ] Complete standalone Issue journey passes and survives rebuild unchanged.
 - [ ] Universal formatters/flags/dependency, promised stubs, and retired Issue fields are absent.
