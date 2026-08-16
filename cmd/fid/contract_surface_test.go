@@ -1,12 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/token"
 	"os"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"sort"
 	"strings"
@@ -15,6 +17,156 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
+	retained := []string{
+		"init",
+		"rebuild",
+		"issue create",
+		"issue get",
+		"issue list",
+		"issue update",
+		"issue transition",
+		"issue ac add",
+		"issue ac list",
+		"issue label add",
+		"issue label remove",
+		"label add",
+		"label list",
+		"link add",
+		"link remove",
+		"link list",
+		"ready",
+		"workflow define",
+		"workflow assign",
+		"workflow list",
+		"maintenance check",
+	}
+	legacy := []string{
+		"policy show",
+		"dev start",
+		"dev gate",
+		"dev finish",
+		"dev block",
+		"claim list",
+		"run record",
+		"issue claim",
+		"issue unclaim",
+		"issue complete",
+		"activity list",
+		"concern list",
+		"concern address",
+		"concern raise",
+		"requirement sync",
+		"issue ac verify",
+		"stats tokens",
+		"stats cost",
+		"sql",
+		"journal inspect",
+		"maintenance vacuum",
+	}
+
+	if len(retained) != 21 || len(legacy) != 21 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 21 each", len(retained), len(legacy))
+	}
+	want := append(append([]string{}, retained...), legacy...)
+	sort.Strings(want)
+	got := liveExecutableLeafCommands(newRootCommandAt(t.TempDir()))
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("live executable leaves = %v, want exact retained/legacy inventory %v", got, want)
+	}
+
+	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
+	for _, command := range retained {
+		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
+	}
+	if !reflect.DeepEqual(rootFlagCapabilities, wantCapabilities) {
+		t.Fatalf("root flag capabilities = %#v, want exact retained inventory %#v", rootFlagCapabilities, wantCapabilities)
+	}
+
+	for _, fixture := range legacyLeafInvocations() {
+		for _, rootFlag := range []string{"--json", "--project"} {
+			t.Run(fixture.command+" rejects "+rootFlag, func(t *testing.T) {
+				assertLegacyLeafRejectsRootFlag(t, fixture, rootFlag)
+			})
+		}
+	}
+}
+
+type legacyLeafInvocation struct {
+	command string
+	args    []string
+}
+
+func legacyLeafInvocations() []legacyLeafInvocation {
+	return []legacyLeafInvocation{
+		{command: "policy show", args: []string{"policy", "show"}},
+		{command: "dev start", args: []string{"dev", "start", "FID-legacy"}},
+		{command: "dev gate", args: []string{"dev", "gate", "FID-legacy"}},
+		{command: "dev finish", args: []string{"dev", "finish", "FID-legacy"}},
+		{command: "dev block", args: []string{"dev", "block", "FID-legacy"}},
+		{command: "claim list", args: []string{"claim", "list"}},
+		{command: "run record", args: []string{"run", "record"}},
+		{command: "issue claim", args: []string{"issue", "claim", "FID-legacy"}},
+		{command: "issue unclaim", args: []string{"issue", "unclaim", "FID-legacy"}},
+		{command: "issue complete", args: []string{"issue", "complete", "FID-legacy"}},
+		{command: "activity list", args: []string{"activity", "list"}},
+		{command: "concern list", args: []string{"concern", "list"}},
+		{command: "concern address", args: []string{"concern", "address", "CON-legacy"}},
+		{command: "concern raise", args: []string{"concern", "raise"}},
+		{command: "requirement sync", args: []string{"requirement", "sync"}},
+		{command: "issue ac verify", args: []string{"issue", "ac", "verify", "FID-legacy", "AC-legacy"}},
+		{command: "stats tokens", args: []string{"stats", "tokens"}},
+		{command: "stats cost", args: []string{"stats", "cost"}},
+		{command: "sql", args: []string{"sql", "SELECT 1"}},
+		{command: "journal inspect", args: []string{"journal", "inspect", "EVT-legacy"}},
+		{command: "maintenance vacuum", args: []string{"maintenance", "vacuum"}},
+	}
+}
+
+func assertLegacyLeafRejectsRootFlag(t *testing.T, fixture legacyLeafInvocation, rootFlag string) {
+	t.Helper()
+	args := append([]string{}, fixture.args...)
+	if rootFlag == "--project" {
+		args = append([]string{rootFlag, t.TempDir()}, args...)
+	} else {
+		args = append([]string{rootFlag}, args...)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(t.TempDir())
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatalf("fid %s with %s succeeded, want pre-handler rejection", fixture.command, rootFlag)
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("fid %s with %s stdout = %q, want empty", fixture.command, rootFlag, stdout.String())
+	}
+	want := "error: " + rootFlag + " is not available for " + fixture.command
+	if !strings.Contains(stderr.String(), want) {
+		t.Fatalf("fid %s with %s stderr = %q, want %q", fixture.command, rootFlag, stderr.String(), want)
+	}
+}
+
+func liveExecutableLeafCommands(root *cobra.Command) []string {
+	var leaves []string
+	var walk func(*cobra.Command)
+	walk = func(command *cobra.Command) {
+		if command != root && (command.Run != nil || command.RunE != nil) {
+			leaves = append(leaves, rootCommandKey(command))
+		}
+		for _, child := range command.Commands() {
+			walk(child)
+		}
+	}
+	walk(root)
+	sort.Strings(leaves)
+	return leaves
+}
 
 func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
 	repoRoot := commandTestRepositoryRoot(t)

@@ -254,21 +254,40 @@ refresh or renamed recovery cannot reset it.
 
 ## 8. Audit A Workspace
 
-ADR-0011 makes JSON the only machine representation. The target audit surface
-after convergence slice A is:
+Phase 20 delivers the standalone Issue journey with JSON as the only machine
+representation for the retained surface. Use `--json` with `init`, `rebuild`,
+the Issue create/read/update/transition, acceptance-criterion, Issue-label,
+label, link, ready, workflow, and maintenance-check operations listed in the
+accepted [Phase 20 contract](phases/phase-20/contracts.md) section 3. Each
+successful command writes one `fid-cli.v1` Response Envelope to stdout; a
+typed failure writes one envelope to stderr.
+
+For a fresh project, a compact machine journey starts with:
 
 ```text
-fid maintenance check
-fid maintenance check --warn-as-error --json
+fid --json init --prefix FID
+fid --json issue create --kind epic --title "Delivery" --by tl
+fid --json issue list
+fid --json maintenance check
+```
+
+The legacy leaves in contract section 6 retain their existing temporary Human
+or unenveloped JSON modes until their named expiry phases. They intentionally
+reject explicit root `--json` and `--project`; do not treat that rejection as a
+fallback to a second machine protocol.
+
+There is no `--format`, TOON, YAML, or generic Markdown output. The audit
+surface is:
+
+```text
+fid --json maintenance check
+fid --json maintenance check --warn-as-error
 ```
 
 Human default output is concise terminal text; `--json` emits the canonical
-machine envelope. There is no `--format`, TOON, YAML, or generic Markdown
-output. The current pre-convergence binary still contains displaced formatter
-behavior, but no adopted workspace depends on it and new integrations must not
-use it. The audit refreshes a missing/stale projection without appending to the
-journal. Warnings exit zero unless `--warn-as-error` promotes the outcome;
-structural errors exit non-zero.
+machine envelope for retained operations. The audit refreshes a missing/stale
+projection without appending to the journal. Warnings exit zero unless
+`--warn-as-error` promotes the outcome; structural errors exit non-zero.
 
 ## 9. Compact the Derived Database
 

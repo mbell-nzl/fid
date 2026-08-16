@@ -7,8 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-_No shipped changes yet._ v0.2a (Workflow Engine Migration) is in planning as
-Phases 18–20; see `project-docs/specs/10_IMPLEMENTATION_ROADMAP.md`.
+### Changed
+
+- Phase 20 delivers the standalone Issue journey: project initialization and
+  rebuild, legal Issue hierarchy creation, acceptance criteria, labels, typed
+  links, ready selection, revisioned updates/transitions, workflow inspection,
+  and maintenance inspection now use the `fid-cli.v1` JSON Response Envelope.
+- The SQLite projection remains derived from the append-only journal; canonical
+  `fid --json issue get` output is preserved byte-for-byte across rebuild.
+
+### Removed
+
+- Universal `--format` output selection and its TOON, YAML, and generic
+  Markdown renderers are removed. JSON is the retained machine interface.
+- The promised `fid decision`, `fid escalation`, and `fid triage` command stubs
+  are removed rather than advertised ahead of their owning phases.
+
+The `0.1.0` notes below are historical release context. In particular, their
+formatter and governance-stub descriptions do not describe the current Phase
+20 command surface.
 
 ## [0.1.0] - 2026-07-18
 
