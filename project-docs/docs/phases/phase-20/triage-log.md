@@ -601,3 +601,95 @@ Phase wrap-up checklist:
   historical evidence and closed by DEC-146.
 - **Next action:** append the resolved recovery sequence, finalize Task 17's
   unchanged evidence to `OUTCOME COMPLETE`, then run Review 6.
+
+---
+
+## TRG-20-016 - Task 3k exact repeated race gate exceeds timeout through later-task fixtures
+
+- **Trigger:** Task 3k's unchanged exact race gate cannot terminate because post-Task-3k serial cmd/fid fixtures owned by Tasks 11 and 12 make ten counts exceed Go's fixed ten-minute test timeout.
+- **Originating task:** task-3k
+- **Trigger signature:** `final-qa:qa-rework:MF-01-report-lint-task-3k`
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-20/tasks/task-3k-done.md`; `project-docs/docs/phases/phase-20/qa/final-review.md` finding MF-01.
+- **Candidate:** `RECOVERY_REQUIRED` / cross-task in-scope repair / ownership disposition.
+- **Attempt count:** 3
+- **Checkpoint:** Commit-verification evidence supplied for `13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb`: `git rev-parse --verify` terminated `exit_code: 0` and subject matched `docs(task): finalize phase-20 task-3k recovery report`; the report preserves both prior recovery attempts and the current immutable timeout evidence.
+- **Verdict:** BLOCK
+- **Reasoning:** The unchanged `go test -race -count=10 ./internal/claims ./cmd/fid` first terminated `FAIL` with `exit_code: 1` after `cmd/fid` reported `panic: test timed out after 10m0s`. A fresh one-count trace terminated `exit_code: 0` in 104.318s, requiring at least 1043.18s for ten counts before overhead; `internal/claims` was at most 1.27s. The causal serial fixtures belong to Task 11 (`cf096da6391c020c24e3392996548158271bc080`, 10.17s/count) and Task 12 (`49c179add40724871bae582fc3812ffc0aff04fc`, 9.21s/count), not Task 3k's accepted source/test scope. Authorizing their repair, re-slicing ownership, or changing the gate/timeout requires cross-task authority; moreover, this is the third mediated attempt after the report's two recoveries without a local Task 3k route to material progress.
+- **Local decisions made:** none.
+- **Resolution evidence:** no accepted decision authorizes an owning Task 11/12 repair or cross-task fixture/scheduling disposition, and the supplied verified report commit preserves rather than clears the exact gate failure. `report-lint` remains truthfully `OUTCOME RECOVERY_REQUIRED` with `exit_code: 0` because the required gate is BLOCKED.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** N/A
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category protected task-boundary / cross-task authority and recovery-budget-exhausted; ESC-20-016 raised in `tl_escalations_current.md`; resolution condition: full Tech Lead records an accepted ownership disposition naming the owning task and bounded later-fixture files, while retaining the byte-identical `go test -race -count=10 ./internal/claims ./cmd/fid` command, Go timeout, threshold, Task 3k scope, and accepted gate semantics, followed by fresh evidence and independent re-review.
+- **Human attention required:** yes.
+- **References:** `project-docs/docs/phases/phase-20/tasks/task-3k-done.md` (Workflow outcome, Exact quality-gate results, Deviations from spec, Concerns); `project-docs/docs/phases/phase-20/qa/final-review.md` (MF-01 and QA-01/QA-24); `project-docs/docs/phases/phase-20/tasks/task-11.md` and `task-12.md` (Exact Commands To Run); `project-docs/specs/09_AI_WORKFLOW.md` §2.3 and §9; `AGENTS.md` (Commands; Hard Stops).
+## TRG-20-017 — Schema-v2 correction/continuation of TRG-20-016
+
+Trigger: Correct the external triage identity record for TRG-20-016 after the Phase Runner schema-v2 validator rejected its non-task-prefixed Trigger signature.
+Originating task: task-3k
+Trigger signature: task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+Attempt count: 3
+Repair category: N/A
+Repair authority: N/A
+Governing escalation: ESC-20-016
+Summary: This correction preserves the BLOCK disposition, the governing ESC-20-016, and its resolution requirement. The corrected task-prefixed Trigger signature exists solely to satisfy the accepted schema-v2 identity rule that the external Trigger signature begins with its Originating task.
+Commit-verification evidence: 13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb; git rev-parse --verify terminated exit_code: 0; subject matched docs(task): finalize phase-20 task-3k recovery report.
+Mismatch evidence: The unchanged exact command go test -race -count=10 ./internal/claims ./cmd/fid first terminated FAIL with exit_code: 1 after cmd/fid timed out at 10m0s; one-count trace terminated exit_code: 0 in 104.318s; later Task 11 and Task 12 serial fixtures are causal and outside Task 3k scope; report-lint remains OUTCOME RECOVERY_REQUIRED.
+References: project-docs/docs/phases/phase-20/triage-log.md TRG-20-016; project-docs/docs/current/tl_escalations_current.md ESC-20-016; project-docs/docs/phases/phase-20/tasks/task-3k-done.md.
+
+Verdict: BLOCK (escalated as ESC-20-016)
+## TRG-20-018 - Schema-v2 formatting and identity correction for TRG-20-016/TRG-20-017
+
+- **Trigger:** Repair the schema-v2 triage artifact formatting for Phase 20.
+- **Source:** project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- **Checkpoint:** TRG-20-018 is a formatting/identity correction only; it preserves the existing BLOCK and ESC-20-016 resolution requirement and creates no ESC-20-018.
+- **Originating task:** task-3k
+- **Trigger signature:** task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Verdict:** BLOCK (escalated as ESC-20-016)
+- **Resolution evidence:** Verified report commit 13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb with subject docs(task): finalize phase-20 task-3k recovery report; unchanged gate go test -race -count=10 ./internal/claims ./cmd/fid first FAIL exit_code: 1 after a 10m0s timeout; report-lint OUTCOME RECOVERY_REQUIRED.
+- **References:** project-docs/templates/triage-log-template.md; project-docs/docs/current/phase_brief.md; project-docs/docs/current/decisions_active.md; project-docs/docs/current/progress_current.md; project-docs/docs/current/tl_escalations_current.md; project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+
+VERDICT: BLOCK (escalated as ESC-20-016)
+## TRG-20-019 — Formatting correction for retained protected BLOCK
+
+- **Trigger:** Correct the remaining accepted triage-log field mismatch in TRG-20-018: its bold Verdict field included the escalation suffix instead of the contract-required `BLOCK` value.
+- **Source:** project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- **Checkpoint:** Corrective record only; TRG-20-016, TRG-20-017, and TRG-20-018 remain unmodified.
+- **Originating task:** task-3k
+- **Trigger signature:** task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Resolution evidence:** Verified report commit `13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb` with subject `docs(task): finalize phase-20 task-3k recovery report`; unchanged gate `go test -race -count=10 ./internal/claims ./cmd/fid` first FAIL `exit_code: 1` after a 10m0s timeout; report-lint is `OUTCOME RECOVERY_REQUIRED`.
+- **Escalation:** ESC-20-016
+- **Verdict:** BLOCK
+- **References:** TRG-20-016, TRG-20-017, TRG-20-018; this correction preserves the protected cross-task BLOCK and the existing ESC-20-016 resolution requirement.
+
+VERDICT: BLOCK (escalated as ESC-20-016)
+## TRG-20-020 - Canonical schema-v2 correction for retained protected BLOCK
+
+- **Originating task:** task-3k
+- **Trigger signature:** task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Verdict:** BLOCK
+- **Escalation:** ESC-20-016
+- **Trigger:** Canonical schema-v2 formatting/identity correction only for the retained protected cross-task BLOCK.
+- **Source:** project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- **Checkpoint:** Verified report commit `13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb` with subject `docs(task): finalize phase-20 task-3k recovery report`; unchanged gate `go test -race -count=10 ./internal/claims ./cmd/fid` first FAIL (terminated `exit_code: 1`) after a 10m0s timeout; report-lint OUTCOME RECOVERY_REQUIRED.
+- **Resolution evidence:** Preserves the protected cross-task BLOCK and the existing ESC-20-016 resolution requirement; this correction creates no ESC-20-020.
+- **References:** project-docs/docs/phases/phase-20/tasks/task-3k-done.md; project-docs/docs/phases/phase-20/triage-log.md; ESC-20-016.
+
+VERDICT: BLOCK (escalated as ESC-20-016)

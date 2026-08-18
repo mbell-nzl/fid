@@ -73,7 +73,7 @@ fails because the current operation reads the wall clock directly.
 Run exactly:
 
 ```text
-go test -race -count=10 ./internal/claims ./cmd/fid
+go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -83,6 +83,13 @@ go build -o /tmp/fid ./cmd/fid
 ```
 
 Required-command rules live in `AGENTS.md` (Commands).
+
+**2026-08-18, DEC-147 (Tech Lead).** The first command gained `-timeout 30m`.
+`-count` repeats inside one test-binary invocation, so Go's default
+`-timeout 10m` was an unstated wall-clock budget rather than a chosen
+assertion. The repeat count, race detector, package scope, and pass/fail
+semantics are unchanged. Expect about 18 minutes for `cmd/fid`; poll it to a
+real termination.
 
 List any conditional command required by this task and why:
 

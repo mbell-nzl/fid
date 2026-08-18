@@ -8,6 +8,23 @@
 
 ### Resolved
 
+- **ESC-20-016 - Task 3k's repeated race gate could not fit Go's unstated
+  default timeout (raised 2026-08-17 via `TRG-20-016`/`TRG-20-020`; resolved
+  2026-08-18 by DEC-147).** The diagnosis is sustained; the requested remedy is
+  not. `-count=10` repeats inside one test-binary invocation, so Go's default
+  `-timeout 10m` bound all ten counts of a package now costing 104.318s per
+  count. The escalation asked for cross-task authority over the later Task 11
+  (10.17s) and Task 12 (9.21s) serial fixtures while keeping the command
+  byte-identical, but removing both leaves 84.94s per count and 849.4s for ten,
+  still over 600s; the unchanged command needs a 42% cut of the whole `cmd/fid`
+  package. The real protected item is the gate definition, which is Tech Lead
+  authority: the command becomes
+  `go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid`, changing
+  only the accidental wall clock. The original gate was already marginal when it
+  first passed at 578.869s, 21s under the cliff. Task 3k runs one bounded
+  report-scope continuation; Tasks 3i/3j/3l keep their verified commands. Human
+  attention is not required.
+
 - **ESC-20-015 - report-lint false-rejected Task 17's byte-identical literal
   command (raised 2026-08-16 via `TRG-20-015`; resolved 2026-08-16 by
   DEC-146).** The control diagnosis is sustained, but the protected `BLOCK`

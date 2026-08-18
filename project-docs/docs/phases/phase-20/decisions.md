@@ -1565,6 +1565,79 @@
   `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 8-9;
   `project-docs/docs/reviews/2026-08-16-esc-20-015-recovery-plan.md`.
 
+### DEC-147: A repeated-run gate's unstated default timeout is an accidental budget, not an assertion; Task 3k's command gains an explicit `-timeout`. Closes ESC-20-016
+
+- **Date:** 2026-08-18
+- **Context:** Task 3k's first required command is
+  `go test -race -count=10 ./internal/claims ./cmd/fid`. `-count` repeats every
+  test inside **one** test-binary invocation, and Go applies its default
+  `-timeout 10m` to that whole invocation, not to each count. The Tech Lead
+  authored the command without `-timeout`, so an unchosen 600s wall clock
+  silently became the binding constraint. The command was already marginal when
+  it first passed: the original Task 3k run recorded
+  `ok github.com/mbell-nzl/fid/cmd/fid 578.869s`, 21s under the cliff. Tasks
+  4-18 grew `cmd/fid` from about 58s per count to 104.318s per count, so the
+  MF-01 retro-verification rerun terminated `FAIL` (`exit_code: 1`) after
+  `panic: test timed out after 10m0s`, while `internal/claims` passed its ten
+  counts in 93.647s. Two Developer recoveries and TL-Lite triage TRG-20-016 /
+  TRG-20-020 correctly refused to change the command and raised ESC-20-016,
+  requesting cross-task authority over the later Task 11 link-limit fixture
+  (10.17s/count) and Task 12 workflow-limit fixture (9.21s/count).
+- **Decision:**
+  1. ESC-20-016's diagnosis is **sustained**; its proposed remedy is **not
+     sustained**. Deleting both named later fixtures outright leaves
+     `104.318 - 10.17 - 9.21 = 84.94s` per count and `849.4s` for ten counts,
+     still over 600s. Fitting the unchanged command under the default timeout
+     needs 60s per count, a 42% cut of the whole `cmd/fid` package. No bounded
+     cross-task fixture repair can satisfy the byte-identical command, so
+     granting that authority would spend a session and end in the same BLOCK.
+  2. The protected item is the gate definition itself, which is Tech Lead
+     authority. Task 3k's first required command becomes
+     `go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid`. The
+     repeat count, race detector, package scope, and pass/fail semantics are
+     unchanged; only the accidental wall-clock budget is stated. The assertion
+     was always "ten race repetitions over these two packages without a flake",
+     never "finishes in under ten minutes". 30m is about 1.7x the ~1043s
+     expectation, which preserves hang detection.
+  3. This is an explicit, recorded gate-definition change, not silent
+     weakening. No assertion is narrowed: a `-run` subset of the de-slept claim
+     tests was considered and rejected because it reduces scope and requires an
+     equivalence argument the full command does not need.
+  4. Only `tasks/task-3k.md` changes, authored and committed by the Tech Lead.
+     The MF-01 repair boundary's "do not edit task specs" rule binds the
+     Developer continuation, which still edits only `tasks/task-3k-done.md`,
+     reruns the seven commands with the amended first command, records observed
+     terminations, and preserves every immutable timeout failure as a deviation.
+  5. `-count` gates are task gates owned by their task spec, not standing
+     repository gates. No `-count=N` command appears in `AGENTS.md` Commands,
+     the QA plan's phase gate, or the canonical task-level gate. This command
+     runs once more for MF-01 and is then historical.
+  6. Tasks 3i, 3j, and 3l are **not** amended. Their `-count=5` and integration
+     reruns already passed at HEAD (`515.474s`, `513.141s`, `32.305s`), and
+     editing their specs now would break report-lint's verbatim command
+     coverage and invalidate verified evidence. Their remaining headroom of
+     about 85s is recorded here as a known fragility, not repaired.
+  7. Forward rule for future task specs: a repeated-run gate (`-count` above 1)
+     **must** carry an explicit `-timeout` sized to the repeat count, and
+     should scope repetition to packages the task owns. Whole-package
+     repetition silently inherits every later task's runtime growth, so a
+     passing repeated gate decays into an unsatisfiable one without any change
+     to the task that owns it.
+  8. No product behavior, public interface, data model, dependency, VAL
+     assertion, review trigger, validation-contract row, or Phase 20 task
+     boundary changes.
+- **Consequences:** ESC-20-016 is archived and the ledger STOP may be resumed.
+  Task 3k runs one bounded report-scope continuation whose first command takes
+  about 18 minutes for `cmd/fid` plus about 95s for `internal/claims`; the
+  runner must poll it to a real termination rather than treat silence as
+  completion. Task 3k then reaches `OUTCOME COMPLETE`, clearing the last MF-01
+  report. MF-02 is untouched and still owned by Task 18. If the amended command
+  fails at ten counts for a genuine flake, that is real information and
+  ordinary repair, not a timeout artifact.
+- **Refs:** `TRG-20-016`; `TRG-20-020`; `ESC-20-016`; `tasks/task-3k.md`;
+  `tasks/task-3k-done.md`; `qa/final-review.md` MF-01; `DEC-133`;
+  `AGENTS.md` Commands; `project-docs/specs/09_AI_WORKFLOW.md` §§2.2, 9.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

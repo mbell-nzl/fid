@@ -9,10 +9,17 @@
 
 ## Open Escalations
 
-None. `ESC-20-015` is resolved by DEC-146 (2026-08-16) and archived in
-`project-docs/docs/phases/phase-20/tl-escalations.md`. Task 17's guarded
-control-conformance and report continuation are authorized; Review 6 remains
-next after Task 17 closes.
+None.
+
+`ESC-20-016` is resolved by DEC-147 (2026-08-18) and archived in
+`project-docs/docs/phases/phase-20/tl-escalations.md`. Task 3k's first required
+command is now
+`go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid`; the count,
+race detector, package scope, and pass/fail semantics are unchanged. One
+bounded report-scope Task 3k continuation is authorized to rerun the seven
+commands and reach `OUTCOME COMPLETE`, after which MF-01's fresh independent QA
+re-review proceeds. `ESC-20-015` is resolved by DEC-146 (2026-08-16) and
+archived in the same file.
 
 ## Archive Pointers
 

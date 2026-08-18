@@ -1460,3 +1460,780 @@ Human-approved and QA-plan acceptance is next._
 - QA-plan commands beyond the task spec: none required; the Task 17 absence command is already in the exact task gate under DEC-143
 - Gate judgment: Task 17 product evidence is unchanged and complete; DEC-146 control-conformance recovery removed only the false report-lint comparisons, preserved the failed attempt, and the exact report now lints COMPLETE
 - Next action: obtain fresh independent Review 6 covering Tasks 16-17 before Task 18
+
+### 2026-08-16 19:10 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: ESC-20-015 recovery super-agent handoff at 603fdac9cfd1f09d255983407c71ae4186ee4c9b
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: Task 17 complete; Review 6 covering Tasks 16-17 is next; branch phase-20 at 603fdac9cfd1f09d255983407c71ae4186ee4c9b
+- Resolution evidence: independently reviewed recovery is committed; verify its PASS report and observe the current ledger validation in this session
+- Resolution authority: N/A
+- Continuing task: task-17
+- Next recovery: N/A
+
+### 2026-08-16 19:19 REVIEW review-6
+
+- Path: project-docs/docs/phases/phase-20/qa/review-6.md
+- Tasks covered: task-16 through task-17
+- Outcome: PASS
+- Owning task: none
+- Re-review of: none
+- Must-fix: 0 / Improvement: 1 / blocker candidates: 0
+
+### 2026-08-16 19:52 TASK task-18 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-18-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 37b59d629b296b7b5383454170f9f017fdd94253 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(cli): add Phase 20 issue journey acceptance
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 20:22 REVIEW review-7
+
+- Path: project-docs/docs/phases/phase-20/qa/final-review.md
+- Tasks covered: phase-end QA; MF-01 report repairs and MF-02 Task 18 integration repair
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: none
+- Must-fix: 2 / Improvement: 1 / blocker candidates: 0
+
+### 2026-08-16 20:22 TASK-RECOVERY task-1
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-1
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-1-done.md
+- Forbidden changes: product files, task-1.md, report-lint.sh, task-1 command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: QA final review 02043068095267e88e446c5af88b52cefdf296ca is committed; Task 1 report and prior evidence remain committed; phase-20 HEAD 02043068095267e88e446c5af88b52cefdf296ca with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve the Task 1 report's historical evidence, add only canonical report-conformance fields/syntax supported by observed results, rerun any exact Task 1 command lacking valid session termination, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-1-done.md, run the exact Task 1 report-lint invocation, verify the committed clean report, then obtain the required fresh independent QA re-review
+- Human attention required: no
+
+### 2026-08-16 20:28 REPAIR task-1
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-1
+- Attempt count: 1
+- Starting checkpoint: QA final review 02043068095267e88e446c5af88b52cefdf296ca and TASK-RECOVERY task-1; Task 1 report was committed but failed current report-lint with exit_code: 19
+- Ending checkpoint: report-only conformance repair c392bbed5d0729413e6221c3ae06584866e5491f; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the exact Task 1 report-lint invocation returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); fresh exact Task 1 command tokens and observed terminations are recorded, and the original report-lint failure plus DEC-131 UNVERIFIED evidence remains preserved
+- Next checkpoint: independent re-review of the Task 1 report repair before the next affected report
+
+### 2026-08-16 20:28 TASK task-1 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: ab4ac8f288b3f180b698bab8924b92f375d09eb0 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched feat(cli): add response contract foundation
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 20:34 REVIEW review-7b
+
+- Path: project-docs/docs/phases/phase-20/qa/final-review-2.md
+- Tasks covered: task-1 MF-01 report repair
+- Outcome: PASS
+- Owning task: task-1
+- Re-review of: review-7
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+
+### 2026-08-16 20:34 TASK-RECOVERY task-2
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-2
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-2-done.md
+- Forbidden changes: product files, task-2.md, report-lint.sh, task-2 command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 1 MF-01 report repair c392bbed5d0729413e6221c3ae06584866e5491f and independent re-review 8aee25d634c66c6dfd5aadcceba9bf90f20e962d are committed; phase-20 HEAD 8aee25d634c66c6dfd5aadcceba9bf90f20e962d with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 2 historical evidence, add only canonical report-conformance fields/syntax supported by observed results, rerun any exact Task 2 command lacking valid session termination, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-2-done.md, run the exact Task 2 report-lint invocation, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 20:40 REPAIR task-2
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-2
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-2 at phase-20 HEAD 8aee25d634c66c6dfd5aadcceba9bf90f20e962d; Task 2 report failed current report-lint with exit_code: 21
+- Ending checkpoint: report-only conformance repair 7a93f010a9a0a52232b1eea6b57ccd3792efc2e6; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the exact Task 2 report-lint invocation returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); fresh exact Task 2 command tokens and observed terminations are recorded, and the original report-lint failure plus DEC-131 UNVERIFIED evidence remains preserved
+- Next checkpoint: open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 20:40 TASK task-2 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-2-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: cd53c43319a3301d3a8cc0089b6785d9afbb163f - verified via git rev-parse --verify (terminated exit_code: 0), subject matched feat(project): add strict project selection config
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 20:41 TASK-RECOVERY task-3
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3-done.md
+- Forbidden changes: product files, task-3.md, report-lint.sh, task-3 command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 2 report repair 7a93f010a9a0a52232b1eea6b57ccd3792efc2e6 is committed; phase-20 HEAD 7a93f010a9a0a52232b1eea6b57ccd3792efc2e6 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3 historical evidence, add canonical report-conformance fields/syntax supported by observed results, rerun any exact Task 3 command lacking valid session termination, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3-done.md, run the exact Task 3 report-lint invocation, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 21:42 REPAIR task-3
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3 attempt 1 at phase-20 HEAD 7a93f010a9a0a52232b1eea6b57ccd3792efc2e6
+- Ending checkpoint: no durable report change; the Developer session exceeded the one-hour wait budget and was shut down after wait_agent returned timed_out=true with no terminated result
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: NO-PROGRESS
+- Resolution evidence: no report edit, command token, report-lint result, or commit was produced; this is preserved as a failed liveness attempt
+- Next checkpoint: append attempt-2 TASK-RECOVERY and dispatch a fresh same-task Developer continuation
+
+### 2026-08-16 21:43 TASK-RECOVERY task-3
+
+- Source: prior Task 3 Developer continuation session timed out after the one-hour wait budget without a terminated result
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3-done.md
+- Forbidden changes: product files, task-3.md, report-lint.sh, task-3 command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first Task 3 report-only continuation made no durable file changes and was recorded NO-PROGRESS; phase-20 HEAD remains 7a93f010a9a0a52232b1eea6b57ccd3792efc2e6 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - run the exact Task 3 commands with observed termination, finalize only task-3-done.md, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a fresh same-task Developer continuation limited to task-3-done.md, then verify report-lint and the committed report
+- Human attention required: no
+
+### 2026-08-16 21:50 REPAIR task-3
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3
+- Attempt count: 2
+- Starting checkpoint: second TASK-RECOVERY task-3 after first report-only session timed out with no durable progress
+- Ending checkpoint: report-only conformance repair 991c0923474d2f539f365dcba2d7b30f6b4986be; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the exact Task 3 report-lint invocation returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); fresh exact Task 3 command tokens and observed terminations are recorded, the prior timed-out attempt remains preserved, and the original report-lint failure plus DEC-131 evidence remains preserved
+- Next checkpoint: renew Task 3 completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 21:50 TASK task-3 COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 42f5d05244eb67aaa9b389e2c612a5d667a16636 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched feat(project): stage atomic fid initialization
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 21:50 TASK-RECOVERY task-3a
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3a
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3a-done.md
+- Forbidden changes: product files, task-3a.md, report-lint.sh, task-3a command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3 report repair 991c0923474d2f539f365dcba2d7b30f6b4986be is committed; phase-20 HEAD 991c0923474d2f539f365dcba2d7b30f6b4986be with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3a historical evidence, rerun all six exact commands with current-session tokens and terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3a-done.md, run exact report-lint, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 21:54 REPAIR task-3a
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3a
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3a at phase-20 HEAD 991c0923474d2f539f365dcba2d7b30f6b4986be
+- Ending checkpoint: report-only conformance repair 4693623be5bbd851503dcf7e91a01ebc55dd0551; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the exact Task 3a report-lint invocation returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all six exact Task 3a commands have fresh tokens and observed terminations, while the original failed/UNVERIFIED evidence remains preserved
+- Next checkpoint: renew Task 3a completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 21:54 TASK task-3a COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3a-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 51763124db2cd6f6c6d00d15548de37532bbc273 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched fix(cli): enforce closed reason-code details
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 21:54 TASK-RECOVERY task-3b
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3b
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3b-done.md
+- Forbidden changes: product files, task-3b.md, report-lint.sh, task-3b command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3a report repair 4693623be5bbd851503dcf7e91a01ebc55dd0551 is committed; phase-20 HEAD 4693623be5bbd851503dcf7e91a01ebc55dd0551 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3b historical evidence, rerun all six exact commands with current-session tokens and terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3b-done.md, run exact report-lint, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:01 REPAIR task-3b
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3b
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3b at phase-20 HEAD 4693623be5bbd851503dcf7e91a01ebc55dd0551
+- Ending checkpoint: report-only conformance repair 48a2dc0220f1bf3e9053443fe00b90b14c1fc75b; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3b report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all six exact Task 3b commands have fresh observed tokens/terminations and original failed/UNVERIFIED evidence remains preserved
+- Next checkpoint: renew Task 3b completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:01 TASK task-3b COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3b-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 4f308c864cd9dd526886bf2469a641f7f2250efa - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(config): close strict init boundary matrix
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:01 TASK-RECOVERY task-3c
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3c
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3c-done.md
+- Forbidden changes: product files, task-3c.md, report-lint.sh, task-3c command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3b report repair 48a2dc0220f1bf3e9053443fe00b90b14c1fc75b is committed; phase-20 HEAD 48a2dc0220f1bf3e9053443fe00b90b14c1fc75b with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3c historical evidence, rerun all six exact commands and any declared provenance command with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3c-done.md, run exact report-lint, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:07 REPAIR task-3c
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3c
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3c at phase-20 HEAD 48a2dc0220f1bf3e9053443fe00b90b14c1fc75b
+- Ending checkpoint: report-only conformance repairs a86a7f66d614c5b1c5f18ef6f52b361c35efc347 and aee2dae099469f7045bf458a29aca96e88d178ef; final report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3c report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all six exact Task 3c commands have fresh observed tokens/terminations and the initial and intermediate failures remain preserved
+- Next checkpoint: renew Task 3c completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:07 TASK task-3c COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3c-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: f978b6d382b3ae90ff44a7f4577799bb048329d4 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(config): converge init integration fixtures
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:07 TASK-RECOVERY task-3d
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3d
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3d-done.md
+- Forbidden changes: product files, task-3d.md, report-lint.sh, task-3d command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3c report repairs a86a7f66d614c5b1c5f18ef6f52b361c35efc347 and aee2dae099469f7045bf458a29aca96e88d178ef are committed; phase-20 HEAD aee2dae099469f7045bf458a29aca96e88d178ef with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3d historical evidence, run report-lint self-test and all exact Task 3d commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, rerun exact report-lint, and obtain OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3d-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:13 REPAIR task-3d
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3d
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3d at phase-20 HEAD aee2dae099469f7045bf458a29aca96e88d178ef
+- Ending checkpoint: report-only conformance repairs c55ff80f1b17c9f160e8de735887a4a64285945a and c6537daecb3f39f6291df0c6a7115e0bc3c82349; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3d report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); report-lint self-test and all exact Task 3d gates have fresh observed terminations, while historical failures remain preserved
+- Next checkpoint: renew Task 3d completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:13 TASK task-3d COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3d-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: d0bffbcd63d9a36474fde7a3da2c76facb604501 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched fix(workflow): recover long-running gate evidence
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:13 TASK-RECOVERY task-3e
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3e
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3e-done.md
+- Forbidden changes: product files, task-3e.md, report-lint.sh, task-3e command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3d report repairs c55ff80f1b17c9f160e8de735887a4a64285945a and c6537daecb3f39f6291df0c6a7115e0bc3c82349 are committed; phase-20 HEAD c6537daecb3f39f6291df0c6a7115e0bc3c82349 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3e historical evidence, rerun the exact benchmark and six gate commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3e-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:18 REPAIR task-3e
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3e
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3e at phase-20 HEAD c6537daecb3f39f6291df0c6a7115e0bc3c82349
+- Ending checkpoint: report-only conformance repair 25fa8c3858bdf3a8d94e693d43de7b9de745fef6; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3e report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); benchmark and six exact gates have fresh observed terminations and historical failures remain preserved
+- Next checkpoint: renew Task 3e completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:18 TASK task-3e COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3e-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: af615cbb18abbf54130547f26e3d73c2625d73e5 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(bootstrap): benchmark durable initialization
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:18 TASK-RECOVERY task-3f
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3f
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3f-done.md
+- Forbidden changes: product files, task-3f.md, report-lint.sh, task-3f command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3e report repair 25fa8c3858bdf3a8d94e693d43de7b9de745fef6 is committed; phase-20 HEAD 25fa8c3858bdf3a8d94e693d43de7b9de745fef6 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3f historical evidence, rerun workflow-lint and all seven exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3f-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:23 REPAIR task-3f
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3f
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3f at phase-20 HEAD 25fa8c3858bdf3a8d94e693d43de7b9de745fef6
+- Ending checkpoint: report-only conformance repair 251cbc18ab18d475ead73453b67b574fb6941874; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3f report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); workflow-lint, both integration commands, and all exact Task 3f gates have fresh observed terminations while historical evidence remains preserved
+- Next checkpoint: renew Task 3f completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:23 TASK task-3f COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3f-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: ec72fdad4cf1e21be82b22644b382825b91d3b0f - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(integration): isolate real-process journeys
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:24 TASK-RECOVERY task-3g
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3g
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3g-done.md
+- Forbidden changes: product files, task-3g.md, report-lint.sh, task-3g command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3f report repair 251cbc18ab18d475ead73453b67b574fb6941874 is committed; phase-20 HEAD 251cbc18ab18d475ead73453b67b574fb6941874 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3g historical evidence, rerun all six exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3g-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:29 REPAIR task-3g
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3g
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3g at phase-20 HEAD 251cbc18ab18d475ead73453b67b574fb6941874
+- Ending checkpoint: report-only conformance repair 105807b4ba59e095da5e072c9f92e387143abbfe; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3g report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all six exact Task 3g commands have fresh observed terminations and historical evidence remains preserved
+- Next checkpoint: renew Task 3g completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:29 TASK task-3g COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3g-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 1edb689b2df560a1f7ce60875458a3e639e60910 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(integration): reuse one package binary
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:29 TASK-RECOVERY task-3h
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3h
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3h-done.md
+- Forbidden changes: product files, task-3h.md, report-lint.sh, task-3h command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3g report repair 105807b4ba59e095da5e072c9f92e387143abbfe is committed; phase-20 HEAD 105807b4ba59e095da5e072c9f92e387143abbfe with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3h historical evidence, rerun all six exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3h-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+
+### 2026-08-16 22:35 REPAIR task-3h
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3h
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3h at phase-20 HEAD 105807b4ba59e095da5e072c9f92e387143abbfe
+- Ending checkpoint: report-only conformance repair 1f6996fa20932f6328602485fa47bafff27afa24; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3h report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all six exact Task 3h commands have fresh observed terminations and historical evidence remains preserved
+- Next checkpoint: renew Task 3h completion and open the next ordered MF-01 report-only continuation
+
+### 2026-08-16 22:35 TASK task-3h COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3h-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: bca799f52f55286e8a45cc68c341cb539ba50481 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(cli): reuse pristine workspace fixtures
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-16 22:52 TASK-RECOVERY task-3i
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3i
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3i-done.md
+- Forbidden changes: product files, task-3i.md, report-lint.sh, task-3i command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3h report repair 1f6996fa20932f6328602485fa47bafff27afa24 is committed; phase-20 HEAD 1f6996fa20932f6328602485fa47bafff27afa24 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3i historical evidence, rerun all seven exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3i-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+### 2026-08-16 22:52 REPAIR task-3i
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3i
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3i at phase-20 HEAD 1f6996fa20932f6328602485fa47bafff27afa24
+- Ending checkpoint: report-only conformance repair 2f9a5fd4ceb0ff2026c219f5ad362d51521d7558; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3i report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all seven exact Task 3i commands have fresh observed terminations and historical evidence remains preserved
+- Next checkpoint: renew Task 3i completion and open the next ordered MF-01 report-only continuation
+### 2026-08-16 22:52 TASK task-3i COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3i-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 3e830b49c8a90472f091e7b852848cf6f86694d8 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched refactor(cli): inject command working directory
+- QA-plan commands beyond the task spec: none required
+### 2026-08-16 22:53 TASK-RECOVERY task-3j
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3j
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3j-done.md
+- Forbidden changes: product files, task-3j.md, report-lint.sh, task-3j command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3i report repair 2f9a5fd4ceb0ff2026c219f5ad362d51521d7558 is committed; phase-20 HEAD 2f9a5fd4ceb0ff2026c219f5ad362d51521d7558 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3j historical evidence, rerun all seven exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3j-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+### 2026-08-16 23:07 REPAIR task-3j
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3j
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3j at phase-20 HEAD 2f9a5fd4ceb0ff2026c219f5ad362d51521d7558
+- Ending checkpoint: report-only conformance repair 1e22462708d3f05ef92f215be880c158a30be261; report-lint OUTCOME COMPLETE and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: exact Task 3j report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); all seven exact Task 3j commands have fresh observed terminations and historical evidence remains preserved
+- Next checkpoint: renew Task 3j completion and open the next ordered MF-01 report-only continuation
+### 2026-08-16 23:07 TASK task-3j COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3j-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 338c5dc9289aa85d1592fe0817f5cbb10d4cf609 - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(cli): parallelize isolated command tests
+- QA-plan commands beyond the task spec: none required
+### 2026-08-16 23:08 TASK-RECOVERY task-3k
+
+- Source: project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review final-review.md MF-01
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- Forbidden changes: product files, task-3k.md, report-lint.sh, task-3k command semantics, accepted evidence semantics, historical failed or UNVERIFIED evidence, dependencies, thresholds, and the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3j report repair 1e22462708d3f05ef92f215be880c158a30be261 is committed; phase-20 HEAD 1e22462708d3f05ef92f215be880c158a30be261 with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve Task 3k historical evidence, rerun all seven exact commands with current-session tokens/terminations, add canonical report-conformance fields/syntax, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation limited to task-3k-done.md, verify the committed clean report, and continue the MF-01 repair sequence
+- Human attention required: no
+### 2026-08-16 23:28 REPAIR task-3k
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-3k at phase-20 HEAD 1e22462708d3f05ef92f215be880c158a30be261
+- Ending checkpoint: report-only conformance repair 51cf992840e4576e2f588290b9e20908896c6c1e; report-lint OUTCOME RECOVERY_REQUIRED and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: canonical report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0 because the first exact command is truthfully BLOCKED after cmd/fid timed out at 10m0s with exit_code: 1; the report now preserves the failed gate and all later passing commands with observed terminations
+- Next checkpoint: append attempt-2 TASK-RECOVERY with ordinary Task 3k source/test scope and dispatch a same-task continuation to diagnose the timeout and rerun the byte-identical command
+### 2026-08-16 23:28 TASK-RECOVERY task-3k
+
+- Source: project-docs/docs/phases/phase-20/tasks/task-3k-done.md failed exact gate and project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-3k.md accepted source/test scope
+- Triage disposition: N/A
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/claims,cmd/fid/claim_test.go,cmd/fid/issue_claim_test.go,project-docs/docs/phases/phase-20/infra-improvement-pack.md,project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- Forbidden changes: task-3k.md, unrelated product or test files, report-lint.sh, exact command semantics, accepted evidence semantics, thresholds, dependencies, and the run ledger
+- Originating report: N/A
+- Exact verification: go test -race -count=10 ./internal/claims ./cmd/fid; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...; go build -o /tmp/fid ./cmd/fid
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: Task 3k report-only repair 51cf992840e4576e2f588290b9e20908896c6c1e is committed; the exact first command is BLOCKED after cmd/fid timed out at 10m0s with exit_code: 1; phase-20 HEAD 51cf992840e4576e2f588290b9e20908896c6c1e with only the runner-owned run ledger dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-20; run ledger is the only dirty path and hidden index flags are absent
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - retain the immutable report-only timeout evidence, diagnose and repair only within the accepted Task 3k source/test scope, rerun the byte-identical seven-command gate, update the report with fresh observed terminations, and obtain report-lint OUTCOME COMPLETE
+- Next action: dispatch a same-task Developer continuation with ordinary Task 3k source/test scope; do not weaken, substitute, or narrow the timed-out command
+- Human attention required: no
+### 2026-08-16 23:34 REPAIR task-3k
+
+- Trigger signature: final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY task-3k attempt 2 at phase-20 HEAD 51cf992840e4576e2f588290b9e20908896c6c1e
+- Ending checkpoint: causal recovery report commits edca54fccb37a38e0c9d4e7f3ba7dece25896d67, 626c05815fb061fa9aed367813170ee15968875a, and 13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb; report-lint OUTCOME RECOVERY_REQUIRED and committed clean report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the continuation narrowed the unchanged exact gate timeout to post-Task-3k serial cmd/fid fixtures owned by Tasks 11 and 12; the claims tests are not the bottleneck, and the report preserves the immutable timeout and current-session observed evidence
+- Next checkpoint: obtain TL-Lite disposition for the cross-task ownership and bounded repair authority before any further Developer dispatch
+### 2026-08-17 00:03 TRIAGE TRG-20-020
+
+- Trigger: Task 3k's unchanged exact repeated race gate cannot terminate within Go's fixed timeout because the causal serial fixtures belong to later Tasks 11 and 12; this ledger record uses the canonical schema-v2 correction from TRG-20-020.
+- Source: project-docs/docs/phases/phase-20/tasks/task-3k-done.md and project-docs/docs/phases/phase-20/qa/final-review.md finding MF-01
+- Originating task: task-3k
+- Trigger signature: task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 3
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: Task 3k recovery report 13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb is verified; report-lint remains OUTCOME RECOVERY_REQUIRED; phase-20 HEAD 13726bf6ae98c3d3c7722e72f5dc67eea8ca94cb with only runner-owned ledger and current escalation/triage artifacts dirty
+- Verdict: BLOCK (escalated as ESC-20-016)
+- Triage log: project-docs/docs/phases/phase-20/triage-log.md entry TRG-20-020 confirmed; prior malformed correction records are preserved
+- Resolution evidence: Full Tech Lead must record an accepted cross-task ownership disposition naming the owning task and exact bounded later-fixture files, retain the byte-identical go test -race -count=10 ./internal/claims ./cmd/fid command and all gate semantics, then authorize fresh evidence and independent re-review
+- Human attention required: yes
+### 2026-08-17 00:03 STOP
+
+- Cause: Task 3k is blocked by TRG-20-020: the unchanged exact go test -race -count=10 ./internal/claims ./cmd/fid gate times out because later Task 11 and Task 12 serial fixtures are outside Task 3k ownership; TL-Lite recorded the retained protected BLOCK as ESC-20-016.
+- Task: task-3k
+- Triage: TRG-20-020 (BLOCK, escalated as ESC-20-016)
+- Escalation: ESC-20-016
+- Protected category: cross-task task-boundary authority and recovery-budget-exhausted
+- Next human action: Full Tech Lead must resolve ESC-20-016 by recording an accepted ownership disposition naming the owning task and exact bounded later-fixture files, retaining the byte-identical command and all gate semantics, then authorize the bounded repair, fresh evidence, independent re-review, and Phase 20 resume.
