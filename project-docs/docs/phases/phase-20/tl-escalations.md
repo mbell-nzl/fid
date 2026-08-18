@@ -8,6 +8,23 @@
 
 ### Resolved
 
+- **ESC-20-017 - a reconciled STOP resume and retained pre-STOP recovery state
+  imposed contradictory constraints on one TASK-RECOVERY (raised 2026-08-18 via
+  `TRG-20-021`; resolved 2026-08-18 by DEC-148).** **Sustained.**
+  `workflow-sequence-lint.sh:883-891` requires a STOP-resolving RUN-RESUME to
+  carry its governing TRIAGE's task-prefixed trigger and that TRIAGE's attempt
+  plus one (4). Line 1046 marks a TRIAGE as exhaustion only when the stage is
+  `needs-triage`; TRG-20-020 followed a `MATERIAL-PROGRESS` REPAIR, so the
+  chain survived the STOP with the unprefixed trigger at attempt 2. The bound
+  TASK-RECOVERY was then judged by both 583-607 and 611-624 and could satisfy
+  neither trigger form nor both attempts. The runner's RUN-RESUME was correct;
+  the Tech Lead's 2026-08-17 handoff values (attempt 3, unprefixed) were wrong
+  and would have failed earlier. DEC-148 records the accepted semantics — a
+  reconciled resume checkpoint supersedes retained chain state, as the
+  exhaustion path already does — and authorizes a bounded protected repair of
+  the excluded verifier plus its drill fixtures, executed as workflow
+  maintenance outside the wedged run sequence. Human attention is not required.
+
 - **ESC-20-016 - Task 3k's repeated race gate could not fit Go's unstated
   default timeout (raised 2026-08-17 via `TRG-20-016`/`TRG-20-020`; resolved
   2026-08-18 by DEC-147).** The diagnosis is sustained; the requested remedy is

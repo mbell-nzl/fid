@@ -2237,3 +2237,17 @@ Human-approved and QA-plan acceptance is next._
 - Escalation: ESC-20-016
 - Protected category: cross-task task-boundary authority and recovery-budget-exhausted
 - Next human action: Full Tech Lead must resolve ESC-20-016 by recording an accepted ownership disposition naming the owning task and exact bounded later-fixture files, retaining the byte-identical command and all gate semantics, then authorize the bounded repair, fresh evidence, independent re-review, and Phase 20 resume.
+### 2026-08-18 20:22 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-08-17 00:03 STOP / TRG-20-020 / ESC-20-016
+- Governing TRG: TRG-20-020
+- Governing ESC: ESC-20-016
+- Trigger signature: task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 4
+- Checkpoint: DEC-147 Tech Lead commit 9fa9064be4f6f98cffd126b6598c1e5accc08d5a is on phase-20 and clean; Task 3k command amendment and archived ESC-20-016 are committed
+- Resolution evidence: DEC-147 is verified in project-docs/docs/phases/phase-20/decisions.md, project-docs/docs/phases/phase-20/tasks/task-3k.md, project-docs/docs/phases/phase-20/tl-escalations.md, and project-docs/docs/current/tl_escalations_current.md; ESC-20-016 is archived; the stopped ledger is valid; the amended gate has not yet been rerun
+- Resolution authority: DEC-147
+- Continuing task: task-3k
+- Next recovery: task-3k | in-scope-implementation | task-scope | task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k | 4

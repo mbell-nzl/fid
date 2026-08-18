@@ -11,6 +11,14 @@
 
 None.
 
+`ESC-20-017` is resolved by DEC-148 (2026-08-18) and archived in
+`project-docs/docs/phases/phase-20/tl-escalations.md`. The diagnosis is
+sustained: a reconciled STOP resume and retained pre-STOP recovery state
+imposed contradictory trigger and attempt values on one TASK-RECOVERY. DEC-148
+records the accepted semantics and issues a bounded protected repair directive
+for `project-docs/tools/workflow-sequence-lint.sh` plus its drill fixtures,
+executed as workflow maintenance outside the wedged run sequence.
+
 `ESC-20-016` is resolved by DEC-147 (2026-08-18) and archived in
 `project-docs/docs/phases/phase-20/tl-escalations.md`. Task 3k's first required
 command is now

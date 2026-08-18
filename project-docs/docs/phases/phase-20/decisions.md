@@ -1638,6 +1638,119 @@
   `tasks/task-3k-done.md`; `qa/final-review.md` MF-01; `DEC-133`;
   `AGENTS.md` Commands; `project-docs/specs/09_AI_WORKFLOW.md` §§2.2, 9.
 
+### DEC-148: A reconciled RUN-RESUME checkpoint supersedes retained pre-STOP recovery-chain state; bounded protected repair of `workflow-sequence-lint.sh`. Closes ESC-20-017
+
+- **Date:** 2026-08-18
+- **Context:** After DEC-147, the Phase Runner appended a valid schema-v2
+  RUN-RESUME (2026-08-18 20:22) and could then append no legal event at all.
+  The validator rejects the only permitted successor with three messages:
+  `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`,
+  `continuing recovery must preserve task and Trigger signature`, and
+  `continuing recovery Attempt count must increment by one`.
+  The root cause is two colliding identifier namespaces on one event:
+  1. `workflow-sequence-lint.sh:883-891` **requires** a STOP-resolving
+     RUN-RESUME to carry its governing TRIAGE's trigger, which is task-prefixed
+     (`task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k`), and an attempt
+     that increments that TRIAGE (TRG-20-020 attempt 3, so 4).
+  2. `workflow-sequence-lint.sh:1046` sets `triage_was_exhaustion` only when
+     `recovery_stage == "needs-triage"`. TRG-20-020 followed a REPAIR with
+     outcome `MATERIAL-PROGRESS`, so the stage was `needs-continuation`, the
+     BLOCK branch at 1062-1065 did **not** clear the chain, and the pre-STOP
+     recovery state survived the STOP.
+  3. The next TASK-RECOVERY is therefore judged twice: by the resume checkpoint
+     at 583-607 (prefixed trigger, attempt 4) and by the retained continuation
+     at 611-624 (unprefixed `final-qa:qa-rework:MF-01-report-lint-task-3k`,
+     attempt 3). No candidate satisfies both. The run is wedged in
+     `REPAIR_PENDING` with the Task 3k gate already resolved.
+  My 2026-08-17 handoff told the runner to use attempt 3 and the unprefixed
+  signature. That was wrong and would have failed at 883-891; the runner
+  correctly derived attempt 4 and the prefixed signature, refused to bypass the
+  validator or edit ledger history, and escalated. The conflict is real and
+  independent of who filled the fields.
+- **Decision:**
+  1. TRG-20-021 and ESC-20-017 are **sustained**. This is a defect in a
+     protected verifier, not runner error and not a Task 3k matter.
+  2. **Accepted semantics:** a RUN-RESUME that reconciles a stopped BLOCK with
+     recorded decision authority is the authoritative successor constraint. It
+     republishes task, category, repair mode, trigger, attempt, and the exact
+     `Next recovery` tuple, and forces no-progress back to `0/2`. Retained
+     pre-STOP chain state is superseded, exactly as it already is on the
+     exhaustion-BLOCK path at 1062-1065 and at TASK-COMPLETE at 992-994. No
+     safety is lost: identity, trigger, and attempt monotonicity are enforced
+     by 883-891 plus the exact-tuple check at 602-606.
+  3. **Bounded repair.** Where `resume_recovery_pending = 1` is set in the
+     RUN-RESUME branch (1077-1086), also reset `recovery_task`,
+     `recovery_stage`, `recovery_trigger`, `recovery_attempt`,
+     `recovery_last_outcome`, `recovery_no_progress`, and `recovery_head` to
+     their initial empty values. The reset is conditional on
+     `resume_recovery_pending` only. A normal RUN-RESUME with `N/A` STOP-only
+     fields must keep enforcing an open chain across a session boundary; that
+     guard is a required red fixture, not an afterthought.
+  4. `AGENTS.md` excludes this verifier from ordinary control-conformance
+     self-repair, so this decision is the required protected authority. It
+     authorizes exactly the change in clause 3 and nothing else. Changing the
+     resume field grammar, the trigger namespaces, attempt arithmetic, event
+     ordering, or any other state transition remains outside it.
+  5. **Execution is a Tech Lead-authorized workflow-maintenance step performed
+     outside the run sequence.** The ledger is in `REPAIR_PENDING`, where the
+     only legal successor is the bound TASK-RECOVERY that cannot yet validate,
+     so no ledger event can precede the fix. No ledger event is appended for
+     the maintenance commit; it is cited in the following TASK-RECOVERY's
+     `Checkpoint` for provenance.
+  6. `project-docs/tools/drills/run-drills.sh` is in the allowlist with the
+     verifier. Unlike `report-lint.sh` under DEC-146, this tool has no built-in
+     self-test, so its red/green fixtures can only live in the drills harness.
+  7. The deeper asymmetry — TRIAGE and control events use task-prefixed trigger
+     signatures while recovery-chain events use unprefixed ones — is real but
+     is **not** repaired here. It is carried to wrap-up as a workflow note.
+  8. No product behavior, public interface, data model, dependency, VAL
+     assertion, validation-contract row, task boundary, or Task 3k command
+     changes. DEC-147 stands unmodified.
+- **Repair directive:**
+  - **Originating task:** task-3k
+  - **Control trigger signature:**
+    `task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k`
+  - **Control contract:** a reconciled STOP-resolving RUN-RESUME is the sole
+    successor constraint on its bound TASK-RECOVERY; superseded pre-STOP chain
+    state must not also constrain it.
+  - **Control mismatch:** a non-exhaustion TRIAGE BLOCK retains
+    `recovery_stage = needs-continuation` across STOP and RUN-RESUME, so
+    583-607 and 611-624 impose contradictory trigger and attempt values.
+  - **Allowed files:**
+    `project-docs/tools/workflow-sequence-lint.sh,project-docs/tools/drills/run-drills.sh`
+  - **Forbidden changes:** the run ledger, historical ledger entries, task
+    specs, completion reports, product and test files, `report-lint.sh`,
+    `workflow-control-scope-lint.sh`, agent prompts, templates, specs, and any
+    state transition other than clause 3.
+  - **Exact verification:**
+    1. Red first: a fixture ledger reproducing non-exhaustion BLOCK, STOP,
+       RUN-RESUME, and its exact bound TASK-RECOVERY reproduces all three
+       current INVALID messages before the change and returns `VALID` after.
+    2. Guard: a normal non-STOP RUN-RESUME with an open chain still rejects a
+       TASK-RECOVERY that changes task or trigger or fails to increment.
+    3. Guard: the continuation after a resume-bound TASK-RECOVERY still must
+       preserve identity and increment 4 to 5.
+    4. `project-docs/tools/drills/run-drills.sh` terminates `exit_code: 0`.
+    5. Regression: the real phase-17, phase-18, phase-19, and phase-20 ledgers
+       validate with unchanged verdicts; phase-20 still prints
+       `VALID state=REPAIR_PENDING` before any new append.
+    6. `project-docs/tools/workflow-lint.sh` passes.
+    7. Scope: `workflow-control-scope-lint.sh <repo> <base> <head>
+       project-docs/tools/workflow-sequence-lint.sh
+       project-docs/tools/drills/run-drills.sh` returns its PASS receipt for an
+       isolated commit on the recorded base.
+- **Consequences:** ESC-20-017 is archived and the run resumes. After the
+  maintenance commit, the runner appends the TASK-RECOVERY the RUN-RESUME
+  already specifies — task-3k, in-scope-implementation, task-scope, prefixed
+  trigger, attempt 4, no-progress `0/2` — and dispatches the DEC-147 report
+  continuation. Task 3k's trigger signature migrates from the unprefixed to the
+  prefixed form at this boundary; that migration is intended by schema v2 and is
+  recorded here so it is not later read as a fabricated identity change.
+- **Refs:** `TRG-20-021`; `ESC-20-017`; `DEC-146`; `DEC-147`;
+  `project-docs/tools/workflow-sequence-lint.sh:583-624`, `:883-891`,
+  `:1046`, `:1062-1086`; `project-docs/tools/drills/run-drills.sh`;
+  `AGENTS.md` Commands; `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 9.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

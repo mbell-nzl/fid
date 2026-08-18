@@ -661,6 +661,36 @@ Verdict: BLOCK (escalated as ESC-20-016)
 - **References:** project-docs/templates/triage-log-template.md; project-docs/docs/current/phase_brief.md; project-docs/docs/current/decisions_active.md; project-docs/docs/current/progress_current.md; project-docs/docs/current/tl_escalations_current.md; project-docs/docs/phases/phase-20/tasks/task-3k-done.md
 
 VERDICT: BLOCK (escalated as ESC-20-016)
+
+## TRG-20-021 - DEC-147 STOP resume exposes incompatible stale recovery checkpoint validation
+
+- **Trigger:** DEC-147 resolved STOP resume is mechanically incompatible with the stale pre-STOP recovery state in the accepted schema-v2 sequence validator.
+- **Originating task:** task-3k
+- **Trigger signature:** task-3k:workflow-control:dec-147-resume-stale-recovery-tuple
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-20/run-ledger.md after confirmed 2026-08-18 20:22 RUN-RESUME; project-docs/docs/phases/phase-20/decisions.md DEC-147; project-docs/docs/phases/phase-20/tasks/task-3k-done.md.
+- **Candidate:** blocker candidate / canonical workflow-sequence validator defect.
+- **Checkpoint:** Commit `9fa9064be4f6f98cffd126b6598c1e5accc08d5a` is supplied as verified on phase-20 with subject `TL final review triage`; the worktree was clean before the RUN-RESUME append, DEC-147 is present, and ESC-20-016 is archived.
+- **Verdict:** BLOCK
+- **Reasoning:** The supplied byte-identical candidate reproduces mutually exclusive requirements: it must preserve the confirmed RUN-RESUME tuple (`task-3k`, task-prefixed signature, attempt `4`, DEC-147 authority, and its Next recovery), while the accepted validator also requires the stale pre-STOP task/signature/attempt `2` chain. The proposed correction changes `project-docs/tools/workflow-sequence-lint.sh`, a verifier explicitly excluded from normal control-conformance self-repair. DEC-147 changes only Task 3k's repeated-run timeout and does not authorize this canonical workflow-control definition/implementation repair.
+- **Local decisions made:** none.
+- **Resolution evidence:** The confirmed RUN-RESUME is transactionally accepted and standalone ledger validation is supplied as `VALID state=REPAIR_PENDING`; the mandatory following TASK-RECOVERY candidate terminates `INVALID` with the three supplied stale-checkpoint diagnostics. No prior ledger entry may be edited or validator bypassed.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** N/A
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category workflow-control definition / canonical verifier authority; ESC-20-017 raised in `tl_escalations_current.md`; resolution condition Full Tech Lead records protected decision authority for the accepted schema-v2 STOP-resume checkpoint semantics and, if it selects a conformance repair, supplies a bounded directive that explicitly authorizes `project-docs/tools/workflow-sequence-lint.sh` with exact verification before any retry.
+- **Human attention required:** yes.
+- **References:** project-docs/specs/09_AI_WORKFLOW.md §2.3 (protected gate/control definitions; normal control-conformance exclusions) and §9; project-docs/docs/phases/phase-20/decisions.md DEC-147; project-docs/docs/phases/phase-20/run-ledger.md (2026-08-17 00:03 STOP; 2026-08-18 20:22 RUN-RESUME); AGENTS.md (Commands; control-conformance repair).
+
+VERDICT: BLOCK (escalated as ESC-20-017)
 ## TRG-20-019 — Formatting correction for retained protected BLOCK
 
 - **Trigger:** Correct the remaining accepted triage-log field mismatch in TRG-20-018: its bold Verdict field included the escalation suffix instead of the contract-required `BLOCK` value.
