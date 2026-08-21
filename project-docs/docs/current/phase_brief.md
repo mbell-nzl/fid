@@ -13,13 +13,16 @@ revision, and the retained Issue contract; delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`. Tasks 1-17 and the infrastructure pack are
-complete; every review through `review-5d` is closed**
-(`../phases/phase-20/infra-improvement-pack.md`). Task 16 closed after its
-control/spec-literal recoveries (DEC-143/144/145); Task 17 closed after the
-tools-only report-lint control-conformance recovery (DEC-146). ESC-20-001..015
-are resolved; nothing is open. **Next: Review 6 covering Tasks 16-17, then Task
-18.**
+**In flight on branch `phase-20`, at final review.** Tasks 1-18 and the
+infrastructure pack are complete and every review window through `review-6` is
+closed (`../phases/phase-20/infra-improvement-pack.md`).
+`../phases/phase-20/qa/final-review.md` is **REPAIR** on two Must-fix findings:
+**MF-01** (22 completion reports fail canonical report-lint; Task 1's share is
+closed by `final-review-2.md`) and **MF-02** (Task 18's accepted journey is
+absent from the dedicated integration package). Task 3k is the last MF-01 report
+still in repair; the ledger is `REPAIR_PENDING`. ESC-20-001..018 are resolved and
+nothing is open. **Next: the DEC-148/DEC-149 workflow-maintenance commit, then
+the DEC-147 Task 3k report continuation and its fresh MF-01 re-review.**
 
 ## Operating Mode And Slice Contract
 
@@ -45,10 +48,10 @@ Envelope, leaf schemas, reason codes, DDL/Event semantics, and removals.
 | 16 | Delete universal formatters and YAML | Complete `20813fc` / `d0f9cea` (DEC-143, DEC-144, DEC-145) | 15, 16a, 16b |
 | 16a, 16b | report-lint accepts declared expected-non-zero rows, then parses declaration lines not prose | Complete `d9d6add`, `d8388d5`; Task 16 recovery-support slices (DEC-143/144) | 15 |
 | 17 | Delete promised-command stubs | Complete `95ee13d`; control recovery report `0c1094c` (DEC-146) | 16 |
-| 18 | Journey acceptance and documentation | Pending | 1-17 |
+| 18 | Journey acceptance and documentation | Complete; MF-02 open against its integration journey | 1-17 |
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
-12, 15, and 17; Task 18 follows the sixth review, and Review 6 is next. Tasks
+12, 15, and 17; Task 18 followed the closed sixth review. Tasks
 3a-3d, 9a, 16a, 16b are recovery sessions and 3e-3l is the DEC-133 infrastructure
 pack; none adds a product VAL. `16a`/`16b` ride the ledger as `REPAIR task-16`;
 Task 16 and Task 17 now have their single renewed completion events.
@@ -69,8 +72,9 @@ All under `../phases/phase-20/qa/`. `validation-contract.md` is Human-approved
 DEC-143/144/145), and `qa-plan.md` is accepted with its unsatisfiable YAML
 `go.sum` row replaced by a stronger pair. Bounded re-reviews `review-1b/1c`,
 `infra-review-1`, `review-3b`, `review-4b/4c`, `review-5b/5c/5d` closed every
-prior finding; Review 6 is due after Task 17, and the final review and Human
-checklist re-run the full gate with real tokens.
+prior finding, and `review-6` is closed. `final-review.md` is REPAIR on MF-01 and
+MF-02; `final-review-2.md` closes Task 1's bounded MF-01 share only.
+`human-checklist.md` awaits a clean final review.
 
 ## Active Constraints
 

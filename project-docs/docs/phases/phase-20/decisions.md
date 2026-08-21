@@ -1751,6 +1751,191 @@
   `:1046`, `:1062-1086`; `project-docs/tools/drills/run-drills.sh`;
   `AGENTS.md` Commands; `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 9.
 
+### DEC-149: the DEC-148 red fixture is proven by the two retained-chain diagnostics; the checkpoint diagnostic is a post-change retained guard, not a symptom. Closes ESC-20-018
+
+- **Date:** 2026-08-19
+- **Context:** The Phase Runner executed DEC-148's bounded directive from the
+  trusted base `91c3d0a4bd5a77f1df1faa63bd8547a50f9420a4` in an isolated
+  Developer worktree. The mandatory red fixture reproduced only two of the three
+  INVALID messages DEC-148 named:
+  `continuing recovery must preserve task and Trigger signature` and
+  `continuing recovery Attempt count must increment by one`. It did not
+  reproduce `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`, so
+  `run-drills.sh` terminated `DRILLS FAIL 1 mechanical drill(s) misbehaved` with
+  observed `exit_code: 1`. Nothing was changed: the worktree stayed clean at the
+  trusted base, no repair commit was created, and the real ledger still
+  validates `VALID state=REPAIR_PENDING`. TL-Lite recorded `TRG-20-022` and
+  returned `BLOCK`. The attempted TRIAGE and STOP appends were correctly refused
+  by `RUN-RESUME must be followed by its bound TASK-RECOVERY before TRIAGE` and
+  `... before STOP`.
+  **The fixture is right and my directive was wrong.** For the ledger shape
+  DEC-148 describes, the candidate TASK-RECOVERY determines which diagnostics
+  can fire, and the three named messages are not jointly reachable from the one
+  event the fix must make valid. `resume_trigger` is task-prefixed at attempt 4
+  (`workflow-sequence-lint.sh:1077-1086`); the retained chain is unprefixed at
+  attempt 2 (`:611-624`):
+
+  | Candidate TASK-RECOVERY | Diagnostics emitted |
+  |---|---|
+  | prefixed trigger, attempt 4 — the exact bound successor, matching `Next recovery` | `:613` + `:616` only |
+  | unprefixed trigger, attempt 3 — my 2026-08-17 handoff values | `:587` + `:605` |
+  | unprefixed trigger, attempt 4 | `:587` + `:605` + `:613` + `:616` |
+
+  The bound successor cannot emit `:587` **by construction**: it preserves the
+  RUN-RESUME checkpoint, which is precisely why the retained chain is the only
+  thing rejecting it. The "three messages" in DEC-148's Context are the union
+  observed across differing candidate shapes, and I transcribed that union into
+  a proof obligation on a single event. Demanding all three would force the
+  fixture onto a checkpoint-violating candidate — an event that must stay
+  INVALID after the change — so the directive as written asks for a red fixture
+  that the green state would contradict.
+- **Decision:**
+  1. `TRG-20-022` is **sustained**. Refusing to substitute a weaker fixture
+     contract, to relax a protected verifier's diagnostics, or to append to a
+     wedged ledger was correct. This is a defect in my directive, not runner
+     error, not TL-Lite error, and not a Task 3k matter.
+  2. DEC-148 stands in full except for `Exact verification` item 1: its
+     diagnosis, accepted semantics (clause 2), the single authorized code change
+     (clause 3), the scope limits (clause 4), the outside-the-sequence execution
+     model (clause 5), the two-file allowlist (clause 6), and the deferred
+     trigger-namespace asymmetry (clause 7) are unmodified. DEC-147 is
+     unmodified.
+  3. **Amended proof obligation.** DEC-148 `Exact verification` item 1 is
+     replaced by items 1a and 1b below. Items 2-7 of DEC-148's
+     `Exact verification` remain in force verbatim and are restated in the
+     directive below so one authoritative copy exists.
+  4. The third message is a **retained guard, not a symptom**. Its correct place
+     is a post-change assertion proving that DEC-148 clause 2's safety claim
+     survives: after the chain reset, the RUN-RESUME checkpoint at `:583-607` is
+     still the sole and effective successor constraint. A fix that made the
+     checkpoint diagnostic unreachable would be a regression, and item 1b is the
+     assertion that detects it.
+  5. Item 1a's **absence** assertion is required, not decorative. It is the
+     positive evidence that the bound successor already satisfies the resume
+     checkpoint and that only superseded pre-STOP state rejects it — the exact
+     claim DEC-148 clause 2 makes. If `run-drills.sh` needs a negative-match or
+     exact-diagnostic-set assertion to express it, adding one is inside the
+     existing allowlist and inside this authority.
+  6. **The wedged-ledger observation is accepted and not repaired here.** While
+     the ledger is `REPAIR_PENDING`, its only legal successor is the bound
+     TASK-RECOVERY, so a run that must stop again in that state has no legal
+     ledger record at all. `TRG-20-022` is therefore correctly recorded in
+     `triage-log.md` with no ledger event; it is cited in the eventual
+     TASK-RECOVERY `Checkpoint` for provenance alongside the maintenance commit,
+     exactly as DEC-148 clause 5 directs for the maintenance commit itself.
+     Widening the verifier to admit a second STOP is outside this bounded
+     authority and is carried to wrap-up as a workflow note with DEC-148
+     clause 7.
+  7. `TRG-20-022` referenced `ESC-20-017` because the register held no open ESC
+     for this condition. Its allocated identifier is **ESC-20-018**, resolved by
+     this decision; `ESC-20-017` remains resolved by DEC-148 and is not
+     reopened.
+  8. **`workflow-control-scope-lint.sh` cannot verify this repair, and that is
+     correct.** It hard-refuses to allowlist either trusted verifier
+     (`:121-126`, `FAIL trusted verifier cannot be allowlisted:
+     project-docs/tools/workflow-sequence-lint.sh`, exit 1), and
+     `run-drills.sh:509-523` asserts exactly that refusal. DEC-148's
+     `Exact verification` item 7 was therefore also unreachable: it would have
+     stopped the retry at the last step. That guard is the anti-self-repair
+     protection this decision deliberately steps around **with recorded
+     authority and outside the guarded route**; it is not weakened, not
+     bypassed, and not edited, and its drill must keep passing under item 4.
+     Item 7 is replaced by the deterministic scope proof below, which asserts
+     the same containment property directly.
+  9. **The guarded control-conformance route is not used.** The Phase Runner
+     route forbids authorizing changes to either trusted verifier, so there is
+     no TRIAGE, no control `TASK-RECOVERY`, no control `REPAIR`, and no scope
+     receipt for this step. It is Tech Lead-authorized workflow maintenance
+     performed outside the run sequence, exactly as DEC-148 clause 5 states, and
+     the ledger stays byte-unchanged until the bound TASK-RECOVERY.
+  10. No product behavior, public interface, data model, dependency, VAL
+     assertion, validation-contract row, review trigger, task boundary, or Task
+     3k command changes.
+- **Repair directive (supersedes DEC-148's `Repair directive`; all other DEC-148
+  clauses stand):**
+  - **Originating task:** task-3k
+  - **Control trigger signature:**
+    `task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k`
+  - **Control contract:** a reconciled STOP-resolving RUN-RESUME is the sole
+    successor constraint on its bound TASK-RECOVERY; superseded pre-STOP chain
+    state must not also constrain it.
+  - **Control mismatch:** a non-exhaustion TRIAGE BLOCK retains
+    `recovery_stage = needs-continuation` across STOP and RUN-RESUME, so
+    `:583-607` and `:611-624` impose contradictory trigger and attempt values.
+  - **Authorized change:** DEC-148 clause 3 only. Where
+    `resume_recovery_pending = 1` is set in the RUN-RESUME branch
+    (`:1077-1086`), also reset `recovery_task`, `recovery_stage`,
+    `recovery_trigger`, `recovery_attempt`, `recovery_last_outcome`,
+    `recovery_no_progress`, and `recovery_head` to their initial empty values,
+    conditional on `resume_recovery_pending` only.
+  - **Control repair base:** the phase-20 HEAD that records this decision, i.e.
+    the DEC-149 documentation commit. It is a fast-forward of DEC-148's trusted
+    base `91c3d0a4bd5a77f1df1faa63bd8547a50f9420a4` adding only
+    `project-docs/docs/` artifacts, so no tool, product, test, or ledger file
+    differs from `91c3d0a`. The runner records the observed hash itself from
+    `git rev-parse --verify HEAD^{commit}` with a clean `git status --short`
+    before dispatch and uses that immutable value throughout.
+  - **Allowed files:**
+    `project-docs/tools/workflow-sequence-lint.sh,project-docs/tools/drills/run-drills.sh`
+  - **Forbidden changes:** the run ledger, historical ledger entries, task
+    specs, completion reports, product and test files, `report-lint.sh`,
+    `workflow-control-scope-lint.sh`, agent prompts, templates, specs, and any
+    state transition other than the authorized change.
+  - **Exact verification:**
+    1a. **Red first.** A fixture ledger reproducing non-exhaustion BLOCK, STOP,
+        RUN-RESUME, and its **exact bound** TASK-RECOVERY — task, trigger
+        signature, and attempt equal to the RUN-RESUME checkpoint, matching its
+        `Next recovery` tuple, no-progress `0/2`, `Source` and `Repair
+        authority` citing the governing TRIAGE and decision — terminates
+        INVALID before the change with its INVALID diagnostics being exactly
+        `continuing recovery must preserve task and Trigger signature` and
+        `continuing recovery Attempt count must increment by one`, and **not**
+        containing `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`.
+        The same ledger returns `VALID` after the change.
+    1b. **Retained guard, after the change.** The same fixture with a
+        TASK-RECOVERY that violates the resume checkpoint — the unprefixed
+        pre-STOP trigger at attempt 4 — is still INVALID and its output contains
+        `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint`.
+    2. Guard: a normal non-STOP RUN-RESUME with an open chain still rejects a
+       TASK-RECOVERY that changes task or trigger or fails to increment.
+    3. Guard: the continuation after a resume-bound TASK-RECOVERY still must
+       preserve identity and increment 4 to 5.
+    4. `project-docs/tools/drills/run-drills.sh` terminates `exit_code: 0`.
+    5. Regression: the real phase-17, phase-18, phase-19, and phase-20 ledgers
+       validate with unchanged verdicts; phase-20 still prints
+       `VALID state=REPAIR_PENDING` before any new append.
+    6. `project-docs/tools/workflow-lint.sh` passes.
+    7. **Scope, proved directly.** `workflow-control-scope-lint.sh` is not run
+       and must not be modified (clause 8). Instead, in the isolated worktree,
+       `git diff --name-only --no-renames <base> <head>` prints exactly these
+       two lines and nothing else:
+       `project-docs/tools/workflow-sequence-lint.sh` and
+       `project-docs/tools/drills/run-drills.sh`. `git status --short` is empty
+       at `<head>`, `<head>` equals the worktree's checked-out HEAD, both
+       changed paths are regular files (no symlink, gitlink, or mode change),
+       and the commit is a single isolated commit on `<base>`. Record each
+       command's verbatim output and observed `exit_code`.
+- **Consequences:** ESC-20-018 is archived and the DEC-148 maintenance step is
+  retried from the recorded control repair base with no further Tech Lead input.
+  Two of DEC-148's verification items were unreachable for the same reason — I
+  transcribed a verification list without checking that each step could pass,
+  which is the DEC-143 rule applied to my own directive. After the
+  maintenance commit the runner appends the TASK-RECOVERY the RUN-RESUME already
+  specifies — task-3k, in-scope-implementation, task-scope, prefixed trigger,
+  attempt 4, no-progress `0/2` — citing the maintenance commit and `TRG-20-022`
+  in its `Checkpoint`, then dispatches the DEC-147 Task 3k report continuation
+  and the MF-01 re-review. If the amended item 1a red fixture still cannot be
+  produced, that is new information about the ledger shape and returns to the
+  full Tech Lead rather than to a fixture substitution.
+- **Refs:** `TRG-20-022`; `ESC-20-018`; `ESC-20-017`; `DEC-146`; `DEC-147`;
+  `DEC-148`; `DEC-143`; `project-docs/tools/workflow-sequence-lint.sh:583-607`,
+  `:611-624`, `:883-891`, `:1046`, `:1062-1086`;
+  `project-docs/tools/workflow-control-scope-lint.sh:121-126`;
+  `project-docs/tools/drills/run-drills.sh:177-218`, `:509-523`;
+  `project-docs/docs/phases/phase-20/run-ledger.md` (2026-08-18 20:22
+  RUN-RESUME); `AGENTS.md` Commands;
+  `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 9.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

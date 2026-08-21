@@ -8,6 +8,36 @@
 
 ### Resolved
 
+- **ESC-20-018 - DEC-148's mandatory red fixture demanded a diagnostic its own
+  bound event cannot emit (raised 2026-08-19 via `TRG-20-022`; resolved
+  2026-08-19 by DEC-149).** **Sustained; the defect is in the directive, not the
+  fixture.** DEC-148 required the pre-change red fixture to reproduce all three
+  observed INVALID messages. Two of them come from the retained pre-STOP chain
+  (`:613`, `:616`); the third,
+  `TASK-RECOVERY does not preserve its RUN-RESUME checkpoint` (`:587`), can only
+  fire on a candidate that violates the resume checkpoint. The exact bound
+  successor preserves that checkpoint by construction — which is exactly why the
+  superseded chain is the only thing rejecting it — so the three messages are
+  the union across candidate shapes, not a property of one event. Demanding all
+  three would force the red fixture onto an event that must remain INVALID after
+  the fix. DEC-149 replaces `Exact verification` item 1 with 1a (bound successor:
+  exactly the two chain diagnostics and **not** the checkpoint diagnostic before
+  the change; `VALID` after) and 1b (retained guard: a checkpoint-violating
+  candidate still emits the third message after the change). Every other DEC-148
+  clause, its authorized code change, and its allowlist are unchanged.
+  A **second** unreachable step was found in the same list before retry:
+  `workflow-control-scope-lint.sh` hard-refuses to allowlist
+  `workflow-sequence-lint.sh` (`:121-126`), and a drill asserts that refusal, so
+  DEC-148's item 7 would have blocked the last step. That anti-self-repair guard
+  is correct and retained; item 7 is replaced by a direct `git diff --name-only`
+  containment proof, and the guarded control route with its ledger events is not
+  used at all. The base is re-recorded as the DEC-149 doc commit, a docs-only
+  fast-forward of `91c3d0a`. Root cause of both: a verification list transcribed
+  without checking each step was reachable — the DEC-143 rule, applied to a Tech
+  Lead directive. `TRG-20-022` cited `ESC-20-017` because the register held no
+  open ESC for this condition; ESC-20-018 is its allocated ID and ESC-20-017 is
+  not reopened. Human attention is not required.
+
 - **ESC-20-017 - a reconciled STOP resume and retained pre-STOP recovery state
   imposed contradictory constraints on one TASK-RECOVERY (raised 2026-08-18 via
   `TRG-20-021`; resolved 2026-08-18 by DEC-148).** **Sustained.**

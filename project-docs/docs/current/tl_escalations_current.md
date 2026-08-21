@@ -11,12 +11,25 @@
 
 None.
 
-`ESC-20-017` is resolved by DEC-148 (2026-08-18) and archived in
-`project-docs/docs/phases/phase-20/tl-escalations.md`. The diagnosis is
-sustained: a reconciled STOP resume and retained pre-STOP recovery state
-imposed contradictory trigger and attempt values on one TASK-RECOVERY. DEC-148
-records the accepted semantics and issues a bounded protected repair directive
-for `project-docs/tools/workflow-sequence-lint.sh` plus its drill fixtures,
+`ESC-20-018` is resolved by DEC-149 (2026-08-19) and archived in
+`project-docs/docs/phases/phase-20/tl-escalations.md`. DEC-148's mandatory red
+fixture demanded a checkpoint diagnostic that its own bound TASK-RECOVERY cannot
+emit; DEC-149 replaces that proof obligation with 1a (bound successor shows
+exactly the two retained-chain diagnostics before the change, `VALID` after) and
+1b (a checkpoint-violating candidate still emits the third message after the
+change). It also replaces DEC-148 item 7, which was likewise unreachable:
+`workflow-control-scope-lint.sh` refuses by design to allowlist
+`workflow-sequence-lint.sh`, so containment is proved by a direct
+`git diff --name-only` assertion and the guarded control route with its ledger
+events is not used. DEC-148's authorized code change and allowlist stand; the
+base is the DEC-149 doc commit, a docs-only fast-forward of `91c3d0a`.
+
+`ESC-20-017` is resolved by DEC-148 (2026-08-18) and archived in the same file.
+The diagnosis is sustained: a reconciled STOP resume and retained pre-STOP
+recovery state imposed contradictory trigger and attempt values on one
+TASK-RECOVERY. DEC-148 records the accepted semantics and issues a bounded
+protected repair directive for
+`project-docs/tools/workflow-sequence-lint.sh` plus its drill fixtures,
 executed as workflow maintenance outside the wedged run sequence.
 
 `ESC-20-016` is resolved by DEC-147 (2026-08-18) and archived in

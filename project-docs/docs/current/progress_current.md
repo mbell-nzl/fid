@@ -5,9 +5,12 @@
 
 ## Project state
 
-**Phase 20 is in flight: Tasks 1-17 and the DEC-133 infrastructure pack are
-complete, with every cadence and bounded review through `review-5d` closed.**
-Fifteen escalations (`ESC-20-001..015`) are resolved by `DEC-130..DEC-146`.
+**Phase 20 is in flight at final review: Tasks 1-18 and the DEC-133
+infrastructure pack are complete, with every cadence and bounded review through
+`review-6` closed.** `final-review.md` is REPAIR on MF-01 (22 completion reports
+fail canonical report-lint; Task 3k is the last one in repair) and MF-02 (Task
+18's journey is absent from the dedicated integration package). Eighteen
+escalations (`ESC-20-001..018`) are resolved by `DEC-130..DEC-149`.
 Task 16 is complete; Task 17's product commit stands at `95ee13d` and its
 control-recovery report is complete at `0c1094c`. No product, architecture,
 data-model, public-interface, dependency, or workflow decision is open.
@@ -99,9 +102,14 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
    corrections and immutable failed evidence.
 7. Task 17 is complete at `95ee13d` with report `0c1094c`. DEC-146 repaired
    report-lint's byte-unsafe command comparison at `88b0377` and added the
-   guarded control-conformance workflow at `92cb0f4`; Review 6 is next, then
-   Task 18.
-8. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
+   guarded control-conformance workflow at `92cb0f4`. Review 6 and Task 18 are
+   complete.
+8. Final review is REPAIR. MF-01 repair is down to `task-3k`, whose gate DEC-147
+   re-timed; DEC-148 and DEC-149 authorize the bounded protected repair of
+   `workflow-sequence-lint.sh` plus its drills that unwedges the
+   `REPAIR_PENDING` ledger. MF-02 remains owned by Task 18's integration
+   journey.
+9. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 
 Carry-forward opened this phase, all registered in `decisions_active.md` at
