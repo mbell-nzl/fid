@@ -1,4 +1,6 @@
-package main
+//go:build integration
+
+package integration
 
 import (
 	"bufio"
@@ -183,12 +185,14 @@ func p20JourneyRead(t *testing.T, workspace string, args ...string) map[string]a
 
 func p20JourneyJSON(t *testing.T, workspace string, args ...string) p20JourneyResponse {
 	t.Helper()
-	result := executeCommandForTest(workspace, append([]string{"--json"}, args...)...)
-	if result.err != nil || result.stderr != "" {
-		t.Fatalf("fid --json %v = (%v, stdout %q, stderr %q), want stdout-only success", args, result.err, result.stdout, result.stderr)
+	stdout, stderr, err := closureRunFIDExpectError(
+		t, integrationFIDBinary(t), workspace, append([]string{"--json"}, args...)...,
+	)
+	if err != nil || stderr != "" {
+		t.Fatalf("fid --json %v = (%v, stdout %q, stderr %q), want stdout-only success", args, err, stdout, stderr)
 	}
-	if len(result.stdout) == 0 || result.stdout[len(result.stdout)-1] != '\n' {
-		t.Fatalf("fid --json %v stdout = %q, want one JSON response with trailing newline", args, result.stdout)
+	if len(stdout) == 0 || stdout[len(stdout)-1] != '\n' {
+		t.Fatalf("fid --json %v stdout = %q, want one JSON response with trailing newline", args, stdout)
 	}
 	var decoded struct {
 		ContractVersion string          `json:"contract_version"`
@@ -199,17 +203,17 @@ func p20JourneyJSON(t *testing.T, workspace string, args ...string) p20JourneyRe
 			ID string `json:"id"`
 		} `json:"event"`
 	}
-	if err := json.Unmarshal([]byte(result.stdout), &decoded); err != nil {
+	if err := json.Unmarshal([]byte(stdout), &decoded); err != nil {
 		t.Fatalf("decode fid --json %v: %v", args, err)
 	}
 	if decoded.ContractVersion != "fid-cli.v1" || !decoded.OK || decoded.Operation == "" || len(decoded.Result) == 0 {
-		t.Fatalf("fid --json %v response = %s, want successful fid-cli.v1 envelope", args, result.stdout)
+		t.Fatalf("fid --json %v response = %s, want successful fid-cli.v1 envelope", args, stdout)
 	}
 	eventID := ""
 	if decoded.Event != nil {
 		eventID = decoded.Event.ID
 	}
-	return p20JourneyResponse{operation: decoded.Operation, result: decoded.Result, eventID: eventID, raw: result.stdout}
+	return p20JourneyResponse{operation: decoded.Operation, result: decoded.Result, eventID: eventID, raw: stdout}
 }
 
 func p20JourneyResult(t *testing.T, response p20JourneyResponse) map[string]any {
@@ -264,26 +268,32 @@ func p20RememberEvent(t *testing.T, eventIDs map[string]bool, eventID string) {
 
 func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expected, actual int) {
 	t.Helper()
-	result := executeCommandForTest(workspace,
+	stdout, stderr, err := closureRunFIDExpectError(t, integrationFIDBinary(t), workspace,
 		"--json", "issue", "update", issueID, "--title", "stale update must not apply", "--expected-revision", strconv.Itoa(expected), "--by", "developer",
 	)
-	if result.err == nil || result.stdout != "" {
-		t.Fatalf("stale update = (%v, stdout %q, stderr %q), want stderr-only typed failure", result.err, result.stdout, result.stderr)
+	if err == nil || stdout != "" {
+		t.Fatalf("stale update = (%v, stdout %q, stderr %q), want stderr-only typed failure", err, stdout, stderr)
 	}
-	if len(result.stderr) == 0 || result.stderr[len(result.stderr)-1] != '\n' {
-		t.Fatalf("stale update stderr = %q, want JSON failure with trailing newline", result.stderr)
+	if len(stderr) == 0 || stderr[len(stderr)-1] != '\n' {
+		t.Fatalf("stale update stderr = %q, want JSON failure with trailing newline", stderr)
 	}
-	assertJSONFailureCode(t, result.stderr, "issue.update", "state-conflict")
 	var failure struct {
-		Error struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Error           struct {
+			Code    string `json:"code"`
 			Details struct {
 				Expected int `json:"expected_revision"`
 				Actual   int `json:"actual_revision"`
 			} `json:"details"`
 		} `json:"error"`
 	}
-	if err := json.Unmarshal([]byte(result.stderr), &failure); err != nil {
+	if err := json.Unmarshal([]byte(stderr), &failure); err != nil {
 		t.Fatalf("decode stale state-conflict: %v", err)
+	}
+	if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != "issue.update" || failure.Error.Code != "state-conflict" {
+		t.Fatalf("stale failure = %#v, want issue.update state-conflict envelope", failure)
 	}
 	if failure.Error.Details.Expected != expected || failure.Error.Details.Actual != actual {
 		t.Fatalf("state-conflict details = %#v, want expected %d actual %d", failure.Error.Details, expected, actual)
