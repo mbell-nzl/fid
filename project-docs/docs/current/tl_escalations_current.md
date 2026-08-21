@@ -11,6 +11,12 @@
 
 None.
 
+`ESC-20-021` is resolved by DEC-150 (2026-08-21) and archived in
+`project-docs/docs/phases/phase-20/tl-escalations.md`. The verified DEC-149
+maintenance commit stands; its item-6 failure is preserved, while the
+self-created `progress_current.md` overage is repaired separately under the
+unchanged 133-line tripwire by explicit Human authority.
+
 `ESC-20-018` is resolved by DEC-149 (2026-08-19) and archived in
 `project-docs/docs/phases/phase-20/tl-escalations.md`. DEC-148's mandatory red
 fixture demanded a checkpoint diagnostic that its own bound TASK-RECOVERY cannot

@@ -8,6 +8,20 @@
 
 ### Resolved
 
+- **ESC-20-021 - DEC-149 item 6 failed on a current-document line-budget
+  overage outside its two-file maintenance allowlist (raised 2026-08-21 via
+  `TRG-20-023`; resolved 2026-08-21 by DEC-150 and Human authority).** The
+  maintenance repair itself is accepted at
+  `74ea3ff0dafb4a778c1fea0c17af320a26e8e46c`: its red/green drills, retained
+  guards, historical ledger checks, clean-worktree checks, and exact two-file
+  containment all pass. DEC-149's own documentation commit had expanded
+  `progress_current.md` to 136 lines against the unchanged 133-line tripwire,
+  so item 6 could not pass inside the isolated allowlist. DEC-150 preserves the
+  failed attempt, keeps the lint definition unchanged, and treats compression
+  of the current status document as a separate documentation-conformance
+  repair. The Human authorized one super-agent to finish the bounded final-QA
+  repairs directly without another role-orchestration cycle.
+
 - **ESC-20-018 - DEC-148's mandatory red fixture demanded a diagnostic its own
   bound event cannot emit (raised 2026-08-19 via `TRG-20-022`; resolved
   2026-08-19 by DEC-149).** **Sustained; the defect is in the directive, not the

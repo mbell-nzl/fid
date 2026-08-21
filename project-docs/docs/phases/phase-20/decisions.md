@@ -1936,6 +1936,42 @@
   RUN-RESUME); `AGENTS.md` Commands;
   `project-docs/specs/09_AI_WORKFLOW.md` §§2.3-2.5, 9.
 
+### DEC-150: Human-authorized direct recovery separates the stale current-document repair from DEC-149's two-file maintenance commit. Closes ESC-20-021
+
+- **Date:** 2026-08-21
+- **Context:** DEC-149's documentation commit expanded
+  `project-docs/docs/current/progress_current.md` from within its accepted line
+  budget to 136 lines, then required the unchanged 133-line workflow lint in
+  item 6 while allowing the isolated maintenance commit to touch only two tool
+  files. The maintenance commit `74ea3ff0dafb4a778c1fea0c17af320a26e8e46c`
+  passed every code, drill, ledger, and containment check; item 6 failed only on
+  that self-created baseline-document overage. The Human explicitly authorized
+  one super-agent to resolve the final-QA recovery directly, outside the normal
+  role and phase-runner cycles.
+- **Decision:**
+  1. Accept `74ea3ff0dafb4a778c1fea0c17af320a26e8e46c` as DEC-149's isolated
+     two-file maintenance repair. Its allowlist and verification semantics are
+     unchanged.
+  2. Treat compression of `progress_current.md` under its existing 133-line
+     tripwire as a separate current-document conformance repair. The tripwire,
+     workflow-lint scope, and accepted pass/fail semantics do not change.
+  3. Preserve `TRG-20-023` and its failed item-6 evidence, archive
+     `ESC-20-021`, and do not fabricate a passing result for the failed
+     maintenance-worktree attempt.
+  4. The Human-authorized super-agent may combine implementation, QA, and
+     orchestration work for the remaining final-review repairs. All exact
+     commands, observed terminations, validation assertions, and Human-only
+     judgments remain binding.
+- **Consequences:** The direct recovery may integrate the verified maintenance
+  commit, repair the current document, finish report conformance and Task 18's
+  integration placement, and produce a fresh final review without another
+  Tech Lead or Phase Runner cycle. Product behavior, public interfaces, data
+  model, dependencies, validation semantics, and quality-gate definitions are
+  unchanged.
+- **Refs:** `TRG-20-023`; `ESC-20-021`; `DEC-149`;
+  `project-docs/docs/current/progress_current.md`;
+  `project-docs/tools/workflow-lint.sh`; Human direction on 2026-08-21.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.

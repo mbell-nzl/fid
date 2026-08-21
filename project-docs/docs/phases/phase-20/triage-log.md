@@ -691,6 +691,9 @@ VERDICT: BLOCK (escalated as ESC-20-016)
 - **References:** project-docs/specs/09_AI_WORKFLOW.md §2.3 (protected gate/control definitions; normal control-conformance exclusions) and §9; project-docs/docs/phases/phase-20/decisions.md DEC-147; project-docs/docs/phases/phase-20/run-ledger.md (2026-08-17 00:03 STOP; 2026-08-18 20:22 RUN-RESUME); AGENTS.md (Commands; control-conformance repair).
 
 VERDICT: BLOCK (escalated as ESC-20-017)
+
+---
+
 ## TRG-20-019 — Formatting correction for retained protected BLOCK
 
 - **Trigger:** Correct the remaining accepted triage-log field mismatch in TRG-20-018: its bold Verdict field included the escalation suffix instead of the contract-required `BLOCK` value.
@@ -754,3 +757,41 @@ VERDICT: BLOCK (escalated as ESC-20-016)
 - **References:** project-docs/docs/phases/phase-20/decisions.md DEC-148 (Decision clauses 3-4; Repair directive Exact verification); project-docs/docs/phases/phase-20/triage-log.md TRG-20-021; project-docs/docs/phases/phase-20/tl-escalations.md ESC-20-017; project-docs/docs/current/tl_escalations_current.md ESC-20-017; project-docs/specs/09_AI_WORKFLOW.md §2.3 and §9; AGENTS.md (Commands; control-conformance repair).
 
 VERDICT: BLOCK (escalated as ESC-20-017)
+
+---
+
+## TRG-20-023 - DEC-149 item 6 fails on an immutable baseline path outside its allowlist
+
+- **Trigger:** DEC-149 Exact verification item 6 fails on an unchanged baseline path outside the two-file maintenance allowlist.
+- **Originating task:** task-3k
+- **Trigger signature:** task-3k:workflow-maintenance:DEC-149-item-6-baseline-lint
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/tools/workflow-lint.sh` and `project-docs/docs/phases/phase-20/decisions.md` DEC-149 item 6.
+- **Candidate:** protected gate/scope contradiction.
+- **Attempt count:** 1
+- **Checkpoint:** Maintenance commit `74ea3ff0dafb4a778c1fea0c17af320a26e8e46c` is supplied as verified: `git rev-parse --verify 74ea3ff0dafb4a778c1fea0c17af320a26e8e46c^{commit}` succeeded with observed `exit_code: 0`, its subject matched `fix(workflow): reset stale recovery state on resume`, and its footer matched `Refs: DEC-149`; runner-recorded control repair base is `1a8717e72979fcd3545b467826ef1dc0ef202a0e`.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-149 makes `project-docs/tools/workflow-lint.sh` passing a required exact-verification item while limiting maintenance edits to `project-docs/tools/workflow-sequence-lint.sh,project-docs/tools/drills/run-drills.sh`. The supplied reproducer ran that exact command in `/tmp/fid-phase20-dec149-control-repair-20260821` at maintenance HEAD `74ea3ff0dafb4a778c1fea0c17af320a26e8e46c` and terminated `exit_code: 1` with `FAIL workflow-lint found 1 failure(s)` because immutable, excluded `project-docs/docs/current/progress_current.md` has `136 > 133` tripwire lines. Repairing that path violates the allowlist; excluding it or altering its budget changes the accepted item-6 gate definition/scope. No canonical-control implementation mismatch within the two allowed paths is shown.
+- **Local decisions made:** none.
+- **Resolution evidence:** All other DEC-149 verification items are supplied as passed, including red/green drills, phase-17/18/19/20 ledger validation, containment, clean worktree, no hidden index flags, isolated commit, and regular-file/mode checks. That narrows the unresolved condition to DEC-149 item 6; the attached immutable-baseline failure means RESUME is unavailable.
+- **If REPAIR:** N/A.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** N/A
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category specification contradiction / protected quality-gate definition and scope; ESC-20-021 raised in `tl_escalations_current.md`; resolution condition: full Tech Lead must amend or otherwise reconcile DEC-149 item 6's required PASS condition with its two-file maintenance allowlist, preserving immutable failed evidence and without authorizing an unrecorded baseline-document, lint-tool, ledger, or scope change.
+- **Human attention required:** yes.
+- **References:** `project-docs/docs/phases/phase-20/decisions.md` DEC-149 (Repair directive, Exact verification items 5-7); `project-docs/tools/workflow-lint.sh`; `project-docs/docs/current/progress_current.md`; `project-docs/specs/09_AI_WORKFLOW.md` §2.3 and §9; `AGENTS.md` (Commands; control-conformance repair).
+
+VERDICT: BLOCK (escalated as ESC-20-021)
+
+**Resolution note (2026-08-21):** DEC-150 preserves this failed attempt,
+accepts the verified two-file maintenance commit, and resolves the excluded
+current-document overage as a separate conformance repair under explicit Human
+authority. The 133-line tripwire and workflow-lint scope are unchanged.
