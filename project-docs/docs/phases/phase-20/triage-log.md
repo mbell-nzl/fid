@@ -723,3 +723,34 @@ VERDICT: BLOCK (escalated as ESC-20-016)
 - **References:** project-docs/docs/phases/phase-20/tasks/task-3k-done.md; project-docs/docs/phases/phase-20/triage-log.md; ESC-20-016.
 
 VERDICT: BLOCK (escalated as ESC-20-016)
+
+## TRG-20-022 - DEC-148 mandatory red fixture omits required checkpoint diagnostic
+
+- **Trigger:** DEC-148's mandatory red fixture cannot reproduce all three required pre-change INVALID diagnostics under the authorized implementation scope.
+- **Originating task:** task-3k
+- **Trigger signature:** control-repair:red-fixture:missing-checkpoint-diagnostic:DEC-148
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** ESC-20-017; attached red-fixture reproduction on trusted base `91c3d0a4bd5a77f1df1faa63bd8547a50f9420a4`.
+- **Candidate:** protected directive/contract contradiction.
+- **Checkpoint:** Commit-verification evidence supplied for `91c3d0a4bd5a77f1df1faa63bd8547a50f9420a4`: `git rev-parse --verify HEAD^{commit}` terminated `exit_code: 0` and the subject matched `TL final review triage`; the temporary fixture was restored, no file changed, and the repair worktree was clean at that trusted base.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-148 makes the pre-change red fixture reproduce all three named INVALID diagnostics before the sole authorized conditional reset. The supplied exact fixture emitted only `INVALID continuing recovery must preserve task and Trigger signature` and `INVALID continuing recovery Attempt count must increment by one`; it omitted `INVALID TASK-RECOVERY does not preserve its RUN-RESUME checkpoint` and terminated `DRILLS FAIL 1 mechanical drill(s) misbehaved` with observed `exit_code: 1`. The real phase-20 ledger independently remains `VALID state=REPAIR_PENDING` with observed `exit_code: 0`, so this is neither a resolved trigger nor an ordinary task-scope failure. DEC-148 authorizes no alternative fixture, diagnostic set, or verifier transition beyond its stated reset; accepting fewer diagnostics or changing that mandatory proof would alter its protected directive/contract.
+- **Local decisions made:** none.
+- **Resolution evidence:** No accepted authority resolves the missing checkpoint diagnostic. DEC-148 expressly requires all three diagnostics and limits implementation to the conditional reset; ESC-20-017 remains the related governing escalation and is referenced rather than duplicated.
+- **If REPAIR:** N/A.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** N/A
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** N/A
+- **If BLOCK:** category protected directive/contract contradiction; ESC-20-017 referenced in `tl_escalations_current.md`; resolution condition: full Tech Lead must record accepted authority resolving DEC-148's mandatory red-fixture diagnostic contract before any retry. No run-ledger append, verifier change, fixture-contract substitution, or protected workflow-definition change is authorized by this TRG.
+- **Human attention required:** yes.
+- **References:** project-docs/docs/phases/phase-20/decisions.md DEC-148 (Decision clauses 3-4; Repair directive Exact verification); project-docs/docs/phases/phase-20/triage-log.md TRG-20-021; project-docs/docs/phases/phase-20/tl-escalations.md ESC-20-017; project-docs/docs/current/tl_escalations_current.md ESC-20-017; project-docs/specs/09_AI_WORKFLOW.md §2.3 and §9; AGENTS.md (Commands; control-conformance repair).
+
+VERDICT: BLOCK (escalated as ESC-20-017)
