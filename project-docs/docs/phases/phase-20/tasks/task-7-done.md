@@ -1,5 +1,14 @@
 # Phase 20 - Task 7: Issue hierarchy invariant - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added domain-level `HierarchyInvalidError` with exact `kind`, `parent_id`, `parent_kind`, and `rule` values for illegal existing-parent and missing-parent-shape cases.
@@ -33,12 +42,21 @@
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` — PASS — `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` — PASS — `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.7%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.767s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.767s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

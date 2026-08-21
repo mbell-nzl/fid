@@ -1,5 +1,14 @@
 # Phase 20 - Task 3l: Deterministic maintenance time - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added an explicit fixed-time table for started-without-claim eligibility at
@@ -37,20 +46,30 @@
 
 ## Tests run
 
-- `go test -race -run '^TestCheckStartedWithoutClaimGraceBoundary$' ./internal/maintenance` - PASS - `ok  	github.com/mbell-nzl/fid/internal/maintenance	1.298s`.
+- `go test -race -run '^TestCheckStartedWithoutClaimGraceBoundary$' ./internal/maintenance` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/internal/maintenance	1.298s` (historical record lacked observed termination)
 - `go test -tags integration -run '^TestClosureJourneyHasNoWallClockSleep$' ./cmd/fid/integration/...` - EXPECTED RED - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	0.562s`.
-- `go test -tags integration -race -run '^(TestClosureJourneyHasNoWallClockSleep|TestV01ClosureJourneyAndRebuildParity)$' ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.188s`.
+- `go test -tags integration -race -run '^(TestClosureJourneyHasNoWallClockSleep|TestV01ClosureJourneyAndRebuildParity)$' ./cmd/fid/integration/...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.188s` (historical record lacked observed termination)
 - Repository `time.Sleep` inventory - PASS with all matches classified - `./cmd/fid/integration/classification_test.go:60:			t.Errorf("closure journey contains time.Sleep at %s", path)`.
 
 ## Exact quality-gate results
 
-- `go test -tags integration -race -count=10 ./internal/maintenance ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	32.305s`.
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`.
-- `golangci-lint run ./...` - PASS - `0 issues.`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements`.
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.331s`.
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`.
+- `go test -tags integration -race -count=10 ./internal/maintenance ./cmd/fid/integration/...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	32.305s` (historical record lacked observed termination)
+- `gofmt -l cmd internal` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+- `golangci-lint run ./...` - UNVERIFIED - `0 issues.` (historical record lacked observed termination)
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements` (historical record lacked observed termination)
+- `go tool cover -func=coverage.out` - UNVERIFIED - `total:										(statements)					77.7%` (historical record lacked observed termination)
+- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.331s` (historical record lacked observed termination)
+- `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `go test -tags integration -race -count=10 ./internal/maintenance ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	37.676s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

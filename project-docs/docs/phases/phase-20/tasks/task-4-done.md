@@ -1,5 +1,14 @@
 # Phase 20 - Task 4: Rebuild, authority, and lock failures - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - The committed Task 4 implementation migrates `fid rebuild` to project selection and the `fid-cli.v1` Response Envelope, maps retained V1 authority failures, returns projection-only success with `event:null`, and maps write-lock contention to retryable `lock-unavailable`.
@@ -26,18 +35,27 @@
 
 ## Tests run
 
-- `go test ./cmd/fid ./internal/journal -run '^(TestRebuildJSONMapsMissingAuthorityWithoutMutation|TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation|TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork|TestRebuildJSONMapsExplicitMissingProjectToSelectedPath|TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease|TestRebuildCommandReplaysJournalAndReportsCounts|TestWithLockWritesOwnerMetadata|TestWithLockReturnsTypedUnavailableErrorForHeldLock)$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/journal  0.005s`
-- `/tmp/fid --project /tmp/fid-task4-S14hTp init --prefix FID` - PASS - `initialized fid project in .fid/`
-- `/tmp/fid --project /tmp/fid-task4-S14hTp --json rebuild --by workflow_runner` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}`
+- `go test ./cmd/fid ./internal/journal -run '^(TestRebuildJSONMapsMissingAuthorityWithoutMutation|TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation|TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork|TestRebuildJSONMapsExplicitMissingProjectToSelectedPath|TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease|TestRebuildCommandReplaysJournalAndReportsCounts|TestWithLockWritesOwnerMetadata|TestWithLockReturnsTypedUnavailableErrorForHeldLock)$' -count=1` - UNVERIFIED - `ok  github.com/mbell-nzl/fid/internal/journal  0.005s` (historical record lacked observed termination)
+- `/tmp/fid --project /tmp/fid-task4-S14hTp init --prefix FID` - UNVERIFIED - `initialized fid project in .fid/` (historical record lacked observed termination)
+- `/tmp/fid --project /tmp/fid-task4-S14hTp --json rebuild --by workflow_runner` - UNVERIFIED - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}` (historical record lacked observed termination)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`
-- `golangci-lint run ./...` - PASS - `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  8.316s  coverage: 80.5% of statements`
-- `go tool cover -func=coverage.out` - PASS - `total:                    (statements)          77.8%`
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  5.215s`
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`
+- `gofmt -l cmd internal` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+- `golangci-lint run ./...` - UNVERIFIED - `0 issues.` (historical record lacked observed termination)
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - `ok  github.com/mbell-nzl/fid/internal/workflow  8.316s  coverage: 80.5% of statements` (historical record lacked observed termination)
+- `go tool cover -func=coverage.out` - UNVERIFIED - `total:                    (statements)          77.8%` (historical record lacked observed termination)
+- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  5.215s` (historical record lacked observed termination)
+- `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

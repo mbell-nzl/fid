@@ -1,5 +1,14 @@
 # Phase 20 - Task 8: Issue read contract - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Migrated `issue get`, `issue list`, and `ready` to the root-`--json` `fid-cli.v1` Response Envelope with `event:null` for successful reads.
@@ -32,20 +41,29 @@
 ## Tests run
 
 - `go test ./cmd/fid -run '^TestIssueGetJSONMatchesClosedSchema$' -count=1` - RED - `FAIL`
-- `go test ./cmd/fid -run '^TestIssueGetJSONMatchesClosedSchema$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.097s`
-- `go test ./cmd/fid -run '^(TestIssueGetJSONMatchesClosedSchema|TestIssueListJSONMatchesClosedSchemaAndRetainedFilters|TestReadyJSONHasExclusiveClosedResultStates)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.124s`
-- `go test ./cmd/fid -run '^(TestIssueReadRejectsRetiredAndMalformedInputs|TestReadCollectionLimitRejectsOnlyOverLimit)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.050s`
-- `go test ./cmd/fid -run '^TestReadyJSONSequentialBlockerUsesClosedExplanation$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.052s`
-- `mktemp workspace; /tmp/fid init --prefix FID; /tmp/fid issue create; /tmp/fid --json issue get <created-id>` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"issue.get",...,"event":null}`
+- `go test ./cmd/fid -run '^TestIssueGetJSONMatchesClosedSchema$' -count=1` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.097s` (historical record lacked observed termination)
+- `go test ./cmd/fid -run '^(TestIssueGetJSONMatchesClosedSchema|TestIssueListJSONMatchesClosedSchemaAndRetainedFilters|TestReadyJSONHasExclusiveClosedResultStates)$' -count=1` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.124s` (historical record lacked observed termination)
+- `go test ./cmd/fid -run '^(TestIssueReadRejectsRetiredAndMalformedInputs|TestReadCollectionLimitRejectsOnlyOverLimit)$' -count=1` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.050s` (historical record lacked observed termination)
+- `go test ./cmd/fid -run '^TestReadyJSONSequentialBlockerUsesClosedExplanation$' -count=1` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.052s` (historical record lacked observed termination)
+- `mktemp workspace; /tmp/fid init --prefix FID; /tmp/fid issue create; /tmp/fid --json issue get <created-id>` - UNVERIFIED - `{"contract_version":"fid-cli.v1","ok":true,"operation":"issue.get",...,"event":null}` (historical record lacked observed termination)
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)`
-- `golangci-lint run ./...` - PASS - `0 issues.`
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements`
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.5%`
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.971s`
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)`
+- `gofmt -l cmd internal` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+- `golangci-lint run ./...` - UNVERIFIED - `0 issues.` (historical record lacked observed termination)
+- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (historical record lacked observed termination)
+- `go tool cover -func=coverage.out` - UNVERIFIED - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.5%` (historical record lacked observed termination)
+- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.971s` (historical record lacked observed termination)
+- `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - `exit 0 (no output)` (historical record lacked observed termination)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

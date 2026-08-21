@@ -1,5 +1,14 @@
 # Phase 20 - Task 6: Replayable Issue aggregate revision - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added migration `0012_p20_issue_revision`, which adds the non-null Issue `revision` column with default `1` and removes it on down migration.
@@ -28,21 +37,31 @@
 ## Tests run
 
 - RED: `go test ./internal/issues -run '^TestUpdateEventRecordsReplayableRevision$' -count=1` - expected FAIL - `FAIL`; diagnostic: `update_test.go:115: missing Issue revision effect` (terminated `exit_code: 1`).
-- GREEN: `go test ./internal/issues -run '^TestUpdateEventRecordsReplayableRevision$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/issues\t0.054s` (terminated `exit_code: 0`).
-- `go test ./internal/issues ./internal/dev ./internal/db ./internal/journal -run '^(TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults|TestUpdateEventRecordsReplayableRevision|TestUpdateAppendsOneEventProjectsActivityAndRebuilds|TestCreateEventOmitsRetiredPhase20Fields|TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds|TestStartClaimsTransitionsAndOpensRunInOneEvent|TestFinishClosesRunCompletesTransitionsAndReleasesClaimInOneEvent|TestBlockRecordsFailedGateCompletionTransitionsAndReleasesClaim|TestIssueRevisionMigrationAddsAndRemovesRevision|TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.024s` (terminated `exit_code: 0`).
-- `go test ./internal/journal -run '^TestReplayJournalAppliesPhase20IssueRevisionGolden$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.026s` (terminated `exit_code: 0`).
-- `go test ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.702s` (terminated `exit_code: 0`).
+- GREEN: `go test ./internal/issues -run '^TestUpdateEventRecordsReplayableRevision$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/issues\t0.054s` (terminated `exit_code: 0`)
+- `go test ./internal/issues ./internal/dev ./internal/db ./internal/journal -run '^(TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults|TestUpdateEventRecordsReplayableRevision|TestUpdateAppendsOneEventProjectsActivityAndRebuilds|TestCreateEventOmitsRetiredPhase20Fields|TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds|TestStartClaimsTransitionsAndOpensRunInOneEvent|TestFinishClosesRunCompletesTransitionsAndReleasesClaimInOneEvent|TestBlockRecordsFailedGateCompletionTransitionsAndReleasesClaim|TestIssueRevisionMigrationAddsAndRemovesRevision|TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.024s` (terminated `exit_code: 0`)
+- `go test ./internal/journal -run '^TestReplayJournalAppliesPhase20IssueRevisionGolden$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.026s` (terminated `exit_code: 0`)
+- `go test ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.702s` (terminated `exit_code: 0`)
 - Real entrypoint: in a fresh temporary workspace, ran `/tmp/fid --project <workspace> init --prefix FID`, then `/tmp/fid issue create --kind task --title 'CLI revision target' --by developer`, and `/tmp/fid issue update FID-517105 --title 'CLI revised target' --by developer` - PASS - final journal Event contained `"values":{"revision":2}` with `"prior":{"revision":1}` and `"preconditions":{"revision":1}` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.7%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.744s` (terminated `exit_code: 0`).
-- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.551s` (terminated `exit_code: 0` after explicit polling of session `99869`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.744s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - UNVERIFIED - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.551s` (historical wrapper-polling record was not in canonical termination form)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.915s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t1.970s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

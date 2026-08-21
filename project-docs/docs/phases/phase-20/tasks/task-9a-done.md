@@ -1,5 +1,14 @@
 # Phase 20 - Task 9a: Mutation concurrency, transition, and attribution evidence - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Closed Review 3 Blocking finding 1 with one canonical JSON matrix covering absent, matching, and stale `--expected-revision` cases for both Issue update and transition.
@@ -43,18 +52,27 @@
 - GREEN: `go test ./cmd/fid -run '^TestIssueMutationCanonicalAttributionAvoidsProtectedEffects$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.210s` (terminated `exit_code: 0`).
 - RED: `go test ./cmd/fid -run '^TestIssueTransitionCanonicalOutcomeTable$' -count=1` after correcting the public Event decoder - expected FAIL - `FAIL` (terminated `exit_code: 1`). The last two failing rows were unknown target and stored unsupported precondition, each reporting `invalid-argument`.
 - GREEN: `go test ./internal/issues -run '^TestTransitionTreatsReservedGateRuleAsUnsatisfied$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/issues	0.056s` (terminated `exit_code: 0`).
-- `go test ./cmd/fid ./internal/issues -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/issues	4.672s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid ./internal/issues -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/issues	4.672s` (terminated `exit_code: 0`)
 - Real entrypoint in `/tmp/fid-task-9a.xP3V7M`: `/tmp/fid init --prefix FID`, `/tmp/fid --json issue create --kind task --title 'Task 9a real entrypoint' --by developer`, `/tmp/fid issue claim FID-9cd7a5 --by developer`, and `/tmp/fid --json issue transition FID-9cd7a5 --to in_progress --expected-revision 1 --by developer` - PASS - returned `{"id":"FID-9cd7a5","revision":2}` with Event `EVT-20260814-000004` (each terminated `exit_code: 0`).
 - Real entrypoint stale rejection: `/tmp/fid --json issue transition FID-9cd7a5 --to dev_complete --expected-revision 1 --by developer` - expected rejection - `{"actual_revision":2,"expected_revision":1}` (terminated `exit_code: 1`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.3%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.100s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.100s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

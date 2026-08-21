@@ -1,5 +1,14 @@
 # Phase 20 - Task 9: Issue mutation and concurrency contract - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: Fresh final QA re-review.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Migrated canonical `issue create`, `issue update`, and `issue transition` to `fid-cli.v1` Response Envelopes, with Human success on stdout and canonical JSON failures on stderr.
@@ -44,19 +53,28 @@
 - GREEN: `go test ./cmd/fid -run '^TestIssueTransitionJSONRejectsUnsatisfiedClaimPrecondition$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.057s` (terminated `exit_code: 0`).
 - RED: `go test ./cmd/fid -run '^TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure$' -count=1` - expected FAIL - `FAIL` (terminated `exit_code: 1`).
 - GREEN: `go test ./cmd/fid -run '^TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.048s` (terminated `exit_code: 0`).
-- `go test ./cmd/fid ./internal/issues -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/issues\t4.469s` (terminated `exit_code: 0`).
-- `go test ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestV01ClosureJourneyAndRebuildParity|TestV02aWorkflowAuthoringExitScenarioAndRebuildParity)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.962s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid ./internal/issues -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/issues\t4.469s` (terminated `exit_code: 0`)
+- `go test ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^(TestV01ClosureJourneyAndRebuildParity|TestV02aWorkflowAuthoringExitScenarioAndRebuildParity)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.962s` (terminated `exit_code: 0`)
 - Real entrypoint: in `/tmp/fid-task9.ucjhTX`, ran `/tmp/fid init --prefix FID`, `/tmp/fid --json issue create --kind task --title 'Task 9 entrypoint' --by developer`, `/tmp/fid --json issue update FID-548415 --title 'Task 9 updated' --expected-revision 1 --by developer`, then the same update with stale `--expected-revision 1` - PASS - final output was the exact JSON `state-conflict` envelope with `actual_revision:2` and `expected_revision:1` (terminated `exit_code: 1` for the deliberate stale rejection; preceding commands each terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.3%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t5.416s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t77.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t5.416s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

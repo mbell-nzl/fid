@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: gate-repair
-- Condition: The unchanged exact repeated claims/CLI race gate cannot finish on the expanded current `cmd/fid` package: one count takes 104.318s, exceeding Go's 10-minute timeout when repeated ten times. The dominant serial fixtures belong to post-Task-3k Task 11 and Task 12 test files outside this recovery's allowlist.
-- Recovery attempts: 2
-- Next action: The Phase Runner must obtain bounded authority for the post-Task-3k serial command-test owners, or dispatch their owning task repair, before rerunning the byte-identical gate. Task 3k must not change its exact command, accepted timeout, or unrelated test files.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 4
+- Next action: Fresh final QA re-review.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -32,6 +32,10 @@
   budget: one `cmd/fid` count took 104.318s, so ten counts exceed Go's
   10-minute timeout before package setup. The Task 3k claim tests completed in
   at most 1.27s, while post-Task-3k serial limit tests took 10.17s and 9.21s.
+- DEC-147 replaced the accidental default ten-minute wall-clock bound with the
+  explicit `-timeout 30m` command. The direct recovery ran that exact amended
+  command to observed completion: `internal/claims` passed at 95.165s and
+  `cmd/fid` passed at 1028.711s.
 
 ## Files created or modified
 
@@ -96,6 +100,16 @@
 - `go build -o /tmp/fid ./cmd/fid` - UNVERIFIED - `exit 0 (no output)` (historical pass record; the original report did not retain an observed termination result).
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
+Fresh direct-recovery evidence captured on 2026-08-21:
+
+- `go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1028.711s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.915s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - The first affected CLI fixture run failed with `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t2.421s`. Aging `claimed_at` to midnight caused the SQLite `DATETIME` driver to normalize the actual precondition value to a date-only value. The fixture now uses noon on the same fixed date; no product code or assertion changed, and the byte-identical focused command passed at 3.499s.
@@ -123,14 +137,17 @@
   repair. The byte-identical report-lint rerun returned `OUTCOME
   RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`
   (terminated `exit_code: 0`) against the committed correction.
+- DEC-147 amended the first required command to
+  `go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid`. The
+  direct-recovery run preserved the earlier timeout failures and later passed
+  that exact amended command with `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1028.711s`
+  (terminated `exit_code: 0`). No product or test-harness change was needed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The current repeated claims/CLI race gate cannot pass within Go's ten-minute
-  timeout on the expanded post-Task-3k `cmd/fid` package. The next repair must
-  be authorized for the later serial limit-test owners or their scheduling
-  boundary; Task 3k's deterministic-claims code and allowed tests are not the
-  causal bottleneck.
+- None. DEC-147's explicit 30-minute timeout resolved the accidental
+  wall-clock bound without changing the repeat count, race detector, package
+  scope, or pass/fail semantics.
 
 ## Dependency-budget note
 
