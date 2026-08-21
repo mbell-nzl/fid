@@ -995,6 +995,191 @@ cat > "$valid_amended_control" <<'EOF'
 EOF
 run_sequence "drill-18 unique resolved-BLOCK amendment authorizes exact control recovery" REPAIR_PENDING "$valid_amended_control"
 
+# DEC-149: a non-exhaustion BLOCK leaves an earlier continuation state in
+# memory. Before the repair, that stale chain incorrectly constrains the exact
+# TASK-RECOVERY bound to the reconciled RUN-RESUME checkpoint.
+resume_reset_phase="$workspace/resume-reset/phase-1"
+mkdir -p "$resume_reset_phase"
+cat > "$resume_reset_phase/decisions.md" <<'EOF'
+# Phase 1 Decisions
+
+### DEC-200: Reconcile the STOP-resolving RUN-RESUME
+EOF
+cat > "$resume_reset_phase/triage-log.md" <<'EOF'
+# Phase 1 Triage Log
+
+## TRG-1-010 - non-exhaustion protected recovery
+- **Originating task:** task-1
+- **Trigger signature:** task-1:reconciled-stop-resume
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Attempt count:** 3
+- **Verdict:** BLOCK
+- **Escalation:** ESC-1-010
+EOF
+resume_reset_ledger="$resume_reset_phase/run-ledger.md"
+cat > "$resume_reset_ledger" <<'EOF'
+### 2026-08-15 12:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 12:01 TASK-RECOVERY task-1
+- Source: interrupted in-scope implementation
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: ordinary task authority
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: pre-stop-trigger
+- Attempt count: 4
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: pre-STOP recovery checkpoint
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair the interrupted implementation
+- Next action: continue the interrupted implementation
+- Human attention required: no
+### 2026-08-15 12:02 REPAIR task-1
+- Trigger signature: pre-stop-trigger
+- Attempt count: 4
+- Starting checkpoint: pre-STOP recovery checkpoint
+- Ending checkpoint: recovery retained pending authority
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: pre-STOP repair made material progress
+- Next checkpoint: continue recovery
+### 2026-08-15 12:03 TRIAGE TRG-1-010
+- Trigger: protected authority resolves the non-exhaustion recovery
+- Originating task: task-1
+- Trigger signature: task-1:reconciled-stop-resume
+- Attempt count: 3
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: reconciled STOP authority required
+- Verdict: BLOCK (escalated as ESC-1-010)
+- Resolution evidence: a decision is required to reconcile the STOP
+- Triage log: unique phase triage entry and ESC confirmed
+### 2026-08-15 12:04 STOP
+- Cause: TRG-1-010 / ESC-1-010 requires protected authority
+- Triage: TRG-1-010 (BLOCK, escalated as ESC-1-010)
+- Protected category: workflow authority
+- Next Human or external-authority action: record the reconciliation decision
+### 2026-08-15 12:05 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: TRG-1-010 / ESC-1-010 STOP
+- Governing TRG: TRG-1-010
+- Governing ESC: ESC-1-010
+- Trigger signature: task-1:reconciled-stop-resume
+- Attempt count: 4
+- Checkpoint: DEC-200 reconciled STOP recovery checkpoint
+- Resolution evidence: DEC-200 authorizes the exact resumed recovery
+- Resolution authority: DEC-200
+- Continuing task: task-1
+- Next recovery: task-1 | in-scope-implementation | task-scope | task-1:reconciled-stop-resume | 4
+### 2026-08-15 12:06 TASK-RECOVERY task-1
+- Source: TRG-1-010 / DEC-200
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-1-010 / DEC-200
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:reconciled-stop-resume
+- Attempt count: 4
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: DEC-200 resumed recovery checkpoint
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - perform the exact resumed recovery
+- Next action: continue the exact resumed recovery
+- Human attention required: no
+EOF
+run_sequence "drill-18 DEC-149 reconciled resume clears stale pre-STOP continuation" \
+  REPAIR_PENDING "$resume_reset_ledger"
+
+resume_checkpoint_violation="$resume_reset_phase/checkpoint-violation.md"
+sed '/^### 2026-08-15 12:06 TASK-RECOVERY task-1$/,$ s/task-1:reconciled-stop-resume/pre-stop-trigger/' \
+  "$resume_reset_ledger" > "$resume_checkpoint_violation"
+run_invalid_sequence "drill-18 DEC-149 resume-bound recovery rejects pre-STOP checkpoint" \
+  "TASK-RECOVERY does not preserve its RUN-RESUME checkpoint" \
+  "$resume_checkpoint_violation"
+
+normal_open_chain="$resume_reset_phase/normal-open-chain.md"
+sed '/^### 2026-08-15 12:03 TRIAGE TRG-1-010$/,$d' "$resume_reset_ledger" > "$normal_open_chain"
+cat >> "$normal_open_chain" <<'EOF'
+### 2026-08-15 12:03 RUN-RESUME
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: prior Runner session ended cleanly
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: ordinary continuation remains open
+- Resolution evidence: ordinary continuation has no STOP reconciliation
+- Resolution authority: N/A
+- Continuing task: task-1
+- Next recovery: N/A
+EOF
+sed -n '/^### 2026-08-15 12:06 TASK-RECOVERY task-1$/,$p' "$resume_reset_ledger" \
+  | sed -e 's/12:06/12:04/' -e 's/task-1:reconciled-stop-resume/task-1:changed-trigger/' \
+  >> "$normal_open_chain"
+run_invalid_sequence "drill-18 DEC-149 normal resume retains open-chain trigger and attempt guards" \
+  "continuing recovery must preserve task and Trigger signature" "$normal_open_chain"
+normal_open_chain_task="$resume_reset_phase/normal-open-chain-task.md"
+sed -e 's/^### 2026-08-15 12:04 TASK-RECOVERY task-1$/### 2026-08-15 12:04 TASK-RECOVERY task-9/' \
+    -e 's/task-1:changed-trigger/task-9:changed-trigger/' \
+  "$normal_open_chain" > "$normal_open_chain_task"
+run_invalid_sequence "drill-18 DEC-149 normal resume retains open-chain task guard" \
+  "continuing recovery must preserve task and Trigger signature" "$normal_open_chain_task"
+
+resume_continuation="$resume_reset_phase/resume-continuation.md"
+cp "$resume_reset_ledger" "$resume_continuation"
+cat >> "$resume_continuation" <<'EOF'
+### 2026-08-15 12:07 REPAIR task-1
+- Trigger signature: task-1:reconciled-stop-resume
+- Attempt count: 4
+- Starting checkpoint: DEC-200 resumed recovery checkpoint
+- Ending checkpoint: resumed recovery made material progress
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: resumed recovery made material progress
+- Next checkpoint: continue resumed recovery
+EOF
+sed -n '/^### 2026-08-15 12:06 TASK-RECOVERY task-1$/,$p' "$resume_reset_ledger" \
+  | sed -e 's/12:06/12:08/' -e 's/Attempt count: 4/Attempt count: 5/' \
+  >> "$resume_continuation"
+run_sequence "drill-18 DEC-149 resume-bound continuation preserves identity and increments 4 to 5" \
+  REPAIR_PENDING "$resume_continuation"
+resume_continuation_violation="$resume_reset_phase/resume-continuation-violation.md"
+sed '/^### 2026-08-15 12:08 TASK-RECOVERY task-1$/,$ s/Attempt count: 5/Attempt count: 4/' \
+  "$resume_continuation" > "$resume_continuation_violation"
+run_invalid_sequence "drill-18 DEC-149 resume-bound continuation rejects a non-incremented attempt" \
+  "continuing recovery Attempt count must increment by one" "$resume_continuation_violation"
+
 missing_amendment_phase="$workspace/missing-amendment/phase-1"
 mkdir -p "$missing_amendment_phase"
 cp "$amended_phase/decisions.md" "$missing_amendment_phase/decisions.md"

@@ -1076,6 +1076,13 @@ function finish_event() {
       resolved_block_authority = event_resolution_authority
       if (event_directive_strict) {
         resume_recovery_pending = 1
+        recovery_task = ""
+        recovery_stage = ""
+        recovery_trigger = ""
+        recovery_attempt = ""
+        recovery_last_outcome = ""
+        recovery_no_progress = ""
+        recovery_head = ""
         resume_triage = latest_triage_id
         resume_task = event_continuing_task
         resume_trigger = event_trigger_signature
