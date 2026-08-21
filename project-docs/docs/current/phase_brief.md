@@ -13,16 +13,14 @@ revision, and the retained Issue contract; delete universal formatters,
 
 ## Status
 
-**In flight on branch `phase-20`, at final review.** Tasks 1-18 and the
-infrastructure pack are complete and every review window through `review-6` is
-closed (`../phases/phase-20/infra-improvement-pack.md`).
-`../phases/phase-20/qa/final-review.md` is **REPAIR** on two Must-fix findings:
-**MF-01** (22 completion reports fail canonical report-lint; Task 1's share is
-closed by `final-review-2.md`) and **MF-02** (Task 18's accepted journey is
-absent from the dedicated integration package). Task 3k is the last MF-01 report
-still in repair; the ledger is `REPAIR_PENDING`. ESC-20-001..018 are resolved and
-nothing is open. **Next: the DEC-148/DEC-149 workflow-maintenance commit, then
-the DEC-147 Task 3k report continuation and its fresh MF-01 re-review.**
+**In flight on branch `phase-20`, awaiting Human verification.** Tasks 1-18,
+the infrastructure pack, and every review window through `review-6` are
+complete (`../phases/phase-20/infra-improvement-pack.md`). The fresh
+`../phases/phase-20/qa/final-review-3.md` is **PASS**: MF-01 report conformance
+and MF-02 integration placement are resolved, the full phase gate passes, and
+45 deterministic validation assertions pass. Only Human-owned VAL-038 remains;
+no escalation or protected decision is open. **Next: complete the three blank
+rows in `human-checklist.md`, then wrap the phase.**
 
 ## Operating Mode And Slice Contract
 
@@ -48,7 +46,7 @@ Envelope, leaf schemas, reason codes, DDL/Event semantics, and removals.
 | 16 | Delete universal formatters and YAML | Complete `20813fc` / `d0f9cea` (DEC-143, DEC-144, DEC-145) | 15, 16a, 16b |
 | 16a, 16b | report-lint accepts declared expected-non-zero rows, then parses declaration lines not prose | Complete `d9d6add`, `d8388d5`; Task 16 recovery-support slices (DEC-143/144) | 15 |
 | 17 | Delete promised-command stubs | Complete `95ee13d`; control recovery report `0c1094c` (DEC-146) | 16 |
-| 18 | Journey acceptance and documentation | Complete; MF-02 open against its integration journey | 1-17 |
+| 18 | Journey acceptance and documentation | Complete; MF-02 resolved by real-process integration journey `90841bb` | 1-17 |
 
 One Developer session owns one task. Review windows close after Tasks 3, 6, 9,
 12, 15, and 17; Task 18 followed the closed sixth review. Tasks
@@ -74,7 +72,8 @@ DEC-143/144/145), and `qa-plan.md` is accepted with its unsatisfiable YAML
 `infra-review-1`, `review-3b`, `review-4b/4c`, `review-5b/5c/5d` closed every
 prior finding, and `review-6` is closed. `final-review.md` is REPAIR on MF-01 and
 MF-02; `final-review-2.md` closes Task 1's bounded MF-01 share only.
-`human-checklist.md` awaits a clean final review.
+`final-review-3.md` closes MF-01 and MF-02 with a deterministic PASS;
+`human-checklist.md` now awaits the three Human VAL-038 judgments.
 
 ## Active Constraints
 
@@ -141,11 +140,11 @@ Issue/label/link/workflow/maintenance packages (journey behavior);
 
 ## Success / Exit Criteria
 
-- [ ] All eighteen tasks plus recovery sessions 3a-3d, 9a, 16a, and 16b complete with exact-command evidence.
-- [ ] Every accepted VAL has a phase-end outcome with cited evidence.
-- [ ] Complete standalone Issue journey passes and survives rebuild unchanged.
-- [ ] Universal formatters/flags/dependency, promised stubs, and retired Issue fields are absent.
-- [ ] Fail-closed V1 authority still rejects; no Phase 21 capability is advertised.
+- [x] All eighteen tasks plus recovery sessions 3a-3d, 9a, 16a, and 16b complete with exact-command evidence.
+- [x] Every accepted VAL has a phase-end outcome with cited evidence.
+- [x] Complete standalone Issue journey passes and survives rebuild unchanged.
+- [x] Universal formatters/flags/dependency, promised stubs, and retired Issue fields are absent.
+- [x] Fail-closed V1 authority still rejects; no Phase 21 capability is advertised.
 - [ ] Final QA and Human checklist have no unresolved blocking outcome.
 
 ## Next Planning Checkpoint

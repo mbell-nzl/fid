@@ -5,13 +5,13 @@
 
 ## Project state
 
-**Phase 20 is in final QA: Tasks 1-18 and every bounded review through
-`review-6` are complete.** `final-review.md` is REPAIR on MF-01 report
-conformance and MF-02 Task 18 integration placement. A current canonical sweep
-leaves nine MF-01 reports: Tasks 3k, 3l, 4, 5, 6, 7, 8, 9, and 9a. DEC-150
-integrates DEC-149's workflow repair and resolves ESC-20-021 under direct Human
-authority. No product, architecture, data-model, public-interface, dependency,
-or workflow decision is open.
+**Phase 20 deterministic QA is complete.** `final-review-3.md` resolves MF-01
+and MF-02: all named reports pass canonical report-lint, Task 18 runs in the
+dedicated real-process integration suite, and the full phase gate passes.
+VAL-001..037 and VAL-039..046 pass; only Human-owned VAL-038 remains. DEC-150
+integrated DEC-149's workflow repair and closed ESC-20-021. No product,
+architecture, data-model, public-interface, dependency, or workflow decision
+is open.
 Phase 19 completed and wrapped on 2026-08-08. fid has no adopted project
 workspace or compatibility constituency.
 
@@ -102,9 +102,8 @@ explicit; `journal inspect` stays legacy rather than publishing V1 Event interna
    report-lint's byte-unsafe command comparison at `88b0377` and added the
    guarded control-conformance workflow at `92cb0f4`. Review 6 and Task 18 are
    complete.
-8. Final review is REPAIR. Nine MF-01 reports remain; DEC-147 re-timed Task
-   3k's repeated gate. DEC-149's workflow repair is integrated. MF-02 remains
-   Task 18's real-process integration journey.
+8. Fresh final re-review is PASS. MF-01 and MF-02 are resolved under DEC-150;
+   the three blank VAL-038 Human judgments are the only remaining phase check.
 9. Resolve Gate D3.2's exact Routine walking-skeleton boundary before Phase 21
    planning.
 

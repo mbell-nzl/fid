@@ -2251,3 +2251,58 @@ Human-approved and QA-plan acceptance is next._
 - Resolution authority: DEC-147
 - Continuing task: task-3k
 - Next recovery: task-3k | in-scope-implementation | task-scope | task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k | 4
+### 2026-08-21 21:30 TASK-RECOVERY task-3k
+
+- Source: TRG-20-020 / DEC-147
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-20-020 / DEC-147
+- Triage disposition: N/A
+- Trigger signature: task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- Forbidden changes: product behavior, task-3k.md, report-lint.sh, command semantics, evidence semantics, dependencies, thresholds, and historical failed or UNVERIFIED evidence
+- Originating report: N/A
+- Exact verification: go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...; go build -o /tmp/fid ./cmd/fid
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: DEC-149 maintenance commit 74ea3ff0dafb4a778c1fea0c17af320a26e8e46c and DEC-150 direct-recovery authority are integrated; Task 3k evidence commit 14482225a59d0b1c71fe95163187088207a02a1d is checked out and clean
+- Phase worktree: /home/mark/projects/fid on branch phase-20; clean before transactional ledger append
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - verify the amended seven-command gate and canonical committed report
+- Next action: verify Task 3k attempt 4 and renew its completion before final-QA re-review
+- Human attention required: no
+
+### 2026-08-21 21:42 REPAIR task-3k
+
+- Trigger signature: task-3k:final-qa:qa-rework:MF-01-report-lint-task-3k
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY task-3k attempt 4 at evidence commit 14482225a59d0b1c71fe95163187088207a02a1d
+- Ending checkpoint: amended seven-command gate terminated successfully; canonical Task 3k report is committed and report-lint returns OUTCOME COMPLETE
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid passed with cmd/fid token ok github.com/mbell-nzl/fid/cmd/fid 1028.711s (terminated exit_code: 0); exact Task 3k report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0); the remaining amended commands also passed with fresh observed terminations recorded in the report
+- Next checkpoint: renew Task 3k completion and perform the fresh final-QA re-review authorized by DEC-150
+
+### 2026-08-21 21:43 TASK task-3k COMPLETE
+
+- Report: project-docs/docs/phases/phase-20/tasks/task-3k-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: bec40c86d49932c862079aa67163003cab6a62ee - verified via git rev-parse --verify (terminated exit_code: 0), subject matched test(claims): make expiry time deterministic
+- Report finalization: 14482225a59d0b1c71fe95163187088207a02a1d - canonical attempt-4 evidence and direct final-QA report repair
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-21 22:05 REVIEW review-7c
+
+- Path: project-docs/docs/phases/phase-20/qa/final-review-3.md
+- Tasks covered: phase-end QA; all MF-01 report repairs and MF-02 Task 18 integration repair
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-7
+- Must-fix: 0 / Improvement: 1 / blocker candidates: 0
