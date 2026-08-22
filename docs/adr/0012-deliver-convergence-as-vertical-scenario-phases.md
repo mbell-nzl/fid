@@ -77,6 +77,21 @@ The accepted thinness decisions are:
 evaluates it; fid receives only the activated, approved operational values
 compiled from kit policy.
 
+## Phase 21 terminal-gate amendment - 2026-08-22
+
+The one gate-evidence Obligation guards the selected Issue's terminal-success
+transition before it also guards Work Envelope completion. The representative
+journey therefore executes the registered Gate, records and links its Receipt,
+and obtains a satisfied evaluation before terminal Issue mutation. Completion
+then independently re-evaluates the same current facts and requires the
+terminal-success Issue. One shared evaluator prevents the two guards from
+becoming separate authorities.
+
+The post-rebuild half is a parity proof, not a second journey mutation: rebuild
+replays the one set of durable facts, then repeats reads, evaluation,
+completion state, resume, export, and negative conformance. It does not create
+a second one-revision Envelope in the project.
+
 ## Consequences
 
 - architecture is still developed in dependency order inside a phase, but

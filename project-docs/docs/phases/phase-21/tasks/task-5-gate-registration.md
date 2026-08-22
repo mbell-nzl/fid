@@ -2,58 +2,61 @@
 
 ## Objective
 
-Create immutable Gate Registrations only from finalized activated Gate Definition values. Bind definition and execution policy to project, repository, and scope before any Envelope can reference the Registration.
+Register and resolve one immutable Gate Definition only from finalized Activation values. Validate the full portable policy at registration and version deterministic bindings.
 
 ## Validation Contract Coverage
 
-- VAL-012: Gate Registration resolves activated values and precedes Envelope creation.
-- VAL-013: Registration content and binding are immutable and versioned.
+- VAL-016: owning observable in the Phase 21 validation contract.
+- VAL-017: owning observable in the Phase 21 validation contract.
+- VAL-018: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Do not execute processes in this task.
-- Registration accepts no argv, cwd, environment, limits, or policy override from the caller.
-- Policy validation is structural here; portable enforcement lands in task 13.
+- Registration precedes Envelope creation.
+- No runtime argv/policy override is accepted.
+- Stronger unsupported restrictions reject; no OS-containment claim.
 
 ## Scope
 
 ### Files To Create Or Modify
 
 - `internal/evidence/`
+- `internal/workflow/`
+- `internal/policy/`
 - `internal/cli/`
 - `cmd/fid/`
-- `internal/journal/`
-- `internal/db/`
 - `project-docs/docs/phases/phase-21/tasks/task-5-done.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §5`
-- `project-docs/specs/03_TRD_SCHEMA.md §8.2`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/specs/04_TRD_CONFIG.md`
 
 ### Out Of Scope
 
-- Executor implementation, Attempts, Receipts, and Evidence linking.
+- Process execution and live output.
 
 ## Acceptance Criteria
 
-- [ ] Only a finalized active definition registers and inline/unactivated input rejects. (VAL-012)
-- [ ] Same content/binding reuses identity; changed digest creates a new version without mutation. (VAL-013)
+- [ ] Only finalized activated Definitions register. (VAL-016)
+- [ ] Each unsupported policy field rejects without persistence. (VAL-017)
+- [ ] Same binding reuses identity; changed binding versions immutably. (VAL-018)
 
 ## First Failing Test
 
-Add a failing registration-order test proving inline and unfinalized definitions cannot register.
+Add the failing activated-source/order test, then policy and version tables.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-5-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-5-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/evidence ./internal/cli ./cmd/fid/...
+go test -race ./internal/evidence ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -61,11 +64,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-5-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after task 4 closes with required evidence.
+- Start after task 4 closes.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-5-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

@@ -1,25 +1,25 @@
-# Phase 21 - Task 3: Capability Discovery Matrix
+# Phase 21 - Task 3: Capability Discovery
 
 ## Objective
 
-Implement capability discovery as a deterministic binary/migration-derived read. Return the exact 12-row availability, limit, and trust-source matrix and reject any caller attempt to upgrade or weaken it.
+Implement the migration-derived capability projection and `fid capabilities` transport. Keep every incomplete semantic capability unavailable with exact limits and trust sources.
 
 ## Validation Contract Coverage
 
-- VAL-007: discovery returns the complete exact capability matrix.
-- VAL-008: incomplete capabilities remain unavailable without caller override.
+- VAL-009: owning observable in the Phase 21 validation contract.
+- VAL-010: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Walking-skeleton command existence does not imply semantic capability availability.
-- Rows sort by capability ID and use canonical `fid-cli.v1` output.
-- No environment/config toggle changes semantic availability.
+- Availability is binary; there is no partial or experimental member.
+- Caller input cannot override binary/migration-derived rows.
+- Use exact operation/result/error contracts from `public-interface.md`.
 
 ## Scope
 
 ### Files To Create Or Modify
 
-- `internal/project/`
+- `internal/workflow/`
 - `internal/cli/`
 - `cmd/fid/`
 - `project-docs/docs/phases/phase-21/tasks/task-3-done.md`
@@ -27,31 +27,32 @@ Implement capability discovery as a deterministic binary/migration-derived read.
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §2`
-- `project-docs/specs/02_TRD.md §3`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/specs/02_TRD.md §3.1`
 
 ### Out Of Scope
 
-- Activation and any unavailable capability implementation.
+- Activation lifecycle and capability qualification beyond the matrix.
 
 ## Acceptance Criteria
 
-- [ ] Clean, restarted, and rebuilt projects return the exact matrix. (VAL-007)
-- [ ] Every override/unknown schema request fails typed and cannot enable a row. (VAL-008)
+- [ ] Discovery emits every exact sorted row. (VAL-009)
+- [ ] Unavailable rows remain false despite internal operations. (VAL-010)
 
 ## First Failing Test
 
-Add a failing command golden test for all 12 rows and their deterministic order.
+Add a failing full-matrix JSON golden and a false-capability conformance table.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-3-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-3-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/project ./internal/cli ./cmd/fid/...
+go test -race ./internal/workflow ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -59,11 +60,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-3-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 1-2 closes with required evidence.
+- Start after tasks 1-2 close. QA Review window 1 follows tasks 1-3.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-3-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

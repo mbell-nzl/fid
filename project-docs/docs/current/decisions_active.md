@@ -71,6 +71,14 @@
   import belong to Phase 22; one gate-evidence Obligation and only enforceable
   executor policy values land in Phase 21. Incomplete capabilities remain
   unavailable.
+- **Gate D3.2 terminal amendment (DEC-156):** gate execution, qualifying
+  Receipt linking, and satisfied Evidence precede the terminal-success Issue
+  transition. Envelope completion later re-evaluates the same Obligation and
+  requires that terminal Issue while reusing one shared Obligation evaluator.
+- **Phase 21 planning correction (DEC-157):** the complete wire contract and
+  V1 convergence inventory are protected planning authorities; public enums
+  are kebab-case; final bootstrap has no role Effect; task 20 owns removal/0014
+  before task 21 final-schema parity.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -88,13 +96,13 @@ review of the exact contract, validation contract, task pack, and phase brief.
 | CF-008 | Candidate Issue-tracker vocabulary improvement; schedule only with a retained cancellation use case. |
 | CF-017 | Cancel. `internal/dev` is displaced role choreography. |
 | CF-018 | Keep as trigger-based engineering debt if `internal/sqlquery` is reopened; `fid sql` remains diagnostic only. |
-| CF-020 | Scheduled Phase 21 task 8 / VAL-062: Event sequence replaces synthetic future occurrence time when the retained Issue/Event path converts to v2. |
+| CF-020 | Scheduled Phase 21 task 8 / VAL-026: Event sequence replaces synthetic future occurrence time when the retained Issue/Event path converts to v2. |
 | CF-022 | Cancel. Generic Markdown formatter characterization is retired. |
 | CF-023 | Reassess only as temporary repository-delivery tooling while the V1 development procedure remains active; it is not product scope. |
-| CF-024 | Scheduled Phase 21 task 20 / VAL-064: exercise the accepted 100k-Event rebuild target under the evidence event load. |
+| CF-024 | Scheduled Phase 21 task 21 / VAL-083: exercise the accepted 100k-Event rebuild target under the evidence event load. |
 | CF-026a | Candidate tracker/workflow inspection projection; no committed slice. |
 | CF-026b | Candidate Issue-workflow lifecycle design; requires a decision before scheduling. |
-| CF-027 | Scheduled Phase 21 task 8 / VAL-063: decompose reopened `internal/issues/create.go`; the `writeMarkdown` half remains cancelled. |
+| CF-027 | Scheduled Phase 21 task 8 / VAL-027: decompose reopened `internal/issues/create.go`; the `writeMarkdown` half remains cancelled. |
 | CF-028 | Split `internal/bootstrap/init.go` staging/fsync helpers only when a later change reopens that file; the trigger did not fire after Task 3b. |
 | CF-029 | Extend evidence-token validation to QA review artifacts while the V1 delivery workflow remains active. |
 | CF-030 | Improve `report-lint.sh` rejected-token diagnostics so they state the accepted token shape. |

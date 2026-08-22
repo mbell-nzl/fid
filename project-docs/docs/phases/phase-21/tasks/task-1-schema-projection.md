@@ -2,20 +2,17 @@
 
 ## Objective
 
-Land the accepted 0013 operational-kernel schema and projection row adapters
-for all Phase 21 aggregates. Prove exact up/down/up inventory before Event and
-domain operations begin populating the tables.
+Implement only migration 0013 and its schema/constraint integration coverage for the additive Phase 21 operational kernel. Prove the exact reversible inventory before any domain family writes the new tables; Event application and domain row adapters begin in task 2 or their owning domain task.
 
 ## Validation Contract Coverage
 
-- VAL-005: migration 0013 implements the accepted additive schema sequence.
+- VAL-001: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Implement only 0013 now. Do not create migration 0014 before task 21 because
-  the normal migration runner would apply its destructive V1 removal.
-- Use `work_claims` until task 21 removes legacy `claims`.
-- Do not add tables for any deferred capability.
+- Do not create or apply migration 0014 in this task.
+- Use `work_claims` for the collision-free generic table.
+- Task 1 remains unauthorized pending Human plan approval, a Ready QA plan, and Tech Lead refinements.
 
 ## Scope
 
@@ -29,27 +26,25 @@ domain operations begin populating the tables.
 ### Files To Read For Context
 
 - `project-docs/specs/03_TRD_SCHEMA.md §8.2`
-- `project-docs/docs/phases/phase-21/contracts.md §§14,15`
+- `project-docs/docs/phases/phase-21/contracts.md`
+- `project-docs/docs/phases/phase-21/public-interface.md`
 
 ### Out Of Scope
 
-- Domain validation, CLI commands, and V1 removal.
+- Event application, domain row adapters/commands, migration 0014, and V1 deletion.
 
 ## Acceptance Criteria
 
-- [ ] Fresh 0013 up/down/up schema inventory matches §8.2 exactly. (VAL-005)
-- [ ] Projection adapters apply/read representative valid and invalid rows
-  against the accepted constraints. (VAL-005)
-- [ ] No deferred table or second authority model is introduced. (VAL-005)
+- [ ] 0013 up/down/up matches the accepted tables, indexes, checks, and foreign keys exactly. (VAL-001)
+- [ ] Representative row adapters accept valid rows and reject invalid constraints. (VAL-001)
 
 ## First Failing Test
 
-Add a failing migration inventory and up/down/up integration test for migration
-0013, including proof that 0014 is not yet present or applied.
+Add the failing 0013 schema inventory and up/down/up migration integration test.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-1-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-1-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
@@ -64,11 +59,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-1-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- No other Developer task may start before this schema task closes.
+- None; this is the first ordered task.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-1-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

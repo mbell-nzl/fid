@@ -1,19 +1,21 @@
-# Phase 21 - Task 12: Execution-Bound Transition Foundation
+# Phase 21 - Task 12: Shared Evaluator And Nonterminal Transition
 
 ## Objective
 
-Enforce the complete active Envelope, Actor, Claim, Run, repository, expected Issue revision, workflow edge, and applicable-Obligation predicate for execution-bound transitions. Return every independent reason without partial effects and expose the durable facts needed by later resume.
+Implement the execution-bound nonterminal transition predicate and one shared Obligation evaluator used fail-closed by both terminal-success transition and completion. Positive trusted Evidence remains Group 2 work.
 
 ## Validation Contract Coverage
 
-- VAL-026: execution-bound transition succeeds only when every accepted condition qualifies.
-- VAL-027: rejected transitions are atomic and return every reason in fixed order.
+- VAL-038: owning observable in the Phase 21 validation contract.
+- VAL-039: owning observable in the Phase 21 validation contract.
+- VAL-040: owning observable in the Phase 21 validation contract.
+- VAL-041: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Use the shared authority and evaluation vocabulary; do not invent a second readiness model.
-- Keep deterministic reason precedence from contract §10.
-- CF-032 applies because `BuildIssueRevisionEffects` is reopened: add invalid-input tests before implementation changes.
+- Terminal-success cannot succeed in this task because qualifying Evidence does not exist yet.
+- Return all reasons in fixed kebab-case order with atomic failure.
+- Apply CF-032 invalid revision-effect tests first.
 
 ## Scope
 
@@ -29,27 +31,28 @@ Enforce the complete active Envelope, Actor, Claim, Run, repository, expected Is
 
 ### Files To Read For Context
 
-- `project-docs/docs/phases/phase-21/contracts.md §§7,10`
-- `project-docs/specs/01_PRD.md PRD-WF-003..005`
-- `project-docs/docs/current/decisions_active.md CF-032`
+- `project-docs/docs/phases/phase-21/contracts.md §§6,7,10`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/docs/phases/phase-21/v1-convergence-inventory.md`
 
 ### Out Of Scope
 
-- Evidence linking/freshness, final completion, and resume rendering.
+- Evidence linking, positive terminal transition, and completion mutation.
 
 ## Acceptance Criteria
 
-- [ ] Exactly the all-qualifying condition row advances Issue once. (VAL-026)
-- [ ] Every failing row returns all independent reasons in exact order and no Event/revision change. (VAL-027)
-- [ ] CF-032 invalid revision-effect inputs are covered before code change. (VAL-027)
+- [ ] Only all-qualified nonterminal transition commits. (VAL-038)
+- [ ] Failures return all reasons with no effect. (VAL-039)
+- [ ] Both guarded actions share the same unsatisfied evaluator result. (VAL-040)
+- [ ] Invalid revision effects reject. (VAL-041)
 
 ## First Failing Test
 
-First add CF-032 failing invalid-input tests, then the full execution-bound transition condition matrix.
+Add CF-032 tests first, then the nonterminal predicate and dual-call fail-closed evaluator goldens.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-12-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-12-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
@@ -65,11 +68,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-12-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 7 and 10-11 closes with required evidence.
+- Start after tasks 7 and 10-11 close. QA Review window 4 and the independent Group 1 checkpoint follow; task 13 cannot start without PASS.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-12-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

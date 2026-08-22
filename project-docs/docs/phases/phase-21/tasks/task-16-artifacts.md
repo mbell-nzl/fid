@@ -1,61 +1,62 @@
-# Phase 21 - Task 16: Safe Content-Addressed Artifacts
+# Phase 21 - Task 16: Safe Referenced Artifacts
 
 ## Objective
 
-Collect only declared safe regular-file Artifacts after gate termination, sanitize and atomically publish them by SHA-256 identity, and implement explicit availability verification without erasing provenance. Fail every unsafe/missing/racy candidate closed.
+Retain declared safe regular files atomically by sanitized content digest, reject every unsafe candidate, and observe availability changes without identity loss.
 
 ## Validation Contract Coverage
 
-- VAL-040: safe Artifacts publish atomically by sanitized content identity.
-- VAL-041: unsafe candidates reject and cannot satisfy material policy.
-- VAL-042: availability changes preserve Artifact/Receipt/Evidence identity.
+- VAL-055: owning observable in the Phase 21 validation contract.
+- VAL-056: owning observable in the Phase 21 validation contract.
+- VAL-057: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Revalidate containment and file type after termination and while copying.
-- Availability is only `available` or `missing`; pruning/expiry automation is deferred.
-- `artifact verify` may append an availability Event only when observed state changes.
+- Resolve and revalidate containment/symlinks before and during copy.
+- Rejected candidates never satisfy required material.
+- Availability changes are observation Events, not identity mutation.
 
 ## Scope
 
 ### Files To Create Or Modify
 
-- `internal/evidence/` - Artifact storage and executor collection files.
+- `internal/evidence/`
+- `internal/config/`
+- `internal/journal/`
 - `internal/cli/`
 - `cmd/fid/`
-- `internal/journal/`
-- `internal/db/`
 - `project-docs/docs/phases/phase-21/tasks/task-16-done.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §9`
-- `project-docs/specs/04_TRD_CONFIG.md §4`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/specs/04_TRD_CONFIG.md`
 
 ### Out Of Scope
 
-- Retention automation, external Artifact stores, and Evidence evaluation.
+- Evidence qualification and pruning.
 
 ## Acceptance Criteria
 
-- [ ] Declared safe files publish atomically with exact digest/metadata. (VAL-040)
-- [ ] Every unsafe path/type/race/size case rejects and stays unsatisfied. (VAL-041)
-- [ ] Verify loss/restoration changes availability only. (VAL-042)
+- [ ] Safe Artifact bytes/digest/metadata publish atomically. (VAL-055)
+- [ ] Every unsafe candidate rejects and cannot satisfy. (VAL-056)
+- [ ] Loss/restoration toggles availability only. (VAL-057)
 
 ## First Failing Test
 
-Add a failing Artifact table test for safe content followed by traversal, symlink, special-file, size, and changed-during-copy cases.
+Add failing safe-content, adversarial candidate, and loss/restoration fixtures.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-16-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-16-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/evidence ./internal/cli ./cmd/fid/...
+go test -race ./internal/evidence ./internal/config ./internal/journal ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -63,11 +64,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-16-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after task 15 and QA Review 5 closes with required evidence.
+- Start after task 15 closes.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-16-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

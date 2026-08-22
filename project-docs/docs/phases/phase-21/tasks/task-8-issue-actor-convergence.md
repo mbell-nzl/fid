@@ -1,25 +1,20 @@
-# Phase 21 - Task 8: Issue Actor And Idempotency Convergence
+# Phase 21 - Task 8: Issue Actor And Event Convergence
 
 ## Objective
 
-Convert retained standalone Issue mutations and execution-aware Issue transition request plumbing to Event v2, `--actor`, and durable idempotency without granting kit trust. Preserve the accepted Phase 20 Issue contract outside the explicit Phase 21 changes.
+Convert retained Issue create/update/transition transport and Events to `--actor`, durable idempotency, and Event v2. Apply the same-clock ordering and reopened creation-size carry-forwards without changing the standalone Issue contract.
 
 ## Validation Contract Coverage
 
-- VAL-001: converted Issue Events use Event v2.
-- VAL-003: retryable Issue mutations replay durably.
-- VAL-020: standalone Issue attribution remains available but untrusted.
-- VAL-062: burst Issue Events use observed time without synthetic future dates.
-- VAL-063: reopened Issue creation code meets structure budgets with parity.
+- VAL-025: owning observable in the Phase 21 validation contract.
+- VAL-026: owning observable in the Phase 21 validation contract.
+- VAL-027: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Standalone attribution is a project-local fact and cannot resolve an Activation profile.
-- Preserve Phase 20 JSON shapes and revision rules except the exact Actor/idempotency additions.
-- Do not implement the execution-bound transition decision until task 12.
-- CF-020 resolves ordering through Event/aggregate sequence, not future-dated
-  occurrence timestamps; CF-027 requires behavior-preserving `create.go`
-  decomposition in this task.
+- Standalone Actor is attribution only; Envelope-bound protected authority still uses task 7.
+- Do not implement positive terminal-success Evidence in this task.
+- CF-020 and CF-027 are triggered.
 
 ## Scope
 
@@ -27,45 +22,41 @@ Convert retained standalone Issue mutations and execution-aware Issue transition
 
 - `internal/issues/`
 - `internal/activity/`
-- `internal/maintenance/`
-- `internal/cli/`
-- `cmd/fid/issue*.go`
 - `internal/journal/`
+- `internal/cli/`
+- `cmd/fid/`
 - `project-docs/docs/phases/phase-21/tasks/task-8-done.md`
 
 ### Files To Read For Context
 
-- `project-docs/docs/phases/phase-21/contracts.md §§1,3,12,14`
-- `project-docs/docs/phases/phase-20/contracts.md`
+- `project-docs/docs/phases/phase-21/public-interface.md §4.1`
+- `project-docs/docs/phases/phase-21/v1-convergence-inventory.md`
+- `project-docs/docs/current/decisions_active.md`
 
 ### Out Of Scope
 
-- Non-Issue retained mutations, V1 policy deletion, and transition authorization.
+- Other retained mutations, generic Claims, and terminal Evidence guard.
 
 ## Acceptance Criteria
 
-- [ ] Issue mutations emit v2 Actor/idempotency facts and replay once. (VAL-001, VAL-003)
-- [ ] Standalone `--actor` persists attribution but cannot authorize kit operations. (VAL-020)
-- [ ] Burst writes remain current without synthetic future timestamps. (VAL-062)
-- [ ] Reopened Issue creation code meets the recorded structure targets with unchanged conformance behavior. (VAL-063)
-- [ ] Unchanged Phase 20 Issue behavior remains conformant. (VAL-020)
+- [ ] Issue mutations match exact Actor/key/Event/replay surface and reject `--by`. (VAL-025)
+- [ ] Same-clock Events are nonfuture and sequence-ordered. (VAL-026)
+- [ ] Creation file/function targets are met without behavior drift. (VAL-027)
 
 ## First Failing Test
 
-First add failing fixed-clock burst/recent-activity and creation-structure
-guards, then the Issue-create retry test asserting Event-v2 Actor provenance
-and no kit authority.
+Add the shared Issue v2/replay corpus, fixed-clock test, and size assertion before conversion.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-8-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-8-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/issues ./internal/activity ./internal/maintenance ./internal/cli ./cmd/fid/...
+go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -73,11 +64,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-8-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after task 7 closes with required evidence.
+- Start after tasks 2 and 7 close.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-8-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

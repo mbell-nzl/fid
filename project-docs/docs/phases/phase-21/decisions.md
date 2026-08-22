@@ -78,20 +78,70 @@
 - **Date:** 2026-08-22
 - **Context:** Phase planning must schedule every carry-forward whose trigger
   the slice fires and explicitly re-defer the rest.
-- **Decision:** Schedule CF-020 and CF-027 in task 8 as VAL-062/063: Event v2
+- **Decision:** Schedule CF-020 and CF-027 in task 8: Event v2
   sequence replaces synthetic future occurrence time as the ordering mechanism,
   and reopened `internal/issues/create.go` is decomposed within the recorded
   size targets without behavior change. Schedule CF-032 in task 12 before
   `BuildIssueRevisionEffects` changes. Schedule CF-024's 100k-Event rebuild
-  target in task 20 as VAL-064. Re-defer CF-008, CF-018, CF-026a, CF-026b, and
+  target in task 21. Re-defer CF-008, CF-018, CF-026a, CF-026b, and
   CF-028 because their product/file triggers do not fire. Re-defer CF-023,
   CF-029, and CF-030 as temporary V1 delivery-tool improvements rather than
   mixing them into product tasks. CF-017/022/031 remain cancelled/closed.
-- **Consequences:** Tasks 8, 12, and 20 carry explicit tests/evidence. No
+- **Consequences:** Tasks 8, 12, and 21 carry explicit tests/evidence. No
   unscheduled triggered debt is hidden in the phase brief, and no workflow
   tooling task dilutes the one-Issue product slice.
-- **Refs:** `decisions_active.md`; DEC-152; task 8; task 12; task 20;
-  VAL-062..064.
+- **Refs:** `decisions_active.md`; DEC-152; task 8; task 12; task 21.
+
+### DEC-156: Gate evidence guards the terminal-success Issue transition
+
+- **Date:** 2026-08-22
+- **Context:** The accepted DEC-153 walking skeleton evaluated gate evidence,
+  but its journey ordering allowed an execution-bound Issue transition before
+  Receipt linking and did not distinguish a nonterminal transition from the
+  terminal-success transition. The Human supplied protected direction that
+  the one gate-evidence Obligation guards terminal success.
+- **Decision:** For an Envelope-bound Issue, the terminal-success transition
+  is permitted only after fid executes the registered Gate, records and links
+  its qualifying Receipt, and the gate-evidence Obligation evaluates
+  `satisfied`. Envelope completion is a later operation that re-evaluates the
+  same Obligation and also requires the selected Issue to be terminal-success.
+  Both operations call one shared Obligation evaluator and return the same
+  deterministic Obligation reason values; their separate action predicates
+  remain outside that evaluator. A nonterminal execution-bound transition may occur earlier
+  under the accepted Actor/Envelope/Claim/Run predicates. DEC-153 remains an
+  accurate historical decision and is amended, not rewritten.
+- **Consequences:** Task 12 builds the shared fail-closed evaluator boundary
+  and the nonterminal transition. Task 17 supplies trusted Evidence inputs.
+  Task 18 owns the positive terminal transition and completion reuse. The
+  real-process journey mutates once, runs the Gate, links/evaluates Evidence,
+  transitions terminal-success, completes, then rebuilds and repeats reads
+  and negative checks without creating a second Envelope revision.
+- **Refs:** Human Phase 21 planning correction 2026-08-22; PRD-WF-004;
+  PRD-ENV-008; `gate-d3-2-proposal.md`; `contracts.md` §§6, 10, 16.
+
+### DEC-157: Complete Phase 21 interface and convergence sequencing
+
+- **Date:** 2026-08-22
+- **Context:** The first planning pack left operation inputs/results/errors,
+  live frame payloads, bootstrap convergence, V1 caller dispositions, and
+  several multi-observable validation rows incomplete. Its checkpoint also
+  required final V1 absence before the removal task.
+- **Decision:** Adopt `public-interface.md` as the complete final-binary wire
+  contract and `v1-convergence-inventory.md` as the live caller/reader/writer
+  disposition. Closed public enum members use lowercase kebab-case; opaque
+  IDs remain identifiers. `project.initialized` is Event v2 with service Actor,
+  aggregate sequence 1, null repository/idempotency, and zero domain Effects;
+  it never writes `roles`. Migration 0014 and V1 removal are task 20, before
+  task 21 final-schema maintenance/init/rebuild/export parity. The Group 1
+  checkpoint proves isolation from explicitly listed temporary V1 state, not
+  its premature absence. Atomic validation assertions replace bundled rows.
+- **Consequences:** `contracts.md`, canonical specs, DDL checks, task specs,
+  phase brief, and QA handoff all cite the two new authorities. Task 1 remains
+  unauthorized until Human approval and a Ready QA plan are accepted. No
+  runtime dependency or OS-containment claim is added.
+- **Refs:** Human Phase 21 planning correction 2026-08-22;
+  `public-interface.md`; `v1-convergence-inventory.md`;
+  `qa/validation-contract.md`; `qa/group-1-checkpoint-contract.md`.
 
 ## Spec Sync Verdict
 
@@ -101,17 +151,17 @@ verdicts are completed at phase wrap-up.
 | Spec | Planning verdict | Evidence / Reference |
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending wrap audit | - |
-| `01_PRD.md` | verified-no-planning-change | Existing requirements remain target baseline requirements; DEC-153 changes slice ownership/availability, not requirement semantics. |
-| `02_TRD.md` | touched: see DEC-154 | Binary capability availability, Activation trust, idempotency, and the portable executor boundary are explicit. |
-| `03_TRD_SCHEMA.md` | touched: see DEC-154 | Exact 0013/0014 DDL/down behavior and Event-v2 fixture authority are accepted for review. |
-| `04_TRD_CONFIG.md` | touched: see DEC-154 | Timeout ceiling, closed environment, redaction, safe content-addressed Artifact storage, and availability are aligned. |
-| `05_DESIGN_PLAN.md` | touched: see DEC-154 | Exact live NDJSON/control/terminal behavior replaces the D3 placeholder. |
-| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-154 | Accepted leaves, `--actor`, `--group-by`, input, streaming, and deferred leaf absences are explicit. |
-| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-153 | Gate Registration now precedes Envelope creation; Phase 21 export is create/validate only. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152 and DEC-154 | Three-task cadence, mandatory independent checkpoint, fresh feasibility, and task-local report lint are explicit. |
+| `01_PRD.md` | touched: see DEC-156 | Phase 21 qualification makes the terminal-success Issue transition and later Envelope completion independently evaluate the same gate-evidence Obligation. |
+| `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157 | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, and executor boundary are explicit. |
+| `03_TRD_SCHEMA.md` | touched: see DEC-157 | Exact migrations, kebab checks, displaced rule deletion, and role-free bootstrap fixture are accepted for review. |
+| `04_TRD_CONFIG.md` | touched: see DEC-157 | Exact public executor bounds agree with the closed input contract. |
+| `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157 | Checkpoint isolation, removal-before-parity, cadence, feasibility, and report lint are explicit. |
 | `09_AI_WORKFLOW.md` | verified-no-planning-change | DEC-152 applies existing Heavy-mode and recovery rules without changing them. |
-| `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153 | Gate closed; one Heavy Phase 21/two groups; Attention/import ownership corrected. |
-| `GLOSSARY.md` | touched: see DEC-153 | Routine and capability availability are now unambiguous. |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
+| `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
 
 ## Triage-Log Audit
 

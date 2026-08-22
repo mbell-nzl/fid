@@ -1,58 +1,60 @@
-# Phase 21 - Task 7: Envelope Authority Evaluator
+# Phase 21 - Task 7: Generic Authority Evaluator
 
 ## Objective
 
-Implement the generic authority evaluator that intersects an activation-resolved Actor with exact Envelope grants. Make absence and every dimension mismatch deny atomically, without consulting V1 roles or recalculating kit policy.
+Evaluate exact Envelope Grants against the active Activation-resolved Actor and deny by default. Prove role-shaped project attribution cannot satisfy any protected operation.
 
 ## Validation Contract Coverage
 
-- VAL-018: exact Actor/grant matches authorize only their recorded scope.
-- VAL-019: missing, forged, inactive, expired, or mismatched authority denies without effects.
+- VAL-023: owning observable in the Phase 21 validation contract.
+- VAL-024: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- The evaluator accepts resolved Actor facts, never caller capabilities.
-- Absence is deny and all failures use stable typed reasons.
-- Do not remove V1 policy callers until their retained mutations are converted in tasks 8-9.
+- Absence is deny and every binding dimension must match.
+- Do not consult `roles`, legacy role action maps, or Actor-looking historical strings.
+- Retain `internal/policy` as the generic evaluator boundary.
 
 ## Scope
 
 ### Files To Create Or Modify
 
-- `internal/policy/` - replace V1 roles with the generic authority evaluator.
+- `internal/policy/`
 - `internal/workflow/`
+- `internal/validation/`
 - `internal/cli/`
+- `cmd/fid/`
 - `project-docs/docs/phases/phase-21/tasks/task-7-done.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §6`
-- `project-docs/specs/01_PRD.md PRD-AUTH-001..007`
+- `project-docs/docs/phases/phase-21/v1-convergence-inventory.md`
+- `project-docs/specs/01_PRD.md PRD-AUTH-001..004`
 
 ### Out Of Scope
 
-- Protected Human authority, kit risk evaluation, and caller migration.
+- Retained standalone mutation conversion and V1 policy deletion.
 
 ## Acceptance Criteria
 
-- [ ] The complete positive decision table authorizes exact matches. (VAL-018)
-- [ ] Every independent mismatch denies with no Event/effect. (VAL-019)
-- [ ] No V1 role lookup or caller role string participates. (VAL-018, VAL-019)
+- [ ] Only the all-match Grant row authorizes. (VAL-023)
+- [ ] Every role-looking attribution remains non-authoritative. (VAL-024)
 
 ## First Failing Test
 
-Add a failing table-driven authority test varying one grant/Actor dimension per row.
+Add the failing one-dimension-at-a-time Grant matrix and seeded-role adversarial test.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-7-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-7-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/policy ./internal/workflow
+go test -race ./internal/policy ./internal/workflow ./internal/validation ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -60,11 +62,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-7-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 4-6 and QA Review 2 closes with required evidence.
+- Start after tasks 4 and 6 close.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-7-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

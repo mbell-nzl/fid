@@ -95,10 +95,14 @@ and only the remaining Human checks or approvals. Omit routine Run narration.
   Response Envelope and no extra JSON follows it.
 - Payload is UTF-8 with invalid bytes replaced and control bytes JSON-escaped.
   Redaction precedes framing, excerpting, hashing, retention, errors, and Human
-  rendering. A combined output ceiling emits one `output_truncated` control
+  rendering. A combined output ceiling emits one `output-truncated` control
   frame while fid continues draining and observes process termination.
 - Human mode prefixes sanitized output by stream, renders no raw control byte,
   and derives its final summary from the same terminal result.
+- The exact stdout/stderr/control/terminal payload union, terminal outcomes,
+  exit classification, and Human obligations are fixed by
+  `../docs/phases/phase-21/public-interface.md` section 8; this design text does
+  not introduce an alternate rendering or frame schema.
 
 ## 6. Errors And Stops
 
@@ -136,4 +140,4 @@ ADR-0011. They are not represented by placeholder commands or speculative
 dependencies. The first supported CLI must prove whether concise semantic
 projections are sufficient.
 
-*Last updated: 2026-08-22 (Phase 21 live-output planning amendment)*
+*Last updated: 2026-08-22 (Phase 21 DEC-157 live-contract amendment)*

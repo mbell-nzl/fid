@@ -70,6 +70,10 @@ replaces the V1 implementation inside `internal/claims`; and Gate
 Registration, executor, Receipt, Artifact, and Evidence logic are owned by
 `internal/evidence`. The slice does not create parallel `internal/envelopes`,
 `internal/authority`, `internal/executor`, or `internal/artifacts` packages.
+`internal/bootstrap` and the init/rebuild adapters own the role-free
+`project.initialized` Event-v2 fixture. The generic evaluator in
+`internal/validation` is called by both terminal-success Issue transition and
+Envelope completion; neither adapter duplicates its rules.
 
 ## 3. Versioned Backend Capabilities
 
@@ -115,6 +119,12 @@ credential-name policy, redaction, and contained Artifact paths. It accepts
 only `sandbox:none`, `network:allowed`, and `write:allowed`; registration
 rejects stronger unsupported values. There is no automatic process/agent
 respawn or Run continuation.
+
+The complete Phase 21 wire surface, including closed input/result/error/live
+schemas and process exits, is
+`../docs/phases/phase-21/public-interface.md`. The live legacy caller and
+reader/writer disposition is
+`../docs/phases/phase-21/v1-convergence-inventory.md`.
 
 ## 4. Contract Rules
 
@@ -279,4 +289,4 @@ ADR-0011.
   physical DDL and Event payload are recorded in `03_TRD_SCHEMA.md` for that
   slice.
 
-*Last updated: 2026-08-09 (ADR-0011 target architecture)*
+*Last updated: 2026-08-22 (Phase 21 DEC-156/157 planning amendment)*

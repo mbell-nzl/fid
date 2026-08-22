@@ -2,63 +2,61 @@
 
 ## Objective
 
-Implement generic Claim acquire, renew, expiry, release, list, conflict,
-version, and idempotency semantics against `work_claims`. Replace the
-Issue-specific `internal/claims` implementation in place after generic
-behavior passes while retaining the table rename for task 21.
+Replace the Claim package behavior and CLI with exact generic acquire/renew/release/list operations under active Envelope authority. Use `work_claims` until migration 0014.
 
 ## Validation Contract Coverage
 
-- VAL-022: Claim lifecycle binds exact identities and versions idempotently.
-- VAL-023: one active mutation Claim per Issue and stale/wrong requests fail closed.
+- VAL-032: owning observable in the Phase 21 validation contract.
+- VAL-033: owning observable in the Phase 21 validation contract.
+- VAL-034: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- One-Issue mutation only; no supersession, parallel-scope proof, or recovery.
-- Use an injected clock for deterministic expiry tests.
-- Remove legacy Claim commands/actions after replacement tests pass, but retain
-  `internal/claims` as the generic owner and do not drop legacy `claims` yet.
+- One active mutation Claim per Issue; no force/supersession/recovery.
+- Exact Actor/worktree/version/TTL bindings are mandatory.
+- Old Issue claim/unclaim spelling is not retained as an alias.
 
 ## Scope
 
 ### Files To Create Or Modify
 
 - `internal/claims/`
+- `internal/policy/`
+- `internal/workflow/`
 - `internal/cli/`
 - `cmd/fid/`
-- `internal/journal/`
-- `internal/db/`
 - `project-docs/docs/phases/phase-21/tasks/task-10-done.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §7`
-- `project-docs/specs/01_PRD.md PRD-RUN-001..004`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/docs/phases/phase-21/v1-convergence-inventory.md`
 
 ### Out Of Scope
 
-- Claim supersession/recovery, parallel mutation, and migration 0014.
+- Final table rename/removal and recovery.
 
 ## Acceptance Criteria
 
-- [ ] Acquire/renew/expire/release/list round-trip exact bindings, versions, and replay. (VAL-022)
-- [ ] Concurrent/stale/wrong Actor/worktree cases reject with zero authorization/effects. (VAL-023)
-- [ ] Issue-specific Claim leaves/package are removed after generic parity. (VAL-022)
+- [ ] Acquire binds every accepted dimension and one-active invariant. (VAL-032)
+- [ ] Conflict/expiry/wrong-holder paths fail closed. (VAL-033)
+- [ ] Renew/release versioning and replay are exact. (VAL-034)
 
 ## First Failing Test
 
-Add a failing fake-clock Claim lifecycle table and concurrent same-Issue acquire test.
+Add failing acquire binding, conflict/expiry, and version lifecycle tables.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-10-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-10-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/claims ./internal/cli ./cmd/fid/...
+go test -race ./internal/claims ./internal/policy ./internal/workflow ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -66,11 +64,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-10-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 6-9 and QA Review 3 closes with required evidence.
+- Start after tasks 6-7 close.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-10-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

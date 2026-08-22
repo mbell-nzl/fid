@@ -1,22 +1,23 @@
-# Phase 21 - Task 17: Receipt Evidence And Deterministic Evaluation
+# Phase 21 - Task 17: Trusted Evidence Evaluation
 
 ## Objective
 
-Link only exact fid-executed Receipts to gate-evidence Obligations and evaluate absence, validity, repository-tree freshness, and required Artifact availability independently. Return all reasons in the fixed order and never raise Attention.
+Link only exact fid-executed Receipts and evaluate validity, repository-tree freshness, required Artifact availability, deterministic all-reasons order, and no Attention.
 
 ## Validation Contract Coverage
 
-- VAL-043: only an exact trusted Receipt can link as Evidence.
-- VAL-044: evidence dimensions serialize and evaluate independently.
-- VAL-045: repository-tree target changes stale bound Evidence.
-- VAL-046: evaluation returns every reason deterministically.
-- VAL-047: unsatisfied routine Obligations never raise Attention.
+- VAL-058: owning observable in the Phase 21 validation contract.
+- VAL-059: owning observable in the Phase 21 validation contract.
+- VAL-060: owning observable in the Phase 21 validation contract.
+- VAL-061: owning observable in the Phase 21 validation contract.
+- VAL-062: owning observable in the Phase 21 validation contract.
+- VAL-063: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- No caller pass flag, attestation, Review, Human Outcome, or external evidence type.
-- Use repository object identity, not branch names or timestamps, for freshness.
-- The same evaluator must serve guarded transitions and completion.
+- Caller-authored pass, command text, import, attestation, and role-looking records cannot qualify.
+- Validity, freshness, and availability remain independent.
+- Return every reason; never short-circuit or raise Attention.
 
 ## Scope
 
@@ -24,44 +25,44 @@ Link only exact fid-executed Receipts to gate-evidence Obligations and evaluate 
 
 - `internal/evidence/`
 - `internal/validation/`
-- `internal/gitctx/`
 - `internal/workflow/`
 - `internal/cli/`
 - `cmd/fid/`
-- `internal/journal/`
-- `internal/db/`
 - `project-docs/docs/phases/phase-21/tasks/task-17-done.md`
 
 ### Files To Read For Context
 
 - `project-docs/docs/phases/phase-21/contracts.md §§9,10`
+- `project-docs/docs/phases/phase-21/public-interface.md`
 - `project-docs/specs/01_PRD.md PRD-EVID-001..006`
 
 ### Out Of Scope
 
-- Completion, resume, Reviews/Human Outcomes, Attention, and external freshness.
+- Terminal Issue transition and Envelope completion.
 
 ## Acceptance Criteria
 
-- [ ] Only exact fid-executed binding links. (VAL-043)
-- [ ] Four dimensions remain independent and tree changes stale correctly. (VAL-044, VAL-045)
-- [ ] All reasons are complete/stable and no Attention state appears. (VAL-046, VAL-047)
+- [ ] Only exact Receipt binding links. (VAL-058)
+- [ ] Validity is independent. (VAL-059)
+- [ ] Tree freshness is exact. (VAL-060)
+- [ ] Artifact dimension is independent. (VAL-061)
+- [ ] All reasons are stable/complete. (VAL-062)
+- [ ] No Attention state/effect exists. (VAL-063)
 
 ## First Failing Test
 
-Add a failing evidence binding matrix, then a four-dimension multi-reason golden evaluation test.
+Add the binding matrix, three paired dimension tests, multi-reason golden, and Attention absence proof.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-17-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-17-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/evidence ./internal/validation ./internal/gitctx ./internal/workflow ./internal/cli ./cmd/fid/...
-go test -tags integration -race ./cmd/fid/integration/...
+go test -race ./internal/evidence ./internal/validation ./internal/workflow ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -69,11 +70,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-17-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 15-16 closes with required evidence.
+- Start after tasks 15-16 close.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-17-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

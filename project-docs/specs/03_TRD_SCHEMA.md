@@ -258,7 +258,7 @@ Rules:
 
 - The caller never supplies the resulting `revision`. Issue revision covers the
   complete aggregate. `issue.created` stores revision 1; `issue.updated`,
-  `issue.transitioned`, `issue.ac_added`, `issue.label.added`,
+  `issue.transitioned`, `issue.ac-added`, `issue.label.added`,
   `issue.label.removed`, `link.added`, `link.removed`, `dev.started`,
   `dev.finished`, and `dev.blocked` advance each affected Issue exactly once.
   Link Events advance one or two Issue endpoints as applicable. The legacy dev
@@ -284,8 +284,10 @@ Rules:
 ### 8.2 Phase 21 - one-Issue operational walking skeleton
 
 DEC-153 accepts this slice subject to Human approval of the complete planning
-pack. The normative value, JSON, Event, removal, and deferral contract is
-`../docs/phases/phase-21/contracts.md`. Migrations are deliberately split:
+pack. The normative semantic/Event contract is
+`../docs/phases/phase-21/contracts.md`; the exact wire contract is
+`../docs/phases/phase-21/public-interface.md`; and the live removal authority
+is `../docs/phases/phase-21/v1-convergence-inventory.md`. Migrations are deliberately split:
 `0013_p21_operational_kernel` adds the generic replacement under the temporary
 name `work_claims`; `0014_p21_retire_v1_authority_execution` runs only after
 replacement conformance, drops the V1 collision, and renames it to `claims`.
@@ -299,7 +301,10 @@ CREATE TABLE system_capabilities (
   schema_max INTEGER NOT NULL CHECK (schema_max >= schema_min),
   available INTEGER NOT NULL CHECK (available IN (0, 1)),
   limits_json TEXT NOT NULL CHECK (json_valid(limits_json)),
-  trust_source TEXT NOT NULL
+  trust_source TEXT NOT NULL CHECK (trust_source IN (
+    'active-kit-activation','fid-executed','fid-git-observation','fid-journal',
+    'phase-22-unavailable','phase-23-unavailable','phase-25-unavailable'
+  ))
 );
 
 CREATE TABLE idempotency_results (
@@ -476,7 +481,9 @@ CREATE TABLE work_claims (
   acquired_at DATETIME NOT NULL,
   expires_at DATETIME NOT NULL,
   released_at DATETIME,
-  release_reason TEXT,
+  release_reason TEXT CHECK (release_reason IS NULL OR release_reason IN (
+    'completed','failed','operator-released'
+  )),
   FOREIGN KEY (envelope_id, envelope_revision) REFERENCES envelope_revisions(envelope_id, revision)
 );
 CREATE UNIQUE INDEX work_claims_one_active_mutation
@@ -526,7 +533,7 @@ CREATE TABLE referenced_artifacts (
   digest TEXT NOT NULL UNIQUE,
   media_type TEXT NOT NULL,
   size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
-  retention_class TEXT NOT NULL,
+  retention_class TEXT NOT NULL CHECK (retention_class = 'evidence'),
   availability TEXT NOT NULL CHECK (availability IN ('available','missing')),
   location_policy TEXT NOT NULL CHECK (location_policy = 'content-addressed'),
   created_at DATETIME NOT NULL,
@@ -537,7 +544,7 @@ CREATE TABLE execution_receipts (
   id TEXT PRIMARY KEY,
   attempt_id TEXT NOT NULL UNIQUE REFERENCES execution_attempts(id),
   trust_source TEXT NOT NULL CHECK (trust_source = 'fid-executed'),
-  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed_out','signaled','spawn_failed')),
+  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed-out','signaled','spawn-failed')),
   exit_code INTEGER,
   signal TEXT,
   timed_out INTEGER NOT NULL CHECK (timed_out IN (0, 1)),
@@ -550,8 +557,10 @@ CREATE TABLE execution_receipts (
   output_bytes INTEGER NOT NULL CHECK (output_bytes >= 0),
   output_truncated INTEGER NOT NULL CHECK (output_truncated IN (0, 1)),
   redaction_applied INTEGER NOT NULL CHECK (redaction_applied IN (0, 1)),
-  CHECK ((terminal_status = 'spawn_failed' AND exit_code IS NULL AND signal IS NULL)
-      OR terminal_status != 'spawn_failed')
+  CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
+      OR (terminal_status = 'timed-out' AND timed_out = 1)
+      OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)
+      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0))
 );
 
 CREATE TABLE receipt_artifacts (
@@ -618,6 +627,9 @@ DROP TABLE system_capabilities;
 `0014` up is exactly:
 
 ```sql
+DELETE FROM workflow_transition_requires
+WHERE rule IN ('all_acs_verified','has_completion_report','concerns_addressed')
+   OR (params_json IS NOT NULL AND json_type(params_json, '$.roles') = 'array');
 DROP TABLE gate_runs;
 DROP TABLE roles;
 DROP TABLE claims;
@@ -657,12 +669,15 @@ CREATE TABLE gate_runs (
 );
 ```
 
-Event schema v2 and the complete canonical fixture are in the phase contract
-section 14. Each listed family gets one success fixture plus its independent
-conflict/absence fixture. Live apply and rebuild must produce byte-identical
-canonical reads. Phase 21 export create/validate covers v2; import parity is
-explicitly excluded. Migration `0014` does not drop `task_completions` or
-`agent_runs`: section 15 of the phase contract freezes them without writers
-and names Phase 23/25 deletion ownership.
+Event schema v2 and its canonical fixtures are in the phase contract section
+14. The final `project.initialized` fixture has the `fid-bootstrap` service
+Actor, project aggregate sequence 1, null repository/idempotency, and zero
+domain Effects. It never inserts a role or policy row. Each other listed
+family gets one success fixture plus its independent conflict/absence fixture.
+Live apply and rebuild must produce byte-identical canonical reads. Phase 21
+export create/validate covers v2; import parity is explicitly excluded.
+Migration `0014` does not drop `task_completions`, `agent_runs`,
+`ac_verifications`, or `concerns`; the convergence inventory freezes them
+without writers or protected-semantic readers and names Phase 23/25 ownership.
 
-*Last updated: 2026-08-22 (Phase 21 planning draft; DEC-153/154)*
+*Last updated: 2026-08-22 (Phase 21 planning draft; DEC-153/154/156/157)*

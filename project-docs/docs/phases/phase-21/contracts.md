@@ -3,7 +3,7 @@
 > Status: **PLANNING DRAFT FOR HUMAN APPROVAL**
 > Owner: Tech Lead
 > Operating mode: Heavy
-> Decision authority: DEC-152, DEC-153, ADR-0011, ADR-0012
+> Decision authority: DEC-152..157, ADR-0011, ADR-0012
 > Physical schema: `../../../specs/03_TRD_SCHEMA.md` section 8.2
 
 This is the exact Phase 21 implementation boundary. Product implementation is
@@ -11,6 +11,9 @@ blocked until the Human accepts this contract, the validation contract, and
 the task pack, and a QA Lead supplies a Ready Heavy-mode QA plan. Normative
 JSON examples use canonical compact JSON: UTF-8, sorted object keys, preserved
 array order, no insignificant whitespace, and a trailing newline on CLI output.
+`public-interface.md` owns every CLI argument, closed input, result, error,
+exit, Human rendering, and live-frame payload. `v1-convergence-inventory.md`
+owns every live caller/reader/writer and removal disposition.
 
 ## 1. Versions And Shared Values
 
@@ -23,17 +26,20 @@ array order, no insignificant whitespace, and a trailing newline on CLI output.
 - Export archive manifest: `fid.export-manifest.v1`. This is a file format,
   not the unavailable `export.portable.v1` semantic capability.
 
-An Actor is exactly:
+An activated authority-profile entry is exactly:
 
 ```json
-{"actor_id":"actor-builder","actor_type":"agent","capabilities":["issue.transition"],"producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null}
+{"actor_id":"actor-builder","actor_type":"agent","capabilities":["artifact.verify","claim.acquire","claim.release","claim.renew","envelope.activate","envelope.complete","envelope.create","evidence.link","gate.register","gate.run","issue.transition","run.finish","run.start"],"producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null}
 ```
 
 For kit-mode mutation, callers submit only `actor_id`; fid resolves all other
-fields from the active Activation. Unknown Actor fields reject. Standalone
-Issue inventory mutations accept an `--actor` attribution string but it is not
-trusted kit authority and cannot authorize an Envelope, Claim, Run, Receipt,
-Evidence, or completion operation.
+fields from the active Activation. Event/result Actor views omit capabilities
+and contain exactly Actor ID/type, producer, provenance reference, and nullable
+session reference. Unknown Actor fields reject. Standalone inventory mutations
+accept only the typed `--actor <type>:<id>` grammar in `public-interface.md`;
+the derived project-local Actor is not trusted kit authority and cannot
+authorize an Envelope, Claim, Run, Receipt, Evidence, guarded transition, or
+completion operation.
 
 A repository identity is exactly:
 
@@ -59,7 +65,7 @@ warns, exhausts, Stops, raises Attention, or changes execution from a budget.
 The complete generic Obligation value is exactly:
 
 ```json
-{"accepted_evidence_types":["receipt"],"accepted_trust_sources":["fid-executed"],"applicability":"required","artifact_policy":"required-available","derived_status":"unsatisfied","freshness_target":"repository-tree","guarded_action":"envelope.complete","id":"OBL-1","independence":"fid-executed","required_lane":null,"source":{"digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"},"section":null,"source_type":"project-file"},"subject":{"id":"ISS-1","type":"issue"},"type":"gate-evidence"}
+{"accepted_evidence_types":["receipt"],"accepted_trust_sources":["fid-executed"],"applicability":"required","artifact_policy":"required-available","derived_status":"unsatisfied","freshness_target":"repository-tree","guarded_actions":["envelope.complete","issue.transition-terminal-success"],"id":"OBL-1","independence":"fid-executed","required_lane":null,"source":{"digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"},"section":null,"source_type":"project-file"},"subject":{"id":"ISS-1","type":"issue"},"type":"gate-evidence"}
 ```
 
 Only `gate-evidence` is accepted. Unknown types reject; `derived_status` is
@@ -72,25 +78,25 @@ Availability is binary and migration-derived. An operation existing for this
 walking skeleton does not make a capability available when required semantics
 are deferred. Discovery returns rows sorted by `capability_id`:
 
-| Capability ID | Available | Phase 21 limits | Trust source |
+| Capability ID | Available | Exact closed `limits` object | Trust source |
 |---|---:|---|---|
-| `attention.v1` | false | no Attention state or operation | `unavailable:phase-22` |
-| `evidence.freshness.v1` | true | repository-tree freshness only | `fid-git-observation` |
-| `evidence.gate-definitions.v1` | true | activated immutable definitions; one supported executor policy | `active-kit-activation` |
-| `evidence.receipts.v1` | true | fid-executed terminal Receipts only; no attestation | `fid-executed` |
-| `export.portable.v1` | false | create/validate only; no import or parity claim | `unavailable:phase-22` |
-| `human.outcomes.v1` | false | no Human Outcome state or operation | `unavailable:phase-23` |
-| `kit.activation.v1` | false | prepare/stage/commit/finalize/pre-commit abort; no recovery | `unavailable:phase-22` |
-| `reviews.coverage.v1` | false | no Review/Finding state or operation | `unavailable:phase-23` |
-| `telemetry.trajectory.v1` | false | no generic telemetry ingestion | `unavailable:phase-25` |
-| `work.claims.v1` | false | one mutation Claim; no recovery or safe parallelism | `unavailable:phase-22` |
-| `workflow.state.v1` | true | one selected primary Issue; no revision/cancel | `fid-journal` |
-| `workflow.transitions.v1` | true | registered workflows; execution-bound transition supported | `fid-journal` |
+| `attention.v1` | false | `{"state":false}` | `phase-22-unavailable` |
+| `evidence.freshness.v1` | true | `{"branch_labels":false,"target":"repository-tree"}` | `fid-git-observation` |
+| `evidence.gate-definitions.v1` | true | `{"executor_policy":"standard-library","network":"allowed","sandbox":"none","write":"allowed"}` | `active-kit-activation` |
+| `evidence.receipts.v1` | true | `{"attestation":false,"producer":"fid","terminal_receipts":true}` | `fid-executed` |
+| `export.portable.v1` | false | `{"create":true,"import":false,"validate":true}` | `phase-22-unavailable` |
+| `human.outcomes.v1` | false | `{"record":false}` | `phase-23-unavailable` |
+| `kit.activation.v1` | false | `{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false}` | `phase-22-unavailable` |
+| `reviews.coverage.v1` | false | `{"record":false}` | `phase-23-unavailable` |
+| `telemetry.trajectory.v1` | false | `{"ingest":false}` | `phase-25-unavailable` |
+| `work.claims.v1` | false | `{"max_active_per_issue":1,"parallelism":false,"recover":false}` | `phase-22-unavailable` |
+| `workflow.state.v1` | true | `{"max_envelope_revisions":1,"max_primary_issues":1,"related_issues":false}` | `fid-journal` |
+| `workflow.transitions.v1` | true | `{"execution_bound":true,"terminal_evidence_guard":true}` | `fid-journal` |
 
 Each discovery row is exactly:
 
 ```json
-{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"unavailable:phase-22"}
+{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}
 ```
 
 No omitted row, partial/experimental state, caller override, or optimistic
@@ -108,7 +114,7 @@ after Actor resolution but before side effects.
   aggregate sequence, and canonical result JSON in the same transaction;
 - same key/same digest: return the stored entity/Event result with only the
   contracted `replayed:true` metadata difference and append no Event;
-- same key/different digest: reject `idempotency_conflict` and append no Event;
+- same key/different digest: reject `idempotency-conflict` and append no Event;
 - a failure before commit stores nothing; a committed result survives restart
   and rebuild; and
 - concurrent same-key calls serialize to one committed mutation.
@@ -121,7 +127,7 @@ or `prepare|staged -> aborted`. One nonterminal Activation blocks another.
 `stage` validates and content-addresses the exact authority profile and Gate
 Definition components. `commit` atomically selects their identities and is the
 point of no return. `finalize` makes that committed identity the active trust
-source. Abort after commit rejects `activation_recovery_unavailable`.
+source. Abort after commit rejects `activation-recovery-unavailable`.
 
 The authority-profile component contains a sorted unique Actor set. Each Actor
 has immutable ID, type, producer, provenance reference, optional session
@@ -137,7 +143,7 @@ Gate Definition by ID and version. It cannot accept execution-policy overrides.
 The activated definition is exactly:
 
 ```json
-{"argv":["go","test","./internal/issues"],"artifact_paths":["coverage.out"],"cwd":".","definition_id":"gate-unit","definition_version":1,"environment":[{"name":"GOCACHE","source":"literal","value":".gocache"},{"name":"HOME","source":"inherit","value":null}],"excerpt_bytes":4096,"network":"allowed","output_bytes":1048576,"redact_literals":[],"sandbox":"none","shell":false,"success_exit_codes":[0],"timeout_ms":120000,"write":"allowed"}
+{"artifact_bytes":10485760,"artifact_paths":["coverage.out"],"argv":["go","test","./internal/issues"],"credential_names":[],"cwd":".","definition_id":"gate-unit","definition_version":1,"environment":[{"name":"GOCACHE","source":"literal","value":".gocache"},{"name":"HOME","source":"inherit","value":null}],"excerpt_bytes":4096,"network":"allowed","output_bytes":1048576,"redact_literals":[],"sandbox":"none","shell":false,"success_exit_codes":[0],"timeout_ms":120000,"write":"allowed"}
 ```
 
 Environment entries use only `literal`, `inherit`, or `credential`; credential
@@ -147,14 +153,16 @@ Registration validates non-empty structured argv; `shell:false`; contained,
 symlink-resolved cwd and Artifact paths; positive configured timeout/output/
 excerpt ceilings; non-empty unique success codes; and exact `sandbox:none`,
 `network:allowed`, `write:allowed`. Stronger or different values reject
-`executor_policy_unsupported`. fid claims no OS, filesystem, network,
+`executor-policy-unsupported`. fid claims no OS, filesystem, network,
 privilege, namespace, or platform containment.
 
 A Registration stores immutable definition digest, binding digest, active
 Activation/provenance, repository/project/scope binding, and resolved policy.
 Same Definition and binding return the existing Registration; changed content
 or binding creates a new immutable version. Envelope creation references only
-the Registration ID/version.
+the Registration ID/version. Registration authorization uses the finalized
+Actor profile's exact `gate.register` capability because no Envelope exists
+yet; caller attribution and later Envelope Grants cannot authorize it.
 
 ## 6. Envelope, Authority, And Completion
 
@@ -168,27 +176,32 @@ Claim on the Issue.
 An Authority Grant is exactly:
 
 ```json
-{"actions":["claim.acquire","issue.transition","run.finish","run.start"],"actor_selector":{"actor_id":"actor-builder","required_capabilities":["issue.transition"]},"scope":{"issue_id":"ISS-1"}}
+{"actions":["artifact.verify","claim.acquire","claim.release","claim.renew","envelope.activate","envelope.complete","evidence.link","gate.run","issue.transition","run.finish","run.start"],"actor_selector":{"actor_id":"actor-builder","required_capabilities":["artifact.verify","claim.acquire","claim.release","claim.renew","envelope.activate","envelope.complete","evidence.link","gate.run","issue.transition","run.finish","run.start"]},"scope":{"issue_id":"ISS-1"}}
 ```
 
-Authorization resolves the Actor from the active Activation, then requires an
-exact action, capability, Issue, Envelope, and revision match. Missing is deny.
+Envelope creation first requires the finalized profile's exact
+`envelope.create` capability. It then records the Authority Grants used by
+later operations. Post-creation authorization resolves the Actor from the
+active Activation and requires an exact action, capability, Issue, Envelope,
+and revision Grant match. Missing is deny.
 Caller attribution, the deleted role registry, a Human-looking string, or an
 inactive Activation confers no authority.
 
-Completion re-reads the active revision in one transaction. It succeeds only
-when the selected Issue is in its workflow terminal-success state and every
-applicable Obligation is `satisfied`. Otherwise it returns all reasons from
-section 10 and changes no state. Completion does not write or consult legacy
-`task_completions`.
+The same Obligation evaluator guards two separate actions. First, an Envelope-bound
+transition into the workflow terminal-success category succeeds only after
+every applicable gate-evidence Obligation is `satisfied`. Later, completion
+re-reads the active revision and calls that evaluator again; it additionally
+requires the selected Issue already to be terminal-success. Either failure
+returns all section 10 reasons and changes no state. Completion does not write
+or consult legacy `task_completions`.
 
 ## 7. Claim, Run, And Execution-Bound Transition
 
 One mutating Claim per Issue is supported. Acquire requires active Envelope,
 resolved Actor authority, expected Envelope revision, worktree identity,
 declared scope, positive TTL, and idempotency. Renew requires the current Claim
-version, same Actor/worktree, and unexpired Claim. Release is idempotent for the
-same Claim version/reason. Conflict, expiry, stale version, or wrong Actor does
+version, same Actor/worktree, and unexpired Claim. Release is idempotent for
+the same Claim version/reason. Conflict, expiry, stale version, or wrong Actor does
 not authorize mutation.
 
 A Run starts from an active Claim and binds Issue, Envelope/revision, Actor,
@@ -197,12 +210,12 @@ JSON always exposes null consumption/remaining. Status is `active`,
 `succeeded`, `failed`, or `abandoned`; only explicit finish terminalizes it.
 There is no recovery, predecessor, automatic continuation, or respawn.
 
-Execution-bound Issue transition requires active Run and Claim, active
+Execution-bound nonterminal Issue transition requires active Run and Claim, active
 Envelope revision, resolved Actor grant, exact expected Issue revision, valid
-workflow edge, matching worktree/repository observation, and no unsatisfied
-Obligation guarding that action. Checks run in that order and return every
-independent reason using section 10 ordering. No Event or revision advance is
-allowed on failure.
+workflow edge, and matching worktree/repository observation. A
+terminal-success transition adds the shared Obligation evaluation after those
+predicates. Checks return every independent reason using section 10 ordering.
+No Event or revision advance is allowed on failure.
 
 ## 8. Attempts, Output, And Receipts
 
@@ -220,19 +233,23 @@ framing, and embedded CR/LF/control bytes escaped by JSON. Output is chunked at
 4096 sanitized UTF-8 bytes without splitting a code point. Human mode prefixes
 sanitized payload with `[stdout]` or `[stderr]`; it prints no raw control byte.
 
-Control frames report only typed metadata: `output_truncated`,
-`artifact_rejected`, or `redaction_applied`. When the combined sanitized output
+Control frames report only typed metadata: `output-truncated`,
+`artifact-rejected`, or `redaction-applied`. When the combined sanitized output
 limit is reached, fid stops retaining/emitting process output, emits exactly
-one `output_truncated`, continues draining both pipes, and still observes
+one `output-truncated`, continues draining both pipes, and still observes
 termination. Redaction applies before live output, excerpt, hash, Receipt,
 Artifact, error detail, or Human rendering. Credential values never enter
 journal, projection, arguments in errors, or exported data.
 
 Exactly one terminal frame is emitted after observed termination and after the
-terminal Receipt commits. Its `data` is the complete canonical `fid-cli.v1`
-Response Envelope; no additional JSON line follows it. Terminal outcomes are
-`succeeded`, `failed`, `timed_out`, `signaled`, or `spawn_failed`.
-`output_limit_observed` is additional control metadata and does not replace
+terminal Receipt commits, or after a handled frame-only `fid-error`. Its
+`data` contains the complete canonical `fid-cli.v1` Response Envelope; no
+additional JSON line follows it. Terminal process outcomes are `succeeded`,
+`failed`, `timed-out`, `signaled`, or `spawn-failed`. A handled fid
+infrastructure failure after streaming begins uses the distinct frame-only
+`fid-error` outcome, null Receipt, `internal-error` response, and exit 7; it
+never satisfies Evidence or commits idempotency.
+`output-limit-observed` is additional control metadata and does not replace
 the observed process result. An
 Attempt without observed termination has no Receipt and cannot satisfy
 evidence. Timeout sends termination, waits for observed process exit, and
@@ -247,7 +264,7 @@ After termination fid revalidates containment, streams bytes into the
 content-addressed Artifact root, hashes SHA-256, atomically publishes by digest,
 and records media type, size, retention class, and `available`. Missing,
 escaping, symlink, directory, device, changed-during-copy, or oversized paths
-produce `artifact_rejected` and cannot satisfy `required-available`.
+produce `artifact-rejected` and cannot satisfy `required-available`.
 
 Artifact availability is observed state: `available` may change to `missing`
 after a verified content-store check, without changing Artifact, Receipt, or
@@ -264,24 +281,30 @@ availability are evaluated independently.
 Evaluation returns every applicable reason, deduplicated and sorted by this
 fixed precedence, then by `subject_type`, `subject_id`, and `detail` bytewise:
 
-1. `authority_unavailable`
-2. `envelope_inactive`
-3. `claim_missing`
-4. `claim_expired`
-5. `run_inactive`
-6. `issue_revision_conflict`
-7. `workflow_transition_invalid`
-8. `obligation_evidence_absent`
-9. `receipt_unsuccessful`
-10. `evidence_invalid`
-11. `evidence_stale`
-12. `artifact_unavailable`
-13. `issue_not_complete`
+1. `authority-unavailable`
+2. `envelope-inactive`
+3. `claim-missing`
+4. `claim-expired`
+5. `run-inactive`
+6. `issue-revision-conflict`
+7. `workflow-transition-invalid`
+8. `obligation-evidence-absent`
+9. `receipt-unsuccessful`
+10. `evidence-invalid`
+11. `evidence-stale`
+12. `artifact-unavailable`
+13. `issue-not-terminal-success`
 
 Each reason is exactly `{"code":"...","detail":"...","subject_id":"...","subject_type":"..."}`.
 Applicable gate evidence is satisfied only when one exact Receipt succeeded,
 Evidence is valid and repository-tree fresh, and every required Artifact is
 available. Attention is never raised.
+
+The shared Obligation evaluator returns only reasons 8..12 and is byte-identical
+when called by pure evaluation, terminal-success transition, or completion.
+The terminal transition may additionally return action predicates 1..7.
+Completion may additionally return 1, 2, and 13; it does not require an active
+Claim or Run, so the accepted journey can finish/release before completion.
 
 `fid projection resume <issue-id>` is a read-only bounded projection. It returns active
 Envelope/revision, current Issue/revision, current Claim or null, active Run or
@@ -307,90 +330,75 @@ Artifact references, and capability snapshot. It writes no `.fid` state and
 does not establish identity/history parity. There is no import command, API,
 hidden repair path, or `export.portable.v1` availability claim.
 
-## 12. Canonical Result Shapes
+## 12. Public Interface Authority
 
-Non-streaming success retains the accepted Response Envelope and is exactly:
+`public-interface.md` fixes every accepted and fail-closed leaf, exact
+arguments/flags, closed input schema, success result, collection ordering,
+Event/idempotency/replay representation, Human rendering, failure detail,
+stdout/stderr rule, process exit class, and `fid.live.v1` payload union. There
+is no `result:{}` placeholder or implied complete entity outside that file.
 
-```json
-{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"envelope.get","result":{}}
-```
+## 13. Closed Public Values
 
-Collections use `result:{"items":[]}`. Retained Phase 20 mutation results keep
-their accepted operation-specific shapes and add `idempotency_key` and
-`replayed`; new Phase 21 results return their complete contract entity plus the
-same two fields. Mutation `event` contains ID and occurrence time. Read `event`
-is null. Failure retains the exact Phase 20 `fid-cli.v1` mutually-exclusive
-error envelope. Optional values are explicit null; unavailable fields are
-omitted only when this contract says they do not exist. Human output is a
-rendering of the same result and cannot add semantics.
-
-### 12.1 Accepted Phase 21 command leaves
-
-Retained Phase 20 leaves remain accepted, with mutation attribution renamed
-from `--by` to `--actor` and retryable mutations adding
-`--idempotency-key`. Phase 21 adds exactly:
-
-```text
-fid capabilities
-fid activation prepare|component|commit|abort|finalize|status
-fid gate register|resolve|run
-fid envelope create|get|activate|complete
-fid claim acquire|renew|release|list
-fid run start|finish|get|list
-fid receipt get|list
-fid evidence link|get|evaluate
-fid artifact verify
-fid projection resume
-fid export create|validate
-```
-
-Complex mutation values enter through exactly one `--input <path|->` JSON
-document; `-` means stdin. Reference/read leaves use positional opaque IDs.
-Every kit mutation also requires `--actor <actor-id>` and
-`--idempotency-key <key>`; update-like leaves require the contract's expected
-revision/version flag. `gate run --json` alone uses the live NDJSON channel;
-all other `--json` leaves emit one Response Envelope. `stats --by` is renamed
-to `stats --group-by`. There is no `activation recover`, `envelope revise`,
-`envelope cancel`, `run recover`, telemetry, Stop, Attention, Receipt ingest,
-Review, Human Outcome, or export import leaf in Phase 21.
-
-## 13. Phase 21 Reason Codes
-
-In addition to retained Phase 20 codes, the closed codes are:
-`activation_conflict`, `activation_invalid`,
-`activation_recovery_unavailable`, `actor_unknown`, `artifact_unavailable`,
-`authority_denied`, `authority_unavailable`, `capability_unavailable`,
-`claim_conflict`, `claim_expired`, `claim_stale`, `envelope_inactive`,
-`evidence_invalid`, `evidence_stale`, `executor_policy_unsupported`,
-`idempotency_conflict`, `obligation_unsatisfied`, `registration_mismatch`,
-`run_inactive`, and `unsafe_path`. Errors remain typed stderr JSON with stable
-exit classification and no partial success payload.
+All contract-controlled enum and reason values are lowercase kebab-case. JSON
+field names remain snake_case. Opaque user-authored workflow state identifiers,
+entity IDs, paths, capability IDs, and digests are identifiers rather than
+closed enum members. The complete reason/code/category/retryability/subject/
+details/exit table is `public-interface.md` section 7.
 
 ## 14. Event Schema V2 And Fixtures
 
 Every new Event and every retained mutation converted in Phase 21 uses exactly:
 
 ```json
-{"actor":{"actor_id":"actor-builder","actor_type":"agent","producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null},"aggregate":{"id":"ISS-1","sequence":2,"type":"issue"},"causation_id":null,"command":"issue transition","correlation_id":"RUN-1","effects":[{"op":"update","pk":{"id":"ISS-1"},"preconditions":{"revision":1,"status":"todo","workflow_id":"task-default"},"prior":{"revision":1,"status":"todo","updated_at":"2026-08-21T23:59:00Z"},"table":"issues","values":{"revision":2,"status":"in_progress","updated_at":"2026-08-22T00:00:00Z"}},{"op":"activity","pk":{"id":"ACT-2"},"table":"activity_log","values":{"actor":"actor-builder","details":{"from":"todo","to":"in_progress"},"event":"status_changed","journal_event_id":"EVT-20260822-000002","occurred_at":"2026-08-22T00:00:00Z","ref_id":"ISS-1","ref_type":"issue"}},{"op":"insert","pk":{"idempotency_key":"key-1","operation_scope":"issue.transition:project-1"},"table":"idempotency_results","values":{"aggregate_sequence":2,"created_at":"2026-08-22T00:00:00Z","idempotency_key":"key-1","operation_scope":"issue.transition:project-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","result_entity_id":"ISS-1","result_event_id":"EVT-20260822-000002","result_json":"{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260822-000002\",\"occurred_at\":\"2026-08-22T00:00:00Z\"},\"ok\":true,\"operation\":\"issue.transition\",\"result\":{\"from_state\":\"todo\",\"idempotency_key\":\"key-1\",\"issue\":{\"id\":\"ISS-1\",\"revision\":2},\"replayed\":false,\"to_state\":\"in_progress\"}}"}}],"event_id":"EVT-20260822-000002","event_schema":2,"event_type":"issue.transitioned","idempotency":{"key":"key-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","scope":"issue.transition:project-1"},"occurred_at":"2026-08-22T00:00:00Z","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"}}
+{"actor":{"actor_id":"actor-builder","actor_type":"agent","producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null},"aggregate":{"id":"ISS-1","sequence":2,"type":"issue"},"causation_id":null,"command":"issue.transition","correlation_id":"RUN-1","effects":[{"op":"update","pk":{"id":"ISS-1"},"preconditions":{"revision":1,"status":"todo","workflow_id":"task-default"},"prior":{"revision":1,"status":"todo","updated_at":"2026-08-21T23:59:00Z"},"table":"issues","values":{"revision":2,"status":"in_progress","updated_at":"2026-08-22T00:00:00Z"}},{"op":"activity","pk":{"id":"ACT-2"},"table":"activity_log","values":{"actor":"actor-builder","details":{"from":"todo","to":"in_progress"},"event":"status-changed","journal_event_id":"EVT-20260822-000002","occurred_at":"2026-08-22T00:00:00Z","ref_id":"ISS-1","ref_type":"issue"}},{"op":"insert","pk":{"idempotency_key":"key-1","operation_scope":"issue.transition:project-1"},"table":"idempotency_results","values":{"aggregate_sequence":2,"created_at":"2026-08-22T00:00:00Z","idempotency_key":"key-1","operation_scope":"issue.transition:project-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","result_entity_id":"ISS-1","result_event_id":"EVT-20260822-000002","result_json":"{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260822-000002\",\"occurred_at\":\"2026-08-22T00:00:00Z\"},\"ok\":true,\"operation\":\"issue.transition\",\"result\":{\"from_state\":\"todo\",\"idempotency_key\":\"key-1\",\"issue\":{\"id\":\"ISS-1\",\"revision\":2},\"replayed\":false,\"to_state\":\"in_progress\"}}"}}],"event_id":"EVT-20260822-000002","event_schema":2,"event_type":"issue.transitioned","idempotency":{"key":"key-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","scope":"issue.transition:project-1"},"occurred_at":"2026-08-22T00:00:00Z","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"}}
 ```
 
 Exact rules: all top-level keys are required; nullable values are explicit;
-`effects` is a non-empty ordered array; aggregate sequence begins at 1 and has
-no gap; Actor capabilities are not copied into Events; repository is null only
-for a non-repository bootstrap fact; unknown keys reject; canonical fixtures
-replace all affected v1 fixtures. The accepted Phase 21 families are:
+`effects` is ordered and nonempty except for the exact bootstrap fixture below;
+aggregate sequence begins at 1 and has no gap; Actor capabilities are not
+copied into Events; repository is null only for a non-repository bootstrap
+fact; unknown keys reject; canonical fixtures replace affected v1 fixtures.
+Kit mutations resolve the complete Actor from the finalized Activation.
+Retained standalone mutations derive the Actor only from the typed
+`--actor <type>:<id>` attribution grammar in `public-interface.md`: the type
+and ID are copied, producer is `fid-standalone`, provenance is
+`project-local-attribution`, and session is null. That Actor is descriptive
+Event provenance only and is never eligible for an Authority Grant.
+
+The final-binary bootstrap fixture is exactly:
+
+```json
+{"actor":{"actor_id":"fid-bootstrap","actor_type":"service","producer":"fid","provenance_ref":"fid:init","session_ref":null},"aggregate":{"id":"project-1","sequence":1,"type":"project"},"causation_id":null,"command":"project.init","correlation_id":null,"effects":[],"event_id":"EVT-20260822-000001","event_schema":2,"event_type":"project.initialized","idempotency":null,"occurred_at":"2026-08-22T00:00:00Z","repository":null}
+```
+
+The project ID comes from strict project config written before append.
+Initialization is naturally exclusive: a second invocation returns
+`project-already-initialized`, never replay. Migrations seed reference
+workflows; the Event inserts no role, workflow, or policy row. Live apply only
+records journal projection metadata. Rebuild applies through migration 0014,
+reads the same project config, replays the Event, and produces the same
+role-free projection. No bootstrap, Actor lookup, export, or down-migration
+path reconstructs removed role facts.
+
+The accepted Phase 21 families are:
 
 | Aggregate | Event types | Projection effects |
 |---|---|---|
-| activation | `activation.prepared`, `.component_staged`, `.committed`, `.finalized`, `.aborted` | activation/component/profile/definition insert or state update |
+| project | `project.initialized` | no domain Effect; journal projection metadata only |
+| activation | `activation.prepared`, `.component-staged`, `.committed`, `.finalized`, `.aborted` | activation/component/profile/definition insert or state update |
 | gate-registration | `gate.registered` | registration insert |
 | envelope | `envelope.created`, `.activated`, `.completed` | envelope/revision/source/selection/grant/obligation/budget insert or status update |
 | claim | `claim.acquired`, `.renewed`, `.released` | claim insert or version/time/status update |
 | run | `run.started`, `.finished` | run/budget-binding insert or terminal update |
-| attempt | `gate.execution_started` | Attempt insert |
-| receipt | `gate.receipt_recorded` | Receipt and Artifact inserts |
-| evidence | `evidence.linked`, `artifact.availability_observed` | Evidence/link insert or optional Artifact availability update |
-| retained mutation | retained Issue/workflow/label/link/requirement/maintenance families | retained v2 effects plus resolved Actor/idempotency/aggregate metadata |
+| attempt | `gate.execution-started` | Attempt insert |
+| receipt | `gate.receipt-recorded` | Receipt and Artifact inserts |
+| evidence | `evidence.linked`, `artifact.availability-observed` | Evidence/link insert or optional Artifact availability update |
+| issue | `issue.created`, `.updated`, `.transitioned`, `.ac-added`, `.label-added`, `.label-removed` | Issue/AC/Issue-label/activity/revision effects |
+| label | `label.added` | label insert/update and activity effects |
+| link | `link.added`, `.removed` | link/dependency effects plus affected Issue revisions |
+| workflow | `workflow.defined`, `.assigned` | structural workflow and assignment effects only |
+| requirement | `requirement.synced` | canonical requirement-reference effects |
 
 For fixture generation, each row below is normative. `insert(T)` contains the
 complete DDL row, `update(T:{keys})` contains exactly those changed values plus
@@ -402,8 +410,8 @@ the canonical non-replayed Response Envelope for this Event.
 | Event type | Aggregate | Exact ordered domain Effects before idempotency |
 |---|---|---|
 | `activation.prepared` | Activation | `insert(kit_activations)` |
-| `activation.component_staged` authority profile | Activation | `insert(activation_components)`, then `insert(activation_actor_profiles)` by Actor ID |
-| `activation.component_staged` gate definitions | Activation | `insert(activation_components)`, then `insert(activation_gate_definitions)` by Definition ID/version |
+| `activation.component-staged` authority profile | Activation | `insert(activation_components)`, then `insert(activation_actor_profiles)` by Actor ID |
+| `activation.component-staged` gate definitions | Activation | `insert(activation_components)`, then `insert(activation_gate_definitions)` by Definition ID/version |
 | `activation.committed` | Activation | `update(kit_activations:{status,point_of_no_return,updated_at})`, then `update(activation_components:{status})` by component key |
 | `activation.finalized` | Activation | `update(kit_activations:{status,updated_at})`, then `update(activation_components:{status})` by component key |
 | `activation.aborted` | Activation | `update(kit_activations:{status,updated_at})`, then `update(activation_components:{status})` by component key |
@@ -416,11 +424,20 @@ the canonical non-replayed Response Envelope for this Event.
 | `claim.released` | Claim | `update(work_claims:{version,status,released_at,release_reason})` with prior Claim version |
 | `run.started` | Run | `insert(runs)`, then `insert(run_budget_bindings)` by budget name |
 | `run.finished` | Run | `update(runs:{status,terminal_repository_json,ended_at})` |
-| `gate.execution_started` | Attempt | `insert(execution_attempts)` |
-| `gate.receipt_recorded` | Receipt | new accepted `insert(referenced_artifacts)` by digest, then `insert(execution_receipts)`, then `insert(receipt_artifacts)` by Artifact ID; an already stored digest omits its Artifact insert; rejected candidates have no Artifact/link Effect |
+| `gate.execution-started` | Attempt | `insert(execution_attempts)` |
+| `gate.receipt-recorded` | Receipt | new accepted `insert(referenced_artifacts)` by digest, then `insert(execution_receipts)`, then `insert(receipt_artifacts)` by Artifact ID; an already stored digest omits its Artifact insert; rejected candidates have no Artifact/link Effect |
 | `evidence.linked` | Evidence | `insert(evidence_records)`, then `insert(evidence_artifact_links)` by Artifact ID |
-| `artifact.availability_observed` | Artifact | optional `update(referenced_artifacts:{availability})` when state changed; unchanged observation has only the required idempotency Effect |
-| retained Phase 20 family | existing aggregate | exact retained Phase 20 domain Effects with actor-attribution fields replaced by Actor ID/provenance and the final idempotency Effect |
+| `artifact.availability-observed` | Artifact | optional `update(referenced_artifacts:{availability})` when state changed; unchanged observation has only the required idempotency Effect |
+| `issue.created` | Issue | `insert(issues)`, labels by name, optional scheduling, then `insert(activity_log)` |
+| `issue.updated` | Issue | requested Issue/label changes in field order, revision update, then `insert(activity_log)` |
+| `issue.transitioned` | Issue | exact Issue status/revision update, then `insert(activity_log)` |
+| `issue.ac-added` | Issue | `insert(acceptance_criteria)`, Issue revision update, then `insert(activity_log)` |
+| `issue.label-added`, `issue.label-removed` | Issue | exact Issue-label insert/delete, Issue revision update, then `insert(activity_log)` |
+| `label.added` | Label | `insert(labels)`, then `insert(activity_log)` |
+| `link.added`, `link.removed` | Link | exact typed link/dependency insert/delete, affected Issue revision updates by ID, then `insert(activity_log)` |
+| `workflow.defined` | Workflow | workflow/version/state/transition inserts in declared ordinal order; no role/judgment requirement Effect |
+| `workflow.assigned` | Workflow | exact kind/project assignment upsert |
+| `requirement.synced` | Requirement source | requirement reference upserts by requirement ID |
 
 The Receipt fixture's order is also the SQLite apply order, so every foreign
 key exists before its dependent link. A golden fixture asserts that canonical
@@ -434,24 +451,16 @@ Finding, Human Outcome, or telemetry.
 
 ## 15. Removal, Frozen State, And Deferral Inventory
 
-After its named replacement passes:
+`v1-convergence-inventory.md` exhaustively assigns every live role-policy
+caller, mutation flag, workflow predicate, Event family, table reader/writer,
+bootstrap path, command, and stats grouping. It also distinguishes temporary
+Group 1 replacement state from task 20 final removal and task 21 final-schema
+parity. An unclassified live match is a contract failure.
 
-| Remove/rename | Replacement or disposition |
-|---|---|
-| mutation `--by` flags | `--actor`; `stats --by` becomes `--group-by` |
-| V1 role-policy implementation in `internal/policy`, `cmd/fid policy`, `roles` | generic policy evaluator over Activation Actor profile plus Envelope grants, retained in `internal/policy` |
-| V1 Issue-role actions in `internal/claims`, Issue claim/unclaim, legacy claim list/table | generic Claims replace the package implementation in place; generic table is renamed to `claims` |
-| `internal/runs`, `run record` | generic Runs owned by `internal/workflow` |
-| `internal/dev`, `dev start|gate|finish|block`, `gate_runs`, dev Events/readers | Attempt/Receipt/Evidence and Envelope completion |
-| `issue complete`, `internal/issues/complete*`, writers of `task_completions` | Envelope completion |
-
-`task_completions` remains a frozen no-writer table only because current
-`concerns` and `ac_verifications` foreign keys are Phase 23-owned. It is not
-read for authority or completion and is deleted in Phase 23. `agent_runs`
-remains frozen with no Phase 21 writer for Phase 25 telemetry convergence and
-is not a generic Run. Source/integration inventory must prove no removed CLI,
-package, Event family, role lookup, or table writer survives. Phase 21 does not
-reconstruct removed state through import.
+`task_completions`, `agent_runs`, `ac_verifications`, and `concerns` remain
+frozen only for Phase 23/25 history/foreign-key ownership. They have no final
+Phase 21 writer and cannot authorize kit operations, satisfy Evidence/Human
+Outcomes, permit a guarded transition, or satisfy Envelope completion.
 
 Phase 21 creates no unrecorded package boundary. Work Envelope, Activation,
 and Run logic live in `internal/workflow`; generic authority remains in
@@ -469,11 +478,15 @@ or exposed by fid.
 
 ## 16. Required Parity And Journey
 
-The dedicated real-process integration journey follows the 13 steps in the
-accepted Gate D3.2 record, tests the negative counterpart of each authority,
-policy, idempotency, evidence, and completion branch, repeats after rebuild,
-and proves byte-identical canonical reads for capabilities, Envelope,
-evaluation, resume, and export. Maintenance reports sequence gaps, orphaned
+The dedicated real-process integration journey mutates once. It performs the
+nonterminal transition, executes the Gate, links/evaluates its Receipt, then
+uses the shared evaluator for terminal-success transition and later Envelope
+completion. It tests the negative counterpart of each authority, policy,
+idempotency, evidence, transition, and completion branch. It then deletes the
+projection and rebuilds from the durable facts. After rebuild it repeats only
+capability/Envelope/Receipt/Evidence reads, evaluation, completion-state read,
+resume, export create/validate, and negative conformance checks. It never
+creates a second one-revision Envelope. Maintenance reports sequence gaps, orphaned
 bindings, Attempt-without-Receipt as non-passing, Receipt mismatch, missing
 Artifact, invalid active Activation, frozen-table writes, and removed V1 state.
 No implementation or QA task reads held-out scenarios or evaluator prompts.

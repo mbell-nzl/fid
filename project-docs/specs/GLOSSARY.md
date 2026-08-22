@@ -41,6 +41,24 @@ Use when: a consumer decides whether it can rely on that capability.
 Avoid: “partial availability”; an incomplete semantic capability is
 unavailable even when internal walking-skeleton operations exist.
 
+**Public enum value**
+Definition: A member of a closed, contract-controlled value set serialized on
+a public machine interface, including reason, outcome, control, status,
+availability, and Event-kind values. Public enum values use lowercase
+kebab-case.
+Use when: distinguishing closed values from their JSON field names.
+Avoid: classifying opaque entity IDs, user-authored workflow-state identifiers,
+paths, capability IDs, or digests as enums merely because they are strings.
+
+**Project-local attribution**
+Definition: A typed `<agent|human|service>:<id>` caller label recorded on a
+retained standalone inventory fact to show who invoked it, with producer
+`fid-standalone` and provenance `project-local-attribution`, without
+establishing kit Actor capability or trusted provenance.
+Use when: converting retained V1 `--by` mutations to `--actor` during Phase 21.
+Avoid: using a role-looking attribution to authorize a protected operation,
+satisfy Evidence or a Human Outcome, or permit guarded transition/completion.
+
 ## Work Inventory
 
 **Issue**
@@ -71,6 +89,13 @@ Avoid: using Subtasks only as a checklist.
 Definition: A named state machine governing one or more Issue kinds.
 Use when: describing Issue lifecycle states and legal transitions.
 Avoid: using it for kit risk, role-routing, or assurance policy.
+
+**Terminal-success Issue state**
+Definition: A workflow state in the completed category that qualifies as the
+successful terminal outcome for the selected Issue rather than cancellation.
+Use when: applying the gate-evidence guard before Phase 21 completion.
+Avoid: treating a legacy completion row, role-specific verification, or
+caller attribution as the terminal-success state or its evidence.
 
 **Acceptance criterion**
 Definition: An Issue-level statement of an observable required outcome.
@@ -182,7 +207,7 @@ Use when: proving deterministic execution.
 Avoid: caller-reported exit codes or mutable result rows.
 
 **Trust Source**
-Definition: The provenance class of evidence: `executed`, `attested`, or
+Definition: The provenance class of evidence: `fid-executed`, `attested`, or
 `reported`.
 Use when: evaluating whether evidence may satisfy an Obligation.
 Avoid: treating `reported` as deterministic proof.

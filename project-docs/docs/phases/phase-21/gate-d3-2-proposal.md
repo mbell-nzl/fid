@@ -28,23 +28,37 @@ One real-process journey, repeated after rebuild, must:
    referencing that Registration through one gate-evidence Obligation;
 6. resolve the Actor from the active activation, authorize it through the
    Envelope grant, acquire one Mutation Claim, and start one Run;
-7. perform one execution-bound Issue transition under active revision, Actor,
-   Claim, expected Issue revision, and applicable-Obligation checks;
+7. perform one nonterminal execution-bound Issue transition under active
+   revision, Actor, Claim, expected Issue revision, and repository checks;
 8. ask fid to execute only the Registration reference, append the Attempt
    before spawn, stream sanitized framed output, and record at most one
    immutable terminal Receipt after observed termination;
 9. link the Receipt to the Obligation, evaluate absence/freshness/Artifact
-   availability independently, and return every unsatisfied reason in
-   deterministic order;
-10. finish the Run, release the Claim, and complete the Work Envelope only
-    when its Issue and Obligation satisfy the accepted contract;
-11. reconstruct bounded resume state from durable facts without prior chat;
-12. create and non-mutatingly validate a deterministic portable export; and
-13. rebuild and reproduce the accepted capability, Envelope, evidence,
-    completion, resume, and export semantics.
+   availability independently, and require `satisfied` before the
+   terminal-success Issue transition;
+10. perform the terminal-success Issue transition through the shared
+    Obligation evaluator, then finish the Run and release the Claim;
+11. complete the Work Envelope through the same evaluator, which rechecks all
+    required Obligations and the terminal-success Issue;
+12. reconstruct bounded resume state, create an export, and non-mutatingly
+    validate it; and
+13. delete the projection, rebuild from durable facts, then repeat only the
+    named reads, evaluation, completion state, resume, export, and negative
+    conformance checks. Do not create a second one-revision Envelope.
 
 Registration precedes Work Envelope creation. An Envelope cannot reference a
 Gate Definition value or mutable project file directly.
+
+## DEC-156 Human Amendment - Terminal-Success Guard
+
+The Human's 2026-08-22 planning correction amends, but does not rewrite,
+DEC-153. The one `gate-evidence` Obligation guards both
+`issue.transition-terminal-success` and `envelope.complete`. Gate execution,
+Receipt linking, and successful Evidence evaluation occur before the guarded
+Issue transition. Completion remains a separate later mutation and re-runs
+the same Obligation evaluator against current Evidence facts; its separate
+action predicate also requires the terminal-success Issue.
+Nonterminal execution-bound transition remains earlier in the journey.
 
 ## Human Decision Point Disposition
 
@@ -71,7 +85,8 @@ Gate Definition value or mutable project file directly.
 - generic Authority Grants evaluated against the activation-resolved Actor;
 - one active Mutation Claim, one Run, and explicit acquire/renew/release and
   start/finish reads;
-- execution-bound transition enforcement;
+- execution-bound nonterminal transition enforcement plus a shared
+  gate-evidence evaluator guarding terminal success and completion;
 - standard-library local execution, framed live output, redaction/control
   handling, Attempt/Receipt terminal semantics, and safe Artifact retention;
 - Receipt-linked Evidence, conservative repository-tree freshness, Artifact
@@ -176,8 +191,9 @@ second authority for Work Envelope completion or generic Runs.
   feasibility. Any finding returns to its owning Group 1 task. Group 2 is not
   dispatched without PASS.
 - **Group 2:** executor policy and framing; Attempt/Receipt; Artifact/Evidence/
-  freshness; completion/resume; export; maintenance/rebuild; V1 dev/completion
-  removal; and the final real-process/conformance journey.
+  freshness; terminal transition/completion/resume; export; V1 removal and
+  migration 0014; final-schema maintenance/rebuild; and the final
+  real-process/conformance journey.
 - **Review cadence:** every three completed Developer tasks, the Group 1
   checkpoint, then final QA and Human checklist.
 

@@ -49,6 +49,11 @@ PASS and its standalone Issue journey accepted. **Gate D3.2 was accepted on
 2026-08-22**: one Heavy Phase 21 uses two internal task groups with an
 independent authority/executor-feasibility checkpoint between them. `Routine`
 remains external kit risk-lane language, not fid state.
+DEC-156 fixes the vertical order: trusted gate Evidence precedes and guards
+terminal-success Issue transition; completion later reuses the same evaluator.
+DEC-157 fixes the complete interface, role-free bootstrap, live V1 inventory,
+and final task order. Phase 21 remains Planning / Awaiting Human Execution
+Approval.
 
 ## 3. Foundation to retain
 
@@ -122,6 +127,9 @@ This is the pre-planning map for implementation that exists after Phase 19.
 The Tech Lead must replace it with an exact file/schema/event inventory in each
 phase plan. Phase 20's exact inventory is
 `../docs/phases/phase-20/contracts.md` section 5.
+Phase 21's code-derived inventory is
+`../docs/phases/phase-21/v1-convergence-inventory.md`; it assigns every retained,
+fail-closed, temporary, removed, and frozen caller/reader/writer.
 
 | Current surface | Planned treatment |
 |---|---|
@@ -221,9 +229,12 @@ reading `.fid/` internals.
    recorded at `../docs/reviews/2026-08-22-phase-20-retrospective.md`.
 3. **Complete (2026-08-22).** Gate D3.2 is accepted with the amendments in
    `../docs/phases/phase-21/gate-d3-2-proposal.md` and ADR-0012.
-4. Review the exact Phase 21 slice contract, validation contract, Heavy-mode
-   task pack, and phase brief. No implementation begins before Human execution
-   approval and a Ready QA plan with fresh feasibility evidence.
+4. Review the exact Phase 21 semantic contract, public-interface contract,
+   convergence inventory, VAL-001..087 contract, Heavy task pack, checkpoint,
+   QA Lead handoff, and phase brief. Tasks 19-22 are export; removal/0014;
+   final-schema init/maintenance/rebuild/export parity; and final conformance.
+   No implementation begins before a Ready QA plan, Tech Lead refinements, and
+   Human execution approval.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

@@ -3,7 +3,7 @@
 > Owner: Tech Lead
 > Required after: task 12 and its QA Review window
 > Required before: task 13 dispatch
-> Governing assertion: VAL-028
+> Governing assertions: VAL-042 and VAL-043
 
 This is a dispatch gate inside one Heavy Phase 21, not a phase boundary. The
 QA Lead assigns a reviewer independent of tasks 1-12 and records the outcome
@@ -27,9 +27,19 @@ The reviewer must establish:
 - finalized Activation is the only kit Actor/Gate trust source;
 - Gate Registration precedes Envelope creation and accepts no policy override;
 - Envelope, Obligation, budget, grant, Claim, Run, and transition bindings
-  match the slice contract without a second V1 authority;
-- only the explicitly frozen `task_completions` and `agent_runs` state remains,
-  with no Phase 21 writer/authority read; and
+  match the slice contract and new generic paths do not consult V1 authority;
+- the temporary replacement inventory is exactly the one in
+  `../v1-convergence-inventory.md` section 5: `roles`, V1 `claims`,
+  `gate_runs`, `task_completions`, `agent_runs`, `ac_verifications`,
+  `concerns`, role/judgment transition-requirement rows, `fid dev`, Issue
+  complete, and their replacement-bound writers/packages may remain; the
+  internal V1 policy implementation may remain only for those exact callers,
+  while the public `fid policy` command is already absent;
+- AC verification and concern mutation are already fail-closed, and none of
+  that temporary state can authorize a generic operation or satisfy Evidence,
+  a guarded terminal transition, or completion;
+- final command/table/writer/Event absence is explicitly reserved for task 20
+  and final-schema init/rebuild/export parity for task 21; and
 - no Group 2 implementation or capability advertisement was pulled forward.
 
 ## Fresh Group 2 Feasibility
@@ -55,7 +65,8 @@ command, or a green result without observed termination is not feasibility.
 
 ## Verdict
 
-`PASS` requires every precondition, review item, and fresh feasibility probe.
+`PASS` requires every precondition, review item, temporary-inventory
+classification, generic-path isolation proof, and fresh feasibility probe.
 `REPAIR` returns each finding to its owning Group 1 task and repeats this
 checkpoint after normal recovery. `BLOCK` is reserved for a protected contract
 change, an unavailable external capability after bounded recovery, or a

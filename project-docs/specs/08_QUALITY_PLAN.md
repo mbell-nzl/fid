@@ -175,6 +175,14 @@ for Group 2. Findings return to their owning task; implementation momentum is
 not evidence. Each Developer runs report lint on its own completion report
 before the next task is dispatched.
 
+The checkpoint proves new generic Group 1 paths are isolated from the exact
+temporary V1 inventory; it does not require final absence before the removal
+task. Phase 21 task 20 performs migration 0014 and V1 removal. Task 21 then
+performs final-schema fresh init, role-free rebuild, maintenance, live/rebuild/
+export parity, and the 100k Event-v2 check. Task 22 performs final wire and
+real-process conformance. The journey mutates once; post-rebuild evidence is
+read/evaluation/export/negative parity, not a second Envelope mutation.
+
 ## 9. First supported baseline
 
 Before fid is used by a live project:

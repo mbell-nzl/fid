@@ -2,59 +2,61 @@
 
 ## Objective
 
-Implement deterministic archive creation and non-mutating validation for the accepted manifest, journal prefix, source metadata, capability snapshot, and available Artifact blobs. Keep import absent and `export.portable.v1` unavailable.
+Create the deterministic v2 export archive and validate it without mutating project state. Keep import absent and portable capability unavailable.
 
 ## Validation Contract Coverage
 
-- VAL-051: export creation is byte-deterministic and integrity-bound.
-- VAL-052: validation detects safety/integrity defects without mutation.
-- VAL-053: import is absent and portable capability remains unavailable.
+- VAL-069: owning observable in the Phase 21 validation contract.
+- VAL-070: owning observable in the Phase 21 validation contract.
+- VAL-071: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Fixed ZIP ordering, timestamp, mode, extras, and compression are contract data.
-- Validation must not initialize, append, rebuild, repair, or alter the target project.
-- Do not claim PRD-REC-001/004 reconstruction parity before Phase 22 import.
+- No wall-clock archive field or unstable ZIP metadata.
+- Validate never repairs or imports.
+- Do not advertise `export.portable.v1`.
 
 ## Scope
 
 ### Files To Create Or Modify
 
 - `internal/export/`
+- `internal/evidence/`
+- `internal/journal/`
 - `internal/cli/`
 - `cmd/fid/`
 - `project-docs/docs/phases/phase-21/tasks/task-19-done.md`
 
 ### Files To Read For Context
 
-- `project-docs/docs/phases/phase-21/contracts.md §§2,11`
-- `project-docs/specs/01_PRD.md PRD-REC-001..004`
+- `project-docs/docs/phases/phase-21/contracts.md §11`
+- `project-docs/docs/phases/phase-21/public-interface.md`
+- `project-docs/specs/07_DESIGN_PLAN_FLOWS.md §10`
 
 ### Out Of Scope
 
-- Export import, reconstruction, identity/history preservation, and portable capability availability.
+- Import, identity/history reconstruction, migration 0014, and final parity.
 
 ## Acceptance Criteria
 
-- [ ] Repeated identical export bytes/digests and exact manifest inventory match. (VAL-051)
-- [ ] Every corruption/path/inventory defect rejects with unchanged project state. (VAL-052)
-- [ ] No import path exists and capability stays false. (VAL-053)
+- [ ] Repeated create from identical facts is byte-identical and complete. (VAL-069)
+- [ ] Every archive defect rejects without mutation. (VAL-070)
+- [ ] Import is absent and capability false. (VAL-071)
 
 ## First Failing Test
 
-Add a failing deterministic two-export byte comparison, then one corruption row per validation rule.
+Add failing repeated-digest/inventory test, corruption corpus, and import/capability absence guard.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-19-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-19-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/export ./internal/cli ./cmd/fid/...
-go test -tags integration -race ./cmd/fid/integration/...
+go test -race ./internal/export ./internal/evidence ./internal/journal ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -62,11 +64,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-19-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 16-18 and QA Review 6 closes with required evidence.
+- Start after task 18 closes.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-19-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

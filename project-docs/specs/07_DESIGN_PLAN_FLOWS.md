@@ -114,6 +114,16 @@ No QA Work Item, QA Plan, handoff, or completion report is created.
 
 Routine status never raises Attention.
 
+### Phase 21 terminal-success qualification
+
+The one-Issue slice performs a nonterminal execution-bound transition first.
+It then executes the registered Gate, records and links the fid-executed
+Receipt, and evaluates the gate-evidence Obligation. Only `satisfied` permits
+the terminal-success Issue transition. Envelope completion follows and calls
+the same evaluator again while also requiring that terminal Issue. A
+role-looking attribution, AC verification, concern, or V1 completion row cannot
+satisfy either guarded action.
+
 ## 9. Envelope Revision And Multi-Issue Progress
 
 1. Progress is read from selected Issue states; it is never written as partial
@@ -144,6 +154,11 @@ only. Import, identity/history preservation, and full live/rebuild/import
 equivalence enter with Phase 22 recovery; `export.portable.v1` remains
 unavailable until that parity passes.
 
+The Phase 21 rebuild proof mutates once. After projection deletion/rebuild it
+repeats capability/Envelope/Receipt/Evidence reads, evaluation, completion
+state, resume, export create/validate, and negative conformance checks. It does
+not create a second Envelope revision or repeat the mutation journey.
+
 ## 11. Pre-Dogfood Convergence
 
 1. A D3 slice specifies its JSON contracts, DDL, Event fixtures, conformance
@@ -155,4 +170,4 @@ unavailable until that parity passes.
 5. Final convergence replaces the development migration chain with the first
    supported schema/Event baseline and rehearses a disposable project.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+*Last updated: 2026-08-22 (Phase 21 DEC-156/157 flow amendment)*

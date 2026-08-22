@@ -42,7 +42,7 @@ Success:
   "contract_version": "fid-cli.v1",
   "ok": true,
   "operation": "issue.get",
-  "result": {},
+  "result": {"issue": {"id": "FID-123", "kind": "task", "title": "Example", "status": "todo", "status_category": "unstarted", "workflow_id": "task-default", "parent_id": null, "priority": null, "sequence": null, "spec_md_path": null, "revision": 1, "labels": [], "created_at": "2026-08-22T00:00:00Z", "updated_at": "2026-08-22T00:00:00Z", "acceptance_criteria": []}},
   "event": null
 }
 ```
@@ -295,7 +295,7 @@ vertical slice before product code changes. Accepted slice contracts:
 | Slice | Accepted contract |
 |---|---|
 | Phase 20 - clean standalone Issue journey | `../docs/phases/phase-20/contracts.md` |
-| Phase 21 - one-Issue operational walking skeleton | `../docs/phases/phase-21/contracts.md` |
+| Phase 21 - one-Issue operational walking skeleton | semantics: `../docs/phases/phase-21/contracts.md`; exact wire surface: `../docs/phases/phase-21/public-interface.md` |
 
 A slice contract fixes its operation names, `result` shapes, reason codes,
 closed request/flag shapes, ordering/limits, redaction/unknown-field behavior,
@@ -313,6 +313,11 @@ the exact `fid.live.v1` NDJSON channel; other machine leaves retain the
 `fid-cli.v1` Response Envelope. Phase 21 has no recovery, Envelope revision or
 cancel, telemetry, Stop, Attention, attestation ingest, review/judgment, or
 export import leaf. The full JSON shapes, limits, ordering, reasons, trust, and
-deferrals live in the cited slice contract.
+deferrals live in the cited slice contract. Every retained inventory/read leaf,
+fail-closed judgment leaf, exact argument/flag, closed `--input` schema,
+operation result, collection order, Event/replay shape, Human rendering,
+failure details/channel/exit, and live frame payload lives in the cited public
+interface. All closed public enum members are lowercase kebab-case; JSON field
+names and opaque workflow-state/entity identifiers are not enum members.
 
-*Last updated: 2026-08-22 (Phase 21 planning contract amendment)*
+*Last updated: 2026-08-22 (Phase 21 DEC-157 complete interface amendment)*

@@ -1,119 +1,100 @@
-# Phase Brief - Phase 21 (Planning / Awaiting Approval)
+# Phase Brief - Phase 21
 
-> Default execution brief. Product implementation is not authorized.
+> Status: **Planning / Awaiting Human Execution Approval**
+> Branch: `phase-21`
+> Product implementation: **NOT AUTHORIZED**
 
-## Phase Goal
+## Goal And Mode
 
-Deliver one complete one-Issue operational walking skeleton: activated trust,
-immutable Gate Registration, one Work Envelope and gate-evidence Obligation,
-generic Claim/Run authority, fid-executed Receipt evidence, deterministic
-completion/resume, export create/validate, rebuild parity, and owned V1
-removal. Routine is external kit language and is not fid state.
+Deliver one Heavy one-Issue operational walking skeleton: activated trust,
+immutable Gate Registration, one Work Envelope/revision, one gate-evidence
+Obligation, generic Actor/Claim/Run authority, fid-executed Receipt Evidence,
+guarded terminal-success Issue transition, later Envelope completion, bounded
+resume, export create/validate, rebuild parity, and owned V1 removal.
 
-## Status
+**Operating mode: Heavy.** Authority, public JSON/Event contracts, destructive
+schema convergence, local process execution, credentials/redaction, Artifact
+safety, completion, and rebuild cross protected boundaries. One numeric phase
+has two internal groups and an independent checkpoint; no 21A/21B exists.
 
-**Planning complete; awaiting Human execution approval.** Branch `phase-21`.
-Gate D3.2 is accepted by DEC-153, the exact slice is DEC-154, and carry-forward
-disposition is DEC-155. Do not dispatch task 1 until the Human accepts this
-Heavy plan and the QA Lead supplies a Ready QA plan with fresh feasibility.
+## Binding Decisions
 
-## Operating Mode
+- DEC-152: Phase 20 retrospective controls task size, fresh feasibility,
+  task-local report lint, three-task review cadence, and checkpoint timing.
+- DEC-153: Gate D3.2 DP-1..DP-7 remain accepted and are not reopened.
+- DEC-154: exact initial slice/schema contract.
+- DEC-155: carry-forward disposition.
+- DEC-156: gate evidence guards terminal-success transition before completion;
+  both use one shared Obligation evaluator.
+- DEC-157: complete wire contract, kebab-case public enums, role-free bootstrap,
+  exhaustive V1 disposition, achievable checkpoint, and tasks 19-22 order.
 
-**Heavy.** This phase changes authority, public JSON/Event contracts, schema,
-trusted local execution, redaction/Artifact safety, completion, and resume
-projections. Two internal groups remain one numeric phase under ADR-0012.
+## Planning Authorities
 
-## Task Index
+- Slice semantics/Event fixtures: `../phases/phase-21/contracts.md`
+- Complete public interface: `../phases/phase-21/public-interface.md`
+- Live V1 inventory: `../phases/phase-21/v1-convergence-inventory.md`
+- Validation: `../phases/phase-21/qa/validation-contract.md` (VAL-001..087)
+- Checkpoint: `../phases/phase-21/qa/group-1-checkpoint-contract.md`
+- QA request: `../phases/phase-21/qa/qa-lead-handoff.md`
+- Planning audit: `../phases/phase-21/planning-audit.md`
+- Tasks: `../phases/phase-21/tasks/task-<N>-*.md`
 
-Full specs are under `../phases/phase-21/tasks/`.
+## Group 1 - Authority Foundation
 
-| Task | Title | Status | Dependencies |
-|---|---|---|---|
-| 1 | Operational schema and projection | Pending approval | None |
-| 2 | Event v2 and durable idempotency | Pending | 1 |
-| 3 | Capability discovery matrix | Pending | 1-2 |
-| 4 | Activation lifecycle and trust profiles | Pending | 1-3, Review 1 |
-| 5 | Activated Gate Registration | Pending | 4 |
-| 6 | Envelope, Obligation, and budget values | Pending | 5 |
-| 7 | Envelope authority evaluator | Pending | 4-6, Review 2 |
-| 8 | Issue Actor/idempotency convergence | Pending | 7 |
-| 9 | Retained Actor convergence and policy removal | Pending | 7-8 |
-| 10 | Generic mutation Claims | Pending | 6-9, Review 3 |
-| 11 | Generic Runs and budget bindings | Pending | 10 |
-| 12 | Execution-bound transition foundation | Pending | 7,10-11 |
-| CP | Independent Group 1 checkpoint | Required | 1-12, Reviews 1-4 |
-| 13 | Portable executor policy | Pending | CP PASS |
-| 14 | Live output framing and redaction | Pending | 13 |
-| 15 | Trusted Attempt and Receipt execution | Pending | 13-14 |
-| 16 | Safe content-addressed Artifacts | Pending | 15, Review 5 |
-| 17 | Receipt Evidence and evaluation | Pending | 15-16 |
-| 18 | Envelope completion and resume | Pending | 17 |
-| 19 | Deterministic export create/validate | Pending | 16-18, Review 6 |
-| 20 | Maintenance and full rebuild parity | Pending | 19 |
-| 21 | V1 authority/execution removal | Pending | 7-20 |
-| 22 | Real-process journey and conformance | Pending | 21, Review 7 |
+| Task | Title | Depends on | VAL ownership |
+|---:|---|---|---|
+| 1 | 0013 schema/constraints | approval only | 001 |
+| 2 | Event v2, idempotency, role-free bootstrap | 1 | 003-008 |
+| 3 | capability discovery | 1-2 | 009-010 |
+| 4 | Activation trust | 2-3 | 011-015 |
+| 5 | Gate Registration | 4 | 016-018 |
+| 6 | Envelope values | 5 | 019-022 |
+| 7 | generic authority | 4,6 | 023-024 |
+| 8 | Issue Actor/Event convergence | 2,7 | 025-027 |
+| 9 | retained attribution/judgment freeze | 7-8 | 028-031 |
+| 10 | generic Claims | 6-7 | 032-034 |
+| 11 | generic Runs | 10 | 035,037 |
+| 12 | shared evaluator/nonterminal transition | 7,10-11 | 038-041 |
 
-Reviews occur after tasks 1-3, 4-6, 7-9, 10-12, 13-15, 16-18, and
-19-21. Task 22 is followed by final QA and the Human checklist.
+QA Reviews follow tasks 1-3, 4-6, 7-9, and 10-12. The independent checkpoint
+owns VAL-042/043. Temporary replacement-bound V1 state may remain exactly as
+inventoried; PASS proves new generic paths do not consult it. Task 13 is
+blocked without checkpoint PASS and fresh Group 2 feasibility.
 
-## Validation Contract
+## Group 2 - Trusted Execution And Convergence
 
-Full contract: `../phases/phase-21/qa/validation-contract.md` (VAL-001..064,
-Draft). Group 1 owns VAL-001..028 plus VAL-062/063; Group 2 owns VAL-029..060
-and VAL-064; VAL-061 is phase-end delivery-control evidence. VAL-036 is the
-only Human assertion. Every row has exactly one validator.
+| Task | Title | Depends on | VAL ownership |
+|---:|---|---|---|
+| 13 | portable executor policy | checkpoint | 044-046 |
+| 14 | live framing/redaction/controls | 13 | 036,047-050 |
+| 15 | Attempt/Receipt | 13-14 | 051-054 |
+| 16 | Artifacts | 15 | 055-057 |
+| 17 | Evidence evaluation | 15-16 | 058-063 |
+| 18 | terminal guard/completion/resume | 12,17 | 064-068 |
+| 19 | export create/validate | 18 | 069-071 |
+| 20 | V1 removal and migration 0014 | 1-19 | 002,074-075 |
+| 21 | final-schema init/maintenance/rebuild/export parity | 20 | 076-083 |
+| 22 | final interface/journey conformance | 21 | 072-073,084-086 |
 
-## QA Artifacts
+QA Reviews follow tasks 13-15, 16-18, and 19-21. Final QA owns task 22
+evidence and phase-end VAL-087. VAL-036 is the sole Human checklist assertion.
 
-| Artifact | Path | Status |
-|---|---|---|
-| Validation contract | `../phases/phase-21/qa/validation-contract.md` | Draft |
-| QA plan | `../phases/phase-21/qa/qa-plan.md` | Missing; required before task 1 |
-| Group 1 checkpoint | `../phases/phase-21/qa/group-1-checkpoint-contract.md` | Contract Ready; review pending |
-| Mid-phase reviews | `../phases/phase-21/qa/review-M.md` | Seven windows pending |
-| Final review/checklist | `../phases/phase-21/qa/` | Pending |
+## Journey Order
 
-## Active Constraints
+Mutate once: init/Issue; discover; activate; register; create/activate Envelope;
+resolve Actor; Claim/Run; nonterminal transition; execute Gate; persist/link
+Receipt; evaluate Evidence; terminal-success transition; finish/release;
+complete; resume; export/validate. Delete the projection and rebuild, then
+repeat only named reads, evaluation, completion state, resume, export, and
+negative checks. Never create a second Envelope revision.
 
-- Registration from finalized activated Gate values precedes Envelope create.
-- Actor capabilities/provenance come only from active Activation; caller
-  declarations confer no kit authority.
-- Only portable standard-library executor controls are accepted; no OS
-  containment claim or new dependency exists.
-- Attention, Stops, budget consumption, recovery/respawn, import, review,
-  Human Outcomes, parallelism, attestation, and telemetry remain deferred.
-- `export.portable.v1` stays unavailable; create/validate is not import parity.
-- Group 2 requires independent VAL-028 PASS with fresh feasibility evidence.
-- Each task runs its full gate and task-local report lint before next dispatch.
+## Approval Gate
 
-## Parity Matrix
+1. Human reviews and approves or amends this complete Heavy planning pack.
+2. QA Lead proposes a **Ready** Heavy QA plan from the handoff.
+3. Tech Lead applies any QA-driven contract/task command refinements.
+4. Human approves execution. Only then may a Phase Runner dispatch task 1.
 
-| Axis | Live | Rebuild | Export/validate | Evidence |
-|---|---|---|---|---|
-| State | canonical v2 reads | byte-identical named reads | integrity-bound snapshot | VAL-006/055 |
-| Authority | active Activation/grants | same resolved facts | metadata only | VAL-010/018 |
-| Evidence | Receipt/Evidence/Artifact | same evaluation/reasons | available material/digests | VAL-043..052 |
-| Capability | exact 12-row matrix | identical matrix | snapshot, no import claim | VAL-007/053 |
-
-## Known Risks
-
-- Child-process termination, redaction, and path-race verification may expose
-  a platform/dependency need; VAL-028 must surface that before task 13.
-- Migration 0014 cannot run until generic authority/Claim/Run replacements
-  pass; frozen table scope must not become a second authority.
-- The large public-contract surface is controlled by 22 causal tasks and
-  three-task independent review windows, not by weakening assertions.
-
-## Success / Exit Criteria
-
-- [ ] Tasks 1-22 complete with required gates and task-local report lint.
-- [ ] VAL-028 checkpoint PASS before Group 2.
-- [ ] VAL-001..064 have final dispositions; no FAIL/BLOCKED is ignored.
-- [ ] Final QA has no unresolved blocking finding and VAL-036 Human check passes.
-- [ ] DEC/spec/removal/triage audits and phase sign-off are recorded.
-
-## Next Planning Checkpoint
-
-Human reviews the Heavy mode, DEC-154 contract, validation contract, and task
-pack. After approval, QA Lead drafts/refines a Ready Heavy QA plan; Tech Lead
-applies any assertion/command refinements before the Phase Runner starts.
+No protected Human decision remains open inside the proposed contract. The
+pending action is execution approval, not a reopened DP-1..DP-7 decision.

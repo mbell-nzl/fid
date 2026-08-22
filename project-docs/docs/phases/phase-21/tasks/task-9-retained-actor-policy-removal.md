@@ -1,69 +1,72 @@
-# Phase 21 - Task 9: Retained Actor Convergence And Policy Removal
+# Phase 21 - Task 9: Retained Inventory Attribution And Judgment Freeze
 
 ## Objective
 
-Convert every remaining retained mutation to `--actor`, Event v2, and required
-idempotency, rename stats grouping to `--group-by`, then delete the V1 policy
-command/implementation after generic authority conformance while retaining
-`internal/policy` as the generic owner. Remove the mixed Phase 20 global-flag
-restriction.
+Convert every retained non-Issue inventory mutation to project-local `--actor` plus Event-v2 idempotency, remove the public V1 policy command after generic authority passes, isolate the legacy action registry to enumerated dev/completion callers until task 20, and make Phase 23 judgment mutations fail closed. Rename stats grouping without treating historical attribution as authority.
 
 ## Validation Contract Coverage
 
-- VAL-001: every retained mutation family emits Event v2.
-- VAL-003: retained retryable mutations use durable replay.
-- VAL-021: no live `--by` spelling remains.
+- VAL-028: owning observable in the Phase 21 validation contract.
+- VAL-029: owning observable in the Phase 21 validation contract.
+- VAL-030: owning observable in the Phase 21 validation contract.
+- VAL-031: owning observable in the Phase 21 validation contract.
 
 ## Binding Constraints
 
-- Convert callers before deleting V1 role-policy files; retain the generic
-  `internal/policy` package and leave `roles` for migration 0014 in task 21.
-- Help, errors, fixtures, and integration commands must use the replacement spellings consistently.
-- Do not treat stats grouping as Actor attribution.
+- Cover workflow define/assign, AC add, labels, links, requirements, activity
+  normalization, concerns, maintenance vacuum, and stats.
+- No public role/judgment requirement authoring survives.
+- Do not delete the legacy policy implementation while the enumerated
+  dev/completion callers remain; prove new generic paths cannot reach it.
+- Do not delete replacement-bound dev/completion packages or tables yet.
 
 ## Scope
 
 ### Files To Create Or Modify
 
-- `cmd/fid/`
-- `internal/cli/`
+- `internal/policy/`
 - `internal/workflow/`
+- `internal/issues/`
 - `internal/labels/`
 - `internal/links/`
 - `internal/requirements/`
+- `internal/activity/`
+- `internal/stats/`
 - `internal/maintenance/`
-- `internal/policy/`
+- `internal/cli/`
+- `cmd/fid/`
 - `project-docs/docs/phases/phase-21/tasks/task-9-done.md`
 
 ### Files To Read For Context
 
-- `project-docs/docs/phases/phase-21/contracts.md §§12,14,15`
-- `project-docs/specs/06_DESIGN_PLAN_CLI.md §§1,8`
+- `project-docs/docs/phases/phase-21/public-interface.md §§4-5`
+- `project-docs/docs/phases/phase-21/v1-convergence-inventory.md`
 
 ### Out Of Scope
 
-- Legacy Claim/Run/dev/completion removals and dropping `roles`.
+- Generic Claims/Runs and final V1 removal.
 
 ## Acceptance Criteria
 
-- [ ] All retained mutation families use resolved/attributed Actor and Event v2/idempotency as contracted. (VAL-001, VAL-003)
-- [ ] Mutation `--actor` and stats `--group-by` work; `--by` rejects everywhere. (VAL-021)
-- [ ] V1 policy command/role implementation is absent only after generic authority tests pass. (VAL-021)
+- [ ] Every retained family has exact attributed/idempotent behavior. (VAL-028)
+- [ ] Role/judgment workflow inputs cannot be authored. (VAL-029)
+- [ ] Judgment mutations are unavailable/no-writer. (VAL-030)
+- [ ] Stats uses exact grouping/attribution contract. (VAL-031)
 
 ## First Failing Test
 
-Add a failing command-tree matrix proving replacement spellings and rejection of every former `--by` use.
+Add one failing conformance row per retained/fail-closed family before shared conversion.
 
 ## Documentation Updates
 
-- `project-docs/docs/phases/phase-21/tasks/task-9-done.md` - record red/green evidence, deviations, required command results, and spec impact.
+- `project-docs/docs/phases/phase-21/tasks/task-9-done.md` - record red/green evidence, deviations, required commands, and spec impact.
 
 ## Exact Commands To Run
 
 Run exactly:
 
 ```text
-go test -race ./internal/workflow ./internal/labels ./internal/links ./internal/requirements ./internal/maintenance ./internal/cli ./cmd/fid/...
+go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -71,11 +74,11 @@ go tool cover -func=coverage.out
 project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-9-done.md
 ```
 
-Every command above is required and must terminate with captured evidence. The report-lint command runs in this task before the next task is dispatched.
+Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
-- Start only after tasks 7-8 closes with required evidence.
+- Start after tasks 7-8 close. QA Review window 3 follows tasks 7-9.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-9-done.md`.
-- Stop for protected contract changes; ordinary in-scope red/green repair remains this task.
+- Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.
