@@ -4,6 +4,13 @@
 > `triage-log.md`. Open items also appear in
 > `../../current/tl_escalations_current.md` until resolved.
 
+## Wrap-Up Note
+
+Phase 20 completed on 2026-08-22 with no open escalation. The archive contains
+resolved allocations ESC-20-001..ESC-20-018 and ESC-20-021. TRG-20-019 and
+TRG-20-020 were correction records preserving ESC-20-016, so no ESC-20-019 or
+ESC-20-020 was allocated. DEC-151 records the final audit.
+
 ## Escalations
 
 ### Resolved

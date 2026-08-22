@@ -90,6 +90,11 @@ before Phase 21 planning. Phase 20 planning may proceed now from
 | CF-026a | Candidate tracker/workflow inspection projection; no committed slice. |
 | CF-026b | Candidate Issue-workflow lifecycle design; requires a decision before scheduling. |
 | CF-027 | Keep the `internal/issues/create.go` decomposition trigger; cancel the `writeMarkdown` half. |
+| CF-028 | Split `internal/bootstrap/init.go` staging/fsync helpers only when a later change reopens that file; the trigger did not fire after Task 3b. |
+| CF-029 | Extend evidence-token validation to QA review artifacts while the V1 delivery workflow remains active. |
+| CF-030 | Improve `report-lint.sh` rejected-token diagnostics so they state the accepted token shape. |
+| CF-031 | Closed in Phase 20: PASS termination validation and expected-nonzero parsing are implemented and drilled. |
+| CF-032 | Add direct invalid-input tests for `BuildIssueRevisionEffects` when `internal/issues/revision.go` next changes. |
 
 Optional product ideas are not carry-forwards. Their evidence triggers live only
 in ADR-0011's concise candidate ledger.
@@ -102,18 +107,15 @@ implementation work, including TDD, evidence, command, phase, and hard-stop
 rules. Those requirements are temporary engineering scaffolding, not forward
 fid product requirements.
 
-No implementation phase starts from the historical version roadmap. Phase 20 is
-planned, V1-workflow-self-checked, and independently audited (2026-08-09): heavy
-mode, eighteen tasks, six mid-phase reviews, `VAL-001..VAL-046`,
-`DEC-107..DEC-129`. Its accepted slice contract is
-`../phases/phase-20/contracts.md`; Human approval accepted amendments to
-`03_TRD_SCHEMA.md` §8, `04_TRD_CONFIG.md` §2/§5,
-`06_DESIGN_PLAN_CLI.md` §2/§5/§8, and `GLOSSARY.md`. QA-plan acceptance remains
-the pre-Developer gate.
+No implementation phase starts from the historical version roadmap. Phase 20
+completed and wrapped on 2026-08-22: all tasks and reviews closed, all 46 VAL
+assertions PASS, the Human checklist is 3/3 PASS, and no escalation remains.
+Its accepted and delivered slice contract is
+`../phases/phase-20/contracts.md`; the next product decision is Gate D3.2.
 
-Two Phase 20 constraints bind every later agent session: fail-closed V1
-authority stays until Phase 21 proves generic authority (DEC-113), and no
-Phase 21 Routine or Envelope surface is pulled forward (DEC-117).
+Two Phase 20 constraints bind later planning: fail-closed V1 authority stays
+until Phase 21 proves generic authority (DEC-113), and no Phase 21 Routine or
+Envelope surface is pulled forward without Gate D3.2 (DEC-117).
 Canonical workflow authoring exposes states/transitions only, never the V1
 role/assurance `--require` grammar; retained legacy `dev` status mutations still
 advance complete Issue aggregate revision until Phase 21 deletes them (DEC-128).

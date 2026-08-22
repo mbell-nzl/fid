@@ -2,7 +2,7 @@
 
 > Phase: 20 - Standalone Issue Journey
 > Date: 2026-08-16
-> Tester: _______________
+> Tester: MBEL
 >
 > This checklist contains only Human judgment for VAL-038. Deterministic
 > command, schema, channel, and file-state checks are recorded in
@@ -45,21 +45,21 @@ it was not judged.
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-038a | VAL-038 | Judge the displayed routine init/create/get/update output as one interaction corpus. | The routine output is concise enough for normal terminal use. | | |
-| HUMAN-038b | VAL-038 | Judge the displayed stale-revision failure message. | The message gives sufficiently actionable guidance for the legitimate next action. | | |
-| HUMAN-038c | VAL-038 | Inspect the displayed routine and failure corpus for direct or indirect advice about fid storage/config internals. | No message advises editing `.fid/`, SQLite, journal files, generated config, or another fid internal directly. | | |
+| HUMAN-038a | VAL-038 | Judge the displayed routine init/create/get/update output as one interaction corpus. | The routine output is concise enough for normal terminal use. | pass | |
+| HUMAN-038b | VAL-038 | Judge the displayed stale-revision failure message. | The message gives sufficiently actionable guidance for the legitimate next action. | pass | |
+| HUMAN-038c | VAL-038 | Inspect the displayed routine and failure corpus for direct or indirect advice about fid storage/config internals. | No message advises editing `.fid/`, SQLite, journal files, generated config, or another fid internal directly. | pass | |
 
 ## Summary
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Human Output And Guidance Judgment | Pending | Pending | Pending | Pending | Pending |
-| **Total** | **Pending** | **Pending** | **Pending** | **Pending** | **Pending** |
+| Human Output And Guidance Judgment | 3 | 3 | 0 | 0 | 0 |
+| **Total** | **3** | **3** | **0** | **0** | **0** |
 
 | | |
 |---|---|
-| **Overall result** | Pending |
-| **Date completed** | |
+| **Overall result** | pass |
+| **Date completed** | 2026-08-22 |
 | **Notes** | |
 
 <!--

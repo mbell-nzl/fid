@@ -1,64 +1,58 @@
 # Phase 20 Progress - Clean Standalone Issue Journey
 
-## Status
+> Status: **COMPLETE / WRAPPED (2026-08-22)**. All tasks and recovery slices
+> are complete, final deterministic review is PASS, Human checklist is 3/3
+> PASS, and VAL-001..VAL-046 are all PASS.
 
-**Tasks 1-17 complete; Review 6 is next.** Task 18 has not started. Branch:
-`phase-20`. The ESC-20-015 recovery is closed in the run ledger; the workflow
-control hardening is undergoing its final independent infrastructure review.
+## Delivered Outcome
 
-## Planning artifacts
+Phase 20 established the `fid-cli.v1` Response Envelope and a complete
+real-process standalone Issue journey: initialize, create hierarchy and
+relationships, inspect ordered collections, update with revision protection,
+transition, observe a typed stale-revision failure, run maintenance, rebuild,
+and compare canonical Issue reads byte-for-byte.
 
-| Artifact | Path | State |
-|---|---|---|
-| Slice contract and removal inventory | `contracts.md` | Accepted |
-| Validation contract | `qa/validation-contract.md` | Accepted and active (VAL-001..VAL-046) |
-| Task specs | `tasks/task-1.md` .. `tasks/task-18.md` | Accepted |
-| Phase decisions | `decisions.md` | Active through DEC-146 |
-| QA plan | `qa/qa-plan.md` | Accepted and in execution |
-| Triage log | `triage-log.md` | Current through TRG-20-015 |
-| Escalations | `tl-escalations.md` | ESC-20-015 resolved; no open escalation |
-| Run ledger | `run-ledger.md` | `ADVANCEABLE`; Task 17 complete |
+The phase also removed universal TOON/YAML/Markdown formatting, `--format`,
+promised governance stubs, and retired Issue fields while preserving the
+fail-closed V1 authority boundary required until Phase 21.
 
-## Accepted planning-time spec edits
+## Completion Summary
 
-- `03_TRD_SCHEMA.md` - new §8 accepted slice DDL for migrations
-  `0011_p20_remove_issue_fields` and `0012_p20_issue_revision`.
-- `04_TRD_CONFIG.md` - required config version plus explicit temporary
-  `pricing.toml` expiry and atomic-init contract alignment.
-- `06_DESIGN_PLAN_CLI.md` - §2 Response Envelope rules, §5 Phase 20 reason
-  codes, new §8 accepted slice leaf contracts.
-- `GLOSSARY.md` - new "Machine Interface" section resolving the
-  Envelope/Response Envelope collision.
+| Area | Outcome |
+|---|---|
+| Tasks 1-18 | Complete |
+| Recovery slices 3a-3l, 9a, 16a, 16b | Complete |
+| Mid-phase review windows 1-6 and bounded re-reviews | Closed |
+| Final deterministic review | PASS (`qa/final-review-3.md`) |
+| Human VAL-038 | PASS, 3/3 (`qa/human-checklist.md`) |
+| Validation contract | 46 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD |
+| Escalations | None open; allocated Phase 20 ESCs archived as resolved |
+| Run ledger | RUN-END appended; sequence remains valid |
 
-## Task status
+## Final Verification
 
-| Task | Title | Status |
-|---|---|---|
-| 1 | Response contract foundation | Complete |
-| 2 | Project selection and config namespace | Complete |
-| 3 | Atomic project initialization | Complete |
-| 4 | Rebuild, authority, and lock failures | Complete |
-| 5 | Remove orphaned Issue fields | Complete |
-| 6 | Replayable Issue aggregate revision | Complete |
-| 7 | Issue hierarchy invariant | Complete |
-| 8 | Issue read contract | Complete |
-| 9 | Issue mutation and concurrency contract | Complete |
-| 10 | Acceptance-criterion and label contracts | Complete |
-| 11 | Link contract and dependency invariants | Complete |
-| 12 | Workflow command contract | Complete |
-| 13 | Maintenance inspection contract | Complete |
-| 14 | Legacy JSON renderer conversion | Complete |
-| 15 | Remaining format caller/test convergence | Complete |
-| 16 | Delete universal formatters and YAML | Complete |
-| 17 | Delete promised-command stubs | Complete |
-| 18 | Journey acceptance and documentation | Pending |
+- Full phase format, lint, race/coverage, integration, benchmark, and build
+  gates passed with observed terminations.
+- Task 3k's amended ten-count race command passed with explicit `-timeout 30m`.
+- The named Phase 20 journey runs in `cmd/fid/integration` through the built
+  binary; it no longer produces `[no tests to run]`.
+- All 22 reports named by MF-01 plus Task 18 pass canonical report-lint.
+- `workflow-lint.sh`, `workflow-sequence-lint.sh`, and all mechanical drills
+  pass. `progress_current.md` remains within its line budget.
 
-Recovery slices `task-3a`..`task-3l`, `task-9a`, `task-16a`, and `task-16b`
-are complete. Reviews 1-5 and their linked re-reviews are closed. Task 17 is
-complete at product commit `95ee13d` and report finalization `0c1094c`.
+## Wrap-Up Disposition
 
-## Next action
+- CF-028 retained: split `internal/bootstrap/init.go` only on its next reopen.
+- CF-029 retained: validate evidence tokens in QA review artifacts.
+- CF-030 retained: improve rejected-token diagnostics.
+- CF-031 closed: PASS termination and expected-nonzero parsing are enforced.
+- CF-032 opened: add direct invalid-input tests for
+  `BuildIssueRevisionEffects` when its implementation next changes.
+- A deep retrospective is recommended before Phase 21 planning because the
+  product slice closed cleanly but the temporary V1 delivery workflow generated
+  23 triage IDs and 19 escalations.
 
-Start a fresh Phase Runner session on `phase-20`, append a full schema-v2 normal
-`RUN-RESUME`, and obtain Review 6 covering Tasks 16-17. If Review 6 passes,
-dispatch Task 18. Do not reopen Task 17 or rerun its completed product work.
+## Next Checkpoint
+
+Resolve Gate D3.2: accept the exact one-Issue Routine walking-skeleton boundary
+before planning or implementing Phase 21.

@@ -1972,42 +1972,113 @@
   `project-docs/docs/current/progress_current.md`;
   `project-docs/tools/workflow-lint.sh`; Human direction on 2026-08-21.
 
+### DEC-151: Phase 20 sign-off - standalone Issue journey accepted and delivery debt dispositioned
+
+- **Date:** 2026-08-22
+- **Status:** Phase 20 sign-off. Product and validation outcomes are binding;
+  delivery-process carry-forwards remain temporary V1 repository tooling.
+- **Context:** `qa/final-review-3.md` returned deterministic PASS with no
+  Must-fix or blocker candidate. The Human then recorded PASS for
+  HUMAN-038a, HUMAN-038b, and HUMAN-038c with no notes. The final contract is
+  therefore 46 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD.
+- **Decision:**
+  1. Phase 20 is **COMPLETE / WRAPPED**. The accepted standalone JSON Issue
+     journey, typed failures, revision protection, rebuild parity, retained
+     legacy boundary, and owned removals all pass.
+  2. The validation contract's 46 status cells are corrected from `Draft` to
+     `Ready`. `qa-plan.md` was already `READY` on 2026-08-09; omitting the
+     accepted state transition was a bookkeeping defect, not evidence that the
+     contract was unaccepted. No assertion, owner, command, threshold, or
+     outcome changes.
+  3. All completion reports pass canonical report-lint; every required phase
+     gate terminated successfully; `workflow-lint.sh`, sequence lint, and the
+     mechanical drills pass. Failed and UNVERIFIED historical attempts remain
+     preserved.
+  4. The triage archive contains the unique ID set TRG-20-001..TRG-20-023.
+     Repeated TRG-20-010/TRG-20-015 headings are explicit adjudications of the
+     existing IDs, not allocations. TRG-20-017..020 are correction records
+     preserving ESC-20-016. Every allocated ESC (001..018 and 021) is resolved
+     in `tl-escalations.md`; no current escalation remains.
+  5. Task deviations are repaired test/report/control attempts, not unresolved
+     product or specification divergence. Planning-time DDL, config, CLI, and
+     Machine Interface changes match the delivered implementation.
+  6. Carry-forward audit: **CF-028 retains its trigger** because no commit after
+     the Task 3b config/init recovery changed `internal/bootstrap/init.go`;
+     **CF-029** remains open for review-artifact token validation; **CF-030**
+     remains open for clearer rejected-token diagnostics; **CF-031 is CLOSED**
+     by `validate_pass_termination` and its expected-nonzero parser repairs;
+     **CF-032 opens** for the final review's IMP-01, adding direct table-driven
+     invalid-input tests for `BuildIssueRevisionEffects` when
+     `internal/issues/revision.go` next changes.
+  7. Gate D3.2 remains the sole next product decision: settle the exact
+     one-Issue Routine walking-skeleton boundary before Phase 21 planning.
+- **Consequences:** Phase 20 may merge. No Phase 21 implementation is active.
+  A deep retrospective is recommended before planning Phase 21 because the
+  product slice closed cleanly while its temporary delivery workflow generated
+  23 triage IDs, 19 allocated escalations, and multiple control-repair cycles.
+- **Refs:** `qa/final-review-3.md`; `qa/human-checklist.md`;
+  `qa/validation-contract.md`; `run-ledger.md`; `triage-log.md`;
+  `tl-escalations.md`; `progress.md`; Gate D3.2.
+
 ## Spec Sync Verdict
 
 Recorded at phase wrap-up. Planning-time spec edits are noted for continuity.
 
 | Spec | Verdict | Evidence / Reference |
 |---|---|---|
-| `00_PROJECT_CHARTER.md` | pending wrap-up | - |
-| `01_PRD.md` | pending wrap-up | - |
-| `02_TRD.md` | pending wrap-up | - |
-| `03_TRD_SCHEMA.md` | accepted at planning: see DEC-108/129 (new §8 slice DDL) | `03_TRD_SCHEMA.md` §8.1 |
-| `04_TRD_CONFIG.md` | accepted at planning: versioned strict config and legacy pricing expiry | §§2, 5; DEC-120/125/126/129 |
-| `05_DESIGN_PLAN.md` | pending wrap-up | - |
-| `06_DESIGN_PLAN_CLI.md` | accepted at planning: see DEC-108/109/129 (§2, §5, new §8) | `06_DESIGN_PLAN_CLI.md` §8 |
-| `07_DESIGN_PLAN_FLOWS.md` | pending wrap-up | - |
-| `08_QUALITY_PLAN.md` | pending wrap-up | - |
-| `09_AI_WORKFLOW.md` | pending wrap-up | No fid product feature may be added here |
-| `10_IMPLEMENTATION_ROADMAP.md` | pending wrap-up | §5.1 ownership map to be replaced by the delivered inventory |
-| `GLOSSARY.md` | accepted at planning: see DEC-109/129 (new Machine Interface section) | `GLOSSARY.md` |
+| `00_PROJECT_CHARTER.md` | verified-no-change | The delivered slice retains the accepted vision, local-first scope, and no-live-adoption boundary. |
+| `01_PRD.md` | verified-no-change | The 46 final outcomes cover the Phase 20 requirement subset; no product requirement moved. |
+| `02_TRD.md` | touched | Records `cmd/fid/integration` as the test-only real-process adapter, matching the repaired Task 18 journey. |
+| `03_TRD_SCHEMA.md` | accepted at planning; verified delivered | §8 migrations `0011`/`0012`, aggregate revision, rollback, and rebuild behavior pass. |
+| `04_TRD_CONFIG.md` | accepted at planning; verified delivered | Strict versioned config, generated identity, path limits, and atomic init pass. |
+| `05_DESIGN_PLAN.md` | verified-no-change | Human-mode principles and retained command tree remain accurate. |
+| `06_DESIGN_PLAN_CLI.md` | accepted at planning; verified delivered | Response Envelope, reason codes, exact request/result schemas, and legacy boundary match the live tree. |
+| `07_DESIGN_PLAN_FLOWS.md` | verified-no-change | The standalone journey and rebuild behavior do not alter later kit-driven flows. |
+| `08_QUALITY_PLAN.md` | touched | Dedicated integration scope is now `./cmd/fid/integration/...`, preventing tagged reruns of the ordinary suite. |
+| `09_AI_WORKFLOW.md` | touched | Phase-local failures drove typed recovery, evidence, transactional ledger, and control-conformance rules; no fid product behavior was added. |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched at wrap | Phase 20 is complete; Gate D3.2 is next before Phase 21 planning. |
+| `GLOSSARY.md` | touched | Machine Interface terms and V1 delivery dispositions are explicit and remain separated from forward fid product Events. |
+| `AGENTS.md`, role prompts, playbook | touched | Generated prompts and operator guidance match the canonical V1 delivery controls; workflow lint passes. |
+| `CHANGELOG.md` | touched | Unreleased notes describe the delivered JSON Issue journey and removals without rewriting historical releases. |
 
 ## Triage-Log Audit
 
-- [ ] Walked every TRG-20-NNN in `triage-log.md`.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed autonomous TL-Lite resume remains in effect (DEC-002; no warm-up tally).
+- [x] Walked every unique TRG-20-001..TRG-20-023 in `triage-log.md`, including correction and adjudication sections.
+- [x] Confirmed each RESUME/REPAIR disposition was correct in hindsight or later superseded by an explicit protected decision.
+- [x] Confirmed every BLOCK names its governing ESC; correction-only TRGs allocate no duplicate ESC.
+- [x] Confirmed autonomous TL-Lite resume remains in effect (DEC-002; no warm-up tally).
 
 ## Workflow Notes
 
 Completed at phase wrap-up.
 
-- **What worked well?** <pending>
-- **What was inefficient?** <pending>
-- **Were tasks the right size?** <pending>
-- **Did the QA review cadence feel right?** <pending>
-- **Were there token-efficiency opportunities missed?** <pending>
+- **What worked well?** The vertical slice produced one inspectable real-process
+  journey, exact request/result inventories, replayable aggregate revision, and
+  removal guards. Independent reviews found evidence and integration-placement
+  gaps before acceptance; no final product defect or unresolved assertion
+  remained.
+- **What was inefficient?** Report conformance was applied retrospectively to
+  22 reports, and the recovery machinery itself required protected repairs.
+  DEC-143..150 repeatedly corrected verification instructions that had not been
+  proven reachable before publication.
+- **Were tasks the right size?** Product tasks were mostly bounded. The 3e-3l
+  infrastructure pack and final report-repair sequence were too process-heavy;
+  Task 3k's ten-count package gate was marginal from the outset and needed an
+  explicit wall-clock budget.
+- **Did the QA review cadence feel right?** Yes for product/evidence discovery:
+  six windows plus bounded re-reviews caught missing matrices, stale evidence,
+  and the absent real-process journey. The weakness was closure bookkeeping,
+  where contract status and old report syntax drifted until final QA.
+- **Were there token-efficiency opportunities missed?** Yes. Control contracts
+  and exact-output directives should have been executed against real fixtures
+  before publication. Task-time report-lint should have prevented the 22-report
+  final sweep. Repeated role cycles added context without changing product code.
 
 ### Deep Retrospective Recommendation
 
-<pending>
+**Recommended.** Before Phase 21 planning, review why a product-clean slice
+generated 23 triage IDs and 19 escalations. Focus on reducing temporary V1
+delivery ceremony, executing every prescribed verifier state before accepting
+it, making report/review evidence controls fail at the owning task boundary,
+and deciding which Phase 20 recovery rules should be retained, simplified, or
+retired once the kit replaces this repository workflow.

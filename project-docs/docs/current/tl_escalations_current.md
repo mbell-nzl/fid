@@ -1,78 +1,27 @@
 # TL Escalations - Current
 
-> **Purpose.** Open items that exceed current repair authority and need full
-> Tech Lead or Human input.
->
-> **Scope.** Open items only. Resolved detail lives in each phase archive.
->
-> **Size target:** under 80 lines.
+> Open items that exceed current repair authority and require full Tech Lead or
+> Human input. Resolved detail lives in each phase archive.
 
 ## Open Escalations
 
 None.
 
-`ESC-20-021` is resolved by DEC-150 (2026-08-21) and archived in
-`project-docs/docs/phases/phase-20/tl-escalations.md`. The verified DEC-149
-maintenance commit stands; its item-6 failure is preserved, while the
-self-created `progress_current.md` overage is repaired separately under the
-unchanged 133-line tripwire by explicit Human authority.
-
-`ESC-20-018` is resolved by DEC-149 (2026-08-19) and archived in
-`project-docs/docs/phases/phase-20/tl-escalations.md`. DEC-148's mandatory red
-fixture demanded a checkpoint diagnostic that its own bound TASK-RECOVERY cannot
-emit; DEC-149 replaces that proof obligation with 1a (bound successor shows
-exactly the two retained-chain diagnostics before the change, `VALID` after) and
-1b (a checkpoint-violating candidate still emits the third message after the
-change). It also replaces DEC-148 item 7, which was likewise unreachable:
-`workflow-control-scope-lint.sh` refuses by design to allowlist
-`workflow-sequence-lint.sh`, so containment is proved by a direct
-`git diff --name-only` assertion and the guarded control route with its ledger
-events is not used. DEC-148's authorized code change and allowlist stand; the
-base is the DEC-149 doc commit, a docs-only fast-forward of `91c3d0a`.
-
-`ESC-20-017` is resolved by DEC-148 (2026-08-18) and archived in the same file.
-The diagnosis is sustained: a reconciled STOP resume and retained pre-STOP
-recovery state imposed contradictory trigger and attempt values on one
-TASK-RECOVERY. DEC-148 records the accepted semantics and issues a bounded
-protected repair directive for
-`project-docs/tools/workflow-sequence-lint.sh` plus its drill fixtures,
-executed as workflow maintenance outside the wedged run sequence.
-
-`ESC-20-016` is resolved by DEC-147 (2026-08-18) and archived in
-`project-docs/docs/phases/phase-20/tl-escalations.md`. Task 3k's first required
-command is now
-`go test -race -count=10 -timeout 30m ./internal/claims ./cmd/fid`; the count,
-race detector, package scope, and pass/fail semantics are unchanged. One
-bounded report-scope Task 3k continuation is authorized to rerun the seven
-commands and reach `OUTCOME COMPLETE`, after which MF-01's fresh independent QA
-re-review proceeds. `ESC-20-015` is resolved by DEC-146 (2026-08-16) and
-archived in the same file.
+Phase 20 completed on 2026-08-22. Its allocated escalations are resolved and
+archived in `../phases/phase-20/tl-escalations.md`; DEC-151 records the final
+triage and escalation audit.
 
 ## Archive Pointers
 
-- Phase 20: `project-docs/docs/phases/phase-20/tl-escalations.md`
-- Phase 19: `project-docs/docs/phases/phase-19/tl-escalations.md`
-- Phase 18: `project-docs/docs/phases/phase-18/tl-escalations.md`
-- Phase 17: `project-docs/docs/phases/phase-17/tl-escalations.md`
+- Phase 20: `../phases/phase-20/tl-escalations.md`
+- Phase 19: `../phases/phase-19/tl-escalations.md`
+- Phase 18: `../phases/phase-18/tl-escalations.md`
+- Phase 17: `../phases/phase-17/tl-escalations.md`
 
 ## Protected Escalation Triggers
 
-TL-Lite or the full Tech Lead allocates an ESC only when a condition requires:
-
-1. Product, architecture, data-model, or public-interface authority.
-2. Dependency, quality-gate definition, testing-policy, or workflow authority.
-3. Security, privacy, journal-integrity, or possible data-loss judgment.
-4. Resolution of a contradictory or missing binding specification.
-5. External capability or infrastructure that remains unavailable after
-   bounded recovery.
-6. Human judgment explicitly required by a validation contract or checklist.
-7. Resolution after two consecutive same-trigger continuation attempts make no
-   material progress (`recovery-budget-exhausted`).
-
-A red test, failed gate, incomplete in-scope implementation, report defect,
-bounded QA Must-fix finding, long-running command, or session continuation is
-REPAIR, not an escalation, unless a separate protected trigger above is
-demonstrated.
-
-Developer and QA roles emit blocker candidates and may cite an existing
-`ESC-<phase>-<NNN>`. They never allocate an ESC or edit this register.
+Escalate only for a required product, architecture, data-model,
+public-interface, dependency, security/data-loss, specification, exhausted
+recovery-budget, or unavailable external-capability decision. Ordinary red
+tests, failed gates, report defects, QA rework, and incomplete in-scope work
+remain bounded repair.
