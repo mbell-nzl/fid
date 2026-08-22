@@ -237,8 +237,10 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 				return AddOptions{
 						WorkspaceRoot: workspace,
 						MigrationsDir: testLinksMigrationsDir(t),
+						FromType:      "issue",
 						FromID:        issueID,
 						Relation:      "implements",
+						ToType:        "requirement",
 						ToID:          "PRD-LINK-002",
 						ActorRole:     "developer",
 					}, func(t *testing.T, err error) {

@@ -90,7 +90,7 @@ func TestStartClaimsTransitionsAndOpensRunInOneEvent(t *testing.T) {
 		switch {
 		case effect.Table == "claims" && effect.Op == "insert":
 			claimEffect = effect
-		case effect.Table == "issues" && effect.Op == "update":
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["status"] != nil:
 			transition = effect
 		case effect.Table == "activity_log" && effect.Op == "activity":
 			activityEffect = effect
@@ -110,6 +110,7 @@ func TestStartClaimsTransitionsAndOpensRunInOneEvent(t *testing.T) {
 	if runEffect == nil {
 		t.Fatal("missing agent run insert effect")
 	}
+	assertDevReplayableRevisionEffect(t, last, created.ID, 1, 2)
 
 	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeDevDB(t, conn)
@@ -399,5 +400,33 @@ func closeDevDB(t *testing.T, conn *sql.DB) {
 
 	if err := conn.Close(); err != nil {
 		t.Fatalf("Close() error = %v", err)
+	}
+}
+
+func assertDevReplayableRevisionEffect(t *testing.T, event journal.Event, issueID string, prior, next int) {
+	t.Helper()
+
+	var revisionEffect *journal.Effect
+	for index := range event.Effects {
+		effect := &event.Effects[index]
+		if effect.Table == "issues" && effect.Op == "update" && effect.Values["revision"] != nil {
+			revisionEffect = effect
+			break
+		}
+	}
+	if revisionEffect == nil {
+		t.Fatal("missing Issue revision effect")
+	}
+	if got := revisionEffect.PK["id"]; got != issueID {
+		t.Fatalf("revision effect Issue ID = %#v, want %q", got, issueID)
+	}
+	if got := revisionEffect.Values["revision"]; got != float64(next) {
+		t.Fatalf("revision effect value = %#v, want %d", got, next)
+	}
+	if got := revisionEffect.Prior["revision"]; got != float64(prior) {
+		t.Fatalf("revision effect prior = %#v, want %d", got, prior)
+	}
+	if got := revisionEffect.Preconditions["revision"]; got != float64(prior) {
+		t.Fatalf("revision effect precondition = %#v, want %d", got, prior)
 	}
 }

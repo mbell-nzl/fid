@@ -1,5 +1,3 @@
-//go:build integration
-
 package main
 
 import (
@@ -46,7 +44,6 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite finish path",
 		"--epic", epicID,
 		"--priority", "1",
-		"--est-tokens", "800",
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, finishCreateStderr)
@@ -63,7 +60,6 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite block path",
 		"--epic", epicID,
 		"--priority", "2",
-		"--est-tokens", "500",
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, blockCreateStderr)
@@ -72,7 +68,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "block task create")
 	assertV01EIssueState(t, workspace, blockIssueID, "todo", "unstarted")
 
-	_, addACStderr := runFIDCommand(
+	addACStdout, addACStderr := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", finishIssueID,
@@ -81,7 +77,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--by", "developer",
 	)
 	assertNoNestedLockFailure(t, addACStderr)
-	finishACID := parseAddedAcceptanceCriterionID(t, addACStderr)
+	finishACID := parseAddedAcceptanceCriterionID(t, addACStdout)
 	expectedJournalLines++
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "finish task ac add")
 
@@ -325,10 +321,10 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
 	assertNoNestedLockFailure(t, rebuildStderr)
-	if !strings.Contains(rebuildStderr, "rebuild complete") {
-		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
+		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "rebuild")
 
@@ -373,6 +369,7 @@ type v01ECompletionRow struct {
 	ID                    string
 	IssueID               string
 	AttemptNumber         int
+	DeveloperRole         string
 	Status                string
 	NotesMDPath           string
 	ActualTokens          int
@@ -529,12 +526,12 @@ func mustReadV01ECompletionsForIssue(t *testing.T, workspace, issueID string) []
 	defer closeCommandDB(t, conn)
 
 	rows, err := conn.Query(`
-		SELECT id, issue_id, attempt_number, COALESCE(status, ''), COALESCE(notes_md_path, ''), COALESCE(actual_tokens, -1),
+		SELECT id, issue_id, attempt_number, COALESCE(developer_role, ''), COALESCE(status, ''), COALESCE(notes_md_path, ''), COALESCE(actual_tokens, -1),
 			COALESCE(commit_hashes, ''), COALESCE(files_touched, ''), gates_passed, gates_failed, COALESCE(gate_results, ''),
 			human_intervention, COALESCE(human_intervention_note, ''), COALESCE(completed_at, '')
 		FROM task_completions
 		WHERE issue_id = ?
-		ORDER BY id
+		ORDER BY attempt_number DESC, id DESC
 	`, issueID)
 	if err != nil {
 		t.Fatalf("query task_completions for %s: %v", issueID, err)
@@ -548,6 +545,7 @@ func mustReadV01ECompletionsForIssue(t *testing.T, workspace, issueID string) []
 			&row.ID,
 			&row.IssueID,
 			&row.AttemptNumber,
+			&row.DeveloperRole,
 			&row.Status,
 			&row.NotesMDPath,
 			&row.ActualTokens,

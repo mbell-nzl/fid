@@ -65,16 +65,137 @@ phase-specific exception.
 
 ## 4. Run The Tasks
 
-- One Developer session handles one task.
+- One Developer session handles at most one task. The same task may span
+  multiple continuation sessions from a durable checkpoint.
 - Each task produces one completion report and one traceable commit.
 - Run deterministic gates before QA review.
-- Phase Runner routes soft blockers through TL-Lite triage.
-- Hard failures stop immediately.
+- Treat a Developer or QA `BLOCKED` response as a candidate to classify, not an
+  authoritative lifecycle decision. Those roles never mint `ESC` IDs.
+- Phase Runner routes unresolved candidates through TL-Lite using three
+  dispositions:
+
+| Disposition | Meaning | Action |
+|---|---|---|
+| `RESUME` | The trigger is cleared, misclassified, or already resolved with verified evidence. | Advance from the recorded checkpoint. |
+| `REPAIR` | The trigger is real, local, in scope, authorized, and decision-free. | Do not advance; record recovery and dispatch a same-task Developer continuation. |
+| `BLOCK` | A protected decision, unsafe condition, unrecoverable external dependency, contradictory contract, or exhausted recovery budget prevents progress. | Mint/reference an ESC, append STOP, and request the named authority action. |
+
+`RESUME` never means repair later, and `BLOCK` is not a synonym for incomplete,
+red, failed, or must-fix. Human attention is required only for `BLOCK`.
+
+A gate/control definition change alters a command, assertion semantics,
+accepted status/scope, threshold/budget/tolerance, or policy and remains
+protected. A `control-conformance` repair instead restores a canonical
+verification/workflow tool to an already accepted contract that uniquely
+determines its behavior. TL-Lite records the contract, reproducer, tools-only
+allowlist, forbidden changes, originating task/trigger/budget, exact
+verification, originating report, and runner-recorded base under the ten typed
+schema-v2 directive labels, then returns the exact disposition
+`REPAIR / control-conformance`. Phase Runner uses this lifecycle:
+
+1. Confirm the phase worktree has no dirt except its uncommitted run ledger and
+   no hidden index flags. Record and verify full phase `HEAD` before triage as
+   immutable `Control repair base`.
+2. Confirm TL-Lite wrote `Originating task`, `Control trigger signature`,
+   `Control attempt count`, `Control contract`, `Control mismatch`,
+   `Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
+   report`, and `Control repair base`. Append ledger TRIAGE referencing that
+   record, then copy the directive byte-for-byte into TASK-RECOVERY. Each label
+   occurs exactly once; field order and contiguity do not matter. `Allowed
+   files` is an exact comma-separated ordered list with no spaces around
+   commas.
+3. Create a dedicated clean temporary repair branch/worktree at that exact
+   base. The Developer works only there and cannot rebaseline.
+   Treat that repair worktree as dedicated to the one bounded control repair.
+4. Materialize the scope verifier from the trusted base into fresh scratch
+   storage, never from repair HEAD, and require observed PASS from that blob:
+
+```text
+git -C <repo> show <base>:project-docs/tools/workflow-control-scope-lint.sh > <fresh-scratch>/workflow-control-scope-lint.sh
+chmod 700 <fresh-scratch>/workflow-control-scope-lint.sh
+<fresh-scratch>/workflow-control-scope-lint.sh <repo> <base> <head> <allowed-1> ...
+```
+
+   Pass allowed paths in CSV order and require the PASS receipt to bind the
+   exact comma-separated `Allowed files` value byte-for-byte as
+   `PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`.
+
+5. After every scope PASS, fast-forward, verify the phase worktree remains
+   ledger-only dirty, append REPAIR, and then clean up.
+6. After `MATERIAL-PROGRESS` or `NO-PROGRESS`, increment attempt count, use the
+   prior integrated HEAD as the next runner-owned base, and preserve every
+   semantic directive value byte-for-byte.
+7. Dispatch only the linked task-scope `report-repair`, restricted to exact
+   `Originating report` and `Exact verification`, retaining the resolved
+   attempt's `Control repair base`. Direct task completion is
+   invalid; only that report-repair's later `RESOLVED` permits completion.
+
+Never use `assume-unchanged`, `skip-worktree`, or an equivalent index flag to
+conceal dirt. The claimed repair `HEAD` must be checked out in its repair
+worktree, that worktree clean, and allowlisted controls regular files; later
+commits, dirty state, symlinks, and gitlinks fail. Ambiguity or any definition
+change is `BLOCK`; canonical location or ordinary task-file scope alone is not.
+Normal control-conformance cannot repair `workflow-control-scope-lint.sh` or
+`workflow-sequence-lint.sh`; either verifier needs separate protected decision
+authority.
+
+Record recovery in the append-only run ledger. Submit each single event to
+`project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`; it
+validates and atomically appends at EOF with an
+`APPEND_CONFIRMED state=<state>` receipt. `INVALID` leaves the ledger unchanged;
+if the receipt is lost, retry the byte-identical candidate to confirm it without
+duplication. Do not mutate the ledger separately.
+
+1. `TASK-RECOVERY` captures the trigger signature, attempt count, durable
+   checkpoint, repair mode/authority, allowed files, and next action. Every
+   newly appended RUN contains exactly one `Sequence contract: v2` and one
+   `Recovery directive schema: v2` in that same event. A standalone historical
+   v1 ledger remains readable, but its next RUN uses v2 and retains general
+   identity/STOP/authority/state checks. Every mandatory schema-v2 event field
+   occurs exactly once; `N/A` is explicit where permitted. Typed control
+   authority binds byte-for-byte to the governing triage record.
+2. `REPAIR` captures the same-task continuation outcome and resolution
+   evidence without erasing any earlier failed attempt.
+3. `RUN-RESUME` captures state reconciliation before a resumed or replacement
+   Phase Runner performs another action.
+
+`STOP` requires a preceding TRIAGE BLOCK and concrete ESC; a later resume
+cannot legitimize an untriaged STOP. RUN-RESUME retains the governing
+phase-scoped TRG/ESC and binds the exact next task, trigger, category, mode, and
+attempt. Its authority is exactly `verified-commit:<40hex>`,
+`restored-capability:<stable-id>`, or `DEC-<NNN>`; evidence remains
+Runner-verified, the next recovery's source and repair authority retain that
+exact value, and a protected decision change/resolution requires DEC. A
+normal resume uses `N/A` governing IDs and `Next recovery`. A DEC-resolved
+BLOCK uses one unique separate H2 directive amendment naming the existing TRG,
+parsed independently from its retained BLOCK verdict, and then RUN-RESUME,
+never a new TRG. Verify every boundary-valid DEC citation in an authority field
+exists; one real DEC cannot mask a nonexistent or embedded ID.
+
+Every schema-v2 external TRG and ledger TRIAGE contains exactly one
+`Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
+and `Repair authority`. Direct REPAIR binds all five through to TASK-RECOVERY;
+RESUME/BLOCK uses `N/A` for repair category/authority when none applies.
+
+These are temporary V1 repository-delivery entries, not forward fid product
+Events, Runs, or recovery entities.
+
+The default budget is two consecutive Phase Runner-mediated continuations for
+one trigger signature with no material progress. Same-session red/green work
+does not consume it. A changed tree, newly satisfied obligation, or narrower
+failure is progress. Attempt counts are monotonic across sessions, branches,
+and worktrees; material progress resets only consecutive no-progress to `0/2`.
+A second consecutive no-progress result exhausts the budget, and a context
+refresh or renamed recovery cannot reset it.
 - If a task mixes logic/data with UI/wiring, re-slice before execution.
 
 ## 5. Review And Close
 
 - Use QA Reviewer for mid-phase reviews every 3 tasks or at named checkpoints.
+- QA review outcomes are `PASS`, `REPAIR`, or `BLOCK`. For `REPAIR`, name the
+  owning task, repair boundary, assertion, and required evidence; Phase Runner
+  dispatches that task and obtains a fresh independent re-review. The original
+  finding remains in history until that re-review resolves it.
 - QA Lead final review must include deterministic evidence for checklist items
   and verify `VAL-NNN` outcomes.
 - Human checklist should contain only human-judgment or dogfooding items.
@@ -113,28 +234,60 @@ phase-specific exception.
   not weakened or silently adapted.
 - Deterministic claims require reproducible evidence.
 - A required command that did not terminate is never `PASS`; it is `BLOCKED`.
+- Failed evidence remains failed after repair; append the byte-identical rerun
+  and its observed termination rather than replacing history.
+- Incomplete work, a failed gate, report repair, local environment recovery,
+  or bounded QA rework is `REPAIR` unless a separate protected condition
+  exists.
+- A tools-only control implementation defect is also `REPAIR` when an accepted
+  contract uniquely determines the fix and the scope verifier proves the
+  isolated commit stayed inside its directive.
+- Human attention and STOP are reserved for a protected blocker category or
+  `recovery-budget-exhausted`.
 - Triage and escalation identifiers are phase-scoped (`TRG-<phase>-<NNN>`,
-  `ESC-<phase>-<NNN>`), allocated from the phase triage log, and written to
-  disk before the verdict is reported. Never a placeholder.
+  `ESC-<phase>-<NNN>`), allocated from the phase triage log, and written to disk
+  before the verdict is reported. Only TL-Lite or the full Tech Lead allocates
+  ESC IDs; Developer and QA candidates never do. Never use a placeholder.
+- Run-ledger and triage entries are append-only in wall-clock order. Correct an
+  earlier entry by appending a labelled correction, never by rewriting history.
 - Keep held-out scenario material outside normal implementation context.
 
 ## 8. Audit A Workspace
 
-ADR-0011 makes JSON the only machine representation. The target audit surface
-after convergence slice A is:
+Phase 20 delivers the standalone Issue journey with JSON as the only machine
+representation for the retained surface. Use `--json` with `init`, `rebuild`,
+the Issue create/read/update/transition, acceptance-criterion, Issue-label,
+label, link, ready, workflow, and maintenance-check operations listed in the
+accepted [Phase 20 contract](phases/phase-20/contracts.md) section 3. Each
+successful command writes one `fid-cli.v1` Response Envelope to stdout; a
+typed failure writes one envelope to stderr.
+
+For a fresh project, a compact machine journey starts with:
 
 ```text
-fid maintenance check
-fid maintenance check --warn-as-error --json
+fid --json init --prefix FID
+fid --json issue create --kind epic --title "Delivery" --by tl
+fid --json issue list
+fid --json maintenance check
+```
+
+The legacy leaves in contract section 6 retain their existing temporary Human
+or unenveloped JSON modes until their named expiry phases. They intentionally
+reject explicit root `--json` and `--project`; do not treat that rejection as a
+fallback to a second machine protocol.
+
+There is no `--format`, TOON, YAML, or generic Markdown output. The audit
+surface is:
+
+```text
+fid --json maintenance check
+fid --json maintenance check --warn-as-error
 ```
 
 Human default output is concise terminal text; `--json` emits the canonical
-machine envelope. There is no `--format`, TOON, YAML, or generic Markdown
-output. The current pre-convergence binary still contains displaced formatter
-behavior, but no adopted workspace depends on it and new integrations must not
-use it. The audit refreshes a missing/stale projection without appending to the
-journal. Warnings exit zero unless `--warn-as-error` promotes the outcome;
-structural errors exit non-zero.
+machine envelope for retained operations. The audit refreshes a missing/stale
+projection without appending to the journal. Warnings exit zero unless
+`--warn-as-error` promotes the outcome; structural errors exit non-zero.
 
 ## 9. Compact the Derived Database
 

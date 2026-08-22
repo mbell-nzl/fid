@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 
-	fidformat "github.com/mbell-nzl/fid/internal/format"
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
@@ -31,33 +30,18 @@ func newIssueACAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <issue-id>",
 		Short: "Add an acceptance criterion to a task or subtask.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("issue.ac.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("text") {
-				err := fmt.Errorf("--text is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "text"); err != nil {
 				return err
 			}
-			if !cmd.Flags().Changed("ordinal") {
-				err := fmt.Errorf("--ordinal is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-			if !cmd.Flags().Changed("by") {
-				err := fmt.Errorf("--by is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "ordinal"); err != nil {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueMutationError(cmd, "issue.ac.add", args[0], err)
 			}
 
 			result, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{
@@ -69,14 +53,21 @@ func newIssueACAddCommand() *cobra.Command {
 				ActorRole:     actorRole,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueMutationError(cmd, "issue.ac.add", args[0], err)
 			}
 
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.ac.add", map[string]any{
+					"acceptance_criterion": map[string]any{"id": result.ID, "issue_id": result.IssueID, "ordinal": result.Ordinal, "text": result.Text},
+					"issue_revision":       result.IssueRevision,
+				}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+			}
 			return writeIssueLine(
-				cmd.ErrOrStderr(),
+				cmd.OutOrStdout(),
 				"added AC %s on %s (ordinal %d): %q\n",
 				result.ID,
 				result.IssueID,
@@ -89,7 +80,13 @@ func newIssueACAddCommand() *cobra.Command {
 	cmd.Flags().StringVar(&text, "text", "", "Acceptance criterion text")
 	cmd.Flags().IntVar(&ordinal, "ordinal", 0, "Acceptance criterion display order")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.add"))
 	return cmd
+}
+
+func init() {
+	rootFlagCapabilities["issue ac add"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["issue ac list"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newIssueACVerifyCommand() *cobra.Command {
@@ -121,7 +118,7 @@ func newIssueACVerifyCommand() *cobra.Command {
 				return err
 			}
 
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -176,16 +173,14 @@ func newIssueACVerifyCommand() *cobra.Command {
 }
 
 func newIssueACListCommand() *cobra.Command {
-	var formatName string
-
 	cmd := &cobra.Command{
 		Use:   "list <issue-id>",
 		Short: "List acceptance criteria for an issue.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("issue.ac.list", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueReadError(cmd, true, "issue.ac.list", err)
 			}
 
 			result, err := issues.ListAcceptanceCriteria(issues.ListAcceptanceCriteriaOptions{
@@ -194,22 +189,28 @@ func newIssueACListCommand() *cobra.Command {
 				IssueID:       args[0],
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderIssueReadError(cmd, true, "issue.ac.list", err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, result); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
+			if jsonMode {
+				criteria := make([]map[string]any, 0, len(result.Criteria))
+				for _, criterion := range result.Criteria {
+					criteria = append(criteria, map[string]any{"id": criterion.ID, "ordinal": criterion.Ordinal, "text": criterion.Text})
 				}
-				return err
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.ac.list", map[string]any{"issue_id": result.IssueID, "acceptance_criteria": criteria}, nil)
+			}
+			for _, criterion := range result.Criteria {
+				if err := writeIssueLine(cmd.OutOrStdout(), "%d. %s\n", criterion.Ordinal, criterion.Text); err != nil {
+					return err
+				}
 			}
 			return nil
 		},
 	}
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.list"))
 
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }

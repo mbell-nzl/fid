@@ -1,7 +1,8 @@
 package main
 
 import (
-	fidformat "github.com/mbell-nzl/fid/internal/format"
+	"encoding/json"
+
 	internalpolicy "github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
 )
@@ -17,14 +18,14 @@ func newPolicyCommand() *cobra.Command {
 }
 
 func newPolicyShowCommand() *cobra.Command {
-	var formatName string
-
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show the active permissions matrix.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, internalpolicy.MatrixRows()); err != nil {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(internalpolicy.MatrixRows()); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}
@@ -34,6 +35,5 @@ func newPolicyShowCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }

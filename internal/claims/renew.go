@@ -76,7 +76,8 @@ func buildRenewEvent(lock *journal.WriteLock, conn *sql.DB, options RenewOptions
 	if err != nil {
 		return journal.Event{}, Claim{}, err
 	}
-	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != options.ActorRole {
+	now := operationTime(options.Now)
+	if current == nil || !current.isLiveAt(now) || current.ClaimedBy != options.ActorRole {
 		return journal.Event{}, Claim{}, claimNotHeldError(options.IssueID, options.ActorRole, current)
 	}
 
@@ -85,7 +86,7 @@ func buildRenewEvent(lock *journal.WriteLock, conn *sql.DB, options RenewOptions
 		ttlSeconds = *options.TTLSeconds
 	}
 
-	renewedAt := nextClaimTime(current.ClaimedAt, time.Now().UTC())
+	renewedAt := nextClaimTime(current.ClaimedAt, now)
 	event, err := journal.PrepareEvent(lock, journal.Event{
 		EventSchema: journal.CurrentEventSchema,
 		EventType:   "issue.claim.renewed",

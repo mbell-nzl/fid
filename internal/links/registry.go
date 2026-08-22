@@ -1,12 +1,9 @@
 package links
 
 import (
-	"regexp"
 	"slices"
 	"strings"
 )
-
-var requirementIDPattern = regexp.MustCompile(`^(PRD|TRD)-[A-Z0-9]+-[0-9]+[a-z]?$`)
 
 var relationInverses = map[string]string{
 	"blocks":          "blocked_by",
@@ -57,11 +54,15 @@ func inverseRelation(relation string) (string, bool) {
 	return inverse, ok
 }
 
-func endpointTypeForID(id string) string {
-	if requirementIDPattern.MatchString(strings.TrimSpace(id)) {
-		return "requirement"
+func endpointType(value, argument, operation string) (string, error) {
+	endpointType := strings.TrimSpace(value)
+	if endpointType == "" {
+		return "", nil
 	}
-	return "issue"
+	if isV01EndpointType(endpointType) {
+		return endpointType, nil
+	}
+	return "", &InvalidEndpointTypeError{Operation: operation, Argument: argument, Value: endpointType}
 }
 
 func relationAllowedForTypes(relation, fromType, toType string) bool {

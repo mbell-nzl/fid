@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
-	"os"
 
-	fidformat "github.com/mbell-nzl/fid/internal/format"
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/labels"
 	"github.com/spf13/cobra"
 )
@@ -30,29 +29,32 @@ func newLabelAddCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <name>",
 		Short: "Create a label.",
-		Args:  cobra.ExactArgs(1),
+		Args:  canonicalExactArgs("label.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderLabelError(cmd, "label.add", err)
 			}
 
 			result, err := labels.Add(labels.AddOptions{
 				WorkspaceRoot: workspaceRoot,
 				MigrationsDir: issueMigrationsDir(),
 				Name:          args[0],
-				Colour:        optionalStringFlag(colour),
-				Description:   optionalStringFlag(description),
+				Colour:        optionalStringFlag(cmd, "colour", colour),
+				Description:   optionalStringFlag(cmd, "description", description),
 				ActorRole:     actorRole,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderLabelError(cmd, "label.add", err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			if _, err := fmt.Fprintf(cmd.ErrOrStderr(), "created label %q\n", result.Label.Name); err != nil {
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "label.add", map[string]any{"label": result.Label}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "created label %q\n", result.Label.Name); err != nil {
 				return err
 			}
 			return nil
@@ -62,27 +64,26 @@ func newLabelAddCommand() *cobra.Command {
 	cmd.Flags().StringVar(&colour, "colour", "", "Label colour")
 	cmd.Flags().StringVar(&description, "description", "", "Label description")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(canonicalFlagError("label.add"))
 	return cmd
 }
 
-func optionalStringFlag(value string) *string {
-	if value == "" {
+func optionalStringFlag(cmd *cobra.Command, name, value string) *string {
+	if !cmd.Flags().Changed(name) {
 		return nil
 	}
 	return &value
 }
 
 func newLabelListCommand() *cobra.Command {
-	var formatName string
-
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List labels.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("label.list"),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderLabelError(cmd, "label.list", err)
 			}
 
 			items, err := labels.List(labels.ListOptions{
@@ -90,22 +91,29 @@ func newLabelListCommand() *cobra.Command {
 				MigrationsDir: issueMigrationsDir(),
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+				return renderLabelError(cmd, "label.list", err)
+			}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
 			}
-
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "label.list", map[string]any{"labels": items, "count": len(items)}, nil)
+			}
+			for _, item := range items {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\n", item.Name); err != nil {
+					return err
 				}
-				return err
 			}
 			return nil
 		},
 	}
+	cmd.SetFlagErrorFunc(canonicalFlagError("label.list"))
 
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
+}
+
+func init() {
+	rootFlagCapabilities["label add"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["label list"] = rootFlagCapability{Project: true, JSON: true}
 }

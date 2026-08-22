@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -10,7 +11,388 @@ import (
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
+
+func TestRebuildJSONMapsMissingAuthorityWithoutMutation(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+
+	journalPath := mustJournalPath(t, workspace)
+	databasePath := filepath.Join(workspace, ".fid", "fid.sqlite")
+	beforeJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+	beforeDatabase, err := os.ReadFile(databasePath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", databasePath, err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--json", "rebuild"})
+
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("Execute() error = nil, want missing authority rejection")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	assertEnvelopeKeySet(t, stderr.Bytes(), []string{"contract_version", "error", "ok", "operation"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"actor", "operation"})
+
+	var envelope struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Error           struct {
+			Code      string `json:"code"`
+			Category  string `json:"category"`
+			Retryable bool   `json:"retryable"`
+			Subject   *any   `json:"subject"`
+			Details   struct {
+				Operation string  `json:"operation"`
+				Actor     *string `json:"actor"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr.String())
+	}
+	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != "project.rebuild" ||
+		envelope.Error.Code != "authority-missing" || envelope.Error.Category != "authority" || envelope.Error.Retryable ||
+		envelope.Error.Subject != nil || envelope.Error.Details.Operation != "project.rebuild" || envelope.Error.Details.Actor != nil {
+		t.Fatalf("failure envelope = %+v, want typed missing rebuild authority", envelope)
+	}
+
+	afterJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
+	}
+	afterDatabase, err := os.ReadFile(databasePath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rejection error = %v", databasePath, err)
+	}
+	if !bytes.Equal(afterJournal, beforeJournal) || !bytes.Equal(afterDatabase, beforeDatabase) {
+		t.Fatal("missing-authority rebuild changed journal or projection")
+	}
+}
+
+func TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	journalPath := mustJournalPath(t, workspace)
+	beforeJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+
+	for _, testCase := range []struct {
+		name      string
+		actor     string
+		wantCode  string
+		wantActor string
+	}{
+		{name: "unknown", actor: "intern", wantCode: "authority-unknown-actor", wantActor: "intern"},
+		{name: "denied", actor: "developer", wantCode: "authority-denied", wantActor: "developer"},
+	} {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			stdout := &bytes.Buffer{}
+			stderr := &bytes.Buffer{}
+			cmd := newRootCommandAt(workspace)
+			cmd.SetOut(stdout)
+			cmd.SetErr(stderr)
+			cmd.SetArgs([]string{"--json", "rebuild", "--by", testCase.actor})
+			if err := cmd.Execute(); err == nil {
+				t.Fatal("Execute() error = nil, want authority rejection")
+			}
+			if stdout.Len() != 0 {
+				t.Fatalf("stdout = %q, want empty", stdout.String())
+			}
+			var failure struct {
+				OK        bool   `json:"ok"`
+				Operation string `json:"operation"`
+				Error     struct {
+					Code      string `json:"code"`
+					Category  string `json:"category"`
+					Retryable bool   `json:"retryable"`
+					Subject   *any   `json:"subject"`
+					Details   struct {
+						Operation string  `json:"operation"`
+						Actor     *string `json:"actor"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+				t.Fatalf("Unmarshal(stderr) error = %v", err)
+			}
+			if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != testCase.wantCode ||
+				failure.Error.Category != "authority" || failure.Error.Retryable || failure.Error.Subject != nil ||
+				failure.Error.Details.Operation != "project.rebuild" || failure.Error.Details.Actor == nil ||
+				*failure.Error.Details.Actor != testCase.wantActor {
+				t.Fatalf("authority failure = %+v, want %s for %q", failure, testCase.wantCode, testCase.wantActor)
+			}
+		})
+	}
+
+	afterJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
+	}
+	if !bytes.Equal(afterJournal, beforeJournal) {
+		t.Fatal("authority-rejected rebuild appended journal data")
+	}
+}
+
+func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	journalPath := mustJournalPath(t, workspace)
+	beforeJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+
+	for _, testCase := range []struct {
+		name         string
+		args         []string
+		wantArgument string
+		wantValue    string
+	}{
+		{name: "positional argument", args: []string{"--json", "rebuild", "unexpected", "--by", "workflow_runner"}, wantArgument: "arguments", wantValue: "unexpected"},
+		{name: "verbose JSON", args: []string{"--json", "rebuild", "--verbose", "--by", "workflow_runner"}, wantArgument: "verbose", wantValue: "true"},
+	} {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			stdout := &bytes.Buffer{}
+			stderr := &bytes.Buffer{}
+			cmd := newRootCommandAt(workspace)
+			cmd.SetOut(stdout)
+			cmd.SetErr(stderr)
+			cmd.SetArgs(testCase.args)
+			if err := cmd.Execute(); err == nil {
+				t.Fatal("Execute() error = nil, want invalid request rejection")
+			}
+			if stdout.Len() != 0 {
+				t.Fatalf("stdout = %q, want empty", stdout.String())
+			}
+			var failure struct {
+				OK        bool   `json:"ok"`
+				Operation string `json:"operation"`
+				Error     struct {
+					Code      string `json:"code"`
+					Category  string `json:"category"`
+					Retryable bool   `json:"retryable"`
+					Subject   *any   `json:"subject"`
+					Details   struct {
+						Argument string   `json:"argument"`
+						Value    string   `json:"value"`
+						Allowed  []string `json:"allowed"`
+					} `json:"details"`
+				} `json:"error"`
+			}
+			if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+				t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr.String())
+			}
+			if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != "invalid-argument" ||
+				failure.Error.Category != "invalid-input" || failure.Error.Retryable || failure.Error.Subject != nil ||
+				failure.Error.Details.Argument != testCase.wantArgument || failure.Error.Details.Value != testCase.wantValue ||
+				len(failure.Error.Details.Allowed) == 0 {
+				t.Fatalf("request failure = %+v, want typed invalid %s", failure, testCase.wantArgument)
+			}
+		})
+	}
+
+	afterJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
+	}
+	if !bytes.Equal(afterJournal, beforeJournal) {
+		t.Fatal("invalid rebuild request appended journal data")
+	}
+}
+
+func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
+	workingDirectory := t.TempDir()
+	missingProject := filepath.Join(t.TempDir(), "missing-project")
+	if err := os.Mkdir(missingProject, 0o755); err != nil {
+		t.Fatalf("Mkdir(%q) error = %v", missingProject, err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workingDirectory)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", missingProject, "--json", "rebuild", "--by", "workflow_runner"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("Execute() error = nil, want selected-project rejection")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	var failure struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code    string `json:"code"`
+			Subject struct {
+				Type string `json:"type"`
+				ID   string `json:"id"`
+			} `json:"subject"`
+			Details struct {
+				Path string `json:"path"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v", err)
+	}
+	if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != "project-not-found" ||
+		failure.Error.Subject.Type != "project" || failure.Error.Subject.ID != missingProject ||
+		failure.Error.Details.Path != missingProject {
+		t.Fatalf("project failure = %+v, want selected missing project %q", failure, missingProject)
+	}
+}
+
+func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	journalPath := mustJournalPath(t, workspace)
+	beforeJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+
+	lockedStdout := &bytes.Buffer{}
+	lockedStderr := &bytes.Buffer{}
+	var lockedErr error
+	err = journal.WithLock(workspace, journal.LockOwner{Command: "test held lock"}, func(_ *journal.WriteLock) error {
+		cmd := newRootCommandAt(workspace)
+		cmd.SetOut(lockedStdout)
+		cmd.SetErr(lockedStderr)
+		cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+		lockedErr = cmd.Execute()
+		return nil
+	})
+	if err != nil {
+		t.Fatalf("WithLock() error = %v", err)
+	}
+	if lockedErr == nil {
+		t.Fatal("Execute() under held lock error = nil, want lock rejection")
+	}
+	if lockedStdout.Len() != 0 {
+		t.Fatalf("held-lock stdout = %q, want empty", lockedStdout.String())
+	}
+	assertEnvelopeKeySet(t, lockedStderr.Bytes(), []string{"contract_version", "error", "ok", "operation"})
+	assertNestedEnvelopeKeySet(t, lockedStderr.Bytes(), "error.details", []string{"lock_path"})
+	var lockedFailure struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code      string `json:"code"`
+			Category  string `json:"category"`
+			Retryable bool   `json:"retryable"`
+			Subject   *any   `json:"subject"`
+			Details   struct {
+				LockPath string `json:"lock_path"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(lockedStderr.Bytes(), &lockedFailure); err != nil {
+		t.Fatalf("Unmarshal(held-lock stderr) error = %v", err)
+	}
+	if lockedFailure.OK || lockedFailure.Operation != "project.rebuild" ||
+		lockedFailure.Error.Code != "lock-unavailable" || lockedFailure.Error.Category != "conflict" ||
+		!lockedFailure.Error.Retryable || lockedFailure.Error.Subject != nil ||
+		lockedFailure.Error.Details.LockPath != ".fid/write.lock" {
+		t.Fatalf("held-lock failure = %+v, want retryable typed lock-unavailable", lockedFailure)
+	}
+	afterHeldJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after held-lock rejection error = %v", journalPath, err)
+	}
+	if !bytes.Equal(afterHeldJournal, beforeJournal) {
+		t.Fatal("held-lock rebuild appended journal data")
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() after lock release error = %v", err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("retry stderr = %q, want empty", stderr.String())
+	}
+	assertEnvelopeKeySet(t, stdout.Bytes(), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"events_replayed", "files_replayed", "schema_version", "upgraded_events"})
+	var success struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Event     *any   `json:"event"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &success); err != nil {
+		t.Fatalf("Unmarshal(retry stdout) error = %v", err)
+	}
+	if !success.OK || success.Operation != "project.rebuild" || success.Event != nil {
+		t.Fatalf("retry success = %+v, want project.rebuild with event null", success)
+	}
+}
+
+func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	writeCommandFixture(t, workspace, "corrupt-tail.jsonl", "2026-06-05.jsonl")
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("Execute() error = nil, want replay-stop failure")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	assertEnvelopeKeySet(t, stderr.Bytes(), []string{"contract_version", "error", "ok", "operation"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"event_id", "journal_file", "line"})
+	var failure struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code      string `json:"code"`
+			Category  string `json:"category"`
+			Retryable bool   `json:"retryable"`
+			Subject   *any   `json:"subject"`
+			Details   struct {
+				JournalFile string  `json:"journal_file"`
+				Line        *int    `json:"line"`
+				EventID     *string `json:"event_id"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v", err)
+	}
+	if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != "journal-replay-stopped" ||
+		failure.Error.Category != "integrity" || failure.Error.Retryable || failure.Error.Subject != nil ||
+		failure.Error.Details.JournalFile != ".fid/journal/2026-06-05.jsonl" || failure.Error.Details.Line == nil ||
+		*failure.Error.Details.Line != 2 || failure.Error.Details.EventID != nil {
+		t.Fatalf("replay failure = %+v, want closed journal-replay-stopped details", failure)
+	}
+}
 
 func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	workspace := newRebuildWorkspace(t)
@@ -19,27 +401,23 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 
-	if stdout.Len() != 0 {
-		t.Fatalf("stdout = %q, want empty", stdout.String())
+	if !strings.Contains(stdout.String(), "rebuild complete") {
+		t.Fatalf("stdout = %q, want rebuild completion", stdout.String())
 	}
-	if got := stderr.String(); !strings.Contains(got, "replayed 2 events from 1 journal files") {
-		t.Fatalf("stderr = %q, want replay count line", got)
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	if got := stdout.String(); !strings.Contains(got, "replayed 2 events from 1 journal files") {
+		t.Fatalf("stdout = %q, want replay count line", got)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -64,19 +442,12 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want corrupt journal error")
 	}
@@ -93,19 +464,12 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want precondition conflict")
 	}
@@ -160,14 +524,6 @@ func writeCommandFixture(t *testing.T, workspaceRoot, fixtureName, journalFileNa
 	journalPath := filepath.Join(workspaceRoot, ".fid", "journal", journalFileName)
 	if err := os.WriteFile(journalPath, payload, 0o644); err != nil {
 		t.Fatalf("WriteFile(%q) error = %v", journalPath, err)
-	}
-}
-
-func mustChdir(t *testing.T, path string) {
-	t.Helper()
-
-	if err := os.Chdir(path); err != nil {
-		t.Fatalf("Chdir(%q) error = %v", path, err)
 	}
 }
 

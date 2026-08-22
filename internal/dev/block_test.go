@@ -63,6 +63,7 @@ func TestBlockRecordsFailedGateCompletionTransitionsAndReleasesClaim(t *testing.
 	if last.EventType != "dev.blocked" {
 		t.Fatalf("last event type = %q, want dev.blocked", last.EventType)
 	}
+	assertDevReplayableRevisionEffect(t, last, issueID, 3, 4)
 
 	var (
 		statusChangedEffects int

@@ -11,7 +11,7 @@ import (
 
 func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionState, error) {
 	row := conn.QueryRow(`
-		SELECT id, kind, workflow_id, status, updated_at
+		SELECT id, kind, workflow_id, status, updated_at, revision
 		FROM issues
 		WHERE id = ?
 	`, issueID)
@@ -20,7 +20,7 @@ func loadIssueTransitionState(conn *sql.DB, issueID string) (issueTransitionStat
 		state     issueTransitionState
 		updatedAt sql.NullString
 	)
-	if err := row.Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt); err != nil {
+	if err := row.Scan(&state.ID, &state.Kind, &state.WorkflowID, &state.Status, &updatedAt, &state.Revision); err != nil {
 		if err == sql.ErrNoRows {
 			return issueTransitionState{}, &NotFoundError{IssueID: issueID}
 		}
@@ -74,7 +74,7 @@ func evaluateTransitionRule(conn *sql.DB, current issueTransitionState, rule wor
 		}
 		return workflow.AllChildTasksDoneOrCancelled(children), nil
 	default:
-		return workflow.RuleResult{}, fmt.Errorf("transition issue %q: unsupported workflow rule %q", current.ID, rule.Name)
+		return workflow.RuleResult{Unmet: []workflow.UnmetCondition{{Rule: rule.Name}}}, nil
 	}
 }
 
@@ -173,6 +173,10 @@ func loadChildTaskStatuses(conn *sql.DB, issueID string) ([]workflow.ChildTaskSt
 	return children, nil
 }
 
-func issueTransitionArgv(issueID, toState, actorRole string) []string {
-	return []string{"fid", "issue", "transition", issueID, "--to", toState, "--by", actorRole}
+func issueTransitionArgv(issueID, toState, actorRole string, expectedRevision *int) []string {
+	argv := []string{"fid", "issue", "transition", issueID, "--to", toState}
+	if expectedRevision != nil {
+		argv = append(argv, "--expected-revision", fmt.Sprintf("%d", *expectedRevision))
+	}
+	return append(argv, "--by", actorRole)
 }

@@ -1,5 +1,14 @@
 # Phase 1 - Task 1: Add greet command with shout mode - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
+
 ## Summary of what was implemented
 
 - Added `src/greet.sh` printing `hello, <name>` with a `--shout` uppercase
@@ -23,7 +32,7 @@
 
 ## Tests run
 
-- `sh test/greet_test.sh` - PASS (2 assertions, both VAL-001 states)
+- `sh test/greet_test.sh` - PASS - `ok - 2 assertions, both VAL-001 states` (terminated `exit_code: 0`)
 - `sh src/greet.sh sam` - prints `hello, sam` (real entrypoint, non-qualifying state)
 - `sh src/greet.sh --shout sam` - prints `HELLO, SAM` (real entrypoint, qualifying state)
 
@@ -31,8 +40,8 @@
 
 Compare this section against the task spec's `## Exact Commands To Run`.
 
-- `sh test/greet_test.sh` - PASS
-- `sh -n src/greet.sh` - PASS
+- `sh test/greet_test.sh` - PASS - `ok - 2 assertions, both VAL-001 states` (terminated `exit_code: 0`)
+- `sh -n src/greet.sh` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 

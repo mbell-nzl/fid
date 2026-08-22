@@ -20,6 +20,17 @@ type LockOwner struct {
 	ActorRole string
 }
 
+type LockUnavailableError struct {
+	LockPath string
+}
+
+func (err *LockUnavailableError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("write lock unavailable at %q", err.LockPath)
+}
+
 type WriteLock struct {
 	workspaceRoot string
 	path          string
@@ -43,6 +54,12 @@ type lockOptions struct {
 
 func WithLock(workspaceRoot string, owner LockOwner, fn func(*WriteLock) error) error {
 	return withLockOptions(workspaceRoot, owner, defaultLockOptions(), fn)
+}
+
+func TryWithLock(workspaceRoot string, owner LockOwner, fn func(*WriteLock) error) error {
+	options := defaultLockOptions()
+	options.waitTimeout = 0
+	return withLockOptions(workspaceRoot, owner, options, fn)
 }
 
 func withLockOptions(workspaceRoot string, owner LockOwner, options lockOptions, fn func(*WriteLock) error) error {
@@ -110,11 +127,7 @@ func acquireLock(workspaceRoot string, owner LockOwner, options lockOptions) (*W
 		}
 
 		if !options.now().Before(deadline) {
-			holder, readErr := readLockMetadata(lockPath)
-			if readErr != nil {
-				return nil, fmt.Errorf("acquire lock %q: timed out waiting for existing holder", lockPath)
-			}
-			return nil, fmt.Errorf("acquire lock %q: held by %s", lockPath, describeLockHolder(holder))
+			return nil, &LockUnavailableError{LockPath: lockPath}
 		}
 
 		options.sleep(options.retryDelay)
@@ -167,25 +180,6 @@ func readLockMetadata(lockPath string) (lockMetadata, error) {
 	}
 
 	return metadata, nil
-}
-
-func describeLockHolder(metadata lockMetadata) string {
-	if metadata.ActorRole != nil && *metadata.ActorRole != "" {
-		return fmt.Sprintf("role=%s pid=%d hostname=%s command=%q started_at=%s",
-			*metadata.ActorRole,
-			metadata.PID,
-			metadata.Hostname,
-			metadata.Command,
-			metadata.StartedAt.UTC().Format(time.RFC3339),
-		)
-	}
-
-	return fmt.Sprintf("pid=%d hostname=%s command=%q started_at=%s",
-		metadata.PID,
-		metadata.Hostname,
-		metadata.Command,
-		metadata.StartedAt.UTC().Format(time.RFC3339),
-	)
 }
 
 func (lock *WriteLock) release() error {

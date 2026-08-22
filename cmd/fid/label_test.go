@@ -3,16 +3,19 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -26,11 +29,11 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	activityBefore := countActivityLogRows(t, conn)
 
 	stdout, stderr := runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if !strings.Contains(stderr, `created label "core"`) {
-		t.Fatalf("stderr = %q, want create confirmation", stderr)
+	if !strings.Contains(stdout, `created label "core"`) {
+		t.Fatalf("stdout = %q, want create confirmation", stdout)
 	}
 
 	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -64,6 +67,9 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	if event.EventType != "label.added" {
 		t.Fatalf("event type = %q, want %q", event.EventType, "label.added")
 	}
+	if event.Actor.Role != "developer" {
+		t.Fatalf("event actor role = %q, want developer", event.Actor.Role)
+	}
 	if len(event.Effects) != 1 {
 		t.Fatalf("effect count = %d, want 1", len(event.Effects))
 	}
@@ -76,9 +82,83 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	}
 }
 
-func TestLabelListDefaultsToJSON(t *testing.T) {
+func TestLabelAddJSONMatchesContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
+
+	journalPath := mustJournalPath(t, workspace)
+	result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("label add result = %#v, want JSON success on stdout only", result)
+	}
+	var envelope struct {
+		ContractVersion string         `json:"contract_version"`
+		OK              bool           `json:"ok"`
+		Operation       string         `json:"operation"`
+		Result          map[string]any `json:"result"`
+		Event           map[string]any `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stdout) error = %v; stdout = %q", err, result.stdout)
+	}
+	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertExactKeys(t, envelope.Result, []string{"label"})
+	label := requireObject(t, envelope.Result, "label")
+	assertExactKeys(t, label, []string{"name", "colour", "description"})
+	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
+	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "label.add" {
+		t.Fatalf("envelope = %#v, want fid-cli.v1 label.add success", envelope)
+	}
+	if label["name"] != "core" || label["colour"] != "#4A90D9" || label["description"] != "Core infrastructure" {
+		t.Fatalf("label = %#v, want exact contract values", label)
+	}
+	last := mustReadLastJournalEvent(t, journalPath)
+	if envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("envelope event = %#v, journal tail = %#v", envelope.Event, last)
+	}
+}
+
+func TestLabelAddJSONDuplicateUsesSpecificAtomicFailureCode(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
+	journalPath := mustJournalPath(t, workspace)
+	before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+
+	result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--by", "developer")
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("result = %#v, want stderr-only duplicate rejection", result)
+	}
+	assertJSONFailureCode(t, result.stderr, "label.add", "duplicate-entity")
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+		t.Fatalf("journal lines after duplicate = %d, want %d", got, before)
+	}
+}
+
+func TestLabelAddRejectsExplicitlyEmptyOptionalFlagsBeforeAppend(t *testing.T) {
+	for _, flag := range []string{"colour", "description"} {
+		t.Run(flag, func(t *testing.T) {
+			workspace := t.TempDir()
+			clonePristineWorkspaceInto(t, workspace)
+			journalPath := mustJournalPath(t, workspace)
+			before := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
+			result := executeCommandForTest(workspace, "--json", "label", "add", "core", "--"+flag, " ", "--by", "developer")
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("result = %#v, want stderr-only empty-%s rejection", result, flag)
+			}
+			assertJSONFailureCode(t, result.stderr, "label.add", "invalid-argument")
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != before {
+				t.Fatalf("journal lines after rejection = %d, want %d", got, before)
+			}
+		})
+	}
+}
+
+func TestLabelListMatchesClosedHumanAndJSONContracts(t *testing.T) {
+	t.Parallel()
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "tech-debt", "--by", "developer")
@@ -87,70 +167,96 @@ func TestLabelListDefaultsToJSON(t *testing.T) {
 	if defaultStderr != "" {
 		t.Fatalf("default stderr = %q, want empty", defaultStderr)
 	}
+	if defaultStdout != "core\ntech-debt\n" {
+		t.Fatalf("default stdout = %q, want sorted label names", defaultStdout)
+	}
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "label", "list", "--format", "json")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "--json", "label", "list")
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
-	if defaultStdout != jsonStdout {
-		t.Fatalf("default stdout = %q, want json stdout %q", defaultStdout, jsonStdout)
+	envelope := decodeReadEnvelope(t, jsonStdout, "label.list")
+	assertExactKeys(t, envelope.Result, []string{"labels", "count"})
+	if envelope.Result["count"] != float64(2) {
+		t.Fatalf("count = %#v, want 2", envelope.Result["count"])
 	}
-
-	var rows []map[string]any
-	if err := json.Unmarshal([]byte(jsonStdout), &rows); err != nil {
-		t.Fatalf("Unmarshal(stdout) error = %v", err)
+	rows, ok := envelope.Result["labels"].([]any)
+	if !ok || len(rows) != 2 {
+		t.Fatalf("labels = %#v, want two rows", envelope.Result["labels"])
 	}
-
-	want := []map[string]any{
-		{"name": "core", "colour": "#4A90D9", "description": "Core infrastructure"},
-		{"name": "tech-debt", "colour": nil, "description": nil},
-	}
-	if !commandStructuresEqual(want, rows) {
-		t.Fatalf("rows = %#v, want %#v", rows, want)
+	want := []map[string]any{{"name": "core", "colour": "#4A90D9", "description": "Core infrastructure"}, {"name": "tech-debt", "colour": nil, "description": nil}}
+	for index, raw := range rows {
+		row, ok := raw.(map[string]any)
+		if !ok {
+			t.Fatalf("labels[%d] = %#v, want object", index, raw)
+		}
+		assertExactKeys(t, row, []string{"name", "colour", "description"})
+		if !commandStructuresEqual(want[index], row) {
+			t.Fatalf("labels[%d] = %#v, want %#v", index, row, want[index])
+		}
 	}
 }
 
-func TestLabelListFormatsMatchJSONReference(t *testing.T) {
+func TestLabelListRejectsLegacyFormatFlag(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	runFIDCommand(t, workspace, "label", "add", "core", "--colour", "#4A90D9", "--description", "Core infrastructure", "--by", "developer")
 	runFIDCommand(t, workspace, "label", "add", "tech-debt", "--by", "developer")
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "label", "list", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
-	}
-	want := decodeCommandJSONStructure(t, jsonStdout)
-
-	for _, formatName := range []string{"toon", "yaml", "markdown"} {
+	for _, formatName := range []string{"json", "toon", "yaml", "markdown"} {
 		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "label", "list", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
+			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "label", "list", "--format", formatName)
+			if err == nil {
+				t.Fatal("Execute() error = nil, want removed --format rejection")
 			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			case "markdown":
-				got = decodeCommandLabelMarkdownRows(t, stdout)
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
 			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
+			if stderr != "error: unknown flag: --format\n" {
+				t.Fatalf("stderr = %q, want concise removed-flag error", stderr)
+			}
+			if !strings.Contains(err.Error(), "unknown flag: --format") {
+				t.Fatalf("error = %q, want removed --format rejection", err)
 			}
 		})
 	}
 }
 
+func TestLabelListJSONReportsOverLimitWithoutOutput(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	tx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("Begin() error = %v", err)
+	}
+	for index := 0; index <= 10000; index++ {
+		if _, err := tx.Exec(`INSERT INTO labels (name) VALUES (?)`, fmt.Sprintf("label-%05d", index)); err != nil {
+			t.Fatalf("insert label %d: %v", index, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		t.Fatalf("Commit() error = %v", err)
+	}
+	closeCommandDB(t, conn)
+
+	result := executeCommandForTest(workspace, "--json", "label", "list")
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("result = %#v, want stderr-only limit rejection", result)
+	}
+	assertJSONFailureCode(t, result.stderr, "label.list", "result-limit-exceeded")
+}
+
 func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
+	t.Parallel()
 	t.Run("duplicate add", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 		runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
 
 		journalPath := mustJournalPath(t, workspace)
@@ -173,7 +279,7 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 
 	t.Run("denied and unknown reject before append", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -223,10 +329,11 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 }
 
 func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}
@@ -246,44 +353,4 @@ func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
 	if commandPolicyCellAllowed(t, rows, "label.add", "qa_lead") {
 		t.Fatal("policy show qa_lead/label.add = true, want false")
 	}
-}
-
-func decodeCommandLabelMarkdownRows(t *testing.T, value string) any {
-	t.Helper()
-
-	lines := strings.Split(strings.TrimSpace(value), "\n")
-	if len(lines) == 0 || lines[0] != "# Labels" {
-		t.Fatalf("markdown output = %q, want # Labels header", value)
-	}
-	if len(lines) >= 3 && strings.TrimSpace(lines[2]) == "(no labels)" {
-		return []any{}
-	}
-	if len(lines) < 5 {
-		t.Fatalf("markdown output = %q, want labels table", value)
-	}
-
-	rows := []any{}
-	for _, line := range lines[4:] {
-		trimmed := strings.TrimSpace(line)
-		if trimmed == "" {
-			continue
-		}
-		cells := splitMarkdownTableRow(trimmed)
-		if len(cells) != 3 {
-			t.Fatalf("markdown row = %q, want 3 cells", line)
-		}
-		row := map[string]any{
-			"name":        cells[0],
-			"colour":      cells[1],
-			"description": cells[2],
-		}
-		if row["colour"] == "" {
-			row["colour"] = nil
-		}
-		if row["description"] == "" {
-			row["description"] = nil
-		}
-		rows = append(rows, row)
-	}
-	return rows
 }

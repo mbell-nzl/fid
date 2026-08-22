@@ -129,15 +129,6 @@ func TestListFiltersAndOrdering(t *testing.T) {
 				wantIDs: []string{"FID-task01", "FID-task04"},
 			},
 			{
-				name: "inbox",
-				options: ListOptions{
-					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
-					InInbox:       boolPointer(true),
-				},
-				wantIDs: []string{"FID-task01"},
-			},
-			{
 				name: "open concerns",
 				options: ListOptions{
 					WorkspaceRoot:   workspace,
@@ -379,8 +370,8 @@ func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 		{
 			query: `
 				INSERT INTO issues (
-					id, kind, parent_id, title, status, workflow_id, priority, sequence, in_inbox, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					id, kind, parent_id, title, status, workflow_id, priority, sequence, owner_role, created_at, updated_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`,
 			args: []any{
 				"FID-task01",
@@ -391,7 +382,6 @@ func seedIssueListFixture(t *testing.T, conn *sql.DB) {
 				"task-default",
 				1,
 				2,
-				true,
 				"developer",
 				"2026-06-09T09:01:00Z",
 				"2026-06-09T09:03:00Z",

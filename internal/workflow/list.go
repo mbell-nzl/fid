@@ -11,6 +11,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+const workflowListLimit = 10000
+
 // ListOptions supplies the read context and filters for workflow listing.
 type ListOptions struct {
 	WorkspaceRoot string
@@ -82,6 +84,9 @@ func listWorkflowSummaries(conn *sql.DB, options ListOptions) ([]ListItem, error
 			return nil, err
 		}
 		items = append(items, item)
+		if len(items) > workflowListLimit {
+			return nil, &ResultLimitExceededError{Collection: "workflows", Limit: workflowListLimit, Observed: len(items)}
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate workflow list rows: %w", err)
@@ -110,14 +115,17 @@ func workflowListQuery(options ListOptions) string {
 			(SELECT COUNT(*) FROM workflow_transitions t WHERE t.workflow_id = w.id)
 		FROM workflows w
 		` + where + `
-		ORDER BY w.id`
+		ORDER BY w.name, w.id
+		LIMIT ?`
 }
 
 func workflowListArgs(options ListOptions) []any {
+	args := make([]any, 0, 2)
 	if strings.TrimSpace(options.Kind) == "" {
-		return nil
+		return append(args, workflowListLimit+1)
 	}
-	return []any{strings.TrimSpace(options.Kind)}
+	args = append(args, strings.TrimSpace(options.Kind))
+	return append(args, workflowListLimit+1)
 }
 
 func scanWorkflowListItem(rows *sql.Rows) (ListItem, error) {

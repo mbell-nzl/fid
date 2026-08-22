@@ -10,8 +10,9 @@ import (
 )
 
 func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -68,8 +69,9 @@ func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
 }
 
 func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -129,8 +131,9 @@ func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
 }
 
 func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -174,10 +177,11 @@ func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
 }
 
 func TestRunRecordPolicyShowMatchesAllowedRoles(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}

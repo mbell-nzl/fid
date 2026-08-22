@@ -62,6 +62,17 @@ check_contains() {
   fi
 }
 
+check_absent() {
+  file=$1
+  pattern=$2
+  label=$3
+  if grep -Eq "$pattern" "$file"; then
+    fail "$label still present in $file"
+  else
+    pass "$label absent: $file"
+  fi
+}
+
 required_skills="validation-contract qa-evidence phase-wrap-up tdd diagnose zoom-out phase-planning task-pack domain-language-grill architecture-review"
 
 for skill in $required_skills; do
@@ -148,6 +159,31 @@ for path in $agent_files; do
   check_file "$path" "agent prompt/config"
 done
 
+# Codex gate-running roles must retain the nested command session handle for
+# commands that outlive the initial exec yield. Generated prompts are checked
+# alongside canonical sources so provider drift cannot silently restore the
+# false "terminated without output" failure mode from ESC-20-003.
+codex_gate_session_surfaces="
+project-docs/agents/developer.md
+project-docs/agents/qa-lead.md
+project-docs/agents/qa-reviewer.md
+.codex/agents/developer.toml
+.codex/agents/qa_lead.toml
+.codex/agents/qa_reviewer.toml
+"
+
+for file in $codex_gate_session_surfaces; do
+  check_contains "$file" 'JSON\.stringify' "Codex full exec-result preservation"
+  check_contains "$file" 'session_id' "Codex nested command session handling"
+  check_contains "$file" 'write_stdin' "Codex long-command polling"
+  check_contains "$file" 'exit_code' "Codex observed command termination"
+done
+
+for file in project-docs/agents/phase-runner.md .codex/agents/phase_runner.toml; do
+  check_contains "$file" 'exit_code' "Phase Runner command-termination evidence"
+  check_contains "$file" 'outer.*execution cell|execution cell.*outer' "Phase Runner wrapper-completion guardrail"
+done
+
 check_file "project-docs/docs/playbook.md" "operator playbook"
 check_file "project-docs/templates/hooks/claude-settings.example.json" "Claude hook example"
 check_file "project-docs/templates/hooks/codex-hooks-notes.md" "Codex hook notes"
@@ -202,12 +238,42 @@ else
   fail "report-lint self-test failed"
 fi
 
+check_file "project-docs/tools/workflow-route.sh" "workflow route tool"
+if [ -x "project-docs/tools/workflow-route.sh" ]; then
+  pass "workflow-route.sh is executable"
+else
+  fail "workflow-route.sh is not executable"
+fi
+
+check_file "project-docs/tools/workflow-control-scope-lint.sh" "control repair scope tool"
+if [ -x "project-docs/tools/workflow-control-scope-lint.sh" ]; then
+  pass "workflow-control-scope-lint.sh is executable"
+else
+  fail "workflow-control-scope-lint.sh is not executable"
+fi
+check_contains "project-docs/tools/workflow-route.sh" 'control:CONFORMANCE_DEFECT' "control conformance repair route"
+check_contains "project-docs/tools/workflow-route.sh" 'control:DEFINITION_CHANGE.*control:AMBIGUOUS' "protected control change route"
+
+check_file "project-docs/tools/workflow-sequence-lint.sh" "workflow sequence tool"
+if [ -x "project-docs/tools/workflow-sequence-lint.sh" ]; then
+  pass "workflow-sequence-lint.sh is executable"
+else
+  fail "workflow-sequence-lint.sh is not executable"
+fi
+
 check_file "project-docs/tools/drills/run-drills.sh" "evidence-chain drills harness"
 if [ -x "project-docs/tools/drills/run-drills.sh" ]; then
   pass "run-drills.sh is executable"
 else
   fail "run-drills.sh is not executable"
 fi
+
+for file in project-docs/docs/playbook.md project-docs/templates/run-ledger-template.md; do
+  check_contains "$file" 'workflow-sequence-lint\.sh' "transactional ledger append reference"
+  check_contains "$file" 'APPEND_CONFIRMED state=' "transactional ledger append receipt"
+  check_contains "$file" 'atomic' "transactional ledger append behavior"
+  check_contains "$file" 'byte-identical' "lost append receipt recovery"
+done
 
 # Phase Runner surfaces must reference report-lint and the run ledger instead
 # of prose-parsing/chat-state equivalents.
@@ -221,9 +287,19 @@ project-docs/templates/phase-runner-prompt.md
 
 for file in $runner_surfaces; do
   check_contains "$file" 'report-lint\.sh' "report-lint reference"
+  check_contains "$file" 'workflow-route\.sh' "workflow route reference"
+  check_contains "$file" 'workflow-sequence-lint\.sh' "workflow sequence reference"
+  check_contains "$file" 'append-stdin' "workflow sequence append transaction"
+  check_contains "$file" 'APPEND_CONFIRMED state=' "workflow append receipt"
+  check_contains "$file" 'atomic' "atomic ledger append contract"
+  check_contains "$file" 'byte-identical' "lost append receipt recovery"
+  check_contains "$file" 'transfer repair' "linked sequential QA repair"
+  check_contains "$file" 'apply_patch' "generic ledger mutation prohibition"
+  check_absent "$file" 'Append only a valid candidate, then run' "split ledger validation and mutation"
+  check_contains "$file" 'Sequence contract: v2' "strict sequence marker"
   check_contains "$file" 'run-ledger' "run-ledger reference"
   check_contains "$file" 'first-step triager' "TL-Lite triage-gated stop invariant"
-  check_contains "$file" 'no TRIAGE entry exists' "untriaged-STOP resume rule"
+  check_contains "$file" 'no TRIAGE entry' "untriaged-STOP resume rule"
 done
 
 report_lint_check_surfaces="
@@ -239,6 +315,10 @@ for file in $report_lint_check_surfaces; do
 done
 
 check_contains "project-docs/templates/run-ledger-template.md" '^- Triage:' "run-ledger STOP triage field"
+check_contains "project-docs/specs/09_AI_WORKFLOW.md" 'phase-scoped.*ESC-' "phase-scoped escalation identity"
+check_absent "project-docs/specs/09_AI_WORKFLOW.md" 'globally sequential ESC-' "global escalation numbering"
+check_absent "project-docs/specs/09_AI_WORKFLOW.md" 'QA Reviewer.*ESC append' "QA Reviewer escalation-write authority"
+check_contains "project-docs/specs/09_AI_WORKFLOW.md" 'append-only run ledger; git branch operations' "Phase Runner write boundary"
 
 codex_runner_surfaces="
 project-docs/specs/09_AI_WORKFLOW.md
@@ -332,6 +412,7 @@ while IFS= read -r heading; do
     fi
   done
 done <<'EOF'
+## Workflow outcome
 ## Summary of what was implemented
 ## Files created or modified
 ## Documentation updated
@@ -344,6 +425,222 @@ done <<'EOF'
 ## Commit hash
 ## Commit subject
 EOF
+
+# --- Recovery-state concordance ---
+
+repair_verdict_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/phase-runner.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+.claude/agents/phase-runner.md
+.claude/agents/tl-lite.md
+.codex/agents/phase_runner.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $repair_verdict_files; do
+  check_contains "$file" 'VERDICT: REPAIR' "three-way recovery verdict"
+done
+
+same_task_recovery_files="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/templates/phase-runner-prompt.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+"
+
+for file in $same_task_recovery_files; do
+  check_contains "$file" 'same-task.*continuation|continuation.*same task' "same-task recovery dispatch"
+  check_contains "$file" 'incomplete.*not.*blocker|not.*blocker.*incomplete' "incomplete-work blocker rejection"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
+  check_absent "$file" 'multiple Developer sessions' "multi-session escalation trigger"
+done
+
+control_conformance_surfaces="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/templates/triage-log-template.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.claude/agents/tl-lite.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $control_conformance_surfaces; do
+  check_contains "$file" 'control-conformance' "bounded control conformance repair"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md .claude/agents/phase-runner.md .codex/agents/phase_runner.toml; do
+  check_contains "$file" 'workflow-control-scope-lint\.sh' "isolated control repair scope verification"
+  check_contains "$file" 'originating task' "control repair task identity"
+  check_contains "$file" 'checked-out.*HEAD' "control repair checkpoint binding"
+  check_contains "$file" 'symlink' "control repair artifact-type guard"
+  check_contains "$file" 'preceding TRIAGE BLOCK|governing TRG/ESC' "triaged STOP authority"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/tl-lite.md project-docs/templates/triage-log-template.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
+  check_contains "$file" '[Aa]ccepted (control )?contract|Control contract' "control repair contract authority"
+  check_contains "$file" '[Aa]llowed file|[Aa]llowed path' "control repair file allowlist"
+  check_contains "$file" '[Ff]orbidden change' "control repair semantic guardrails"
+done
+
+check_contains "project-docs/templates/run-ledger-template.md" 'Recovery directive schema: v2' "recovery directive schema marker"
+check_contains "project-docs/templates/run-ledger-template.md" 'Repair mode:.*control-conformance' "control repair ledger mode"
+check_contains "project-docs/templates/run-ledger-template.md" 'Control contract:' "control repair ledger contract"
+check_contains "project-docs/templates/run-ledger-template.md" 'Control mismatch:' "control repair ledger reproducer"
+check_contains "project-docs/templates/run-ledger-template.md" 'Repair authority:' "control repair ledger authority"
+check_contains "project-docs/templates/run-ledger-template.md" '[Ee]very new v2.*RUN|same RUN event' "mandatory recovery directive schema"
+
+for file in project-docs/tools/workflow-control-scope-lint.sh project-docs/tools/drills/run-drills.sh; do
+  check_contains "$file" 'worktree is not clean' "control repair clean-tree enforcement"
+  check_contains "$file" 'regular file' "control repair regular-file enforcement"
+done
+check_contains "project-docs/tools/workflow-control-scope-lint.sh" 'repair commit is not the checked-out HEAD' "control repair HEAD enforcement"
+check_contains "project-docs/tools/workflow-control-scope-lint.sh" 'assume-unchanged or skip-worktree' "control repair hidden-index enforcement"
+
+# Control recovery must stay physically isolated from the dirty runner ledger.
+# Canonical role sources and generated provider copies are both guarded so a
+# sync cannot silently drop the worktree boundary.
+control_repair_isolation_surfaces="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/docs/playbook.md
+project-docs/tools/README.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.claude/agents/tl-lite.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $control_repair_isolation_surfaces; do
+  check_contains "$file" 'temporary' "temporary control repair isolation"
+  check_contains "$file" 'clean' "clean control repair isolation"
+  check_contains "$file" 'repair worktree' "dedicated control repair worktree"
+  check_contains "$file" 'fast-forward' "control repair fast-forward integration"
+  check_contains "$file" 'assume-unchanged' "control repair hidden-index rejection"
+  check_contains "$file" 'skip-worktree' "control repair skip-worktree rejection"
+  check_contains "$file" 'only (permitted )?dirt|no dirt except|only dirty.*ledger|only.*ledger|ledger-only dirty|no other dirt' "runner ledger is only phase-worktree dirt"
+done
+
+control_scope_execution_surfaces="
+AGENTS.md
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/developer.md
+project-docs/agents/phase-runner.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/docs/playbook.md
+project-docs/tools/README.md
+.claude/agents/developer.md
+.claude/agents/phase-runner.md
+.codex/agents/developer.toml
+.codex/agents/phase_runner.toml
+"
+
+for file in $control_scope_execution_surfaces; do
+  check_contains "$file" 'workflow-control-scope-lint\.sh' "repair-worktree scope command"
+done
+
+control_repair_authority_surfaces="
+project-docs/agents/developer.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/docs/playbook.md
+project-docs/tools/README.md
+.claude/agents/developer.md
+.claude/agents/tl-lite.md
+.codex/agents/developer.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $control_repair_authority_surfaces; do
+  check_contains "$file" 'REPAIR / control-conformance' "exact control-conformance disposition"
+  check_contains "$file" 'Control trigger signature' "bound control repair trigger"
+  check_contains "$file" 'phase-scoped TRG/ESC|existing.*TRG/ESC|retains? the governing' "resolved-BLOCK identity retention"
+  check_contains "$file" 'existing DEC|DEC-<NNN>|DEC-resolved BLOCK|resolved by a DEC' "existing decision authority for resolved BLOCK"
+done
+
+control_repair_resolution_surfaces="
+project-docs/agents/developer.md
+project-docs/agents/tl-lite.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/templates/run-ledger-template.md
+project-docs/docs/playbook.md
+project-docs/tools/README.md
+.claude/agents/developer.md
+.claude/agents/tl-lite.md
+.codex/agents/developer.toml
+.codex/agents/tl_lite.toml
+"
+
+for file in $control_repair_resolution_surfaces; do
+  check_contains "$file" 'RESOLVED.*permit' "RESOLVED permits only report continuation"
+done
+
+for file in project-docs/agents/tl-lite.md project-docs/templates/phase-runner-prompt.md project-docs/templates/run-ledger-template.md project-docs/docs/playbook.md project-docs/tools/README.md .claude/agents/tl-lite.md .codex/agents/tl_lite.toml; do
+  check_contains "$file" 'monotonic' "monotonic recovery attempt budget"
+  check_contains "$file" 'second|two consecutive' "two-attempt no-progress exhaustion"
+done
+
+for file in project-docs/tools/workflow-sequence-lint.sh project-docs/tools/drills/run-drills.sh; do
+  check_contains "$file" 'downgrade Recovery directive schema|cannot drop directive schema' "directive schema downgrade rejection"
+  check_contains "$file" 'preceding TRIAGE' "control/STOP triage binding"
+  check_contains "$file" 'Consecutive no-progress attempts' "recovery budget enforcement"
+  check_contains "$file" 'phase triage log' "durable phase triage authority"
+  check_contains "$file" 'unrecorded or malformed phase decision|every cited resolution decision must exist' "recorded decision authority"
+  check_contains "$file" 'RUN-RESUME.*governing TRIAGE' "STOP/resume authority continuity"
+  check_contains "$file" 'exhausted no-progress.*must BLOCK' "exhausted recovery cannot restart"
+done
+
+for file in project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
+  check_contains "$file" 'no-op churn is not progress' "recovery progress anti-churn rule"
+done
+
+for file in project-docs/templates/run-ledger-template.md project-docs/specs/09_AI_WORKFLOW.md project-docs/agents/phase-runner.md project-docs/templates/phase-runner-prompt.md; do
+  check_contains "$file" 'TASK-RECOVERY' "task recovery ledger event"
+  check_contains "$file" 'RUN-RESUME' "resolved run resume event"
+done
+
+qa_recovery_files="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/qa-reviewer.md
+project-docs/templates/mid-phase-review-template.md
+.claude/agents/qa-reviewer.md
+.codex/agents/qa_reviewer.toml
+"
+
+for file in $qa_recovery_files; do
+  check_contains "$file" 'PASS.*REPAIR.*BLOCK' "typed QA review outcome"
+  check_contains "$file" 'owning task' "QA recovery ownership"
+  check_contains "$file" 're-review' "independent QA re-review"
+done
+
+check_contains "project-docs/tools/report-lint.sh" 'OUTCOME.*RECOVERY_REQUIRED' "typed report-lint recovery outcome"
+check_contains "project-docs/tools/report-lint.sh" 'PASS result missing observed termination' "report-lint termination enforcement"
+check_absent "project-docs/tools/report-lint.sh" 'orchestrator must still stop' "unconditional blocker stop"
 
 # --- Current-state file line budgets (from 09_AI_WORKFLOW.md section 3.5) ---
 
@@ -383,6 +680,8 @@ while IFS= read -r literal; do
   done
 done <<'EOF'
 VERDICT: RESUME
+VERDICT: REPAIR
+VERDICT: REPAIR / control-conformance
 VERDICT: BLOCK
 EOF
 
@@ -417,8 +716,8 @@ while IFS= read -r trigger; do
 done <<'EOF'
 Changes a public interface
 Changes the data model or persistence contract
-Affects more than one task or subsystem
-Introduces a dependency, tool, quality gate, or workflow
+Changes accepted behavior across more than one task or subsystem
+Introduces/removes a dependency, tool, quality gate, or workflow
 Exposes ambiguity in product intent or acceptance criteria
 EOF
 

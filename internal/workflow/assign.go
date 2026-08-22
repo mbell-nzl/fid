@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
@@ -19,9 +20,11 @@ type AssignOptions struct {
 
 // AssignResult reports the workflow and scope recorded by one assignment.
 type AssignResult struct {
-	Name    string
-	Kind    string
-	Project bool
+	Name       string
+	Kind       string
+	Project    bool
+	EventID    string
+	OccurredAt time.Time
 }
 
 // Assign appends and projects one atomic workflow.assigned event.
@@ -50,7 +53,7 @@ func Assign(options AssignOptions) (AssignResult, error) {
 		Command:   strings.Join(workflowAssignArgv(options), " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
-		return assignWorkflowLocked(lock, options)
+		return assignWorkflowLocked(lock, options, &result)
 	})
 	if err != nil {
 		return AssignResult{}, err
@@ -63,7 +66,7 @@ func AuthorizeAssignment(workspaceRoot, actorRole string) error {
 	return policy.Authorize(workspaceRoot, actorRole, "workflow.assign")
 }
 
-func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions) error {
+func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, result *AssignResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
 	}
@@ -100,7 +103,12 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions) error 
 	if err != nil {
 		return err
 	}
-	return projectWorkflowEvent(options.WorkspaceRoot, conn, appended)
+	if err := projectWorkflowEvent(options.WorkspaceRoot, conn, appended); err != nil {
+		return err
+	}
+	result.EventID = appended.EventID
+	result.OccurredAt = appended.OccurredAt.UTC()
+	return nil
 }
 
 func assignmentExists(conn *sql.DB, request AssignmentRequest) (bool, error) {
@@ -140,7 +148,7 @@ func assignmentEffects(request AssignmentRequest, replacing bool, assignedAt str
 func workflowAssignArgv(options AssignOptions) []string {
 	argv := []string{"fid", "workflow", "assign", "--name", options.Request.Name}
 	if options.Request.Project {
-		argv = append(argv, "--project")
+		argv = append(argv, "--project-wide")
 	} else {
 		argv = append(argv, "--kind", options.Request.Kind)
 	}

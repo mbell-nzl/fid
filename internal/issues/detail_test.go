@@ -2,16 +2,14 @@ package issues
 
 import (
 	"database/sql"
-	"errors"
 	"path/filepath"
-	"reflect"
 	"testing"
 )
 
 func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 	t.Parallel()
 
-	t.Run("empty issue returns stable empty sections and null due date", func(t *testing.T) {
+	t.Run("empty issue returns stable empty sections", func(t *testing.T) {
 		t.Parallel()
 
 		workspace := newIssueWorkspace(t)
@@ -36,9 +34,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			t.Fatalf("Get() error = %v", err)
 		}
 
-		if got.DueDate != nil {
-			t.Fatalf("Get() due_date = %#v, want nil", got.DueDate)
-		}
 		if got.ParentTitle != nil {
 			t.Fatalf("Get() parent_title = %#v, want nil", got.ParentTitle)
 		}
@@ -71,7 +66,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		}
 	})
 
-	t.Run("populated issue returns due date and structured sections", func(t *testing.T) {
+	t.Run("populated issue returns structured sections", func(t *testing.T) {
 		t.Parallel()
 
 		workspace := newIssueWorkspace(t)
@@ -89,9 +84,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			t.Fatalf("Get() error = %v", err)
 		}
 
-		if got.DueDate == nil || *got.DueDate != "2026-06-30" {
-			t.Fatalf("Get() due_date = %#v, want 2026-06-30", got.DueDate)
-		}
 		if got.ParentTitle == nil || *got.ParentTitle != "Core persistence layer" {
 			t.Fatalf("Get() parent_title = %#v, want Core persistence layer", got.ParentTitle)
 		}
@@ -163,93 +155,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			t.Fatalf("Get() completions gate_results = %#v, want completion snapshot preserved separately", got.Completions)
 		}
 	})
-}
-
-func TestSectionValue(t *testing.T) {
-	t.Parallel()
-
-	issue := Issue{
-		AcceptanceCriteria: []AcceptanceCriterion{{ID: "AC-1"}},
-		Concerns:           []IssueConcern{{ID: "CON-1"}},
-		Completions:        []IssueCompletion{{ID: "TC-1"}},
-		Links:              []IssueLink{{Relation: "blocks", TargetID: "FID-2"}},
-		Claims:             []IssueClaim{{RefID: "REQ-1", ClaimedBy: "developer"}},
-		Gates:              []IssueGate{{ID: "GATE-1", Command: "go test ./..."}},
-	}
-
-	tests := []struct {
-		name    string
-		section string
-		want    any
-		wantErr string
-	}{
-		{
-			name:    "acceptance section",
-			section: "acceptance",
-			want:    issue.AcceptanceCriteria,
-		},
-		{
-			name:    "concerns section",
-			section: "concerns",
-			want:    issue.Concerns,
-		},
-		{
-			name:    "completions section",
-			section: "completions",
-			want:    issue.Completions,
-		},
-		{
-			name:    "links section",
-			section: "links",
-			want:    issue.Links,
-		},
-		{
-			name:    "claims section",
-			section: "claims",
-			want:    issue.Claims,
-		},
-		{
-			name:    "gates section",
-			section: "gates",
-			want:    issue.Gates,
-		},
-		{
-			name:    "unknown section is rejected with supported names",
-			section: " timeline ",
-			wantErr: `unsupported issue section "timeline"; supported sections: acceptance, concerns, completions, links, claims, gates`,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := SectionValue(issue, tt.section)
-			if tt.wantErr != "" {
-				if err == nil {
-					t.Fatalf("SectionValue() error = nil, want %q", tt.wantErr)
-				}
-				var unsupportedErr *UnsupportedSectionError
-				if !errors.As(err, &unsupportedErr) {
-					t.Fatalf("SectionValue() error = %T, want *UnsupportedSectionError", err)
-				}
-				if unsupportedErr.Section != "timeline" {
-					t.Fatalf("UnsupportedSectionError.Section = %q, want timeline", unsupportedErr.Section)
-				}
-				if err.Error() != tt.wantErr {
-					t.Fatalf("SectionValue() error = %q, want %q", err.Error(), tt.wantErr)
-				}
-				if !equalStrings(SupportedSections(), []string{"acceptance", "concerns", "completions", "links", "claims", "gates"}) {
-					t.Fatalf("SupportedSections() = %#v", SupportedSections())
-				}
-				return
-			}
-			if err != nil {
-				t.Fatalf("SectionValue() error = %v", err)
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Fatalf("SectionValue() = %#v, want %#v", got, tt.want)
-			}
-		})
-	}
 }
 
 func TestIssueParentTitle(t *testing.T) {
@@ -378,8 +283,8 @@ func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 			query: `
 				INSERT INTO issues (
 					id, kind, parent_id, title, workflow_id, status, priority, sequence,
-					spec_md_path, due_date, owner_role, created_at, updated_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+					spec_md_path, owner_role, created_at, updated_at
+				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			`,
 			args: []any{
 				"FID-a1b2c3",
@@ -391,7 +296,6 @@ func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 				1,
 				3,
 				"project-docs/docs/phases/phase-1/tasks/FID-a1b2c3.md",
-				"2026-06-30",
 				"developer",
 				"2026-05-25T09:00:00Z",
 				"2026-05-27T10:20:00Z",

@@ -3,216 +3,155 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"reflect"
+	"fmt"
 	"sort"
-	"strconv"
-	"strings"
 	"testing"
 )
 
-func TestWorkflowListRendersDocumentedJSONFieldSet(t *testing.T) {
+func TestWorkflowListJSONMatchesContractAndUsesNullAssignmentScope(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
-
-	stdout, stderr := runFIDCommand(t, workspace, "workflow", "list")
-	if stderr != "" {
-		t.Fatalf("stderr = %q, want empty", stderr)
+	clonePristineWorkspaceInto(t, workspace)
+	defineWorkflowForTest(t, workspace, "list-flow", "any")
+	if result := executeCommandForTest(workspace, "--json", "workflow", "assign", "--name", "list-flow", "--project-wide", "--by", "tl"); result.err != nil {
+		t.Fatalf("assign project scope = %#v", result)
 	}
-
-	var items []map[string]any
-	if err := json.Unmarshal([]byte(stdout), &items); err != nil {
-		t.Fatalf("decode workflow list JSON: %v", err)
+	result := executeCommandForTest(workspace, "--json", "workflow", "list")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("workflow list = %#v", result)
 	}
-	if len(items) == 0 {
-		t.Fatal("workflow list returned no seeded workflows")
+	var envelope struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Result          struct {
+			Workflows []map[string]any `json:"workflows"`
+			Count     int              `json:"count"`
+		} `json:"result"`
+		Event any `json:"event"`
 	}
-
-	wantFields := []string{"active", "applies_to", "assigned_to", "id", "name", "states", "transitions"}
-	for _, item := range items {
-		gotFields := make([]string, 0, len(item))
-		for field := range item {
-			gotFields = append(gotFields, field)
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || !envelope.OK || envelope.ContractVersion != "fid-cli.v1" || envelope.Operation != "workflow.list" || envelope.Event != nil || envelope.Result.Count != len(envelope.Result.Workflows) {
+		t.Fatalf("list envelope = %+v, err = %v", envelope, err)
+	}
+	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result", []string{"count", "workflows"})
+	for _, item := range envelope.Result.Workflows {
+		keys := make([]string, 0, len(item))
+		for key := range item {
+			keys = append(keys, key)
 		}
-		sort.Strings(gotFields)
-		if !reflect.DeepEqual(gotFields, wantFields) {
-			t.Fatalf("workflow %q fields = %v, want %v", item["id"], gotFields, wantFields)
+		sort.Strings(keys)
+		if got, want := joinWorkflowKeys(keys), "active,applies_to,assigned_to,id,name,states,transitions"; got != want {
+			t.Fatalf("workflow keys = %s, want %s", got, want)
 		}
 	}
+	for _, item := range envelope.Result.Workflows {
+		if item["id"] == "list-flow" {
+			assignments := item["assigned_to"].([]any)
+			if len(assignments) != 1 || assignments[0].(map[string]any)["scope_type"] != "project" || assignments[0].(map[string]any)["scope_value"] != nil {
+				t.Fatalf("project assignment = %#v", assignments)
+			}
+			return
+		}
+	}
+	t.Fatal("list-flow missing from result")
 }
 
-func TestWorkflowListFormatsFiltersAndAssignments(t *testing.T) {
+func TestWorkflowListRejectsNonIssueKind(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
+	result := executeCommandForTest(workspace, "--json", "workflow", "list", "--kind", "qa_review")
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("list rejection = %#v", result)
+	}
+	assertWorkflowInvalidEnvelope(t, result.stderr, "workflow.list")
+}
+
+func TestWorkflowListEnforcesCollectionLimitWithoutTruncation(t *testing.T) {
+	workspace := t.TempDir()
+	clonePristineWorkspaceInto(t, workspace)
 	conn := openWorkflowCommandDB(t, workspace)
-	seedWorkflowListCommandFixture(t, conn)
-	closeCommandDB(t, conn)
+	defer closeCommandDB(t, conn)
+	resetWorkflowListFixture(t, conn)
 
-	jsonOutput, jsonStderr := runFIDCommand(t, workspace, "workflow", "list", "--kind", "qa_review", "--active")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	for index := 0; index < 10000; index++ {
+		insertWorkflowListFixture(t, conn, index)
 	}
-	want := decodeCommandJSONStructure(t, jsonOutput)
-	if got, wantIDs := workflowListCommandIDs(t, want), []string{"alpha-any", "bravo-qa"}; !reflect.DeepEqual(got, wantIDs) {
-		t.Fatalf("active kind IDs = %v, want %v", got, wantIDs)
+	atLimit := executeCommandForTest(workspace, "--json", "workflow", "list")
+	if atLimit.err != nil || atLimit.stderr != "" {
+		t.Fatalf("at-limit workflow.list = %#v, want stdout-only success", atLimit)
 	}
-	assertWorkflowListCommandShapes(t, want)
-
-	for _, formatName := range []string{"toon", "markdown", "yaml"} {
-		stdout, stderr := runFIDCommand(t, workspace, "workflow", "list", "--kind", "qa_review", "--active", "--format", formatName)
-		if stderr != "" {
-			t.Fatalf("%s stderr = %q, want empty", formatName, stderr)
-		}
-		var got any
-		switch formatName {
-		case "toon":
-			got = decodeCommandTOONStructure(t, stdout)
-		case "markdown":
-			got = decodeWorkflowListMarkdown(t, stdout)
-		case "yaml":
-			got = decodeCommandYAMLStructure(t, stdout)
-		}
-		if !commandStructuresEqual(want, got) {
-			t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-		}
+	var success struct {
+		Result struct {
+			Workflows []struct {
+				ID   string `json:"id"`
+				Name string `json:"name"`
+			} `json:"workflows"`
+			Count int `json:"count"`
+		} `json:"result"`
+		Event any `json:"event"`
+	}
+	if err := json.Unmarshal([]byte(atLimit.stdout), &success); err != nil || success.Event != nil || success.Result.Count != 10000 || len(success.Result.Workflows) != 10000 || success.Result.Workflows[0].Name != "limit workflow 00000" || success.Result.Workflows[len(success.Result.Workflows)-1].Name != "limit workflow 09999" {
+		t.Fatalf("at-limit workflow.list = %+v, err = %v; want 10000 complete ordered rows and null event", success, err)
 	}
 
-	secondJSON, _ := runFIDCommand(t, workspace, "workflow", "list", "--kind", "qa_review", "--active")
-	if secondJSON != jsonOutput {
-		t.Fatalf("consecutive JSON outputs differ: %q != %q", secondJSON, jsonOutput)
+	insertWorkflowListFixture(t, conn, 10000)
+	journalPath := mustJournalPath(t, workspace)
+	before := mustReadCommandFile(t, journalPath)
+	overLimit := executeCommandForTest(workspace, "--json", "workflow", "list")
+	if overLimit.err == nil || overLimit.stdout != "" {
+		t.Fatalf("over-limit workflow.list = %#v, want stderr-only rejection", overLimit)
 	}
-	unfiltered, _ := runFIDCommand(t, workspace, "workflow", "list", "--kind", "qa_review")
-	if got, wantIDs := workflowListCommandIDs(t, decodeCommandJSONStructure(t, unfiltered)), []string{"alpha-any", "bravo-qa", "charlie-qa-inactive"}; !reflect.DeepEqual(got, wantIDs) {
-		t.Fatalf("unfiltered kind IDs = %v, want %v", got, wantIDs)
+	var failure struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code     string `json:"code"`
+			Category string `json:"category"`
+			Subject  any    `json:"subject"`
+			Details  struct {
+				Collection string `json:"collection"`
+				Limit      int    `json:"limit"`
+				Observed   int    `json:"observed"`
+			} `json:"details"`
+		} `json:"error"`
 	}
+	if err := json.Unmarshal([]byte(overLimit.stderr), &failure); err != nil || failure.OK || failure.Operation != "workflow.list" || failure.Error.Code != "result-limit-exceeded" || failure.Error.Category != "integrity" || failure.Error.Subject != nil || failure.Error.Details.Collection != "workflows" || failure.Error.Details.Limit != 10000 || failure.Error.Details.Observed != 10001 {
+		t.Fatalf("over-limit failure = %+v, err = %v; want closed result-limit-exceeded envelope", failure, err)
+	}
+	if after := mustReadCommandFile(t, journalPath); string(after) != string(before) {
+		t.Fatal("over-limit workflow list appended a journal event")
+	}
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflows`).Scan(&count); err != nil || count != 10001 {
+		t.Fatalf("workflows after over-limit list = %d, err = %v; want 10001 without truncation", count, err)
+	}
+}
 
-	emptyWorkspace := t.TempDir()
-	runInitCommand(t, emptyWorkspace, "init")
-	for _, formatName := range []string{"json", "toon", "markdown", "yaml"} {
-		stdout, stderr := runFIDCommand(t, emptyWorkspace, "workflow", "list", "--kind", "qa_review", "--format", formatName)
-		if stderr != "" || stdout != "[]\n" {
-			t.Fatalf("empty %s = (%q, %q), want ([]\\n, empty stderr)", formatName, stdout, stderr)
+func resetWorkflowListFixture(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	for _, table := range []string{"workflow_transition_requires", "workflow_transitions", "workflow_states", "workflow_assignments", "workflows"} {
+		if _, err := conn.Exec("DELETE FROM " + table); err != nil {
+			t.Fatalf("clear %s: %v", table, err)
 		}
 	}
 }
 
-func seedWorkflowListCommandFixture(t *testing.T, conn *sql.DB) {
+func insertWorkflowListFixture(t *testing.T, conn *sql.DB, index int) {
 	t.Helper()
-	for _, item := range []struct {
-		id, appliesTo string
-		active        bool
-	}{
-		{"alpha-any", "", true},
-		{"bravo-qa", "qa_review", true},
-		{"charlie-qa-inactive", "qa_review", false},
-		{"delta-epic", "epic", true},
-	} {
-		var appliesTo any
-		if item.appliesTo != "" {
-			appliesTo = item.appliesTo
-		}
-		if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES (?, ?, ?, ?)`, item.id, item.id, appliesTo, item.active); err != nil {
-			t.Fatalf("insert workflow %q: %v", item.id, err)
-		}
-	}
-	for ordinal, state := range []string{"open", "closed"} {
-		if _, err := conn.Exec(`INSERT INTO workflow_states (workflow_id, state, category, ordinal) VALUES ('alpha-any', ?, 'unstarted', ?)`, state, ordinal+1); err != nil {
-			t.Fatalf("insert alpha-any state %q: %v", state, err)
-		}
-	}
-	if _, err := conn.Exec(`INSERT INTO workflow_transitions (workflow_id, from_state, to_state) VALUES ('alpha-any', 'open', 'closed')`); err != nil {
-		t.Fatalf("insert alpha-any transition: %v", err)
-	}
-	for _, assignment := range []struct{ scope, kind string }{{"kind", "task"}, {"project", ""}} {
-		var kind any
-		if assignment.kind != "" {
-			kind = assignment.kind
-		}
-		if _, err := conn.Exec(`INSERT INTO workflow_assignments (scope, kind, workflow_id) VALUES (?, ?, 'alpha-any')`, assignment.scope, kind); err != nil {
-			t.Fatalf("insert alpha-any %s assignment: %v", assignment.scope, err)
-		}
+	id := fmt.Sprintf("limit-%05d", index)
+	name := fmt.Sprintf("limit workflow %05d", index)
+	if _, err := conn.Exec(`INSERT INTO workflows (id, name, applies_to, active) VALUES (?, ?, 'task', 1)`, id, name); err != nil {
+		t.Fatalf("insert workflow %q: %v", id, err)
 	}
 }
 
-func workflowListCommandIDs(t *testing.T, value any) []string {
-	t.Helper()
-	rows, ok := value.([]any)
-	if !ok {
-		t.Fatalf("workflow list = %#v, want array", value)
-	}
-	ids := make([]string, 0, len(rows))
-	for _, row := range rows {
-		item, ok := row.(map[string]any)
-		if !ok {
-			t.Fatalf("workflow item = %#v, want object", row)
+func joinWorkflowKeys(keys []string) string {
+	result := ""
+	for i, key := range keys {
+		if i > 0 {
+			result += ","
 		}
-		ids = append(ids, item["id"].(string))
+		result += key
 	}
-	return ids
-}
-
-func assertWorkflowListCommandShapes(t *testing.T, value any) {
-	t.Helper()
-	rows := value.([]any)
-	alpha := rows[0].(map[string]any)
-	if alpha["applies_to"] != nil || alpha["states"].(json.Number).String() != "2" || alpha["transitions"].(json.Number).String() != "1" {
-		t.Fatalf("alpha-any fields = %#v, want null applicability and counts", alpha)
-	}
-	assignments := alpha["assigned_to"].([]any)
-	if got, want := assignments[0].(map[string]any), map[string]any{"scope": "kind", "kind": "task"}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("kind assignment = %#v, want %#v", got, want)
-	}
-	project := assignments[1].(map[string]any)
-	if project["scope"] != "project" || project["kind"] != nil {
-		t.Fatalf("project assignment = %#v, want only project scope", project)
-	}
-	if _, exists := project["kind"]; exists {
-		t.Fatalf("project assignment kind key = %#v, want absent", project["kind"])
-	}
-	bravo := rows[1].(map[string]any)
-	if assigned := bravo["assigned_to"]; assigned == nil || len(assigned.([]any)) != 0 {
-		t.Fatalf("unassigned workflow assigned_to = %#v, want empty array", assigned)
-	}
-}
-
-func decodeWorkflowListMarkdown(t *testing.T, value string) any {
-	t.Helper()
-	if value == "[]\n" {
-		return []any{}
-	}
-	lines := strings.Split(strings.TrimSpace(value), "\n")
-	if len(lines) < 4 {
-		t.Fatalf("markdown = %q, want workflow table", value)
-	}
-	rows := make([]any, 0, len(lines)-4)
-	for _, line := range lines[4:] {
-		cells := splitMarkdownTableRow(line)
-		if len(cells) != 7 {
-			t.Fatalf("markdown row = %q, want 7 cells", line)
-		}
-		states, err := strconv.Atoi(cells[4])
-		if err != nil {
-			t.Fatalf("parse markdown states %q: %v", cells[4], err)
-		}
-		transitions, err := strconv.Atoi(cells[5])
-		if err != nil {
-			t.Fatalf("parse markdown transitions %q: %v", cells[5], err)
-		}
-		active, err := strconv.ParseBool(cells[3])
-		if err != nil {
-			t.Fatalf("parse markdown active %q: %v", cells[3], err)
-		}
-		var assignments any
-		if err := json.Unmarshal([]byte(cells[6]), &assignments); err != nil {
-			t.Fatalf("parse markdown assigned_to %q: %v", cells[6], err)
-		}
-		var appliesTo any
-		if cells[2] != "null" {
-			appliesTo = cells[2]
-		}
-		rows = append(rows, map[string]any{
-			"id": cells[0], "name": cells[1], "applies_to": appliesTo, "active": active,
-			"states": states, "transitions": transitions, "assigned_to": assignments,
-		})
-	}
-	return rows
+	return result
 }

@@ -82,19 +82,34 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 
 	var (
 		updateEffect   *journal.Effect
+		revisionEffect *journal.Effect
 		activityEffect *journal.Effect
 	)
 	for index := range last.Effects {
 		effect := &last.Effects[index]
 		switch {
-		case effect.Table == "issues" && effect.Op == "update":
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["status"] != nil:
 			updateEffect = effect
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["revision"] != nil:
+			revisionEffect = effect
 		case effect.Table == "activity_log" && effect.Op == "activity":
 			activityEffect = effect
 		}
 	}
 	if updateEffect == nil {
 		t.Fatal("missing issues update effect")
+	}
+	if revisionEffect == nil {
+		t.Fatal("missing Issue revision effect")
+	}
+	if got := revisionEffect.Values["revision"]; got != float64(2) {
+		t.Fatalf("revision effect value = %#v, want 2", got)
+	}
+	if got := revisionEffect.Prior["revision"]; got != float64(1) {
+		t.Fatalf("revision effect prior = %#v, want 1", got)
+	}
+	if got := revisionEffect.Preconditions["revision"]; got != float64(1) {
+		t.Fatalf("revision effect precondition = %#v, want 1", got)
 	}
 	if activityEffect == nil {
 		t.Fatal("missing activity effect")
@@ -350,7 +365,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 	}
 }
 
-func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
+func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 	created, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
@@ -385,8 +400,15 @@ func TestTransitionReservedGateRuleRemainsUnevaluated(t *testing.T) {
 		ToState:       "in_progress",
 		ActorRole:     "developer",
 	})
-	if err == nil || !strings.Contains(err.Error(), `unsupported workflow rule "required_gates_current"`) {
-		t.Fatalf("Transition() error = %v, want unevaluated reserved-rule rejection", err)
+	if err == nil {
+		t.Fatal("Transition() error = nil, want reserved-rule rejection")
+	}
+	var blocked *BlockedTransitionError
+	if !errors.As(err, &blocked) {
+		t.Fatalf("Transition() error = %T, want *BlockedTransitionError", err)
+	}
+	if blocked.CurrentState != "todo" || blocked.RequestedState != "in_progress" || len(blocked.Unmet) != 1 || blocked.Unmet[0].Rule != workflow.RuleRequiredGatesCurrent {
+		t.Fatalf("BlockedTransitionError = %+v, want todo/in_progress/%q", blocked, workflow.RuleRequiredGatesCurrent)
 	}
 	after, readErr := os.ReadFile(journalPath)
 	if readErr != nil {
@@ -651,7 +673,7 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 	for index := range last.Effects {
 		effect := &last.Effects[index]
 		switch {
-		case effect.Table == "issues" && effect.Op == "update":
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["status"] != nil:
 			updateEffect = effect
 		case effect.Table == "claims" && effect.Op == "delete":
 			deleteEffect = effect

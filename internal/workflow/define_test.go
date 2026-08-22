@@ -37,8 +37,8 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Define() error = %v", err)
 	}
-	if got, want := result, (DefineResult{Name: "direct-flow", AppliesTo: "task", States: 3, Transitions: 3, Requirements: 1}); got != want {
-		t.Fatalf("Define() result = %#v, want %#v", got, want)
+	if result.Name != "direct-flow" || result.AppliesTo != "task" || result.States != 3 || result.Transitions != 3 || result.Requirements != 1 || result.EventID == "" || result.OccurredAt.IsZero() {
+		t.Fatalf("Define() result = %#v, want projected counts and appended Event identity", result)
 	}
 
 	afterJournal := readWorkflowTestFile(t, journalPath)

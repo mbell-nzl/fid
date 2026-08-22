@@ -65,6 +65,9 @@ func ListAcceptanceCriteria(options ListAcceptanceCriteriaOptions) (AcceptanceCr
 	if err != nil {
 		return AcceptanceCriteriaList{}, err
 	}
+	if len(criteria) > AcceptanceCriteriaLimit {
+		return AcceptanceCriteriaList{}, &ResultLimitExceededError{Collection: "acceptance_criteria", Limit: AcceptanceCriteriaLimit, Observed: len(criteria)}
+	}
 
 	return AcceptanceCriteriaList{
 		IssueID:  options.IssueID,

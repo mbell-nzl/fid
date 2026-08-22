@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Phase 20 developer stoppages - V1 patch review</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --canvas: #f4f6f7;
+      --paper: #ffffff;
+      --ink: #17212b;
+      --muted: #5d6874;
+      --line: #d7dde2;
+      --navy: #183247;
+      --teal: #087f73;
+      --teal-soft: #e8f5f2;
+      --red: #a53834;
+      --red-soft: #fbeeed;
+      --amber: #8a5a00;
+      --amber-soft: #fff5dc;
+      --blue-soft: #edf4fa;
+      --code: #eef1f3;
+      --shadow: 0 8px 28px rgba(23, 33, 43, 0.08);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--canvas);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+      font-size: 16px;
+      line-height: 1.62;
+      letter-spacing: 0;
+    }
+
+    .page {
+      width: min(1040px, calc(100% - 32px));
+      margin: 28px auto 56px;
+    }
+
+    header {
+      padding: 42px 48px 38px;
+      background: var(--navy);
+      color: #fff;
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+
+    header p { color: #d8e4ec; }
+
+    .eyebrow {
+      margin: 0 0 10px;
+      color: #8cd9d0;
+      font-size: 0.78rem;
+      font-weight: 750;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3 {
+      margin-top: 0;
+      letter-spacing: 0;
+      line-height: 1.2;
+    }
+
+    h1 {
+      max-width: 800px;
+      margin-bottom: 16px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 760;
+    }
+
+    h2 {
+      margin-bottom: 18px;
+      color: var(--navy);
+      font-size: 1.55rem;
+    }
+
+    h3 {
+      margin-bottom: 10px;
+      color: var(--navy);
+      font-size: 1.08rem;
+    }
+
+    p { margin: 0 0 14px; }
+    p:last-child { margin-bottom: 0; }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 24px;
+      margin-top: 22px;
+      color: #d8e4ec;
+      font-size: 0.9rem;
+    }
+
+    .status {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      border-radius: 4px;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      padding: 16px 6px 6px;
+      font-size: 0.9rem;
+    }
+
+    nav a {
+      color: var(--navy);
+      font-weight: 650;
+      text-decoration: none;
+    }
+
+    nav a:hover { text-decoration: underline; }
+
+    main {
+      margin-top: 12px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      box-shadow: var(--shadow);
+    }
+
+    section {
+      padding: 36px 48px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child { border-bottom: 0; }
+
+    .verdict {
+      display: grid;
+      grid-template-columns: minmax(180px, 0.35fr) 1fr;
+      gap: 24px;
+      align-items: start;
+      padding: 22px;
+      border-left: 5px solid var(--red);
+      border-radius: 4px;
+      background: var(--red-soft);
+    }
+
+    .verdict strong {
+      color: var(--red);
+      font-size: 1.2rem;
+    }
+
+    .summary-grid,
+    .decision-grid,
+    .finding-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      margin-top: 20px;
+    }
+
+    .card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fff;
+    }
+
+    .card.good { border-top: 4px solid var(--teal); }
+    .card.warn { border-top: 4px solid #d59a24; }
+    .card.bad { border-top: 4px solid var(--red); }
+    .card.info { border-top: 4px solid #3977a5; }
+
+    .label {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 760;
+      text-transform: uppercase;
+    }
+
+    .callout {
+      margin: 20px 0;
+      padding: 18px 20px;
+      border-left: 4px solid var(--teal);
+      border-radius: 4px;
+      background: var(--teal-soft);
+    }
+
+    .callout.warning {
+      border-left-color: #d59a24;
+      background: var(--amber-soft);
+    }
+
+    .callout.info {
+      border-left-color: #3977a5;
+      background: var(--blue-soft);
+    }
+
+    ol, ul {
+      margin: 10px 0 0;
+      padding-left: 22px;
+    }
+
+    li { margin: 8px 0; }
+
+    code {
+      padding: 0.1em 0.34em;
+      border-radius: 3px;
+      background: var(--code);
+      color: #253646;
+      font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      font-size: 0.9em;
+      overflow-wrap: anywhere;
+    }
+
+    .timeline {
+      margin: 20px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .timeline li {
+      display: grid;
+      grid-template-columns: 92px 1fr;
+      gap: 16px;
+      margin: 0;
+      padding: 0 0 22px;
+    }
+
+    .timeline li:last-child { padding-bottom: 0; }
+
+    .timeline .when {
+      color: var(--teal);
+      font-weight: 760;
+    }
+
+    .timeline .event {
+      padding: 0 0 22px 18px;
+      border-left: 2px solid var(--line);
+    }
+
+    .timeline li:last-child .event { padding-bottom: 0; }
+
+    .priority {
+      display: inline-block;
+      min-width: 42px;
+      margin-right: 7px;
+      padding: 2px 7px;
+      border-radius: 3px;
+      background: var(--red-soft);
+      color: var(--red);
+      font-size: 0.72rem;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .priority.medium {
+      background: var(--amber-soft);
+      color: var(--amber);
+    }
+
+    details {
+      margin-top: 16px;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fafbfc;
+    }
+
+    summary {
+      padding: 14px 16px;
+      color: var(--navy);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    details > div { padding: 0 16px 16px; }
+
+    .compact-table {
+      width: 100%;
+      margin-top: 16px;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    .compact-table th,
+    .compact-table td {
+      padding: 11px 12px;
+      border: 1px solid var(--line);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compact-table th {
+      background: #eef2f5;
+      color: var(--navy);
+    }
+
+    footer {
+      padding: 20px 4px 0;
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    @media (max-width: 740px) {
+      .page { width: min(100% - 18px, 1040px); margin-top: 10px; }
+      header, section { padding: 26px 22px; }
+      .verdict, .summary-grid, .decision-grid, .finding-grid {
+        grid-template-columns: 1fr;
+      }
+      .timeline li { grid-template-columns: 1fr; gap: 3px; }
+      .timeline .event { padding-left: 14px; }
+      .compact-table { display: block; overflow-x: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; margin: 0; }
+      header, main { box-shadow: none; }
+      nav { display: none; }
+      section { break-inside: avoid; }
+      details { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <p class="eyebrow">fid workflow review</p>
+      <h1>Phase 20 developer stoppages</h1>
+      <p>Review of the V1 prompt patch, DEC-136, DEC-138, and the new Task 8 gate-evidence stop.</p>
+      <div class="meta">
+        <span>11 August 2026</span>
+        <span>Branch: <strong>phase-20</strong></span>
+        <span class="status">Verdict: DEC-139 fixes Task 8; broader patch remains</span>
+      </div>
+    </header>
+
+    <nav aria-label="Report sections">
+      <a href="#summary">Summary</a>
+      <a href="#decisions">DEC-136 and DEC-138</a>
+      <a href="#task8">Task 8</a>
+      <a href="#findings">Findings</a>
+      <a href="#actions">Actions</a>
+      <a href="#evidence">Evidence</a>
+    </nav>
+
+    <main>
+      <section id="summary">
+        <h2>Executive summary</h2>
+        <div class="verdict">
+          <strong>Do not carry DEC-138 into V2 as written.</strong>
+          <p>Keep DEC-136. Replace DEC-138's narrow bookkeeping exception with a general, bounded same-session repair rule. DEC-139 has now resolved Task 8's command-evidence mismatch forward-effectively, with no Task 8 rerun.</p>
+        </div>
+
+        <div class="summary-grid">
+          <article class="card good">
+            <span class="label">Keep</span>
+            <h3>DEC-136</h3>
+            <p>It correctly fixed an impossible one-commit instruction and stopped task specs from overriding shared report, commit, and gate procedure.</p>
+          </article>
+          <article class="card bad">
+            <span class="label">Supersede</span>
+            <h3>DEC-138</h3>
+            <p>It solves a real routing problem, but starts from a false premise and defines a category too narrow and internally inconsistent for reliable use.</p>
+          </article>
+          <article class="card warn">
+            <span class="label">Resolved by DEC-139</span>
+            <h3>Task 8 evidence handoff</h3>
+            <p>The executor had to observe an exit code, while the report template recorded only an output token. DEC-139 made terminal status a forward-effective report field and closed Task 8 without a rerun.</p>
+          </article>
+          <article class="card info">
+            <span class="label">V2 direction</span>
+            <h3>Attempts and receipts</h3>
+            <p>V2 already models a gate failure as retryable after scoped repair. Preserve immutable attempts and machine-readable termination receipts instead of adding V1's bookkeeping-only carve-out.</p>
+          </article>
+        </div>
+
+        <div class="callout info">
+          <strong>This is no longer primarily a slow-test problem.</strong>
+          Task 8's dedicated integration gate reports <code>4.971s</code>. The new stop is about how termination evidence moves between agents, not about the test command taking 185 seconds.
+        </div>
+      </section>
+
+      <section id="decisions">
+        <h2>What DEC-136 and DEC-138 meant</h2>
+        <div class="decision-grid">
+          <article class="card good">
+            <span class="label">DEC-136 refresher</span>
+            <h3>Fix the report protocol, preserve strict tokens</h3>
+            <p>Task 4 was told by DEC-135 to make exactly one commit. That was impossible under the canonical protocol: the task commit must exist before its hash can be inserted into the report, then a second docs commit finalizes that report.</p>
+            <p>The same report also shortened real Go output to fragments such as <code>4.625s</code>. Those fragments lost the required <code>ok</code> or <code>FAIL</code> marker.</p>
+            <p>DEC-136 withdrew the one-commit instruction, required fresh exact gate evidence, kept the token checks strict, and established that task specs must not restate or override shared process.</p>
+            <p><strong>Review:</strong> sound. Retain it in V1 and carry the principle into V2.</p>
+          </article>
+
+          <article class="card bad">
+            <span class="label">DEC-138 refresher</span>
+            <h3>Allow narrow bookkeeping repair in-session</h3>
+            <p>After Task 5 added a legitimate integration journey, a hardcoded journey inventory became stale. DEC-138 allowed the same Developer to repair and rerun a gate only when the mismatch was a self-describing repository inventory issue.</p>
+            <p>Its safeguards required an exact named discrepancy, no threshold or assertion weakening, a byte-identical rerun, and both failure and success tokens. Its shorthand was: <strong>fix the bookkeeping, never the verdict.</strong></p>
+            <p><strong>Review:</strong> good safeguards, wrong abstraction. V1 already says to fix an in-scope gate failure and rerun it. The bookkeeping-only category creates ambiguity and fails to cover one of its own examples.</p>
+          </article>
+        </div>
+
+        <div class="callout warning">
+          <strong>The key correction:</strong> the binding V1 workflow does not generally forbid same-session repair. <code>09_AI_WORKFLOW.md</code> says, "If any gate fails, fix the issue and rerun the exact failed command." <code>AGENTS.md</code> requires a stop only when the failure cannot be fixed inside assigned scope. DEC-138 should not reinforce the opposite interpretation.
+        </div>
+      </section>
+
+      <section id="task8">
+        <h2>The new Task 8 stop</h2>
+        <ul class="timeline">
+          <li>
+            <div class="when">Task 8</div>
+            <div class="event"><strong>Implementation completed.</strong> Commit <code>4df4d66</code> migrated the issue read contract. Commit <code>ce282c2</code> finalized its completion report.</div>
+          </li>
+          <li>
+            <div class="when">Report</div>
+            <div class="event"><strong>Six gates were recorded PASS.</strong> The report contains plausible final output tokens, including race/coverage output and a <code>4.971s</code> dedicated integration result.</div>
+          </li>
+          <li>
+            <div class="when">19:55</div>
+            <div class="event"><strong>The Phase Runner stopped at ESC-20-008.</strong> None of the six rows contains a nested <code>exit_code</code> or explicit termination result.</div>
+          </li>
+          <li>
+            <div class="when">20:12</div>
+            <div class="event"><strong>DEC-139 resolved the stop.</strong> Commit <code>f434f41</code> promoted terminal status into the canonical report contract, applied the rule only to future reports, and closed Task 8 without rerunning its gates.</div>
+          </li>
+        </ul>
+
+        <div class="callout">
+          <strong>Assessment:</strong> DEC-139 is a suitable resolution. The Phase Runner followed its current prompt correctly, but the Task 8 Developer followed the canonical producer contract correctly too. A downstream private requirement should not retroactively fail a compliant artifact. Keeping the stronger rule forward-effectively fixes the interface without inventing a product or gate failure.
+        </div>
+
+        <p>This defect is directly related to the earlier ESC-20-003 recovery change in commit <code>d0bffbc</code>. That change correctly taught Codex agents to retain nested sessions and wait for a real terminal result. It also told the Phase Runner to reject reports without that result, but it did not add a termination field to the report template or make <code>report-lint.sh</code> enforce one.</p>
+
+        <p>A final Go package line is a useful output token, but it is not by itself proof that the entire process exited. DEC-139 takes the correct forward path: carry observed terminal status through the evidence interface instead of weakening the Phase Runner back to accepting output alone. CF-031 still tracks mechanical <code>report-lint.sh</code> enforcement.</p>
+      </section>
+
+      <section id="findings">
+        <h2>Review findings</h2>
+        <div class="finding-grid">
+          <article class="card bad">
+            <h3><span class="priority">High</span>Evidence schema mismatch</h3>
+            <p>The Developer prompt demands observed termination, the report template has no terminal-status field, and the Phase Runner requires that missing field. Task 8 is the deterministic result.</p>
+          </article>
+          <article class="card bad">
+            <h3><span class="priority">High</span>False DEC-138 premise</h3>
+            <p>The analysis says Developers may never repair a failed required gate in-session. Binding V1 text says the opposite for repairs inside accepted scope.</p>
+          </article>
+          <article class="card bad">
+            <h3><span class="priority">High</span>Classifier weakened</h3>
+            <p>DEC-137 changed an exact dedicated-journey manifest into required-presence only. Because the repository-wide classifier skips the dedicated directory, a future in-process tagged test added there can now evade both checks.</p>
+          </article>
+          <article class="card warn">
+            <h3><span class="priority medium">Med</span>DEC-138 is inconsistent</h3>
+            <p>An unused production helper is not a stale inventory assertion, and deleting it requires a judgment about intended behavior. The rule's Task 4 example does not meet its own stated conditions.</p>
+          </article>
+          <article class="card warn">
+            <h3><span class="priority medium">Med</span>Historical claim overstated</h3>
+            <p>The claim that all roughly 26 escalations were verification-only is false. Phase 18 recorded and fixed a real <code>workflow.Load</code> deadlock. Counts also mix ESC records with triages.</p>
+          </article>
+          <article class="card warn">
+            <h3><span class="priority medium">Med</span>Workflow lint is red</h3>
+            <p>The current tree fails only the current-escalation line budget: <code>142 &gt; 107</code>. The file is accumulating archive prose despite being defined as open items only.</p>
+          </article>
+        </div>
+
+        <details>
+          <summary>Why the Task 5 classifier change should be revised</summary>
+          <div>
+            <p>The dedicated package originally used an exact list to make every real-process journey intentional. DEC-137 retained only the four historic names and allowed arbitrary additions. Meanwhile, the repository-wide tagged-test walk deliberately skips the dedicated package.</p>
+            <p>Restore an exact explicit manifest that includes the current fifth journey. An authorized task that adds a real-process journey updates that manifest in the same session. This keeps additions deliberate without requiring a full Tech Lead escalation.</p>
+          </div>
+        </details>
+      </section>
+
+      <section id="actions">
+        <h2>Recommended action plan</h2>
+        <h3>Immediate V1 follow-through</h3>
+        <ol>
+          <li><strong>Accept DEC-139's Task 8 close.</strong> Do not rerun Task 8. Its producer followed the canonical contract that existed at the time, and no independent evidence casts doubt on the recorded tokens.</li>
+          <li><strong>Finish the forward contract.</strong> DEC-139 updated the completion-report template, canonical prompts, generated prompts and binding workflow. Commit the matching Phase Runner prompt-template update and keep those sources aligned.</li>
+          <li><strong>Implement CF-031 promptly.</strong> Make <code>report-lint.sh</code> check the terminal-status field and add self-tests, so a future omission fails locally before the Phase Runner has to interpret prose.</li>
+          <li><strong>Supersede DEC-138.</strong> State the general rule: a Developer may make a causal repair in the same session when it is inside accepted task scope and changes no protected decision or gate criterion.</li>
+          <li><strong>Restore the exact journey manifest.</strong> Include the current fifth journey and permit authorized additions to update it without escalation.</li>
+          <li><strong>Archive current escalation history.</strong> Return <code>tl_escalations_current.md</code> to open-items-only scope so <code>workflow-lint.sh</code> is green.</li>
+        </ol>
+
+        <h3 style="margin-top: 28px;">The replacement same-session rule</h3>
+        <div class="callout info">
+          A failed invocation remains failed evidence. The Developer may repair its cause and rerun the exact command when the repair is within accepted task scope, makes no product, architecture, schema, dependency or public-interface decision, and does not weaken the command, assertion, threshold or scope. Record the first failure, root cause, repair, and later terminal result. Stop only when the repair is out of scope, ambiguous, decision-requiring, unrepairable, or beyond the retry budget.
+        </div>
+
+        <h3 style="margin-top: 28px;">V2 adoption</h3>
+        <p>Do not port DEC-138's bookkeeping category. V2 already treats <code>gate-failed</code> as retryable after scoped repair. Complete that model with immutable attempt records, machine-readable termination receipts, evidence invalidation after tree changes, and explicit retry budgets. A simple gate failure should not require a new run unless the executor or session was actually lost.</p>
+
+        <table class="compact-table">
+          <thead>
+            <tr><th>Item</th><th>V1</th><th>V2</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>DEC-136 principle</td><td>Keep</td><td>Adopt</td></tr>
+            <tr><td>DEC-138 wording</td><td>Supersede</td><td>Do not port</td></tr>
+            <tr><td>Same-session scoped repair</td><td>Clarify now</td><td>First-class retry path</td></tr>
+            <tr><td>Termination evidence</td><td>Durable report field</td><td>Machine-readable receipt</td></tr>
+            <tr><td>Journey classification</td><td>Exact manifest</td><td>Explicit classified test inventory</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="evidence">
+        <h2>Evidence reviewed</h2>
+        <p>The review used the committed prompts, workflow specification, task records and current escalation state. The most relevant anchors are below.</p>
+        <details>
+          <summary>Repository evidence paths</summary>
+          <div>
+            <ul>
+              <li><code>project-docs/docs/reviews/2026-08-11-developer-stoppage-analysis.md</code></li>
+              <li><code>project-docs/docs/phases/phase-20/decisions.md</code>, DEC-136 through DEC-138</li>
+              <li><code>project-docs/docs/phases/phase-20/tasks/task-8-done.md</code></li>
+              <li><code>project-docs/docs/current/tl_escalations_current.md</code>, ESC-20-008</li>
+              <li><code>project-docs/agents/developer.md</code>, long-running command protocol</li>
+              <li><code>project-docs/agents/phase-runner.md</code>, termination-evidence requirement</li>
+              <li><code>project-docs/templates/completion-report-template.md</code>, gate row format</li>
+              <li><code>project-docs/specs/09_AI_WORKFLOW.md</code>, Developer step 7 and evidence rules</li>
+              <li><code>cmd/fid/integration/classification_test.go</code></li>
+              <li><code>project-docs/tools/report-lint.sh</code> and <code>workflow-lint.sh</code></li>
+              <li><code>/home/mark/projects/agentic-coding-project-starter-kit/project-docs/specs/trd/02_INTERFACES.md</code></li>
+              <li><code>/home/mark/projects/agentic-coding-project-starter-kit/kit/internal/workflow/stop.go</code></li>
+            </ul>
+          </div>
+        </details>
+
+        <details>
+          <summary>Exact current-state facts</summary>
+          <div>
+            <ul>
+              <li>Task 8 implementation commit: <code>4df4d66</code>.</li>
+              <li>Task 8 report-finalization commit: <code>ce282c2</code>.</li>
+              <li>ESC-20-003 recovery commit that introduced the evidence mismatch: <code>d0bffbc</code>.</li>
+              <li>DEC-137/138 prompt patch and classifier commit: <code>8533c50</code>.</li>
+              <li>Current workflow-lint failure: <code>line budget exceeded (142 &gt; 107 tripwire): tl_escalations_current.md</code>.</li>
+              <li>Task 8 stop <code>ESC-20-008</code> was resolved by DEC-139 in <code>f434f41</code>, with no rerun.</li>
+              <li>The matching human Phase Runner prompt-template edit remained uncommitted at the final evidence check.</li>
+            </ul>
+          </div>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      This report is a review artifact. It does not modify the in-flight Task 8 implementation, escalation records, or Phase Runner ledger.
+    </footer>
+  </div>
+</body>
+</html>

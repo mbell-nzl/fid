@@ -16,17 +16,21 @@ import (
 )
 
 type TransitionOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	ID            string
-	ToState       string
-	ActorRole     string
+	WorkspaceRoot    string
+	MigrationsDir    string
+	ID               string
+	ToState          string
+	ActorRole        string
+	ExpectedRevision *int
 }
 
 type TransitionResult struct {
-	ID        string
-	FromState string
-	ToState   string
+	ID         string
+	Revision   int
+	FromState  string
+	ToState    string
+	EventID    string
+	OccurredAt string
 }
 
 type InvalidTransitionError struct {
@@ -52,6 +56,14 @@ type BlockedTransitionError struct {
 	CurrentState   string
 	RequestedState string
 	Unmet          []workflow.UnmetCondition
+	Cause          error
+}
+
+func (err *BlockedTransitionError) Unwrap() error {
+	if err == nil {
+		return nil
+	}
+	return err.Cause
 }
 
 func (err *BlockedTransitionError) Error() string {
@@ -91,6 +103,7 @@ type issueTransitionState struct {
 	WorkflowID string
 	Status     string
 	UpdatedAt  string
+	Revision   int
 }
 
 func Transition(options TransitionOptions) (TransitionResult, error) {
@@ -108,15 +121,11 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if toState == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: target state is required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
-		return TransitionResult{}, err
-	}
-
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return TransitionResult{}, err
 	}
 
-	commandArgv := issueTransitionArgv(options.ID, toState, options.ActorRole)
+	commandArgv := issueTransitionArgv(options.ID, toState, options.ActorRole, options.ExpectedRevision)
 	var result TransitionResult
 	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
@@ -133,8 +142,21 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
+		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
+			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+		}
 		registry, err := workflow.Load(conn)
 		if err != nil {
+			return err
+		}
+		if _, known := registry.CategoryForState(current.WorkflowID, toState); !known {
+			return &InvalidTransitionError{
+				IssueID:        current.ID,
+				CurrentState:   current.Status,
+				RequestedState: toState,
+			}
+		}
+		if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
 			return err
 		}
 
@@ -161,7 +183,13 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		}
 		if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
 			if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, options.ActorRole); err != nil {
-				return err
+				return &BlockedTransitionError{
+					IssueID:        current.ID,
+					CurrentState:   current.Status,
+					RequestedState: toState,
+					Unmet:          []workflow.UnmetCondition{{Rule: "live_claim_held"}},
+					Cause:          err,
+				}
 			}
 		}
 
@@ -208,6 +236,14 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 				},
 			},
 		}
+		revisionEffects, err := BuildIssueRevisionEffects([]IssueRevision{{
+			IssueID:  current.ID,
+			Observed: current.Revision,
+		}})
+		if err != nil {
+			return err
+		}
+		event.Effects = append(event.Effects, revisionEffects...)
 		if leavesStartedCategory(registry, current.WorkflowID, current.Status, toState) {
 			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, options.ActorRole)
 			if err != nil {
@@ -269,9 +305,12 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		}
 
 		result = TransitionResult{
-			ID:        current.ID,
-			FromState: current.Status,
-			ToState:   toState,
+			ID:         current.ID,
+			Revision:   current.Revision + 1,
+			FromState:  current.Status,
+			ToState:    toState,
+			EventID:    appended.EventID,
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})

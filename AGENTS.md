@@ -29,7 +29,7 @@ they must not begin implementation that depends on that choice.
 
 ## Architecture
 
-- User-facing adapters: `cmd/fid/`, `internal/format/`,
+- User-facing adapters: `cmd/fid/`, `internal/cli/`, `internal/project/`,
   `internal/export/`.
 - Core/domain/business logic: `internal/issues/`, `internal/claims/`,
   `internal/workflow/`, `internal/policy/`, `internal/qa/`,
@@ -54,7 +54,8 @@ Rules:
 - Tests must assert behavior, not implementation trivia.
 - Do not delete or weaken tests to make a failing gate pass.
 - Keep changes small and scoped to one task.
-- A Developer session implements exactly one task.
+- A Developer session implements at most one task. A task may span a same-task
+  continuation session when recovery or context renewal is required.
 - Use file artifacts as shared memory. Do not rely on chat history.
 - Update impacted documentation in the same task as the code change.
 - Normal and heavy planned phases use `VAL-NNN` validation assertions in
@@ -183,10 +184,37 @@ A missing, silently skipped, or narrower substituted required command is a
 failed gate, not an acceptable omission. Record each result with one short
 verbatim token from the command's own output (its last printed line, or
 `exit 0 (no output)`). A command that did not terminate is never `PASS` — a
-hung, interrupted, or killed command is `BLOCKED`. A search or inventory
+hung, interrupted, or killed command is `BLOCKED`. **A silent command is not a
+finished command:** `go test ./...` compiles every package before printing
+anything, so the repository-wide race and dedicated integration gates can run
+for minutes with no output and then emit package result lines. Wait for them.
+`exit 0 (no output)` is never a valid token for a `go test` command. A search or inventory
 command (`rg`, `grep`) that finds nothing terminates **non-zero**: record its
 real status, `exit 1 (no output)`, and say that no-match is the pass condition.
 `exit 0 (no output)` means silent success and is fabricated evidence there.
+
+Record each result's **observed termination** next to its token — the nested
+command's real `exit_code`, or the explicit signal/termination result the
+execution surface reported:
+``- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)``.
+A printed last line proves the command produced output; it does not by itself
+prove the process exited, and for a silent success the exit status is the only
+thing that distinguishes one from a discarded session. Copy the termination
+result from the command's own result object. Wrapper completion, an empty
+output field, and absence of new output are not termination, and an `exit_code`
+asserted rather than observed is fabricated evidence exactly like a fabricated
+token.
+
+A command whose pass condition is a **non-zero** exit — an `rg`/`grep` absence
+proof, an `ls` on a path that must not exist — records that real status in the
+declared form, and its task spec pre-declares the expected status under
+`## Expected Non-Zero Commands`:
+``- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)``.
+The status field stays exactly `PASS`; the expectation is what the spec
+declared, and the termination is what the command actually did. An undeclared
+non-zero `PASS`, a declared expectation of zero, and an observed status that
+differs from the declared one are all failed gates. Never convert a non-zero
+absence result into `exit 0 (no output)` to satisfy a control.
 
 A gate result **not captured in the session that records it** is `UNVERIFIED`,
 never `PASS` — attestation from memory, transcription from another agent's
@@ -200,17 +228,113 @@ evidence**: commands that only remove or prune scratch state are never recorded
 attempt (`mktemp -d`), and declare the working directory for any command whose
 result depends on it.
 
-A required command whose **harness is a deliverable of the task being authored**
-(a fixture, capture/measurement script, or golden generator) may fail, be
-repaired, and be rerun to a pass. Record it `PASS` **with a mandatory deviation
-note** stating the first failure's verbatim token, the root cause, and the fix —
-provided the rerun command is **byte-identical**, the pass is **deterministic
-and third-party reproducible from committed artifacts**, and the failing
-artifact is not the product under test, a test asserting product behavior, or a
-pre-existing gate or tool. Otherwise the strict rule stands: a command that
-fails against the product, or that passes only after the command, the test, or
-the assertion is weakened or narrowed, is a **failed gate**. Iterating a harness
-to green is the normal red/green loop; mining for a flaky green is not.
+A required-command failure is an immutable failed attempt, not automatically a
+Human-visible blocker. Two cases are distinct:
+
+- A **protected gate/control definition change** changes the command, the
+  assertion's accepted pass/fail semantics, accepted status, scope,
+  threshold/budget/tolerance, or governing policy. It is not repair and needs
+  the authority that owns the definition.
+- A **control-conformance repair** fixes an implementation bug in a canonical
+  verification/workflow control when an already accepted contract uniquely
+  determines its behavior. It changes none of the protected items above. The
+  fact that the control is canonical or outside the originating task's ordinary
+  file list does not make this case `BLOCK`.
+
+Ordinary causal repair stays inside accepted task scope and leaves the
+gate/control definition intact. A cross-scope control-conformance repair
+requires an authoritative TL-Lite triage-log directive with these exact typed
+fields: `Originating task`, `Control trigger signature`,
+`Control attempt count`, `Control contract`, `Control mismatch`,
+`Allowed files`, `Forbidden changes`, `Exact verification`, `Originating
+report`, and `Control repair base`.
+Each label occurs exactly once and each value occupies one physical line;
+label order and contiguity do not matter. `Allowed files` is an exact
+comma-separated ordered list of repo-relative paths with no spaces around
+commas. The Phase Runner records and verifies
+the full pre-dispatch phase HEAD as `Control repair base`; the Developer cannot
+select, replace, or rebaseline it. The initial TASK-RECOVERY maps its ledger
+trigger/attempt to the control fields and copies every other directive value
+byte-for-byte. Product, spec, prompt, template, dependency, task, QA-contract,
+report, and generated files are never eligible for the isolated repair.
+Normal control-conformance also cannot authorize self-repair of
+`project-docs/tools/workflow-control-scope-lint.sh` or
+`project-docs/tools/workflow-sequence-lint.sh`; either verifier requires
+separate protected decision authority.
+
+The Phase Runner creates a dedicated clean temporary git worktree at the
+recorded base before dispatching a same-task continuation into that path. The
+dirty runner-owned ledger stays in the main phase worktree as its only dirt.
+The Developer edits only the named tool paths in the repair worktree, uses
+red/green, preserves all failed evidence, runs `Exact verification`, and leaves
+the ending HEAD clean. Necessary provider sync is a separate authorized
+workflow-maintenance step, never part of the isolated control repair.
+
+Before recording the `REPAIR` ledger event, the Phase Runner materializes the
+scope verifier blob from the trusted `Control repair base` into fresh scratch
+storage, never from repair HEAD, and executes it over the dedicated commit:
+
+```text
+git -C <repo> show <base>:project-docs/tools/workflow-control-scope-lint.sh > <fresh-scratch>/workflow-control-scope-lint.sh
+chmod 700 <fresh-scratch>/workflow-control-scope-lint.sh
+<fresh-scratch>/workflow-control-scope-lint.sh <repo> <base> <head> <allowed-1> ...
+```
+
+The `<base>` is always the runner-recorded directive value and `<head>` is the
+Developer-produced repair worktree HEAD. The claimed `<head>` must be that
+worktree's checked-out `HEAD`, its
+worktree/index must be clean with no `assume-unchanged` or `skip-worktree`
+tracked-file index flags, and every
+allowlisted artifact must remain a regular file rather than a symlink or
+gitlink. The PASS receipt binds the exact comma-separated ordered
+`Allowed files` value in the exact form `PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`; missing, normalized,
+reordered, or different receipt data fails. After any scope PASS, fast-forward the unchanged phase branch to
+verified HEAD while its only dirt is the ledger, confirm phase HEAD, append
+REPAIR, and clean up the temporary worktree. For a nonresolved control attempt,
+the next recovery increments attempt count and uses that prior integrated HEAD
+as the new runner-recorded base; every semantic directive value remains
+byte-identical. A control `RESOLVED` permits only a linked
+`report-repair` limited to the exact `Originating report` and `Exact
+verification`, retaining the resolved attempt's `Control repair base`; direct
+task completion is invalid. Only that report repair's
+later `RESOLVED` permits completion. Any ambiguity or proposed
+definition/policy change is `BLOCK`.
+
+Every newly appended RUN-START/RUN-RESUME event carries exactly one
+`Sequence contract: v2` and exactly one `Recovery directive schema: v2` in the
+same event; a standalone historical v1 ledger remains valid, but its next RUN
+uses v2. Every mandatory schema-v2 event field occurs exactly once, with `N/A`
+only where the ledger template permits it; field order and contiguity do not
+matter. Every schema-v2 external TRG and ledger TRIAGE binds exactly one
+`Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
+and `Repair authority`; direct REPAIR binds all five into TASK-RECOVERY.
+
+A normal non-STOP RUN-RESUME records `N/A` governing IDs and `Next recovery`.
+A STOP resume retains the governing TRG/ESC and binds its exact next recovery;
+its `Resolution authority` is exactly `verified-commit:<40hex>`,
+`restored-capability:<stable-id>`, or `DEC-<NNN>`, while separate resolution
+evidence records Runner verification. The next recovery's `Source` and `Repair
+authority` retain that exact typed authority. A protected decision change or
+resolution requires DEC authority. When such a DEC resolves a BLOCK into
+control-conformance, append one unique separate H2 amendment naming the
+existing TRG and parse it independently from that TRG's retained BLOCK verdict;
+then use RUN-RESUME without minting a new TRG. Every boundary-valid DEC citation
+in an authority field must exist in the phase decisions file.
+
+No failed test, gate, or control grants generic permission to edit its test,
+command, or implementation. Authority comes from the task scope or the written
+control-conformance directive. After a causal repair, rerun the
+**byte-identical** command and record both attempts plus a mandatory deviation
+note containing the first failure's verbatim token and termination, root cause,
+repair, and later result. The first attempt remains failed evidence; the later
+passing attempt is the evidence used to close the task.
+
+Never delete, weaken, narrow, re-point, or mine a flaky green. If the needed
+change is protected or ambiguous, record a typed `BLOCKED` outcome. If work is
+decision-free but outside ordinary task files, return `RECOVERY_REQUIRED` so
+the Phase Runner can obtain the bounded directive above; do not self-authorize
+the edit. If in-scope work cannot finish in the current session, also record
+`RECOVERY_REQUIRED`; incomplete work is not a blocker by itself.
 
 Sandboxed Codex agents use `.codex/config.toml` to redirect Go and tool caches
 into gitignored repo-local directories (`.gocache/`, `.gomodcache/`,
@@ -231,7 +355,10 @@ installs still require the normal dependency-budget and approval path.
   go tool cover -func=coverage.out
   ```
 
-- Integration tests: `go test -tags integration -race ./...`.
+- Real-process integration journeys:
+  `go test -tags integration -race ./cmd/fid/integration/...`. In-process
+  SQLite and command contract tests belong in the ordinary suite; do not widen
+  this gate to `./...`, which reruns that suite under the tag.
 - End-to-end tests: `N/A` until an end-to-end or held-out scenario harness is
   accepted in the specs.
 - Build verification: `go build -o /tmp/fid ./cmd/fid`.
@@ -242,7 +369,7 @@ installs still require the normal dependency-budget and approval path.
   golangci-lint run ./...
   go test -race -coverprofile=coverage.out ./...
   go tool cover -func=coverage.out
-  go test -tags integration -race ./...
+  go test -tags integration -race ./cmd/fid/integration/...
   go test -bench . -benchmem ./...
   go build -o /tmp/fid ./cmd/fid
   ```
@@ -278,7 +405,7 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-go test -tags integration -race ./...
+go test -tags integration -race ./cmd/fid/integration/...
 go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
@@ -317,17 +444,20 @@ See `project-docs/docs/playbook.md` for a concise operator runbook.
 
 ## Hard Stops
 
-Agents must stop and notify the human when:
+Agents stop for Human or protected-authority input only when:
 
-- A deterministic quality gate fails and cannot be fixed inside the assigned
-  task scope.
+- A deterministic quality gate cannot be fixed under the assigned task scope
+  or a bounded control-conformance directive without changing a protected
+  command, assertion semantics, accepted status/scope,
+  threshold/budget/tolerance, or policy.
 - A required project command is still a placeholder.
 - A task requires an architectural, product, data-model, or public-interface
   decision not already recorded in specs.
 - A task depends on ambiguous terminology that is not resolved or flagged in
   `project-docs/specs/GLOSSARY.md`.
 - A dependency addition lacks documented budget rationale.
-- A required completion report, QA plan, review, or human checklist is missing.
+- A required artifact or external capability remains unavailable after its
+  bounded recovery budget is exhausted.
 - A required phase validation contract is missing, has uncovered `VAL-NNN`
   assertions, or needs a product/architecture decision before evidence can be
   produced.
@@ -335,3 +465,8 @@ Agents must stop and notify the human when:
   prompts that are meant to stay outside agent context.
 - A release-readiness phase lacks the required threat model, pre-release
   checklist, or scenario/audit decision for its maturity level.
+
+A red test, failed command, report-lint defect, bounded QA finding, interrupted
+session, or incomplete in-scope implementation is `REPAIR`, not a Human-visible
+stop. Preserve the failed evidence, checkpoint the work, and continue through
+the recovery state machine in `project-docs/specs/09_AI_WORKFLOW.md`.

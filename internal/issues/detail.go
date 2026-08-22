@@ -9,19 +9,6 @@ import (
 	"time"
 )
 
-var supportedIssueSections = []string{"acceptance", "concerns", "completions", "links", "claims", "gates"}
-
-type UnsupportedSectionError struct {
-	Section string
-}
-
-func (err *UnsupportedSectionError) Error() string {
-	if err == nil {
-		return "<nil>"
-	}
-	return fmt.Sprintf("unsupported issue section %q; supported sections: %s", err.Section, strings.Join(supportedIssueSections, ", "))
-}
-
 type IssueConcern struct {
 	ID                      string  `json:"id"`
 	RaisedInCompletionID    string  `json:"raised_in_completion_id"`
@@ -85,29 +72,6 @@ type IssueGate struct {
 	ExitCode       int     `json:"exit_code"`
 	OutputExcerpt  *string `json:"output_excerpt"`
 	RanAt          string  `json:"ran_at"`
-}
-
-func SupportedSections() []string {
-	return append([]string(nil), supportedIssueSections...)
-}
-
-func SectionValue(issue Issue, section string) (any, error) {
-	switch strings.TrimSpace(strings.ToLower(section)) {
-	case "acceptance":
-		return issue.AcceptanceCriteria, nil
-	case "concerns":
-		return issue.Concerns, nil
-	case "completions":
-		return issue.Completions, nil
-	case "links":
-		return issue.Links, nil
-	case "claims":
-		return issue.Claims, nil
-	case "gates":
-		return issue.Gates, nil
-	default:
-		return nil, &UnsupportedSectionError{Section: strings.TrimSpace(section)}
-	}
 }
 
 func issueParentTitle(conn *sql.DB, parentID *string) (*string, error) {

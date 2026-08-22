@@ -2,95 +2,55 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
-	fidformat "github.com/mbell-nzl/fid/internal/format"
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
 
-func newReadyCommand() *cobra.Command {
-	var (
-		epicID     string
-		formatName string
-	)
+func init() {
+	rootFlagCapabilities["ready"] = rootFlagCapability{Project: true, JSON: true}
+}
 
+func newReadyCommand() *cobra.Command {
+	var epicID string
 	cmd := &cobra.Command{
 		Use:   "ready",
 		Short: "Show the next ready task.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			jsonMode, err := readJSONMode(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
-			}
-
-			result, err := issues.Ready(issues.ReadyOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				EpicID:        epicID,
-			})
-			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
 				return err
 			}
-
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, fidformat.ReadyView{Task: result.Task}); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+			workspaceRoot, err := rebuildWorkspaceRoot(cmd)
+			if err != nil {
+				return renderIssueReadError(cmd, jsonMode, "ready.get", err)
 			}
-
-			if result.Task == nil && result.Explanation != nil {
-				if err := writeIssueLine(cmd.ErrOrStderr(), "note: %s\n", readyExplanationNote(*result.Explanation)); err != nil {
-					return err
-				}
+			result, err := issues.Ready(issues.ReadyOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), EpicID: epicID})
+			if err != nil {
+				return renderIssueReadError(cmd, jsonMode, "ready.get", err)
 			}
-			return nil
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "ready.get", map[string]any{"task": result.Task, "explanation": result.Explanation}, nil)
+			}
+			if result.Task != nil {
+				return writeIssueLine(cmd.OutOrStdout(), "%s | %s | %s\n", result.Task.ID, result.Task.Status, result.Task.Title)
+			}
+			return writeIssueLine(cmd.OutOrStdout(), "%s\n", readyExplanationText(*result.Explanation))
 		},
 	}
-
 	cmd.Flags().StringVar(&epicID, "epic", "", "Scope to a single epic")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }
 
-func readyExplanationNote(explanation issues.ReadyExplanation) string {
-	switch explanation.Code {
-	case "sequential_current_not_actionable":
-		scope := readyExplanationScope(explanation)
-		taskID := readyExplanationValue(explanation.BlockingTaskID, "current task")
-		taskTitle := readyExplanationQuoted(explanation.BlockingTaskTitle)
-		status := readyExplanationValue(explanation.BlockingTaskStatus, "started")
-		return fmt.Sprintf("no ready tasks in %s; current sequential task %s%s is %s", scope, taskID, taskTitle, status)
-	case "no_ready_tasks":
-		return fmt.Sprintf("no ready tasks in %s", readyExplanationScope(explanation))
-	default:
-		return fmt.Sprintf("no ready tasks in %s", readyExplanationScope(explanation))
+func readyExplanationText(explanation issues.ReadyExplanation) string {
+	if explanation.Code == "sequential_current_not_actionable" && explanation.BlockingTaskID != nil {
+		return fmt.Sprintf("current sequential task %s is not actionable", *explanation.BlockingTaskID)
 	}
-}
-
-func readyExplanationScope(explanation issues.ReadyExplanation) string {
 	if explanation.Scope == "epic" && explanation.EpicID != nil && strings.TrimSpace(*explanation.EpicID) != "" {
-		return "epic " + *explanation.EpicID
+		return fmt.Sprintf("no ready tasks in epic %s", *explanation.EpicID)
 	}
-	return "project"
-}
-
-func readyExplanationQuoted(value *string) string {
-	if value == nil || strings.TrimSpace(*value) == "" {
-		return ""
-	}
-	return fmt.Sprintf(" %q", *value)
-}
-
-func readyExplanationValue(value *string, fallback string) string {
-	if value == nil || strings.TrimSpace(*value) == "" {
-		return fallback
-	}
-	return *value
+	return "no ready tasks in project"
 }

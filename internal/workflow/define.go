@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -30,6 +31,8 @@ type DefineResult struct {
 	States       int
 	Transitions  int
 	Requirements int
+	EventID      string
+	OccurredAt   time.Time
 }
 
 // Define appends and projects one atomic workflow.defined event.
@@ -108,7 +111,12 @@ func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, result
 	if err := projectWorkflowEvent(options.WorkspaceRoot, conn, appended); err != nil {
 		return err
 	}
-	return loadDefinitionCounts(conn, options.Request.Name, result)
+	if err := loadDefinitionCounts(conn, options.Request.Name, result); err != nil {
+		return err
+	}
+	result.EventID = appended.EventID
+	result.OccurredAt = appended.OccurredAt.UTC()
+	return nil
 }
 
 func openWorkflowDB(workspaceRoot string) (*sql.DB, error) {

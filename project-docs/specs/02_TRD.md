@@ -58,6 +58,10 @@ Rules:
   journal files, or projection tables.
 - The in-memory fake implements the same semantic port only for tests and
   controlled fixtures.
+- `cmd/fid/integration` is a test-only real-process adapter: its tagged
+  journeys execute the built CLI in isolated workspaces. In-process command,
+  SQLite, journal, and projection tests remain in their ordinary owning
+  packages so the integration gate does not rerun the default suite.
 
 ## 3. Versioned Backend Capabilities
 

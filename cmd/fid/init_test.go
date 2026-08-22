@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/mbell-nzl/fid/internal/bootstrap"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -22,29 +25,26 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}
 
-	if stdout.Len() != 0 {
-		t.Fatalf("stdout = %q, want empty", stdout.String())
+	if got, want := stdout.String(), "initialized fid project in .fid/\n"; got != want {
+		t.Fatalf("stdout = %q, want %q", got, want)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
 	}
 
 	requiredPaths := []string{
 		filepath.Join(workspace, ".fid", "journal"),
+		filepath.Join(workspace, ".fid", "artifacts"),
 		filepath.Join(workspace, ".fid", "config.toml"),
 		filepath.Join(workspace, ".fid", "pricing.toml"),
 		filepath.Join(workspace, ".fid", "fid.sqlite"),
@@ -55,13 +55,33 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 			t.Fatalf("Stat(%q) error = %v", path, err)
 		}
 	}
+	entries, err := os.ReadDir(workspace)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".fid-staging-") {
+			t.Fatalf("successful init left staging residue %q", entry.Name())
+		}
+	}
 	configPath := filepath.Join(workspace, ".fid", "config.toml")
 	configPayload, err := os.ReadFile(configPath)
 	if err != nil {
 		t.Fatalf("ReadFile(%q) error = %v", configPath, err)
 	}
-	if got := string(configPayload); !strings.Contains(got, "[maintenance]\nstarted_without_claim_grace_seconds = 300") {
-		t.Fatalf("config.toml = %q, want default maintenance grace section", got)
+	for _, want := range []string{
+		"config_version = 1",
+		"[project]\nid = ",
+		"issue_prefix = ",
+		"[storage]\nartifact_root = \"artifacts\"",
+		"[maintenance]\nabandoned_attempt_grace_seconds = 300",
+	} {
+		if !strings.Contains(string(configPayload), want) {
+			t.Fatalf("config.toml = %q, want %q", configPayload, want)
+		}
+	}
+	if strings.Contains(string(configPayload), "\nprefix =") || strings.Contains(string(configPayload), "started_without_claim") {
+		t.Fatalf("config.toml = %q, contains retired key", configPayload)
 	}
 
 	gitignorePath := filepath.Join(workspace, ".fid", ".gitignore")
@@ -77,15 +97,14 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() error = %v", err)
 	}
-	if projectConfig.Prefix != strings.ToUpper(filepath.Base(workspace)) {
-		t.Fatalf("project prefix = %q, want %q", projectConfig.Prefix, strings.ToUpper(filepath.Base(workspace)))
+	if projectConfig.IssuePrefix != "FID" {
+		t.Fatalf("project issue prefix = %q, want %q", projectConfig.IssuePrefix, "FID")
 	}
-	if projectConfig.StartedWithoutClaimGraceSeconds != config.DefaultStartedWithoutClaimGraceSeconds {
-		t.Fatalf(
-			"started-without-claim grace = %d, want %d",
-			projectConfig.StartedWithoutClaimGraceSeconds,
-			config.DefaultStartedWithoutClaimGraceSeconds,
-		)
+	if projectConfig.ProjectID == "" {
+		t.Fatal("project identity is empty")
+	}
+	if projectConfig.AbandonedAttemptGraceSeconds != config.DefaultAbandonedAttemptGraceSeconds {
+		t.Fatalf("abandoned-attempt grace = %d, want %d", projectConfig.AbandonedAttemptGraceSeconds, config.DefaultAbandonedAttemptGraceSeconds)
 	}
 
 	pricingConfig, err := config.ReadPricingConfig(filepath.Join(workspace, ".fid", "pricing.toml"))
@@ -95,22 +114,275 @@ func TestInitCommandCreatesWorkspaceFiles(t *testing.T) {
 	if len(pricingConfig.Models) != len(config.DefaultPricingConfig().Models) {
 		t.Fatalf("pricing models = %d, want %d", len(pricingConfig.Models), len(config.DefaultPricingConfig().Models))
 	}
-	if got := stderr.String(); !strings.Contains(got, "initialized fid project in .fid/") {
-		t.Fatalf("stderr = %q, want init confirmation", got)
+}
+
+func TestInitCommandUsesExactProjectInitResponseEnvelope(t *testing.T) {
+	workspace := t.TempDir()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", workspace, "--json", "init", "--prefix", "FID"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v", err)
 	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	assertEnvelopeKeySet(t, stdout.Bytes(), []string{"contract_version", "event", "ok", "operation", "result"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result", []string{"journal_path", "project"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "result.project", []string{"id", "issue_prefix", "root"})
+	assertNestedEnvelopeKeySet(t, stdout.Bytes(), "event", []string{"id", "occurred_at"})
+
+	var envelope struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Result          struct {
+			Project struct {
+				ID          string `json:"id"`
+				IssuePrefix string `json:"issue_prefix"`
+				Root        string `json:"root"`
+			} `json:"project"`
+			JournalPath string `json:"journal_path"`
+		} `json:"result"`
+		Event *struct {
+			ID         string `json:"id"`
+			OccurredAt string `json:"occurred_at"`
+		} `json:"event"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stdout) error = %v\nstdout=%q", err, stdout.String())
+	}
+	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "project.init" {
+		t.Fatalf("envelope header = %+v, want fid-cli.v1 successful project.init", envelope)
+	}
+	if envelope.Result.Project.ID == "" || envelope.Result.Project.IssuePrefix != "FID" || envelope.Result.Project.Root != workspace {
+		t.Fatalf("project result = %+v, want generated ID, FID, and root %q", envelope.Result.Project, workspace)
+	}
+	if envelope.Result.JournalPath == "" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" {
+		t.Fatalf("mutation result = %+v event=%+v, want journal path and event identity", envelope.Result, envelope.Event)
+	}
+	journalPayload, err := os.ReadFile(mustJournalPath(t, workspace))
+	if err != nil {
+		t.Fatalf("ReadFile(journal) error = %v", err)
+	}
+	var journalEvent journal.Event
+	if err := json.Unmarshal([]byte(splitJournalLines(journalPayload)[0]), &journalEvent); err != nil {
+		t.Fatalf("Unmarshal(journal event) error = %v", err)
+	}
+	if envelope.Event.ID != journalEvent.EventID || envelope.Event.OccurredAt != journalEvent.OccurredAt.UTC().Format(time.RFC3339Nano) {
+		t.Fatalf("envelope event = %+v, want journal event %s at %s", envelope.Event, journalEvent.EventID, journalEvent.OccurredAt.UTC().Format(time.RFC3339Nano))
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	cmd = newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", workspace, "--json", "init", "--prefix", "FID"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("Execute() error = nil, want initialized-project rejection")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("failure stdout = %q, want empty", stdout.String())
+	}
+	var failure struct {
+		ContractVersion string `json:"contract_version"`
+		OK              bool   `json:"ok"`
+		Operation       string `json:"operation"`
+		Error           struct {
+			Code     string `json:"code"`
+			Category string `json:"category"`
+			Details  struct {
+				Path string `json:"path"`
+			} `json:"details"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr.String())
+	}
+	assertEnvelopeKeySet(t, stderr.Bytes(), []string{"contract_version", "error", "ok", "operation"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"path"})
+	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.subject", []string{"id", "type"})
+	if failure.ContractVersion != "fid-cli.v1" || failure.OK || failure.Operation != "project.init" ||
+		failure.Error.Code != "project-already-initialized" || failure.Error.Category != "conflict" || failure.Error.Details.Path != workspace {
+		t.Fatalf("failure = %+v, want typed project-already-initialized envelope for %q", failure, workspace)
+	}
+}
+
+func assertEnvelopeKeySet(t *testing.T, payload []byte, want []string) {
+	t.Helper()
+	var value map[string]json.RawMessage
+	if err := json.Unmarshal(payload, &value); err != nil {
+		t.Fatalf("Unmarshal key set error = %v", err)
+	}
+	assertJSONKeys(t, value, want)
+}
+
+func assertNestedEnvelopeKeySet(t *testing.T, payload []byte, path string, want []string) {
+	t.Helper()
+	var current json.RawMessage = payload
+	for _, name := range strings.Split(path, ".") {
+		var object map[string]json.RawMessage
+		if err := json.Unmarshal(current, &object); err != nil {
+			t.Fatalf("Unmarshal %s error = %v", path, err)
+		}
+		var ok bool
+		current, ok = object[name]
+		if !ok {
+			t.Fatalf("%s is absent", path)
+		}
+	}
+	var value map[string]json.RawMessage
+	if err := json.Unmarshal(current, &value); err != nil {
+		t.Fatalf("Unmarshal %s object error = %v", path, err)
+	}
+	assertJSONKeys(t, value, want)
+}
+
+func assertJSONKeys(t *testing.T, value map[string]json.RawMessage, want []string) {
+	t.Helper()
+	got := make([]string, 0, len(value))
+	for key := range value {
+		got = append(got, key)
+	}
+	sort.Strings(got)
+	sortedWant := append([]string(nil), want...)
+	sort.Strings(sortedWant)
+	if !reflect.DeepEqual(got, sortedWant) {
+		t.Fatalf("JSON keys = %v, want %v", got, sortedWant)
+	}
+}
+
+func TestInitCommandEnforcesExplicitPrefixGrammarBeforeStaging(t *testing.T) {
+	validWorkspace := t.TempDir()
+	runInitCommand(t, validWorkspace, "init", "--prefix", "A123456789012345")
+	if _, err := os.Stat(filepath.Join(validWorkspace, ".fid")); err != nil {
+		t.Fatalf("valid-prefix workspace error = %v, want activated workspace", err)
+	}
+
+	invalidWorkspace := t.TempDir()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(invalidWorkspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--project", invalidWorkspace, "--json", "init", "--prefix", "fid"})
+	if err := cmd.Execute(); err == nil {
+		t.Fatal("Execute() error = nil, want malformed-prefix rejection")
+	}
+	if stdout.Len() != 0 {
+		t.Fatalf("stdout = %q, want empty", stdout.String())
+	}
+	var envelope struct {
+		Error struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal(stderr.Bytes(), &envelope); err != nil {
+		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr.String())
+	}
+	if envelope.Error.Code != "invalid-argument" {
+		t.Fatalf("error code = %q, want invalid-argument", envelope.Error.Code)
+	}
+	if _, err := os.Stat(filepath.Join(invalidWorkspace, ".fid")); !os.IsNotExist(err) {
+		t.Fatalf("invalid-prefix workspace state = %v, want no .fid", err)
+	}
+}
+
+func TestInitCommandPrefixBoundaryMatrix(t *testing.T) {
+	for _, test := range []struct {
+		name          string
+		workspaceName string
+		prefix        string
+		valid         bool
+		wantPrefix    string
+	}{
+		{name: "explicit one character", workspaceName: "project", prefix: "A", valid: true, wantPrefix: "A"},
+		{name: "explicit 16 characters", workspaceName: "project", prefix: "A123456789012345", valid: true, wantPrefix: "A123456789012345"},
+		{name: "explicit 17 characters", workspaceName: "project", prefix: "A1234567890123456"},
+		{name: "explicit lowercase", workspaceName: "project", prefix: "fid"},
+		{name: "explicit leading digit", workspaceName: "project", prefix: "1FID"},
+		{name: "derived uppercase basename", workspaceName: "fid", valid: true, wantPrefix: "FID"},
+		{name: "derived invalid basename", workspaceName: "invalid_prefix"},
+	} {
+		test := test
+		t.Run(test.name, func(t *testing.T) {
+			workspace := filepath.Join(t.TempDir(), test.workspaceName)
+			if err := os.Mkdir(workspace, 0o755); err != nil {
+				t.Fatalf("Mkdir() error = %v", err)
+			}
+			args := []string{"--project", workspace, "--json", "init"}
+			if test.prefix != "" {
+				args = append(args, "--prefix", test.prefix)
+			}
+			stdout, stderr, err := executeInitCommand(t, args...)
+			if test.valid {
+				if err != nil {
+					t.Fatalf("Execute(%v) error = %v", args, err)
+				}
+				if stderr != "" {
+					t.Fatalf("stderr = %q, want empty", stderr)
+				}
+				assertProjectInitSuccess(t, stdout)
+				assertActivatedConfigRoundTrip(t, workspace, test.wantPrefix)
+				assertNoInitStagingResidue(t, workspace)
+				return
+			}
+			if err == nil {
+				t.Fatalf("Execute(%v) error = nil, want invalid-argument rejection", args)
+			}
+			if stdout != "" {
+				t.Fatalf("stdout = %q, want empty", stdout)
+			}
+			assertProjectInitFailureCode(t, stderr, "invalid-argument")
+			if _, statErr := os.Lstat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+				t.Fatalf(".fid state = %v, want absent", statErr)
+			}
+			assertNoInitStagingResidue(t, workspace)
+		})
+	}
+}
+
+func TestInitCommandPreservesDanglingWorkspaceSymlinkCollision(t *testing.T) {
+	workspace := t.TempDir()
+	danglingTarget := filepath.Join(workspace, "missing-fid-target")
+	workspacePath := filepath.Join(workspace, ".fid")
+	if err := os.Symlink(danglingTarget, workspacePath); err != nil {
+		t.Fatalf("Symlink() error = %v", err)
+	}
+
+	stdout, stderr, err := executeInitCommand(t, "--project", workspace, "--json", "init", "--prefix", "FID")
+	if err == nil {
+		t.Fatal("Execute() error = nil, want project-already-initialized rejection")
+	}
+	if stdout != "" {
+		t.Fatalf("stdout = %q, want empty", stdout)
+	}
+	assertProjectInitFailureCode(t, stderr, "project-already-initialized")
+	if got, readErr := os.Readlink(workspacePath); readErr != nil || got != danglingTarget {
+		t.Fatalf("Readlink(%q) = %q, %v; want unchanged dangling target %q", workspacePath, got, readErr, danglingTarget)
+	}
+	if info, statErr := os.Lstat(workspacePath); statErr != nil || info.Mode()&os.ModeSymlink == 0 {
+		t.Fatalf("Lstat(%q) = %v, %v; want unchanged symlink", workspacePath, info, statErr)
+	}
+	assertNoInitStagingResidue(t, workspace)
 }
 
 func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	defaultWorkspace := t.TempDir()
-	runInitCommand(t, defaultWorkspace, "init")
+	runInitCommand(t, defaultWorkspace, "init", "--prefix", "FID")
 
 	defaultConfig, err := config.ReadProjectConfig(filepath.Join(defaultWorkspace, ".fid", "config.toml"))
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() default error = %v", err)
 	}
-	wantDefault := strings.ToUpper(filepath.Base(defaultWorkspace))
-	if defaultConfig.Prefix != wantDefault {
-		t.Fatalf("default prefix = %q, want %q", defaultConfig.Prefix, wantDefault)
+	if defaultConfig.IssuePrefix != "FID" {
+		t.Fatalf("default issue prefix = %q, want %q", defaultConfig.IssuePrefix, "FID")
 	}
 
 	customWorkspace := t.TempDir()
@@ -120,14 +392,42 @@ func TestInitCommandStoresConfiguredOrDefaultPrefix(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ReadProjectConfig() custom error = %v", err)
 	}
-	if customConfig.Prefix != "ABC" {
-		t.Fatalf("custom prefix = %q, want %q", customConfig.Prefix, "ABC")
+	if customConfig.IssuePrefix != "ABC" {
+		t.Fatalf("custom issue prefix = %q, want %q", customConfig.IssuePrefix, "ABC")
+	}
+}
+
+func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing.T) {
+	workspace := filepath.Join(t.TempDir(), "invalid_prefix")
+	if err := os.Mkdir(workspace, 0o755); err != nil {
+		t.Fatalf("Mkdir() error = %v", err)
+	}
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"init"})
+
+	if err := config.ValidateIssuePrefix(bootstrap.DefaultPrefix(workspace)); err == nil {
+		t.Fatal("test workspace unexpectedly has a valid default prefix")
+	}
+
+	err := cmd.Execute()
+	if err == nil {
+		t.Fatal("Execute() error = nil, want explicit-prefix rejection")
+	}
+	if got, want := stderr.String(), "error: invalid project initialization argument\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
+	}
+	if _, statErr := os.Stat(filepath.Join(workspace, ".fid")); !os.IsNotExist(statErr) {
+		t.Fatalf(".fid state = %v, want no workspace", statErr)
 	}
 }
 
 func TestInitCommandSeedsExactlyOneBootstrapEventAndSevenRoles(t *testing.T) {
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
 	journalPath := mustJournalPath(t, workspace)
 	payload, err := os.ReadFile(journalPath)
@@ -195,24 +495,17 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"init"})
+	cmd.SetArgs([]string{"init", "--prefix", "FID"})
 
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
-
-	err = cmd.Execute()
+	err := cmd.Execute()
 	if err == nil {
 		t.Fatal("Execute() error = nil, want re-init rejection")
 	}
-	if got := stderr.String(); !strings.Contains(got, "error: .fid/ already exists") {
-		t.Fatalf("stderr = %q, want already exists error", got)
+	if got, want := stderr.String(), "error: project is already initialized\n  choose a new directory or use the existing project\n"; got != want {
+		t.Fatalf("stderr = %q, want %q", got, want)
 	}
 	if stdout.Len() != 0 {
 		t.Fatalf("stdout = %q, want empty", stdout.String())
@@ -292,29 +585,125 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 	}
 }
 
+func executeInitCommand(t *testing.T, args ...string) (string, string, error) {
+	t.Helper()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(commandRepositoryRoot())
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs(args)
+	err := cmd.Execute()
+	return stdout.String(), stderr.String(), err
+}
+
+func assertProjectInitSuccess(t *testing.T, payload string) {
+	t.Helper()
+	var envelope struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+	}
+	if err := json.Unmarshal([]byte(payload), &envelope); err != nil {
+		t.Fatalf("Unmarshal(success) error = %v\npayload=%q", err, payload)
+	}
+	if !envelope.OK || envelope.Operation != "project.init" {
+		t.Fatalf("success envelope = %+v, want successful project.init", envelope)
+	}
+}
+
+func assertProjectInitFailureCode(t *testing.T, payload, wantCode string) {
+	t.Helper()
+	var envelope struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Error     struct {
+			Code string `json:"code"`
+		} `json:"error"`
+	}
+	if err := json.Unmarshal([]byte(payload), &envelope); err != nil {
+		t.Fatalf("Unmarshal(failure) error = %v\npayload=%q", err, payload)
+	}
+	if envelope.OK || envelope.Operation != "project.init" || envelope.Error.Code != wantCode {
+		t.Fatalf("failure envelope = %+v, want failed project.init with %q", envelope, wantCode)
+	}
+}
+
+func assertActivatedConfigRoundTrip(t *testing.T, workspace, wantPrefix string) {
+	t.Helper()
+	path := filepath.Join(workspace, ".fid", "config.toml")
+	project, err := config.ReadProjectConfig(path)
+	if err != nil {
+		t.Fatalf("ReadProjectConfig(%q) error = %v", path, err)
+	}
+	if project.IssuePrefix != wantPrefix {
+		t.Fatalf("IssuePrefix = %q, want %q", project.IssuePrefix, wantPrefix)
+	}
+	payload, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", path, err)
+	}
+	want := fmt.Sprintf(`config_version = 1
+
+[project]
+id = %q
+issue_prefix = %q
+
+[storage]
+artifact_root = "artifacts"
+
+[executor_limits]
+max_output_bytes = %d
+max_excerpt_bytes = %d
+
+[maintenance]
+abandoned_attempt_grace_seconds = %d
+`, project.ProjectID, project.IssuePrefix, config.DefaultMaxOutputBytes, config.DefaultMaxExcerptBytes, config.DefaultAbandonedAttemptGraceSeconds)
+	if string(payload) != want {
+		t.Fatalf("activated config contents = %q, want exact target keys %q", payload, want)
+	}
+}
+
+func assertNoInitStagingResidue(t *testing.T, workspace string) {
+	t.Helper()
+	entries, err := os.ReadDir(workspace)
+	if err != nil {
+		t.Fatalf("ReadDir(%q) error = %v", workspace, err)
+	}
+	for _, entry := range entries {
+		if entry.IsDir() && strings.HasPrefix(entry.Name(), ".fid-staging-") {
+			t.Fatalf("staging residue %q remains", entry.Name())
+		}
+	}
+}
+
 func runInitCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
+	if len(args) > 0 && args[0] == "init" && !containsArgument(args, "--prefix") {
+		args = append(args, "--prefix", "FID")
+	}
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 
-	cmd := newRootCommand()
+	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
 	cmd.SetArgs(args)
-
-	cwd, err := os.Getwd()
-	if err != nil {
-		t.Fatalf("Getwd() error = %v", err)
-	}
-	defer mustChdir(t, cwd)
-	mustChdir(t, workspace)
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute(%v) error = %v", args, err)
 	}
 
 	return stdout.String(), stderr.String()
+}
+
+func containsArgument(args []string, value string) bool {
+	for _, arg := range args {
+		if arg == value {
+			return true
+		}
+	}
+	return false
 }
 
 func mustJournalPath(t *testing.T, workspace string) string {

@@ -72,7 +72,8 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 	if err := assertIssueExists(conn, options.IssueID); err != nil {
 		return journal.Event{}, ReleaseResult{}, err
 	}
-	releaseEffect, err := BuildIssueReleaseEffect(conn, options.IssueID, options.ActorRole)
+	now := operationTime(options.Now)
+	releaseEffect, err := buildIssueReleaseEffectAt(conn, options.IssueID, options.ActorRole, now)
 	if err != nil {
 		return journal.Event{}, ReleaseResult{}, err
 	}
@@ -80,6 +81,7 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 	event, err := journal.PrepareEvent(lock, journal.Event{
 		EventSchema: journal.CurrentEventSchema,
 		EventType:   "issue.claim.released",
+		OccurredAt:  now,
 		Actor: journal.Actor{
 			Role: options.ActorRole,
 		},
@@ -129,7 +131,11 @@ func buildReleaseEvent(lock *journal.WriteLock, conn *sql.DB, options ReleaseOpt
 }
 
 func BuildIssueReleaseEffect(conn *sql.DB, issueID, actorRole string) (journal.Effect, error) {
-	current, err := requireLiveIssueClaimHeld(conn, issueID, actorRole)
+	return buildIssueReleaseEffectAt(conn, issueID, actorRole, operationTime(time.Time{}))
+}
+
+func buildIssueReleaseEffectAt(conn *sql.DB, issueID, actorRole string, now time.Time) (journal.Effect, error) {
+	current, err := requireLiveIssueClaimHeldAt(conn, issueID, actorRole, now)
 	if err != nil {
 		return journal.Effect{}, err
 	}
@@ -137,11 +143,15 @@ func BuildIssueReleaseEffect(conn *sql.DB, issueID, actorRole string) (journal.E
 }
 
 func MaybeBuildIssueReleaseEffect(conn *sql.DB, issueID, actorRole string) (*journal.Effect, error) {
+	return maybeBuildIssueReleaseEffectAt(conn, issueID, actorRole, operationTime(time.Time{}))
+}
+
+func maybeBuildIssueReleaseEffectAt(conn *sql.DB, issueID, actorRole string, now time.Time) (*journal.Effect, error) {
 	current, err := loadCurrentClaim(conn, issueID)
 	if err != nil {
 		return nil, err
 	}
-	if current == nil || !current.isLiveAt(time.Now().UTC()) || current.ClaimedBy != actorRole {
+	if current == nil || !current.isLiveAt(now) || current.ClaimedBy != actorRole {
 		return nil, nil
 	}
 	effect := buildIssueReleaseEffect(issueID, current)

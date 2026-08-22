@@ -96,7 +96,7 @@ func TestMaintenanceVacuumPolicyShowMatchesEnforcement(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}

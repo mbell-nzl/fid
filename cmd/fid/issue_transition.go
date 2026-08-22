@@ -1,17 +1,19 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
 
+func init() {
+	rootFlagCapabilities["issue transition"] = rootFlagCapability{Project: true, JSON: true}
+}
+
 func newIssueTransitionCommand() *cobra.Command {
 	var (
-		toState   string
-		actorRole string
+		toState          string
+		actorRole        string
+		expectedRevision string
 	)
 
 	cmd := &cobra.Command{
@@ -19,30 +21,34 @@ func newIssueTransitionCommand() *cobra.Command {
 		Short: "Transition an issue.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueMutationError(cmd, "issue.transition", args[0], err)
+			}
+			expected, err := issueExpectedRevision(cmd, expectedRevision)
+			if err != nil {
+				return renderIssueMutationError(cmd, "issue.transition", args[0], err)
 			}
 
 			result, err := issues.Transition(issues.TransitionOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				ID:            args[0],
-				ToState:       toState,
-				ActorRole:     actorRole,
+				WorkspaceRoot:    workspaceRoot,
+				MigrationsDir:    issueMigrationsDir(),
+				ID:               args[0],
+				ToState:          toState,
+				ActorRole:        actorRole,
+				ExpectedRevision: expected,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueMutationError(cmd, "issue.transition", args[0], err)
 			}
 
-			return writeIssueLine(cmd.ErrOrStderr(), "transitioned %s: %s → %s\n", result.ID, result.FromState, result.ToState)
+			return renderIssueTransitionSuccess(cmd, result)
 		},
 	}
 
 	cmd.Flags().StringVar(&toState, "to", "", "Target state")
+	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.transition"))
 	return cmd
 }

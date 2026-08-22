@@ -150,7 +150,15 @@ func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *Repla
 			Offset:     offset,
 			ReplayMode: fiddb.ReplayStatusClean,
 		}); err != nil {
-			return false, err
+			var conflictErr *PreconditionConflictError
+			if errors.As(err, &conflictErr) {
+				return false, err
+			}
+			return false, &CorruptJournalError{
+				File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+				Line: lineNumber,
+				Err:  fmt.Errorf("project event %q: %w", upgraded.EventID, err),
+			}
 		}
 
 		stats.EventsReplayed++

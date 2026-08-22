@@ -19,8 +19,8 @@ type ReadyOptions struct {
 }
 
 type ReadyResult struct {
-	Task        *ReadyTask
-	Explanation *ReadyExplanation
+	Task        *ReadyTask        `json:"task"`
+	Explanation *ReadyExplanation `json:"explanation"`
 }
 
 type ReadyTask struct {
@@ -31,16 +31,15 @@ type ReadyTask struct {
 	EpicTitle *string `json:"epic_title"`
 	Sequence  *int    `json:"sequence"`
 	Priority  *int    `json:"priority"`
-	EstTokens *int    `json:"est_tokens"`
 }
 
 type ReadyExplanation struct {
-	Code               string
-	Scope              string
-	EpicID             *string
-	BlockingTaskID     *string
-	BlockingTaskTitle  *string
-	BlockingTaskStatus *string
+	Code               string  `json:"code"`
+	Scope              string  `json:"scope"`
+	EpicID             *string `json:"epic_id"`
+	BlockingTaskID     *string `json:"blocking_task_id"`
+	BlockingTaskTitle  *string `json:"blocking_task_title"`
+	BlockingTaskStatus *string `json:"blocking_task_status"`
 }
 
 type readyCandidate struct {
@@ -100,7 +99,6 @@ func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
 			parent.title,
 			ie.sequence,
 			ie.priority,
-			ie.est_tokens,
 			ie.created_at,
 			em.scheduling
 		FROM issues_enriched ie
@@ -125,7 +123,7 @@ func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
 		var (
 			record                            readyRowRecord
 			parentID, parentTitle, scheduling sql.NullString
-			sequence, priority, estTokens     sql.NullInt64
+			sequence, priority                sql.NullInt64
 		)
 		if err := sqlRows.Scan(
 			&record.task.ID,
@@ -136,7 +134,6 @@ func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
 			&parentTitle,
 			&sequence,
 			&priority,
-			&estTokens,
 			&record.createdAt,
 			&scheduling,
 		); err != nil {
@@ -147,7 +144,6 @@ func loadReadyRows(conn *sql.DB, epicID string) ([]readyRowRecord, error) {
 		record.task.EpicTitle = nullStringPointer(parentTitle)
 		record.task.Sequence = nullIntPointer(sequence)
 		record.task.Priority = nullIntPointer(priority)
-		record.task.EstTokens = nullIntPointer(estTokens)
 		record.scheduling = nullStringPointer(scheduling)
 		records = append(records, record)
 	}

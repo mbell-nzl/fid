@@ -106,8 +106,8 @@ func TestMigrations0009And0010RoundTripWithoutResidue(t *testing.T) {
 	}
 	before := snapshotDatabaseState(t, conn)
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("Up() error = %v", err)
+	if err := migrator.Migrate(10); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Migrate(10) error = %v", err)
 	}
 	afterUp := snapshotDatabaseState(t, conn)
 	if !stateContains(afterUp.schema, "workflow_assignments") || !stateContains(afterUp.rows["workflows"], "escalation-default") {
@@ -122,8 +122,8 @@ func TestMigrations0009And0010RoundTripWithoutResidue(t *testing.T) {
 		t.Fatalf("state after down = %#v, want pre-0009 state %#v", afterDown, before)
 	}
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("second Up() error = %v", err)
+	if err := migrator.Migrate(10); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("second Migrate(10) error = %v", err)
 	}
 	if afterSecondUp := snapshotDatabaseState(t, conn); !reflect.DeepEqual(afterSecondUp, afterUp) {
 		t.Fatalf("state after second up = %#v, want first post-up state %#v", afterSecondUp, afterUp)

@@ -81,7 +81,8 @@ func buildAcquireEvent(lock *journal.WriteLock, conn *sql.DB, options AcquireOpt
 	if err != nil {
 		return journal.Event{}, Claim{}, err
 	}
-	if current != nil && current.isLiveAt(time.Now().UTC()) && !options.Force {
+	now := operationTime(options.Now)
+	if current != nil && current.isLiveAt(now) && !options.Force {
 		return journal.Event{}, Claim{}, &LiveClaimConflictError{
 			RefID:     options.IssueID,
 			ClaimedBy: current.ClaimedBy,
@@ -92,6 +93,7 @@ func buildAcquireEvent(lock *journal.WriteLock, conn *sql.DB, options AcquireOpt
 	event, err := journal.PrepareEvent(lock, journal.Event{
 		EventSchema: journal.CurrentEventSchema,
 		EventType:   "issue.claim.acquired",
+		OccurredAt:  now,
 		Actor: journal.Actor{
 			Role: options.ActorRole,
 		},
@@ -183,7 +185,7 @@ func buildAcquireEvent(lock *journal.WriteLock, conn *sql.DB, options AcquireOpt
 				"details": map[string]any{
 					"previous_claimed_by": current.ClaimedBy,
 					"previous_expires_at": current.expiresAt().Format(time.RFC3339),
-					"reason":              takeoverReason(current, options),
+					"reason":              takeoverReason(current, options.Force, now),
 				},
 				"actor":       options.ActorRole,
 				"occurred_at": claimedAt,

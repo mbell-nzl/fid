@@ -199,7 +199,7 @@ replay, divergence, and internal failures that have no single entity subject.
 | `project-not-found`, `project-already-initialized` | `{path: string}` |
 | `issue-not-found`, `requirement-not-found`, `label-not-found`, `workflow-not-found` | `{id: string}` |
 | `link-not-found` | `{from_type: string, from_id: string, relation: string, to_type: string, to_id: string}` |
-| `duplicate-entity` | `{entity_type: string, identity: {fields: string[], values: string[]}}` (parallel arrays in field-name order) |
+| `duplicate-entity` | `{entity_type: string, identity: {fields: string[], values: string[]}}` (equal-length parallel arrays in field-name order; a length mismatch is invalid) |
 | `state-conflict` | `{expected_revision: integer, actual_revision: integer}` |
 | `lock-unavailable` | `{lock_path: string}` |
 | `hierarchy-invalid` | `{kind: string, parent_id: string?, parent_kind: string?, rule: string}` |
@@ -602,8 +602,10 @@ amendment.
 ## 5. Removal Inventory
 
 Every item below is deleted in Phase 20. Owning tasks: §5.1 and the format
-matrix in §5.3 belong to task 16; legacy JSON callers in §5.2 belong to task 14;
-remaining flag/test callers in §5.2-§5.3 belong to task 15;
+matrix in §5.3 belong to task 16; the eight legacy JSON leaves in §5.2 **and
+every test caller their conversion invalidates** belong to task 14 (DEC-142);
+the `--format json` test shim, the `ready`/`issue get`/`issue list` callers it
+carries, and the remaining flag/test callers in §5.2-§5.3 belong to task 15;
 `cmd/fid/issue_section_test.go` and `--section` belong to task 8; §5.4 belongs
 to task 17; §5.5 splits between task 5 (schema/domain fields), task 8
 (contract-only fields and `--section`), task 2 (global/config naming), Tasks

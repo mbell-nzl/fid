@@ -67,6 +67,27 @@ List any conditional command required by this task and why:
 
 - None.
 
+## Expected Non-Zero Commands
+
+Optional. Include this section only when a required command's pass condition is
+a non-zero exit - an `rg`/`grep` absence proof, an `ls` on a path that must not
+exist. Declare the expected status here so the Developer never infers one and
+the report can record the real observed status:
+
+- `<command>` - expected `exit_code: <N>` - <what its absence proves>
+
+One declaration per line: the exact command in backticks, then
+`- expected \`exit_code: <N>\``, then optional prose that is ignored. Never wrap
+before the expected field. Every declared command must also appear in
+`## Exact Commands To Run`. Omit the section entirely when every required
+command must exit 0.
+
+A declaration is a line starting at column 0 with a backtick bullet (`` - ` ``);
+every other line here - this prose, an indented continuation of a declaration's
+trailing explanation, a bullet that does not open with a backtick - is
+explanatory and is not parsed (DEC-144). A backtick bullet that does not match
+the grammar is a failure, not prose.
+
 ## Notes For Developer
 
 - <constraints, ordering, pitfalls, escalation tripwires; completion-report

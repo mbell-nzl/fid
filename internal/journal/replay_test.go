@@ -3,6 +3,7 @@ package journal
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -25,6 +26,43 @@ func TestReplayJournalRejectsNilConnection(t *testing.T) {
 	}
 	if err.Error() != "replay journal: connection is nil" {
 		t.Fatalf("ReplayJournal() error = %q, want %q", err.Error(), "replay journal: connection is nil")
+	}
+}
+
+func TestReplayJournalClassifiesRetiredIssueEffectKeyAsStopped(t *testing.T) {
+	workspace := newReplayWorkspace(t)
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	writeReplayEvents(t, journalPath, Event{
+		EventID:     "EVT-retired-effect-key",
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.created",
+		OccurredAt:  time.Date(2026, time.August, 11, 0, 0, 0, 0, time.UTC),
+		Actor:       Actor{Role: "developer"},
+		Command:     Command{Argv: []string{"fid", "issue", "create"}, CWD: ".", FIDVersion: "0.1.0"},
+		Effects: []Effect{{
+			Op:    "insert",
+			Table: "issues",
+			PK:    map[string]any{"id": "FID-retired-effect-key"},
+			Values: map[string]any{
+				"kind":        "task",
+				"title":       "retired key",
+				"workflow_id": "task-default",
+				"status":      "todo",
+				"in_inbox":    true,
+			},
+		}},
+	})
+
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
+	defer closeProjectDB(t, conn)
+
+	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	var corruptErr *CorruptJournalError
+	if !errors.As(err, &corruptErr) {
+		t.Fatalf("ReplayJournal() error = %T %v, want *CorruptJournalError", err, err)
+	}
+	if corruptErr.File != ".fid/journal/2026-08-11.jsonl" || corruptErr.Line != 1 {
+		t.Fatalf("replay stop location = %s:%d, want .fid/journal/2026-08-11.jsonl:1", corruptErr.File, corruptErr.Line)
 	}
 }
 
@@ -79,6 +117,97 @@ func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 	}
 	if category != "unstarted" {
 		t.Fatalf("migrated workflow category = %q, want unstarted", category)
+	}
+}
+
+func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
+	workspace := newReplayWorkspace(t)
+	writeReplayFixture(t, workspace, "p20-issue-revision-effects.golden.jsonl", "2026-08-11.jsonl")
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+
+	payload, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+	lines := strings.Split(strings.TrimSpace(string(payload)), "\n")
+	wantTypes := []string{"issue.created", "issue.updated", "issue.transitioned", "dev.started", "dev.finished", "dev.blocked", "issue.ac_added", "label.added", "issue.label.added", "issue.label.removed"}
+	if len(lines) != len(wantTypes) {
+		t.Fatalf("golden Event count = %d, want %d", len(lines), len(wantTypes))
+	}
+	for index, line := range lines {
+		var event Event
+		if err := json.Unmarshal([]byte(line), &event); err != nil {
+			t.Fatalf("Unmarshal(golden Event %d) error = %v", index, err)
+		}
+		if event.EventType != wantTypes[index] {
+			t.Fatalf("golden Event %d type = %q, want %q", index, event.EventType, wantTypes[index])
+		}
+		effect := event.Effects[0]
+		if event.EventType == "issue.created" {
+			if got := effect.Values["revision"]; got != float64(1) || len(effect.Prior) != 0 || len(effect.Preconditions) != 0 {
+				t.Fatalf("issue.created revision Effect = %#v, want absolute revision 1 only", effect)
+			}
+			continue
+		}
+		if event.EventType == "label.added" {
+			if effect.Table != "labels" || effect.Op != "insert" {
+				t.Fatalf("label.added Effect = %#v, want labels insert", effect)
+			}
+			continue
+		}
+		priorByType := map[string]float64{
+			"issue.updated":       1,
+			"issue.transitioned":  2,
+			"dev.started":         3,
+			"dev.finished":        4,
+			"dev.blocked":         5,
+			"issue.ac_added":      6,
+			"issue.label.added":   7,
+			"issue.label.removed": 8,
+		}
+		prior := priorByType[event.EventType]
+		var revisionEffect *Effect
+		for effectIndex := range event.Effects {
+			candidate := &event.Effects[effectIndex]
+			if candidate.Table == "issues" && candidate.Op == "update" {
+				revisionEffect = candidate
+			}
+		}
+		if revisionEffect == nil {
+			t.Fatalf("%s has no Issue revision Effect: %#v", event.EventType, event.Effects)
+		}
+		if got := revisionEffect.Values["revision"]; got != prior+1 {
+			t.Fatalf("%s revision value = %#v, want %v", event.EventType, got, prior+1)
+		}
+		if got := revisionEffect.Prior["revision"]; got != prior {
+			t.Fatalf("%s revision prior = %#v, want %v", event.EventType, got, prior)
+		}
+		if got := revisionEffect.Preconditions["revision"]; got != prior {
+			t.Fatalf("%s revision precondition = %#v, want %v", event.EventType, got, prior)
+		}
+	}
+
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
+	defer closeProjectDB(t, conn)
+	if _, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+		t.Fatalf("ReplayJournal() error = %v", err)
+	}
+	var revision int
+	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = 'FID-p20-revision'`).Scan(&revision); err != nil {
+		t.Fatalf("query golden Issue revision: %v", err)
+	}
+	if revision != 9 {
+		t.Fatalf("golden replay revision = %d, want 9", revision)
+	}
+	var criterionCount, issueLabelCount int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM acceptance_criteria WHERE issue_id = 'FID-p20-revision'`).Scan(&criterionCount); err != nil {
+		t.Fatalf("count golden acceptance criteria: %v", err)
+	}
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM issue_labels WHERE issue_id = 'FID-p20-revision'`).Scan(&issueLabelCount); err != nil {
+		t.Fatalf("count golden Issue labels: %v", err)
+	}
+	if criterionCount != 1 || issueLabelCount != 0 {
+		t.Fatalf("golden domain counts = (AC %d, labels %d), want (1, 0)", criterionCount, issueLabelCount)
 	}
 }
 
@@ -184,6 +313,86 @@ func TestReplayJournalStopsOnPreconditionConflict(t *testing.T) {
 	}
 	if conflictErr.Line != 2 {
 		t.Fatalf("conflict line = %d, want %d", conflictErr.Line, 2)
+	}
+}
+
+func TestReplayJournalRejectsStaleIssueRevisionBeforeApplyingEffect(t *testing.T) {
+	workspace := newReplayWorkspace(t)
+	journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-11.jsonl")
+	issueID := "FID-stale-revision"
+	writeReplayEvents(t, journalPath,
+		Event{
+			EventID:     "EVT-revision-created",
+			EventSchema: EventSchemaV1,
+			EventType:   "issue.created",
+			OccurredAt:  time.Date(2026, time.August, 11, 0, 0, 0, 0, time.UTC),
+			Actor:       Actor{Role: "developer"},
+			Command:     Command{Argv: []string{"fid", "issue", "create"}, CWD: ".", FIDVersion: "0.1.0"},
+			Effects: []Effect{{
+				Op:    "insert",
+				Table: "issues",
+				PK:    map[string]any{"id": issueID},
+				Values: map[string]any{
+					"kind":        "task",
+					"title":       "stale revision",
+					"workflow_id": "task-default",
+					"status":      "todo",
+					"revision":    1,
+				},
+			}},
+		},
+		issueRevisionReplayEvent("EVT-revision-current", issueID, 1, 2),
+		issueRevisionReplayEvent("EVT-revision-stale", issueID, 1, 2),
+	)
+
+	conn := openReplayDB(t, filepath.Join(t.TempDir(), "fid.sqlite"))
+	defer closeProjectDB(t, conn)
+
+	_, err := ReplayJournal(conn, filepath.Join(workspace, ".fid", "journal"), nil)
+	var conflictErr *PreconditionConflictError
+	if !errors.As(err, &conflictErr) {
+		t.Fatalf("ReplayJournal() error = %T %v, want *PreconditionConflictError", err, err)
+	}
+	if conflictErr.EventID != "EVT-revision-stale" {
+		t.Fatalf("conflict event ID = %q, want EVT-revision-stale", conflictErr.EventID)
+	}
+	if got := conflictErr.Expected["revision"]; got != float64(1) {
+		t.Fatalf("conflict expected revision = %#v, want 1", got)
+	}
+	if got := conflictErr.Actual["revision"]; got != int64(2) {
+		t.Fatalf("conflict actual revision = %#v, want 2", got)
+	}
+	var revision int
+	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, issueID).Scan(&revision); err != nil {
+		t.Fatalf("query replayed revision: %v", err)
+	}
+	if revision != 2 {
+		t.Fatalf("revision after stale replay = %d, want 2", revision)
+	}
+}
+
+func issueRevisionReplayEvent(eventID, issueID string, prior, next int) Event {
+	return Event{
+		EventID:     eventID,
+		EventSchema: EventSchemaV1,
+		EventType:   "issue.updated",
+		OccurredAt:  time.Date(2026, time.August, 11, 0, 1, 0, 0, time.UTC),
+		Actor:       Actor{Role: "developer"},
+		Command:     Command{Argv: []string{"fid", "issue", "update"}, CWD: ".", FIDVersion: "0.1.0"},
+		Effects: []Effect{{
+			Op:    "update",
+			Table: "issues",
+			PK:    map[string]any{"id": issueID},
+			Values: map[string]any{
+				"revision": next,
+			},
+			Prior: map[string]any{
+				"revision": prior,
+			},
+			Preconditions: map[string]any{
+				"revision": prior,
+			},
+		}},
 	}
 }
 

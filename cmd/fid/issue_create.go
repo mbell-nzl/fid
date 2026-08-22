@@ -1,12 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	rootFlagCapabilities["issue create"] = rootFlagCapability{Project: true, JSON: true}
+}
 
 func newIssueCreateCommand() *cobra.Command {
 	var kind string
@@ -17,29 +18,21 @@ func newIssueCreateCommand() *cobra.Command {
 	var priority int
 	var sequence int
 	var specMDPath string
-	var estTokens int
-	var dueDate string
 	var labels []string
-	var inbox bool
-	var ownerRole string
-	var ownerActor string
 	var scheduling string
 
 	cmd := &cobra.Command{
 		Use:   "create",
 		Short: "Create an issue.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueMutationError(cmd, "issue.create", "", err)
 			}
 
 			issueParentID, err := issueCreateParentID(kind, epicID, parentID)
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueMutationError(cmd, "issue.create", "", err)
 			}
 
 			result, err := issues.Create(issues.CreateOptions{
@@ -52,22 +45,14 @@ func newIssueCreateCommand() *cobra.Command {
 				Priority:      issueCreateOptionalInt(cmd, "priority", priority),
 				Sequence:      issueCreateOptionalInt(cmd, "sequence", sequence),
 				SpecMDPath:    issueCreateOptionalString(cmd, "spec-md", specMDPath),
-				EstTokens:     issueCreateOptionalInt(cmd, "est-tokens", estTokens),
-				DueDate:       issueCreateOptionalString(cmd, "due-date", dueDate),
 				Labels:        labels,
-				InInbox:       inbox,
-				OwnerRole:     issueCreateOptionalString(cmd, "owner-role", ownerRole),
-				OwnerActor:    issueCreateOptionalString(cmd, "owner-actor", ownerActor),
 				Scheduling:    scheduling,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueMutationError(cmd, "issue.create", "", err)
 			}
 
-			return writeIssueLine(cmd.ErrOrStderr(), "created issue %s (%s) %q\n", result.ID, result.Kind, result.Title)
+			return renderIssueCreateSuccess(cmd, result)
 		},
 	}
 
@@ -78,13 +63,9 @@ func newIssueCreateCommand() *cobra.Command {
 	cmd.Flags().IntVar(&priority, "priority", 0, "Issue priority")
 	cmd.Flags().IntVar(&sequence, "sequence", 0, "Issue sequence")
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "Spec markdown path")
-	cmd.Flags().IntVar(&estTokens, "est-tokens", 0, "Estimated tokens")
-	cmd.Flags().StringVar(&dueDate, "due-date", "", "Due date")
 	cmd.Flags().StringSliceVar(&labels, "label", nil, "Issue label")
-	cmd.Flags().BoolVar(&inbox, "inbox", false, "Add issue to inbox")
-	cmd.Flags().StringVar(&ownerRole, "owner-role", "", "Owner role")
-	cmd.Flags().StringVar(&ownerActor, "owner-actor", "", "Owner actor")
 	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	cmd.Flags().StringVar(&scheduling, "scheduling", "", "Epic scheduling")
+	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.create"))
 	return cmd
 }

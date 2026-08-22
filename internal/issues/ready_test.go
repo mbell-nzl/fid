@@ -35,7 +35,6 @@ func TestReadySelectsLowestSequenceActionableTaskForSequentialEpic(t *testing.T)
 			ownerRole:  "developer",
 			sequence:   intPointer(1),
 			priority:   intPointer(2),
-			estTokens:  intPointer(1200),
 			createdAt:  "2026-06-14T10:01:00Z",
 			updatedAt:  "2026-06-14T10:01:00Z",
 		},
@@ -49,7 +48,6 @@ func TestReadySelectsLowestSequenceActionableTaskForSequentialEpic(t *testing.T)
 			ownerRole:  "developer",
 			sequence:   intPointer(2),
 			priority:   intPointer(1),
-			estTokens:  intPointer(2400),
 			createdAt:  "2026-06-14T10:02:00Z",
 			updatedAt:  "2026-06-14T10:02:00Z",
 		},
@@ -63,7 +61,6 @@ func TestReadySelectsLowestSequenceActionableTaskForSequentialEpic(t *testing.T)
 			ownerRole:  "developer",
 			sequence:   intPointer(3),
 			priority:   intPointer(0),
-			estTokens:  intPointer(1800),
 			createdAt:  "2026-06-14T10:03:00Z",
 			updatedAt:  "2026-06-14T10:03:00Z",
 		},
@@ -103,9 +100,6 @@ func TestReadySelectsLowestSequenceActionableTaskForSequentialEpic(t *testing.T)
 	}
 	if got.Task.Priority == nil || *got.Task.Priority != 1 {
 		t.Fatalf("Ready().Task.Priority = %#v, want 1", got.Task.Priority)
-	}
-	if got.Task.EstTokens == nil || *got.Task.EstTokens != 2400 {
-		t.Fatalf("Ready().Task.EstTokens = %#v, want 2400", got.Task.EstTokens)
 	}
 }
 
@@ -240,7 +234,6 @@ func TestReadySelectsHighestPriorityActionableTaskForPrioritisedEpic(t *testing.
 			workflowID: "task-default",
 			ownerRole:  "developer",
 			priority:   intPointer(1),
-			estTokens:  intPointer(1300),
 			createdAt:  "2026-06-14T12:02:00Z",
 			updatedAt:  "2026-06-14T12:02:00Z",
 		},
@@ -293,7 +286,6 @@ func TestReadyProjectWideIncludesOnlyActionableUnattachedTasks(t *testing.T) {
 			workflowID: "task-default",
 			ownerRole:  "developer",
 			priority:   intPointer(1),
-			estTokens:  intPointer(800),
 			createdAt:  "2026-06-14T13:00:00Z",
 			updatedAt:  "2026-06-14T13:00:00Z",
 		},
@@ -616,7 +608,6 @@ type readyRow struct {
 	ownerRole  string
 	sequence   *int
 	priority   *int
-	estTokens  *int
 	createdAt  string
 	updatedAt  string
 	scheduling *string
@@ -628,8 +619,8 @@ func seedReadyRows(t *testing.T, conn *sql.DB, rows []readyRow) {
 	for _, row := range rows {
 		if _, err := conn.Exec(`
 			INSERT INTO issues (
-				id, kind, parent_id, title, status, workflow_id, owner_role, sequence, priority, est_tokens, created_at, updated_at
-			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				id, kind, parent_id, title, status, workflow_id, owner_role, sequence, priority, created_at, updated_at
+			) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		`,
 			row.id,
 			row.kind,
@@ -640,7 +631,6 @@ func seedReadyRows(t *testing.T, conn *sql.DB, rows []readyRow) {
 			row.ownerRole,
 			row.sequence,
 			row.priority,
-			row.estTokens,
 			row.createdAt,
 			row.updatedAt,
 		); err != nil {

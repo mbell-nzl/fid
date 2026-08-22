@@ -22,7 +22,6 @@ type ListOptions struct {
 	EpicID          string
 	Label           string
 	Priorities      []int
-	InInbox         *bool
 	HasOpenConcerns *bool
 	Order           string
 }
@@ -37,7 +36,6 @@ type ListItem struct {
 	Priority          *int    `json:"priority"`
 	ConcernsRaised    bool    `json:"concerns_raised"`
 	OpenConcernsCount int     `json:"open_concerns_count"`
-	InInbox           bool    `json:"-"`
 }
 
 type UnsupportedListOrderError struct {
@@ -60,6 +58,9 @@ func List(options ListOptions) ([]ListItem, error) {
 	}
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return nil, fmt.Errorf("list issues: migrations dir is required")
+	}
+	if err := validateListOptions(options); err != nil {
+		return nil, err
 	}
 
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
@@ -105,7 +106,6 @@ func List(options ListOptions) ([]ListItem, error) {
 			&priority,
 			&item.ConcernsRaised,
 			&item.OpenConcernsCount,
-			&item.InInbox,
 		); err != nil {
 			return nil, fmt.Errorf("scan issue list row: %w", err)
 		}
@@ -164,10 +164,6 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 		}
 		whereParts = append(whereParts, "ie.priority IN ("+strings.Join(priorityPlaceholders, ", ")+")")
 	}
-	if options.InInbox != nil {
-		whereParts = append(whereParts, "ie.in_inbox = ?")
-		args = append(args, *options.InInbox)
-	}
 	if options.HasOpenConcerns != nil {
 		if *options.HasOpenConcerns {
 			whereParts = append(whereParts, "ie.open_concerns_count > 0")
@@ -187,8 +183,7 @@ func issueListQuery(options ListOptions) (string, []any, error) {
 			ie.parent_id,
 			ie.priority,
 			ie.concerns_raised,
-			ie.open_concerns_count,
-			ie.in_inbox
+			ie.open_concerns_count
 		FROM issues_enriched ie
 	`)
 	if len(whereParts) > 0 {
@@ -231,7 +226,11 @@ func ParsePriorityFilter(value string) ([]int, error) {
 	}
 
 	parts := strings.Split(trimmed, ",")
+	if len(parts) > 6 {
+		return nil, fmt.Errorf("priority filter accepts at most 6 values")
+	}
 	priorities := make([]int, 0, len(parts))
+	seen := map[int]bool{}
 	for _, part := range parts {
 		priorityValue := strings.TrimSpace(part)
 		if priorityValue == "" {
@@ -241,8 +240,32 @@ func ParsePriorityFilter(value string) ([]int, error) {
 		if err != nil {
 			return nil, fmt.Errorf("priority filter %q is not an integer", priorityValue)
 		}
+		if priority < 0 || priority > 5 {
+			return nil, fmt.Errorf("priority filter %d is outside 0..5", priority)
+		}
+		if seen[priority] {
+			return nil, fmt.Errorf("priority filter contains duplicate value %d", priority)
+		}
+		seen[priority] = true
 		priorities = append(priorities, priority)
 	}
 
 	return priorities, nil
+}
+
+func validateListOptions(options ListOptions) error {
+	if kind := strings.TrimSpace(options.Kind); kind != "" && kind != "epic" && kind != "task" && kind != "subtask" {
+		return fmt.Errorf("unsupported issue kind %q", kind)
+	}
+	if category := strings.TrimSpace(options.StatusCategory); category != "" && category != "unstarted" && category != "started" && category != "completed" && category != "cancelled" {
+		return fmt.Errorf("unsupported issue status category %q", category)
+	}
+	if status := strings.TrimSpace(options.Status); status != "" {
+		for index, character := range status {
+			if (character < 'a' || character > 'z') && (index == 0 || ((character < '0' || character > '9') && character != '_')) {
+				return fmt.Errorf("invalid issue status %q", status)
+			}
+		}
+	}
+	return nil
 }

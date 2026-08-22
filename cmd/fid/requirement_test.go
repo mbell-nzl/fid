@@ -13,8 +13,9 @@ import (
 )
 
 func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	writeRequirementFixture(t, workspace, "project-docs/specs/sample_requirements.md", `# Requirements
 
@@ -114,6 +115,7 @@ func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
 }
 
 func TestRequirementSyncRejectsMalformedInputBeforeAppend(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name          string
 		body          string
@@ -174,7 +176,7 @@ This file contains prose only.
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			workspace := t.TempDir()
-			runInitCommand(t, workspace, "init")
+			clonePristineWorkspaceInto(t, workspace)
 			writeRequirementFixture(t, workspace, "project-docs/specs/bad.md", tt.body)
 
 			journalPath := mustJournalPath(t, workspace)
@@ -210,9 +212,10 @@ This file contains prose only.
 }
 
 func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
+	t.Parallel()
 	t.Run("human allowed", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 		writeRequirementFixture(t, workspace, "project-docs/specs/auth.md", `# Auth
 
 ## 3.11 Governance
@@ -240,7 +243,7 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 
 	t.Run("denied and unknown reject before append", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 		writeRequirementFixture(t, workspace, "project-docs/specs/auth.md", `# Auth
 
 ## 3.11 Governance
@@ -298,9 +301,9 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 
 	t.Run("policy show includes requirement sync row", func(t *testing.T) {
 		workspace := t.TempDir()
-		runInitCommand(t, workspace, "init")
+		clonePristineWorkspaceInto(t, workspace)
 
-		stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+		stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 		if stderr != "" {
 			t.Fatalf("policy show stderr = %q, want empty", stderr)
 		}

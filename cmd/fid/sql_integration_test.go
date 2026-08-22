@@ -1,5 +1,3 @@
-//go:build integration
-
 package main
 
 import (
@@ -10,8 +8,9 @@ import (
 )
 
 func TestSQLCommandRejectsMutationAttemptsWithoutChangingProjectedCounts(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,

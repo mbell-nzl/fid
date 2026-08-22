@@ -22,19 +22,22 @@ type CreateOptions struct {
 	Priority      *int
 	Sequence      *int
 	SpecMDPath    *string
-	EstTokens     *int
-	DueDate       *string
 	Labels        []string
-	InInbox       bool
-	OwnerRole     *string
-	OwnerActor    *string
-	Scheduling    string
+	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
+	// in-process callers. Canonical Issue commands never populate them.
+	OwnerRole  *string
+	OwnerActor *string
+	Scheduling string
 }
 
 type CreateResult struct {
-	ID    string
-	Kind  string
-	Title string
+	ID         string
+	Kind       string
+	Title      string
+	Status     string
+	Revision   int
+	EventID    string
+	OccurredAt string
 }
 
 type GetOptions struct {
@@ -65,6 +68,44 @@ func (err *NotFoundError) Error() string {
 	return fmt.Sprintf("issue %q not found", err.IssueID)
 }
 
+type HierarchyInvalidError struct {
+	Kind       string
+	ParentID   *string
+	ParentKind *string
+	Rule       string
+}
+
+// StateConflictError records an optimistic-concurrency mismatch observed while
+// the Issue mutation lock is held.
+type StateConflictError struct {
+	IssueID          string
+	ExpectedRevision int
+	ActualRevision   int
+}
+
+func (err *StateConflictError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("issue %q revision is %d, not expected revision %d", err.IssueID, err.ActualRevision, err.ExpectedRevision)
+}
+
+func (err *HierarchyInvalidError) Error() string {
+	if err == nil {
+		return "<nil>"
+	}
+	switch err.Kind {
+	case "epic":
+		return "issues: epic parent_id must be NULL"
+	case "task":
+		return "issues: task parent_id must reference an epic or be NULL"
+	case "subtask":
+		return "issues: subtask parent_id must reference a task"
+	default:
+		return fmt.Sprintf("issue hierarchy is invalid: %s", err.Rule)
+	}
+}
+
 type Issue struct {
 	ID                 string                `json:"id"`
 	Kind               string                `json:"kind"`
@@ -76,12 +117,10 @@ type Issue struct {
 	Priority           *int                  `json:"priority"`
 	Sequence           *int                  `json:"sequence"`
 	SpecMDPath         *string               `json:"spec_md_path"`
-	EstTokens          *int                  `json:"est_tokens"`
-	DueDate            *string               `json:"due_date"`
+	Revision           int                   `json:"-"`
 	OwnerRole          *string               `json:"owner_role"`
 	OwnerActor         *string               `json:"owner_actor"`
 	Labels             []string              `json:"labels"`
-	InInbox            bool                  `json:"in_inbox"`
 	ConcernsRaised     bool                  `json:"concerns_raised"`
 	OpenConcernsCount  int                   `json:"open_concerns_count"`
 	TriageStatus       *string               `json:"triage_status"`

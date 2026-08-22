@@ -40,7 +40,7 @@ func Get(options GetOptions) (Issue, error) {
 
 	row := conn.QueryRow(`
 		SELECT id, kind, title, status, workflow_id, parent_id, priority, sequence,
-		       spec_md_path, est_tokens, due_date, owner_role, owner_actor, in_inbox,
+		       spec_md_path, revision, owner_role, owner_actor,
 		       concerns_raised, open_concerns_count, triage_status, created_at, updated_at
 		FROM issues_enriched
 		WHERE id = ?
@@ -48,9 +48,9 @@ func Get(options GetOptions) (Issue, error) {
 
 	var (
 		record                                         Issue
-		parentID, specMDPath, dueDate, ownerRole       sql.NullString
+		parentID, specMDPath, ownerRole                sql.NullString
 		ownerActor, triageStatus, createdAt, updatedAt sql.NullString
-		priority, sequence, estTokens                  sql.NullInt64
+		priority, sequence                             sql.NullInt64
 	)
 	if err := row.Scan(
 		&record.ID,
@@ -62,11 +62,9 @@ func Get(options GetOptions) (Issue, error) {
 		&priority,
 		&sequence,
 		&specMDPath,
-		&estTokens,
-		&dueDate,
+		&record.Revision,
 		&ownerRole,
 		&ownerActor,
-		&record.InInbox,
 		&record.ConcernsRaised,
 		&record.OpenConcernsCount,
 		&triageStatus,
@@ -90,7 +88,6 @@ func Get(options GetOptions) (Issue, error) {
 	record.AcceptanceCriteria = []AcceptanceCriterion{}
 	record.ParentID = nullStringPointer(parentID)
 	record.SpecMDPath = nullStringPointer(specMDPath)
-	record.DueDate = normalizeDateOnlyPointer(nullStringPointer(dueDate))
 	record.OwnerRole = nullStringPointer(ownerRole)
 	record.OwnerActor = nullStringPointer(ownerActor)
 	record.TriageStatus = nullStringPointer(triageStatus)
@@ -98,7 +95,6 @@ func Get(options GetOptions) (Issue, error) {
 	record.UpdatedAt = nullStringPointer(updatedAt)
 	record.Priority = nullIntPointer(priority)
 	record.Sequence = nullIntPointer(sequence)
-	record.EstTokens = nullIntPointer(estTokens)
 	record.ParentTitle, err = issueParentTitle(conn, record.ParentID)
 	if err != nil {
 		return Issue{}, err

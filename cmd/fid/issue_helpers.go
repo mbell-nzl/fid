@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	fidformat "github.com/mbell-nzl/fid/internal/format"
+	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
@@ -47,16 +47,16 @@ func renderIssueError(writer io.Writer, err error) error {
 		return writeIssueLine(writer, "  check `fid policy show` for permitted role/action combinations\n")
 	}
 
+	var claimNotHeldErr *claims.ClaimNotHeldError
+	if errors.As(err, &claimNotHeldErr) {
+		return writeIssueLine(writer, "error: %s\n", claimNotHeldErr.Error())
+	}
+
 	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
 		return writeIssueLine(writer, format, args...)
 	}, err, "read stopped - manual repair required")
 	if handled {
 		return renderErr
-	}
-
-	var unsupportedFormatErr *fidformat.UnsupportedFormatError
-	if errors.As(err, &unsupportedFormatErr) {
-		return writeIssueLine(writer, "error: %s\n", unsupportedFormatErr.Error())
 	}
 
 	var unsupportedKindErr *issues.UnsupportedKindError
@@ -201,10 +201,6 @@ func issueUpdateFieldLabel(field string) string {
 	switch field {
 	case "spec_md_path":
 		return "spec-md"
-	case "est_tokens":
-		return "est-tokens"
-	case "due_date":
-		return "due-date"
 	case "owner_role":
 		return "owner-role"
 	case "owner_actor":

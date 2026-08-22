@@ -71,14 +71,14 @@ func TestLinkErrorsRenderActionableMessages(t *testing.T) {
 func TestRegistryHelpersCoverEndpointAndCompatibilityRules(t *testing.T) {
 	t.Parallel()
 
-	if got := endpointTypeForID("PRD-LINK-002"); got != "requirement" {
-		t.Fatalf("endpointTypeForID(PRD) = %q, want requirement", got)
+	if got, err := endpointType("requirement", "type", "link add"); err != nil || got != "requirement" {
+		t.Fatalf("endpointType(requirement) = %q, %v; want requirement, nil", got, err)
 	}
-	if got := endpointTypeForID("TRD-ARCH-010"); got != "requirement" {
-		t.Fatalf("endpointTypeForID(TRD) = %q, want requirement", got)
+	if got, err := endpointType("", "type", "link add"); err != nil || got != "" {
+		t.Fatalf("endpointType(empty) = %q, %v; want empty, nil", got, err)
 	}
-	if got := endpointTypeForID("FID-123"); got != "issue" {
-		t.Fatalf("endpointTypeForID(issue) = %q, want issue", got)
+	if _, err := endpointType("claim", "type", "link add"); err == nil {
+		t.Fatal("endpointType(claim) error = nil, want invalid endpoint type")
 	}
 
 	if !relationAllowedForTypes("relates_to", "issue", "requirement") {

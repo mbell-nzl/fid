@@ -1,5 +1,27 @@
 # Phase <N> - Task <M>: <Title> - Completion Report
 
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
+
+Use `COMPLETE` only after every required gate passes and the task is ready to
+advance. Use `RECOVERY_REQUIRED` for real, local, in-scope work that a same-task
+Developer continuation must finish; choose one of `in-scope-implementation`,
+`gate-repair`, `report-repair`, `qa-rework`, `session-continuation`, or
+`local-environment`, keep Human attention `no`, and name the condition and next
+action. Use `BLOCKED` only for a protected condition; choose one of
+`product-decision`, `architecture-decision`, `data-model-decision`,
+`public-interface-decision`, `dependency-approval`, `security-or-data-loss`,
+`external-infrastructure`, `specification-contradiction`, or
+`recovery-budget-exhausted`, set Human attention to `yes`, and name the
+resolution action. Incomplete work, a red test, or a failed gate is not a
+protected blocker by itself.
+
 ## Summary of what was implemented
 
 - <summary>
@@ -26,17 +48,35 @@ for **each** state; positive-only evidence is not a PASS.
 
 ## Tests run
 
-- `<command>` - PASS/FAIL - `<verbatim final output line>`
+- `<command>` - PASS/FAIL - `<verbatim final output line>` (terminated `exit_code: <N>`)
 
 ## Exact quality-gate results
 
 Compare this section against the task spec's `## Exact Commands To Run`.
 
-- `gofmt -l cmd internal` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
-- `golangci-lint run ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
-- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
-- `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED - `<verbatim final output line>`
-- `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A - `<verbatim final output line>`
+- `gofmt -l cmd internal` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
+- `golangci-lint run ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
+- `go tool cover -func=coverage.out` - PASS/FAIL/BLOCKED - `<verbatim final output line>` (terminated `exit_code: <N>`)
+- `<conditional command from task spec>` - PASS/FAIL/BLOCKED/N/A - `<verbatim final output line>` (terminated `exit_code: <N>`)
+
+A real example row:
+
+```text
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+```
+
+A command whose pass condition is a non-zero exit (an `rg`/`grep` absence
+proof, an `ls` on a path that must not exist) must be declared in the task
+spec's `## Expected Non-Zero Commands` section, and its row carries the
+declared expectation beside the real observed termination:
+
+```text
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+```
+
+The status stays exactly `PASS`. Never rewrite a non-zero absence result as
+`exit 0 (no output)`.
 
 Every required command from the task spec and QA plan must appear here or in
 `## Tests run`. If a command is blocked, record the reason. Do not substitute a
@@ -47,12 +87,23 @@ Each result carries one short verbatim token copied from the command's own
 terminal output — the last line it printed, or `exit 0 (no output)` for a
 silent success. Copy it; do not summarize or reconstruct it.
 
+Each result also carries the **observed termination result**: the command's
+real `exit_code`, or the explicit signal/termination result your execution
+surface reported when it exposes no exit code. A printed last line proves the
+command produced output, not that the process exited; for a silent success the
+exit status is the only evidence that separates it from a discarded session.
+Copy the termination result from the command's own result object. Wrapper
+completion, an empty output field, and absence of new output are not
+termination, and an `exit_code` you assert rather than observed is fabricated
+evidence exactly like a fabricated token.
+
 **A command you did not watch terminate is never `PASS`.** A command that hung,
 was interrupted, was killed, or whose output you never saw complete has no
 final line to copy, and inventing one is fabricated evidence. Record it as
-`BLOCKED` with the reason in a blocker report and stop. A gate recorded `PASS`
-without terminating is invisible to every downstream review until someone
-re-runs it independently.
+`BLOCKED` with the reason in a `RECOVERY_REQUIRED` report when a continuation
+can recover it, or a `BLOCKED` report only when a protected condition prevents
+recovery. A gate recorded `PASS` without terminating is invisible to every
+downstream review until someone re-runs it independently.
 
 ## Deviations from spec
 
@@ -68,7 +119,7 @@ re-runs it independently.
 
 ## Commit hash
 
-- `<hash or "No commit created - blocker report">`
+- `<hash or "No commit created - protected blocker report">`
 
 Draft this section as `- Pending commit` until the task commit exists. Then,
 while `HEAD` is still the task commit, copy the hash verbatim from
@@ -77,7 +128,7 @@ complete, or recall a hash from memory.
 
 ## Commit subject
 
-- `<subject or "No commit created - blocker report">`
+- `<subject or "No commit created - protected blocker report">`
 
 Copy the subject verbatim from `git log -1 --format=%s`.
 

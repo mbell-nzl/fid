@@ -9,18 +9,18 @@ import (
 	internalsqlquery "github.com/mbell-nzl/fid/internal/sqlquery"
 )
 
-func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
+func TestSQLCommandAcceptsReadStatementsAsDirectLegacyJSON(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
-	jsonStdout, jsonStderr := runFIDCommand(
+	stdout, stderr := runFIDCommand(
 		t,
 		workspace,
 		"sql", "SELECT name, active FROM roles ORDER BY name LIMIT 2",
-		"--format", "json",
 	)
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
 	wantRows := []internalsqlquery.Row{
@@ -28,52 +28,8 @@ func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 		{"name": "human", "active": int64(1)},
 	}
 	want := expectedCommandStructure(t, wantRows)
-	if got := decodeCommandJSONStructure(t, jsonStdout); !reflect.DeepEqual(got, want) {
+	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("sql json = %#v, want %#v", got, want)
-	}
-
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(
-				t,
-				workspace,
-				"sql", "SELECT name, active FROM roles ORDER BY name LIMIT 2",
-				"--format", formatName,
-			)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(
-		t,
-		workspace,
-		"sql", "SELECT name, active FROM roles ORDER BY name LIMIT 2",
-		"--format", "markdown",
-	)
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	wantMarkdown := "" +
-		"# SQL Query Results\n\n" +
-		"| name | active |\n" +
-		"| --- | --- |\n" +
-		"| developer | 1 |\n" +
-		"| human | 1 |\n"
-	if markdownStdout != wantMarkdown {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, wantMarkdown)
 	}
 
 	for _, query := range []string{
@@ -82,7 +38,7 @@ func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 		"WITH selected AS (SELECT name FROM roles WHERE name = 'developer') SELECT name FROM selected",
 	} {
 		t.Run(query, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "sql", query, "--format", "json")
+			stdout, stderr := runFIDCommand(t, workspace, "sql", query)
 			if stderr != "" {
 				t.Fatalf("stderr = %q, want empty", stderr)
 			}
@@ -95,8 +51,9 @@ func TestSQLCommandAcceptsReadStatementsAndFormats(t *testing.T) {
 }
 
 func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	tests := []struct {
 		name         string
@@ -133,8 +90,9 @@ func TestSQLCommandRejectsMutationsWithDocumentedError(t *testing.T) {
 }
 
 func TestSQLCommandRequiresSingleQueryArgument(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "sql")
 	if err == nil {

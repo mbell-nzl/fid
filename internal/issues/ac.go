@@ -12,7 +12,10 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/validation"
 )
+
+const AcceptanceCriteriaLimit = 1000
 
 type AddAcceptanceCriterionOptions struct {
 	WorkspaceRoot string
@@ -24,10 +27,13 @@ type AddAcceptanceCriterionOptions struct {
 }
 
 type AddAcceptanceCriterionResult struct {
-	ID      string
-	IssueID string
-	Text    string
-	Ordinal int
+	ID            string
+	IssueID       string
+	Text          string
+	Ordinal       int
+	IssueRevision int
+	EventID       string
+	OccurredAt    string
 }
 
 func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanceCriterionResult, error) {
@@ -41,12 +47,18 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if issueID == "" {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: issue id is required")
 	}
-	text := strings.TrimSpace(options.Text)
-	if text == "" {
+	if strings.TrimSpace(options.Text) == "" {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: text is required")
+	}
+	text, err := validation.NormalizeText("acceptance criterion text", options.Text, 4096)
+	if err != nil {
+		return AddAcceptanceCriterionResult{}, err
 	}
 	if options.Ordinal <= 0 {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: ordinal must be a positive integer")
+	}
+	if options.Ordinal > 2147483647 {
+		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: ordinal must be between 1 and 2147483647")
 	}
 	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueACAdd); err != nil {
 		return AddAcceptanceCriterionResult{}, err
@@ -58,7 +70,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 
 	commandArgv := issueACAddArgv(issueID, text, options.Ordinal, options.ActorRole)
 	var result AddAcceptanceCriterionResult
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
@@ -69,8 +81,24 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		}
 		defer closeIssueDB(conn)
 
-		if err := requireAcceptanceCriteriaIssue(conn, issueID); err != nil {
+		issueRevision, err := acceptanceCriteriaIssueRevision(conn, issueID)
+		if err != nil {
 			return err
+		}
+		var existing string
+		err = conn.QueryRow(`SELECT id FROM acceptance_criteria WHERE issue_id = ? AND ordinal = ?`, issueID, options.Ordinal).Scan(&existing)
+		if err == nil {
+			return &DuplicateAcceptanceCriterionError{IssueID: issueID, Ordinal: options.Ordinal}
+		}
+		if err != sql.ErrNoRows {
+			return fmt.Errorf("query acceptance criterion ordinal: %w", err)
+		}
+		var criterionCount int
+		if err := conn.QueryRow(`SELECT COUNT(*) FROM acceptance_criteria WHERE issue_id = ?`, issueID).Scan(&criterionCount); err != nil {
+			return fmt.Errorf("count acceptance criteria for issue %q: %w", issueID, err)
+		}
+		if criterionCount >= AcceptanceCriteriaLimit {
+			return &ResultLimitExceededError{Collection: "acceptance_criteria", Limit: AcceptanceCriteriaLimit, Observed: criterionCount + 1}
 		}
 
 		criterionID, err := journal.GenerateID("AC", func(candidate string) (bool, error) {
@@ -112,19 +140,24 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 					"text":     text,
 				},
 			},
-			issueActivityEffect(
-				activityID,
-				event.EventID,
-				options.ActorRole,
-				timestamp,
-				issueID,
-				"ac_added",
-				map[string]any{
-					"ac_id":   criterionID,
-					"ordinal": options.Ordinal,
-				},
-			),
 		}
+		revisionEffects, err := BuildIssueRevisionEffects([]IssueRevision{{IssueID: issueID, Observed: issueRevision}})
+		if err != nil {
+			return err
+		}
+		event.Effects = append(event.Effects, revisionEffects...)
+		event.Effects = append(event.Effects, issueActivityEffect(
+			activityID,
+			event.EventID,
+			options.ActorRole,
+			timestamp,
+			issueID,
+			"ac_added",
+			map[string]any{
+				"ac_id":   criterionID,
+				"ordinal": options.Ordinal,
+			},
+		))
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
 			return err
@@ -158,10 +191,13 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		}
 
 		result = AddAcceptanceCriterionResult{
-			ID:      criterionID,
-			IssueID: issueID,
-			Text:    text,
-			Ordinal: options.Ordinal,
+			ID:            criterionID,
+			IssueID:       issueID,
+			Text:          text,
+			Ordinal:       options.Ordinal,
+			IssueRevision: issueRevision + 1,
+			EventID:       appended.EventID,
+			OccurredAt:    appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})
@@ -172,18 +208,20 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	return result, nil
 }
 
-func requireAcceptanceCriteriaIssue(conn *sql.DB, issueID string) error {
-	kind, found, err := issueKindForID(conn, issueID)
-	if err != nil {
-		return err
+func acceptanceCriteriaIssueRevision(conn *sql.DB, issueID string) (int, error) {
+	var kind string
+	var revision int
+	err := conn.QueryRow(`SELECT kind, revision FROM issues WHERE id = ?`, issueID).Scan(&kind, &revision)
+	if err == sql.ErrNoRows {
+		return 0, &NotFoundError{IssueID: issueID}
 	}
-	if !found {
-		return &NotFoundError{IssueID: issueID}
+	if err != nil {
+		return 0, fmt.Errorf("query issue %q: %w", issueID, err)
 	}
 	if kind == "task" || kind == "subtask" {
-		return nil
+		return revision, nil
 	}
-	return fmt.Errorf(
+	return 0, fmt.Errorf(
 		"add acceptance criterion: issue %q is kind %q; acceptance criteria require task or subtask",
 		issueID,
 		kind,

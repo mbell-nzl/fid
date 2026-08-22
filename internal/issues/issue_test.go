@@ -376,12 +376,7 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		Priority:      intPointer(1),
 		Sequence:      intPointer(1),
 		SpecMDPath:    stringPointer("project-docs/docs/phases/phase-4/tasks/task-2.md"),
-		EstTokens:     intPointer(2100),
-		DueDate:       stringPointer("2026-06-30"),
 		Labels:        []string{"phase-4", "core"},
-		InInbox:       true,
-		OwnerRole:     stringPointer("qa_lead"),
-		OwnerActor:    stringPointer("human:mark"),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -413,17 +408,8 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 	if task.SpecMDPath == nil || *task.SpecMDPath != "project-docs/docs/phases/phase-4/tasks/task-2.md" {
 		t.Fatalf("Get(task) spec_md_path = %#v", task.SpecMDPath)
 	}
-	if task.EstTokens == nil || *task.EstTokens != 2100 {
-		t.Fatalf("Get(task) est_tokens = %#v, want 2100", task.EstTokens)
-	}
-	if task.OwnerRole == nil || *task.OwnerRole != "qa_lead" {
-		t.Fatalf("Get(task) owner_role = %#v, want qa_lead", task.OwnerRole)
-	}
-	if task.OwnerActor == nil || *task.OwnerActor != "human:mark" {
-		t.Fatalf("Get(task) owner_actor = %#v, want human:mark", task.OwnerActor)
-	}
-	if !task.InInbox {
-		t.Fatal("Get(task) in_inbox = false, want true")
+	if task.OwnerRole == nil || *task.OwnerRole != "developer" || task.OwnerActor != nil {
+		t.Fatalf("Get(task) internal owner defaults = (%#v, %#v), want developer and nil", task.OwnerRole, task.OwnerActor)
 	}
 	if want := []string{"core", "phase-4"}; !equalStrings(task.Labels, want) {
 		t.Fatalf("Get(task) labels = %#v, want %#v", task.Labels, want)
@@ -471,14 +457,6 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 	}
 	if scheduling != "sequential" {
 		t.Fatalf("epic_metadata scheduling = %q, want sequential", scheduling)
-	}
-
-	var dueDate string
-	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskCreated.ID).Scan(&dueDate); err != nil {
-		t.Fatalf("query task due_date: %v", err)
-	}
-	if dueDate != "2026-06-30" {
-		t.Fatalf("task due_date = %q, want 2026-06-30", dueDate)
 	}
 
 	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
@@ -739,11 +717,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		Priority:      intPointer(2),
 		Sequence:      intPointer(1),
 		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
-		EstTokens:     intPointer(1440),
-		DueDate:       stringPointer("2026-07-01"),
 		Labels:        []string{"ready", "phase-4"},
-		InInbox:       true,
-		OwnerActor:    stringPointer("agent"),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -780,14 +754,6 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
-
-	var dueDate string
-	if err := conn.QueryRow(`SELECT date(due_date) FROM issues WHERE id = ?`, taskCreated.ID).Scan(&dueDate); err != nil {
-		t.Fatalf("query rebuilt due_date: %v", err)
-	}
-	if dueDate != "2026-07-01" {
-		t.Fatalf("rebuilt due_date = %q, want 2026-07-01", dueDate)
-	}
 
 	var issueID, scheduling string
 	if err := conn.QueryRow(`SELECT issue_id, scheduling FROM epic_metadata WHERE issue_id = ?`, epicCreated.ID).Scan(&issueID, &scheduling); err != nil {
@@ -874,6 +840,45 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 	if got := countJournalLines(journalPath); got != 2 {
 		t.Fatalf("countJournalLines(%q) = %d, want 2", journalPath, got)
 	}
+}
+
+func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Retired field event coverage",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	events := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	for _, event := range events {
+		if event.EventType != "issue.created" {
+			continue
+		}
+		for _, effect := range event.Effects {
+			if effect.Table != "issues" || effect.PK["id"] != created.ID {
+				continue
+			}
+			if got := effect.Values["revision"]; got != float64(1) {
+				t.Fatalf("issue.created revision = %#v, want 1", got)
+			}
+			if len(effect.Prior) != 0 || len(effect.Preconditions) != 0 {
+				t.Fatalf("issue.created revision prior/preconditions = %#v / %#v, want omitted", effect.Prior, effect.Preconditions)
+			}
+			for _, key := range []string{"in_inbox", "est_tokens", "due_date"} {
+				if _, found := effect.Values[key]; found {
+					t.Fatalf("issue.created effect unexpectedly contains retired key %q", key)
+				}
+			}
+			return
+		}
+	}
+	t.Fatalf("missing issue.created effect for %q", created.ID)
 }
 
 func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
@@ -1361,8 +1366,8 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	_, err = conn.Exec(`
 		INSERT INTO issues (
 			id, kind, title, status, workflow_id, parent_id, priority, sequence,
-			spec_md_path, est_tokens, owner_role, owner_actor, in_inbox, created_at, updated_at
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			spec_md_path, owner_role, owner_actor, created_at, updated_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 	`,
 		"FID-populated",
 		"task",
@@ -1373,10 +1378,8 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 		5,
 		42,
 		"docs/spec.md",
-		99,
 		"qa_lead",
 		"human",
-		true,
 		"2026-06-07T10:00:00Z",
 		"2026-06-07T11:00:00Z",
 	)
@@ -1407,9 +1410,6 @@ func TestGetMapsPopulatedNullableFields(t *testing.T) {
 	}
 	if got.SpecMDPath == nil || *got.SpecMDPath != "docs/spec.md" {
 		t.Fatalf("Get() spec_md_path = %#v, want docs/spec.md", got.SpecMDPath)
-	}
-	if got.EstTokens == nil || *got.EstTokens != 99 {
-		t.Fatalf("Get() est_tokens = %#v, want 99", got.EstTokens)
 	}
 	if got.OwnerRole == nil || *got.OwnerRole != "qa_lead" {
 		t.Fatalf("Get() owner_role = %#v, want qa_lead", got.OwnerRole)
@@ -1634,7 +1634,6 @@ func assertIssuesEqual(t *testing.T, got, want Issue) {
 		got.Status != want.Status ||
 		got.StatusCategory != want.StatusCategory ||
 		got.WorkflowID != want.WorkflowID ||
-		got.InInbox != want.InInbox ||
 		got.ConcernsRaised != want.ConcernsRaised ||
 		got.OpenConcernsCount != want.OpenConcernsCount {
 		t.Fatalf("issue mismatch = %#v, want %#v", got, want)
@@ -1643,7 +1642,6 @@ func assertIssuesEqual(t *testing.T, got, want Issue) {
 		!equalIntPointers(got.Priority, want.Priority) ||
 		!equalIntPointers(got.Sequence, want.Sequence) ||
 		!equalStringPointers(got.SpecMDPath, want.SpecMDPath) ||
-		!equalIntPointers(got.EstTokens, want.EstTokens) ||
 		!equalStringPointers(got.OwnerRole, want.OwnerRole) ||
 		!equalStringPointers(got.OwnerActor, want.OwnerActor) ||
 		!equalStringPointers(got.TriageStatus, want.TriageStatus) ||

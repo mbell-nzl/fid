@@ -177,6 +177,14 @@ func Start(options StartOptions) (StartResult, error) {
 				},
 			},
 		}
+		revisionEffects, err := issues.BuildIssueRevisionEffects([]issues.IssueRevision{{
+			IssueID:  current.ID,
+			Observed: current.Revision,
+		}})
+		if err != nil {
+			return err
+		}
+		event.Effects = append(event.Effects[:2], append(revisionEffects, event.Effects[2:]...)...)
 
 		if err := appendAndProjectEvent(options.WorkspaceRoot, conn, lock, event); err != nil {
 			return err

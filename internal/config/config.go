@@ -10,19 +10,13 @@ import (
 )
 
 const (
-	WorkspaceDirName                       = ".fid"
-	JournalDirName                         = "journal"
-	ConfigFileName                         = "config.toml"
-	PricingFileName                        = "pricing.toml"
-	DatabaseFileName                       = "fid.sqlite"
-	GitIgnoreName                          = ".gitignore"
-	DefaultStartedWithoutClaimGraceSeconds = 300
+	WorkspaceDirName = ".fid"
+	JournalDirName   = "journal"
+	ConfigFileName   = "config.toml"
+	PricingFileName  = "pricing.toml"
+	DatabaseFileName = "fid.sqlite"
+	GitIgnoreName    = ".gitignore"
 )
-
-type ProjectConfig struct {
-	Prefix                          string
-	StartedWithoutClaimGraceSeconds int
-}
 
 type ModelPricing struct {
 	InPerMTok  float64
@@ -50,13 +44,6 @@ type WorkspacePaths struct {
 	PricingPath  string
 	DatabasePath string
 	GitIgnore    string
-}
-
-func DefaultProjectConfig(prefix string) ProjectConfig {
-	return ProjectConfig{
-		Prefix:                          prefix,
-		StartedWithoutClaimGraceSeconds: DefaultStartedWithoutClaimGraceSeconds,
-	}
 }
 
 func DefaultPricingConfig() PricingConfig {
@@ -110,8 +97,8 @@ func WriteBootstrapFiles(workspaceRoot string, project ProjectConfig, pricing Pr
 	if strings.TrimSpace(workspaceRoot) == "" {
 		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: workspace root is required")
 	}
-	if strings.TrimSpace(project.Prefix) == "" {
-		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: project prefix is required")
+	if err := validateProjectConfig(project, pathsForConfigRoot(workspaceRoot)); err != nil {
+		return WorkspacePaths{}, fmt.Errorf("write bootstrap files: %w", err)
 	}
 
 	paths := WorkspacePathsForRoot(workspaceRoot)
@@ -130,62 +117,6 @@ func WriteBootstrapFiles(workspaceRoot string, project ProjectConfig, pricing Pr
 	}
 
 	return paths, nil
-}
-
-func ReadProjectConfig(path string) (ProjectConfig, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return ProjectConfig{}, fmt.Errorf("open project config %q: %w", path, err)
-	}
-	defer closeConfigFile(file)
-
-	scanner := bufio.NewScanner(file)
-	section := ""
-	prefix := ""
-	startedWithoutClaimGraceSeconds := DefaultStartedWithoutClaimGraceSeconds
-	for scanner.Scan() {
-		line := normalizeLine(scanner.Text())
-		if line == "" {
-			continue
-		}
-		if isSection(line) {
-			section = strings.Trim(line, "[]")
-			continue
-		}
-		key, value, ok := splitAssignment(line)
-		if !ok {
-			continue
-		}
-		if section == "project" && key == "prefix" {
-			parsed, err := parseQuotedString(value)
-			if err != nil {
-				return ProjectConfig{}, fmt.Errorf("parse project config %q: %w", path, err)
-			}
-			prefix = parsed
-		}
-		if section == "maintenance" && key == "started_without_claim_grace_seconds" {
-			parsed, err := strconv.Atoi(value)
-			if err != nil || parsed < 0 {
-				return ProjectConfig{}, fmt.Errorf(
-					"parse project config %q: maintenance.started_without_claim_grace_seconds must be a non-negative integer, got %q",
-					path,
-					value,
-				)
-			}
-			startedWithoutClaimGraceSeconds = parsed
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return ProjectConfig{}, fmt.Errorf("scan project config %q: %w", path, err)
-	}
-	if prefix == "" {
-		return ProjectConfig{}, fmt.Errorf("parse project config %q: missing [project].prefix", path)
-	}
-
-	return ProjectConfig{
-		Prefix:                          prefix,
-		StartedWithoutClaimGraceSeconds: startedWithoutClaimGraceSeconds,
-	}, nil
 }
 
 func ReadPricingConfig(path string) (PricingConfig, error) {
@@ -241,17 +172,6 @@ func ReadPricingConfig(path string) (PricingConfig, error) {
 	return pricing, nil
 }
 
-func projectConfigContents(project ProjectConfig) string {
-	return fmt.Sprintf(`# Project identity
-[project]
-prefix = %q
-
-# Maintenance audit settings
-[maintenance]
-started_without_claim_grace_seconds = %d
-`, project.Prefix, project.StartedWithoutClaimGraceSeconds)
-}
-
 func pricingConfigContents(pricing PricingConfig) string {
 	var builder strings.Builder
 	builder.WriteString("# Default model pricing in USD per million tokens.\n")
@@ -282,9 +202,6 @@ func normalizeLine(line string) string {
 	trimmed := strings.TrimSpace(line)
 	if trimmed == "" || strings.HasPrefix(trimmed, "#") {
 		return ""
-	}
-	if comment := strings.Index(trimmed, "#"); comment >= 0 {
-		trimmed = strings.TrimSpace(trimmed[:comment])
 	}
 	return trimmed
 }

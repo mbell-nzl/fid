@@ -12,7 +12,6 @@ import (
 	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -39,6 +38,9 @@ func TestMigration0008PreservesIssueGetAndListRenderedBytes(t *testing.T) {
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 	`, "FID-cli-parity", "task", "CLI parity fixture", "task-default", "in_progress", 1, "2026-07-19T03:00:00Z", "2026-07-19T03:01:00Z"); err != nil {
 		t.Fatalf("insert issue fixture: %v", err)
+	}
+	if err := fiddb.MigrateUp(dbPath, sourceMigrationsDirectory(t)); err != nil {
+		t.Fatalf("MigrateUp(current schema before canonical read): %v", err)
 	}
 	writeMigrationReadCheckpoint(t, conn, workspace)
 
@@ -83,7 +85,9 @@ func renderMigrationRead(t *testing.T, value any) string {
 	t.Helper()
 
 	var output bytes.Buffer
-	if err := fidformat.Write(&output, fidformat.JSON, value); err != nil {
+	encoder := json.NewEncoder(&output)
+	encoder.SetEscapeHTML(false)
+	if err := encoder.Encode(value); err != nil {
 		t.Fatalf("render JSON: %v", err)
 	}
 	return output.String()

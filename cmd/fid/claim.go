@@ -1,11 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/mbell-nzl/fid/internal/claims"
-	fidformat "github.com/mbell-nzl/fid/internal/format"
 	"github.com/spf13/cobra"
 )
 
@@ -21,9 +20,8 @@ func newClaimCommand() *cobra.Command {
 
 func newClaimListCommand() *cobra.Command {
 	var (
-		staleOnly  bool
-		claimedBy  string
-		formatName string
+		staleOnly bool
+		claimedBy string
 	)
 
 	cmd := &cobra.Command{
@@ -31,7 +29,7 @@ func newClaimListCommand() *cobra.Command {
 		Short: "List current claims.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := os.Getwd()
+			workspaceRoot, err := commandWorkingDirectory(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -49,7 +47,9 @@ func newClaimListCommand() *cobra.Command {
 				return err
 			}
 
-			if err := fidformat.Write(cmd.OutOrStdout(), formatName, items); err != nil {
+			encoder := json.NewEncoder(cmd.OutOrStdout())
+			encoder.SetEscapeHTML(false)
+			if err := encoder.Encode(items); err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
 					return renderErr
 				}
@@ -61,6 +61,5 @@ func newClaimListCommand() *cobra.Command {
 
 	cmd.Flags().BoolVar(&staleOnly, "stale", false, "Show only stale claims")
 	cmd.Flags().StringVar(&claimedBy, "by", "", "Filter by claiming role")
-	cmd.Flags().StringVar(&formatName, "format", fidformat.JSON, "Output format")
 	return cmd
 }

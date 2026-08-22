@@ -11,8 +11,9 @@ import (
 )
 
 func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -45,10 +46,7 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 		}
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
-	}
+	issueStdout := mustGetIssueJSON(t, workspace, issueID)
 	var got struct {
 		Status string `json:"status"`
 	}
@@ -61,8 +59,9 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 }
 
 func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(
 		t,
@@ -128,10 +127,11 @@ func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.
 }
 
 func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
 	if stderr != "" {
 		t.Fatalf("policy show stderr = %q, want empty", stderr)
 	}
@@ -215,8 +215,9 @@ func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 }
 
 func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := seedCommandDevFinishReadyIssue(t, workspace)
 
@@ -248,10 +249,7 @@ func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 		}
 	}
 
-	issueStdout, issueStderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--format", "json")
-	if issueStderr != "" {
-		t.Fatalf("issue get stderr = %q, want empty", issueStderr)
-	}
+	issueStdout := mustGetIssueJSON(t, workspace, issueID)
 	var got struct {
 		Status string `json:"status"`
 	}
@@ -264,8 +262,9 @@ func TestDevFinishCommandClosesRunAndReleasesClaim(t *testing.T) {
 }
 
 func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	issueID := seedCommandStartedIssue(t, workspace, "CLI dev block")
 	runFIDCommand(
@@ -323,8 +322,9 @@ func TestDevBlockCommandRecordsFailedGateAndLeavesRunUntouched(t *testing.T) {
 }
 
 func TestDevFinishAndBlockDeniedRolesRejectBeforeAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	finishIssueID := seedCommandDevFinishReadyIssue(t, workspace)
 	blockIssueID := seedCommandStartedIssue(t, workspace, "CLI denied dev block")
@@ -377,7 +377,7 @@ func seedCommandDevFinishReadyIssue(t *testing.T, workspace string) string {
 	t.Helper()
 
 	issueID := seedCommandStartedIssue(t, workspace, "CLI dev finish")
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -385,7 +385,7 @@ func seedCommandDevFinishReadyIssue(t *testing.T, workspace string) string {
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	acID := parseAddedAcceptanceCriterionID(t, addStderr)
+	acID := parseAddedAcceptanceCriterionID(t, addStdout)
 	runFIDCommand(
 		t,
 		workspace,

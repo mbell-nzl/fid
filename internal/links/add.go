@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/policy"
 )
@@ -33,6 +34,14 @@ func Add(options AddOptions) (AddResult, error) {
 		return AddResult{}, err
 	}
 
+	fromType, err := endpointType(options.FromType, "from-type", "link add")
+	if err != nil {
+		return AddResult{}, err
+	}
+	toType, err := endpointType(options.ToType, "to-type", "link add")
+	if err != nil {
+		return AddResult{}, err
+	}
 	declaredRelation := strings.TrimSpace(options.Relation)
 	if _, ok := inverseRelation(declaredRelation); !ok {
 		return AddResult{}, &UnknownRelationError{Operation: "link add", Relation: declaredRelation}
@@ -40,13 +49,16 @@ func Add(options AddOptions) (AddResult, error) {
 
 	fromID := strings.TrimSpace(options.FromID)
 	toID := strings.TrimSpace(options.ToID)
-	if fromID == toID {
+	if fromType == "issue" && toType == "issue" && fromID == toID && isDependencyRelation(declaredRelation) {
+		return AddResult{}, &DependencyCycleError{Operation: "link add", Path: []string{fromID, toID}}
+	}
+	if fromType == toType && fromID == toID {
 		return AddResult{}, &SelfLinkError{Operation: "link add", FromID: fromID, Relation: declaredRelation, ToID: toID}
 	}
 
 	var result AddResult
-	commandArgv := linkAddArgv(fromID, declaredRelation, toID, options.ActorRole)
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
+	commandArgv := linkAddArgv(fromID, fromType, declaredRelation, toID, toType, options.ActorRole)
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
 	}, func(lock *journal.WriteLock) error {
@@ -60,7 +72,7 @@ func Add(options AddOptions) (AddResult, error) {
 		}
 		defer closeLinksConn(conn)
 
-		declared, inverse, err := plannedLinks(conn, fromID, declaredRelation, toID)
+		declared, inverse, err := plannedLinks(conn, fromType, fromID, declaredRelation, toType, toID)
 		if err != nil {
 			return err
 		}
@@ -88,11 +100,20 @@ func Add(options AddOptions) (AddResult, error) {
 
 		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
 		createdAt := event.OccurredAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		observedRevisions, err := linkIssueRevisions(conn, declared)
+		if err != nil {
+			return err
+		}
+		revisionEffects, err := issues.BuildIssueRevisionEffects(observedRevisions)
+		if err != nil {
+			return err
+		}
 		event.Effects = []journal.Effect{
 			linkInsertEffect(declared, createdAt),
 			linkInsertEffect(inverse, createdAt),
-			linkAddActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse),
 		}
+		event.Effects = append(event.Effects, revisionEffects...)
+		event.Effects = append(event.Effects, linkAddActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse))
 
 		if err := journal.DryRunProjectEvent(conn, event); err != nil {
 			return err
@@ -106,7 +127,7 @@ func Add(options AddOptions) (AddResult, error) {
 			return err
 		}
 
-		result = AddResult{Declared: declared, Inverse: inverse}
+		result = AddResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano)}
 		return nil
 	})
 	if err != nil {
@@ -116,18 +137,26 @@ func Add(options AddOptions) (AddResult, error) {
 	return result, nil
 }
 
-func plannedLinks(conn *sql.DB, fromID, relation, toID string) (Link, Link, error) {
-	declared := Link{
-		FromType: endpointTypeForID(fromID),
-		FromID:   fromID,
-		Relation: relation,
-		ToType:   endpointTypeForID(toID),
-		ToID:     toID,
-	}
-	if err := assertEndpointExists(conn, declared.FromType, declared.FromID, relation, declared.ToType, declared.ToID); err != nil {
+func plannedLinks(conn *sql.DB, fromType, fromID, relation, toType, toID string) (Link, Link, error) {
+	resolvedFromType, err := resolveEndpointType(conn, fromType, fromID)
+	if err != nil {
 		return Link{}, Link{}, err
 	}
-	if err := assertEndpointExists(conn, declared.ToType, declared.ToID, relation, declared.FromType, declared.FromID); err != nil {
+	resolvedToType, err := resolveEndpointType(conn, toType, toID)
+	if err != nil {
+		return Link{}, Link{}, err
+	}
+	declared := Link{
+		FromType: resolvedFromType,
+		FromID:   fromID,
+		Relation: relation,
+		ToType:   resolvedToType,
+		ToID:     toID,
+	}
+	if err := assertEndpointExists(conn, "link add", declared.FromType, declared.FromID, relation, declared.ToType, declared.ToID); err != nil {
+		return Link{}, Link{}, err
+	}
+	if err := assertEndpointExists(conn, "link add", declared.ToType, declared.ToID, relation, declared.FromType, declared.FromID); err != nil {
 		return Link{}, Link{}, err
 	}
 	if !relationAllowedForTypes(declared.Relation, declared.FromType, declared.ToType) {
@@ -145,6 +174,11 @@ func plannedLinks(conn *sql.DB, fromID, relation, toID string) (Link, Link, erro
 	} else if exists {
 		return Link{}, Link{}, &DuplicateLinkError{Operation: "link add", FromID: declared.FromID, Relation: declared.Relation, ToID: declared.ToID}
 	}
+	if path, err := dependencyCyclePath(conn, declared); err != nil {
+		return Link{}, Link{}, err
+	} else if path != nil {
+		return Link{}, Link{}, &DependencyCycleError{Operation: "link add", Path: path}
+	}
 
 	inverseRelationName, _ := inverseRelation(relation)
 	inverse := Link{
@@ -157,8 +191,28 @@ func plannedLinks(conn *sql.DB, fromID, relation, toID string) (Link, Link, erro
 	return declared, inverse, nil
 }
 
-func linkAddArgv(fromID, relation, toID, actorRole string) []string {
-	return []string{"fid", "link", "add", fromID, relation, toID, "--by", actorRole}
+func resolveEndpointType(conn *sql.DB, suppliedType, endpointID string) (string, error) {
+	if suppliedType != "" {
+		return suppliedType, nil
+	}
+	matches := []string{}
+	for _, candidate := range []string{"issue", "requirement"} {
+		exists, err := endpointExists(conn, candidate, endpointID)
+		if err != nil {
+			return "", err
+		}
+		if exists {
+			matches = append(matches, candidate)
+		}
+	}
+	if len(matches) == 1 {
+		return matches[0], nil
+	}
+	return "", &InvalidEndpointTypeError{Operation: "link", Argument: "endpoint type", Value: suppliedType}
+}
+
+func linkAddArgv(fromID, fromType, relation, toID, toType, actorRole string) []string {
+	return []string{"fid", "link", "add", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--by", actorRole}
 }
 
 func linkInsertEffect(link Link, createdAt string) journal.Effect {
@@ -206,7 +260,7 @@ func linkAddActivityEffect(activityID, eventID, actorRole, occurredAt string, de
 	}
 }
 
-func assertEndpointExists(conn *sql.DB, endpointType, endpointID, relation, otherType, otherID string) error {
+func assertEndpointExists(conn *sql.DB, operation, endpointType, endpointID, relation, otherType, otherID string) error {
 	exists, err := endpointExists(conn, endpointType, endpointID)
 	if err != nil {
 		return err
@@ -215,7 +269,7 @@ func assertEndpointExists(conn *sql.DB, endpointType, endpointID, relation, othe
 		return nil
 	}
 	return &EndpointNotFoundError{
-		Operation:    "link add",
+		Operation:    operation,
 		EndpointType: endpointType,
 		EndpointID:   endpointID,
 		Relation:     relation,

@@ -115,7 +115,7 @@ func rebuildWorkspaceWithOptionalLock(workspaceRoot, migrationsDir string, heldL
 	}
 
 	var stats ReplayStats
-	err := WithLock(workspaceRoot, owner, func(_ *WriteLock) error {
+	err := TryWithLock(workspaceRoot, owner, func(_ *WriteLock) error {
 		replayed, err := rebuildWorkspaceLocked(&WriteLock{workspaceRoot: workspaceRoot}, migrationsDir)
 		stats = replayed
 		return err

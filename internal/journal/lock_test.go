@@ -50,7 +50,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 	}
 }
 
-func TestWithLockTimesOutWithHolderNamedError(t *testing.T) {
+func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 	workspace := t.TempDir()
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
@@ -87,8 +87,39 @@ func TestWithLockTimesOutWithHolderNamedError(t *testing.T) {
 	if !strings.Contains(err.Error(), lockPath) {
 		t.Fatalf("timeout error = %q, want lock path %q", err, lockPath)
 	}
-	if !strings.Contains(err.Error(), "developer") {
-		t.Fatalf("timeout error = %q, want holder role", err)
+	var unavailableErr *LockUnavailableError
+	if !errors.As(err, &unavailableErr) {
+		t.Fatalf("timeout error = %T, want *LockUnavailableError", err)
+	}
+}
+
+func TestWithLockReturnsTypedUnavailableErrorForHeldLock(t *testing.T) {
+	workspace := t.TempDir()
+	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
+
+	heldLock, err := acquireLock(workspace, LockOwner{Command: "fid rebuild --by workflow_runner"}, defaultLockOptions())
+	if err != nil {
+		t.Fatalf("acquireLock() error = %v", err)
+	}
+	t.Cleanup(func() {
+		if releaseErr := heldLock.release(); releaseErr != nil {
+			t.Fatalf("heldLock.release() error = %v", releaseErr)
+		}
+	})
+
+	err = withLockOptions(workspace, LockOwner{Command: "fid rebuild --by workflow_runner"}, lockOptions{
+		waitTimeout: 0,
+		now:         time.Now,
+	}, func(lock *WriteLock) error {
+		t.Fatalf("withLockOptions() unexpectedly acquired %v", lock)
+		return nil
+	})
+	var unavailableErr *LockUnavailableError
+	if !errors.As(err, &unavailableErr) {
+		t.Fatalf("withLockOptions() error = %T, want *LockUnavailableError", err)
+	}
+	if unavailableErr.LockPath != filepath.Join(workspace, ".fid", lockDirectoryName) {
+		t.Fatalf("LockUnavailableError.LockPath = %q, want project lock path", unavailableErr.LockPath)
 	}
 }
 

@@ -37,7 +37,7 @@ func workflowAppliesTo(conn *sql.DB, name string) (sql.NullString, error) {
 	var appliesTo sql.NullString
 	err := conn.QueryRow(`SELECT applies_to FROM workflows WHERE id = ? LIMIT 1`, name).Scan(&appliesTo)
 	if err == sql.ErrNoRows {
-		return sql.NullString{}, fmt.Errorf("workflow %q does not exist", name)
+		return sql.NullString{}, &NotFoundError{ID: name}
 	}
 	if err != nil {
 		return sql.NullString{}, fmt.Errorf("load workflow %q for assignment: %w", name, err)

@@ -1,7 +1,7 @@
 # AI Workflow - fid
 
 **Status:** Binding V1 repository delivery workflow
-**Last reviewed:** 2026-08-09
+**Last reviewed:** 2026-08-16
 
 This document is the canonical agentic engineering workflow for
 `fid`. Agent prompts, `AGENTS.md`, `CLAUDE.md`, Codex config, and
@@ -27,11 +27,16 @@ deterministic quality gates.
 4. Default context is intentionally small and lives under
    `project-docs/docs/current/`.
 5. Deterministic gates run before subjective review.
-6. Tasks stay small enough for one Developer session.
+6. A Developer session handles at most one task. A task may span same-task
+   continuation sessions when durable recovery is required.
 7. Documentation ships with the change.
 8. Specs are guides and guardrails. When implementation proves a spec wrong,
    update the affected spec and record the decision.
 9. Prompt and config files do not create workflow policy by implication.
+10. Detection severity and workflow disposition are separate: a real failure
+    may require repair without requiring Human attention.
+11. Failed attempts remain immutable evidence. Causal repair creates a later
+    attempt; it never rewrites failure into PASS.
 
 ## 2. Agent Roles
 
@@ -85,9 +90,11 @@ Phase start:
    method, validator role, task window, pass and fail criteria, and an
    out-of-scope note. The contract is the **spec**; the QA plan is the
    **test plan**. See section 6.1.
-7. Break the phase into ordered tasks that each fit one Developer session and
-   either satisfy a subset of `VAL-NNN` assertions or explicitly state why no
-   validation assertion applies.
+7. Break the phase into ordered tasks sized to fit one Developer session. A
+   task may use a same-task continuation when an estimate is exceeded or a
+   recoverable verification state remains. Each task either satisfies a subset
+   of `VAL-NNN` assertions or explicitly states why no validation assertion
+   applies.
 8. Write task specs to `project-docs/docs/phases/phase-<id>/tasks/task-<n>.md`
    using the task contract in section 6. Each task spec lists the `VAL-NNN`
    assertions it satisfies in its Acceptance Criteria.
@@ -174,8 +181,8 @@ Modes:
 - Question mode: answer a local tactical question that does not change specs,
   public interfaces, schema, dependencies, workflow, or product intent.
 - Triage mode: invoked by Phase Runner with `Triage trigger:`. Decide
-  `RESUME` or `BLOCK`, append a TRG-NNN entry, and end with a literal verdict
-  line.
+  `RESUME`, `REPAIR`, or `BLOCK`, append a TRG-NNN entry, and end
+  with a literal verdict line.
 
 Default context:
 - `AGENTS.md`
@@ -198,14 +205,20 @@ Must escalate if the issue:
    schema, migrations, journal replay semantics, and storage invariants.
 3. Contradicts `decisions_active.md`, `decisions_principles.md`, or
    `AGENTS.md`.
-4. Affects more than one task or subsystem.
-5. Introduces a dependency, tool, quality gate, or workflow.
-6. Changes testing strategy or coverage policy.
+4. Changes accepted behavior across more than one task or subsystem. Restoring
+   one canonical control implementation to uniquely accepted behavior for all
+   callers does not trigger this rule by itself.
+5. Introduces/removes a dependency, tool, quality gate, or workflow, or changes
+   its accepted definition or policy. A decision-free implementation repair
+   that restores a canonical verification/workflow control to an already
+   accepted contract is handled by the control-conformance rule below.
+6. Changes testing strategy, assertion semantics, or coverage policy.
 7. Exposes ambiguity in product intent or acceptance criteria. Design
    ambiguity that changes behavior also escalates.
-8. Resumes a context-exhausted or partial task where remaining or completed
-   work spans schema/data model, dependency/platform configuration, public
-   interfaces, canonical docs, or multiple Developer sessions.
+8. Requires an unapproved protected change to recover partial task work, such
+   as a schema/data-model, dependency/platform, public-interface, or canonical
+   workflow definition change. Context exhaustion, same-task continuation, and
+   a qualifying control-conformance repair are `REPAIR`.
 
 When in doubt, escalate. Do not optimize for answering immediately when a
 trigger is crossed.
@@ -219,9 +232,9 @@ Triage rules:
   Phase scoping exists because a global counter has no readable source of
   truth — closed escalations leave the current register, so a global sequence
   cannot be resumed by an agent that cannot scan every phase archive.
-- Every triage event appends a `TRG-<phase>-<NNN>` entry to
-  `project-docs/docs/phases/phase-<id>/triage-log.md`, creating it from
-  `project-docs/templates/triage-log-template.md` if needed. The entry is
+- Every triage event appends a `TRG-<phase>-<NNN>` entry to the
+  phase-start seeded
+  `project-docs/docs/phases/phase-<id>/triage-log.md`. The entry is
   written **before** the verdict is reported; the verdict quotes the
   identifier that was written. A verdict carrying a placeholder identifier
   (`ESC-NNN`, `ESC-NEW`) or unaccompanied by a log entry is a defective
@@ -232,30 +245,88 @@ Triage rules:
   a triage genuinely cannot be written, the Phase Runner logs
   `TRIAGE (identifier unavailable)` and the full Tech Lead backfills both the
   TRG and the ESC, labelled as reconstructions.
-- Triage RESUME is allowed only when the issue is local-decision-eligible and
-  no escalation is needed.
+- Under schema v2, every external TRG section and ledger TRIAGE event carries
+  exactly one `Originating task`, `Trigger signature`, `Attempt count`,
+  `Repair category`, and `Repair authority`. A direct `REPAIR` binds all five
+  byte-for-byte through the ledger TRIAGE into TASK-RECOVERY (`Repair category`
+  maps to TASK-RECOVERY `Category`). RESUME/BLOCK uses `N/A` for repair
+  category or authority when none applies. The external TRG is authoritative,
+  not merely a referenced narrative.
+- Triage `RESUME` means the trigger is demonstrably misclassified,
+  already resolved by verified evidence, or covered by an accepted decision.
+  The Phase Runner may advance from the current checkpoint.
+- Triage `REPAIR` means the trigger is real and causal work is decision-free
+  under either the originating task's ordinary scope or a bounded
+  control-conformance directive. The Phase Runner must not advance: it appends
+  `TASK-RECOVERY`, keeps the originating task identity and trigger budget,
+  dispatches the matching same-task continuation, reruns required verification,
+  and repeats any affected independent review.
+- A **protected gate/control definition change** changes a command, assertion's
+  accepted pass/fail semantics, accepted status, scope,
+  threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless
+  an existing accepted decision already authorizes that exact definition.
+- A **control-conformance repair** fixes an implementation bug in a canonical
+  verification/workflow control where an already accepted contract uniquely
+  determines behavior and the proposed edit changes no protected item. It is
+  `REPAIR`, never `BLOCK` merely because the control is canonical or outside
+  the originating task's ordinary files.
+- Before returning control-conformance `REPAIR`, TL-Lite writes an
+  authoritative triage-log directive with these exact labels:
+  `Originating task`, `Control trigger signature`, `Control attempt count`,
+  `Control contract`, `Control mismatch`, `Allowed files`, `Forbidden changes`,
+  `Exact verification`, `Originating report`, and `Control repair base`. Each
+  label occurs exactly once and each value is one physical line. Labels may
+  appear in any order and need not be contiguous. The Phase Runner supplies the task,
+  trigger, attempt, exact report, and full verified pre-dispatch phase HEAD;
+  TL-Lite copies them and cannot select or verify another base. Allowed files
+  are a comma-separated ordered list of only the named control/self-test paths
+  under `project-docs/tools/`, with no spaces around commas; forbidden changes include
+  product/spec/prompt/template/dependency/task/QA-contract/report/generated
+  paths and command/assertion/status/semantics/scope/threshold/budget/tolerance/
+  policy. `Exact verification` records exact command bytes and working
+  directory. Missing fields, ambiguous semantics, or any proposed protected
+  change is `BLOCK`.
+- The confirmed triage-log directive is authority. The initial control
+  TASK-RECOVERY maps ledger `Trigger signature` and `Attempt count` to
+  `Control trigger signature` and `Control attempt count` and copies every
+  other directive value byte-for-byte. Neither the runner nor Developer may
+  paraphrase, widen, or rebaseline it.
 - Triage BLOCK appends a concrete `ESC-<phase>-<NNN>` to
   `project-docs/docs/current/tl_escalations_current.md` when no existing ESC
   covers the issue, then logs the TRG entry with BLOCK.
 - If the source is an existing `ESC-<phase>-<NNN>`, do not create a duplicate.
   Log the TRG entry with BLOCK pointing to the existing ESC unless the new
-  issue is clearly unrelated.
-- For QA Reviewer Blocking findings, RESUME is allowed only when the finding is
-  demonstrably misclassified, already resolved by a verified commit, or covered
-  by an accepted decision. Otherwise BLOCK.
-- TL-Lite is also the first-step triager for Phase Runner hard stops:
-  report-lint failure, missing report, blocker report, quality-gate failure,
-  placeholder command, missing command, silently skipped command, narrower
-  substituted command, or ad hoc gate substitution. RESUME is allowed only when
-  the failure is misclassified, already resolved by a verified commit with
-  attached evidence, or covered by an accepted decision. A genuine unresolved
-  failure is always BLOCK.
+  issue is clearly unrelated. If a later existing DEC resolves that BLOCK into
+  control-conformance repair, append one unique separate H2 typed directive
+  amendment whose heading names the existing governing TRG and retain its ESC;
+  do not allocate a new TRG. The amendment is parsed independently from the
+  original TRG and its retained BLOCK verdict. Its verdict and ten directive
+  fields each occur exactly once. The Phase Runner then uses RUN-RESUME with
+  those governing IDs.
+- Every boundary-valid DEC citation in a `Repair authority` or
+  `Resolution authority` field must exist in the phase decisions file.
+  Validate all such citations, not only the first; embedded text such as
+  `NOTDEC-123X` is not a decision citation.
+- For a QA `REPAIR` outcome, verify that every must-fix finding names an
+  owning task, bounded repair scope, unchanged acceptance criterion, and
+  required re-review evidence. If so, return `REPAIR`. If the finding is
+  cleared, return `RESUME`. If protected authority is required or
+  cross-task work cannot be separated without a new decision, return `BLOCK`.
+- A report-lint failure, missing report, typed `RECOVERY_REQUIRED` result,
+  in-scope quality-gate failure, missing/skipped command, or incomplete
+  implementation is normally `REPAIR`; incomplete work is not a blocker.
+- `BLOCK` requires a protected category: product, architecture, data
+  model, public interface, dependency approval, security/data loss,
+  unrepairable external infrastructure, specification contradiction, or
+  exhausted no-progress recovery budget. Red tests, failed gates, report
+  defects, and file count are not protected categories by themselves.
 - TL-Lite cannot run commands and never verifies commits itself. A commit
   counts as verified only when the invoking prompt attaches
   commit-verification evidence (hash, `git rev-parse --verify` result, and
   subject match, or report-lint output). Without attached evidence, do not
   RESUME on the already-resolved-by-a-verified-commit ground.
-- The final line in triage mode must be exactly `VERDICT: RESUME` or
+- The final line in triage mode must be exactly `VERDICT: RESUME`,
+  `VERDICT: REPAIR`, `VERDICT: REPAIR / control-conformance`, or
   `VERDICT: BLOCK (escalated as ESC-<phase>-<NNN>)`, with the concrete
   identifier substituted.
 
@@ -287,6 +358,7 @@ Default context:
 - `project-docs/docs/current/progress_current.md`
 - `project-docs/docs/current/tl_escalations_current.md`
 - task specs under `project-docs/docs/phases/phase-<id>/tasks/`
+- `project-docs/docs/phases/phase-<id>/decisions.md`
 - `project-docs/docs/phases/phase-<id>/qa/validation-contract.md`
 - QA plan after QA Lead creates it
 
@@ -302,108 +374,257 @@ Responsibilities:
    agents cannot be spawned, stop with a phase-runner configuration error. Do
    not do child work yourself.
 5. Read the validation contract and the QA plan before any task execution.
-6. Execute task specs in order by spawning exactly one Developer per task,
-   unless that Developer produces a blocker report.
+6. Execute task specs in order with one active Developer child at a time. A
+   Developer session handles at most one task; the same task may use a
+   same-task continuation after a recoverable return. Never advance while the
+   current task outcome is `RECOVERY_REQUIRED`.
 7. Use explicit child prompts. Each prompt must restate the required reads,
    task path, report path, exact gate commands, stop conditions, and
-   commit/report requirements.
+   commit/report requirements. A control-repair continuation also receives the
+   complete written control-conformance recovery directive.
    Codex child spawns must set `spawn_agent.agent_type` exactly to the intended
    project custom agent (`qa_lead`, `developer`, `qa_reviewer`, or `tl_lite`).
    Do not omit `agent_type`, do not use `default`, `worker`, or `explorer`, and
    do not set model overrides for these project roles.
 8. After each Developer run, run
    `project-docs/tools/report-lint.sh <report> <task spec>`. It
-   deterministically verifies required headings, sentinel sections, task-spec
-   command coverage, commit hash validity via `git rev-parse --verify
-   <hash>^{commit}`, commit subject match against `git log -1 --format=%s`,
-   and that the report file itself is committed with no uncommitted
-   modifications. A nonzero exit is a hard stop; do not re-derive these checks
-   by prose parsing. A hash that does not resolve is a hard stop even when its
-   abbreviated prefix is valid.
+   deterministically verifies the typed outcome, required headings, task-spec
+   command coverage, observed termination, commit identity, and
+   committed/clean state. Parse its literal `OUTCOME COMPLETE`,
+   `OUTCOME RECOVERY_REQUIRED`, or `OUTCOME BLOCKED` line. A nonzero
+   exit is `report-repair`; do not re-derive failed checks by prose parsing.
 9. Read the report for the judgment items report-lint cannot check: blocker
-   semantics, deviation content, concerns needing triage, and QA-plan commands
+   evidence, deviation content, protected concerns, and QA-plan commands
    required for that task window beyond the task spec. Every QA-plan required
    command must be recorded as `PASS`, or as `BLOCKED` with reason in a
-   blocker report. Missing, silently skipped, or narrower substituted required
-   commands are hard stops.
-10. Append the TASK entry to the run ledger after each verified task: report
-    path, report-lint result, verified commit.
-11. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
+   non-complete report. Missing, silently skipped, or narrower substituted
+   required commands prevent completion and enter recovery.
+10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
+    recovery-budget results through
+    `project-docs/tools/workflow-route.sh <source> <outcome> [attempts]` and
+    follow its literal `ACTION` result. `WAIT` retains and polls a live command
+    session; `EVALUATE` inspects its observed terminated result. Invalid router
+    input is an orchestration defect to repair, not permission to invent a
+    route.
+    Every newly appended RUN-START/RUN-RESUME carries exactly one
+    `Sequence contract: v2` and exactly one `Recovery directive schema: v2` in
+    that same event; both become effective immediately and schema cannot
+    downgrade. A standalone historical v1 ledger remains valid, while general
+    identity, STOP, authority, budget, and state checks still apply to it; its
+    next appended RUN uses v2. Every mandatory field in every schema-v2 event
+    occurs exactly once, with `N/A` only where the ledger template permits it.
+    Field order and contiguity are irrelevant. Pipe
+    each exact candidate entry, beginning with its
+    single `###` event heading, to
+    `project-docs/tools/workflow-sequence-lint.sh <run-ledger> --append-stdin`.
+    The tool validates and atomically appends the entry at EOF; an `INVALID`
+    result leaves the ledger byte-for-byte unchanged. Require exit zero and
+    literal `APPEND_CONFIRMED state=<state>`. If termination or receipt is
+    missing, retry the byte-identical candidate; an exact EOF match confirms it
+    without another append. Do not advance, submit a different entry, or perform
+    a separate `apply_patch`, redirect, or editor mutation. This validator and
+    append transaction does not choose
+    the next action; `workflow-route.sh` does. Run it without `--append-stdin`
+    to read current state, and require literal `VALID state=ADVANCEABLE` before
+    an actual advance. After a schema-v2 marker, the validator requires the
+    complete typed control directive and binds its values byte-for-byte to the
+    governing real phase triage-log entry. It also binds the five ordinary
+    TRIAGE authority fields byte-for-byte. Every TRIAGE ID and exact verdict
+    must match that log; TRG/ESC identity is bound to the ledger phase. It
+    rejects STOP without its exact preceding TRIAGE BLOCK/ESC and binds
+    RUN-RESUME to the exact next task, trigger, category, mode, and attempt.
+    Every boundary-valid DEC citation in an authority field must exist. After `MATERIAL-PROGRESS` or
+    `NO-PROGRESS`, only the monotonic attempt and runner-owned base advance to
+    the prior integrated HEAD; every semantic directive value is byte-identical
+    and the two-attempt no-progress budget remains enforced. Control
+    `RESOLVED` forbids direct completion and permits only the exact originating
+    report-repair; its later `RESOLVED` permits task completion. It preserves
+    task identity and requires recovery completion
+    plus an explicitly linked, differently identified QA re-review.
+    A linked re-review may transfer repair ownership to another task only after
+    the current owner completes; it cannot overwrite an unresolved owner. An
+    `INVALID` candidate is recoverable while the ledger remains valid. A
+    missing receipt is an ambiguous result resolved only by byte-identical
+    retry; retain and stop only if standalone validation fails after a confirmed
+    append.
+11. On `OUTCOME COMPLETE`, append TASK complete with report path, lint
+    result, and verified commit. On `OUTCOME RECOVERY_REQUIRED` or a
+    recoverable lint, report, gate, or session defect, append
+    `TASK-RECOVERY` with trigger signature, attempt count, checkpoint, repair
+    mode/authority, allowed files, and next action, then dispatch a same-task
+    Developer continuation. On
+    `OUTCOME BLOCKED`, treat the report as a blocker candidate and triage
+    it; never accept a child-authored blocker as authoritative lifecycle state.
+12. Re-read `project-docs/docs/current/tl_escalations_current.md` before each
     task and after each review.
-12. Maintain the append-only run ledger at
+13. Maintain the append-only run ledger at
     `project-docs/docs/phases/phase-<id>/run-ledger.md` using
     `project-docs/templates/run-ledger-template.md`: one appended entry per
-    event (RUN-START, TASK complete, REVIEW, TRIAGE, STOP, RUN-END). The
+    event (RUN-START, `RUN-RESUME`, TASK complete, `TASK-RECOVERY`,
+    REPAIR, REVIEW, TRIAGE, STOP, RUN-END). The
     ledger, not chat notes, is the durable run state; a resumed runner reads
     it first and reconciles it against completion reports and git history. It
     is the only file the Phase Runner writes.
-13. Every third completed task, or at the cadence defined by the QA plan,
+14. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
-    output paths, then append the REVIEW entry to the run ledger.
-14. Route soft blockers and triage-gated hard stops through TL-Lite triage.
+    output paths, then append the REVIEW entry. `PASS` advances.
+    `REPAIR` dispatches the named owning task to a Developer continuation
+    and requires a fresh independent re-review of the same window. `BLOCK`
+    is a blocker candidate for TL-Lite.
+15. Route blocker candidates, ambiguous recovery classifications, and proposed
+    cross-scope control-conformance repairs through TL-Lite triage.
     When a triage may turn on "already resolved by a verified commit", verify
     the commit first and attach the commit-verification evidence (hash,
     `git rev-parse --verify` result, subject match) to the triage trigger;
     TL-Lite judges evidence and never verifies commits itself. After TL-Lite
     returns, read the triage log to confirm the TRG-NNN entry exists, then
     parse the literal final `VERDICT:` line and append a TRIAGE entry to the
-    run ledger.
-15. After all tasks complete, spawn QA Lead for final review and human
+    run ledger. `VERDICT: RESUME` advances only when the trigger is
+    cleared. `VERDICT: REPAIR` appends `TASK-RECOVERY` and dispatches the same
+    task; it never advances. `VERDICT: REPAIR / control-conformance` requires
+    the complete written directive above and dispatches a dedicated same-task
+    control-repair continuation. `VERDICT: BLOCK` appends STOP with the concrete
+    ESC.
+16. Apply a default budget of two consecutive Phase Runner-mediated
+    continuation attempts for the same trigger signature with no material
+    progress. Same-session red/green iterations do not consume this budget. A
+    relevant in-scope change tied to the trigger is progress only when it newly
+    satisfies or removes an obligation, or verification demonstrably narrows
+    the failure. Formatting and metadata-only or unrelated changes do not
+    qualify; no-op churn is not progress. On exhaustion, triage the protected
+    `recovery-budget-exhausted` candidate.
+17. After all tasks complete, spawn QA Lead for final review and human
     checklist.
-16. Append the RUN-END entry to the run ledger and notify the Human with the
+18. Append the RUN-END entry to the run ledger and notify the Human with the
     final review path and current stop/completion state. When stopping early,
     append a STOP entry naming the trigger and the next human action.
 
-Hard stop conditions, triage-gated through TL-Lite first:
+Recovery conditions:
 
-Before appending a final STOP for any of these causes, spawn TL-Lite as the
-first-step triager with the failure evidence attached, append a TRIAGE entry
-for its verdict, and continue only on `VERDICT: RESUME`. On
-`VERDICT: BLOCK`, append the STOP entry referencing the TRG and ESC. Never
-record a STOP for these causes without a TRIAGE entry for it.
+- `OUTCOME RECOVERY_REQUIRED`.
+- Report-lint failure, missing report, incomplete commit/report sequence, or
+  missing termination evidence.
+- In-scope focused/full-gate failure or obsolete assertion caused by the task.
+- Missing/skipped/narrower command record that can be corrected without
+  changing the accepted command.
+- Child session ending while durable in-scope work remains.
+- QA `REPAIR` with an owning task and bounded decision-free repair.
+- A canonical verification/workflow control implementation that demonstrably
+  violates an already accepted, uniquely determining contract and has a
+  TL-Lite control-conformance recovery directive.
+- Recoverable local sandbox, cache, or scratch-state failure.
 
-- Completion report fails `project-docs/tools/report-lint.sh`.
-- Developer fails to produce a completion or blocker report.
-- A blocker report says the task could not be completed, the gate cannot pass,
-  a commit cannot be produced, or scope conflicts prevent progress.
-- Developer quality gate fails.
-- A required command is still a placeholder.
-- Developer completion report omits a required task-spec or QA-plan command,
-  records it as skipped without a `BLOCKED` reason, substitutes a narrower
-  command for a required gate, or uses an ad hoc gate substitution.
-- Completion report lacks required headings, commit hash, or commit subject.
-- Recorded commit hash does not resolve via `git rev-parse --verify
-  <hash>^{commit}` to a single commit matching the report subject.
+Protected blocker candidates:
 
-Hard stop conditions, immediate:
+- `OUTCOME BLOCKED` with a closed protected category and supporting
+  evidence.
+- Placeholder or contradictory required command/specification.
+- Product, architecture, data-model, public-interface, dependency, security,
+  data-loss, or gate/control definition authority is required. Definition
+  changes include command, assertion semantics, accepted status/scope,
+  threshold/budget/tolerance, and policy changes; merely repairing a canonical
+  control implementation to a uniquely accepted contract is not in this list.
+- Unrepairable external infrastructure/capability failure.
+- Recovery budget exhausted for an identical no-progress trigger.
+- QA `BLOCK`.
+- A new Open ESC-NNN appears after the run-start baseline.
 
-- Missing validation contract.
-- Missing QA plan.
-- Required child agent cannot be spawned or reports the wrong role/model.
-- Branch issue or missing artifact prevents safe execution before task triage
-  can be constructed.
-- TL-Lite returns `VERDICT: BLOCK`.
+Before appending STOP for a blocker candidate, spawn TL-Lite as the first-step triager,
+append TRIAGE for its verdict, and stop only on
+`VERDICT: BLOCK`. `VERDICT: REPAIR` keeps the current task open and dispatches
+ordinary recovery; `VERDICT: REPAIR / control-conformance` dispatches only its
+guarded worktree route. `VERDICT: RESUME` advances only when the trigger is
+already cleared.
 
-Soft blocker conditions:
-- Developer report contains concerns, technical debt, or notes for Tech Lead.
-- QA Reviewer reports Blocking findings.
-- A new Open ESC-NNN appears in
-  `project-docs/docs/current/tl_escalations_current.md` after the run-start
-  baseline or after the last triage.
+Control-conformance dispatch is a recovery mode, not a new planned product
+task. Before TL-Lite or Developer dispatch, the Phase Runner verifies that the
+runner-owned ledger is the only dirty phase path, rejects hidden index flags,
+and records the full current phase HEAD as immutable `Control repair base`.
+TL-Lite writes the ten-field typed directive in the triage log. The runner
+confirms it, appends TRIAGE, and copies its values byte-for-byte into
+TASK-RECOVERY under the originating task and trigger budget.
 
-TL-Lite resume:
-- Autonomous TL-Lite resumption is permanently enabled (DEC-002). On
-  `VERDICT: RESUME`, Phase Runner records the TRG-NNN and continues without a
-  Human stop. `VERDICT: BLOCK` still always stops the run.
-- If resuming from an existing STOP caused by a task blocker or failed
-  required gate and no TRIAGE entry exists for that STOP, spawn TL-Lite first,
-  append the TRIAGE entry, and continue only on `VERDICT: RESUME`.
-- The former WF-10 warm-up safeguard is retired; no warm-up tally is maintained.
+The runner creates a dedicated clean temporary git worktree and repair branch
+at the exact directive base. It sends a same-task Developer continuation that
+worktree path and directive verbatim. The Developer verifies HEAD equals the
+base, cannot rebaseline it, edits only the exact tools-only allowlist, runs
+`Exact verification`, commits, and returns the ending HEAD. Normal
+control-conformance may not repair `workflow-control-scope-lint.sh` or
+`workflow-sequence-lint.sh`; changing either verifier requires separate
+protected decision authority. Before every control `REPAIR`, the runner
+materializes the scope verifier blob from the trusted base into fresh scratch
+storage, never from repair HEAD, executes that blob, and observes PASS from:
+
+```text
+git -C <repo> show <base>:project-docs/tools/workflow-control-scope-lint.sh > <fresh-scratch>/workflow-control-scope-lint.sh
+chmod 700 <fresh-scratch>/workflow-control-scope-lint.sh
+<fresh-scratch>/workflow-control-scope-lint.sh <repo> <base> <head> <allowed-1> ...
+```
+
+Here `<repo>` is the repair worktree, `<base>` is the runner-recorded directive
+value, `<head>` is the Developer-produced checked-out HEAD, and the allowed
+arguments are derived from the directive's comma-separated ordered allowlist
+without normalization or reordering. The PASS receipt must bind that exact CSV
+value byte-for-byte as `PASS control repair scope: <base> -> <head>; allowed=<Allowed files> (terminated exit_code: 0)`. Product, spec, prompt, template,
+dependency, task, QA-contract, originating-report, and generated paths are
+forbidden. The worktree/index must be clean with no assume-unchanged/
+skip-worktree paths, and allowed artifacts must be regular files.
+
+After every control scope PASS, the runner fast-forwards the unchanged phase
+branch to verified HEAD while the ledger remains its only dirt, confirms phase
+HEAD, appends REPAIR, and cleans up. After `MATERIAL-PROGRESS` or
+`NO-PROGRESS`, the next control TASK-RECOVERY increments attempt count, records
+the prior integrated HEAD as the new runner-owned base, and preserves authority,
+contract, mismatch, allowlist, forbidden set, report, and verification
+byte-for-byte.
+
+Control `RESOLVED` never permits direct task completion. It permits only one
+linked task-scope `report-repair` whose allowlist is exactly `Originating
+report` and whose trigger, report, `Exact verification`, and resolved attempt
+base are unchanged. The
+Developer edits only that report and preserves the first failure. Only the
+report-repair's later `RESOLVED` permits TASK COMPLETE. Provider sync remains a
+separate authorized maintenance step. Ambiguity or forbidden definition
+changes return a protected `BLOCKED` candidate rather than expanding scope.
+
+Immediate safety stops are limited to a branch/worktree state that cannot be
+reconciled non-destructively, a missing validation contract that requires
+authoring authority, or an inability to spawn any required role after bounded
+retry. Record the exact resolution condition. Missing QA output by itself is a
+retryable QA-session failure, not a Human blocker.
+
+Autonomous triage and resolved resume:
+
+- Autonomous TL-Lite `RESUME` and `REPAIR` are enabled. Only
+  `BLOCK` creates a Human-visible STOP.
+- When a prior STOP has a later decision, verified commit, or restored
+  capability, verify it and append `RUN-RESUME` retaining the
+  governing TRG/ESC, trigger, next attempt, continuing task, and exact next
+  recovery. That tuple binds the next TASK-RECOVERY. Record exactly one
+  `Resolution authority` as `verified-commit:<40hex>`,
+  `restored-capability:<stable-id>`, or `DEC-<NNN>`, with separate
+  Runner-observed resolution evidence. The next recovery's `Source` and
+  `Repair authority` retain that exact typed authority. A protected decision change or
+  resolution requires DEC authority. A normal non-STOP RUN-RESUME uses `N/A`
+  governing IDs and `Next recovery`. Do not allocate a new TRG for a resolved
+  BLOCK. When a DEC converts it to control-conformance repair, append one
+  unique separate H2 typed directive amendment naming the existing governing
+  TRG before RUN-RESUME; parse it independently from the original BLOCK
+  section and retain its ESC.
+- Validate every boundary-valid DEC citation in an authority field against the
+  phase decisions file; a real citation cannot mask another nonexistent or
+  embedded pseudo-ID.
+- If no TRIAGE entry exists for an existing STOP, invoke TL-Lite before
+  resuming.
+- Ordinary concerns and technical debt remain in the report for Tech Lead
+  wrap-up; they do not trigger triage unless explicitly identified as a
+  protected blocker candidate.
 
 ### 2.5 Developer
 
 Purpose:
-- Implement exactly one task per session using strict red/green TDD.
+- Implement at most one task per session using strict red/green TDD. Continue
+  an assigned task from any durable in-scope checkpoint.
 
 Default context:
 - `AGENTS.md`
@@ -415,10 +636,15 @@ Default context:
 - `project-docs/docs/phases/phase-<id>/qa/validation-contract.md` (the
   `VAL-NNN` assertions the task is expected to satisfy)
 - scoped source, test, and doc files
+- for a continuation: the latest `TASK-RECOVERY` ledger entry and owning QA
+  review, when applicable; for control repair, the complete written
+  control-conformance recovery directive and governing triage-log entry
 
 Responsibilities:
 1. Confirm task scope, allowed files, and the `VAL-NNN` assertions listed in
-   the task spec acceptance criteria.
+   the task spec acceptance criteria. A written control-conformance recovery
+   directive may replace the ordinary allowed-file list only for that
+   continuation; it does not change task identity or create a product task.
 2. Inspect existing in-scope partial work and continue from that state.
 3. Write failing tests first for behavior changes.
 4. Implement minimum code to pass, then refactor only while tests stay green.
@@ -428,8 +654,20 @@ Responsibilities:
    unless the task explicitly says otherwise. The focused loop is the iteration
    loop and does not substitute for the full gate at close. If the task spec
    does not define a gate, use the standard fallback gate from `AGENTS.md`.
-7. If any gate fails, fix the issue and rerun the exact failed command. Do not
-   substitute ad hoc coverage commands for the required gate.
+7. If any gate fails, preserve its token and observed termination, diagnose the
+   cause, and repair only when authorized by ordinary task scope or a written
+   control-conformance directive. A failure alone never grants permission to
+   edit a test, gate, or control. A dedicated control-repair continuation edits
+   only the directive's named `project-docs/tools/` control/self-test paths.
+   Require all ten typed fields and confirm the ledger values map to the
+   governing triage-log directive byte-for-byte. Before editing, verify HEAD is
+   the full runner-recorded `Control repair base`; never select, advance, or
+   rebaseline it. Use red/green, run `Exact verification` in its recorded
+   working directory, commit, and leave the ending HEAD clean. Do not edit the
+   originating report. Never weaken, narrow, re-point, substitute, change
+   accepted semantics, or mine a flaky green. Normal control-conformance does
+   not authorize edits to `workflow-control-scope-lint.sh` or
+   `workflow-sequence-lint.sh`.
 8. Where the task changes behavior with a runtime surface, exercise the
    changed behavior once through the real entrypoint (the `fid` CLI or other
    real interface) before writing the report, and record the command or
@@ -437,7 +675,9 @@ Responsibilities:
    entrypoint works.
 9. Create or update the completion report immediately after gate outcome is
    known, leaving `## Commit hash` and `## Commit subject` as
-   `- Pending commit`.
+   `- Pending commit`. Set `Task outcome` to `COMPLETE` only when every
+   obligation and gate is satisfied; use `RECOVERY_REQUIRED` for unfinished
+   in-scope continuation work and `BLOCKED` only for a protected category.
 10. Create the task commit (implementation, tests, docs, and the report draft)
     with a Conventional Commit subject and `Refs: phase-<id>/task-<n>`.
 11. While `HEAD` is still the task commit, record the commit hash and subject
@@ -467,7 +707,15 @@ Responsibilities:
 14. Verify the report path is committed and clean:
     `git status --porcelain -- <report path>` prints nothing. Then stop.
 
+Responsibilities 8-14 apply to an ordinary task or ordinary same-task
+continuation. A dedicated control-conformance continuation instead returns its
+isolated tools-only history, directive base/ending hashes, red/green evidence,
+and exact control verification to the Phase Runner without editing the
+originating report. A control `RESOLVED` permits only the linked report-repair
+described below after the runner's scope and integration checks.
+
 Required completion report headings, in order:
+- `## Workflow outcome`
 - `## Summary of what was implemented`
 - `## Files created or modified`
 - `## Documentation updated`
@@ -484,20 +732,47 @@ If there are no concerns, the concerns section contains exactly `- None.`. If no
 dependencies changed, dependency-budget note contains exactly
 `- No dependency changes.`.
 
-Blocker behavior:
-- If the task cannot be completed, the quality gate cannot pass, a commit
-  cannot be produced, or a scope conflict prevents progress, still write
-  `project-docs/docs/phases/phase-<id>/tasks/task-<n>-done.md` as a blocker
-  report before stopping.
-- The blocker report must include current state, changed files, commands run,
-  exact blocker, gate status, whether a commit exists, and all required
-  headings.
-- Never stop silently without either a completion report or blocker report.
+Recovery and blocker behavior:
+- Stay in the red/green/repair loop while causal progress is possible. Same
+  session iterations do not consume the Phase Runner continuation budget.
+- If the session must end with real in-scope work remaining, create a durable
+  checkpoint, set `Task outcome: RECOVERY_REQUIRED`, choose the recovery
+  category, name the condition and next action, record every failed/not-run
+  required command as `BLOCKED`, finalize and lint the report, and return it for
+  a same-task continuation. Incomplete work is not a blocker.
+- Use `Task outcome: BLOCKED` only for product/architecture/data-model/public-
+  interface decision, dependency approval, security/data loss, unrepairable
+  external infrastructure, specification contradiction, or exhausted recovery
+  budget. Name why current task authority cannot resolve it and the exact
+  resolution action.
+- A control-conformance directive is assigned recovery scope. Keep the
+  originating task ID, trigger, attempt budget, and typed directive. Edit only
+  its exact tools-only allowlist; product, spec, prompt, template, dependency,
+  task, QA-contract, generated, and report files remain protected in the
+  isolated history. After a nonresolved attempt, leave the worktree clean for
+  scope check and integration. The next control continuation increments attempt
+  count, receives the prior integrated HEAD as its new runner-owned base, and
+  preserves every semantic directive value byte-for-byte. It cannot switch
+  mode or authority, and the Developer never chooses the new base.
+- After control `RESOLVED`, accept only a linked TASK-RECOVERY with `Category:
+  report-repair`, `Repair mode: task-scope`, and `Allowed files` exactly equal
+  to `Originating report`. Edit only that report, preserve the first failed
+  attempt, and run `Exact verification` unchanged. This report repair must
+  resolve before task completion. If the accepted contract does not uniquely
+  determine the fix or the repair would change a command, assertion semantics,
+  accepted status/scope, threshold/budget/tolerance, or policy, return a typed
+  protected `BLOCKED` candidate. Do not reinterpret the directive or create a
+  new task.
+- Never stop silently. Return a typed report even when no task commit can be
+  produced; the Phase Runner classifies the observation and decides lifecycle
+  state.
 
 Constraints:
 - Never skip TDD for logic changes.
 - Never delete or weaken tests to pass.
-- Never modify files outside task scope unless the task requires related docs.
+- Never modify files outside task scope except the exact tools-only paths in a
+  written control-conformance directive; a failing control is not generic
+  authority.
 - Never make architectural or product decisions; record concerns instead.
 - Never hand edit generated files.
 
@@ -582,6 +857,10 @@ Phase-end review must:
 - Generate `project-docs/docs/phases/phase-<id>/qa/final-review.md`.
 - Generate `project-docs/docs/phases/phase-<id>/qa/human-checklist.md` with
   only the `(human)` subset, using the human checklist template.
+- End with `Outcome: PASS | REPAIR | BLOCK`. `REPAIR` findings must
+  name an owning task, bounded decision-free scope, required evidence, and
+  fresh independent re-review. `BLOCK` is reserved for a protected
+  blocker candidate or unresolved Human-only validation.
 
 ### 2.7 QA Reviewer
 
@@ -613,12 +892,12 @@ Responsibilities:
   `VAL-NNN` it claims to satisfy and assess whether evidence in the commit,
   tests, and report demonstrably tracks toward the pass criterion. Cite the
   `VAL-NNN` and evidence in the per-task section. An assertion that cannot
-  be evidenced is a Blocking finding unless the assertion is explicitly
+  be evidenced is a Must-fix finding unless the assertion is explicitly
   scheduled for a later task window.
 - Compare each reviewed task's completion report against the task spec's exact
   commands and the QA plan's required commands. Missing required gates, skipped
   gates without a `BLOCKED` reason, or narrower substituted commands are
-  Blocking findings.
+  Must-fix findings.
 - Check architecture, layer boundaries, business logic placement, test quality,
   test-pair compliance, naming, docs, dependency-budget compliance,
   quality-gate reality, and commit/report hygiene.
@@ -630,20 +909,32 @@ Responsibilities:
   do not run broad mutating or full-gate commands unless explicitly asked.
   `project-docs/tools/report-lint.sh <report> <task spec>` may be run per task
   as independent mechanical evidence.
-- Classify findings as Blocking or Improvement.
+- Classify findings as Must-fix or Improvement. Severity says whether work must
+  change before sign-off; it does not decide whether Human authority is needed.
 - Each finding should include severity, file:line where possible, what is
   wrong, and fix direction.
 - Write exactly one review artifact:
   `project-docs/docs/phases/phase-<id>/qa/review-<n>.md`.
-- End with `Blocking: <count>  Improvement: <count>  Escalations: <list or
-  none>` and `VERDICT: CONTINUE | BLOCK`.
+- For every Must-fix finding, record its owning task, whether the repair stays
+  inside accepted scope, the required verification, and the independent
+  re-review condition.
+- End with `Must-fix: <count>  Improvement: <count>  Blocker candidates:
+  <list or none>` and `Outcome: PASS | REPAIR | BLOCK`.
+  `PASS` means no Must-fix finding remains. `REPAIR` means every
+  Must-fix finding is real, bounded, decision-free, and owned by an existing
+  task. `BLOCK` means at least one finding needs protected authority or
+  cannot be bounded within the review window. A fresh Reviewer must perform
+  re-review after repair; the original Reviewer never resolves its own finding
+  by assertion.
 
 CLI/TUI review mode:
 - Active when the phase brief identifies CLI UX or TUI work, or task language
   emphasizes consistency, matches, parity, follows, or audit across surfaces.
 - Cite `project-docs/specs/05_DESIGN_PLAN.md` sections per reviewed task.
 - If the phase brief has a Parity Matrix, walk it. Parity discrepancies are
-  Blocking by default unless an accepted decision says otherwise.
+  Must-fix by default unless an accepted decision says otherwise. They produce
+  `REPAIR` when bounded and decision-free, and `BLOCK` only when protected
+  authority is required.
 - Use focused test output, source-linked behavior proof, CLI invocation
   evidence, or another concrete evidence source. Code reading alone is not
   enough when runnable evidence exists.
@@ -652,8 +943,8 @@ CLI/TUI review mode:
 
 Standing QA escalation rule:
 - Most findings stay in `review-<n>.md`.
-- Also append ESC-NNN to
-  `project-docs/docs/current/tl_escalations_current.md` if the finding:
+- QA roles never allocate or append ESC identities. Mark a blocker candidate
+  for TL-Lite if the finding:
   1. Is a suspected architecture or layer-boundary violation with implications
      beyond the review window.
   2. Is a test gap that implies the acceptance criterion itself is ambiguous.
@@ -666,8 +957,9 @@ Standing QA escalation rule:
   7. Is a coverage, vet, lint, or codegen anomaly the phase QA plan did not
      anticipate.
 
-When in doubt, escalate. Do not stretch a focused review to make a call that
-warrants QA Lead or Tech Lead judgment.
+When in doubt, return `BLOCK` with the candidate category and evidence.
+Do not stretch a focused review to make a call that warrants QA Lead or Tech
+Lead judgment.
 
 ### 2.8 Product Designer
 
@@ -686,10 +978,11 @@ Human selects phase
   -> Phase Runner starts or resumes the approved phase
   -> Phase Runner spawns QA Lead for QA plan
   -> Phase Runner executes each task through Developer
-  -> Phase Runner verifies report, gate status, and commit
-  -> Phase Runner routes soft blockers to TL-Lite
+  -> Phase Runner verifies typed report outcome, gate status, and commit
+  -> Recoverable result loops to same-task Developer continuation
   -> QA Reviewer reviews every 3 tasks or planned checkpoint
-  -> Phase Runner routes review blockers to TL-Lite
+  -> QA REPAIR loops through owning task and fresh independent re-review
+  -> Protected blocker candidates route to TL-Lite
   -> QA Lead runs final review and writes human checklist
   -> Human runs human checklist
   -> Tech Lead wraps phase, syncs specs, archives state
@@ -853,9 +1146,12 @@ Per-phase run state:
 Escalations:
 - `tl_escalations_current.md` carries unresolved escalations only; it is not a
   running log.
-- New ESC entries use globally sequential ESC-NNN numbering.
+- New ESC entries use phase-scoped `ESC-<phase>-<NNN>` numbering allocated from
+  that phase's seeded `triage-log.md`. TL-Lite or the full Tech Lead is the
+  allocator; QA roles emit blocker candidates only.
 - Resolved entries move to
-  `project-docs/docs/phases/phase-<id>/tl-escalations.md` at phase wrap-up.
+  `project-docs/docs/phases/phase-<id>/tl-escalations.md`; the current
+  projection retains unresolved entries only.
 
 Phase brief required sections:
 - Goal
@@ -989,11 +1285,11 @@ loads:
 | Agent | Default Load | On Demand | Writes |
 |---|---|---|---|
 | Tech Lead | `project-docs/docs/current/*`, workflow doc | Roadmap, PRD/TRD, principles, phase archives | task specs, phase brief, validation contract, decisions, current state, specs, handoff |
-| TL-Lite | `project-docs/docs/current/*`, trigger source | principles, specific task, referenced archives | ESC append, TRG append/create |
-| Phase Runner | `project-docs/docs/current/*`, phase task list, validation contract, QA plan after creation | triage log, reports, reviews | git branch operations only |
+| TL-Lite | `project-docs/docs/current/*`, trigger source | principles, specific task, referenced archives | append TRG; append ESC on BLOCK |
+| Phase Runner | `project-docs/docs/current/*`, phase task list, validation contract, QA plan after creation | triage log, reports, reviews | append-only run ledger; git branch operations |
 | Developer | `project-docs/docs/current/*`, assigned task, validation contract, scoped files | principles, referenced archives | code, tests, docs, report, commit |
 | QA Lead | `project-docs/docs/current/*`, quality plan, validation contract, phase tasks/reports | PRD/TRD sections, principles, archives | QA plan (refines contract), final review (records VAL outcomes), human checklist |
-| QA Reviewer | `project-docs/docs/current/*`, QA plan, validation contract, named tasks/reports, quality plan | Design Plan, principles, archives | review artifact, ESC append |
+| QA Reviewer | `project-docs/docs/current/*`, QA plan, validation contract, named tasks/reports, quality plan | Design Plan, principles, archives | review artifact only; blocker candidates are routed to TL-Lite |
 
 ## 6. Task Specification Contract
 
@@ -1093,6 +1389,13 @@ them at length. Scenario, parity, and audit obligations are phase-level
 concerns declared in the phase brief (Parity Matrix) and QA plan; parity or
 heavy-mode phases may add task-spec sections for them when the phase brief
 requires it.
+
+The canonical integration command targets the dedicated real-process package,
+`go test -tags integration -race ./cmd/fid/integration/...`. Ordinary
+in-process command and persistence tests run under the default race/coverage
+gate. Expanding the integration command to `./...` is not additional evidence;
+it duplicates the ordinary suite under a build tag and is a gate-definition
+regression.
 
 ### 6.1 Validation Contract
 
@@ -1210,29 +1513,86 @@ claim invisible to every downstream review until someone re-runs the gate
 independently. Such a command is `BLOCKED` with the reason in a blocker
 report. This rule is mode-invariant.
 
+For an execution tool that can yield a long-running command, wrapper
+completion is not command completion. The executing role preserves the full
+result object, retains any nested session handle, polls that session until the
+nested result reports an exit code or explicit termination signal, and records
+the output token only then. A downstream reviewer or orchestrator rejects a
+termination claim that is supported only by completion of the outer wrapper,
+empty output, or absence of new output.
+
+The recorded result carries that termination result alongside the token —
+`(terminated exit_code: 0)`, or the explicit signal where the execution
+surface exposes no exit code — so termination is visible in the artifact
+rather than trusted. A printed last line proves the command produced output;
+for a silent success the observed exit status is the only evidence separating
+it from a discarded session. An `exit_code` asserted rather than copied from
+the command's own result is fabricated evidence, exactly like a fabricated
+token. A control that requires more of a completion report than this contract
+and the completion-report template do is a defect in the control: the
+canonical contract governs, and the Tech Lead fixes the divergence rather than
+failing a compliant report.
+
 The token is the command's real exit behavior, not the expected one. A search
 or inventory command (`rg`, `grep`) used to prove an *absence* — no production
 evaluator, no forbidden call site — terminates with **exit 1 and no output**
-when it finds nothing, which is the pass condition for that assertion. Record
-`PASS (no match) - exit 1 (no output)` and name the assertion; `exit 0 (no
-output)` is reserved for a silent success and is fabricated evidence here. A
-task spec or QA plan that relies on such an inventory states its expected exit
-status, so the Developer never has to infer one.
+when it finds nothing, which is the pass condition for that assertion;
+`exit 0 (no output)` is reserved for a silent success and is fabricated
+evidence here. A task spec that relies on such a command declares its expected
+status under an `## Expected Non-Zero Commands` section, so the Developer never
+infers one, and the report records the real observed status in that declared
+form:
 
-These rules govern commands run *against finished work*. A required command
-whose **harness is itself a deliverable of the task being authored** — a
-fixture, a capture or measurement script, a golden generator — is different: it
-is written during the task, and like any other deliverable it may be wrong on
-first execution. Such a command may fail, be repaired, and be rerun to a pass,
-recorded as `PASS` with a **mandatory deviation note** giving the first
-failure's verbatim token, the root cause, and the fix. All four conditions must
-hold: the failing artifact is a task deliverable and **not** the product under
-test, a test asserting product behavior, or a pre-existing committed gate or
-tool; the rerun command is **byte-identical**, with nothing narrowed,
-substituted, or re-pointed; the final pass is **deterministic and reproducible
-by a third party from committed artifacts alone**; and both the failure and the
-final result are recorded with their own tokens. If any condition fails, the
-strict rule applies and the gate is failed.
+```text
+- `rg -n "internal/format" cmd internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+```
+
+The status field is machine-parsed and stays exactly `PASS`; the no-match claim
+lives in the explicit `expected` field beside the observed termination. An
+undeclared non-zero `PASS`, a declared expectation of zero, and an observed
+status that differs from the declared one are all failed gates. This keeps one
+lawful notation for absence evidence rather than a status word a control cannot
+parse.
+
+In that spec section a **declaration** is a line beginning at column 0 with a
+backtick bullet (`` - ` ``): the exact command in backticks, then
+``- expected `exit_code: <N>` ``, then optional trailing prose. Every other line
+there — instructional prose, an indented continuation of that trailing prose, a
+bullet that does not open with a backtick — is explanatory and is not parsed as
+a declaration. A backtick bullet that does not match the grammar is a failure,
+not prose, and a declaration never wraps before the end of its `expected` field.
+
+Two standing rules follow from how those literals and controls have failed. An
+exact-output literal required by a spec, QA plan, or decision is transcribed
+from an observed run of that exact command with those exact flags, or stated as
+a semantic pass condition; documentation wording and a sibling flag's output are
+not evidence of what a command prints. The same rule governs a claim about the
+*complete* output — line count, first line, last line, "the whole output is X":
+it is transcribed from the complete observed output, including protocol framing
+the tool always emits, such as stanza headers, separators, and summary lines.
+Pinning the interesting line is not pinning the output. A control that parses
+an artifact section is self-tested against every real shape of that section in
+the repository at the time the control lands; a fixture invented for the control
+only proves the control agrees with itself.
+
+A required-command failure is an immutable failed attempt, not automatically a
+failed task or Human blocker. The Developer may repair it only under ordinary
+task scope or a written control-conformance recovery directive; failure itself
+grants no license to edit a test, gate, or control. Record a mandatory deviation
+note with the first attempt's token and termination, root cause, repair, and
+later result. The final pass must be deterministic and reproducible from
+committed artifacts.
+
+A gate/control **definition** is protected: its command, assertion's accepted
+pass/fail semantics, accepted status, scope, threshold/budget/tolerance, and
+governing policy. Changing any of these, deleting or weakening a test,
+narrowing/re-pointing a command, or mining a flaky green is not repair. By
+contrast, a canonical verification/workflow control implementation that
+violates an already accepted contract with one uniquely determined behavior is
+eligible for the bounded tools-only control-conformance route in sections 2.3
+and 2.4. Canonical location or ordinary task-file scope alone does not turn it
+into `BLOCK`. DEC-138's bookkeeping-only carve-out is superseded by this
+general causal-repair distinction; its anti-gaming constraints remain.
 
 The distinction matters at triage. **"The task is incomplete, stop"** and
 **"the evidence is tainted, restart"** are different verdicts with different
@@ -1250,7 +1610,8 @@ report, or promised against a named future control is `UNVERIFIED`, and
 `UNVERIFIED` is not a passing state. Naming a later verifier is not a
 substitute: a control that fires late enough to be tripped over by accident is
 not a control. Copy the token in the session that runs the command, or record
-`UNVERIFIED` and stop.
+`UNVERIFIED` and enter recovery. A later session must run the exact
+command itself; transcription never becomes PASS.
 
 **"Pre-existing" is a provenance claim and needs provenance evidence.**
 Declining an out-of-scope repair is often correct, but the report must cite the
@@ -1277,8 +1638,8 @@ the directory they resolve against.
 
 `project-docs/tools/report-lint.sh <report> <task spec>` performs the
 mechanical subset of completion-report verification deterministically:
-required headings, sentinel sections, task-spec command coverage, hash
-validity, and subject match.
+typed workflow outcome, required headings, task-spec command coverage, observed
+termination, hash validity, subject match, and committed/clean report state.
 
 A completion report cannot contain the hash of the exact commit that
 introduces the report's final content - changing the report changes the hash.
@@ -1298,25 +1659,35 @@ remain with agents and humans.
 seeded-defect fixtures that verify the QA chain itself still catches
 fabricated hashes, wrong hash prefixes, skipped or narrower substituted
 commands, weakened tests, unrecorded deviations, stale doc claims, and
-positive-only `VAL` passes. Run quarterly, after any agent prompt change, and
-before trusting a new model in an orchestrator or QA role.
+positive-only `VAL` passes. Recovery drills also cover typed reports,
+premature blocker claims, same-task continuation, QA rework, and protected
+stops. Run quarterly, after any agent prompt change, and before trusting a new
+model in an orchestrator or QA role.
 
 ## 9. Stop And Escalate
 
-Stop and surface the issue instead of guessing when:
+Enter `BLOCK` and surface the issue instead of guessing only when:
 
-- Required task, QA, current-state, or canonical docs are missing.
-- Task boundaries are wrong or need re-slicing.
-- Required format, vet, test, codegen, or lint gates fail and stay unresolved.
-- Another session's in-progress edits conflict with assigned scope.
+- Required task, validation, or canonical authority is missing or contradictory
+  and cannot be authored inside the current role.
+- Task boundaries require protected re-slicing or cross-task authority.
+- Required gates cannot be repaired inside scope without weakening or changing
+  their accepted definition.
+- Another session's edits cannot be reconciled non-destructively.
 - Implementation reveals a spec conflict or product decision.
 - A change would alter SQLite schema, journal event contracts, CLI command
   contracts, output format contracts, dependency policy, or workflow policy.
-- A child agent required by Phase Runner cannot be spawned.
+- A required external capability or child role remains unavailable after
+  bounded recovery.
+- Two consecutive same-trigger continuation attempts make no material progress.
 
-Hard failures such as red tests, vet failures, missing reports, and scope
-conflicts stop immediately. Soft blockers route through TL-Lite only in Phase
-Runner mode.
+Red tests, vet/lint failures, missing reports, interrupted sessions, incomplete
+in-scope work, and bounded QA findings are `REPAIR` by default. In Phase
+Runner mode they dispatch a same-task continuation and preserve failed
+evidence. They become `BLOCK` only when a separate protected category or
+exhausted recovery budget is demonstrated. `RESUME` means the trigger is
+already cleared and it is safe to advance; `VERDICT: REPAIR` and
+`VERDICT: REPAIR / control-conformance` mean do not advance.
 
 ## 10. Continuous Improvement
 

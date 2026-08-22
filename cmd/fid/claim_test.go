@@ -8,14 +8,14 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestClaimListDefaultsToJSONAndListsLiveClaims(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim list", "--by", "developer")
 	issueID := parseCreatedIssueID(t, createStderr)
@@ -70,9 +70,10 @@ func TestClaimListDefaultsToJSONAndListsLiveClaims(t *testing.T) {
 	}
 }
 
-func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
+func TestClaimListUsesDirectLegacyJSONAndFiltersByStoredRole(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	staleDeveloperID := createClaimListIssue(t, workspace, "Stale developer claim")
 	staleQAID := createClaimListIssue(t, workspace, "Stale QA claim")
@@ -81,16 +82,16 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 
 	runFIDCommand(t, workspace, "issue", "claim", staleDeveloperID, "--by", "developer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", staleQAID, "--by", "qa_reviewer", "--ttl", "1s")
-	time.Sleep(1100 * time.Millisecond)
+	ageCommandClaims(t, workspace, staleDeveloperID, staleQAID)
 	runFIDCommand(t, workspace, "issue", "claim", liveDeveloperID, "--by", "developer", "--note", "live developer claim")
 	runFIDCommand(t, workspace, "issue", "claim", liveHumanID, "--by", "human", "--note", "human held claim")
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "claim", "list", "--format", "json")
-	if jsonStderr != "" {
-		t.Fatalf("json stderr = %q, want empty", jsonStderr)
+	stdout, stderr := runFIDCommand(t, workspace, "claim", "list")
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
-	want := decodeCommandJSONStructure(t, jsonStdout)
+	want := decodeCommandJSONStructure(t, stdout)
 	wantRows := want.([]any)
 	if got := commandClaimListIDs(t, wantRows); !equalIssueIDs(got, []string{liveDeveloperID, liveHumanID}) {
 		t.Fatalf("live claim ids = %#v, want [%q, %q]", got, liveDeveloperID, liveHumanID)
@@ -99,36 +100,7 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 		t.Fatalf("human claimed_by = %q, want human", got)
 	}
 
-	for _, formatName := range []string{"toon", "yaml"} {
-		t.Run(formatName, func(t *testing.T) {
-			stdout, stderr := runFIDCommand(t, workspace, "claim", "list", "--format", formatName)
-			if stderr != "" {
-				t.Fatalf("stderr = %q, want empty", stderr)
-			}
-
-			var got any
-			switch formatName {
-			case "toon":
-				got = decodeCommandTOONStructure(t, stdout)
-			case "yaml":
-				got = decodeCommandYAMLStructure(t, stdout)
-			}
-
-			if !commandStructuresEqual(want, got) {
-				t.Fatalf("%s structure = %#v, want %#v", formatName, got, want)
-			}
-		})
-	}
-
-	markdownStdout, markdownStderr := runFIDCommand(t, workspace, "claim", "list", "--format", "markdown")
-	if markdownStderr != "" {
-		t.Fatalf("markdown stderr = %q, want empty", markdownStderr)
-	}
-	if markdownStdout != expectedClaimListMarkdown(t, wantRows) {
-		t.Fatalf("markdown stdout = %q, want %q", markdownStdout, expectedClaimListMarkdown(t, wantRows))
-	}
-
-	humanStdout, humanStderr := runFIDCommand(t, workspace, "claim", "list", "--by", "human", "--format", "json")
+	humanStdout, humanStderr := runFIDCommand(t, workspace, "claim", "list", "--by", "human")
 	if humanStderr != "" {
 		t.Fatalf("human stderr = %q, want empty", humanStderr)
 	}
@@ -137,7 +109,7 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 		t.Fatalf("human claim ids = %#v, want [%q]", got, liveHumanID)
 	}
 
-	unknownStdout, unknownStderr := runFIDCommand(t, workspace, "claim", "list", "--by", "intern", "--format", "json")
+	unknownStdout, unknownStderr := runFIDCommand(t, workspace, "claim", "list", "--by", "intern")
 	if unknownStderr != "" {
 		t.Fatalf("unknown-role stderr = %q, want empty", unknownStderr)
 	}
@@ -147,8 +119,9 @@ func TestClaimListDispatchesFormatsAndFiltersByStoredRole(t *testing.T) {
 }
 
 func TestClaimListStaleFilterIsReadOnlyAndUsesRowIDOrder(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
-	runInitCommand(t, workspace, "init")
+	clonePristineWorkspaceInto(t, workspace)
 
 	firstStaleID := createClaimListIssue(t, workspace, "First stale claim")
 	secondStaleID := createClaimListIssue(t, workspace, "Second stale claim")
@@ -157,7 +130,7 @@ func TestClaimListStaleFilterIsReadOnlyAndUsesRowIDOrder(t *testing.T) {
 	runFIDCommand(t, workspace, "issue", "claim", firstStaleID, "--by", "developer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", secondStaleID, "--by", "qa_reviewer", "--ttl", "1s")
 	runFIDCommand(t, workspace, "issue", "claim", liveID, "--by", "human")
-	time.Sleep(1100 * time.Millisecond)
+	ageCommandClaims(t, workspace, firstStaleID, secondStaleID)
 
 	journalPath := mustJournalPath(t, workspace)
 	beforePayload, err := os.ReadFile(journalPath)
@@ -174,7 +147,7 @@ func TestClaimListStaleFilterIsReadOnlyAndUsesRowIDOrder(t *testing.T) {
 
 	activityBefore := countActivityLogRows(t, conn)
 
-	stdout, stderr := runFIDCommand(t, workspace, "claim", "list", "--stale", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "claim", "list", "--stale")
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
@@ -216,7 +189,7 @@ func TestClaimListOrderIsStableAcrossRebuild(t *testing.T) {
 	runFIDCommand(t, workspace, "issue", "claim", secondID, "--by", "human")
 	runFIDCommand(t, workspace, "issue", "claim", thirdID, "--by", "qa_reviewer")
 
-	beforeStdout, beforeStderr := runFIDCommand(t, workspace, "claim", "list", "--format", "json")
+	beforeStdout, beforeStderr := runFIDCommand(t, workspace, "claim", "list")
 	if beforeStderr != "" {
 		t.Fatalf("before rebuild stderr = %q, want empty", beforeStderr)
 	}
@@ -226,14 +199,14 @@ func TestClaimListOrderIsStableAcrossRebuild(t *testing.T) {
 	}
 
 	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
-	if rebuildStdout != "" {
-		t.Fatalf("rebuild stdout = %q, want empty", rebuildStdout)
+	if !strings.Contains(rebuildStdout, "rebuild complete") {
+		t.Fatalf("rebuild stdout = %q, want rebuild confirmation", rebuildStdout)
 	}
-	if !strings.Contains(rebuildStderr, "rebuild complete") {
-		t.Fatalf("rebuild stderr = %q, want rebuild confirmation", rebuildStderr)
+	if rebuildStderr != "" {
+		t.Fatalf("rebuild stderr = %q, want empty", rebuildStderr)
 	}
 
-	afterStdout, afterStderr := runFIDCommand(t, workspace, "claim", "list", "--format", "json")
+	afterStdout, afterStderr := runFIDCommand(t, workspace, "claim", "list")
 	if afterStderr != "" {
 		t.Fatalf("after rebuild stderr = %q, want empty", afterStderr)
 	}
@@ -248,6 +221,27 @@ func createClaimListIssue(t *testing.T, workspace, title string) string {
 
 	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
 	return parseCreatedIssueID(t, stderr)
+}
+
+func ageCommandClaims(t *testing.T, workspace string, issueIDs ...string) {
+	t.Helper()
+
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("Open() error = %v", err)
+	}
+	defer closeCommandDB(t, conn)
+
+	const staleClaimedAt = "2000-01-01T12:00:00Z"
+	for _, issueID := range issueIDs {
+		if _, err := conn.Exec(`
+			UPDATE claims
+			SET claimed_at = ?
+			WHERE ref_type = 'issue' AND ref_id = ?
+		`, staleClaimedAt, issueID); err != nil {
+			t.Fatalf("age claim %q: %v", issueID, err)
+		}
+	}
 }
 
 func commandClaimListIDs(t *testing.T, rows []any) []string {
@@ -273,44 +267,6 @@ func commandClaimListField(t *testing.T, row any, field string) string {
 		t.Fatalf("row = %#v, want object", row)
 	}
 	return commandClaimListFieldValue(t, fields, field)
-}
-
-func expectedClaimListMarkdown(t *testing.T, rows []any) string {
-	t.Helper()
-
-	var builder strings.Builder
-	builder.WriteString("# Claims\n\n")
-	for _, row := range rows {
-		fields, ok := row.(map[string]any)
-		if !ok {
-			t.Fatalf("row = %#v, want object", row)
-		}
-
-		builder.WriteString("- ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "ref_type"))
-		builder.WriteString(" ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "ref_id"))
-		builder.WriteString(" | ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "claimed_by"))
-		builder.WriteString(" | claimed ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "claimed_at"))
-		builder.WriteString(" | ttl ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "ttl_seconds"))
-		builder.WriteString("s | expires ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "expires_at"))
-		builder.WriteString(" | stale: ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "is_stale"))
-		builder.WriteString("\n")
-
-		note, ok := fields["note"]
-		if !ok || note == nil || note == "<nil>" {
-			continue
-		}
-		builder.WriteString("  ")
-		builder.WriteString(commandClaimListFieldValue(t, fields, "note"))
-		builder.WriteString("\n")
-	}
-	return builder.String()
 }
 
 func commandClaimListFieldValue(t *testing.T, fields map[string]any, field string) string {

@@ -23,8 +23,6 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 		ActorRole:     "developer",
 		Priority:      intPointer(2),
 		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		EstTokens:     intPointer(1200),
-		DueDate:       stringPointer("2026-07-15"),
 		Labels:        []string{"core"},
 		OwnerActor:    stringPointer("agent:before"),
 	})
@@ -71,17 +69,62 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 	if !equalStringPointers(after.SpecMDPath, before.SpecMDPath) {
 		t.Fatalf("Get(after update) spec_md_path = %#v, want %#v", after.SpecMDPath, before.SpecMDPath)
 	}
-	if !equalIntPointers(after.EstTokens, before.EstTokens) {
-		t.Fatalf("Get(after update) est_tokens = %#v, want %#v", after.EstTokens, before.EstTokens)
-	}
-	if !equalStringPointers(after.DueDate, before.DueDate) {
-		t.Fatalf("Get(after update) due_date = %#v, want %#v", after.DueDate, before.DueDate)
-	}
 	if !equalStrings(after.Labels, before.Labels) {
 		t.Fatalf("Get(after update) labels = %#v, want %#v", after.Labels, before.Labels)
 	}
 	if !equalStringPointers(after.OwnerActor, before.OwnerActor) {
 		t.Fatalf("Get(after update) owner_actor = %#v, want %#v", after.OwnerActor, before.OwnerActor)
+	}
+}
+
+func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
+	t.Parallel()
+
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Record revision",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+
+	if _, err := Update(UpdateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ActorRole:     "developer",
+		Title:         stringPointer("Record updated revision"),
+	}); err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+
+	stored := readIssueStoredEvents(t, journalPathForWorkspace(t, workspace))
+	last := stored[len(stored)-1]
+	var revisionEffect *journal.Effect
+	for index := range last.Effects {
+		effect := &last.Effects[index]
+		if effect.Table == "issues" && effect.Op == "update" && len(effect.Values) == 1 {
+			revisionEffect = effect
+		}
+	}
+	if revisionEffect == nil {
+		t.Fatal("missing Issue revision effect")
+	}
+	if got := revisionEffect.PK["id"]; got != created.ID {
+		t.Fatalf("revision effect issue id = %#v, want %q", got, created.ID)
+	}
+	if got := revisionEffect.Values["revision"]; got != float64(2) {
+		t.Fatalf("revision effect value = %#v, want 2", got)
+	}
+	if got := revisionEffect.Prior["revision"]; got != float64(1) {
+		t.Fatalf("revision effect prior = %#v, want 1", got)
+	}
+	if got := revisionEffect.Preconditions["revision"]; got != float64(1) {
+		t.Fatalf("revision effect precondition = %#v, want 1", got)
 	}
 }
 
@@ -127,28 +170,6 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			},
 			wantErr: `update issue: label "missing" does not exist`,
 		},
-		{
-			name: "unknown owner role",
-			mutate: func(createdID string) UpdateOptions {
-				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					OwnerRole: stringPointer("intern"),
-				}
-			},
-			wantErr: `role "intern" not in project profile`,
-		},
-		{
-			name: "malformed due date",
-			mutate: func(createdID string) UpdateOptions {
-				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					DueDate:   stringPointer("2026/07/20"),
-				}
-			},
-			wantErr: "update issue: due_date must use YYYY-MM-DD",
-		},
 	}
 
 	for _, tt := range tests {
@@ -164,7 +185,6 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 				ActorRole:     "developer",
 				Priority:      intPointer(2),
 				Labels:        []string{"core"},
-				DueDate:       stringPointer("2026-07-20"),
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -225,10 +245,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		ActorRole:     "developer",
 		Priority:      intPointer(2),
 		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
-		EstTokens:     intPointer(800),
-		DueDate:       stringPointer("2026-07-20"),
 		Labels:        []string{"core", "legacy"},
-		OwnerActor:    stringPointer("agent:before"),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -255,10 +272,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		Priority:      intPointer(1),
 		Labels:        &labels,
 		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		EstTokens:     intPointer(900),
-		DueDate:       stringPointer("2026-07-22"),
-		OwnerRole:     stringPointer("qa_lead"),
-		OwnerActor:    stringPointer("human:mark"),
 	})
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -285,17 +298,8 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if after.SpecMDPath == nil || *after.SpecMDPath != "project-docs/specs/06_DESIGN_PLAN_CLI.md" {
 		t.Fatalf("Get(after update) spec_md_path = %#v", after.SpecMDPath)
 	}
-	if after.EstTokens == nil || *after.EstTokens != 900 {
-		t.Fatalf("Get(after update) est_tokens = %#v, want 900", after.EstTokens)
-	}
-	if after.DueDate == nil || *after.DueDate != "2026-07-22" {
-		t.Fatalf("Get(after update) due_date = %#v, want 2026-07-22", after.DueDate)
-	}
-	if after.OwnerRole == nil || *after.OwnerRole != "qa_lead" {
-		t.Fatalf("Get(after update) owner_role = %#v, want qa_lead", after.OwnerRole)
-	}
-	if after.OwnerActor == nil || *after.OwnerActor != "human:mark" {
-		t.Fatalf("Get(after update) owner_actor = %#v, want human:mark", after.OwnerActor)
+	if !equalStringPointers(after.OwnerRole, before.OwnerRole) || !equalStringPointers(after.OwnerActor, before.OwnerActor) {
+		t.Fatalf("Get(after update) owner fields = (%#v, %#v), want unchanged (%#v, %#v)", after.OwnerRole, after.OwnerActor, before.OwnerRole, before.OwnerActor)
 	}
 	if want := []string{"api", "core"}; !equalStrings(after.Labels, want) {
 		t.Fatalf("Get(after update) labels = %#v, want %#v", after.Labels, want)
@@ -323,7 +327,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	for index := range last.Effects {
 		effect := &last.Effects[index]
 		switch {
-		case effect.Table == "issues" && effect.Op == "update":
+		case effect.Table == "issues" && effect.Op == "update" && effect.Values["title"] != nil:
 			updateEffect = effect
 		case effect.Table == "activity_log" && effect.Op == "activity":
 			activityEffect = effect
@@ -348,12 +352,6 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if updateEffect.Preconditions["priority"] != float64(2) {
 		t.Fatalf("priority precondition = %#v, want 2", updateEffect.Preconditions["priority"])
 	}
-	if updateEffect.Preconditions["owner_role"] != "developer" {
-		t.Fatalf("owner_role precondition = %#v, want developer", updateEffect.Preconditions["owner_role"])
-	}
-	if updateEffect.Preconditions["owner_actor"] != "agent:before" {
-		t.Fatalf("owner_actor precondition = %#v, want agent:before", updateEffect.Preconditions["owner_actor"])
-	}
 	if updateEffect.Preconditions["updated_at"] != *before.UpdatedAt {
 		t.Fatalf("updated_at precondition = %#v, want %#v", updateEffect.Preconditions["updated_at"], before.UpdatedAt)
 	}
@@ -366,6 +364,13 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
+	var liveRevision int
+	if err := conn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, created.ID).Scan(&liveRevision); err != nil {
+		t.Fatalf("query live Issue revision: %v", err)
+	}
+	if liveRevision != 2 {
+		t.Fatalf("live Issue revision = %d, want 2", liveRevision)
+	}
 
 	var (
 		activityCount int
@@ -390,7 +395,7 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if eventName != "issue_updated" {
 		t.Fatalf("activity_log event = %q, want issue_updated", eventName)
 	}
-	for _, want := range []string{`"field":"owner_role"`, `"from":"developer"`, `"to":"qa_lead"`, `"field":"labels"`} {
+	for _, want := range []string{`"field":"labels"`, `"field":"priority"`, `"field":"spec_md_path"`, `"field":"title"`} {
 		if !strings.Contains(detailsRaw, want) {
 			t.Fatalf("activity_log details = %q, want substring %q", detailsRaw, want)
 		}
@@ -415,6 +420,15 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		t.Fatalf("Get(after rebuild) error = %v", err)
 	}
 	assertIssuesEqual(t, rebuilt, beforeRebuild)
+	rebuiltConn := openIssueDB(t, dbPath)
+	defer closeIssueTestDB(t, rebuiltConn)
+	var rebuiltRevision int
+	if err := rebuiltConn.QueryRow(`SELECT revision FROM issues WHERE id = ?`, created.ID).Scan(&rebuiltRevision); err != nil {
+		t.Fatalf("query rebuilt Issue revision: %v", err)
+	}
+	if rebuiltRevision != liveRevision {
+		t.Fatalf("rebuilt Issue revision = %d, want live %d", rebuiltRevision, liveRevision)
+	}
 }
 
 func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {

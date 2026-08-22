@@ -1,0 +1,119 @@
+# Phase 20 - Task 2: Project selection and config namespace - Completion Report
+
+## Workflow outcome
+
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 1
+- Next action: None.
+- Human attention required: no
+
+## Summary of what was implemented
+
+- Added Git-bounded project-root resolution with direct explicit-root selection and `.fid` symlink rejection.
+- Replaced the permissive config reader/writer with the exact version-1 project, storage, executor-limit, and maintenance model; bootstrap now writes generated opaque project IDs and `issue_prefix`.
+- Registered persistent root `--project` and `--json` flags behind one fail-closed migrated-leaf registry; until a leaf is migrated, explicitly supplied flags reject before its handler.
+- Renamed workflow assignment scope to `--project-wide` and detached legacy maintenance warning grace from target config by using the fixed 300-second constant.
+
+## Files created or modified
+
+- `internal/project/resolve.go`
+- `internal/project/resolve_test.go`
+- `internal/config/config.go`
+- `internal/config/config_test.go`
+- `internal/bootstrap/init.go`
+- `internal/issues/create.go`
+- `cmd/fid/root.go`
+- `cmd/fid/root_flags_test.go`
+- `cmd/fid/init.go`
+- `cmd/fid/init_test.go`
+- `cmd/fid/workflow.go`
+- `cmd/fid/workflow_assign_test.go`
+- `cmd/fid/maintenance.go`
+- `cmd/fid/maintenance_test.go`
+- `project-docs/docs/phases/phase-20/tasks/task-2-done.md`
+
+## Documentation updated
+
+- Completion report only; the accepted contract already documents the delivered behavior.
+
+## Validation Contract Coverage
+
+- VAL-003: PASS (Task 2 portion) — `TestResolveStopsAtContainingGitRoot`, `TestResolveFindsNearestRootAndRequiresExplicitRootToContainFID`, and `TestResolveRejectsSymlinkedFIDDirectory` in `internal/project/resolve_test.go` prove the Git boundary, nearest discovery/explicit direct-root rule, and symlink rejection.
+- VAL-005: PASS (Task 2 portion) — `TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers` in `cmd/fid/root_flags_test.go` proves both explicit root flags reject before legacy and not-yet-migrated handlers; the real entrypoint command below proves the stderr/exit behavior.
+- VAL-039: PASS (Task 2 portion) — `TestProjectConfigRoundTripsStrictTargetSchema` in `internal/config/config_test.go` proves opaque `project.id` and `project.issue_prefix` round-trip without the retired key; `TestInitCommandCreatesWorkspaceFiles` in `cmd/fid/init_test.go` proves direct bootstrap emits the strict config.
+- VAL-043: PASS (Task 2 config-model portion) — `TestReadProjectConfigRejectsUnknownDuplicateAliasAndInvalidInputs` and `TestReadProjectConfigRejectsArtifactRootSymlinkEscape` in `internal/config/config_test.go` cover unknown/duplicate/alias/version, invalid prefix/limits/path, and symlink escape rejection.
+- VAL-027: PASS (Task 2 fixed-policy wiring portion) — `TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig` in `cmd/fid/maintenance_test.go` sets the target Attempt grace to zero yet proves a five-second-old started Issue does not produce the legacy warning.
+- VAL-026: PASS (Task 2 flag-collision portion) — `TestWorkflowAssignRejectsWithoutMutation` in `cmd/fid/workflow_assign_test.go` exercises `--project-wide`, including the mutually exclusive kind/project-scope rejection.
+- VAL-044: PASS (Task 2 root-dispatch portion) — `TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers` proves flags do not reach handlers before their transport migration. The complete retained-leaf request registry remains assigned to Tasks 3-13 and closes at Task 18.
+
+## Tests run
+
+- `go test ./internal/project -run '^TestResolveStopsAtContainingGitRoot$'` — EXPECTED RED — `FAIL`
+- `go test ./internal/config -run '^(TestProjectConfigRoundTripsStrictTargetSchema|TestReadProjectConfigRejectsUnknownDuplicateAliasAndInvalidInputs)$'` — EXPECTED RED — `FAIL`
+- `go test ./cmd/fid -run '^TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers$'` — EXPECTED RED — `FAIL`
+- `go test ./cmd/fid -run '^(TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers|TestWorkflowAssignRejectsWithoutMutation|TestMaintenanceCheckUsesFixedLegacyGraceInsteadOfTargetConfig|TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename)$'` — PASS — `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.074s`
+- `go test ./internal/config ./internal/project` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/project\t(cached)`
+- `go test ./...` — PASS — `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.582s`
+- `/tmp/fid --json journal inspect EVT-missing` — PASS (expected rejection) — `error: --json is not available for journal inspect until its fid-cli.v1 transport is migrated`; observed exit status: 1.
+- QA-plan applicability: QA-03 is covered by the project/root-flag tests and real CLI rejection; QA-11 is covered by the workflow collision test; QA-12 is covered by the fixed-grace test; QA-18 is covered by the strict config parser/writer and symlink tests. QA-01 is covered by the exact gates below. Later all-leaf, atomic-init, and maintenance-envelope QA evidence remains with their named owning tasks.
+
+## Exact quality-gate results
+
+Historical Task 2 gate evidence is preserved below. Its original PASS and
+UNVERIFIED records predate the required termination syntax and are not used as
+the current required-gate evidence.
+
+> - `gofmt -l cmd internal` — PASS — `exit 0 (no output)`
+> - `golangci-lint run ./...` — PASS — `0 issues.`
+> - `go test -race -coverprofile=coverage.out ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go tool cover -func=coverage.out` — PASS — `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t76.6%`
+> - `go test -tags integration -race ./...` — UNVERIFIED — see Gate-evidence correction (DEC-131).
+> - `go build -o /tmp/fid ./cmd/fid` — PASS — `exit 0 (no output)`
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t78.7%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t20.320s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+
+## Deviations from spec
+
+- Historical Task 2 implementation had no product or specification deviations.
+- DEC-131 gate-evidence correction remains immutable historical context: the
+  original full-suite records were UNVERIFIED because their silent tokens could
+  not prove termination. This continuation preserves those records and adds
+  fresh, session-captured PASS results without rewriting them.
+- MF-01 report/control-conformance repair: the initial exact report-lint
+  attempt failed with `FAIL report-lint found 21 failure(s)` (terminated
+  `exit_code: 21`) because the report lacked the canonical typed workflow
+  outcome and used legacy evidence punctuation/termination syntax. This
+  report-only repair adds the required typed fields, preserves historical
+  evidence verbatim as quoted context, and records fresh terminal evidence for
+  every exact Task 2 command.
+
+## Concerns, technical debt, or notes for the Tech Lead
+
+- None.
+
+## Dependency-budget note
+
+- No dependency changes.
+
+## Commit hash
+
+- `cd53c43319a3301d3a8cc0089b6785d9afbb163f`
+
+## Commit subject
+
+- `feat(project): add strict project selection config`
+
+## Gate-evidence correction (DEC-131)
+
+- The full-suite `go test -race -coverprofile=coverage.out ./...` and `go test -tags integration -race ./...` records are UNVERIFIED. Each original recorded token `exit 0 (no output)` could not have come from a completed `go test` run: long runs may print nothing until their packages finish, while a killed or timed-out run is BLOCKED, never PASS with a silent token.
+- Preserved original record: `go test -race -coverprofile=coverage.out ./...` — PASS — original recorded token `exit 0 (no output)`.
+- Preserved original record: `go test -tags integration -race ./...` — PASS — original recorded token `exit 0 (no output)`.
+- `task-3c-done.md`'s current-tree full-gate run is the Phase 20 verified baseline; these historical commands were not re-run at Task 2's commit.
+- Task 2 remains complete, but its own full-suite gate evidence is UNVERIFIED as of its task commit.

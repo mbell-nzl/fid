@@ -19,12 +19,21 @@ decay before a real defect exploits it.
 | drill-02 | plausible wrong hash (resolves, wrong commit) | `report-lint.sh` (subject match) |
 | drill-03 | silently skipped required command | `report-lint.sh` |
 | drill-04 | narrower substituted command | `report-lint.sh` |
+| drill-09 | malformed PASS: missing or nonzero termination | `report-lint.sh` |
+| drill-10 | typed recoverable report | `report-lint.sh` |
+| drill-11 | typed protected blocker | `report-lint.sh` |
+| drill-12 | recoverable condition presented as BLOCKED | `report-lint.sh` |
+| drill-13 | in-scope failure next action | `workflow-route.sh` |
+| drill-14 | invalid report next action | `workflow-route.sh` |
+| drill-15 | live and missing-termination command handling | `workflow-route.sh` |
+| drill-16 | bounded QA finding next action | `workflow-route.sh` |
+| drill-17 | protected stop and no-progress budget | `workflow-route.sh` |
 | drill-05 | weakened/vacuous test | QA Reviewer |
 | drill-06 | unrecorded spec deviation | QA Reviewer |
 | drill-07 | stale doc claim | QA Reviewer |
 | drill-08 | VAL PASS on positive-only evidence | QA Reviewer / QA Lead |
 
-## Known Uncovered Defect Class
+## Recovered Defect Class
 
 **A required command that ran but never terminated, recorded `PASS`.** Phase 18
 produced this defect (DEC-072 / QA-BLK-18-FINAL-01): a `workflow.Load`
@@ -34,22 +43,16 @@ caught it; the mid-phase review cadence structurally cannot, because a report
 that claims a result the reviewer does not re-execute is indistinguishable from
 one that earned it.
 
-The existing set does not cover this: drill-03 is a *silently skipped* required
-command and drill-04 a *narrower substituted* one — both detectable from the
-report text alone. A fabricated `PASS` is only detectable if the report is
-required to carry evidence the run itself produced.
-
-The completion-report template and Developer prompt now require a verbatim
-terminal-evidence token per command (a hung command has no final line to copy).
-That is an affordance, not a detector. A `drill-09` for this class needs
-`report-lint.sh` to check that each required command's result line carries an
-evidence token, and must be demonstrated failing-then-passing per Extending
-below. Not yet built — see
+Drill 09 now proves that a PASS row without observed termination is rejected.
+Drill 15 separately proves that a live command routes to `WAIT`, while missing
+termination routes to `REPAIR`. Together they cover both the evidence defect
+and the orchestration behavior that caused ESC-20-003. See
 `project-docs/docs/reviews/2026-07-26-workflow-retrospective.md` (DEC-087).
 
 ## Running
 
-Mechanical drills (00-04), scored automatically; exit code is the miss count:
+Mechanical outcome and transition drills, scored automatically; exit code is
+the miss count:
 
 ```sh
 project-docs/tools/drills/run-drills.sh

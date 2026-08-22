@@ -1,5 +1,3 @@
-//go:build integration
-
 package main
 
 import (
@@ -67,7 +65,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("dev_complete -> qa_review stderr = %q, want confirmation", transitionStderr)
 	}
 
-	_, addStderr := runFIDCommand(
+	addStdout, _ := runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -75,9 +73,9 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"--ordinal", "1",
 		"--by", "developer",
 	)
-	firstACID := parseAddedAcceptanceCriterionID(t, addStderr)
+	firstACID := parseAddedAcceptanceCriterionID(t, addStdout)
 
-	_, addStderr = runFIDCommand(
+	addStdout, _ = runFIDCommand(
 		t,
 		workspace,
 		"issue", "ac", "add", issueID,
@@ -85,7 +83,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"--ordinal", "2",
 		"--by", "developer",
 	)
-	secondACID := parseAddedAcceptanceCriterionID(t, addStderr)
+	secondACID := parseAddedAcceptanceCriterionID(t, addStdout)
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBeforeReject := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -164,9 +162,9 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	_, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
-	if !strings.Contains(rebuildStderr, "rebuild complete") {
-		t.Fatalf("rebuild stderr = %q, want completion output", rebuildStderr)
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
+		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 
 	assertTask4ACRowsEqual(t, snapshotTask4ACRows(t, workspace), beforeAcceptanceRows)
@@ -303,17 +301,17 @@ func snapshotTask4VerificationRows(t *testing.T, workspace string) []task4Verifi
 func mustGetAcceptanceSectionJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "get", issueID, "--section", "acceptance", "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if stderr != "" {
-		t.Fatalf("issue get acceptance stderr = %q, want empty", stderr)
+		t.Fatalf("issue ac list stderr = %q, want empty", stderr)
 	}
-	return canonicalJSON(t, stdout)
+	return mustCanonicalAcceptanceCriteriaJSON(t, stdout)
 }
 
 func mustGetTask4ACListJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "issue", "ac", "list", issueID, "--format", "json")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", issueID)
 	if stderr != "" {
 		t.Fatalf("issue ac list stderr = %q, want empty", stderr)
 	}

@@ -36,14 +36,11 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 	parentID := trimmedOptionalString(options.ParentID)
 	specMDPath := trimmedOptionalString(options.SpecMDPath)
-	dueDate := trimmedOptionalString(options.DueDate)
-	ownerRole := trimmedOptionalString(options.OwnerRole)
-	ownerActor := trimmedOptionalString(options.OwnerActor)
 	labels, err := normalizedLabels(options.Labels)
 	if err != nil {
 		return CreateResult{}, err
 	}
-	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, options.EstTokens, dueDate, ownerRole, strings.TrimSpace(options.Scheduling), options.WorkspaceRoot); err != nil {
+	if err := validateCreateOptions(kind, parentID, options.Priority, options.Sequence, strings.TrimSpace(options.Scheduling)); err != nil {
 		return CreateResult{}, err
 	}
 
@@ -57,7 +54,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	var result CreateResult
-	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, options.EstTokens, dueDate, labels, ownerRole, ownerActor, strings.TrimSpace(options.Scheduling), options.InInbox)
+	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, labels, strings.TrimSpace(options.Scheduling))
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
 		ActorRole: options.ActorRole,
@@ -69,7 +66,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 		defer closeIssueDB(conn)
 
-		issueID, err := journal.GenerateID(projectConfig.Prefix, func(candidate string) (bool, error) {
+		issueID, err := journal.GenerateID(projectConfig.IssuePrefix, func(candidate string) (bool, error) {
 			return issueIDExists(conn, candidate)
 		})
 		if err != nil {
@@ -93,15 +90,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 		defaultOwnerRole := defaultIssueOwnerRole(kind)
-		if ownerRole != nil {
-			defaultOwnerRole = *ownerRole
-		}
 		timestamp := time.Now().UTC().Format(time.RFC3339)
 		issueValues := map[string]any{
 			"kind":        kind,
 			"title":       options.Title,
 			"workflow_id": resolvedWorkflow.ID,
 			"status":      resolvedWorkflow.InitialState,
+			"revision":    1,
 			"owner_role":  defaultOwnerRole,
 			"created_at":  timestamp,
 			"updated_at":  timestamp,
@@ -117,18 +112,6 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 		if specMDPath != nil {
 			issueValues["spec_md_path"] = *specMDPath
-		}
-		if options.EstTokens != nil {
-			issueValues["est_tokens"] = *options.EstTokens
-		}
-		if dueDate != nil {
-			issueValues["due_date"] = *dueDate
-		}
-		if options.InInbox {
-			issueValues["in_inbox"] = true
-		}
-		if ownerActor != nil {
-			issueValues["owner_actor"] = *ownerActor
 		}
 
 		effects := []journal.Effect{
@@ -231,9 +214,13 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 
 		result = CreateResult{
-			ID:    issueID,
-			Kind:  kind,
-			Title: options.Title,
+			ID:         issueID,
+			Kind:       kind,
+			Title:      options.Title,
+			Status:     resolvedWorkflow.InitialState,
+			Revision:   1,
+			EventID:    appended.EventID,
+			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
 		}
 		return nil
 	})
@@ -279,12 +266,9 @@ func defaultIssueOwnerRole(kind string) string {
 	return "developer"
 }
 
-func validateCreateOptions(kind string, parentID *string, priority, sequence, estTokens *int, dueDate, ownerRole *string, scheduling, workspaceRoot string) error {
+func validateCreateOptions(kind string, parentID *string, priority, sequence *int, scheduling string) error {
 	switch kind {
 	case "epic":
-		if parentID != nil {
-			return fmt.Errorf("issues: epic parent_id must be NULL")
-		}
 		if scheduling == "" {
 			return fmt.Errorf("create issue: epic scheduling is required")
 		}
@@ -304,19 +288,6 @@ func validateCreateOptions(kind string, parentID *string, priority, sequence, es
 	if sequence != nil && *sequence <= 0 {
 		return fmt.Errorf("create issue: sequence must be positive")
 	}
-	if kind == "epic" && estTokens != nil {
-		return fmt.Errorf("create issue: est_tokens is only valid for tasks and subtasks")
-	}
-	if dueDate != nil {
-		if _, err := time.Parse("2006-01-02", *dueDate); err != nil {
-			return fmt.Errorf("create issue: due_date must use YYYY-MM-DD")
-		}
-	}
-	if ownerRole != nil {
-		if err := policy.RequireKnownRole(workspaceRoot, *ownerRole); err != nil {
-			return err
-		}
-	}
 	if scheduling != "" && scheduling != "sequential" && scheduling != "prioritised" {
 		return fmt.Errorf("create issue: scheduling must be sequential or prioritised")
 	}
@@ -326,7 +297,7 @@ func validateCreateOptions(kind string, parentID *string, priority, sequence, es
 func validateParentConstraint(conn *sql.DB, kind string, parentID *string) error {
 	if parentID == nil {
 		if kind == "subtask" {
-			return fmt.Errorf("issues: subtask parent_id must reference a task")
+			return hierarchyInvalidError(kind, nil, nil)
 		}
 		return nil
 	}
@@ -335,19 +306,40 @@ func validateParentConstraint(conn *sql.DB, kind string, parentID *string) error
 	if err != nil {
 		return err
 	}
+	if !found {
+		return &NotFoundError{IssueID: *parentID}
+	}
 	switch kind {
 	case "epic":
-		return fmt.Errorf("issues: epic parent_id must be NULL")
+		return hierarchyInvalidError(kind, parentID, &parentKind)
 	case "task":
-		if !found || parentKind != "epic" {
-			return fmt.Errorf("issues: task parent_id must reference an epic or be NULL")
+		if parentKind != "epic" {
+			return hierarchyInvalidError(kind, parentID, &parentKind)
 		}
 	case "subtask":
-		if !found || parentKind != "task" {
-			return fmt.Errorf("issues: subtask parent_id must reference a task")
+		if parentKind != "task" {
+			return hierarchyInvalidError(kind, parentID, &parentKind)
 		}
 	}
 	return nil
+}
+
+func hierarchyInvalidError(kind string, parentID, parentKind *string) *HierarchyInvalidError {
+	rule := ""
+	switch kind {
+	case "epic":
+		rule = "epics must not have a parent"
+	case "task":
+		rule = "tasks must have an epic parent or no parent"
+	case "subtask":
+		rule = "subtasks must have a task parent"
+	}
+	return &HierarchyInvalidError{
+		Kind:       kind,
+		ParentID:   parentID,
+		ParentKind: parentKind,
+		Rule:       rule,
+	}
 }
 
 func requireExistingLabels(conn *sql.DB, labels []string) error {
@@ -365,7 +357,7 @@ func requireExistingLabels(conn *sql.DB, labels []string) error {
 	return nil
 }
 
-func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, estTokens *int, dueDate *string, labels []string, ownerRole, ownerActor *string, scheduling string, inInbox bool) []string {
+func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, scheduling string) []string {
 	argv := []string{"fid", "issue", "create", "--kind", kind, "--title", title}
 	switch kind {
 	case "task":
@@ -386,26 +378,11 @@ func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, 
 	if specMDPath != nil {
 		argv = append(argv, "--spec-md", *specMDPath)
 	}
-	if estTokens != nil {
-		argv = append(argv, "--est-tokens", fmt.Sprintf("%d", *estTokens))
-	}
-	if dueDate != nil {
-		argv = append(argv, "--due-date", *dueDate)
-	}
 	for _, label := range labels {
 		argv = append(argv, "--label", label)
 	}
-	if ownerRole != nil {
-		argv = append(argv, "--owner-role", *ownerRole)
-	}
-	if ownerActor != nil {
-		argv = append(argv, "--owner-actor", *ownerActor)
-	}
 	if scheduling != "" {
 		argv = append(argv, "--scheduling", scheduling)
-	}
-	if inInbox {
-		argv = append(argv, "--inbox")
 	}
 	argv = append(argv, "--by", actorRole)
 	return argv

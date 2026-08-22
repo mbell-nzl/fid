@@ -22,6 +22,7 @@ type AcquireOptions struct {
 	TTLSeconds    *int
 	Note          *string
 	Force         bool
+	Now           time.Time
 }
 
 type Claim struct {
@@ -46,6 +47,7 @@ type RenewOptions struct {
 	IssueID       string
 	ActorRole     string
 	TTLSeconds    *int
+	Now           time.Time
 }
 
 type ReleaseOptions struct {
@@ -53,6 +55,7 @@ type ReleaseOptions struct {
 	MigrationsDir string
 	IssueID       string
 	ActorRole     string
+	Now           time.Time
 }
 
 type ReleaseResult struct {
@@ -110,4 +113,11 @@ func (claim *currentClaim) expiresAt() time.Time {
 
 func (claim *currentClaim) isLiveAt(now time.Time) bool {
 	return now.UTC().Before(claim.expiresAt())
+}
+
+func operationTime(now time.Time) time.Time {
+	if now.IsZero() {
+		return time.Now().UTC()
+	}
+	return now.UTC()
 }

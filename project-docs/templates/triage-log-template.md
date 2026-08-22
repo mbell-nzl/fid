@@ -1,8 +1,9 @@
 # Phase <N> - TL-Lite Triage Log
 
-> **Purpose.** Append-only log of mid-phase triage events handled by TL-Lite.
-> Phase Runner reads TL-Lite's `VERDICT:` line to decide whether to resume or
-> stop. Tech Lead audits this log at phase wrap-up.
+> **Purpose.** Append-only log of mid-phase triage events handled by TL-Lite or
+> the full Tech Lead. Phase Runner reads the `VERDICT:` line to decide whether
+> to advance, dispatch a same-task repair, or stop. Tech Lead audits this log at
+> wrap-up.
 >
 > **Numbering.** Identifiers are **phase-scoped**: `TRG-<phase>-<NNN>` and
 > `ESC-<phase>-<NNN>` — for example `TRG-19-001`, `ESC-19-001`. The phase
@@ -15,35 +16,109 @@
 > `ESC-NNN` placeholder — a placeholder is not an identifier and leaves the
 > event with no durable record.
 >
-> **Write the entry before reporting the verdict.** This row, not the chat
+> Only TL-Lite or the full Tech Lead may allocate an `ESC`. Developer and QA
+> outputs are recovery or blocker candidates; they neither mint nor reserve an
+> escalation ID. `REPAIR` creates no ESC and requests no Human attention.
+>
+> **Write the entry before reporting the verdict.** This entry, not the chat
 > reply, is what the Phase Runner confirms and the Tech Lead audits at wrap-up.
-> Newest entry at top.
+> Append new entries at the end in wall-clock order. Never insert, edit, delete,
+> or renumber an earlier entry; append a labelled correction instead.
+>
+> Under `Recovery directive schema: v2`, every value in the typed
+> control-conformance directive is written on one physical line. The Phase
+> Runner copies those values byte-for-byte into the run ledger; prose elsewhere
+> in the entry does not grant or widen repair authority. Each authoritative
+> label occurs exactly once in its TRG or amendment section. Labels may appear
+> in any order and need not be contiguous; their values, not their position,
+> bind recovery.
 
-| TRG-<phase>-<NNN> | Date | Trigger | Source | Verdict | ESC-<phase>-<NNN> (if BLOCK) | Summary |
-|---|---|---|---|---|---|---|
-| TRG-19-001 | YYYY-MM-DD | <one line> | <source> | RESUME / BLOCK | <ESC-19-001 or -> | <2 lines max> |
+<!--
+Phase wrap-up checklist:
+
+- [ ] Walked every TRG-<phase>-<NNN> in this file.
+- [ ] Confirmed each RESUME had resolution evidence and every REPAIR completed
+      verification plus any required independent re-review.
+- [ ] Flagged any TRG that should have escalated.
+- [ ] Confirmed every entry carries a real, unique, non-placeholder ID, and
+      that every BLOCK names the ESC it raised or referenced.
+- [ ] Confirmed QA and Developer candidates did not mint ESC IDs.
+-->
 
 ---
 
 ## TRG-<phase>-<NNN> - <short title>
 
 - **Trigger:** <verbatim trigger line from Phase Runner prompt>
-- **Source:** <task report / review / ESC-<phase>-<NNN>>
-- **Verdict:** RESUME | BLOCK
+- **Originating task:** <task-M>
+- **Trigger signature:** `<task/review>:<category>:<stable source identity>`
+- **Repair category:** <recovery category | N/A for RESUME/BLOCK>
+- **Repair authority:** <task spec / QA review / this TRG typed directive | N/A for RESUME/BLOCK>
+- **Source:** <task report / review / session / existing ESC>
+- **Candidate:** <RECOVERY_REQUIRED / QA REPAIR / blocker candidate / other>
+- **Attempt count:** <total mediated continuations for this signature>
+- **Checkpoint:** <commit/tree/report/review state>
+- **Verdict:** RESUME | REPAIR | REPAIR / control-conformance | BLOCK
 - **Reasoning:** <2-4 lines>
 - **Local decisions made:** <bullets or "none">
+- **Resolution evidence:** <why cleared; bounded repair evidence; or exact
+  protected/exhausted condition>
+- **If REPAIR:** owning task <task-M>; category <recovery category>; next action
+  <same-task continuation plus exact verification/re-review>; no ESC.
+- **Control trigger signature:** <exact stable signature | N/A>
+- **Control attempt count:** <exact next mediated attempt | N/A>
+- **Control contract:** <binding accepted source and required behavior | N/A>
+- **Control mismatch:** <exact reproduced mismatch and termination | N/A>
+- **Allowed files:** <exact comma-separated ordered project-docs/tools/ paths with no spaces around commas | N/A>
+- **Forbidden changes:** <exact protected paths and semantics | N/A>
+- **Exact verification:** <exact command bytes and working directory | N/A>
+- **Originating report:** <exact repo-relative completion-report path | N/A>
+- **Control repair base:** <full runner-supplied pre-triage phase HEAD | N/A>
+- **If BLOCK:** category <protected blocker category>;
+  ESC-<phase>-<NNN> <raised or referenced> in `tl_escalations_current.md`;
+  resolution condition <named Human or external-authority action>.
+- **Human attention required:** <no for RESUME/REPAIR | yes for BLOCK>
 - **References:** <file:line, doc section, DEC-NNN>
-- **If BLOCK:** ESC-<phase>-<NNN> raised in `tl_escalations_current.md`;
-  recommended next action: <action>
 
-<!--
-Phase wrap-up checklist:
+For `REPAIR / control-conformance`, `Originating task` plus the nine fields from
+`Control trigger signature` through `Control repair base` are the ten-field
+authoritative typed directive. Each occurs exactly once in this TRG section. The
+ordinary `Trigger signature` and `Attempt count` must equal `Control trigger
+signature` and `Control attempt count`. TL-Lite copies the runner-supplied full
+`Control repair base`; it never selects or verifies a different base.
 
-- [ ] Walked every TRG-<phase>-<NNN> above.
-- [ ] Confirmed each RESUME verdict was correct in hindsight.
-- [ ] Flagged any TRG that should have escalated.
-- [ ] Confirmed every entry carries a real, unique, non-placeholder ID, and
-      that every BLOCK names the ESC it raised.
-- [ ] Confirmed autonomous TL-Lite resume in effect (DEC-002; no warm-up tally).
--->
+## Control Directive Amendment For TRG-<phase>-<NNN>
 
+Use this append-only form only when an existing `DEC-<NNN>` resolves the
+governing BLOCK into `REPAIR / control-conformance`. This is a unique, separate
+H2 section parsed independently from the original TRG section and its BLOCK
+verdict. Do not nest it under, edit, or reinterpret the original BLOCK entry,
+and do not allocate a new TRG. Exactly one amendment H2 may name a governing
+TRG. TL-Lite or the full Tech Lead appends it after the decision exists and
+before RUN-RESUME.
+
+- **Governing TRG:** TRG-<phase>-<NNN>
+- **Governing ESC:** ESC-<phase>-<NNN>
+- **Resolution authority:** DEC-<NNN>
+- **Verdict:** REPAIR / control-conformance
+- **Originating task:** <task-M>
+- **Control trigger signature:** <exact stable signature retained from STOP>
+- **Control attempt count:** <exact next mediated attempt number>
+- **Control contract:** <binding accepted source and uniquely required behavior>
+- **Control mismatch:** <exact expected/observed reproducer and termination>
+- **Allowed files:** <exact comma-separated ordered project-docs/tools/ paths with no spaces around commas>
+- **Forbidden changes:** <exact protected paths and semantics>
+- **Exact verification:** <exact command bytes and working directory>
+- **Originating report:** <exact repo-relative completion-report path>
+- **Control repair base:** <full phase HEAD supplied and verified by Phase Runner>
+- **References:** <existing DEC, task/report, control contract, and evidence>
+
+The verdict and each of the ten directive labels occur exactly once in this
+amendment section. Their values bind byte-for-byte. Their order and contiguity
+do not matter. The original TRG retains exactly its original BLOCK verdict;
+only this separately parsed amendment authorizes the resolved control repair.
+
+Every boundary-valid DEC citation in a `Repair authority` or
+`Resolution authority` field must exist in the phase decisions file. One real
+DEC does not validate another nonexistent citation, and embedded text such as
+`NOTDEC-123X` is not a citation.

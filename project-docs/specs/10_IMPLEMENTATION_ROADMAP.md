@@ -1,7 +1,7 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Gate D3.1 and revised Phase 20 implementation pack accepted
-**Last updated:** 2026-08-09
+**Status:** Phase 20 complete; Gate D3.2 is next
+**Last updated:** 2026-08-22
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
@@ -43,12 +43,11 @@ migrations, and formatters are removed rather than deprecated.
 
 ### Current gate position
 
-**Gate D3.1** has ratified the vertical-slice order and initial removal owners
-in section 5. The Human accepted the exact Phase 20 contract, validation
-contract, and eighteen-task pack on 2026-08-09 under the binding V1 delivery
-process. QA-plan acceptance is the remaining pre-implementation gate.
-**Gate D3.2** will settle the exact thin
-Routine walking-skeleton boundary before Phase 21 is planned.
+**Gate D3.1** ratified the vertical-slice order and initial removal owners in
+section 5. Phase 20 completed on 2026-08-22 with 46/46 validation assertions
+PASS and its standalone Issue journey accepted. **Gate D3.2** is now the active
+decision gate and must settle the exact thin Routine walking-skeleton boundary
+before Phase 21 is planned.
 
 ## 3. Foundation to retain
 
@@ -214,15 +213,12 @@ reading `.fid/` internals.
 
 ## 10. Immediate next work
 
-1. **Accepted (2026-08-09).** Phase 20 planned, V1-workflow-self-checked, independently audited, and Human-approved from section 5. Slice contract:
-   `../docs/phases/phase-20/contracts.md`; DDL amendment: `03_TRD_SCHEMA.md`
-   section 8; config amendment: `04_TRD_CONFIG.md` sections 2/5;
-   cross-cutting CLI rules: `06_DESIGN_PLAN_CLI.md` sections 2, 5, 8.
-2. QA Lead writes and validates the Phase 20 QA plan; Phase Runner then starts
-   Task 1.
-3. Implement and independently review Phase 20 through the existing V1 process.
-4. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary before
-   planning Phase 21.
+1. **Complete (2026-08-22).** Phase 20 delivered and independently validated
+   the standalone Issue journey from its accepted slice contract; all 46 VAL
+   assertions and all three Human checks pass.
+2. Run the recommended Phase 20 delivery-workflow retrospective.
+3. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary.
+4. Plan Phase 21 only after Gate D3.2 receives Human approval.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.
