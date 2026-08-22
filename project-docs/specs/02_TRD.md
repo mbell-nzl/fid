@@ -276,6 +276,16 @@ Targets include deterministic benchmark fixtures and may not be weakened to
 accommodate a regression. A performance tier remains evidence-gated under
 ADR-0011.
 
+For Phase 21, the 100k-Event reference instance is Linux/amd64 on an AMD Ryzen
+7 5700G with six exposed logical CPUs and 8,133,236 kB recorded memory, using
+Go 1.26.2. Evidence also records the exact kernel, `GOOS`/`GOARCH`, toolchain,
+logical CPU count, CPU model, and memory visible to the process. Acceptance is
+three consecutive fresh one-iteration benchmark processes on that instance;
+every sample must self-assert parity and complete below 30 seconds. Best-of or
+median tolerance is not accepted. The general benchmark gate retains the same
+per-sample failure assertion. An unavailable reference instance is `BLOCKED`,
+and a slow sample requires causal optimization rather than threshold change.
+
 ## 10. Pre-Dogfood Convergence Rules
 
 - Replacement contracts and tests land before displaced V1 code is deleted in
@@ -289,4 +299,4 @@ ADR-0011.
   physical DDL and Event payload are recorded in `03_TRD_SCHEMA.md` for that
   slice.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-156/157 planning amendment)*
+*Last updated: 2026-08-23 (Phase 21 DEC-156/157/158 planning amendments)*

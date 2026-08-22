@@ -490,3 +490,14 @@ creates a second one-revision Envelope. Maintenance reports sequence gaps, orpha
 bindings, Attempt-without-Receipt as non-passing, Receipt mismatch, missing
 Artifact, invalid active Activation, frozen-table writes, and removed V1 state.
 No implementation or QA task reads held-out scenarios or evaluator prompts.
+
+The mutation prefix commits exactly 20 Events: `project.initialized`,
+`issue.created`, `activation.prepared`, two `activation.component-staged`,
+`activation.committed`, `activation.finalized`, `gate.registered`,
+`envelope.created`, `envelope.activated`, `claim.acquired`, `run.started`, the
+nonterminal `issue.transitioned`, `gate.execution-started`,
+`gate.receipt-recorded`, `evidence.linked`, the terminal-success
+`issue.transitioned`, `run.finished`, `claim.released`, and
+`envelope.completed`. The complete journey contains exactly one
+`envelope.created`. Post-rebuild commands append zero Events; a count other
+than 20 before rebuild or any later increase is a conformance failure.

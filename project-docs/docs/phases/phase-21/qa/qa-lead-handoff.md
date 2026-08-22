@@ -67,10 +67,10 @@ QA-role/workflow sections required to author the plan:
     compliance, security review of executor/redaction/path handling,
     performance spot-check, documentation review, every VAL outcome, task/report
     audit, and final no-unclassified-inventory-match proof.
-12. Create exactly one Human checklist item for VAL-036 using the deterministic
-    recorded terminal fixture. Ask the Human to confirm stream identity, typed
-    controls, and terminal result are understandable and no raw control affects
-    display. Do not delegate or pre-answer it.
+12. Keep VAL-036 as the sole Human parent assertion and, per Workflow §6.1,
+    fan it out into HUMAN-01a..01d over the deterministic terminal fixture:
+    stream identity, typed controls, terminal result, and no raw-control display
+    effect. All four cite VAL-036; do not delegate or pre-answer them.
 
 ## Readiness Response
 
@@ -82,3 +82,25 @@ changes requested.
 
 Task 1 remains unauthorized after the QA Lead response. The Tech Lead must
 apply accepted refinements, then the Human must approve execution.
+
+## Tech Lead Refinement Response - 2026-08-23
+
+DEC-158 applies BC-01/BC-02 and R-01..R-18, except R-09's final-status premise:
+final role-policy and `--by` searches must terminate 1, while broad retained
+reader/Event searches terminate 0 and all matches classify to
+`UNCLASSIFIED=0`. R-19 remains deferred until Human execution approval. QA Lead
+must re-review the amended contract/tasks and update its own plan before a
+`Ready` verdict. In particular it must:
+
+1. replace BC-01/QA-80/final-performance language with DEC-158's exact reference
+   identity and three consecutive fresh-process, all-samples-`<30 s` rule;
+2. close BC-02 and use only the Phase Runner's two-argument post-commit report
+   lint before the next dispatch, including in VAL-042/VAL-087 cadence text;
+3. bind the task 14 Human fixtures, task 22 committed corpus/non-vacuity, exact
+   20-Event/one-`envelope.created` positive control, containment lexicon, and
+   Group 1 environment-only feasibility wording; and
+4. correct R-09/QA-41/QA-93 status expectations without narrowing the two broad
+   classified inventories.
+
+Mark `qa-plan.md` `Ready` only if the independent re-review finds no remaining
+Must-fix. Task 1 stays unauthorized.

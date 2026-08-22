@@ -24,6 +24,16 @@
 - Exact QA Lead handoff prepared; no QA plan was authored by the Tech Lead.
 - Planning inventories recorded in `planning-audit.md`; all final comparisons
   pass with observed termination.
+- QA Lead plan committed at `f5ccbb6` with complete VAL mapping and fresh
+  feasibility, but returned BC-01/BC-02 and refinements R-01..R-19.
+- DEC-158 applies the bounded refinements, preserves the `<30 s` target as
+  three consecutive self-asserted samples, and returns the plan for Ready
+  re-review. R-19 waits for Human execution approval.
+- The DEC-158 planning rerun passed: 87 unique VAL rows, zero task-owner or
+  path mismatches, 55 owned convergence dispositions, zero forbidden public
+  snake-case enums, and exact task-20/task-21 removal/parity agreement.
+- `project-docs/tools/workflow-lint.sh` and `git diff --check` both terminated
+  `exit_code: 0`; the prior trailing-blank-line defect is absent.
 - Implementation remains unauthorized pending Human review and a Ready QA
   Lead plan.
 

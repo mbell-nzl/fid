@@ -12,7 +12,9 @@ commands; the contract and accepted pass/fail semantics below are protected.
 
 ## Preconditions
 
-- Tasks 1-12 have completion reports with task-local report-lint evidence.
+- Tasks 1-12 have committed completion reports and Phase Runner two-argument
+  report-lint evidence captured after each report commit and before the next
+  dispatch.
 - QA Review artifacts exist for tasks 1-3, 4-6, 7-9, and 10-12.
 - Every finding is linked to its owning task and resolved by a later committed
   repair or remains an explicit checkpoint failure.
@@ -57,8 +59,9 @@ environment can deterministically verify:
 - repository-tree freshness and Artifact loss/restoration;
 - byte-deterministic ZIP creation and non-mutating corruption validation;
 - every prescribed expected-nonzero absence command with its real status; and
-- the dedicated tagged real-process journey within the QA plan's declared
-  bounded time budget.
+- environment feasibility to run the existing tagged integration gate within
+  300 seconds and each FEAS probe within 120 seconds. This does not require the
+  task-22 product journey to exist after task 12.
 
 Transcribed Phase 20 evidence, a promised later fixture, an unbounded/hung
 command, or a green result without observed termination is not feasibility.

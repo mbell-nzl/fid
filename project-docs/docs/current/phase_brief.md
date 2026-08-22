@@ -19,8 +19,9 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
 
 ## Binding Decisions
 
-- DEC-152: Phase 20 retrospective controls task size, fresh feasibility,
-  task-local report lint, three-task review cadence, and checkpoint timing.
+- DEC-152 as refined by DEC-158: Phase 20 retrospective controls task size,
+  fresh feasibility, Phase Runner two-argument post-commit lint before the next
+  dispatch, three-task review cadence, and checkpoint timing.
 - DEC-153: Gate D3.2 DP-1..DP-7 remain accepted and are not reopened.
 - DEC-154: exact initial slice/schema contract.
 - DEC-155: carry-forward disposition.
@@ -28,6 +29,8 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
   both use one shared Obligation evaluator.
 - DEC-157: complete wire contract, kebab-case public enums, role-free bootstrap,
   exhaustive V1 disposition, achievable checkpoint, and tasks 19-22 order.
+- DEC-158: QA refinements, two-argument Runner report lint, four Human subchecks,
+  and three consecutive `<30 s` reference-instance rebuild samples.
 
 ## Planning Authorities
 
@@ -37,6 +40,7 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
 - Validation: `../phases/phase-21/qa/validation-contract.md` (VAL-001..087)
 - Checkpoint: `../phases/phase-21/qa/group-1-checkpoint-contract.md`
 - QA request: `../phases/phase-21/qa/qa-lead-handoff.md`
+- QA plan: `../phases/phase-21/qa/qa-plan.md` (Needs Refinement at `f5ccbb6`)
 - Planning audit: `../phases/phase-21/planning-audit.md`
 - Tasks: `../phases/phase-21/tasks/task-<N>-*.md`
 
@@ -80,6 +84,14 @@ blocked without checkpoint PASS and fresh Group 2 feasibility.
 QA Reviews follow tasks 13-15, 16-18, and 19-21. Final QA owns task 22
 evidence and phase-end VAL-087. VAL-036 is the sole Human checklist assertion.
 
+## Dispatch Controls
+
+Before each next dispatch, the Phase Runner runs
+`project-docs/tools/report-lint.sh <committed-report> <task-spec>` and records
+observed termination. Review artifacts are `qa/review-1.md` through
+`qa/review-7.md`; checkpoint is `qa/group-1-checkpoint-review.md`; final
+artifacts are `qa/final-review.md` and `qa/human-checklist.md`.
+
 ## Journey Order
 
 Mutate once: init/Issue; discover; activate; register; create/activate Envelope;
@@ -92,8 +104,8 @@ negative checks. Never create a second Envelope revision.
 ## Approval Gate
 
 1. Human reviews and approves or amends this complete Heavy planning pack.
-2. QA Lead proposes a **Ready** Heavy QA plan from the handoff.
-3. Tech Lead applies any QA-driven contract/task command refinements.
+2. QA Lead re-reviews DEC-158 refinements and marks the Heavy QA plan **Ready**.
+3. Tech Lead confirms no unresolved QA contract refinement remains.
 4. Human approves execution. Only then may a Phase Runner dispatch task 1.
 
 No protected Human decision remains open inside the proposed contract. The

@@ -19,7 +19,9 @@ Against the post-0014 binary, prove fresh init and delete-projection/rebuild are
 
 - This task starts only after destructive removal; it cannot use a pre-0014 bootstrap fixture.
 - Maintenance reports but never repairs.
-- Record hardware/toolchain and observed termination for the 100k threshold.
+- Record the DEC-158 reference identity exactly: `go1.26.2 linux/amd64`, `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`, 6 logical processors, `AMD Ryzen 7 5700G with Radeon Graphics`, and `8133236 kB` `MemTotal`.
+- Run the bounded 100k benchmark in three consecutive fresh processes. Every sample must preserve parity and terminate under 30 seconds; best/median sampling is forbidden, and the benchmark's per-sample `<30s` `b.Fatalf` remains part of the general phase gate.
+- If any sample fails, optimize the implementation within task scope and rerun the byte-identical three-sample sequence; do not weaken, average, or rebaseline the protected threshold.
 
 ## Scope
 
@@ -51,7 +53,7 @@ Against the post-0014 binary, prove fresh init and delete-projection/rebuild are
 - [ ] Delete/rebuild reproduces role-free bootstrap/capabilities. (VAL-077)
 - [ ] All three atomic maintenance classes are exact. (VAL-078, VAL-079, VAL-080)
 - [ ] Named reads and export are live/rebuild identical. (VAL-081, VAL-082)
-- [ ] 100k v2 rebuild terminates under threshold with parity. (VAL-083)
+- [ ] On the recorded DEC-158 reference instance, three consecutive fresh-process 100k Event-v2 rebuild samples each preserve parity and terminate under 30 seconds. (VAL-083)
 
 ## First Failing Test
 
@@ -68,15 +70,23 @@ Run exactly:
 ```text
 go test -race ./internal/bootstrap ./internal/maintenance ./internal/journal ./internal/db ./internal/export ./internal/cli ./cmd/fid/...
 go test -tags integration -race ./cmd/fid/integration/...
+go version
+go env GOOS GOARCH
+uname -srm
+nproc
+grep -m1 '^model name' /proc/cpuinfo
+grep -m1 '^MemTotal:' /proc/meminfo
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
 go test -bench . -benchmem ./...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-21-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 

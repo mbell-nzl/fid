@@ -79,6 +79,10 @@
   V1 convergence inventory are protected planning authorities; public enums
   are kebab-case; final bootstrap has no role Effect; task 20 owns removal/0014
   before task 21 final-schema parity.
+- **Phase 21 QA refinement (DEC-158):** report lint is a two-argument Phase
+  Runner pre-dispatch control, not a Developer task command. The unchanged
+  100k rebuild target is three consecutive self-asserted `<30 s` samples on
+  the recorded Phase 21 reference instance; one failure fails VAL-083.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -86,8 +90,8 @@ specification suite.
 
 ## Open decision
 
-None for Phase 21 planning. Human execution approval is still required after
-review of the exact contract, validation contract, task pack, and phase brief.
+None for Phase 21 planning. QA Ready re-review and Human execution approval
+are still required after DEC-158 refinements.
 
 ## Carry-forward disposition
 

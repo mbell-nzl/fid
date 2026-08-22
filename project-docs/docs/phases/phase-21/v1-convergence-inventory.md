@@ -3,7 +3,7 @@
 > Status: **PLANNING DRAFT FOR HUMAN APPROVAL**
 > Owner: Tech Lead
 > Live inventory base: Phase 21 planning HEAD before implementation
-> Governing decisions: DEC-153, DEC-156, DEC-157
+> Governing decisions: DEC-153, DEC-156, DEC-157, DEC-158
 
 This is the exhaustive removal/disposition authority for Phase 21. It was
 derived from the live `cmd/fid`, `internal`, `migrations`, and journal fixture
@@ -180,4 +180,9 @@ rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\s*"' cmd/fid internal
 
 The report must classify every match against this file. An unclassified match
 fails; a raw no-match is not sufficient where a frozen or diagnostic reader is
-explicitly retained.
+explicitly retained. At final task-20 HEAD, the first two commands are absence
+controls and must terminate with the predeclared `exit_code: 1`; the broad
+table-reader and Event-family commands are classified inventories and must
+terminate `exit_code: 0`. Every line produced by either classified inventory
+must map to an explicit retained, frozen, diagnostic, or removal disposition,
+and the completion report must record `UNCLASSIFIED=0`.

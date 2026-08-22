@@ -25,6 +25,8 @@ Implement exact `fid.live.v1` stdout/stderr/control framing, pre-surface redacti
 - `internal/evidence/`
 - `internal/cli/`
 - `cmd/fid/`
+- `cmd/fid/testdata/val-036/human-session.txt`
+- `cmd/fid/testdata/val-036/live-frames.jsonl`
 - `project-docs/docs/phases/phase-21/tasks/task-14-done.md`
 
 ### Files To Read For Context
@@ -42,11 +44,11 @@ Implement exact `fid.live.v1` stdout/stderr/control framing, pre-surface redacti
 - [ ] Every control variant is exact. (VAL-048)
 - [ ] Canary redaction covers all surfaces. (VAL-049)
 - [ ] Truncation drains without changing outcome. (VAL-050)
-- [ ] A deterministic terminal fixture is recorded for Human VAL-036.
+- [ ] `human-session.txt` and `live-frames.jsonl` are regenerated and byte-compared by a golden test; together they show interleaved stdout/stderr, all three control kinds (`redaction-applied`, `artifact-rejected`, `output-truncated`), a non-success terminal frame, and child output containing raw ESC, CR, and BEL bytes rendered safely. (VAL-036)
 
 ## First Failing Test
 
-Add interleaved/control/canary/high-output failing real-process fixtures before framing.
+Add the failing golden regeneration/byte-comparison test for both VAL-036 fixtures, then the interleaved/control/canary/high-output real-process fixtures before framing.
 
 ## Documentation Updates
 
@@ -62,10 +64,9 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-14-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 

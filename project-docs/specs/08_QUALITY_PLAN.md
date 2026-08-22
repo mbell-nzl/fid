@@ -172,8 +172,9 @@ Envelope/Claim/Run foundation and before executor implementation begins. That
 checkpoint re-runs fresh feasibility for every non-default verifier, fixture,
 environment assumption, expected non-zero proof, and time budget prescribed
 for Group 2. Findings return to their owning task; implementation momentum is
-not evidence. Each Developer runs report lint on its own completion report
-before the next task is dispatched.
+not evidence. Report lint is not a Developer task-gate command: after the
+Developer's report commit, the Phase Runner runs the exact two-argument
+report/task-spec control before the next task is dispatched.
 
 The checkpoint proves new generic Group 1 paths are isolated from the exact
 temporary V1 inventory; it does not require final absence before the removal

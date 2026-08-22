@@ -56,18 +56,25 @@ Run exactly:
 
 ```text
 go test -race ./internal/evidence ./internal/config ./internal/cli ./cmd/fid/...
+rg -n -i --glob '*.go' --glob '!**/*_test.go' -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' cmd internal
+rg -n -i -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' project-docs/docs/phases/phase-21/contracts.md project-docs/docs/phases/phase-21/public-interface.md
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-13-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+
+## Expected Non-Zero Commands
+
+- `rg -n -i --glob '*.go' --glob '!**/*_test.go' -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' cmd internal` - expected `exit_code: 1` - no production containment claim
+- `rg -n -i -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' project-docs/docs/phases/phase-21/contracts.md project-docs/docs/phases/phase-21/public-interface.md` - expected `exit_code: 1` - no Phase 21 contract containment claim
 
 ## Notes For Developer
 
-- Start only after Group 1 checkpoint PASS (VAL-042/043 and feasibility probes).
+- Start only after Group 1 checkpoint PASS (VAL-042 and VAL-043) and all
+  feasibility probes.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-13-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

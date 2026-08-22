@@ -57,18 +57,23 @@ Run exactly:
 
 ```text
 go test -race ./internal/export ./internal/evidence ./internal/journal ./internal/cli ./cmd/fid/...
+rg -n --glob '*.go' --glob '!**/*_test.go' 'Use:\s*"import|newExportImport|export\.import' cmd/fid internal
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-19-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+
+## Expected Non-Zero Commands
+
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'Use:\s*"import|newExportImport|export\.import' cmd/fid internal` - expected `exit_code: 1` - no export import command/path
 
 ## Notes For Developer
 
 - Start after task 18 closes.
+- This task creates `internal/export/`; its focused package command is valid only from this task onward.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-19-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

@@ -143,6 +143,39 @@
   `public-interface.md`; `v1-convergence-inventory.md`;
   `qa/validation-contract.md`; `qa/group-1-checkpoint-contract.md`.
 
+### DEC-158: Resolve QA-plan refinements without weakening the rebuild target
+
+- **Date:** 2026-08-23
+- **Context:** The QA Lead committed the Heavy plan at `f5ccbb6` with complete
+  VAL mapping and feasibility, but found two blockers: every task specified an
+  invalid/self-referential one-argument report-lint command, and the retained
+  100k rebuild control produced one 33.46s failure followed by 27.11s and
+  24.97s passes on the only verification machine. It also proposed bounded
+  evidence refinements R-04..R-19.
+- **Decision:** Remove report lint from Developer command gates. The Phase
+  Runner runs the exact two-argument control against the committed report and
+  task spec before the next dispatch. Keep the TRD `<30 s` target and the
+  benchmark's per-sample `b.Fatalf`; do not use best/median tolerance. The
+  Phase 21 reference instance is Linux/amd64 on an AMD Ryzen 7 5700G with six
+  exposed logical CPUs and 8,133,236 kB recorded memory, using Go 1.26.2;
+  kernel, toolchain, CPU count/model, and memory are captured with the gate.
+  VAL-083 requires three consecutive fresh `-benchtime 1x` processes, each
+  self-asserting below 30 seconds with parity. Any one failure fails the
+  assertion and task 21 owns causal optimization, not threshold relaxation.
+- **Decision:** Accept R-04..R-08 and R-10..R-18. Human VAL-036 remains one
+  parent perception assertion and fans out to HUMAN-01a..01d as required by
+  workflow section 6.1. R-19 remains deferred until Human execution approval.
+  Correct R-09's status premise: at final task-20 HEAD the role-policy and
+  `--by` recipes must terminate `exit_code: 1`, while the broad retained-reader
+  and Event recipes terminate 0; every actual match still must classify and
+  the completion report records `UNCLASSIFIED=0`.
+- **Consequences:** Task 1 remains unauthorized. QA Lead must re-review the
+  applied refinements, correct its task-20 recipe expectations, and change the
+  QA plan to `Ready` before Human execution approval. The 30-second target,
+  Event schema, product surface, phase shape, and task order do not change.
+- **Refs:** QA plan BC-01/BC-02 and R-01..R-19 at `f5ccbb6`; DEC-071;
+  CF-024; TRD section 9; `qa/validation-contract.md`; tasks 1-22.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -152,13 +185,13 @@ verdicts are completed at phase wrap-up.
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending wrap audit | - |
 | `01_PRD.md` | touched: see DEC-156 | Phase 21 qualification makes the terminal-success Issue transition and later Envelope completion independently evaluate the same gate-evidence Obligation. |
-| `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157 | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, and executor boundary are explicit. |
+| `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157, DEC-158 | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, executor boundary, and the unchanged deterministic rebuild target are explicit. |
 | `03_TRD_SCHEMA.md` | touched: see DEC-157 | Exact migrations, kebab checks, displaced rule deletion, and role-free bootstrap fixture are accepted for review. |
 | `04_TRD_CONFIG.md` | touched: see DEC-157 | Exact public executor bounds agree with the closed input contract. |
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157 | Checkpoint isolation, removal-before-parity, cadence, feasibility, and report lint are explicit. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158 | Checkpoint isolation, removal-before-parity, cadence, feasibility, and committed-report lint ownership are explicit. |
 | `09_AI_WORKFLOW.md` | verified-no-planning-change | DEC-152 applies existing Heavy-mode and recovery rules without changing them. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |

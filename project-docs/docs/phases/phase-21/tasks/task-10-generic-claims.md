@@ -61,10 +61,9 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-10-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 

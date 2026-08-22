@@ -37,7 +37,7 @@ Implement the migration-derived capability projection and `fid capabilities` tra
 ## Acceptance Criteria
 
 - [ ] Discovery emits every exact sorted row. (VAL-009)
-- [ ] Unavailable rows remain false despite internal operations. (VAL-010)
+- [ ] Every false capability and every named operation/surface it governs remains unavailable despite internal implementation detail or caller input. (VAL-010)
 
 ## First Failing Test
 
@@ -57,10 +57,9 @@ gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
-project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-3-done.md
 ```
 
-Every command is required and must terminate with session-captured evidence. The report-lint command runs before the next dispatch. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
+Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
 ## Notes For Developer
 
