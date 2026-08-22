@@ -26,6 +26,21 @@ Use when: content may be referenced by fid but must not be copied into its
 operational model.
 Avoid: “fid document” or “backend prose.”
 
+**Routine (external kit term)**
+Definition: An external kit risk-lane classification for work the kit judges
+eligible for its routine policy path. It is not a fid entity or lifecycle.
+Use when: discussing how the external kit selects and compiles policy before
+activation.
+Avoid: persisting a Routine, evaluating a Routine in fid, naming a fid command
+or Event with it, or using it as a synonym for Work Envelope.
+
+**Capability availability**
+Definition: A discovery claim that one independently versioned semantic
+capability is complete within its declared limits and trust sources.
+Use when: a consumer decides whether it can rely on that capability.
+Avoid: “partial availability”; an incomplete semantic capability is
+unavailable even when internal walking-skeleton operations exist.
+
 ## Work Inventory
 
 **Issue**
@@ -89,9 +104,10 @@ Avoid: “QA step,” “validation assertion,” or an untyped checklist item.
 
 **Actor**
 Definition: A Human, agent, harness, or trusted producer identity recorded with
-declared capabilities and provenance.
+capabilities and provenance established by the applicable trusted source.
 Use when: attributing an attempted or completed action.
-Avoid: assuming a kit role name is a fid-global role.
+Avoid: assuming a kit role name is a fid-global role or treating
+caller-self-declared capabilities as authority.
 
 **Authority Grant**
 Definition: The explicit actions and protected-decision classes an Actor may

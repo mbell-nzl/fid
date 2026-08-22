@@ -30,11 +30,15 @@ keeps fid useful as an Issue tracker without requiring the V2 kit.
 2. Kit evaluates risk, roles/routing, authority, protected Decisions, gates,
    validation/review/Human Obligations, budgets, Stops, and repository scope.
 3. Human approval is obtained where kit policy requires it.
-4. Kit submits the complete versioned Envelope through the backend port.
-5. fid validates references, capability support, provenance, non-weakening, and
+4. fid creates immutable Gate Definition Registrations from the activated Gate
+   Definition values that the Envelope will reference.
+5. Kit submits the complete versioned Envelope through the backend port.
+6. fid validates references, capability support, provenance, non-weakening, and
    revision invariants, then records the approved/active revision.
 
-fid does not recalculate the risk lane or create Issue copies.
+fid does not persist or recalculate the external kit's risk lane and does not
+create Issue copies. A caller cannot substitute a mutable Gate Definition for
+the activated Registration reference.
 
 ## 4. Builder Execution
 
@@ -134,6 +138,11 @@ Routine status never raises Attention.
    Receipts/Evidence, Reviews/Findings, Outcomes, activation, and telemetry
    match the source semantics.
 5. Projections are regenerated; project prose is not copied.
+
+Phase 21 implements deterministic export creation and non-mutating validation
+only. Import, identity/history preservation, and full live/rebuild/import
+equivalence enter with Phase 22 recovery; `export.portable.v1` remains
+unavailable until that parity passes.
 
 ## 11. Pre-Dogfood Convergence
 

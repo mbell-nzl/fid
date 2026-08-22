@@ -5,11 +5,9 @@
 
 ## Project State
 
-**No implementation phase is active. Phase 20 completed and wrapped on
-2026-08-22.** Its final deterministic review is PASS, Human VAL-038 is 3/3
-PASS, all 46 validation assertions pass, and the run ledger is closed. No
-product, architecture, data-model, public-interface, dependency, workflow, or
-Human decision remains open for Phase 20.
+**Phase 21 planning is active; implementation is not approved.** Phase 20
+completed and wrapped on 2026-08-22 with deterministic PASS, Human VAL-038 at
+3/3 PASS, all 46 assertions passing, and a closed run ledger.
 
 Phase 20 delivered the canonical JSON standalone Issue journey and retained
 durable kernel behavior while removing universal formatters, `--format`,
@@ -36,10 +34,12 @@ The authoritative register is `decisions_active.md`.
 
 ## Next Work
 
-1. Run the recommended deep retrospective on Phase 20's temporary V1 delivery
-   workflow.
-2. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary.
-3. Plan Phase 21 only after that boundary is Human-accepted.
+1. **Complete:** Phase 20 deep retrospective and DEC-152.
+2. **Complete:** Human-accepted Gate D3.2 and DEC-153.
+3. Draft and present the exact Phase 21 slice/DDL/Event contract, validation
+   contract, ordered two-group task pack, and Heavy-mode phase brief.
+4. Stop before implementation for Human execution approval; a Ready QA plan
+   with fresh feasibility evidence is also required before Task 1.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

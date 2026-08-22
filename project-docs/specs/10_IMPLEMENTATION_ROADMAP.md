@@ -1,6 +1,6 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 20 complete; Gate D3.2 is next
+**Status:** Gate D3.2 accepted; Phase 21 planning awaiting execution approval
 **Last updated:** 2026-08-22
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
@@ -45,9 +45,10 @@ migrations, and formatters are removed rather than deprecated.
 
 **Gate D3.1** ratified the vertical-slice order and initial removal owners in
 section 5. Phase 20 completed on 2026-08-22 with 46/46 validation assertions
-PASS and its standalone Issue journey accepted. **Gate D3.2** is now the active
-decision gate and must settle the exact thin Routine walking-skeleton boundary
-before Phase 21 is planned.
+PASS and its standalone Issue journey accepted. **Gate D3.2 was accepted on
+2026-08-22**: one Heavy Phase 21 uses two internal task groups with an
+independent authority/executor-feasibility checkpoint between them. `Routine`
+remains external kit risk-lane language, not fid state.
 
 ## 3. Foundation to retain
 
@@ -103,8 +104,8 @@ owning phase before its product code changes.
 | Phase / slice | End-to-end acceptance journey | Contract and capability advance | Owned legacy removal |
 |---|---|---|---|
 | **20. Clean standalone Issue journey** | Initialize a repository; create, relate, inspect, update, and transition Issues; explain failure; rebuild; and repeat the journey through canonical JSON. | Establish common JSON success/error envelopes, project identity, revision/idempotency conventions where used, and the retained standalone Issue contract. | Remove universal TOON/YAML/Markdown formatters, `--format`, format-matrix tests, obsolete promised-command stubs, and Issue-path fields or commands with no retained meaning. Do not yet remove fail-closed V1 authority. |
-| **21. One-Issue Routine walking skeleton** | Activate one kit/project/backend contract; select one Issue; authorize and claim one Builder Run; execute one immutable registered gate through fid; create trusted evidence; evaluate completion; then resume and export the same state. | Introduce the thinnest coherent Envelope/Revision, Actor authority, Claim/Run, Gate Registration/Attempt/Receipt, Evidence/Freshness, Attention, completion, activation, and portable-export path. Gate D3.2 fixes the exact inclusion boundary before planning. | After replacements pass, remove the V1 role matrix and `fid policy show`, role-bound Claim/Run fields, `fid dev start/gate/finish/block`, reported `gate_runs`, gate snapshots, and completion-report-as-state paths. |
-| **22. Failure and recovery** | Interrupt or abandon execution, recover liveness, reconcile repository state, start a linked Run, retry or stop safely, stale prior proof, rebuild, and resume without contradictory truth. | Complete typed Stops, Attention disposition, lease/liveness rules, activation recovery, freshness failure, rebuild equivalence, and recovery-grade export behavior. | Remove escalation entities and commands, duplicate recovery/activity truth, caller-reported terminal-result paths, and temporary walking-skeleton recovery shortcuts. |
+| **21. One-Issue walking skeleton (Heavy; two internal groups)** | Activate one kit/project/backend contract; register one activated Gate Definition; select one Issue; authorize and claim one Builder Run; execute the Registration through fid; create trusted evidence; evaluate completion; then resume and create/validate an export of the same state. An independent checkpoint separates Group 1 authority/state from Group 2 trusted execution/evidence. | Introduce the exact limited Envelope/Revision, activated Actor authority, Claim/Run, Registration/Attempt/Receipt, gate-evidence Obligation, freshness, completion, activation happy path, and export create/validate operations. Store immutable budgets with consumption/remaining null. Keep every incomplete semantic capability unavailable. | After replacements pass, remove the V1 role matrix and `fid policy show`, every actor-attribution `--by`, role-bound Claim/Run commands, `fid dev start/gate/finish/block`, reported `gate_runs`, gate snapshots, and completion-report-as-state writers. |
+| **22. Failure and recovery** | Interrupt or abandon execution, recover liveness, reconcile repository state, start a linked Run, retry or stop safely, stale prior proof, import/export recovery state, rebuild, and resume without contradictory truth. | Complete typed Stops, Attention disposition, budget consumption/exhaustion, lease/liveness rules, explicit recovery without automatic respawn, activation recovery, freshness failure, import identity/history preservation, and recovery-grade export equivalence. Advertise `kit.activation.v1`, `work.claims.v1`, `attention.v1`, and `export.portable.v1` only when complete. | Remove escalation entities and commands, duplicate recovery/activity truth, caller-reported terminal-result paths, and temporary walking-skeleton recovery shortcuts. |
 | **23. Review and Human judgment** | An independent Reviewer records coverage and zero-or-more Findings; Builder rework preserves review independence; protected or subjective Obligations receive authorized Human Outcomes; completion is reevaluated. | Complete Reviews, Findings, Concerns, Deviations, project Decision/requirement references, Human Outcomes, acceptance evidence, and Human-facing decision projections. | Remove role-specific verification columns, QA/TL composites, legacy requirement authoring that duplicates project prose, and remaining role-specific completion behavior. |
 | **24. Parallel and evolving work** | Execute distinct selected Issues in disjoint worktrees; reject conflicting Claims; revise a multi-Issue Envelope; carry valid completion forward; handle removed unfinished work explicitly; and preserve review rework rules. | Complete multi-Issue revision, scope conflict, dependency, partial-progress, parallel-claim, linked-Run, and evolving-obligation semantics. | Remove remaining V1 Claim/Run shapes, triage and carry-forward composites, and any Envelope-owned duplicate work or partial-progress state. |
 | **25. Qualification and baseline convergence** | Run the full shared fake/fid conformance suite, all recovery and security scenarios, portable validation, a disposable V1-project input migration rehearsal, and Human validation of the operating experience. | Qualify all twelve capabilities together; finish trajectory telemetry and named operational/Human projections; consolidate the first supported schema and event baseline. | Remove superseded migrations and event fixtures, V1 parity/compatibility tests, dead packages, temporary slice scaffolding, generic report/whet-export residue, and any retired surface found by the whole-product audit. |
@@ -216,9 +217,13 @@ reading `.fid/` internals.
 1. **Complete (2026-08-22).** Phase 20 delivered and independently validated
    the standalone Issue journey from its accepted slice contract; all 46 VAL
    assertions and all three Human checks pass.
-2. Run the recommended Phase 20 delivery-workflow retrospective.
-3. Resolve Gate D3.2's exact one-Issue Routine walking-skeleton boundary.
-4. Plan Phase 21 only after Gate D3.2 receives Human approval.
+2. **Complete (2026-08-22).** The Phase 20 delivery-workflow retrospective is
+   recorded at `../docs/reviews/2026-08-22-phase-20-retrospective.md`.
+3. **Complete (2026-08-22).** Gate D3.2 is accepted with the amendments in
+   `../docs/phases/phase-21/gate-d3-2-proposal.md` and ADR-0012.
+4. Review the exact Phase 21 slice contract, validation contract, Heavy-mode
+   task pack, and phase brief. No implementation begins before Human execution
+   approval and a Ready QA plan with fresh feasibility evidence.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

@@ -65,6 +65,12 @@
 - **Gate D3.1:** use vertical scenario phases rather than horizontal subsystem
   phases. Each phase owns explicit legacy removals and may contain multiple
   bounded Developer tasks under the current V1 delivery process.
+- **Gate D3.2:** one Heavy Phase 21 delivers the one-Issue walking skeleton in
+  two internal task groups separated by an independent checkpoint. Attention,
+  Stops, budget consumption/exhaustion, automatic respawn/recovery, and export
+  import belong to Phase 22; one gate-evidence Obligation and only enforceable
+  executor policy values land in Phase 21. Incomplete capabilities remain
+  unavailable.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -72,9 +78,8 @@ specification suite.
 
 ## Open decision
 
-**Gate D3.2:** settle the exact one-Issue Routine walking-skeleton boundary
-before Phase 21 planning. Phase 20 planning may proceed now from
-`../../specs/10_IMPLEMENTATION_ROADMAP.md` section 5.
+None for Phase 21 planning. Human execution approval is still required after
+review of the exact contract, validation contract, task pack, and phase brief.
 
 ## Carry-forward disposition
 
@@ -111,7 +116,7 @@ No implementation phase starts from the historical version roadmap. Phase 20
 completed and wrapped on 2026-08-22: all tasks and reviews closed, all 46 VAL
 assertions PASS, the Human checklist is 3/3 PASS, and no escalation remains.
 Its accepted and delivered slice contract is
-`../phases/phase-20/contracts.md`; the next product decision is Gate D3.2.
+`../phases/phase-20/contracts.md`; Gate D3.2 is accepted in Phase 21 DEC-153.
 
 Two Phase 20 constraints bind later planning: fail-closed V1 authority stays
 until Phase 21 proves generic authority (DEC-113), and no Phase 21 Routine or
