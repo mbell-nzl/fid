@@ -1,15 +1,14 @@
 # Phase 21 Slice Contract - One-Issue Walking Skeleton
 
-> Status: **PLANNING DRAFT FOR HUMAN APPROVAL**
+> Status: **ACCEPTED FOR EXECUTION - DEC-159**
 > Owner: Tech Lead
 > Operating mode: Heavy
-> Decision authority: DEC-152..157, ADR-0011, ADR-0012
+> Decision authority: DEC-152..159, ADR-0011, ADR-0012
 > Physical schema: `../../../specs/03_TRD_SCHEMA.md` section 8.2
 
-This is the exact Phase 21 implementation boundary. Product implementation is
-blocked until the Human accepts this contract, the validation contract, and
-the task pack, and a QA Lead supplies a Ready Heavy-mode QA plan. Normative
-JSON examples use canonical compact JSON: UTF-8, sorted object keys, preserved
+This is the exact Phase 21 implementation boundary. The QA Lead supplied a
+Ready Heavy plan at `e8a636e`, and DEC-159 records Human execution approval.
+Normative JSON examples use canonical compact JSON: UTF-8, sorted object keys, preserved
 array order, no insignificant whitespace, and a trailing newline on CLI output.
 `public-interface.md` owns every CLI argument, closed input, result, error,
 exit, Human rendering, and live-frame payload. `v1-convergence-inventory.md`

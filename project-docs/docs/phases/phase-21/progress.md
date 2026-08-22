@@ -37,7 +37,20 @@
 - Implementation remains unauthorized pending Human review and a Ready QA
   Lead plan.
 
+## 2026-08-23 - Execution Authorized
+
+- QA Lead independently re-reviewed DEC-158 and committed the Ready Heavy plan
+  at `e8a636e`; BC-01/BC-02 are closed and no Must-fix remains.
+- Human explicitly approved execution on 2026-08-23.
+- DEC-159 accepts the complete pack, changes VAL-001..087 from `Draft` to
+  `Accepted`, and authorizes task 1 for Phase Runner dispatch.
+- The phase is Active. Later tasks remain dependency-, review-, and
+  checkpoint-gated; approval changes no contract or threshold.
+- The post-approval planning audit, workflow lint, and whitespace check all
+  terminated `exit_code: 0`.
+
 ## Task Status
 
-Tasks 1-22: Pending Human approval and Ready QA plan. Task 1 is not authorized.
-No product code or test has been changed.
+Task 1: Ready for Phase Runner dispatch. Tasks 2-22: pending recorded
+dependencies and review controls. No product code or test has been changed by
+the Tech Lead.

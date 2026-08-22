@@ -1,8 +1,8 @@
 # Phase Brief - Phase 21
 
-> Status: **Planning / Awaiting Human Execution Approval**
+> Status: **Active / Task 1 Ready For Phase Runner Dispatch**
 > Branch: `phase-21`
-> Product implementation: **NOT AUTHORIZED**
+> Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
 ## Goal And Mode
 
@@ -31,6 +31,8 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
   exhaustive V1 disposition, achievable checkpoint, and tasks 19-22 order.
 - DEC-158: QA refinements, two-argument Runner report lint, four Human subchecks,
   and three consecutive `<30 s` reference-instance rebuild samples.
+- DEC-159: Ready QA plan and Human approval accept the Heavy pack and authorize
+  task 1 dispatch through the Phase Runner.
 
 ## Planning Authorities
 
@@ -40,7 +42,7 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
 - Validation: `../phases/phase-21/qa/validation-contract.md` (VAL-001..087)
 - Checkpoint: `../phases/phase-21/qa/group-1-checkpoint-contract.md`
 - QA request: `../phases/phase-21/qa/qa-lead-handoff.md`
-- QA plan: `../phases/phase-21/qa/qa-plan.md` (Needs Refinement at `f5ccbb6`)
+- QA plan: `../phases/phase-21/qa/qa-plan.md` (Ready at `e8a636e`)
 - Planning audit: `../phases/phase-21/planning-audit.md`
 - Tasks: `../phases/phase-21/tasks/task-<N>-*.md`
 
@@ -101,12 +103,16 @@ complete; resume; export/validate. Delete the projection and rebuild, then
 repeat only named reads, evaluation, completion state, resume, export, and
 negative checks. Never create a second Envelope revision.
 
-## Approval Gate
+## Approval Record
 
-1. Human reviews and approves or amends this complete Heavy planning pack.
-2. QA Lead re-reviews DEC-158 refinements and marks the Heavy QA plan **Ready**.
-3. Tech Lead confirms no unresolved QA contract refinement remains.
-4. Human approves execution. Only then may a Phase Runner dispatch task 1.
+1. Complete - Human accepted the Heavy phase shape and Gate D3.2 amendments.
+2. Complete - QA Lead marked the plan Ready at `e8a636e` with no Must-fix.
+3. Complete - Tech Lead confirmed no unresolved contract refinement.
+4. Complete - Human approved execution on 2026-08-23; DEC-159 records it.
 
-No protected Human decision remains open inside the proposed contract. The
-pending action is execution approval, not a reopened DP-1..DP-7 decision.
+## Dispatch Authorization
+
+Task 1 is authorized for Phase Runner dispatch under its exact task spec and
+VAL-001. This is task-scoped execution authority, not permission to bypass TDD,
+the recorded commands, report lint, review windows, dependencies, or the Group
+1 checkpoint. No protected Human decision remains open.

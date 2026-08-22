@@ -176,6 +176,27 @@
 - **Refs:** QA plan BC-01/BC-02 and R-01..R-19 at `f5ccbb6`; DEC-071;
   CF-024; TRD section 9; `qa/validation-contract.md`; tasks 1-22.
 
+### DEC-159: Accept the Heavy Phase 21 pack and authorize execution
+
+- **Date:** 2026-08-23
+- **Context:** The QA Lead independently re-reviewed DEC-158 at `b367a3b`,
+  committed a `READY` Heavy QA plan at `e8a636e`, closed BC-01/BC-02, accepted
+  every R-01..R-19 disposition, and reported no outstanding Must-fix. The Human
+  then explicitly approved execution.
+- **Decision:** Accept the Phase 21 slice contract, public interface, V1
+  convergence inventory, VAL-001..087 validation contract, Group 1 checkpoint,
+  Ready QA plan, and ordered 22-task pack for execution. Complete R-19 by
+  changing every validation row from `Draft` to `Accepted`. Authorize the Phase
+  Runner to dispatch task 1; later tasks remain gated by their recorded
+  dependencies, review windows, report-lint controls, and Group 1 checkpoint.
+- **Consequences:** Phase 21 moves from Planning to Active. This approval changes
+  no product contract, threshold, task scope, dependency, validator, or gate.
+  Any protected change discovered during execution still requires its normal
+  decision authority; approval is not permission to weaken an assertion.
+- **Refs:** Human execution approval 2026-08-23; QA plan readiness commit
+  `e8a636e`; DEC-152..158; `qa/qa-plan.md`; `qa/validation-contract.md`;
+  `current/phase_brief.md`.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

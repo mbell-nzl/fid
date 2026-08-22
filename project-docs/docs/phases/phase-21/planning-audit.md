@@ -1,13 +1,14 @@
 # Phase 21 Planning Consistency Audit
 
-> Status: **PASS FOR QA RE-REVIEW AND HUMAN PLANNING REVIEW**
+> Status: **ACCEPTED PLANNING BASE - DEC-159**
 > Date: 2026-08-23
 > Planning base: `124292255bd9b99972796b8aff72e5179342f56a`
 > Branch: `phase-21`
 
-This audit covers planning artifacts only. It neither validates product
-behavior nor authorizes task 1. Every result below was captured in this Tech
-Lead session from the revised worktree and observed to terminate with
+This audit covers planning artifacts only. It does not validate product
+behavior and did not itself authorize task 1; DEC-159 records the later QA
+Ready verdict and Human execution approval. Every result below was captured by
+the Tech Lead from the revised worktree and observed to terminate with
 `exit_code: 0`.
 
 ## Contract And Task Coverage

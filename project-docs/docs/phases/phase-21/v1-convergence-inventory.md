@@ -1,9 +1,9 @@
 # Phase 21 V1 Convergence Inventory
 
-> Status: **PLANNING DRAFT FOR HUMAN APPROVAL**
+> Status: **ACCEPTED FOR EXECUTION - DEC-159**
 > Owner: Tech Lead
 > Live inventory base: Phase 21 planning HEAD before implementation
-> Governing decisions: DEC-153, DEC-156, DEC-157, DEC-158
+> Governing decisions: DEC-153, DEC-156, DEC-157, DEC-158, DEC-159
 
 This is the exhaustive removal/disposition authority for Phase 21. It was
 derived from the live `cmd/fid`, `internal`, `migrations`, and journal fixture

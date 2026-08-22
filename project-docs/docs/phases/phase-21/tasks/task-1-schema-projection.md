@@ -12,7 +12,9 @@ Implement only migration 0013 and its schema/constraint integration coverage for
 
 - Do not create or apply migration 0014 in this task.
 - Use `work_claims` for the collision-free generic table.
-- Task 1 remains unauthorized pending Human plan approval, a Ready QA plan, and Tech Lead refinements.
+- DEC-159 records the Ready QA plan and Human execution approval. Task 1 may be
+  dispatched only by the Phase Runner under this exact spec and its accepted
+  VAL-001 contract.
 
 ## Scope
 

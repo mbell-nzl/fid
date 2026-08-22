@@ -4,13 +4,14 @@
 
 ## Project State
 
-**Phase 21 planning is revised and awaiting Human execution approval.** Phase
-20 completed/wrapped on 2026-08-22. The Phase 20 retrospective is committed in
+**Phase 21 is active; task 1 is ready for Phase Runner dispatch.** Phase 20
+completed/wrapped on 2026-08-22. The Phase 20 retrospective is committed in
 `../reviews/2026-08-22-phase-20-retrospective.md`; Gate D3.2 is closed by
 DEC-153; the initial slice/spec contract is DEC-154; carry-forward disposition
 is DEC-155; the terminal gate amendment is DEC-156; and the complete interface,
 bootstrap, inventory, sequencing, and validation correction is DEC-157.
 QA-plan refinements and the unchanged deterministic rebuild target are DEC-158.
+QA readiness and Human execution approval are DEC-159.
 
 ## Planned Boundary
 
@@ -23,14 +24,15 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 
 ## Approval State
 
-- Human approval of revised Heavy mode, exact contracts, VAL contract, and task pack:
-  **PENDING**.
-- QA Lead Heavy QA plan with fresh feasibility: **SUBMITTED / NEEDS READY
-  RE-REVIEW** at `f5ccbb6`; Tech Lead refinements applied under DEC-158.
-- Product implementation: **NOT AUTHORIZED**.
+- Human approval of revised Heavy mode, exact contracts, VAL contract, and task
+  pack: **APPROVED 2026-08-23 / DEC-159**.
+- QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
+  outstanding Must-fix.
+- Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
+- Dispatch state: **TASK 1 READY**; tasks 2-22 remain dependency-gated.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
-  `exit_code: 0` on the DEC-158 worktree.
+  `exit_code: 0` after the DEC-159 approval-state update.
 
 ## Carry-Forward
 
@@ -40,8 +42,8 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. QA Lead re-reviews DEC-158 changes and updates the plan to `Ready` or returns
-   exact residual refinements.
-2. Tech Lead confirms the Ready plan and no unresolved protected change.
-3. Human reviews and grants explicit execution approval.
-4. Phase Runner begins task 1 only after all three are recorded.
+1. Phase Runner opens the Phase 21 execution ledger and dispatches task 1 under
+   `task-1-schema-projection.md`.
+2. Developer completes only task 1 with TDD and its exact command gate.
+3. Phase Runner runs the two-argument report lint after the committed report,
+   then continues according to dependencies and review cadence.

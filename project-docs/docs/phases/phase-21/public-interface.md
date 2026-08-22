@@ -1,8 +1,8 @@
 # Phase 21 Public Interface Contract
 
-> Status: **PLANNING DRAFT FOR HUMAN APPROVAL**
+> Status: **ACCEPTED FOR EXECUTION - DEC-159**
 > Owner: Tech Lead
-> Authority: DEC-153, DEC-154, DEC-156, DEC-157
+> Authority: DEC-153, DEC-154, DEC-156, DEC-157, DEC-159
 > Applies to: the final Phase 21 binary after migration 0014
 
 This file is the complete public CLI contract for Phase 21. Product code may

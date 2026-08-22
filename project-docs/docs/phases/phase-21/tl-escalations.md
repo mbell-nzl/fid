@@ -2,8 +2,8 @@
 
 ## Open Escalations
 
-None. Human execution approval and QA-plan readiness are planned approvals,
-not escalations.
+None. QA-plan readiness and Human execution approval completed under DEC-159;
+they were planned approvals, not escalations.
 
 ## Archive Rule
 

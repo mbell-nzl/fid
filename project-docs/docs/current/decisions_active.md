@@ -83,6 +83,10 @@
   Runner pre-dispatch control, not a Developer task command. The unchanged
   100k rebuild target is three consecutive self-asserted `<30 s` samples on
   the recorded Phase 21 reference instance; one failure fails VAL-083.
+- **Phase 21 execution approval (DEC-159):** the QA Lead's Ready plan at
+  `e8a636e` and the Human's 2026-08-23 approval accept VAL-001..087 and the
+  ordered Heavy task pack. Task 1 is authorized for Phase Runner dispatch;
+  every later task remains dependency- and review-gated.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -90,8 +94,9 @@ specification suite.
 
 ## Open decision
 
-None for Phase 21 planning. QA Ready re-review and Human execution approval
-are still required after DEC-158 refinements.
+None for Phase 21. QA readiness and Human execution approval are complete under
+DEC-159; protected changes discovered during execution still require their
+normal authority.
 
 ## Carry-forward disposition
 

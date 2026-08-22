@@ -8,8 +8,9 @@
 None.
 
 Phase 21 QA blocker candidates BC-01 and BC-02 were planning-contract defects,
-not open Human escalations. DEC-158 resolves them without changing the accepted
-rebuild threshold or product slice; independent QA Lead re-review remains due.
+not open Human escalations. DEC-158 resolved them without changing the accepted
+rebuild threshold or product slice; the Ready QA re-review and Human execution
+approval completed under DEC-159.
 
 Phase 20 completed on 2026-08-22. Its allocated escalations are resolved and
 archived in `../phases/phase-20/tl-escalations.md`; DEC-151 records the final
