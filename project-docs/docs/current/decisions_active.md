@@ -88,18 +88,18 @@ review of the exact contract, validation contract, task pack, and phase brief.
 | CF-008 | Candidate Issue-tracker vocabulary improvement; schedule only with a retained cancellation use case. |
 | CF-017 | Cancel. `internal/dev` is displaced role choreography. |
 | CF-018 | Keep as trigger-based engineering debt if `internal/sqlquery` is reopened; `fid sql` remains diagnostic only. |
-| CF-020 | Keep. Correct future-dated activity behavior when the retained Issue/event path is next changed. |
+| CF-020 | Scheduled Phase 21 task 8 / VAL-062: Event sequence replaces synthetic future occurrence time when the retained Issue/Event path converts to v2. |
 | CF-022 | Cancel. Generic Markdown formatter characterization is retired. |
 | CF-023 | Reassess only as temporary repository-delivery tooling while the V1 development procedure remains active; it is not product scope. |
-| CF-024 | Keep. Rebuild performance headroom remains relevant to the evidence event load. |
+| CF-024 | Scheduled Phase 21 task 20 / VAL-064: exercise the accepted 100k-Event rebuild target under the evidence event load. |
 | CF-026a | Candidate tracker/workflow inspection projection; no committed slice. |
 | CF-026b | Candidate Issue-workflow lifecycle design; requires a decision before scheduling. |
-| CF-027 | Keep the `internal/issues/create.go` decomposition trigger; cancel the `writeMarkdown` half. |
+| CF-027 | Scheduled Phase 21 task 8 / VAL-063: decompose reopened `internal/issues/create.go`; the `writeMarkdown` half remains cancelled. |
 | CF-028 | Split `internal/bootstrap/init.go` staging/fsync helpers only when a later change reopens that file; the trigger did not fire after Task 3b. |
 | CF-029 | Extend evidence-token validation to QA review artifacts while the V1 delivery workflow remains active. |
 | CF-030 | Improve `report-lint.sh` rejected-token diagnostics so they state the accepted token shape. |
 | CF-031 | Closed in Phase 20: PASS termination validation and expected-nonzero parsing are implemented and drilled. |
-| CF-032 | Add direct invalid-input tests for `BuildIssueRevisionEffects` when `internal/issues/revision.go` next changes. |
+| CF-032 | Scheduled Phase 21 task 12: add direct invalid-input tests before `internal/issues/revision.go` changes. |
 
 Optional product ideas are not carry-forwards. Their evidence triggers live only
 in ADR-0011's concise candidate ledger.
@@ -118,9 +118,10 @@ assertions PASS, the Human checklist is 3/3 PASS, and no escalation remains.
 Its accepted and delivered slice contract is
 `../phases/phase-20/contracts.md`; Gate D3.2 is accepted in Phase 21 DEC-153.
 
-Two Phase 20 constraints bind later planning: fail-closed V1 authority stays
-until Phase 21 proves generic authority (DEC-113), and no Phase 21 Routine or
-Envelope surface is pulled forward without Gate D3.2 (DEC-117).
+Two Phase 20 constraints bind execution: fail-closed V1 authority stays until
+Phase 21 proves generic authority (DEC-113), and DEC-117's Gate D3.2 condition
+is now satisfied only through the exact DEC-153/154 boundary; it creates no fid
+Routine entity.
 Canonical workflow authoring exposes states/transitions only, never the V1
 role/assurance `--require` grammar; retained legacy `dev` status mutations still
 advance complete Issue aggregate revision until Phase 21 deletes them (DEC-128).

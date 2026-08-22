@@ -145,10 +145,12 @@ own task gate:
 - every actor-attribution `--by` spelling on retained mutation paths becomes
   `--actor`; the unrelated `stats --by` grouping flag becomes `--group-by`
   so `--by` disappears from the live tree;
-- `internal/policy`, the `roles` table, and `fid policy show` are removed
-  after activation-resolved Actor/Envelope authority passes;
-- `fid issue claim|unclaim`, legacy `fid claim list`, and
-  `internal/claims` role actions are replaced by generic Claim operations;
+- the V1 role-policy implementation in `internal/policy`, the `roles` table,
+  and `fid policy show` are removed after the generic `internal/policy`
+  Activation/Envelope evaluator passes;
+- `fid issue claim|unclaim`, legacy `fid claim list`, and the V1
+  `internal/claims` role actions are replaced in place by generic Claim
+  operations;
 - legacy `fid run record` and `internal/runs` are replaced by generic Runs;
 - `fid dev start|gate|finish|block`, `internal/dev`, `dev.*` Events,
   reported `gate_runs`, and gate snapshot reads are removed after trusted
@@ -185,4 +187,3 @@ Gate D3.2 is closed. Product implementation remains blocked until the Human
 reviews and approves the exact slice contract, validation contract, Heavy-mode
 task pack, and phase brief, and the QA Lead supplies a Ready Heavy-mode QA plan
 with fresh feasibility evidence.
-

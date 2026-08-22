@@ -73,6 +73,26 @@
 - **Refs:** DEC-152; DEC-153; `contracts.md`; `03_TRD_SCHEMA.md` §8.2;
   `02_TRD.md` §3.1; ADR-0011; ADR-0012.
 
+### DEC-155: Dispose active carry-forwards against the Phase 21 task pack
+
+- **Date:** 2026-08-22
+- **Context:** Phase planning must schedule every carry-forward whose trigger
+  the slice fires and explicitly re-defer the rest.
+- **Decision:** Schedule CF-020 and CF-027 in task 8 as VAL-062/063: Event v2
+  sequence replaces synthetic future occurrence time as the ordering mechanism,
+  and reopened `internal/issues/create.go` is decomposed within the recorded
+  size targets without behavior change. Schedule CF-032 in task 12 before
+  `BuildIssueRevisionEffects` changes. Schedule CF-024's 100k-Event rebuild
+  target in task 20 as VAL-064. Re-defer CF-008, CF-018, CF-026a, CF-026b, and
+  CF-028 because their product/file triggers do not fire. Re-defer CF-023,
+  CF-029, and CF-030 as temporary V1 delivery-tool improvements rather than
+  mixing them into product tasks. CF-017/022/031 remain cancelled/closed.
+- **Consequences:** Tasks 8, 12, and 20 carry explicit tests/evidence. No
+  unscheduled triggered debt is hidden in the phase brief, and no workflow
+  tooling task dilutes the one-Issue product slice.
+- **Refs:** `decisions_active.md`; DEC-152; task 8; task 12; task 20;
+  VAL-062..064.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

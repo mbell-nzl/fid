@@ -63,6 +63,14 @@ Rules:
   SQLite, journal, and projection tests remain in their ordinary owning
   packages so the integration gate does not rerun the default suite.
 
+Phase 21 keeps the recorded package boundaries: Work Envelope, Activation,
+and generic Run logic are owned by `internal/workflow`; generic authority
+replaces V1 role policy inside `internal/policy`; generic Claim behavior
+replaces the V1 implementation inside `internal/claims`; and Gate
+Registration, executor, Receipt, Artifact, and Evidence logic are owned by
+`internal/evidence`. The slice does not create parallel `internal/envelopes`,
+`internal/authority`, `internal/executor`, or `internal/artifacts` packages.
+
 ## 3. Versioned Backend Capabilities
 
 Capability versions evolve independently of the fid product version.

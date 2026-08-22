@@ -44,7 +44,7 @@ A repository identity is exactly:
 A source reference is exactly:
 
 ```json
-{"digest":"sha256:<64hex>","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":{...},"section":null,"source_type":"project-file"}
+{"digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"},"section":null,"source_type":"project-file"}
 ```
 
 An immutable Phase 21 budget is exactly:
@@ -59,7 +59,7 @@ warns, exhausts, Stops, raises Attention, or changes execution from a budget.
 The complete generic Obligation value is exactly:
 
 ```json
-{"accepted_evidence_types":["receipt"],"accepted_trust_sources":["fid-executed"],"applicability":"required","artifact_policy":"required-available","derived_status":"unsatisfied","freshness_target":"repository-tree","guarded_action":"envelope.complete","id":"OBL-1","independence":"fid-executed","required_lane":null,"source":{...},"subject":{"id":"ISS-1","type":"issue"},"type":"gate-evidence"}
+{"accepted_evidence_types":["receipt"],"accepted_trust_sources":["fid-executed"],"applicability":"required","artifact_policy":"required-available","derived_status":"unsatisfied","freshness_target":"repository-tree","guarded_action":"envelope.complete","id":"OBL-1","independence":"fid-executed","required_lane":null,"source":{"digest":"sha256:0000000000000000000000000000000000000000000000000000000000000000","display_label":"Gate policy","external_id":null,"path":"project-docs/gates/unit.json","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"},"section":null,"source_type":"project-file"},"subject":{"id":"ISS-1","type":"issue"},"type":"gate-evidence"}
 ```
 
 Only `gate-evidence` is accepted. Unknown types reject; `derived_status` is
@@ -106,8 +106,8 @@ after Actor resolution but before side effects.
 
 - first key/digest: execute once and durably store response entity ID, Event ID,
   aggregate sequence, and canonical result JSON in the same transaction;
-- same key/same digest: return the byte-identical stored result with
-  `replayed:true` and append no Event;
+- same key/same digest: return the stored entity/Event result with only the
+  contracted `replayed:true` metadata difference and append no Event;
 - same key/different digest: reject `idempotency_conflict` and append no Event;
 - a failure before commit stores nothing; a committed result survives restart
   and rebuild; and
@@ -230,9 +230,10 @@ journal, projection, arguments in errors, or exported data.
 
 Exactly one terminal frame is emitted after observed termination and after the
 terminal Receipt commits. Its `data` is the complete canonical `fid-cli.v1`
-Response Envelope; no additional JSON line follows it. Terminal outcomes are `succeeded`, `failed`,
-`timed_out`, `signaled`, `spawn_failed`, or `output_limit_observed`; the last is
-additional metadata and does not replace the observed process result. An
+Response Envelope; no additional JSON line follows it. Terminal outcomes are
+`succeeded`, `failed`, `timed_out`, `signaled`, or `spawn_failed`.
+`output_limit_observed` is additional control metadata and does not replace
+the observed process result. An
 Attempt without observed termination has no Receipt and cannot satisfy
 evidence. Timeout sends termination, waits for observed process exit, and
 records timeout plus any observed signal/exit. Spawn failure records a Receipt
@@ -314,12 +315,14 @@ Non-streaming success retains the accepted Response Envelope and is exactly:
 {"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"envelope.get","result":{}}
 ```
 
-Collections use `result:{"items":[]}`. Mutation `result` contains the full
-created or changed entity, idempotency key, and `replayed`; its `event` contains
-ID and occurrence time. Read `event` is null. Failure retains the exact Phase
-20 `fid-cli.v1` mutually-exclusive error envelope. Optional values are explicit
-null; unavailable fields are omitted only when this contract says they do not
-exist. Human output is a rendering of the same result and cannot add semantics.
+Collections use `result:{"items":[]}`. Retained Phase 20 mutation results keep
+their accepted operation-specific shapes and add `idempotency_key` and
+`replayed`; new Phase 21 results return their complete contract entity plus the
+same two fields. Mutation `event` contains ID and occurrence time. Read `event`
+is null. Failure retains the exact Phase 20 `fid-cli.v1` mutually-exclusive
+error envelope. Optional values are explicit null; unavailable fields are
+omitted only when this contract says they do not exist. Human output is a
+rendering of the same result and cannot add semantics.
 
 ### 12.1 Accepted Phase 21 command leaves
 
@@ -368,7 +371,7 @@ exit classification and no partial success payload.
 Every new Event and every retained mutation converted in Phase 21 uses exactly:
 
 ```json
-{"actor":{"actor_id":"actor-builder","actor_type":"agent","producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null},"aggregate":{"id":"ISS-1","sequence":2,"type":"issue"},"causation_id":null,"command":"issue transition","correlation_id":"RUN-1","effects":[{"op":"update","pk":{"id":"ISS-1"},"preconditions":{"revision":1},"prior":{"revision":1,"status":"todo"},"table":"issues","values":{"revision":2,"status":"in_progress"}}],"event_id":"EVT-2","event_schema":2,"event_type":"issue.transitioned","idempotency":{"key":"key-1","request_digest":"sha256:<64hex>","scope":"issue.transition:<project-id>"},"occurred_at":"2026-08-22T00:00:00Z","repository":{...}}
+{"actor":{"actor_id":"actor-builder","actor_type":"agent","producer":"kit","provenance_ref":"activation:ACT-1/profile:builder","session_ref":null},"aggregate":{"id":"ISS-1","sequence":2,"type":"issue"},"causation_id":null,"command":"issue transition","correlation_id":"RUN-1","effects":[{"op":"update","pk":{"id":"ISS-1"},"preconditions":{"revision":1,"status":"todo","workflow_id":"task-default"},"prior":{"revision":1,"status":"todo","updated_at":"2026-08-21T23:59:00Z"},"table":"issues","values":{"revision":2,"status":"in_progress","updated_at":"2026-08-22T00:00:00Z"}},{"op":"activity","pk":{"id":"ACT-2"},"table":"activity_log","values":{"actor":"actor-builder","details":{"from":"todo","to":"in_progress"},"event":"status_changed","journal_event_id":"EVT-20260822-000002","occurred_at":"2026-08-22T00:00:00Z","ref_id":"ISS-1","ref_type":"issue"}},{"op":"insert","pk":{"idempotency_key":"key-1","operation_scope":"issue.transition:project-1"},"table":"idempotency_results","values":{"aggregate_sequence":2,"created_at":"2026-08-22T00:00:00Z","idempotency_key":"key-1","operation_scope":"issue.transition:project-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","result_entity_id":"ISS-1","result_event_id":"EVT-20260822-000002","result_json":"{\"contract_version\":\"fid-cli.v1\",\"event\":{\"id\":\"EVT-20260822-000002\",\"occurred_at\":\"2026-08-22T00:00:00Z\"},\"ok\":true,\"operation\":\"issue.transition\",\"result\":{\"from_state\":\"todo\",\"idempotency_key\":\"key-1\",\"issue\":{\"id\":\"ISS-1\",\"revision\":2},\"replayed\":false,\"to_state\":\"in_progress\"}}"}}],"event_id":"EVT-20260822-000002","event_schema":2,"event_type":"issue.transitioned","idempotency":{"key":"key-1","request_digest":"sha256:1111111111111111111111111111111111111111111111111111111111111111","scope":"issue.transition:project-1"},"occurred_at":"2026-08-22T00:00:00Z","repository":{"base_oid":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","capture_source":"git","dirty":false,"dirty_digest":null,"head_oid":"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","project_id":"project-1","tree_oid":"cccccccccccccccccccccccccccccccccccccccc","worktree_id":"worktree-1"}}
 ```
 
 Exact rules: all top-level keys are required; nullable values are explicit;
@@ -386,8 +389,42 @@ replace all affected v1 fixtures. The accepted Phase 21 families are:
 | run | `run.started`, `.finished` | run/budget-binding insert or terminal update |
 | attempt | `gate.execution_started` | Attempt insert |
 | receipt | `gate.receipt_recorded` | Receipt and Artifact inserts |
-| evidence | `evidence.linked`, `artifact.availability_changed` | Evidence/link insert or Artifact availability update |
+| evidence | `evidence.linked`, `artifact.availability_observed` | Evidence/link insert or optional Artifact availability update |
 | retained mutation | retained Issue/workflow/label/link/requirement/maintenance families | retained v2 effects plus resolved Actor/idempotency/aggregate metadata |
+
+For fixture generation, each row below is normative. `insert(T)` contains the
+complete DDL row, `update(T:{keys})` contains exactly those changed values plus
+their complete `prior` and key/version `preconditions`, and repeated rows sort
+by their declared primary key. Every idempotent mutation appends
+`insert(idempotency_results)` as its final Effect; its stored `result_json` is
+the canonical non-replayed Response Envelope for this Event.
+
+| Event type | Aggregate | Exact ordered domain Effects before idempotency |
+|---|---|---|
+| `activation.prepared` | Activation | `insert(kit_activations)` |
+| `activation.component_staged` authority profile | Activation | `insert(activation_components)`, then `insert(activation_actor_profiles)` by Actor ID |
+| `activation.component_staged` gate definitions | Activation | `insert(activation_components)`, then `insert(activation_gate_definitions)` by Definition ID/version |
+| `activation.committed` | Activation | `update(kit_activations:{status,point_of_no_return,updated_at})`, then `update(activation_components:{status})` by component key |
+| `activation.finalized` | Activation | `update(kit_activations:{status,updated_at})`, then `update(activation_components:{status})` by component key |
+| `activation.aborted` | Activation | `update(kit_activations:{status,updated_at})`, then `update(activation_components:{status})` by component key |
+| `gate.registered` | Gate Registration ID/version | `insert(gate_registrations)` |
+| `envelope.created` | Envelope | `insert(work_envelopes)`, `insert(envelope_revisions)`, sources by ordinal, primary selection, grants by ordinal, Obligation, then budgets by name |
+| `envelope.activated` | Envelope | `update(work_envelopes:{status})`, `update(envelope_revisions:{status,approved_actor_id,activated_at})` |
+| `envelope.completed` | Envelope | `update(work_envelopes:{status})`, `update(envelope_revisions:{status,completed_at})` |
+| `claim.acquired` | Claim | `insert(work_claims)`; after 0014 the table name in new fixtures is `claims` |
+| `claim.renewed` | Claim | `update(work_claims:{version,expires_at})` with prior Claim version |
+| `claim.released` | Claim | `update(work_claims:{version,status,released_at,release_reason})` with prior Claim version |
+| `run.started` | Run | `insert(runs)`, then `insert(run_budget_bindings)` by budget name |
+| `run.finished` | Run | `update(runs:{status,terminal_repository_json,ended_at})` |
+| `gate.execution_started` | Attempt | `insert(execution_attempts)` |
+| `gate.receipt_recorded` | Receipt | new accepted `insert(referenced_artifacts)` by digest, then `insert(execution_receipts)`, then `insert(receipt_artifacts)` by Artifact ID; an already stored digest omits its Artifact insert; rejected candidates have no Artifact/link Effect |
+| `evidence.linked` | Evidence | `insert(evidence_records)`, then `insert(evidence_artifact_links)` by Artifact ID |
+| `artifact.availability_observed` | Artifact | optional `update(referenced_artifacts:{availability})` when state changed; unchanged observation has only the required idempotency Effect |
+| retained Phase 20 family | existing aggregate | exact retained Phase 20 domain Effects with actor-attribution fields replaced by Actor ID/provenance and the final idempotency Effect |
+
+The Receipt fixture's order is also the SQLite apply order, so every foreign
+key exists before its dependent link. A golden fixture asserts that canonical
+order; the projector cannot silently reorder public JSON.
 
 Receipt recording is one Event containing the terminal Receipt and every
 accepted Artifact effect. Evidence linking is a separate mutation/Event. An
@@ -402,9 +439,9 @@ After its named replacement passes:
 | Remove/rename | Replacement or disposition |
 |---|---|
 | mutation `--by` flags | `--actor`; `stats --by` becomes `--group-by` |
-| `internal/policy`, `cmd/fid policy`, `roles` | activation Actor profile plus Envelope grants |
-| `internal/claims`, Issue claim/unclaim, legacy claim list, legacy `claims` | generic Claims |
-| `internal/runs`, `run record` | generic Runs |
+| V1 role-policy implementation in `internal/policy`, `cmd/fid policy`, `roles` | generic policy evaluator over Activation Actor profile plus Envelope grants, retained in `internal/policy` |
+| V1 Issue-role actions in `internal/claims`, Issue claim/unclaim, legacy claim list/table | generic Claims replace the package implementation in place; generic table is renamed to `claims` |
+| `internal/runs`, `run record` | generic Runs owned by `internal/workflow` |
 | `internal/dev`, `dev start|gate|finish|block`, `gate_runs`, dev Events/readers | Attempt/Receipt/Evidence and Envelope completion |
 | `issue complete`, `internal/issues/complete*`, writers of `task_completions` | Envelope completion |
 
@@ -415,6 +452,12 @@ remains frozen with no Phase 21 writer for Phase 25 telemetry convergence and
 is not a generic Run. Source/integration inventory must prove no removed CLI,
 package, Event family, role lookup, or table writer survives. Phase 21 does not
 reconstruct removed state through import.
+
+Phase 21 creates no unrecorded package boundary. Work Envelope, Activation,
+and Run logic live in `internal/workflow`; generic authority remains in
+`internal/policy`; generic Claims replace `internal/claims` in place; and Gate
+Registration, executor, Receipt, Artifact, and Evidence logic live in
+`internal/evidence`. Adapters remain in `internal/cli` and `cmd/fid`.
 
 Deferred to Phase 22: Attention, Stops, budget use/exhaustion, recovery,
 automatic respawn, Activation recovery, successor Runs, export import, and
