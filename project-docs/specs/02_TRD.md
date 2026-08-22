@@ -83,8 +83,30 @@ Capability versions evolve independently of the fid product version.
 | `export.portable.v1` | Versioned backend-neutral validation, export, and import semantics |
 
 Discovery returns product/version, supported backend-port range, each
-capability/version/schema range, read/write availability, limits, and accepted
-trust sources. Missing or incompatible capability returns a typed stop.
+capability/version/schema range, binary availability, limits, and accepted
+trust sources. Missing or incompatible capability returns typed unavailability;
+it returns a Stop only after the Stop capability exists.
+
+### 3.1 Phase 21 qualification boundary
+
+Phase 21 fixes the complete availability matrix in its slice contract. An
+operation used by the one-Issue walking skeleton does not make its semantic
+capability available when recovery, parallelism, import, or another required
+behavior is deferred. Availability is derived from binary and migration state,
+cannot be caller-declared, and has no partial or experimental value.
+
+Kit-mode Actor identity, capabilities, producer, and provenance resolve only
+from the active Kit Activation authority profile. Callers pass an Actor
+reference and cannot augment it. Gate Registration similarly resolves a
+finalized activated Gate Definition before any Envelope may reference it.
+
+The Phase 21 executor is a standard-library local process adapter, not an OS
+containment boundary. It enforces structured argv without a shell, exact
+contained cwd, a closed environment allowlist, timeout/output ceilings,
+credential-name policy, redaction, and contained Artifact paths. It accepts
+only `sandbox:none`, `network:allowed`, and `write:allowed`; registration
+rejects stronger unsupported values. There is no automatic process/agent
+respawn or Run continuation.
 
 ## 4. Contract Rules
 
@@ -101,6 +123,9 @@ trust sources. Missing or incompatible capability returns a typed stop.
   and optional structured details. Human message text is never control flow.
 - Full logs, secrets, credentials, and raw environment snapshots are forbidden
   in normal JSON responses and journal payloads.
+- Phase 21 mutation retries use a durable operation/project-scoped idempotency
+  key and canonical request digest; same key/digest replays the stored result,
+  while a changed digest conflicts without an Event.
 
 ## 5. Semantic Operation Groups
 

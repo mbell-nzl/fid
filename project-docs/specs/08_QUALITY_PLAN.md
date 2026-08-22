@@ -166,6 +166,15 @@ A slice is not complete if it leaves two authoritative models for the same
 fact. Temporary compilation scaffolding is allowed only inside the slice and
 must not be advertised as a supported capability.
 
+For Heavy Phase 21, three-task QA Review windows apply. A separate independent
+Group 1 checkpoint must PASS after the authority/Activation/Registration/
+Envelope/Claim/Run foundation and before executor implementation begins. That
+checkpoint re-runs fresh feasibility for every non-default verifier, fixture,
+environment assumption, expected non-zero proof, and time budget prescribed
+for Group 2. Findings return to their owning task; implementation momentum is
+not evidence. Each Developer runs report lint on its own completion report
+before the next task is dispatched.
+
 ## 9. First supported baseline
 
 Before fid is used by a live project:

@@ -26,6 +26,13 @@ An explicitly supplied `--project` or `--json` on a listed legacy leaf rejects
 before its handler; neither flag may be accepted and ignored. Later slices
 remove or migrate those leaves and retire this temporary restriction.
 
+Phase 21 removes that mixed-tree restriction. Every retained mutation uses
+`--actor`; the unrelated stats grouping spelling is `--group-by`; no live
+`--by` flag remains. Complex Phase 21 mutations use exactly one
+`--input <path|->` JSON document and require `--idempotency-key`; kit-mode
+mutations additionally resolve the required `--actor <actor-id>` through the
+active Activation rather than trusting caller-supplied capabilities.
+
 ## 2. JSON Envelope
 
 Success:
@@ -288,6 +295,7 @@ vertical slice before product code changes. Accepted slice contracts:
 | Slice | Accepted contract |
 |---|---|
 | Phase 20 - clean standalone Issue journey | `../docs/phases/phase-20/contracts.md` |
+| Phase 21 - one-Issue operational walking skeleton | `../docs/phases/phase-21/contracts.md` |
 
 A slice contract fixes its operation names, `result` shapes, reason codes,
 closed request/flag shapes, ordering/limits, redaction/unknown-field behavior,
@@ -295,4 +303,16 @@ removal inventory, and the exact set of commands that emit a Response Envelope.
 Commands scheduled for deletion in a later slice keep their current unenveloped
 output and are listed in the owning slice contract with an expiry phase.
 
-*Last updated: 2026-08-09 (Phase 20 accepted slice contract)*
+The Phase 21 accepted leaves are `capabilities`; Activation
+`prepare|component|commit|abort|finalize|status`; gate
+`register|resolve|run`; Envelope `create|get|activate|complete`; Claim
+`acquire|renew|release|list`; Run `start|finish|get|list`; Receipt `get|list`;
+Evidence `link|get|evaluate`; Artifact `verify`; projection `resume`; and
+export `create|validate`, plus retained Phase 20 leaves. `gate run --json` uses
+the exact `fid.live.v1` NDJSON channel; other machine leaves retain the
+`fid-cli.v1` Response Envelope. Phase 21 has no recovery, Envelope revision or
+cancel, telemetry, Stop, Attention, attestation ingest, review/judgment, or
+export import leaf. The full JSON shapes, limits, ordering, reasons, trust, and
+deferrals live in the cited slice contract.
+
+*Last updated: 2026-08-22 (Phase 21 planning contract amendment)*

@@ -46,6 +46,7 @@ issue_prefix = "FID"
 artifact_root = "artifacts"
 
 [executor_limits]
+max_timeout_ms = 600000
 max_output_bytes = 10485760
 max_excerpt_bytes = 16384
 
@@ -69,7 +70,8 @@ Rules:
 - `artifact_root` is valid UTF-8 of `1..4096` bytes, relative, not `.`, and has
   no lexical `..` escape. An existing symlink component must resolve within
   `.fid/` when the path is used.
-- Executor byte limits are base-10 integers in `1..9223372036854775807` and
+- Executor timeout and byte limits are base-10 integers in
+  `1..9223372036854775807`, and
   `max_excerpt_bytes` cannot exceed `max_output_bytes`; maintenance grace is a
   base-10 integer in `0..9223372036854775807`.
 - Config contains no role matrix, risk policy, QA policy, templates, model
@@ -94,11 +96,15 @@ gate file at execution time. Standalone clients use the same registration API.
 
 - The journal and Receipt retain bounded sanitized excerpts, hashes, byte
   counts, truncation/redaction flags, and opaque Artifact identity.
-- Full logs are written only when the active registration permits retention.
-- Artifact content is sanitized according to registered policy before exposure
-  and is stored by content identity or another stable opaque key.
-- Availability is `available`, `expired`, or `unavailable`; deleting material
-  never deletes its Evidence Record or digest.
+- Full logs are written only when the active registration names the path and
+  permits retention. Phase 21 accepts only regular, symlink-resolved paths
+  contained by the exact execution cwd and configured Artifact root.
+- Artifact content and output are redacted before framing, hashing, retention,
+  error detail, Human rendering, or export and are stored by SHA-256 content
+  identity through atomic publication.
+- Phase 21 availability is `available` or `missing`; verified loss changes
+  availability but never deletes its Evidence Record or digest. Expiry policy
+  is deferred with retention automation.
 - Pruning is an explicit maintenance operation and cannot remove material still
   required by a `full-material-required` active Obligation.
 
@@ -126,4 +132,9 @@ credential policy or allowlisted variable names, but never stores secret
 values. Execution receives secrets only through the trusted runtime mechanism
 authorized by that policy.
 
-*Last updated: 2026-08-09 (Phase 20 accepted config-contract amendment)*
+The closed Phase 21 environment is assembled from activated Gate Definition
+entries whose source is `literal`, approved `inherit`, or `credential` name.
+The ambient environment is not inherited wholesale. Credential values exist
+only in process memory long enough to execute and redact output.
+
+*Last updated: 2026-08-22 (Phase 21 executor/artifact planning amendment)*

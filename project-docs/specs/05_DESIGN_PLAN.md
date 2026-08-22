@@ -89,8 +89,16 @@ and only the remaining Human checks or approvals. Omit routine Run narration.
 - On termination, show terminal status, duration, Receipt ID, repository
   identity, truncation/redaction state, and Artifact reference if retained.
 - A crash or lost terminal result is shown as abandoned/unknown, never pass.
-- JSON machine mode returns structured terminal state after streaming through
-  a separately defined framing channel selected during D3 interface design.
+- Phase 21 JSON machine mode is `fid.live.v1` NDJSON. One globally sequenced
+  stream carries sanitized `stdout`, `stderr`, typed `control`, and exactly one
+  final `terminal` frame; the terminal frame contains the complete canonical
+  Response Envelope and no extra JSON follows it.
+- Payload is UTF-8 with invalid bytes replaced and control bytes JSON-escaped.
+  Redaction precedes framing, excerpting, hashing, retention, errors, and Human
+  rendering. A combined output ceiling emits one `output_truncated` control
+  frame while fid continues draining and observes process termination.
+- Human mode prefixes sanitized output by stream, renders no raw control byte,
+  and derives its final summary from the same terminal result.
 
 ## 6. Errors And Stops
 
@@ -128,4 +136,4 @@ ADR-0011. They are not represented by placeholder commands or speculative
 dependencies. The first supported CLI must prove whether concise semantic
 projections are sufficient.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+*Last updated: 2026-08-22 (Phase 21 live-output planning amendment)*

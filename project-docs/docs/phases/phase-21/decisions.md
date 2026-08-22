@@ -46,6 +46,33 @@
 - **Refs:** Human Gate D3.2 direction 2026-08-22; ADR-0011; ADR-0012;
   `10_IMPLEMENTATION_ROADMAP.md` §§5, 10; DEC-152.
 
+### DEC-154: Fix the exact Heavy Phase 21 slice contract
+
+- **Date:** 2026-08-22
+- **Context:** DEC-153 requires exact capability, authority, JSON, DDL/Event,
+  executor, evidence, idempotency, removal, and deferral boundaries before a
+  Developer task may infer implementation behavior.
+- **Decision:** Adopt `contracts.md` and `03_TRD_SCHEMA.md` section 8.2 as the
+  planning contract presented for Human execution approval. Capability
+  availability is binary and conservative; activated profiles are the only
+  kit Actor/Gate trust source; Gate Registration precedes Envelope creation;
+  Event schema v2 and operation-scoped durable idempotency apply to converted
+  mutations; executor policy is limited to portable standard-library controls;
+  and evaluation returns every independent reason in fixed order. Use
+  migrations 0013/0014 so generic Claims can pass before V1 `claims` is
+  removed. Freeze `task_completions` without writers until Phase 23 and
+  `agent_runs` until Phase 25 because existing foreign-key/read ownership makes
+  immediate deletion a cross-phase change; neither is authoritative Phase 21
+  completion or Run state.
+- **Consequences:** One Heavy phase uses two internal task groups and an
+  independent checkpoint. Group 2 cannot begin until Group 1 contract closure
+  and executor/verifier feasibility independently pass. The slice exposes
+  export create/validate but keeps `export.portable.v1` unavailable. No
+  unsupported containment, Attention, Stop, recovery, respawn, budget
+  consumption, import, review, or Human authority behavior may be inferred.
+- **Refs:** DEC-152; DEC-153; `contracts.md`; `03_TRD_SCHEMA.md` §8.2;
+  `02_TRD.md` §3.1; ADR-0011; ADR-0012.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -55,13 +82,13 @@ verdicts are completed at phase wrap-up.
 |---|---|---|
 | `00_PROJECT_CHARTER.md` | pending wrap audit | - |
 | `01_PRD.md` | verified-no-planning-change | Existing requirements remain target baseline requirements; DEC-153 changes slice ownership/availability, not requirement semantics. |
-| `02_TRD.md` | pending slice contract sync | DEC-153/154 |
-| `03_TRD_SCHEMA.md` | pending slice DDL/Event sync | DEC-154 |
-| `04_TRD_CONFIG.md` | pending executor/export sync | DEC-154 |
-| `05_DESIGN_PLAN.md` | pending live-output sync | DEC-154 |
-| `06_DESIGN_PLAN_CLI.md` | pending slice leaf sync | DEC-154 |
+| `02_TRD.md` | touched: see DEC-154 | Binary capability availability, Activation trust, idempotency, and the portable executor boundary are explicit. |
+| `03_TRD_SCHEMA.md` | touched: see DEC-154 | Exact 0013/0014 DDL/down behavior and Event-v2 fixture authority are accepted for review. |
+| `04_TRD_CONFIG.md` | touched: see DEC-154 | Timeout ceiling, closed environment, redaction, safe content-addressed Artifact storage, and availability are aligned. |
+| `05_DESIGN_PLAN.md` | touched: see DEC-154 | Exact live NDJSON/control/terminal behavior replaces the D3 placeholder. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-154 | Accepted leaves, `--actor`, `--group-by`, input, streaming, and deferred leaf absences are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-153 | Gate Registration now precedes Envelope creation; Phase 21 export is create/validate only. |
-| `08_QUALITY_PLAN.md` | pending evidence sync | DEC-152/154 |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152 and DEC-154 | Three-task cadence, mandatory independent checkpoint, fresh feasibility, and task-local report lint are explicit. |
 | `09_AI_WORKFLOW.md` | verified-no-planning-change | DEC-152 applies existing Heavy-mode and recovery rules without changing them. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153 | Gate closed; one Heavy Phase 21/two groups; Attention/import ownership corrected. |
 | `GLOSSARY.md` | touched: see DEC-153 | Routine and capability availability are now unambiguous. |
