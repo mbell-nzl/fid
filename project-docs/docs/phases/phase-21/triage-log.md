@@ -5,4 +5,5 @@
 > Entries use Recovery directive schema v2 from
 > `project-docs/templates/triage-log-template.md`.
 
-No Phase 21 triage event has been allocated. Planning is awaiting approval.
+No Phase 21 triage event has been allocated. DEC-159 records Ready QA and Human
+execution approval; task 1 is ready for Phase Runner dispatch.
