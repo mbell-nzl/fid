@@ -1,16 +1,25 @@
 # Phase 21 QA Plan - One-Issue Operational Walking Skeleton
 
 > Phase: 21 - Heavy - One-Issue Operational Walking Skeleton
-> Refreshed: 2026-08-23
+> Refreshed: 2026-08-23 (re-review of DEC-158 refinements)
 > QA Lead: Claude Opus 5 (QA Lead role)
-> Planning base validated: `463183a16ac99879eeeadc35ff5f1064980892e5` (branch `phase-21`, clean worktree)
-> Readiness verdict: **NEEDS REFINEMENT** - see section 2.3 and section 13
-> Product implementation: **NOT AUTHORIZED**. Task 1 stays blocked.
+> Planning base validated: `463183a16ac99879eeeadc35ff5f1064980892e5`, re-validated at
+> `b367a3b` (branch `phase-21`, clean worktree)
+> Readiness verdict: **READY** - see section 2.3 and section 13
+> Product implementation: **NOT AUTHORIZED**. Task 1 stays blocked pending Human
+> execution approval.
 
 This plan is the test plan for `qa/validation-contract.md` (VAL-001..087). It
 does not assign QA verdicts, does not edit the validation contract, the
-checkpoint contract, or any task spec, and does not authorize task 1. Every
-refinement in section 13 is a proposal for the Tech Lead to apply.
+checkpoint contract, or any task spec, and does not authorize task 1.
+
+Revision history: the plan was first committed at `f5ccbb6` with the verdict
+Needs Refinement and refinement proposals R-01..R-19 plus blocker candidates
+BC-01 and BC-02. The Tech Lead applied DEC-158 at `b367a3b`. This revision is
+the independent QA Lead re-review of those amendments. Every command added or
+changed by DEC-158 was re-executed fresh in this session; section 6 records the
+results and section 13 records the disposition of every proposal. No Must-fix
+finding remains, so the verdict is Ready.
 
 ## 1. Scope And Source Documents
 
@@ -27,7 +36,10 @@ Sources read to build this plan:
 - `AGENTS.md`
 - `project-docs/docs/current/phase_brief.md`
 - `project-docs/docs/current/progress_current.md`
+- `project-docs/docs/current/decisions_active.md` (DEC-158)
 - `project-docs/docs/current/tl_escalations_current.md`
+- `project-docs/docs/phases/phase-21/decisions.md` (DEC-158 record)
+- `project-docs/specs/02_TRD.md` section 9 (Phase 21 reference instance)
 - `project-docs/specs/08_QUALITY_PLAN.md` (sections 5, 6, 7, 8)
 - `project-docs/specs/09_AI_WORKFLOW.md` (sections 2.6, 2.7, 6.1, 8)
 - `project-docs/docs/phases/phase-21/contracts.md`
@@ -44,57 +56,71 @@ Sources read to build this plan:
 
 ### 2.1 Coverage rollup
 
+Re-checked against the DEC-158 contract at `b367a3b`.
+
 - All in-scope requirements referenced by at least one `VAL-NNN`: **YES**
-  (`planning-audit.md` `UNCOVERED_VALS=0`, re-derived in this session:
+  (`planning-audit.md` `UNCOVERED_VALS=0`, re-derived in the first review:
   87 unique contract IDs, 85 task-referenced, 3 phase-control owners,
   0 uncovered).
 - Every `VAL-NNN` has one validator role: **YES** (QA Reviewer 78, QA Lead 8,
-  Human 1).
-- Every `VAL-NNN` has a concrete evidence method: **YES with exceptions** -
-  VAL-046, VAL-073, VAL-083, and VAL-086 need the bindings in section 13
-  (R-05, R-04/R-16, R-02/R-03, R-17) before their evidence method is
-  reproducible.
+  Human 1). DEC-158 changed no validator.
+- Every `VAL-NNN` has a concrete evidence method: **YES**. The four gaps from
+  the first review are closed: VAL-046 now has the bound containment lexicon in
+  task 13; VAL-073 now has the committed corpus plus the non-vacuity control;
+  VAL-083 now has the reference-instance identity and the three-sample rule;
+  VAL-086 now has the exact 20-Event and one-`envelope.created` control.
 - Every `VAL-NNN` maps to a task/window or phase-end check: **YES** - section 7
   maps each ID exactly once, with no merged IDs and the contract validator role
   preserved.
 - Every `VAL-NNN` describes one observable, or human fan-out is required:
-  **NO for VAL-036** - it bundles four observables (stream identity, typed
-  controls, terminal result, no raw-control display effect). Section 9 fans it
-  out into `HUMAN-01a..01d`, all citing the single parent VAL-036, per
-  `09_AI_WORKFLOW.md` sections 2.6 and 6.1. VAL-036 remains the sole Human
-  assertion. R-07 asks the Tech Lead to confirm this reading against the
-  handoff's "exactly one Human checklist item" wording.
+  **YES**. VAL-036 is now stated as one parent perception assertion, "a Human
+  can safely and correctly interpret one complete rendered Gate session", with
+  the contract's Coverage Audit explicitly requiring the `HUMAN-01a..01d`
+  fan-out under Workflow section 6.1. Section 9 implements exactly that.
 - Conditional or binary assertions require both qualifying and non-qualifying
-  states: **NO for VAL-073 and VAL-086** - both can currently pass vacuously
-  (an empty or truncated conformance corpus, a journey whose pre-rebuild
-  mutation phase wrote nothing). R-16 and R-17 supply the positive controls.
+  states: **YES**. VAL-073 now requires the complete-member positive control
+  alongside the snake_case absence; VAL-086 now requires the exact pre-rebuild
+  count before the post-rebuild comparison; VAL-044 and VAL-045 are explicitly
+  cross-paired so neither can be satisfied unpaired.
 - Parity or "matches reference" assertions have deterministic conformance
   proof: **YES** - VAL-069, VAL-081, VAL-082, and VAL-086 are byte or count
   comparisons; commands are in section 7.
-- Revisions requested from Tech Lead: **R-01 .. R-19 (section 13)**.
+- Revisions requested from Tech Lead: **none outstanding**. Section 13 records
+  R-01..R-18 as applied, R-09 as applied with a Tech Lead correction that QA
+  accepts and has adopted, and R-19 as deliberately deferred to Human
+  execution approval.
 
-### 2.2 Blocker candidates
+### 2.2 Blocker candidate disposition
 
-QA emits candidates only. No `ESC-<phase>-<NNN>` is allocated here.
+Both first-review candidates are closed. QA allocated no `ESC` identity.
 
-| Candidate | Protected category | Evidence | Authority boundary | Requested action |
-|---|---|---|---|---|
-| BC-01 | Gate threshold/budget/tolerance plus specification authority (VAL-083, TRD section 9, CF-024) | Three fresh planning-base runs of `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` on the only available verification machine: `33.461764423s` (FAIL), `27109172011 ns/op` (pass), `24965037891 ns/op` (pass). Threshold is 30s and the failing run predates every Phase 21 Event-v2 load increase. | QA cannot change a threshold, tolerance, or its accepted pass semantics. | Tech Lead (with Human where the budget itself changes) defines the reference-hardware identity fields, a deterministic pass rule (declared N and best/median policy, or a revised budget), and whether the phase-level `go test -bench . -benchmem ./...` gate may keep enforcing the in-test 30s `b.Fatalf`. |
-| BC-02 | Specification/control definition (task-spec required-command contract, all 22 tasks) | `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-1-done.md` terminates `exit_code: 2` printing `Usage: ...`; the tool requires `<completion-report.md> <task-spec.md>`. All 22 specs declare the one-argument form. | QA cannot edit task specs. | Apply R-01. |
+| Candidate | Disposition | Verification in this session |
+|---|---|---|
+| BC-01 - 100k rebuild threshold and undefined reference hardware | **Resolved by DEC-158** without changing the protected 30s budget. The reference instance is now named in `02_TRD.md` section 9 and task 21, and the pass rule is three consecutive fresh one-iteration processes each self-asserting `<30 s`, with best-of and median tolerance forbidden and causal optimization assigned to task 21 scope. | Re-measured at planning base with the exact DEC-158 procedure on an unloaded machine: `23727938194 ns/op` / `23728 ms/rebuild`, `23797261352 ns/op` / `23797 ms/rebuild`, `23800483588 ns/op` / `23800 ms/rebuild`; all three terminated `exit_code: 0` with `ok github.com/mbell-nzl/fid/internal/journal 25.5-25.7s`. All samples are under budget with about 6.2s headroom and a 0.07s spread. Every recorded identity literal matches the machine exactly (see section 6). |
+| BC-02 - invalid and self-referential report-lint command in all 22 task specs | **Resolved by DEC-158.** Report lint is removed from every Developer command gate and is now the Phase Runner's two-argument post-commit pre-dispatch control, recorded in the phase brief, `08_QUALITY_PLAN.md` section 8, the checkpoint preconditions, and VAL-087. | `grep -l "report-lint.sh" project-docs/docs/phases/phase-21/tasks/*.md` terminated `exit_code: 1` with no output: no task spec references it. The two-argument form matches the tool's documented usage and its `--self-test` passes. |
+
+**Correction to first-review evidence.** The first review reported three
+planning-base samples of `33.461764423s` (FAIL), `27109172011 ns/op`, and
+`24965037891 ns/op`. The 33.46s sample was taken while a backgrounded
+`go test -race ./...` was still running on the same machine, so it was a
+loaded-machine measurement rather than a clean one. The clean three-sample
+re-measurement above supersedes it. The first review's conclusion that the
+budget needed an explicit deterministic rule and a named reference instance
+still stands and is what DEC-158 supplies; the conclusion that the budget was
+unreachable does not stand and is withdrawn.
 
 ### 2.3 Readiness statement
 
-**Needs Refinement.** Every VAL has exactly one mapping, all seven review
-windows and both checkpoint assertions are defined, the fresh Group 2
-feasibility harness is executable, and final QA is complete. Readiness is
-withheld because: (a) BC-02 makes a required command in all 22 task specs
-terminate non-zero on usage error, so no task can produce a clean gate record;
-(b) BC-01 makes VAL-083 and the phase benchmark gate nondeterministic against
-an undefined reference machine; (c) VAL-046, VAL-073, and VAL-086 lack
-reproducible or non-vacuous evidence bindings; and (d) VAL-036 needs the
-declared fixture path and the human fan-out ruling. Section 13 lists the exact
-changes. Once R-01 .. R-06 and R-16 .. R-17 are applied and BC-01/BC-02 are
-resolved, this plan is Ready without structural change.
+**Ready.** Every VAL has exactly one mapping with its contract validator role
+preserved; all commands are concrete, bounded, and were executed fresh in a QA
+Lead session; every expected non-zero command has a declared and observed exit
+code; all seven review windows plus the independent Group 1 checkpoint are
+defined with VAL-042 and VAL-043 separately decided; the Group 2 feasibility
+harness is executable and environment-scoped; final QA is complete; and VAL-036
+is the sole Human assertion, fanned out as the contract now requires. No
+Must-fix finding remains.
+
+Task 1 stays unauthorized until the Human approves execution.
 
 ## 3. Task Inventory
 
@@ -175,10 +201,11 @@ the required evidence is the observed `total:` line.
 | Unit/race + coverage profile | `go test -race -coverprofile=coverage.out ./...` | per-package `ok` lines, terminated `exit_code: 0`; `exit 0 (no output)` is never a valid token | every task |
 | Coverage report | `go tool cover -func=coverage.out` | final `total:` line with a percentage, terminated `exit_code: 0` | every task |
 | Integration journeys | `go test -tags integration -race ./cmd/fid/integration/...` | `ok github.com/mbell-nzl/fid/cmd/fid/integration <t>s`, terminated `exit_code: 0` | tasks 12, 18, 21, 22; checkpoint; final QA |
-| Benchmarks | `go test -bench . -benchmem ./...` | benchmark result lines, terminated `exit_code: 0` | tasks 21, 22; final QA. See BC-01 |
-| Bounded 100k rebuild | `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` | one `BenchmarkRebuildWorkspace100kEvents-<n>` line and `ok ...`, terminated `exit_code: 0`. See BC-01 | task 21, final QA |
+| Benchmarks | `go test -bench . -benchmem ./...` | benchmark result lines, terminated `exit_code: 0`; the per-sample `<30 s` `b.Fatalf` remains part of this gate per DEC-158 | tasks 21, 22; final QA |
+| Bounded 100k rebuild, three consecutive fresh processes | `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal`, run three times as three separate processes | three distinct `BenchmarkRebuildWorkspace100kEvents-<n>` lines, each reporting `<30 s` and each terminated `exit_code: 0`, on the recorded DEC-158 reference instance; best-of and median sampling are forbidden | task 21, final QA |
+| Reference-instance identity | `go version`; `go env GOOS GOARCH`; `uname -srm`; `nproc`; `grep -m1 '^model name' /proc/cpuinfo`; `grep -m1 '^MemTotal:' /proc/meminfo` | each terminated `exit_code: 0` and matching the `02_TRD.md` section 9 reference instance | task 21, final QA |
 | Build | `go build -o /tmp/fid ./cmd/fid` | `exit 0 (no output)`, terminated `exit_code: 0` | tasks 21, 22; final QA |
-| Report lint (Phase Runner control, two-argument form) | `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-<N>-done.md project-docs/docs/phases/phase-21/tasks/task-<N>-<slug>.md` | `PASS report-lint completed with no failures`, terminated `exit_code: 0` | before every next dispatch, all 22 tasks |
+| Report lint (Phase Runner post-commit control, two-argument form; not a Developer task-gate command) | `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-<N>-done.md project-docs/docs/phases/phase-21/tasks/task-<N>-<slug>.md` | `PASS report-lint completed with no failures`, terminated `exit_code: 0` | after each report commit, before every next dispatch, all 22 tasks |
 | Full phase command gate | the seven `AGENTS.md` commands in order: `gofmt -l cmd internal`; `golangci-lint run ./...`; `go test -race -coverprofile=coverage.out ./...`; `go tool cover -func=coverage.out`; `go test -tags integration -race ./cmd/fid/integration/...`; `go test -bench . -benchmem ./...`; `go build -o /tmp/fid ./cmd/fid` | every command terminates `exit_code: 0` with its own captured token | final QA |
 
 ### 5.1 Expected non-zero commands used by this plan
@@ -190,6 +217,33 @@ VAL-046, no production containment claim, expected `exit_code: 1`:
 
 ```text
 rg -n -i --glob '*.go' --glob '!**/*_test.go' -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' cmd internal
+```
+
+VAL-013, no activation recovery or automatic-respawn path (task 4), expected
+`exit_code: 1`:
+
+```text
+rg -n --glob '*.go' --glob '!**/*_test.go' 'Use:\s*"recover|newActivationRecover|activation\.recover' cmd/fid internal
+```
+
+VAL-046, no Phase 21 contract containment claim (task 13), expected
+`exit_code: 1`:
+
+```text
+rg -n -i -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' project-docs/docs/phases/phase-21/contracts.md project-docs/docs/phases/phase-21/public-interface.md
+```
+
+VAL-063, no production Attention state or effect (task 17), expected
+`exit_code: 1`:
+
+```text
+rg -n -i --glob '*.go' --glob '!**/*_test.go' '\battention\b|attention_items' cmd/fid internal
+```
+
+VAL-071, no export import command or path (task 19), expected `exit_code: 1`:
+
+```text
+rg -n --glob '*.go' --glob '!**/*_test.go' 'Use:\s*"import|newExportImport|export\.import' cmd/fid internal
 ```
 
 VAL-075, the six task-20 absence searches, expected `exit_code: 1` each:
@@ -226,10 +280,16 @@ cannot be missing or empty:
 ls cmd/fid/integration/testdata/p21_conformance
 ```
 
-VAL-074, VAL-043, and QA-93 classification recipes. These are **not** absence
-commands: they terminate `exit_code: 0` today and are expected to keep
-matching retained, frozen, and diagnostic readers. Their pass condition is that
-every match is classified against `v1-convergence-inventory.md`:
+VAL-074, VAL-043, and QA-93 classification recipes, per DEC-158 and
+`v1-convergence-inventory.md` section 7. At final task-20 HEAD the **first two**
+recipes are absence controls that must terminate `exit_code: 1` and are already
+declared above; the **last two** are broad classified inventories that must
+terminate `exit_code: 0`, keep matching retained, frozen, and diagnostic
+readers, and must not be narrowed to suppress them. Their pass condition is
+that every produced line maps to an explicit retained, frozen, diagnostic, or
+removal disposition and the report records `UNCLASSIFIED=0`. At the Group 1
+checkpoint all four terminate `exit_code: 0`, because removal has not happened
+yet:
 
 ```text
 rg -n --glob '*.go' --glob '!**/*_test.go' 'policy\.Authorize|KnownRoles|ActorRole|Role:' cmd/fid internal
@@ -240,10 +300,13 @@ rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\s*"' cmd/fid internal
 
 ## 6. Command And Feasibility Validation
 
-Heavy mode: every row below was validated fresh in this QA Lead session at
-`463183a16ac99879eeeadc35ff5f1064980892e5`. No result is carried forward from
-the Phase 20 QA plan. Working directory for every row is the repository root
-unless stated.
+Heavy mode: no result is carried forward from the Phase 20 QA plan. Rows marked
+`[R2]` were validated fresh in this re-review session at `b367a3b`, which covers
+every command DEC-158 added or changed. Every unmarked row, and any row marked
+`[R1]`, was validated fresh in the first QA Lead session at
+`463183a16ac99879eeeadc35ff5f1064980892e5` against commands DEC-158 left
+unchanged. Working directory for every row is the repository root unless
+stated.
 
 | Referenced Step | Validation method | Result | Evidence |
 |---|---|---|---|
@@ -253,12 +316,24 @@ unless stated.
 | `go tool cover -func=coverage.out` | executed against the probe profile | PASS | `total: (statements) 78.7%`; terminated `exit_code: 0` |
 | `go test -tags integration -race ./cmd/fid/integration/...` | executed | PASS | `ok github.com/mbell-nzl/fid/cmd/fid/integration 4.658s`; terminated `exit_code: 0`. Declared journey budget: 300s wall clock |
 | `go build -o /tmp/fid ./cmd/fid` | executed | PASS | silent success; terminated `exit_code: 0` |
-| `go test -bench . -benchmem ./...` | component probe of its longest member (bounded 100k rebuild) | **FAIL (nondeterministic)** | see the next row; the in-test 30s `b.Fatalf` makes this gate flaky. BC-01 |
-| `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` | executed three times | **FAIL (nondeterministic)** | run 1 `100k-event rebuild = 33.461764423s, want <30s` then `FAIL`, terminated `exit_code: 1`; run 2 `27109172011 ns/op 27109 ms/rebuild`, terminated `exit_code: 0`; run 3 `24965037891 ns/op 24965 ms/rebuild`, terminated `exit_code: 0`. BC-01 |
-| hardware/toolchain identity capture: `go version`; `uname -srm`; `nproc`; `grep -m1 'model name' /proc/cpuinfo` | executed | PASS | `go version go1.26.2 linux/amd64`; `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`; `6`; `model name : AMD Ryzen 7 5700G with Radeon Graphics` |
-| `project-docs/tools/report-lint.sh <report>` (the form declared in all 22 task specs) | executed against `task-1-done.md` | **FAIL** | printed `Usage: project-docs/tools/report-lint.sh <completion-report.md> <task-spec.md> [--repo <git-dir>]`, terminated `exit_code: 2`. BC-02 |
+| `go test -bench . -benchmem ./...` | component probe of its longest member (bounded 100k rebuild) `[R1][R2]` | PASS | the member benchmark passes cleanly on an unloaded machine; see the next row |
+| DEC-158 rule: `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` as three consecutive fresh processes | executed as three separate unloaded processes `[R2]` | PASS | `23727938194 ns/op 23728 ms/rebuild`; `23797261352 ns/op 23797 ms/rebuild`; `23800483588 ns/op 23800 ms/rebuild`; each terminated `exit_code: 0` with `ok github.com/mbell-nzl/fid/internal/journal` at 25.566s / 25.690s / 25.660s. All three under the 30s budget, spread 0.07s, headroom about 6.2s |
+| first-review benchmark samples (superseded) | executed `[R1]` | withdrawn | `33.461764423s` FAIL, then `27109172011 ns/op` and `24965037891 ns/op`. The failing sample overlapped a backgrounded `go test -race ./...`; it is a loaded-machine measurement and is superseded by the clean row above |
+| DEC-158 reference-instance identity: `go version`; `go env GOOS GOARCH`; `uname -srm`; `nproc`; `grep -m1 '^model name' /proc/cpuinfo`; `grep -m1 '^MemTotal:' /proc/meminfo` | all six executed verbatim from the task-21 command block `[R2]` | PASS | `go version go1.26.2 linux/amd64`; `linux` / `amd64`; `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`; `6`; `model name : AMD Ryzen 7 5700G with Radeon Graphics`; `MemTotal: 8133236 kB`. Every literal recorded in `02_TRD.md` section 9, task 21, and DEC-158 matches the observed machine exactly |
+| `project-docs/tools/report-lint.sh <report>` one-argument form | executed against `task-1-done.md` `[R1]` | **FAIL, now removed** | printed `Usage: ... <completion-report.md> <task-spec.md> [--repo <git-dir>]`, terminated `exit_code: 2`. DEC-158 removed the command from all 22 specs |
+| report-lint absent from every task spec after DEC-158 | `grep -l "report-lint.sh" project-docs/docs/phases/phase-21/tasks/*.md` `[R2]` | PASS | no output, terminated `exit_code: 1`: 0 of 22 specs still declare it |
+| report-lint behaviour with task 21's three identical benchmark lines | source inspection of `required_commands()` and the coverage loop `[R2]` | PASS with a stated limitation | the loop is a stateless per-command lookup with no dedupe, so duplicates neither break lint nor prove three samples were run. Counting the three distinct samples is QA-80's obligation, recorded in section 7.8 |
 | `project-docs/tools/report-lint.sh --self-test` | executed | PASS | `SELF-TEST PASS report-lint self-test completed with no failures`; terminated `exit_code: 0` |
 | `project-docs/tools/report-lint.sh <report> <task-spec>` two-argument form | documented usage inspection plus argument-count guard inspection in the script (it exits 2 with usage when fewer than two arguments are supplied) | PASS | script header `Usage: project-docs/tools/report-lint.sh <completion-report.md> <task-spec.md> [--repo <git-dir>]` |
+| task 4 recovery-absence recipe, run verbatim from the spec (VAL-013) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` in the task's new `## Expected Non-Zero Commands` |
+| task 17 Attention-absence recipe, run verbatim from the spec (VAL-063) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
+| task 19 import-absence recipe, run verbatim from the spec (VAL-071) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
+| task 13 containment lexicon over the two phase contracts (VAL-046) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
+| task 20 broad table-reader classification recipe | executed `[R2]` | PASS | 54 matching lines, terminated `exit_code: 0`; correctly **not** declared in the task's expected-non-zero section |
+| task 20 broad `EventType` classification recipe | executed `[R2]` | PASS | 22 matching lines, terminated `exit_code: 0`; correctly **not** declared |
+| task 20 expected-non-zero declaration set after DEC-158 | declaration count and content inspection `[R2]` | PASS | exactly the 10 original absence declarations remain; the two added broad inventories are absent from the section, matching DEC-158's corrected R-09 premise |
+| no duplicate required command outside task 21 | per-spec duplicate-line scan over each `## Exact Commands To Run` block `[R2]` | PASS | only `task-21-maintenance-rebuild.md` reports a duplicate line, which is the intended three-sample benchmark |
+| VAL-086 expected count of 20 Events | independent enumeration of the journey order in `phase_brief.md` and `contracts.md` section 16 against the Event families in section 14 `[R2]` | PASS | QA derived 20 Event-producing operations independently before reading the amended contract, and the amended `contracts.md` enumerates the identical 20 with exactly one `envelope.created`; reads (capabilities, evaluate, resume, export create/validate) produce none |
 | containment lexicon over source (VAL-046) | executed | PASS | no match, terminated `exit_code: 1`; the accepted permissive values `sandbox:"none"`, `network:"allowed"`, `write:"allowed"` are not matched |
 | containment lexicon over `contracts.md` and `public-interface.md` | executed | PASS | no match, terminated `exit_code: 1` |
 | `--by` inventory (task 20) | executed at planning base | PASS (syntax and reachability) | 61 matching lines today; the pattern is valid and the paths exist, so `exit_code: 1` at task 20 is a real absence proof |
@@ -283,12 +358,13 @@ unless stated.
 | FEAS byte-deterministic ZIP | executed | PASS | two archives written 1.1s apart with fixed 1980-01-01 headers produced identical digest `018486bea8ba8921b104146842daec9577bde29c0c8cb129a482bf4a3d0c1d3f`; `ZIP_DETERMINISM: PASS` |
 | FEAS non-mutating corruption validation | executed | PASS | `unzip -t` terminated `exit_code: 0` and left the digest unchanged (`VALIDATION_NON_MUTATING: PASS`); after a one-byte `dd` corruption it terminated `exit_code: 1` |
 | FEAS repository-tree freshness | executed | PASS | two commits in a scratch repository produced different `rev-parse HEAD^{tree}` values |
-| Human step `cat cmd/fid/testdata/val-036/human-session.txt` | file-existence check | **BLOCKED until task 14** | the path does not exist and is not named by any task spec; R-06 requests the declaration. The step itself is a single `cat` in an interactive terminal and needs no tooling |
-| `ls cmd/fid/integration/testdata/p21_conformance` | file-existence check | **BLOCKED until task 22** | directory does not exist and is not named by task 22; R-04 requests the declaration |
+| Human step `cat cmd/fid/testdata/val-036/human-session.txt` | task-spec declaration check `[R2]` | PASS as planned, produced by task 14 | task 14 now names `cmd/fid/testdata/val-036/human-session.txt` and `live-frames.jsonl` in Files To Create, and its acceptance criterion requires a golden test to regenerate and byte-compare both, with interleaved streams, all three control kinds, a non-success terminal frame, and raw ESC/CR/BEL in the child output. The step itself is a single `cat` in an interactive terminal and needs no tooling |
+| `ls cmd/fid/integration/testdata/p21_conformance` | task-spec declaration check `[R2]` | PASS as planned, produced by task 22 | task 22 now names the directory in Files To Create, requires `manifest.json`, `operations/<operation>.json` per section 4.1-4.2 row, `failures/<failure-code>.json` per section 7 failure, and `live/<variant>.jsonl` per section 8 variant, and runs `ls` on it as a required exit-0 command. It is correctly not declared expected-non-zero |
 | Task 5/13/16 scope `./internal/evidence`, task 19/21 scope `./internal/export` | directory listing of `internal/` | PASS with sequencing note | neither package exists at planning base; task 5 creates `internal/evidence` and task 19 creates `internal/export`, so their task-scoped `go test` commands are only valid from the task that creates the package onward. No earlier task references them |
 
-Unvalidated or invalid steps in this table are QA-plan defects and are carried
-into section 13 as R-01, R-04, and R-06.
+No unvalidated or invalid step remains. Every command DEC-158 added was
+executed verbatim from its task spec in this session, and both previously
+blocked artifact assumptions are now declared by their owning task spec.
 
 ## 7. Deterministic Checklist
 
@@ -319,7 +395,7 @@ Shared conventions for every row:
 | QA-06 | Confirm concurrent same-key calls commit exactly one mutation: `go test -race ./internal/journal ./internal/cli` `(qa-lead)` | VAL-007 | barrier concurrency test output showing one Event identity and one replay under `-race`, terminated `exit_code: 0` |
 | QA-07 | Byte-compare the `project.initialized` fixture against `contracts.md` section 14: service Actor `fid-bootstrap`, aggregate sequence 1, null repository, null idempotency, empty Effects, and no role/workflow/policy Effect `(qa-lead)` | VAL-008 | golden bootstrap Event diff, terminated `exit_code: 0` |
 | QA-08 | Compare `fid capabilities --json` output against the exact 12-row sorted matrix in `contracts.md` section 2, field by field: `go test -race ./internal/workflow ./cmd/fid/...` `(qa-lead)` | VAL-009 | full-matrix golden diff plus the projection rows, terminated `exit_code: 0` |
-| QA-09 | Confirm every capability declared `false` stays `false` while its internal walking-skeleton operations exist `(qa-lead)` | VAL-010 | capability/leaf conformance table output listing each false row and its exercised internal operation, terminated `exit_code: 0` |
+| QA-09 | Confirm `kit.activation.v1`, `work.claims.v1`, `export.portable.v1`, `reviews.coverage.v1`, `human.outcomes.v1`, `telemetry.trajectory.v1`, and `attention.v1` all stay `false` across the internal Activation lifecycle, Claim lifecycle and list, export create and validate, fail-closed AC and Concern judgment, historical stats, and Attention-absence surfaces `(qa-lead)` | VAL-010 | exact false-row/operation conformance matrix naming each of the seven capabilities against each named surface, terminated `exit_code: 0` |
 
 ### 7.2 Window 2 - tasks 4-6
 
@@ -327,7 +403,7 @@ Shared conventions for every row:
 |---|---|---|---|
 | QA-10 | Confirm only `prepared -> staged -> committed -> finalized` is accepted and one active identity results; every skipped or extra transition rejects `(qa-lead)` | VAL-011 | lifecycle state-table output covering accepted and rejected orders, terminated `exit_code: 0` |
 | QA-11 | Confirm abort succeeds only from prepared or staged, leaves no active trust source, and abort after commit returns `activation-recovery-unavailable` `(qa-lead)` | VAL-012 | abort state-table output plus the post-abort trust-source read, terminated `exit_code: 0` |
-| QA-12 | Confirm recovery and automatic respawn are unavailable and post-commit repair rejects: absence proof over CLI registration, capability row, and source `(qa-lead)` | VAL-013 | `activation recover` unknown-command result, `kit.activation.v1` row with `recover:false` and `automatic_respawn:false`, and the typed post-commit rejection, terminated `exit_code: 0` |
+| QA-12 | Confirm recovery and automatic respawn are unavailable and post-commit repair rejects `(qa-lead)` | VAL-013 | the task-4 declared recovery-absence recipe (section 5.1) terminated `exit_code: 1`; the `activation recover` unknown-command result; the `kit.activation.v1` row with `recover:false` and `automatic_respawn:false`; and the typed `activation-recovery-unavailable` post-commit rejection |
 | QA-13 | Confirm the finalized authority profile is the sole source of Actor identity, capability, producer, and provenance; a non-finalized or alternative source resolves nothing `(qa-lead)` | VAL-014 | resolution/provenance test output for both the qualifying and non-qualifying source, terminated `exit_code: 0` |
 | QA-14 | Confirm caller-supplied capability or provenance fields are unknown input, reject with a typed error, and append no Event `(qa-lead)` | VAL-015 | adversarial closed-input matrix output plus the asserted zero-Event delta, terminated `exit_code: 0` |
 | QA-15 | Confirm Registration resolves only a finalized activated Definition and only before Envelope creation; missing, mutable, or caller-supplied values reject `(qa-lead)` | VAL-016 | ordering/trust integration test output for both states, terminated `exit_code: 0` |
@@ -370,7 +446,7 @@ Shared conventions for every row:
 
 | ID | Check | Covers | Evidence Required |
 |---|---|---|---|
-| QA-40 | Audit that tasks 1-12 have completion reports with task-local report-lint evidence and that QA Review windows 1-4 exist with every finding linked to its owning task and resolved by a committed repair, and record Group 1 HEAD and the contract/spec commit `(qa-lead)` | VAL-042 | `git log --oneline` for the twelve task commits and their `docs(task)` report commits; `ls project-docs/docs/phases/phase-21/qa/`; the four review artifacts with `Outcome: PASS`; a fresh `project-docs/tools/report-lint.sh <report> <spec>` run per task with `PASS report-lint completed with no failures` and terminated `exit_code: 0`; `git rev-parse HEAD` |
+| QA-40 | Audit that tasks 1-12 have committed completion reports with Phase Runner two-argument report-lint evidence captured after each report commit and before the next dispatch, and that QA Review windows 1-4 exist with every finding linked to its owning task and resolved by a committed repair; record Group 1 HEAD and the contract/spec commit `(qa-lead)` | VAL-042 | `git log --oneline` for the twelve task commits and their `docs(task)` report commits; `ls project-docs/docs/phases/phase-21/qa/`; the four review artifacts with `Outcome: PASS`; the run-ledger entry for each pre-dispatch lint; a fresh `project-docs/tools/report-lint.sh <report> <spec>` run per task with `PASS report-lint completed with no failures` and terminated `exit_code: 0`; `git rev-parse HEAD` |
 | QA-41 | Prove no new Group 1 generic path consults the temporary V1 inventory, and classify the temporary inventory as exactly the `v1-convergence-inventory.md` section 5 list, without requiring final absence `(qa-lead)` | VAL-043 | (a) the four section 7 classification commands run fresh, every match classified against the inventory file, unclassified count 0; (b) a dependency/call-graph proof per new generic path - `go list -deps ./internal/workflow ./internal/policy ./internal/claims ./internal/evidence` plus `rg -n -e roles -e gate_runs -e task_completions -e agent_runs -e ac_verifications -e concerns -e 'internal/dev' <generic source files>` terminated `exit_code: 1` for the generic files; (c) adversarial fixtures seeding rows in each temporary table and showing Activation, Registration, Envelope, Grant, Claim, Run, nonterminal transition, capability, and idempotency paths are unchanged; (d) proof that AC verification and concern mutation are fail-closed |
 
 Section 11 defines the fresh Group 2 feasibility probes that must also PASS in
@@ -382,7 +458,7 @@ the same checkpoint session before task 13 dispatch.
 |---|---|---|---|
 | QA-42 | Confirm the accepted executor policy is observably enforced: structured argv, no shell, exact cwd, closed environment, bounds, credentials, redaction inputs, and safe Artifact declarations `(qa-lead)` | VAL-044 | positive policy/process probe showing the child's observed argv, cwd, and full environment set matching the policy exactly, terminated `exit_code: 0` |
 | QA-43 | Confirm each unsupported shell, sandbox, network, write, environment, path, or limit value rejects at registration with no Registration persisted `(qa-lead)` | VAL-045 | one-field rejection matrix with `executor-policy-unsupported` and the exact `fields` detail per case, terminated `exit_code: 0` |
-| QA-44 | Confirm no OS, network, filesystem, privilege, namespace, or platform containment claim exists and that the permissive values are explicit `(qa-lead)` | VAL-046 | negative: the section 5.1 containment lexicon over `cmd internal`, terminated `exit_code: 1`; positive: `evidence.gate-definitions.v1` limits row showing `sandbox:"none"`, `network:"allowed"`, `write:"allowed"` and the resolved Registration policy carrying the same values |
+| QA-44 | Confirm no OS, network, filesystem, privilege, namespace, or platform containment claim exists in source or in the Phase 21 contracts, and that the permissive values are explicit `(qa-lead)` | VAL-046 | negative: both task-13 declared containment lexicons from section 5.1, over `cmd internal` and over `contracts.md` plus `public-interface.md`, each terminated `exit_code: 1`; positive: the `evidence.gate-definitions.v1` limits row showing `sandbox:"none"`, `network:"allowed"`, `write:"allowed"` and the resolved Registration policy carrying the same values |
 | QA-45 | Confirm stdout and stderr process bytes serialize as exact globally sequenced `fid.live.v1` data frames with correct chunking and escaping `(qa-lead)` | VAL-047 | interleaved child-process golden: frame-by-frame diff of schema, `execution_id`, strictly increasing `sequence` across both streams, 4096-byte chunk boundaries that never split a code point, and JSON-escaped CR/LF/ESC, terminated `exit_code: 0` |
 | QA-46 | Confirm redaction, truncation, and Artifact rejection each emit their exact control payload and that no unknown control kind exists `(qa-lead)` | VAL-048 | control-variant golden covering `output-truncated`, `artifact-rejected`, and `redaction-applied` with exact fields and ordering, plus a rejection row for an unknown or snake-case kind, terminated `exit_code: 0` |
 | QA-47 | Confirm credential and literal redaction occurs before every live, stored, hashed, error, Artifact, export, and Human surface `(qa-lead)` | VAL-049 | canary end-to-end scan: `rg -n 'CANARY-<value>' <live frames> <journal> <projection dump> <artifact store> <export archive> <human transcript>` terminated `exit_code: 1`, plus the positive `redaction-applied` control frame with its count |
@@ -404,7 +480,7 @@ the same checkpoint session before task 13 dispatch.
 | QA-58 | Confirm a repository-tree change stales Evidence while the original target stays fresh, and that branch labels do not drive freshness `(qa-lead)` | VAL-060 | git tree change test showing `fresh` for the original tree and `stale` after the tree OID changes, terminated `exit_code: 0` |
 | QA-59 | Confirm required Artifact availability changes only the Artifact reason and status dimension `(qa-lead)` | VAL-061 | available/missing paired evaluation with an isolated field diff, terminated `exit_code: 0` |
 | QA-60 | Confirm evaluation returns every reason deduplicated in the fixed section 10 precedence and bytewise tie order, stable across repeat and rebuild `(qa-lead)` | VAL-062 | repeated and post-rebuild multi-failure golden byte-identical to the reference, terminated `exit_code: 0` |
-| QA-61 | Confirm unsatisfied Obligations stay queryable and never create Attention `(qa-lead)` | VAL-063 | evaluation read plus absence proof over the Attention table, Event families, and capability leaf, terminated `exit_code: 0` |
+| QA-61 | Confirm unsatisfied Obligations stay queryable and never create Attention `(qa-lead)` | VAL-063 | positive: the evaluation read returning status and reasons; negative: the task-17 declared Attention-absence recipe (section 5.1) terminated `exit_code: 1`, plus the Attention table, Event-family, and `attention.v1` capability-leaf absence proofs |
 | QA-62 | Confirm that after a qualifying Receipt link and evaluation the terminal-success Issue transition commits through the shared evaluator `(qa-lead)` | VAL-064 | positive guarded transition test asserting the evaluator identity used, with exactly one transition Event, terminated `exit_code: 0` |
 | QA-63 | Confirm missing, unsuccessful, invalid, stale, and Artifact-missing evidence each block the terminal-success transition atomically `(qa-lead)` | VAL-065 | negative evidence matrix with exact reasons and a zero-Event delta per case, terminated `exit_code: 0` |
 | QA-64 | Confirm Envelope completion reuses the shared evaluator and commits only with a terminal-success Issue plus all required Obligations satisfied `(qa-lead)` | VAL-066 | positive completion test plus an evaluator-identity assertion showing the same result object, with one `envelope.completed` Event, terminated `exit_code: 0` |
@@ -417,9 +493,9 @@ the same checkpoint session before task 13 dispatch.
 |---|---|---|---|
 | QA-67 | Confirm export create is byte-deterministic and integrity-binds manifest, journal prefix, sources, capabilities, and available Artifacts `(qa-lead)` | VAL-069 | two archives created from identical facts with identical `sha256sum` output plus the exact entry inventory and per-entry digests, terminated `exit_code: 0` |
 | QA-68 | Confirm export validate detects each safety and integrity defect without mutating project state `(qa-lead)` | VAL-070 | corruption corpus results with one `archive-invalid` check code per defect, plus identical `.fid` tree digests before and after validation, terminated `exit_code: 0` |
-| QA-69 | Confirm export import is absent and `export.portable.v1` remains unavailable `(qa-lead)` | VAL-071 | `fid export import` unknown-command result with exit 2, a source inventory with no import path, and the capability row `available:false` with `import:false`, terminated `exit_code: 0` |
+| QA-69 | Confirm export import is absent and `export.portable.v1` remains unavailable `(qa-lead)` | VAL-071 | the task-19 declared import-absence recipe (section 5.1) terminated `exit_code: 1`; the `fid export import` unknown-command result with exit 2; and the capability row `available:false` with `import:false` |
 | QA-70 | Confirm migration 0014 performs the exact destructive drop, rename, and role-rule deletion sequence with the accepted empty-state down behavior and no data reconstruction `(qa-lead)` | VAL-002 | pre/post schema diff and row fixture showing `roles`, V1 `claims`, and `gate_runs` dropped, `work_claims` renamed to `claims`, displaced requirement rows deleted, and the frozen tables untouched, terminated `exit_code: 0` |
-| QA-71 | Confirm every retained, fail-closed, and frozen V1 caller has its exact final non-authoritative disposition, using the classified inventory rather than a raw no-match rule `(qa-lead)` | VAL-074 | the four `v1-convergence-inventory.md` section 7 commands run fresh at task-20 HEAD, each match classified against the inventory file, `UNCLASSIFIED=0`, plus the per-disposition test naming each frozen or diagnostic reader that is explicitly permitted |
+| QA-71 | Confirm every retained, fail-closed, and frozen V1 caller has its exact final non-authoritative disposition, using the classified inventory rather than a raw no-match rule `(qa-lead)` | VAL-074 | all four `v1-convergence-inventory.md` section 7 recipes run fresh at task-20 HEAD with the DEC-158 status split: the role-policy and `--by` recipes terminated `exit_code: 1`, and the broad table-reader and `EventType` recipes terminated `exit_code: 0`. Every line either recipe produced maps to an explicit retained, frozen, diagnostic, or removal disposition, the report records `UNCLASSIFIED=0`, and neither broad recipe was narrowed to suppress a frozen or diagnostic reader. Plus the per-disposition test naming each permitted reader |
 | QA-72 | Confirm the final binary has no owned V1 policy, dev, completion, Claim, Run, or Gate command, writer, Event acceptance, role table, or mutation `--by` `(qa-lead)` | VAL-075 | the ten predeclared task-20 absence commands, each with its declared and observed non-zero status from section 5.1, plus the post-0014 schema listing showing the dropped tables absent |
 | QA-73 | Confirm final-binary fresh `fid init` after 0014 succeeds and creates no `roles` table and no role Effect `(qa-lead)` | VAL-076 | `go build -o /tmp/fid ./cmd/fid` then `/tmp/fid init` in a fresh `mktemp -d` project; `.fid` schema listing with no `roles`; the genesis Event byte-compared to the bootstrap fixture, terminated `exit_code: 0` |
 | QA-74 | Confirm deleting the fresh projection and rebuilding succeeds without `roles` and reproduces bootstrap and capability reads `(qa-lead)` | VAL-077 | delete-DB then `/tmp/fid rebuild` output, plus byte-identical `capabilities` and bootstrap snapshots before and after, terminated `exit_code: 0` |
@@ -428,25 +504,25 @@ the same checkpoint session before task 13 dispatch.
 | QA-77 | Confirm maintenance reports `frozen-state-present` and `removed-state-residue` without treating either as authority or repairing them `(qa-lead)` | VAL-080 | frozen and residue fixtures producing both findings with exact counts, plus identical projection digests before and after the check, terminated `exit_code: 0` |
 | QA-78 | Confirm final-schema live and rebuilt capabilities, Envelope, Receipt/Evidence evaluation, completion state, and resume reads are byte-identical `(qa-lead)` | VAL-081 | before/delete/rebuild/after snapshot set with a byte diff of every named canonical read, terminated `exit_code: 0` |
 | QA-79 | Confirm export bytes and validation result are identical before and after the final-schema rebuild `(qa-lead)` | VAL-082 | matching `sha256sum` for both archives and identical `ExportValidation` results, terminated `exit_code: 0` |
-| QA-80 | Run the bounded 100k Event-v2 rebuild in this session and record its complete termination with hardware and toolchain identity `(qa-lead)` | VAL-083 | `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` with the full benchmark line and observed `exit_code`, plus `go version`, `uname -srm`, `nproc`, and the CPU model line, plus the parity snapshot. Evaluated against the deterministic pass rule BC-01 requires |
+| QA-80 | Run the DEC-158 rule in this session: three consecutive fresh one-iteration 100k Event-v2 rebuild processes on the recorded reference instance, and capture the reference identity `(qa-lead)` | VAL-083 | three distinct captured `BenchmarkRebuildWorkspace100kEvents-<n>` result lines from three separate processes, each reporting `<30 s` and each terminated `exit_code: 0`, plus the parity snapshot per sample. All six identity commands captured and matching `02_TRD.md` section 9: `go1.26.2 linux/amd64`, `linux`/`amd64`, `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`, `6`, `AMD Ryzen 7 5700G with Radeon Graphics`, `MemTotal: 8133236 kB`. Best-of and median sampling are forbidden; one sample at or above 30 s fails the assertion. Report lint cannot count samples, so QA-80 must confirm three distinct captured results rather than one repeated token. An unavailable reference instance is `BLOCKED`, not `PASS` |
 
 ### 7.9 Task 22 and final QA
 
 | ID | Check | Covers | Evidence Required |
 |---|---|---|---|
 | QA-81 | Confirm every accepted nonstreaming leaf matches its exact args, closed input, result, Event, replay, Human rendering, error, channel, and exit contract and rejects unknown fields `(qa-lead)` | VAL-072 | the committed conformance corpus with one case file per `public-interface.md` section 4.1 and 4.2 operation row; a row-by-row coverage table showing every operation present; per-case diffs against the contract; and the unknown-field rejection row per input schema. `ls cmd/fid/integration/testdata/p21_conformance` terminated `exit_code: 0` |
-| QA-82 | Confirm no closed public enum, reason, Event, control, or availability value contains snake_case, while excluding JSON field names and opaque identifiers, and confirm the corpus is non-vacuous `(qa-lead)` | VAL-073 | the section 12 inventory pipeline over the committed corpus: (a) positive control - the extracted closed-value set contains at least one occurrence of every closed member enumerated in `public-interface.md` sections 3, 7, and 8, with the missing-member count 0; (b) negative control - `grep -E $'\t[^\t]*[a-z0-9]_[a-z0-9]' "$SCRATCH/kept.tsv"` terminated `exit_code: 1` |
+| QA-82 | Confirm no closed public enum, reason, Event, control, or availability value contains snake_case, while excluding JSON field names and opaque identifiers, and confirm the corpus is non-vacuous `(qa-lead)` | VAL-073 | the section 12 inventory pipeline over the committed `p21_conformance` corpus: (a) positive control - the extracted closed-value set contains every closed member enumerated in `public-interface.md` sections 3, 7, and 8, missing-member count 0, so an empty or truncated corpus cannot pass; (b) negative control - `grep -E $'\t[^\t]*[a-z0-9]_[a-z0-9]' "$SCRATCH/kept.tsv"` terminated `exit_code: 1`. `ls cmd/fid/integration/testdata/p21_conformance` terminated `exit_code: 0` |
 | QA-83 | Confirm the final real-process one-Issue journey succeeds in the required Gate-before-terminal-transition order through completion and export `(qa-lead)` | VAL-084 | `go test -tags integration -race ./cmd/fid/integration/...` plus the ordered journey transcript showing, in order: nonterminal transition; Gate execution; Receipt link and evaluation; terminal-success transition; Run finish and Claim release; Envelope completion; resume; export create and validate. Real binary only, no mock or in-process substitute, terminated `exit_code: 0` |
 | QA-84 | Confirm every final authority, policy, idempotency, evidence, Artifact, transition, and completion negative counterpart fails closed with exact codes and exits `(qa-lead)` | VAL-085 | tagged negative journey output listing each negative case with its `FailureCode`, category, process exit class, and the asserted absence of the forbidden effect, terminated `exit_code: 0` |
-| QA-85 | Confirm that after delete and rebuild the journey repeats only the named reads, evaluation, completion state, resume, export, and negative checks, with no second Envelope creation and no other mutation `(qa-lead)` | VAL-086 | (a) positive control - the pre-rebuild Event count equals the exact expected mutation count declared by the journey; (b) post-rebuild Event count identical to the pre-rebuild count; (c) a command trace listing only the permitted post-rebuild operations; (d) `envelope.created` Event count of exactly 1 over the whole journey, terminated `exit_code: 0` |
-| QA-86 | Audit that three-task reviews, the Group 1 checkpoint, task-local report lint, final QA, and captured termination evidence occurred at the accepted cadence `(qa-lead)` | VAL-087 | phase artifact and run-ledger audit: the seven review artifacts plus the checkpoint review exist in order; every completion report carries an observed termination for every required command; no result is transcribed from another session; `git log` ordering shows each review after its window's last task and the checkpoint between tasks 12 and 13 |
+| QA-85 | Confirm that after delete and rebuild the journey repeats only the named reads, evaluation, completion state, resume, export, and negative checks, with no second Envelope creation and no other mutation `(qa-lead)` | VAL-086 | (a) positive control - the pre-rebuild Event count is exactly 20 and matches the `contracts.md` section 16 enumeration family by family; (b) post-rebuild Event count still exactly 20, so post-rebuild commands appended zero Events; (c) a command trace listing only the permitted post-rebuild operations; (d) `envelope.created` count of exactly 1 over the whole journey, terminated `exit_code: 0` |
+| QA-86 | Audit that three-task reviews, the Group 1 checkpoint, the Phase Runner two-argument post-commit report lint before each next dispatch, final QA, and captured termination evidence occurred at the accepted cadence `(qa-lead)` | VAL-087 | phase artifact and run-ledger audit: the seven review artifacts plus the checkpoint review exist in order; every completion report carries an observed termination for every required command; no result is transcribed from another session; `git log` ordering shows each review after its window's last task and the checkpoint between tasks 12 and 13 |
 | QA-87 | Execute the full seven-command phase gate from `AGENTS.md` in order in the final QA session `(qa-lead)` | no VAL | seven captured tokens with observed `exit_code` for each command in section 5's full phase gate row |
 | QA-88 | PRD compliance review against every requirement cited in the validation contract's Source requirement column `(qa-lead)` | no VAL | a requirement-to-evidence table naming the `VAL-NNN` and the artifact that satisfies each cited PRD/TRD requirement, and explicitly listing the negative or unavailable requirements |
 | QA-89 | Security review of executor, redaction, and path handling `(qa-lead)` | no VAL | the canary scan result, the closed-environment observation, the `credential-unavailable` pre-Attempt failure path, the symlink and traversal rejection matrix, the `unsafe-path` details never containing credentials or unrelated absolute paths, and the confirmation that credential values never appear in journal, projection, error arguments, or export |
-| QA-90 | Performance spot-check `(qa-lead)` | no VAL | `go test -bench . -benchmem ./...` output with the rebuild, registry, and init benchmark lines and observed termination; deviation from the Phase 20 recorded values noted |
+| QA-90 | Performance spot-check `(qa-lead)` | no VAL | `go test -bench . -benchmem ./...` output with the rebuild, registry, and init benchmark lines and observed termination, including the retained per-sample `<30 s` assertion; deviation from the Phase 20 recorded values and from the three task-21 samples noted |
 | QA-91 | Documentation review `(qa-lead)` | no VAL | confirmation that `AGENTS.md`, `project-docs/specs/02_TRD.md`, `03_TRD_SCHEMA.md`, `04_TRD_CONFIG.md`, `06_DESIGN_PLAN_CLI.md`, `07_DESIGN_PLAN_FLOWS.md`, and `GLOSSARY.md` match the shipped interface, with a diff or citation per changed surface |
 | QA-92 | Task and completion-report audit `(qa-lead)` | no VAL | per task: spec commands versus report results, deviation notes for every failed-then-repaired attempt, dependency-budget notes, and a fresh two-argument `report-lint.sh` run per report with its token and observed `exit_code` |
-| QA-93 | Final no-unclassified-inventory-match proof `(qa-lead)` | no VAL | the four `v1-convergence-inventory.md` section 7 commands run fresh at phase HEAD with every match classified against that file and an unclassified count of 0; a raw no-match is explicitly not accepted where a frozen or diagnostic reader is retained |
+| QA-93 | Final no-unclassified-inventory-match proof `(qa-lead)` | no VAL | all four `v1-convergence-inventory.md` section 7 recipes run fresh at phase HEAD with the DEC-158 status split: role-policy and `--by` terminate `exit_code: 1`; the broad table-reader and `EventType` recipes terminate `exit_code: 0` and every produced line maps to an explicit retained, frozen, diagnostic, or removal disposition, with `UNCLASSIFIED=0`. A raw no-match from a broad recipe is a failure, not a pass, because a frozen or diagnostic reader is expected to remain |
 
 ## 8. Mid-Phase Review Cadence
 
@@ -542,13 +618,17 @@ and of the WINDOW-1..4 reviews. Output artifact:
 The checkpoint has three separately decided parts. A partial, conditional, or
 undocumented status never dispatches Group 2.
 
-1. **VAL-042 (QA-40)** - Group 1 completion reports and the four three-task QA
-   review windows are present and resolved. Decided on its own evidence.
+1. **VAL-042 (QA-40)** - Group 1 committed completion reports with Phase Runner
+   two-argument post-commit report-lint evidence, and the four three-task QA
+   review windows, are present and resolved. Decided on its own evidence.
 2. **VAL-043 (QA-41)** - new Group 1 generic paths do not consult the exactly
    enumerated temporary V1 state, and the temporary inventory is classified as
    exactly the `v1-convergence-inventory.md` section 5 list. Decided on its own
    evidence. Final V1 absence is **not** required here; requiring it is itself
-   a VAL-043 failure condition.
+   a VAL-043 failure condition. At the checkpoint all four section 7 recipes
+   terminate `exit_code: 0`, because removal happens in task 20; the DEC-158
+   `exit_code: 1` expectation for the role-policy and `--by` recipes applies
+   only at final task-20 HEAD.
 3. **Fresh Group 2 feasibility (section 11)** - every FEAS probe in this
    session, with observed termination.
 
@@ -628,7 +708,7 @@ most 300s (planning-base observation 4.658s).
 | FEAS-16 deterministic ZIP | build the same two-entry archive twice at least one second apart with fixed 1980-01-01 headers and fixed modes and compression, then `sha256sum` both | identical digests; terminated `exit_code: 0` |
 | FEAS-17 non-mutating corruption validation | `sha256sum ar.zip`; `unzip -t ar.zip`; `sha256sum ar.zip`; then corrupt one byte with `dd ... conv=notrunc` and rerun `unzip -t` | first `unzip -t` terminated `exit_code: 0` with an unchanged digest; the corrupted run terminated `exit_code: 1` |
 | FEAS-18 expected-nonzero absence commands | run every section 5.1 expected-non-zero command shape once against a path set known to contain no match | each terminates with its declared non-zero status and no output; a converted `exit 0 (no output)` fails the probe |
-| FEAS-19 tagged real-process journey budget | `go test -tags integration -race ./cmd/fid/integration/...` | `ok github.com/mbell-nzl/fid/cmd/fid/integration <t>s` within the declared 300s budget; terminated `exit_code: 0` |
+| FEAS-19 tagged integration gate budget | `go test -tags integration -race ./cmd/fid/integration/...` | `ok github.com/mbell-nzl/fid/cmd/fid/integration <t>s` within the 300s budget; terminated `exit_code: 0`. Per the amended checkpoint contract this proves environment feasibility only and does not require the task-22 product journey to exist after task 12 |
 
 ## 12. VAL-073 Closed-Value Inventory Procedure
 
@@ -732,34 +812,45 @@ grep -E $'\t[^\t]*[a-z0-9]_[a-z0-9]' "$SCRATCH/kept.tsv"
   containing `spawn_failed`, `in_progress`, `needs_review`, `head_oid`, and
   `tree_oid changed`; it reported only the seeded closed-value violation.
 
-## 13. Refinement Proposals For The Tech Lead
+## 13. Refinement Disposition
 
-QA never edits the validation contract, the checkpoint contract, or a task
-spec. Each row names the exact artifact, the exact change, and the evidence
-that motivates it. R-01 through R-06 and R-16 through R-17 are Must-fix for
-readiness; the rest are improvements.
+The Tech Lead applied DEC-158 at `b367a3b`. Every first-review proposal is
+dispositioned below and independently verified in this session. QA edited no
+contract, checkpoint contract, or task spec.
 
-| ID | Severity | Target artifact | Exact requested change | Motivating evidence |
-|---|---|---|---|---|
-| R-01 | Must-fix | all 22 `tasks/task-<N>-*.md` `## Exact Commands To Run` blocks | Remove the line `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-<N>-done.md` from the required command block. Record report lint instead in the phase brief and run ledger as a Phase Runner pre-dispatch control using the two-argument form in section 8. Rationale: the declared one-argument form always terminates `exit_code: 2`, and keeping the lint inside the spec's required block is self-referential - report-lint requires each spec command to appear in the report with a PASS token, and the report must be committed and unmodified before the lint can pass, so any recorded token would necessarily come from a failing pre-commit run. | `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-1-done.md` printed `Usage: ...` and terminated `exit_code: 2`; the script enforces `[ "$#" -ge 2 ]`; 22 of 22 specs declare the one-argument form |
-| R-02 | Must-fix (protected) | `qa/validation-contract.md` VAL-083 row, and the benchmark row of the phase gate | Define (a) the exact reference-hardware and toolchain identity fields to record, (b) a deterministic pass rule - declared repetition count N with a best-of-N or median-of-N policy, or a revised budget - and (c) whether the phase-level `go test -bench . -benchmem ./...` may keep enforcing the in-test 30s `b.Fatalf`. Threshold and tolerance are protected; QA cannot set them. | Three fresh planning-base runs: `33.461764423s` FAIL, `27109172011 ns/op`, `24965037891 ns/op` against a 30s budget, before any Phase 21 Event-v2 load increase. BC-01 |
-| R-03 | Must-fix | `tasks/task-21-maintenance-rebuild.md` `## Exact Commands To Run` | Add, after the existing benchmark line: `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal`, then `go version`, `uname -srm`, `nproc`, and `grep -m1 'model name' /proc/cpuinfo`. Adjust the benchmark name if task 21 renames it, and align the invocation with whatever pass rule R-02 settles. | VAL-083 requires complete benchmark termination plus hardware and toolchain identity; the existing `go test -bench . -benchmem ./...` records neither a bounded single-benchmark result nor machine identity |
-| R-04 | Must-fix | `tasks/task-22-walking-skeleton.md` scope, acceptance criteria, and `## Exact Commands To Run` | Declare the conformance corpus artifact: task 22 writes `cmd/fid/integration/testdata/p21_conformance/` with one canonical JSON file per `public-interface.md` section 4.1 and 4.2 operation row (accepted and fail-closed), one file per failure case, and one `.jsonl` file per `fid gate run` live-frame variant, all regenerated deterministically by the tagged integration suite. Add `ls cmd/fid/integration/testdata/p21_conformance` to the command block. | `ls cmd/fid/integration/testdata/p21_conformance` is currently a BLOCKED feasibility row; VAL-072 and VAL-073 have QA Lead validators and need a committed artifact to inspect independently |
-| R-05 | Must-fix | `tasks/task-13-executor-policy.md` `## Exact Commands To Run` plus a new `## Expected Non-Zero Commands` section | Add the containment lexicon command from section 5.1 verbatim and declare it `expected exit_code: 1` with the note "no production containment claim". | VAL-046 currently has no defined lexicon, so "claims no containment" is not reproducible. The proposed lexicon was executed at planning base over `cmd internal` and over `contracts.md`/`public-interface.md` and terminated `exit_code: 1` in both cases without matching the accepted permissive values |
-| R-06 | Must-fix | `tasks/task-14-live-output.md` scope and acceptance criteria | Declare the VAL-036 fixture: `cmd/fid/testdata/val-036/human-session.txt` (byte-exact recorded Human-mode stdout) and `cmd/fid/testdata/val-036/live-frames.jsonl` (the corresponding machine frames), both regenerated and byte-compared by a golden test. Require the recorded session to contain interleaved stdout and stderr chunks, one `redaction-applied` control, one `artifact-rejected` control, one `output-truncated` control, a non-success terminal result, and a child process that emits raw ESC, CR, and BEL bytes so escaping is observable. | The Human step `cat cmd/fid/testdata/val-036/human-session.txt` is currently a BLOCKED feasibility row: no task spec names a fixture path, so the Human item cannot be executed as written |
-| R-07 | Must-fix (decision) | `qa/validation-contract.md` VAL-036 row note, and `qa/qa-lead-handoff.md` item 12 | Confirm the human fan-out. `09_AI_WORKFLOW.md` sections 2.6 and 6.1 require one human-checklist row per observable when a Human assertion spans several; VAL-036 names three properties plus a negative display condition. Section 9 of this plan uses `HUMAN-01a..01d`, all citing the single parent VAL-036, which keeps VAL-036 the sole Human assertion. Either accept that reading or restate VAL-036 as a single observable. | VAL-036 pass criterion "Human confirms all three properties" plus the contract note "preserve its exact three-part observable"; the handoff's "exactly one Human checklist item" conflicts with the canonical fan-out rule |
-| R-08 | Must-fix | `qa/group-1-checkpoint-contract.md` fresh-feasibility bullet on the tagged journey | Clarify that the checkpoint proves environment feasibility for the tagged journey within the QA plan's declared budget, not the existence of the product journey, which is task 22 work. Section 11 declares 300s for `go test -tags integration -race ./cmd/fid/integration/...` and 120s per FEAS probe. | The bullet reads as requiring "the dedicated tagged real-process journey", which does not exist at checkpoint time (after task 12); without this clarification the checkpoint cannot PASS on its own terms |
-| R-09 | Must-fix | `tasks/task-20-v1-removal.md` `## Exact Commands To Run` | Add the four `v1-convergence-inventory.md` section 7 classification commands verbatim (they terminate `exit_code: 0` and must not be declared non-zero), and add an acceptance criterion requiring the completion report to classify every match against the inventory file with an unclassified count of 0. | Task 20 currently declares only absence commands, but inventory section 7 states "a raw no-match is not sufficient where a frozen or diagnostic reader is explicitly retained", and the handoff item 7 requires the classified inventory rather than a raw no-match rule |
-| R-16 | Must-fix | `qa/validation-contract.md` VAL-073 row | Add the non-vacuity control to the pass criterion: the extracted closed-value set must contain at least one occurrence of every closed enum member enumerated in `public-interface.md` sections 3, 7, and 8, with a missing-member count of 0, in addition to the snake_case absence result. | As written, an empty or truncated conformance corpus satisfies "All closed values kebab-case" with no evidence at all |
-| R-17 | Must-fix | `qa/validation-contract.md` VAL-086 row | Add the positive control to the pass criterion: the pre-rebuild Event count must equal the exact expected mutation count declared by the journey, and the whole journey must contain exactly one `envelope.created` Event, before the post-rebuild count is compared. | As written, a journey whose mutation phase wrote nothing would satisfy "Event count is unchanged" |
-| R-10 | Improvement | `tasks/task-4-activation-trust.md` | Add an `## Expected Non-Zero Commands` section declaring the recovery-absence proofs used by VAL-013, so the Developer never infers a status. | VAL-013's evidence method is a CLI/capability/source absence proof with no declared command |
-| R-11 | Improvement | `tasks/task-19-export-create-validate.md` | Add an `## Expected Non-Zero Commands` section declaring the import-absence proof used by VAL-071. | Same reason as R-10 |
-| R-12 | Improvement | `tasks/task-17-evidence-evaluation.md` | Add an `## Expected Non-Zero Commands` section declaring the Attention-absence proof used by VAL-063. | Same reason as R-10 |
-| R-13 | Improvement | `tasks/task-5-gate-registration.md` and `tasks/task-19-export-create-validate.md` | Note in `## Notes For Developer` that these tasks create `internal/evidence` and `internal/export` respectively, so their package-scoped `go test` commands only resolve from that task onward. | Neither package exists at planning base; `ls internal/` confirms |
-| R-14 | Improvement | `qa/validation-contract.md` VAL-044 and VAL-045 rows | Cross-reference the pair explicitly so the positive-only VAL-044 probe is never read as satisfying the policy assertion on its own. | VAL-044's evidence method is a positive probe; VAL-045 carries the non-qualifying states |
-| R-15 | Improvement | `project-docs/docs/current/phase_brief.md` approval gate | Record the two-argument report-lint control and the seven window artifact paths in the brief so the Phase Runner has one authoritative dispatch checklist. | Section 8 of this plan currently holds the only complete list |
-| R-18 | Improvement | `qa/validation-contract.md` VAL-010 row | Name the exact internal walking-skeleton operations whose existence must not flip a false capability, so the conformance matrix is bounded rather than open-ended. | VAL-010's pass criterion is "All declared false rows remain false" without naming the operations that create the risk |
-| R-19 | Improvement | `qa/validation-contract.md` Status column | Move every row from `Draft` to `Accepted` when the Human approves execution, so a later reviewer cannot read a Draft contract as non-binding. | All 87 rows currently read `Draft` |
+| ID | Disposition | Independent verification at `b367a3b` |
+|---|---|---|
+| R-01 | Applied | Report lint removed from all 22 `## Exact Commands To Run` blocks; `grep -l "report-lint.sh" .../tasks/*.md` terminated `exit_code: 1`. Each spec now states it is a Phase Runner post-commit control. Recorded consistently in `phase_brief.md` Dispatch Controls, `08_QUALITY_PLAN.md` section 8, the checkpoint preconditions, and VAL-087 |
+| R-02 | Applied, threshold retained | DEC-158 keeps the 30s budget and the per-sample `b.Fatalf`, names the reference instance in `02_TRD.md` section 9, and sets the three-consecutive-fresh-process, all-samples-`<30 s` rule with best-of and median forbidden. QA re-measured the exact procedure clean: 23.728s, 23.797s, 23.800s, all `exit_code: 0` |
+| R-03 | Applied | Task 21 adds the three benchmark invocations plus all six identity commands; every identity literal matches the observed machine exactly |
+| R-04 | Applied | Task 22 declares `cmd/fid/integration/testdata/p21_conformance/` with `manifest.json`, per-operation, per-failure-code, and per-live-variant fixtures, regenerated and byte-compared by the tagged suite, and adds `ls` on it as a required exit-0 command |
+| R-05 | Applied and widened | Task 13 adds the containment lexicon over `cmd internal` **and** a second lexicon over `contracts.md` and `public-interface.md`, both declared `exit_code: 1`. Both terminated `exit_code: 1` when run verbatim |
+| R-06 | Applied | Task 14 declares both VAL-036 fixtures and an acceptance criterion requiring golden regeneration and byte comparison, interleaved streams, all three control kinds, a non-success terminal frame, and raw ESC/CR/BEL child output |
+| R-07 | Applied | VAL-036 is restated as one parent perception assertion; the Coverage Audit now requires the `HUMAN-01a..01d` fan-out under Workflow section 6.1 and keeps VAL-036 the sole Human parent. Section 9 matches |
+| R-08 | Applied | The checkpoint contract now reads "environment feasibility to run the existing tagged integration gate within 300 seconds and each FEAS probe within 120 seconds. This does not require the task-22 product journey to exist after task 12" |
+| R-09 | Applied with an accepted Tech Lead correction | QA had assumed all four section 7 recipes terminate 0 at task 20. DEC-158 correctly separates them: the role-policy and `--by` recipes are already predeclared absence controls that must terminate `exit_code: 1` at final task-20 HEAD, while only the broad table-reader and `EventType` recipes terminate `exit_code: 0` as classified inventories. QA accepts this and has corrected sections 5.1, 7.5, 7.8, and QA-93. Verified: the two broad recipes were added to task 20, both terminate `exit_code: 0` today (54 and 22 matching lines), neither is declared expected-non-zero, the expected-non-zero section still holds exactly the 10 original declarations, and the inventory file plus the task's Notes forbid narrowing them |
+| R-10 | Applied | Task 4 adds the declared recovery-absence recipe; terminated `exit_code: 1` |
+| R-11 | Applied | Task 19 adds the declared import-absence recipe; terminated `exit_code: 1` |
+| R-12 | Applied | Task 17 adds the declared Attention-absence recipe; terminated `exit_code: 1` |
+| R-13 | Applied | Tasks 5 and 19 note that they create `internal/evidence/` and `internal/export/` and that the focused package command is valid only from that task onward |
+| R-14 | Applied | VAL-044 and VAL-045 are explicitly cross-paired; an unpaired positive-only or negative-only claim now fails by contract |
+| R-15 | Applied | `phase_brief.md` gains a Dispatch Controls section naming the two-argument control and all nine QA artifact paths |
+| R-16 | Applied | VAL-073 now requires every closed member from interface sections 3, 7, and 8 in the extracted set with missing count 0, so an empty or truncated corpus fails |
+| R-17 | Applied and made exact | VAL-086 and `contracts.md` section 16 now fix the pre-rebuild count at exactly 20 Events with exactly one `envelope.created`. QA independently enumerated the journey and derived the same 20 families before reading the amendment |
+| R-18 | Applied | VAL-010 now names the seven false capabilities and the exact surfaces they govern; task 3's acceptance criterion matches |
+| R-19 | Deferred by decision | The contract keeps `Status: Draft` on all 87 rows until Human execution approval. QA accepts the deferral and notes it is the Tech Lead's to flip at approval |
+
+### 13.1 Named execution risks carried into the phase
+
+These are risks for the Phase Runner and reviewers to watch. None is a QA-plan
+defect and none blocks readiness.
+
+| Risk | Detail | Mitigation already in the plan |
+|---|---|---|
+| RISK-01 | The 100k rebuild has about 6.2s of headroom at planning base, and Phase 21 adds Event-v2 effects, idempotency inserts, and richer projection rows. Task 21 could legitimately breach the budget. | DEC-158 assigns causal optimization to task 21 scope and forbids threshold relaxation, best-of, and median. QA-80 requires three distinct captured samples. A sustained breach after bounded optimization is a blocker candidate for the Tech Lead, not a QA threshold change |
+| RISK-02 | Report lint cannot count task 21's three identical benchmark invocations; one recorded PASS token satisfies its coverage check three times. | QA-80 must confirm three distinct captured result lines from three separate processes, not one repeated token |
+| RISK-03 | The measurement in RISK-01 is load-sensitive: a concurrent full race suite pushed one planning-base sample from about 23.8s to 33.5s. | The task-21 samples must be taken as dedicated fresh processes; QA-80 records this and rejects samples taken under concurrent load |
+| RISK-04 | The task-20 broad classified inventories can be silently weakened by narrowing their patterns, which would convert a classification duty into a vacuous no-match. | `v1-convergence-inventory.md` section 7, the task-20 Notes, QA-71, and QA-93 all state that a raw no-match from a broad recipe is a failure |
 
 ## 14. Phase-End Decision Rule
 
@@ -777,11 +868,18 @@ The phase proceeds to final review only when all of the following hold.
   delegated, or inferred by QA.
 - All seven review windows are `PASS`; every earlier `REPAIR` has a fresh
   independent `PASS` re-review resolving its original Must-fix findings.
+- Every task-local report lint ran as the Phase Runner's two-argument
+  post-commit control before the next dispatch, with its token and observed
+  `exit_code` in the run ledger.
 - The Group 1 checkpoint recorded `PASS` separately for VAL-042 and VAL-043 and
   for every FEAS probe, and did so before task 13 dispatch.
-- No unresolved Must-fix finding or blocker candidate remains, including BC-01
-  and BC-02.
-- The final classified-inventory proof (QA-93) reports 0 unclassified matches.
+- VAL-083 has three distinct captured samples from three separate fresh
+  processes on the recorded reference instance, each under 30 s, with the six
+  identity commands captured and matching `02_TRD.md` section 9.
+- No unresolved Must-fix finding or blocker candidate remains. BC-01 and BC-02
+  are closed by DEC-158 and re-verified in this plan's section 6.
+- The final classified-inventory proof (QA-93) reports 0 unclassified matches
+  with the DEC-158 status split.
 - Required documentation updates named in QA-91 are applied.
 
 An in-scope failed gate or incomplete evidence triggers repair; recording
@@ -793,11 +891,14 @@ TL-Lite or the full Tech Lead, which alone may allocate an `ESC` identity.
 
 | Item | State |
 |---|---|
-| VAL mapping completeness | 87 of 87 mapped exactly once (86 `QA-NN` rows plus HUMAN-01a..01d for VAL-036); no ID merged; validator roles preserved |
+| VAL mapping completeness | 87 of 87 mapped exactly once (86 `QA-NN` rows plus HUMAN-01a..01d for VAL-036); no ID merged; contract validator roles preserved |
 | Review windows | 7 defined, plus the independent Group 1 checkpoint |
 | Checkpoint assertions | VAL-042 and VAL-043 separately decided |
-| Fresh feasibility | FEAS-01..FEAS-19 defined and mechanically validated in this session; execution required fresh at the checkpoint |
+| Fresh feasibility | FEAS-01..FEAS-19 defined and mechanically validated; execution required fresh at the checkpoint |
 | Final QA | QA-86..QA-93 cover the full gate, PRD compliance, security, performance, documentation, VAL outcomes, task/report audit, and the classified-inventory proof |
-| Human scope | VAL-036 only |
-| Readiness | **Needs Refinement** - apply R-01..R-06, R-16, R-17 and resolve BC-01 and BC-02 |
-| Task 1 | Remains unauthorized |
+| Human scope | VAL-036 only, as one parent assertion fanned out to HUMAN-01a..01d |
+| Command validation | every command, including all nine DEC-158 additions, executed verbatim in a QA Lead session with an observed exit code |
+| Blocker candidates | BC-01 and BC-02 closed by DEC-158 and re-verified |
+| Outstanding Must-fix findings | none |
+| Readiness | **Ready** |
+| Task 1 | Remains unauthorized until Human execution approval |
