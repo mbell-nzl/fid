@@ -103,7 +103,7 @@ func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationV
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "envelope-builders", []any{map[string]any{
 		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/envelope-builders", "session_ref": nil,
-		"capabilities": []string{"envelope.activate", "envelope.create", "gate.register"},
+		"capabilities": authorityCapabilities(),
 	}})
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", validGateDefinitions())
 	digests := []string{profileDigest, gateDigest}
@@ -123,6 +123,13 @@ func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationV
 	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
 	writeActivationInput(t, registrationPath, registrationInput)
 	return workspace, issue.Result.Issue.ID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+}
+
+func authorityCapabilities() []string {
+	return []string{
+		"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
+		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.start",
+	}
 }
 
 func envelopeCreateInput(t *testing.T, workspace, issueID string, registration gateRegistrationView) map[string]any {
