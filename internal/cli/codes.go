@@ -45,18 +45,23 @@ const (
 	CodeInternalError                 Code = "internal-error"
 	CodeActivationConflict            Code = "activation-conflict"
 	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
+	CodeAuthorityUnavailable          Code = "authority-unavailable"
+	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
+	CodeRegistrationNotFound          Code = "registration-not-found"
 )
 
 type SubjectType string
 
 const (
-	SubjectProject     SubjectType = "project"
-	SubjectIssue       SubjectType = "issue"
-	SubjectRequirement SubjectType = "requirement"
-	SubjectLabel       SubjectType = "label"
-	SubjectLink        SubjectType = "link"
-	SubjectWorkflow    SubjectType = "workflow"
-	SubjectActivation  SubjectType = "activation"
+	SubjectProject          SubjectType = "project"
+	SubjectIssue            SubjectType = "issue"
+	SubjectRequirement      SubjectType = "requirement"
+	SubjectLabel            SubjectType = "label"
+	SubjectLink             SubjectType = "link"
+	SubjectWorkflow         SubjectType = "workflow"
+	SubjectActivation       SubjectType = "activation"
+	SubjectGateDefinition   SubjectType = "gate-definition"
+	SubjectGateRegistration SubjectType = "gate-registration"
 )
 
 type Subject struct {
@@ -177,6 +182,11 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
 	CodeActivationRecoveryUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectActivation},
 		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
+	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
+		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
+	CodeExecutorPolicyUnsupported: definition(CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition},
+		stringsField("fields"), objectField("supported", stringField("network"), booleanField("shell"), stringField("sandbox"), stringField("write"))),
+	CodeRegistrationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringField("id")),
 }
 
 var registeredCodes = []Code{
@@ -187,6 +197,7 @@ var registeredCodes = []Code{
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
+	CodeAuthorityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound,
 }
 
 func findingFields() []detailField {

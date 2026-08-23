@@ -87,6 +87,15 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeActivationRecoveryUnavailable, CategoryAuthority, false, []SubjectType{SubjectActivation}, []detailExpectation{
 			stringDetail("status"), {name: "point_of_no_return", kind: detailBooleanKind}, integerDetail("owner_phase"),
 		}},
+		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
+			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
+		}},
+		{CodeExecutorPolicyUnsupported, CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition}, []detailExpectation{
+			{name: "fields", kind: detailStringsKind}, {name: "supported", kind: detailObjectKind, children: []detailExpectation{
+				stringDetail("network"), {name: "shell", kind: detailBooleanKind}, stringDetail("sandbox"), stringDetail("write"),
+			}},
+		}},
+		{CodeRegistrationNotFound, CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringDetails("id")},
 	}
 
 	registered := RegisteredCodes()
