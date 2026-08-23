@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0c4c04ea0c7d0786e2e6cf88a7573d8a3105aef5`
 
 ## Commit subject
 
-- Pending commit
+- `feat(gate): register activated definitions`
