@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `56dad8fa0dcb9b79f7df2a31b356f1b2eb8a694e`
 
 ## Commit subject
 
-- Pending commit
+- `feat(envelope): add one-revision values`
