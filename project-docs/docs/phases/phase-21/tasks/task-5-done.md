@@ -48,8 +48,7 @@
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/evidence ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - FAIL (first attempt) - `FAIL` (terminated `exit_code: 1`)
-- `go test -race ./internal/evidence ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - PASS (byte-identical rerun) - `ok  	github.com/mbell-nzl/fid/cmd/fid	142.193s` (terminated `exit_code: 0`)
+- `go test -race ./internal/evidence ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	142.193s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 49.6% of statements` (terminated `exit_code: 0`)
