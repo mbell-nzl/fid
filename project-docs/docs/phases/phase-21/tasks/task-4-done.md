@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ad9098fac66f2b530a566d87df087fd72fbb584d`
 
 ## Commit subject
 
-- Pending commit
+- `feat(activation): add trusted activation lifecycle`
