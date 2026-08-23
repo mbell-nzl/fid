@@ -60,6 +60,15 @@ Table-driven unit tests and temporary SQLite databases are the default Go
 patterns. Golden fixtures are appropriate for canonical JSON and event
 compatibility only after that contract is accepted for a slice.
 
+A test encodes a contract; it is not itself an authority. When an accepted
+change supersedes the contract a test encodes, the change owner adapts that test
+in the same unit of work and under the same gate, preserving the test's subject
+and assertion strength. Dropping a removed argument, converting an assertion
+about removed behaviour into the accepted behaviour, or repointing incidental
+reads is convergence. Deleting an assertion requires another test that already
+owns the accepted equivalent. Skips, build tags, narrowed test selection, and
+relaxed thresholds are never convergence.
+
 ## 4. Critical scenario inventory
 
 The conformance and workflow suites must cover at least these scenarios:

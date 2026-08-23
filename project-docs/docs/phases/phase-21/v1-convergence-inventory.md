@@ -64,6 +64,28 @@ telemetry, or journal facts are attribution only. They never satisfy an
 Authority Grant, Evidence trust source, Human Outcome, protected transition,
 or Envelope completion.
 
+### 1.2 Retained test and fixture convergence rule (DEC-162)
+
+Retained V1 tests and fixtures are not protected contracts. When an accepted
+Phase 21 interface, Event, or projection change invalidates a retained test, the
+task that made the change adapts that test inside the same task and inside its
+own required gate. Adaptation must preserve the test's subject and assertion
+strength; that is convergence, not weakening, and it is not an escalation
+trigger.
+
+The order of preference is: keep the assertion and drop only the removed
+argument or flag; convert an assertion about removed behaviour into the accepted
+behaviour; repoint incidental reads of replacement-bound state to state the
+accepted path still produces; and only where the subject genuinely requires
+legacy state, seed that state explicitly in the fixture and name it in the
+completion report for task-20 removal. Deleting an assertion is allowed only
+when another test already owns the accepted equivalent and the report names it.
+`t.Skip`, build tags, `-run` narrowing, threshold changes, and silent assertion
+loss are never adaptation.
+
+This rule applies to every later task with retained-caller collateral, notably
+task 8 (`--by` to `--actor`), task 9, and task 20.
+
 ## 2. Workflow Preconditions And Judgment State
 
 | Rule/state | Current readers/writers | Final disposition | Owner |

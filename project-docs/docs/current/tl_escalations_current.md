@@ -5,10 +5,18 @@
 
 ## Open Escalations
 
-None. DEC-160 and DEC-161 resolved ESC-21-001..003 on 2026-08-23. The full
+None.
+
+DEC-160, DEC-161, and DEC-162 resolved ESC-21-001..004 on 2026-08-23. The full
 conditions, evidence, and recovery dispositions are archived in
 `../phases/phase-21/tl-escalations.md`; the stopped ledger remains unchanged
-until the Phase Runner appends DEC-161's exact RUN-RESUME.
+until the Phase Runner appends the DEC-162 RUN-RESUME.
+
+DEC-162 additionally records a standing rule: retained V1 tests are not
+protected contracts, and the task whose accepted change invalidates one adapts
+it inside that task, preserving subject and assertion strength. Tasks 8, 9, and
+20 inherit it through `../phases/phase-21/v1-convergence-inventory.md` section
+1.2, so equivalent retained-test collateral is not an escalation trigger.
 
 Phase 21 QA blocker candidates BC-01 and BC-02 were planning-contract defects,
 not open Human escalations. DEC-158 resolved them without changing the accepted

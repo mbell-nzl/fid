@@ -2,10 +2,23 @@
 
 ## Open Escalations
 
-None. DEC-160 and DEC-161 resolve ESC-21-001..003; task 2 remains in the
-ledger's stopped state until the Phase Runner appends the authorized resume.
+None. DEC-160, DEC-161, and DEC-162 resolve ESC-21-001..004; task 2 remains in
+the ledger's stopped state until the Phase Runner appends the authorized resume.
 
 ## Resolved Escalations
+
+### ESC-21-004 - Retained rebuild and role-row tests versus accepted Event-v2 contracts
+
+- **Raised by:** TRG-21-004 after the DEC-160 policy-bridge recovery.
+- **Resolution:** DEC-162 keeps the no-leaf-flags `project.rebuild` interface and
+  the exact role-free Event-v2 bootstrap. Retained V1 tests are not protected
+  contracts: the task whose accepted change invalidates a retained test adapts it
+  in that same task, preserving subject and assertion strength. Task 2 gains the
+  test-file scope, ordered adaptation rules, and a closed no-weakening list;
+  `journal.RebuildWorkspace` drops its vestigial role parameter.
+- **Recovery:** same-task, task-scope `in-scope-implementation` continuation of
+  task 2 at attempt 6 under the TRG-21-004 trigger signature, with both
+  previously failed required commands rerun byte-identically.
 
 ### ESC-21-001 - Role-free bootstrap versus retained V1 policy
 

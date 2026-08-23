@@ -23,6 +23,16 @@ Implement the shared Event-v2 and durable idempotency foundation, then convert `
   only after the exact role-free Event-v2 bootstrap and only when no legacy
   role Effect exists. The bridge persists nothing, supplements no explicit
   role facts, grants no Phase 21 generic authority, and is removed by task 20.
+- DEC-162: retained V1 tests broken by this task's accepted interface change are
+  converged inside this task under `v1-convergence-inventory.md` section 1.2.
+  Preserve each test's subject and assertion strength. No `--by` on `fid
+  rebuild`, no bootstrap role Effect, no persisted compatibility row, no
+  migration 0014, no `t.Skip`, no build tags, no `-run` narrowing, and no
+  threshold, timeout, required-command, interface, or migration change.
+- DEC-162: `journal.RebuildWorkspace` drops its vestigial `byRole` parameter and
+  acquires the lock with the exact owner command `fid rebuild`. Leave
+  `LockOwner.ActorRole`, `internal/journal/lock.go` role metadata, and V1
+  lock-owner strings in unrelated tests to tasks 20-21.
 
 ## Scope
 
@@ -36,6 +46,17 @@ Implement the shared Event-v2 and durable idempotency foundation, then convert `
 - `cmd/fid/rebuild.go`
 - `cmd/fid/init_test.go`
 - `cmd/fid/rebuild_test.go`
+- Retained Go test files and test fixtures repository-wide, but only where this
+  task's accepted change invalidates them (DEC-162). Derive the exact set with:
+
+  ```text
+  rg -n --glob '*_test.go' '"rebuild", "--by"' cmd internal
+  rg -n --glob '*_test.go' 'RebuildWorkspace\(' cmd internal
+  rg -n --glob '*_test.go' '(FROM|INTO) roles' cmd internal
+  ```
+
+  then reconcile against the actual gate output; the commands are a starting
+  inventory, not the acceptance boundary.
 - `project-docs/docs/phases/phase-21/tasks/task-2-done.md`
 
 ### Files To Read For Context
@@ -48,6 +69,9 @@ Implement the shared Event-v2 and durable idempotency foundation, then convert `
 
 - Other mutation-family conversions, changes to the V1 permissions matrix,
   and migration 0014.
+- Any production change to a retained V1 caller. Test convergence adapts tests
+  to the accepted interface; it never changes retained command behaviour to make
+  a test pass. `--by` on retained mutations stays until task 8.
 
 ## Acceptance Criteria
 
@@ -62,6 +86,14 @@ Implement the shared Event-v2 and durable idempotency foundation, then convert `
 - [ ] The task-20 removal inventory names the compatibility lookup explicitly;
   no new generic Phase 21 package imports or calls it. (No additional VAL: this
   is an intermediate convergence invariant removed before final validation.)
+- [ ] Every retained test invalidated by the no-leaf-flags rebuild interface and
+  the role-free bootstrap is converged under DEC-162 and
+  `v1-convergence-inventory.md` section 1.2, and both previously failed required
+  commands now terminate `exit_code: 0` byte-identically. (VAL-003, VAL-008;
+  convergence rule, not a new observable.)
+- [ ] The completion report names, one line each: every deleted assertion with
+  the accepted test that already owns its equivalent, and every fixture that had
+  to seed an explicit legacy `roles` Effect, for task-20 removal.
 
 ## First Failing Test
 
@@ -69,6 +101,24 @@ For the recovery continuation, first add failing table-driven policy tests for
 the exact-bootstrap fallback, explicit-role-fact precedence, and fail-closed
 unknown/uninitialized cases. Preserve the existing bootstrap and idempotency
 red/green evidence.
+
+The DEC-162 continuation has no new first failing test: the two required
+commands are already red and are the red evidence. Preserve their prior failed
+output, converge the retained tests, then rerun both commands byte-identically.
+
+## Known Retained-Test Convergence Cases
+
+Non-exhaustive; derived by inspection, not by running the gate.
+
+| Case | Accepted adaptation |
+|---|---|
+| ~23 `"rebuild", "--by", "<role>"` call sites across `cmd/fid` and `cmd/fid/integration` | drop the argument pair only |
+| `journal.RebuildWorkspace(..., "<role>")` call sites in `cmd/fid` and `internal` tests | drop the role argument only |
+| `cmd/fid/issue_test.go` unauthorized `rebuild --by intern` rejection | convert to the accepted flag rejection, or delete because `cmd/fid/rebuild_test.go` already owns it; name the choice |
+| `cmd/fid/sql_test.go` and `internal/sqlquery/sqlquery_test.go` expecting `developer`/`human` rows from a bootstrapped workspace | repoint the read to migration-seeded state; keep the read-only/structured-rows subject |
+| `cmd/fid/integration/e2e_v01_closure_helpers_test.go` roles parity reads | same repointing rule |
+| Third subtest of `TestKnownRolesTRG002CorruptTailTolerance` | repair the fixture to a genuinely un-upgradeable shape; keep the error, file, and line assertions |
+| `internal/maintenance/vacuum_test.go` before/after roles snapshot | expected to remain valid with an empty snapshot; change nothing unless it fails |
 
 ## Documentation Updates
 
@@ -92,10 +142,14 @@ Every command is required and must terminate with session-captured evidence. Rep
 ## Notes For Developer
 
 - Start after task 1 closes.
-- This is a same-task recovery under DEC-160/DEC-161. Preserve both failed
-  required-command attempts in the report and rerun their byte-identical
-  commands after the causal repair; do not replace them with the new focused
-  policy command.
+- This is a same-task recovery under DEC-160/DEC-161/DEC-162. Preserve every
+  prior failed required-command attempt in the report and rerun their
+  byte-identical commands after the causal repair; do not replace them with the
+  focused policy command.
+- DEC-162 authorizes the retained-test convergence. Adapting a retained test to
+  the accepted interface is in scope; weakening one is not. If a retained test's
+  subject cannot survive adaptation and no accepted test owns its equivalent,
+  stop and escalate that single case rather than deleting it.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-2-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

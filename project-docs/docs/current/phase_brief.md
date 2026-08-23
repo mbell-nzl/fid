@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / STOPPED After Task 2 / Task 2 Recovery Authorized**
+> Status: **Active / STOPPED In Task 2 / Task 2 Recovery Authorized (DEC-162)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -38,6 +38,9 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
   and task 20 deletes it.
 - DEC-161: plain task-prefixed schema-v2 identity values are canonical;
   TRG-21-003 governs exact task-2 RUN-RESUME attempt 3 without a verifier edit.
+- DEC-162: retained V1 tests are not protected contracts; the task whose
+  accepted change invalidates one converges it in that task without weakening.
+  Task 2 gains repo-wide test scope; tasks 8, 9, and 20 inherit the rule.
 
 ## Planning Authorities
 
@@ -122,14 +125,18 @@ negative checks. Never create a second Envelope revision.
 
 ## Dispatch Authorization
 
-Task 1 is complete. The ledger is valid and remains `STOPPED` at TRG-21-003;
-the Tech Lead must not edit it. DEC-161 authorizes the Phase Runner to append
-RUN-RESUME attempt 3 with this exact next recovery:
+Task 1 is complete. The ledger is valid and remains `STOPPED` at TRG-21-004;
+the Tech Lead must not edit it. DEC-162 authorizes the Phase Runner to append
+RUN-RESUME with governing TRG `TRG-21-004`, governing ESC `ESC-21-004`,
+resolution authority `DEC-162`, trigger signature
+`task-2:specification-contradiction:task-2-done.md:retained-v1-rebuild-role-contract`,
+attempt count 6, and this exact next recovery:
 
-`task-2 | in-scope-implementation | task-scope | task-2:control-conformance:workflow-sequence-lint:external-triage-trigger-prefix | 3`
+`task-2 | in-scope-implementation | task-scope | task-2:specification-contradiction:task-2-done.md:retained-v1-rebuild-role-contract | 6`
 
-Then dispatch only the DEC-160 task-2 continuation. Preserve failed evidence,
-run the new focused policy command, rerun both failed required commands
+Then dispatch only the DEC-162 task-2 continuation. Preserve every failed
+required-command result, converge the retained tests under DEC-162 and
+`v1-convergence-inventory.md` section 1.2, rerun both failed required commands
 byte-for-byte, complete the unchanged remaining gate, commit the truthful
 report, and run two-argument report lint. Task 3 remains unauthorized until
 task 2 completes mechanically. No protected Human decision remains open.

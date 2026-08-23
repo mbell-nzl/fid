@@ -119,3 +119,55 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **Historical integrity:** prior TRG, failed append, STOP, and ledger evidence
   remain immutable. The Phase Runner appends the DEC-161 RUN-RESUME; the Tech
   Lead does not edit `run-ledger.md`.
+
+---
+
+## TRG-21-004 - Retained rebuild and role-row tests contradict accepted Event-v2 contracts
+
+- **Trigger:** after DEC-160's authorized temporary V1 policy vocabulary bridge and focused policy tests passed, the exact byte-identical required package and repository coverage gates still fail because retained tests require the prohibited `fid rebuild --by` flag and persisted `roles` rows.
+- **Originating task:** task-2
+- **Trigger signature:** task-2:specification-contradiction:task-2-done.md:retained-v1-rebuild-role-contract
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-2-done.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 5
+- **Checkpoint:** implementation commit 861e90da8b9218915ddbd77515326921ff3c0cf4 and final report repair commit 0e231bcb1a86a1142dd67c3137703da53c394e3c; prompt-attached git rev-parse --verify, subject-match, and two-argument report-lint evidence.
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-160 authorizes only a nonpersistent V1 policy vocabulary bridge and expressly preserves the exact role-free Event-v2 bootstrap. The retained tests require two protected contracts that the accepted authorities prohibit: a `fid rebuild --by` leaf flag despite the no-leaf-flags public interface, and persisted `roles` rows despite the empty-Effects, role-free projection contract. Resolving the gate failure would require a public-interface, data-model/persistence, test-contract, or specification decision; neither ordinary task repair nor control-conformance authority applies.
+- **Local decisions made:** none
+- **Resolution evidence:** The DEC-160 focused policy command passed without state writes. The exact required package command and byte-identical repository coverage command each printed `FAIL` and terminated `exit_code: 1`; the supplied report-lint result terminated `exit_code: 0` with literal `OUTCOME BLOCKED`. No test, contract, flag, role row, migration, or protected assertion was weakened.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no test weakening; no rebuild flag restoration; no bootstrap role Effects; no persisted compatibility rows; no migration 0014; no task, QA, spec, decision, report, workflow-control, command, assertion, status, semantics, scope, threshold, budget, tolerance, or policy changes under this triage.
+- **Exact verification:** `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` and `go test -race -coverprofile=coverage.out ./...` in `/home/mark/projects/fid`; both observed `FAIL` (terminated `exit_code: 1`).
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-2-done.md
+- **Control repair base:** 0e231bcb1a86a1142dd67c3137703da53c394e3c
+- **If BLOCK:** category specification contradiction, public interface, and data model/persistence contract; ESC-21-004 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision reconciles the retained V1 rebuild flag and persisted role-row test contract with DEC-157/DEC-160's role-free Event-v2 bootstrap, no-leaf-flags rebuild interface, and role-free projection.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/decisions.md DEC-157 and DEC-160; project-docs/docs/phases/phase-21/public-interface.md:330; project-docs/docs/phases/phase-21/contracts.md:377-383; project-docs/docs/phases/phase-21/tasks/task-2-done.md; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-004
+
+- **Decision authority:** DEC-162, 2026-08-23.
+- **Verdict audit:** the BLOCK was correct on the authority available. The
+  Developer had no scope to touch the retained tests and refused to weaken them,
+  which is the required behaviour. The recorded protected category was wrong in
+  hindsight: the accepted contracts do not contradict each other. The residual
+  failures are retained-test collateral of an accepted interface change that
+  task 2's file scope omitted.
+- **Resolution:** DEC-162 keeps the no-leaf-flags `project.rebuild` interface and
+  the role-free Event-v2 bootstrap exactly as accepted, and rules that retained
+  V1 tests converge inside the task whose accepted change breaks them. Task 2's
+  scope now covers the affected test files, with ordered adaptation rules and an
+  explicit no-weakening boundary in `v1-convergence-inventory.md` section 1.2.
+- **Recovery:** one more same-task, task-scope `in-scope-implementation` attempt
+  on task 2 under this trigger signature, attempt count 6. Required commands are
+  unchanged and rerun byte-identically. ESC-21-004 is resolved.
+- **Historical integrity:** no prior TRG, ledger, report, or failed-gate evidence
+  is rewritten. The Phase Runner appends the RUN-RESUME; the Tech Lead does not
+  edit `run-ledger.md`.

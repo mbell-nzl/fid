@@ -286,6 +286,87 @@
   `project-docs/tools/workflow-sequence-lint.sh` schema-v2 TRIAGE and
   RUN-RESUME checks; `run-ledger.md` final STOP.
 
+### DEC-162: Retained V1 tests converge inside the task whose accepted change breaks them. Closes ESC-21-004
+
+- **Date:** 2026-08-23
+- **Context:** After the DEC-160 bridge, task 2's focused evidence passes and the
+  policy vocabulary is restored, but the required package and repository gates
+  still fail. Every residual failure is a retained V1 *test*, not a product
+  defect: about twenty-three call sites invoke `fid rebuild --by <role>` or
+  `journal.RebuildWorkspace(..., role)`; a few tests assert V1 seeded `roles`
+  rows in a freshly bootstrapped workspace (`cmd/fid/sql_test.go`,
+  `internal/sqlquery/sqlquery_test.go`, the closure helpers); and the third
+  subtest of `TestKnownRolesTRG002CorruptTailTolerance` uses a schema-2 fixture
+  carrying a V1 `actor.role`, which the accepted Event-v2 rules no longer treat
+  as un-upgradeable. DEC-157 fixed `project.rebuild` with no leaf flags and a
+  zero-Effect role-free bootstrap; DEC-159 approved both. Task 2 listed only
+  `cmd/fid/init_test.go` and `cmd/fid/rebuild_test.go` in scope, so the
+  Developer had no authority to adapt the other call sites and correctly stopped
+  instead of weakening them. The defect is a planning scope omission, not a
+  contract contradiction.
+- **Decision:**
+  1. The accepted contracts stand and are not reopened. No `--by` on
+     `fid rebuild`, no bootstrap role Effect, no persisted compatibility row, no
+     early migration 0014, and no change to the V1 permissions matrix, the
+     Event-v2 fixture, VAL semantics, or task 2's required commands.
+  2. Retained V1 tests and test fixtures are not protected contracts. When an
+     accepted interface change invalidates a retained test, the task that made
+     the change adapts that test inside the same task. Adaptation that preserves
+     the test's subject and assertion strength is convergence, not weakening,
+     and needs no further escalation.
+  3. Task 2's file scope extends to retained Go test files and test fixtures
+     repository-wide. Production scope is unchanged except item 6.
+  4. Adaptation rules, in priority order:
+     - Rebuild call sites: delete the `--by <role>` argument pair from `fid
+       rebuild` invocations and the role argument from `journal.RebuildWorkspace`
+       calls. Every other argument, expectation, and assertion stays identical.
+     - A test whose subject *was* removed V1 rebuild authority (for example
+       `cmd/fid/issue_test.go` expecting `rebuild --by intern` to be rejected for
+       an unauthorized role) is converted to the accepted behaviour, or deleted
+       only when `cmd/fid/rebuild_test.go` already owns an equivalent accepted
+       assertion. The report names each deleted assertion and its accepted owner.
+     - A test that reads `roles` rows as incidental data repoints the read to
+       state the accepted bootstrap or the test's own journey still produces
+       (migration-seeded `workflows`/`workflow_states`, `issues`,
+       `activity_log`). Only where the subject genuinely requires a legacy role
+       row may the fixture append an explicit legacy `roles` Effect; the report
+       names each such fixture so task 20 removes it.
+     - A test whose subject *was* bootstrap role seeding asserts the accepted
+       role-free result instead, as `cmd/fid/init_test.go` already does.
+     - A stale Event fixture is repaired to a shape that is genuinely invalid or
+       un-upgradeable under the accepted Event-v2 rules while keeping the
+       existing error, file, and line assertions.
+  5. Forbidden in this recovery: `t.Skip`, build tags, `-run` narrowing,
+     deleting or loosening any assertion without a named accepted owner, and any
+     change to coverage thresholds, timeouts, required commands, public
+     interface, migrations, or production behaviour beyond item 6.
+  6. `journal.RebuildWorkspace` drops its now-vestigial `byRole` parameter and
+     acquires the lock with the exact owner command `fid rebuild`. The current
+     code writes `fid rebuild --by ` into lock metadata for a flag that no longer
+     exists, so this is a truthfulness repair, not new behaviour.
+     `LockOwner.ActorRole`, `internal/journal/lock.go` role metadata, and V1
+     lock-owner strings inside unrelated tests remain inventoried
+     replacement-bound state owned by tasks 20-21.
+  7. Recovery route: one more same-task, task-scope `in-scope-implementation`
+     attempt on task 2 under the TRG-21-004 trigger signature. Attempts 3-5 each
+     recorded material progress, so the two-attempt no-progress budget is not
+     exhausted. No Human decision is required: DEC-157 and DEC-159 already
+     accepted these contracts and this decision changes none of them.
+- **Consequences:** Task 2 can close its unchanged required gates without any
+  protected contract change. Item 2 becomes the standing convergence rule, which
+  matters immediately: task 8's `--by` to `--actor` rename and the task 9/20
+  removals invalidate the same retained suites, and those tasks now adapt their
+  own collateral rather than raising a new escalation. The rule is recorded in
+  `v1-convergence-inventory.md` section 1.2 and `08_QUALITY_PLAN.md` section 3.
+  Task 20's removal inventory gains any explicit legacy role Effect fixture that
+  item 4 permits. Group 1 checkpoint, task 20, and task 21 obligations are
+  unchanged. ESC-21-004 is resolved once this decision is committed.
+- **Refs:** TRG-21-004; ESC-21-004; DEC-157; DEC-159; DEC-160;
+  `public-interface.md` section 4.1 `project.rebuild`; `contracts.md` section 14;
+  `v1-convergence-inventory.md` sections 1, 1.2, 4-6;
+  `tasks/task-2-event-idempotency.md`; `tasks/task-2-done.md`;
+  `08_QUALITY_PLAN.md` section 3; VAL-003..008, VAL-076, VAL-077.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -301,12 +382,18 @@ verdicts are completed at phase wrap-up.
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158 | Checkpoint isolation, removal-before-parity, cadence, feasibility, and committed-report lint ownership are explicit. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, and superseded-contract test convergence are explicit. |
 | `09_AI_WORKFLOW.md` | touched: see DEC-161 | Schema-v2 external identity fields are plain single-line scalars; Markdown delimiters are not part of the exact-bound value. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
 
 ## Triage-Log Audit
+
+TRG-21-004 correctly refused to weaken retained tests without authority, but its
+protected category was wrong in hindsight: the accepted contracts never
+conflicted with each other, and the residual failures were retained-test
+collateral of an accepted interface change that task 2's file scope omitted.
+DEC-162 supplies the bounded convergence authority and the standing rule.
 
 TRG-21-001 correctly identified the bootstrap/V1 sequencing contradiction;
 DEC-160 supplies the bounded task-2 repair. TRG-21-002 is malformed historical
