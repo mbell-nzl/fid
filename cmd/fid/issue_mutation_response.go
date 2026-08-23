@@ -68,8 +68,10 @@ func renderIssueUpdateSuccess(cmd *cobra.Command, result issues.UpdateResult) er
 			changes = append(changes, map[string]any{"field": change.Field, "from": change.From, "to": change.To})
 		}
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.update", map[string]any{
-			"issue":   map[string]any{"id": result.ID, "revision": result.Revision},
-			"changes": changes,
+			"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+			"changes":         changes,
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "updated %s:\n%s\n", result.ID, issueUpdateSummary(result.Changes))
@@ -82,9 +84,11 @@ func renderIssueTransitionSuccess(cmd *cobra.Command, result issues.TransitionRe
 	}
 	if jsonMode {
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.transition", map[string]any{
-			"issue":      map[string]any{"id": result.ID, "revision": result.Revision},
-			"from_state": result.FromState,
-			"to_state":   result.ToState,
+			"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+			"from_state":      result.FromState,
+			"to_state":        result.ToState,
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "transitioned %s: %s → %s\n", result.ID, result.FromState, result.ToState)

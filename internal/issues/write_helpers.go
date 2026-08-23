@@ -8,6 +8,13 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+func issueMutationNow(now func() time.Time) time.Time {
+	if now == nil {
+		return time.Now().UTC()
+	}
+	return now().UTC()
+}
+
 func nextIssueUpdateTime(currentUpdatedAt string, now time.Time) time.Time {
 	parsed, err := time.Parse(time.RFC3339, currentUpdatedAt)
 	if err != nil {

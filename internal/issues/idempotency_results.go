@@ -32,3 +32,58 @@ func createResultFromJSON(raw string, eventID string, replayed bool) (CreateResu
 	}
 	return CreateResult{ID: value.Issue.ID, Kind: value.Issue.Kind, Title: value.Issue.Title, Status: value.Issue.Status, Revision: value.Issue.Revision, EventID: eventID, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
 }
+
+func updateResultJSON(result UpdateResult) (string, error) {
+	return resultJSON(map[string]any{
+		"idempotency_key": result.IdempotencyKey,
+		"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+		"changes":         result.Changes,
+		"replayed":        false,
+	})
+}
+
+func updateResultFromJSON(raw, eventID string, replayed bool) (UpdateResult, error) {
+	var value struct {
+		IdempotencyKey string        `json:"idempotency_key"`
+		Changes        []FieldChange `json:"changes"`
+		Issue          struct {
+			ID       string `json:"id"`
+			Revision int    `json:"revision"`
+		} `json:"issue"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return UpdateResult{}, fmt.Errorf("decode stored Issue update result: %w", err)
+	}
+	return UpdateResult{ID: value.Issue.ID, Revision: value.Issue.Revision, Changes: value.Changes, EventID: eventID, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
+}
+
+func transitionResultJSON(result TransitionResult) (string, error) {
+	return resultJSON(map[string]any{
+		"idempotency_key": result.IdempotencyKey,
+		"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+		"from_state":      result.FromState,
+		"to_state":        result.ToState,
+		"replayed":        false,
+	})
+}
+
+func transitionResultFromJSON(raw, eventID string, replayed bool) (TransitionResult, error) {
+	var value struct {
+		IdempotencyKey string `json:"idempotency_key"`
+		FromState      string `json:"from_state"`
+		ToState        string `json:"to_state"`
+		Issue          struct {
+			ID       string `json:"id"`
+			Revision int    `json:"revision"`
+		} `json:"issue"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return TransitionResult{}, fmt.Errorf("decode stored Issue transition result: %w", err)
+	}
+	return TransitionResult{ID: value.Issue.ID, Revision: value.Issue.Revision, FromState: value.FromState, ToState: value.ToState, EventID: eventID, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
+}
+
+func resultJSON(value map[string]any) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(value)
+	return string(payload), err
+}

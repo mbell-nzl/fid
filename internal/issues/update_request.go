@@ -46,7 +46,7 @@ func normalizeUpdateRequest(options UpdateOptions) (normalizedUpdateRequest, err
 	return request, nil
 }
 
-func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest, expectedRevision *int) []string {
+func issueUpdateArgv(issueID, actor, idempotencyKey string, request normalizedUpdateRequest, expectedRevision *int) []string {
 	argv := []string{"fid", "issue", "update", issueID}
 	if request.title != nil {
 		argv = append(argv, "--title", *request.title)
@@ -68,6 +68,6 @@ func issueUpdateArgv(issueID, actorRole string, request normalizedUpdateRequest,
 	if expectedRevision != nil {
 		argv = append(argv, "--expected-revision", fmt.Sprintf("%d", *expectedRevision))
 	}
-	argv = append(argv, "--by", actorRole)
+	argv = append(argv, "--actor", actor, "--idempotency-key", idempotencyKey)
 	return argv
 }

@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Issue create is converted through the durable Event-v2/idempotency path, but Issue update and transition still use the retained V1 writer path and the accepted retained-test convergence is unfinished.
-- Recovery attempts: 0
-- Next action: Continue task 8 from this checkpoint: complete red/green conversion of update and transition, add the fixed-clock/size corpus, converge affected retained tests, then run every exact task gate.
+- Condition: Issue create, update, and transition use typed Actor attribution, Event v2, durable idempotency, and replay. Retained CLI tests still invoke removed `--by` transport, so the exact task gate is red.
+- Recovery attempts: 1
+- Next action: Migrate retained command tests that create, update, or transition Issues to typed `--actor` and `--idempotency-key`, preserve their assertions, then run every exact task gate.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -14,6 +14,8 @@
 - Converted the Issue create CLI transport to require typed standalone `--actor` attribution and `--idempotency-key`.
 - Converted Issue create to emit Event v2 and commit/replay through `idempotency_results`.
 - Added red/green CLI corpus coverage for accepted create transport and durable replay identity.
+- Converted Issue update and transition to typed Actor/Event-v2/idempotent commit and replay, retaining an in-process V1 test-call compatibility bridge only.
+- Added `--by` rejection, fixed-clock aggregate ordering/nonfuture, and creation source-budget coverage.
 
 ## Files created or modified
 
@@ -24,10 +26,15 @@
 - `cmd/fid/task8_contract_test.go`
 - `internal/issues/actor.go`
 - `internal/issues/create.go`
+- `internal/issues/create_commit.go`
 - `internal/issues/idempotency_results.go`
 - `internal/issues/issue.go`
 - `internal/issues/update.go`
 - `internal/issues/transition.go`
+- `internal/issues/transition_rules.go`
+- `internal/issues/write_helpers.go`
+- `internal/issues/task8_test.go`
+- `internal/journal/idempotency.go`
 - `project-docs/docs/phases/phase-21/tasks/task-8-done.md`
 
 ## Documentation updated
@@ -36,9 +43,9 @@
 
 ## Validation Contract Coverage
 
-- VAL-025: BLOCKED - `TestTask8IssueCreateRequiresStandaloneActorAndIdempotencyKey` and `TestTask8IssueCreateReplaysTheOriginalMutation` prove only the create slice; update, transition, and `--by` rejection corpus rows remain unfinished.
-- VAL-026: BLOCKED - fixed-clock same-clock ordering test has not yet been added.
-- VAL-027: BLOCKED - the creation size inventory and completed Issue corpus have not yet been run.
+- VAL-025: BLOCKED - update, transition, and `--by` rejection corpus tests pass, but retained CLI test convergence and the exact gate remain unfinished.
+- VAL-026: BLOCKED - `TestTask8IssueEventsUseFixedClockAndAggregateOrder` passes, but the exact gate is red.
+- VAL-027: BLOCKED - `TestTask8IssueCreationSourceBudget` passes, but the completed Issue corpus and exact gate remain red.
 
 ## Tests run
 
@@ -47,7 +54,7 @@
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - BLOCKED - `not run: task implementation is incomplete` (no observed termination)
+- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
 - `gofmt -l cmd internal` - BLOCKED - `not run: task implementation is incomplete` (no observed termination)
 - `golangci-lint run ./...` - BLOCKED - `not run: task implementation is incomplete` (no observed termination)
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `not run: task implementation is incomplete` (no observed termination)
@@ -68,8 +75,8 @@
 
 ## Commit hash
 
-- `d78bf0edc69f17f9a081918a10cce139edf8de78`
+- Pending commit
 
 ## Commit subject
 
-- `feat(issue): begin actor and idempotency convergence`
+- Pending commit

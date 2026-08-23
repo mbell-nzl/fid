@@ -57,19 +57,10 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 		return IdempotencyOutcome{}, err
 	}
 
-	stored, found, err := findIdempotencyResult(conn, request)
-	if err != nil {
+	if outcome, found, err := ReplayIdempotent(conn, request); err != nil {
 		return IdempotencyOutcome{}, err
-	}
-	if found {
-		if stored.requestDigest != request.RequestDigest {
-			return IdempotencyOutcome{}, &IdempotencyConflictError{request.OperationScope, request.IdempotencyKey, stored.requestDigest, request.RequestDigest}
-		}
-		replayedJSON, err := replayedResultJSON(stored.resultJSON)
-		if err != nil {
-			return IdempotencyOutcome{}, err
-		}
-		return IdempotencyOutcome{stored.entityID, stored.eventID, stored.aggregateSequence, replayedJSON, true}, nil
+	} else if found {
+		return outcome, nil
 	}
 
 	if !event.IsV2() {
@@ -114,6 +105,32 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 		return IdempotencyOutcome{}, err
 	}
 	return IdempotencyOutcome{mutation.EntityID, appended.EventID, appended.Aggregate.Sequence, resultJSON, false}, nil
+}
+
+// ReplayIdempotent returns a previously committed result for the exact request.
+func ReplayIdempotent(conn *sql.DB, request IdempotencyRequest) (IdempotencyOutcome, bool, error) {
+	if conn == nil {
+		return IdempotencyOutcome{}, false, fmt.Errorf("replay idempotent: connection is nil")
+	}
+	if err := validateIdempotencyRequest(request); err != nil {
+		return IdempotencyOutcome{}, false, err
+	}
+
+	stored, found, err := findIdempotencyResult(conn, request)
+	if err != nil {
+		return IdempotencyOutcome{}, false, err
+	}
+	if !found {
+		return IdempotencyOutcome{}, false, nil
+	}
+	if stored.requestDigest != request.RequestDigest {
+		return IdempotencyOutcome{}, false, &IdempotencyConflictError{request.OperationScope, request.IdempotencyKey, stored.requestDigest, request.RequestDigest}
+	}
+	replayedJSON, err := replayedResultJSON(stored.resultJSON)
+	if err != nil {
+		return IdempotencyOutcome{}, false, err
+	}
+	return IdempotencyOutcome{stored.entityID, stored.eventID, stored.aggregateSequence, replayedJSON, true}, true, nil
 }
 
 type storedIdempotencyResult struct {

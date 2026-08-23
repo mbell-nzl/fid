@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -32,6 +33,7 @@ type CreateOptions struct {
 	OwnerRole  *string
 	OwnerActor *string
 	Scheduling string
+	now        func() time.Time
 }
 
 type CreateResult struct {

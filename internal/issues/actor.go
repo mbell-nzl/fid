@@ -22,6 +22,18 @@ func parseStandaloneActor(value string) (standaloneActor, error) {
 	return standaloneActor{id: parts[1], typeName: parts[0]}, nil
 }
 
+// standaloneActorForOptions preserves retained in-process test callers while
+// CLI transport remains restricted to the typed Actor field.
+func standaloneActorForOptions(actor, legacyRole string) (standaloneActor, error) {
+	if strings.TrimSpace(actor) != "" {
+		return parseStandaloneActor(actor)
+	}
+	if strings.TrimSpace(legacyRole) != "" {
+		return parseStandaloneActor("agent:" + legacyRole)
+	}
+	return parseStandaloneActor(actor)
+}
+
 func validStandaloneActorType(value string) bool {
 	return value == "agent" || value == "human" || value == "service"
 }
