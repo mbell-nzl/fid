@@ -49,10 +49,10 @@
 
 - `go test ./internal/bootstrap -run '^TestBuildProjectInitializedEventMatchesV2Golden$'` - FAIL (red) - `FAIL` (terminated `exit_code: 1`)
 - `go test ./internal/journal -run '^TestCommitIdempotent'` - FAIL (red) - `FAIL` (terminated `exit_code: 1`)
-- `go test ./internal/journal -run '^TestCommitIdempotent'` - PASS (green) - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.120s` (terminated `exit_code: 0`)
+- `go test ./internal/journal -run '^TestCommitIdempotent'` - PASS (green) - `ok  	github.com/mbell-nzl/fid/internal/journal	0.120s` (terminated `exit_code: 0`)
 - `go test ./internal/journal -run '^(TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` - FAIL (red) - `FAIL` (terminated `exit_code: 1`)
-- `go test ./internal/journal -run '^(TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` - PASS (green) - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.029s` (terminated `exit_code: 0`)
-- `go test ./internal/bootstrap ./internal/journal ./cmd/fid -run '^(TestBuildProjectInitializedEventMatchesV2Golden|TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent|TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta|TestCommitIdempotent|TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.185s` (terminated `exit_code: 0`)
+- `go test ./internal/journal -run '^(TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` - PASS (green) - `ok  	github.com/mbell-nzl/fid/internal/journal	0.029s` (terminated `exit_code: 0`)
+- `go test ./internal/bootstrap ./internal/journal ./cmd/fid -run '^(TestBuildProjectInitializedEventMatchesV2Golden|TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent|TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta|TestCommitIdempotent|TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.185s` (terminated `exit_code: 0`)
 - `/tmp/fid-task2 --project /tmp/fid-task2-cli.xkIUsW --json init --prefix FID` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-23.jsonl","project":{"id":"project-114173b20e9b911a65e9497198830679","issue_prefix":"FID","root":"/tmp/fid-task2-cli.xkIUsW"}},"event":{"id":"EVT-20260823-000001","occurred_at":"2026-08-23T00:24:35.443567052Z"}}` (terminated `exit_code: 0`)
 - `/tmp/fid-task2 --project /tmp/fid-task2-cli.xkIUsW --json rebuild` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}` (terminated `exit_code: 0`)
 
@@ -62,7 +62,7 @@
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; retained V1 role-authorized packages fail after role-free init)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t44.9%` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:								(statements)						44.9%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
