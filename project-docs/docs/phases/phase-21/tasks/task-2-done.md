@@ -79,8 +79,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `94e752d25809a0e54f827b1872172f8038c0a741`
 
 ## Commit subject
 
-- Pending commit
+- `feat(journal): add event v2 idempotency foundation`
