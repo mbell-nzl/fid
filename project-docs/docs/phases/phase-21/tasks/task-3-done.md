@@ -64,8 +64,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `6ff90152fdcdd373c14a434ec736e557144a1617`
 
 ## Commit subject
 
-- Pending commit
+- `feat(capabilities): add capability discovery transport`
