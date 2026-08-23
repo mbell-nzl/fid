@@ -265,6 +265,162 @@ func TestKnownRolesCollectsCleanRolesAcrossFilesAndLines(t *testing.T) {
 	}
 }
 
+func TestKnownRolesUsesV1CompatibilityVocabularyForRoleFreeV2Bootstrap(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name string
+		want []string
+	}{
+		{
+			name: "exact bootstrap recognizes the closed V1 vocabulary",
+			want: []string{
+				"developer",
+				"human",
+				"qa_lead",
+				"qa_reviewer",
+				"tl",
+				"tl_lite",
+				"workflow_runner",
+			},
+		},
+	} {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newPolicyJournalWorkspace(t)
+			writePolicyJournalFile(t, workspace, "2026-08-23.jsonl", policyBootstrapEvent())
+			journalPath := filepath.Join(workspace, ".fid", "journal", "2026-08-23.jsonl")
+			before, err := os.ReadFile(journalPath)
+			if err != nil {
+				t.Fatalf("ReadFile(before lookup) error = %v", err)
+			}
+
+			got, err := KnownRoles(workspace)
+			if err != nil {
+				t.Fatalf("KnownRoles() error = %v", err)
+			}
+			if !equalStrings(got, tt.want) {
+				t.Fatalf("KnownRoles() = %#v, want %#v", got, tt.want)
+			}
+
+			after, err := os.ReadFile(journalPath)
+			if err != nil {
+				t.Fatalf("ReadFile(after lookup) error = %v", err)
+			}
+			if string(after) != string(before) {
+				t.Fatal("KnownRoles() modified the bootstrap journal")
+			}
+		})
+	}
+}
+
+func TestKnownRolesKeepsExplicitRoleFactsAuthoritative(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name   string
+		effect journal.Effect
+		want   []string
+	}{
+		{
+			name: "active explicit role does not receive fallback roles",
+			effect: journal.Effect{
+				Op:     "insert",
+				Table:  "roles",
+				PK:     map[string]any{"name": "qa_lead"},
+				Values: map[string]any{"active": true},
+			},
+			want: []string{"qa_lead"},
+		},
+		{
+			name: "inactive explicit role still blocks the fallback",
+			effect: journal.Effect{
+				Op:     "insert",
+				Table:  "roles",
+				PK:     map[string]any{"name": "developer"},
+				Values: map[string]any{"active": false},
+			},
+			want: []string{},
+		},
+	} {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newPolicyJournalWorkspace(t)
+			writePolicyJournalFile(t, workspace, "2026-08-23.jsonl",
+				policyBootstrapEvent(),
+				policyRoleEvent("EVT-20260823-000002", tt.effect),
+			)
+
+			got, err := KnownRoles(workspace)
+			if err != nil {
+				t.Fatalf("KnownRoles() error = %v", err)
+			}
+			if !equalStrings(got, tt.want) {
+				t.Fatalf("KnownRoles() = %#v, want %#v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestKnownRolesRejectsCompatibilityForUninitializedJournal(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name string
+	}{
+		{name: "empty journal directory"},
+		{name: "empty journal file"},
+	} {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newPolicyJournalWorkspace(t)
+			if tt.name == "empty journal file" {
+				writeRawPolicyJournalFile(t, workspace, "2026-08-23.jsonl", "")
+			}
+
+			got, err := KnownRoles(workspace)
+			if err != nil {
+				t.Fatalf("KnownRoles() error = %v", err)
+			}
+			if len(got) != 0 {
+				t.Fatalf("KnownRoles() = %#v, want no roles", got)
+			}
+		})
+	}
+}
+
+func TestKnownRolesRejectsCompatibilityForCorruptJournal(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name     string
+		contents string
+	}{
+		{name: "malformed event after bootstrap", contents: "{broken-json\n"},
+	} {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newPolicyJournalWorkspace(t)
+			writePolicyJournalFile(t, workspace, "2026-08-23.jsonl", policyBootstrapEvent())
+			appendMalformedPolicyLine(t, workspace, "2026-08-23.jsonl", strings.TrimSpace(tt.contents))
+
+			_, err := KnownRoles(workspace)
+			if err == nil {
+				t.Fatal("KnownRoles() error = nil, want corrupt journal error")
+			}
+			assertPolicyCorruptJournalError(t, err, "2026-08-23.jsonl", 2)
+		})
+	}
+}
+
 func TestPolicyHelpersCoverActiveValueDefaults(t *testing.T) {
 	t.Parallel()
 
@@ -363,6 +519,13 @@ func policyRoleEvent(eventID string, effects ...journal.Effect) journal.Event {
 		},
 		Effects: effects,
 	}
+}
+
+func policyBootstrapEvent() journal.Event {
+	event := bootstrap.BuildProjectInitializedEvent("project-policy")
+	event.EventID = "EVT-20260823-000001"
+	event.OccurredAt = time.Date(2026, time.August, 23, 0, 0, 0, 0, time.UTC)
+	return event
 }
 
 func joinLines(lines [][]byte) string {

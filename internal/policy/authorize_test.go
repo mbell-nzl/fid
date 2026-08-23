@@ -63,6 +63,34 @@ func TestAuthorizePreservesMissingAndUnknownRoleErrors(t *testing.T) {
 	}
 }
 
+func TestAuthorizeRejectsUnknownCompatibilityRole(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name string
+		role string
+	}{
+		{name: "unknown name remains rejected after role-free bootstrap", role: "intern"},
+	} {
+		tt := tt
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			workspace := newPolicyJournalWorkspace(t)
+			writePolicyJournalFile(t, workspace, "2026-08-23.jsonl", policyBootstrapEvent())
+
+			err := Authorize(workspace, tt.role, "issue.create.task")
+			var unknownErr *UnknownRoleError
+			if !errors.As(err, &unknownErr) {
+				t.Fatalf("Authorize() error = %T %v, want *UnknownRoleError", err, err)
+			}
+			if unknownErr.Role != tt.role {
+				t.Fatalf("UnknownRoleError.Role = %q, want %q", unknownErr.Role, tt.role)
+			}
+		})
+	}
+}
+
 func TestAuthorizeIssueLabelActionsMatchMatrixExpectations(t *testing.T) {
 	t.Parallel()
 

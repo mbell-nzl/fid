@@ -77,15 +77,21 @@ func KnownRoles(workspaceRoot string) ([]string, error) {
 	}
 	sort.Strings(files)
 
-	roles := make(map[string]bool)
+	scan := roleScan{roles: make(map[string]bool)}
 	for _, name := range files {
-		if err := collectRoles(filepath.Join(journalDir, name), roles); err != nil {
+		if err := collectRoles(filepath.Join(journalDir, name), &scan); err != nil {
 			return nil, err
 		}
 	}
 
-	knownRoles := make([]string, 0, len(roles))
-	for role, active := range roles {
+	if scan.hasExactRoleFreeBootstrap && !scan.hasLegacyRoleEffect {
+		knownRoles := MatrixRoleNames()
+		sort.Strings(knownRoles)
+		return knownRoles, nil
+	}
+
+	knownRoles := make([]string, 0, len(scan.roles))
+	for role, active := range scan.roles {
 		if active {
 			knownRoles = append(knownRoles, role)
 		}
@@ -94,7 +100,13 @@ func KnownRoles(workspaceRoot string) ([]string, error) {
 	return knownRoles, nil
 }
 
-func collectRoles(path string, roles map[string]bool) error {
+type roleScan struct {
+	roles                     map[string]bool
+	hasExactRoleFreeBootstrap bool
+	hasLegacyRoleEffect       bool
+}
+
+func collectRoles(path string, scan *roleScan) error {
 	file, err := os.Open(path)
 	if err != nil {
 		return fmt.Errorf("open journal file %q: %w", path, err)
@@ -124,11 +136,15 @@ func collectRoles(path string, roles map[string]bool) error {
 		if err != nil {
 			return fmt.Errorf("upgrade event %q from %s:%d: %w", stored.EventID, roleJournalErrorPath(path), lineNumber, err)
 		}
+		if isRoleFreeV2Bootstrap(stored) {
+			scan.hasExactRoleFreeBootstrap = true
+		}
 
 		for _, effect := range upgraded.Effects {
 			if effect.Table != "roles" {
 				continue
 			}
+			scan.hasLegacyRoleEffect = true
 
 			roleName, _ := effect.PK["name"].(string)
 			if roleName == "" {
@@ -137,11 +153,11 @@ func collectRoles(path string, roles map[string]bool) error {
 
 			switch effect.Op {
 			case "insert":
-				roles[roleName] = activeValue(effect.Values)
+				scan.roles[roleName] = activeValue(effect.Values)
 			case "update":
-				roles[roleName] = activeValue(effect.Values)
+				scan.roles[roleName] = activeValue(effect.Values)
 			case "delete":
-				delete(roles, roleName)
+				delete(scan.roles, roleName)
 			}
 		}
 	}
@@ -150,6 +166,25 @@ func collectRoles(path string, roles map[string]bool) error {
 	}
 
 	return nil
+}
+
+func isRoleFreeV2Bootstrap(event journal.Event) bool {
+	return event.EventSchema == journal.EventSchemaV2 &&
+		event.EventType == "project.initialized" &&
+		event.ActorV2.ActorID == "fid-bootstrap" &&
+		event.ActorV2.ActorType == "service" &&
+		event.ActorV2.Producer == "fid" &&
+		event.ActorV2.ProvenanceRef == "fid:init" &&
+		event.ActorV2.SessionRef == nil &&
+		event.Aggregate.ID != "" &&
+		event.Aggregate.Sequence == 1 &&
+		event.Aggregate.Type == "project" &&
+		event.CausationID == nil &&
+		event.CommandName == "project.init" &&
+		event.CorrelationID == nil &&
+		len(event.Effects) == 0 &&
+		event.Idempotency == nil &&
+		event.Repository == nil
 }
 
 func roleJournalErrorPath(path string) string {
