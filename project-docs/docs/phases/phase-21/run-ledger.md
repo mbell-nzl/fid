@@ -333,3 +333,92 @@ and need not be contiguous. Ordering is not authority.
 - Commit: e6946c891c1ed554dc2ed087f359643cb7ee4f06 - verified, subject matched; implementation commit c0fd2cd8343826fdcd1a597f8f2f3a671e0e15dc - verified, subject matched
 - QA-plan commands beyond the task spec: none required
 
+
+### 2026-08-23 15:09 TASK-RECOVERY task-3
+
+- Source: report-lint task-3-done.md
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-3:report-repair:task-3-done.md:pass-termination
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-3-done.md
+- Forbidden changes: do not alter task-3 implementation, tests, task spec, decisions, QA artifacts, or run ledger; preserve all failed and passing command evidence
+- Originating report: project-docs/docs/phases/phase-21/tasks/task-3-done.md
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-3-done.md project-docs/docs/phases/phase-21/tasks/task-3-capabilities.md
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD d8db8dac30551412f124c927c7b65b8346be9a5e; task-3 implementation commit 6ff90152fdcdd373c14a434ec736e557144a1617; report committed; report-lint terminated exit_code: 6 with six termination-evidence defects
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md remains the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: report-lint rejected six PASS termination records even though the exact task commands and observed exit_code: 0 evidence are present; repair only the report syntax
+- Next action: dispatch only the task-3 report-repair continuation limited to project-docs/docs/phases/phase-21/tasks/task-3-done.md, run the exact two-argument report-lint control, commit the report, and return its typed outcome
+- Human attention required: no
+
+
+### 2026-08-23 15:12 REPAIR task-3
+
+- Trigger signature: task-3:report-repair:task-3-done.md:pass-termination
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase HEAD d8db8dac30551412f124c927c7b65b8346be9a5e; report-lint terminated exit_code: 6 with six termination-evidence defects
+- Ending checkpoint: report repair commit 6394bd4c5563c4ececd451b980f383ef2def99fc; exact two-argument report-lint returned OUTCOME COMPLETE and terminated exit_code: 0
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: report-only termination syntax was repaired without changing command, token, status, or observed exit_code evidence; the exact two-argument report-lint rerun passed with observed exit_code: 0
+- Next checkpoint: VERIFY/REPORT
+
+
+### 2026-08-23 15:12 TASK task-3 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-3-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: 6394bd4c5563c4ececd451b980f383ef2def99fc - verified, subject matched; implementation commit 6ff90152fdcdd373c14a434ec736e557144a1617 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+
+### 2026-08-23 15:19 REVIEW review-1
+
+- Path: project-docs/docs/phases/phase-21/qa/review-1.md
+- Tasks covered: task-1 through task-3
+- Outcome: REPAIR
+- Owning task: task-1, task-3
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0
+
+
+### 2026-08-23 15:23 CORRECTION
+
+- Supersedes: 2026-08-23 15:19 REVIEW review-1
+- Reason: the accepted REVIEW event names two QA repair owners, but schema-v2 recovery state permits one current owning task; the first owner is task-1 and task-3 remains a separate Must-fix for a linked fresh re-review after task-1 completion
+- Corrected owner for current recovery: task-1
+- Preserved finding: task-3 VAL-010 / QA-09 remains open in review-1.md and is not discarded or marked resolved
+
+
+### 2026-08-23 15:29 TRIAGE TRG-21-006
+
+- Trigger: Triage correction trigger: The prior TL-Lite BLOCK for this same protected workflow ambiguity was written as TRG-21-005 with Trigger signature phase-runner:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding. The schema-v2 ledger TRIAGE bind correctly rejected that external record because Originating task is task-1 and the trigger signature must carry the task-prefixed identity. The prior external BLOCK and ESC-21-005 are historical evidence and must not be rewritten or duplicated.
+- Originating task: task-1
+- Trigger signature: task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: review commit 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b verified; runner-recorded control repair base 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b; current ledger state VALID state=REPAIR_PENDING
+- Verdict: BLOCK (escalated as ESC-21-005)
+- Resolution evidence: protected workflow policy and canonical verifier-control ambiguity remains unresolved; correcting the historical external identity does not select a valid multi-owner QA recovery representation
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-006 entry confirmed; ESC-21-005 referenced in project-docs/docs/current/tl_escalations_current.md; no duplicate escalation created
+
+
+### 2026-08-23 15:29 STOP
+
+- Cause: Review 1 QA repair cannot advance because its accepted two-owner Must-fix set (task-1 and task-3) cannot bind to the schema-v2 ledger single-owner recovery control; TRG-21-006 / ESC-21-005
+- Triage: TRG-21-006 (BLOCK, escalated as ESC-21-005)
+- Protected category: workflow policy / canonical verifier control
+- Next Human or external-authority action: Tech Lead/Human authority must select and record the accepted multi-owner QA-review recovery representation and canonical sequence behavior, including whether sequential ownership through CORRECTION is valid, whether REVIEW entries may carry multiple owners, or another precise rule, before any validator or workflow-definition change or further task recovery
+

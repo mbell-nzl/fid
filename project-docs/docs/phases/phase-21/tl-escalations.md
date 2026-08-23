@@ -2,10 +2,30 @@
 
 ## Open Escalations
 
-None. DEC-160, DEC-161, and DEC-162 resolve ESC-21-001..004; task 2 remains in
-the ledger's stopped state until the Phase Runner appends the authorized resume.
+None. DEC-160 through DEC-163 resolve ESC-21-001..005. The ledger remains in its
+stopped state until the DEC-163 verifier change lands and the Phase Runner
+appends the authorized resume.
 
 ## Resolved Escalations
+
+### ESC-21-005 - Multi-owner QA review recovery cannot bind the single-owner sequence control
+
+- **Raised by:** TRG-21-005, corrected for external identity by TRG-21-006,
+  after QA Review 1 of tasks 1-3.
+- **Resolution:** DEC-163. A QA `REPAIR` review carries an ordered
+  comma-separated owner list in exactly one `Owning task` field, matching the
+  review artifact's Repair Plan row order. Every listed owner completes
+  TASK-RECOVERY, REPAIR, and TASK complete before a linked re-review may close
+  or replace the review. `CORRECTION` remains evidence-only and is rejected as
+  an owner-selection mechanism. `workflow-sequence-lint.sh` is corrected under
+  protected decision authority to implement this, with new drills, because it
+  accepted an append that left the ledger unrecoverable. No historical record is
+  rewritten; MF-1 and MF-2 keep their exact boundaries and evidence.
+- **Recovery:** after the verifier change lands, RUN-RESUME attempt 2 under
+  TRG-21-006 / ESC-21-005 / DEC-163 into `task-1 | qa-rework | task-scope |
+  task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding |
+  2` for review-1 MF-1, then an ordinary task-3 `qa-rework` recovery for MF-2,
+  then fresh re-review `review-1b`. Task 4 stays gated.
 
 ### ESC-21-004 - Retained rebuild and role-row tests versus accepted Event-v2 contracts
 

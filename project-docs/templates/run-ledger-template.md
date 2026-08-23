@@ -103,9 +103,15 @@ embedded strings such as `NOTDEC-123X` are not decision citations.
 - Path: `project-docs/docs/phases/phase-<N>/qa/review-<M>.md`
 - Tasks covered: <task range>
 - Outcome: <PASS | REPAIR | BLOCK>
-- Owning task: <task-M for REPAIR | none>
+- Owning task: <ordered comma-separated task IDs for REPAIR, e.g. `task-1, task-3` | none>
 - Re-review of: <prior review ID for a repair-closing PASS | none>
 - Must-fix: <n> / Improvement: <n> / blocker candidates: <n; QA minted no ESC>
+
+Use exactly one `Owning task` field. For `REPAIR`, list every Must-fix owner in
+the review's Repair Plan row order; that order is the repair order. Each listed
+owner needs its own `TASK-RECOVERY`, `REPAIR`, and `TASK COMPLETE` before a
+linked re-review may close or replace the review. `none` is only for `PASS` and
+`BLOCK`.
 
 ### <YYYY-MM-DD HH:MM> TASK-RECOVERY task-<M>
 

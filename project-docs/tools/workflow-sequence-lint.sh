@@ -329,6 +329,58 @@ function exact_once(count, value) {
   return count == 1 && value != ""
 }
 
+function trim_surrounding_space(value) {
+  sub(/^[[:space:]]+/, "", value)
+  sub(/[[:space:]]+$/, "", value)
+  return value
+}
+
+function valid_review_owner_list(value, id, parts, seen,
+                                 count, i, task, valid) {
+  count = split(value, parts, ",")
+  valid = 1
+  for (i = 1; i <= count; i++) {
+    task = trim_surrounding_space(parts[i])
+    if (task == "") {
+      invalid("REVIEW REPAIR has empty owning task: " id)
+      valid = 0
+    } else if (task !~ /^task-[0-9]+[a-z]*$/) {
+      invalid("REVIEW REPAIR has invalid owning task " task ": " id)
+      valid = 0
+    } else if (task in seen) {
+      invalid("REVIEW REPAIR has duplicate owning task " task ": " id)
+      valid = 0
+    } else {
+      seen[task] = 1
+    }
+  }
+  return valid
+}
+
+function clear_review_owner_state(i, task) {
+  for (i = 1; i <= review_owner_total; i++) {
+    task = review_owner_tasks[i]
+    delete review_owner_tasks[i]
+    delete review_owner_position[task]
+    delete review_owner_recovery_seen[task]
+    delete review_owner_repair_seen[task]
+    delete review_owner_complete[task]
+  }
+  review_owner_total = 0
+  review_next_owner = 1
+}
+
+function set_review_owner_state(value, parts, count, i, task) {
+  clear_review_owner_state()
+  count = split(value, parts, ",")
+  for (i = 1; i <= count; i++) {
+    task = trim_surrounding_space(parts[i])
+    review_owner_total++
+    review_owner_tasks[review_owner_total] = task
+    review_owner_position[task] = review_owner_total
+  }
+}
+
 function valid_commit(id) {
   return length(id) == 40 && id !~ /[^0-9a-f]/
 }
@@ -514,6 +566,9 @@ function finish_event() {
         !exact_once(event_wrapup_ready_count, event_wrapup_ready)) {
       invalid("schema v2 RUN-END must contain each closure field exactly once")
     }
+  }
+  if (event == "RUN-END" && review_open && !review_task_complete) {
+    invalid("RUN-END precedes completion of every QA repair owner: " review_owner)
   }
   if (event_strict && event_directive_strict && event == "TASK-RECOVERY") {
     if (event_source == "") {
@@ -930,8 +985,11 @@ function finish_event() {
     if (recovery_task == "") {
       recovery_head = ""
     }
-    if (review_open && event_task != review_owner) {
+    if (review_open && !(event_task in review_owner_position)) {
       invalid("QA repair owner " review_owner " does not match recovery task " event_task)
+    } else if (review_open && event_task != review_owner_tasks[review_next_owner]) {
+      invalid("QA repair owner " review_owner " requires recovery task " \
+              review_owner_tasks[review_next_owner] " before " event_task)
     }
     if (recovery_task != "" && recovery_task != event_task) {
       invalid("overlapping recovery changes task identity from " recovery_task " to " event_task)
@@ -953,8 +1011,8 @@ function finish_event() {
     recovery_base = event_control_base
     triage_repair_pending = 0
     resume_recovery_pending = 0
-    if (review_open && event_task == review_owner) {
-      review_recovery_seen = 1
+    if (review_open && event_task == review_owner_tasks[review_next_owner]) {
+      review_owner_recovery_seen[event_task] = 1
     }
   } else if (event == "REPAIR") {
     if (recovery_task == "") {
@@ -978,8 +1036,8 @@ function finish_event() {
       if (recovery_mode == "control-conformance" && event_control_head != "") {
         recovery_head = event_control_head
       }
-      if (review_open && event_task == review_owner) {
-        review_repair_seen = 1
+      if (review_open && event_task == review_owner_tasks[review_next_owner]) {
+        review_owner_repair_seen[event_task] = 1
       }
     }
   } else if (event == "TASK-COMPLETE") {
@@ -994,17 +1052,26 @@ function finish_event() {
         recovery_head = ""
       }
     }
-    if (review_open && event_task == review_owner) {
-      if (!review_recovery_seen || !review_repair_seen) {
+    if (review_open && (event_task in review_owner_position)) {
+      if (event_task != review_owner_tasks[review_next_owner]) {
+        invalid("QA repair owner " review_owner " requires completion of task " \
+                review_owner_tasks[review_next_owner] " before " event_task)
+      } else if (!review_owner_recovery_seen[event_task] ||
+                 !review_owner_repair_seen[event_task]) {
         invalid("QA repair owner completed without TASK-RECOVERY and REPAIR: " event_task)
       } else {
-        review_task_complete = 1
+        review_owner_complete[event_task] = 1
+        review_next_owner++
+        review_task_complete = review_next_owner > review_owner_total
       }
     }
   } else if (event == "REVIEW") {
     if (event_outcome == "REPAIR") {
+      owner_list_valid = 0
       if (event_owner == "" || event_owner == "none") {
         invalid("REVIEW REPAIR has no owning task: " event_id)
+      } else {
+        owner_list_valid = valid_review_owner_list(event_owner, event_id)
       }
       if (review_open) {
         if (!review_task_complete) {
@@ -1021,9 +1088,14 @@ function finish_event() {
       review_id = event_id
       review_owner = event_owner
       review_task_complete = 0
-      review_recovery_seen = 0
-      review_repair_seen = 0
+      clear_review_owner_state()
+      if (owner_list_valid) {
+        set_review_owner_state(event_owner)
+      }
     } else if (event_outcome == "PASS" && review_open) {
+      if (event_owner != "none") {
+        invalid("REVIEW PASS must use Owning task: none: " event_id)
+      }
       if (!review_task_complete) {
         invalid("QA re-review passed before owning task completed: " review_owner)
       }
@@ -1037,10 +1109,14 @@ function finish_event() {
       review_id = ""
       review_owner = ""
       review_task_complete = 0
-      review_recovery_seen = 0
-      review_repair_seen = 0
+      clear_review_owner_state()
     } else if (event_outcome == "BLOCK") {
+      if (event_owner != "none") {
+        invalid("REVIEW BLOCK must use Owning task: none: " event_id)
+      }
       triage_needed = 1
+    } else if (event_outcome == "PASS" && event_owner != "none") {
+      invalid("REVIEW PASS must use Owning task: none: " event_id)
     }
   } else if (event == "TRIAGE") {
     triage_was_exhaustion = (recovery_stage == "needs-triage")

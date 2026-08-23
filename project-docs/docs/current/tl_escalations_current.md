@@ -7,10 +7,17 @@
 
 None.
 
+DEC-163 resolved ESC-21-005 on 2026-08-23. A QA `REPAIR` review carries an
+ordered comma-separated owner list in exactly one `Owning task` field, every
+listed owner completes TASK-RECOVERY/REPAIR/TASK complete before a linked
+re-review may close or replace the review, and `CORRECTION` stays evidence-only.
+DEC-163 also authorizes the corresponding `workflow-sequence-lint.sh` correction
+and its drills as workflow infrastructure outside the phase recovery loop. That
+change must land before the Phase Runner appends the DEC-163 RUN-RESUME.
+
 DEC-160, DEC-161, and DEC-162 resolved ESC-21-001..004 on 2026-08-23. The full
 conditions, evidence, and recovery dispositions are archived in
-`../phases/phase-21/tl-escalations.md`; the stopped ledger remains unchanged
-until the Phase Runner appends the DEC-162 RUN-RESUME.
+`../phases/phase-21/tl-escalations.md`.
 
 DEC-162 additionally records a standing rule: retained V1 tests are not
 protected contracts, and the task whose accepted change invalidates one adapts

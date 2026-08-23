@@ -447,8 +447,17 @@ Responsibilities:
     report-repair; its later `RESOLVED` permits task completion. It preserves
     task identity and requires recovery completion
     plus an explicitly linked, differently identified QA re-review.
-    A linked re-review may transfer repair ownership to another task only after
-    the current owner completes; it cannot overwrite an unresolved owner. An
+    A REVIEW event whose outcome is `REPAIR` carries exactly one `Owning task`
+    field holding an ordered, comma-separated list of one or more distinct task
+    IDs, in the same order as the review artifact's Repair Plan rows. Multiple
+    owners are valid; `none` is valid only for `PASS` and `BLOCK`. Every listed
+    owner must complete TASK-RECOVERY, REPAIR, and TASK complete before the open
+    review can be closed by a linked `PASS` or replaced by a linked `REPAIR`,
+    and owners are repaired one at a time in list order. A linked re-review may
+    transfer repair ownership to a task outside the list only after every listed
+    owner completes; it cannot overwrite an unresolved owner. A `CORRECTION` is
+    evidence only: it never changes review ownership, recovery state, or any
+    other sequence state, and it is not a mechanism for selecting owners. An
     `INVALID` candidate is recoverable while the ledger remains valid. A
     missing receipt is an ambiguous result resolved only by byte-identical
     retry; retain and stop only if standalone validation fails after a confirmed
@@ -474,8 +483,9 @@ Responsibilities:
 14. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths, then append the REVIEW entry. `PASS` advances.
-    `REPAIR` dispatches the named owning task to a Developer continuation
-    and requires a fresh independent re-review of the same window. `BLOCK`
+    `REPAIR` dispatches each named owning task, in the review's Repair Plan
+    order, to its own Developer continuation, and requires a fresh independent
+    re-review of the same window after the last owner completes. `BLOCK`
     is a blocker candidate for TL-Lite.
 15. Route blocker candidates, ambiguous recovery classifications, and proposed
     cross-scope control-conformance repairs through TL-Lite triage.

@@ -171,3 +171,91 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **Historical integrity:** no prior TRG, ledger, report, or failed-gate evidence
   is rewritten. The Phase Runner appends the RUN-RESUME; the Tech Lead does not
   edit `run-ledger.md`.
+
+---
+
+## TRG-21-005 - Multi-owner QA review cannot bind one schema-v2 recovery owner
+
+- **Trigger:** The accepted QA Review 1 artifact has two bounded Must-fix findings owned by task-1 and task-3, but the schema-v2 run ledger REVIEW event has one Owning task field and the canonical workflow-sequence validator binds the active QA recovery to one exact owner. The accepted REVIEW event was recorded as Owning task: task-1, task-3. A valid task-1 recovery candidate was rejected, leaving the valid ledger state REPAIR_PENDING; the append-only CORRECTION was accepted but cannot alter validator state.
+- **Originating task:** task-1
+- **Trigger signature:** phase-runner:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/qa/review-1.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 1
+- **Checkpoint:** review commit 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b verified by prompt-attached git rev-parse --verify result and subject match `docs(qa): review phase 21 tasks 1-3`; phase branch phase-21; runner-recorded control repair base 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b; only the runner-owned ledger is dirty and hidden index flags are absent.
+- **Verdict:** BLOCK
+- **Reasoning:** Review 1 has two separately owned, bounded Must-fix findings, but the accepted schema-v2 REVIEW record declares one `Owning task` field and the canonical validator binds active QA recovery to that exact value. The supplied task-1 candidate is rejected because `task-1, task-3` is not one recovery task; the accepted CORRECTION preserves the task-3 finding but cannot alter the validator's active owner. Selecting sequential ownership, admitting a list, or teaching the validator to honor CORRECTION changes canonical workflow sequence semantics and policy.
+- **Local decisions made:** none
+- **Resolution evidence:** The supplied exact append control `workflow-sequence-lint.sh project-docs/docs/phases/phase-21/run-ledger.md --append-stdin` with a TASK-RECOVERY task-1 candidate required a valid task-1 QA-rework recovery and observed `INVALID QA repair owner task-1, task-3 does not match recovery task task-1`, terminated exit_code: 1. Standalone validation after the accepted CORRECTION remains `VALID state=REPAIR_PENDING`; no validator-valid route exists for either owner.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** project-docs/tools/workflow-sequence-lint.sh; project-docs/docs/phases/phase-21/run-ledger.md; project-docs/docs/phases/phase-21/qa/review-1.md; task specs; product files; tests; decisions; specs; prompts; templates; dependencies; QA contracts; reports; generated files; and no command, assertion, status, semantics, scope, threshold, budget, tolerance, or policy changes.
+- **Exact verification:** `workflow-sequence-lint.sh project-docs/docs/phases/phase-21/run-ledger.md --append-stdin` with a TASK-RECOVERY task-1 candidate in `/home/mark/projects/fid`; required a valid task-1 QA-rework recovery; observed `INVALID QA repair owner task-1, task-3 does not match recovery task task-1` (terminated exit_code: 1).
+- **Originating report:** project-docs/docs/phases/phase-21/qa/review-1.md
+- **Control repair base:** 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b
+- **If BLOCK:** category workflow policy / canonical verifier control; ESC-21-005 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision must select and record the accepted multi-owner QA-review recovery representation and canonical sequence behavior, including whether a corrected current owner may bind sequential same-review recoveries, before any validator or workflow-definition change is authorized.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/qa/review-1.md; project-docs/docs/phases/phase-21/run-ledger.md:386; project-docs/tools/workflow-sequence-lint.sh; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4, and 9; project-docs/templates/triage-log-template.md.
+
+---
+
+## TRG-21-006 - Corrected external identity retains the multi-owner workflow-policy block
+
+- **Trigger:** Triage correction trigger: The prior TL-Lite BLOCK for this same protected workflow ambiguity was written as TRG-21-005 with Trigger signature phase-runner:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding. The schema-v2 ledger TRIAGE bind correctly rejected that external record because Originating task is task-1 and the trigger signature must carry the task-prefixed identity. The prior external BLOCK and ESC-21-005 are historical evidence and must not be rewritten or duplicated.
+- **Originating task:** task-1
+- **Trigger signature:** task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** ESC-21-005; project-docs/docs/phases/phase-21/triage-log.md TRG-21-005
+- **Candidate:** correction of external schema-v2 identity binding for an existing blocker
+- **Attempt count:** 1
+- **Checkpoint:** review commit 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b verified by prompt-attached git rev-parse --verify result and subject match `docs(qa): review phase 21 tasks 1-3`; runner-recorded control repair base 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b.
+- **Verdict:** BLOCK
+- **Reasoning:** The correction supplies the task-prefixed external identity required for a schema-v2 TRIAGE bind without rewriting TRG-21-005 or the existing escalation. It does not resolve the protected condition: Review 1 still has task-1 and task-3 Must-fix owners while the canonical REVIEW/recovery control admits one active recovery owner. Selecting sequential ownership, allowing multiple owners, or changing how CORRECTION affects recovery changes canonical workflow sequence semantics and policy.
+- **Local decisions made:** none
+- **Resolution evidence:** The supplied TASK-RECOVERY task-1 append candidate required a valid task-1 QA-rework recovery but observed `INVALID QA repair owner task-1, task-3 does not match recovery task task-1` (terminated exit_code: 1). Standalone validation after the accepted CORRECTION remains `VALID state=REPAIR_PENDING`. The prior TRIAGE candidate for TRG-21-005 was rejected because its external Trigger signature was not task-prefixed; this entry corrects that external identity only.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** project-docs/tools/workflow-sequence-lint.sh; project-docs/docs/phases/phase-21/run-ledger.md; project-docs/docs/phases/phase-21/qa/review-1.md; task specs; product files; tests; decisions; specs; prompts; templates; dependencies; QA contracts; reports; generated files; and no command, assertion, status, semantics, scope, threshold, budget, tolerance, or policy changes.
+- **Exact verification:** `workflow-sequence-lint.sh project-docs/docs/phases/phase-21/run-ledger.md --append-stdin` with a TASK-RECOVERY task-1 candidate in `/home/mark/projects/fid`; required a valid task-1 QA-rework recovery; observed `INVALID QA repair owner task-1, task-3 does not match recovery task task-1` (terminated exit_code: 1).
+- **Originating report:** project-docs/docs/phases/phase-21/qa/review-1.md
+- **Control repair base:** 17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b
+- **If BLOCK:** category workflow policy / canonical verifier control; ESC-21-005 referenced in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision must select and record the accepted multi-owner QA-review recovery representation and canonical sequence behavior, including whether a corrected current owner may bind sequential same-review recoveries, before any validator or workflow-definition change is authorized.
+- **Human attention required:** yes
+- **References:** project-docs/docs/current/tl_escalations_current.md ESC-21-005; project-docs/docs/phases/phase-21/triage-log.md TRG-21-005; project-docs/docs/phases/phase-21/qa/review-1.md; project-docs/docs/phases/phase-21/run-ledger.md:386; project-docs/tools/workflow-sequence-lint.sh; project-docs/specs/09_AI_WORKFLOW.md sections 2.3, 2.4, and 9; project-docs/templates/triage-log-template.md.
+
+## Resolution Note For TRG-21-005 And TRG-21-006
+
+- **Decision authority:** DEC-163, 2026-08-23.
+- **TRG-21-005:** sustained. The protected condition was real; the entry is
+  retained as historical evidence and its non-task-prefixed external identity is
+  not a governing recovery record.
+- **TRG-21-006:** sustained and mechanically valid. It is the sole governing
+  STOP record. DEC-163 authorizes RUN-RESUME attempt 2 into a task-1 `qa-rework`
+  task-scope recovery for review-1 MF-1.
+- **Accepted representation:** a QA `REPAIR` review carries an ordered
+  comma-separated owner list in one `Owning task` field; every listed owner
+  completes TASK-RECOVERY, REPAIR, and TASK complete before a linked re-review
+  may close or replace the review; `CORRECTION` remains evidence-only and never
+  selects owners.
+- **Verifier disposition:** unlike TRG-21-002/003, a verifier change *is*
+  required and is authorized. `workflow-sequence-lint.sh` accepted a REVIEW
+  append that no later event could recover, so it is corrected under DEC-163
+  item 4 with new drills under item 5, outside the phase recovery loop. A
+  control-conformance route is impossible because the open multi-owner review
+  rejects the TASK-RECOVERY that would authorize it.
+- **Historical integrity:** no prior TRG, ledger, review, escalation, or failed
+  append evidence is rewritten. The 15:29 CORRECTION stands; its single-owner
+  narrowing is superseded by DEC-163 item 1 and its named first owner `task-1`
+  matches the accepted list order. The Phase Runner appends the RUN-RESUME; the
+  Tech Lead does not edit `run-ledger.md`.

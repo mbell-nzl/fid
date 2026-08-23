@@ -2310,6 +2310,165 @@ cat > "$valid_qa" <<'EOF'
 EOF
 run_sequence "drill-16 lifecycle: QA repair closes on linked fresh re-review" ADVANCEABLE "$valid_qa"
 
+multi_owner_qa="$workspace/valid-multi-owner-qa-rereview.md"
+cat > "$multi_owner_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1 , task-3
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 task-1 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-1 and continue the owner list
+- Human attention required: no
+### 2026-08-15 10:03 REPAIR task-1
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-1 review finding repaired
+- Next checkpoint: next review owner
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 TASK-RECOVERY task-3
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-3:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 task-3 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-3 and obtain linked re-review
+- Human attention required: no
+### 2026-08-15 10:06 REPAIR task-3
+- Trigger signature: task-3:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-3 review finding repaired
+- Next checkpoint: REVIEW
+### 2026-08-15 10:07 TASK task-3 COMPLETE
+### 2026-08-15 10:08 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_sequence "drill-16 multi-owner QA repair closes after every ordered owner" \
+  ADVANCEABLE "$multi_owner_qa"
+
+partial_multi_owner_qa="$workspace/partial-multi-owner-qa-rereview.md"
+sed '/^### 2026-08-15 10:05 TASK-RECOVERY task-3$/,$d' \
+  "$multi_owner_qa" > "$partial_multi_owner_qa"
+cat >> "$partial_multi_owner_qa" <<'EOF'
+### 2026-08-15 10:08 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_invalid_sequence "drill-16 multi-owner QA repair cannot close after only its first owner" \
+  "QA re-review passed before owning task completed: task-1 , task-3" \
+  "$partial_multi_owner_qa"
+
+nonmember_multi_owner_qa="$workspace/nonmember-multi-owner-qa-recovery.md"
+sed '/^### 2026-08-15 10:03 REPAIR task-1$/,$d' "$multi_owner_qa" \
+  | sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$ {
+      s/TASK-RECOVERY task-1/TASK-RECOVERY task-2/
+      s/task-1:qa-rework:review-1/task-2:qa-rework:review-1/
+    }' > "$nonmember_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a nonmember recovery" \
+  "QA repair owner task-1 , task-3 does not match recovery task task-2" \
+  "$nonmember_multi_owner_qa"
+
+out_of_order_multi_owner_qa="$workspace/out-of-order-multi-owner-qa-recovery.md"
+sed '/^### 2026-08-15 10:03 REPAIR task-1$/,$d' "$multi_owner_qa" \
+  | sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$ {
+      s/TASK-RECOVERY task-1/TASK-RECOVERY task-3/
+      s/task-1:qa-rework:review-1/task-3:qa-rework:review-1/
+    }' > "$out_of_order_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair enforces owner order" \
+  "QA repair owner task-1 , task-3 requires recovery task task-1 before task-3" \
+  "$out_of_order_multi_owner_qa"
+
+duplicate_multi_owner_qa="$workspace/duplicate-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1, task-1/' \
+  > "$duplicate_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a duplicate owner" \
+  "REVIEW REPAIR has duplicate owning task task-1: review-1" \
+  "$duplicate_multi_owner_qa"
+
+malformed_multi_owner_qa="$workspace/malformed-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1, task-X/' \
+  > "$malformed_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a malformed owner" \
+  "REVIEW REPAIR has invalid owning task task-X: review-1" \
+  "$malformed_multi_owner_qa"
+
+empty_multi_owner_qa="$workspace/empty-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1,, task-3/' \
+  > "$empty_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects an empty owner token" \
+  "REVIEW REPAIR has empty owning task: review-1" "$empty_multi_owner_qa"
+
+ownerless_multi_owner_qa="$workspace/ownerless-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: none/' \
+  > "$ownerless_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair still rejects Owning task none" \
+  "REVIEW REPAIR has no owning task: review-1" "$ownerless_multi_owner_qa"
+
+duplicate_multi_owner_field="$review_phase/duplicate-multi-owner-field.md"
+cat > "$duplicate_multi_owner_field" <<'EOF'
+### 2026-08-15 09:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 09:01 REVIEW review-1
+- Path: project-docs/docs/phases/phase-1/qa/review-1.md
+- Tasks covered: task-1..task-3
+- Outcome: REPAIR
+- Owning task: task-1
+- Owning task: task-3
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+EOF
+run_invalid_sequence "drill-16 multi-owner QA repair still rejects duplicate Owning task fields" \
+  "REVIEW must contain each review field exactly once" "$duplicate_multi_owner_field"
+
+run_end_during_multi_owner_qa="$workspace/run-end-during-multi-owner-qa.md"
+sed '/^### 2026-08-15 10:05 TASK-RECOVERY task-3$/,$d' \
+  "$multi_owner_qa" > "$run_end_during_multi_owner_qa"
+cat >> "$run_end_during_multi_owner_qa" <<'EOF'
+### 2026-08-15 10:08 RUN-END
+EOF
+run_invalid_sequence "drill-16 RUN-END cannot bypass an incomplete multi-owner repair" \
+  "RUN-END precedes completion of every QA repair owner: task-1 , task-3" \
+  "$run_end_during_multi_owner_qa"
+
 valid_sequential_qa="$workspace/valid-sequential-qa-repair.md"
 cat > "$valid_sequential_qa" <<'EOF'
 ### 2026-08-15 10:00 RUN-START

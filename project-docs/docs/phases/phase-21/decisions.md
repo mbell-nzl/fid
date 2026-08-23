@@ -367,6 +367,127 @@
   `tasks/task-2-event-idempotency.md`; `tasks/task-2-done.md`;
   `08_QUALITY_PLAN.md` section 3; VAL-003..008, VAL-076, VAL-077.
 
+### DEC-163: A QA REPAIR review carries an ordered owner list; the sequence verifier is corrected to honour it. Closes ESC-21-005
+
+- **Date:** 2026-08-23
+- **Context:** Review 1 covers tasks 1-3 and raises two bounded, decision-free
+  Must-fix findings: MF-1 owned by task-1 (VAL-001 exhaustive 0013 inventory)
+  and MF-2 owned by task-3 (VAL-010 named deferred-surface probes). The
+  mid-phase review template already requires one Repair Plan row per Must-fix
+  with its own owning task, so a multi-owner REPAIR review is an accepted and
+  expected artifact. The ledger REVIEW event and `workflow-sequence-lint.sh`
+  model exactly one owner: the runner appended `Owning task: task-1, task-3`,
+  the verifier accepted that append, and every subsequent recovery route is now
+  rejected. `TASK-RECOVERY task-1` fails
+  `QA repair owner task-1, task-3 does not match recovery task task-1`; a
+  list-valued recovery task fails the task-ID shape check; a replacement or
+  closing REVIEW fails because `review_task_complete` can never become true.
+  The append-only CORRECTION at 15:29 preserves the task-3 finding but has no
+  verifier semantics. TRG-21-005 and TRG-21-006 correctly returned BLOCK.
+
+  This is a verifier defect independent of the policy chosen: the sequence
+  validator admitted an append that puts the ledger into an unrecoverable
+  state. A correct validator either rejects a multi-owner REVIEW at append time
+  or supports it. It must therefore change under `09_AI_WORKFLOW.md` section
+  2.3, which reserves `workflow-sequence-lint.sh` changes to separate protected
+  decision authority. This decision is that authority.
+- **Decision:**
+  1. **Accepted representation.** A REVIEW event with outcome `REPAIR` carries
+     exactly one `Owning task` field whose value is an ordered, comma-separated
+     list of one or more distinct task IDs, copied in the same order as the
+     review artifact's Repair Plan rows. Multiple owners are valid. `none` is
+     valid only for `PASS` and `BLOCK`. Splitting one review window into
+     several review identities to dodge the field is not the accepted answer.
+  2. **Accepted sequencing.** Every listed owner must complete
+     `TASK-RECOVERY` -> `REPAIR` -> `TASK COMPLETE` before the open review can
+     be closed by a linked `PASS` or replaced by a linked `REPAIR`. Owners are
+     repaired one at a time; recovery-task exclusivity already forbids
+     interleaving. The list order is the required repair order. Ownership
+     transfer to a task outside the list still requires the whole list to
+     complete first.
+  3. **CORRECTION stays evidence-only.** A `CORRECTION` never mutates review
+     ownership, recovery state, or any other verifier state. Sequential owner
+     selection through `CORRECTION` is rejected as the accepted mechanism. The
+     15:29 CORRECTION remains immutable historical evidence; its narrowing to a
+     single current owner is superseded by item 1, and its named first owner
+     `task-1` coincides with the list order, so nothing in the ledger is
+     contradicted.
+  4. **Authorized verifier change.** `project-docs/tools/workflow-sequence-lint.sh`
+     is corrected to implement items 1-3 exactly:
+     - `Owning task` remains exactly one field per REVIEW event; the existing
+       duplicate-field rejection is unchanged.
+     - Parse the value leniently by splitting on commas and trimming
+       surrounding spaces, then validate each token strictly against
+       `^task-[0-9]+[a-z]*$`. Reject an empty token, a duplicate token, and any
+       non-conforming token when the outcome is `REPAIR`.
+     - A `TASK-RECOVERY` while a review is open is valid when its task is a
+       member of the open owner list; the existing rejection message shape
+       `QA repair owner <list> does not match recovery task <task>` is
+       preserved for a non-member.
+     - `REPAIR` and `TASK COMPLETE` mark per-owner progress; `TASK COMPLETE`
+       for a member still requires that member's own `TASK-RECOVERY` and
+       `REPAIR`, with the existing message preserved.
+     - The review-complete gate that guards a linked `PASS`, a linked
+       replacement `REPAIR`, and `RUN-END` becomes true only when every listed
+       owner is complete; existing messages are preserved.
+     - Single-owner behaviour is unchanged. Every existing drill in
+       `project-docs/tools/drills/run-drills.sh` must still pass unmodified.
+  5. **Required new drills.** Add coverage for: a multi-owner REPAIR review
+     driven through both owners to a linked re-review `PASS`; a linked `PASS`
+     rejected while only the first owner is complete; a `TASK-RECOVERY` for a
+     non-member task rejected; a duplicate owner in the list rejected; a
+     malformed owner token rejected; `Owning task: none` with outcome `REPAIR`
+     still rejected; and a duplicate `Owning task` field still rejected.
+  6. **Execution route.** This change is workflow infrastructure, not phase-21
+     product work and not a control-conformance recovery. A control-conformance
+     route is impossible here: the ledger's open multi-owner review rejects the
+     very `TASK-RECOVERY` that would authorize the repair. The Human, or a
+     Human-directed session outside the phase loop, applies items 4-5, runs
+     `project-docs/tools/drills/run-drills.sh` to PASS, confirms
+     `project-docs/tools/workflow-sequence-lint.sh project-docs/docs/phases/phase-21/run-ledger.md`
+     reports `VALID state=STOPPED`, and commits on `phase-21`. No historical
+     ledger, triage, review, or escalation record is edited. The Phase Runner
+     does not perform this change and does not resume before it lands.
+  7. **Phase-21 recovery.** Once item 6 lands, the Phase Runner appends exactly
+     one RUN-RESUME with these binding values:
+     - `Prior run/session or STOP`: `2026-08-23 15:29 STOP / TRG-21-006 / ESC-21-005`
+     - `Governing TRG`: `TRG-21-006`
+     - `Governing ESC`: `ESC-21-005`
+     - `Trigger signature`: `task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding`
+     - `Attempt count`: `2`
+     - `Resolution authority`: `DEC-163`
+     - `Continuing task`: `task-1`
+     - `Next recovery`: `task-1 | qa-rework | task-scope | task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding | 2`
+
+     The bound `TASK-RECOVERY task-1` uses category `qa-rework`, repair mode
+     `task-scope`, source and repair authority that both name `TRG-21-006` and
+     `DEC-163`, the same trigger signature and attempt count, and
+     `Consecutive no-progress attempts: 0/2`. It dispatches only review-1 MF-1.
+     Review-1 MF-2 follows as an ordinary `task-3` `qa-rework` recovery under
+     trigger signature `task-3:qa-rework:review-1` at attempt 1 after task 1
+     completes. Task 4 stays unauthorized until a fresh independent re-review
+     `review-1b` closes review-1.
+  8. **No finding is weakened.** MF-1 and MF-2 keep their exact repair
+     boundaries, required evidence, and re-review scope as written in
+     `qa/review-1.md`. The validation contract, VAL-001, VAL-010, QA-09, task
+     scopes, and required commands are unchanged.
+- **Consequences:** A QA Reviewer covering a multi-task window no longer has to
+  hide, defer, or artificially split findings to keep the ledger recoverable,
+  and the runner copies the Repair Plan owners verbatim. `09_AI_WORKFLOW.md`
+  sections 2.3-2.4 and `run-ledger-template.md` now state the ordered-owner
+  rule, and `mid-phase-review-template.md` states that Repair Plan row order is
+  the repair order. Phase 21 has six more multi-task review windows plus a
+  checkpoint and a final review, so this recurs; without the fix each one is a
+  potential deadlock. ESC-21-005 is resolved once item 6 lands. Phase 21's
+  product scope, task pack, and validation contract are untouched.
+- **Refs:** TRG-21-005; TRG-21-006; ESC-21-005; `qa/review-1.md` Repair Plan
+  MF-1 and MF-2; `run-ledger.md` REVIEW review-1, CORRECTION, TRIAGE TRG-21-006,
+  and STOP; `project-docs/tools/workflow-sequence-lint.sh` REVIEW/TASK-RECOVERY/
+  REPAIR/TASK-COMPLETE state machine; `project-docs/tools/drills/run-drills.sh`
+  review-schema drills; `09_AI_WORKFLOW.md` sections 2.3, 2.4, and 9;
+  `project-docs/templates/run-ledger-template.md`;
+  `project-docs/templates/mid-phase-review-template.md`; VAL-001; VAL-010.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -383,7 +504,7 @@ verdicts are completed at phase wrap-up.
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
 | `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, and superseded-contract test convergence are explicit. |
-| `09_AI_WORKFLOW.md` | touched: see DEC-161 | Schema-v2 external identity fields are plain single-line scalars; Markdown delimiters are not part of the exact-bound value. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163 | Schema-v2 external identity fields are plain single-line scalars; a QA `REPAIR` review carries an ordered owner list and closes only after every listed owner completes. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
 
@@ -394,6 +515,14 @@ protected category was wrong in hindsight: the accepted contracts never
 conflicted with each other, and the residual failures were retained-test
 collateral of an accepted interface change that task 2's file scope omitted.
 DEC-162 supplies the bounded convergence authority and the standing rule.
+
+TRG-21-005 and TRG-21-006 were both correct BLOCK outcomes. The condition was a
+genuine protected workflow-policy and canonical-verifier question, TL-Lite
+refused to invent multi-owner semantics, and the correction in TRG-21-006
+supplied the required task-prefixed external identity without rewriting
+TRG-21-005. Hindsight verdict: correct, and cheaply reached. The upstream defect
+belongs to the verifier, which accepted a REVIEW append that no later event
+could recover; DEC-163 fixes that and records the accepted representation.
 
 TRG-21-001 correctly identified the bootstrap/V1 sequencing contradiction;
 DEC-160 supplies the bounded task-2 repair. TRG-21-002 is malformed historical
