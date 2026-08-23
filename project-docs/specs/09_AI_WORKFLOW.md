@@ -251,7 +251,13 @@ Triage rules:
   byte-for-byte through the ledger TRIAGE into TASK-RECOVERY (`Repair category`
   maps to TASK-RECOVERY `Category`). RESUME/BLOCK uses `N/A` for repair
   category or authority when none applies. The external TRG is authoritative,
-  not merely a referenced narrative.
+  not merely a referenced narrative. These five values are plain, single-line
+  schema scalars: write their bytes directly after the field label. Markdown
+  code delimiters, emphasis, links, or quotation marks are not presentation
+  wrappers and therefore must not surround a value. Narrative fields may use
+  Markdown. A malformed historical TRG remains immutable; a later valid,
+  task-prefixed TRG or a recorded decision-authorized RUN-RESUME supplies the
+  recovery boundary without rewriting that evidence.
 - Triage `RESUME` means the trigger is demonstrably misclassified,
   already resolved by verified evidence, or covered by an accepted decision.
   The Phase Runner may advance from the current checkpoint.

@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / Task 1 Ready For Phase Runner Dispatch**
+> Status: **Active / STOPPED After Task 2 / Task 2 Recovery Authorized**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -33,6 +33,11 @@ has two internal groups and an independent checkpoint; no 21A/21B exists.
   and three consecutive `<30 s` reference-instance rebuild samples.
 - DEC-159: Ready QA plan and Human approval accept the Heavy pack and authorize
   task 1 dispatch through the Phase Runner.
+- DEC-160: role-free bootstrap remains exact; task 2 owns a nonpersistent,
+  seven-name V1 policy vocabulary bridge for inventoried legacy callers only,
+  and task 20 deletes it.
+- DEC-161: plain task-prefixed schema-v2 identity values are canonical;
+  TRG-21-003 governs exact task-2 RUN-RESUME attempt 3 without a verifier edit.
 
 ## Planning Authorities
 
@@ -94,6 +99,11 @@ observed termination. Review artifacts are `qa/review-1.md` through
 `qa/review-7.md`; checkpoint is `qa/group-1-checkpoint-review.md`; final
 artifacts are `qa/final-review.md` and `qa/human-checklist.md`.
 
+Every external schema-v2 `Originating task`, `Trigger signature`, `Attempt
+count`, `Repair category`, and `Repair authority` value is a plain scalar.
+Never wrap those values in Markdown backticks. Each trigger begins with its
+exact originating task plus `:`.
+
 ## Journey Order
 
 Mutate once: init/Issue; discover; activate; register; create/activate Envelope;
@@ -112,7 +122,14 @@ negative checks. Never create a second Envelope revision.
 
 ## Dispatch Authorization
 
-Task 1 is authorized for Phase Runner dispatch under its exact task spec and
-VAL-001. This is task-scoped execution authority, not permission to bypass TDD,
-the recorded commands, report lint, review windows, dependencies, or the Group
-1 checkpoint. No protected Human decision remains open.
+Task 1 is complete. The ledger is valid and remains `STOPPED` at TRG-21-003;
+the Tech Lead must not edit it. DEC-161 authorizes the Phase Runner to append
+RUN-RESUME attempt 3 with this exact next recovery:
+
+`task-2 | in-scope-implementation | task-scope | task-2:control-conformance:workflow-sequence-lint:external-triage-trigger-prefix | 3`
+
+Then dispatch only the DEC-160 task-2 continuation. Preserve failed evidence,
+run the new focused policy command, rerun both failed required commands
+byte-for-byte, complete the unchanged remaining gate, commit the truthful
+report, and run two-argument report lint. Task 3 remains unauthorized until
+task 2 completes mechanically. No protected Human decision remains open.

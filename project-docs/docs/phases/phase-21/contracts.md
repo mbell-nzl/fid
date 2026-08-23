@@ -380,6 +380,20 @@ reads the same project config, replays the Event, and produces the same
 role-free projection. No bootstrap, Actor lookup, export, or down-migration
 path reconstructs removed role facts.
 
+Tasks 2-19 may retain one nonpersistent V1 compatibility bridge solely for
+callers explicitly classified in `v1-convergence-inventory.md`. When the
+journal contains the exact role-free Event-v2 bootstrap and no legacy role
+Effect, `internal/policy` may recognize the closed V1 vocabulary
+`developer`, `qa_reviewer`, `qa_lead`, `tl_lite`, `tl`, `workflow_runner`, and
+`human` for the existing V1 permissions matrix. If any legacy role Effects
+exist, those facts remain authoritative and the fallback does not supplement
+them; if neither the exact bootstrap nor role Effects exist, role lookup stays
+empty and fail-closed. Unknown names always fail. The bridge writes no Event,
+Effect, row, config, or export field; is not an Actor, Activation, capability,
+Grant, Evidence, Human Outcome, or provenance source; and cannot authorize a
+new generic path, guarded transition, or Envelope completion. Task 20 removes
+it with the V1 policy implementation.
+
 The accepted Phase 21 families are:
 
 | Aggregate | Event types | Projection effects |

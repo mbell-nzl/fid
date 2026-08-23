@@ -197,6 +197,95 @@
   `e8a636e`; DEC-152..158; `qa/qa-plan.md`; `qa/validation-contract.md`;
   `current/phase_brief.md`.
 
+### DEC-160: Preserve role-free bootstrap with a bounded V1 policy vocabulary bridge. Closes ESC-21-001
+
+- **Date:** 2026-08-23
+- **Context:** Task 2 correctly implemented the DEC-157 Event-v2 bootstrap:
+  `project.initialized` has the service Actor, aggregate sequence 1, null
+  repository/idempotency, and zero Effects. Its focused VAL-003..008 tests and
+  role-free init/rebuild journey pass. The required package and repository
+  gates then fail because `internal/policy.KnownRoles` derives the V1
+  permissions vocabulary only from bootstrap role Effects, while inventoried
+  V1 mutations intentionally remain until tasks 8-20. Planning removed their
+  only intermediate identity source before their replacement owners ran.
+- **Decision:** Keep the exact role-free bootstrap and final Phase 21 model.
+  Authorize task 2 to add one temporary, nonpersistent V1 compatibility lookup
+  inside `internal/policy` under these closed rules:
+  1. It is eligible only when the journal contains the exact role-free
+     Event-v2 bootstrap and contains no legacy role Effect.
+  2. It recognizes exactly `developer`, `qa_reviewer`, `qa_lead`, `tl_lite`,
+     `tl`, `workflow_runner`, and `human` for the unchanged V1 permissions
+     matrix and enumerated legacy callers.
+  3. If any legacy role Effects exist, those facts remain authoritative and
+     the fixed vocabulary does not add to them. If neither the exact bootstrap
+     nor role Effects exist, lookup stays empty. Unknown names always fail.
+  4. It writes no Event, Effect, row, config, export field, or reconstruction
+     fact. It is not a kit Actor, Activation, capability, Grant, provenance,
+     Evidence, or Human Outcome source and cannot satisfy a generic operation,
+     guarded transition, Obligation, or Envelope completion.
+  5. No new Phase 21 generic package may call it. Task 20 deletes it with V1
+     policy and proves the existing `KnownRoles|policy.Authorize` absence
+     control; task 21 still proves final fresh init and rebuild without roles.
+  Amend task 2 to own `internal/policy`, focused red/green compatibility tests,
+  and its existing byte-identical failed-command reruns. Do not change the V1
+  matrix, Event fixture, VAL semantics, required failed commands, or final
+  removal boundary.
+- **Consequences:** Task 2 has a bounded causal repair that restores the
+  repository gate without reintroducing persisted role authority. The bridge
+  is an execution-order device, not a new public compatibility promise. The
+  Group 1 checkpoint must classify and isolate it; task 20 must remove it.
+  ESC-21-001 is resolved and archived after this decision is committed.
+- **Refs:** TRG-21-001; ESC-21-001; DEC-157; `contracts.md` section 14;
+  `v1-convergence-inventory.md` sections 1, 4-7;
+  `tasks/task-2-event-idempotency.md`; `tasks/task-20-v1-removal.md`;
+  `tasks/task-2-done.md`; VAL-008, VAL-024, VAL-075, VAL-076, VAL-077.
+
+### DEC-161: Use the valid TRG-21-003 boundary and resume task 2 without verifier repair. Closes ESC-21-002 and ESC-21-003
+
+- **Date:** 2026-08-23
+- **Context:** TRG-21-001 wrapped its schema-v2 `Trigger signature` in
+  Markdown backticks, so exact external binding and the task-prefix check could
+  not both pass. TRG-21-002 removed the backticks but used a `phase-runner:`
+  prefix for originating task `task-2`, so it also could not bind. Both records
+  are immutable failed evidence. TRG-21-003 uses the required plain,
+  task-prefixed scalar, was bound into the ledger, and the final STOP ledger
+  validated as `state=STOPPED`. Its BLOCK condition was absence of protected
+  resolution authority, not a remaining verifier defect.
+- **Decision:** Schema-v2 external identity fields are plain single-line
+  scalars, not Markdown code spans; `09_AI_WORKFLOW.md` now states this
+  explicitly. Preserve TRG-21-001/TRG-21-002 and all failed append evidence.
+  Use TRG-21-003 as the sole governing recovery record. No edit to
+  `workflow-sequence-lint.sh`, no control-conformance directive amendment, and
+  no historical ledger/triage rewrite is authorized or required.
+
+  The Phase Runner may append exactly one schema-v2 RUN-RESUME after this
+  decision commit, with these binding values:
+  - `Prior run/session or STOP`: `2026-08-23 12:37 STOP / TRG-21-003 / ESC-21-003`
+  - `Governing TRG`: `TRG-21-003`
+  - `Governing ESC`: `ESC-21-003`
+  - `Trigger signature`: `task-2:control-conformance:workflow-sequence-lint:external-triage-trigger-prefix`
+  - `Attempt count`: `3`
+  - `Resolution authority`: `DEC-161`
+  - `Continuing task`: `task-2`
+  - `Next recovery`: `task-2 | in-scope-implementation | task-scope | task-2:control-conformance:workflow-sequence-lint:external-triage-trigger-prefix | 3`
+
+  Its checkpoint and resolution evidence must cite the committed DEC-160/161
+  HEAD, the already-valid stopped ledger, and DEC-160's task-2 scope amendment.
+  The following TASK-RECOVERY uses category `in-scope-implementation`, repair
+  mode `task-scope`, source `TRG-21-003 / DEC-161`, and repair authority
+  `DEC-161`. This is not a tools-only control repair. It dispatches only the
+  task-2 continuation under DEC-160; task 3 remains dependency-gated.
+- **Consequences:** ESC-21-002 and ESC-21-003 are resolved without weakening or
+  changing the canonical verifier. During Phase 21, every new external
+  schema-v2 identity value must be written without Markdown delimiters and
+  begin with its exact originating task. The valid replacement record plus
+  append-only history is the standing recovery pattern, so this formatting
+  mistake does not require another protected verifier escalation.
+- **Refs:** TRG-21-002; TRG-21-003; ESC-21-002; ESC-21-003; DEC-160;
+  `09_AI_WORKFLOW.md` sections 2.3-2.4 and 9;
+  `project-docs/tools/workflow-sequence-lint.sh` schema-v2 TRIAGE and
+  RUN-RESUME checks; `run-ledger.md` final STOP.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -213,13 +302,19 @@ verdicts are completed at phase wrap-up.
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
 | `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158 | Checkpoint isolation, removal-before-parity, cadence, feasibility, and committed-report lint ownership are explicit. |
-| `09_AI_WORKFLOW.md` | verified-no-planning-change | DEC-152 applies existing Heavy-mode and recovery rules without changing them. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-161 | Schema-v2 external identity fields are plain single-line scalars; Markdown delimiters are not part of the exact-bound value. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
 
 ## Triage-Log Audit
 
-Phase not started; no Phase 21 TRG exists.
+TRG-21-001 correctly identified the bootstrap/V1 sequencing contradiction;
+DEC-160 supplies the bounded task-2 repair. TRG-21-002 is malformed historical
+evidence. TRG-21-003 is the valid governing BLOCK and DEC-161 supplies its
+exact RUN-RESUME boundary. ESC-21-001..003 are resolved without rewriting any
+TRG or ledger entry. Hindsight verdict: all three BLOCK outcomes were correct
+under the authority available when written; TRG-21-002 should have used a
+task-prefixed plain scalar initially, which would have avoided TRG-21-003.
 
 ## Workflow Notes
 

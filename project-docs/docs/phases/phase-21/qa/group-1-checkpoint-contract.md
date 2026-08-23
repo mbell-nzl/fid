@@ -36,7 +36,10 @@ The reviewer must establish:
   `concerns`, role/judgment transition-requirement rows, `fid dev`, Issue
   complete, and their replacement-bound writers/packages may remain; the
   internal V1 policy implementation may remain only for those exact callers,
-  while the public `fid policy` command is already absent;
+  while the public `fid policy` command is already absent; its task-2
+  nonpersistent vocabulary bridge may recognize only the closed seven V1
+  names after the exact role-free bootstrap, must defer to any explicit legacy
+  role Effects, and must be unreachable from every new generic path;
 - AC verification and concern mutation are already fail-closed, and none of
   that temporary state can authorize a generic operation or satisfy Evidence,
   a guarded terminal transition, or completion;

@@ -53,6 +53,9 @@ After all replacements pass, execute the exhaustive convergence inventory: remov
 - [ ] Migration 0014 is exact and empty-state reversible. (VAL-002)
 - [ ] Every retained/fail-closed/frozen caller has its tested final disposition. (VAL-074)
 - [ ] Owned V1 paths, writers, Events, tables, commands, and `--by` are absent. (VAL-075)
+- [ ] The task-2 nonpersistent V1 compatibility role vocabulary and every
+  fallback reader are deleted with `internal/policy`; no alternate fixed-role
+  registry remains. (VAL-075)
 - [ ] The completion report runs all four `v1-convergence-inventory.md` §7 recipes, classifies every match against the frozen/diagnostic-reader or removal disposition, and records `UNCLASSIFIED=0`; the first two removal searches have zero matches while the broad table-reader and Event-family inventories remain successful, classified inventories. (VAL-074, VAL-075)
 
 ## First Failing Test

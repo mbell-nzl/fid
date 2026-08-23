@@ -34,7 +34,7 @@ state. Phase 23/25-owned state may remain only under the explicit freeze rules.
 | Maintenance check | reads legacy tables | retain; readers become integrity/frozen-state observations only | tasks 20, 21 |
 | Stats tokens/cost | `--by` means grouping and reads `agent_runs.role` | rename `--group-by`; `actor` exposes historical `actor_attribution`; no authority/capability inference | tasks 9, 20 |
 | Policy show and action registry | public V1 role/action inspection plus policy used by dev/completion | remove public command in task 9; isolate implementation to enumerated legacy callers; delete implementation only after all caller dispositions pass in task 20 | tasks 9, 20 |
-| Bootstrap/init | genesis role Effects and rebuild as `human` | Event-v2 empty domain Effects, service Actor, no role table/read; final fresh init proven after 0014 | tasks 2, 20, 21 |
+| Bootstrap/init | genesis role Effects and rebuild as `human` | Event-v2 empty domain Effects, service Actor, no role projection; bounded nonpersistent V1 policy vocabulary bridge through task 19; final fresh init proven after 0014 | tasks 2, 20, 21 |
 
 ### 1.1 Exact live caller/file classification
 
@@ -106,7 +106,7 @@ segments. A v1 historical name may replay during development only until task
 
 | Table | Live readers/writers | Final Phase 21 rule | Owner |
 |---|---|---|---|
-| `roles` | bootstrap writer; policy journal scanner; SQL/tests | drop in 0014; no final reader/writer/genesis Effect | tasks 2, 9, 20, 21 |
+| `roles` | bootstrap writer; policy journal scanner; SQL/tests | task 2 removes the writer/Effect and permits only the exact nonpersistent V1 compatibility lookup in section 5; task 20 drops the table and lookup; no final reader/writer/genesis Effect | tasks 2, 9, 20, 21 |
 | V1 `claims` | Issue Claim, dev, transition, maintenance readers/writers | generic replacement uses `work_claims` through task 19; task 20 drops V1 and renames generic table | tasks 10, 12, 20 |
 | `gate_runs` | dev gate writer; dev/Issue detail/transition/maintenance readers | may remain replacement-bound through task 19; drop in 0014 after Receipt/Evidence | tasks 15-18, 20 |
 | `task_completions` | Issue complete/dev finish writers; Issue detail/transition/concern/maintenance readers | remove all writers and authority/completion readers; freeze table for Phase 23 FKs; maintenance may report nonempty/frozen writes | tasks 18, 20, 21 |
@@ -133,7 +133,12 @@ still exist because final deletion depends on Group 2 trusted execution:
 - source packages: `internal/dev`, legacy completion files, and frozen-table
   readers needed for removal conversion; and
 - internal V1 policy implementation reachable only by the enumerated
-  dev/completion compatibility callers, with `fid policy` already absent.
+  dev/completion compatibility callers, with `fid policy` already absent; and
+- the task-2 V1 compatibility role vocabulary inside `internal/policy`, which
+  is available only when the exact role-free Event-v2 bootstrap exists and no
+  legacy role Effect exists. It recognizes the closed seven V1 names for the
+  retained V1 matrix, persists nothing, and is unavailable to every new
+  generic path.
 
 Checkpoint PASS does not assert their absence. It proves by dependency/call
 graph and adversarial tests that no new Activation, Registration, Envelope,
@@ -149,7 +154,8 @@ dev`; legacy Issue Claim/unclaim and Run record leaves; Issue complete files;
 V1 policy implementation; every writer of `roles`, V1 `claims`, `gate_runs`,
 `task_completions`, `agent_runs`, `ac_verifications`, and `concerns`; accepted
 V1 dev/completion/claim/run fixtures; every mutation `--by`; stats `--by`; and
-role/judgment workflow requirement rows. Migration 0014 drops `roles`, V1
+role/judgment workflow requirement rows; and the task-2 nonpersistent V1 role
+vocabulary bridge. Migration 0014 drops `roles`, V1
 `claims`, and `gate_runs`, renames `work_claims`, and deletes the displaced
 requirement rows.
 
