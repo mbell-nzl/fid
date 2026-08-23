@@ -102,24 +102,36 @@ func TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation(
 		t.Fatalf("activation component response = %+v, want staged profile component", envelope)
 	}
 
-	writeActivationInput(t, componentPath, map[string]any{
-		"activation_id": activationID, "component_type": "authority-profile", "component_id": "builders",
-		"component_version": 2, "expected_prior_digest": nil,
-		"content": []any{map[string]any{
-			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit",
-			"provenance_ref": "activation:profile/builders", "session_ref": nil,
-			"capabilities": []string{"claim.acquire"}, "caller_capabilities": []string{"envelope.create"},
-		}},
-	})
-	result = executeCommandForTest(workspace,
-		"--project", workspace, "--json", "activation", "component",
-		"--input", componentPath, "--idempotency-key", "activation-component-2",
-	)
-	if result.err == nil {
-		t.Fatal("caller capability augmentation error = nil, want closed-input rejection")
-	}
-	if result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
-		t.Fatalf("caller augmentation result stdout=%q stderr=%q, want typed closed-input rejection", result.stdout, result.stderr)
+	for _, testCase := range []struct {
+		name  string
+		apply func(map[string]any)
+	}{
+		{"capabilities", func(profile map[string]any) { profile["caller_capabilities"] = []string{"envelope.create"} }},
+		{"provenance", func(profile map[string]any) { profile["caller_provenance_ref"] = "caller:override" }},
+	} {
+		t.Run("caller "+testCase.name, func(t *testing.T) {
+			profile := map[string]any{
+				"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit",
+				"provenance_ref": "activation:profile/builders", "session_ref": nil,
+				"capabilities": []string{"claim.acquire"},
+			}
+			testCase.apply(profile)
+			writeActivationInput(t, componentPath, map[string]any{
+				"activation_id": activationID, "component_type": "authority-profile", "component_id": "builders",
+				"component_version": 2, "expected_prior_digest": nil, "content": []any{profile},
+			})
+			before := journalEventCount(t, workspace)
+			result = executeCommandForTest(workspace,
+				"--project", workspace, "--json", "activation", "component",
+				"--input", componentPath, "--idempotency-key", "activation-component-reject-"+testCase.name,
+			)
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
+				t.Fatalf("caller %s result = %#v, want typed closed-input rejection", testCase.name, result)
+			}
+			if after := journalEventCount(t, workspace); after != before {
+				t.Fatalf("caller %s Event count = %d, want no Event after %d", testCase.name, after, before)
+			}
+		})
 	}
 }
 
@@ -183,6 +195,163 @@ func TestActivationCommitIsPointOfNoReturn(t *testing.T) {
 	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"activation-recovery-unavailable"`) {
 		t.Fatalf("abort after commit result error=%v stdout=%q stderr=%q, want recovery-unavailable failure", result.err, result.stdout, result.stderr)
 	}
+}
+
+func TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents(t *testing.T) {
+	for _, testCase := range []struct {
+		name, status, operation, wantCode string
+	}{
+		{"prepared skips commit", "prepared", "commit", "invalid-argument"},
+		{"prepared skips finalize", "prepared", "finalize", "invalid-argument"},
+		{"staged skips finalize", "staged", "finalize", "invalid-argument"},
+		{"committed stages extra component", "committed", "component", "invalid-argument"},
+		{"committed repeats commit", "committed", "commit", "invalid-argument"},
+		{"committed abort remains unavailable", "committed", "abort", "activation-recovery-unavailable"},
+		{"finalized stages extra component", "finalized", "component", "invalid-argument"},
+		{"finalized repeats commit", "finalized", "commit", "invalid-argument"},
+		{"finalized repeats finalize", "finalized", "finalize", "invalid-argument"},
+		{"finalized abort remains unavailable", "finalized", "abort", "activation-recovery-unavailable"},
+		{"aborted stages extra component", "aborted", "component", "invalid-argument"},
+		{"aborted skips commit", "aborted", "commit", "invalid-argument"},
+		{"aborted skips finalize", "aborted", "finalize", "invalid-argument"},
+		{"aborted repeats abort", "aborted", "abort", "invalid-argument"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := activationLifecycleFixtureAt(t, testCase.status)
+			before := journalEventCount(t, fixture.workspace)
+			result := rejectActivationLifecycleTransition(t, fixture, testCase.operation, testCase.name)
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+testCase.wantCode+`"`) {
+				t.Fatalf("%s result = %#v, want %s rejection", testCase.name, result, testCase.wantCode)
+			}
+			if after := journalEventCount(t, fixture.workspace); after != before {
+				t.Fatalf("%s Event count = %d, want no Event after %d", testCase.name, after, before)
+			}
+		})
+	}
+}
+
+func TestActivationAbortPreCommitLeavesNoTrustedActor(t *testing.T) {
+	for _, status := range []string{"prepared", "staged"} {
+		t.Run(status, func(t *testing.T) {
+			fixture := activationLifecycleFixtureAt(t, status)
+			inputPath := filepath.Join(fixture.workspace, "activation-abort-"+status+".json")
+			writeActivationInput(t, inputPath, map[string]any{
+				"activation_id": fixture.activationID, "expected_status": status, "reason": "operator-abort",
+			})
+			before := journalEventCount(t, fixture.workspace)
+			result := executeCommandForTest(fixture.workspace,
+				"--project", fixture.workspace, "--json", "activation", "abort",
+				"--input", inputPath, "--idempotency-key", "activation-abort-"+status,
+			)
+			if result.err != nil || result.stderr != "" || activationStatusFromResult(t, result.stdout) != "aborted" {
+				t.Fatalf("abort from %s result = %#v, want aborted success", status, result)
+			}
+			if after := journalEventCount(t, fixture.workspace); after != before+1 {
+				t.Fatalf("abort from %s Event count = %d, want one Event after %d", status, after, before)
+			}
+			if _, err := workflow.ResolveTrustedActor(fixture.workspace, issueMigrationsDir(), "actor-builder"); err == nil {
+				t.Fatalf("abort from %s left actor-builder available as a trusted actor", status)
+			}
+		})
+	}
+}
+
+type activationLifecycleFixture struct {
+	workspace        string
+	activationID     string
+	componentDigests []string
+}
+
+func activationLifecycleFixtureAt(t *testing.T, status string) activationLifecycleFixture {
+	t.Helper()
+	fixture := activationLifecycleFixture{workspace: clonePristineWorkspace(t)}
+	fixture.activationID = prepareActivationForTest(t, fixture.workspace)
+	fixture.componentDigests = []string{
+		"sha256:" + strings.Repeat("0", 64),
+		"sha256:" + strings.Repeat("1", 64),
+	}
+	if status == "prepared" {
+		return fixture
+	}
+	if status == "aborted" {
+		abortPath := filepath.Join(fixture.workspace, "activation-lifecycle-abort.json")
+		writeActivationInput(t, abortPath, map[string]any{"activation_id": fixture.activationID, "expected_status": "prepared", "reason": "fixture-abort"})
+		if result := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "activation", "abort", "--input", abortPath, "--idempotency-key", "activation-lifecycle-abort"); result.err != nil {
+			t.Fatalf("abort lifecycle fixture: %#v", result)
+		}
+		return fixture
+	}
+	profileDigest := stageActivationComponentForTest(t, fixture.workspace, fixture.activationID, "authority-profile", "lifecycle-builders", []any{map[string]any{
+		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/lifecycle-builders", "session_ref": nil,
+		"capabilities": []string{"claim.acquire", "gate.register"},
+	}})
+	gateDigest := stageActivationComponentForTest(t, fixture.workspace, fixture.activationID, "gate-definitions", "lifecycle-gates", validGateDefinitions())
+	fixture.componentDigests = []string{profileDigest, gateDigest}
+	sort.Strings(fixture.componentDigests)
+	if status == "staged" {
+		return fixture
+	}
+	commitPath := filepath.Join(fixture.workspace, "activation-lifecycle-commit.json")
+	writeActivationInput(t, commitPath, map[string]any{"activation_id": fixture.activationID, "expected_status": "staged", "component_digests": fixture.componentDigests})
+	if result := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "activation", "commit", "--input", commitPath, "--idempotency-key", "activation-lifecycle-commit"); result.err != nil {
+		t.Fatalf("commit lifecycle fixture: %#v", result)
+	}
+	if status == "committed" {
+		return fixture
+	}
+	if status == "finalized" {
+		finalizePath := filepath.Join(fixture.workspace, "activation-lifecycle-finalize.json")
+		writeActivationInput(t, finalizePath, map[string]any{"activation_id": fixture.activationID, "expected_status": "committed"})
+		if result := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "activation", "finalize", "--input", finalizePath, "--idempotency-key", "activation-lifecycle-finalize"); result.err != nil {
+			t.Fatalf("finalize lifecycle fixture: %#v", result)
+		}
+		return fixture
+	}
+	t.Fatalf("unknown lifecycle fixture status %q", status)
+	return activationLifecycleFixture{}
+}
+
+func rejectActivationLifecycleTransition(t *testing.T, fixture activationLifecycleFixture, operation, name string) commandExecutionResult {
+	t.Helper()
+	inputPath := filepath.Join(fixture.workspace, "activation-reject-"+strings.ReplaceAll(name, " ", "-")+".json")
+	switch operation {
+	case "component":
+		writeActivationInput(t, inputPath, map[string]any{
+			"activation_id": fixture.activationID, "component_type": "authority-profile", "component_id": "late-profile",
+			"component_version": 2, "expected_prior_digest": nil,
+			"content": []any{map[string]any{
+				"actor_id": "actor-late", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/late", "session_ref": nil,
+				"capabilities": []string{"claim.acquire"},
+			}},
+		})
+	case "commit":
+		writeActivationInput(t, inputPath, map[string]any{"activation_id": fixture.activationID, "expected_status": "staged", "component_digests": fixture.componentDigests})
+	case "abort":
+		writeActivationInput(t, inputPath, map[string]any{"activation_id": fixture.activationID, "expected_status": "staged", "reason": "reject-transition"})
+	case "finalize":
+		writeActivationInput(t, inputPath, map[string]any{"activation_id": fixture.activationID, "expected_status": "committed"})
+	default:
+		t.Fatalf("unknown activation operation %q", operation)
+	}
+	return executeCommandForTest(fixture.workspace,
+		"--project", fixture.workspace, "--json", "activation", operation,
+		"--input", inputPath, "--idempotency-key", "activation-reject-"+strings.ReplaceAll(name, " ", "-"),
+	)
+}
+
+func activationStatusFromResult(t *testing.T, output string) string {
+	t.Helper()
+	var envelope struct {
+		Result struct {
+			Activation struct {
+				Status string `json:"status"`
+			} `json:"activation"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(output), &envelope); err != nil || envelope.Result.Activation.Status == "" {
+		t.Fatalf("decode activation mutation result: %v; stdout=%q", err, output)
+	}
+	return envelope.Result.Activation.Status
 }
 
 func TestActivationFinalizeAndStatusExposeOnlyFinalLifecycleState(t *testing.T) {
