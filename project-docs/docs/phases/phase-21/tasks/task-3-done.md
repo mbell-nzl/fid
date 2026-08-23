@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 0
+- Recovery attempts: 1
 - Next action: The Phase Runner runs the two-argument report-lint control against this committed report.
 - Human attention required: no
 
@@ -14,6 +14,7 @@
 - Added the migration-derived binary capability projection, which re-materializes the fixed Phase 21 matrix into `system_capabilities` and reads it back in capability-ID order.
 - Added `fid capabilities` / `capabilities.get` with the exact 12-row JSON result, no-argument typed rejection, and no event.
 - Updated the shared CLI envelope serializer to emit lexicographically ordered JSON object keys required by the public transport contract.
+- Added the review-1 MF-2 executable seven-surface conformance table without changing deferred V1 behavior.
 
 ## Files created or modified
 
@@ -28,15 +29,21 @@
 
 ## Documentation updated
 
-- `project-docs/docs/phases/phase-21/tasks/task-3-done.md` - records task evidence, the immutable initial gate failure, and the required final gate results.
+- `project-docs/docs/phases/phase-21/tasks/task-3-done.md` - preserves prior task evidence and records the review-1 MF-2 red/green cycle, seven-surface matrix, real CLI exercise, and renewed gate results.
 
 ## Validation Contract Coverage
 
+- Review-1 MF-2 evidence for VAL-010: `TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects` in `cmd/fid/capabilities_test.go:102` preserves the qualifying/non-qualifying 12-row matrix at `:109`; probes Activation (`:141`), Claim (`:147`), export (`:153`), AC judgment (`:159`), Concern judgment (`:165`), historical stats (`:171`), and Attention absence (`:177`); every unavailable probe asserts no stdout, byte-identical journal, unchanged complete projection table counts at `:185`, and false rediscovery at `:203`. The focused green run ended `ok  	github.com/mbell-nzl/fid/cmd/fid	3.444s` (terminated `exit_code: 0`).
 - VAL-009: PASS - `TestCapabilitiesJSONGoldenAndProjectionRows` in `cmd/fid/capabilities_test.go:16` compares the complete literal `fid capabilities --json` result at `:22` and reads the `system_capabilities` projection in capability-ID order at `:28`; the focused green run ended `ok  	github.com/mbell-nzl/fid/cmd/fid	2.407s` (terminated `exit_code: 0`)
 - VAL-010: PASS - `TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable` in `cmd/fid/capabilities_test.go:55` asserts the exact typed no-argument rejection at `:61` and sets each of the seven named deferred rows in `:76` to an optimistic `available=1` before confirming discovery restores `false` at `:85`; the required package rerun ended `ok  	github.com/mbell-nzl/fid/cmd/fid	131.062s` (terminated `exit_code: 0`)
 
 ## Tests run
 
+- `go test -race ./cmd/fid -run '^TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects$' -count=1` - RED - `FAIL` (terminated `exit_code: 1`)
+  The three unknown-command rows initially inspected only Cobra's stderr buffer; Cobra returns those failures as command errors. The failure identified the complete command-failure channel required by the probe.
+- `go test -race ./cmd/fid -run '^TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects$' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/cmd/fid	3.444s` (terminated `exit_code: 0`)
+- `/tmp/fid-task3 init --prefix FID` in `/tmp/fid-task3-entrypoint.dYPcHJ` - PASS - `initialized fid project in .fid/` (terminated `exit_code: 0`)
+- `/tmp/fid-task3 capabilities` in `/tmp/fid-task3-entrypoint.dYPcHJ` - PASS - `workflow.transitions.v1	true` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^TestCapabilities' -count=1` - RED - `FAIL` (terminated `exit_code: 1`)
   Before implementation, `fid capabilities` was not registered and both capability tests received an execution error.
 - `go test -race ./cmd/fid -run '^TestCapabilities' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/cmd/fid	2.407s` (terminated `exit_code: 0`)
@@ -44,6 +51,11 @@
 
 ## Exact quality-gate results
 
+- `go test -race ./internal/workflow ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	156.857s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	coverage: 75.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					77.7%` (terminated `exit_code: 0`)
 - `go test -race ./internal/workflow ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`).
 - `go test -race ./internal/workflow ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	131.062s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -66,8 +78,8 @@
 
 ## Commit hash
 
-- `6ff90152fdcdd373c14a434ec736e557144a1617`
+- Pending commit
 
 ## Commit subject
 
-- `feat(capabilities): add capability discovery transport`
+- Pending commit

@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -91,6 +94,118 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 			}
 			if available := capabilityAvailability(t, result.stdout, fixture.capabilityID); available {
 				t.Fatalf("%s availability = true after optimistic projection write, want false for %s", fixture.capabilityID, fixture.surfaces)
+			}
+		})
+	}
+}
+
+func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	initial := executeCommandForTest(workspace, "--json", "capabilities")
+	if initial.err != nil || initial.stderr != "" {
+		t.Fatalf("initialize capability projection = %#v", initial)
+	}
+
+	for _, state := range []struct {
+		capabilityID string
+		available    bool
+	}{
+		{"attention.v1", false},
+		{"evidence.freshness.v1", true},
+		{"evidence.gate-definitions.v1", true},
+		{"evidence.receipts.v1", true},
+		{"export.portable.v1", false},
+		{"human.outcomes.v1", false},
+		{"kit.activation.v1", false},
+		{"reviews.coverage.v1", false},
+		{"telemetry.trajectory.v1", false},
+		{"work.claims.v1", false},
+		{"workflow.state.v1", true},
+		{"workflow.transitions.v1", true},
+	} {
+		t.Run("state "+state.capabilityID, func(t *testing.T) {
+			if got := capabilityAvailability(t, initial.stdout, state.capabilityID); got != state.available {
+				t.Fatalf("%s availability = %t, want %t", state.capabilityID, got, state.available)
+			}
+		})
+	}
+
+	journalPath := mustJournalPath(t, workspace)
+	for _, probe := range []struct {
+		capabilityID string
+		surface      string
+		args         []string
+		errorText    string
+	}{
+		{
+			capabilityID: "kit.activation.v1",
+			surface:      "Activation lifecycle",
+			args:         []string{"--json", "activation", "prepare"},
+			errorText:    `unknown command "activation"`,
+		},
+		{
+			capabilityID: "work.claims.v1",
+			surface:      "Claim lifecycle and list",
+			args:         []string{"--json", "claim", "list"},
+			errorText:    "--json is not available for claim list",
+		},
+		{
+			capabilityID: "export.portable.v1",
+			surface:      "export create and validate",
+			args:         []string{"--json", "export", "create"},
+			errorText:    `unknown command "export"`,
+		},
+		{
+			capabilityID: "reviews.coverage.v1",
+			surface:      "fail-closed AC judgment",
+			args:         []string{"--json", "issue", "ac", "verify", "ISS-1", "AC-1"},
+			errorText:    "--json is not available for issue ac verify",
+		},
+		{
+			capabilityID: "human.outcomes.v1",
+			surface:      "fail-closed Concern judgment",
+			args:         []string{"--json", "concern", "raise"},
+			errorText:    "--json is not available for concern raise",
+		},
+		{
+			capabilityID: "telemetry.trajectory.v1",
+			surface:      "historical stats",
+			args:         []string{"--json", "stats", "tokens"},
+			errorText:    "--json is not available for stats tokens",
+		},
+		{
+			capabilityID: "attention.v1",
+			surface:      "Attention absence",
+			args:         []string{"--json", "attention", "list"},
+			errorText:    `unknown command "attention"`,
+		},
+	} {
+		probe := probe
+		t.Run(probe.capabilityID+" "+probe.surface, func(t *testing.T) {
+			journalBefore := mustReadCommandFile(t, journalPath)
+			projectionBefore := commandProjectionTableCounts(t, workspace)
+
+			result := executeCommandForTest(workspace, probe.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("%s probe = %#v, want unavailable without stdout", probe.surface, result)
+			}
+			failureText := result.stderr + "\n" + result.err.Error()
+			if !strings.Contains(failureText, probe.errorText) {
+				t.Fatalf("%s failure = %q, want unavailable surface error containing %q", probe.surface, failureText, probe.errorText)
+			}
+			if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+				t.Fatalf("%s probe changed journal bytes", probe.surface)
+			}
+			if projectionAfter := commandProjectionTableCounts(t, workspace); !reflect.DeepEqual(projectionAfter, projectionBefore) {
+				t.Fatalf("%s probe changed projection counts: got %#v, want %#v", probe.surface, projectionAfter, projectionBefore)
+			}
+
+			result = executeCommandForTest(workspace, "--json", "capabilities")
+			if result.err != nil || result.stderr != "" {
+				t.Fatalf("capability discovery after %s probe = %#v", probe.surface, result)
+			}
+			if capabilityAvailability(t, result.stdout, probe.capabilityID) {
+				t.Fatalf("%s became available after %s probe", probe.capabilityID, probe.surface)
 			}
 		})
 	}
