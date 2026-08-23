@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: qa-rework (review-2 MF-1)
+- Category: none
 - Condition: None.
 - Recovery attempts: 1
 - Next action: None.
@@ -51,7 +51,7 @@
 - `/tmp/fid-task4 --project /tmp/FIDTASK4b9FjVd --json activation prepare --input - --idempotency-key smoke-activation-prepare` - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260823-000002","occurred_at":"2026-08-23T05:30:33.707873055Z"},"ok":true,"operation":"activation.prepare","result":{"activation":{"id":"ACT-ebdf0d","status":"prepared","kit_identity":"kit","backend_identity":"fid","phase":21,"direction":"activate","point_of_no_return":false,"component_digests":[],"created_at":"2026-08-23T05:30:33.707873055Z","updated_at":"2026-08-23T05:30:33.707873055Z"},"idempotency_key":"smoke-activation-prepare","replayed":false}}` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`). Red: the lifecycle test referenced its table fixture before that test helper existed.
 - `go test -race ./cmd/fid -run '^(TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation|TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents|TestActivationAbortPreCommitLeavesNoTrustedActor)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`). Red: the first complete table run exposed the fixture ordering error and verified the CLI uses the existing typed `invalid-argument` envelope for rejected non-recovery transitions.
-- `go test -race ./cmd/fid -run '^(TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation|TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents|TestActivationAbortPreCommitLeavesNoTrustedActor)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.723s` (terminated `exit_code: 0`). Green: all new MF-1 rows pass.
+- Focused green evidence for the byte-identical lifecycle table run retained token `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.723s` with observed termination `exit_code: 0`; all new MF-1 rows pass.
 
 ## Exact quality-gate results
 
