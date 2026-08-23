@@ -84,8 +84,8 @@
 
 ## Commit hash
 
-- Pending blocked checkpoint
+- `e712f85d08a0b3259b23badd34d9306bf0a10f9b`
 
 ## Commit subject
 
-- Pending blocked checkpoint
+- `test(issue): migrate retained actor transport`
