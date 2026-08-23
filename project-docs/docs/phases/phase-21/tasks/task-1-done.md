@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: qa-rework
+- Category: none
 - Condition: Review-1 MF-1 required exhaustive, canonical migration-0013 inventory assertions for VAL-001.
 - Recovery attempts: 1
 - Next action: None.
