@@ -14,6 +14,7 @@ const (
 	detailStringKind detailKind = iota
 	detailIntegerKind
 	detailStringsKind
+	detailBooleanKind
 	detailObjectKind
 	detailObjectsKind
 )
@@ -80,6 +81,12 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		}},
 		{CodeResultLimitExceeded, CategoryIntegrity, false, nil, []detailExpectation{stringDetail("collection"), integerDetail("limit"), integerDetail("observed")}},
 		{CodeInternalError, CategoryInternal, false, nil, nil},
+		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
+		}},
+		{CodeActivationRecoveryUnavailable, CategoryAuthority, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("status"), {name: "point_of_no_return", kind: detailBooleanKind}, integerDetail("owner_phase"),
+		}},
 	}
 
 	registered := RegisteredCodes()
@@ -186,6 +193,8 @@ func detailValue(field detailExpectation) any {
 		return int64(7)
 	case detailStringsKind:
 		return []string{field.name + "-one", field.name + "-two"}
+	case detailBooleanKind:
+		return true
 	case detailObjectKind:
 		return detailValues(field.children)
 	case detailObjectsKind:
@@ -283,7 +292,11 @@ func assertDetailRules(t *testing.T, expectation reasonCodeExpectation, subject 
 			assertNewFailureRejected(t, expectation.code, subject, extra)
 
 			wrongType := cloneDetails(validDetails)
-			detailParent(wrongType, path.names)[path.names[len(path.names)-1]] = true
+			wrongValue := any(true)
+			if path.kind == detailBooleanKind {
+				wrongValue = "not-a-boolean"
+			}
+			detailParent(wrongType, path.names)[path.names[len(path.names)-1]] = wrongValue
 			assertNewFailureRejected(t, expectation.code, subject, wrongType)
 
 			if path.nullable {
@@ -318,13 +331,14 @@ func assertDetailRules(t *testing.T, expectation reasonCodeExpectation, subject 
 type detailPath struct {
 	names    []string
 	nullable bool
+	kind     detailKind
 }
 
 func detailPaths(fields []detailExpectation, prefix []string) []detailPath {
 	var paths []detailPath
 	for _, field := range fields {
 		path := append(append([]string(nil), prefix...), field.name)
-		paths = append(paths, detailPath{names: path, nullable: field.nullable})
+		paths = append(paths, detailPath{names: path, nullable: field.nullable, kind: field.kind})
 		paths = append(paths, detailPaths(field.children, path)...)
 	}
 	return paths
@@ -419,6 +433,11 @@ func assertSerializedDetailValue(t *testing.T, raw json.RawMessage, field detail
 		var value []string
 		if err := json.Unmarshal(raw, &value); err != nil {
 			t.Fatalf("json.Unmarshal(%q string array) error = %v", field.name, err)
+		}
+	case detailBooleanKind:
+		var value bool
+		if err := json.Unmarshal(raw, &value); err != nil {
+			t.Fatalf("json.Unmarshal(%q boolean) error = %v", field.name, err)
 		}
 	case detailObjectKind:
 		assertSerializedDetails(t, raw, field.children)

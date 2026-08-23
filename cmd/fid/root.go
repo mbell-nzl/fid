@@ -57,6 +57,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.SetErr(os.Stderr)
 	cmd.AddCommand(newActivityCommand())
 	cmd.AddCommand(newCapabilitiesCommand())
+	cmd.AddCommand(newActivationCommand())
 	cmd.AddCommand(newClaimCommand())
 	cmd.AddCommand(newInitCommand())
 	cmd.AddCommand(newConcernCommand())

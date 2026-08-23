@@ -20,29 +20,31 @@ const (
 )
 
 const (
-	CodeInvalidArgument        Code = "invalid-argument"
-	CodeUnsupportedKind        Code = "unsupported-kind"
-	CodeUnsupportedRelation    Code = "unsupported-relation"
-	CodeProjectNotFound        Code = "project-not-found"
-	CodeProjectAlreadyInit     Code = "project-already-initialized"
-	CodeIssueNotFound          Code = "issue-not-found"
-	CodeRequirementNotFound    Code = "requirement-not-found"
-	CodeLabelNotFound          Code = "label-not-found"
-	CodeLinkNotFound           Code = "link-not-found"
-	CodeWorkflowNotFound       Code = "workflow-not-found"
-	CodeDuplicateEntity        Code = "duplicate-entity"
-	CodeStateConflict          Code = "state-conflict"
-	CodeLockUnavailable        Code = "lock-unavailable"
-	CodeHierarchyInvalid       Code = "hierarchy-invalid"
-	CodeDependencyCycle        Code = "dependency-cycle"
-	CodeTransitionNotPermitted Code = "transition-not-permitted"
-	CodeAuthorityMissing       Code = "authority-missing"
-	CodeAuthorityUnknownActor  Code = "authority-unknown-actor"
-	CodeAuthorityDenied        Code = "authority-denied"
-	CodeJournalReplayStopped   Code = "journal-replay-stopped"
-	CodeProjectionDivergence   Code = "projection-divergence"
-	CodeResultLimitExceeded    Code = "result-limit-exceeded"
-	CodeInternalError          Code = "internal-error"
+	CodeInvalidArgument               Code = "invalid-argument"
+	CodeUnsupportedKind               Code = "unsupported-kind"
+	CodeUnsupportedRelation           Code = "unsupported-relation"
+	CodeProjectNotFound               Code = "project-not-found"
+	CodeProjectAlreadyInit            Code = "project-already-initialized"
+	CodeIssueNotFound                 Code = "issue-not-found"
+	CodeRequirementNotFound           Code = "requirement-not-found"
+	CodeLabelNotFound                 Code = "label-not-found"
+	CodeLinkNotFound                  Code = "link-not-found"
+	CodeWorkflowNotFound              Code = "workflow-not-found"
+	CodeDuplicateEntity               Code = "duplicate-entity"
+	CodeStateConflict                 Code = "state-conflict"
+	CodeLockUnavailable               Code = "lock-unavailable"
+	CodeHierarchyInvalid              Code = "hierarchy-invalid"
+	CodeDependencyCycle               Code = "dependency-cycle"
+	CodeTransitionNotPermitted        Code = "transition-not-permitted"
+	CodeAuthorityMissing              Code = "authority-missing"
+	CodeAuthorityUnknownActor         Code = "authority-unknown-actor"
+	CodeAuthorityDenied               Code = "authority-denied"
+	CodeJournalReplayStopped          Code = "journal-replay-stopped"
+	CodeProjectionDivergence          Code = "projection-divergence"
+	CodeResultLimitExceeded           Code = "result-limit-exceeded"
+	CodeInternalError                 Code = "internal-error"
+	CodeActivationConflict            Code = "activation-conflict"
+	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
 )
 
 type SubjectType string
@@ -54,6 +56,7 @@ const (
 	SubjectLabel       SubjectType = "label"
 	SubjectLink        SubjectType = "link"
 	SubjectWorkflow    SubjectType = "workflow"
+	SubjectActivation  SubjectType = "activation"
 )
 
 type Subject struct {
@@ -88,6 +91,7 @@ const (
 	detailString detailType = iota
 	detailInteger
 	detailStrings
+	detailBoolean
 	detailObject
 	detailObjects
 )
@@ -117,6 +121,8 @@ func nullableIntegerField(name string) detailField {
 }
 
 func stringsField(name string) detailField { return detailField{name: name, typeOf: detailStrings} }
+
+func booleanField(name string) detailField { return detailField{name: name, typeOf: detailBoolean} }
 
 func objectField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObject, fields: fields}
@@ -167,6 +173,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("status"), objectsField("errors", findingFields()...), objectsField("warnings", findingFields()...), objectField("info", infoFields()...)),
 	CodeResultLimitExceeded: definition(CategoryIntegrity, false, nil, stringField("collection"), integerField("limit"), integerField("observed")),
 	CodeInternalError:       definition(CategoryInternal, false, nil),
+	CodeActivationConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
+		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
+	CodeActivationRecoveryUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectActivation},
+		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
 }
 
 var registeredCodes = []Code{
@@ -175,6 +185,8 @@ var registeredCodes = []Code{
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
+	CodeActivationConflict,
+	CodeActivationRecoveryUnavailable,
 }
 
 func findingFields() []detailField {
@@ -312,6 +324,10 @@ func validateDetailValue(value any, field detailField) error {
 	case detailStrings:
 		if !isStrings(value) {
 			return fmt.Errorf("must be a string array")
+		}
+	case detailBoolean:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("must be a boolean")
 		}
 	case detailObject:
 		object, ok := value.(map[string]any)

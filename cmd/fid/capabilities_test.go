@@ -138,12 +138,6 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 		errorText    string
 	}{
 		{
-			capabilityID: "kit.activation.v1",
-			surface:      "Activation lifecycle",
-			args:         []string{"--json", "activation", "prepare"},
-			errorText:    `unknown command "activation"`,
-		},
-		{
 			capabilityID: "work.claims.v1",
 			surface:      "Claim lifecycle and list",
 			args:         []string{"--json", "claim", "list"},
