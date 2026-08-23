@@ -81,8 +81,8 @@ and all earlier red/green evidence are retained below.
 
 ## Commit hash
 
-- Pending commit
+- `861e90da8b9218915ddbd77515326921ff3c0cf4`
 
 ## Commit subject
 
-- Pending commit
+- `feat(policy): add temporary role vocabulary bridge`
