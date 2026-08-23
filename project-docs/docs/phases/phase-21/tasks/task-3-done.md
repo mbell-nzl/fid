@@ -78,8 +78,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `401f609d4d7e24c0ab5ca45d27a16424000ded9f`
 
 ## Commit subject
 
-- Pending commit
+- `test(capabilities): probe deferred capability surfaces`
