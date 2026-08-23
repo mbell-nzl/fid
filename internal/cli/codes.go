@@ -48,6 +48,7 @@ const (
 	CodeAuthorityUnavailable          Code = "authority-unavailable"
 	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
 	CodeRegistrationNotFound          Code = "registration-not-found"
+	CodeEnvelopeNotFound              Code = "envelope-not-found"
 )
 
 type SubjectType string
@@ -62,6 +63,7 @@ const (
 	SubjectActivation       SubjectType = "activation"
 	SubjectGateDefinition   SubjectType = "gate-definition"
 	SubjectGateRegistration SubjectType = "gate-registration"
+	SubjectEnvelope         SubjectType = "envelope"
 )
 
 type Subject struct {
@@ -187,6 +189,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeExecutorPolicyUnsupported: definition(CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition},
 		stringsField("fields"), objectField("supported", stringField("network"), booleanField("shell"), stringField("sandbox"), stringField("write"))),
 	CodeRegistrationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringField("id")),
+	CodeEnvelopeNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringField("id")),
 }
 
 var registeredCodes = []Code{
@@ -197,7 +200,7 @@ var registeredCodes = []Code{
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
-	CodeAuthorityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound,
+	CodeAuthorityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 }
 
 func findingFields() []detailField {

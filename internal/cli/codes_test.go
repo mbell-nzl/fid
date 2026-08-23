@@ -96,6 +96,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			}},
 		}},
 		{CodeRegistrationNotFound, CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringDetails("id")},
+		{CodeEnvelopeNotFound, CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringDetails("id")},
 	}
 
 	registered := RegisteredCodes()
