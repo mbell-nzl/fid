@@ -63,6 +63,51 @@ func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 	}
 }
 
+func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) {
+	workspace := newIssueWorkspace(t)
+	created, err := Create(CreateOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		Kind:          "task",
+		Title:         "Legacy in-process Issue",
+		ActorRole:     "developer",
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	updated, err := Update(UpdateOptions{
+		WorkspaceRoot:    workspace,
+		MigrationsDir:    testIssueMigrationsDir(t),
+		ID:               created.ID,
+		ActorRole:        "developer",
+		Title:            stringPointer("Legacy in-process update"),
+		ExpectedRevision: intPointer(1),
+	})
+	if err != nil {
+		t.Fatalf("Update() error = %v", err)
+	}
+	transitioned, err := Transition(TransitionOptions{
+		WorkspaceRoot:    workspace,
+		MigrationsDir:    testIssueMigrationsDir(t),
+		ID:               created.ID,
+		ToState:          "cancelled",
+		ActorRole:        "developer",
+		ExpectedRevision: intPointer(2),
+	})
+	if err != nil {
+		t.Fatalf("Transition() error = %v", err)
+	}
+	keys := []string{created.IdempotencyKey, updated.IdempotencyKey, transitioned.IdempotencyKey}
+	for index, key := range keys {
+		if key == "" {
+			t.Fatalf("mutation %d idempotency key is empty", index)
+		}
+	}
+	if keys[0] == keys[1] || keys[1] == keys[2] || keys[0] == keys[2] {
+		t.Fatalf("legacy idempotency keys = %v, want distinct values", keys)
+	}
+}
+
 func TestTask8IssueCreationSourceBudget(t *testing.T) {
 	_, sourceFile, _, ok := runtime.Caller(0)
 	if !ok {

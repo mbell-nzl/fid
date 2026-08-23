@@ -30,7 +30,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 		"--title", "CLI issue label add",
 		"--label", "core",
 		"--label", "legacy",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -140,7 +140,7 @@ func TestIssueLabelMutationsJSONMatchContract(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label envelope", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label envelope", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -155,7 +155,7 @@ func TestIssueLabelJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON failures", "--label", "core", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON failures", "--label", "core", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -189,7 +189,7 @@ func TestIssueLabelJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
 func TestIssueLabelAddJSONReportsNestedLimitWithoutAppend(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -271,7 +271,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 			"--kind", "task",
 			"--title", "CLI issue label rejection",
 			"--label", "core",
-			"--by", "developer",
+			"--actor", "agent:developer",
 		)
 		issueID := parseCreatedIssueID(t, createStderr)
 
@@ -316,7 +316,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 			"issue", "create",
 			"--kind", "task",
 			"--title", "CLI issue label permissions",
-			"--by", "developer",
+			"--actor", "agent:developer",
 		)
 		issueID := parseCreatedIssueID(t, createStderr)
 
@@ -369,7 +369,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 		"--label", "api",
 		"--label", "core",
 		"--label", "legacy",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -487,7 +487,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 		"--kind", "task",
 		"--title", "CLI issue label absent removal",
 		"--label", "core",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 

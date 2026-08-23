@@ -85,7 +85,7 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationView) {
 	t.Helper()
 	workspace := clonePristineWorkspace(t)
-	created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--by", "developer")
+	created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
 	if created.err != nil {
 		t.Fatalf("create issue: %v; stderr=%q", created.err, created.stderr)
 	}

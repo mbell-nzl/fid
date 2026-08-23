@@ -110,6 +110,7 @@ type issueTransitionState struct {
 }
 
 func Transition(options TransitionOptions) (TransitionResult, error) {
+	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: workspace root is required")
 	}

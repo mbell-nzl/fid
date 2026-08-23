@@ -150,7 +150,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 		"--kind", "epic",
 		"--title", "Denied parity epic",
 		"--scheduling", "sequential",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if err == nil {
 		t.Fatal("developer epic create error = nil, want permission denial")
@@ -169,7 +169,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 		"--kind", "epic",
 		"--title", "Permitted parity epic",
 		"--scheduling", "sequential",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	if allowedStdout != "" {
 		t.Fatalf("tl epic create stdout = %q, want empty", allowedStdout)

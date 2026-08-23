@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -31,12 +32,41 @@ func closureRun(t *testing.T, workspace, command string, args ...string) (string
 
 func closureRunFID(t *testing.T, binary, workspace string, args ...string) (string, string) {
 	t.Helper()
+	args = withClosureIssueMutationKey(args)
 	return closureRun(t, workspace, binary, args...)
 }
 
 func closureRunFIDExpectError(t *testing.T, binary, workspace string, args ...string) (string, string, error) {
 	t.Helper()
+	args = withClosureIssueMutationKey(args)
 	return closureRunCommand(workspace, binary, args...)
+}
+
+var closureIssueMutationSequence uint64
+
+func withClosureIssueMutationKey(args []string) []string {
+	if !closureTypedIssueMutation(args) || closureContainsArgument(args, "--idempotency-key") {
+		return args
+	}
+	return append(args, "--idempotency-key", fmt.Sprintf("task8-integration-%d", atomic.AddUint64(&closureIssueMutationSequence, 1)))
+}
+
+func closureTypedIssueMutation(args []string) bool {
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "issue" && (args[index+1] == "create" || args[index+1] == "update" || args[index+1] == "transition") {
+			return closureContainsArgument(args, "--actor")
+		}
+	}
+	return false
+}
+
+func closureContainsArgument(args []string, target string) bool {
+	for _, argument := range args {
+		if argument == target {
+			return true
+		}
+	}
+	return false
 }
 
 func closureRunCommand(workspace, command string, args ...string) (string, string, error) {

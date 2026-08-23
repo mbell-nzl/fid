@@ -20,7 +20,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Inspect journal event",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	claimIssueForTransitionCLI(t, workspace, issueID, "developer")
@@ -29,7 +29,7 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "in_progress",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → in_progress") {
 		t.Fatalf("transition stderr = %q, want confirmation", transitionStderr)
@@ -72,7 +72,7 @@ func TestJournalInspectCommandDoesNotExposeRevertOrResponseEnvelope(t *testing.T
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Inspect non-eligible event",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 

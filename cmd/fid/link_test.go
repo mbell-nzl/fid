@@ -17,10 +17,10 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, firstStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "First issue", "--by", "developer")
+	_, firstStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "First issue", "--actor", "agent:developer")
 	firstIssueID := parseCreatedIssueID(t, firstStderr)
 
-	_, secondStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Second issue", "--by", "developer")
+	_, secondStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Second issue", "--actor", "agent:developer")
 	secondIssueID := parseCreatedIssueID(t, secondStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -854,7 +854,7 @@ func containsCommandLinkRow(rows []commandLinkRow, want commandLinkRow) bool {
 func createCommandIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
 	return parseCreatedIssueID(t, stderr)
 }
 

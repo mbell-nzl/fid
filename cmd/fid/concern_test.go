@@ -19,7 +19,7 @@ func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Raise CLI concern",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -142,7 +142,7 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Address CLI concern",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -408,7 +408,7 @@ func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, add
 		"issue", "create",
 		"--kind", "task",
 		"--title", summary,
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 

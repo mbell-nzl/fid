@@ -15,7 +15,7 @@ func TestIssueCompleteCommandCreatesAttemptOneAndReturnsJSONCompletionFields(t *
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI completion", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI completion", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	stdout, stderr := runFIDCommand(
@@ -130,7 +130,7 @@ func TestIssueCompleteCommandSupersedesPriorAttemptAndStoresInterventionFields(t
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI supersession", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI supersession", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "complete", issueID, "--by", "developer", "--tokens", "4000")
@@ -248,7 +248,7 @@ func TestIssueCompleteCommandRejectsEpicBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Epic completion reject", "--scheduling", "sequential", "--by", "tl")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Epic completion reject", "--scheduling", "sequential", "--actor", "agent:tl")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -295,7 +295,7 @@ func TestIssueCompleteCommandRejectsUnknownRoleAndMissingIssueBeforeAppend(t *te
 		{
 			name: "unknown role",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role reject", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role reject", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "complete", issueID, "--by", "intern"}
 			},

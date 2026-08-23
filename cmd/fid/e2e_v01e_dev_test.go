@@ -29,7 +29,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--kind", "epic",
 		"--title", "Developer composite smoke epic",
 		"--scheduling", "prioritised",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	assertNoNestedLockFailure(t, epicStderr)
 	epicID := parseCreatedIssueID(t, epicStderr)
@@ -44,7 +44,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite finish path",
 		"--epic", epicID,
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, finishCreateStderr)
 	finishIssueID := parseCreatedIssueID(t, finishCreateStderr)
@@ -60,7 +60,7 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		"--title", "Composite block path",
 		"--epic", epicID,
 		"--priority", "2",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, blockCreateStderr)
 	blockIssueID := parseCreatedIssueID(t, blockCreateStderr)

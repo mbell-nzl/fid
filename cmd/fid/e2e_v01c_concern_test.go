@@ -21,7 +21,7 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Phase 9 concern rebuild parity",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -139,7 +139,7 @@ func TestV01CClosureSmoke(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Phase 9 v0.1c closure smoke",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 

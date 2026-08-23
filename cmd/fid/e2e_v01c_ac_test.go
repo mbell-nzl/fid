@@ -22,7 +22,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Phase 7 AC gate parity",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	_, claimStderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -35,7 +35,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "in_progress",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → in_progress") {
 		t.Fatalf("todo -> in_progress stderr = %q, want confirmation", transitionStderr)
@@ -48,7 +48,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "dev_complete",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": in_progress → dev_complete") {
 		t.Fatalf("in_progress -> dev_complete stderr = %q, want confirmation", transitionStderr)
@@ -59,7 +59,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "qa_review",
-		"--by", "qa_lead",
+		"--actor", "agent:qa_lead",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": dev_complete → qa_review") {
 		t.Fatalf("dev_complete -> qa_review stderr = %q, want confirmation", transitionStderr)
@@ -94,7 +94,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "qa_pass",
-		"--by", "qa_lead",
+		"--actor", "agent:qa_lead",
 	)
 	if err == nil {
 		t.Fatal("qa_review -> qa_pass error = nil, want gated rejection")
@@ -146,7 +146,7 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "qa_pass",
-		"--by", "qa_lead",
+		"--actor", "agent:qa_lead",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": qa_review → qa_pass") {
 		t.Fatalf("qa_review -> qa_pass stderr = %q, want confirmation", transitionStderr)

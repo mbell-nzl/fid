@@ -17,7 +17,7 @@ func TestClaimListDefaultsToJSONAndListsLiveClaims(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim list", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim list", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer", "--note", "journal append work")
@@ -219,7 +219,7 @@ func TestClaimListOrderIsStableAcrossRebuild(t *testing.T) {
 func createClaimListIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
 	return parseCreatedIssueID(t, stderr)
 }
 

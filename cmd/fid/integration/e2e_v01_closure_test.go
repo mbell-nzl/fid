@@ -31,17 +31,17 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	closureRunFID(t, binary, workspace, "issue", "label", "add", mainIssueID, "release", "--by", "developer")
 
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "qa_reviewer"},
+		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer"},
 		`role "qa_reviewer" not permitted`)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer"},
+		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:developer"},
 		`has no live claim held by "developer"`)
 
 	closureRunFID(t, binary, workspace, "issue", "claim", mainIssueID, "--by", "developer")
-	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer")
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:developer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--by", "developer"},
+		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer"},
 		"has_completion_report")
 	closureRunFID(t, binary, workspace, "issue", "ac", "verify", mainIssueID, acID, "--status", "pass", "--by", "qa_lead")
 	firstCompletionID := closureCompleteIssue(t, binary, workspace, mainIssueID)
@@ -61,7 +61,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
 	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
-	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--by", "tl")
+	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--actor", "agent:tl")
 	assertClosureReadyTask(t, binary, workspace, seqEpicID, seqNextID)
 
 	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)

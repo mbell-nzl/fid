@@ -109,7 +109,7 @@ func TestIssueGetJSONMatchesClosedSchema(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Closed read", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Closed read", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	result := executeCommandForTest(workspace, "--json", "issue", "get", issueID)

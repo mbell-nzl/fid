@@ -24,7 +24,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Activity lifecycle finish path",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, finishCreateStderr)
 	finishIssueID := parseCreatedIssueID(t, finishCreateStderr)
@@ -88,7 +88,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Activity lifecycle peer issue",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, peerCreateStderr)
 	peerIssueID := parseCreatedIssueID(t, peerCreateStderr)
@@ -107,7 +107,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Activity lifecycle unclaim path",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, unclaimCreateStderr)
 	unclaimIssueID := parseCreatedIssueID(t, unclaimCreateStderr)
@@ -135,7 +135,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Activity lifecycle concern path",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, concernCreateStderr)
 	concernIssueID := parseCreatedIssueID(t, concernCreateStderr)

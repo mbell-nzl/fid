@@ -20,7 +20,7 @@ func TestRunRecordCreatesAgentRunAndPrintsConfirmation(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI run record",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -79,7 +79,7 @@ func TestRunRecordUnknownModelWarnsAndStillRecords(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI unknown model run",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -141,7 +141,7 @@ func TestRunRecordRejectsUnknownActorRoleBeforeAppend(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI unknown actor role",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -199,7 +199,7 @@ func TestRunRecordPolicyShowMatchesAllowedRoles(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI run policy parity",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 

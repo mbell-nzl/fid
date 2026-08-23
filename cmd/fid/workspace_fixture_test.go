@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
@@ -18,6 +19,8 @@ import (
 )
 
 var pristineWorkspaceRoot string
+
+var issueMutationTestSequence uint64
 
 func TestMain(m *testing.M) {
 	exitCode := runCommandTestSuite(m)
@@ -140,6 +143,7 @@ type commandExecutionResult struct {
 }
 
 func executeCommandForTest(workingDirectory string, args ...string) commandExecutionResult {
+	args = withIssueMutationTestKey(args)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workingDirectory)
@@ -148,6 +152,31 @@ func executeCommandForTest(workingDirectory string, args ...string) commandExecu
 	cmd.SetArgs(args)
 	err := cmd.Execute()
 	return commandExecutionResult{stdout: stdout.String(), stderr: stderr.String(), err: err}
+}
+
+func withIssueMutationTestKey(args []string) []string {
+	if !isTypedIssueMutation(args) || containsTestArgument(args, "--idempotency-key") {
+		return args
+	}
+	return append(args, "--idempotency-key", fmt.Sprintf("task8-test-%d", atomic.AddUint64(&issueMutationTestSequence, 1)))
+}
+
+func isTypedIssueMutation(args []string) bool {
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "issue" && (args[index+1] == "create" || args[index+1] == "update" || args[index+1] == "transition") {
+			return containsTestArgument(args, "--actor")
+		}
+	}
+	return false
+}
+
+func containsTestArgument(args []string, target string) bool {
+	for _, argument := range args {
+		if argument == target {
+			return true
+		}
+	}
+	return false
 }
 
 func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) {
@@ -162,7 +191,7 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 		t.Fatal("second clone differs from pristine template")
 	}
 
-	runFIDCommand(t, cloneA, "issue", "create", "--kind", "task", "--title", "Fixture isolation", "--by", "developer")
+	runFIDCommand(t, cloneA, "issue", "create", "--kind", "task", "--title", "Fixture isolation", "--actor", "agent:developer")
 	if got := snapshotWorkspace(t, cloneA); reflect.DeepEqual(got, want) {
 		t.Fatal("mutated clone still equals pristine template")
 	}
@@ -202,7 +231,7 @@ func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
 		go func() {
 			<-start
 			results <- executeCommandForTest(item.workspace,
-				"issue", "create", "--kind", "task", "--title", item.title, "--by", "developer")
+				"issue", "create", "--kind", "task", "--title", item.title, "--actor", "agent:developer")
 		}()
 	}
 	close(start)

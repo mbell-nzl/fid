@@ -29,7 +29,7 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Primary lifecycle issue",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, primaryCreateStderr)
 	primaryIssueID := parseCreatedIssueID(t, primaryCreateStderr)
@@ -42,7 +42,7 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Peer lifecycle issue",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, peerCreateStderr)
 	peerIssueID := parseCreatedIssueID(t, peerCreateStderr)
@@ -60,7 +60,7 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", primaryIssueID,
 		"--to", "in_progress",
-		"--by", "qa_reviewer",
+		"--actor", "agent:qa_reviewer",
 	)
 	if deniedErr == nil {
 		t.Fatal("qa_reviewer transition error = nil, want permission denial")
@@ -79,7 +79,7 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", primaryIssueID,
 		"--to", "in_progress",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if rejectErr == nil {
 		t.Fatal("developer transition without claim error = nil, want claim-gate rejection")
@@ -112,7 +112,7 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", primaryIssueID,
 		"--to", "in_progress",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	assertNoNestedLockFailure(t, transitionStderr)
 	if !strings.Contains(transitionStderr, "transitioned "+primaryIssueID+": todo → in_progress") {

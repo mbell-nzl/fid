@@ -7,6 +7,7 @@ import (
 )
 
 func Create(options CreateOptions) (CreateResult, error) {
+	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	request, err := normalizeCreateRequest(options)
 	if err != nil {
 		return CreateResult{}, err

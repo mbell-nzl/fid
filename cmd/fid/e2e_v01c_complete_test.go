@@ -23,7 +23,7 @@ func TestV01CHasCompletionReportGateAndRebuildParity(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "Phase 8 completion gate parity",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	_, claimStderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -36,7 +36,7 @@ func TestV01CHasCompletionReportGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "in_progress",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → in_progress") {
 		t.Fatalf("todo -> in_progress stderr = %q, want confirmation", transitionStderr)
@@ -51,7 +51,7 @@ func TestV01CHasCompletionReportGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "dev_complete",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if err == nil {
 		t.Fatal("in_progress -> dev_complete error = nil, want gated rejection")
@@ -91,7 +91,7 @@ func TestV01CHasCompletionReportGateAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "dev_complete",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": in_progress → dev_complete") {
 		t.Fatalf("in_progress -> dev_complete stderr = %q, want confirmation", transitionStderr)

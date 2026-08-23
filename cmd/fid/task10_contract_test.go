@@ -176,7 +176,7 @@ func TestTask10OperationsUseSelectedProjectOutsideWorkingDirectory(t *testing.T)
 	assertTask10ProjectOperation(t, executeCommandForTest(outside, "--project", workspace, "--json", "label", "add", "core", "--by", "developer"), "label.add")
 	assertTask10ProjectOperation(t, executeCommandForTest(outside, "--project", workspace, "--json", "label", "list"), "label.list")
 
-	created := executeCommandForTest(outside, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Selected project", "--by", "developer")
+	created := executeCommandForTest(outside, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Selected project", "--actor", "agent:developer")
 	if created.err != nil || created.stderr != "" {
 		t.Fatalf("issue create = %#v, want selected-project success", created)
 	}

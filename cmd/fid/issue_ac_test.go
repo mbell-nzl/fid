@@ -18,7 +18,7 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 	clonePristineWorkspaceInto(t, workspace)
 
 	created := executeCommandForTest(workspace,
-		"--json", "issue", "create", "--kind", "task", "--title", "AC envelope target", "--by", "developer",
+		"--json", "issue", "create", "--kind", "task", "--title", "AC envelope target", "--actor", "agent:developer",
 	)
 	if created.err != nil || created.stderr != "" {
 		t.Fatalf("issue create = %#v, want stdout-only success", created)
@@ -96,7 +96,7 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC JSON failures", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC JSON failures", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	runFIDCommand(t, workspace, "issue", "ac", "add", issueID, "--text", "existing", "--ordinal", "1", "--by", "developer")
 
@@ -129,7 +129,7 @@ func TestIssueACAddCommandAddsAcceptanceCriterionAndPrintsConfirmation(t *testin
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC add", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC add", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	stdout, stderr := runFIDCommand(
@@ -230,7 +230,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "missing by flag",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing by", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing by", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Missing role", "--ordinal", "1"}
 			},
@@ -239,7 +239,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "missing text flag",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing text", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing text", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--ordinal", "1", "--by", "developer"}
 			},
@@ -248,7 +248,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "missing ordinal flag",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing ordinal", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing ordinal", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Missing ordinal", "--by", "developer"}
 			},
@@ -257,7 +257,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "invalid ordinal",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Bad ordinal", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Bad ordinal", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Bad ordinal", "--ordinal", "0", "--by", "developer"}
 			},
@@ -266,7 +266,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "unknown role",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role", "--by", "developer")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role", "--actor", "agent:developer")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Unknown role", "--ordinal", "1", "--by", "intern"}
 			},
@@ -282,7 +282,7 @@ func TestIssueACAddCommandRejectsBeforeAppend(t *testing.T) {
 		{
 			name: "epic rejection before append",
 			args: func(t *testing.T, workspace string) []string {
-				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Epic AC reject", "--scheduling", "prioritised", "--by", "tl")
+				_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Epic AC reject", "--scheduling", "prioritised", "--actor", "agent:tl")
 				issueID := parseCreatedIssueID(t, createStderr)
 				return []string{"issue", "ac", "add", issueID, "--text", "Epic AC", "--ordinal", "1", "--by", "developer"}
 			},
@@ -339,7 +339,7 @@ func TestIssueACVerifyCommandPersistsVerificationAndPrintsConfirmation(t *testin
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC verify", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI AC verify", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	addStdout, _ := runFIDCommand(
 		t,
@@ -851,7 +851,7 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 	}
 
 	t.Run("empty list", func(t *testing.T) {
-		_, emptyIssueStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Empty AC list", "--by", "developer")
+		_, emptyIssueStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Empty AC list", "--actor", "agent:developer")
 		emptyIssueID := parseCreatedIssueID(t, emptyIssueStderr)
 
 		stdout, stderr := runFIDCommand(t, workspace, "--json", "issue", "ac", "list", emptyIssueID)
@@ -880,7 +880,7 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 func TestIssueACListJSONReportsOverLimitWithoutOutput(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC list limit", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC list limit", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -923,7 +923,7 @@ func parseAddedAcceptanceCriterionID(t *testing.T, output string) string {
 func seedIssueAcceptanceCriterion(t *testing.T, workspace string, title string) (string, string) {
 	t.Helper()
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	addStdout, _ := runFIDCommand(
 		t,

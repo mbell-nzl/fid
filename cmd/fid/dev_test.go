@@ -21,7 +21,7 @@ func TestDevStartCommandPrintsCompositeConfirmation(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI dev start",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -69,7 +69,7 @@ func TestDevGateCommandRecordsReportedResultAndDoesNotExecuteCommand(t *testing.
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI dev gate",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	runFIDCommand(
@@ -155,7 +155,7 @@ func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 		"issue", "create",
 		"--kind", "task",
 		"--title", "CLI dev policy",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -414,7 +414,7 @@ func seedCommandStartedIssue(t *testing.T, workspace, title string) string {
 		"issue", "create",
 		"--kind", "task",
 		"--title", title,
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	runFIDCommand(

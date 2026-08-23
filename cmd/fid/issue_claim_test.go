@@ -14,7 +14,7 @@ func TestIssueClaimCommandCreatesLiveClaimWithDefaultTTL(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	stdout, stderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -61,7 +61,7 @@ func TestIssueClaimCommandRenewsHolderClaimAndPreservesTTL(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim renew", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI claim renew", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	_, claimStderr := runFIDCommand(
@@ -128,7 +128,7 @@ func TestIssueUnclaimCommandReleasesHolderClaim(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI unclaim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI unclaim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -159,7 +159,7 @@ func TestIssueClaimCommandForceAcquireReportsPreviousHolder(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI force claim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI force claim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -192,7 +192,7 @@ func TestIssueClaimCommandSupportsCustomTTLNoteAndHumanReadBack(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI custom claim", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI custom claim", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		_, stderr := runFIDCommand(
@@ -223,7 +223,7 @@ func TestIssueClaimCommandSupportsCustomTTLNoteAndHumanReadBack(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI human claim", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI human claim", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		_, stderr := runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "human")
@@ -246,7 +246,7 @@ func TestIssueClaimCommandRejectsInvalidTTLBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI invalid ttl", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI invalid ttl", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -274,7 +274,7 @@ func TestIssueClaimCommandRejectsLiveConflictBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI conflict claim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI conflict claim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -310,7 +310,7 @@ func TestIssueClaimCommandRejectsDeniedForceBeforeAppend(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI denied force", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI denied force", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "qa_reviewer")
@@ -346,7 +346,7 @@ func TestIssueClaimCommandRenewsWithOverrideTTLAndRejectsNonHolder(t *testing.T)
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI renew ttl override", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI renew ttl override", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer", "--ttl", "15m", "--note", "focus mode")
@@ -372,7 +372,7 @@ func TestIssueClaimCommandRenewsWithOverrideTTLAndRejectsNonHolder(t *testing.T)
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI renew wrong holder", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI renew wrong holder", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -405,7 +405,7 @@ func TestIssueClaimCommandRejectsForceAndRenewTogetherBeforeAppend(t *testing.T)
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI force renew conflict", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI force renew conflict", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -433,7 +433,7 @@ func TestIssueClaimCommandTakesOverStaleClaimWithoutForce(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI stale claim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI stale claim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer", "--ttl", "1s")
@@ -474,7 +474,7 @@ func TestIssueClaimCommandMatchesPolicyShowForForceAcquire(t *testing.T) {
 		t.Fatal("policy show tl/issue.claim.force_acquire = false, want true")
 	}
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI policy parity claim", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI policy parity claim", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
 
@@ -504,7 +504,7 @@ func TestIssueUnclaimCommandRejectsWrongHolderRepeatAndRoleErrorsBeforeAppend(t 
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI wrong holder unclaim", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI wrong holder unclaim", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -535,7 +535,7 @@ func TestIssueUnclaimCommandRejectsWrongHolderRepeatAndRoleErrorsBeforeAppend(t 
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI repeat unclaim", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI repeat unclaim", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		runFIDCommand(t, workspace, "issue", "claim", issueID, "--by", "developer")
@@ -565,7 +565,7 @@ func TestIssueUnclaimCommandRejectsWrongHolderRepeatAndRoleErrorsBeforeAppend(t 
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI missing unclaim role", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI missing unclaim role", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		journalPath := mustJournalPath(t, workspace)
@@ -592,7 +592,7 @@ func TestIssueUnclaimCommandRejectsWrongHolderRepeatAndRoleErrorsBeforeAppend(t 
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI unknown unclaim role", "--by", "developer")
+		_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI unknown unclaim role", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		journalPath := mustJournalPath(t, workspace)

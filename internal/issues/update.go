@@ -59,6 +59,7 @@ type issueUpdateState struct {
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
+	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: workspace root is required")
 	}

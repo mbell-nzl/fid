@@ -32,27 +32,27 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20RememberEvent(t, eventIDs, assignmentEvent)
 
 	epicResult, epicEvent := p20JourneyMutation(t, workspace,
-		"issue", "create", "--kind", "epic", "--title", "Phase 20 journey", "--scheduling", "sequential", "--by", "tl",
+		"issue", "create", "--kind", "epic", "--title", "Phase 20 journey", "--scheduling", "sequential", "--actor", "agent:tl",
 	)
 	p20RememberEvent(t, eventIDs, epicEvent)
 	epicID := p20IssueID(t, epicResult)
 
 	taskResult, taskEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Exercise retained journey", "--epic", epicID,
-		"--sequence", "1", "--priority", "1", "--by", "developer",
+		"--sequence", "1", "--priority", "1", "--actor", "agent:developer",
 	)
 	p20RememberEvent(t, eventIDs, taskEvent)
 	taskID := p20IssueID(t, taskResult)
 
 	followUpResult, followUpEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Follow-up retained journey", "--epic", epicID,
-		"--sequence", "2", "--priority", "2", "--by", "developer",
+		"--sequence", "2", "--priority", "2", "--actor", "agent:developer",
 	)
 	p20RememberEvent(t, eventIDs, followUpEvent)
 	followUpID := p20IssueID(t, followUpResult)
 
 	subtaskResult, subtaskEvent := p20JourneyMutation(t, workspace,
-		"issue", "create", "--kind", "subtask", "--title", "Inspect canonical state", "--parent", taskID, "--by", "developer",
+		"issue", "create", "--kind", "subtask", "--title", "Inspect canonical state", "--parent", taskID, "--actor", "agent:developer",
 	)
 	p20RememberEvent(t, eventIDs, subtaskEvent)
 	subtaskID := p20IssueID(t, subtaskResult)
@@ -119,7 +119,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	beforeUpdate := p20IssueGet(t, workspace, taskID)
 	currentRevision := p20IssueRevision(t, beforeUpdate)
 	updateResult, updateEvent := p20JourneyMutation(t, workspace,
-		"issue", "update", taskID, "--title", "Exercise retained journey, updated", "--expected-revision", strconv.Itoa(currentRevision), "--by", "developer",
+		"issue", "update", taskID, "--title", "Exercise retained journey, updated", "--expected-revision", strconv.Itoa(currentRevision), "--actor", "agent:developer",
 	)
 	p20RememberEvent(t, eventIDs, updateEvent)
 	updatedRevision := p20Integer(t, p20Object(t, updateResult["issue"])["revision"])
@@ -131,7 +131,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	}
 
 	transitionResult, transitionEvent := p20JourneyMutation(t, workspace,
-		"issue", "transition", taskID, "--to", "cancelled", "--expected-revision", strconv.Itoa(updatedRevision), "--by", "tl",
+		"issue", "transition", taskID, "--to", "cancelled", "--expected-revision", strconv.Itoa(updatedRevision), "--actor", "agent:tl",
 	)
 	p20RememberEvent(t, eventIDs, transitionEvent)
 	transitionedRevision := p20Integer(t, p20Object(t, transitionResult["issue"])["revision"])
@@ -269,7 +269,7 @@ func p20RememberEvent(t *testing.T, eventIDs map[string]bool, eventID string) {
 func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expected, actual int) {
 	t.Helper()
 	stdout, stderr, err := closureRunFIDExpectError(t, integrationFIDBinary(t), workspace,
-		"--json", "issue", "update", issueID, "--title", "stale update must not apply", "--expected-revision", strconv.Itoa(expected), "--by", "developer",
+		"--json", "issue", "update", issueID, "--title", "stale update must not apply", "--expected-revision", strconv.Itoa(expected), "--actor", "agent:developer",
 	)
 	if err == nil || stdout != "" {
 		t.Fatalf("stale update = (%v, stdout %q, stderr %q), want stderr-only typed failure", err, stdout, stderr)

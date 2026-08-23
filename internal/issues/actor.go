@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
+	"sync/atomic"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -13,6 +14,8 @@ type standaloneActor struct {
 	id       string
 	typeName string
 }
+
+var legacyInProcessIdempotencySequence uint64
 
 func parseStandaloneActor(value string) (standaloneActor, error) {
 	parts := strings.SplitN(value, ":", 2)
@@ -32,6 +35,13 @@ func standaloneActorForOptions(actor, legacyRole string) (standaloneActor, error
 		return parseStandaloneActor("agent:" + legacyRole)
 	}
 	return parseStandaloneActor(actor)
+}
+
+func idempotencyKeyForOptions(key, legacyRole string) string {
+	if strings.TrimSpace(key) != "" || strings.TrimSpace(legacyRole) == "" {
+		return key
+	}
+	return fmt.Sprintf("legacy-in-process-%d", atomic.AddUint64(&legacyInProcessIdempotencySequence, 1))
 }
 
 func validStandaloneActorType(value string) bool {

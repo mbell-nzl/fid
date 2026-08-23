@@ -21,7 +21,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--kind", "epic",
 		"--title", "Sequential delivery epic",
 		"--scheduling", "sequential",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	seqEpicID := parseCreatedIssueID(t, seqEpicStderr)
 
@@ -34,7 +34,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--epic", seqEpicID,
 		"--sequence", "1",
 		"--priority", "2",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	seqCurrentID := parseCreatedIssueID(t, seqCurrentStderr)
 
@@ -47,7 +47,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--epic", seqEpicID,
 		"--sequence", "2",
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	seqNextID := parseCreatedIssueID(t, seqNextStderr)
 
@@ -58,7 +58,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--kind", "epic",
 		"--title", "Prioritised incident epic",
 		"--scheduling", "prioritised",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	priEpicID := parseCreatedIssueID(t, priEpicStderr)
 
@@ -70,7 +70,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--title", "Clean up backlog fallout",
 		"--epic", priEpicID,
 		"--priority", "2",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	priLowID := parseCreatedIssueID(t, priLowStderr)
 
@@ -82,7 +82,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--title", "Patch customer outage",
 		"--epic", priEpicID,
 		"--priority", "0",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	priHighID := parseCreatedIssueID(t, priHighStderr)
 
@@ -93,7 +93,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"--kind", "subtask",
 		"--title", "Capture parity checks",
 		"--parent", seqCurrentID,
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	subtaskID := parseCreatedIssueID(t, subtaskStderr)
 
@@ -172,7 +172,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		"issue", "update", seqCurrentID,
 		"--title", "Draft implementation plan v2",
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	for _, want := range []string{
 		"updated " + seqCurrentID + ":",
@@ -200,7 +200,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		workspace,
 		"issue", "transition", seqCurrentID,
 		"--to", "cancelled",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+seqCurrentID+": todo → cancelled") {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
@@ -346,7 +346,7 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 		"--kind", "task",
 		"--title", "Only actionable task",
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -361,7 +361,7 @@ func TestV01BReadyReturnsEmptyAfterAllTasksFinishedEndToEnd(t *testing.T) {
 		workspace,
 		"issue", "transition", issueID,
 		"--to", "cancelled",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	if !strings.Contains(transitionStderr, "transitioned "+issueID+": todo → cancelled") {
 		t.Fatalf("transition stderr = %q, want cancellation confirmation", transitionStderr)
