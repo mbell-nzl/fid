@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: N/A
+- Category: none
 - Condition: DEC-162 authorized retained V1 test and fixture convergence while preserving the accepted no-leaf-flags `project.rebuild` interface and role-free Event-v2 bootstrap.
 - Recovery attempts: 6
 - Next action: The Phase Runner runs the two-argument report-lint control against this committed report.
@@ -49,22 +49,22 @@ The prior BLOCKED outcome and every failed required-command result remain immuta
 - DEC-160 policy bridge red evidence for the required `internal/policy` command: `FAIL` (terminated `exit_code: 1`). Its prior green rerun printed `ok  github.com/mbell-nzl/fid/internal/policy  1.018s` (terminated `exit_code: 0`).
 - DEC-162 API red evidence: `go test ./internal/journal -run '^TestCommitIdempotentReplaysStoredResultAfterRebuild$'` printed `FAIL` because `RebuildWorkspace` still required three arguments (terminated `exit_code: 1`); after the role-free API repair it printed `ok  github.com/mbell-nzl/fid/internal/journal  0.060s` (terminated `exit_code: 0`).
 - DEC-162 SQL fixture red evidence: `go test ./internal/sqlquery -run '^TestRunReturnsStructuredRows$'` printed `FAIL` because `escalation-default` is the second sorted migration workflow (terminated `exit_code: 1`); after correcting that migration-backed expectation it printed `ok  github.com/mbell-nzl/fid/internal/sqlquery  0.138s` (terminated `exit_code: 0`).
-- `go test -tags integration ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  3.767s` (terminated `exit_code: 0`).
+- Legacy integration journey green evidence: `go test -tags integration ./cmd/fid/integration/...` printed `ok  github.com/mbell-nzl/fid/cmd/fid/integration  3.767s` (terminated `exit_code: 0`).
 - `/tmp/fid-task2-convergence --project /tmp/fid-task2-entrypoint.P9MZMC --json init --prefix FID` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-23.jsonl","project":{"id":"project-7883296cc2078cd7c69173682537a31d","issue_prefix":"FID","root":"/tmp/fid-task2-entrypoint.P9MZMC"}},"event":{"id":"EVT-20260823-000001","occurred_at":"2026-08-23T02:38:48.90909758Z"}}` (terminated `exit_code: 0`)
 - `/tmp/fid-task2-convergence --project /tmp/fid-task2-entrypoint.P9MZMC --json rebuild` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
 - `go test -race ./internal/policy -run '^(TestKnownRolesUsesV1CompatibilityVocabularyForRoleFreeV2Bootstrap|TestKnownRolesKeepsExplicitRoleFactsAuthoritative|TestKnownRolesRejectsCompatibilityForUninitializedJournal|TestKnownRolesRejectsCompatibilityForCorruptJournal|TestAuthorizeRejectsUnknownCompatibilityRole)$'` - PASS - `ok  github.com/mbell-nzl/fid/internal/policy  1.018s` (terminated `exit_code: 0`)
-- Prior attempt of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`): retained V1 callers required roles after role-free init.
-- DEC-160 byte-identical rerun of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`): retained tests still required forbidden `rebuild --by` and persisted role rows.
-- DEC-162 byte-identical rerun of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  135.014s` (terminated `exit_code: 0`)
+- `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  135.014s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- Prior attempt of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): retained V1 role-authorized packages failed after role-free init.
-- DEC-160 byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): retained rebuild-flag and role-row assertions remained.
-- DEC-162 first byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): `TestVacuumRefreshesMissingProjectionBeforeCompacting` still expected bootstrap roles, and `TestCommitIdempotentSerializesConcurrentSameKeyCalls` observed `database is locked (5)`.
-- DEC-162 later byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  25.511s  coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  25.511s  coverage: 80.6% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:                                  (statements)                          78.2%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
