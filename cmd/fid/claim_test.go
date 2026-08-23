@@ -198,7 +198,7 @@ func TestClaimListOrderIsStableAcrossRebuild(t *testing.T) {
 		t.Fatalf("before rebuild ids = %#v, want [%q, %q, %q]", got, firstID, secondID, thirdID)
 	}
 
-	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild")
 	if !strings.Contains(rebuildStdout, "rebuild complete") {
 		t.Fatalf("rebuild stdout = %q, want rebuild confirmation", rebuildStdout)
 	}

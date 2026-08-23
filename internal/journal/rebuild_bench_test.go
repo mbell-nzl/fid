@@ -36,7 +36,7 @@ func benchmarkRebuildWorkspace(b *testing.B, targetEvents int) {
 	var total time.Duration
 	for iteration := 0; iteration < b.N; iteration++ {
 		start := time.Now()
-		stats, err := RebuildWorkspace(workspace, migrationsDir, "developer")
+		stats, err := RebuildWorkspace(workspace, migrationsDir)
 		total += time.Since(start)
 		if err != nil {
 			b.Fatalf("RebuildWorkspace() error = %v", err)

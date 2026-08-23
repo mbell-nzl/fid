@@ -789,7 +789,7 @@ func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *t
 		t.Fatalf("Get(after release).Claims = %#v, want no current claims", afterRelease.Claims)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "workflow_runner"); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 

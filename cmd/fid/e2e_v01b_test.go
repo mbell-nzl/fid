@@ -282,7 +282,7 @@ func TestV01BSmokeCreateListGetUpdateTransitionReadyAndRebuildParity(t *testing.
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	for issueID, wantJSON := range beforeIssueJSON {
 		if gotJSON := mustGetIssueJSON(t, workspace, issueID); gotJSON != wantJSON {

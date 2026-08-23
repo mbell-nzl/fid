@@ -441,7 +441,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	for issueID, want := range beforeRebuild {
 		if got := mustGetIssueJSON(t, workspace, issueID); got != want {
@@ -569,7 +569,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if beforeStdout != afterStdout {
@@ -695,7 +695,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
 	if beforeStdout != afterStdout {
@@ -767,31 +767,6 @@ func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
 		}
 	})
 
-	t.Run("rebuild missing by", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "rebuild")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
-		}
-	})
-
-	t.Run("rebuild unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "rebuild", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
-		}
-	})
 }
 
 func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {

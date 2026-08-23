@@ -17,15 +17,15 @@ func TestSQLCommandAcceptsReadStatementsAsDirectLegacyJSON(t *testing.T) {
 	stdout, stderr := runFIDCommand(
 		t,
 		workspace,
-		"sql", "SELECT name, active FROM roles ORDER BY name LIMIT 2",
+		"sql", "SELECT id, active FROM workflows ORDER BY id LIMIT 2",
 	)
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
 	wantRows := []internalsqlquery.Row{
-		{"name": "developer", "active": int64(1)},
-		{"name": "human", "active": int64(1)},
+		{"id": "epic-default", "active": int64(1)},
+		{"id": "escalation-default", "active": int64(1)},
 	}
 	want := expectedCommandStructure(t, wantRows)
 	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
@@ -33,9 +33,9 @@ func TestSQLCommandAcceptsReadStatementsAsDirectLegacyJSON(t *testing.T) {
 	}
 
 	for _, query := range []string{
-		"EXPLAIN QUERY PLAN SELECT name FROM roles ORDER BY name",
-		"PRAGMA table_info(roles)",
-		"WITH selected AS (SELECT name FROM roles WHERE name = 'developer') SELECT name FROM selected",
+		"EXPLAIN QUERY PLAN SELECT id FROM workflows ORDER BY id",
+		"PRAGMA table_info(workflows)",
+		"WITH selected AS (SELECT id FROM workflows WHERE id = 'task-default') SELECT id FROM selected",
 	} {
 		t.Run(query, func(t *testing.T) {
 			stdout, stderr := runFIDCommand(t, workspace, "sql", query)

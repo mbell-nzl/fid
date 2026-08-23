@@ -79,20 +79,20 @@ func TestRunReturnsStructuredRows(t *testing.T) {
 	result, err := Run(Options{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testSQLQueryMigrationsDir(t),
-		Query:         "SELECT name, active, is_human FROM roles ORDER BY name LIMIT 2",
+		Query:         "SELECT id, active, applies_to FROM workflows ORDER BY id LIMIT 2",
 	})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
 
-	wantColumns := []string{"name", "active", "is_human"}
+	wantColumns := []string{"id", "active", "applies_to"}
 	if !reflect.DeepEqual(result.Columns, wantColumns) {
 		t.Fatalf("Run().Columns = %#v, want %#v", result.Columns, wantColumns)
 	}
 
 	wantRows := []Row{
-		{"name": "developer", "active": int64(1), "is_human": int64(0)},
-		{"name": "human", "active": int64(1), "is_human": int64(1)},
+		{"id": "epic-default", "active": int64(1), "applies_to": "epic"},
+		{"id": "escalation-default", "active": int64(1), "applies_to": "escalation"},
 	}
 	if !reflect.DeepEqual(result.Rows, wantRows) {
 		t.Fatalf("Run().Rows = %#v, want %#v", result.Rows, wantRows)

@@ -413,7 +413,7 @@ func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
 			workspace := t.TempDir()
 			clonePristineWorkspaceInto(t, workspace)
 			issueID := tt.setup(t, workspace)
-			refreshed := executeCommandForTest(workspace, "--json", "rebuild", "--by", "workflow_runner")
+			refreshed := executeCommandForTest(workspace, "--json", "rebuild")
 			if refreshed.err != nil || refreshed.stderr != "" {
 				t.Fatalf("fixture rebuild = %#v, want stdout-only success", refreshed)
 			}

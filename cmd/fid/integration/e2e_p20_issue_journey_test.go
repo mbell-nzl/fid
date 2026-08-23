@@ -150,7 +150,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	for _, issueID := range []string{epicID, taskID, followUpID, subtaskID} {
 		beforeRebuild[issueID] = p20IssueGet(t, workspace, issueID)
 	}
-	p20JourneyRead(t, workspace, "rebuild", "--by", "tl")
+	p20JourneyRead(t, workspace, "rebuild")
 	for issueID, want := range beforeRebuild {
 		if got := p20IssueGet(t, workspace, issueID); got != want {
 			t.Fatalf("canonical issue.get bytes after rebuild for %s differ\n got: %q\nwant: %q", issueID, got, want)

@@ -173,7 +173,7 @@ func TestKnownRolesTRG002CorruptTailTolerance(t *testing.T) {
 		assertPolicyCorruptJournalError(t, err, "2026-06-07.jsonl", 1)
 	})
 
-	t.Run("valid role before un-upgradeable trailing event reports corruption", func(t *testing.T) {
+	t.Run("valid role before a future-schema trailing event reports corruption", func(t *testing.T) {
 		t.Parallel()
 
 		workspace := newPolicyJournalWorkspace(t)
@@ -186,32 +186,14 @@ func TestKnownRolesTRG002CorruptTailTolerance(t *testing.T) {
 					"active": true,
 				},
 			}),
-			journal.Event{
-				EventID:     "EVT-20260607-000002",
-				EventSchema: 2,
-				EventType:   "project.initialized",
-				OccurredAt:  time.Date(2026, time.June, 7, 9, 1, 0, 0, time.UTC),
-				Actor: journal.Actor{
-					Role: "human",
-				},
-				Command: journal.Command{
-					Argv:       []string{"fid", "init"},
-					CWD:        ".",
-					FIDVersion: "0.1.0",
-				},
-			},
 		)
+		appendMalformedPolicyLine(t, workspace, "2026-06-07.jsonl", `{"event_id":"EVT-20260607-000002","event_schema":3}`)
 
 		_, err := KnownRoles(workspace)
 		if err == nil {
-			t.Fatal("KnownRoles() error = nil, want upgrade error")
+			t.Fatal("KnownRoles() error = nil, want corrupt journal error")
 		}
-		if !strings.Contains(err.Error(), `upgrade event "EVT-20260607-000002"`) {
-			t.Fatalf("KnownRoles() error = %q, want upgrade event context", err.Error())
-		}
-		if want := filepath.ToSlash(filepath.Join(".fid", "journal", "2026-06-07.jsonl")) + ":2"; !strings.Contains(filepath.ToSlash(err.Error()), want) {
-			t.Fatalf("KnownRoles() error = %q, want path %q", err.Error(), want)
-		}
+		assertPolicyCorruptJournalError(t, err, "2026-06-07.jsonl", 2)
 	})
 }
 

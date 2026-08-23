@@ -85,7 +85,7 @@ func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
 	cmd := newRootCommandAt(t.TempDir())
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"--project", workspace, "--json", "rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"--project", workspace, "--json", "rebuild"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
 	}

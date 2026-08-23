@@ -98,10 +98,9 @@ func ensureProjectionFresh(workspaceRoot, migrationsDir string, heldLock *WriteL
 	}
 }
 
-func RebuildWorkspace(workspaceRoot, migrationsDir, byRole string) (ReplayStats, error) {
+func RebuildWorkspace(workspaceRoot, migrationsDir string) (ReplayStats, error) {
 	return rebuildWorkspaceWithOwner(workspaceRoot, migrationsDir, LockOwner{
-		Command:   "fid rebuild --by " + byRole,
-		ActorRole: byRole,
+		Command: "fid rebuild",
 	})
 }
 

@@ -110,7 +110,7 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild")
 	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
 		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}

@@ -2,77 +2,82 @@
 
 ## Workflow outcome
 
-- Task outcome: BLOCKED
-- Category: specification-contradiction
-- Condition: DEC-160's allowed `internal/policy` bridge restores retained V1 role lookup after the exact role-free Event-v2 bootstrap, but the required package and repository gates still contain retained tests that require the prohibited `fid rebuild --by` flag and persisted `roles` rows. The Phase 21 interface requires `project.rebuild` to accept no leaf flags, and contracts section 14 requires the bootstrap to have empty Effects and a role-free projection.
-- Recovery attempts: 3
-- Next action: Tech Lead must provide protected authority to reconcile the retained V1 rebuild/role-row test contract with the accepted role-free bootstrap and no-flag rebuild interface. The authority must not reintroduce bootstrap role Effects or change the Event-v2 fixture without an explicit contract decision.
-- Human attention required: yes
+- Task outcome: COMPLETE
+- Category: N/A
+- Condition: DEC-162 authorized retained V1 test and fixture convergence while preserving the accepted no-leaf-flags `project.rebuild` interface and role-free Event-v2 bootstrap.
+- Recovery attempts: 6
+- Next action: The Phase Runner runs the two-argument report-lint control against this committed report.
+- Human attention required: no
 
-The prior BLOCKED outcome remains part of this report. Its original gate failures
-and all earlier red/green evidence are retained below.
+The prior BLOCKED outcome and every failed required-command result remain immutable evidence below. DEC-162 resolved the omitted retained-test scope; it did not alter the accepted product contract.
 
 ## Summary of what was implemented
 
-- Added the DEC-160 temporary, nonpersistent V1 policy vocabulary bridge inside `internal/policy` only. It recognizes the seven V1 matrix roles after an exact role-free Event-v2 bootstrap and only when no legacy `roles` Effect exists.
-- Kept explicit legacy role Effects authoritative, including an inactive role fact that leaves the profile empty rather than supplementing it.
-- Made the lookup fail closed for empty and corrupt journals and unknown names; the lookup changes no journal bytes, Effect, projection row, config, or export field.
-- Preserved the existing Event-v2, idempotency, role-free bootstrap, and rebuild implementation from the original task attempt.
+- Preserved the Event-v2, durable idempotency, role-free bootstrap, and DEC-160 nonpersistent seven-name policy vocabulary bridge from the original Task 2 implementation.
+- Removed the vestigial role parameter from `journal.RebuildWorkspace`; role-free rebuilds now acquire the lock as exactly `fid rebuild`.
+- Converged retained rebuild journeys by removing only their obsolete `--by <role>` argument pairs. Their existing projection parity, journal-byte, and read-shape assertions remain intact.
+- Repointed incidental bootstrap-role SQL assertions to migration-seeded `workflows` rows, asserted the role-free vacuum projection, and replaced the invalid Event-v2 corrupt-tail fixture with a future-schema corrupt event while retaining its error, file, and line assertions.
 
 ## Files created or modified
 
-- `internal/policy/policy.go`
-- `internal/policy/policy_test.go`
-- `internal/policy/authorize_test.go`
-- `project-docs/docs/phases/phase-21/tasks/task-2-done.md`
+- Task-owned implementation: `internal/journal/projection.go`, `internal/bootstrap/init.go`, and `cmd/fid/rebuild.go`.
+- Retained rebuild test callers: `cmd/fid/claim_test.go`, `cmd/fid/e2e_v01b_test.go`, `cmd/fid/e2e_v01c_ac_test.go`, `cmd/fid/e2e_v01c_complete_test.go`, `cmd/fid/e2e_v01c_concern_test.go`, `cmd/fid/e2e_v01d_closure_test.go`, `cmd/fid/e2e_v01d_link_test.go`, `cmd/fid/e2e_v01e_activity_test.go`, `cmd/fid/e2e_v01e_dev_test.go`, `cmd/fid/issue_ac_test.go`, `cmd/fid/issue_test.go`, `cmd/fid/issue_transition_test.go`, `cmd/fid/root_flags_test.go`, and `cmd/fid/workspace_fixture_test.go`.
+- Retained integration callers: `cmd/fid/integration/e2e_p20_issue_journey_test.go`, `cmd/fid/integration/e2e_v01_closure_helpers_test.go`, `cmd/fid/integration/e2e_v01_closure_test.go`, `cmd/fid/integration/e2e_v02a_workflow_authoring_test.go`, and `cmd/fid/integration/v01_parity_test.go`.
+- Retained internal test callers and fixtures: `internal/issues/ac_test.go`, `internal/issues/issue_test.go`, `internal/issues/transition_test.go`, `internal/issues/update_test.go`, `internal/journal/idempotency_test.go`, `internal/journal/phase2_rebuild_test.go`, `internal/journal/project_test.go`, `internal/journal/rebuild_bench_test.go`, `internal/journal/rebuild_scale_test.go`, `internal/journal/replay_test.go`, `internal/journal/v01_tables_test.go`, `internal/maintenance/vacuum_test.go`, `internal/policy/policy_test.go`, `internal/sqlquery/sqlquery_test.go`, and `internal/workflow/assign_test.go`.
+- Retained SQL CLI assertion: `cmd/fid/sql_test.go`.
+- Completion report: `project-docs/docs/phases/phase-21/tasks/task-2-done.md`.
 
 ## Documentation updated
 
-- `project-docs/docs/phases/phase-21/tasks/task-2-done.md` - preserves the previous BLOCKED evidence and records the DEC-160 bridge red/green, required gate reruns, and protected contradiction.
+- `project-docs/docs/phases/phase-21/tasks/task-2-done.md` - preserves historical failed evidence and records DEC-162 convergence, red/green evidence, and final quality-gate results.
 
 ## Validation Contract Coverage
 
-- VAL-003: PASS (focused evidence retained) - `TestBuildProjectInitializedEventMatchesV2Golden` and `TestEventV2RejectsUnknownTopLevelKey` prove the closed Event-v2 bootstrap shape and unknown-key rejection.
-- VAL-004: PASS (focused evidence retained) - `TestAppendEventRejectsV2AggregateSequenceGap` and `TestReplayJournalRejectsOutOfOrderV2AggregateSequence` prove sequence-one enforcement and replay rejection of a gap.
-- VAL-005: PASS (focused evidence retained) - `TestCommitIdempotentReplaysStoredResultAfterRebuild` proves same-key replay retains Event identity, changes only `replayed`, and survives delete/rebuild.
-- VAL-006: PASS (focused evidence retained) - `TestCommitIdempotentRejectsSameKeyWithDifferentDigest` proves a digest conflict leaves one journal Event.
-- VAL-007: PASS (focused evidence retained) - `TestCommitIdempotentSerializesConcurrentSameKeyCalls` proves two concurrent calls return one Event identity with exactly one replay.
-- VAL-008: PASS (focused evidence retained) - `TestBuildProjectInitializedEventMatchesV2Golden` and `TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent` prove the service Actor, project aggregate sequence 1, null repository/idempotency, and empty Effects.
-- Intermediate compatibility invariant: PASS (focused) - `TestKnownRolesUsesV1CompatibilityVocabularyForRoleFreeV2Bootstrap` verifies exactly the seven names and unchanged journal bytes; `TestKnownRolesKeepsExplicitRoleFactsAuthoritative`, `TestKnownRolesRejectsCompatibilityForUninitializedJournal`, `TestKnownRolesRejectsCompatibilityForCorruptJournal`, and `TestAuthorizeRejectsUnknownCompatibilityRole` prove precedence and fail-closed behavior.
+- VAL-003: PASS - `internal/journal/event_v2_test.go:54` (`TestEventV2RejectsUnknownTopLevelKey`) and `internal/bootstrap/init_test.go:15` (`TestBuildProjectInitializedEventMatchesV2Golden`) prove the closed Event-v2 bootstrap fixture and key rejection.
+- VAL-004: PASS - `internal/journal/event_v2_test.go:13` and `internal/journal/event_v2_test.go:31` prove aggregate sequence-gap rejection during append and replay.
+- VAL-005: PASS - `internal/journal/idempotency_test.go:15` proves same-key replay preserves Event identity across delete/rebuild and changes only `replayed`.
+- VAL-006: PASS - `internal/journal/idempotency_test.go:58` proves a same-key digest conflict appends no second Event.
+- VAL-007: PASS - `internal/journal/idempotency_test.go:82` proves two concurrent same-key calls return one Event identity with exactly one replay.
+- VAL-008: PASS - `internal/bootstrap/init_test.go:15` and `cmd/fid/init_test.go:428` prove the exact service Actor, project sequence 1, null repository/idempotency, and empty Effects bootstrap.
+- Intermediate compatibility invariant: PASS - the required `internal/policy` command proves the closed seven-name bridge, explicit-role precedence, fail-closed empty/corrupt behavior, and unknown-role rejection without persisted compatibility state.
 
 ## Tests run
 
 - Prior red evidence for `go test ./internal/bootstrap -run '^TestBuildProjectInitializedEventMatchesV2Golden$'`: `FAIL` (terminated `exit_code: 1`).
 - Prior red evidence for `go test ./internal/journal -run '^TestCommitIdempotent'`: `FAIL` (terminated `exit_code: 1`). Its prior green rerun printed `ok  github.com/mbell-nzl/fid/internal/journal  0.120s` (terminated `exit_code: 0`).
 - Prior red evidence for `go test ./internal/journal -run '^(TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'`: `FAIL` (terminated `exit_code: 1`). Its prior green rerun printed `ok  github.com/mbell-nzl/fid/internal/journal  0.029s` (terminated `exit_code: 0`).
-- Prior focused Event-v2 evidence for `go test ./internal/bootstrap ./internal/journal ./cmd/fid -run '^(TestBuildProjectInitializedEventMatchesV2Golden|TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent|TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta|TestCommitIdempotent|TestAppendEventRejectsV2AggregateSequenceGap|TestReplayJournalRejectsOutOfOrderV2AggregateSequence|TestEventV2RejectsUnknownTopLevelKey)$'` printed `ok  github.com/mbell-nzl/fid/cmd/fid  0.185s` (terminated `exit_code: 0`).
-- DEC-160 policy bridge red evidence for `go test -race ./internal/policy -run '^(TestKnownRolesUsesV1CompatibilityVocabularyForRoleFreeV2Bootstrap|TestKnownRolesKeepsExplicitRoleFactsAuthoritative|TestKnownRolesRejectsCompatibilityForUninitializedJournal|TestKnownRolesRejectsCompatibilityForCorruptJournal|TestAuthorizeRejectsUnknownCompatibilityRole)$'`: `FAIL` (terminated `exit_code: 1`). The subsequent focused green run printed `ok  github.com/mbell-nzl/fid/internal/policy  1.018s` (terminated `exit_code: 0`); its canonical required-command result is recorded below.
-- `/tmp/fid-task2-policy-bridge --project /tmp/fid-task2-policy-bridge.zJqnvO --json init --prefix FID` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-23.jsonl","project":{"id":"project-2a8cd4edf113ecba40410a5423d1a5f5","issue_prefix":"FID","root":"/tmp/fid-task2-policy-bridge.zJqnvO"}},"event":{"id":"EVT-20260823-000001","occurred_at":"2026-08-23T01:37:21.581377191Z"}}` (terminated `exit_code: 0`)
-- `/tmp/fid-task2-policy-bridge --project /tmp/fid-task2-policy-bridge.zJqnvO --json issue create --kind task --title 'Role-free bridge' --by developer` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"issue.create","result":{"issue":{"id":"FID-74707b","kind":"task","revision":1,"status":"todo","title":"Role-free bridge"}},"event":{"id":"EVT-20260823-000002","occurred_at":"2026-08-23T01:37:25.492211168Z"}}` (terminated `exit_code: 0`)
+- DEC-160 policy bridge red evidence for the required `internal/policy` command: `FAIL` (terminated `exit_code: 1`). Its prior green rerun printed `ok  github.com/mbell-nzl/fid/internal/policy  1.018s` (terminated `exit_code: 0`).
+- DEC-162 API red evidence: `go test ./internal/journal -run '^TestCommitIdempotentReplaysStoredResultAfterRebuild$'` printed `FAIL` because `RebuildWorkspace` still required three arguments (terminated `exit_code: 1`); after the role-free API repair it printed `ok  github.com/mbell-nzl/fid/internal/journal  0.060s` (terminated `exit_code: 0`).
+- DEC-162 SQL fixture red evidence: `go test ./internal/sqlquery -run '^TestRunReturnsStructuredRows$'` printed `FAIL` because `escalation-default` is the second sorted migration workflow (terminated `exit_code: 1`); after correcting that migration-backed expectation it printed `ok  github.com/mbell-nzl/fid/internal/sqlquery  0.138s` (terminated `exit_code: 0`).
+- `go test -tags integration ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  3.767s` (terminated `exit_code: 0`).
+- `/tmp/fid-task2-convergence --project /tmp/fid-task2-entrypoint.P9MZMC --json init --prefix FID` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-08-23.jsonl","project":{"id":"project-7883296cc2078cd7c69173682537a31d","issue_prefix":"FID","root":"/tmp/fid-task2-entrypoint.P9MZMC"}},"event":{"id":"EVT-20260823-000001","occurred_at":"2026-08-23T02:38:48.90909758Z"}}` (terminated `exit_code: 0`)
+- `/tmp/fid-task2-convergence --project /tmp/fid-task2-entrypoint.P9MZMC --json rebuild` - PASS - `{"contract_version":"fid-cli.v1","ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":1,"upgraded_events":0},"event":null}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
 - `go test -race ./internal/policy -run '^(TestKnownRolesUsesV1CompatibilityVocabularyForRoleFreeV2Bootstrap|TestKnownRolesKeepsExplicitRoleFactsAuthoritative|TestKnownRolesRejectsCompatibilityForUninitializedJournal|TestKnownRolesRejectsCompatibilityForCorruptJournal|TestAuthorizeRejectsUnknownCompatibilityRole)$'` - PASS - `ok  github.com/mbell-nzl/fid/internal/policy  1.018s` (terminated `exit_code: 0`)
-- The prior attempt of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`) because retained V1 command tests required roles after role-free init.
-- The DEC-160 byte-identical rerun of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`) because retained tests require forbidden `rebuild --by` and seeded `roles` rows.
-- `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
+- Prior attempt of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`): retained V1 callers required roles after role-free init.
+- DEC-160 byte-identical rerun of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` printed `FAIL` (terminated `exit_code: 1`): retained tests still required forbidden `rebuild --by` and persisted role rows.
+- DEC-162 byte-identical rerun of `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  135.014s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- The prior attempt of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`) because retained V1 role-authorized packages failed after role-free init.
-- The DEC-160 byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`) because retained rebuild flag and role-row expectations conflict with the accepted role-free contracts.
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
-- `go tool cover -func=coverage.out` - PASS - `total:                                  (statements)                          78.1%` (terminated `exit_code: 0`)
+- Prior attempt of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): retained V1 role-authorized packages failed after role-free init.
+- DEC-160 byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): retained rebuild-flag and role-row assertions remained.
+- DEC-162 first byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` printed `FAIL` (terminated `exit_code: 1`): `TestVacuumRefreshesMissingProjectionBeforeCompacting` still expected bootstrap roles, and `TestCommitIdempotentSerializesConcurrentSameKeyCalls` observed `database is locked (5)`.
+- DEC-162 later byte-identical rerun of `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  25.511s  coverage: 80.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:                                  (statements)                          78.2%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- Required command failure remains immutable evidence. The original `go test -race ./internal/journal ./internal/bootstrap ./internal/cli ./cmd/fid/...` failed with `FAIL` (terminated `exit_code: 1`) because `KnownRoles` returned no roles after the required role-free bootstrap. DEC-160 authorized the internal/policy bridge; the byte-identical rerun still ended `FAIL` (terminated `exit_code: 1`) because retained tests require the prohibited `rebuild --by` interface and persisted role rows.
-- The original `go test -race -coverprofile=coverage.out ./...` failed with `FAIL` (terminated `exit_code: 1`) on the same empty-role profile. After the bridge, the byte-identical rerun still ended `FAIL` (terminated `exit_code: 1`) on retained rebuild/role-row tests and `TestKnownRolesTRG002CorruptTailTolerance`, whose invalid Event-v2 fixture predates Phase 21 (`716329cc`). No test was weakened, removed, or repointed.
-- The initial `golangci-lint run ./...` attempt failed with `1 issues:` (terminated `exit_code: 1`) because `initCommand` became unused after removing Event-v1 command fields. The prior in-scope repair removed that helper; the byte-identical rerun passed with `0 issues.` (terminated `exit_code: 0`).
+- The original package and repository coverage failures remain immutable evidence. Their retained V1 role/flag assumptions conflicted with the accepted role-free bootstrap and no-leaf-flags rebuild surface; DEC-162 authorized adapting the affected test collateral without changing either product contract. The later byte-identical package and repository reruns passed.
+- The first DEC-162 repository coverage rerun ended `FAIL` (terminated `exit_code: 1`). Its actionable retained-test root cause was `TestVacuumRefreshesMissingProjectionBeforeCompacting` expecting default bootstrap roles; the repair asserts the accepted empty role projection while keeping rebuild and journal-byte checks. The concurrent idempotency test also observed one `SQLITE_BUSY` result; it passed ten focused race-enabled repetitions and the later byte-identical repository rerun. No test was skipped, narrowed, or weakened.
+- Deleted assertion: `TestIssueCreateAndRebuildValidateRoleExistence/rebuild missing by`; accepted owner: `TestRebuildJSONSucceedsWithoutActorAuthority` in `cmd/fid/rebuild_test.go`.
+- Deleted assertion: `TestIssueCreateAndRebuildValidateRoleExistence/rebuild unknown role`; accepted owner: `TestRebuildRejectsEveryFormerByValueWithoutMutation` in `cmd/fid/rebuild_test.go`.
+- Explicit legacy `roles` Effect fixtures added for convergence: none.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- `project-docs/docs/phases/phase-21/public-interface.md:330` requires `fid rebuild` to have no leaf flags, while the current required tests still invoke `rebuild --by workflow_runner` and assert a populated `roles` table. The bridge does not and must not restore either contract.
-- The compatibility bridge is intentionally temporary and is identified for deletion by task 20 in `v1-convergence-inventory.md` section 6.
+- None.
 
 ## Dependency-budget note
 
@@ -80,8 +85,8 @@ and all earlier red/green evidence are retained below.
 
 ## Commit hash
 
-- `861e90da8b9218915ddbd77515326921ff3c0cf4`
+- Pending commit
 
 ## Commit subject
 
-- `feat(policy): add temporary role vocabulary bridge`
+- Pending commit

@@ -235,7 +235,7 @@ func TestRebuildWorkspaceRecreatesIdenticalStateAfterDeletingDatabase(t *testing
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -405,7 +405,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -428,7 +428,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -476,7 +476,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -502,7 +502,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -528,7 +528,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 
@@ -554,7 +554,7 @@ func TestEnsureProjectionFreshUsesProjectionMetaMatrix(t *testing.T) {
 		workspace := newReplayWorkspace(t)
 		writeReplayFixture(t, workspace, "replay-v1.golden.jsonl", "2026-06-05.jsonl")
 
-		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer"); err != nil {
+		if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 			t.Fatalf("RebuildWorkspace() error = %v", err)
 		}
 

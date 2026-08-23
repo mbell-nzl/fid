@@ -110,7 +110,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("remove derived DB: %v", err)
 	}
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "delete-and-rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
@@ -120,10 +120,10 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureForeignKeysClean(t, binary, workspace)
 	afterMaintenance := closureMaintenanceResultAt(t, workspace, maintenanceNow)
 	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
-	assertClosureRolesAfterRebuild(t, binary, workspace)
+	assertClosureWorkflowsAfterRebuild(t, binary, workspace)
 	assertClosureJournalTracked(t, workspace)
 
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "second rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
 	if afterSchema := closureSchemaSnapshot(t, binary, workspace); afterSchema != beforeSchema {

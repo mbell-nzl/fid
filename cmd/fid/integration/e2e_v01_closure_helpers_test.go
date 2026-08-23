@@ -478,13 +478,13 @@ func assertClosureProjectedTablesEqual(t *testing.T, got, want map[string]string
 	}
 }
 
-func assertClosureRolesAfterRebuild(t *testing.T, binary, workspace string) {
+func assertClosureWorkflowsAfterRebuild(t *testing.T, binary, workspace string) {
 	t.Helper()
 
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT name FROM roles WHERE active = 1 ORDER BY name")
-	for _, role := range []string{"developer", "human", "qa_lead", "qa_reviewer", "tl", "tl_lite", "workflow_runner"} {
-		if !strings.Contains(stdout, `"name":"`+role+`"`) {
-			t.Fatalf("roles after rebuild = %q, want %q", stdout, role)
+	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT id FROM workflows WHERE active = 1 ORDER BY id")
+	for _, workflowID := range []string{"epic-default", "subtask-default", "task-default"} {
+		if !strings.Contains(stdout, `"id":"`+workflowID+`"`) {
+			t.Fatalf("workflows after rebuild = %q, want %q", stdout, workflowID)
 		}
 	}
 }

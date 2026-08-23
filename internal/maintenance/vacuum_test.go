@@ -80,8 +80,8 @@ func TestVacuumRefreshesMissingProjectionBeforeCompacting(t *testing.T) {
 	}
 
 	state := snapshotVacuumState(t, dbPath)
-	if len(state.Roles) != len(bootstrap.DefaultRoles()) {
-		t.Fatalf("roles after missing-projection vacuum = %#v, want all default roles", state.Roles)
+	if len(state.Roles) != 0 {
+		t.Fatalf("roles after missing-projection vacuum = %#v, want role-free projection", state.Roles)
 	}
 	if journalAfter := readVacuumFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
 		t.Fatal("Vacuum() changed journal bytes while refreshing projection")

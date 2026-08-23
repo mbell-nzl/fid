@@ -31,7 +31,7 @@ func TestCommitIdempotentReplaysStoredResultAfterRebuild(t *testing.T) {
 	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
 		t.Fatalf("Remove(projection) error = %v", err)
 	}
-	if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), ""); err != nil {
+	if _, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 	conn = openIdempotencyDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))

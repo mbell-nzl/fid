@@ -175,7 +175,7 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 
 	databasePath := config.WorkspacePathsForRoot(cloneA).DatabasePath
 	beforeRebuild := readWorkspaceFixtureFile(t, databasePath)
-	if _, err := journal.RebuildWorkspace(cloneA, filepath.Join("..", "..", "migrations"), "workflow_runner"); err != nil {
+	if _, err := journal.RebuildWorkspace(cloneA, filepath.Join("..", "..", "migrations")); err != nil {
 		t.Fatalf("rebuild cloned workspace: %v", err)
 	}
 	afterRebuild := readWorkspaceFixtureFile(t, databasePath)

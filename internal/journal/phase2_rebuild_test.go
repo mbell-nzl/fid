@@ -41,7 +41,7 @@ func TestRebuildWorkspacePreservesFullPhaseTwoProjectionWithRefTriggersActive(t 
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}

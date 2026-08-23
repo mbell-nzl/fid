@@ -45,7 +45,7 @@ func newRebuildCommand() *cobra.Command {
 			}
 
 			startedAt := time.Now()
-			stats, err := journal.RebuildWorkspace(workspaceRoot, rebuildMigrationsDir(), "")
+			stats, err := journal.RebuildWorkspace(workspaceRoot, rebuildMigrationsDir())
 			if err != nil {
 				return renderRebuildOperationError(cmd, jsonMode, err)
 			}

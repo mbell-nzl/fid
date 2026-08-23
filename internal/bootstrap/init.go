@@ -199,7 +199,7 @@ func verifyStagedRebuild(stagingRoot, databasePath, migrationsDir string, hooks 
 	if err != nil {
 		return fmt.Errorf("read staged projection before rebuild: %w", err)
 	}
-	if _, err := journal.RebuildWorkspace(stagingRoot, migrationsDir, ""); err != nil {
+	if _, err := journal.RebuildWorkspace(stagingRoot, migrationsDir); err != nil {
 		return fmt.Errorf("rebuild staged projection: %w", err)
 	}
 	if err := runInitHook(hooks, initStageRebuilt); err != nil {

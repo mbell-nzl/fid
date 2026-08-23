@@ -87,7 +87,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 			if got := second.Effects[1].Values["workflow_id"]; got != fixture.lastID {
 				t.Fatalf("second workflow_id = %#v, want %q", got, fixture.lastID)
 			}
-			if _, err := journal.RebuildWorkspace(workspace, migrationsDir, "tl"); err != nil {
+			if _, err := journal.RebuildWorkspace(workspace, migrationsDir); err != nil {
 				t.Fatalf("RebuildWorkspace() error = %v", err)
 			}
 			rebuilt, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

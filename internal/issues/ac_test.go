@@ -1033,7 +1033,7 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
