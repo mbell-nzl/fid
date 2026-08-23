@@ -61,8 +61,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `817ad7c50469c51dc12f88a4bc081ecd7a384d7e`
 
 ## Commit subject
 
-- Pending commit
+- `feat(policy): add envelope authority evaluator`
