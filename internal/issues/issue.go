@@ -13,16 +13,20 @@ import (
 const fidVersion = "0.1.0"
 
 type CreateOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	Kind          string
-	Title         string
-	ActorRole     string
-	ParentID      *string
-	Priority      *int
-	Sequence      *int
-	SpecMDPath    *string
-	Labels        []string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	Kind           string
+	Title          string
+	Actor          string
+	IdempotencyKey string
+	// ActorRole is retained temporarily for V1 in-process test callers. CLI
+	// transport only supplies Actor and never uses role authority.
+	ActorRole  string
+	ParentID   *string
+	Priority   *int
+	Sequence   *int
+	SpecMDPath *string
+	Labels     []string
 	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
 	// in-process callers. Canonical Issue commands never populate them.
 	OwnerRole  *string
@@ -31,13 +35,15 @@ type CreateOptions struct {
 }
 
 type CreateResult struct {
-	ID         string
-	Kind       string
-	Title      string
-	Status     string
-	Revision   int
-	EventID    string
-	OccurredAt string
+	ID             string
+	Kind           string
+	Title          string
+	Status         string
+	Revision       int
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type GetOptions struct {

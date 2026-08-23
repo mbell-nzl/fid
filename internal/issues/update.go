@@ -16,14 +16,16 @@ import (
 )
 
 type UpdateOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	ID            string
-	ActorRole     string
-	Title         *string
-	Priority      *int
-	Labels        *[]string
-	SpecMDPath    *string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	ID             string
+	Actor          string
+	IdempotencyKey string
+	ActorRole      string
+	Title          *string
+	Priority       *int
+	Labels         *[]string
+	SpecMDPath     *string
 	// OwnerRole and OwnerActor are retained only for source compatibility with
 	// V1 in-process callers. Canonical Issue updates deliberately ignore them.
 	OwnerRole        *string

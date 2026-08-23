@@ -12,7 +12,8 @@ func init() {
 func newIssueTransitionCommand() *cobra.Command {
 	var (
 		toState          string
-		actorRole        string
+		actor            string
+		idempotencyKey   string
 		expectedRevision string
 	)
 
@@ -21,6 +22,12 @@ func newIssueTransitionCommand() *cobra.Command {
 		Short: "Transition an issue.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalFlag(cmd, "issue.transition", "actor"); err != nil {
+				return err
+			}
+			if err := requireCanonicalFlag(cmd, "issue.transition", "idempotency-key"); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.transition", args[0], err)
@@ -35,7 +42,8 @@ func newIssueTransitionCommand() *cobra.Command {
 				MigrationsDir:    issueMigrationsDir(),
 				ID:               args[0],
 				ToState:          toState,
-				ActorRole:        actorRole,
+				Actor:            actor,
+				IdempotencyKey:   idempotencyKey,
 				ExpectedRevision: expected,
 			})
 			if err != nil {
@@ -48,7 +56,8 @@ func newIssueTransitionCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&toState, "to", "", "Target state")
 	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")
+	cmd.Flags().StringVar(&idempotencyKey, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.transition"))
 	return cmd
 }

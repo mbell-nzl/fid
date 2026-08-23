@@ -15,7 +15,8 @@ func newIssueUpdateCommand() *cobra.Command {
 		priority         int
 		labels           []string
 		specMDPath       string
-		actorRole        string
+		actor            string
+		idempotencyKey   string
 		expectedRevision string
 	)
 
@@ -24,6 +25,12 @@ func newIssueUpdateCommand() *cobra.Command {
 		Short: "Update an issue.",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalFlag(cmd, "issue.update", "actor"); err != nil {
+				return err
+			}
+			if err := requireCanonicalFlag(cmd, "issue.update", "idempotency-key"); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.update", args[0], err)
@@ -37,7 +44,8 @@ func newIssueUpdateCommand() *cobra.Command {
 				WorkspaceRoot:    workspaceRoot,
 				MigrationsDir:    issueMigrationsDir(),
 				ID:               args[0],
-				ActorRole:        actorRole,
+				Actor:            actor,
+				IdempotencyKey:   idempotencyKey,
 				Title:            issueCreateOptionalString(cmd, "title", title),
 				Priority:         issueCreateOptionalInt(cmd, "priority", priority),
 				Labels:           issueOptionalStringSlice(cmd, "labels", labels),
@@ -57,7 +65,8 @@ func newIssueUpdateCommand() *cobra.Command {
 	cmd.Flags().StringSliceVar(&labels, "labels", nil, "Replacement issue labels")
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "New spec markdown path")
 	cmd.Flags().StringVar(&expectedRevision, "expected-revision", "", "Required current Issue revision")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")
+	cmd.Flags().StringVar(&idempotencyKey, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.update"))
 	return cmd
 }

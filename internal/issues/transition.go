@@ -20,6 +20,8 @@ type TransitionOptions struct {
 	MigrationsDir    string
 	ID               string
 	ToState          string
+	Actor            string
+	IdempotencyKey   string
 	ActorRole        string
 	ExpectedRevision *int
 }

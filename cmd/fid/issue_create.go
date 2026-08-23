@@ -12,7 +12,8 @@ func init() {
 func newIssueCreateCommand() *cobra.Command {
 	var kind string
 	var title string
-	var actorRole string
+	var actor string
+	var idempotencyKey string
 	var epicID string
 	var parentID string
 	var priority int
@@ -25,6 +26,12 @@ func newIssueCreateCommand() *cobra.Command {
 		Use:   "create",
 		Short: "Create an issue.",
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if err := requireCanonicalFlag(cmd, "issue.create", "actor"); err != nil {
+				return err
+			}
+			if err := requireCanonicalFlag(cmd, "issue.create", "idempotency-key"); err != nil {
+				return err
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.create", "", err)
@@ -36,17 +43,18 @@ func newIssueCreateCommand() *cobra.Command {
 			}
 
 			result, err := issues.Create(issues.CreateOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				Kind:          kind,
-				Title:         title,
-				ActorRole:     actorRole,
-				ParentID:      issueParentID,
-				Priority:      issueCreateOptionalInt(cmd, "priority", priority),
-				Sequence:      issueCreateOptionalInt(cmd, "sequence", sequence),
-				SpecMDPath:    issueCreateOptionalString(cmd, "spec-md", specMDPath),
-				Labels:        labels,
-				Scheduling:    scheduling,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				Kind:           kind,
+				Title:          title,
+				Actor:          actor,
+				IdempotencyKey: idempotencyKey,
+				ParentID:       issueParentID,
+				Priority:       issueCreateOptionalInt(cmd, "priority", priority),
+				Sequence:       issueCreateOptionalInt(cmd, "sequence", sequence),
+				SpecMDPath:     issueCreateOptionalString(cmd, "spec-md", specMDPath),
+				Labels:         labels,
+				Scheduling:     scheduling,
 			})
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.create", "", err)
@@ -64,7 +72,8 @@ func newIssueCreateCommand() *cobra.Command {
 	cmd.Flags().IntVar(&sequence, "sequence", 0, "Issue sequence")
 	cmd.Flags().StringVar(&specMDPath, "spec-md", "", "Spec markdown path")
 	cmd.Flags().StringSliceVar(&labels, "label", nil, "Issue label")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone actor attribution")
+	cmd.Flags().StringVar(&idempotencyKey, "idempotency-key", "", "Idempotency key")
 	cmd.Flags().StringVar(&scheduling, "scheduling", "", "Epic scheduling")
 	cmd.SetFlagErrorFunc(issueMutationFlagError("issue.create"))
 	return cmd

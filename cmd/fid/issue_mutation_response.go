@@ -50,6 +50,8 @@ func renderIssueCreateSuccess(cmd *cobra.Command, result issues.CreateResult) er
 				"id": result.ID, "kind": result.Kind, "title": result.Title,
 				"status": result.Status, "revision": result.Revision,
 			},
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "created issue %s (%s) %q\n", result.ID, result.Kind, result.Title)

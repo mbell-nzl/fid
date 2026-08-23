@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -12,7 +11,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -31,7 +29,8 @@ func Create(options CreateOptions) (CreateResult, error) {
 	if !supportedIssueKind(kind) {
 		return CreateResult{}, &UnsupportedKindError{Kind: kind}
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueCreateAction(kind)); err != nil {
+	actor, err := parseStandaloneActor(options.Actor)
+	if err != nil {
 		return CreateResult{}, err
 	}
 	parentID := trimmedOptionalString(options.ParentID)
@@ -54,10 +53,10 @@ func Create(options CreateOptions) (CreateResult, error) {
 	}
 
 	var result CreateResult
-	commandArgv := issueCreateArgv(kind, options.Title, options.ActorRole, parentID, options.Priority, options.Sequence, specMDPath, labels, strings.TrimSpace(options.Scheduling))
+	commandArgv := issueCreateArgv(kind, options.Title, options.Actor, options.IdempotencyKey, parentID, options.Priority, options.Sequence, specMDPath, labels, strings.TrimSpace(options.Scheduling))
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		ActorRole: actor.id,
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
@@ -149,16 +148,12 @@ func Create(options CreateOptions) (CreateResult, error) {
 		}
 
 		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
+			EventSchema: journal.EventSchemaV2,
 			EventType:   "issue.created",
-			Actor: journal.Actor{
-				Role: options.ActorRole,
-			},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
+			ActorV2:     actor.eventActor(),
+			Aggregate:   journal.Aggregate{ID: issueID, Sequence: 1, Type: "issue"},
+			CommandName: "issue.create",
+			Effects:     effects,
 		})
 		if err != nil {
 			return err
@@ -170,7 +165,7 @@ func Create(options CreateOptions) (CreateResult, error) {
 		effects = append(effects, issueActivityEffect(
 			activityID,
 			event.EventID,
-			options.ActorRole,
+			actor.id,
 			timestamp,
 			issueID,
 			"issue_created",
@@ -186,43 +181,32 @@ func Create(options CreateOptions) (CreateResult, error) {
 			return err
 		}
 
-		appended, err := journal.AppendEvent(lock, event)
+		first := CreateResult{
+			ID:             issueID,
+			Kind:           kind,
+			Title:          options.Title,
+			Status:         resolvedWorkflow.InitialState,
+			Revision:       1,
+			EventID:        event.EventID,
+			OccurredAt:     event.OccurredAt.UTC().Format(time.RFC3339Nano),
+			IdempotencyKey: options.IdempotencyKey,
+		}
+		resultJSON, err := createResultJSON(first)
 		if err != nil {
 			return err
 		}
-
-		eventHash, err := journal.HashEvent(appended)
+		requestDigest, err := issueRequestDigest("issue.create", projectConfig.ProjectID, actor, map[string]any{"kind": kind, "labels": labels, "parent_id": parentIDValue(parentID), "priority": options.Priority, "scheduling": options.Scheduling, "sequence": options.Sequence, "spec_md_path": specMDPath, "title": options.Title})
 		if err != nil {
-			return fmt.Errorf("hash issue event %q: %w", appended.EventID, err)
-		}
-
-		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-		info, err := os.Stat(journalPath)
-		if err != nil {
-			return fmt.Errorf("stat issue journal %q: %w", journalPath, err)
-		}
-
-		if err := journal.ProjectEvent(conn, journal.ProjectionInput{
-			Event:     appended,
-			EventHash: eventHash,
-			File:      journalFile,
-			Line:      countJournalLines(journalPath),
-			Offset:    info.Size(),
-		}); err != nil {
 			return err
 		}
-
-		result = CreateResult{
-			ID:         issueID,
-			Kind:       kind,
-			Title:      options.Title,
-			Status:     resolvedWorkflow.InitialState,
-			Revision:   1,
-			EventID:    appended.EventID,
-			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
+		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "issue.create:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			return journal.IdempotencyMutation{EntityID: issueID, ResultJSON: resultJSON}, nil
+		})
+		if err != nil {
+			return err
 		}
-		return nil
+		result, err = createResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		return err
 	})
 	if err != nil {
 		return CreateResult{}, err
@@ -357,7 +341,7 @@ func requireExistingLabels(conn *sql.DB, labels []string) error {
 	return nil
 }
 
-func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, scheduling string) []string {
+func issueCreateArgv(kind, title, actor, idempotencyKey string, parentID *string, priority, sequence *int, specMDPath *string, labels []string, scheduling string) []string {
 	argv := []string{"fid", "issue", "create", "--kind", kind, "--title", title}
 	switch kind {
 	case "task":
@@ -384,6 +368,6 @@ func issueCreateArgv(kind, title, actorRole string, parentID *string, priority, 
 	if scheduling != "" {
 		argv = append(argv, "--scheduling", scheduling)
 	}
-	argv = append(argv, "--by", actorRole)
+	argv = append(argv, "--actor", actor, "--idempotency-key", idempotencyKey)
 	return argv
 }
