@@ -94,6 +94,14 @@ func prepareEventWithClock(lock *WriteLock, event Event, now func() time.Time) (
 			return Event{}, err
 		}
 	}
+	if event.IsV2() {
+		if err := validateV2Event(event); err != nil {
+			return Event{}, err
+		}
+		if err := validateNextAggregateSequence(journalDir, event); err != nil {
+			return Event{}, err
+		}
+	}
 
 	return event, nil
 }
