@@ -20,6 +20,7 @@ import (
 
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	retained := []string{
+		"capabilities",
 		"init",
 		"rebuild",
 		"issue create",
@@ -66,8 +67,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"maintenance vacuum",
 	}
 
-	if len(retained) != 21 || len(legacy) != 21 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 21 each", len(retained), len(legacy))
+	if len(retained) != 22 || len(legacy) != 21 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 22 and 21", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), legacy...)
 	sort.Strings(want)

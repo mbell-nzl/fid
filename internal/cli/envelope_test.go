@@ -68,7 +68,7 @@ func TestWriteFailureUsesExactContractKeys(t *testing.T) {
 	assertJSONValue(t, responseError["code"], `"issue-not-found"`)
 	assertJSONValue(t, responseError["category"], `"not-found"`)
 	assertJSONValue(t, responseError["retryable"], `false`)
-	assertJSONValue(t, responseError["subject"], `{"type":"issue","id":"FID-123"}`)
+	assertJSONValue(t, responseError["subject"], `{"id":"FID-123","type":"issue"}`)
 	assertJSONValue(t, responseError["details"], `{"id":"FID-123"}`)
 }
 

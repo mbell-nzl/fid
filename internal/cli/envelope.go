@@ -14,21 +14,6 @@ type Event struct {
 	OccurredAt string `json:"occurred_at"`
 }
 
-type successEnvelope struct {
-	ContractVersion string         `json:"contract_version"`
-	OK              bool           `json:"ok"`
-	Operation       string         `json:"operation"`
-	Result          map[string]any `json:"result"`
-	Event           *Event         `json:"event"`
-}
-
-type failureEnvelope struct {
-	ContractVersion string  `json:"contract_version"`
-	OK              bool    `json:"ok"`
-	Operation       string  `json:"operation"`
-	Error           Failure `json:"error"`
-}
-
 func WriteSuccess(writer io.Writer, operation string, result map[string]any, event *Event) error {
 	if writer == nil {
 		return fmt.Errorf("write success envelope: writer is nil")
@@ -37,13 +22,7 @@ func WriteSuccess(writer io.Writer, operation string, result map[string]any, eve
 		return fmt.Errorf("write success envelope: result is nil")
 	}
 
-	envelope := successEnvelope{
-		ContractVersion: ContractVersion,
-		OK:              true,
-		Operation:       operation,
-		Result:          result,
-		Event:           event,
-	}
+	envelope := map[string]any{"contract_version": ContractVersion, "event": event, "ok": true, "operation": operation, "result": result}
 	encoder := json.NewEncoder(writer)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(envelope); err != nil {
@@ -64,7 +43,18 @@ func WriteFailure(writer io.Writer, operation string, failure Failure) error {
 		return fmt.Errorf("write failure envelope: %w", err)
 	}
 
-	envelope := failureEnvelope{ContractVersion: ContractVersion, Operation: operation, Error: failure}
+	subject := any(nil)
+	if failure.Subject != nil {
+		subject = map[string]any{"id": failure.Subject.ID, "type": failure.Subject.Type}
+	}
+	envelope := map[string]any{
+		"contract_version": ContractVersion,
+		"error": map[string]any{
+			"category": failure.Category, "code": failure.Code, "details": failure.Details,
+			"message": failure.Message, "retryable": failure.Retryable, "subject": subject,
+		},
+		"ok": false, "operation": operation,
+	}
 	encoder := json.NewEncoder(writer)
 	encoder.SetEscapeHTML(false)
 	if err := encoder.Encode(envelope); err != nil {
