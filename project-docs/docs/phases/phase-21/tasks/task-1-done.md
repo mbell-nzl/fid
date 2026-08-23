@@ -33,7 +33,7 @@
 
 - `go test -race ./internal/db/... -run '^TestMigration0013OperationalKernelInventoryAndRoundTrip$' -count=1` - RED - `FAIL` (terminated `exit_code: 1`); before migration 0013 existed, the test reported `0013 schema missing table "activation_actor_profiles"`.
 - `go test -race ./internal/db/... -run '^TestMigration0013OperationalKernelInventoryAndRoundTrip$' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/internal/db	1.649s` (terminated `exit_code: 0`).
-- `go run ./cmd/fid init --project /tmp/fid-task-1-init.wdCmO4 --prefix FID` - PASS - `initialized fid project in .fid/` (terminated `exit_code: 0`).
+- `go run ./cmd/fid init --project /tmp/fid-task-1-init.wdCmO4 --prefix FID` - PASS - `initialized fid project in .fid/` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
