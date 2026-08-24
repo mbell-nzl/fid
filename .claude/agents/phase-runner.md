@@ -119,7 +119,11 @@ and runner-recorded repair base must also match. It requires each field exactly
 once but does not require directive-label order or contiguity. It binds every
 ordinary TRIAGE's `Originating task`, `Trigger signature`, `Attempt count`,
 `Repair category`, and `Repair authority` byte-for-byte to its external TRG
-record. It requires each TRIAGE ID and exact verdict to match the phase triage log, binds phase TRG/ESC identity and
+record. The following TASK-RECOVERY `Source` references the governing TRG; its
+exact-bound ordinary `Repair authority` is not changed merely to repeat that
+TRG ID. If direct schema-v2 TRIAGE `REPAIR` classified a blocker candidate
+returned by an active recovery awaiting REPAIR, its bound recovery replaces
+that pending dispatch only for the same task; other overlaps remain invalid. It requires each TRIAGE ID and exact verdict to match the phase triage log, binds phase TRG/ESC identity and
 exact STOP authority, and requires a STOP resume's recorded next recovery to
 retain its task, trigger, category, mode, next attempt, and governing TRG/ESC.
 Every boundary-valid DEC citation in an authority field must exist; one real

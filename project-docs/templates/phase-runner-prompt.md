@@ -101,6 +101,11 @@ Execution rules:
   originating report. It also binds the external TRG and ledger TRIAGE's exact
   `Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
   and `Repair authority`; direct REPAIR carries all five into TASK-RECOVERY.
+  That recovery's Source references the governing TRG, while its exact-bound
+  ordinary Repair authority is not changed merely to repeat the TRG ID.
+  When direct schema-v2 TRIAGE REPAIR classifies a blocker candidate returned
+  by an active recovery awaiting REPAIR, its bound recovery replaces that
+  pending dispatch only for the same task; other overlaps remain invalid.
   It rejects STOP without a preceding TRIAGE BLOCK and concrete ESC, validates
   every DEC citation in an authority field, and binds a STOP resume to its
   exact next recovery. It requires the same task across recovery, a recorded

@@ -7,6 +7,14 @@
 
 None.
 
+DEC-164 resolved ESC-21-006 on 2026-08-24. Ordinary schema-v2 TRIAGE recovery
+names its governing TRG in `Source` and preserves the external `Repair
+authority` byte-for-byte; the protected verifier correction and regression
+drills also let that bound recovery replace the pending same-task dispatch.
+The ledger remains `REPAIR_PENDING` after TRG-21-007, so Phase Runner resumes
+by appending that bound task-8 recovery, not by appending RUN-RESUME or binding
+TRG-21-008.
+
 DEC-163 resolved ESC-21-005 on 2026-08-23. A QA `REPAIR` review carries an
 ordered comma-separated owner list in exactly one `Owning task` field, every
 listed owner completes TASK-RECOVERY/REPAIR/TASK complete before a linked

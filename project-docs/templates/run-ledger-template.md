@@ -166,6 +166,13 @@ For an ordinary TRIAGE `REPAIR`, the heading task, `Trigger signature`,
 external triage record's `Originating task`, `Trigger signature`, `Attempt
 count`, `Repair category`, and `Repair authority`. A triage record is not
 merely a reference: it is the authority for those recovery identity fields.
+`Source` references the governing TRG. Do not prefix or otherwise change the
+ordinary `Repair authority` merely to repeat that TRG ID; control-conformance
+authority naming remains governed by the preceding paragraph.
+If the TRIAGE `REPAIR` classified a blocker candidate returned by an active
+schema-v2 recovery awaiting its REPAIR event, this bound TASK-RECOVERY replaces
+that pending dispatch only for the same task. Other overlap and recovery-stage
+checks remain unchanged.
 After `MATERIAL-PROGRESS` or the first `NO-PROGRESS`, the next
 control-conformance `TASK-RECOVERY` increments `Attempt count`, records the
 prior integrated HEAD as its new runner-owned `Control repair base`, and keeps

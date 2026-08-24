@@ -1411,7 +1411,7 @@ cat > "$ordinary_phase/triage-log.md" <<'EOF'
 - **Originating task:** task-1
 - **Trigger signature:** task-1:focused-test:legacy-assertion
 - **Repair category:** gate-repair
-- **Repair authority:** TRG-1-030 task spec
+- **Repair authority:** task-1 specification
 - **Attempt count:** 1
 - **Verdict:** REPAIR
 EOF
@@ -1430,7 +1430,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
 - Repair category: gate-repair
-- Repair authority: TRG-1-030 task spec
+- Repair authority: task-1 specification
 - Checkpoint: focused test failed on in-scope legacy assertion
 - Verdict: REPAIR
 - Resolution evidence: bounded same-task repair is authorized
@@ -1439,7 +1439,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Source: TRG-1-030
 - Category: gate-repair
 - Repair mode: task-scope
-- Repair authority: TRG-1-030 task spec
+- Repair authority: task-1 specification
 - Triage disposition: N/A
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
@@ -1461,6 +1461,83 @@ cat > "$ordinary_repair" <<'EOF'
 EOF
 run_sequence "drill-18 schema v2 ordinary TRIAGE binds exact recovery identity" \
   REPAIR_PENDING "$ordinary_repair"
+
+misbound_ordinary_source="$ordinary_phase/misbound-source.md"
+sed '0,/^- Source: TRG-1-030$/s//- Source: task-1 report/' \
+  "$ordinary_repair" > "$misbound_ordinary_source"
+run_invalid_sequence "drill-18 ordinary TRIAGE recovery Source retains its governing TRG" \
+  "does not preserve its governing schema v2 TRIAGE REPAIR authority" \
+  "$misbound_ordinary_source"
+
+pending_ordinary_repair="$ordinary_phase/pending-recovery-triage-repair.md"
+cat > "$pending_ordinary_repair" <<'EOF'
+### 2026-08-15 12:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 12:01 TASK-RECOVERY task-1
+- Source: task-1 report recovery
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 specification
+- Triage disposition: N/A
+- Trigger signature: task-1:gate-repair:initial-attempt
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: initial same-task recovery dispatched
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - classify the child blocker candidate
+- Next action: triage the child blocker candidate
+- Human attention required: no
+### 2026-08-15 12:02 TRIAGE TRG-1-030
+- Trigger: child blocker candidate is ordinary retained-assertion repair
+- Originating task: task-1
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Repair category: gate-repair
+- Repair authority: task-1 specification
+- Checkpoint: prior same-task recovery returned a blocker candidate
+- Verdict: REPAIR
+- Resolution evidence: bounded same-task repair is authorized
+- Triage log: unique phase triage entry confirmed
+### 2026-08-15 12:03 TASK-RECOVERY task-1
+- Source: TRG-1-030
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 specification
+- Triage disposition: N/A
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: TRG-1-030 replaces the returned same-task dispatch
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun the exact test
+- Next action: same-task repair and exact test rerun
+- Human attention required: no
+EOF
+run_sequence "drill-18 TRIAGE REPAIR replaces its pending same-task recovery" \
+  REPAIR_PENDING "$pending_ordinary_repair"
 
 misbound_ordinary_phase="$workspace/misbound-ordinary/phase-1"
 mkdir -p "$misbound_ordinary_phase"

@@ -623,8 +623,7 @@ function finish_event() {
             event_attempt != latest_triage_attempt ||
             event_category != latest_triage_category ||
             event_repair_authority != latest_triage_authority ||
-            !references_id(event_source, latest_triage_id) ||
-            !references_id(event_repair_authority, latest_triage_id)) {
+            !references_id(event_source, latest_triage_id)) {
           invalid("TASK-RECOVERY does not preserve its governing schema v2 TRIAGE REPAIR authority")
         }
       } else if (event_trigger_signature != latest_triage_trigger ||
@@ -661,7 +660,8 @@ function finish_event() {
         }
       }
     }
-    if (recovery_task != "" && recovery_stage == "needs-repair") {
+    if (recovery_task != "" && recovery_stage == "needs-repair" &&
+        !(event_directive_v2 && triage_repair_pending && event_task == recovery_task)) {
       invalid("overlapping TASK-RECOVERY precedes required REPAIR")
     } else if (recovery_task != "" && recovery_stage == "needs-continuation") {
       if (event_task != recovery_task || event_trigger_signature != recovery_trigger) {

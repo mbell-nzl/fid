@@ -4,9 +4,10 @@
 
 ## Project State
 
-**Phase 21 is active and mechanically STOPPED after QA Review 1; DEC-163
-authorizes the review-1 repair route and the ordered-owner verifier
-correction.** Tasks 1-3 are mechanically complete. Phase 20
+**Phase 21 is active at task 8 with the ledger valid at `REPAIR_PENDING`;
+DEC-164 authorizes the ordinary-TRIAGE verifier correction and exact task-8
+recovery route.** Tasks 1-7 and reviews 1/1b and 2/2b are mechanically
+complete. Phase 20
 completed/wrapped on 2026-08-22. The Phase 20 retrospective is committed in
 `../reviews/2026-08-22-phase-20-retrospective.md`; Gate D3.2 is closed by
 DEC-153; the initial slice/spec contract is DEC-154; carry-forward disposition
@@ -18,7 +19,10 @@ role-free bootstrap while bounding temporary V1 policy compatibility; DEC-161
 selects the valid ledger recovery record without a verifier change; DEC-162
 converges retained V1 tests inside the task whose accepted change breaks them;
 DEC-163 makes a QA `REPAIR` review carry an ordered owner list and authorizes
-the matching `workflow-sequence-lint.sh` correction with new drills.
+the matching `workflow-sequence-lint.sh` correction with new drills. DEC-164
+keeps ordinary schema-v2 repair authority byte-exact and locates its governing
+TRG reference in TASK-RECOVERY `Source`; its bound same-task recovery replaces
+the pending dispatch whose blocker candidate the TRIAGE classified.
 
 ## Planned Boundary
 
@@ -36,11 +40,11 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-3 COMPLETE; REVIEW 1 REPAIR / STOPPED AT
-  TRG-21-006**. The DEC-163 verifier correction lands first; then the Phase
-  Runner appends DEC-163's exact RUN-RESUME and TASK-RECOVERY (governing
-  TRG-21-006 / ESC-21-005, attempt 2) for review-1 MF-1 on task-1, then MF-2 on
-  task-3, then fresh re-review `review-1b`. Task 4 remains gated.
+- Dispatch state: **TASKS 1-7 COMPLETE; TASK 8 REPAIR_PENDING AFTER
+  TRG-21-007**. The DEC-164 verifier correction lands first; then the Phase
+  Runner appends the exact ordinary task-8 recovery governed by TRG-21-007 and
+  dispatches only its same-task continuation. No RUN-RESUME or new TRIAGE is
+  required because the ledger never accepted TRG-21-008 or entered STOPPED.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
   `exit_code: 0` after the DEC-159 approval-state update.
@@ -53,11 +57,10 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Human applies DEC-163 items 4-5 to `workflow-sequence-lint.sh` and the drills,
-   confirms `run-drills.sh` PASS plus a standalone `VALID state=STOPPED` on the
-   phase-21 ledger, and commits on `phase-21`.
-2. Phase Runner appends DEC-163's RUN-RESUME attempt 2 and its bound task-1
-   `qa-rework` TASK-RECOVERY, then dispatches only review-1 MF-1.
-3. After task 1 completes, Phase Runner runs review-1 MF-2 as a task-3
-   `qa-rework` recovery, then spawns a fresh independent `review-1b` of tasks
-   1-3. Task 4 is released only on a re-review PASS.
+1. Human-directed workflow maintenance lands DEC-164's protected verifier,
+   drill, and canonical-doc correction with full deterministic evidence.
+2. Phase Runner validates `REPAIR_PENDING`, appends the pending TRG-21-007
+   task-8 recovery with exact external authority, and dispatches only task 8.
+3. Developer preserves failed attempts and retained assertion strength, fixes
+   the remaining in-scope report/gate defects, reruns all five exact commands,
+   and returns task 8 for two-argument report lint and Window 3 review.

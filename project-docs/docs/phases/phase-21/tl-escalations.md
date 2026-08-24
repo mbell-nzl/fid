@@ -2,11 +2,29 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-163 resolve ESC-21-001..005. The ledger remains in its
-stopped state until the DEC-163 verifier change lands and the Phase Runner
-appends the authorized resume.
+None. DEC-160 through DEC-164 resolve ESC-21-001..006. The ledger is valid at
+`REPAIR_PENDING` after TRG-21-007; DEC-164 authorizes the verifier correction
+that lets Phase Runner append its exact ordinary task-8 recovery.
 
 ## Resolved Escalations
+
+### ESC-21-006 - Schema-v2 ordinary repair authority cannot bind TASK-RECOVERY
+
+- **Raised by:** TRG-21-008 after the exact task-8 recovery governed by
+  TRG-21-007 was rejected.
+- **Resolution:** DEC-164. In ordinary schema-v2 repair, TASK-RECOVERY `Source`
+  references the governing TRG while the five external identity fields,
+  including `Repair authority`, remain byte-identical. The verifier removes
+  only its redundant requirement that the already exact-bound ordinary
+  authority also contain the TRG ID and admits the bound same-task recovery as
+  replacement for the pending dispatch whose blocker candidate was classified.
+  Other overlaps plus control-conformance, legacy recovery, STOP/RUN-RESUME,
+  decision, and exact external-binding guards are unchanged.
+- **Recovery:** a Human-directed workflow-infrastructure change adds the
+  ordinary-authority positive drill and Source negative drill, runs the full
+  drill/workflow checks, and commits the corrected verifier. The Phase Runner
+  then appends the pending TRG-21-007 task-8 recovery directly; no RUN-RESUME,
+  new TRIAGE, historical rewrite, or task-8 contract change applies.
 
 ### ESC-21-005 - Multi-owner QA review recovery cannot bind the single-owner sequence control
 

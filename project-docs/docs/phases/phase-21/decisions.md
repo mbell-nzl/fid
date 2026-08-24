@@ -488,6 +488,113 @@
   `project-docs/templates/run-ledger-template.md`;
   `project-docs/templates/mid-phase-review-template.md`; VAL-001; VAL-010.
 
+### DEC-164: Ordinary schema-v2 TRIAGE recovery preserves exact authority and replaces its pending same-task dispatch. Closes ESC-21-006
+
+- **Date:** 2026-08-24
+- **Context:** TRG-21-007 classified task 8's retained Issue/Event/activity/
+  Actor failures as ordinary in-scope repair under the accepted task-8
+  specification and DEC-162. Its schema-v2 external and ledger TRIAGE records
+  therefore bind `Repair authority` exactly as `task-8 specification and
+  DEC-162`. `workflow-sequence-lint.sh` then requires the following
+  TASK-RECOVERY to both equal that exact value and reference `TRG-21-007` in
+  the same field. No string can satisfy both predicates. The byte-identical
+  candidate failed `INVALID TASK-RECOVERY does not preserve its governing
+  schema v2 TRIAGE REPAIR authority`; adding the TRG ID would instead violate
+  the accepted external binding. It simultaneously failed `INVALID overlapping
+  TASK-RECOVERY precedes required REPAIR`: TRG-21-007 was accepted while the
+  prior task-8 dispatch awaited classification, but direct TRIAGE `REPAIR`
+  requires its newly bound TASK-RECOVERY immediately, so no intervening REPAIR
+  can close the old dispatch. TRG-21-008 and ESC-21-006 correctly stopped
+  the proposed protected verifier change. The ledger itself never accepted
+  that second TRIAGE or a STOP and remains valid at `REPAIR_PENDING` after
+  TRG-21-007.
+- **Decision:**
+  1. **Ordinary authority representation.** For a schema-v2 ordinary TRIAGE
+     `REPAIR`, TASK-RECOVERY continues to copy `Originating task`, `Trigger
+     signature`, `Attempt count`, `Repair category`/`Category`, and `Repair
+     authority` byte-for-byte from the authoritative external TRG through the
+     ledger TRIAGE. Its `Source` must reference the governing TRG. Its exact
+     `Repair authority` is not prefixed, suffixed, or otherwise changed merely
+     to repeat that TRG ID.
+  2. **Pending same-task handoff.** When schema-v2 direct TRIAGE `REPAIR`
+     classifies a blocker candidate returned by an active recovery whose stage
+     is `needs-repair`, its immediately bound TASK-RECOVERY replaces that
+     returned dispatch only when the task identity is unchanged. The governing
+     TRG supplies the new trigger, attempt, category, and authority. A different
+     task, a missing TRIAGE bind, any other recovery stage, or any ordinary
+     overlapping recovery remains invalid.
+  3. **Control authority remains distinct.** A control-conformance
+     TASK-RECOVERY still requires `Repair authority` to name the governing
+     TRIAGE, and all typed-directive, decision, allowlist, protected-verifier,
+     retry, report-repair, and scope checks remain unchanged. Legacy pre-v2
+     recovery and STOP/RUN-RESUME authority checks also remain unchanged.
+  4. **Authorized verifier correction.** In the schema-v2
+     `triage_repair_pending` comparison only,
+     `project-docs/tools/workflow-sequence-lint.sh` removes the redundant
+     predicate that `event_repair_authority` reference `latest_triage_id`.
+     It retains exact equality with `latest_triage_authority`, the Source TRG
+     reference, and the other four exact identity comparisons. The separate
+     control-conformance check continues to require the authority's TRG ID. In
+     the `needs-repair` overlap check only, an exact schema-v2 pending TRIAGE
+     recovery for the same task is admitted as the item-2 replacement; all
+     other overlap checks remain intact.
+  5. **Required drills.** The existing ordinary schema-v2 TRIAGE fixture uses
+     an external `Repair authority` that does not contain its TRG ID and must
+     validate when TASK-RECOVERY copies it exactly and names the TRG in
+     `Source`. A companion negative fixture removes the TRG from `Source` and
+     must remain rejected. A third fixture begins with an active same-task
+     recovery, records direct TRIAGE `REPAIR`, and proves its bound replacement
+     recovery reaches `REPAIR_PENDING`. Every existing drill, including
+     unrelated overlap rejection, must still pass.
+  6. **Execution route.** This is protected workflow infrastructure, not task-8
+     product work and not a control-conformance recovery. A Human-directed
+     session outside the phase loop applies items 4-5, updates the canonical
+     workflow docs/prompts, runs `project-docs/tools/drills/run-drills.sh` and
+     `project-docs/tools/workflow-lint.sh`, proves the current phase ledger is
+     `VALID state=REPAIR_PENDING`, proves an exact TRG-21-007 recovery candidate
+     appends to a scratch copy, and commits on `phase-21`. No historical ledger,
+     triage, task report, test assertion, or escalation record is rewritten.
+  7. **Phase-21 recovery.** No RUN-RESUME is appended: the ledger never entered
+     STOPPED. After item 6 lands, the Phase Runner validates the ledger and
+     appends the pending `TASK-RECOVERY task-8` governed by TRG-21-007 with
+     category `in-scope-implementation`, repair mode `task-scope`, trigger
+     `task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract`,
+     attempt 1, `Source` naming `TRG-21-007`, exact `Repair authority` of
+     `task-8 specification and DEC-162`, and no-progress `0/2`. It then
+     dispatches only the task-8 continuation defined by TRG-21-007. TRG-21-008
+     and ESC-21-006 are resolved historical evidence, not ledger events to bind.
+  8. **No product or gate change.** Task 8, VAL-025..027, its five exact
+     commands, retained assertion subjects/strength, public Issue contract,
+     Event schema, activity vocabulary, Actor semantics, and report-lint
+     contract are unchanged.
+- **Consequences:** Ordinary schema-v2 repair now has one authority source and
+  one provenance reference instead of an impossible double encoding, and a
+  direct REPAIR verdict can replace the same dispatch whose blocker candidate
+  it classified. Exact external binding remains fail-closed,
+  control-conformance remains separately guarded, and task 8 can resume without
+  rewriting accepted history or weakening any product assertion. ESC-21-006 is
+  resolved once item 6 lands.
+- **Execution evidence:** The pre-change verifier blob from
+  `44370af13c1c5c39e9e040065bc70e15e30b8deb` rejected the exact scratch
+  task-8 candidate with both `INVALID TASK-RECOVERY does not preserve its
+  governing schema v2 TRIAGE REPAIR authority` and `INVALID overlapping
+  TASK-RECOVERY precedes required REPAIR` (terminated `exit_code: 1`). After
+  the correction, `project-docs/tools/drills/run-drills.sh` ended `DRILLS PASS
+  mechanical drills completed with no misses` (terminated `exit_code: 0`),
+  the live ledger ended `VALID state=REPAIR_PENDING` (terminated `exit_code:
+  0`), and the byte-identical candidate against a scratch phase directory
+  ended `APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`).
+  `project-docs/tools/workflow-lint.sh` ended `PASS workflow-lint completed
+  with no failures`, provider sync check passed, and `git diff --check` was
+  silent success (each terminated `exit_code: 0`).
+- **Refs:** TRG-21-007; TRG-21-008; ESC-21-006; DEC-162;
+  `project-docs/tools/workflow-sequence-lint.sh` schema-v2
+  `triage_repair_pending` and control-conformance checks;
+  `project-docs/tools/drills/run-drills.sh` ordinary-TRIAGE drills;
+  `09_AI_WORKFLOW.md` sections 2.3, 2.4, and 9;
+  `project-docs/templates/run-ledger-template.md`;
+  `project-docs/templates/triage-log-template.md`.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -504,7 +611,7 @@ verdicts are completed at phase wrap-up.
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
 | `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, and superseded-contract test convergence are explicit. |
-| `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163 | Schema-v2 external identity fields are plain single-line scalars; a QA `REPAIR` review carries an ordered owner list and closes only after every listed owner completes. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164 | Schema-v2 external identity fields are plain single-line scalars; a QA `REPAIR` review carries an ordered owner list; ordinary TRIAGE recovery preserves exact external Repair authority and replaces only its pending same-task dispatch. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
 
@@ -531,6 +638,17 @@ exact RUN-RESUME boundary. ESC-21-001..003 are resolved without rewriting any
 TRG or ledger entry. Hindsight verdict: all three BLOCK outcomes were correct
 under the authority available when written; TRG-21-002 should have used a
 task-prefixed plain scalar initially, which would have avoided TRG-21-003.
+
+TRG-21-007 correctly classified task 8's retained-contract collision as
+ordinary in-scope convergence under DEC-162. TRG-21-008 correctly escalated the
+protected verifier definition change after the exact TASK-RECOVERY candidate
+proved the accepted five-field byte binding and the additional authority TRG
+reference mutually exclusive. DEC-164 keeps the former, locates provenance in
+`Source`, removes the redundant schema-v2 ordinary-repair predicate, and lets
+the bound task-8 recovery replace the pending task-8 dispatch that produced the
+classified blocker candidate.
+Hindsight verdict: both outcomes were correct under the authority available;
+no historical record needs correction.
 
 ## Workflow Notes
 

@@ -251,7 +251,11 @@ Triage rules:
   byte-for-byte through the ledger TRIAGE into TASK-RECOVERY (`Repair category`
   maps to TASK-RECOVERY `Category`). RESUME/BLOCK uses `N/A` for repair
   category or authority when none applies. The external TRG is authoritative,
-  not merely a referenced narrative. These five values are plain, single-line
+  not merely a referenced narrative. The TASK-RECOVERY `Source` references the
+  governing TRG; its `Repair authority` remains the external scalar exactly and
+  is not changed merely to repeat that TRG ID. The separate control-conformance
+  route still requires its typed `Repair authority` to name the governing
+  TRIAGE. These five values are plain, single-line
   schema scalars: write their bytes directly after the field label. Markdown
   code delimiters, emphasis, links, or quotation marks are not presentation
   wrappers and therefore must not surround a value. Narrative fields may use
@@ -266,7 +270,11 @@ Triage rules:
   control-conformance directive. The Phase Runner must not advance: it appends
   `TASK-RECOVERY`, keeps the originating task identity and trigger budget,
   dispatches the matching same-task continuation, reruns required verification,
-  and repeats any affected independent review.
+  and repeats any affected independent review. When this verdict classifies a
+  blocker candidate returned by an active schema-v2 recovery awaiting its
+  REPAIR event, the immediately bound TASK-RECOVERY replaces that pending
+  dispatch only for the same task. It does not permit cross-task replacement or
+  bypass any other recovery stage.
 - A **protected gate/control definition change** changes a command, assertion's
   accepted pass/fail semantics, accepted status, scope,
   threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless
@@ -435,7 +443,12 @@ Responsibilities:
     an actual advance. After a schema-v2 marker, the validator requires the
     complete typed control directive and binds its values byte-for-byte to the
     governing real phase triage-log entry. It also binds the five ordinary
-    TRIAGE authority fields byte-for-byte. Every TRIAGE ID and exact verdict
+    TRIAGE authority fields byte-for-byte and requires the following
+    TASK-RECOVERY `Source` to reference the governing TRG; it does not add that
+    ID to the exact-bound ordinary `Repair authority`. A direct schema-v2
+    TRIAGE `REPAIR` may replace the active `needs-repair` dispatch that returned
+    its blocker candidate only when the bound recovery keeps the same task;
+    other overlaps remain invalid. Every TRIAGE ID and exact verdict
     must match that log; TRG/ESC identity is bound to the ledger phase. It
     rejects STOP without its exact preceding TRIAGE BLOCK/ESC and binds
     RUN-RESUME to the exact next task, trigger, category, mode, and attempt.

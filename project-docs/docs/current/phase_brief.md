@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / STOPPED After Review 1 / Review-1 Repair Authorized (DEC-163)**
+> Status: **Active / Task 8 REPAIR_PENDING / Recovery Authorized (DEC-164)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -43,6 +43,11 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   one `Owning task` field; every listed owner completes recovery, repair, and
   task completion before the fresh re-review. `CORRECTION` is evidence-only.
   The `workflow-sequence-lint.sh` correction and its drills are authorized.
+- DEC-164: ordinary schema-v2 TRIAGE recovery names its TRG in `Source` and
+  preserves the external `Repair authority` exactly. The verifier correction
+  removes the contradictory extra authority-reference predicate and lets the
+  bound same-task recovery replace the pending dispatch that returned the
+  blocker candidate.
 
 ## Planning Authorities
 
@@ -106,7 +111,8 @@ observed termination. Reviews are `qa/review-1.md`..`qa/review-7.md`; checkpoint
 Every external schema-v2 `Originating task`, `Trigger signature`, `Attempt
 count`, `Repair category`, and `Repair authority` value is a plain scalar, never
 wrapped in Markdown backticks; each trigger begins with its exact originating
-task plus `:`. A REVIEW `REPAIR` lists every Must-fix owner in the one `Owning
+task plus `:`. Ordinary recovery references its TRG in `Source` without
+changing the exact-bound `Repair authority`. A REVIEW `REPAIR` lists every Must-fix owner in the one `Owning
 task` field, in Repair Plan order; each owner is repaired in turn before the
 fresh re-review.
 
@@ -125,26 +131,25 @@ All four planning gates are complete: Heavy shape and Gate D3.2 accepted, plan
 Ready at `e8a636e`, no unresolved refinement, Human execution approval under
 DEC-159.
 
-Tasks 1-3 are mechanically complete. QA Review 1 returned `REPAIR`: MF-1 to
-task-1 (VAL-001 exhaustive 0013 inventory), MF-2 to task-3 (VAL-010 named
-deferred-surface probes). The ledger is valid, `STOPPED` at TRG-21-006, and the
-Tech Lead must not edit it.
+Tasks 1-7 and review windows 1/1b and 2/2b are mechanically complete. Task 8
+has committed implementation/report checkpoint
+`44370af13c1c5c39e9e040065bc70e15e30b8deb`. TRG-21-007 correctly classified
+the remaining retained-contract convergence as ordinary task-8 repair under
+DEC-162. TRG-21-008/ESC-21-006 caught the verifier contradiction; DEC-164
+resolves it without changing task 8 or accepted product behavior.
 
-**Precondition.** DEC-163 items 4-5 land first: the authorized
-`workflow-sequence-lint.sh` ordered-owner correction plus drills, verified by
-`project-docs/tools/drills/run-drills.sh` PASS and a standalone
-`VALID state=STOPPED` on the phase-21 ledger, committed on `phase-21`. This is
-Human-executed workflow infrastructure, not a Runner or Developer task.
+**Precondition.** DEC-164's `workflow-sequence-lint.sh` correction, positive
+ordinary-authority drill, Source negative drill, pending same-task replacement
+drill, canonical workflow-doc sync, full drill PASS, workflow-lint PASS, and
+exact scratch append proof land on `phase-21`. This is Human-executed workflow
+infrastructure outside the phase loop.
 
-Then the Phase Runner appends RUN-RESUME with governing TRG `TRG-21-006`,
-governing ESC `ESC-21-005`, resolution authority `DEC-163`, trigger signature
-`task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding`,
-attempt count 2, continuing task `task-1`, and this exact next recovery:
-
-`task-1 | qa-rework | task-scope | task-1:orchestration-integrity:review-1:multi-owner-ledger-recovery-binding | 2`
-
-The bound TASK-RECOVERY names `TRG-21-006` and `DEC-163` in both Source and
-Repair authority, restarts no-progress at `0/2`, and dispatches only MF-1. After
-task 1 completes, MF-2 runs as an ordinary task-3 `qa-rework` recovery under
-`task-3:qa-rework:review-1` at attempt 1. Then fresh re-review `review-1b` of
-tasks 1-3 with `Re-review of: review-1`. Task 4 is gated on review-1b.
+The ledger remains valid at `REPAIR_PENDING` after TRG-21-007. The Phase Runner
+does not append RUN-RESUME, TRIAGE TRG-21-008, or STOP. It appends the pending
+`TASK-RECOVERY task-8` with category `in-scope-implementation`, repair mode
+`task-scope`, trigger
+`task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract`,
+attempt 1, `Source` naming `TRG-21-007`, exact `Repair authority` `task-8
+specification and DEC-162`, and no-progress `0/2`. It then dispatches only the
+TRG-21-007 task-8 continuation, preserving failed evidence and assertion
+strength and rerunning all five unchanged task commands.

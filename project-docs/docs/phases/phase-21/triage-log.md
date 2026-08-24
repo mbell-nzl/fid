@@ -259,3 +259,65 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   narrowing is superseded by DEC-163 item 1 and its named first owner `task-1`
   matches the accepted list order. The Phase Runner appends the RUN-RESUME; the
   Tech Lead does not edit `run-ledger.md`.
+
+---
+
+## TRG-21-007 - Task 8 retained assertions require accepted-contract convergence
+
+- **Trigger:** Task 8 retained Issue convergence exposes an alleged protected contradiction between accepted Phase 21 Event-v2, kebab-case activity, and attribution-only standalone Actor contracts and retained test assertions; the child also returned a malformed BLOCKED report that report-lint rejected.
+- **Originating task:** task-8
+- **Trigger signature:** task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract
+- **Repair category:** in-scope-implementation
+- **Repair authority:** task-8 specification and DEC-162
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- **Candidate:** malformed `OUTCOME BLOCKED` report and retained-test gate failure
+- **Attempt count:** 1
+- **Checkpoint:** implementation commit e712f85d08a0b3259b23badd34d9306bf0a10f9b and report checkpoint 44370af13c1c5c39e9e040065bc70e15e30b8deb; prompt-attached git rev-parse --verify results and subject matches passed. The Phase Runner report-lint observed `OUTCOME BLOCKED` with exit_code 2, including missing `next_action` and invalid category `protected-contract-conflict`.
+- **Verdict:** REPAIR
+- **Reasoning:** DEC-162 establishes that retained V1 tests and fixtures are not protected contracts, and its standing rule explicitly applies to task 8's `--by` to `--actor` convergence. The Phase 21 public interface and inventory uniquely require typed standalone Actor attribution, keyed Event-v2 Issue mutations, and kebab-case accepted activity values; the retained assertions must converge while preserving their subjects and strength. The failed required gates and malformed report keep task 8 open but do not require a protected contract change.
+- **Local decisions made:** retained assertions for Issue Event fields, activity values, and standalone Actor behavior must be migrated to the already accepted Phase 21 contract under task 8; the child-authored `BLOCKED` outcome is not authoritative lifecycle state and must be replaced by a valid recovery/completion report that preserves the failed evidence.
+- **Resolution evidence:** `project-docs/docs/phases/phase-21/public-interface.md` requires retained standalone mutations to use `--actor <type>:<id>` as attribution only and never kit authority, and specifies Event-producing mutation idempotency plus kebab-case ActivityEvent values. `v1-convergence-inventory.md` assigns Issue create/update/transition Event-v2 conversion and retained activity normalization to task 8 and applies DEC-162's no-weakening retained-test convergence rule expressly to task 8. The prompt-attached focused/package, lint, and repository failures are recoverable task-scope evidence; no reproduced canonical-control mismatch exists.
+- **If REPAIR:** owning task task-8; category in-scope-implementation; next action dispatch a same-task continuation to converge the failing retained Issue/Event/activity/Actor assertions and lint findings in task-8 scope, preserve failed attempts and assertion strength, rerun every unchanged required command, then write and commit a valid report with the Phase Runner's unchanged two-argument report-lint path; no ESC.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no reintroduction of `--by`, V1 Event fields, snake-case accepted activity values, standalone role authority, public-interface changes, Event-schema or persistence changes, task/QA/spec/decision/run-ledger changes, required-command or assertion-semantics changes, test weakening, `t.Skip`, build tags, `-run` narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access.
+- **Exact verification:** `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...`; `gofmt -l cmd internal`; `golangci-lint run ./...`; `go test -race -coverprofile=coverage.out ./...`; `go tool cover -func=coverage.out` in `/home/mark/projects/fid`; after the report commit, `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-8-done.md project-docs/docs/phases/phase-21/tasks/task-8-issue-actor-convergence.md` in `/home/mark/projects/fid`.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- **Control repair base:** 44370af13c1c5c39e9e040065bc70e15e30b8deb
+- **If BLOCK:** N/A
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-21/decisions.md DEC-162; project-docs/docs/current/decisions_active.md DEC-162; project-docs/docs/phases/phase-21/v1-convergence-inventory.md sections 1, 1.2, and 3; project-docs/docs/phases/phase-21/public-interface.md lines 88-98 and 331-350; project-docs/docs/phases/phase-21/tasks/task-8-issue-actor-convergence.md lines 19-28 and 40-72; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+---
+
+## TRG-21-008 - Schema-v2 ordinary repair authority cannot bind TASK-RECOVERY
+
+- **Trigger:** The accepted ordinary REPAIR authority in TRG-21-007 cannot bind to a schema-v2 TASK-RECOVERY because workflow-sequence-lint.sh requires the byte-identical Repair authority value to also reference TRG-21-007, while the external TRG's exact Repair authority is 'task-8 specification and DEC-162'. The exact TASK-RECOVERY candidate is rejected; adding the TRG ID would violate external TRG byte binding.
+- **Originating task:** task-8
+- **Trigger signature:** task-8:orchestration-integrity:workflow-sequence-lint:ordinary-triage-authority-binding
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** TRG-21-007 / project-docs/docs/phases/phase-21/run-ledger.md append candidate
+- **Candidate:** schema-v2 TASK-RECOVERY task-8 append candidate
+- **Attempt count:** 1
+- **Checkpoint:** runner-recorded control repair base 44370af13c1c5c39e9e040065bc70e15e30b8deb; prompt-attached commit verification resolves it as `docs(task): checkpoint phase-21 task-8 conflict`, with full-hash verification and subject match passed.
+- **Verdict:** BLOCK
+- **Reasoning:** The accepted schema-v2 contract requires ordinary TRIAGE REPAIR authority to bind byte-for-byte from the external TRG into TASK-RECOVERY. The canonical verifier additionally requires the bound TASK-RECOVERY Repair authority to reference TRG-21-007, but the binding authority is exactly `task-8 specification and DEC-162` and contains no TRG ID. Changing that verifier requirement or admitting an authority representation that differs from the external TRG changes protected canonical workflow-control definition and semantics. `workflow-sequence-lint.sh` is expressly excluded from normal control-conformance self-repair.
+- **Local decisions made:** none
+- **Resolution evidence:** The attached exact append reproducer required a valid bound schema-v2 TASK-RECOVERY using task-8, the governing TRG-21-007 trigger and attempt, category `in-scope-implementation`, mode `task-scope`, and exact external Repair authority. It observed `INVALID TASK-RECOVERY does not preserve its governing schema v2 TRIAGE REPAIR authority; INVALID overlapping TASK-RECOVERY precedes required REPAIR` (terminated exit_code: 1). Prefixing the authority with `TRG-21-007 / ` would violate the accepted byte-identical external TRIAGE binding.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** project-docs/tools/workflow-sequence-lint.sh; project-docs/tools/workflow-control-scope-lint.sh; project-docs/docs/phases/phase-21/run-ledger.md; triage-log history; task, spec, QA, decision, public-interface, product, test, dependency, report, prompt, template, and generated paths; and no command, assertion, status, semantics, scope, threshold, budget, tolerance, or policy changes.
+- **Exact verification:** `project-docs/tools/workflow-sequence-lint.sh project-docs/docs/phases/phase-21/run-ledger.md --append-stdin` in `/home/mark/projects/fid` using a byte-identical TASK-RECOVERY candidate copied from TRG-21-007.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- **Control repair base:** 44370af13c1c5c39e9e040065bc70e15e30b8deb
+- **If BLOCK:** category workflow policy / protected verifier definition; ESC-21-006 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision reconciles the schema-v2 ordinary TRIAGE-to-TASK-RECOVERY byte-binding contract with the canonical verifier's additional TRG-reference requirement, then authorizes any verifier or contract-definition change and recovery route.
+- **Human attention required:** yes
+- **References:** TRG-21-007; project-docs/tools/workflow-sequence-lint.sh lines 619-637; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/templates/triage-log-template.md; project-docs/docs/phases/phase-21/decisions.md DEC-162.
