@@ -70,7 +70,7 @@
 - No dependency changes.
 
 ## Commit hash
-- Pending commit
+- `099906daf6795f79d9e669d562a88702dbc33068`
 
 ## Commit subject
-- Pending commit
+- `fix(issue): converge retained actor events`
