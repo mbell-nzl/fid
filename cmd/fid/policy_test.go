@@ -8,33 +8,17 @@ import (
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	internalpolicy "github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
 )
 
-func TestPolicyShowUsesDirectLegacyJSONWithoutFormatFlag(t *testing.T) {
+func TestPublicPolicyCommandIsAbsent(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	if flag := newPolicyShowCommand().Flags().Lookup("format"); flag != nil {
-		t.Fatalf("policy show --format flag = %#v, want absent", flag)
-	}
-
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("stderr = %q, want empty", stderr)
-	}
-	if !strings.HasSuffix(stdout, "\n") {
-		t.Fatalf("stdout = %q, want one trailing newline", stdout)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-	if gotActions := commandPolicyActions(rows); !equalIssueIDs(gotActions, expectedPolicyActions()) {
-		t.Fatalf("policy actions = %#v, want %#v", gotActions, expectedPolicyActions())
-	}
-	if _, enveloped := decodeCommandJSONStructure(t, stdout).(map[string]any); enveloped {
-		t.Fatalf("policy show JSON = %s, want unenveloped legacy rows", stdout)
+	result := executeCommandForTest(workspace, "policy", "show")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+		t.Fatalf("policy show = %#v, want absent public command", result)
 	}
 }
 
@@ -77,12 +61,9 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 
 	activityBefore := countActivityLogRows(t, conn)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("stderr = %q, want empty", stderr)
-	}
-	if strings.TrimSpace(stdout) == "" {
-		t.Fatal("stdout = empty, want policy matrix output")
+	result := executeCommandForTest(workspace, "policy", "show")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+		t.Fatalf("policy show = %#v, want absent public command", result)
 	}
 
 	afterPayload, err := os.ReadFile(journalPath)
@@ -99,18 +80,9 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 		t.Fatalf("activity_log rows after policy show = %d, want unchanged %d", activityAfter, activityBefore)
 	}
 
-	stdout, stderr, err = runFIDCommandExpectError(t, workspace, "policy", "show", "--by", "developer")
-	if err == nil {
-		t.Fatal("Execute(--by) error = nil, want unknown flag rejection")
-	}
-	if stdout != "" {
-		t.Fatalf("stdout with --by = %q, want empty", stdout)
-	}
-	if stderr != "" {
-		t.Fatalf("stderr with --by = %q, want empty", stderr)
-	}
-	if !strings.Contains(err.Error(), "unknown flag: --by") {
-		t.Fatalf("Execute(--by) error = %q, want unknown flag rejection", err.Error())
+	result = executeCommandForTest(workspace, "policy", "show", "--by", "developer")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+		t.Fatalf("policy show with V1 flag = %#v, want absent public command", result)
 	}
 }
 
@@ -118,30 +90,6 @@ func TestPolicyShowDoesNotGrantStandaloneIssueAuthority(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "developer"); got {
-		t.Fatal("policy show developer/issue.create.epic = true, want false")
-	}
-	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "tl"); !got {
-		t.Fatal("policy show tl/issue.create.epic = false, want true")
-	}
-	for _, action := range []string{"workflow.define", "workflow.assign"} {
-		if got := commandPolicyCellAllowed(t, rows, action, "tl"); !got {
-			t.Fatalf("policy show tl/%s = false, want true", action)
-		}
-		if got := commandPolicyCellAllowed(t, rows, action, "human"); !got {
-			t.Fatalf("policy show human/%s = false, want true", action)
-		}
-		if got := commandPolicyCellAllowed(t, rows, action, "developer"); got {
-			t.Fatalf("policy show developer/%s = true, want false", action)
-		}
-	}
 
 	attributedStdout, attributedStderr := runFIDCommand(
 		t,
@@ -176,43 +124,15 @@ func TestPolicyShowDoesNotGrantStandaloneIssueAuthority(t *testing.T) {
 	}
 }
 
-func TestPolicyShowIncludesWorkflowAuthoringRows(t *testing.T) {
+func TestWorkflowAuthoringDoesNotNeedPublicPolicyInspection(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("stderr = %q, want empty", stderr)
+	result := executeCommandForTest(workspace, "policy", "show")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+		t.Fatalf("policy show = %#v, want absent public command", result)
 	}
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-	for _, action := range []string{"workflow.define", "workflow.assign"} {
-		if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
-			t.Fatalf("policy show missing allowed %s row", action)
-		}
-	}
-}
-
-func expectedPolicyActions() []string {
-	rows := internalpolicy.MatrixRows()
-	actions := make([]string, 0, len(rows))
-	for _, row := range rows {
-		actions = append(actions, row.Action)
-	}
-	return actions
-}
-
-func commandPolicyActions(rows []any) []string {
-	actions := make([]string, 0, len(rows))
-	for _, row := range rows {
-		fields, ok := row.(map[string]any)
-		if !ok {
-			continue
-		}
-		action, _ := fields["action"].(string)
-		actions = append(actions, action)
-	}
-	return actions
 }
 
 func countActivityLogRows(t *testing.T, conn *sql.DB) int {
@@ -225,15 +145,14 @@ func countActivityLogRows(t *testing.T, conn *sql.DB) int {
 	return count
 }
 
+// Retained V1 dev/completion fixtures continue to use this internal matrix helper
+// until their replacement-bound callers are removed in task 20.
 func commandPolicyCellAllowed(t *testing.T, rows []any, action, role string) bool {
 	t.Helper()
 
 	for _, row := range rows {
 		fields, ok := row.(map[string]any)
-		if !ok {
-			continue
-		}
-		if fields["action"] != action {
+		if !ok || fields["action"] != action {
 			continue
 		}
 		value, ok := fields[role].(bool)

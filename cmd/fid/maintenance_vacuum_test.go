@@ -4,14 +4,13 @@ import (
 	"bytes"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"testing"
 
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-func TestMaintenanceVacuumCommandAuthorizesCompactsAndPreservesState(t *testing.T) {
+func TestMaintenanceVacuumCommandIsUnavailableAndPreservesState(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -25,19 +24,18 @@ func TestMaintenanceVacuumCommandAuthorizesCompactsAndPreservesState(t *testing.
 	defer closeCommandDB(t, conn)
 	activityBefore := countActivityLogRows(t, conn)
 
-	for _, role := range []string{"tl", "human"} {
-		t.Run(role, func(t *testing.T) {
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "maintenance", "vacuum", "--by", role)
-			if err != nil {
-				t.Fatalf("maintenance vacuum error = %v", err)
-			}
-			if stdout != "" {
-				t.Fatalf("maintenance vacuum stdout = %q, want empty", stdout)
-			}
-			if !regexp.MustCompile(`(?m)^vacuum complete — \.fid/fid\.sqlite: \d+ B → \d+ B$`).MatchString(stderr) {
-				t.Fatalf("maintenance vacuum stderr = %q, want size confirmation", stderr)
-			}
-		})
+	for _, args := range [][]string{{"maintenance", "vacuum"}, {"maintenance", "vacuum", "--by", "tl"}} {
+		result := executeCommandForTest(workspace, args...)
+		if result.err == nil || result.stdout != "" {
+			t.Fatalf("maintenance vacuum %v = %#v, want rejected without output", args, result)
+		}
+		want := "capability is unavailable"
+		if containsTestArgument(args, "--by") {
+			want = "unknown flag: --by"
+		}
+		if !strings.Contains(result.stderr, want) {
+			t.Fatalf("maintenance vacuum %v = %#v, want %q", args, result, want)
+		}
 	}
 	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
 		t.Fatal("maintenance vacuum changed journal bytes")
@@ -57,60 +55,30 @@ func TestMaintenanceVacuumCommandRejectsUnauthorizedRolesBeforeMutation(t *testi
 		t.Fatalf("read journal: %v", err)
 	}
 
-	for _, testCase := range []struct {
-		role       string
-		wantStderr string
-	}{
-		{role: "", wantStderr: "error: --by is required"},
-		{role: "unknown", wantStderr: `error: role "unknown" not in project profile`},
-		{role: "developer", wantStderr: `error: role "developer" not permitted for action "maintenance.vacuum"`},
-		{role: "qa_reviewer", wantStderr: `error: role "qa_reviewer" not permitted for action "maintenance.vacuum"`},
-		{role: "qa_lead", wantStderr: `error: role "qa_lead" not permitted for action "maintenance.vacuum"`},
-		{role: "tl_lite", wantStderr: `error: role "tl_lite" not permitted for action "maintenance.vacuum"`},
-		{role: "workflow_runner", wantStderr: `error: role "workflow_runner" not permitted for action "maintenance.vacuum"`},
-	} {
-		role := testCase.role
-		t.Run(role, func(t *testing.T) {
-			args := []string{"maintenance", "vacuum"}
-			if role != "" {
-				args = append(args, "--by", role)
-			}
-			stdout, stderr, commandErr := runFIDCommandExpectError(t, workspace, args...)
-			if commandErr == nil {
-				t.Fatal("maintenance vacuum error = nil, want role rejection")
-			}
-			if stdout != "" {
-				t.Fatalf("maintenance vacuum stdout = %q, want empty", stdout)
-			}
-			if !strings.Contains(stderr, testCase.wantStderr) {
-				t.Fatalf("maintenance vacuum stderr = %q, want %q", stderr, testCase.wantStderr)
-			}
-			if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
-				t.Fatal("rejected maintenance vacuum changed journal bytes")
-			}
-		})
+	for _, args := range [][]string{{"maintenance", "vacuum"}, {"maintenance", "vacuum", "--by", "unknown"}} {
+		result := executeCommandForTest(workspace, args...)
+		if result.err == nil || result.stdout != "" {
+			t.Fatalf("maintenance vacuum %v = %#v, want rejected without output", args, result)
+		}
+		want := "capability is unavailable"
+		if containsTestArgument(args, "--by") {
+			want = "unknown flag: --by"
+		}
+		if !strings.Contains(result.stderr, want) {
+			t.Fatalf("maintenance vacuum %v = %#v, want %q", args, result, want)
+		}
+		if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+			t.Fatal("unavailable maintenance vacuum changed journal bytes")
+		}
 	}
 }
 
-func TestMaintenanceVacuumPolicyShowMatchesEnforcement(t *testing.T) {
+func TestMaintenanceVacuumHasNoPublicPolicySurface(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-	for _, testCase := range []struct {
-		role string
-		want bool
-	}{
-		{role: "tl", want: true},
-		{role: "human", want: true},
-		{role: "workflow_runner", want: false},
-	} {
-		if got := commandPolicyCellAllowed(t, rows, "maintenance.vacuum", testCase.role); got != testCase.want {
-			t.Fatalf("policy show maintenance.vacuum/%s = %t, want %t", testCase.role, got, testCase.want)
-		}
+	result := executeCommandForTest(workspace, "policy", "show")
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+		t.Fatalf("policy show = %#v, want absent public command", result)
 	}
 }

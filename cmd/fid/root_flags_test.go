@@ -112,7 +112,7 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 		flag string
 	}{
 		{"legacy json", []string{"--json", "journal", "inspect", "EVT-missing"}, "--json"},
-		{"legacy project", []string{"--project", t.TempDir(), "maintenance", "vacuum"}, "--project"},
+		{"unavailable maintenance", []string{"--project", t.TempDir(), "maintenance", "vacuum"}, "capability"},
 	} {
 		fixture := fixture
 		t.Run(fixture.name, func(t *testing.T) {
@@ -130,27 +130,46 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 			if stdout.Len() != 0 {
 				t.Fatalf("stdout = %q, want no handler output", stdout.String())
 			}
-			if !strings.Contains(err.Error(), fixture.flag+" is not available") {
+			if !strings.Contains(err.Error(), fixture.flag+" is not available") && !strings.Contains(err.Error(), "is unavailable") {
 				t.Fatalf("Execute() error = %q, want explicit %s rejection", err, fixture.flag)
 			}
-			if got := stderr.String(); !strings.Contains(got, "error: "+fixture.flag+" is not available") {
+			if got := stderr.String(); !strings.Contains(got, "error: "+fixture.flag+" is not available") && !strings.Contains(got, "error: capability is unavailable") {
 				t.Fatalf("stderr = %q, want concise explicit %s rejection", got, fixture.flag)
 			}
 		})
 	}
 }
 
-func TestRootFlagsRejectBeforeEachConvertedLegacyJSONRead(t *testing.T) {
+func TestRootFlagsAcceptConvertedReadsAndRejectOnlyLegacyDiagnostics(t *testing.T) {
 	for _, fixture := range []struct {
 		name    string
 		command []string
 	}{
-		{"policy show", []string{"policy", "show"}},
-		{"claim list", []string{"claim", "list"}},
 		{"activity list", []string{"activity", "list"}},
 		{"concern list", []string{"concern", "list"}},
 		{"stats tokens", []string{"stats", "tokens"}},
 		{"stats cost", []string{"stats", "cost"}},
+	} {
+		for _, rootFlag := range []string{"--json", "--project"} {
+			t.Run(fixture.name+" "+rootFlag, func(t *testing.T) {
+				workspace := clonePristineWorkspace(t)
+				args := append([]string{rootFlag}, fixture.command...)
+				if rootFlag == "--project" {
+					args = append([]string{rootFlag, workspace, "--json"}, fixture.command...)
+				}
+				result := executeCommandForTest(workspace, args...)
+				if result.err != nil || result.stderr != "" || result.stdout == "" {
+					t.Fatalf("%s %s = %#v, want accepted JSON read", fixture.name, rootFlag, result)
+				}
+			})
+		}
+	}
+
+	for _, fixture := range []struct {
+		name    string
+		command []string
+	}{
+		{"claim list", []string{"claim", "list"}},
 		{"sql", []string{"sql", "SELECT 1"}},
 		{"journal inspect", []string{"journal", "inspect", "EVT-missing"}},
 	} {
@@ -180,5 +199,18 @@ func TestRootFlagsRejectBeforeEachConvertedLegacyJSONRead(t *testing.T) {
 				}
 			})
 		}
+	}
+
+	for _, rootFlag := range []string{"--json", "--project"} {
+		t.Run("policy absent "+rootFlag, func(t *testing.T) {
+			args := []string{rootFlag, "policy", "show"}
+			if rootFlag == "--project" {
+				args = []string{rootFlag, clonePristineWorkspace(t), "--json", "policy", "show"}
+			}
+			result := executeCommandForTest(clonePristineWorkspace(t), args...)
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
+				t.Fatalf("policy show %s = %#v, want absent command", rootFlag, result)
+			}
+		})
 	}
 }
