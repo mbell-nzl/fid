@@ -18,24 +18,30 @@ func newIssueLabelCommand() *cobra.Command {
 }
 
 func newIssueLabelAddCommand() *cobra.Command {
-	var actorRole string
+	var actor, key string
 
 	cmd := &cobra.Command{
 		Use:   "add <issue-id> <label>",
 		Short: "Add one label to an issue without replacing the rest.",
 		Args:  canonicalExactArgs("issue.label.add", 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			for _, flag := range []string{"actor", "idempotency-key"} {
+				if err := requireCanonicalFlag(cmd, "issue.label.add", flag); err != nil {
+					return err
+				}
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.add", args[0], err)
 			}
 
 			result, err := issues.AddLabel(issues.AddLabelOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				IssueID:       args[0],
-				Label:         args[1],
-				ActorRole:     actorRole,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				IssueID:        args[0],
+				Label:          args[1],
+				Actor:          actor,
+				IdempotencyKey: key,
 			})
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.add", args[0], err)
@@ -45,36 +51,43 @@ func newIssueLabelAddCommand() *cobra.Command {
 				return err
 			}
 			if jsonMode {
-				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.add", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.add", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 			}
 			return writeIssueLine(cmd.OutOrStdout(), "added label %q to %s\n", result.Label, result.IssueID)
 		},
 	}
 
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("issue.label.add"))
 	return cmd
 }
 
 func newIssueLabelRemoveCommand() *cobra.Command {
-	var actorRole string
+	var actor, key string
 
 	cmd := &cobra.Command{
 		Use:   "remove <issue-id> <label>",
 		Short: "Remove one label from an issue without changing the rest.",
 		Args:  canonicalExactArgs("issue.label.remove", 2),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			for _, flag := range []string{"actor", "idempotency-key"} {
+				if err := requireCanonicalFlag(cmd, "issue.label.remove", flag); err != nil {
+					return err
+				}
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.remove", args[0], err)
 			}
 
 			result, err := issues.RemoveLabel(issues.RemoveLabelOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				IssueID:       args[0],
-				Label:         args[1],
-				ActorRole:     actorRole,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				IssueID:        args[0],
+				Label:          args[1],
+				Actor:          actor,
+				IdempotencyKey: key,
 			})
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.label.remove", args[0], err)
@@ -84,13 +97,14 @@ func newIssueLabelRemoveCommand() *cobra.Command {
 				return err
 			}
 			if jsonMode {
-				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.remove", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.label.remove", map[string]any{"issue_id": result.IssueID, "label": result.Label, "issue_revision": result.IssueRevision, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 			}
 			return writeIssueLine(cmd.OutOrStdout(), "removed label %q from %s\n", result.Label, result.IssueID)
 		},
 	}
 
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("issue.label.remove"))
 	return cmd
 }

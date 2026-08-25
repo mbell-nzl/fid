@@ -1,14 +1,16 @@
 package links
 
 type AddOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	FromType      string
-	FromID        string
-	Relation      string
-	ToType        string
-	ToID          string
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	FromType       string
+	FromID         string
+	Relation       string
+	ToType         string
+	ToID           string
+	Actor          string
+	IdempotencyKey string
+	ActorRole      string
 }
 
 type AddResult struct {
@@ -17,17 +19,21 @@ type AddResult struct {
 	IssueRevisions []IssueRevision
 	EventID        string
 	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type RemoveOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	FromType      string
-	FromID        string
-	Relation      string
-	ToType        string
-	ToID          string
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	FromType       string
+	FromID         string
+	Relation       string
+	ToType         string
+	ToID           string
+	Actor          string
+	IdempotencyKey string
+	ActorRole      string
 }
 
 type RemoveResult struct {
@@ -36,6 +42,8 @@ type RemoveResult struct {
 	IssueRevisions []IssueRevision
 	EventID        string
 	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type ListOptions struct {

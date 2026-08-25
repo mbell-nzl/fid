@@ -3,12 +3,14 @@ package requirements
 // SyncOptions defines the inputs for syncing requirement pointers from a source
 // markdown document into the workspace requirements table.
 type SyncOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	SourceDoc     string
-	ActorRole     string
-	TypeFilter    string
-	RequirementID string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	SourceDoc      string
+	Actor          string
+	IdempotencyKey string
+	ActorRole      string
+	TypeFilter     string
+	RequirementID  string
 }
 
 // SyncResult reports the persisted changes from a requirement sync run.
@@ -18,6 +20,10 @@ type SyncResult struct {
 	Updated        int
 	Unchanged      int
 	RequirementIDs []string
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type requirementRow struct {

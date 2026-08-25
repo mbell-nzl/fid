@@ -2,26 +2,22 @@ package requirements
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"slices"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
-)
-
-const (
-	actionRequirementSync = "requirement.sync"
-	fidVersion            = "0.1.0"
 )
 
 // Sync parses requirement pointers from a markdown source document and upserts
 // them into the requirements table through one journal event.
 func Sync(options SyncOptions) (SyncResult, error) {
+	options.IdempotencyKey = requirementIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return SyncResult{}, fmt.Errorf("requirement sync: workspace root is required")
 	}
@@ -32,7 +28,8 @@ func Sync(options SyncOptions) (SyncResult, error) {
 	if sourceDoc == "" {
 		return SyncResult{}, fmt.Errorf("requirement sync: --source-doc is required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionRequirementSync); err != nil {
+	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	if err != nil {
 		return SyncResult{}, err
 	}
 
@@ -41,7 +38,7 @@ func Sync(options SyncOptions) (SyncResult, error) {
 		return SyncResult{}, err
 	}
 
-	commandArgv := requirementSyncArgv(sourceDoc, options.TypeFilter, options.RequirementID, options.ActorRole)
+	commandArgv := requirementSyncArgv(sourceDoc, options.TypeFilter, options.RequirementID, options.Actor, options.IdempotencyKey)
 	result := SyncResult{
 		SourceDoc:      filepath.ToSlash(filepath.Clean(sourceDoc)),
 		RequirementIDs: collectRequirementIDs(parsed),
@@ -49,7 +46,7 @@ func Sync(options SyncOptions) (SyncResult, error) {
 
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		ActorRole: actor.id,
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
@@ -60,6 +57,25 @@ func Sync(options SyncOptions) (SyncResult, error) {
 			return err
 		}
 		defer closeRequirementsConn(conn)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		if err != nil {
+			return err
+		}
+		digest, err := requirementRequestDigest(projectConfig.ProjectID, actor, map[string]any{"id": options.RequirementID, "source_doc": result.SourceDoc, "type": options.TypeFilter})
+		if err != nil {
+			return err
+		}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "requirement.sync:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			decoded, err := syncResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 
 		effects, created, updated, unchanged, err := buildSyncEffects(conn, parsed)
 		if err != nil {
@@ -70,35 +86,33 @@ func Sync(options SyncOptions) (SyncResult, error) {
 		result.Unchanged = unchanged
 
 		if len(effects) == 0 {
+			result.IdempotencyKey = options.IdempotencyKey
 			return nil
 		}
-
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
-			EventType:   "requirement.synced",
-			Actor: journal.Actor{
-				Role: options.ActorRole,
-			},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-			Effects: effects,
+		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: result.SourceDoc, Type: "requirement-sync"})
+		if err != nil {
+			return err
+		}
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "requirement.synced", ActorV2: actor.eventActor(), Aggregate: journal.Aggregate{ID: result.SourceDoc, Sequence: sequence, Type: "requirement-sync"}, CommandName: "requirement.sync", Effects: effects}
+		seed := result
+		seed.IdempotencyKey = options.IdempotencyKey
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+			seed.OccurredAt = prepared.OccurredAt.UTC().Format(time.RFC3339Nano)
+			encoded, err := syncResultJSON(seed)
+			if err != nil {
+				return journal.IdempotencyMutation{}, err
+			}
+			return journal.IdempotencyMutation{EntityID: result.SourceDoc, ResultJSON: encoded}, nil
 		})
 		if err != nil {
 			return err
 		}
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		decoded, err := syncResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
 		if err != nil {
 			return err
 		}
-		return projectRequirementsEvent(options.WorkspaceRoot, conn, appended)
+		result = decoded
+		return nil
 	})
 	if err != nil {
 		return SyncResult{}, err
@@ -175,7 +189,7 @@ func buildSyncEffects(conn *sql.DB, parsed []requirementRow) ([]journal.Effect, 
 	return effects, created, updated, unchanged, nil
 }
 
-func requirementSyncArgv(sourceDoc, typeFilter, requirementID, actorRole string) []string {
+func requirementSyncArgv(sourceDoc, typeFilter, requirementID, actor, key string) []string {
 	argv := []string{"fid", "requirement", "sync", "--source-doc", sourceDoc}
 	if trimmed := strings.TrimSpace(typeFilter); trimmed != "" {
 		argv = append(argv, "--type", trimmed)
@@ -183,7 +197,7 @@ func requirementSyncArgv(sourceDoc, typeFilter, requirementID, actorRole string)
 	if trimmed := strings.TrimSpace(requirementID); trimmed != "" {
 		argv = append(argv, "--id", trimmed)
 	}
-	return append(argv, "--by", actorRole)
+	return append(argv, "--actor", actor, "--idempotency-key", key)
 }
 
 func collectRequirementIDs(rows []requirementRow) []string {
@@ -237,40 +251,6 @@ func requirementRowsEqual(left, right requirementRow) bool {
 		left.Status == right.Status
 }
 
-func projectRequirementsEvent(workspaceRoot string, conn *sql.DB, event journal.Event) error {
-	eventHash, err := journal.HashEvent(event)
-	if err != nil {
-		return fmt.Errorf("hash requirement event %q: %w", event.EventID, err)
-	}
-
-	journalFile := event.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-	info, err := os.Stat(journalPath)
-	if err != nil {
-		return fmt.Errorf("stat requirement journal %q: %w", journalPath, err)
-	}
-
-	return journal.ProjectEvent(conn, journal.ProjectionInput{
-		Event:     event,
-		EventHash: eventHash,
-		File:      journalFile,
-		Line:      countJournalLines(journalPath),
-		Offset:    info.Size(),
-	})
-}
-
-func countJournalLines(path string) int {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return 0
-	}
-	trimmed := strings.TrimSpace(string(payload))
-	if trimmed == "" {
-		return 0
-	}
-	return len(strings.Split(trimmed, "\n"))
-}
-
 func nullRequirementString(value sql.NullString) *string {
 	if !value.Valid {
 		return nil
@@ -288,4 +268,25 @@ func dereferenceRequirementString(value *string) any {
 
 func closeRequirementsConn(conn *sql.DB) {
 	_ = conn.Close()
+}
+
+func syncResultJSON(result SyncResult) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"created": result.Created, "event_occurred_at": result.OccurredAt, "idempotency_key": result.IdempotencyKey, "replayed": false, "requirement_ids": result.RequirementIDs, "source_doc": result.SourceDoc, "unchanged": result.Unchanged, "updated": result.Updated})
+	return string(payload), err
+}
+
+func syncResultFromJSON(raw, eventID string, replayed bool) (SyncResult, error) {
+	var value struct {
+		Created        int      `json:"created"`
+		OccurredAt     string   `json:"event_occurred_at"`
+		IdempotencyKey string   `json:"idempotency_key"`
+		RequirementIDs []string `json:"requirement_ids"`
+		SourceDoc      string   `json:"source_doc"`
+		Unchanged      int      `json:"unchanged"`
+		Updated        int      `json:"updated"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return SyncResult{}, fmt.Errorf("decode stored requirement sync result: %w", err)
+	}
+	return SyncResult{SourceDoc: value.SourceDoc, Created: value.Created, Updated: value.Updated, Unchanged: value.Unchanged, RequirementIDs: value.RequirementIDs, EventID: eventID, OccurredAt: value.OccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
 }

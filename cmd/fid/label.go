@@ -21,7 +21,8 @@ func newLabelCommand() *cobra.Command {
 
 func newLabelAddCommand() *cobra.Command {
 	var (
-		actorRole   string
+		actor       string
+		key         string
 		colour      string
 		description string
 	)
@@ -31,18 +32,24 @@ func newLabelAddCommand() *cobra.Command {
 		Short: "Create a label.",
 		Args:  canonicalExactArgs("label.add", 1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			for _, flag := range []string{"actor", "idempotency-key"} {
+				if err := requireCanonicalFlag(cmd, "label.add", flag); err != nil {
+					return err
+				}
+			}
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return renderLabelError(cmd, "label.add", err)
 			}
 
 			result, err := labels.Add(labels.AddOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				Name:          args[0],
-				Colour:        optionalStringFlag(cmd, "colour", colour),
-				Description:   optionalStringFlag(cmd, "description", description),
-				ActorRole:     actorRole,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				Name:           args[0],
+				Colour:         optionalStringFlag(cmd, "colour", colour),
+				Description:    optionalStringFlag(cmd, "description", description),
+				Actor:          actor,
+				IdempotencyKey: key,
 			})
 			if err != nil {
 				return renderLabelError(cmd, "label.add", err)
@@ -52,7 +59,7 @@ func newLabelAddCommand() *cobra.Command {
 				return err
 			}
 			if jsonMode {
-				return cli.WriteSuccess(cmd.OutOrStdout(), "label.add", map[string]any{"label": result.Label}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+				return cli.WriteSuccess(cmd.OutOrStdout(), "label.add", map[string]any{"label": result.Label, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 			}
 			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "created label %q\n", result.Label.Name); err != nil {
 				return err
@@ -63,7 +70,8 @@ func newLabelAddCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&colour, "colour", "", "Label colour")
 	cmd.Flags().StringVar(&description, "description", "", "Label description")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("label.add"))
 	return cmd
 }

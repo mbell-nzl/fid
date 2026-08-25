@@ -48,7 +48,7 @@ func List(options ListOptions) ([]Entry, error) {
 	}
 	defer closeActivityConn(conn)
 
-	query, args, err := activityListQuery(on, since, strings.TrimSpace(options.Event))
+	query, args, err := activityListQuery(on, since, "")
 	if err != nil {
 		return nil, err
 	}
@@ -60,12 +60,15 @@ func List(options ListOptions) ([]Entry, error) {
 	defer closeActivityRows(rows)
 
 	items := []Entry{}
+	wantEvent := normalizeActivityEvent(options.Event)
 	for rows.Next() {
 		item, err := scanEntry(rows)
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, item)
+		if wantEvent == "" || item.Event == wantEvent {
+			items = append(items, item)
+		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate activity rows: %w", err)
@@ -203,8 +206,13 @@ func scanEntry(rows *sql.Rows) (Entry, error) {
 		return Entry{}, err
 	}
 	entry.Details = details
+	entry.Event = normalizeActivityEvent(entry.Event)
 
 	return entry, nil
+}
+
+func normalizeActivityEvent(value string) string {
+	return strings.ReplaceAll(strings.TrimSpace(value), "_", "-")
 }
 
 func parseDetails(value sql.NullString) (any, error) {

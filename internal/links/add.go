@@ -3,7 +3,6 @@ package links
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -12,15 +11,10 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
-)
-
-const (
-	actionLinkAdd = "link.add"
-	fidVersion    = "0.1.0"
 )
 
 func Add(options AddOptions) (AddResult, error) {
+	options.IdempotencyKey = linkIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddResult{}, fmt.Errorf("link add: workspace root is required")
 	}
@@ -30,7 +24,8 @@ func Add(options AddOptions) (AddResult, error) {
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
 		return AddResult{}, fmt.Errorf("link add: from and to ids are required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionLinkAdd); err != nil {
+	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	if err != nil {
 		return AddResult{}, err
 	}
 
@@ -57,10 +52,10 @@ func Add(options AddOptions) (AddResult, error) {
 	}
 
 	var result AddResult
-	commandArgv := linkAddArgv(fromID, fromType, declaredRelation, toID, toType, options.ActorRole)
+	commandArgv := linkAddArgv(fromID, fromType, declaredRelation, toID, toType, options.Actor, options.IdempotencyKey)
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		ActorRole: actor.id,
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
@@ -71,22 +66,27 @@ func Add(options AddOptions) (AddResult, error) {
 			return err
 		}
 		defer closeLinksConn(conn)
-
-		declared, inverse, err := plannedLinks(conn, fromType, fromID, declaredRelation, toType, toID)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
 		if err != nil {
 			return err
 		}
+		digest, err := linkRequestDigest("link.add", projectConfig.ProjectID, actor, map[string]any{"from_id": fromID, "from_type": fromType, "relation": declaredRelation, "to_id": toID, "to_type": toType})
+		if err != nil {
+			return err
+		}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "link.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			decoded, err := addResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
-			EventType:   "link.added",
-			Actor:       journal.Actor{Role: options.ActorRole},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-		})
+		declared, inverse, err := plannedLinks(conn, fromType, fromID, declaredRelation, toType, toID)
 		if err != nil {
 			return err
 		}
@@ -98,8 +98,6 @@ func Add(options AddOptions) (AddResult, error) {
 			return err
 		}
 
-		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
-		createdAt := event.OccurredAt.UTC().Format("2006-01-02T15:04:05Z07:00")
 		observedRevisions, err := linkIssueRevisions(conn, declared)
 		if err != nil {
 			return err
@@ -108,26 +106,35 @@ func Add(options AddOptions) (AddResult, error) {
 		if err != nil {
 			return err
 		}
-		event.Effects = []journal.Effect{
-			linkInsertEffect(declared, createdAt),
-			linkInsertEffect(inverse, createdAt),
-		}
-		event.Effects = append(event.Effects, revisionEffects...)
-		event.Effects = append(event.Effects, linkAddActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse))
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Type: "link"})
 		if err != nil {
 			return err
 		}
-		if err := projectLinksEvent(options.WorkspaceRoot, conn, appended); err != nil {
+		baseEffects := append([]journal.Effect{linkInsertEffect(declared, ""), linkInsertEffect(inverse, "")}, revisionEffects...)
+		event, err := journal.PrepareEvent(lock, journal.Event{EventSchema: journal.EventSchemaV2, EventType: "link.added", ActorV2: actor.eventActor(), Aggregate: journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Sequence: sequence, Type: "link"}, CommandName: "link.add", Effects: baseEffects})
+		if err != nil {
 			return err
 		}
-
-		result = AddResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano)}
+		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
+		createdAt := event.OccurredAt.UTC().Format("2006-01-02T15:04:05Z07:00")
+		event.Effects = append([]journal.Effect{linkInsertEffect(declared, createdAt), linkInsertEffect(inverse, createdAt)}, revisionEffects...)
+		event.Effects = append(event.Effects, linkAddActivityEffect(activityID, event.EventID, actor.id, occurredAt, declared, inverse))
+		seed := AddResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			encoded, err := addResultJSON(seed)
+			if err != nil {
+				return journal.IdempotencyMutation{}, err
+			}
+			return journal.IdempotencyMutation{EntityID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, ResultJSON: encoded}, nil
+		})
+		if err != nil {
+			return err
+		}
+		decoded, err := addResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		if err != nil {
+			return err
+		}
+		result = decoded
 		return nil
 	})
 	if err != nil {
@@ -211,8 +218,8 @@ func resolveEndpointType(conn *sql.DB, suppliedType, endpointID string) (string,
 	return "", &InvalidEndpointTypeError{Operation: "link", Argument: "endpoint type", Value: suppliedType}
 }
 
-func linkAddArgv(fromID, fromType, relation, toID, toType, actorRole string) []string {
-	return []string{"fid", "link", "add", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--by", actorRole}
+func linkAddArgv(fromID, fromType, relation, toID, toType, actor, key string) []string {
+	return []string{"fid", "link", "add", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--actor", actor, "--idempotency-key", key}
 }
 
 func linkInsertEffect(link Link, createdAt string) journal.Effect {
@@ -241,7 +248,7 @@ func linkAddActivityEffect(activityID, eventID, actorRole, occurredAt string, de
 			"journal_event_id": eventID,
 			"ref_type":         declared.FromType,
 			"ref_id":           declared.FromID,
-			"event":            "link_added",
+			"event":            "link-added",
 			"details": map[string]any{
 				"from_type":         declared.FromType,
 				"from_id":           declared.FromID,
@@ -315,40 +322,6 @@ func linkExists(conn *sql.DB, link Link) (bool, error) {
 		return false, nil
 	}
 	return false, fmt.Errorf("link add: query existing link %s %s %s: %w", link.FromID, link.Relation, link.ToID, err)
-}
-
-func projectLinksEvent(workspaceRoot string, conn *sql.DB, event journal.Event) error {
-	eventHash, err := journal.HashEvent(event)
-	if err != nil {
-		return fmt.Errorf("hash link event %q: %w", event.EventID, err)
-	}
-
-	journalFile := event.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-	info, err := os.Stat(journalPath)
-	if err != nil {
-		return fmt.Errorf("stat link journal %q: %w", journalPath, err)
-	}
-
-	return journal.ProjectEvent(conn, journal.ProjectionInput{
-		Event:     event,
-		EventHash: eventHash,
-		File:      journalFile,
-		Line:      countLinkJournalLines(journalPath),
-		Offset:    info.Size(),
-	})
-}
-
-func countLinkJournalLines(path string) int {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return 1
-	}
-	trimmed := strings.TrimSpace(string(payload))
-	if trimmed == "" {
-		return 0
-	}
-	return len(strings.Split(trimmed, "\n"))
 }
 
 func closeLinksConn(conn *sql.DB) {

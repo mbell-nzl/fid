@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -34,6 +36,42 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			want: `"idempotency_key":"task-9-ac"`,
 		},
 		{
+			name: "label add accepts standalone actor and idempotency",
+			args: []string{"--project", workspace, "--json", "label", "add", "task-9-label", "--actor", "agent:task-9", "--idempotency-key", "task-9-label"},
+			want: `"idempotency_key":"task-9-label"`,
+		},
+		{
+			name: "issue label add accepts standalone actor and idempotency",
+			args: func() []string {
+				issueID := createTask8Issue(t, workspace, "Task 9 label attribution")
+				return []string{"--project", workspace, "--json", "issue", "label", "add", issueID, "task-9-label", "--actor", "agent:task-9", "--idempotency-key", "task-9-issue-label"}
+			}(),
+			want: `"idempotency_key":"task-9-issue-label"`,
+		},
+		{
+			name: "link add accepts standalone actor and idempotency",
+			args: func() []string {
+				fromID := createTask8Issue(t, workspace, "Task 9 link source")
+				toID := createTask8Issue(t, workspace, "Task 9 link target")
+				return []string{"--project", workspace, "--json", "link", "add", fromID, "blocks", toID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:task-9", "--idempotency-key", "task-9-link"}
+			}(),
+			want: `"idempotency_key":"task-9-link"`,
+		},
+		{
+			name: "requirement sync accepts standalone actor and idempotency",
+			args: func() []string {
+				path := filepath.Join(workspace, "project-docs", "specs", "task-9.md")
+				if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+					t.Fatalf("MkdirAll(%q): %v", path, err)
+				}
+				if err := os.WriteFile(path, []byte("# Task 9\n\n| ID | Requirement | Priority | Notes |\n|---|---|---|---|\n| PRD-TASK-009 | Retained inventory attribution is durable. | Must | task 9 |\n"), 0o644); err != nil {
+					t.Fatalf("WriteFile(%q): %v", path, err)
+				}
+				return []string{"--project", workspace, "--json", "requirement", "sync", "--source-doc", "project-docs/specs/task-9.md", "--actor", "agent:task-9", "--idempotency-key", "task-9-requirement"}
+			}(),
+			want: `"idempotency_key":"task-9-requirement"`,
+		},
+		{
 			name:    "AC verification is fail closed",
 			args:    []string{"--project", workspace, "--json", "issue", "ac", "verify", "FID-1", "AC-1", "--actor", "agent:task-9"},
 			want:    `"code":"capability-unavailable"`,
@@ -55,6 +93,11 @@ func TestTask9RetainedInventorySurface(t *testing.T) {
 			name: "stats groups by historical actor attribution",
 			args: []string{"--project", workspace, "--json", "stats", "tokens", "--group-by", "actor"},
 			want: `"items"`,
+		},
+		{
+			name: "activity normalizes retained event names",
+			args: []string{"--project", workspace, "--json", "activity", "list", "--event", "issue-label-added"},
+			want: `"issue-label-added"`,
 		},
 	}
 

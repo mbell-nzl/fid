@@ -11,12 +11,10 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
-const actionLinkRemove = "link.remove"
-
 func Remove(options RemoveOptions) (RemoveResult, error) {
+	options.IdempotencyKey = linkIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return RemoveResult{}, fmt.Errorf("link remove: workspace root is required")
 	}
@@ -26,7 +24,8 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
 		return RemoveResult{}, fmt.Errorf("link remove: from and to ids are required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionLinkRemove); err != nil {
+	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	if err != nil {
 		return RemoveResult{}, err
 	}
 
@@ -48,11 +47,11 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		return RemoveResult{}, &SelfLinkError{Operation: "link remove", FromID: fromID, Relation: relation, ToID: toID}
 	}
 
-	commandArgv := linkRemoveArgv(fromID, fromType, relation, toID, toType, options.ActorRole)
+	commandArgv := linkRemoveArgv(fromID, fromType, relation, toID, toType, options.Actor, options.IdempotencyKey)
 	var result RemoveResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		ActorRole: actor.id,
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
@@ -63,6 +62,25 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 			return err
 		}
 		defer closeLinksConn(conn)
+		projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+		if err != nil {
+			return err
+		}
+		digest, err := linkRequestDigest("link.remove", projectConfig.ProjectID, actor, map[string]any{"from_id": fromID, "from_type": fromType, "relation": relation, "to_id": toID, "to_type": toType})
+		if err != nil {
+			return err
+		}
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "link.remove:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			decoded, err := removeResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 
 		declared, inverse, err := plannedRemoval(conn, fromType, fromID, relation, toType, toID)
 		if err != nil {
@@ -83,20 +101,6 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 			return err
 		}
 
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
-			EventType:   "link.removed",
-			Actor:       journal.Actor{Role: options.ActorRole},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-		})
-		if err != nil {
-			return err
-		}
-
 		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
 			return linkActivityIDExists(conn, candidate)
 		})
@@ -104,7 +108,6 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 			return err
 		}
 
-		occurredAt := event.OccurredAt.UTC().Format(time.RFC3339)
 		observedRevisions, err := linkIssueRevisions(conn, declared)
 		if err != nil {
 			return err
@@ -113,26 +116,36 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 		if err != nil {
 			return err
 		}
-		event.Effects = []journal.Effect{
+		baseEffects := []journal.Effect{
 			linkDeleteEffect(storedDeclared),
 			linkDeleteEffect(storedInverse),
 		}
-		event.Effects = append(event.Effects, revisionEffects...)
-		event.Effects = append(event.Effects, linkRemoveActivityEffect(activityID, event.EventID, options.ActorRole, occurredAt, declared, inverse))
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		baseEffects = append(baseEffects, revisionEffects...)
+		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Type: "link"})
 		if err != nil {
 			return err
 		}
-		if err := projectLinksEvent(options.WorkspaceRoot, conn, appended); err != nil {
+		event, err := journal.PrepareEvent(lock, journal.Event{EventSchema: journal.EventSchemaV2, EventType: "link.removed", ActorV2: actor.eventActor(), Aggregate: journal.Aggregate{ID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, Sequence: sequence, Type: "link"}, CommandName: "link.remove", Effects: baseEffects})
+		if err != nil {
 			return err
 		}
-
-		result = RemoveResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), EventID: appended.EventID, OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano)}
+		event.Effects = append(baseEffects, linkRemoveActivityEffect(activityID, event.EventID, actor.id, event.OccurredAt.UTC().Format(time.RFC3339), declared, inverse))
+		seed := RemoveResult{Declared: declared, Inverse: inverse, IssueRevisions: resultIssueRevisions(observedRevisions), OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			encoded, err := removeResultJSON(seed)
+			if err != nil {
+				return journal.IdempotencyMutation{}, err
+			}
+			return journal.IdempotencyMutation{EntityID: declared.FromID + ":" + declared.Relation + ":" + declared.ToID, ResultJSON: encoded}, nil
+		})
+		if err != nil {
+			return err
+		}
+		decoded, err := removeResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		if err != nil {
+			return err
+		}
+		result = decoded
 		return nil
 	})
 	if err != nil {
@@ -208,8 +221,8 @@ func loadStoredLink(conn *sql.DB, link Link) (storedLink, error) {
 	return storedLink{}, fmt.Errorf("link remove: query existing link %s %s %s: %w", link.FromID, link.Relation, link.ToID, err)
 }
 
-func linkRemoveArgv(fromID, fromType, relation, toID, toType, actorRole string) []string {
-	return []string{"fid", "link", "remove", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--by", actorRole}
+func linkRemoveArgv(fromID, fromType, relation, toID, toType, actor, key string) []string {
+	return []string{"fid", "link", "remove", fromID, relation, toID, "--from-type", fromType, "--to-type", toType, "--actor", actor, "--idempotency-key", key}
 }
 
 func linkDeleteEffect(link storedLink) journal.Effect {
@@ -238,7 +251,7 @@ func linkRemoveActivityEffect(activityID, eventID, actorRole, occurredAt string,
 			"journal_event_id": eventID,
 			"ref_type":         declared.FromType,
 			"ref_id":           declared.FromID,
-			"event":            "link_removed",
+			"event":            "link-removed",
 			"details": map[string]any{
 				"from_type":         declared.FromType,
 				"from_id":           declared.FromID,
