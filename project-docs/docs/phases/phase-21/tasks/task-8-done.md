@@ -2,7 +2,11 @@
 
 ## Workflow outcome
 - Task outcome: COMPLETE
-- Recovery TRG-21-007 completed under task-8 scope and DEC-162. The retained V1 test collateral now asserts the accepted V2 contract without reducing assertion strength.
+- Category: none
+- Condition: All five required task gates and the real entrypoint validation passed.
+- Recovery attempts: 2
+- Next action: None.
+- Human attention required: no
 
 ## Summary of what was implemented
 - Converged retained Issue command tests and activity fixtures on `--actor`, Event v2 attribution, and kebab-case activity values.
@@ -50,14 +54,15 @@
 - SQLite contention diagnosis: `go test -race ./internal/journal --run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=10` - `ok\tgithub.com/mbell-nzl/fid/internal/journal\t5.205s` (terminated `exit_code: 0`); `go test -race -cover ./internal/journal --run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=20` - `ok\tgithub.com/mbell-nzl/fid/internal/journal\t9.286s\tcoverage: 30.8% of statements` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
-- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - PASS - `ok\tgithub.com/mbell-nzl/fid/cmd/fid\t154.622s` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok\tgithub.com/mbell-nzl/fid/internal/workflow\t38.4% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:\t(statements)\t70.6%` (terminated `exit_code: 0`).
+- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid	154.622s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	38.4% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:	(statements)	70.6%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 - No accepted-contract deviations.
+- Retained recovery context: TRG-21-007 completed under task-8 scope and DEC-162; the retained V1 test collateral now asserts the accepted V2 contract without reducing assertion strength.
 - Retained evidence: the pre-recovery task command failed twice with final token `FAIL` (terminated `exit_code: 1`): first due to stale V1 Role/Command, snake-case activity, and fixed-date test expectations; second due to retained standalone-role-authority expectations. Tests were adapted under DEC-162, and the final byte-identical command passed.
 - Retained evidence: the historical exact lint attempt failed with token `4 issues:` (terminated `exit_code: 1`) for the actor parsing simplification and obsolete V1 helpers. The minimal in-scope cleanup produced the final `0 issues.` result.
 - Retained evidence: the historical exact coverage attempt failed with token `FAIL` (terminated `exit_code: 1`) while retained V1 expectations remained. A later exact coverage attempt also failed with token `FAIL` (terminated `exit_code: 1`) because `TestCommitIdempotentSerializesConcurrentSameKeyCalls` observed `database is locked (5) (SQLITE_BUSY)`. The focused repeated race and race-plus-coverage diagnostics passed without code, test, command, or threshold changes; the later byte-identical repository coverage command passed.
