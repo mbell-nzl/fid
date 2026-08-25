@@ -41,7 +41,7 @@
 
 ## Validation Contract Coverage
 
-- VAL-028: BLOCKED - `TestTask9RetainedInventorySurface` in `cmd/fid/task9_contract_test.go` proves the converted workflow and AC entrypoints, but the first required focused package gate ended `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t146.305s` while retained labels, links, requirements, activity, and other inventory coverage remains unconverged.
+- VAL-028: BLOCKED - `TestTask9RetainedInventorySurface` in `cmd/fid/task9_contract_test.go` proves the converted workflow and AC entrypoints, but the first required focused package gate ended `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` while retained labels, links, requirements, activity, and other inventory coverage remains unconverged.
 - VAL-029: BLOCKED - `cmd/fid/root.go` no longer registers `newPolicyCommand`, but the required package gate has not passed and the full generic-caller isolation proof remains unfinished.
 - VAL-030: BLOCKED - `TestTask9RetainedInventorySurface` proves typed capability-unavailable results for `issue ac verify`, `concern raise`, and `maintenance vacuum`; continuation must add persistence-negative evidence for every fail-closed judgment mutation.
 - VAL-031: BLOCKED - `TestTask9RetainedInventorySurface` proves `fid stats token --group-by actor` returns `items`; continuation must finish the accepted grouping matrix and its historical-attribution-only evidence.
@@ -53,7 +53,7 @@
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t146.305s` (terminated `exit_code: 1`; retained V1 contract tests require in-scope convergence)
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` (terminated `exit_code: 1`; retained V1 contract tests require in-scope convergence)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; the first attempt also observed the temporarily removed unregistered policy helper before it was restored, and retained V1 tests still require convergence)
@@ -62,7 +62,7 @@
 ## Deviations from spec
 
 - No accepted-contract deviations.
-- Required-gate first attempts are preserved above: the focused package test failed with `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t146.305s` (terminated `exit_code: 1`) because retained tests still expect replaced V1 behavior; `golangci-lint run ./...` first failed with `* unused: 6` (terminated `exit_code: 1`) after intermediate migration symbols became unused, those symbols were removed, and its byte-identical rerun later passed with `0 issues.` (terminated `exit_code: 0`); coverage failed with `FAIL` (terminated `exit_code: 1`) while the temporary removal of the unregistered policy helper and retained V1 test expectations were being repaired. No gate, assertion, scope, or accepted interface was weakened. A continuation must rerun each affected command byte-identically after completing the in-scope migration.
+- Required-gate first attempts are preserved above: the focused package test failed with `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` (terminated `exit_code: 1`) because retained tests still expect replaced V1 behavior; `golangci-lint run ./...` first failed with `* unused: 6` (terminated `exit_code: 1`) after intermediate migration symbols became unused, those symbols were removed, and its byte-identical rerun later passed with `0 issues.` (terminated `exit_code: 0`); coverage failed with `FAIL` (terminated `exit_code: 1`) while the temporary removal of the unregistered policy helper and retained V1 test expectations were being repaired. No gate, assertion, scope, or accepted interface was weakened. A continuation must rerun each affected command byte-identically after completing the in-scope migration.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
