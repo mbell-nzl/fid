@@ -12,11 +12,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 var acceptanceVerificationStatuses = []string{"pass", "fail", "blocked", "not_applicable"}
 var acceptanceVerificationEvidenceTypes = []string{"test", "source", "screenshot", "manual", "command", "commit"}
+var _ = verifyAcceptanceCriterionLegacy
 
 type VerifyAcceptanceCriterionOptions struct {
 	WorkspaceRoot string
@@ -43,6 +43,10 @@ type VerifyAcceptanceCriterionResult struct {
 }
 
 func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (VerifyAcceptanceCriterionResult, error) {
+	return VerifyAcceptanceCriterionResult{}, unavailableCapability("reviews.coverage.v1", 23)
+}
+
+func verifyAcceptanceCriterionLegacy(options VerifyAcceptanceCriterionOptions) (VerifyAcceptanceCriterionResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return VerifyAcceptanceCriterionResult{}, fmt.Errorf("verify acceptance criterion: workspace root is required")
 	}
@@ -68,10 +72,6 @@ func VerifyAcceptanceCriterion(options VerifyAcceptanceCriterionOptions) (Verify
 			strings.Join(acceptanceVerificationStatuses, ", "),
 		)
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueACVerifyAction(options.ActorRole)); err != nil {
-		return VerifyAcceptanceCriterionResult{}, err
-	}
-
 	evidenceType := trimmedOptionalString(options.EvidenceType)
 	if evidenceType != nil && !slices.Contains(acceptanceVerificationEvidenceTypes, *evidenceType) {
 		return VerifyAcceptanceCriterionResult{}, fmt.Errorf(

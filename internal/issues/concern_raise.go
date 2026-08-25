@@ -11,8 +11,9 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
+
+var _ = raiseConcernLegacy
 
 type RaiseConcernOptions struct {
 	WorkspaceRoot        string
@@ -37,6 +38,10 @@ type RaiseConcernResult struct {
 }
 
 func RaiseConcern(options RaiseConcernOptions) (RaiseConcernResult, error) {
+	return RaiseConcernResult{}, unavailableCapability("human.outcomes.v1", 23)
+}
+
+func raiseConcernLegacy(options RaiseConcernOptions) (RaiseConcernResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return RaiseConcernResult{}, fmt.Errorf("raise concern: workspace root is required")
 	}
@@ -55,10 +60,6 @@ func RaiseConcern(options RaiseConcernOptions) (RaiseConcernResult, error) {
 	if summary == "" {
 		return RaiseConcernResult{}, fmt.Errorf("raise concern: summary is required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionConcernRaise); err != nil {
-		return RaiseConcernResult{}, err
-	}
-
 	bodyMDPath := trimmedOptionalString(options.BodyMDPath)
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return RaiseConcernResult{}, err

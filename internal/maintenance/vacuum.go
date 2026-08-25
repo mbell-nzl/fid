@@ -8,7 +8,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 // VacuumResult reports the derived SQLite projection size before and after compaction.
@@ -17,12 +16,14 @@ type VacuumResult struct {
 	AfterBytes  int64
 }
 
+var _ = vacuumLegacy
+
 // Vacuum compacts the derived SQLite projection without changing journal history.
 func Vacuum(workspaceRoot, migrationsDir, byRole string) (VacuumResult, error) {
-	if err := policy.Authorize(workspaceRoot, byRole, "maintenance.vacuum"); err != nil {
-		return VacuumResult{}, err
-	}
+	return VacuumResult{}, &CapabilityUnavailableError{CapabilityID: "telemetry.trajectory.v1", OwnerPhase: 25}
+}
 
+func vacuumLegacy(workspaceRoot, migrationsDir, byRole string) (VacuumResult, error) {
 	var result VacuumResult
 	err := journal.WithLock(workspaceRoot, journal.LockOwner{
 		Command:   "fid maintenance vacuum --by " + byRole,

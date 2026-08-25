@@ -72,8 +72,8 @@ func TestAddLabelAddsOneRowWithoutReplacingOthersAndProjectsActivity(t *testing.
 	if last.EventType != "issue.label.added" {
 		t.Fatalf("event type = %q, want %q", last.EventType, "issue.label.added")
 	}
-	if last.Actor.Role != "developer" || len(last.Effects) != 3 {
-		t.Fatalf("Issue-label add Event actor/effects = (%q, %d), want (developer, 3)", last.Actor.Role, len(last.Effects))
+	if last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || len(last.Effects) != 4 {
+		t.Fatalf("Issue-label add Event actor/effects = (%#v, %d), want agent developer and 4 effects", last.ActorV2, len(last.Effects))
 	}
 
 	var (
@@ -103,7 +103,7 @@ func TestAddLabelAddsOneRowWithoutReplacingOthersAndProjectsActivity(t *testing.
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	defer closeIssueTestDB(t, conn)
 
-	assertIssueLabelActivity(t, conn, last.EventID, "issue_label_added", "developer", `"label":"api"`, `"direction":"added"`)
+	assertIssueLabelActivity(t, conn, last.EventID, "issue-label-added", "developer", `"label":"api"`, `"direction":"added"`)
 }
 
 func TestAddLabelRejectsMissingOrExistingLabelBeforeAppend(t *testing.T) {
@@ -234,8 +234,8 @@ func TestRemoveLabelRemovesOneRowPreservesLabelTableAndProjectsActivity(t *testi
 	if last.EventType != "issue.label.removed" {
 		t.Fatalf("event type = %q, want %q", last.EventType, "issue.label.removed")
 	}
-	if last.Actor.Role != "developer" || len(last.Effects) != 3 {
-		t.Fatalf("Issue-label remove Event actor/effects = (%q, %d), want (developer, 3)", last.Actor.Role, len(last.Effects))
+	if last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || len(last.Effects) != 4 {
+		t.Fatalf("Issue-label remove Event actor/effects = (%#v, %d), want agent developer and 4 effects", last.ActorV2, len(last.Effects))
 	}
 	var revisionEffect *journal.Effect
 	for index := range last.Effects {
@@ -257,7 +257,7 @@ func TestRemoveLabelRemovesOneRowPreservesLabelTableAndProjectsActivity(t *testi
 		t.Fatalf("labels row count for legacy = %d, want 1", labelCount)
 	}
 
-	assertIssueLabelActivity(t, conn, last.EventID, "issue_label_removed", "developer", `"label":"legacy"`, `"direction":"removed"`)
+	assertIssueLabelActivity(t, conn, last.EventID, "issue-label-removed", "developer", `"label":"legacy"`, `"direction":"removed"`)
 }
 
 func TestRemoveLabelRejectsAbsentLabelBeforeAppend(t *testing.T) {

@@ -95,11 +95,11 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("stored events len = %d, want at least 2", len(stored))
 	}
 	last := stored[len(stored)-1]
-	if last.EventType != "issue.ac_added" {
-		t.Fatalf("last event type = %q, want issue.ac_added", last.EventType)
+	if last.EventType != "issue.ac-added" || last.EventSchema != journal.EventSchemaV2 {
+		t.Fatalf("last event = (%q, schema %d), want issue.ac-added Event-v2", last.EventType, last.EventSchema)
 	}
-	if last.Actor.Role != "developer" || len(last.Effects) != 3 {
-		t.Fatalf("AC Event actor/effects = (%q, %d), want (developer, 3)", last.Actor.Role, len(last.Effects))
+	if last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || len(last.Effects) != 4 {
+		t.Fatalf("AC Event actor/effects = (%#v, %d), want agent developer and 4 effects", last.ActorV2, len(last.Effects))
 	}
 
 	var (
@@ -121,8 +121,8 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 	if activityEffect == nil {
 		t.Fatal("missing ac_added activity effect")
 	}
-	if got := activityEffect.Values["event"]; got != "ac_added" {
-		t.Fatalf("activity event = %#v, want ac_added", got)
+	if got := activityEffect.Values["event"]; got != "ac-added" {
+		t.Fatalf("activity event = %#v, want ac-added", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -138,7 +138,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("stored row = (%q, %d, %q), want (%q, 1, %q)", issueID, ordinal, text, taskCreated.ID, "First acceptance criterion")
 	}
 
-	assertIssueLabelActivity(t, conn, last.EventID, "ac_added", "developer", first.ID, `"ordinal":1`)
+	assertIssueLabelActivity(t, conn, last.EventID, "ac-added", "developer", first.ID, `"ordinal":1`)
 }
 
 func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
@@ -187,7 +187,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			},
 		},
 		{
-			name: "unknown role rejected before append",
+			name: "malformed actor rejected before append",
 			prepare: func(t *testing.T, workspace string) string {
 				t.Helper()
 				created, err := Create(CreateOptions{
@@ -207,12 +207,12 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					WorkspaceRoot: workspace,
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
-					Text:          "Unknown role rejection",
+					Text:          "Malformed actor rejection",
 					Ordinal:       1,
-					ActorRole:     "intern",
+					Actor:         "intern",
 				}
 			},
-			wantErr: `role "intern" not in project profile`,
+			wantErr: "Issue actor must match <agent|human|service>:<id>",
 			verify: func(t *testing.T, workspace, issueID string) {
 				t.Helper()
 				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -565,11 +565,11 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	if err := json.Unmarshal(payload, &roundTripped); err != nil {
 		t.Fatalf("Unmarshal(round-trip) error = %v", err)
 	}
-	if roundTripped.EventType != "issue.ac_added" {
-		t.Fatalf("round-tripped event type = %q, want issue.ac_added", roundTripped.EventType)
+	if roundTripped.EventType != "issue.ac-added" {
+		t.Fatalf("round-tripped event type = %q, want issue.ac-added", roundTripped.EventType)
 	}
-	if len(roundTripped.Effects) != 3 {
-		t.Fatalf("round-tripped event effects = %#v, want insert, revision, and activity", roundTripped.Effects)
+	if len(roundTripped.Effects) != 4 {
+		t.Fatalf("round-tripped event effects = %#v, want insert, revision, activity, and idempotency", roundTripped.Effects)
 	}
 	if roundTripped.Effects[0].PK["id"] != result.ID {
 		t.Fatalf("round-tripped insert effect PK = %#v, want %q", roundTripped.Effects[0].PK, result.ID)
@@ -584,6 +584,14 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -798,6 +806,14 @@ func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *test
 }
 
 func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -956,6 +972,14 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 }
 
 func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -1066,6 +1090,14 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	tests := []struct {
@@ -1294,6 +1326,14 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 }
 
 func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)

@@ -10,8 +10,9 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
+
+var _ = addressConcernLegacy
 
 type AddressConcernOptions struct {
 	WorkspaceRoot           string
@@ -37,6 +38,10 @@ type concernAddressState struct {
 }
 
 func AddressConcern(options AddressConcernOptions) (AddressConcernResult, error) {
+	return AddressConcernResult{}, unavailableCapability("human.outcomes.v1", 23)
+}
+
+func addressConcernLegacy(options AddressConcernOptions) (AddressConcernResult, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddressConcernResult{}, fmt.Errorf("address concern: workspace root is required")
 	}
@@ -50,9 +55,6 @@ func AddressConcern(options AddressConcernOptions) (AddressConcernResult, error)
 	completionID := strings.TrimSpace(options.AddressedInCompletionID)
 	if completionID == "" {
 		return AddressConcernResult{}, fmt.Errorf("address concern: completion id is required")
-	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionConcernAddress); err != nil {
-		return AddressConcernResult{}, err
 	}
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return AddressConcernResult{}, err

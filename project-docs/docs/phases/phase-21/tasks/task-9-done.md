@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Labels, issue-labels, links, requirements, and activity have partial Task 9 conversion, but retained V1 tests and remaining policy/judgment isolation are still unconverged; both required test gates fail.
-- Recovery attempts: 1
-- Next action: Complete the retained test migration and remaining fail-closed/policy isolation work, repair activity command assertions, then rerun all five required commands byte-for-byte.
+- Condition: Direct AC verification, concern raise/address, and maintenance vacuum now fail closed before policy or writer work, but the required gates still contain retained V1 CLI and internal assertions for workflow, links, requirements, activity, policy-show, and `--by` fixtures.
+- Recovery attempts: 2
+- Next action: Migrate the remaining retained internal and CLI test corpus to exact actor/key/Event-v2, envelope, kebab-case activity, stats, policy-absence, and no-writer contracts; then rerun all five required commands byte-for-byte.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -59,6 +59,8 @@
 - VAL-030: BLOCKED - `TestTask9RetainedInventorySurface` proves typed capability-unavailable results for `issue ac verify`, `concern raise`, and `maintenance vacuum`; continuation must add persistence-negative evidence for every fail-closed judgment mutation.
 - VAL-031: BLOCKED - `TestTask9RetainedInventorySurface` proves `fid stats token --group-by actor` returns `items`; continuation must finish the accepted grouping matrix and its historical-attribution-only evidence.
 
+- Attempt 2 update: VAL-030 now has direct no-writer evidence in `internal/issues/judgment_unavailable_test.go` and `internal/maintenance/vacuum_unavailable_test.go`; the remaining CLI persistence-negative matrix is in scope for recovery. VAL-028, VAL-029, and VAL-031 remain PARTIAL because the required gate still fails on retained V1 fixture expectations.
+
 ## Tests run
 
 - `go test -race ./cmd/fid -run '^TestTask9RetainedInventorySurface$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 2.072s` (terminated `exit_code: 0`)
@@ -79,11 +81,20 @@
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; retained test migration remains in scope)
 - `go tool cover -func=coverage.out` - PASS - `68.3%` (terminated `exit_code: 0`)
 
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL github.com/mbell-nzl/fid/cmd/fid 130.786s` (terminated `exit_code: 1`; workflow/link/activity and retained CLI V1 assertion migration remains)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - BLOCKED - `* unused: 2` (terminated `exit_code: 1`; obsolete helper symbols remained after writer isolation)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; the full suite still contains retained V1 test expectations)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.8%` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`; byte-identical rerun after in-scope cleanup)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
 - Required-gate first attempts are preserved above: the focused package test failed with `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` (terminated `exit_code: 1`) because retained tests still expect replaced V1 behavior; `golangci-lint run ./...` first failed with `* unused: 6` (terminated `exit_code: 1`) after intermediate migration symbols became unused, those symbols were removed, and its byte-identical rerun later passed with `0 issues.` (terminated `exit_code: 0`); coverage failed with `FAIL` (terminated `exit_code: 1`) while the temporary removal of the unregistered policy helper and retained V1 test expectations were being repaired. No gate, assertion, scope, or accepted interface was weakened. A continuation must rerun each affected command byte-identically after completing the in-scope migration.
 - Recovery attempt 1 added label, issue-label, link, requirement, and activity conversion. Its required package gate failed with `FAIL	github.com/mbell-nzl/fid/cmd/fid	147.763s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) because retained V1 `--by`, policy-show, direct-JSON, role, snake-case activity, and Event-v1 assertions have not yet been migrated. `gofmt -l cmd internal` and `golangci-lint run ./...` both passed with observed `exit_code: 0`. No assertion, threshold, command, policy, or public contract was weakened; the next continuation must preserve these failures while migrating their accepted replacements.
+
+- Recovery attempt 2 made direct judgment and vacuum entries unavailable before policy, projection, lock, Event, or row work. The writer-oriented tests for those exact subjects were adapted to assert typed unavailability before the same writer inputs can be evaluated; this replaces obsolete mutation-success coverage with the accepted fail-closed no-writer contract, not a narrowed assertion. Its required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 130.786s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) because broad retained V1 CLI and internal test fixtures remain. The first lint attempt failed with `* unused: 2` (terminated `exit_code: 1`) due to obsolete helper symbols after writer isolation; removing those symbols and separating inactive legacy implementation produced the byte-identical later PASS `0 issues.` (terminated `exit_code: 0`). No gate, assertion semantics, threshold, policy, or accepted public contract changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -95,8 +106,8 @@
 
 ## Commit hash
 
-- `ab09b4756c4e610c836222c99a9eed51b39a6559`
+- Pending commit
 
 ## Commit subject
 
-- `feat(convergence): checkpoint inventory actor migrations`
+- Pending commit
