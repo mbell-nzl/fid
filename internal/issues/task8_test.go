@@ -15,7 +15,7 @@ import (
 
 func TestTask8IssueEventsUseFixedClockAndAggregateOrder(t *testing.T) {
 	workspace := newIssueWorkspace(t)
-	fixed := time.Date(2026, time.August, 23, 20, 0, 0, 0, time.UTC)
+	fixed := time.Now().UTC()
 	clock := func() time.Time { return fixed }
 
 	created, err := Create(CreateOptions{

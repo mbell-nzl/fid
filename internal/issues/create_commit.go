@@ -81,7 +81,7 @@ func createUnderLock(conn *sql.DB, lock *journal.WriteLock, options CreateOption
 	if err != nil {
 		return CreateResult{}, err
 	}
-	result := CreateResult{ID: issueID, Kind: request.kind, Title: options.Title, Status: resolved.InitialState, Revision: 1, IdempotencyKey: options.IdempotencyKey}
+	result := CreateResult{ID: issueID, Kind: request.kind, Title: options.Title, Status: resolved.InitialState, Revision: 1, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
 	return commitCreateEvent(conn, lock, project.ProjectID, request, options, event, result)
 }
 

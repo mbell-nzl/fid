@@ -69,8 +69,8 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		t.Fatalf("qa_reviewer transition stdout = %q, want empty", deniedStdout)
 	}
 	assertNoNestedLockFailure(t, deniedStderr)
-	if !strings.Contains(deniedStderr, `error: role "qa_reviewer" not permitted for action "issue.transition.in_progress"`) {
-		t.Fatalf("qa_reviewer transition stderr = %q, want permission error", deniedStderr)
+	if !strings.Contains(deniedStderr, `has no live claim held by "qa_reviewer"`) {
+		t.Fatalf("qa_reviewer transition stderr = %q, want claim precondition without role authority", deniedStderr)
 	}
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "qa_reviewer transition denial")
 

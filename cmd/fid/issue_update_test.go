@@ -473,7 +473,7 @@ func TestIssueMutationHumanSuccessUsesStdoutOnly(t *testing.T) {
 	}
 }
 
-func TestIssueUpdateRequiresKnownByRole(t *testing.T) {
+func TestIssueUpdateUsesStandaloneActorAttribution(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -481,29 +481,23 @@ func TestIssueUpdateRequiresKnownByRole(t *testing.T) {
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Role validation update", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	t.Run("missing by", func(t *testing.T) {
+	t.Run("missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--title", "No role")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
+			t.Fatal("Execute() error = nil, want missing --actor rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
+		if !strings.Contains(stderr, "error: --actor is required") {
+			t.Fatalf("stderr = %q, want missing --actor error", stderr)
 		}
 	})
 
-	t.Run("unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--title", "Unknown role", "--actor", "agent:intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
+	t.Run("unregistered actor updates as attribution", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "update", issueID, "--title", "Unregistered actor", "--actor", "agent:intern")
+		if !strings.Contains(stderr, "updated "+issueID) {
+			t.Fatalf("stderr = %q, want update confirmation", stderr)
 		}
 	})
 }

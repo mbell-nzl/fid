@@ -33,17 +33,30 @@ func validateNextAggregateSequence(journalDir string, event Event) error {
 	if !event.IsV2() {
 		return nil
 	}
-	files, err := orderedJournalFiles(journalDir)
+	sequence, err := NextAggregateSequence(journalDir, event.Aggregate)
 	if err != nil {
 		return err
+	}
+	if event.Aggregate.Sequence != sequence {
+		return fmt.Errorf("aggregate %s/%s sequence %d, want %d", event.Aggregate.Type, event.Aggregate.ID, event.Aggregate.Sequence, sequence)
+	}
+	return nil
+}
+
+// NextAggregateSequence returns the next Event-v2 sequence for one aggregate.
+// Callers hold the journal write lock while deriving and appending the Event.
+func NextAggregateSequence(journalDir string, aggregate Aggregate) (int, error) {
+	files, err := orderedJournalFiles(journalDir)
+	if err != nil {
+		return 0, err
 	}
 	tracker := newAggregateSequenceTracker()
 	for _, fileName := range files {
 		if err := addAggregateSequencesFromFile(tracker, filepath.Join(journalDir, fileName)); err != nil {
-			return err
+			return 0, err
 		}
 	}
-	return tracker.add(event)
+	return tracker.sequences[aggregate.Type+"/"+aggregate.ID] + 1, nil
 }
 
 func addAggregateSequencesFromFile(tracker *aggregateSequenceTracker, path string) error {

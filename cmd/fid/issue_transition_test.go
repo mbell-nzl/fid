@@ -122,7 +122,7 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 			if tt.expectedRevision != "" {
 				args = append(args, "--expected-revision", tt.expectedRevision)
 			}
-			args = append(args, "--by", "developer")
+			args = append(args, "--actor", "agent:developer")
 			result := executeCommandForTest(workspace, args...)
 
 			if tt.wantSuccess {
@@ -315,8 +315,8 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 						} `json:"issue"`
 					} `json:"result"`
 					Event struct {
-						ID         string    `json:"id"`
-						OccurredAt time.Time `json:"occurred_at"`
+						ID         string `json:"id"`
+						OccurredAt string `json:"occurred_at"`
 					} `json:"event"`
 				}
 				if err := json.Unmarshal([]byte(result.stdout), &success); err != nil {
@@ -329,7 +329,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 					t.Fatalf("journal lines after legal transition = %d, want %d", got, linesBefore+1)
 				}
 				journalTail := lastCommandJournalEvent(t, journalPath)
-				if success.Event.ID != journalTail.EventID || !success.Event.OccurredAt.Equal(journalTail.OccurredAt) {
+				if success.Event.ID != journalTail.EventID || success.Event.OccurredAt != journalTail.OccurredAt.UTC().Format(time.RFC3339Nano) {
 					t.Fatalf("transition event = (%q, %s), want journal tail (%q, %s)", success.Event.ID, success.Event.OccurredAt, journalTail.EventID, journalTail.OccurredAt)
 				}
 				return
@@ -440,19 +440,19 @@ func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
 			}
 
 			journalTail := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
-			if journalTail.EventID != envelope.Event.ID || journalTail.Actor.Role != "developer" {
-				t.Fatalf("journal tail = (%q, actor %q), want returned event %q with local developer attribution", journalTail.EventID, journalTail.Actor.Role, envelope.Event.ID)
+			if journalTail.EventID != envelope.Event.ID || journalTail.ActorV2.ActorID != "developer" || journalTail.ActorV2.Producer != "fid-standalone" || journalTail.ActorV2.ProvenanceRef != "project-local-attribution" {
+				t.Fatalf("journal tail = (%q, actor %#v), want returned event %q with local developer attribution", journalTail.EventID, journalTail.ActorV2, envelope.Event.ID)
 			}
 			for _, effect := range journalTail.Effects {
-				if effect.Table != "issues" && effect.Table != "activity_log" {
-					t.Fatalf("%s Event effect table = %q, want only issues/activity_log", tt.name, effect.Table)
+				if effect.Table != "issues" && effect.Table != "activity_log" && effect.Table != "idempotency_results" && effect.Table != "issue_revisions" {
+					t.Fatalf("%s Event effect table = %q, want retained Issue, activity, revision, or idempotency projection", tt.name, effect.Table)
 				}
 			}
 			assertProjectedIssueActivityAttribution(t, workspace, journalTail.EventID, issueID, "developer")
 
 			afterCounts := commandProjectionTableCounts(t, workspace)
 			for table, before := range beforeCounts {
-				if table == "issues" || table == "activity_log" || table == "journal_events" {
+				if table == "issues" || table == "activity_log" || table == "idempotency_results" || table == "issue_revisions" || table == "journal_events" {
 					continue
 				}
 				if after := afterCounts[table]; after != before {
@@ -720,29 +720,29 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 		}
 	})
 
-	t.Run("missing by", func(t *testing.T) {
+	t.Run("missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "in_progress")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
+			t.Fatal("Execute() error = nil, want missing --actor rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
+		if !strings.Contains(stderr, "error: --actor is required") {
+			t.Fatalf("stderr = %q, want missing --actor error", stderr)
 		}
 	})
 
-	t.Run("unknown by", func(t *testing.T) {
+	t.Run("unregistered actor reaches claim precondition", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:intern")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown --by rejection")
+			t.Fatal("Execute() error = nil, want live claim rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
+		if !strings.Contains(stderr, `has no live claim held by "intern"`) {
+			t.Fatalf("stderr = %q, want intern claim precondition", stderr)
 		}
 	})
 }
@@ -829,7 +829,7 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 	}
 }
 
-func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
+func TestIssueTransitionUsesStandaloneActorAttribution(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -855,34 +855,16 @@ func TestIssueTransitionUsesStateSpecificPermissions(t *testing.T) {
 		t.Fatalf("complete stderr = %q, want completion confirmation", completeStderr)
 	}
 
-	journalPath := mustJournalPath(t, workspace)
-	linesBeforeDenied := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
-
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:qa_reviewer")
-	if err == nil {
-		t.Fatal("qa_reviewer dev_complete error = nil, want permission denial")
-	}
+	stdout, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:qa_reviewer")
 	if stdout != "" {
 		t.Fatalf("qa_reviewer stdout = %q, want empty", stdout)
 	}
-	for _, want := range []string{
-		`error: role "qa_reviewer" not permitted for action "issue.transition.dev_complete"`,
-		"check `fid policy show` for permitted role/action combinations",
-	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("qa_reviewer stderr = %q, want substring %q", stderr, want)
-		}
+	if !strings.Contains(stderr, "transitioned "+issueID+": in_progress → dev_complete") {
+		t.Fatalf("qa_reviewer stderr = %q, want standalone attribution transition confirmation", stderr)
 	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBeforeDenied {
-		t.Fatalf("journal lines after qa_reviewer denial = %d, want %d", got, linesBeforeDenied)
-	}
-
-	allowedStdout, allowedStderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:developer")
-	if allowedStdout != "" {
-		t.Fatalf("developer stdout = %q, want empty", allowedStdout)
-	}
-	if !strings.Contains(allowedStderr, "transitioned "+issueID+": in_progress → dev_complete") {
-		t.Fatalf("developer stderr = %q, want dev_complete confirmation", allowedStderr)
+	last := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+	if last.ActorV2.ActorID != "qa_reviewer" || last.ActorV2.Producer != "fid-standalone" {
+		t.Fatalf("transition Event actor = %#v, want qa_reviewer standalone attribution", last.ActorV2)
 	}
 }
 

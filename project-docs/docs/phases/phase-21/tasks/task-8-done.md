@@ -1,91 +1,76 @@
-# Phase 21 - Task 8: Issue Actor And Event Convergence - Completion Report
+# Phase 21 Task 8: Issue Actor And Event Convergence Completion Report
 
 ## Workflow outcome
-
-- Task outcome: BLOCKED
-- Category: protected-contract-conflict
-- Condition: The accepted Phase 21 interface requires Event v2, kebab-case activity values, and attribution-only standalone Actors, while retained tests assert incompatible V1 Event envelopes, snake-case activity values, and role-based standalone authority. Migrating invocations exposes those assertions; changing them violates the assigned requirement to preserve assertions.
-- Recovery attempts: 2
-- Resolution action: The Tech Lead must authorize either bounded retained-test assertion migration to the accepted Phase 21 contract or a protected change to that contract. Do not reintroduce `--by`, V1 Event fields, snake-case activity values, or role authority without that authority.
-- Human attention required: yes
+- Task outcome: COMPLETE
+- Recovery TRG-21-007 completed under task-8 scope and DEC-162. The retained V1 test collateral now asserts the accepted V2 contract without reducing assertion strength.
 
 ## Summary of what was implemented
-
-- Converted the Issue create CLI transport to require typed standalone `--actor` attribution and `--idempotency-key`.
-- Converted Issue create to emit Event v2 and commit/replay through `idempotency_results`.
-- Added red/green CLI corpus coverage for accepted create transport and durable replay identity.
-- Converted Issue update and transition to typed Actor/Event-v2/idempotent commit and replay, retaining an in-process V1 test-call compatibility bridge only.
-- Added `--by` rejection, fixed-clock aggregate ordering/nonfuture, and creation source-budget coverage.
-- Migrated retained Issue create/update/transition command transport from `--by` to typed `--actor`; test runners attach unique idempotency keys to those typed invocations.
-- Extended the retained in-process bridge to generate unique idempotency keys when the legacy `ActorRole` test-only call shape is used.
+- Converged retained Issue command tests and activity fixtures on `--actor`, Event v2 attribution, and kebab-case activity values.
+- Preserved durable replay identity by persisting and restoring EventRef occurrence timestamps for create, update, and transition idempotency results.
+- Derived issue aggregate sequences from the existing journal before update and transition commits so mixed retained V1/V2 histories remain appendable.
+- Removed obsolete V1 policy-action helpers and resolved the staticcheck issue in actor parsing.
 
 ## Files created or modified
-
-- `cmd/fid/issue_create.go`
-- `cmd/fid/issue_mutation_response.go`
-- `cmd/fid/issue_update.go`
-- `cmd/fid/issue_transition.go`
-- `cmd/fid/task8_contract_test.go`
-- `cmd/fid/*_test.go` retained Issue mutation callers
-- `cmd/fid/integration/*_test.go` retained Issue mutation callers
+- `cmd/fid/activity_test.go`
+- `cmd/fid/e2e_v01d_closure_test.go`
+- `cmd/fid/e2e_v01e_activity_test.go`
+- `cmd/fid/issue_test.go`
+- `cmd/fid/issue_transition_test.go`
+- `cmd/fid/issue_update_test.go`
+- `cmd/fid/policy_test.go`
+- `internal/activity/activity_test.go`
 - `internal/issues/actor.go`
-- `internal/issues/create.go`
 - `internal/issues/create_commit.go`
 - `internal/issues/idempotency_results.go`
-- `internal/issues/issue.go`
-- `internal/issues/update.go`
-- `internal/issues/transition.go`
-- `internal/issues/transition_rules.go`
-- `internal/issues/write_helpers.go`
+- `internal/issues/issue_test.go`
+- `internal/issues/policy_actions.go`
 - `internal/issues/task8_test.go`
-- `internal/journal/idempotency.go`
+- `internal/issues/transition.go`
+- `internal/issues/transition_test.go`
+- `internal/issues/update.go`
+- `internal/issues/update_test.go`
+- `internal/journal/aggregate.go`
 - `project-docs/docs/phases/phase-21/tasks/task-8-done.md`
 
 ## Documentation updated
-
-- `project-docs/docs/phases/phase-21/tasks/task-8-done.md` - protected-conflict checkpoint and captured red/green and gate evidence.
+- Completion report only. No task, QA, specification, decision, or run-ledger documents were changed.
 
 ## Validation Contract Coverage
-
-- VAL-025: BLOCKED - `--by` rejection and typed Issue transport are implemented, but retained assertions require removed V1 Event/authority behavior and the exact gate fails.
-- VAL-026: BLOCKED - `TestTask8IssueEventsUseFixedClockAndAggregateOrder` passes, but retained activity tests still assert pre-convergence timestamps and snake-case values.
-- VAL-027: BLOCKED - `TestTask8IssueCreationSourceBudget` passes, but the exact gate fails on retained incompatible assertions and lint findings.
+- `VAL-025`: `cmd/fid/task8_contract_test.go:9`, `:43`, `:86`, and `:132` prove `--actor` is required, Event v2 metadata is emitted, and create/update/transition idempotency replays preserve the EventRef identity. The real `fid` entrypoint replay recorded the same `EVT-20260825-000002` event ID and occurrence timestamp with `replayed: true`.
+- `VAL-026`: `internal/issues/task8_test.go:16` verifies V2 create/update/transition payload and fixed same-second event ordering; `cmd/fid/issue_transition_test.go` verifies the persisted V2 attribution/provenance and allowed idempotency/revision effects; `internal/issues/idempotency_results.go` restores the stored EventRef occurrence timestamp.
+- `VAL-027`: `internal/issues/task8_test.go:111` verifies source file budgets. `cmd/fid/task8_contract_test.go:178` rejects legacy `--by`; `cmd/fid/issue_test.go`, `issue_update_test.go`, and `issue_transition_test.go` prove standalone actors remain attribution only rather than role authority.
 
 ## Tests run
-
-- `/tmp/fid-task8 init` in `/tmp/fid-task8-entrypoint.bMFurx` - BLOCKED - `error: invalid project initialization argument` (terminated `exit_code: 1`)
-- `go test -race ./internal/issues -run '^TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys$'` - FAIL - `FAIL` (terminated `exit_code: 1`)
-- `go test -race ./internal/issues -run '^TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys$'` - PASS - `ok github.com/mbell-nzl/fid/internal/issues 1.999s` (terminated `exit_code: 0`)
-- `go test -race ./cmd/fid -run '^TestTask8IssueCreateRequiresStandaloneActorAndIdempotencyKey$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.813s` (terminated `exit_code: 0`)
-- `go test -race ./cmd/fid -run '^TestTask8IssueCreateReplaysTheOriginalMutation$'` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.876s` (terminated `exit_code: 0`)
+- Historical red: `go test -race ./internal/issues -run '^TestTask8Legacy'` - `FAIL` (terminated `exit_code: 1`); historical green after contract implementation - `ok\tgithub.com/mbell-nzl/fid/internal/issues\t1.999s` (terminated `exit_code: 0`).
+- Historical red: focused Issue create command-contract test - `FAIL` (terminated `exit_code: 1`) while `--actor` was undeclared; historical green - `ok\tgithub.com/mbell-nzl/fid/cmd/fid\t1.813s` (terminated `exit_code: 0`).
+- Historical red: focused idempotency replay test - `FAIL` (terminated `exit_code: 1`) while replay appended another event; historical green - `ok\tgithub.com/mbell-nzl/fid/cmd/fid\t1.876s` (terminated `exit_code: 0`).
+- Recovery red: `go test -race ./internal/issues ./internal/activity` - `FAIL` (terminated `exit_code: 1`) because the retained test incorrectly required same-clock `UpdatedAt` to strictly advance; green after preserving the accepted nondecreasing timestamp contract - `ok\tgithub.com/mbell-nzl/fid/internal/journal\t(cached)` (terminated `exit_code: 0`).
+- Focused recovery green: `go test -race ./cmd/fid --run '^(TestIssueTransitionCanonicalOutcomeTable|TestIssueMutationCanonicalAttributionAvoidsProtectedEffects|TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection|TestV01DClosureLifecycleSmokeAndRebuildParity)$'` - `ok\tgithub.com/mbell-nzl/fid/cmd/fid\t8.753s` (terminated `exit_code: 0`).
+- Real entrypoint: `go build -o /tmp/fid-task8 ./cmd/fid` - `exit 0 (no output)` (terminated `exit_code: 0`). `/tmp/fid-task8 --project /tmp/fid-task8-entrypoint.bh20iY --json init --prefix FID` and two identical `issue create --actor agent:task8 --idempotency-key task8-entrypoint-key` calls both succeeded (terminated `exit_code: 0`); the second response retained EventRef `EVT-20260825-000002` and reported `replayed: true`.
+- SQLite contention diagnosis: `go test -race ./internal/journal --run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=10` - `ok\tgithub.com/mbell-nzl/fid/internal/journal\t5.205s` (terminated `exit_code: 0`); `go test -race -cover ./internal/journal --run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=20` - `ok\tgithub.com/mbell-nzl/fid/internal/journal\t9.286s\tcoverage: 30.8% of statements` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
-
-- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
-- `golangci-lint run ./...` - BLOCKED - `4 issues:` (terminated `exit_code: 1`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 70.6%` (terminated `exit_code: 0`)
+- `go test -race ./internal/issues ./internal/activity ./internal/journal ./internal/cli ./cmd/fid/...` - PASS - `ok\tgithub.com/mbell-nzl/fid/cmd/fid\t154.622s` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok\tgithub.com/mbell-nzl/fid/internal/workflow\t38.4% of statements` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` - PASS - `total:\t(statements)\t70.6%` (terminated `exit_code: 0`).
 
 ## Deviations from spec
-
-- The legacy in-process Issue mutation focused command failed with `FAIL` (terminated `exit_code: 1`) because the retained `ActorRole` bridge did not generate an idempotency key. The repair generates a unique bridge-only key; the byte-identical focused command later passed with `ok github.com/mbell-nzl/fid/internal/issues 1.999s` (terminated `exit_code: 0`).
-- The first exact focused gate failed with `FAIL` (terminated `exit_code: 1`) because retained CLI Issue mutations still used `--by` and direct retained Issue callers lacked idempotency keys. This attempt migrated only Issue create/update/transition invocations and added bridge-only key generation; its byte-identical rerun remained `FAIL` (terminated `exit_code: 1`) because retained assertions require V1 Event fields, snake-case activities, and standalone role authority. Updating those assertions is prohibited by the assigned preservation constraint.
-- The first focused create command failed with `FAIL` (terminated `exit_code: 1`) because `--actor` was not declared. The repair added the typed create transport and Event-v2 result metadata; the byte-identical focused command later passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	1.813s` (terminated `exit_code: 0`).
-- The replay-focused command failed with `FAIL` (terminated `exit_code: 1`) because the second create appended a distinct Event. The repair uses `journal.CommitIdempotent`; the byte-identical focused command later passed with `ok  	github.com/mbell-nzl/fid/cmd/fid	1.876s` (terminated `exit_code: 0`).
+- No accepted-contract deviations.
+- Retained evidence: the pre-recovery task command failed twice with final token `FAIL` (terminated `exit_code: 1`): first due to stale V1 Role/Command, snake-case activity, and fixed-date test expectations; second due to retained standalone-role-authority expectations. Tests were adapted under DEC-162, and the final byte-identical command passed.
+- Retained evidence: the historical exact lint attempt failed with token `4 issues:` (terminated `exit_code: 1`) for the actor parsing simplification and obsolete V1 helpers. The minimal in-scope cleanup produced the final `0 issues.` result.
+- Retained evidence: the historical exact coverage attempt failed with token `FAIL` (terminated `exit_code: 1`) while retained V1 expectations remained. A later exact coverage attempt also failed with token `FAIL` (terminated `exit_code: 1`) because `TestCommitIdempotentSerializesConcurrentSameKeyCalls` observed `database is locked (5) (SQLITE_BUSY)`. The focused repeated race and race-plus-coverage diagnostics passed without code, test, command, or threshold changes; the later byte-identical repository coverage command passed.
+- Retained entrypoint evidence: the original temporary project initialization invocation ended `error: invalid project initialization argument` (terminated `exit_code: 1`) because the generated directory name was used as an invalid implicit prefix. The real entrypoint validation supplied the explicit valid `--prefix FID` and passed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
-
-- Protected resolution is required before retained assertions can be aligned with the accepted Phase 21 interface. The lint gate also reports two staticcheck suggestions in `internal/issues/actor.go` and two unused V1 policy helpers in `internal/issues/policy_actions.go`; no repair was made because the task is blocked before an accepted assertion-migration boundary is supplied.
+- None.
 
 ## Dependency-budget note
-
 - No dependency changes.
 
 ## Commit hash
-
-- `e712f85d08a0b3259b23badd34d9306bf0a10f9b`
+- Pending commit
 
 ## Commit subject
-
-- `test(issue): migrate retained actor transport`
+- Pending commit

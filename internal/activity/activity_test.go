@@ -273,7 +273,7 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 
 	if _, err := conn.Exec(`
 		DELETE FROM activity_log
-		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue_created'
+		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue-created'
 	`, result.ID); err != nil {
 		t.Fatalf("delete create activity row: %v", err)
 	}

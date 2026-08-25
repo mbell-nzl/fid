@@ -629,8 +629,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	if event.EventType != "issue.created" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "issue.created")
 	}
-	if event.EventID == "" || event.EventSchema != journal.EventSchemaV1 || event.Actor.Role != "developer" || len(event.Command.Argv) == 0 {
-		t.Fatalf("event envelope = %+v, want populated v1 envelope", event)
+	if event.EventID == "" || event.EventSchema != journal.EventSchemaV2 || event.ActorV2.ActorID != "developer" || event.ActorV2.ActorType != "agent" || event.ActorV2.Producer != "fid-standalone" || event.ActorV2.ProvenanceRef != "project-local-attribution" || event.Aggregate.ID != issueID || event.Aggregate.Sequence != 1 || event.CommandName != "issue.create" || event.Idempotency == nil {
+		t.Fatalf("event envelope = %+v, want populated v2 standalone Issue Event", event)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -668,8 +668,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_created" {
-		t.Fatalf("activity_log event = %q, want issue_created", activityEvent)
+	if activityEvent != "issue-created" {
+		t.Fatalf("activity_log event = %q, want issue-created", activityEvent)
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
@@ -703,67 +703,36 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 	}
 }
 
-func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
+func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	t.Run("issue create missing by", func(t *testing.T) {
+	t.Run("issue create missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing role")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
+			t.Fatal("Execute() error = nil, want missing --actor rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
+		if !strings.Contains(stderr, "error: --actor is required") {
+			t.Fatalf("stderr = %q, want missing --actor error", stderr)
 		}
 	})
 
-	t.Run("issue create unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role", "--actor", "agent:intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
+	t.Run("unregistered actor is recorded as attribution", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unregistered actor", "--actor", "agent:intern")
+		issueID := parseCreatedIssueID(t, stderr)
+		tail := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+		if tail.ActorV2.ActorID != "intern" || tail.ActorV2.ActorType != "agent" || tail.Aggregate.ID != issueID {
+			t.Fatalf("Event Actor/aggregate = (%#v, %#v), want agent intern attribution for %q", tail.ActorV2, tail.Aggregate, issueID)
 		}
 	})
 
-	t.Run("issue create denied role leaves journal unchanged", func(t *testing.T) {
-		journalPath := mustJournalPath(t, workspace)
-		linesBefore := splitJournalLines(mustReadCommandFile(t, journalPath))
-
-		stdout, stderr, err := runFIDCommandExpectError(
-			t,
-			workspace,
-			"issue", "create",
-			"--kind", "epic",
-			"--title", "Denied epic create",
-			"--scheduling", "sequential",
-			"--actor", "agent:developer",
-		)
-		if err == nil {
-			t.Fatal("Execute() error = nil, want permission rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		for _, want := range []string{
-			`error: role "developer" not permitted for action "issue.create.epic"`,
-			"check `fid policy show` for permitted role/action combinations",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
-			}
-		}
-
-		linesAfter := splitJournalLines(mustReadCommandFile(t, journalPath))
-		if len(linesAfter) != len(linesBefore) {
-			t.Fatalf("journal lines after rejection = %d, want unchanged %d", len(linesAfter), len(linesBefore))
+	t.Run("actor does not select standalone create authority", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Attributed epic create", "--scheduling", "sequential", "--actor", "agent:developer")
+		if issueID := parseCreatedIssueID(t, stderr); issueID == "" {
+			t.Fatal("attributed epic create did not return an Issue ID")
 		}
 	})
 

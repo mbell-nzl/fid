@@ -53,10 +53,11 @@ func validStandaloneActorID(value string) bool {
 		return false
 	}
 	for index, character := range value {
-		if !(character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z' || character >= '0' && character <= '9' || character == '.' || character == '_' || character == '-') {
+		isAlphaNumeric := character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z' || character >= '0' && character <= '9'
+		if !isAlphaNumeric && character != '.' && character != '_' && character != '-' {
 			return false
 		}
-		if index == 0 && !(character >= 'A' && character <= 'Z' || character >= 'a' && character <= 'z' || character >= '0' && character <= '9') {
+		if index == 0 && !isAlphaNumeric {
 			return false
 		}
 	}

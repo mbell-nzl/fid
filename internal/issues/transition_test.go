@@ -123,8 +123,8 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	if got := updateEffect.Values["status"]; got != "in_progress" {
 		t.Fatalf("update value status = %#v, want in_progress", got)
 	}
-	if got := activityEffect.Values["event"]; got != "status_changed" {
-		t.Fatalf("activity event = %#v, want status_changed", got)
+	if got := activityEffect.Values["event"]; got != "status-changed" {
+		t.Fatalf("activity event = %#v, want status-changed", got)
 	}
 	details, ok := activityEffect.Values["details"].(map[string]any)
 	if !ok {
@@ -158,8 +158,8 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
 	}
-	if eventName != "status_changed" {
-		t.Fatalf("activity_log event = %q, want status_changed", eventName)
+	if eventName != "status-changed" {
+		t.Fatalf("activity_log event = %q, want status-changed", eventName)
 	}
 
 	beforeRebuild := issue

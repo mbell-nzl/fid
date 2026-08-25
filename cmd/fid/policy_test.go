@@ -114,7 +114,7 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	}
 }
 
-func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.T) {
+func TestPolicyShowDoesNotGrantStandaloneIssueAuthority(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -143,7 +143,7 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 		}
 	}
 
-	deniedStdout, deniedStderr, err := runFIDCommandExpectError(
+	attributedStdout, attributedStderr := runFIDCommand(
 		t,
 		workspace,
 		"issue", "create",
@@ -152,14 +152,11 @@ func TestPolicyShowMatchesWriteEnforcementForPermittedAndDeniedCells(t *testing.
 		"--scheduling", "sequential",
 		"--actor", "agent:developer",
 	)
-	if err == nil {
-		t.Fatal("developer epic create error = nil, want permission denial")
+	if attributedStdout != "" {
+		t.Fatalf("developer epic create stdout = %q, want empty", attributedStdout)
 	}
-	if deniedStdout != "" {
-		t.Fatalf("developer epic create stdout = %q, want empty", deniedStdout)
-	}
-	if !strings.Contains(deniedStderr, `error: role "developer" not permitted for action "issue.create.epic"`) {
-		t.Fatalf("developer epic create stderr = %q, want permission denial", deniedStderr)
+	if !strings.Contains(attributedStderr, "created issue ") || !strings.Contains(attributedStderr, "(epic)") {
+		t.Fatalf("developer epic create stderr = %q, want standalone attribution confirmation", attributedStderr)
 	}
 
 	allowedStdout, allowedStderr := runFIDCommand(

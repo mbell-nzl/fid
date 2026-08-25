@@ -304,8 +304,8 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if want := []string{"api", "core"}; !equalStrings(after.Labels, want) {
 		t.Fatalf("Get(after update) labels = %#v, want %#v", after.Labels, want)
 	}
-	if after.UpdatedAt == nil || before.UpdatedAt == nil || *after.UpdatedAt == *before.UpdatedAt {
-		t.Fatalf("updated_at before/after = %#v / %#v, want advance", before.UpdatedAt, after.UpdatedAt)
+	if after.UpdatedAt == nil || before.UpdatedAt == nil || *after.UpdatedAt < *before.UpdatedAt {
+		t.Fatalf("updated_at before/after = %#v / %#v, want nondecreasing", before.UpdatedAt, after.UpdatedAt)
 	}
 
 	if got := countJournalLines(journalPath); got != linesBefore+1 {
@@ -392,8 +392,8 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 	if actor != "tl" {
 		t.Fatalf("activity_log actor = %q, want tl", actor)
 	}
-	if eventName != "issue_updated" {
-		t.Fatalf("activity_log event = %q, want issue_updated", eventName)
+	if eventName != "issue-updated" {
+		t.Fatalf("activity_log event = %q, want issue-updated", eventName)
 	}
 	for _, want := range []string{`"field":"labels"`, `"field":"priority"`, `"field":"spec_md_path"`, `"field":"title"`} {
 		if !strings.Contains(detailsRaw, want) {

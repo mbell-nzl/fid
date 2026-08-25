@@ -139,12 +139,16 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		if err != nil {
 			return err
 		}
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
+		if err != nil {
+			return err
+		}
 		event := journal.Event{
 			EventSchema: journal.EventSchemaV2,
 			EventType:   "issue.updated",
 			OccurredAt:  issueMutationNow(options.now),
 			ActorV2:     actor.eventActor(),
-			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: current.Revision + 1, Type: "issue"},
+			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: aggregateSequence, Type: "issue"},
 			CommandName: "issue.update",
 		}
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
@@ -177,7 +181,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 			return err
 		}
 		event.Effects = append(effects, issueActivityEffect(activityID, prepared.EventID, actor.id, timestamp, current.ID, "issue-updated", map[string]any{"changes": activityDetailChanges(changes)}))
-		resultJSON, err := updateResultJSON(UpdateResult{ID: current.ID, Revision: current.Revision + 1, Changes: changes, IdempotencyKey: options.IdempotencyKey})
+		resultJSON, err := updateResultJSON(UpdateResult{ID: current.ID, Revision: current.Revision + 1, Changes: changes, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
 		if err != nil {
 			return err
 		}

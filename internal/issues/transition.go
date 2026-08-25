@@ -216,13 +216,17 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
+		if err != nil {
+			return err
+		}
 
 		event := journal.Event{
 			EventSchema: journal.EventSchemaV2,
 			EventType:   "issue.transitioned",
 			OccurredAt:  issueMutationNow(options.now),
 			ActorV2:     actor.eventActor(),
-			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: current.Revision + 1, Type: "issue"},
+			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: aggregateSequence, Type: "issue"},
 			CommandName: "issue.transition",
 		}
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
@@ -267,7 +271,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		event.Effects = append(effects, issueActivityEffect(activityID, prepared.EventID, actor.id, timestamp, current.ID, "status-changed", map[string]any{"from": current.Status, "to": toState}))
-		resultJSON, err := transitionResultJSON(TransitionResult{ID: current.ID, Revision: current.Revision + 1, FromState: current.Status, ToState: toState, IdempotencyKey: options.IdempotencyKey})
+		resultJSON, err := transitionResultJSON(TransitionResult{ID: current.ID, Revision: current.Revision + 1, FromState: current.Status, ToState: toState, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
 		if err != nil {
 			return err
 		}

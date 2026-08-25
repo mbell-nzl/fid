@@ -920,8 +920,8 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	if activityEffect == nil {
 		t.Fatal("missing issue_created activity effect")
 	}
-	if got := activityEffect.Values["event"]; got != "issue_created" {
-		t.Fatalf("activity event = %#v, want issue_created", got)
+	if got := activityEffect.Values["event"]; got != "issue-created" {
+		t.Fatalf("activity event = %#v, want issue-created", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -944,8 +944,8 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if eventName != "issue_created" {
-		t.Fatalf("activity_log event = %q, want issue_created", eventName)
+	if eventName != "issue-created" {
+		t.Fatalf("activity_log event = %q, want issue-created", eventName)
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)

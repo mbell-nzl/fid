@@ -192,19 +192,19 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	}
 
 	want := []activityLifecycleExpectation{
-		{RefID: finishIssueID, Event: "issue_created"},
+		{RefID: finishIssueID, Event: "issue-created"},
 		{RefID: finishIssueID, Event: "status_changed"},
 		{RefID: finishIssueID, Event: "ac_added"},
 		{RefID: finishIssueID, Event: "ac_verified"},
 		{RefID: finishIssueID, Event: "gate_recorded"},
 		{RefID: finishIssueID, Event: "status_changed"},
 		{RefID: finishIssueID, Event: "task_completed"},
-		{RefID: peerIssueID, Event: "issue_created"},
+		{RefID: peerIssueID, Event: "issue-created"},
 		{RefID: finishIssueID, Event: "link_added"},
-		{RefID: unclaimIssueID, Event: "issue_created"},
+		{RefID: unclaimIssueID, Event: "issue-created"},
 		{RefID: unclaimIssueID, Event: "status_changed"},
 		{RefID: unclaimIssueID, Event: "claim_released"},
-		{RefID: concernIssueID, Event: "issue_created"},
+		{RefID: concernIssueID, Event: "issue-created"},
 		{RefID: concernIssueID, Event: "task_completed"},
 		{RefID: concernIssueID, Event: "concern_raised"},
 		{RefID: concernIssueID, Event: "task_completed"},
@@ -225,7 +225,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		}
 	}
 	assertActivityEventsForIssue(t, workspace, finishIssueID, []string{
-		"issue_created",
+		"issue-created",
 		"status_changed",
 		"ac_added",
 		"ac_verified",
@@ -235,15 +235,15 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		"link_added",
 	})
 	assertActivityEventsForIssue(t, workspace, peerIssueID, []string{
-		"issue_created",
+		"issue-created",
 	})
 	assertActivityEventsForIssue(t, workspace, unclaimIssueID, []string{
-		"issue_created",
+		"issue-created",
 		"status_changed",
 		"claim_released",
 	})
 	assertActivityEventsForIssue(t, workspace, concernIssueID, []string{
-		"issue_created",
+		"issue-created",
 		"task_completed",
 		"concern_raised",
 		"task_completed",
