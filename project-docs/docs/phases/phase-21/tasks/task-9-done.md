@@ -95,8 +95,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ab09b4756c4e610c836222c99a9eed51b39a6559`
 
 ## Commit subject
 
-- Pending commit
+- `feat(convergence): checkpoint inventory actor migrations`
