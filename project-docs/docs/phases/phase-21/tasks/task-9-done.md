@@ -86,7 +86,7 @@
 - `golangci-lint run ./...` - BLOCKED - `* unused: 2` (terminated `exit_code: 1`; obsolete helper symbols remained after writer isolation)
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; the full suite still contains retained V1 test expectations)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.8%` (terminated `exit_code: 0`)
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`; byte-identical rerun after in-scope cleanup)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
