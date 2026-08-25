@@ -11,7 +11,7 @@ import (
 	internalstats "github.com/mbell-nzl/fid/internal/stats"
 )
 
-func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
+func TestStatsTokensDefaultsToJSONByActorAttribution(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -25,20 +25,10 @@ func TestStatsTokensDefaultsToJSONByRole(t *testing.T) {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
 
-	want := expectedCommandStructure(t, []internalstats.TokensRow{
-		{
-			Role:           stringPointer("developer"),
-			TotalTokensIn:  120,
-			TotalTokensOut: 30,
-			RunCount:       1,
-		},
-		{
-			Role:           stringPointer("qa_reviewer"),
-			TotalTokensIn:  40,
-			TotalTokensOut: 10,
-			RunCount:       1,
-		},
-	})
+	want := map[string]any{"contract_version": "fid-cli.v1", "event": nil, "ok": true, "operation": "stats.tokens", "result": map[string]any{"items": []any{
+		map[string]any{"actor_attribution": "developer", "epic_id": nil, "model": nil, "total_tokens_in": "120", "total_tokens_out": "30", "run_count": "1"},
+		map[string]any{"actor_attribution": "qa_reviewer", "epic_id": nil, "model": nil, "total_tokens_in": "40", "total_tokens_out": "10", "run_count": "1"},
+	}}}
 	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("stats tokens json = %#v, want %#v", got, want)
 	}
@@ -59,30 +49,20 @@ func TestStatsTokensUsesDirectLegacyJSONAndEpicFilter(t *testing.T) {
 	recordStatsCommandRun(t, workspace, epicID, "tl", "gemini-2.5-pro", 70, 7)
 	recordStatsCommandRun(t, workspace, standaloneTaskID, "developer", "gpt-5", 30, 5)
 
-	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "epic")
+	jsonStdout, jsonStderr := runFIDCommand(t, workspace, "stats", "tokens", "--group-by", "epic")
 	if jsonStderr != "" {
 		t.Fatalf("json stderr = %q, want empty", jsonStderr)
 	}
 
-	wantRows := []internalstats.TokensRow{
-		{
-			TotalTokensIn:  30,
-			TotalTokensOut: 5,
-			RunCount:       1,
-		},
-		{
-			EpicID:         stringPointer(epicID),
-			TotalTokensIn:  220,
-			TotalTokensOut: 37,
-			RunCount:       3,
-		},
-	}
-	want := expectedCommandStructure(t, wantRows)
+	want := map[string]any{"contract_version": "fid-cli.v1", "event": nil, "ok": true, "operation": "stats.tokens", "result": map[string]any{"items": []any{
+		map[string]any{"actor_attribution": nil, "epic_id": nil, "model": nil, "total_tokens_in": "30", "total_tokens_out": "5", "run_count": "1"},
+		map[string]any{"actor_attribution": nil, "epic_id": epicID, "model": nil, "total_tokens_in": "220", "total_tokens_out": "37", "run_count": "3"},
+	}}}
 	if got := decodeCommandJSONStructure(t, jsonStdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("stats tokens by epic json = %#v, want %#v", got, want)
 	}
 
-	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "tokens", "--by", "role", "--epic", epicID)
+	filteredStdout, filteredStderr := runFIDCommand(t, workspace, "stats", "tokens", "--group-by", "actor", "--epic", epicID)
 	if filteredStderr != "" {
 		t.Fatalf("filtered stderr = %q, want empty", filteredStderr)
 	}

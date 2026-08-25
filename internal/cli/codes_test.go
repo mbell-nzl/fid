@@ -90,6 +90,9 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
 			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
 		}},
+		{CodeCapabilityUnavailable, CategoryAuthority, false, []SubjectType{SubjectCapability}, []detailExpectation{
+			stringDetail("capability_id"), {name: "available", kind: detailBooleanKind}, integerDetail("owner_phase"),
+		}},
 		{CodeExecutorPolicyUnsupported, CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition}, []detailExpectation{
 			{name: "fields", kind: detailStringsKind}, {name: "supported", kind: detailObjectKind, children: []detailExpectation{
 				stringDetail("network"), {name: "shell", kind: detailBooleanKind}, stringDetail("sandbox"), stringDetail("write"),

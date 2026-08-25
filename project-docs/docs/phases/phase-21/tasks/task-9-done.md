@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Direct AC verification, concern raise/address, and maintenance vacuum now fail closed before policy or writer work, but the required gates still contain retained V1 CLI and internal assertions for workflow, links, requirements, activity, policy-show, and `--by` fixtures.
-- Recovery attempts: 2
-- Next action: Migrate the remaining retained internal and CLI test corpus to exact actor/key/Event-v2, envelope, kebab-case activity, stats, policy-absence, and no-writer contracts; then rerun all five required commands byte-for-byte.
+- Condition: The retained internal Task 9 packages now pass the required race gate, but the full command gate still contains CLI V1 fixtures and replacement-bound dev tests that expect `--by`, `policy show`, or Phase-23 judgment writers.
+- Recovery attempts: 4
+- Next action: Migrate the remaining Task 9 CLI fixture subjects to exact actor/key/Event-v2, envelope, kebab-case activity, stats, policy-absence, and fail-closed contracts; preserve replacement-bound dev coverage without restoring judgment writers, then rerun all five required commands byte-for-byte.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -61,6 +61,8 @@
 
 - Attempt 2 update: VAL-030 now has direct no-writer evidence in `internal/issues/judgment_unavailable_test.go` and `internal/maintenance/vacuum_unavailable_test.go`; the remaining CLI persistence-negative matrix is in scope for recovery. VAL-028, VAL-029, and VAL-031 remain PARTIAL because the required gate still fails on retained V1 fixture expectations.
 
+- Attempt 4 update: VAL-028 internal workflow, links, requirements, and activity assertions now pass as Event-v2/actor/key and normalized-read coverage. VAL-030 continues to retain typed no-writer assertions; the incomplete CLI migration still prevents COMPLETE for VAL-028 through VAL-031.
+
 ## Tests run
 
 - `go test -race ./cmd/fid -run '^TestTask9RetainedInventorySurface$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 2.072s` (terminated `exit_code: 0`)
@@ -88,6 +90,12 @@
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 64.8%` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL github.com/mbell-nzl/fid/cmd/fid 135.581s` (terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 66.5%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
@@ -95,6 +103,7 @@
 - Recovery attempt 1 added label, issue-label, link, requirement, and activity conversion. Its required package gate failed with `FAIL	github.com/mbell-nzl/fid/cmd/fid	147.763s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) because retained V1 `--by`, policy-show, direct-JSON, role, snake-case activity, and Event-v1 assertions have not yet been migrated. `gofmt -l cmd internal` and `golangci-lint run ./...` both passed with observed `exit_code: 0`. No assertion, threshold, command, policy, or public contract was weakened; the next continuation must preserve these failures while migrating their accepted replacements.
 
 - Recovery attempt 2 made direct judgment and vacuum entries unavailable before policy, projection, lock, Event, or row work. The writer-oriented tests for those exact subjects were adapted to assert typed unavailability before the same writer inputs can be evaluated; this replaces obsolete mutation-success coverage with the accepted fail-closed no-writer contract, not a narrowed assertion. Its required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 130.786s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) because broad retained V1 CLI and internal test fixtures remain. The first lint attempt failed with `* unused: 2` (terminated `exit_code: 1`) due to obsolete helper symbols after writer isolation; removing those symbols and separating inactive legacy implementation produced the byte-identical later PASS `0 issues.` (terminated `exit_code: 0`). No gate, assertion semantics, threshold, policy, or accepted public contract changed.
+- Recovery attempt 4 migrated the retained internal workflow, links, requirements, activity, and CLI-code tests to Event-v2/idempotency, standalone attribution, normalized activity, and capability-code contracts. Its focused internal package set was green before the required gate. The required package and coverage gates remain red on unmigrated CLI V1 fixtures and replacement-bound dev tests that invoke removed Phase-23 writers; no test subject was removed or weakened, and no V1 policy or judgment writer was restored.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -106,8 +115,8 @@
 
 ## Commit hash
 
-- `b441601d012f816ed12833ab921a8c3d73e649a1`
+- Pending commit
 
 ## Commit subject
 
-- `feat(judgments): fail close retained task-9 writers`
+- Pending commit

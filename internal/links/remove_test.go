@@ -58,8 +58,8 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 	stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
 	last := stored[len(stored)-1]
 	eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
-	if eventName != "link_removed" {
-		t.Fatalf("activity_log event = %q, want %q", eventName, "link_removed")
+	if eventName != "link-removed" {
+		t.Fatalf("activity_log event = %q, want %q", eventName, "link-removed")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")

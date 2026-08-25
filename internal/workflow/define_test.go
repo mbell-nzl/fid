@@ -51,11 +51,11 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if err := json.Unmarshal([]byte(afterLines[len(afterLines)-1]), &event); err != nil {
 		t.Fatalf("decode appended event: %v", err)
 	}
-	if event.EventType != "workflow.defined" || event.EventSchema != journal.CurrentEventSchema {
-		t.Fatalf("appended event = (%q, schema %d), want (workflow.defined, schema %d)", event.EventType, event.EventSchema, journal.CurrentEventSchema)
+	if event.EventType != "workflow.defined" || event.EventSchema != journal.EventSchemaV2 {
+		t.Fatalf("appended event = (%q, schema %d), want Event-v2 workflow.defined", event.EventType, event.EventSchema)
 	}
-	if got, want := len(event.Effects), 8; got != want {
-		t.Fatalf("event effects = %d, want %d", got, want)
+	if got, want := len(event.Effects), 9; got != want || event.Effects[len(event.Effects)-1].Table != "idempotency_results" {
+		t.Fatalf("event effects = %#v, want workflow effects plus idempotency result", event.Effects)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

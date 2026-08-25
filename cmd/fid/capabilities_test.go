@@ -162,12 +162,6 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 			errorText:    "--json is not available for concern raise",
 		},
 		{
-			capabilityID: "telemetry.trajectory.v1",
-			surface:      "historical stats",
-			args:         []string{"--json", "stats", "tokens"},
-			errorText:    "--json is not available for stats tokens",
-		},
-		{
 			capabilityID: "attention.v1",
 			surface:      "Attention absence",
 			args:         []string{"--json", "attention", "list"},

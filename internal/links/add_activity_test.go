@@ -45,8 +45,8 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 		if last.EventType != "link.added" {
 			t.Fatalf("last event type = %q, want link.added", last.EventType)
 		}
-		if len(last.Effects) != 5 {
-			t.Fatalf("effect count = %d, want 5", len(last.Effects))
+		if len(last.Effects) != 6 || last.Effects[len(last.Effects)-1].Table != "idempotency_results" {
+			t.Fatalf("effect count = %d, want link effects plus idempotency result", len(last.Effects))
 		}
 		if got := result.IssueRevisions; len(got) != 2 || got[0].Revision != 2 || got[1].Revision != 2 {
 			t.Fatalf("IssueRevisions = %#v, want two Issue revisions at 2", got)
@@ -59,8 +59,8 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 				continue
 			}
 			activityFound = true
-			if got := effect.Values["event"]; got != "link_added" {
-				t.Fatalf("activity event = %#v, want link_added", got)
+			if got := effect.Values["event"]; got != "link-added" {
+				t.Fatalf("activity event = %#v, want link-added", got)
 			}
 			if got := effect.Values["ref_type"]; got != "issue" {
 				t.Fatalf("activity ref_type = %#v, want issue", got)
@@ -81,8 +81,8 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 		}
 
 		eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
-		if eventName != "link_added" {
-			t.Fatalf("activity_log event = %q, want link_added", eventName)
+		if eventName != "link-added" {
+			t.Fatalf("activity_log event = %q, want link-added", eventName)
 		}
 		if actor != "developer" {
 			t.Fatalf("activity_log actor = %q, want developer", actor)
@@ -129,8 +129,8 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 		defer closeLinksDB(t, conn)
 
 		eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
-		if eventName != "link_added" {
-			t.Fatalf("activity_log event = %q, want link_added", eventName)
+		if eventName != "link-added" {
+			t.Fatalf("activity_log event = %q, want link-added", eventName)
 		}
 		if actor != "developer" {
 			t.Fatalf("activity_log actor = %q, want developer", actor)
