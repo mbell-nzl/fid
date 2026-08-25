@@ -115,8 +115,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `5bf629b591f039f871251d0be64590790e8f08f8`
 
 ## Commit subject
 
-- Pending commit
+- `test(convergence): migrate retained task-9 assertions`
