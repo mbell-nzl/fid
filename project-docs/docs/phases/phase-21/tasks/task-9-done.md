@@ -130,8 +130,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `e4f486bbadb4fa396e4859a0000dff70116bbf7d`
 
 ## Commit subject
 
-- Pending commit
+- `test(convergence): checkpoint task-9 CLI contract migration`
