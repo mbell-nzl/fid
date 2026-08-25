@@ -41,6 +41,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue transition",
 		"issue ac add",
 		"issue ac list",
+		"issue ac verify",
 		"issue label add",
 		"issue label remove",
 		"label add",
@@ -53,9 +54,16 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"workflow assign",
 		"workflow list",
 		"maintenance check",
+		"maintenance vacuum",
+		"activity list",
+		"concern list",
+		"concern address",
+		"concern raise",
+		"requirement sync",
+		"stats tokens",
+		"stats cost",
 	}
 	legacy := []string{
-		"policy show",
 		"dev start",
 		"dev gate",
 		"dev finish",
@@ -65,21 +73,12 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue claim",
 		"issue unclaim",
 		"issue complete",
-		"activity list",
-		"concern list",
-		"concern address",
-		"concern raise",
-		"requirement sync",
-		"issue ac verify",
-		"stats tokens",
-		"stats cost",
 		"sql",
 		"journal inspect",
-		"maintenance vacuum",
 	}
 
-	if len(retained) != 33 || len(legacy) != 21 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 33 and 21", len(retained), len(legacy))
+	if len(retained) != 42 || len(legacy) != 11 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 42 and 11", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), legacy...)
 	sort.Strings(want)
@@ -112,7 +111,6 @@ type legacyLeafInvocation struct {
 
 func legacyLeafInvocations() []legacyLeafInvocation {
 	return []legacyLeafInvocation{
-		{command: "policy show", args: []string{"policy", "show"}},
 		{command: "dev start", args: []string{"dev", "start", "FID-legacy"}},
 		{command: "dev gate", args: []string{"dev", "gate", "FID-legacy"}},
 		{command: "dev finish", args: []string{"dev", "finish", "FID-legacy"}},
@@ -122,17 +120,8 @@ func legacyLeafInvocations() []legacyLeafInvocation {
 		{command: "issue claim", args: []string{"issue", "claim", "FID-legacy"}},
 		{command: "issue unclaim", args: []string{"issue", "unclaim", "FID-legacy"}},
 		{command: "issue complete", args: []string{"issue", "complete", "FID-legacy"}},
-		{command: "activity list", args: []string{"activity", "list"}},
-		{command: "concern list", args: []string{"concern", "list"}},
-		{command: "concern address", args: []string{"concern", "address", "CON-legacy"}},
-		{command: "concern raise", args: []string{"concern", "raise"}},
-		{command: "requirement sync", args: []string{"requirement", "sync"}},
-		{command: "issue ac verify", args: []string{"issue", "ac", "verify", "FID-legacy", "AC-legacy"}},
-		{command: "stats tokens", args: []string{"stats", "tokens"}},
-		{command: "stats cost", args: []string{"stats", "cost"}},
 		{command: "sql", args: []string{"sql", "SELECT 1"}},
 		{command: "journal inspect", args: []string{"journal", "inspect", "EVT-legacy"}},
-		{command: "maintenance vacuum", args: []string{"maintenance", "vacuum"}},
 	}
 }
 

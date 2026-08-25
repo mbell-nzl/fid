@@ -21,6 +21,7 @@ func newConcernCommand() *cobra.Command {
 }
 
 func init() {
+	rootFlagCapabilities["concern list"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern raise"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["concern address"] = rootFlagCapability{Project: true, JSON: true}
 }

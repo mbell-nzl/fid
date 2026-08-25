@@ -153,13 +153,13 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 			capabilityID: "reviews.coverage.v1",
 			surface:      "fail-closed AC judgment",
 			args:         []string{"--json", "issue", "ac", "verify", "ISS-1", "AC-1"},
-			errorText:    "--json is not available for issue ac verify",
+			errorText:    `"code":"capability-unavailable"`,
 		},
 		{
 			capabilityID: "human.outcomes.v1",
 			surface:      "fail-closed Concern judgment",
 			args:         []string{"--json", "concern", "raise"},
-			errorText:    "--json is not available for concern raise",
+			errorText:    `"code":"capability-unavailable"`,
 		},
 		{
 			capabilityID: "attention.v1",
