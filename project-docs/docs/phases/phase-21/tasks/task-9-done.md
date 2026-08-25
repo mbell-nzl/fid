@@ -157,8 +157,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `026d08ad663ebc50467b5031cf1e9c9b6807aa58`
 
 ## Commit subject
 
-- Pending commit
+- `test(convergence): migrate task-9 public policy fixtures`
