@@ -155,16 +155,57 @@ func executeCommandForTest(workingDirectory string, args ...string) commandExecu
 }
 
 func withIssueMutationTestKey(args []string) []string {
-	if !isTypedIssueMutation(args) || containsTestArgument(args, "--idempotency-key") {
+	args = migrateTask9RetainedMutationFixture(args)
+	if (!isTypedIssueMutation(args) && !isTask9RetainedMutation(args)) || containsTestArgument(args, "--idempotency-key") {
 		return args
 	}
-	return append(args, "--idempotency-key", fmt.Sprintf("task8-test-%d", atomic.AddUint64(&issueMutationTestSequence, 1)))
+	return append(args, "--idempotency-key", fmt.Sprintf("mutation-test-%d", atomic.AddUint64(&issueMutationTestSequence, 1)))
 }
 
 func isTypedIssueMutation(args []string) bool {
 	for index := 0; index+1 < len(args); index++ {
 		if args[index] == "issue" && (args[index+1] == "create" || args[index+1] == "update" || args[index+1] == "transition") {
 			return containsTestArgument(args, "--actor")
+		}
+	}
+	return false
+}
+
+func migrateTask9RetainedMutationFixture(args []string) []string {
+	if !isTask9RetainedMutation(args) || containsTestArgument(args, "--actor") {
+		return args
+	}
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] != "--by" {
+			continue
+		}
+		migrated := append([]string{}, args...)
+		migrated[index] = "--actor"
+		migrated[index+1] = "agent:" + args[index+1]
+		return migrated
+	}
+	return args
+}
+
+func isTask9RetainedMutation(args []string) bool {
+	for index := range args {
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "ac" && args[index+2] == "add" {
+			return true
+		}
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "label" && (args[index+2] == "add" || args[index+2] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "label" && args[index+1] == "add" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "link" && (args[index+1] == "add" || args[index+1] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "requirement" && args[index+1] == "sync" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "workflow" && (args[index+1] == "define" || args[index+1] == "assign") {
+			return true
 		}
 	}
 	return false
@@ -177,6 +218,33 @@ func containsTestArgument(args []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.T) {
+	args := withIssueMutationTestKey([]string{"label", "add", "core", "--by", "developer"})
+	if containsTestArgument(args, "--by") {
+		t.Fatalf("retained fixture args = %v, want no V1 --by", args)
+	}
+	if !containsTestArgument(args, "--actor") || !containsTestArgument(args, "--idempotency-key") {
+		t.Fatalf("retained fixture args = %v, want standalone actor and idempotency key", args)
+	}
+	for index := range args {
+		if args[index] == "--actor" && (index+1 == len(args) || args[index+1] != "agent:developer") {
+			t.Fatalf("retained fixture actor = %v, want agent:developer", args)
+		}
+	}
+}
+
+func TestTask9FixtureAdapterLeavesJudgmentAndPolicyCommandsUntouched(t *testing.T) {
+	for _, args := range [][]string{
+		{"concern", "raise", "--by", "developer"},
+		{"policy", "show"},
+	} {
+		got := withIssueMutationTestKey(args)
+		if !reflect.DeepEqual(got, args) {
+			t.Fatalf("fixture adapter(%v) = %v, want unchanged", args, got)
+		}
+	}
 }
 
 func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) {

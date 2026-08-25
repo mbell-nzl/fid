@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: The retained internal Task 9 packages pass in the required race gate, and stats/root-capability convergence advanced, but the full command gate still contains CLI V1 fixtures and replacement-bound dev tests that expect `--by`, `policy show`, or Phase-23 judgment writers.
-- Recovery attempts: 5
-- Next action: Migrate the remaining retained CLI fixture subjects to exact actor/key/Event-v2 and policy-absence/fail-closed contracts; converge replacement-bound dev expectations without restoring judgment writers, then rerun all five required commands byte-for-byte.
+- Condition: The retained internal Task 9 packages and replacement-bound internal/dev suite now pass; an explicit retained-mutation fixture adapter removed the broad V1 `--by` transport failures, but the full command gate still contains unmigrated CLI result, activity-name, policy-absence, root-flag, and fail-closed judgment expectations.
+- Recovery attempts: 6
+- Next action: Migrate those remaining retained CLI assertion subjects to exact actor/key/Event-v2, kebab activity, policy-absence, accepted root-flag, and fail-closed contracts; preserve the historical-only dev fixture, then rerun all five required commands byte-for-byte.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -17,6 +17,7 @@
 - Added a focused CLI conformance matrix for the converted public surfaces.
 - Converted label add, issue-label add/remove, link add/remove, and requirement sync to standalone actor/key Event-v2 paths; started canonical activity event normalization and transport migration.
 - Registered `concern list` as an accepted project/JSON root-flag leaf and strengthened stats CLI assertions to the public `actor_attribution` envelope with `--group-by actor|epic`.
+- Added an allowlisted retained-mutation fixture adapter for standalone actor/idempotency transport and made replacement-bound dev completion tests prove public AC verification is unavailable before seeding historical projection state.
 
 ## Files created or modified
 
@@ -32,6 +33,7 @@
 - `cmd/fid/task9_contract_test.go`
 - `cmd/fid/unavailable.go`
 - `cmd/fid/workflow.go`
+- `cmd/fid/workspace_fixture_test.go`
 - `internal/cli/codes.go`
 - `internal/issues/ac.go`
 - `internal/issues/idempotency_results.go`
@@ -51,6 +53,7 @@
 - `internal/requirements/attribution.go`
 - `internal/requirements/sync.go`
 - `internal/requirements/types.go`
+- `internal/dev/finish_test.go`
 
 ## Documentation updated
 
@@ -69,8 +72,11 @@
 
 - Attempt 5 update: VAL-028 now includes the exact retained root inventory in `TestLiveLeafCommandsMatchContractInventories` (`cmd/fid/contract_surface_test.go`) and an accepted `concern list` root capability. VAL-029 and VAL-030 retain the policy-absence and capability-unavailable coverage in `TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects` (`cmd/fid/capabilities_test.go`). VAL-031 CLI assertions now use `TestStatsTokensDefaultsToJSONByActorAttribution`, `TestStatsTokensUsesDirectLegacyJSONAndEpicFilter`, and `TestStatsCostUsesDirectLegacyJSONAndExcludesNullCostsFromSum` (`cmd/fid/stats_test.go`) to check public envelopes and `--group-by`; the required command gate remains BLOCKED by other unmigrated CLI fixtures.
 
+- Attempt 6 update: VAL-028 retained mutation setup now goes through `TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency` (`cmd/fid/workspace_fixture_test.go`) with an explicit command allowlist, but the required CLI package still has unmigrated V2 result/effect/activity expectations. VAL-030 replacement-bound dev coverage now proves unavailable public verification and unchanged journal lines before using historical `ac_verifications` projection state in `verifyDeveloperAC` (`internal/dev/finish_test.go`); `go test ./internal/dev` passed. VAL-029 and VAL-031 remain incomplete until the remaining policy-absence/root-flag and CLI fixture assertions converge.
+
 ## Tests run
 
+- `go test ./internal/dev` - PASS - `ok github.com/mbell-nzl/fid/internal/dev 0.912s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 11.645s` (terminated `exit_code: 1`; remaining V1 CLI fixtures and policy/judgment expectations are enumerated in the output)
 - `go run ./cmd/fid --json concern list` - PASS - `[]` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^TestTask9RetainedInventorySurface$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 2.072s` (terminated `exit_code: 0`)
@@ -110,6 +116,12 @@
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 66.6%` (terminated `exit_code: 0`)
 
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL github.com/mbell-nzl/fid/cmd/fid 148.943s` (terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.1%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
@@ -119,10 +131,11 @@
 - Recovery attempt 2 made direct judgment and vacuum entries unavailable before policy, projection, lock, Event, or row work. The writer-oriented tests for those exact subjects were adapted to assert typed unavailability before the same writer inputs can be evaluated; this replaces obsolete mutation-success coverage with the accepted fail-closed no-writer contract, not a narrowed assertion. Its required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 130.786s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) because broad retained V1 CLI and internal test fixtures remain. The first lint attempt failed with `* unused: 2` (terminated `exit_code: 1`) due to obsolete helper symbols after writer isolation; removing those symbols and separating inactive legacy implementation produced the byte-identical later PASS `0 issues.` (terminated `exit_code: 0`). No gate, assertion semantics, threshold, policy, or accepted public contract changed.
 - Recovery attempt 4 migrated the retained internal workflow, links, requirements, activity, and CLI-code tests to Event-v2/idempotency, standalone attribution, normalized activity, and capability-code contracts. Its focused internal package set was green before the required gate. The required package and coverage gates remain red on unmigrated CLI V1 fixtures and replacement-bound dev tests that invoke removed Phase-23 writers; no test subject was removed or weakened, and no V1 policy or judgment writer was restored.
 - Recovery attempt 5 added the missing accepted `concern list` root capability and updated stats fixtures from internal `TokensRow`/`CostRow` serialization to exact public success envelopes with `actor_attribution`, numeric aggregate fields, and accepted `--group-by` values. The removed internal-row expectation lines were obsolete because they asserted an implementation type (`Role`) rather than the accepted public contract; their replacements assert every returned public field and retain all grouping/filter aggregation subjects. The first required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 131.849s` (terminated `exit_code: 1`) and the coverage gate failed with `FAIL` (terminated `exit_code: 1`) due to remaining retained V1 fixtures plus replacement-bound dev tests that call fail-closed judgment writers. Formatting and lint passed. No assertion, threshold, command, policy, or accepted public contract changed.
+- Recovery attempt 6 introduced a test-only command allowlist that rewrites only retained Task 9 mutation fixture calls from `--by <role>` to `--actor agent:<role>` and adds an idempotency key. The adapter deliberately excludes `policy` and fail-closed judgment commands and leaves calls that already contain `--actor` unchanged, so explicit legacy-flag rejection tests remain real command invocations. Replacement-bound internal/dev finish fixtures now first assert the public verifier returns the accepted Phase-23 capability-unavailable error with no journal append, then seed a pre-existing historical `ac_verifications` projection row for legacy dev-completion behavior. This preserves both no-writer and dev-finish subjects; no writer, policy command, public contract, or assertion threshold was restored or weakened. The required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 148.943s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) on still-unmigrated CLI expectations; formatting and lint passed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The remaining package failures include tests under `cmd/fid` and `internal/dev` whose subjects span retained V1 fixture migration and replacement-bound dev completion behavior. Continue only the accepted fixture/expectation convergence; do not restore `policy show` or Phase-23 judgment writers.
+- The replacement-bound `internal/dev` suite is green through historical projection state. Remaining failures are concentrated in `cmd/fid` V1 response/effect/activity/policy/root-flag and fail-closed judgment expectations. Continue only accepted assertion migration; do not restore `policy show` or Phase-23 judgment writers.
 
 ## Dependency-budget note
 
@@ -130,8 +143,8 @@
 
 ## Commit hash
 
-- `e4f486bbadb4fa396e4859a0000dff70116bbf7d`
+- Pending commit
 
 ## Commit subject
 
-- `test(convergence): checkpoint task-9 CLI contract migration`
+- Pending commit

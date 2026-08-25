@@ -338,6 +338,8 @@ func recordFinishDeveloperGate(t *testing.T, workspace, issueID string) {
 func verifyDeveloperAC(t *testing.T, workspace, issueID, criterionID string) {
 	t.Helper()
 
+	journalPath := journalPathForDevWorkspace(t, workspace)
+	linesBefore := countDevJournalLines(journalPath)
 	if _, err := issues.VerifyAcceptanceCriterion(issues.VerifyAcceptanceCriterionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testDevMigrationsDir(t),
@@ -345,8 +347,20 @@ func verifyDeveloperAC(t *testing.T, workspace, issueID, criterionID string) {
 		CriterionID:   criterionID,
 		ActorRole:     "developer",
 		Status:        "pass",
-	}); err != nil {
-		t.Fatalf("VerifyAcceptanceCriterion() error = %v", err)
+	}); err == nil || !strings.Contains(err.Error(), "reviews.coverage.v1") {
+		t.Fatalf("VerifyAcceptanceCriterion() error = %v, want phase-23 capability-unavailable", err)
+	}
+	if got := countDevJournalLines(journalPath); got != linesBefore {
+		t.Fatalf("VerifyAcceptanceCriterion() journal lines = %d, want unchanged %d", got, linesBefore)
+	}
+
+	conn := openDevDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeDevDB(t, conn)
+	if _, err := conn.Exec(`
+		INSERT INTO ac_verifications (id, ac_id, verifier_role, verifier_actor, status, verified_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, "ACV-historical-"+criterionID, criterionID, "developer", "developer", "pass", "2026-08-25T00:00:00Z"); err != nil {
+		t.Fatalf("seed historical AC verification = %v", err)
 	}
 }
 
