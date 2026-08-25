@@ -14,7 +14,8 @@ import (
 type GroupBy string
 
 const (
-	GroupByRole  GroupBy = "role"
+	GroupByActor GroupBy = "actor"
+	GroupByRole  GroupBy = GroupByActor
 	GroupByModel GroupBy = "model"
 	GroupByEpic  GroupBy = "epic"
 )
@@ -143,7 +144,9 @@ func validateStatsOptions(workspaceRoot, migrationsDir string, by GroupBy, epicI
 		normalizedBy = GroupByRole
 	}
 	switch normalizedBy {
-	case GroupByRole, GroupByModel, GroupByEpic:
+	case "role":
+		normalizedBy = GroupByActor
+	case GroupByActor, GroupByModel, GroupByEpic:
 	default:
 		return "", "", "", "", fmt.Errorf("stats: unsupported group %q", normalizedBy)
 	}

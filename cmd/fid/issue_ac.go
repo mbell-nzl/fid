@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/issues"
 	"github.com/spf13/cobra"
@@ -22,9 +20,10 @@ func newIssueACCommand() *cobra.Command {
 
 func newIssueACAddCommand() *cobra.Command {
 	var (
-		text      string
-		ordinal   int
-		actorRole string
+		text    string
+		ordinal int
+		actor   string
+		key     string
 	)
 
 	cmd := &cobra.Command{
@@ -38,6 +37,12 @@ func newIssueACAddCommand() *cobra.Command {
 			if err := requireCanonicalFlag(cmd, "issue.ac.add", "ordinal"); err != nil {
 				return err
 			}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "actor"); err != nil {
+				return err
+			}
+			if err := requireCanonicalFlag(cmd, "issue.ac.add", "idempotency-key"); err != nil {
+				return err
+			}
 
 			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
@@ -45,12 +50,13 @@ func newIssueACAddCommand() *cobra.Command {
 			}
 
 			result, err := issues.AddAcceptanceCriterion(issues.AddAcceptanceCriterionOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				IssueID:       args[0],
-				Text:          text,
-				Ordinal:       ordinal,
-				ActorRole:     actorRole,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				IssueID:        args[0],
+				Text:           text,
+				Ordinal:        ordinal,
+				Actor:          actor,
+				IdempotencyKey: key,
 			})
 			if err != nil {
 				return renderIssueMutationError(cmd, "issue.ac.add", args[0], err)
@@ -64,6 +70,8 @@ func newIssueACAddCommand() *cobra.Command {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "issue.ac.add", map[string]any{
 					"acceptance_criterion": map[string]any{"id": result.ID, "issue_id": result.IssueID, "ordinal": result.Ordinal, "text": result.Text},
 					"issue_revision":       result.IssueRevision,
+					"idempotency_key":      result.IdempotencyKey,
+					"replayed":             result.Replayed,
 				}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 			}
 			return writeIssueLine(
@@ -79,7 +87,8 @@ func newIssueACAddCommand() *cobra.Command {
 
 	cmd.Flags().StringVar(&text, "text", "", "Acceptance criterion text")
 	cmd.Flags().IntVar(&ordinal, "ordinal", 0, "Acceptance criterion display order")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.add"))
 	return cmd
 }
@@ -87,88 +96,23 @@ func newIssueACAddCommand() *cobra.Command {
 func init() {
 	rootFlagCapabilities["issue ac add"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["issue ac list"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["issue ac verify"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newIssueACVerifyCommand() *cobra.Command {
-	var (
-		actorRole    string
-		status       string
-		evidenceType string
-		evidenceRef  string
-		notes        string
-	)
+	var actor string
 
 	cmd := &cobra.Command{
 		Use:   "verify <issue-id> <ac-id>",
 		Short: "Verify an acceptance criterion.",
-		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if !cmd.Flags().Changed("by") {
-				err := fmt.Errorf("--by is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-			if !cmd.Flags().Changed("status") {
-				err := fmt.Errorf("--status is required")
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-
-			workspaceRoot, err := commandWorkingDirectory(cmd)
-			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
-			}
-
-			result, err := issues.VerifyAcceptanceCriterion(issues.VerifyAcceptanceCriterionOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				IssueID:       args[0],
-				CriterionID:   args[1],
-				ActorRole:     actorRole,
-				Status:        status,
-				EvidenceType:  issueCreateOptionalString(cmd, "evidence-type", evidenceType),
-				EvidenceRef:   issueCreateOptionalString(cmd, "evidence-ref", evidenceRef),
-				Notes:         issueCreateOptionalString(cmd, "notes", notes),
-			})
-			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-
-			if err := writeIssueLine(
-				cmd.ErrOrStderr(),
-				"verified %s on %s by %s: %s\n",
-				result.CriterionID,
-				result.IssueID,
-				result.ActorRole,
-				result.Status,
-			); err != nil {
-				return err
-			}
-			if result.EvidenceType != nil && result.EvidenceRef != nil {
-				return writeIssueLine(cmd.ErrOrStderr(), "  evidence: %s → %s\n", *result.EvidenceType, *result.EvidenceRef)
-			}
-			if result.EvidenceType != nil {
-				return writeIssueLine(cmd.ErrOrStderr(), "  evidence: %s\n", *result.EvidenceType)
-			}
-			if result.EvidenceRef != nil {
-				return writeIssueLine(cmd.ErrOrStderr(), "  evidence: %s\n", *result.EvidenceRef)
-			}
-			return nil
+		Args:  canonicalExactArgs("issue.ac.verify", 2),
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return writeCapabilityUnavailable(cmd, "issue.ac.verify", "reviews.coverage.v1", 23)
 		},
 	}
 
-	cmd.Flags().StringVar(&actorRole, "by", "", "Verifying role")
-	cmd.Flags().StringVar(&status, "status", "", "Verification status")
-	cmd.Flags().StringVar(&evidenceType, "evidence-type", "", "Evidence type")
-	cmd.Flags().StringVar(&evidenceRef, "evidence-ref", "", "Evidence reference")
-	cmd.Flags().StringVar(&notes, "notes", "", "Verification notes")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.SetFlagErrorFunc(canonicalFlagError("issue.ac.verify"))
 	return cmd
 }
 

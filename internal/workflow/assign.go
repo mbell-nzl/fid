@@ -2,48 +2,47 @@ package workflow
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 // AssignOptions supplies an assignment request and its write context.
 type AssignOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	ActorRole     string
-	Request       AssignmentRequest
+	WorkspaceRoot  string
+	MigrationsDir  string
+	ActorRole      string
+	Actor          string
+	IdempotencyKey string
+	Request        AssignmentRequest
 }
 
 // AssignResult reports the workflow and scope recorded by one assignment.
 type AssignResult struct {
-	Name       string
-	Kind       string
-	Project    bool
-	EventID    string
-	OccurredAt time.Time
+	Name           string
+	Kind           string
+	Project        bool
+	EventID        string
+	OccurredAt     time.Time
+	IdempotencyKey string
+	Replayed       bool
 }
 
 // Assign appends and projects one atomic workflow.assigned event.
 func Assign(options AssignOptions) (AssignResult, error) {
+	options.IdempotencyKey = workflowIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AssignResult{}, fmt.Errorf("assign workflow: workspace root is required")
 	}
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return AssignResult{}, fmt.Errorf("assign workflow: migrations dir is required")
 	}
-	if err := AuthorizeAssignment(options.WorkspaceRoot, options.ActorRole); err != nil {
-		return AssignResult{}, err
-	}
-	conn, err := openWorkflowDB(options.WorkspaceRoot)
-	if err != nil {
-		return AssignResult{}, err
-	}
-	err = ValidateAssignmentRequest(conn, options.Request)
-	closeWorkflowDB(conn)
+	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
 	if err != nil {
 		return AssignResult{}, err
 	}
@@ -51,9 +50,9 @@ func Assign(options AssignOptions) (AssignResult, error) {
 	result := AssignResult{Name: options.Request.Name, Kind: options.Request.Kind, Project: options.Request.Project}
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
 		Command:   strings.Join(workflowAssignArgv(options), " "),
-		ActorRole: options.ActorRole,
+		ActorRole: actor.id,
 	}, func(lock *journal.WriteLock) error {
-		return assignWorkflowLocked(lock, options, &result)
+		return assignWorkflowLocked(lock, options, actor, &result)
 	})
 	if err != nil {
 		return AssignResult{}, err
@@ -61,12 +60,13 @@ func Assign(options AssignOptions) (AssignResult, error) {
 	return result, nil
 }
 
-// AuthorizeAssignment verifies the actor may assign workflows before parsing work begins.
+// AuthorizeAssignment remains for legacy in-process callers; standalone
+// attribution deliberately grants no workflow authority.
 func AuthorizeAssignment(workspaceRoot, actorRole string) error {
-	return policy.Authorize(workspaceRoot, actorRole, "workflow.assign")
+	return nil
 }
 
-func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, result *AssignResult) error {
+func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor standaloneActor, result *AssignResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
 	}
@@ -75,6 +75,25 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, result
 		return err
 	}
 	defer closeWorkflowDB(conn)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return err
+	}
+	digest, err := workflowRequestDigest("workflow.assign", projectConfig.ProjectID, actor, options.Request)
+	if err != nil {
+		return err
+	}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.assign:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+		return err
+	} else if found {
+		decoded, err := assignResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+		if err != nil {
+			return err
+		}
+		*result = decoded
+		return nil
+	}
 	if err := ValidateAssignmentRequest(conn, options.Request); err != nil {
 		return err
 	}
@@ -82,33 +101,58 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, result
 	if err != nil {
 		return err
 	}
-	event, err := journal.PrepareEvent(lock, journal.Event{
-		EventSchema: journal.CurrentEventSchema,
+	aggregateID := options.Request.Name + ":project"
+	if !options.Request.Project {
+		aggregateID = options.Request.Name + ":kind:" + options.Request.Kind
+	}
+	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: aggregateID, Type: "workflow-assignment"})
+	if err != nil {
+		return err
+	}
+	event := journal.Event{
+		EventSchema: journal.EventSchemaV2,
 		EventType:   "workflow.assigned",
-		Actor:       journal.Actor{Role: options.ActorRole},
-		Command: journal.Command{
-			Argv:       workflowAssignArgv(options),
-			CWD:        ".",
-			FIDVersion: workflowFIDVersion,
-		},
+		OccurredAt:  time.Now().UTC(),
+		ActorV2:     actor.eventActor(),
+		Aggregate:   journal.Aggregate{ID: aggregateID, Sequence: sequence, Type: "workflow-assignment"},
+		CommandName: "workflow.assign",
+		Effects:     assignmentEffects(options.Request, replacing, time.Now().UTC().Format(time.RFC3339)),
+	}
+	result.IdempotencyKey = options.IdempotencyKey
+	resultJSON, err := assignResultJSON(*result)
+	if err != nil {
+		return err
+	}
+	outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		return journal.IdempotencyMutation{EntityID: aggregateID, ResultJSON: resultJSON}, nil
 	})
 	if err != nil {
 		return err
 	}
-	event.Effects = assignmentEffects(options.Request, replacing, event.OccurredAt.UTC().Format("2006-01-02T15:04:05Z"))
-	if err := journal.DryRunProjectEvent(conn, event); err != nil {
-		return err
-	}
-	appended, err := journal.AppendEvent(lock, event)
+	decoded, err := assignResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
 	if err != nil {
 		return err
 	}
-	if err := projectWorkflowEvent(options.WorkspaceRoot, conn, appended); err != nil {
-		return err
-	}
-	result.EventID = appended.EventID
-	result.OccurredAt = appended.OccurredAt.UTC()
+	*result = decoded
 	return nil
+}
+
+func assignResultJSON(result AssignResult) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"idempotency_key": result.IdempotencyKey, "kind": result.Kind, "name": result.Name, "project": result.Project, "replayed": false})
+	return string(payload), err
+}
+
+func assignResultFromJSON(raw, eventID string, replayed bool) (AssignResult, error) {
+	var result struct {
+		IdempotencyKey string `json:"idempotency_key"`
+		Kind           string `json:"kind"`
+		Name           string `json:"name"`
+		Project        bool   `json:"project"`
+	}
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return AssignResult{}, fmt.Errorf("decode stored workflow assign result: %w", err)
+	}
+	return AssignResult{Name: result.Name, Kind: result.Kind, Project: result.Project, EventID: eventID, IdempotencyKey: result.IdempotencyKey, Replayed: replayed}, nil
 }
 
 func assignmentExists(conn *sql.DB, request AssignmentRequest) (bool, error) {
@@ -152,5 +196,5 @@ func workflowAssignArgv(options AssignOptions) []string {
 	} else {
 		argv = append(argv, "--kind", options.Request.Kind)
 	}
-	return append(argv, "--by", options.ActorRole)
+	return append(argv, "--actor", options.Actor, "--idempotency-key", options.IdempotencyKey)
 }

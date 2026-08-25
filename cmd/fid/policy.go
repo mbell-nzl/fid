@@ -7,33 +7,20 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func newPolicyCommand() *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "policy",
-		Short: "Inspect the active permissions policy.",
-	}
-
-	cmd.AddCommand(newPolicyShowCommand())
-	return cmd
-}
+// The compatibility helper remains for replacement-bound in-process callers.
+// It is deliberately not registered on the public command tree.
+var _ = newPolicyShowCommand
 
 func newPolicyShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show",
-		Short: "Show the active permissions matrix.",
+		Short: "Show the legacy permissions matrix.",
 		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(cmd *cobra.Command, _ []string) error {
 			encoder := json.NewEncoder(cmd.OutOrStdout())
 			encoder.SetEscapeHTML(false)
-			if err := encoder.Encode(internalpolicy.MatrixRows()); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-			return nil
+			return encoder.Encode(internalpolicy.MatrixRows())
 		},
 	}
-
 	return cmd
 }

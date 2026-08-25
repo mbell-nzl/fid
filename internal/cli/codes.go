@@ -46,6 +46,7 @@ const (
 	CodeActivationConflict            Code = "activation-conflict"
 	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
 	CodeAuthorityUnavailable          Code = "authority-unavailable"
+	CodeCapabilityUnavailable         Code = "capability-unavailable"
 	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
 	CodeRegistrationNotFound          Code = "registration-not-found"
 	CodeEnvelopeNotFound              Code = "envelope-not-found"
@@ -64,6 +65,7 @@ const (
 	SubjectGateDefinition   SubjectType = "gate-definition"
 	SubjectGateRegistration SubjectType = "gate-registration"
 	SubjectEnvelope         SubjectType = "envelope"
+	SubjectCapability       SubjectType = "capability"
 )
 
 type Subject struct {
@@ -186,6 +188,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
 	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
 		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
+	CodeCapabilityUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectCapability},
+		stringField("capability_id"), booleanField("available"), integerField("owner_phase")),
 	CodeExecutorPolicyUnsupported: definition(CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition},
 		stringsField("fields"), objectField("supported", stringField("network"), booleanField("shell"), stringField("sandbox"), stringField("write"))),
 	CodeRegistrationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringField("id")),
@@ -200,7 +204,7 @@ var registeredCodes = []Code{
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
-	CodeAuthorityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
+	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 }
 
 func findingFields() []detailField {

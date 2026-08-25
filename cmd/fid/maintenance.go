@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
@@ -26,6 +25,7 @@ type maintenanceCheckResult struct {
 
 func init() {
 	rootFlagCapabilities["maintenance check"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["maintenance vacuum"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newMaintenanceCommand() *cobra.Command {
@@ -39,37 +39,19 @@ func newMaintenanceCommand() *cobra.Command {
 }
 
 func newMaintenanceVacuumCommand() *cobra.Command {
-	var actorRole string
+	var actor string
 
 	cmd := &cobra.Command{
 		Use:   "vacuum",
 		Short: "Compact the derived SQLite projection without changing the journal.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("maintenance.vacuum"),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
-			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
-			}
-
-			result, err := maintenance.Vacuum(workspaceRoot, issueMigrationsDir(), actorRole)
-			if err != nil {
-				return renderMaintenanceVacuumError(cmd, err)
-			}
-			if err := writeIssueLine(cmd.ErrOrStderr(), "vacuum complete — .fid/fid.sqlite: %d B → %d B\n", result.BeforeBytes, result.AfterBytes); err != nil {
-				return err
-			}
-			return nil
+			return writeCapabilityUnavailable(cmd, "maintenance.vacuum", "telemetry.trajectory.v1", 25)
 		},
 	}
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.SetFlagErrorFunc(canonicalFlagError("maintenance.vacuum"))
 	return cmd
-}
-
-func renderMaintenanceVacuumError(cmd *cobra.Command, err error) error {
-	if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-		return renderErr
-	}
-	return err
 }
 
 func newMaintenanceCheckCommand() *cobra.Command {

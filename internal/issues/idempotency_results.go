@@ -89,6 +89,34 @@ func transitionResultFromJSON(raw, eventID string, replayed bool) (TransitionRes
 	return TransitionResult{ID: value.Issue.ID, Revision: value.Issue.Revision, FromState: value.FromState, ToState: value.ToState, EventID: eventID, OccurredAt: value.EventOccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
 }
 
+func acAddResultJSON(result AddAcceptanceCriterionResult) (string, error) {
+	return resultJSON(map[string]any{
+		"acceptance_criterion": map[string]any{"id": result.ID, "issue_id": result.IssueID, "ordinal": result.Ordinal, "text": result.Text},
+		"event_occurred_at":    result.OccurredAt,
+		"idempotency_key":      result.IdempotencyKey,
+		"issue_revision":       result.IssueRevision,
+		"replayed":             false,
+	})
+}
+
+func acAddResultFromJSON(raw, eventID string, replayed bool) (AddAcceptanceCriterionResult, error) {
+	var value struct {
+		Criterion struct {
+			ID      string `json:"id"`
+			IssueID string `json:"issue_id"`
+			Ordinal int    `json:"ordinal"`
+			Text    string `json:"text"`
+		} `json:"acceptance_criterion"`
+		IdempotencyKey string `json:"idempotency_key"`
+		OccurredAt     string `json:"event_occurred_at"`
+		IssueRevision  int    `json:"issue_revision"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return AddAcceptanceCriterionResult{}, fmt.Errorf("decode stored AC add result: %w", err)
+	}
+	return AddAcceptanceCriterionResult{ID: value.Criterion.ID, IssueID: value.Criterion.IssueID, Ordinal: value.Criterion.Ordinal, Text: value.Criterion.Text, IssueRevision: value.IssueRevision, EventID: eventID, OccurredAt: value.OccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
+}
+
 func resultJSON(value map[string]any) (string, error) {
 	payload, err := journal.MarshalCanonicalJSON(value)
 	return string(payload), err
