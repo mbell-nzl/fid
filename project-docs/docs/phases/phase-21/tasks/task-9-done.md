@@ -168,10 +168,10 @@
 
 ### Attempt 9 exact task-gate rerun
 
-- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL github.com/mbell-nzl/fid/cmd/fid 163.174s` (terminated `exit_code: 1`; policy row, stats grouping, and vacuum reads now converge, but retained Event-v2 result/effect/activity and AC/concern no-writer fixtures remain red)
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 163.174s` (terminated `exit_code: 1`; policy row, stats grouping, and vacuum reads now converge, but retained Event-v2 result/effect/activity and AC/concern no-writer fixtures remain red)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; the repository suite retains the same unconverted `cmd/fid` fixtures)
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`; the repository suite retains the same unconverted `cmd/fid` fixtures)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.1%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
