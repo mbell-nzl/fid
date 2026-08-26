@@ -201,8 +201,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `bc328f9136ec44d31824d1fe2b1c63d1c8b7c921`
 
 ## Commit subject
 
-- Pending commit
+- `test(convergence): finalize task-9 retained actor fixture`
