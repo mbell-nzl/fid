@@ -98,7 +98,7 @@
 ## Tests run
 
 - `go test -race ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`; pre-convergence red evidence for stale `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse`)
-- `go test -race ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 155.278s` (terminated `exit_code: 0`)
+- `go test -race ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	155.278s` (terminated `exit_code: 0`)
 - `/tmp/fid-task9 --project /tmp/fid-task9-runtime.25ZdS5 --json label add runtime-core --actor agent:developer --idempotency-key runtime-label-add` - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260826-000002","occurred_at":"2026-08-26T08:46:45.011801748Z"},"ok":true,"operation":"label.add","result":{"idempotency_key":"runtime-label-add","label":{"name":"runtime-core","colour":null,"description":null},"replayed":false}}` (terminated `exit_code: 0`)
 - `go test ./internal/dev` - PASS - `ok github.com/mbell-nzl/fid/internal/dev 0.912s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 11.645s` (terminated `exit_code: 1`; remaining V1 CLI fixtures and policy/judgment expectations are enumerated in the output)
@@ -112,10 +112,10 @@
 
 ### Attempt 12 exact task-gate rerun
 
-- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid (cached)` (terminated `exit_code: 0`)
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	(cached)` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 39.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 39.7% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.4%` (terminated `exit_code: 0`)
 
 - `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` (terminated `exit_code: 1`; retained V1 contract tests require in-scope convergence)
