@@ -2,12 +2,12 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: in-scope-implementation
-- Condition: DEC-165 bounded convergence now repoints retained policy row reads through the unregistered legacy matrix helper, and converges the amended integration stats and fail-closed vacuum reads. The required package and coverage gates remain red in `cmd/fid` on retained Event-v2 result/effect/activity assertions and AC/concern no-writer fixture migration.
-- Recovery attempts: 9
-- Next action: Continue only the remaining accepted Task 9 retained fixture convergence without touching Claim/Run/dev authority behavior; preserve historical-only dev fixtures, then rerun all five required commands byte-for-byte.
-- Human attention required: no
+- Task outcome: BLOCKED
+- Category: specification-contradiction
+- Condition: The unchanged `cmd/fid/task10_contract_test.go` requires the Task 9-converted `issue ac add`, `label add`, and `issue label add/remove` leaves to accept `--by` and emit the old missing-role authority envelope. Task 9's accepted `--actor` plus idempotency contract and DEC-165 expressly forbid restoring `--by` on those families. The exact package and repository coverage gates each reproduce this conflict with observed `exit_code: 1`.
+- Recovery attempts: 10
+- Next action: A Tech Lead decision must reconcile the retained Task 10 contract with Task 9's accepted actor/idempotency interface, either by authorizing the Task 10 contract's convergence to the retained Task 9 public surface or by authorizing a protected public-interface change. Task 9 cannot select either route.
+- Human attention required: yes
 
 ## Summary of what was implemented
 
@@ -91,6 +91,8 @@
 
 - Attempt 9 update: Under DEC-165, the named retained policy callers in `label_test.go`, `link_test.go`, `issue_label_test.go`, `requirement_test.go`, `issue_claim_test.go`, `run_test.go`, `dev_test.go`, and `integration/e2e_v01_closure_helpers_test.go` now read rows through `legacyPolicyRows`, which invokes the retained unregistered `commandPolicyCellAllowed` helper. The role/action assertion bodies remain byte-identical; the callers are enumerated for task-20 removal and no public policy registration was restored. The closure helper now uses `--group-by actor` for stats and asserts typed capability-unavailable maintenance vacuum with unchanged journal bytes; its public `policy show` read remains absent and side-effect free. This is navigation and contract convergence only: no Claim/Run/dev authority assertions or replacement-bound implementation were changed. The exact package gate still fails on remaining retained Event-v2 result/effect/activity and AC/concern no-writer fixtures.
 
+- Attempt 10 update: The exact package and coverage gates reduce to `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse` in `cmd/fid/task10_contract_test.go:79` and `:140`. Those byte-identical assertions require `--by` behavior on Task 9 actor/idempotency leaves. The current command implementations are unchanged from `HEAD`; restoring the demanded behavior would violate the task's accepted no-`--by` contract and DEC-165. VAL-028 through VAL-031 therefore remain BLOCKED by the protected contradiction rather than incomplete local fixture work.
+
 ## Tests run
 
 - `go test ./internal/dev` - PASS - `ok github.com/mbell-nzl/fid/internal/dev 0.912s` (terminated `exit_code: 0`)
@@ -139,6 +141,12 @@
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.1%` (terminated `exit_code: 0`)
 
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse` require prohibited `--by` behavior on Task 9-converted leaves)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; the same unchanged Task 10 contract conflict reproduces repository-wide)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.4%` (terminated `exit_code: 0`)
+
 - `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL github.com/mbell-nzl/fid/cmd/fid 141.606s` (terminated `exit_code: 1`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
@@ -166,9 +174,11 @@
 - Recovery attempt 7 replaced public `policy show` row/matrix expectations with exact unknown-command and no-journal/no-activity effects, as required after the public V1 command removal. It retained the internal matrix test helper because enumerated replacement-bound dev/completion tests still call it. Vacuum success/role-denial rows were adapted to typed capability-unavailable checks plus the real removed-flag rejection; both retain no-side-effect assertions. Root-flag tests now run accepted activity/concern/stats reads from initialized workspaces and keep legacy diagnostic rejection coverage. These deleted role-row assertions are obsolete only because their public inspector no longer exists; direct retained mutation tests still assert Event-v2 actor/key semantics. The required package gate failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 141.606s` (terminated `exit_code: 1`) and coverage failed with `FAIL` (terminated `exit_code: 1`) on remaining retained CLI fixtures. Formatting and lint passed; no command, threshold, policy, or accepted interface changed.
 - Recovery attempt 9 repaired the remaining incidental reads assigned by DEC-165/TRG-21-009. The first focused `go test ./cmd/fid` after the checkpoint failed on the named policy row callers; repointing those rows to `legacyPolicyRows` repaired that causal surface while retaining every role/action assertion and keeping `TestPublicPolicyCommandIsAbsent` as the public absence proof. The exact package rerun remained failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 163.174s` (terminated `exit_code: 1`) on other retained Event-v2 result/effect/activity and AC/concern no-writer fixtures, so this is preserved as failed evidence rather than represented as a passing gate. The amended closure helper's stats and vacuum reads now follow the accepted `--group-by actor` and typed unavailable contracts with journal-byte assertions unchanged. No tests were deleted or weakened; no `t.Skip`, build tags, `-run` narrowing, threshold, command, policy, or public contract changed. A supplementary tagged integration run remained red on broader V1 journey fixtures and was not substituted for the required gates.
 
+- Recovery attempt 10 first ran the required package command and observed `FAIL` with `exit_code: 1`; the repository coverage command independently observed the same `FAIL` with `exit_code: 1`. The preserved `cmd/fid/task10_contract_test.go` requires legacy `--by` input and authority-missing envelopes for Task 9-converted leaves, including successful selected-project `--by` mutations. Reintroducing that input would violate the task's accepted `--actor` plus idempotency interface and DEC-165's explicit no-`--by` prohibition; changing the Task 10 assertion or semantics is forbidden. Formatting, lint, and coverage summary passed. This is a protected specification contradiction, not a gate failure that Task 9 can repair.
+
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The replacement-bound `internal/dev` suite is green through historical projection state. Remaining required-gate failures are concentrated in `cmd/fid` Event-v2 response/effect/activity and AC/concern no-writer fixture expectations. A retained actor-error contract fixture also remains red as collateral from the accepted actor migration; no Task 10 implementation has been run or changed. Continue only accepted Task 9 assertion migration; do not restore `policy show` or Phase-23 judgment writers, and leave Claim/Run/dev authority assertions to their owning tasks.
+- The replacement-bound `internal/dev` suite is green through historical projection state. The remaining required-gate failure is now a protected retained-contract contradiction: `cmd/fid/task10_contract_test.go` requires `--by` on Task 9 actor/idempotency leaves, while Task 9's accepted contract prohibits restoring it. No Task 10 implementation or test was changed. A Tech Lead decision must choose the compatible public contract before Task 9 can proceed.
 
 ## Dependency-budget note
 
@@ -176,8 +186,8 @@
 
 ## Commit hash
 
-- `6803f04927eb28986a7926311f99b4f5f5388629`
+- Pending commit
 
 ## Commit subject
 
-- `test(convergence): restore task-9 retained policy reads`
+- Pending commit

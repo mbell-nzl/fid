@@ -49,14 +49,8 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	assertNoNestedLockFailure(t, addACStderr)
 	finishACID := parseAddedAcceptanceCriterionID(t, addACStdout)
 
-	_, verifyACStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", finishIssueID, finishACID,
-		"--status", "pass",
-		"--by", "developer",
-	)
-	assertNoNestedLockFailure(t, verifyACStderr)
+	assertIssueACVerifyUnavailable(t, workspace, finishIssueID, finishACID, "agent:developer")
+	seedHistoricalACVerification(t, workspace, finishACID, "developer")
 
 	_, gateStderr := runFIDCommand(
 		t,
@@ -150,17 +144,8 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	assertNoNestedLockFailure(t, firstCompleteStderr)
 	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
 
-	_, raiseConcernStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", concernIssueID,
-		"--by", "developer",
-		"--in-completion", firstCompletionID,
-		"--summary", "Follow-up required for lifecycle parity",
-	)
-	assertNoNestedLockFailure(t, raiseConcernStderr)
-	concernID := parseConcernID(t, raiseConcernStderr)
+	concernID := "CON-v01e-activity"
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "raise", "--on", concernIssueID, "--actor", "agent:developer", "--in-completion", firstCompletionID, "--summary", "Follow-up required for lifecycle parity"})
 
 	_, secondCompleteStderr := runFIDCommand(
 		t,
@@ -172,43 +157,30 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	assertNoNestedLockFailure(t, secondCompleteStderr)
 	secondCompletionID := parseCompletionID(t, secondCompleteStderr)
 
-	_, addressConcernStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "address", concernID,
-		"--in-completion", secondCompletionID,
-		"--by", "developer",
-	)
-	assertNoNestedLockFailure(t, addressConcernStderr)
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "address", concernID, "--in-completion", secondCompletionID, "--actor", "human:reviewer"})
 
-	activityStdout, activityStderr := runFIDCommand(t, workspace, "activity", "list")
+	activityStdout, activityStderr := runFIDCommand(t, workspace, "--json", "activity", "list")
 	if activityStderr != "" {
 		t.Fatalf("activity list stderr = %q, want empty", activityStderr)
 	}
 
-	var rows []activityLifecycleRow
-	if err := json.Unmarshal([]byte(activityStdout), &rows); err != nil {
-		t.Fatalf("Unmarshal(activity list) error = %v", err)
-	}
+	rows := decodeActivityLifecycleRows(t, activityStdout)
 
 	want := []activityLifecycleExpectation{
 		{RefID: finishIssueID, Event: "issue-created"},
-		{RefID: finishIssueID, Event: "status_changed"},
-		{RefID: finishIssueID, Event: "ac_added"},
-		{RefID: finishIssueID, Event: "ac_verified"},
-		{RefID: finishIssueID, Event: "gate_recorded"},
-		{RefID: finishIssueID, Event: "status_changed"},
-		{RefID: finishIssueID, Event: "task_completed"},
+		{RefID: finishIssueID, Event: "status-changed"},
+		{RefID: finishIssueID, Event: "ac-added"},
+		{RefID: finishIssueID, Event: "gate-recorded"},
+		{RefID: finishIssueID, Event: "status-changed"},
+		{RefID: finishIssueID, Event: "task-completed"},
 		{RefID: peerIssueID, Event: "issue-created"},
-		{RefID: finishIssueID, Event: "link_added"},
+		{RefID: finishIssueID, Event: "link-added"},
 		{RefID: unclaimIssueID, Event: "issue-created"},
-		{RefID: unclaimIssueID, Event: "status_changed"},
-		{RefID: unclaimIssueID, Event: "claim_released"},
+		{RefID: unclaimIssueID, Event: "status-changed"},
+		{RefID: unclaimIssueID, Event: "claim-released"},
 		{RefID: concernIssueID, Event: "issue-created"},
-		{RefID: concernIssueID, Event: "task_completed"},
-		{RefID: concernIssueID, Event: "concern_raised"},
-		{RefID: concernIssueID, Event: "task_completed"},
-		{RefID: concernIssueID, Event: "concern_addressed"},
+		{RefID: concernIssueID, Event: "task-completed"},
+		{RefID: concernIssueID, Event: "task-completed"},
 	}
 	if len(rows) != len(want) {
 		t.Fatalf("activity row count = %d, want %d", len(rows), len(want))
@@ -226,46 +198,42 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 	}
 	assertActivityEventsForIssue(t, workspace, finishIssueID, []string{
 		"issue-created",
-		"status_changed",
-		"ac_added",
-		"ac_verified",
-		"gate_recorded",
-		"status_changed",
-		"task_completed",
-		"link_added",
+		"status-changed",
+		"ac-added",
+		"gate-recorded",
+		"status-changed",
+		"task-completed",
+		"link-added",
 	})
 	assertActivityEventsForIssue(t, workspace, peerIssueID, []string{
 		"issue-created",
 	})
 	assertActivityEventsForIssue(t, workspace, unclaimIssueID, []string{
 		"issue-created",
-		"status_changed",
-		"claim_released",
+		"status-changed",
+		"claim-released",
 	})
 	assertActivityEventsForIssue(t, workspace, concernIssueID, []string{
 		"issue-created",
-		"task_completed",
-		"concern_raised",
-		"task_completed",
-		"concern_addressed",
+		"task-completed",
+		"task-completed",
 	})
-	if !strings.Contains(activityStdout, `"event":"gate_recorded"`) {
-		t.Fatalf("activity list stdout = %q, want gate_recorded", activityStdout)
+	if !strings.Contains(activityStdout, `"event":"gate-recorded"`) {
+		t.Fatalf("activity list stdout = %q, want gate-recorded", activityStdout)
 	}
-	if !strings.Contains(activityStdout, `"event":"concern_addressed"`) {
-		t.Fatalf("activity list stdout = %q, want concern_addressed", activityStdout)
+	for _, event := range []string{"ac-verified", "concern-raised", "concern-addressed"} {
+		if strings.Contains(activityStdout, `"event":"`+event+`"`) {
+			t.Fatalf("activity list stdout = %q, want no %s event after fail-closed mutation", activityStdout, event)
+		}
 	}
-	if !strings.Contains(activityStdout, `"event":"claim_released"`) {
-		t.Fatalf("activity list stdout = %q, want claim_released", activityStdout)
+	if !strings.Contains(activityStdout, `"event":"claim-released"`) {
+		t.Fatalf("activity list stdout = %q, want claim-released", activityStdout)
 	}
-	if !strings.Contains(activityStdout, `"event":"link_added"`) {
-		t.Fatalf("activity list stdout = %q, want link_added", activityStdout)
+	if !strings.Contains(activityStdout, `"event":"link-added"`) {
+		t.Fatalf("activity list stdout = %q, want link-added", activityStdout)
 	}
 	if !strings.Contains(activityStdout, `"gate_run_id":"`) {
 		t.Fatalf("activity list stdout = %q, want gate_run_id details", activityStdout)
-	}
-	if !strings.Contains(activityStdout, `"concern_id":"`+concernID+`"`) {
-		t.Fatalf("activity list stdout = %q, want concern_id %q", activityStdout, concernID)
 	}
 	if !strings.Contains(activityStdout, `"attempt_number":1`) {
 		t.Fatalf("activity list stdout = %q, want attempt_number details", activityStdout)
@@ -290,7 +258,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 
-	afterStdout, afterStderr := runFIDCommand(t, workspace, "activity", "list")
+	afterStdout, afterStderr := runFIDCommand(t, workspace, "--json", "activity", "list")
 	if afterStderr != "" {
 		t.Fatalf("activity list stderr after rebuild = %q, want empty", afterStderr)
 	}
@@ -298,10 +266,7 @@ func TestV01EActivityLifecycleCoverageAndRebuildParity(t *testing.T) {
 		t.Fatalf("activity_log after rebuild = %#v, want %#v", got, beforeRebuild)
 	}
 
-	var afterRows []activityLifecycleRow
-	if err := json.Unmarshal([]byte(afterStdout), &afterRows); err != nil {
-		t.Fatalf("Unmarshal(activity list after rebuild) error = %v", err)
-	}
+	afterRows := decodeActivityLifecycleRows(t, afterStdout)
 	if !reflect.DeepEqual(afterRows, rows) {
 		t.Fatalf("activity list after rebuild = %#v, want %#v", afterRows, rows)
 	}
@@ -386,15 +351,12 @@ func closeActivityLifecycleRows(t *testing.T, rows *sql.Rows) {
 func assertActivityEventsForIssue(t *testing.T, workspace, issueID string, want []string) {
 	t.Helper()
 
-	stdout, stderr := runFIDCommand(t, workspace, "activity", "list", "--on", "issue/"+issueID)
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "activity", "list", "--on", "issue/"+issueID)
 	if stderr != "" {
 		t.Fatalf("activity list stderr for %s = %q, want empty", issueID, stderr)
 	}
 
-	var rows []activityLifecycleRow
-	if err := json.Unmarshal([]byte(stdout), &rows); err != nil {
-		t.Fatalf("Unmarshal(activity list for %s) error = %v", issueID, err)
-	}
+	rows := decodeActivityLifecycleRows(t, stdout)
 
 	got := make([]string, 0, len(rows))
 	for _, row := range rows {
@@ -403,6 +365,21 @@ func assertActivityEventsForIssue(t *testing.T, workspace, issueID string, want 
 	if !reflect.DeepEqual(countLifecycleEventNames(got), countLifecycleEventNames(want)) {
 		t.Fatalf("activity events for %s = %#v, want %#v", issueID, got, want)
 	}
+}
+
+func decodeActivityLifecycleRows(t *testing.T, output string) []activityLifecycleRow {
+	t.Helper()
+
+	envelope := decodeReadEnvelope(t, output, "activity.list")
+	payload, err := json.Marshal(envelope.Result["items"])
+	if err != nil {
+		t.Fatalf("Marshal(activity list items) error = %v", err)
+	}
+	var rows []activityLifecycleRow
+	if err := json.Unmarshal(payload, &rows); err != nil {
+		t.Fatalf("Unmarshal(activity list items) error = %v", err)
+	}
+	return rows
 }
 
 func countLifecycleEvents(rows []activityLifecycleRow) map[string]int {

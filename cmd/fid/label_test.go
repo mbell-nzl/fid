@@ -67,18 +67,18 @@ func TestLabelAddCreatesOneRowInOneEventWithoutActivityLog(t *testing.T) {
 	if event.EventType != "label.added" {
 		t.Fatalf("event type = %q, want %q", event.EventType, "label.added")
 	}
-	if event.Actor.Role != "developer" {
-		t.Fatalf("event actor role = %q, want developer", event.Actor.Role)
+	if event.ActorV2.ActorID != "developer" || event.ActorV2.ActorType != "agent" {
+		t.Fatalf("event actor = %#v, want standalone agent developer", event.ActorV2)
 	}
-	if len(event.Effects) != 1 {
-		t.Fatalf("effect count = %d, want 1", len(event.Effects))
+	if len(event.Effects) != 2 {
+		t.Fatalf("effect count = %d, want label insert plus idempotency result", len(event.Effects))
 	}
 	effect := event.Effects[0]
 	if effect.Op != "insert" {
 		t.Fatalf("effect op = %q, want insert", effect.Op)
 	}
-	if effect.Table != "labels" {
-		t.Fatalf("effect table = %q, want labels", effect.Table)
+	if effect.Table != "labels" || event.Effects[1].Table != "idempotency_results" {
+		t.Fatalf("effects = %#v, want label insert plus idempotency result", event.Effects)
 	}
 }
 
@@ -103,7 +103,7 @@ func TestLabelAddJSONMatchesContract(t *testing.T) {
 		t.Fatalf("Unmarshal(stdout) error = %v; stdout = %q", err, result.stdout)
 	}
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertExactKeys(t, envelope.Result, []string{"label"})
+	assertExactKeys(t, envelope.Result, []string{"idempotency_key", "label", "replayed"})
 	label := requireObject(t, envelope.Result, "label")
 	assertExactKeys(t, label, []string{"name", "colour", "description"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
@@ -277,53 +277,21 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		}
 	})
 
-	t.Run("denied and unknown reject before append", func(t *testing.T) {
+	t.Run("project-local actors are accepted without role policy", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "label", "add", "core", "--by", "qa_lead")
-		if err == nil {
-			t.Fatal("qa_lead Execute() error = nil, want denial")
-		}
-		if stdout != "" {
-			t.Fatalf("qa_lead stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "qa_lead" not permitted for action "label.add"`) {
-			t.Fatalf("qa_lead stderr = %q, want permission denial", stderr)
-		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after denied role = %d, want %d", got, linesBefore)
-		}
-
-		stdout, stderr, err = runFIDCommandExpectError(t, workspace, "label", "add", "core", "--by", "intern")
-		if err == nil {
-			t.Fatal("unknown-role Execute() error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("unknown-role stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("unknown-role stderr = %q, want unknown-role error", stderr)
-		}
-		for _, want := range []string{
-			"known roles:",
-			"developer",
-			"qa_reviewer",
-			"qa_lead",
-			"tl_lite",
-			"tl",
-			"workflow_runner",
-			"human",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("unknown-role stderr = %q, want substring %q", stderr, want)
+		for _, fixture := range []struct{ name, actor string }{{"qa", "agent:qa_reviewer"}, {"unlisted", "agent:intern"}} {
+			stdout, stderr := runFIDCommand(t, workspace, "label", "add", fixture.name, "--actor", fixture.actor)
+			if stderr != "" || !strings.Contains(stdout, "created label") {
+				t.Fatalf("%s actor result = (%q, %q), want stdout success", fixture.actor, stdout, stderr)
 			}
 		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after unknown role = %d, want %d", got, linesBefore)
+		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+2 {
+			t.Fatalf("journal lines after project-local actors = %d, want %d", got, linesBefore+2)
 		}
 	})
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -34,16 +33,9 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 	)
 	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
 
-	_, raiseStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", firstCompletionID,
-		"--summary", "First concern for parity",
-	)
-	firstConcernID := parseConcernID(t, raiseStderr)
+	firstConcernID := "CON-v01c-first"
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", firstCompletionID, "--summary", "First concern for parity"})
+	seedConcernProjection(t, workspace, firstConcernID, issueID, firstCompletionID, "First concern for parity", "open", nil)
 
 	_, secondCompleteStderr := runFIDCommand(
 		t,
@@ -54,16 +46,8 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 	)
 	secondCompletionID := parseCompletionID(t, secondCompleteStderr)
 
-	_, addressStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "address", firstConcernID,
-		"--in-completion", secondCompletionID,
-		"--by", "developer",
-	)
-	if !strings.Contains(addressStderr, "addressed concern "+firstConcernID) {
-		t.Fatalf("address stderr = %q, want concern confirmation", addressStderr)
-	}
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "address", firstConcernID, "--actor", "human:reviewer", "--in-completion", secondCompletionID})
+	updateConcernProjection(t, workspace, firstConcernID, secondCompletionID)
 
 	_, thirdCompleteStderr := runFIDCommand(
 		t,
@@ -74,21 +58,11 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 	)
 	thirdCompletionID := parseCompletionID(t, thirdCompleteStderr)
 
-	_, raiseStderr = runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", thirdCompletionID,
-		"--summary", "Second concern for parity",
-	)
-	secondConcernID := parseConcernID(t, raiseStderr)
+	secondConcernID := "CON-v01c-second"
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", thirdCompletionID, "--summary", "Second concern for parity"})
+	seedConcernProjection(t, workspace, secondConcernID, issueID, thirdCompletionID, "Second concern for parity", "open", nil)
 
 	beforeConcernRows := snapshotConcernRows(t, workspace)
-	beforeConcernList := mustGetConcernListJSON(t, workspace)
-	beforeIssueJSON := mustGetIssueJSON(t, workspace, issueID)
-	beforeIssueListJSON := mustGetIssueListJSON(t, workspace)
 
 	if len(beforeConcernRows) != 2 {
 		t.Fatalf("before concern rows len = %d, want 2", len(beforeConcernRows))
@@ -104,7 +78,6 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 	if secondConcernRow.Status != "open" {
 		t.Fatalf("before second concern row = %#v, want open %q", secondConcernRow, secondConcernID)
 	}
-
 	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
@@ -115,18 +88,14 @@ func TestV01CConcernRebuildParity(t *testing.T) {
 		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
 	}
 
-	if got := snapshotConcernRows(t, workspace); !reflect.DeepEqual(got, beforeConcernRows) {
-		t.Fatalf("concern rows after rebuild = %#v, want %#v", got, beforeConcernRows)
+	if got := snapshotConcernRows(t, workspace); len(got) != 0 {
+		t.Fatalf("concern rows after rebuild = %#v, want no non-journal historical rows", got)
 	}
-	if got := mustGetConcernListJSON(t, workspace); got != beforeConcernList {
-		t.Fatalf("concern list after rebuild = %q, want %q", got, beforeConcernList)
+	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
+		t.Fatalf("concern list state after rebuild = %#v, want false/0 for non-journal historical rows", got)
 	}
-	if got := mustGetIssueJSON(t, workspace, issueID); got != beforeIssueJSON {
-		t.Fatalf("issue JSON after rebuild = %q, want %q", got, beforeIssueJSON)
-	}
-	if got := mustGetIssueListJSON(t, workspace); got != beforeIssueListJSON {
-		t.Fatalf("issue list JSON after rebuild = %q, want %q", got, beforeIssueListJSON)
-	}
+	assertIssueConcernState(t, mustGetIssueJSON(t, workspace, issueID), false, 0)
+	assertIssueListConcernState(t, mustGetIssueListJSON(t, workspace), issueID, false, 0)
 }
 
 func TestV01CClosureSmoke(t *testing.T) {
@@ -153,16 +122,8 @@ func TestV01CClosureSmoke(t *testing.T) {
 	)
 	acID := parseAddedAcceptanceCriterionID(t, addStdout)
 
-	_, verifyStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", issueID, acID,
-		"--by", "qa_lead",
-		"--status", "pass",
-	)
-	if !strings.Contains(verifyStderr, "verified "+acID+" on "+issueID+" by qa_lead: pass") {
-		t.Fatalf("verify stderr = %q, want confirmation", verifyStderr)
-	}
+	assertIssueACVerifyUnavailable(t, workspace, issueID, acID, "agent:qa_lead")
+	seedHistoricalACVerification(t, workspace, acID, "qa_lead")
 
 	acListStdout, acListStderr := runFIDCommand(
 		t,
@@ -195,16 +156,9 @@ func TestV01CClosureSmoke(t *testing.T) {
 	)
 	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
 
-	_, raiseStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", firstCompletionID,
-		"--summary", "Smoke concern",
-	)
-	concernID := parseConcernID(t, raiseStderr)
+	concernID := "CON-v01c-smoke"
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", firstCompletionID, "--summary", "Smoke concern"})
+	seedConcernProjection(t, workspace, concernID, issueID, firstCompletionID, "Smoke concern", "open", nil)
 
 	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); !got.ConcernsRaised || got.OpenConcernsCount != 1 {
 		t.Fatalf("after raise concern state = %#v, want true/1", got)
@@ -237,16 +191,8 @@ func TestV01CClosureSmoke(t *testing.T) {
 	)
 	secondCompletionID := parseCompletionID(t, secondCompleteStderr)
 
-	_, addressStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "address", concernID,
-		"--in-completion", secondCompletionID,
-		"--by", "developer",
-	)
-	if !strings.Contains(addressStderr, "addressed concern "+concernID) {
-		t.Fatalf("address stderr = %q, want concern confirmation", addressStderr)
-	}
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "address", concernID, "--actor", "human:reviewer", "--in-completion", secondCompletionID})
+	updateConcernProjection(t, workspace, concernID, secondCompletionID)
 
 	if got := decodeConcernListState(t, mustGetConcernListJSON(t, workspace)); got.ConcernsRaised || got.OpenConcernsCount != 0 {
 		t.Fatalf("after address concern state = %#v, want false/0", got)
@@ -379,6 +325,43 @@ func decodeConcernListState(t *testing.T, listJSON string) issueConcernState {
 		}
 	}
 	return issueConcernState{ConcernsRaised: open > 0, OpenConcernsCount: open}
+}
+
+func assertIssueConcernState(t *testing.T, issueJSON string, wantRaised bool, wantOpen int) {
+	t.Helper()
+
+	var issue struct {
+		ConcernsRaised    bool `json:"concerns_raised"`
+		OpenConcernsCount int  `json:"open_concerns_count"`
+	}
+	if err := json.Unmarshal([]byte(issueJSON), &issue); err != nil {
+		t.Fatalf("Unmarshal(issue concern state) error = %v", err)
+	}
+	if issue.ConcernsRaised != wantRaised || issue.OpenConcernsCount != wantOpen {
+		t.Fatalf("issue concern state = %#v, want %t/%d", issue, wantRaised, wantOpen)
+	}
+}
+
+func assertIssueListConcernState(t *testing.T, issueListJSON, issueID string, wantRaised bool, wantOpen int) {
+	t.Helper()
+
+	var issues []struct {
+		ID                string `json:"id"`
+		ConcernsRaised    bool   `json:"concerns_raised"`
+		OpenConcernsCount int    `json:"open_concerns_count"`
+	}
+	if err := json.Unmarshal([]byte(issueListJSON), &issues); err != nil {
+		t.Fatalf("Unmarshal(issue list concern state) error = %v", err)
+	}
+	for _, issue := range issues {
+		if issue.ID == issueID {
+			if issue.ConcernsRaised != wantRaised || issue.OpenConcernsCount != wantOpen {
+				t.Fatalf("issue list concern state = %#v, want %t/%d", issue, wantRaised, wantOpen)
+			}
+			return
+		}
+	}
+	t.Fatalf("issue %q not found in issue list", issueID)
 }
 
 func concernRowByID(t *testing.T, rows []concernParityRow, concernID string) concernParityRow {

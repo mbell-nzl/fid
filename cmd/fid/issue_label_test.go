@@ -123,8 +123,8 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_label_added" {
-		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue_label_added")
+	if activityEvent != "issue-label-added" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue-label-added")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
@@ -243,7 +243,7 @@ func assertIssueLabelMutationEnvelope(t *testing.T, result commandExecutionResul
 		t.Fatalf("Unmarshal(%s stdout) error = %v; stdout = %q", operation, err, result.stdout)
 	}
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertExactKeys(t, envelope.Result, []string{"issue_id", "label", "issue_revision"})
+	assertExactKeys(t, envelope.Result, []string{"idempotency_key", "issue_id", "issue_revision", "label", "replayed"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
 		t.Fatalf("envelope = %#v, want fid-cli.v1 %s success", envelope, operation)
@@ -305,7 +305,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		}
 	})
 
-	t.Run("permissions reject denied and unknown roles", func(t *testing.T) {
+	t.Run("project-local actors are accepted without role policy", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
@@ -323,30 +323,16 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "label", "add", issueID, "core", "--by", "qa_reviewer")
-		if err == nil {
-			t.Fatal("Execute(denied add) error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("denied add stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "qa_reviewer" not permitted for action "issue.label.add"`) {
-			t.Fatalf("denied add stderr = %q, want permission error", stderr)
+		for _, fixture := range []struct{ label, actor string }{{"qa", "agent:qa_reviewer"}, {"intern", "agent:intern"}} {
+			runFIDCommand(t, workspace, "label", "add", fixture.label, "--actor", fixture.actor)
+			stdout, stderr := runFIDCommand(t, workspace, "issue", "label", "add", issueID, fixture.label, "--actor", fixture.actor)
+			if stderr != "" || !strings.Contains(stdout, "added label") {
+				t.Fatalf("%s actor issue label = (%q, %q), want stdout confirmation", fixture.actor, stdout, stderr)
+			}
 		}
 
-		stdout, stderr, err = runFIDCommandExpectError(t, workspace, "issue", "label", "add", issueID, "core", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute(unknown add role) error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("unknown add role stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("unknown add role stderr = %q, want unknown-role error", stderr)
-		}
-
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after rejected permission checks = %d, want %d", got, linesBefore)
+		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+4 {
+			t.Fatalf("journal lines after project-local actor checks = %d, want %d", got, linesBefore+4)
 		}
 	})
 }
@@ -461,8 +447,8 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_label_removed" {
-		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue_label_removed")
+	if activityEvent != "issue-label-removed" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue-label-removed")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")

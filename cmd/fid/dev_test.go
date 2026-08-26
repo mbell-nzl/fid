@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -381,13 +382,27 @@ func seedCommandDevFinishReadyIssue(t *testing.T, workspace string) string {
 		"--by", "developer",
 	)
 	acID := parseAddedAcceptanceCriterionID(t, addStdout)
-	runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", issueID, acID,
-		"--status", "pass",
-		"--by", "developer",
-	)
+	journalPath := mustJournalPath(t, workspace)
+	before := mustReadCommandFile(t, journalPath)
+	verify := executeCommandForTest(workspace, "issue", "ac", "verify", issueID, acID, "--actor", "agent:developer")
+	if verify.err == nil || verify.stdout != "" || !strings.Contains(verify.stderr, "capability is unavailable") {
+		t.Fatalf("public AC verification = %#v, want typed capability-unavailable rejection", verify)
+	}
+	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+		t.Fatal("public AC verification changed journal bytes")
+	}
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open dev fixture database: %v", err)
+	}
+	if _, err := conn.Exec(`
+		INSERT INTO ac_verifications (id, ac_id, verifier_role, verifier_actor, status, verified_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+	`, "ACV-historical-"+acID, acID, "developer", "developer", "pass", "2026-08-25T00:00:00Z"); err != nil {
+		closeCommandDB(t, conn)
+		t.Fatalf("seed historical AC verification: %v", err)
+	}
+	closeCommandDB(t, conn)
 	runFIDCommand(
 		t,
 		workspace,

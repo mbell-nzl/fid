@@ -118,6 +118,7 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 		CommandName: "workflow.assign",
 		Effects:     assignmentEffects(options.Request, replacing, time.Now().UTC().Format(time.RFC3339)),
 	}
+	result.OccurredAt = event.OccurredAt.UTC()
 	result.IdempotencyKey = options.IdempotencyKey
 	resultJSON, err := assignResultJSON(*result)
 	if err != nil {
@@ -138,12 +139,13 @@ func assignWorkflowLocked(lock *journal.WriteLock, options AssignOptions, actor 
 }
 
 func assignResultJSON(result AssignResult) (string, error) {
-	payload, err := journal.MarshalCanonicalJSON(map[string]any{"idempotency_key": result.IdempotencyKey, "kind": result.Kind, "name": result.Name, "project": result.Project, "replayed": false})
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"event_occurred_at": result.OccurredAt.Format(time.RFC3339Nano), "idempotency_key": result.IdempotencyKey, "kind": result.Kind, "name": result.Name, "project": result.Project, "replayed": false})
 	return string(payload), err
 }
 
 func assignResultFromJSON(raw, eventID string, replayed bool) (AssignResult, error) {
 	var result struct {
+		OccurredAt     string `json:"event_occurred_at"`
 		IdempotencyKey string `json:"idempotency_key"`
 		Kind           string `json:"kind"`
 		Name           string `json:"name"`
@@ -152,7 +154,11 @@ func assignResultFromJSON(raw, eventID string, replayed bool) (AssignResult, err
 	if err := json.Unmarshal([]byte(raw), &result); err != nil {
 		return AssignResult{}, fmt.Errorf("decode stored workflow assign result: %w", err)
 	}
-	return AssignResult{Name: result.Name, Kind: result.Kind, Project: result.Project, EventID: eventID, IdempotencyKey: result.IdempotencyKey, Replayed: replayed}, nil
+	occurredAt, err := time.Parse(time.RFC3339Nano, result.OccurredAt)
+	if err != nil {
+		return AssignResult{}, fmt.Errorf("decode stored workflow assign occurred_at: %w", err)
+	}
+	return AssignResult{Name: result.Name, Kind: result.Kind, Project: result.Project, EventID: eventID, OccurredAt: occurredAt, IdempotencyKey: result.IdempotencyKey, Replayed: replayed}, nil
 }
 
 func assignmentExists(conn *sql.DB, request AssignmentRequest) (bool, error) {

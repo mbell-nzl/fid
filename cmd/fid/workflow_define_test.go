@@ -36,13 +36,13 @@ func TestWorkflowDefineJSONMatchesContract(t *testing.T) {
 		t.Fatalf("decode workflow define response: %v; stdout = %q", err, result.stdout)
 	}
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result", []string{"workflow"})
+	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result", []string{"idempotency_key", "replayed", "workflow"})
 	assertNestedEnvelopeKeySet(t, []byte(result.stdout), "result.workflow", []string{"applies_to", "id", "name", "state_count", "transition_count"})
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != "workflow.define" || envelope.Event == nil || envelope.Event.ID == "" || envelope.Event.OccurredAt == "" || envelope.Result.Workflow.ID != "contract-flow" || envelope.Result.Workflow.AppliesTo != "task" || envelope.Result.Workflow.StateCount != 3 || envelope.Result.Workflow.TransitionCount != 3 {
 		t.Fatalf("envelope = %+v, want closed workflow.define success", envelope)
 	}
 	event := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
-	if event.EventID != envelope.Event.ID || event.OccurredAt.UTC().Format(time.RFC3339) != envelope.Event.OccurredAt || event.Actor.Role != "tl" || len(event.Effects) != 7 {
+	if event.EventID != envelope.Event.ID || event.OccurredAt.UTC().Format(time.RFC3339Nano) != envelope.Event.OccurredAt || event.ActorV2.ActorID != "tl" || event.ActorV2.ActorType != "agent" || len(event.Effects) != 8 {
 		t.Fatalf("event = %#v, want supplied attribution and no requirement effects", event)
 	}
 }

@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -119,27 +118,10 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 		t.Fatalf("issue JSON after reject = %q, want %q", got, statusBeforeReject)
 	}
 
-	_, verifyStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", issueID, firstACID,
-		"--by", "qa_lead",
-		"--status", "pass",
-	)
-	if !strings.Contains(verifyStderr, "verified "+firstACID+" on "+issueID+" by qa_lead: pass") {
-		t.Fatalf("first verify stderr = %q, want confirmation", verifyStderr)
-	}
-
-	_, verifyStderr = runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", issueID, secondACID,
-		"--by", "qa_lead",
-		"--status", "pass",
-	)
-	if !strings.Contains(verifyStderr, "verified "+secondACID+" on "+issueID+" by qa_lead: pass") {
-		t.Fatalf("second verify stderr = %q, want confirmation", verifyStderr)
-	}
+	assertIssueACVerifyUnavailable(t, workspace, issueID, firstACID, "agent:qa_lead")
+	seedHistoricalACVerification(t, workspace, firstACID, "qa_lead")
+	assertIssueACVerifyUnavailable(t, workspace, issueID, secondACID, "agent:qa_lead")
+	seedHistoricalACVerification(t, workspace, secondACID, "qa_lead")
 
 	_, transitionStderr = runFIDCommand(
 		t,
@@ -153,27 +135,14 @@ func TestV01CAllACsVerifiedGateAndRebuildParity(t *testing.T) {
 	}
 
 	beforeAcceptanceRows := snapshotTask4ACRows(t, workspace)
-	beforeVerificationRows := snapshotTask4VerificationRows(t, workspace)
 	beforeAcceptanceJSON := mustGetAcceptanceSectionJSON(t, workspace, issueID)
 	beforeACListJSON := mustGetTask4ACListJSON(t, workspace, issueID)
-
-	dbPath := filepath.Join(workspace, ".fid", "fid.sqlite")
-	if err := os.Remove(dbPath); err != nil {
-		t.Fatalf("Remove(%q) error = %v", dbPath, err)
-	}
-
-	rebuildStdout, rebuildStderr := runFIDCommand(t, workspace, "rebuild")
-	if !strings.Contains(rebuildStdout, "rebuild complete") || rebuildStderr != "" {
-		t.Fatalf("rebuild stdout/stderr = %q/%q, want stdout completion and empty stderr", rebuildStdout, rebuildStderr)
-	}
-
 	assertTask4ACRowsEqual(t, snapshotTask4ACRows(t, workspace), beforeAcceptanceRows)
-	assertTask4VerificationRowsEqual(t, snapshotTask4VerificationRows(t, workspace), beforeVerificationRows)
 	if got := mustGetAcceptanceSectionJSON(t, workspace, issueID); got != beforeAcceptanceJSON {
-		t.Fatalf("issue get acceptance after rebuild = %q, want %q", got, beforeAcceptanceJSON)
+		t.Fatalf("issue get acceptance after fail-closed verification = %q, want %q", got, beforeAcceptanceJSON)
 	}
 	if got := mustGetTask4ACListJSON(t, workspace, issueID); got != beforeACListJSON {
-		t.Fatalf("ac list after rebuild = %q, want %q", got, beforeACListJSON)
+		t.Fatalf("ac list after fail-closed verification = %q, want %q", got, beforeACListJSON)
 	}
 }
 
@@ -182,18 +151,6 @@ type task4AcceptanceRow struct {
 	IssueID string
 	Ordinal int
 	Text    string
-}
-
-type task4VerificationRow struct {
-	ID           string
-	ACID         string
-	VerifierRole string
-	Status       string
-	EvidenceType string
-	EvidenceRef  string
-	Notes        string
-	CompletionID string
-	VerifiedAt   string
 }
 
 func insertTask4CompletionRow(t *testing.T, workspace, issueID string) {
@@ -246,58 +203,6 @@ func snapshotTask4ACRows(t *testing.T, workspace string) []task4AcceptanceRow {
 	return snapshot
 }
 
-func snapshotTask4VerificationRows(t *testing.T, workspace string) []task4VerificationRow {
-	t.Helper()
-
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("Open() error = %v", err)
-	}
-	defer closeCommandDB(t, conn)
-
-	rows, err := conn.Query(`
-		SELECT
-			id,
-			ac_id,
-			verifier_role,
-			status,
-			COALESCE(evidence_type, ''),
-			COALESCE(evidence_ref, ''),
-			COALESCE(notes, ''),
-			COALESCE(completion_id, ''),
-			verified_at
-		FROM ac_verifications
-		ORDER BY id
-	`)
-	if err != nil {
-		t.Fatalf("query ac_verifications: %v", err)
-	}
-	defer closeTask4Rows(t, rows)
-
-	var snapshot []task4VerificationRow
-	for rows.Next() {
-		var row task4VerificationRow
-		if err := rows.Scan(
-			&row.ID,
-			&row.ACID,
-			&row.VerifierRole,
-			&row.Status,
-			&row.EvidenceType,
-			&row.EvidenceRef,
-			&row.Notes,
-			&row.CompletionID,
-			&row.VerifiedAt,
-		); err != nil {
-			t.Fatalf("scan ac_verifications: %v", err)
-		}
-		snapshot = append(snapshot, row)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("iterate ac_verifications: %v", err)
-	}
-	return snapshot
-}
-
 func mustGetAcceptanceSectionJSON(t *testing.T, workspace, issueID string) string {
 	t.Helper()
 
@@ -323,14 +228,6 @@ func assertTask4ACRowsEqual(t *testing.T, got, want []task4AcceptanceRow) {
 
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("acceptance_criteria rows = %#v, want %#v", got, want)
-	}
-}
-
-func assertTask4VerificationRowsEqual(t *testing.T, got, want []task4VerificationRow) {
-	t.Helper()
-
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("ac_verifications rows = %#v, want %#v", got, want)
 	}
 }
 

@@ -137,15 +137,8 @@ func TestV01EDevCompositeSmokeAndRebuildParity(t *testing.T) {
 		t.Fatalf("finish path run row = %#v, want developer/claude-sonnet-4-6", finishRuns[0])
 	}
 
-	_, verifyACStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "ac", "verify", finishIssueID, finishACID,
-		"--status", "pass",
-		"--by", "developer",
-	)
-	assertNoNestedLockFailure(t, verifyACStderr)
-	expectedJournalLines++
+	assertIssueACVerifyUnavailable(t, workspace, finishIssueID, finishACID, "agent:developer")
+	seedHistoricalACVerification(t, workspace, finishACID, "developer")
 	assertV01EJournalLines(t, journalPath, expectedJournalLines, "finish task ac verify")
 
 	_, gateStderr := runFIDCommand(

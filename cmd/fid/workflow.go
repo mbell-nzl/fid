@@ -56,7 +56,7 @@ func newWorkflowDefineCommand() *cobra.Command {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "workflow.define", map[string]any{"workflow": map[string]any{
 					"id": result.Name, "name": result.Name, "applies_to": result.AppliesTo,
 					"state_count": result.States, "transition_count": result.Transitions,
-				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339)})
+				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339Nano)})
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "defined workflow %s\n", result.Name)
 			return err
@@ -117,7 +117,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 			if jsonMode {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "workflow.assign", map[string]any{"assignment": map[string]any{
 					"scope_type": map[bool]string{true: "project", false: "kind"}[result.Project], "scope_value": scopeValue, "workflow_id": result.Name,
-				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339)})
+				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339Nano)})
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "assigned workflow %s\n", result.Name)
 			return err

@@ -43,11 +43,11 @@ func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
 		"--source-doc", filepath.ToSlash(filepath.Join("project-docs", "specs", "sample_requirements.md")),
 		"--by", "tl",
 	)
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
+	if stderr != "" {
+		t.Fatalf("stderr = %q, want empty", stderr)
 	}
-	if stderr == "" {
-		t.Fatal("stderr = empty, want sync confirmation")
+	if !strings.Contains(stdout, "synced requirements from") {
+		t.Fatalf("stdout = %q, want sync confirmation", stdout)
 	}
 
 	linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -101,15 +101,17 @@ func TestRequirementSyncCreatesPointersInOneJournalEvent(t *testing.T) {
 	if event.EventType != "requirement.synced" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "requirement.synced")
 	}
-	if len(event.Effects) != 3 {
-		t.Fatalf("effect count = %d, want 3", len(event.Effects))
+	if len(event.Effects) != 4 {
+		t.Fatalf("effect count = %d, want requirement effects plus idempotency result", len(event.Effects))
 	}
 	for _, effect := range event.Effects {
 		if effect.Op != "insert" {
 			t.Fatalf("effect op = %q, want insert", effect.Op)
 		}
 		if effect.Table != "requirements" {
-			t.Fatalf("effect table = %q, want requirements", effect.Table)
+			if effect.Table != "idempotency_results" {
+				t.Fatalf("effect table = %q, want requirements or idempotency_results", effect.Table)
+			}
 		}
 	}
 }
@@ -226,8 +228,8 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 `)
 
 		stdout, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/auth.md", "--by", "human")
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
+		if stderr != "" {
+			t.Fatalf("stderr = %q, want empty", stderr)
 		}
 		for _, want := range []string{
 			"synced requirements from project-docs/specs/auth.md",
@@ -235,8 +237,8 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 			"updated: 0",
 			"unchanged: 0",
 		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
+			if !strings.Contains(stdout, want) {
+				t.Fatalf("stdout = %q, want substring %q", stdout, want)
 			}
 		}
 	})
@@ -256,46 +258,14 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/auth.md", "--by", "developer")
-		if err == nil {
-			t.Fatal("developer Execute() error = nil, want denial")
-		}
-		if stdout != "" {
-			t.Fatalf("developer stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "developer" not permitted for action "requirement.sync"`) {
-			t.Fatalf("developer stderr = %q, want permission denial", stderr)
-		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after denied role = %d, want %d", got, linesBefore)
-		}
-
-		stdout, stderr, err = runFIDCommandExpectError(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/auth.md", "--by", "intern")
-		if err == nil {
-			t.Fatal("unknown-role Execute() error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("unknown-role stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("unknown-role stderr = %q, want unknown-role error", stderr)
-		}
-		for _, want := range []string{
-			"known roles:",
-			"developer",
-			"qa_reviewer",
-			"qa_lead",
-			"tl_lite",
-			"tl",
-			"workflow_runner",
-			"human",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("unknown-role stderr = %q, want substring %q", stderr, want)
+		for _, actor := range []string{"agent:developer", "agent:intern"} {
+			stdout, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/auth.md", "--actor", actor)
+			if stderr != "" || !strings.Contains(stdout, "synced requirements") {
+				t.Fatalf("%s actor result = (%q, %q), want stdout success", actor, stdout, stderr)
 			}
 		}
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after unknown role = %d, want %d", got, linesBefore)
+		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+			t.Fatalf("journal lines after project-local actors = %d, want %d", got, linesBefore+1)
 		}
 	})
 
