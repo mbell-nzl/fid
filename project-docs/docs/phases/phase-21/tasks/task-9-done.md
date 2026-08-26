@@ -2,12 +2,12 @@
 
 ## Workflow outcome
 
-- Task outcome: BLOCKED
-- Category: specification-contradiction
-- Condition: The unchanged `cmd/fid/task10_contract_test.go` requires the Task 9-converted `issue ac add`, `label add`, and `issue label add/remove` leaves to accept `--by` and emit the old missing-role authority envelope. Task 9's accepted `--actor` plus idempotency contract and DEC-165 expressly forbid restoring `--by` on those families. The exact package and repository coverage gates each reproduce this conflict with observed `exit_code: 1`.
-- Recovery attempts: 10
-- Next action: A Tech Lead decision must reconcile the retained Task 10 contract with Task 9's accepted actor/idempotency interface, either by authorizing the Task 10 contract's convergence to the retained Task 9 public surface or by authorizing a protected public-interface change. Task 9 cannot select either route.
-- Human attention required: yes
+- Task outcome: COMPLETE
+- Category: none
+- Condition: DEC-166 resolved TRG-21-010's stale ownership classification. The historical Phase 20 request fixture now exercises the accepted Task 9 `--actor` plus idempotency contract, and all five unchanged task commands pass.
+- Recovery attempts: 12
+- Next action: Phase Runner performs the required two-argument report lint, then dispatches QA Review Window 3.
+- Human attention required: no
 
 ## Summary of what was implemented
 
@@ -19,6 +19,7 @@
 - Registered `concern list` as an accepted project/JSON root-flag leaf and strengthened stats CLI assertions to the public `actor_attribution` envelope with `--group-by actor|epic`.
 - Added an allowlisted retained-mutation fixture adapter for standalone actor/idempotency transport and made replacement-bound dev completion tests prove public AC verification is unavailable before seeding historical projection state.
 - Replaced public policy-matrix fixture expectations with absent-command and no-side-effect checks; updated vacuum and converted-read root-flag fixtures to typed unavailable and accepted project/JSON behavior.
+- Renamed the Phase 20 task-labelled request fixture to `retained_actor_request_contract_test.go` and converged its Task-9-owned attribution rows to canonical invalid-argument JSON, concise Human `--actor`/Actor-grammar errors, and selected-project actor/idempotency requests.
 
 ## Files created or modified
 
@@ -67,6 +68,7 @@
 - `internal/requirements/sync.go`
 - `internal/requirements/types.go`
 - `internal/dev/finish_test.go`
+- `cmd/fid/retained_actor_request_contract_test.go` (renamed from `cmd/fid/task10_contract_test.go`)
 
 ## Documentation updated
 
@@ -74,10 +76,10 @@
 
 ## Validation Contract Coverage
 
-- VAL-028: BLOCKED - `TestTask9RetainedInventorySurface` in `cmd/fid/task9_contract_test.go` now has red rows for label add, issue-label add, link add, and requirement sync; the current required package gate ended `FAIL	github.com/mbell-nzl/fid/cmd/fid	147.763s` while retained assertion migration and remaining families remain unconverged.
-- VAL-029: BLOCKED - `cmd/fid/root.go` no longer registers `newPolicyCommand`, but the required package gate has not passed and the full generic-caller isolation proof remains unfinished.
-- VAL-030: BLOCKED - `TestTask9RetainedInventorySurface` proves typed capability-unavailable results for `issue ac verify`, `concern raise`, and `maintenance vacuum`; continuation must add persistence-negative evidence for every fail-closed judgment mutation.
-- VAL-031: BLOCKED - `TestTask9RetainedInventorySurface` proves `fid stats token --group-by actor` returns `items`; continuation must finish the accepted grouping matrix and its historical-attribution-only evidence.
+- VAL-028: PASS - `TestTask9RetainedInventorySurface` (`cmd/fid/task9_contract_test.go:10`) and `TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope` (`cmd/fid/retained_actor_request_contract_test.go:79`) prove retained inventory operations reject missing/malformed attribution before journal mutation; `TestRetainedInventoryOperationsUseSelectedProjectOutsideWorkingDirectory` (`cmd/fid/retained_actor_request_contract_test.go:173`) proves selected-project actor/idempotency success.
+- VAL-029: PASS - `TestPublicPolicyCommandIsAbsent` (`cmd/fid/policy_test.go:15`) and `TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag` (`cmd/fid/policy_test.go:45`) pass in the final required package gate without restoring public policy authority.
+- VAL-030: PASS - `TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects` (`cmd/fid/capabilities_test.go:102`) passes in the final required package gate with typed unavailable results and no side effects.
+- VAL-031: PASS - `TestStatsTokensDefaultsToJSONByActorAttribution` (`cmd/fid/stats_test.go:13`), `TestStatsTokensUsesDirectLegacyJSONAndEpicFilter` (`cmd/fid/stats_test.go:36`), and `TestStatsCostUsesDirectLegacyJSONAndExcludesNullCostsFromSum` (`cmd/fid/stats_test.go:78`) pass in the final required package gate.
 
 - Attempt 2 update: VAL-030 now has direct no-writer evidence in `internal/issues/judgment_unavailable_test.go` and `internal/maintenance/vacuum_unavailable_test.go`; the remaining CLI persistence-negative matrix is in scope for recovery. VAL-028, VAL-029, and VAL-031 remain PARTIAL because the required gate still fails on retained V1 fixture expectations.
 
@@ -95,6 +97,9 @@
 
 ## Tests run
 
+- `go test -race ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`; pre-convergence red evidence for stale `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse`)
+- `go test -race ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 155.278s` (terminated `exit_code: 0`)
+- `/tmp/fid-task9 --project /tmp/fid-task9-runtime.25ZdS5 --json label add runtime-core --actor agent:developer --idempotency-key runtime-label-add` - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260826-000002","occurred_at":"2026-08-26T08:46:45.011801748Z"},"ok":true,"operation":"label.add","result":{"idempotency_key":"runtime-label-add","label":{"name":"runtime-core","colour":null,"description":null},"replayed":false}}` (terminated `exit_code: 0`)
 - `go test ./internal/dev` - PASS - `ok github.com/mbell-nzl/fid/internal/dev 0.912s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 11.645s` (terminated `exit_code: 1`; remaining V1 CLI fixtures and policy/judgment expectations are enumerated in the output)
 - `go run ./cmd/fid --json concern list` - PASS - `[]` (terminated `exit_code: 0`)
@@ -104,6 +109,14 @@
 - `go test ./internal/requirements ./internal/links` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/links	1.355s` (terminated `exit_code: 1`; retained role and activity-name assertions remain)
 
 ## Exact quality-gate results
+
+### Attempt 12 exact task-gate rerun
+
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid (cached)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 39.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.4%` (terminated `exit_code: 0`)
 
 - `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL	github.com/mbell-nzl/fid/cmd/fid	146.305s` (terminated `exit_code: 1`; retained V1 contract tests require in-scope convergence)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -176,9 +189,11 @@
 
 - Recovery attempt 10 first ran the required package command and observed `FAIL` with `exit_code: 1`; the repository coverage command independently observed the same `FAIL` with `exit_code: 1`. The preserved `cmd/fid/task10_contract_test.go` requires legacy `--by` input and authority-missing envelopes for Task 9-converted leaves, including successful selected-project `--by` mutations. Reintroducing that input would violate the task's accepted `--actor` plus idempotency interface and DEC-165's explicit no-`--by` prohibition; changing the Task 10 assertion or semantics is forbidden. Formatting, lint, and coverage summary passed. This is a protected specification contradiction, not a gate failure that Task 9 can repair.
 
+- Recovery attempt 12 preserved the preceding red evidence, then applied DEC-166's in-scope convergence authority: it renamed the historical Phase 20 task-labelled fixture and converted only its Task-9-owned actor/request rows to the accepted `--actor` plus idempotency contract. The red package result was `FAIL` (terminated `exit_code: 1`); after the fixture repair, its byte-identical rerun passed with `ok github.com/mbell-nzl/fid/cmd/fid 155.278s` (terminated `exit_code: 0`), and the final five-command gate passed. No assertion was deleted, narrowed, skipped, or weakened; no production, Claim/Run, V1-removal, public-interface, Event-schema, gate, VAL, or required-command behavior changed.
+
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The replacement-bound `internal/dev` suite is green through historical projection state. The remaining required-gate failure is now a protected retained-contract contradiction: `cmd/fid/task10_contract_test.go` requires `--by` on Task 9 actor/idempotency leaves, while Task 9's accepted contract prohibits restoring it. No Task 10 implementation or test was changed. A Tech Lead decision must choose the compatible public contract before Task 9 can proceed.
+- None.
 
 ## Dependency-budget note
 
@@ -186,8 +201,8 @@
 
 ## Commit hash
 
-- `55ba57e10016ac25b5b1af4f7dd6e33402b00377`
+- Pending commit
 
 ## Commit subject
 
-- `test(convergence): checkpoint task-9 retained fixture recovery`
+- Pending commit
