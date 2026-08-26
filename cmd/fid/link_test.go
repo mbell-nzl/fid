@@ -410,12 +410,7 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 	for _, action := range []string{"link.add", "link.remove"} {
 		for _, role := range []string{"developer", "qa_reviewer", "qa_lead", "tl_lite", "tl", "workflow_runner", "human"} {
 			if got := commandPolicyCellAllowed(t, rows, action, role); !got {

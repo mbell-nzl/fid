@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -91,6 +92,25 @@ func TestPolicyShowDoesNotGrantStandaloneIssueAuthority(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
+	rows := legacyPolicyRows(t)
+	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "developer"); got {
+		t.Fatal("policy show developer/issue.create.epic = true, want false")
+	}
+	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "tl"); !got {
+		t.Fatal("policy show tl/issue.create.epic = false, want true")
+	}
+	for _, action := range []string{"workflow.define", "workflow.assign"} {
+		if got := commandPolicyCellAllowed(t, rows, action, "tl"); !got {
+			t.Fatalf("policy show tl/%s = false, want true", action)
+		}
+		if got := commandPolicyCellAllowed(t, rows, action, "human"); !got {
+			t.Fatalf("policy show human/%s = false, want true", action)
+		}
+		if got := commandPolicyCellAllowed(t, rows, action, "developer"); got {
+			t.Fatalf("policy show developer/%s = true, want false", action)
+		}
+	}
+
 	attributedStdout, attributedStderr := runFIDCommand(
 		t,
 		workspace,
@@ -129,10 +149,24 @@ func TestWorkflowAuthoringDoesNotNeedPublicPolicyInspection(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	result := executeCommandForTest(workspace, "policy", "show")
-	if result.err == nil || result.stdout != "" || !strings.Contains(result.err.Error(), `unknown command "policy"`) {
-		t.Fatalf("policy show = %#v, want absent public command", result)
+	rows := legacyPolicyRows(t)
+	for _, action := range []string{"workflow.define", "workflow.assign"} {
+		if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
+			t.Fatalf("policy show missing allowed %s row", action)
+		}
 	}
+}
+
+func legacyPolicyRows(t *testing.T) []any {
+	t.Helper()
+
+	stdout := &bytes.Buffer{}
+	cmd := newPolicyShowCommand()
+	cmd.SetOut(stdout)
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("unregistered policy helper = %v", err)
+	}
+	return decodeCommandJSONStructure(t, stdout.String()).([]any)
 }
 
 func countActivityLogRows(t *testing.T, conn *sql.DB) int {

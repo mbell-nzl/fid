@@ -333,11 +333,7 @@ func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 	if !commandPolicyCellAllowed(t, rows, "label.add", "developer") {
 		t.Fatal("policy show developer/label.add = false, want true")
 	}

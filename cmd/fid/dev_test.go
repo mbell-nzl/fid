@@ -131,12 +131,7 @@ func TestDevCommandsPolicyShowMatchesRowsAndDeniedRoles(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 	for _, action := range []string{"dev.start", "dev.gate", "dev.finish", "dev.block"} {
 		if !commandPolicyCellAllowed(t, rows, action, "developer") {
 			t.Fatalf("policy show developer/%s = false, want true", action)

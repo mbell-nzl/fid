@@ -514,11 +514,7 @@ func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 
 	for _, action := range []string{"issue.label.add", "issue.label.remove"} {
 		for _, role := range []string{"developer", "tl", "workflow_runner", "human"} {

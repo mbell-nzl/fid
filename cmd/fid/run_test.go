@@ -181,12 +181,7 @@ func TestRunRecordPolicyShowMatchesAllowedRoles(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 	for _, role := range []string{"developer", "qa_reviewer", "qa_lead", "tl_lite", "tl", "workflow_runner", "human"} {
 		if !commandPolicyCellAllowed(t, rows, "run.record", role) {
 			t.Fatalf("policy show %s/run.record = false, want true", role)

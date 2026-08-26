@@ -461,12 +461,7 @@ func TestIssueClaimCommandMatchesPolicyShowForForceAcquire(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
+	rows := legacyPolicyRows(t)
 	if got := commandPolicyCellAllowed(t, rows, "issue.claim.force_acquire", "developer"); got {
 		t.Fatal("policy show developer/issue.claim.force_acquire = true, want false")
 	}

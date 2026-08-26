@@ -303,11 +303,7 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
-		stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-		if stderr != "" {
-			t.Fatalf("policy show stderr = %q, want empty", stderr)
-		}
-		rows := decodeCommandJSONStructure(t, stdout).([]any)
+		rows := legacyPolicyRows(t)
 		if !commandPolicyCellAllowed(t, rows, "requirement.sync", "tl") {
 			t.Fatal("policy show tl/requirement.sync = false, want true")
 		}

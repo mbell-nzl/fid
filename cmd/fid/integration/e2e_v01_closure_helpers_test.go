@@ -295,8 +295,8 @@ func assertClosureTelemetry(t *testing.T, binary, workspace, issueID, completion
 	if primary.PriceIn <= 0 || primary.PriceOut <= 0 || math.Abs(primary.CostUSD-wantCost) > 1e-12 {
 		t.Fatalf("run snapshot = %#v, want priced cost %v", primary, wantCost)
 	}
-	cost, _ := closureRunFID(t, binary, workspace, "stats", "cost", "--by", "role")
-	tokens, _ := closureRunFID(t, binary, workspace, "stats", "tokens", "--by", "role")
+	cost, _ := closureRunFID(t, binary, workspace, "stats", "cost", "--group-by", "actor")
+	tokens, _ := closureRunFID(t, binary, workspace, "stats", "tokens", "--group-by", "actor")
 	if !strings.Contains(cost, "developer") || !strings.Contains(cost, fmt.Sprintf("%g", primary.CostUSD)) {
 		t.Fatalf("cost stats = %q, want developer cost %g", cost, primary.CostUSD)
 	}
@@ -313,9 +313,12 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		t.Fatalf("maintenance check = %q, want pass", check)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance check")
-	closureRunFID(t, binary, workspace, "maintenance", "vacuum", "--by", "tl")
+	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "maintenance", "vacuum")
+	if err == nil || stdout != "" || !strings.Contains(stderr, "capability is unavailable") {
+		t.Fatalf("maintenance vacuum = (%v, %q, %q), want fail-closed unavailable", err, stdout, stderr)
+	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance vacuum")
-	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "decision", "get")
+	stdout, stderr, err = closureRunFIDExpectError(t, binary, workspace, "decision", "get")
 	if err == nil || stdout != "" || stderr != "" {
 		t.Fatalf("decision command = (%v, %q, %q), want unknown command with empty output", err, stdout, stderr)
 	}
@@ -324,13 +327,17 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 		{"--json", "issue", "list"},
 		{"--json", "ready"},
 		{"--json", "link", "list", issueID, "--type", "issue"},
-		{"stats", "cost", "--by", "role"},
-		{"stats", "tokens", "--by", "role"},
-		{"policy", "show"},
+		{"stats", "cost", "--group-by", "actor"},
+		{"stats", "tokens", "--group-by", "actor"},
 	} {
 		closureRunFID(t, binary, workspace, args...)
 		assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, strings.Join(args, " "))
 	}
+	stdout, stderr, err = closureRunFIDExpectError(t, binary, workspace, "policy", "show")
+	if err == nil || stdout != "" || stderr != "" {
+		t.Fatalf("policy show = (%v, %q, %q), want absent public command", err, stdout, stderr)
+	}
+	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "policy show")
 }
 
 func closureAgedMaintenanceTime(t *testing.T, workspace string) time.Time {
