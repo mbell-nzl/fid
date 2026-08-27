@@ -2,18 +2,19 @@
 
 ## Workflow outcome
 
-- Task outcome: COMPLETE
-- Category: none
-- Condition: None.
-- Recovery attempts: 0
-- Next action: None.
-- Human attention required: no
+- Task outcome: BLOCKED
+- Category: specification-contradiction
+- Condition: The recovery directive requires conversion of the retained Issue Claim fixture to generic Claim acquire/release while preserving the following closure transition assertions. Generic acquire writes `work_claims`, but the retained `issue transition` implementation still requires a V1 Claim through `claims.RequireLiveIssueClaimHeld`; replacing the fixture transport makes the preserved transition fail. Changing that transition is Task 12 behavior, and changing the preserved assertion would weaken retained coverage, so neither is authorized in Task 10.
+- Recovery attempts: 1
+- Next action: The Tech Lead must resolve the Task 10/Task 12 boundary by either authorizing the generic Claim-to-transition integration in the owning Task 12 scope or amending the retained fixture authority without weakening its coverage.
+- Human attention required: yes
 
 ## Summary of what was implemented
 
 - Added generic Claim `acquire`, `renew`, `release`, and `list` operations backed by `work_claims`, journal Event v2 commits, and idempotent replay.
 - Bound mutation Claims to an active Envelope, Actor, Issue revision, worktree, mutation scope, exact version, and TTL; conflicts, expiry, and wrong-holder mutations fail closed.
 - Replaced public `issue claim` and `issue unclaim` leaves with the generic Claim surface. The old spellings are not registered aliases.
+- Continuation attempt 1 did not change product code: the retained real-process closure fixture cannot be converted to the accepted generic transport without also changing its out-of-scope V1 transition dependency.
 
 ## Files created or modified
 
@@ -30,6 +31,7 @@
 - `cmd/fid/issue_test.go`
 - `cmd/fid/issue_update_test.go`
 - `cmd/fid/root_flags_test.go`
+- `project-docs/docs/phases/phase-21/tasks/task-10-done.md`
 
 ## Documentation updated
 
@@ -50,8 +52,16 @@
 - `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `/tmp/fid --project /tmp/fid-task10-D5yAq3 init --prefix FID` - PASS - `initialized fid project in .fid/` (terminated `exit_code: 0`)
 - `/tmp/fid --project /tmp/fid-task10-D5yAq3 --json claim list` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"claim.list","result":{"items":[]}}` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` at `cmd/fid/integration/e2e_v01_closure_test.go:33` received `issue "FID-8e5336" has no live claim held by "qa_reviewer"`, while the retained V1 assertion requires `role "qa_reviewer" not permitted`. The failure occurs before the old `issue claim` call at line 40.
 
 ## Exact quality-gate results
+
+- Continuation attempt 1 exact gate:
+- `go test -race ./internal/claims ./internal/policy ./internal/workflow ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	(cached)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 33.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)							65.3%` (terminated `exit_code: 0`)
 
 - `go test -race ./internal/claims ./internal/policy ./internal/workflow ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	156.550s` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
@@ -63,10 +73,11 @@
 
 - Required command repair: the first `go test -race ./internal/claims ./internal/policy ./internal/workflow ./internal/cli ./cmd/fid/...` attempt ended `FAIL` (terminated `exit_code: 1`) because the exact registered-code inventory still listed the pre-Claim count. Updated the in-scope `internal/cli/codes_test.go` registry expectation; the byte-identical rerun ended `ok  	github.com/mbell-nzl/fid/cmd/fid	156.550s` (terminated `exit_code: 0`).
 - Required command repair: the first `golangci-lint run ./...` attempt ended `3 issues:` (terminated `exit_code: 1`) because unregistered legacy Issue Claim command code and its TTL helper were dead. Removed that obsolete public-alias implementation and unused helper; the byte-identical rerun ended `0 issues.` (terminated `exit_code: 0`).
+- Supplementary tagged-gate recovery attempt: `go test -tags integration -race ./cmd/fid/integration/...` ended `FAIL` (terminated `exit_code: 1`) at the retained closure Claim assertion. Root cause: the fixture expects retired V1 role authority before its legacy `issue claim` transport, whereas the current transition reports its retained V1 Claim precondition. The authorized generic Claim transport writes only `work_claims`; the subsequent retained transition calls `claims.RequireLiveIssueClaimHeld` at `internal/issues/transition.go:221`, so an in-scope fixture conversion would still fail immediately. No repair was made because converting that transition is Task 12 behavior and changing the preserved assertion would weaken coverage.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- None.
+- Protected scope conflict: `cmd/fid/integration/e2e_v01_closure_test.go:33-52` combines the Task 10-invalidated legacy Claim transport with a V1 Claim-dependent transition. The accepted generic Claim lifecycle cannot satisfy that transition without the Task 12 generic execution-bound transition integration.
 
 ## Dependency-budget note
 
