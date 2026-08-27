@@ -1,5 +1,10 @@
 ## Workflow outcome
 - Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
 
 ## Summary of what was implemented
 - Replaced the legacy `fid run record` adapter with generic `run start`, `run finish`, `run get`, and `run list` leaves.
@@ -30,11 +35,11 @@
 - Runtime entrypoint: `/tmp/fid-task11 --project /tmp/fid-task11-Sc41KC --json run list` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"run.list","result":{"items":[]}}` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
-- `go test -race ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  161.767s` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 34.6% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.7%` (terminated `exit_code: 0`).
+- `go test -race ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  161.767s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 34.6% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.7%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 - The first focused full-package attempt failed with `FAIL` (terminated `exit_code: 1`) because `TestLiveLeafCommandsMatchContractInventories` retained `run record`. Root cause: the historical Phase 20 inventory predated the accepted task-11 public interface. Repair: converged the inventory and the retained Run tests to preserve exact leaf-surface strength for `run start|finish|get|list` and legacy absence. Later focused result: `ok  github.com/mbell-nzl/fid/cmd/fid  5.609s` (terminated `exit_code: 0`).
