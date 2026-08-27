@@ -2,8 +2,8 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: gate-repair
-- Condition: Attempt 3 restored the retained Claim-holder and Claim-expiry no-mutation obligations as execution-bound generic-Claim coverage. The unchanged tagged integration gate still stops at Task 9's `issue ac verify --status` transport and repository coverage still stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
-- Recovery attempts: 3
+- Condition: Attempt 3 restored the retained Claim-holder and Claim-expiry no-mutation obligations as execution-bound generic-Claim coverage. Its child then stopped after MISSING_TERMINATION before returning terminal status, leaving the report dirty with the six recorded command terminations. The unchanged tagged integration gate still stops at Task 9's `issue ac verify --status` transport and repository coverage still stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
+- Recovery attempts: 4
 - Next action: Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20; after both owner repairs land, dispatch Task 12 only to rerun its unchanged six-command gate.
 - Human attention required: no
 
@@ -59,7 +59,8 @@
 - `go test -race ./cmd/fid --run '^(TestV01DClosureLifecycleSmokeAndRebuildParity|TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.235s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): the restored closure journey reaches Task 9's `issue ac verify ... --status pass` and receives `error: unknown flag: --status`.
 - Real entrypoint: `go build -o /tmp/fid-task12-attempt2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt2 issue transition FID-70fcfa --to in_progress --actor agent:qa_reviewer --idempotency-key task12-entry-transition` in `/tmp/fid-task12-entry.y8p4B8` - PASS - `transitioned FID-70fcfa: todo → in_progress` (terminated `exit_code: 0`).
-- `go test ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t14.266s` (terminated `exit_code: 0`): `TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards` preserves wrong-holder and expired generic Claim denials with no journal append.
+- `go test ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t14.266s` (terminated `exit_code: 0`)
+- `TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards` preserves wrong-holder and expired generic Claim denials with no journal append.
 
 ## Exact quality-gate results
 
@@ -99,6 +100,7 @@
 - The first post-repair format and lint failures are retained above. `gofmt -w internal/issues/transition_test.go` corrected the formatting, and deletion of the obsolete `entersStartedCategory` helper corrected lint; neither changed a command, assertion semantics, threshold, or public contract.
 - The remaining tagged and coverage failures are not repaired here: the tagged `issue ac verify` failure belongs to Task 9's accepted fail-closed AC surface, and the coverage `internal/dev` failure is forbidden Dev collateral outside Task 12 scope.
 - Attempt 3 corrected the prior assertion-boundary defect without restoring V1 `issue claim|unclaim` aliases or `--by`: the direct generic evaluator test retains the historic Claim-holder/expiry and atomic no-mutation obligations at the only accepted execution-bound surface. Task 9 owns the AC fixture transport; Task 20 owns the retained Dev fixture.
+- Attempt 3's focused coverage restoration is committed at `2a584fc125ba16f90973951dccda731c04c357a7`; after recording the six exact command terminations above, its child session was shut down under MISSING_TERMINATION before a terminal response. This report-only continuation preserves that partial-work evidence and does not rerun or reclassify either remaining owner-routed failure.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
