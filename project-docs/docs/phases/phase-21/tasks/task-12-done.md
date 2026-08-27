@@ -87,8 +87,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c407c305f404c2b418b021c415323972d5044ebb`
 
 ## Commit subject
 
-- Pending commit
+- `fix(issues): converge standalone transition claims`
