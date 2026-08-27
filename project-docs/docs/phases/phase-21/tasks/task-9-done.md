@@ -174,6 +174,14 @@
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`; the repository suite retains the same unconverted `cmd/fid` fixtures)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.1%` (terminated `exit_code: 0`)
 
+### Attempt 12 exact task-gate rerun (final result)
+
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t(cached)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 39.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.4%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
