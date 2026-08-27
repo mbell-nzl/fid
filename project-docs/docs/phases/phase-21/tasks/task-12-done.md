@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `93da8a150d76b10d63bb8330517c508728bbe45f`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add execution-bound transition predicate`
