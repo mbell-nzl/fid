@@ -96,8 +96,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `02baf2b112fc761465878f246e3371bb930d32fe`
 
 ## Commit subject
 
-- Pending commit
+- `fix(workflow): require claim worktree for execution transitions`
