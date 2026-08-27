@@ -226,8 +226,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `98217f4f3d1b20f6f2baa9201c8b16f84d6afeb3`
 
 ## Commit subject
 
-- Pending commit
+- `fix(stats): reject retired role grouping`
