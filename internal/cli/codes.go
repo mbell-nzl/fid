@@ -54,6 +54,8 @@ const (
 	CodeClaimConflict                 Code = "claim-conflict"
 	CodeClaimExpired                  Code = "claim-expired"
 	CodeClaimStale                    Code = "claim-stale"
+	CodeRunNotFound                   Code = "run-not-found"
+	CodeRunInactive                   Code = "run-inactive"
 )
 
 type SubjectType string
@@ -70,6 +72,7 @@ const (
 	SubjectGateRegistration SubjectType = "gate-registration"
 	SubjectEnvelope         SubjectType = "envelope"
 	SubjectClaim            SubjectType = "claim"
+	SubjectRun              SubjectType = "run"
 	SubjectCapability       SubjectType = "capability"
 )
 
@@ -203,6 +206,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimConflict:        definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimExpired:         definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
+	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
 }
 
 var registeredCodes = []Code{
@@ -214,7 +219,7 @@ var registeredCodes = []Code{
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
-	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
 }
 
 func findingFields() []detailField {

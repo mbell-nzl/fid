@@ -36,6 +36,10 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"claim renew",
 		"claim release",
 		"claim list",
+		"run start",
+		"run finish",
+		"run get",
+		"run list",
 		"init",
 		"rebuild",
 		"issue create",
@@ -72,14 +76,13 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"dev gate",
 		"dev finish",
 		"dev block",
-		"run record",
 		"issue complete",
 		"sql",
 		"journal inspect",
 	}
 
-	if len(retained) != 46 || len(legacy) != 8 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 46 and 8", len(retained), len(legacy))
+	if len(retained) != 50 || len(legacy) != 7 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 50 and 7", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), legacy...)
 	sort.Strings(want)
@@ -116,7 +119,6 @@ func legacyLeafInvocations() []legacyLeafInvocation {
 		{command: "dev gate", args: []string{"dev", "gate", "FID-legacy"}},
 		{command: "dev finish", args: []string{"dev", "finish", "FID-legacy"}},
 		{command: "dev block", args: []string{"dev", "block", "FID-legacy"}},
-		{command: "run record", args: []string{"run", "record"}},
 		{command: "issue complete", args: []string{"issue", "complete", "FID-legacy"}},
 		{command: "sql", args: []string{"sql", "SELECT 1"}},
 		{command: "journal inspect", args: []string{"journal", "inspect", "EVT-legacy"}},
