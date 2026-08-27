@@ -74,8 +74,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0b67c8304a84e4e5bcb8df44d79f899e40a16acb`
 
 ## Commit subject
 
-- Pending commit
+- `feat(claims): add generic mutation claim lifecycle`
