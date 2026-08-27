@@ -46,7 +46,7 @@
 - No dependency changes.
 
 ## Commit hash
-- Pending commit
+- `5ca732ff163ee1d31fc155d3d9ebb3dac1501838`
 
 ## Commit subject
-- Pending commit
+- `feat(workflow): add generic Run lifecycle`
