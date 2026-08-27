@@ -112,7 +112,7 @@
 - `go test ./internal/requirements ./internal/links` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/links	1.355s` (terminated `exit_code: 1`; retained role and activity-name assertions remain)
 
 - `go test -race ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`; new `TestStatsTokensAcceptsOnlyClosedGroupByValues` showed retired `--group-by role` returned a successful actor-attribution envelope)
-- `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t148.050s` (terminated `exit_code: 0`; actor, epic, and model envelopes passed; role, another invalid group, and retired `--by` rejected with unchanged journal bytes)
+- `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t148.050s` (terminated `exit_code: 0`); actor, epic, and model envelopes passed; role, another invalid group, and retired `--by` rejected with unchanged journal bytes.
 - Real-process CLI probe: `go run ./cmd/fid --project /tmp/fid-task9-stats.vfrJFV --json stats tokens --group-by role` - rejected with `invalid issue read argument` (terminated `exit_code: 1`; initialized workspace, no accepted role grouping)
 
 ## Exact quality-gate results
