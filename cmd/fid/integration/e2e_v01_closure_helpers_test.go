@@ -229,7 +229,7 @@ func closureCreateIssue(t *testing.T, binary, workspace, kind, title string, sch
 	if kind == "epic" {
 		actor = "tl"
 	}
-	args = append(args, "--by", actor)
+	args = append(args, "--actor", "agent:"+actor)
 	stdout, stderr := closureRunFID(t, binary, workspace, args...)
 	if stderr != "" {
 		t.Fatalf("issue create stderr = %q, want empty", stderr)
