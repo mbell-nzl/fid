@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/json"
 	"reflect"
 	"strings"
@@ -30,6 +31,73 @@ func TestStatsTokensDefaultsToJSONByActorAttribution(t *testing.T) {
 	}}})
 	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
 		t.Fatalf("stats tokens json = %#v, want %#v", got, want)
+	}
+}
+
+func TestStatsTokensAcceptsOnlyClosedGroupByValues(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	epicID := createStatsCommandIssue(t, workspace, "epic", "Closed stats grouping epic", nil)
+	taskID := createStatsCommandIssue(t, workspace, "task", "Closed stats grouping task", stringPointer(epicID))
+	recordStatsCommandRun(t, workspace, taskID, "developer", "gpt-5", 100, 25)
+	journalPath := mustJournalPath(t, workspace)
+	before := mustReadCommandFile(t, journalPath)
+
+	accepted := []struct {
+		group string
+		item  map[string]any
+	}{
+		{
+			group: "actor",
+			item:  map[string]any{"actor_attribution": "developer", "epic_id": nil, "model": nil, "total_tokens_in": 100, "total_tokens_out": 25, "run_count": 1},
+		},
+		{
+			group: "epic",
+			item:  map[string]any{"actor_attribution": nil, "epic_id": epicID, "model": nil, "total_tokens_in": 100, "total_tokens_out": 25, "run_count": 1},
+		},
+		{
+			group: "model",
+			item:  map[string]any{"actor_attribution": nil, "epic_id": nil, "model": "gpt-5", "total_tokens_in": 100, "total_tokens_out": 25, "run_count": 1},
+		},
+	}
+	for _, testCase := range accepted {
+		t.Run("accepts "+testCase.group, func(t *testing.T) {
+			result := executeCommandForTest(workspace, "--project", workspace, "--json", "stats", "tokens", "--group-by", testCase.group)
+			if result.err != nil || result.stderr != "" {
+				t.Fatalf("stats tokens --group-by %s = %#v, want successful JSON response", testCase.group, result)
+			}
+			want := expectedCommandStructure(t, map[string]any{
+				"contract_version": "fid-cli.v1",
+				"event":            nil,
+				"ok":               true,
+				"operation":        "stats.tokens",
+				"result":           map[string]any{"items": []any{testCase.item}},
+			})
+			if got := decodeCommandJSONStructure(t, result.stdout); !reflect.DeepEqual(got, want) {
+				t.Fatalf("stats tokens --group-by %s = %#v, want %#v", testCase.group, got, want)
+			}
+			if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+				t.Fatalf("journal changed after accepted %q grouping", testCase.group)
+			}
+		})
+	}
+
+	for _, testCase := range []struct {
+		name string
+		args []string
+	}{
+		{name: "retired role", args: []string{"--project", workspace, "--json", "stats", "tokens", "--group-by", "role"}},
+		{name: "unknown group", args: []string{"--project", workspace, "--json", "stats", "tokens", "--group-by", "team"}},
+		{name: "retired by flag", args: []string{"--project", workspace, "--json", "stats", "tokens", "--by", "developer"}},
+	} {
+		t.Run("rejects "+testCase.name, func(t *testing.T) {
+			result := executeCommandForTest(workspace, testCase.args...)
+			if result.err == nil || result.stdout != "" {
+				t.Fatalf("%q result = %#v, want stderr-only rejection", testCase.args, result)
+			}
+			if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+				t.Fatalf("journal changed after rejected %q", testCase.name)
+			}
+		})
 	}
 }
 

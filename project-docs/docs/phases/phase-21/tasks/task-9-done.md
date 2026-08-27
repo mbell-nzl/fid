@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: DEC-166 resolved TRG-21-010's stale ownership classification. The historical Phase 20 request fixture now exercises the accepted Task 9 `--actor` plus idempotency contract, and all five unchanged task commands pass.
+- Condition: DEC-166 resolved TRG-21-010's stale ownership classification. QA Review Window 3 then found MF-1: Stats still accepted retired `--group-by role`. This repair removes that public acceptance, proves the closed actor/epic/model set and rejected role/invalid/`--by` inputs without journal mutation, and reruns all five unchanged task commands successfully.
 - Recovery attempts: 12
-- Next action: Phase Runner performs the required two-argument report lint, then dispatches QA Review Window 3.
+- Next action: Phase Runner verifies the committed report with the two-argument report lint and routes a fresh independent Review Window 3 re-review.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -20,6 +20,7 @@
 - Added an allowlisted retained-mutation fixture adapter for standalone actor/idempotency transport and made replacement-bound dev completion tests prove public AC verification is unavailable before seeding historical projection state.
 - Replaced public policy-matrix fixture expectations with absent-command and no-side-effect checks; updated vacuum and converted-read root-flag fixtures to typed unavailable and accepted project/JSON behavior.
 - Renamed the Phase 20 task-labelled request fixture to `retained_actor_request_contract_test.go` and converged its Task-9-owned attribution rows to canonical invalid-argument JSON, concise Human `--actor`/Actor-grammar errors, and selected-project actor/idempotency requests.
+- QA Review Window 3 repair: removed the retired public `role` grouping normalization and added a CLI stats conformance matrix for explicit actor, epic, and model envelopes plus rejection/no-journal-mutation checks for role, another unknown group, and retired `--by`.
 
 ## Files created or modified
 
@@ -79,7 +80,7 @@
 - VAL-028: PASS - `TestTask9RetainedInventorySurface` (`cmd/fid/task9_contract_test.go:10`) and `TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope` (`cmd/fid/retained_actor_request_contract_test.go:79`) prove retained inventory operations reject missing/malformed attribution before journal mutation; `TestRetainedInventoryOperationsUseSelectedProjectOutsideWorkingDirectory` (`cmd/fid/retained_actor_request_contract_test.go:173`) proves selected-project actor/idempotency success.
 - VAL-029: PASS - `TestPublicPolicyCommandIsAbsent` (`cmd/fid/policy_test.go:15`) and `TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag` (`cmd/fid/policy_test.go:45`) pass in the final required package gate without restoring public policy authority.
 - VAL-030: PASS - `TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects` (`cmd/fid/capabilities_test.go:102`) passes in the final required package gate with typed unavailable results and no side effects.
-- VAL-031: PASS - `TestStatsTokensDefaultsToJSONByActorAttribution` (`cmd/fid/stats_test.go:13`), `TestStatsTokensUsesDirectLegacyJSONAndEpicFilter` (`cmd/fid/stats_test.go:36`), and `TestStatsCostUsesDirectLegacyJSONAndExcludesNullCostsFromSum` (`cmd/fid/stats_test.go:78`) pass in the final required package gate.
+- VAL-031: PASS - `TestStatsTokensAcceptsOnlyClosedGroupByValues` (`cmd/fid/stats_test.go:37`) exercises exact successful `--group-by actor`, `epic`, and `model` JSON envelopes, rejects retired `role`, another invalid value, and retired `--by`, and compares journal bytes after every command. `validateStatsOptions` (`internal/stats/stats.go:132`) now accepts only actor, epic, or model. The final required package gate passes with this test.
 
 - Attempt 2 update: VAL-030 now has direct no-writer evidence in `internal/issues/judgment_unavailable_test.go` and `internal/maintenance/vacuum_unavailable_test.go`; the remaining CLI persistence-negative matrix is in scope for recovery. VAL-028, VAL-029, and VAL-031 remain PARTIAL because the required gate still fails on retained V1 fixture expectations.
 
@@ -95,6 +96,8 @@
 
 - Attempt 10 update: The exact package and coverage gates reduce to `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse` in `cmd/fid/task10_contract_test.go:79` and `:140`. Those byte-identical assertions require `--by` behavior on Task 9 actor/idempotency leaves. The current command implementations are unchanged from `HEAD`; restoring the demanded behavior would violate the task's accepted no-`--by` contract and DEC-165. VAL-028 through VAL-031 therefore remain BLOCKED by the protected contradiction rather than incomplete local fixture work.
 
+- QA Review Window 3 repair attempt 1: MF-1 showed that the preceding VAL-031 evidence covered actor and epic but not model or closed-value rejection, while `internal/stats/stats.go` still normalized public `role` to actor. `TestStatsTokensAcceptsOnlyClosedGroupByValues` now supplies the missing real-CLI evidence. Its red run observed the accepted role success envelope below; the green rerun, exact five-command gate, and live initialized-workspace probe establish the repaired behavior without changing the journal.
+
 ## Tests run
 
 - `go test -race ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`; pre-convergence red evidence for stale `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse`)
@@ -107,6 +110,10 @@
 - `go test -race ./cmd/fid -run '^TestTask9RetainedInventorySurface/AC_add_accepts_standalone_actor_and_idempotency$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 1.913s` (terminated `exit_code: 0`)
 - `go test ./internal/labels ./internal/issues` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/issues	6.617s` (terminated `exit_code: 1`; retained AC and issue-label Event-v1 assertions remain)
 - `go test ./internal/requirements ./internal/links` - FAIL - `FAIL	github.com/mbell-nzl/fid/internal/links	1.355s` (terminated `exit_code: 1`; retained role and activity-name assertions remain)
+
+- `go test -race ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`; new `TestStatsTokensAcceptsOnlyClosedGroupByValues` showed retired `--group-by role` returned a successful actor-attribution envelope)
+- `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t148.050s` (terminated `exit_code: 0`; actor, epic, and model envelopes passed; role, another invalid group, and retired `--by` rejected with unchanged journal bytes)
+- Real-process CLI probe: `go run ./cmd/fid --project /tmp/fid-task9-stats.vfrJFV --json stats tokens --group-by role` - rejected with `invalid issue read argument` (terminated `exit_code: 1`; initialized workspace, no accepted role grouping)
 
 ## Exact quality-gate results
 
@@ -182,6 +189,14 @@
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 39.7% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 68.4%` (terminated `exit_code: 0`)
 
+### QA Review Window 3 repair attempt 1 exact task-gate rerun (final result)
+
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t(cached)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 39.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t68.4%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
@@ -199,6 +214,8 @@
 
 - Recovery attempt 12 preserved the preceding red evidence, then applied DEC-166's in-scope convergence authority: it renamed the historical Phase 20 task-labelled fixture and converted only its Task-9-owned actor/request rows to the accepted `--actor` plus idempotency contract. The red package result was `FAIL` (terminated `exit_code: 1`); after the fixture repair, its byte-identical rerun passed with `ok github.com/mbell-nzl/fid/cmd/fid 155.278s` (terminated `exit_code: 0`), and the final five-command gate passed. No assertion was deleted, narrowed, skipped, or weakened; no production, Claim/Run, V1-removal, public-interface, Event-schema, gate, VAL, or required-command behavior changed.
 
+- QA Review Window 3 repair attempt 1 preserves the original task evidence and corrects only MF-1. The red `go test -race ./cmd/fid` result was `FAIL` (terminated `exit_code: 1`) because the old production branch accepted `--group-by role` as actor. The causal repair deletes that normalization, and the byte-identical green rerun ended `ok  github.com/mbell-nzl/fid/cmd/fid 148.050s` (terminated `exit_code: 0`). The fresh exact task gate later passed. No command, threshold, test selection, QA/spec/validation artifact, Event schema, public interface, or unrelated assertion changed.
+
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - None.
@@ -209,8 +226,8 @@
 
 ## Commit hash
 
-- `bc328f9136ec44d31824d1fe2b1c63d1c8b7c921`
+- Pending commit
 
 ## Commit subject
 
-- `test(convergence): finalize task-9 retained actor fixture`
+- Pending commit
