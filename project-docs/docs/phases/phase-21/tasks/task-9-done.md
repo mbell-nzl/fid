@@ -235,7 +235,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- None.
+- The tagged integration gate now reaches task-8-owned Event-v2 actor inspection and retained `issue create --by` assertions in the P20 and closure journeys. They remain red with `FAIL` (terminated `exit_code: 1`) and require their owning accepted convergence scope before task 12 can rerun its integration gate.
 
 ## Dependency-budget note
 
