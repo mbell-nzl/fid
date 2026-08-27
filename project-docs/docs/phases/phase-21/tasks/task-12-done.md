@@ -64,17 +64,20 @@
 
 ### Continuation attempt 1
 
-- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.603s` (terminated `exit_code: 0`). The first post-repair package attempt failed at retained V1 Claim-precondition tests; those exact Task 12 Claim-observation tests were converged before this passing rerun.
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`): retained V1 Claim-precondition tests still expected the obsolete standalone Claim gate.
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.603s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` now reaches `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`. This is Task 9's accepted fail-closed AC verification surface, not Claim-observation collateral.
-- `gofmt -l cmd internal` - FAIL - `internal/issues/transition_test.go` (terminated `exit_code: 0`): the command terminated successfully while reporting an unformatted edited file. After `gofmt -w internal/issues/transition_test.go`, the byte-identical rerun PASSed with `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - FAIL - `1 issues:` (terminated `exit_code: 1`): `entersStartedCategory` became unused after removal of the V1 Claim fallback. Deleting that obsolete helper produced the byte-identical rerun PASS token `0 issues.` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - FAIL - `internal/issues/transition_test.go` (terminated `exit_code: 0`): the command reported an unformatted edited file.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - FAIL - `1 issues:` (terminated `exit_code: 1`): `entersStartedCategory` became unused after removal of the V1 Claim fallback.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition. `internal/dev` is outside Task 12 scope and its Dev assertion is expressly forbidden from this repair.
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t65.3%` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` - PASS - `65.3%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
 - Required tagged integration attempt before repair: `FAIL` (terminated `exit_code: 1`) at the retained V1 Claim observation. The Task 12 repair removed only the non-bound V1 Claim read and converged its direct retained Claim assertions; it preserves the Envelope-bound generic `work_claims` evaluator and all VAL-038..041 behavior.
-- The first post-repair format and lint failures are retained above. Their root causes were an unformatted edited test and an obsolete helper left after the bounded deletion; neither changed a command, assertion semantics, threshold, or public contract.
+- The first post-repair format and lint failures are retained above. `gofmt -w internal/issues/transition_test.go` corrected the formatting, and deletion of the obsolete `entersStartedCategory` helper corrected lint; neither changed a command, assertion semantics, threshold, or public contract.
 - The remaining tagged and coverage failures are not repaired here: the tagged `issue ac verify` failure belongs to Task 9's accepted fail-closed AC surface, and the coverage `internal/dev` failure is forbidden Dev collateral outside Task 12 scope.
 
 ## Concerns, technical debt, or notes for the Tech Lead
