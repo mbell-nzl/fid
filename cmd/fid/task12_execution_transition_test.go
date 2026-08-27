@@ -106,6 +106,54 @@ func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t
 	}
 }
 
+func TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards(t *testing.T) {
+	tests := []struct {
+		name        string
+		updateClaim string
+		wantCode    string
+	}{
+		{
+			name:        "wrong holder",
+			updateClaim: `UPDATE work_claims SET actor_id = 'actor-other' WHERE issue_id = ?`,
+			wantCode:    "claim-missing",
+		},
+		{
+			name:        "expired",
+			updateClaim: `UPDATE work_claims SET expires_at = '2000-01-01T00:00:00Z' WHERE issue_id = ?`,
+			wantCode:    "claim-expired",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			workspace, issueID, _, _ := executionTransitionFixture(t)
+			conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+			if err != nil {
+				t.Fatalf("open execution database: %v", err)
+			}
+			if _, err := conn.Exec(tt.updateClaim, issueID); err != nil {
+				_ = conn.Close()
+				t.Fatalf("prepare %s Claim: %v", tt.name, err)
+			}
+			if err := conn.Close(); err != nil {
+				t.Fatalf("close execution database: %v", err)
+			}
+
+			before := journalEventCount(t, workspace)
+			result := executeCommandForTest(workspace,
+				"--project", workspace, "--json", "issue", "transition", issueID,
+				"--to", "in_progress", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "execution-transition-claim-"+strings.ReplaceAll(tt.name, " ", "-"),
+			)
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"`+tt.wantCode+`"`) {
+				t.Fatalf("%s Claim transition = %#v, want %s rejection", tt.name, result, tt.wantCode)
+			}
+			if after := journalEventCount(t, workspace); after != before {
+				t.Fatalf("journal events after %s Claim rejection = %d, want %d", tt.name, after, before)
+			}
+		})
+	}
+}
+
 func executionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
