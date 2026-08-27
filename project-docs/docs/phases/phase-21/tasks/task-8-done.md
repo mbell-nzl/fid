@@ -93,7 +93,7 @@
 - No dependency changes.
 
 ## Commit hash
-- Pending commit
+- `9f1c6d03aef12723aad6387b3096c7485655a2ed`
 
 ## Commit subject
-- Pending commit
+- `test(integration): converge task-8 issue fixtures`
