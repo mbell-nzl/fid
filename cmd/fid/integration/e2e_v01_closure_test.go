@@ -30,14 +30,6 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	peerIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure linked peer", nil, nil, nil)
 	closureRunFID(t, binary, workspace, "issue", "label", "add", mainIssueID, "release", "--by", "developer")
 
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer"},
-		`role "qa_reviewer" not permitted`)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:developer"},
-		`has no live claim held by "developer"`)
-
-	closureRunFID(t, binary, workspace, "issue", "claim", mainIssueID, "--by", "developer")
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:developer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
@@ -49,8 +41,6 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	if concernID == "" {
 		t.Fatal("addressed concern id = empty")
 	}
-	closureRunFID(t, binary, workspace, "issue", "unclaim", mainIssueID, "--by", "developer")
-
 	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)

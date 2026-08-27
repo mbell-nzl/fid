@@ -218,14 +218,6 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 					Unmet:          unmet,
 				}
 			}
-			if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
-				if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, actor.id); err != nil {
-					return &BlockedTransitionError{
-						IssueID: current.ID, CurrentState: current.Status, RequestedState: toState,
-						Unmet: []workflow.UnmetCondition{{Rule: "live_claim_held"}}, Cause: err,
-					}
-				}
-			}
 		}
 
 		activityID, err := nextIssueActivityID(conn)
@@ -309,14 +301,6 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 
 func transitionRequestValue(toState string, expectedRevision *int) map[string]any {
 	return map[string]any{"expected_revision": expectedRevision, "to": toState}
-}
-
-func entersStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
-	if !ok {
-		return false
-	}
-	return fromCategory != "started" && toCategory == "started"
 }
 
 func leavesStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {

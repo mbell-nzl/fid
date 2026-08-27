@@ -13,7 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-func TestIssueTransitionJSONRejectsUnsatisfiedClaimPrecondition(t *testing.T) {
+func TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -33,32 +33,29 @@ func TestIssueTransitionJSONRejectsUnsatisfiedClaimPrecondition(t *testing.T) {
 		t.Fatalf("Unmarshal(create stdout) error = %v", err)
 	}
 
+	journalPath := mustJournalPath(t, workspace)
+	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 	transition := executeCommandForTest(workspace, "--json", "issue", "transition", created.Result.Issue.ID, "--to", "in_progress", "--actor", "agent:developer")
-	if transition.err == nil {
-		t.Fatal("issue transition error = nil, want precondition rejection")
-	}
-	if transition.stdout != "" {
-		t.Fatalf("transition stdout = %q, want empty", transition.stdout)
+	if transition.err != nil || transition.stderr != "" {
+		t.Fatalf("standalone transition = %#v, want stdout-only success", transition)
 	}
 	var failure struct {
 		Operation string `json:"operation"`
-		Error     struct {
-			Code    string `json:"code"`
-			Details struct {
-				FromState   string   `json:"from_state"`
-				ToState     string   `json:"to_state"`
-				Unsatisfied []string `json:"unsatisfied"`
-			} `json:"details"`
-		} `json:"error"`
+		Result    struct {
+			Issue struct {
+				ID       string `json:"id"`
+				Revision int    `json:"revision"`
+			} `json:"issue"`
+		} `json:"result"`
 	}
-	if err := json.Unmarshal([]byte(transition.stderr), &failure); err != nil {
-		t.Fatalf("Unmarshal(transition stderr) error = %v; stderr = %q", err, transition.stderr)
+	if err := json.Unmarshal([]byte(transition.stdout), &failure); err != nil {
+		t.Fatalf("Unmarshal(transition stdout) error = %v; stdout = %q", err, transition.stdout)
 	}
-	if failure.Operation != "issue.transition" || failure.Error.Code != "transition-not-permitted" {
-		t.Fatalf("failure = %+v, want issue.transition transition-not-permitted", failure)
+	if failure.Operation != "issue.transition" || failure.Result.Issue.ID != created.Result.Issue.ID || failure.Result.Issue.Revision != 2 {
+		t.Fatalf("transition result = %+v, want issue.transition/%s/revision 2", failure, created.Result.Issue.ID)
 	}
-	if failure.Error.Details.FromState != "todo" || failure.Error.Details.ToState != "in_progress" || strings.Join(failure.Error.Details.Unsatisfied, ",") != "live_claim_held" {
-		t.Fatalf("transition details = %+v, want todo/in_progress/live_claim_held", failure.Error.Details)
+	if linesAfter := len(splitJournalLines(mustReadCommandFile(t, journalPath))); linesAfter != linesBefore+1 {
+		t.Fatalf("journal lines after standalone transition = %d, want %d", linesAfter, linesBefore+1)
 	}
 }
 
@@ -733,52 +730,41 @@ func TestIssueTransitionRequiresTargetStateAndKnownByRole(t *testing.T) {
 		}
 	})
 
-	t.Run("unregistered actor reaches claim precondition", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want live claim rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `has no live claim held by "intern"`) {
-			t.Fatalf("stderr = %q, want intern claim precondition", stderr)
+	t.Run("unregistered actor is standalone attribution", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:intern")
+		if !strings.Contains(stderr, "transitioned "+issueID+": todo → in_progress") {
+			t.Fatalf("stderr = %q, want standalone transition confirmation", stderr)
 		}
 	})
 }
 
-func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
+func TestIssueTransitionIgnoresRetainedV1ClaimsForStandaloneStates(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name           string
 		claimRole      string
 		transitionRole string
 		expireClaim    bool
-		wantParts      []string
 	}{
 		{
 			name:           "no claim",
 			transitionRole: "developer",
-			wantParts:      []string{"error: issue", "has no live claim held by \"developer\""},
 		},
 		{
 			name:           "wrong holder",
 			claimRole:      "qa_reviewer",
 			transitionRole: "developer",
-			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"qa_reviewer\""},
 		},
 		{
 			name:           "stale caller claim",
 			claimRole:      "developer",
 			transitionRole: "developer",
 			expireClaim:    true,
-			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"developer\""},
 		},
 		{
 			name:           "human holder blocks developer",
 			claimRole:      "human",
 			transitionRole: "developer",
-			wantParts:      []string{"error: issue", "live claim not held by \"developer\"", "held by \"human\""},
 		},
 	}
 
@@ -800,30 +786,16 @@ func TestIssueTransitionRequiresLiveCallerClaimForStartedStates(t *testing.T) {
 				expireTransitionClaimCLI(t, workspace, issueID, 2*time.Hour)
 			}
 
-			beforeStdout := mustGetIssueJSON(t, workspace, issueID)
-
 			journalPath := mustJournalPath(t, workspace)
 			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-			stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:"+tt.transitionRole)
-			if err == nil {
-				t.Fatal("Execute() error = nil, want claim-gate rejection")
-			}
-			if stdout != "" {
-				t.Fatalf("stdout = %q, want empty", stdout)
-			}
-			for _, want := range tt.wantParts {
-				if !strings.Contains(stderr, want) {
-					t.Fatalf("stderr = %q, want substring %q", stderr, want)
-				}
+			_, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:"+tt.transitionRole)
+			if !strings.Contains(stderr, "transitioned "+issueID+": todo → in_progress") {
+				t.Fatalf("stderr = %q, want standalone transition confirmation", stderr)
 			}
 
-			afterStdout := mustGetIssueJSON(t, workspace, issueID)
-			if afterStdout != beforeStdout {
-				t.Fatalf("issue JSON after rejected transition = %q, want %q", afterStdout, beforeStdout)
-			}
-			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-				t.Fatalf("journal lines after rejected transition = %d, want %d", got, linesBefore)
+			if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+				t.Fatalf("journal lines after standalone transition = %d, want %d", got, linesBefore+1)
 			}
 		})
 	}

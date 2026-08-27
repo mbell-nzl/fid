@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -419,7 +418,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	}
 }
 
-func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
+func TestTransitionIntoStartedAllowsStandaloneActorWithoutGenericClaim(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -435,41 +434,21 @@ func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	before, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(before transition) error = %v", err)
-	}
-
 	journalPath := journalPathForWorkspace(t, workspace)
 	linesBefore := countJournalLines(journalPath)
 
-	_, err = Transition(TransitionOptions{
+	result, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
 		ActorRole:     "developer",
 	})
-	if err == nil {
-		t.Fatal("Transition() error = nil, want missing claim rejection")
+	if err != nil {
+		t.Fatalf("Transition() error = %v", err)
 	}
-
-	var notHeldErr *claims.ClaimNotHeldError
-	if !errors.As(err, &notHeldErr) {
-		t.Fatalf("Transition() error = %T, want *claims.ClaimNotHeldError", err)
-	}
-	if notHeldErr.RefID != created.ID {
-		t.Fatalf("ClaimNotHeldError.RefID = %q, want %q", notHeldErr.RefID, created.ID)
-	}
-	if notHeldErr.RequestedBy != "developer" {
-		t.Fatalf("ClaimNotHeldError.RequestedBy = %q, want developer", notHeldErr.RequestedBy)
-	}
-	if notHeldErr.ClaimedBy != "" {
-		t.Fatalf("ClaimNotHeldError.ClaimedBy = %q, want empty", notHeldErr.ClaimedBy)
+	if result.ID != created.ID || result.Revision != 2 || result.ToState != "in_progress" {
+		t.Fatalf("TransitionResult = %+v, want %s/revision 2/in_progress", result, created.ID)
 	}
 
 	after, err := Get(GetOptions{
@@ -480,14 +459,16 @@ func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get(after transition) error = %v", err)
 	}
-	assertIssuesEqual(t, after, before)
+	if after.Status != "in_progress" || after.Revision != 2 {
+		t.Fatalf("Issue after standalone transition = %+v, want in_progress/revision 2", after)
+	}
 
-	if got := countJournalLines(journalPath); got != linesBefore {
-		t.Fatalf("journal lines after rejected started transition = %d, want unchanged %d", got, linesBefore)
+	if got := countJournalLines(journalPath); got != linesBefore+1 {
+		t.Fatalf("journal lines after standalone transition = %d, want %d", got, linesBefore+1)
 	}
 }
 
-func TestTransitionIntoStartedRejectsWrongHolderAndStaleClaims(t *testing.T) {
+func TestTransitionIntoStartedIgnoresRetainedV1Claims(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -549,38 +530,21 @@ func TestTransitionIntoStartedRejectsWrongHolderAndStaleClaims(t *testing.T) {
 				expireTransitionClaim(t, workspace, created.ID, 2*time.Hour)
 			}
 
-			before, err := Get(GetOptions{
-				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
-				ID:            created.ID,
-			})
-			if err != nil {
-				t.Fatalf("Get(before transition) error = %v", err)
-			}
-
 			journalPath := journalPathForWorkspace(t, workspace)
 			linesBefore := countJournalLines(journalPath)
 
-			_, err = Transition(TransitionOptions{
+			result, err := Transition(TransitionOptions{
 				WorkspaceRoot: workspace,
 				MigrationsDir: testIssueMigrationsDir(t),
 				ID:            created.ID,
 				ToState:       "in_progress",
 				ActorRole:     tt.transitionRole,
 			})
-			if err == nil {
-				t.Fatal("Transition() error = nil, want started claim rejection")
+			if err != nil {
+				t.Fatalf("Transition() error = %v", err)
 			}
-
-			var notHeldErr *claims.ClaimNotHeldError
-			if !errors.As(err, &notHeldErr) {
-				t.Fatalf("Transition() error = %T, want *claims.ClaimNotHeldError", err)
-			}
-			if notHeldErr.ClaimedBy != tt.wantClaimedBy {
-				t.Fatalf("ClaimNotHeldError.ClaimedBy = %q, want %q", notHeldErr.ClaimedBy, tt.wantClaimedBy)
-			}
-			if (notHeldErr.ExpiresAt != "") != tt.wantExpiresValue {
-				t.Fatalf("ClaimNotHeldError.ExpiresAt = %q, want populated=%t", notHeldErr.ExpiresAt, tt.wantExpiresValue)
+			if result.ID != created.ID || result.Revision != 2 || result.ToState != "in_progress" {
+				t.Fatalf("TransitionResult = %+v, want %s/revision 2/in_progress", result, created.ID)
 			}
 
 			after, err := Get(GetOptions{
@@ -591,10 +555,12 @@ func TestTransitionIntoStartedRejectsWrongHolderAndStaleClaims(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Get(after transition) error = %v", err)
 			}
-			assertIssuesEqual(t, after, before)
+			if after.Status != "in_progress" || after.Revision != 2 {
+				t.Fatalf("Issue after standalone transition = %+v, want in_progress/revision 2", after)
+			}
 
-			if got := countJournalLines(journalPath); got != linesBefore {
-				t.Fatalf("journal lines after rejected transition = %d, want unchanged %d", got, linesBefore)
+			if got := countJournalLines(journalPath); got != linesBefore+1 {
+				t.Fatalf("journal lines after standalone transition = %d, want %d", got, linesBefore+1)
 			}
 		})
 	}

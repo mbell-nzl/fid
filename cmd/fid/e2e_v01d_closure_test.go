@@ -55,58 +55,6 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue label add")
 	assertClosureIssueState(t, workspace, primaryIssueID, "todo", "unstarted", []string{"lifecycle"})
 
-	deniedStdout, deniedStderr, deniedErr := runFIDCommandExpectError(
-		t,
-		workspace,
-		"issue", "transition", primaryIssueID,
-		"--to", "in_progress",
-		"--actor", "agent:qa_reviewer",
-	)
-	if deniedErr == nil {
-		t.Fatal("qa_reviewer transition error = nil, want permission denial")
-	}
-	if deniedStdout != "" {
-		t.Fatalf("qa_reviewer transition stdout = %q, want empty", deniedStdout)
-	}
-	assertNoNestedLockFailure(t, deniedStderr)
-	if !strings.Contains(deniedStderr, `has no live claim held by "qa_reviewer"`) {
-		t.Fatalf("qa_reviewer transition stderr = %q, want claim precondition without role authority", deniedStderr)
-	}
-	assertClosureJournalLines(t, journalPath, expectedJournalLines, "qa_reviewer transition denial")
-
-	rejectStdout, rejectStderr, rejectErr := runFIDCommandExpectError(
-		t,
-		workspace,
-		"issue", "transition", primaryIssueID,
-		"--to", "in_progress",
-		"--actor", "agent:developer",
-	)
-	if rejectErr == nil {
-		t.Fatal("developer transition without claim error = nil, want claim-gate rejection")
-	}
-	if rejectStdout != "" {
-		t.Fatalf("developer transition without claim stdout = %q, want empty", rejectStdout)
-	}
-	assertNoNestedLockFailure(t, rejectStderr)
-	for _, want := range []string{"error: issue", primaryIssueID, `has no live claim held by "developer"`} {
-		if !strings.Contains(rejectStderr, want) {
-			t.Fatalf("developer transition without claim stderr = %q, want substring %q", rejectStderr, want)
-		}
-	}
-	assertClosureJournalLines(t, journalPath, expectedJournalLines, "developer transition without claim")
-
-	_, claimStderr := runFIDCommand(t, workspace, "issue", "claim", primaryIssueID, "--by", "developer")
-	assertNoNestedLockFailure(t, claimStderr)
-	if !strings.Contains(claimStderr, "claimed "+primaryIssueID+" by developer (expires ") {
-		t.Fatalf("claim stderr = %q, want confirmation", claimStderr)
-	}
-	expectedJournalLines++
-	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue claim")
-	claims := mustReadIssueClaimsSection(t, workspace, primaryIssueID)
-	if len(claims) != 1 || claims[0].ClaimedBy != "developer" {
-		t.Fatalf("claims after claim = %#v, want one developer claim", claims)
-	}
-
 	_, transitionStderr := runFIDCommand(
 		t,
 		workspace,
@@ -152,16 +100,6 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 	expectedJournalLines++
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue complete")
 
-	_, unclaimStderr := runFIDCommand(t, workspace, "issue", "unclaim", primaryIssueID, "--by", "developer")
-	assertNoNestedLockFailure(t, unclaimStderr)
-	if !strings.Contains(unclaimStderr, "released claim on "+primaryIssueID+" by developer") {
-		t.Fatalf("unclaim stderr = %q, want confirmation", unclaimStderr)
-	}
-	expectedJournalLines++
-	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue unclaim")
-	if claims := mustReadIssueClaimsSection(t, workspace, primaryIssueID); len(claims) != 0 {
-		t.Fatalf("claims after unclaim = %#v, want empty", claims)
-	}
 	assertClosureIssueState(t, workspace, primaryIssueID, "in_progress", "started", []string{"lifecycle"})
 
 	beforeIssues := mustSnapshotClosureIssues(t, workspace, primaryIssueID, peerIssueID)
