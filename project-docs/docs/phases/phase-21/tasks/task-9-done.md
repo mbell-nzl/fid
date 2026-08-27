@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: DEC-166 resolved TRG-21-010's stale ownership classification and the final task-9 gate remains green. The tagged integration source then exposed retained task-9 `--by` transports; this continuation converged those calls while preserving later-owner Issue/Event failures reached afterward.
-- Recovery attempts: 12 prior task-9 recoveries; integration-fixture convergence attempt 1
+- Recovery attempts: 13
 - Next action: Phase Runner verifies this committed report with the two-argument report lint and routes the remaining tagged integration failures to their owning accepted scope before task-12 continuation.
 - Human attention required: no
 
