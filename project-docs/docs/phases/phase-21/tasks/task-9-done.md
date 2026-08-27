@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: DEC-166 resolved TRG-21-010's stale ownership classification. QA Review Window 3 then found MF-1: Stats still accepted retired `--group-by role`. This repair removes that public acceptance, proves the closed actor/epic/model set and rejected role/invalid/`--by` inputs without journal mutation, and reruns all five unchanged task commands successfully.
-- Recovery attempts: 12
-- Next action: Phase Runner verifies the committed report with the two-argument report lint and routes a fresh independent Review Window 3 re-review.
+- Condition: DEC-166 resolved TRG-21-010's stale ownership classification and the final task-9 gate remains green. The tagged integration source then exposed retained task-9 `--by` transports; this continuation converged those calls while preserving later-owner Issue/Event failures reached afterward.
+- Recovery attempts: 12 prior task-9 recoveries; integration-fixture convergence attempt 1
+- Next action: Phase Runner verifies this committed report with the two-argument report lint and routes the remaining tagged integration failures to their owning accepted scope before task-12 continuation.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -21,6 +21,7 @@
 - Replaced public policy-matrix fixture expectations with absent-command and no-side-effect checks; updated vacuum and converted-read root-flag fixtures to typed unavailable and accepted project/JSON behavior.
 - Renamed the Phase 20 task-labelled request fixture to `retained_actor_request_contract_test.go` and converged its Task-9-owned attribution rows to canonical invalid-argument JSON, concise Human `--actor`/Actor-grammar errors, and selected-project actor/idempotency requests.
 - QA Review Window 3 repair: removed the retired public `role` grouping normalization and added a CLI stats conformance matrix for explicit actor, epic, and model envelopes plus rejection/no-journal-mutation checks for role, another unknown group, and retired `--by`.
+- Converged the retained tagged integration fixture transport through one allowlisted adapter: workflow define/assign, AC add, labels, links, and requirement sync now use `--actor agent:<role>` with unique idempotency keys. Issue creation, Claim, Run, AC verification, concern, dev, completion, and closure behaviors remain untouched.
 
 ## Files created or modified
 
@@ -81,6 +82,7 @@
 - VAL-029: PASS - `TestPublicPolicyCommandIsAbsent` (`cmd/fid/policy_test.go:15`) and `TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag` (`cmd/fid/policy_test.go:45`) pass in the final required package gate without restoring public policy authority.
 - VAL-030: PASS - `TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects` (`cmd/fid/capabilities_test.go:102`) passes in the final required package gate with typed unavailable results and no side effects.
 - VAL-031: PASS - `TestStatsTokensAcceptsOnlyClosedGroupByValues` (`cmd/fid/stats_test.go:37`) exercises exact successful `--group-by actor`, `epic`, and `model` JSON envelopes, rejects retired `role`, another invalid value, and retired `--by`, and compares journal bytes after every command. `validateStatsOptions` (`internal/stats/stats.go:132`) now accepts only actor, epic, or model. The final required package gate passes with this test.
+- Integration-fixture convergence: `TestTask9IntegrationMutationRequestsUseActorAndIdempotency` (`cmd/fid/integration/e2e_v01_closure_helpers_test.go`) proves all seven retained task-9 families use actor/key transport while later-owner Issue creation, Claim, Run, AC verification, and concern calls stay byte-identical. The final tagged run reaches only task-8 Event/Issue assertions after these task-9 transports pass.
 
 - Attempt 2 update: VAL-030 now has direct no-writer evidence in `internal/issues/judgment_unavailable_test.go` and `internal/maintenance/vacuum_unavailable_test.go`; the remaining CLI persistence-negative matrix is in scope for recovery. VAL-028, VAL-029, and VAL-031 remain PARTIAL because the required gate still fails on retained V1 fixture expectations.
 
@@ -115,6 +117,10 @@
 - `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t148.050s` (terminated `exit_code: 0`)
   Actor, epic, and model envelopes passed; role, another invalid group, and retired `--by` rejected with unchanged journal bytes.
 - Real-process CLI probe: `go run ./cmd/fid --project /tmp/fid-task9-stats.vfrJFV --json stats tokens --group-by role` - rejected with `invalid issue read argument` (terminated `exit_code: 1`; initialized workspace, no accepted role grouping)
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`; preserved red baseline: retained workflow define, label add, and workflow-authoring fixtures sent removed `--by` flags.)
+- `go test -tags integration -race ./cmd/fid/integration --run '^TestTask9IntegrationMutationRequestsUseActorAndIdempotency$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.426s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`; after task-9 transport convergence it reaches preserved task-8 Event actor and `issue create --by` assertions in `TestP20StandaloneIssueJourneyJSONAndRebuildParity`, `TestV01ClosureJourneyAndRebuildParity`, and `TestV02aWorkflowAuthoringExitScenarioAndRebuildParity`.)
+- `/tmp/fid-task9-integration-bin --json workflow define --name integration-task --applies-to task --states todo,in_progress,cancelled --categories unstarted,started,cancelled --transitions 'todo->in_progress,in_progress->cancelled' --actor agent:tl --idempotency-key integration-workflow-define` (working directory `/tmp/fid-task9-integration.216Ye4`) - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260827-000002","occurred_at":"2026-08-27T10:22:15.237678985Z"},"ok":true,"operation":"workflow.define","result":{"idempotency_key":"integration-workflow-define","replayed":false,"workflow":{"applies_to":"task","id":"integration-task","name":"integration-task","state_count":3,"transition_count":3}}}` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -198,6 +204,14 @@
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 39.7% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t68.4%` (terminated `exit_code: 0`)
 
+### Integration-fixture continuation exact task-gate rerun (final result)
+
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 169.216s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 33.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
@@ -217,6 +231,8 @@
 
 - QA Review Window 3 repair attempt 1 preserves the original task evidence and corrects only MF-1. The red `go test -race ./cmd/fid` result was `FAIL` (terminated `exit_code: 1`) because the old production branch accepted `--group-by role` as actor. The causal repair deletes that normalization, and the byte-identical green rerun ended `ok  github.com/mbell-nzl/fid/cmd/fid 148.050s` (terminated `exit_code: 0`). The fresh exact task gate later passed. No command, threshold, test selection, QA/spec/validation artifact, Event schema, public interface, or unrelated assertion changed.
 
+- Integration-fixture convergence attempt 1 preserves the source tagged-gate failure `FAIL` (terminated `exit_code: 1`) caused by removed `--by` transport on task-9 workflow/label family calls. The allowlisted test adapter converts only workflow define/assign, AC add, label, issue-label, link, and requirement-sync calls to `--actor agent:<role>` plus idempotency. The subsequent byte-identical tagged run remains `FAIL` (terminated `exit_code: 1`) only after reaching the preserved task-8 Event actor and `issue create --by` assertions; this continuation does not change them. No policy command, V1 Claim/Run/dev/closure behavior, writer, test selection, gate, public contract, Event schema, or task-10/task-11 behavior changed.
+
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - None.
@@ -227,8 +243,8 @@
 
 ## Commit hash
 
-- `98217f4f3d1b20f6f2baa9201c8b16f84d6afeb3`
+- Pending commit
 
 ## Commit subject
 
-- `fix(stats): reject retired role grouping`
+- Pending commit

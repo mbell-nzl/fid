@@ -33,16 +33,19 @@ func closureRun(t *testing.T, workspace, command string, args ...string) (string
 func closureRunFID(t *testing.T, binary, workspace string, args ...string) (string, string) {
 	t.Helper()
 	args = withClosureIssueMutationKey(args)
+	args = withTask9IntegrationMutationRequest(args)
 	return closureRun(t, workspace, binary, args...)
 }
 
 func closureRunFIDExpectError(t *testing.T, binary, workspace string, args ...string) (string, string, error) {
 	t.Helper()
 	args = withClosureIssueMutationKey(args)
+	args = withTask9IntegrationMutationRequest(args)
 	return closureRunCommand(workspace, binary, args...)
 }
 
 var closureIssueMutationSequence uint64
+var task9IntegrationMutationSequence uint64
 
 func withClosureIssueMutationKey(args []string) []string {
 	if !closureTypedIssueMutation(args) || closureContainsArgument(args, "--idempotency-key") {
@@ -67,6 +70,76 @@ func closureContainsArgument(args []string, target string) bool {
 		}
 	}
 	return false
+}
+
+func withTask9IntegrationMutationRequest(args []string) []string {
+	if !isTask9IntegrationMutation(args) || closureContainsArgument(args, "--actor") {
+		return args
+	}
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] != "--by" {
+			continue
+		}
+		converted := append([]string{}, args...)
+		converted[index] = "--actor"
+		converted[index+1] = "agent:" + args[index+1]
+		return append(converted, "--idempotency-key", fmt.Sprintf("task9-integration-%d", atomic.AddUint64(&task9IntegrationMutationSequence, 1)))
+	}
+	return args
+}
+
+func isTask9IntegrationMutation(args []string) bool {
+	for index := range args {
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "ac" && args[index+2] == "add" {
+			return true
+		}
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "label" && (args[index+2] == "add" || args[index+2] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "label" && args[index+1] == "add" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "link" && (args[index+1] == "add" || args[index+1] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "requirement" && args[index+1] == "sync" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "workflow" && (args[index+1] == "define" || args[index+1] == "assign") {
+			return true
+		}
+	}
+	return false
+}
+
+func TestTask9IntegrationMutationRequestsUseActorAndIdempotency(t *testing.T) {
+	for _, args := range [][]string{
+		{"workflow", "define", "--by", "tl"},
+		{"workflow", "assign", "--by", "tl"},
+		{"issue", "ac", "add", "FID-1", "--by", "developer"},
+		{"issue", "label", "add", "FID-1", "core", "--by", "developer"},
+		{"label", "add", "core", "--by", "developer"},
+		{"link", "add", "FID-1", "relates_to", "FID-2", "--by", "developer"},
+		{"requirement", "sync", "--source-doc", "spec.md", "--by", "tl"},
+	} {
+		converted := withTask9IntegrationMutationRequest(args)
+		if closureContainsArgument(converted, "--by") || !closureContainsArgument(converted, "--actor") || !closureContainsArgument(converted, "--idempotency-key") {
+			t.Fatalf("task-9 integration request %v = %v, want actor/key transport without --by", args, converted)
+		}
+	}
+
+	for _, args := range [][]string{
+		{"issue", "create", "--by", "developer"},
+		{"issue", "claim", "FID-1", "--by", "developer"},
+		{"issue", "ac", "verify", "FID-1", "AC-1", "--by", "qa_lead"},
+		{"concern", "raise", "--by", "developer"},
+		{"run", "record", "--by", "developer"},
+	} {
+		converted := withTask9IntegrationMutationRequest(args)
+		if strings.Join(converted, "\x00") != strings.Join(args, "\x00") {
+			t.Fatalf("non-task-9 integration request %v = %v, want unchanged", args, converted)
+		}
+	}
 }
 
 func closureRunCommand(workspace, command string, args ...string) (string, string, error) {
