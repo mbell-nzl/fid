@@ -60,15 +60,37 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 		workspace,
 		"issue", "transition", primaryIssueID,
 		"--to", "in_progress",
-		"--actor", "agent:developer",
+		"--actor", "agent:qa_reviewer",
 	)
 	assertNoNestedLockFailure(t, transitionStderr)
 	if !strings.Contains(transitionStderr, "transitioned "+primaryIssueID+": todo → in_progress") {
 		t.Fatalf("transition stderr = %q, want in_progress confirmation", transitionStderr)
 	}
 	expectedJournalLines++
-	assertClosureJournalLines(t, journalPath, expectedJournalLines, "issue transition to in_progress")
+	assertClosureJournalLines(t, journalPath, expectedJournalLines, "standalone issue transition")
+	if claims := mustReadIssueClaimsSection(t, workspace, primaryIssueID); len(claims) != 0 {
+		t.Fatalf("claims after standalone transition = %#v, want empty", claims)
+	}
 	assertClosureIssueState(t, workspace, primaryIssueID, "in_progress", "started", []string{"lifecycle"})
+
+	rejectStdout, rejectStderr, rejectErr := runFIDCommandExpectError(
+		t,
+		workspace,
+		"issue", "transition", primaryIssueID,
+		"--to", "dev_complete",
+		"--actor", "agent:developer",
+	)
+	if rejectErr == nil {
+		t.Fatal("developer transition without completion report error = nil, want workflow rejection")
+	}
+	if rejectStdout != "" {
+		t.Fatalf("developer transition without completion report stdout = %q, want empty", rejectStdout)
+	}
+	assertNoNestedLockFailure(t, rejectStderr)
+	if !strings.Contains(rejectStderr, "has_completion_report") {
+		t.Fatalf("developer transition without completion report stderr = %q, want workflow precondition", rejectStderr)
+	}
+	assertClosureJournalLines(t, journalPath, expectedJournalLines, "developer transition without completion report")
 
 	_, linkStderr := runFIDCommand(t, workspace, "link", "add", peerIssueID, "discovered_from", primaryIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertNoNestedLockFailure(t, linkStderr)

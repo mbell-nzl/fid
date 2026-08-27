@@ -135,10 +135,10 @@ func loadExecutionClaim(conn *sql.DB, issueID string, envelope Envelope) (execut
 	err := conn.QueryRow(`
 		SELECT id, actor_id, expires_at
 		FROM work_claims
-		WHERE issue_id = ? AND envelope_id = ? AND envelope_revision = ? AND status = 'active'
+		WHERE issue_id = ? AND envelope_id = ? AND envelope_revision = ? AND worktree_id = ? AND status = 'active'
 		ORDER BY id
 		LIMIT 1
-	`, issueID, envelope.ID, envelope.CurrentRevision).Scan(&claim.ID, &claim.ActorID, &claim.ExpiresAt)
+	`, issueID, envelope.ID, envelope.CurrentRevision, envelope.RepositoryScope.WorktreeID).Scan(&claim.ID, &claim.ActorID, &claim.ExpiresAt)
 	if err == sql.ErrNoRows {
 		return executionClaim{}, false, false, nil
 	}

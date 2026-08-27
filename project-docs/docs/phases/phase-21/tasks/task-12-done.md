@@ -2,9 +2,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: gate-repair
-- Condition: Task 12 has converged the retained V1 Claim observation to the accepted standalone/execution-bound boundary, but its tagged integration gate now stops at Task 9's `issue ac verify` transport and repository coverage stops at the out-of-scope `internal/dev` V1 Claim expectation.
-- Recovery attempts: 1
-- Next action: Phase Runner must route the tagged AC-verification fixture and `internal/dev/start_test.go` to their owning accepted scopes, then dispatch the same Task 12 continuation to rerun the six exact commands.
+- Condition: Task 12 restored the retained closure and no-mutation assertions at the accepted standalone/generic-Claim boundary and now enforces the execution Claim worktree predicate, but its tagged integration gate stops at Task 9's `issue ac verify --status` transport and repository coverage stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
+- Recovery attempts: 2
+- Next action: Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20, then dispatch Task 12 only to rerun its unchanged six-command gate after those owner repairs land.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -13,7 +13,8 @@
 - Added the execution-bound nonterminal transition predicate for Envelope, trusted Actor authority, generic Claim/Run, repository, Issue revision, and workflow edge qualification.
 - Added the shared fail-closed Obligation evaluator. Until Group 2 Evidence exists, terminal-success reports `obligation-evidence-absent` and commits no Event.
 - Replaced the retained non-bound Issue transition's V1 Claim precondition with the accepted boundary: standalone structural transitions use attribution only, while Envelope-bound transitions continue to read generic `work_claims` through the execution evaluator.
-- Converged only the directly invalidated V1 Claim/role closure fixtures and retained no-mutation/rebuild-parity assertions outside that obsolete precondition.
+- Enforced the Envelope repository worktree match when resolving an active generic Claim for an execution-bound transition.
+- Restored the retained closure coverage as accepted-contract equivalents: standalone attribution commits without a Claim or role-derived authority, rejected workflow edges leave the journal unchanged, and Claim/rebuild parity remains asserted.
 
 ## Files created or modified
 
@@ -36,8 +37,8 @@
 
 ## Validation Contract Coverage
 
-- VAL-038: PASS - `TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision` at `cmd/fid/task12_execution_transition_test.go:9` advances one all-qualified nonterminal transition through the CLI root command.
-- VAL-039: PASS - `TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:56` proves ordered all-reasons output and an unchanged Event count.
+- VAL-038: PASS - `TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision` at `cmd/fid/task12_execution_transition_test.go:11` advances one all-qualified nonterminal transition through the CLI root command; `TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:78` rejects a Claim whose worktree differs from the Envelope scope.
+- VAL-039: PASS - `TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:58` proves ordered all-reasons output and an unchanged Event count; `TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:78` proves `claim-missing,run-inactive` and no Event for a mismatched worktree.
 - VAL-040: PASS - `TestEvaluateObligationsReturnsIdenticalUnsatisfiedReasonsForBothGuards` at `internal/workflow/evaluation_test.go:8` compares the terminal-success and `envelope.complete` evaluator outputs byte-for-byte; `cmd/fid/task12_execution_transition_test.go:40` proves terminal transition remains atomic before Evidence exists.
 - VAL-041: PASS - `TestBuildIssueRevisionEffectsRejectsInvalidInputsWithoutEffects` at `internal/issues/revision_test.go:42` covers whitespace IDs, normalized duplicates, and overflow with nil Effects.
 
@@ -52,17 +53,22 @@
 - `go test -race ./cmd/fid -run '^TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1.942s` (terminated `exit_code: 0`)
 - `go test -race ./internal/issues ./cmd/fid -run '^(TestTransitionIntoStartedAllowsStandaloneActorWithoutGenericClaim|TestTransitionIntoStartedIgnoresRetainedV1Claims|TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim|TestIssueTransitionIgnoresRetainedV1ClaimsForStandaloneStates|TestV01DClosureLifecycleSmokeAndRebuildParity)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t5.281s` (terminated `exit_code: 0`)
 - Real entrypoint: `go build -o /tmp/fid-task12 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12 --project /tmp/fid-task12-entry.tDHf2P issue transition FID-7770e6 --to in_progress --actor agent:developer --idempotency-key task12-entry-transition` - PASS - `transitioned FID-7770e6: todo → in_progress` (terminated `exit_code: 0`).
+- `go test ./cmd/fid --run '^TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation$' -count=1` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): a Claim mutated to `other-worktree` still transitioned the Envelope-bound Issue and appended an Event.
+- `go test ./cmd/fid --run '^TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.210s` (terminated `exit_code: 0`)
+- `go test -race ./cmd/fid --run '^(TestV01DClosureLifecycleSmokeAndRebuildParity|TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.235s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): the restored closure journey reaches Task 9's `issue ac verify ... --status pass` and receives `error: unknown flag: --status`.
+- Real entrypoint: `go build -o /tmp/fid-task12-attempt2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt2 issue transition FID-70fcfa --to in_progress --actor agent:qa_reviewer --idempotency-key task12-entry-transition` in `/tmp/fid-task12-entry.y8p4B8` - PASS - `transitioned FID-70fcfa: todo → in_progress` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t(cached)` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): retained fixtures use removed `--by` flags; provenance is `e712f85d08a0b3259b23badd34d9306bf0a10f9b`, `7119d5b38d79663f544f093d55f676c375746419`, and `09aa0a081d2ecfee025c3b4d8158bc6203d02d98`, all before Phase 21.
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.975s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t24.081s\tcoverage: 33.5% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `65.3%` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
 
-### Continuation attempt 1
+- Historical continuation attempt 1:
 
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`): retained V1 Claim-precondition tests still expected the obsolete standalone Claim gate.
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.603s` (terminated `exit_code: 0`)
@@ -82,7 +88,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` to the Dev-owning accepted scope before rerunning Task 12's exact gate.
+- Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20 before rerunning Task 12's exact gate.
 
 ## Dependency-budget note
 
@@ -90,8 +96,8 @@
 
 ## Commit hash
 
-- `c407c305f404c2b418b021c415323972d5044ebb`
+- Pending commit
 
 ## Commit subject
 
-- `fix(issues): converge standalone transition claims`
+- Pending commit

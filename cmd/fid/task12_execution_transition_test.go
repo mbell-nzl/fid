@@ -4,6 +4,8 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision(t *testing.T) {
@@ -70,6 +72,37 @@ func TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation(t *tes
 	}
 	if after := journalEventCount(t, workspace); after != before {
 		t.Fatalf("multi-failure rejection changed journal event count to %d, want %d", after, before)
+	}
+}
+
+func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t *testing.T) {
+	workspace, issueID, _, _ := executionTransitionFixture(t)
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open execution database: %v", err)
+	}
+	if _, err := conn.Exec(`UPDATE work_claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID); err != nil {
+		_ = conn.Close()
+		t.Fatalf("mismatch claim worktree: %v", err)
+	}
+	if err := conn.Close(); err != nil {
+		t.Fatalf("close execution database: %v", err)
+	}
+
+	before := journalEventCount(t, workspace)
+	result := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "issue", "transition", issueID,
+		"--to", "in_progress", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "execution-transition-claim-worktree",
+	)
+	if result.err == nil || result.stdout != "" {
+		t.Fatalf("mismatched Claim worktree transition = %#v, want closed failure", result)
+	}
+	want := `"unsatisfied":["claim-missing","run-inactive"]`
+	if !strings.Contains(result.stderr, want) {
+		t.Fatalf("mismatched Claim worktree stderr = %q, want ordered reasons %s", result.stderr, want)
+	}
+	if after := journalEventCount(t, workspace); after != before {
+		t.Fatalf("mismatched Claim worktree changed journal event count to %d, want %d", after, before)
 	}
 }
 
