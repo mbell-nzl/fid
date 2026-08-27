@@ -2,12 +2,12 @@
 
 ## Workflow outcome
 
-- Task outcome: BLOCKED
-- Category: specification-contradiction
-- Condition: The recovery directive requires conversion of the retained Issue Claim fixture to generic Claim acquire/release while preserving the following closure transition assertions. Generic acquire writes `work_claims`, but the retained `issue transition` implementation still requires a V1 Claim through `claims.RequireLiveIssueClaimHeld`; replacing the fixture transport makes the preserved transition fail. Changing that transition is Task 12 behavior, and changing the preserved assertion would weaken retained coverage, so neither is authorized in Task 10.
-- Recovery attempts: 1
-- Next action: The Tech Lead must resolve the Task 10/Task 12 boundary by either authorizing the generic Claim-to-transition integration in the owning Task 12 scope or amending the retained fixture authority without weakening its coverage.
-- Human attention required: yes
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 2
+- Next action: None.
+- Human attention required: no
 
 ## Summary of what was implemented
 
@@ -15,6 +15,7 @@
 - Bound mutation Claims to an active Envelope, Actor, Issue revision, worktree, mutation scope, exact version, and TTL; conflicts, expiry, and wrong-holder mutations fail closed.
 - Replaced public `issue claim` and `issue unclaim` leaves with the generic Claim surface. The old spellings are not registered aliases.
 - Continuation attempt 1 did not change product code: the retained real-process closure fixture cannot be converted to the accepted generic transport without also changing its out-of-scope V1 transition dependency.
+- Continuation attempt 2 is report-only: TRG-21-011 confirms that the retained transition dependency belongs to the existing Task 12 recovery, so Task 10 closes on its unchanged five-command contract.
 
 ## Files created or modified
 
@@ -73,11 +74,11 @@
 
 - Required command repair: the first `go test -race ./internal/claims ./internal/policy ./internal/workflow ./internal/cli ./cmd/fid/...` attempt ended `FAIL` (terminated `exit_code: 1`) because the exact registered-code inventory still listed the pre-Claim count. Updated the in-scope `internal/cli/codes_test.go` registry expectation; the byte-identical rerun ended `ok  	github.com/mbell-nzl/fid/cmd/fid	156.550s` (terminated `exit_code: 0`).
 - Required command repair: the first `golangci-lint run ./...` attempt ended `3 issues:` (terminated `exit_code: 1`) because unregistered legacy Issue Claim command code and its TTL helper were dead. Removed that obsolete public-alias implementation and unused helper; the byte-identical rerun ended `0 issues.` (terminated `exit_code: 0`).
-- Supplementary tagged-gate recovery attempt: `go test -tags integration -race ./cmd/fid/integration/...` ended `FAIL` (terminated `exit_code: 1`) at the retained closure Claim assertion. Root cause: the fixture expects retired V1 role authority before its legacy `issue claim` transport, whereas the current transition reports its retained V1 Claim precondition. The authorized generic Claim transport writes only `work_claims`; the subsequent retained transition calls `claims.RequireLiveIssueClaimHeld` at `internal/issues/transition.go:221`, so an in-scope fixture conversion would still fail immediately. No repair was made because converting that transition is Task 12 behavior and changing the preserved assertion would weaken coverage.
+- Supplementary tagged-gate boundary: `go test -tags integration -race ./cmd/fid/integration/...` ended `FAIL` (terminated `exit_code: 1`) at the retained closure Claim assertion. This is not a Task 10 defect: the retained transition calls `claims.RequireLiveIssueClaimHeld` at `internal/issues/transition.go:221` before the removed legacy `issue claim` command, while the accepted generic Claim transport writes only `work_claims`. TRG-21-011 routes the required generic Claim-observation integration to the existing Task 12 recovery. The tagged FAIL remains supplementary evidence; it is not a PASS and Task 10 makes no product or test change for it.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Protected scope conflict: `cmd/fid/integration/e2e_v01_closure_test.go:33-52` combines the Task 10-invalidated legacy Claim transport with a V1 Claim-dependent transition. The accepted generic Claim lifecycle cannot satisfy that transition without the Task 12 generic execution-bound transition integration.
+- None.
 
 ## Dependency-budget note
 
