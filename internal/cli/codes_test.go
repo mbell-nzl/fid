@@ -100,6 +100,10 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		}},
 		{CodeRegistrationNotFound, CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringDetails("id")},
 		{CodeEnvelopeNotFound, CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringDetails("id")},
+		{CodeClaimNotFound, CategoryNotFound, false, []SubjectType{SubjectClaim}, stringDetails("id")},
+		{CodeClaimConflict, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimExpired, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 	}
 
 	registered := RegisteredCodes()
@@ -155,6 +159,13 @@ func argumentDetails() []detailExpectation {
 
 func authorityDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("operation"), nullableStringDetail("actor")}
+}
+
+func claimConflictDetails() []detailExpectation {
+	return []detailExpectation{
+		stringDetail("issue_id"), nullableStringDetail("claim_id"), nullableIntegerDetail("expected_version"),
+		nullableIntegerDetail("actual_version"), nullableStringDetail("expires_at"),
+	}
 }
 
 func findingDetails() []detailExpectation {

@@ -6,13 +6,12 @@ func newIssueCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "issue",
 		Short: "Manage issues.",
+		Args:  cobra.NoArgs,
 	}
 
 	cmd.AddCommand(newIssueACCommand())
-	cmd.AddCommand(newIssueClaimCommand())
 	cmd.AddCommand(newIssueCreateCommand())
 	cmd.AddCommand(newIssueCompleteCommand())
-	cmd.AddCommand(newIssueUnclaimCommand())
 	cmd.AddCommand(newIssueLabelCommand())
 	cmd.AddCommand(newIssueUpdateCommand())
 	cmd.AddCommand(newIssueTransitionCommand())

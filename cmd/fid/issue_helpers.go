@@ -8,7 +8,6 @@ import (
 	"runtime"
 	"slices"
 	"strings"
-	"time"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
@@ -139,26 +138,6 @@ func issueCreateOptionalString(cmd *cobra.Command, flagName, value string) *stri
 		return nil
 	}
 	return &value
-}
-
-func issueClaimTTLSeconds(cmd *cobra.Command, ttl string) (*int, error) {
-	if !cmd.Flags().Changed("ttl") {
-		return nil, nil
-	}
-
-	duration, err := time.ParseDuration(ttl)
-	if err != nil {
-		return nil, fmt.Errorf("parse --ttl: %w", err)
-	}
-	if duration <= 0 {
-		return nil, fmt.Errorf("--ttl must be greater than 0s")
-	}
-	if duration%time.Second != 0 {
-		return nil, fmt.Errorf("--ttl must resolve to whole seconds")
-	}
-
-	ttlSeconds := int(duration / time.Second)
-	return &ttlSeconds, nil
 }
 
 func issueSplitCommaSeparated(value string) []string {

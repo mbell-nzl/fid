@@ -169,7 +169,6 @@ func TestRootFlagsAcceptConvertedReadsAndRejectOnlyLegacyDiagnostics(t *testing.
 		name    string
 		command []string
 	}{
-		{"claim list", []string{"claim", "list"}},
 		{"sql", []string{"sql", "SELECT 1"}},
 		{"journal inspect", []string{"journal", "inspect", "EVT-missing"}},
 	} {

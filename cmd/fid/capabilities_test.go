@@ -138,12 +138,6 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 		errorText    string
 	}{
 		{
-			capabilityID: "work.claims.v1",
-			surface:      "Claim lifecycle and list",
-			args:         []string{"--json", "claim", "list"},
-			errorText:    "--json is not available for claim list",
-		},
-		{
 			capabilityID: "export.portable.v1",
 			surface:      "export create and validate",
 			args:         []string{"--json", "export", "create"},

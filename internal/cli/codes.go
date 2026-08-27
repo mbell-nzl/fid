@@ -50,6 +50,10 @@ const (
 	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
 	CodeRegistrationNotFound          Code = "registration-not-found"
 	CodeEnvelopeNotFound              Code = "envelope-not-found"
+	CodeClaimNotFound                 Code = "claim-not-found"
+	CodeClaimConflict                 Code = "claim-conflict"
+	CodeClaimExpired                  Code = "claim-expired"
+	CodeClaimStale                    Code = "claim-stale"
 )
 
 type SubjectType string
@@ -65,6 +69,7 @@ const (
 	SubjectGateDefinition   SubjectType = "gate-definition"
 	SubjectGateRegistration SubjectType = "gate-registration"
 	SubjectEnvelope         SubjectType = "envelope"
+	SubjectClaim            SubjectType = "claim"
 	SubjectCapability       SubjectType = "capability"
 )
 
@@ -194,6 +199,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringsField("fields"), objectField("supported", stringField("network"), booleanField("shell"), stringField("sandbox"), stringField("write"))),
 	CodeRegistrationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringField("id")),
 	CodeEnvelopeNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringField("id")),
+	CodeClaimNotFound:        definition(CategoryNotFound, false, []SubjectType{SubjectClaim}, stringField("id")),
+	CodeClaimConflict:        definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimExpired:         definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 }
 
 var registeredCodes = []Code{
@@ -205,6 +214,7 @@ var registeredCodes = []Code{
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale,
 }
 
 func findingFields() []detailField {

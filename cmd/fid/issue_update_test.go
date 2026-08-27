@@ -463,9 +463,8 @@ func TestIssueMutationHumanSuccessUsesStdoutOnly(t *testing.T) {
 		t.Fatalf("update = %#v, want stdout-only success", updated)
 	}
 
-	claimed := executeCommandForTest(workspace, "issue", "claim", issueID, "--by", "developer")
-	if claimed.err != nil {
-		t.Fatalf("issue claim error = %v, stderr = %q", claimed.err, claimed.stderr)
+	if _, _, err, handled := runLegacyClaimFixture(workspace, []string{"issue", "claim", issueID, "--by", "developer"}); !handled || err != nil {
+		t.Fatalf("fixture claim handled=%t error=%v", handled, err)
 	}
 	transitioned := executeCommandForTest(workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 	if transitioned.err != nil || transitioned.stderr != "" || !strings.Contains(transitioned.stdout, "transitioned "+issueID) {
