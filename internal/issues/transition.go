@@ -62,6 +62,18 @@ type BlockedTransitionError struct {
 	Cause          error
 }
 
+// ExecutionBoundTransitionError preserves every failed generic predicate.
+type ExecutionBoundTransitionError struct {
+	IssueID        string
+	CurrentState   string
+	RequestedState string
+	Reasons        []workflow.EvaluationReason
+}
+
+func (err *ExecutionBoundTransitionError) Error() string {
+	return fmt.Sprintf("execution-bound transition for issue %q is not permitted", err.IssueID)
+}
+
 func (err *BlockedTransitionError) Unwrap() error {
 	if err == nil {
 		return nil
@@ -165,49 +177,53 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
-		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
-			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
-		}
 		registry, err := workflow.Load(conn)
 		if err != nil {
 			return err
 		}
-		if _, known := registry.CategoryForState(current.WorkflowID, toState); !known {
-			return &InvalidTransitionError{
-				IssueID:        current.ID,
-				CurrentState:   current.Status,
-				RequestedState: toState,
-			}
-		}
+		toCategory, known := registry.CategoryForState(current.WorkflowID, toState)
 		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
-		if !allowed {
-			return &InvalidTransitionError{
-				IssueID:        current.ID,
-				CurrentState:   current.Status,
-				RequestedState: toState,
-			}
-		}
-
-		unmet, err := evaluateTransitionRules(conn, current, rules)
+		execution, err := workflow.EvaluateExecutionTransition(options.WorkspaceRoot, options.MigrationsDir, workflow.ExecutionTransitionRequest{
+			IssueID: current.ID, ActorID: actor.id, ExpectedIssueRevision: options.ExpectedRevision,
+			ActualIssueRevision: current.Revision, WorkflowEdgeValid: known && allowed,
+			TerminalSuccess: toCategory == "completed",
+		})
 		if err != nil {
 			return err
 		}
-		if len(unmet) > 0 {
-			return &BlockedTransitionError{
+		if execution.Bound {
+			if len(execution.Reasons) > 0 {
+				return &ExecutionBoundTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: toState, Reasons: execution.Reasons}
+			}
+		} else if !known || !allowed {
+			return &InvalidTransitionError{
 				IssueID:        current.ID,
 				CurrentState:   current.Status,
 				RequestedState: toState,
-				Unmet:          unmet,
 			}
 		}
-		if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
-			if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, actor.id); err != nil {
+		if !execution.Bound {
+			if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
+				return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+			}
+			unmet, err := evaluateTransitionRules(conn, current, rules)
+			if err != nil {
+				return err
+			}
+			if len(unmet) > 0 {
 				return &BlockedTransitionError{
 					IssueID:        current.ID,
 					CurrentState:   current.Status,
 					RequestedState: toState,
-					Unmet:          []workflow.UnmetCondition{{Rule: "live_claim_held"}},
-					Cause:          err,
+					Unmet:          unmet,
+				}
+			}
+			if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
+				if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, actor.id); err != nil {
+					return &BlockedTransitionError{
+						IssueID: current.ID, CurrentState: current.Status, RequestedState: toState,
+						Unmet: []workflow.UnmetCondition{{Rule: "live_claim_held"}}, Cause: err,
+					}
 				}
 			}
 		}

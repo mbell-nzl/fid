@@ -207,6 +207,14 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	if errors.As(mutationErr, &invalidTransition) {
 		return transitionNotPermittedFailure(invalidTransition.IssueID, invalidTransition.CurrentState, invalidTransition.RequestedState, nil)
 	}
+	var executionTransition *issues.ExecutionBoundTransitionError
+	if errors.As(mutationErr, &executionTransition) {
+		unsatisfied := make([]string, 0, len(executionTransition.Reasons))
+		for _, reason := range executionTransition.Reasons {
+			unsatisfied = append(unsatisfied, reason.Code)
+		}
+		return transitionNotPermittedFailure(executionTransition.IssueID, executionTransition.CurrentState, executionTransition.RequestedState, unsatisfied)
+	}
 	var blockedTransition *issues.BlockedTransitionError
 	if errors.As(mutationErr, &blockedTransition) {
 		unsatisfied := make([]string, 0, len(blockedTransition.Unmet))

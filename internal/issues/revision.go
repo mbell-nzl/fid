@@ -2,6 +2,7 @@ package issues
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
@@ -27,17 +28,20 @@ func BuildIssueRevisionEffects(observed []IssueRevision) ([]journal.Effect, erro
 		return revisions[left].IssueID < revisions[right].IssueID
 	})
 
-	effects := make([]journal.Effect, 0, len(revisions))
 	for index, revision := range revisions {
-		if strings.TrimSpace(revision.IssueID) == "" {
+		if strings.TrimSpace(revision.IssueID) == "" || revision.IssueID != strings.TrimSpace(revision.IssueID) {
 			return nil, fmt.Errorf("issue revision effect %d: Issue ID is required", index)
 		}
-		if revision.Observed < 1 {
+		if revision.Observed < 1 || revision.Observed == math.MaxInt {
 			return nil, fmt.Errorf("issue revision effect %q: observed revision must be positive", revision.IssueID)
 		}
 		if index > 0 && revision.IssueID == revisions[index-1].IssueID {
 			return nil, fmt.Errorf("issue revision effects duplicate Issue %q", revision.IssueID)
 		}
+	}
+
+	effects := make([]journal.Effect, 0, len(revisions))
+	for _, revision := range revisions {
 		effects = append(effects, journal.Effect{
 			Op:    "update",
 			Table: "issues",
