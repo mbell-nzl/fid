@@ -2,8 +2,8 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: gate-repair
-- Condition: Attempt 3 restored the retained Claim-holder and Claim-expiry no-mutation obligations as execution-bound generic-Claim coverage. Its child then stopped after MISSING_TERMINATION before returning terminal status, leaving the report dirty with the six recorded command terminations. The unchanged tagged integration gate still stops at Task 9's `issue ac verify --status` transport and repository coverage still stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
-- Recovery attempts: 4
+- Condition: Attempt 3 restored the retained Claim-holder and Claim-expiry no-mutation obligations as execution-bound generic-Claim coverage. Attempt 5 reran all six unchanged commands: the focused package, format, lint, and coverage-report commands pass; the tagged integration gate still stops at Task 9's `issue ac verify --status` transport and repository coverage still stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
+- Recovery attempts: 5
 - Next action: Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20; after both owner repairs land, dispatch Task 12 only to rerun its unchanged six-command gate.
 - Human attention required: no
 
@@ -64,6 +64,14 @@
 
 ## Exact quality-gate results
 
+- Attempt 5 (this continuation):
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t173.260s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
+
 - Attempt 3 (this continuation):
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t172.951s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
@@ -101,6 +109,7 @@
 - The remaining tagged and coverage failures are not repaired here: the tagged `issue ac verify` failure belongs to Task 9's accepted fail-closed AC surface, and the coverage `internal/dev` failure is forbidden Dev collateral outside Task 12 scope.
 - Attempt 3 corrected the prior assertion-boundary defect without restoring V1 `issue claim|unclaim` aliases or `--by`: the direct generic evaluator test retains the historic Claim-holder/expiry and atomic no-mutation obligations at the only accepted execution-bound surface. Task 9 owns the AC fixture transport; Task 20 owns the retained Dev fixture.
 - Attempt 3's focused coverage restoration is committed at `2a584fc125ba16f90973951dccda731c04c357a7`; after recording the six exact command terminations above, its child session was shut down under MISSING_TERMINATION before a terminal response. This report-only continuation preserves that partial-work evidence and does not rerun or reclassify either remaining owner-routed failure.
+- Attempt 5 made no implementation or assertion change. It preserves the immutable Task 9 and Task 20 gate failures above, with their observed `exit_code: 1` terminations, pending their separately authorized owner repairs.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
