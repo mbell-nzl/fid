@@ -65,7 +65,7 @@
 - No dependency changes.
 
 ## Commit hash
-- Pending commit
+- `8c763e9cddee1d4ff0df3379e08b286ef74d5300`
 
 ## Commit subject
-- Pending commit
+- `test(workflow): cover generic Run binding rejections`
