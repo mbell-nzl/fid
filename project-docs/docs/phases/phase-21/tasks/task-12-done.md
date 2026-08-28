@@ -2,7 +2,7 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: DEC-167 attempt 6 converged the stale retained Dev precondition and every accepted-Phase-21-invalidated tagged integration row. All six unchanged required commands pass.
+- Condition: DEC-167 attempt 6 converged the stale retained Dev precondition and every accepted-Phase-21-invalidated tagged integration row. Window 4 MF-3 now adds the required execution-bound predicate and atomicity evidence; all six unchanged required commands pass.
 - Recovery attempts: 6
 - Next action: None.
 - Human attention required: no
@@ -18,6 +18,8 @@
 - Restored the removed Claim-holder and Claim-expiry transition obligations at their accepted generic boundary: an Envelope-bound transition reports the Claim-specific reason plus `run-inactive` and appends no Event when its Claim belongs to another Actor or is expired.
 - Converged the tagged closure journey's unavailable V1 AC and Concern mutations into typed `capability-unavailable`, no-journal-append assertions; its removed V1 `run record` leaf now rejects without a journal append and maintenance asserts the resulting telemetry-gap warning.
 - Removed only the stale standalone-transition Claim-rejection probe from the Dev invalid-edge setup. The `Start()` subject, typed invalid-transition assertion, current-state assertion, and journal-unchanged assertion remain unchanged.
+- Added the Window 4 execution-bound predicate matrix: one qualifying row plus isolated non-mutating rows for inactive Envelope, unavailable Actor capability, mismatched Claim worktree, usable Claim with no active Run, mismatched Run repository, Issue revision conflict, and invalid workflow edge.
+- Replaced partial stderr substring checks with an exact CLI failure-envelope assertion, unchanged Issue state/revision snapshots, and a byte-exact ordered `Reason` object golden for the combined failure against contracts.md section 10.
 
 ### DEC-167 retained-row provenance
 
@@ -54,8 +56,8 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 
 ## Validation Contract Coverage
 
-- VAL-038: PASS - `TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision` at `cmd/fid/task12_execution_transition_test.go:11` advances one all-qualified nonterminal transition through the CLI root command; `TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:78` rejects a Claim whose worktree differs from the Envelope scope.
-- VAL-039: PASS - `TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:58` proves ordered all-reasons output and an unchanged Event count; `TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:78` proves `claim-missing,run-inactive` and no Event for a mismatched worktree.
+- VAL-038: PASS - `TestExecutionBoundTransitionPredicateMatrix` at `cmd/fid/task12_execution_transition_test.go:114` exercises the qualifying row and separately rejects inactive Envelope, unavailable Actor capability, mismatched Claim worktree, usable Claim/no active Run, mismatched Run repository, Issue revision conflict, and invalid workflow edge. Every rejected row uses `assertExecutionTransitionRejectionWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:248`, which asserts the complete CLI failure envelope, unchanged Issue `status`/`revision`, and unchanged journal Event count.
+- VAL-039: PASS - `TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation` at `cmd/fid/task12_execution_transition_test.go:53` byte-compares the complete ordered `workflow.EvaluationReason` objects against the section 10 golden at `cmd/fid/task12_execution_transition_test.go:63`, then proves the matching CLI rejection is atomic through the same unchanged Issue snapshot and journal assertion at `cmd/fid/task12_execution_transition_test.go:248`.
 - VAL-040: PASS - `TestEvaluateObligationsReturnsIdenticalUnsatisfiedReasonsForBothGuards` at `internal/workflow/evaluation_test.go:8` compares the terminal-success and `envelope.complete` evaluator outputs byte-for-byte; `cmd/fid/task12_execution_transition_test.go:40` proves terminal transition remains atomic before Evidence exists.
 - VAL-041: PASS - `TestBuildIssueRevisionEffectsRejectsInvalidInputsWithoutEffects` at `internal/issues/revision_test.go:42` covers whitespace IDs, normalized duplicates, and overflow with nil Effects.
 
@@ -83,8 +85,19 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 - Real entrypoint: `go build -o /tmp/fid-task12-attempt2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt2 issue transition FID-70fcfa --to in_progress --actor agent:qa_reviewer --idempotency-key task12-entry-transition` in `/tmp/fid-task12-entry.y8p4B8` - PASS - `transitioned FID-70fcfa: todo → in_progress` (terminated `exit_code: 0`).
 - `go test ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t14.266s` (terminated `exit_code: 0`)
 - `TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards` preserves wrong-holder and expired generic Claim denials with no journal append.
+- Window 4 MF-3 test-first attempt: `go test -race ./cmd/fid -run '^TestExecutionBoundTransitionPredicateMatrix$' -count=1` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the newly added snapshot type and helper used the same Go identifier, so the package did not compile.
+- Window 4 MF-3 focused matrix rerun: `go test -race ./cmd/fid -run '^TestExecutionBoundTransitionPredicateMatrix$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t19.415s` (terminated `exit_code: 0`)
+- Window 4 MF-3 combined predicate/golden rerun: `go test -race ./cmd/fid -run '^TestExecutionBound' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t31.696s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
+
+- Window 4 MF-3 final exact task-gate rerun:
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t210.732s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t5.792s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `65.4%` (terminated `exit_code: 0`)
 
 - Attempt 6 final exact task-gate rerun:
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t175.213s` (terminated `exit_code: 0`)
@@ -145,6 +158,7 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 - Attempt 5 made no implementation or assertion change. It preserves the immutable Task 9 and Task 20 gate failures above, with their observed `exit_code: 1` terminations, pending their separately authorized owner repairs.
 - Attempt 6 initially retained two transitions while removing the stale Dev probe, so the coverage gate correctly rejected an `in_progress` to `in_progress` setup edge. The repair removed that duplicate setup only; `Start()`'s `*issues.InvalidTransitionError`, `CurrentState`, and no-journal-append assertions are unchanged. The later exact coverage gate passed.
 - DEC-167 supersedes the prior owner-routing conclusions for the tagged integration and Dev rows. This report preserves their failed evidence but records the accepted-change provenance above instead.
+- Window 4 MF-3's first focused run failed at compile time with `FAIL` (terminated `exit_code: 1`) because the new `executionTransitionIssueSnapshot` type and helper shared a Go identifier. The test-only repair renamed the type to `executionTransitionIssueState`; the byte-identical focused matrix rerun later passed with `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t19.415s` (terminated `exit_code: 0`). No production behavior, command, assertion semantics, threshold, or accepted contract changed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -156,8 +170,8 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 
 ## Commit hash
 
-- `16b15d8134e7b29f27cf996486bff997a080fcc3`
+- Pending commit
 
 ## Commit subject
 
-- `test(integration): converge retained closure journey`
+- Pending commit
