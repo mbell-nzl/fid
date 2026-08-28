@@ -321,3 +321,239 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **If BLOCK:** category workflow policy / protected verifier definition; ESC-21-006 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision reconciles the schema-v2 ordinary TRIAGE-to-TASK-RECOVERY byte-binding contract with the canonical verifier's additional TRG-reference requirement, then authorizes any verifier or contract-definition change and recovery route.
 - **Human attention required:** yes
 - **References:** TRG-21-007; project-docs/tools/workflow-sequence-lint.sh lines 619-637; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/templates/triage-log-template.md; project-docs/docs/phases/phase-21/decisions.md DEC-162.
+
+---
+
+## TRG-21-009 - Task 9 gate closure requires Task 10 Claim/Run fixture authority
+
+- **Trigger:** Task 9's exact required package and coverage gates remain red on retained cmd/fid Event-v2/result/activity and AC/concern no-writer fixtures plus explicit replacement-bound Task 10 Claim/Run authority fixtures. The task-9 report says the Task 10 fixtures remain outside task-9 scope.
+- **Originating task:** task-9
+- **Trigger signature:** task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- **Candidate:** `OUTCOME RECOVERY_REQUIRED` report and retained required-gate failures
+- **Attempt count:** 8
+- **Checkpoint:** report commit 8eabb7c4e3ec54352bed9cf04fb7224280b9415a; prompt-attached git rev-parse --verify returned the same full commit and subject matched `docs(task): finalize recovery report for phase-21 task-9`; two-argument report-lint returned `OUTCOME RECOVERY_REQUIRED` (terminated `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-162 authorizes retained-test convergence only inside the task whose accepted change invalidates the test, preserving subject and assertion strength. Task 9 owns retained attribution and judgment-freeze convergence, but expressly excludes generic Claims/Runs; the inventory and task 10 specification assign Claim/Run replacement authority and its contract to task 10. Moving explicit Task 10 authority fixtures into task 9, changing their assertion subject, or advancing around their red gates requires a protected task-boundary re-slice or cross-task authority decision. The prompt supplies no reproduced canonical-control mismatch, so control-conformance repair is unavailable.
+- **Local decisions made:** none
+- **Resolution evidence:** The task-9 report records `RECOVERY_REQUIRED` and identifies the remaining explicit Task 10/Claim/Run authority fixtures as outside task-9 scope. Its exact required package command and repository coverage command are recorded `BLOCKED` with observed `exit_code: 1`; report-lint confirms recovery remains required. Task 9's Out Of Scope section excludes Generic Claims/Runs and final V1 removal, while task 10 owns generic Claim operations and the V1 inventory assigns Claim replacement to task 10 and Run replacement to task 11.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no task-10 Claim/Run implementation, no final V1 removal, no widening of task-9 scope, no command/assertion/status/threshold/policy changes, no test weakening, no Task 10 or later product/spec/task/QA/decision edits without their authority.
+- **Exact verification:** the task-9 exact package command and repository coverage command are recorded in task-9-done.md as BLOCKED with observed exit_code: 1; the report identifies remaining explicit replacement-bound Task 10 Claim/Run authority fixtures; report-lint project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-9-done.md project-docs/docs/phases/phase-21/tasks/task-9-retained-actor-policy-removal.md returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0 in /home/mark/projects/fid.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- **Control repair base:** 8eabb7c4e3ec54352bed9cf04fb7224280b9415a
+- **If BLOCK:** category protected task-boundary / cross-task authority; ESC-21-007 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead decision selects a bounded ownership and sequencing route for the named Task 10 Claim/Run fixtures while retaining all accepted public authority contracts, task gates, and assertion strength.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/tasks/task-9-done.md; project-docs/docs/phases/phase-21/tasks/task-9-retained-actor-policy-removal.md Scope and Out Of Scope; project-docs/docs/phases/phase-21/tasks/task-10-generic-claims.md Scope and Acceptance Criteria; project-docs/docs/phases/phase-21/v1-convergence-inventory.md sections 1, 1.2, and 5; project-docs/docs/phases/phase-21/decisions.md DEC-162; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-009
+
+- **Decision authority:** DEC-165, 2026-08-25.
+- **Verdict audit:** **not sustained on its recorded category.** The refusal to
+  widen scope or weaken the Claim assertions on child authority was correct
+  behaviour. The classification was wrong: the named fixtures are not Task 10
+  Claim/Run authority fixtures. No generic Claim or Run fixture exists in the
+  tree, task 10 has not been dispatched, and every red assertion is an incidental
+  read of a surface task 9 itself removed or renamed - public `fid policy show`
+  (`cmd/fid/issue_claim_test.go:464`, `cmd/fid/run_test.go:184`,
+  `cmd/fid/dev_test.go:134`, `cmd/fid/label_test.go:336`,
+  `cmd/fid/link_test.go:413`, `cmd/fid/issue_label_test.go:517`,
+  `cmd/fid/requirement_test.go:306`,
+  `cmd/fid/integration/e2e_v01_closure_helpers_test.go:329`), stats `--by role`
+  (`:327-328`), and fail-closed `maintenance vacuum --by tl` (`:316`). The V1
+  claim, run, and dev behavioural assertions in those same files still pass.
+- **Resolution:** DEC-165 states DEC-162's rule explicitly - convergence
+  ownership follows the invalidating accepted change, not the fixture file's
+  primary subject - and makes the bounded task-9 amendment: `cmd/fid/integration/`
+  is named in file scope, Out Of Scope is narrowed to generic Claim/Run
+  implementation and semantics, and the incidental `policy show` reads are
+  repointed onto the retained unregistered legacy matrix helper with every
+  role/action assertion byte-identical. No task-10/11 work, no re-slicing, no
+  sequencing change, no gate/VAL/command/contract change.
+- **Recovery:** RUN-RESUME from the STOP, then one same-task `TASK-RECOVERY
+  task-9`, category `in-scope-implementation`, mode `task-scope`, trigger
+  signature `task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures`,
+  attempt 9, `Source` and `Repair authority` `TRG-21-009 / DEC-165`,
+  no-progress `0/2`. All five required commands rerun byte-identically.
+  ESC-21-007 is resolved.
+- **Recurrence note:** this is the second occurrence of the TRG-21-004 pattern -
+  residual failures that are collateral of an accepted change the escalating
+  task itself made, misclassified as protected by file subject. `08_QUALITY_PLAN.md`
+  §3 now carries the generalised ownership rule.
+- **Historical integrity:** no prior TRG, ledger, report, escalation, or
+  failed-gate evidence is rewritten. The Phase Runner appends the RUN-RESUME; the
+  Tech Lead does not edit `run-ledger.md`.
+
+---
+
+## TRG-21-010 - Task 9 convergence now conflicts with retained Task 10 contract assertions
+
+- **Trigger:** Task 9's unchanged required gates remain red on two assertions in cmd/fid/task10_contract_test.go that exercise Task 9-converted inventory leaves and still require legacy --by behavior and old authority-missing envelopes.
+- **Originating task:** task-9
+- **Trigger signature:** task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- **Candidate:** protected-blocker candidate after Task 9 recovery attempt 10
+- **Attempt count:** 11
+- **Checkpoint:** prompt-attached commit verification identifies 77575e419dd20e341fa04a22344063187281db41 with subject `docs(task): finalize completion report for phase-21 task-9`; two-argument report-lint returned `OUTCOME BLOCKED` and `PASS report-lint completed with no failures` (terminated `exit_code: 0`). The exact required package command and repository coverage command remain FAIL (terminated `exit_code: 1`).
+- **Verdict:** BLOCK
+- **Reasoning:** DEC-165 binds retained-test convergence to the invalidating accepted Task 9 change rather than a fixture filename, but it also preserves the Task 9 `--actor` plus idempotency interface and expressly forbids restoring `--by` on a Task 9 family. The retained assertions now require both the prohibited legacy flag and old authority-missing envelopes for Task 9-converted leaves. Repairing them requires selecting a public CLI/authority contract or changing retained assertion semantics, neither of which Task 9 can decide. This is the third recurrence of the TRG-21-004 file-subject misclassification pattern: TRG-21-009's Resolution Note records itself as the second; the supplied recurrence rule requires escalation rather than another local recovery.
+- **Local decisions made:** none
+- **Resolution evidence:** the reproduced command `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` required PASS but observed FAIL (terminated `exit_code: 1`) in `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse`. Those assertions retain legacy `--by` behavior for Task 9-converted `issue ac add`, `label add`, and `issue label add/remove` leaves, while Task 9's accepted interface is `--actor` plus idempotency. No canonical workflow-control mismatch is reproduced.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A - no control-conformance candidate
+- **Control mismatch:** N/A - no canonical control mismatch reproduced
+- **Allowed files:** N/A
+- **Forbidden changes:** do not restore --by on a task-9 family; do not modify cmd/fid/task10_contract_test.go or Task 10 implementation/semantics; do not weaken or narrow the exact gates; no task-spec, QA artifact, validation-contract, public-interface, Event-schema, required-command, workflow-verifier, t.Skip, build-tag, -run, threshold, budget, tolerance, or policy change.
+- **Exact verification:** N/A - no control-conformance candidate
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- **Control repair base:** 77575e419dd20e341fa04a22344063187281db41
+- **If BLOCK:** category public-interface / specification contradiction and repeated post-DEC-165 task-boundary classification; ESC-21-008 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead must determine the compatible accepted contract and ownership route for the retained Task 10-named assertions without restoring a forbidden Task 9 legacy interface or weakening assertion semantics.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/decisions.md DEC-165 items 1, 2, 4, 5, and 6; project-docs/docs/current/phase_brief.md DEC-165 and Dispatch Controls; project-docs/docs/phases/phase-21/triage-log.md TRG-21-004, TRG-21-009, and Resolution Note For TRG-21-009; project-docs/docs/phases/phase-21/tasks/task-9-done.md Recovery attempt 10 and Concerns; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-010
+
+- **Decision authority:** DEC-166, 2026-08-26.
+- **Verdict audit:** **not sustained on its recorded category.** The product
+  interface is not contradictory. The red file and functions were introduced
+  under `Refs: phase-20/task-10`; current Phase 21 task 10 is generic Claims and
+  owns none of the affected inventory leaves. The test filename was treated as
+  ownership evidence even after DEC-165 established invalidating-change
+  ownership. Repetition of that inference did not create a protected category.
+- **Resolution:** Task 9 converges the stale Phase 20 request rows to the exact
+  accepted `--actor` plus idempotency contract, renames historical `Task10`
+  fixture labels to subject-based names, and preserves the actual subjects:
+  missing/malformed attribution rejects before mutation, JSON and Human errors
+  match the current public contract, and journal state is unchanged. Unrelated
+  assertions remain byte-identical. No production behavior or accepted
+  contract changes.
+- **Recovery:** RUN-RESUME from the STOP retains TRG-21-010 and ESC-21-008,
+  uses resolution authority DEC-166, and binds one same-task TASK-RECOVERY for
+  task 9 with trigger signature
+  `task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions`,
+  category `in-scope-implementation`, mode `task-scope`, attempt 12, `Source`
+  and `Repair authority` `TRG-21-010 / DEC-166`, and no-progress `0/2`. All
+  five task commands rerun byte-identically.
+- **Historical integrity:** TRG-21-010, ESC-21-008, their ledger TRIAGE/STOP,
+  the BLOCKED report, and all failed command evidence remain unchanged. The
+  Phase Runner appends the recovery events; this note does not edit the ledger.
+
+---
+
+## TRG-21-011 - Task 10 supplementary closure failure is Task 12 transition integration
+
+- **Trigger:** Task 10 continuation returned a typed BLOCKED report after the supplementary retained-integration gate failed at a Claim-dependent closure transition before reaching the removed legacy Claim command.
+- **Originating task:** task-10
+- **Trigger signature:** task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-10-done.md
+- **Candidate:** typed `OUTCOME BLOCKED` report after supplementary tagged integration failure
+- **Attempt count:** 2
+- **Checkpoint:** report commit 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8; prompt-attached `git rev-parse --verify 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8^{commit}` returned the exact hash, subject matched `docs(task): record phase-21 task-10 blocker`, and two-argument report-lint returned `OUTCOME BLOCKED` with `PASS report-lint completed with no failures` (terminated `exit_code: 0`).
+- **Verdict:** RESUME
+- **Reasoning:** This is not an unresolved Task 10 task-scope defect or a protected contract conflict. Task 10's exact five-command gate passed, and its accepted generic Claim transport correctly writes `work_claims` while keeping legacy issue-claim aliases absent. The reproduced supplementary journey instead fails at the retained transition's V1 `claims.RequireLiveIssueClaimHeld` read before it reaches the removed legacy command; the convergence inventory assigns V1 `claims` readers to tasks 10, 12, and 20, and Task 12 expressly owns the execution-bound transition integration. DEC-162 requires assertion-preserving convergence, not a Task 10 workaround that weakens the closure assertion or changes Task 12 behavior.
+- **Local decisions made:** Task 10 may advance from this misclassified BLOCKED disposition; preserve its failed supplementary gate evidence. Route the actual repair through the already-open Task 12 `RECOVERY_REQUIRED` continuation: integrate the retained transition's Claim observation with the accepted generic Claim contract, preserve the closure journey's assertion strength, and rerun Task 12's unchanged six commands including the tagged integration gate. This TRG grants no Task 10 product edit and no change to commands, assertions, public interface, persistence contract, task specifications, QA artifacts, or validation contract.
+- **Resolution evidence:** `task-10-generic-claims.md` limits Task 10's required gate to five commands, all recorded PASS in the source report. `task-12-execution-bound-transition.md` owns `internal/issues/`, `internal/workflow/`, and the tagged integration gate; `v1-convergence-inventory.md` assigns the V1 `claims` reader boundary to tasks 10, 12, and 20. The attached reproducer fails before the removed `issue claim` call, at `cmd/fid/integration/e2e_v01_closure_test.go:33`, because `internal/issues/transition.go:221` still requires a live V1 Claim. No canonical workflow-control mismatch, protected definition change, or unresolved product ambiguity is reproduced.
+- **If REPAIR:** N/A; the appropriate next route is the existing task-12 `RECOVERY_REQUIRED` same-task continuation under the task-12 specification and DEC-162, not a new task-10 recovery.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no workflow verifier repair; no command, assertion, public-interface, specification, QA-artifact, validation-contract, persistence, or task-definition change; no weakening of retained V1 closure coverage; no reintroduction of issue claim/unclaim aliases or `--by`.
+- **Exact verification:** N/A
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-10-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** N/A
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-21/tasks/task-10-generic-claims.md Exact Commands To Run and Scope; project-docs/docs/phases/phase-21/tasks/task-12-execution-bound-transition.md Objective, Scope, and Exact Commands To Run; project-docs/docs/phases/phase-21/tasks/task-10-done.md lines 5-10 and 72-80; project-docs/docs/phases/phase-21/tasks/task-12-done.md lines 5-9 and 13-14; project-docs/docs/phases/phase-21/v1-convergence-inventory.md sections 1, 1.1, and 4; project-docs/docs/phases/phase-21/decisions.md DEC-162; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+---
+
+## TRG-21-012 - Task 12 recovery budget exhausted on owner-routed gate failures
+
+- **Trigger:** Task 12 recovery budget exhausted after two consecutive runner-mediated continuations failed to clear the unchanged required gate; the remaining failures are owner-routed to Task 9 and future Task 20.
+- **Originating task:** task-12
+- **Trigger signature:** task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-12-done.md
+- **Candidate:** recovery-budget-exhausted after Task 12 continuation attempt 5
+- **Attempt count:** 5
+- **Checkpoint:** af4c9ecf9d1be5668725d8287fde5bc531ea2fe3; prompt-attached `git rev-parse --verify` succeeded and subject matched `docs(task): record task-12 attempt-5 gate evidence`.
+- **Verdict:** BLOCK
+- **Reasoning:** The same trigger reached two consecutive Phase Runner-mediated no-progress continuations. Attempt 5 reproduced the unchanged Task 9-owned tagged-integration failure and future Task 20-owned repository-coverage failure; neither is within Task 12 authority, and Task 12 has completed its accepted implementation obligations. Further advance would require selecting cross-task owner/order handling, while restoring `--by`, the obsolete V1 Claim behavior, or changing a required command or assertion is prohibited. No canonical-control mismatch or control-conformance proposal is presented.
+- **Local decisions made:** none
+- **Resolution evidence:** `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` passed with `ok github.com/mbell-nzl/fid/cmd/fid 173.260s` (terminated `exit_code: 0`); `go test -tags integration -race ./cmd/fid/integration/...` failed with `FAIL` (terminated `exit_code: 1`) because the retained fixture reaches Task 9's `issue ac verify --status pass --by qa_lead` and receives `error: unknown flag: --status`; `gofmt -l cmd internal` passed with `exit 0 (no output)` (terminated `exit_code: 0`); `golangci-lint run ./...` passed with `0 issues.` (terminated `exit_code: 0`); `go test -race -coverprofile=coverage.out ./...` failed with `FAIL` (terminated `exit_code: 1`) because future Task 20-owned `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` expects the removed V1 Claim precondition; and `go tool cover -func=coverage.out` passed with `total: (statements) 65.3%` (terminated `exit_code: 0`). The valid truthful Task 12 report remains `OUTCOME RECOVERY_REQUIRED`.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** Task 12 must not edit Task 9 or Task 20 fixtures; restore `--by`; restore obsolete V1 Claim behavior; weaken assertions; change required commands, command definitions, accepted status, scope, threshold, budget, tolerance, policy, or any protected contract; no control-conformance directive.
+- **Exact verification:** N/A
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-12-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** category recovery-budget-exhausted / protected task-boundary and phase-order authority; ESC-21-009 raised in `tl_escalations_current.md`; resolution condition a Human/full Tech Lead decision selects the owner and order handling for the remaining Task 9 and future Task 20 gate failures, after which the phase may resume without changing accepted contracts.
+- **Human attention required:** yes
+- **References:** project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/docs/phases/phase-21/run-ledger.md lines 1968-2002; project-docs/docs/phases/phase-21/tasks/task-12-execution-bound-transition.md Scope and Exact Commands To Run; project-docs/docs/phases/phase-21/tasks/task-12-done.md Workflow outcome and Exact quality-gate results; project-docs/docs/phases/phase-21/tasks/task-9-retained-actor-policy-removal.md Scope and Out Of Scope; project-docs/docs/current/phase_brief.md Group 2 task order.
+
+## Resolution Note For TRG-21-012
+
+- **Decision authority:** DEC-167, 2026-08-28.
+- **Verdict audit:** **not sustained.** The Developer's refusal to widen scope or
+  weaken assertions on child authority was correct, and its recorded evidence is
+  accurate. Every other element of the disposition fails:
+  - The `internal/dev` failure is task 12's own collateral, not task 20's. Task
+    12 removed the V1 Claim precondition from `internal/issues/transition.go`;
+    `internal/dev/start_test.go:225-233` still requires it.
+    `v1-convergence-inventory.md:54` assigns task 20 the *source-package
+    removal*, which is not test-convergence ownership.
+  - The `issue ac verify` failure is not a `--by` to `--actor` transport gap.
+    VAL-030 makes the leaf unconditionally `capability-unavailable`
+    (`cmd/fid/issue_ac.go:109-111`), so no flag change can make the journey step
+    succeed. Task 9 correctly excluded it from its conversion family.
+  - It is a chain, not a line: `concern raise` and `concern address`
+    (`e2e_v01_closure_helpers_test.go:263`, `:266`) are the same VAL-030
+    fail-closed family and fail next.
+  - `recovery-budget-exhausted` does not hold. Run-ledger :1904 forbade task 12
+    from repairing the only two failing rows; attempt 4 was report-only and
+    attempt 5 changed nothing. Both NO-PROGRESS outcomes were guaranteed by
+    directive.
+- **Root cause:** gate coverage, not ownership. `cmd/fid/integration/` is
+  `//go:build integration`, and only tasks 12, 18, 21, and 22 carry a tagged
+  command. DEC-165 gave task 9 ownership of that package without a command that
+  runs it. Tasks 8, 9, and 10 each observed the red package and correctly walked
+  away; task 12 is the first task obligated to make it green.
+- **Resolution:** DEC-167 amends task 12's file scope to name `internal/dev/` and
+  the `cmd/fid/integration/` package, assigns it the accumulated tagged-journey
+  convergence with per-row provenance recording, and keeps the no-weakening
+  boundary. It adds two standing rules to `08_QUALITY_PLAN.md` §3: required
+  commands must exercise owned scope, and a no-progress budget counts only
+  attempts whose directive permitted causal repair.
+- **Recovery:** RUN-RESUME from the STOP retains TRG-21-012 and ESC-21-009, uses
+  resolution authority DEC-167, and binds one same-task TASK-RECOVERY for task 12
+  with trigger signature
+  `task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral`,
+  category `in-scope-implementation`, mode `task-scope`, attempt 6, `Source` and
+  `Repair authority` `TRG-21-012 / DEC-167`, and no-progress `0/2`. All six
+  task-12 commands rerun byte-identically. Reaching a later journey step resets
+  the no-progress count. ESC-21-009 is resolved.
+- **Recurrence note:** fourth occurrence of the TRG-21-004 pattern after
+  TRG-21-009 and TRG-21-010. DEC-165 and DEC-166 fixed the ownership rule; the
+  surviving generator was unexecutable ownership, which DEC-167 item 7 closes.
+- **Historical integrity:** TRG-21-012, ESC-21-009, their ledger TRIAGE/STOP, the
+  attempt 1-5 evidence, and all failed command results remain unchanged. The
+  Phase Runner appends the recovery events; this note does not edit the ledger.

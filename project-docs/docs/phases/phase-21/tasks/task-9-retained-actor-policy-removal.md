@@ -34,7 +34,7 @@ Convert every retained non-Issue inventory mutation to project-local `--actor` p
 - `internal/stats/`
 - `internal/maintenance/`
 - `internal/cli/`
-- `cmd/fid/`
+- `cmd/fid/` (including the `cmd/fid/integration/` package)
 - `project-docs/docs/phases/phase-21/tasks/task-9-done.md`
 
 ### Files To Read For Context
@@ -44,7 +44,53 @@ Convert every retained non-Issue inventory mutation to project-local `--actor` p
 
 ### Out Of Scope
 
-- Generic Claims/Runs and final V1 removal.
+- Generic Claim/Run implementation, semantics, table, CLI, and contract; final
+  V1 removal.
+- This does **not** exclude converging an incidental read of a surface this task
+  removed or renamed that happens to sit inside a V1 claim, run, dev, or closure
+  fixture. See DEC-165.
+
+### Convergence Ownership (DEC-162, DEC-165, DEC-166)
+
+Convergence ownership follows the invalidating accepted change, not the fixture
+file's primary subject. This task's public `fid policy` removal, stats `--by` to
+`--group-by` rename, and fail-closed vacuum/AC/concern conversions are task-9
+changes, so task 9 converges every assertion they invalidated wherever it lives,
+including in fixtures whose headline subject belongs to task 10, 11, or 20.
+
+- Repoint each incidental `policy show` row read onto the retained unregistered
+  legacy matrix helper, keeping every role/action assertion byte-identical.
+  Extend the enumerated legacy test-caller list and name the callers in the
+  completion report for task-20 removal. Do not re-register `fid policy`.
+- Delete a parity block only where `TestPublicPolicyCommandIsAbsent` plus a
+  named surviving denial assertion already own the accepted equivalent, and name
+  both in the report.
+- Leave every V1 Claim, Run, dev, and closure *behavioural* assertion
+  byte-identical: `issue.claim.force_acquire` denial and `tl` force-acquire,
+  one-active/expiry/wrong-holder claim paths, the `run.record` allowed-role
+  matrix, `dev.start|gate|finish|block` denial and journal-unchanged checks, and
+  closure journal-byte equality. Their owning task replaces them later.
+- Known remaining sites at the time of this amendment: `cmd/fid/label_test.go`,
+  `cmd/fid/link_test.go`, `cmd/fid/issue_label_test.go`,
+  `cmd/fid/requirement_test.go`, `cmd/fid/issue_claim_test.go`,
+  `cmd/fid/run_test.go`, `cmd/fid/dev_test.go`, and
+  `cmd/fid/integration/e2e_v01_closure_helpers_test.go`. This list is a
+  navigation aid, not a limit; the gate is the authority.
+- `cmd/fid/task10_contract_test.go` is a Phase 20 task-10 artifact, not a Phase
+  21 generic-Claims fixture. Rename it and its `TestTask10*` functions to
+  subject-based inventory/request-contract names. Convert only Task-9-owned
+  mutation rows from `--by` and old missing-role expectations to the accepted
+  `--actor` plus idempotency request contract. Missing/malformed Actor requests
+  still fail before mutation: JSON uses the exact current closed
+  `invalid-argument` envelope, Human output names `--actor` or its accepted
+  grammar, and the journal remains byte-identical. Selected-project successes
+  use `--actor agent:developer` plus idempotency. Preserve unrelated assertions
+  byte-identically.
+- Historical task numbering in a path, Go test name, or prose label is not
+  current-phase ownership. Use introducing-commit provenance plus the current
+  task pack, convergence inventory, and accepted contract. See DEC-166.
+- `t.Skip`, build tags, `-run` narrowing, threshold changes, and silent
+  assertion loss are never convergence.
 
 ## Acceptance Criteria
 

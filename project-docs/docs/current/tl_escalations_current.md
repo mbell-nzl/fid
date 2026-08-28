@@ -7,6 +7,47 @@
 
 None.
 
+DEC-167 resolved ESC-21-009 on 2026-08-28. TRG-21-012 is not sustained. Both
+owner routings are wrong and the recovery-budget category does not hold. The
+`internal/dev` failure is task 12's own collateral from removing the V1 Claim
+precondition, not task-20 work; `v1-convergence-inventory.md:54` assigns task 20
+only the source-package removal. The `issue ac verify` failure is not a `--by`
+transport gap: VAL-030 makes the leaf unconditionally `capability-unavailable`,
+so no flag change makes the step succeed, and `concern raise`/`address` are the
+same fail-closed family and fail next. The budget was consumed by run-ledger
+:1904, which forbade task 12 from repairing the only failing rows. Root cause is
+gate coverage: `cmd/fid/integration/` is build-tagged and only tasks 12, 18, 21,
+and 22 run it, so DEC-165 gave task 9 ownership it could not execute. DEC-167
+amends task 12's scope to name `internal/dev/` and `cmd/fid/integration/`,
+assigns it the accumulated convergence with per-row provenance, and adds two
+standing rules to `08_QUALITY_PLAN.md` §3: required commands must exercise owned
+scope, and a no-progress budget counts only attempts whose directive permitted
+causal repair. Phase Runner appends RUN-RESUME then one same-task
+`TASK-RECOVERY task-12` at attempt 6.
+
+DEC-166 resolved ESC-21-008 on 2026-08-26. The accepted contracts do not
+conflict. `cmd/fid/task10_contract_test.go` and its actor-request assertions
+were introduced by Phase 20 task 10; current Phase 21 task 10 is generic Claims
+and owns none of those inventory leaves. The filename-based ownership inference
+was wrong, and repeating it did not create a protected category. Task 9 owns
+subject-preserving convergence to the accepted `--actor` plus idempotency and
+current request-validation contract. The Phase Runner resumes TRG-21-010 at
+attempt 12 under DEC-166; no `--by`, old envelope, production behavior, gate,
+VAL, or current task-10 semantics are restored or changed.
+
+DEC-165 resolved ESC-21-007 on 2026-08-25. The escalation's premise did not hold:
+the remaining red fixtures are not Task 10 Claim/Run authority fixtures. No
+generic Claim or Run fixture exists in the tree and task 10 has not been
+dispatched; every red assertion is an incidental read of a surface task 9 itself
+removed or renamed - public `fid policy show`, stats `--by role`, and fail-closed
+`maintenance vacuum`. DEC-165 states DEC-162's rule explicitly - convergence
+ownership follows the invalidating accepted change, not the fixture file's
+primary subject - amends task 9 to name `cmd/fid/integration/` and narrow Out Of
+Scope to generic Claim/Run implementation and semantics, and requires the V1
+claim/run/dev behavioural assertions to stay byte-identical. No re-slicing,
+sequencing change, gate change, or task-10 work. Phase Runner appends RUN-RESUME
+then one same-task `TASK-RECOVERY task-9` at attempt 9.
+
 DEC-164 resolved ESC-21-006 on 2026-08-24. Ordinary schema-v2 TRIAGE recovery
 names its governing TRG in `Source` and preserves the external `Repair
 authority` byte-for-byte; the protected verifier correction and regression

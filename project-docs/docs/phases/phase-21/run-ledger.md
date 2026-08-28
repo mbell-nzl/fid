@@ -828,3 +828,1197 @@ and need not be contiguous. Ordering is not authority.
 - Verdict: REPAIR
 - Resolution evidence: TRG-21-007 confirms DEC-162 and the Phase 21 inventory make retained Issue/Event/activity/Actor assertion convergence part of task 8; failed gates and malformed BLOCKED report are recoverable task-scope evidence; no protected contract or canonical control change is authorized
 - Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-007 entry confirmed; no escalation created
+
+### 2026-08-25 16:35 TASK-RECOVERY task-8
+
+- Source: TRG-21-007
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-8 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: no reintroduction of --by, V1 Event fields, snake-case accepted activity values, standalone role authority, public-interface changes, Event-schema or persistence changes, task/QA/spec/decision/run-ledger changes, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access.
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 0379d3370c7bbb7cc9b173e7802ba4505e832000 verified with subject fix(workflow): restore ordinary triage recovery; task-8 implementation/report checkpoint 44370af13c1c5c39e9e040065bc70e15e30b8deb; TRG-21-007 task boundary and retained-contract convergence remain open; run-ledger.md is the only runner-owned dirty path after this append
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence and retained assertion strength; repair the remaining in-scope report/lint/retained-contract defects; run all five exact task commands unchanged; write a truthful report; pass the two-argument report-lint control; and obtain Window 3 review evidence
+- Next action: dispatch only a same-task task-8 Developer continuation under TRG-21-007; preserve failed evidence and retained assertion strength, repair the remaining in-scope report/lint/retained-contract defects, run all five exact task commands unchanged, commit a truthful report, and return for the normal two-argument report-lint and Window 3 review flow
+- Human attention required: no
+
+### 2026-08-25 17:07 REPAIR task-8
+
+- Trigger signature: task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase HEAD 0379d3370c7bbb7cc9b173e7802ba4505e832000; task-8 retained-contract implementation and report repair were pending
+- Ending checkpoint: implementation commit 099906daf6795f79d9e669d562a88702dbc33068 and report commit 3fc145e9c1d5d381cd39370bbae6eb4123a08cd8; all five exact task commands PASS with observed termination; two-argument report-lint terminated exit_code: 15 with canonical report failures
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: retained Issue/Event/activity/Actor convergence and all five unchanged task gates now pass; report-lint preserved the report outcome but found 15 canonical report failures and terminated exit_code: 15, with final token FAIL report-lint found 15 failure(s); a report-only repair remains
+- Next checkpoint: another TASK-RECOVERY
+- Human attention required: no
+
+### 2026-08-25 17:09 TASK-RECOVERY task-8
+
+- Source: report-lint project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- Forbidden changes: implementation is complete; edit only the task-8 completion report to satisfy the canonical report-lint contract, preserve every prior failed and passing evidence row and deviation detail, and do not change product files, tests, task specifications, QA artifacts, decisions, public interface, workflow tools, required commands, assertion semantics, or the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 3fc145e9c1d5d381cd39370bbae6eb4123a08cd8 verified; task-8 implementation and report are committed; all five exact task commands PASS; two-argument report-lint terminated exit_code: 15 with 15 report failures; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all prior evidence and deviation detail, correct only the report's canonical workflow fields and command-evidence formatting, rerun the exact two-argument report-lint control, and obtain OUTCOME COMPLETE with observed exit_code: 0
+- Next action: dispatch only a same-task task-8 Developer report-repair continuation limited to task-8-done.md; preserve all prior evidence, correct the canonical report contract, commit the report repair, and return for the exact two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 17:12 REPAIR task-8
+
+- Trigger signature: task-8:specification-contradiction:task-8-done.md:retained-v1-rebuild-role-contract
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY attempt 2; phase HEAD 3fc145e9c1d5d381cd39370bbae6eb4123a08cd8; implementation and five exact task gates were complete; report-lint required canonical report repair
+- Ending checkpoint: report-only repair commit f6d6af09f1ccaca0311236ac0b5cc5cc6936b8a8; task-8-done.md is canonical, committed, and clean
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the exact two-argument report-lint command returned OUTCOME COMPLETE with observed exit_code: 0; all required headings, typed workflow fields, five command results, commit identity, and report cleanliness passed
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-08-25 17:13 TASK task-8 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: f6d6af09f1ccaca0311236ac0b5cc5cc6936b8a8 - verified, subject matched; implementation commit 099906daf6795f79d9e669d562a88702dbc33068 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-25 17:51 TASK-RECOVERY task-9
+
+- Source: project-docs/docs/phases/phase-21/tasks/task-9-done.md RECOVERY_REQUIRED
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 962913f706ba76971d8471658dcc7960ceae81c2 verified; implementation checkpoint e51afe3c3e0ea157ee960fb643996453250a37c6 and report history acc36e57dee1fd652a11e86e47d0c32e04d59ac3 / 962913f706ba76971d8471658dcc7960ceae81c2 verified; task-9 report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; focused and coverage gates remain BLOCKED; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, converge the remaining retained labels, links, requirements, activity, and related contracts in task-9 scope, rerun all five exact task commands unchanged, write a truthful complete report, pass the two-argument report-lint control, and then enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded task boundary; preserve failed evidence and assertion strength, finish the remaining retained inventory convergence, rerun all five exact commands unchanged, commit the implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 18:14 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase HEAD 962913f706ba76971d8471658dcc7960ceae81c2; task-9 had partial policy/workflow/AC/judgment/stats convergence with labels, links, requirements, and activity work remaining
+- Ending checkpoint: implementation commit ab09b4756c4e610c836222c99a9eed51b39a6559 and report commit 4f03df6f7159a9da82be73d82bfd0573f9f2f9bb; labels, links, and requirements conversion progressed; exact task gates remain blocked on retained tests and remaining activity/policy obligations
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-9 gained in-scope standalone Actor/Event-v2/idempotency conversion for labels, issue-label add/remove, links, and requirements plus activity work; the exact focused gate and coverage gate still returned FAIL with observed exit_code: 1, and the report-lint control returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 18:15 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED continuation
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 4f03df6f7159a9da82be73d82bfd0573f9f2f9bb verified; task-9 implementation checkpoint ab09b4756c4e610c836222c99a9eed51b39a6559 and report are committed; exact focused and coverage gates remain BLOCKED with exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, finish retained test migration, activity normalization/assertions, and remaining policy/judgment isolation in task-9 scope, rerun all five exact task commands unchanged, write a truthful complete report, pass the two-argument report-lint control, and enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded boundary; preserve failed evidence and assertion strength, complete remaining task-9 obligations, rerun all five exact commands unchanged, commit implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 18:35 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY attempt 2; phase HEAD 4f03df6f7159a9da82be73d82bfd0573f9f2f9bb; task-9 labels/links/requirements conversion and fail-closed AC/concern/vacuum work were committed, with retained V1 and activity failures remaining
+- Ending checkpoint: implementation commit b441601d012f816ed12833ab921a8c3d73e649a1 and report commit c73ad36c3e23bf9711d0b707e6d626bccb8acab5; AC/concern/vacuum fail-closed paths and contract adaptations are committed; exact focused and coverage gates remain blocked; report-lint found one canonical termination-format failure and terminated exit_code: 1
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-9 gained typed capability-unavailable no-writer behavior and migrated affected assertions without weakening accepted subjects; the exact focused and coverage gates remain FAIL with observed exit_code: 1; report-lint preserved the report but rejected the golangci-lint PASS line because explanatory text followed its observed termination, terminating exit_code: 1
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 18:36 TASK-RECOVERY task-9
+
+- Source: report-lint project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- Forbidden changes: edit only the task-9 completion report to correct the canonical observed-termination representation; preserve every prior failed and passing evidence row and deviation detail; do not change product files, tests, task specifications, QA artifacts, decisions, public interface, workflow tools, required commands, assertion semantics, or the run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD c73ad36c3e23bf9711d0b707e6d626bccb8acab5 verified; implementation commit b441601d012f816ed12833ab921a8c3d73e649a1 remains committed; report-lint terminated exit_code: 1 because the golangci-lint PASS line included text after its observed termination; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - edit only task-9-done.md, preserve all prior evidence, rerun the exact two-argument report-lint control, and obtain a clean report-lint result
+- Next action: dispatch a same-task task-9 report-repair continuation limited to task-9-done.md; preserve the implementation checkpoint and all failed evidence, correct the one report-lint termination-format defect, commit the report repair, and return for the exact two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 18:37 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 3
+- Starting checkpoint: TASK-RECOVERY attempt 3; phase HEAD c73ad36c3e23bf9711d0b707e6d626bccb8acab5; task-9 implementation checkpoint b441601d012f816ed12833ab921a8c3d73e649a1 was committed and report-lint had one termination-format defect
+- Ending checkpoint: report-only repair commit 87a0f693029c2bc77957ef5c6a984117cfcb3d69; task-9-done.md remains RECOVERY_REQUIRED, committed, and clean
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the report now preserves all prior evidence with canonical PASS termination formatting; the exact two-argument report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0 and no failures; task-9 implementation gates remain blocked on retained V1/activity/policy convergence
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 18:38 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED after report repair
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 87a0f693029c2bc77957ef5c6a984117cfcb3d69 verified; implementation checkpoint b441601d012f816ed12833ab921a8c3d73e649a1 remains committed; report-lint now passes with OUTCOME RECOVERY_REQUIRED exit_code: 0; focused and coverage gates remain BLOCKED with exit_code: 1; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, finish retained V1 test migration, activity normalization/assertions, and remaining policy/judgment isolation in task-9 scope, rerun all five exact task commands unchanged, write a truthful COMPLETE report, pass the two-argument report-lint control, and then enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded boundary; preserve all failed evidence and assertion strength, complete remaining task-9 obligations, rerun all five exact commands unchanged, commit implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 18:49 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY attempt 4; phase HEAD 87a0f693029c2bc77957ef5c6a984117cfcb3d69; task-9 had converged report grammar and retained label/link/requirement plus fail-closed and internal assertion work, with CLI V1 fixtures and replacement-bound dev expectations remaining
+- Ending checkpoint: implementation commit 5bf629b591f039f871251d0be64590790e8f08f8 and report commit ac53b637d20fbeb70972db22a01ed0ec94fd9d12; internal workflow/links/requirements/activity/stats/capability and CLI read assertions migrated; focused and coverage gates remain blocked on retained CLI V1 and replacement-bound dev tests
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-9 gained in-scope retained assertion convergence and the internal focused race gate now passes; the exact task package and coverage commands still returned FAIL with observed exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0 and no failures
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 18:50 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED continuation
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD ac53b637d20fbeb70972db22a01ed0ec94fd9d12 verified; implementation commit 5bf629b591f039f871251d0be64590790e8f08f8 and report are committed; focused package and coverage gates remain BLOCKED with exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, finish retained CLI V1 fixture migration and replacement-bound dev expectation convergence within task-9 scope, rerun all five exact task commands unchanged, write a truthful COMPLETE report, pass the two-argument report-lint control, and enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded boundary; preserve all failed evidence and assertion strength, complete remaining task-9 obligations, rerun all five exact commands unchanged, commit implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 19:04 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 5
+- Starting checkpoint: TASK-RECOVERY attempt 5; phase HEAD ac53b637d20fbeb70972db22a01ed0ec94fd9d12; task-9 internal convergence was committed and retained CLI V1/replacement-bound failures remained
+- Ending checkpoint: implementation commit e4f486bbadb4fa396e4859a0000dff70116bbf7d and report commit d2afe825542ef82fea5d7bff14d863fcab93354c; concern-list capability and stats public-contract migration are committed; focused and coverage gates remain blocked on retained CLI V1 and replacement-bound dev expectations
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-9 gained retained concern-list capability registration, stronger fail-closed assertions, and stats actor-attribution/grouping fixtures; exact focused and coverage commands still returned FAIL with observed exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0 and no failures
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 19:05 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED continuation
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 6
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD d2afe825542ef82fea5d7bff14d863fcab93354c verified; implementation commit e4f486bbadb4fa396e4859a0000dff70116bbf7d and report are committed; focused package and coverage gates remain BLOCKED with exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, finish remaining retained CLI V1 fixture and replacement-bound dev expectation migration in task-9 scope without restoring prohibited writers, rerun all five exact task commands unchanged, write a truthful COMPLETE report, pass the two-argument report-lint control, and enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded boundary; preserve all failed evidence and assertion strength, complete remaining task-9 obligations, rerun all five exact commands unchanged, commit implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 19:16 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 6
+- Starting checkpoint: TASK-RECOVERY attempt 6; phase HEAD d2afe825542ef82fea5d7bff14d863fcab93354c; task-9 retained CLI fixture and replacement-bound internal/dev migration was in progress
+- Ending checkpoint: implementation commit 5181c6779b65b24ef9cc09e2001d6f5ebf45c7b7 and report commit 17b6a322f1f9f924dc132ad8a1055bc564f4247a; retained fixture transport and internal/dev historical-state adaptation are committed; remaining cmd/fid result/activity/policy/root-flag and fail-closed expectation failures remain
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-9 gained retained fixture transport migration and replacement-bound internal/dev adaptation; exact focused and coverage commands still returned FAIL with observed exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0 and no failures
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-25 19:17 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED continuation
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:task-9-done.md:retained-inventory-attribution-convergence
+- Attempt count: 7
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve the accepted project-local Actor, Event-v2, idempotency, fail-closed judgment, and historical-attribution contracts; complete only retained inventory attribution/idempotency, policy removal and isolation, activity normalization, stats grouping, and task-9 retained-test convergence; do not implement generic Claims/Runs, final V1 removal, task 10 or later work, task specs, QA artifacts, decisions, public interface, workflow tools, required-command or assertion-semantics changes, test weakening, t.Skip, build tags, -run narrowing, threshold/budget/tolerance/policy changes, or held-out scenario access
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 17b6a322f1f9f924dc132ad8a1055bc564f4247a verified; implementation commit 5181c6779b65b24ef9cc09e2001d6f5ebf45c7b7 and report are committed; focused package and coverage gates remain BLOCKED with exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; run-ledger.md is the only runner-owned dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-21; run-ledger.md is the only runner-owned dirty path
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all failed evidence, finish remaining cmd/fid result/activity/policy/root-flag and fail-closed expectation migration in task-9 scope, rerun all five exact task commands unchanged, write a truthful COMPLETE report, pass the two-argument report-lint control, and enter Window 3 review
+- Next action: dispatch the same-task task-9 Developer continuation within the recorded boundary; preserve all failed evidence and assertion strength, complete remaining task-9 obligations, rerun all five exact commands unchanged, commit implementation and report, and return for the normal two-argument report-lint control
+- Human attention required: no
+
+### 2026-08-25 19:34 TRIAGE TRG-21-009
+
+- Trigger: Task 9 exact required gates remain red on retained cmd/fid Event-v2/result/activity and AC/concern no-writer fixtures plus explicit replacement-bound Task 10 Claim/Run authority fixtures outside task-9 scope.
+- Originating task: task-9
+- Trigger signature: task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- Attempt count: 8
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: report commit 8eabb7c4e3ec54352bed9cf04fb7224280b9415a verified with subject match; exact task package and coverage gates remain BLOCKED with observed exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0; TRG-21-009 and ESC-21-007 confirmed
+- Verdict: BLOCK (escalated as ESC-21-007)
+- Resolution evidence: protected task-boundary and cross-task authority condition; Task 9 excludes generic Claims/Runs and Task 10 owns the named Claim/Run fixtures; no canonical-control mismatch was reproduced
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-009 entry confirmed; ESC-21-007 open in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-08-25 19:35 STOP
+
+- Cause: task-9 / TRG-21-009 - the unchanged task-9 gates remain red on explicit Task 10 Claim/Run authority fixtures that task 9 is forbidden to modify
+- Triage: TRG-21-009 (BLOCK, escalated as ESC-21-007)
+- Protected category: protected task-boundary / cross-task authority
+- Next Human or external-authority action: Tech Lead must select an authorized task-boundary route that preserves Task 9 gates, Claim/Run public authority, and assertion strength, either by bounded fixture ownership amendment or approved sequencing/re-slicing; no Developer edits or phase advancement until resolved
+
+### 2026-08-26 16:54 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-08-25 19:35 STOP / TRG-21-009 / ESC-21-007
+- Governing TRG: TRG-21-009
+- Governing ESC: ESC-21-007
+- Trigger signature: task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- Attempt count: 9
+- Checkpoint: phase-21 HEAD 8eabb7c4e3ec54352bed9cf04fb7224280b9415a verified; task-9 report is committed at that HEAD; prior ledger entry is the TRG-21-009 STOP and the live ledger validated state=STOPPED; DEC-165 and its Resolution Note are present in the current phase documents
+- Resolution evidence: DEC-165 resolves ESC-21-007 and rejects TRG-21-009’s recorded task-boundary category; the named failures are incidental reads of task-9 surfaces removed or renamed, and the amended task-9 scope authorizes ordinary in-scope convergence without changing gates, contracts, or V1 behavioural assertion strength
+- Resolution authority: DEC-165
+- Continuing task: task-9
+- Next recovery: task-9 | in-scope-implementation | task-scope | task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures | 9
+
+### 2026-08-26 16:55 TASK-RECOVERY task-9
+
+- Source: TRG-21-009 / DEC-165
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-009 / DEC-165
+- Triage disposition: N/A
+- Trigger signature: task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- Attempt count: 9
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope, which now includes cmd/fid/integration/
+- Forbidden changes: no task-10 or task-11 implementation; no final V1 removal; no re-registration of fid policy; no restored AC-verification, concern, or vacuum writer; no --by restoration on a task-9 family; every V1 claim/run/dev/closure behavioural assertion stays byte-identical; no t.Skip, build tags, -run narrowing, or threshold change; no task-spec, QA-artifact, validation-contract, public-interface, Event-schema, or required-command change.
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 8eabb7c4e3ec54352bed9cf04fb7224280b9415a verified; task-9 report task-9-done.md is committed at that HEAD with prior required package and coverage failures preserved; the live ledger is STOPPED after TRG-21-009 and the DEC-165 resolution artifacts are present in the phase documents
+- Phase worktree: /home/mark/projects/fid on branch phase-21; DEC-165 resolution documents and run-ledger are the current dirty paths; product implementation paths are clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - repoint every incidental policy show read to commandPolicyCellAllowed without changing role/action assertions, converge stats --by role and fail-closed maintenance vacuum reads, preserve all failed evidence and untouchable V1 behavioural assertions, rerun all five exact task-9 commands byte-identically, commit a truthful COMPLETE report, pass two-argument report-lint, and enter Window 3 review
+- Next action: dispatch only the same-task task-9 Developer continuation under DEC-165 and the amended Convergence Ownership section; do not touch Task 10 or Task 11 implementation, protected V1 behavioural assertions, task specs, QA artifacts, validation contract, public interface, Event schema, workflow verifier, or required commands
+- Human attention required: no
+
+### 2026-08-26 17:46 REPAIR task-9
+
+- Trigger signature: task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- Attempt count: 9
+- Starting checkpoint: TASK-RECOVERY attempt 9; phase-21 HEAD 8eabb7c4e3ec54352bed9cf04fb7224280b9415a; task-9 report remained RECOVERY_REQUIRED on the exact focused and coverage gates
+- Ending checkpoint: phase-21 HEAD 9463b49861a207c1deba742b58bbe037786edc52 verified with subject docs(task): record phase-21 task-9 recovery; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; task-9 implementation edits remain unstaged; the final focused gate was interrupted with observed exit_code: 1 after Ctrl-C and no natural terminal token
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the continuation repaired the DEC-165 incidental policy-row, stats grouping, and fail-closed vacuum reads while retaining their role/action and no-side-effect assertions; the exact focused gate narrowed but remained failed, the repository coverage gate remained failed, and the final focused rerun lacked natural termination evidence; protected claim force-acquire, run-record, dev denial/journal, closure journal-byte, and Task-10 contract assertions were preserved
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-26 17:48 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED / TRG-21-009 / DEC-165
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-009 / DEC-165
+- Triage disposition: N/A
+- Trigger signature: task-9:scope-boundary:task-9-done.md:replacement-bound-task10-claim-run-fixtures
+- Attempt count: 10
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope, which now includes cmd/fid/integration/
+- Forbidden changes: no task-10 or task-11 implementation; no final V1 removal; no re-registration of fid policy; no restored AC-verification, concern, or vacuum writer; no --by restoration on a task-9 family; every V1 claim/run/dev/closure behavioural assertion stays byte-identical; no t.Skip, build tags, -run narrowing, or threshold change; no task-spec, QA-artifact, validation-contract, public-interface, Event-schema, or required-command change.
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 9463b49861a207c1deba742b58bbe037786edc52 verified; the committed report task-9-done.md remains OUTCOME RECOVERY_REQUIRED and passes two-argument report-lint; the prior continuation made material policy/stats/vacuum convergence progress, but its final exact focused rerun was interrupted with observed exit_code: 1 and the remaining implementation edits are unstaged
+- Phase worktree: /home/mark/projects/fid on branch phase-21; task-9 continuation edits, DEC-165 resolution documents, and run-ledger are the current dirty paths; no hidden index flags
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - finish only task-9-invalidated incidental reads and fail-closed retained fixtures, preserve protected V1 claim/run/dev/closure assertions and the byte-identical Task-10 contract fixture, complete and naturally terminate all five exact task commands, commit the implementation and truthful report, and return for two-argument report-lint
+- Next action: dispatch only the same-task task-9 Developer continuation; first audit and preserve the forbidden behavioural assertion set, then complete remaining in-scope convergence and rerun all five exact commands byte-for-byte
+- Human attention required: no
+
+### 2026-08-26 18:02 TRIAGE TRG-21-010
+
+- Trigger: Task 9 exact required gates remain red on two unchanged Task-10-named assertions that exercise Task-9-converted inventory leaves and still require legacy --by behavior and old authority-missing envelopes.
+- Originating task: task-9
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 11
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: report commit 77575e419dd20e341fa04a22344063187281db41 verified with subject match; two-argument report-lint returned OUTCOME BLOCKED with PASS report-lint completed with no failures (terminated exit_code: 0); exact required package and repository coverage gates remain FAIL (terminated exit_code: 1); TRG-21-010 and ESC-21-008 confirmed
+- Verdict: BLOCK (escalated as ESC-21-008)
+- Resolution evidence: DEC-165 requires convergence ownership to follow the invalidating Task-9 change, but the unchanged retained assertions require prohibited legacy --by behavior on Task-9-converted leaves; resolving this requires a protected public-interface/retained-assertion decision, and TL-Lite identified this as the third recurrence of the filename-based task-boundary misclassification pattern
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-010 entry confirmed; ESC-21-008 open in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-08-26 18:03 STOP
+
+- Cause: task-9 / TRG-21-010 - unchanged required gates remain red on retained Task-10-named assertions that require legacy --by behavior on Task-9-converted inventory leaves, conflicting with DEC-165 and the accepted Task-9 actor/idempotency interface
+- Triage: TRG-21-010 (BLOCK, escalated as ESC-21-008)
+- Protected category: public-interface / specification contradiction and repeated post-DEC-165 task-boundary classification
+- Next Human or external-authority action: Full Tech Lead must select and record the compatible accepted public contract and ownership route for the retained assertions without restoring prohibited --by behavior, weakening or narrowing the exact gates/assertions, or changing Task-10 implementation/semantics; no Developer edits, task completion, QA Window 3 review, or phase advancement until ESC-21-008 is resolved
+
+### 2026-08-26 20:33 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-08-26 18:03 STOP / TRG-21-010 / ESC-21-008
+- Governing TRG: TRG-21-010
+- Governing ESC: ESC-21-008
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 12
+- Checkpoint: phase-21 HEAD 77575e419dd20e341fa04a22344063187281db41 verified with subject docs(task): finalize completion report for phase-21 task-9; committed task-9 report remains report-lint valid with OUTCOME BLOCKED; prior ledger entry is the 2026-08-26 18:03 STOP after TRIAGE TRG-21-010; DEC-166 and the Resolution Note are present; current escalations report no open escalations
+- Resolution evidence: DEC-166 resolves ESC-21-008 and rejects the recorded public-interface/specification category; provenance binds the stale fixture to Phase 20 task 10, while Phase 21 task 10 owns generic Claims and none of these inventory leaves; task 9 is authorized to converge the stale request rows to the accepted actor/idempotency and current request-validation contracts without restoring --by, changing production behavior, gates, or unrelated assertion strength
+- Resolution authority: DEC-166
+- Continuing task: task-9
+- Next recovery: task-9 | in-scope-implementation | task-scope | task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions | 12
+
+### 2026-08-26 20:34 TASK-RECOVERY task-9
+
+- Source: TRG-21-010 / DEC-166
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-010 / DEC-166
+- Triage disposition: N/A
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 12
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary Task 9 scope, including renaming cmd/fid/task10_contract_test.go to a subject-based fixture path.
+- Forbidden changes: no --by restoration; no old missing-role envelopes; no production behavior change; no generic Claim/Run implementation; no final V1 removal; no gate/VAL/command/public-interface/Event-schema change; no t.Skip, build tags, -run narrowing, threshold/budget/tolerance change, or assertion loss; unrelated request, Claim, Run, dev, closure, and journal assertions remain byte-identical; no task-spec, QA-artifact, validation-contract, or workflow-verifier change.
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 77575e419dd20e341fa04a22344063187281db41 verified; task-9 report task-9-done.md is committed with OUTCOME BLOCKED and two-argument report-lint valid; DEC-166 resolves the prior STOP and authorizes subject-based retained-fixture convergence; current phase documents and generated workflow artifacts are intentional dirty maintenance paths
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional current-authority, specification, generated-agent, and run-ledger paths are dirty; product implementation paths are clean; no hidden index flags
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - use red/green TDD to rename historical Phase 20 task-labelled fixture/functions, convert only Task-9-owned rows to --actor plus idempotency, preserve missing/malformed attribution rejection before mutation, match the current invalid-argument JSON and concise Human contracts, keep journal/no-mutation assertions and unrelated request, Claim, Run, dev, closure, and journal assertions byte-identical, run all five exact commands, commit implementation and truthful finalized report, and return for two-argument report-lint
+- Next action: dispatch only the same-task task-9 Developer continuation under DEC-166; preserve every failed attempt and do not modify production behavior or restore legacy --by semantics
+- Human attention required: no
+
+### 2026-08-26 20:53 REPAIR task-9
+
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 12
+- Starting checkpoint: TASK-RECOVERY attempt 12; phase-21 HEAD 77575e419dd20e341fa04a22344063187281db41; task-9 report outcome was BLOCKED and the historical request fixture remained stale
+- Ending checkpoint: phase-21 HEAD 033a5869bf14d395237977b4b4e68186100f06c9 verified with subject docs(task): correct task-9 gate evidence; implementation commit bc328f9136ec44d31824d1fe2b1c63d1c8b7c921 verified; all five exact task commands passed with observed exit_code: 0; report-lint returned OUTCOME COMPLETE but failed with exit_code: 2 because two historical required-command entries remain BLOCKED outside a blocker report
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: DEC-166 fixture convergence is complete and the exact implementation/gate obligations now pass; the committed completion report still needs report-only canonical status repair while preserving every earlier failed token and termination
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-26 20:54 TASK-RECOVERY task-9
+
+- Source: report-lint task-9-done.md / TRG-21-010 / DEC-166
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: TRG-21-010 / DEC-166
+- Triage disposition: N/A
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 13
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-9-done.md only
+- Forbidden changes: no product, implementation, test, task-spec, QA-artifact, validation-contract, public-interface, Event-schema, gate, VAL, required-command, or workflow-verifier change; preserve every historical failed command token and observed termination; change only report status/wording required by canonical report-lint; do not convert failed evidence to PASS or omit it
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 033a5869bf14d395237977b4b4e68186100f06c9 verified; implementation commit bc328f9136ec44d31824d1fe2b1c63d1c8b7c921 and completion report are committed; all five exact task commands passed with exit_code: 0; two-argument report-lint returned OUTCOME COMPLETE but exit_code: 2 on two historical BLOCKED command records
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and the committed report are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all prior failed evidence while changing the two historical non-current BLOCKED required-command records to canonical failed-attempt status, commit only the report repair, and pass the exact two-argument report-lint control
+- Next action: dispatch only a same-task task-9 report-repair continuation limited to project-docs/docs/phases/phase-21/tasks/task-9-done.md; do not rerun or alter implementation gates unless the report repair exposes a factual inconsistency
+- Human attention required: no
+
+### 2026-08-26 20:56 REPAIR task-9
+
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 13
+- Starting checkpoint: TASK-RECOVERY attempt 13; phase-21 HEAD 033a5869bf14d395237977b4b4e68186100f06c9; report-lint rejected the COMPLETE report because two historical required-command entries were BLOCKED outside a blocker report
+- Ending checkpoint: phase-21 HEAD f50673ed4d8eeb505620804caa11a5f6b832df2e verified with subject docs(task): repair task-9 historical gate statuses; the two historical BLOCKED labels were changed to FAIL while preserving tokens and exit_code: 1; report-lint still returned OUTCOME COMPLETE but failed with exit_code: 2 because those historical FAIL entries are parsed as the final required-command results
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the report now passes the blocker-status check but the final-result ordering check remains; all implementation and five-command evidence is unchanged and the remaining defect is report-only
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-26 20:57 TASK-RECOVERY task-9
+
+- Source: report-lint task-9-done.md / TRG-21-010 / DEC-166
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: TRG-21-010 / DEC-166
+- Triage disposition: N/A
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 14
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-9-done.md only
+- Forbidden changes: no product, implementation, test, task-spec, QA-artifact, validation-contract, public-interface, Event-schema, gate, VAL, required-command, or workflow-verifier change; preserve every historical failed command token, exit_code, cause, and later passing rerun; do not omit failed evidence or convert it to PASS; only reorder or restate report sections as required by canonical report-lint
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD f50673ed4d8eeb505620804caa11a5f6b832df2e verified; implementation commit bc328f9136ec44d31824d1fe2b1c63d1c8b7c921 and report are committed; all five final task commands passed with exit_code: 0; two-argument report-lint returned OUTCOME COMPLETE but exit_code: 2 because historical FAIL entries occur after the Attempt 12 PASS block and are parsed as final results
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and the committed report are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all historical failed evidence while making the Attempt 12 PASS results the final occurrence for each required command in the report, commit only the report repair, and pass the exact two-argument report-lint control
+- Next action: dispatch only a same-task task-9 report-repair continuation limited to project-docs/docs/phases/phase-21/tasks/task-9-done.md; do not change implementation or rerun product gates
+- Human attention required: no
+
+### 2026-08-27 20:06 REPAIR task-9
+
+- Trigger signature: task-9:scope-boundary:task-9-done.md:task9-converted-leaf-actor-contract-retained-legacy-by-assertions
+- Attempt count: 14
+- Starting checkpoint: TASK-RECOVERY attempt 14; phase-21 HEAD f50673ed4d8eeb505620804caa11a5f6b832df2e; implementation commit bc328f9136ec44d31824d1fe2b1c63d1c8b7c921 verified; report-lint returned OUTCOME COMPLETE but exit_code: 2 because historical FAIL entries occurred after the Attempt 12 PASS block
+- Ending checkpoint: phase-21 HEAD 48e25340420966c1581f8d52a592c2772fbee0c3 verified with subject docs(task): finalize task-9 report ordering; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: report-only ordering repair preserves every historical failed command token, observed termination, cause, and deviation while making the Attempt 12 PASS results the final occurrence for every required command; canonical two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-08-27 20:07 TASK task-9 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 48e25340420966c1581f8d52a592c2772fbee0c3 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 20:12 REVIEW review-3
+
+- Path: project-docs/docs/phases/phase-21/qa/review-3.md
+- Tasks covered: task-7, task-8, task-9
+- Outcome: REPAIR
+- Owning task: task-9
+- Re-review of: none
+- Must-fix: 1 / Improvement: 0 / blocker candidates: 0
+
+### 2026-08-27 20:13 TASK-RECOVERY task-9
+
+- Source: review-3.md MF-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: task-9:qa-rework:review-3
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: bounded to internal/stats/stats.go, the CLI stats tests, and project-docs/docs/phases/phase-21/tasks/task-9-done.md; remove only the retired public --group-by role alias while preserving actor, epic, and model behavior; add observable actor/epic/model success and role/invalid/--by rejection with no-side-effect evidence; no task-10 or task-11 implementation; no production behavior outside the named stats contract; no task-spec, QA-artifact, validation-contract, public-interface, Event-schema, gate, required-command, or workflow-verifier change; no t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 303c75e8de363b5f30b614b7eea878a137fb7cac verified with subject docs(qa): review phase 21 window 3; task-9 implementation/report are complete and report-lint valid; review-3 is committed with one bounded task-9 MF-1 affecting VAL-031; intentional workflow-maintenance paths remain dirty
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and committed task reports/QA review are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - remove the retired role alias without changing accepted actor/epic/model behavior; add focused closed-value and rejection coverage with no-side-effect assertions; run the exact five task-9 commands unchanged; commit implementation and truthful report; pass the two-argument report-lint; obtain a fresh independent Window 3 re-review
+- Next action: dispatch only the task-9 Developer continuation for review-3 MF-1 within the named stats implementation/test/report boundary; preserve all prior task-9 red/green evidence and return for fresh independent review-3 re-review
+- Human attention required: no
+
+### 2026-08-27 20:29 REPAIR task-9
+
+- Trigger signature: task-9:qa-rework:review-3
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD 303c75e8de363b5f30b614b7eea878a137fb7cac; Window 3 review-3 MF-1 remained open for VAL-031 because stats accepted retired --group-by role
+- Ending checkpoint: phase-21 HEAD 62679ff91ea45e65d6e46aeede057a2af5cdf53b verified with subject docs(task): correct task-9 report evidence; implementation commit 98217f4f3d1b20f6f2baa9201c8b16f84d6afeb3 verified with subject fix(stats): reject retired role grouping; report commit 62679ff91ea45e65d6e46aeede057a2af5cdf53b verified
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: retired --group-by role now rejects while actor, epic, and model succeed; role, team, invalid, and retired --by rejection cases assert unchanged journal bytes; all five exact task-9 commands passed with observed exit_code: 0; canonical two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-08-27 20:30 TASK task-9 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 62679ff91ea45e65d6e46aeede057a2af5cdf53b - verified, subject matched; MF-1 implementation commit 98217f4f3d1b20f6f2baa9201c8b16f84d6afeb3 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 20:35 REVIEW review-3b
+
+- Path: project-docs/docs/phases/phase-21/qa/review-3b.md
+- Tasks covered: task-7, task-8, task-9
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-3
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+
+### 2026-08-27 21:17 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: a8722b81062002b976927b438c8514c5b7a46e64 - verified, subject matched; implementation commit 0b67c8304a84e4e5bcb8df44d79f899e40a16acb - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 21:47 TASK-RECOVERY task-11
+
+- Source: report-lint task-11-done.md
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task specification
+- Triage disposition: N/A
+- Trigger signature: task-11:report-repair:task-11-done.md:workflow-outcome-fields-and-termination-format
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-11-done.md
+- Forbidden changes: edit only task-11-done.md; preserve every historical failed and passing gate token, observed termination, cause, and deviation; add the canonical workflow outcome fields and correct only report-lint-parsable termination formatting; do not alter implementation, task spec, QA artifacts, validation contract, public interface, Event schema, gate definitions, or run ledger; do not convert failed evidence to PASS or omit it
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 245e5c6c8ab35116237da078244c15c97d9816a4 verified with subject docs(task): finalize completion report for phase-21 task-11; implementation commit 5ca732ff163ee1d31fc155d3d9ebb3dac1501838 verified; all five exact task commands passed with observed exit_code: 0; two-argument report-lint emitted OUTCOME COMPLETE but exited 13 for missing workflow outcome fields and noncanonical termination formatting
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and the committed task-11 report are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve all historical evidence, repair only the canonical workflow outcome fields and report-lint termination formatting, run the exact two-argument report-lint, commit only the report repair, and return a lint-valid COMPLETE report
+- Next action: dispatch only a same-task task-11 report-repair continuation limited to task-11-done.md; preserve implementation commit and all failed evidence, then rerun report-lint
+- Human attention required: no
+
+### 2026-08-27 21:50 REPAIR task-11
+
+- Trigger signature: task-11:report-repair:task-11-done.md:workflow-outcome-fields-and-termination-format
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD 245e5c6c8ab35116237da078244c15c97d9816a4; implementation commit 5ca732ff163ee1d31fc155d3d9ebb3dac1501838 verified; report-lint exited 13 for missing workflow outcome fields and noncanonical termination formatting
+- Ending checkpoint: phase-21 HEAD f463e14337867db3deacbd0a3b516fca012e657a verified with subject docs(task): repair completion report for phase-21 task-11; implementation commit 5ca732ff163ee1d31fc155d3d9ebb3dac1501838 remains verified; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: report-only repair added the required canonical workflow outcome fields and corrected termination formatting while preserving the implementation, all historical failed evidence, all five required PASS commands, and their observed exit_code: 0; canonical two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-08-27 21:50 TASK task-11 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-11-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: f463e14337867db3deacbd0a3b516fca012e657a - verified, subject matched; implementation commit 5ca732ff163ee1d31fc155d3d9ebb3dac1501838 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 22:10 TASK-RECOVERY task-9
+
+- Source: task-12-done.md / tagged integration gate
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9 specification and DEC-162 / DEC-165 / DEC-166
+- Triage disposition: N/A
+- Trigger signature: task-9:integration-fixture:task-12-done.md:retained-by-transport-collateral
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: converge only retained integration reads invalidated by task-9 accepted changes, including removed policy inspection, --by to --actor/idempotency retained-family calls, renamed stats grouping, and fail-closed vacuum/AC/concern surfaces; preserve all V1 Claim, Run, dev, and closure behavioral assertions byte-identically; no task-10 or task-11 implementation or semantics, no final V1 removal, no policy re-registration, no restored writer, no --by restoration, no t.Skip, build tags, -run narrowing, threshold/budget/tolerance change, assertion weakening, task-spec, QA-artifact, validation-contract, public-interface, Event-schema, gate, required-command, or run-ledger change
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 4e4ab1e43a21498dacfd07d956df1782481b2ee2 verified with subject docs(task): finalize completion report for phase-21 task-12; task-12 implementation commit 93da8a150d76b10d63bb8330517c508728bbe45f verified; exact task-12 unit, format, lint, coverage, and cover commands passed with observed exit_code: 0; tagged integration gate failed with exit_code: 1 on retained historical --by fixture calls; DEC-162/165/166 assign those task-9-invalidated reads to task 9
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and committed task-12 report are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - identify the failing retained integration reads from the byte-identical tagged gate, converge only task-9-owned surfaces under DEC-162/165/166 while preserving Claim/Run/dev/closure behavior, run task-9 exact commands unchanged plus the affected tagged integration gate, update the truthful task-9 report, pass task-9 report-lint, and obtain any required fresh independent review before task-12 continuation
+- Next action: dispatch only a same-task task-9 continuation for retained integration-fixture convergence; preserve task-12 implementation/report and all failed evidence, then return to the task-12 recovery checkpoint
+- Human attention required: no
+
+### 2026-08-27 22:26 REPAIR task-9
+
+- Trigger signature: task-9:integration-fixture:task-12-done.md:retained-by-transport-collateral
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD 4e4ab1e43a21498dacfd07d956df1782481b2ee2; task-12 tagged integration gate failed with exit_code: 1 on retained task-9-owned --by transports
+- Ending checkpoint: phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396 verified with subject docs(task): note remaining task-9 integration follow-up; task-9 implementation commit 942abad7e9b6a0b0fb9fd009d074aeab79042457 verified with subject test(integration): converge retained task-9 actor transport; task-9 report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-9-owned retained integration workflow, AC, label, issue-label, link, and requirement-sync transports now use accepted actor/idempotency forms; the byte-identical tagged integration rerun reaches only preserved task-8 Event/Issue assertions; all five exact task-9 commands passed with observed exit_code: 0; canonical task-9 report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-08-27 22:27 TASK task-9 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-9-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396 - verified, subject matched; implementation commit 942abad7e9b6a0b0fb9fd009d074aeab79042457 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 22:27 TASK-RECOVERY task-8
+
+- Source: task-12-done.md / tagged integration gate
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-8 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: converge only task-8-owned retained Issue create/Event-v2 integration calls and expectations exposed by the tagged gate; use --actor plus idempotency and current Event-v2 attribution; preserve task-9-owned actor/idempotency conversions, task-9 policy/stats/vacuum/AC/concern behavior, Claim/Run/dev/closure behavioral assertions and journal-byte equality; no task-9 or task-10/11 implementation, no final V1 removal, no --by restoration, no public-interface/Event-schema/gate/spec/QA-artifact/validation-contract change, no t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396 verified with subject docs(task): note remaining task-9 integration follow-up; task-12 implementation/report remain committed with OUTCOME RECOVERY_REQUIRED; tagged integration rerun after task-9 convergence still failed with exit_code: 1 only on preserved task-8 Event actor and Issue create --by assertions; task-8 scope covers cmd/fid including the integration package
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; product paths and committed reports are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve the initial tagged-gate failure, convert only task-8-owned Issue create/Event-v2 integration expectations, rerun the exact tagged integration gate and all five exact task-8 commands unchanged, update a truthful task-8 report, pass task-8 report-lint, and return to task-12 recovery
+- Next action: dispatch only a same-task task-8 continuation for retained Issue/Event-v2 integration convergence; preserve task-9 and task-12 evidence and do not alter later-owner behavior
+- Human attention required: no
+
+### 2026-08-27 23:30 REPAIR task-8
+
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396; tagged integration gate failed with exit_code: 1 on preserved task-8 Event actor and Issue create --by assertions
+- Ending checkpoint: phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396 with durable dirty changes in cmd/fid/integration/e2e_p20_issue_journey_test.go and cmd/fid/integration/e2e_v01_closure_helpers_test.go; child session was shut down after wait timeout with no observed command termination; empty untracked scratch path done remains for the continuation to inspect and clean
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: relevant task-8-owned partial changes convert the P20 Event actor inspection to the Event-v2 attribution contract and convert Issue create transport in the closure helper to actor attribution; command-liveness routed MISSING_TERMINATION and no final gate result was observed
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-27 23:30 TASK-RECOVERY task-8
+
+- Source: command-liveness MISSING_TERMINATION / task-8 continuation
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-8 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: converge only task-8-owned retained Issue create/Event-v2 integration calls and expectations exposed by the tagged gate; use --actor plus idempotency and current Event-v2 attribution; preserve task-9-owned actor/idempotency conversions, task-9 policy/stats/vacuum/AC/concern behavior, Claim/Run/dev/closure behavioral assertions and journal-byte equality; no task-9 or task-10/11 implementation, no final V1 removal, no --by restoration, no public-interface/Event-schema/gate/spec/QA-artifact/validation-contract change, no t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396; prior attempt 1 left durable task-8-owned edits in cmd/fid/integration/e2e_p20_issue_journey_test.go and cmd/fid/integration/e2e_v01_closure_helpers_test.go; child session was shut down after missing termination; empty untracked scratch path done remains to inspect
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths are dirty; durable task-8 integration edits and empty scratch path done are from the interrupted continuation
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - resume the durable partial task-8 fixture convergence, remove only the child-owned empty scratch artifact if confirmed, run the exact tagged integration gate and all five exact task-8 commands with observed termination, update a truthful report, and pass task-8 report-lint
+- Next action: dispatch only a same-task task-8 continuation attempt 2; preserve the prior missing-termination evidence and partial edits, complete the bounded Issue/Event-v2 convergence, and return its durable outcome
+- Human attention required: no
+
+### 2026-08-27 23:46 REPAIR task-8
+
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY attempt 2; phase-21 HEAD fa2a5ada97181b1c3c04e09441e0ce4dd6b4c396; durable task-8 integration edits remained after attempt 1 missing termination and session shutdown
+- Ending checkpoint: phase-21 HEAD 449c87930b85dabb2f471b14280f224c74554a4c verified with subject docs(task): finalize completion report for phase-21 task-8; implementation commit 9f1c6d03aef12723aad6387b3096c7485655a2ed verified with subject test(integration): converge task-8 issue fixtures; report-lint returned OUTCOME RECOVERY_REQUIRED with observed exit_code: 0; tagged integration gate still failed on preserved task-10 Claim behavior
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: task-8-owned Issue create transport and Event-v2 attribution are now converged and the task-8 five-command gate passes; the tagged integration gate narrowed to the preserved generic Claim fixture, while all command terminations in this attempt were observed with exit_code: 0 for the task gate and exit_code: 1 for the failing tagged gate
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-27 23:47 TASK-RECOVERY task-8
+
+- Source: task-8-done.md report boundary after task-8 integration repair
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task-8 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- Forbidden changes: edit only task-8-done.md; preserve the initial tagged integration failure, the missing-termination evidence, all task-8 historical failures and passes, and the post-convergence tagged failure on task-10 Claim behavior; record that task-8 exact five-command gate and task-8-owned Issue/Event-v2 repair are complete without claiming the separate task-12 tagged gate passed; do not change implementation, tests, task spec, QA artifacts, validation contract, public interface, Event schema, gate definitions, or run ledger
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 449c87930b85dabb2f471b14280f224c74554a4c verified with subject docs(task): finalize completion report for phase-21 task-8; task-8 implementation/test commit 9f1c6d03aef12723aad6387b3096c7485655a2ed is verified; all five exact task-8 commands pass with observed exit_code: 0; report-lint returns OUTCOME RECOVERY_REQUIRED with exit_code: 0 only because the supplementary tagged integration gate still reaches task-10 Claim behavior
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; committed task-8 report and implementation paths are otherwise clean
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - update only the report workflow outcome and boundary so task-8 closes truthfully on its unchanged exact five-command contract, while preserving the separate task-12 integration failure for task-10 owner routing; run two-argument task-8 report-lint
+- Next action: dispatch only a same-task task-8 report-repair continuation limited to task-8-done.md; preserve all evidence and do not claim the supplementary tagged integration gate passed
+- Human attention required: no
+
+### 2026-08-27 23:51 REPAIR task-8
+
+- Trigger signature: task-8:integration-fixture:task-12-done.md:retained-issue-event-v2-collateral
+- Attempt count: 3
+- Starting checkpoint: TASK-RECOVERY attempt 3; phase-21 HEAD 449c87930b85dabb2f471b14280f224c74554a4c; task-8-owned integration changes and five-command gate were complete, but the report remained RECOVERY_REQUIRED because the supplementary tagged gate reached task-10 Claim behavior
+- Ending checkpoint: phase-21 HEAD 9b6dccf4ac291e20a50f7f406b285c7ee803aa60 verified with subject docs(task): close task-8 report boundary; task-8 implementation commit 9f1c6d03aef12723aad6387b3096c7485655a2ed verified; report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-8 report now truthfully closes on its unchanged five-command task gate and preserves the prior missing-termination and supplementary tagged integration failures, explicitly routing the remaining Claim-path failure to task 10; canonical two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-08-27 23:52 TASK task-8 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-8-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 9b6dccf4ac291e20a50f7f406b285c7ee803aa60 - verified, subject matched; implementation commit 9f1c6d03aef12723aad6387b3096c7485655a2ed - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-08-27 23:54 TASK-RECOVERY task-10
+
+- Source: task-12-done.md / tagged integration gate; task-8-done.md preserves the remaining task-10 Claim failure
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-10 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: converge only task-10-owned retained generic Claim integration collateral; preserve task-8 and task-9 repairs, Run/dev/closure behavior except the exact invalidated Claim fixture use, and every failed attempt; no task-11 implementation, no final V1 removal, no --by restoration, no task-spec, QA-artifact, validation-contract, public-interface, Event-schema, or required-command change; no t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 9b6dccf4ac291e20a50f7f406b285c7ee803aa60 verified with subject docs(task): close task-8 report boundary; task-8 implementation commit 9f1c6d03aef12723aad6387b3096c7485655a2ed and report commit 9b6dccf4ac291e20a50f7f406b285c7ee803aa60 are verified; task-8 exact five-command gate passes; supplementary go test -tags integration -race ./cmd/fid/integration/... remains failed with exit_code: 1 on the retained task-10 Claim assertion that expects role "qa_reviewer" not permitted while the current actor path reports no live claim held by "qa_reviewer"
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; no product-path changes are pending from task-8
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - first run the exact tagged integration gate to preserve the red evidence, repair only the task-10-owned retained Claim fixture against the accepted generic Claim contract, run all five exact task-10 commands byte-identically with observed termination, update the truthful report, and pass two-argument report-lint
+- Next action: dispatch only a same-task task-10 Developer continuation; use generic claim acquire/release with --actor agent:developer, accepted closed input, and idempotency keys where the retained fixture requires Claim lifecycle behavior; preserve unrelated request, Claim, Run, dev, closure, and journal assertions
+- Human attention required: no
+### 2026-08-28 00:05 TRIAGE TRG-21-011
+
+- Trigger: Task 10 supplementary closure failure is Task 12 transition integration
+- Originating task: task-10
+- Trigger signature: task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- Attempt count: 2
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: report commit 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8 verified with subject docs(task): record phase-21 task-10 blocker; two-argument report-lint returned OUTCOME BLOCKED and PASS report-lint completed with no failures (terminated exit_code: 0); Task 10 exact five-command gate passed; tagged integration gate failed with exit_code: 1 at the retained Claim-dependent transition
+- Verdict: RESUME
+- Resolution evidence: Task 10's exact five-command gate passes and its accepted generic Claim transport correctly writes work_claims while legacy issue claim/unclaim aliases remain absent; the retained supplementary journey fails before the removed command because internal/issues/transition.go:221 still reads the V1 claims store, which is Task 12 execution-bound transition integration; preserve the failed tagged evidence and route the existing Task 12 RECOVERY_REQUIRED continuation
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-011 entry confirmed
+### 2026-08-28 00:06 REPAIR task-10
+
+- Trigger signature: task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD 9b6dccf4ac291e20a50f7f406b285c7ee803aa60; the supplementary tagged integration gate failed with exit_code: 1 at the retained Claim-dependent transition before the removed legacy Claim command
+- Ending checkpoint: phase-21 HEAD 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8 verified with subject docs(task): record phase-21 task-10 blocker; no product or test implementation change was made; task-10-done.md is committed with OUTCOME BLOCKED
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: NO-PROGRESS
+- Resolution evidence: the child preserved the tagged integration failure and all five exact Task 10 command passes with observed exit_code: 0, but made no in-scope product progress; TRG-21-011 independently returned RESUME and classified the failure as the existing Task 12 transition-integration repair, so Task 10 requires a report-only boundary repair before completion
+- Next checkpoint: another TASK-RECOVERY
+- Human attention required: no
+### 2026-08-28 00:07 TASK-RECOVERY task-10
+
+- Source: TRG-21-011 RESUME / task-10-done.md report boundary
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task-10 specification
+- Triage disposition: N/A
+- Trigger signature: task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-10-done.md
+- Forbidden changes: edit only task-10-done.md; preserve the tagged integration FAIL and all prior failed and passing command evidence with observed termination; change only the workflow outcome and boundary so Task 10 closes truthfully on its unchanged five-command gate while routing the separate Task 12-owned transition failure; do not alter implementation, tests, task spec, QA artifacts, validation contract, public interface, Event schema, gate definitions, or run ledger; do not convert failed evidence to PASS, weaken assertions, restore issue claim/unclaim aliases, or restore --by
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: phase-21 HEAD 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8 verified with subject docs(task): record phase-21 task-10 blocker; task-10 exact five-command gate passes with observed exit_code: 0; task-10-done.md is committed with OUTCOME BLOCKED; TRG-21-011 is confirmed in the phase triage log with VERDICT RESUME and routes the tagged transition failure to existing Task 12 ownership
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; only the task-10 report is authorized for this continuation
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - update only task-10-done.md to a truthful COMPLETE report boundary, retain the supplementary tagged integration failure and all historical evidence, run two-argument report-lint, and return the committed report
+- Next action: dispatch only a same-task task-10 report-repair continuation limited to task-10-done.md; no product or test edits
+- Human attention required: no
+### 2026-08-28 00:10 REPAIR task-10
+
+- Trigger signature: task-10:integration-fixture:task-12-done.md:retained-claim-transport-collateral
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY attempt 2; phase-21 HEAD 0a0fe828d9f51cd86252e4ed50163f46fcf4bec8; task-10-done.md was committed with OUTCOME BLOCKED after the tagged integration gate failed, while all five exact Task 10 commands passed
+- Ending checkpoint: phase-21 HEAD 7c2242bdbc98f880b988fefc0e75cd9c670327b7 verified with subject docs(task): close task-10 report boundary; only task-10-done.md changed in the report repair; two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: report-only continuation changed Task 10's workflow outcome to COMPLETE with recovery attempts 2, preserved every prior failed and passing command token with observed termination including the supplementary tagged integration FAIL exit_code: 1, and recorded TRG-21-011's routing of the retained transition failure to Task 12; independent two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Next checkpoint: VERIFY/REPORT/REVIEW
+- Human attention required: no
+### 2026-08-28 00:11 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 7c2242bdbc98f880b988fefc0e75cd9c670327b7 - verified, subject matched; implementation commit 0b67c8304a84e4e5bcb8df44d79f899e40a16acb - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+### 2026-08-28 00:14 TASK-RECOVERY task-12
+
+- Source: TRG-21-011 RESUME / task-12-done.md / tagged integration gate
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-12 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: integrate only the Task 12 execution-bound transition's observation of the accepted generic Claim contract and the exact retained collateral required by that integration; preserve Task 8, Task 9, and Task 10 repairs, generic Claim contract and implementation, retained closure assertion strength, all unrelated Request/Claim/Run/dev/journal behavior, and every failed attempt; no Task 11 implementation, no final V1 removal, no --by restoration, no command, assertion semantics, public-interface, Event-schema, task-spec, QA-artifact, validation-contract, or gate-definition change; no t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 7c2242bdbc98f880b988fefc0e75cd9c670327b7 verified with subject docs(task): close task-10 report boundary; Task 10 report-lint returned OUTCOME COMPLETE with exit_code: 0; Task 12 implementation commit 93da8a150d76b10d63bb8330517c508728bbe45f and report task-12-done.md remain the prior recovery state; the exact tagged integration gate is preserved as FAIL with exit_code: 1 at the retained Claim-dependent closure transition, and TRG-21-011 routes that transition integration to Task 12
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; product implementation paths are clean before this continuation
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - first rerun all six exact Task 12 commands unchanged to preserve current red evidence, implement the smallest red/green Task 12 generic Claim observation repair, preserve retained closure assertion strength, rerun the unchanged six commands with observed termination, update a truthful report, and pass two-argument report-lint
+- Next action: dispatch only a same-task Task 12 Developer continuation; use the Task 12 specification and DEC-162 boundary to integrate the retained transition with generic Claim state, then return the unchanged six-command evidence and report
+- Human attention required: no
+### 2026-08-28 00:37 REPAIR task-12
+
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY attempt 1; phase-21 HEAD 7c2242bdbc98f880b988fefc0e75cd9c670327b; the tagged integration gate failed at the retained Claim-dependent transition and Task 12's repository coverage gate was pending
+- Ending checkpoint: phase-21 HEAD 8040daed365606f47126bd18af9eebcd2d8eae95 verified with subject docs(task): record task-12 recovery gate evidence; implementation commit c407c305f404c2b418b021c415323972d5044ebb verified with subject fix(issues): converge standalone transition claims; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the Task 12 transition Claim-observation failure was narrowed and the standalone transition implementation now avoids the obsolete V1 Claim read, but the continuation removed retained V1 Claim assertions from cmd/fid/integration/e2e_v01_closure_test.go and cmd/fid/e2e_v01d_closure_test.go, which violates the recorded assertion-strength boundary; the unchanged six-command gate still fails on the Task 9-owned AC --status fixture and internal/dev's retained V1 Claim precondition, both with observed exit_code: 1
+- Next checkpoint: another TASK-RECOVERY
+- Human attention required: no
+### 2026-08-28 00:39 TASK-RECOVERY task-12
+
+- Source: task-12-done.md / Task 12 continuation attempt 1 narrowed gate and assertion-boundary defect
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-12 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: restore and preserve every retained V1 Claim, Run, dev, closure, journal-byte, and no-mutation behavioural assertion removed or altered by the prior continuation; integrate only Task 12's accepted generic Claim observation and exact collateral; preserve Task 8, Task 9, and Task 10 implementation and reports; do not repair Task 9-owned AC --status or later Task 20-owned internal/dev fixtures in this task; no final V1 removal, --by restoration, command/assertion/public-interface/Event-schema/task-spec/QA-artifact/validation-contract/gate-definition change, t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 8040daed365606f47126bd18af9eebcd2d8eae95 verified with subject docs(task): record task-12 recovery gate evidence; Task 12 implementation commit c407c305f404c2b418b021c415323972d5044ebb verified; Task 12 report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; tagged integration now fails at the Task 9-owned AC --status command with exit_code: 1 and repository coverage fails at internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend with exit_code: 1; prior continuation removed retained Claim assertions from cmd/fid/integration/e2e_v01_closure_test.go and cmd/fid/e2e_v01d_closure_test.go
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; Task 12 product/report paths are committed before this continuation and no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - restore the removed retained assertions without weakening them, rerun the six exact Task 12 commands unchanged, preserve and truthfully report the Task 9 AC and later internal/dev failures if they remain outside Task 12 scope, and return a committed truthful report
+- Next action: dispatch only a same-task Task 12 Developer continuation; repair the prior assertion-boundary defect first, then rerun the unchanged six commands and report-lint
+- Human attention required: no
+### 2026-08-28 00:54 REPAIR task-12
+
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY attempt 2; phase-21 HEAD 8040daed365606f47126bd18af9eebcd2d8eae95; the prior continuation had narrowed the tagged integration failure but had not preserved retained Claim assertion strength
+- Ending checkpoint: phase-21 HEAD 54f513d81b3f6bc592ee325944a0d9541d41d6c3 verified with subject docs(task): finalize completion report for phase-21 task-12; implementation commit 02baf2b112fc761465878f246e3371bb930d32fe verified with subject fix(workflow): require claim worktree for execution transitions; report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the continuation restored the retained closure coverage and fixed the execution-bound generic Claim worktree predicate; the tagged integration gate now reaches the Task 9-owned AC --status command and the repository coverage gate reaches the later internal/dev V1 Claim precondition, both failing with observed exit_code: 1; the remaining task report is truthful RECOVERY_REQUIRED and preserves all historical evidence
+- Next checkpoint: another TASK-RECOVERY
+- Human attention required: no
+### 2026-08-28 00:56 TASK-RECOVERY task-12
+
+- Source: task-12-done.md / Task 12 continuation attempt 2 retained-assertion boundary repair
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-12 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: do not delete, weaken, narrow, or re-point retained V1 Claim, Run, dev, closure, journal-byte, or no-mutation behavioural assertions; reconcile the prior closure fixture edits only by preserving their original obligations or an exact accepted generic-contract equivalent; preserve Task 8, Task 9, and Task 10 implementation and reports; do not repair Task 9-owned AC --status or later Task 20-owned internal/dev fixtures in this task; no final V1 removal, --by restoration, command/assertion/public-interface/Event-schema/task-spec/QA-artifact/validation-contract/gate-definition change, t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 54f513d81b3f6bc592ee325944a0d9541d41d6c3 verified with subject docs(task): finalize completion report for phase-21 task-12; implementation commit 02baf2b112fc761465878f246e3371bb930d32fe verified; report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; Task 12 implementation narrowed the original Claim failure, but the unchanged tagged gate fails at Task 9-owned AC --status and the coverage gate fails at internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend; prior continuation changed retained closure Claim assertions and legacy claim lifecycle rows
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; Task 12 product/report paths are committed before this continuation and no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - reconcile the prior assertion-boundary edits without weakening retained obligations, rerun all six exact Task 12 commands unchanged, preserve and truthfully report any Task 9 or later-owner failures, and return a committed truthful report
+- Next action: dispatch only a same-task Task 12 Developer continuation; inspect the prior diff against 7c2242b, preserve required assertion strength, rerun the unchanged six commands, and return report-lint evidence
+- Human attention required: no
+### 2026-08-28 01:25 REPAIR task-12
+
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 3
+- Starting checkpoint: TASK-RECOVERY attempt 3; phase-21 HEAD 54f513d81b3f6bc592ee325944a0d9541d41d6c3; Task 12 report-lint was valid OUTCOME RECOVERY_REQUIRED, and retained assertion-boundary reconciliation was pending
+- Ending checkpoint: phase-21 HEAD 2a584fc125ba16f90973951dccda731c04c357a7 verified with subject test(workflow): restore execution claim guard coverage; focused Task 12 coverage restoration is committed, task-12-done.md contains the six attempt-3 command results but remains dirty; the child session was shut down after missing a terminal status
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the continuation restored the retained generic Claim-holder/expiry and atomic no-mutation obligations as focused execution-bound coverage, reran all six exact Task 12 commands with recorded terminations, and preserved the remaining Task 9 AC --status and later internal/dev failures; command-liveness was routed MISSING_TERMINATION and the report commit sequence was incomplete when the child was shut down
+- Next checkpoint: another TASK-RECOVERY
+- Human attention required: no
+### 2026-08-28 01:35 TASK-RECOVERY task-12
+
+- Source: task-12-done.md / incomplete report sequence after Task 12 continuation attempt 3
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task-12 specification
+- Triage disposition: N/A
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-12-done.md
+- Forbidden changes: edit only task-12-done.md; preserve every failed and passing command result with observed termination, the retained assertion strength, the Task 9 and Task 20 owner-routed failures, and the prior implementation commits; do not alter implementation, tests, task specification, QA artifacts, validation contract, public interface, Event schema, gate definitions, or run ledger; do not convert failed evidence to PASS, weaken assertions, restore issue claim/unclaim aliases, restore --by, or change production behavior
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 2a584fc125ba16f90973951dccda731c04c357a7 verified with subject test(workflow): restore execution claim guard coverage; task-12-done.md contains the six attempt-3 command results but the report commit sequence was incomplete after the child session stopped without terminal status; command-liveness was routed MISSING_TERMINATION with ACTION REPAIR
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; Task 12 implementation paths are otherwise committed and no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - commit the already prepared truthful task-12 report without changing its retained failed evidence, run two-argument report-lint, and return the committed report result
+- Next action: record the same-task report-repair continuation result as the next REPAIR event, then route the remaining owner-routed failures through their owning tasks before rerunning Task 12
+- Human attention required: no
+### 2026-08-28 01:38 REPAIR task-12
+
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY attempt 4; phase-21 HEAD 2a584fc125ba16f90973951dccda731c04c357a7 verified with subject test(workflow): restore execution claim guard coverage; task-12-done.md was committed after the prior session stopped without terminal status
+- Ending checkpoint: phase-21 HEAD c54646377dc935b8608f282c302e26dacfeeee0 verified with subject docs(task): finalize task-12 recovery report; two-argument report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0); report remains truthful and preserves all failed gate evidence
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: NO-PROGRESS
+- Resolution evidence: the continuation completed the missing report commit sequence only; report-lint verified the same OUTCOME RECOVERY_REQUIRED, and no implementation obligation or gate failure was removed
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-08-28 01:45 TASK-RECOVERY task-12
+
+- Source: task-12-done.md / Task 12 attempt 4 report-only recovery and unchanged owner-routed gate failures
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-12 specification and DEC-162
+- Triage disposition: N/A
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: preserve every failed and passing result and observed termination; run the six Task 12 commands byte-identically; do not edit Task 9 or Task 20 implementation or fixtures, do not alter any task specification, QA artifact, validation contract, public interface, Event schema, command, assertion semantics, gate definition, or run ledger; no final V1 removal, --by restoration, t.Skip, build tags, -run narrowing, threshold change, or assertion weakening
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: phase-21 HEAD c54646377dc935b8608f282c302e26dacfeeee0 verified with subject docs(task): finalize task-12 recovery report; task-12-done.md is committed and report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0; the exact tagged integration and repository coverage failures remain routed to Task 9 and Task 20 respectively; the prior REPAIR attempt 4 was NO-PROGRESS
+- Phase worktree: /home/mark/projects/fid on branch phase-21; intentional role-prompt, generated-agent, current-doc, decision, triage, task-spec, quality-plan, and run-ledger maintenance paths remain dirty; product implementation and Task 12 report paths are committed before this continuation
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - dispatch the same-task continuation to rerun all six exact Task 12 commands unchanged, preserve the owner-routed failures if they remain, and return a committed truthful report with two-argument report-lint
+- Next action: dispatch only a same-task Task 12 Developer continuation; if the unchanged gate remains RECOVERY_REQUIRED, route the exhausted no-progress recovery through TL-Lite before any further task dispatch
+- Human attention required: no
+### 2026-08-28 02:05 REPAIR task-12
+
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 5
+- Starting checkpoint: TASK-RECOVERY attempt 5; phase-21 HEAD c54646377dc935b8608f282c302e26dacfeeee0 verified with subject docs(task): finalize task-12 recovery report; task-12-done.md was committed and report-lint returned OUTCOME RECOVERY_REQUIRED with exit_code: 0
+- Ending checkpoint: phase-21 HEAD af4c9ecf9d1be5668725d8287fde5bc531ea2fe3 verified with subject docs(task): record task-12 attempt-5 gate evidence; all six exact Task 12 commands were rerun with observed termination; two-argument report-lint returned OUTCOME RECOVERY_REQUIRED and PASS report-lint completed with no failures (terminated exit_code: 0)
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: NO-PROGRESS
+- Resolution evidence: the unchanged six-command rerun reproduced the same Task 9-owned AC --status failure and later Task 20-owned internal/dev V1 Claim failure, both terminated exit_code: 1; no Task 12 obligation was newly satisfied or narrowed
+- Next checkpoint: triage as recovery-budget-exhausted
+
+### 2026-08-28 02:12 TRIAGE TRG-21-012
+
+- Trigger: Task 12 recovery budget exhausted on owner-routed gate failures
+- Originating task: task-12
+- Trigger signature: task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral
+- Attempt count: 5
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: af4c9ecf9d1be5668725d8287fde5bc531ea2fe3 verified with subject docs(task): record task-12 attempt-5 gate evidence; the unchanged six-command Task 12 gate retains the Task 9-owned tagged integration failure and future Task 20-owned repository coverage failure, both with terminated exit_code: 1; report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0
+- Verdict: BLOCK (escalated as ESC-21-009)
+- Resolution evidence: the same trigger reached two consecutive runner-mediated no-progress continuations; Task 12 accepted implementation obligations are complete, and further progress requires a protected owner/order decision for the remaining Task 9 and future Task 20 failures without changing accepted contracts
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-012 entry confirmed
+
+### 2026-08-28 02:15 STOP
+
+- Cause: task-12 / TRG-21-012 / ESC-21-009 - the unchanged Task 12 gate exhausted its bounded recovery budget while retaining a Task 9-owned AC fixture failure and a future Task 20-owned repository-coverage failure
+- Triage: TRG-21-012 (BLOCK, escalated as ESC-21-009)
+- Protected category: recovery-budget-exhausted / protected task-boundary and phase-order authority
+- Next Human or external-authority action: Full Tech Lead or Human must decide the owner and order handling for the remaining Task 9 and future Task 20 gate failures; after that decision, the Phase Runner may resume without restoring --by or obsolete V1 Claim behavior, weakening assertions, or changing required commands, gates, or accepted contracts

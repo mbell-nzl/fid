@@ -1710,6 +1710,16 @@ Enter `BLOCK` and surface the issue instead of guessing only when:
   bounded recovery.
 - Two consecutive same-trigger continuation attempts make no material progress.
 
+For retained tests and fixtures, a filename, test name, embedded task number,
+or prose label does not establish current-phase task ownership. Before treating
+retained-test repair as protected re-slicing or cross-task authority, establish
+the introducing phase/task from commit provenance and compare the assertion
+with the current task pack, convergence inventory, and accepted contract. When
+the current accepted change displaced the assertion, its task owns
+subject-preserving convergence. Repeating an unproven label-based
+classification neither creates a specification contradiction nor counts as a
+distinct no-progress condition.
+
 Red tests, vet/lint failures, missing reports, interrupted sessions, incomplete
 in-scope work, and bounded QA findings are `REPAIR` by default. In Phase
 Runner mode they dispatch a same-task continuation and preserve failed

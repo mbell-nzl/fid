@@ -74,6 +74,28 @@ lives in `09_AI_WORKFLOW.md` §2.5
   threshold/budget/tolerance, or policy and is not repair. Record both attempts
   and the mandatory deviation note required by `AGENTS.md`. Never weaken,
   narrow, re-point, substitute, or mine a flaky green.
+- For retained tests, never infer current-task ownership or protected semantics
+  from a filename, test function, embedded task number, or prose label. Check
+  introducing-commit phase/task provenance and the current task pack,
+  convergence inventory, and accepted contract. If the assigned task's
+  accepted change displaced the assertion, converge that assertion in scope
+  while preserving its subject and strength; a historical task label does not
+  transfer it to the same-numbered current task.
+- Do not route a required-gate failure to another task in your report. Naming a
+  different owner is a Tech Lead decision, and an unproven routing stalls the
+  phase. State the accepted change that invalidated the assertion and which task
+  made it. If your own task's accepted change caused it, converge it. If the
+  file lies outside your named file scope, say exactly that as a scope gap in a
+  `RECOVERY_REQUIRED` report rather than assigning it elsewhere. A later task's
+  ownership of a package's *removal* is not ownership of a test your change
+  broke.
+- Where an accepted decision made a surface fail-closed, unavailable, or
+  removed, converge a retained call on it into an explicit rejection assertion
+  with the current typed envelope and no state change. Changing flags on a
+  fail-closed surface fixes nothing.
+- A sequential end-to-end fixture blocks one step at a time. Reaching a later
+  step is real progress: keep repairing within scope rather than reporting the
+  newly revealed step as someone else's failure.
 - For a dedicated `REPAIR / control-conformance` continuation, confirm the
   accepted contract uniquely determines behavior and require all typed fields:
   `Originating task`, `Control trigger signature`, `Control attempt count`,

@@ -66,6 +66,17 @@ follow `09_AI_WORKFLOW.md` §2.2 (Tech Lead). Hard rules that always apply:
   before task close unless the spec records an explicit exception. Developer
   does not load the QA plan by default, so include any QA-plan command the
   Developer must run.
+- A task's required commands must exercise every file scope the task owns.
+  Ownership is only assignable where it is executable. Before assigning a file
+  scope, confirm a listed command actually compiles and runs those files; a
+  build-tagged, environment-gated, or otherwise excluded suite covering owned
+  files needs its gate named in that same task, or the scope does not belong to
+  it. This applies equally to a mid-phase scope amendment: adding files without
+  adding the gate that exercises them is an incomplete assignment and silently
+  accumulates convergence debt for whichever later task first runs that gate.
+  When a gated suite does first become required several tasks after the changes
+  that invalidated its assertions, assign the accumulated convergence to that
+  first task and require per-row provenance in its report.
 - Verify coverage rules: every in-scope PRD/TRD requirement is referenced by
   at least one `VAL-NNN`, every `VAL-NNN` is referenced by at least one task
   spec acceptance criterion, and every `VAL-NNN` has exactly one validator
@@ -116,6 +127,21 @@ tell the human the handoff is written.
 
 - Tasks must be ordered, scoped, and testable; reference specific requirement
   IDs or doc sections in task specs.
+- When resolving a retained-test ownership escalation, do not infer current
+  ownership from a filename, test function, embedded task number, or prose
+  label. Establish introducing-commit phase/task provenance, then compare it
+  with the current task pack, convergence inventory, and accepted contract.
+  Assign subject-preserving convergence to the task whose accepted change
+  displaced the assertion. Then check the other half: confirm the assigned
+  task's required commands actually execute that assertion. If they do not, the
+  assignment is unexecutable and the real defect is gate coverage, not
+  ownership.
+- Before accepting a `recovery-budget-exhausted` escalation, read the recovery
+  directives behind each no-progress attempt. An attempt whose own directive
+  forbade repairing the rows causing the failure could not have made progress;
+  that is a mis-scoped directive, not exhausted repair capability, and the
+  budget does not count it. For a sequential end-to-end fixture, reaching a
+  later step is material progress.
 - If implementation proves a spec wrong, update affected specs and record why
   in phase decisions.
 - If a required validation assertion cannot be satisfied, stop and escalate

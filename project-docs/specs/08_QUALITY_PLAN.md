@@ -69,6 +69,39 @@ reads is convergence. Deleting an assertion requires another test that already
 owns the accepted equivalent. Skips, build tags, narrowed test selection, and
 relaxed thresholds are never convergence.
 
+Convergence ownership follows the invalidating change, not the file. A test
+file's primary subject may belong to a different unit of work; that does not
+transfer or defer the obligation, and it is not a scope boundary. The change
+owner converges only the assertions its own change invalidated and leaves every
+other assertion in that file byte-identical, so the other subject keeps full
+strength until its own owner replaces it.
+
+Task numbering in a retained filename, test function, fixture label, or prose
+name is historical metadata, not current-phase ownership evidence. Before
+classifying retained-test convergence as cross-task or protected, establish the
+introducing phase/task from commit provenance and compare the assertion with
+the current task pack, convergence inventory, and accepted contract. A
+historical label transfers ownership only when the current task pack explicitly
+adopts it. Repetition of an unproven filename-based classification does not make
+it a specification contradiction or exhaust a causal recovery budget.
+
+A unit of work's required commands must exercise every file scope it owns.
+Convergence ownership is only assignable where it is executable: a build-tagged,
+environment-gated, or otherwise excluded suite covering owned files must have
+the gate that runs it named in that same unit of work, or the scope does not
+belong to it. Adding files to a scope without adding the gate that exercises
+them is an incomplete assignment. Where a gated suite first becomes required
+several units of work after the changes that invalidated its assertions, the
+accumulated convergence belongs to the first unit whose required gate runs it,
+and that unit records per-row provenance - file, line, invalidating change, and
+originating unit - so the audit trail survives the reassignment.
+
+A sequential end-to-end fixture reveals one blocking step at a time. Reaching a
+later step is material progress. A no-progress recovery budget counts only
+attempts whose directive actually permitted causal repair of the failing rows;
+an attempt forbidden from touching the only cause of the failure is a
+mis-scoped directive, not evidence of exhausted repair capability.
+
 ## 4. Critical scenario inventory
 
 The conformance and workflow suites must cover at least these scenarios:

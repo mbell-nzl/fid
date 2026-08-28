@@ -87,6 +87,15 @@
   `e8a636e` and the Human's 2026-08-23 approval accept VAL-001..087 and the
   ordered Heavy task pack. Task 1 is authorized for Phase Runner dispatch;
   every later task remains dependency- and review-gated.
+- **Executable ownership (DEC-167, standing):** a task's required commands must
+  exercise every file scope it owns. A build-tagged or otherwise gated suite
+  covering owned files must have its gate named in that same task, or the scope
+  is not assignable to it. Where a gated suite first becomes required several
+  tasks after the changes that invalidated its assertions, the accumulated
+  convergence belongs to the first task whose gate runs it, recorded with
+  per-row provenance. A no-progress recovery budget counts only attempts whose
+  directive permitted causal repair of the failing rows. Canonical text is
+  `08_QUALITY_PLAN.md` §3.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
