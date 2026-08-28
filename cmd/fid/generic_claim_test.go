@@ -62,11 +62,140 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 	}
 }
 
+func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
+	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
+	qualifying := map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+	}
+	path := filepath.Join(workspace, "claim-acquire-binding-matrix.json")
+	writeActivationInput(t, path, qualifying)
+	acquired := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
+		"--input", path, "--idempotency-key", "claim-acquire-binding-qualified",
+	)
+	if acquired.err != nil || acquired.stderr != "" {
+		t.Fatalf("qualifying acquire = %#v, want stdout-only success", acquired)
+	}
+	claim := claimFromResponse(t, acquired.stdout)
+
+	tests := []struct {
+		name     string
+		input    map[string]any
+		actor    string
+		wantCode string
+	}{
+		{
+			name: "missing Issue",
+			input: map[string]any{
+				"issue_id": "", "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "mismatched Issue",
+			input: map[string]any{
+				"issue_id": "ISSUE-mismatched", "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "missing Envelope",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": "", "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "mismatched Envelope revision",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 2,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "Actor authority",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-other", wantCode: "authority-denied",
+		},
+		{
+			name: "mismatched worktree",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-other", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "missing scope",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{}}, "ttl_seconds": 60,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+		{
+			name: "invalid TTL",
+			input: map[string]any{
+				"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+				"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 0,
+			},
+			actor: "actor-builder", wantCode: "invalid-argument",
+		},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			beforeClaim, beforeEvents := claimStateSnapshot(t, workspace, claim["id"].(string))
+			writeActivationInput(t, path, testCase.input)
+			result := executeCommandForTest(workspace,
+				"--project", workspace, "--json", "claim", "acquire", "--actor", testCase.actor,
+				"--input", path, "--idempotency-key", "claim-acquire-binding-"+strings.ReplaceAll(testCase.name, " ", "-"),
+			)
+			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+testCase.wantCode+`"`) {
+				t.Fatalf("%s acquire = %#v, want typed %s rejection", testCase.name, result, testCase.wantCode)
+			}
+			assertClaimStateUnchanged(t, workspace, claim["id"].(string), beforeClaim, beforeEvents)
+		})
+	}
+}
+
 func stringifyClaimValue(value any) any {
 	if number, ok := value.(interface{ String() string }); ok {
 		return number.String()
 	}
 	return value
+}
+
+func claimStateSnapshot(t *testing.T, workspace, claimID string) (string, int) {
+	t.Helper()
+	listed := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "list")
+	if listed.err != nil || listed.stderr != "" {
+		t.Fatalf("claim list snapshot = %#v, want stdout-only success", listed)
+	}
+	items := decodeCommandJSONStructure(t, listed.stdout).(map[string]any)["result"].(map[string]any)["items"].([]any)
+	for _, item := range items {
+		if item.(map[string]any)["id"] == claimID {
+			return listed.stdout, journalEventCount(t, workspace)
+		}
+	}
+	t.Fatalf("claim list snapshot = %q, want claim %q", listed.stdout, claimID)
+	return "", 0
+}
+
+func assertClaimStateUnchanged(t *testing.T, workspace, claimID, wantClaim string, wantEvents int) {
+	t.Helper()
+	gotClaim, gotEvents := claimStateSnapshot(t, workspace, claimID)
+	if gotClaim != wantClaim || gotEvents != wantEvents {
+		t.Fatalf("claim state after rejection = (%q, %d), want (%q, %d)", gotClaim, gotEvents, wantClaim, wantEvents)
+	}
 }
 
 func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
@@ -123,6 +252,14 @@ func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 	if got := stringifyClaimValue(renewedClaim["version"]); got != "2" {
 		t.Fatalf("renewed version = %#v, want 2", got)
 	}
+	beforeStaleRenewClaim, beforeStaleRenewEvents := claimStateSnapshot(t, workspace, claim["id"].(string))
+	staleRenewPath := filepath.Join(workspace, "claim-renew-stale.json")
+	writeActivationInput(t, staleRenewPath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "ttl_seconds": 120})
+	staleRenew := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "renew", "--actor", "actor-builder", "--input", staleRenewPath, "--idempotency-key", "claim-renew-stale")
+	if staleRenew.err == nil || staleRenew.stdout != "" || !strings.Contains(staleRenew.stderr, `"code":"claim-stale"`) {
+		t.Fatalf("stale renew = %#v, want typed stale rejection", staleRenew)
+	}
+	assertClaimStateUnchanged(t, workspace, claim["id"].(string), beforeStaleRenewClaim, beforeStaleRenewEvents)
 	replay := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "renew", "--actor", "actor-builder", "--input", renewPath, "--idempotency-key", "claim-renew-1")
 	if replay.err != nil || replay.stderr != "" || claimResponseReplayed(t, replay.stdout) != true {
 		t.Fatalf("renew replay = %#v, want exact idempotent replay", replay)
@@ -130,6 +267,14 @@ func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 
 	releasePath := filepath.Join(workspace, "claim-release.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claim["id"], "expected_version": 2, "reason": "completed"})
+	beforeStaleReleaseClaim, beforeStaleReleaseEvents := claimStateSnapshot(t, workspace, claim["id"].(string))
+	staleReleasePath := filepath.Join(workspace, "claim-release-stale.json")
+	writeActivationInput(t, staleReleasePath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "reason": "completed"})
+	staleRelease := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", staleReleasePath, "--idempotency-key", "claim-release-stale")
+	if staleRelease.err == nil || staleRelease.stdout != "" || !strings.Contains(staleRelease.stderr, `"code":"claim-stale"`) {
+		t.Fatalf("stale release = %#v, want typed stale rejection", staleRelease)
+	}
+	assertClaimStateUnchanged(t, workspace, claim["id"].(string), beforeStaleReleaseClaim, beforeStaleReleaseEvents)
 	beforeRelease := journalEventCount(t, workspace)
 	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "claim-release-1")
 	if released.err != nil || released.stderr != "" {
