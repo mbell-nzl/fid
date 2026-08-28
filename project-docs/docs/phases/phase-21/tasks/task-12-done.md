@@ -170,8 +170,8 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 
 ## Commit hash
 
-- Pending commit
+- `0ced511b2e6a7e1f252260024176705106e9b793`
 
 ## Commit subject
 
-- Pending commit
+- `test(workflow): cover execution-bound predicate matrix`
