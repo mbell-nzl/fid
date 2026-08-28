@@ -222,15 +222,6 @@ func TestStartRejectsInvalidWorkflowEdgeBeforeAppend(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	if _, err := issues.Transition(issues.TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testDevMigrationsDir(t),
-		ID:            created.ID,
-		ToState:       "in_progress",
-		ActorRole:     "developer",
-	}); err == nil {
-		t.Fatal("Transition() error = nil, want missing claim rejection")
-	}
 	if _, err := claims.Acquire(claims.AcquireOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testDevMigrationsDir(t),

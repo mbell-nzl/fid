@@ -35,12 +35,11 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer"},
 		"has_completion_report")
-	closureRunFID(t, binary, workspace, "issue", "ac", "verify", mainIssueID, acID, "--status", "pass", "--by", "qa_lead")
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"--json", "issue", "ac", "verify", mainIssueID, acID, "--actor", "agent:qa_lead"},
+		`"code":"capability-unavailable"`)
 	firstCompletionID := closureCompleteIssue(t, binary, workspace, mainIssueID)
-	concernID, addressCompletionID := closureRaiseAndAddressConcern(t, binary, workspace, mainIssueID, firstCompletionID)
-	if concernID == "" {
-		t.Fatal("addressed concern id = empty")
-	}
+	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, firstCompletionID)
 	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
@@ -59,11 +58,9 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
 	assertClosureReadyTask(t, binary, workspace, priorityEpicID, priorityHighID)
 
-	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", firstCompletionID,
-		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer")
-	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", addressCompletionID,
-		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "0", "--tokens-out", "0", "--by", "developer")
-	assertClosureTelemetry(t, binary, workspace, mainIssueID, firstCompletionID)
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"run", "record", "--issue", mainIssueID, "--completion", firstCompletionID,
+			"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer"})
 
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)

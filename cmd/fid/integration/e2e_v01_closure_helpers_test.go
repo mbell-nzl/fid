@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -258,13 +257,14 @@ func closureCompleteIssue(t *testing.T, binary, workspace, issueID string) strin
 	return ""
 }
 
-func closureRaiseAndAddressConcern(t *testing.T, binary, workspace, issueID, completionID string) (string, string) {
+func assertClosureConcernMutationsUnavailable(t *testing.T, binary, workspace, issueID, completionID string) {
 	t.Helper()
-	_, stderr := closureRunFID(t, binary, workspace, "concern", "raise", "--on", issueID, "--by", "developer", "--in-completion", completionID, "--summary", "Closure concern")
-	concernID := closureIDAfterWord(t, stderr, "concern")
-	addressCompletionID := closureCompleteIssue(t, binary, workspace, issueID)
-	closureRunFID(t, binary, workspace, "concern", "address", concernID, "--in-completion", addressCompletionID, "--by", "developer")
-	return concernID, addressCompletionID
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
+		[]string{"--json", "concern", "raise", "--on", issueID, "--actor", "agent:developer", "--in-completion", completionID, "--summary", "Closure concern"},
+		`"code":"capability-unavailable"`)
+	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, closureJournalPath(t, workspace),
+		[]string{"--json", "concern", "address", issueID, "--in-completion", completionID, "--actor", "agent:developer"},
+		`"code":"capability-unavailable"`)
 }
 
 func closureIDAfterWord(t *testing.T, text, word string) string {
@@ -292,6 +292,20 @@ func assertClosureRejectedWithoutJournalAppend(t *testing.T, binary, workspace, 
 	}
 	if !strings.Contains(stderr, want) {
 		t.Fatalf("fid %s stderr = %q, want %q", strings.Join(args, " "), stderr, want)
+	}
+	assertClosureJournalBytesEqual(t, journalPath, before, strings.Join(args, " "))
+}
+
+func assertClosureUnknownCommandWithoutJournalAppend(t *testing.T, binary, workspace, journalPath string, args []string) {
+	t.Helper()
+
+	before := closureReadFile(t, journalPath)
+	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, args...)
+	if err == nil {
+		t.Fatalf("fid %s succeeded, want rejection", strings.Join(args, " "))
+	}
+	if stdout != "" || stderr != "" {
+		t.Fatalf("fid %s = (%v, %q, %q), want absent-command rejection with empty output", strings.Join(args, " "), err, stdout, stderr)
 	}
 	assertClosureJournalBytesEqual(t, journalPath, before, strings.Join(args, " "))
 }
@@ -330,60 +344,12 @@ func assertClosureReadyTask(t *testing.T, binary, workspace, epicID, wantID stri
 	}
 }
 
-func assertClosureTelemetry(t *testing.T, binary, workspace, issueID, completionID string) {
-	t.Helper()
-
-	stdout, _ := closureRunFID(t, binary, workspace, "sql", "SELECT tokens_in, tokens_out, price_in_per_mtok, price_out_per_mtok, cost_usd, completion_id FROM agent_runs WHERE issue_id = '"+issueID+"' ORDER BY id")
-	var rows []struct {
-		TokensIn   int     `json:"tokens_in"`
-		TokensOut  int     `json:"tokens_out"`
-		PriceIn    float64 `json:"price_in_per_mtok"`
-		PriceOut   float64 `json:"price_out_per_mtok"`
-		CostUSD    float64 `json:"cost_usd"`
-		Completion string  `json:"completion_id"`
-	}
-	if err := json.Unmarshal([]byte(stdout), &rows); err != nil {
-		t.Fatalf("decode run snapshot: %v", err)
-	}
-	if len(rows) != 2 {
-		t.Fatalf("run snapshots = %#v, want two completion-linked runs", rows)
-	}
-	var primary *struct {
-		TokensIn   int     `json:"tokens_in"`
-		TokensOut  int     `json:"tokens_out"`
-		PriceIn    float64 `json:"price_in_per_mtok"`
-		PriceOut   float64 `json:"price_out_per_mtok"`
-		CostUSD    float64 `json:"cost_usd"`
-		Completion string  `json:"completion_id"`
-	}
-	for index := range rows {
-		if rows[index].Completion == completionID {
-			primary = &rows[index]
-		}
-	}
-	if primary == nil {
-		t.Fatalf("run snapshots = %#v, want one linked to %q", rows, completionID)
-	}
-	wantCost := (float64(primary.TokensIn)*primary.PriceIn + float64(primary.TokensOut)*primary.PriceOut) / 1_000_000
-	if primary.PriceIn <= 0 || primary.PriceOut <= 0 || math.Abs(primary.CostUSD-wantCost) > 1e-12 {
-		t.Fatalf("run snapshot = %#v, want priced cost %v", primary, wantCost)
-	}
-	cost, _ := closureRunFID(t, binary, workspace, "stats", "cost", "--group-by", "actor")
-	tokens, _ := closureRunFID(t, binary, workspace, "stats", "tokens", "--group-by", "actor")
-	if !strings.Contains(cost, "developer") || !strings.Contains(cost, fmt.Sprintf("%g", primary.CostUSD)) {
-		t.Fatalf("cost stats = %q, want developer cost %g", cost, primary.CostUSD)
-	}
-	if !strings.Contains(tokens, `"total_tokens_in":1200`) || !strings.Contains(tokens, `"total_tokens_out":3400`) {
-		t.Fatalf("token stats = %q, want 1200/3400", tokens)
-	}
-}
-
 func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, issueID string, journalBefore []byte) {
 	t.Helper()
 
 	check, _ := closureRunFID(t, binary, workspace, "--json", "maintenance", "check")
-	if !strings.Contains(check, `"status":"pass"`) {
-		t.Fatalf("maintenance check = %q, want pass", check)
+	if !strings.Contains(check, `"status":"warn"`) || !strings.Contains(check, `"check":"telemetry_gaps"`) {
+		t.Fatalf("maintenance check = %q, want telemetry_gaps warning", check)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance check")
 	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "maintenance", "vacuum")

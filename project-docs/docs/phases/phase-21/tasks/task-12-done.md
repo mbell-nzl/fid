@@ -1,10 +1,10 @@
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: gate-repair
-- Condition: Attempt 3 restored the retained Claim-holder and Claim-expiry no-mutation obligations as execution-bound generic-Claim coverage. Attempt 5 reran all six unchanged commands: the focused package, format, lint, and coverage-report commands pass; the tagged integration gate still stops at Task 9's `issue ac verify --status` transport and repository coverage still stops at the later Task 20-owned `internal/dev` V1 Claim fixture.
-- Recovery attempts: 5
-- Next action: Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20; after both owner repairs land, dispatch Task 12 only to rerun its unchanged six-command gate.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: DEC-167 attempt 6 converged the stale retained Dev precondition and every accepted-Phase-21-invalidated tagged integration row. All six unchanged required commands pass.
+- Recovery attempts: 6
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -16,6 +16,20 @@
 - Enforced the Envelope repository worktree match when resolving an active generic Claim for an execution-bound transition.
 - Restored the retained closure coverage as accepted-contract equivalents: standalone attribution commits without a Claim or role-derived authority, rejected workflow edges leave the journal unchanged, and Claim/rebuild parity remains asserted.
 - Restored the removed Claim-holder and Claim-expiry transition obligations at their accepted generic boundary: an Envelope-bound transition reports the Claim-specific reason plus `run-inactive` and appends no Event when its Claim belongs to another Actor or is expired.
+- Converged the tagged closure journey's unavailable V1 AC and Concern mutations into typed `capability-unavailable`, no-journal-append assertions; its removed V1 `run record` leaf now rejects without a journal append and maintenance asserts the resulting telemetry-gap warning.
+- Removed only the stale standalone-transition Claim-rejection probe from the Dev invalid-edge setup. The `Start()` subject, typed invalid-transition assertion, current-state assertion, and journal-unchanged assertion remain unchanged.
+
+### DEC-167 retained-row provenance
+
+| Retained row | Current assertion | Invalidating accepted change | Task |
+|---|---|---|---|
+| `internal/dev/start_test.go:225` | `TestStartRejectsInvalidWorkflowEdgeBeforeAppend` retains the post-Claim setup and all `Start()` assertions. | Non-bound Issue transitions no longer read the V1 Claim precondition. | task 12, `c407c305f404c2b418b021c415323972d5044ebb` |
+| `cmd/fid/integration/e2e_v01_closure_test.go:38` | AC verification is a typed `capability-unavailable` rejection with no journal append. | VAL-030 makes `issue ac verify` unconditionally unavailable. | task 9, `cmd/fid/issue_ac.go:109-111` |
+| `cmd/fid/integration/e2e_v01_closure_helpers_test.go:260` | Concern raise/address are typed `capability-unavailable` rejections with no journal append. | VAL-030 makes Concern mutation unavailable. | task 9, `cmd/fid/concern.go:83,101` |
+| `cmd/fid/integration/e2e_v01_closure_test.go:61` | Legacy `run record` rejects with empty output and no journal append. | The generic Run lifecycle removed the `run record` leaf. | task 11, `5ca732ff163ee1d31fc155d3d9ebb3dac1501838`; surviving equivalent `cmd/fid/run_test.go:5` |
+| `cmd/fid/integration/e2e_v01_closure_helpers_test.go:350` | Maintenance reports the deterministic `telemetry_gaps` warning without a journal append. | The removed `run record` writer leaves completion telemetry unavailable. | task 11, `5ca732ff163ee1d31fc155d3d9ebb3dac1501838` |
+
+The retained Task 8 Event-actor and `issue create --by` assertions remain in `TestP20StandaloneIssueJourneyJSONAndRebuildParity`, `TestV01ClosureJourneyAndRebuildParity`, and `TestV02aWorkflowAuthoringExitScenarioAndRebuildParity` as named by `task-9-done.md:122`.
 
 ## Files created or modified
 
@@ -27,7 +41,9 @@
 - `internal/issues/transition_test.go`
 - `cmd/fid/issue_transition_test.go`
 - `cmd/fid/integration/e2e_v01_closure_test.go`
+- `cmd/fid/integration/e2e_v01_closure_helpers_test.go`
 - `cmd/fid/e2e_v01d_closure_test.go`
+- `internal/dev/start_test.go`
 - `internal/workflow/evaluation.go`
 - `internal/workflow/evaluation_test.go`
 - `project-docs/docs/phases/phase-21/tasks/task-12-done.md`
@@ -58,11 +74,28 @@
 - `go test ./cmd/fid --run '^TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.210s` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid --run '^(TestV01DClosureLifecycleSmokeAndRebuildParity|TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.235s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): the restored closure journey reaches Task 9's `issue ac verify ... --status pass` and receives `error: unknown flag: --status`.
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the retained AC success call passed removed `--status` and stopped before the VAL-030 unavailable leaf.
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after AC and Concern convergence, the journey reached removed `run record`.
+- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after the `run record` rejection, maintenance exposed the expected `telemetry_gaps` warning rather than the stale `pass` status.
+- `go test -race -coverprofile=coverage.out ./...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the initial Dev convergence retained two `in_progress` transitions; the second rejected as an invalid edge.
+- `go test -race ./internal/dev` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/dev\t10.125s` (terminated `exit_code: 0`)
+- Real entrypoint: `go build -o /tmp/fid-task12-attempt6 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt6 --json issue ac verify FID-1 AC-1 --actor agent:qa_lead` in `/tmp/fid-task12-attempt6.dHeJ9O` - PASS (expected capability-unavailable rejection) - `{"contract_version":"fid-cli.v1","error":{"category":"authority","code":"capability-unavailable","details":{"available":false,"capability_id":"reviews.coverage.v1","owner_phase":23},"message":"capability is unavailable","retryable":false,"subject":{"id":"reviews.coverage.v1","type":"capability"}},"ok":false,"operation":"issue.ac.verify"}` (terminated `exit_code: 1`).
 - Real entrypoint: `go build -o /tmp/fid-task12-attempt2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt2 issue transition FID-70fcfa --to in_progress --actor agent:qa_reviewer --idempotency-key task12-entry-transition` in `/tmp/fid-task12-entry.y8p4B8` - PASS - `transitioned FID-70fcfa: todo → in_progress` (terminated `exit_code: 0`).
 - `go test ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t14.266s` (terminated `exit_code: 0`)
 - `TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards` preserves wrong-holder and expired generic Claim denials with no journal append.
 
 ## Exact quality-gate results
+
+- Attempt 6 final exact task-gate rerun:
+- `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t175.213s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t5.597s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t65.3%` (terminated `exit_code: 0`)
+
+- Attempt 6 first coverage attempt:
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`): `TestStartRejectsInvalidWorkflowEdgeBeforeAppend` exposed the duplicate setup transition; the stale V1 Claim-rejection probe was removed, leaving the original post-Claim transition as the only setup transition.
 
 - Attempt 5 (this continuation):
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t173.260s` (terminated `exit_code: 0`)
@@ -110,10 +143,12 @@
 - Attempt 3 corrected the prior assertion-boundary defect without restoring V1 `issue claim|unclaim` aliases or `--by`: the direct generic evaluator test retains the historic Claim-holder/expiry and atomic no-mutation obligations at the only accepted execution-bound surface. Task 9 owns the AC fixture transport; Task 20 owns the retained Dev fixture.
 - Attempt 3's focused coverage restoration is committed at `2a584fc125ba16f90973951dccda731c04c357a7`; after recording the six exact command terminations above, its child session was shut down under MISSING_TERMINATION before a terminal response. This report-only continuation preserves that partial-work evidence and does not rerun or reclassify either remaining owner-routed failure.
 - Attempt 5 made no implementation or assertion change. It preserves the immutable Task 9 and Task 20 gate failures above, with their observed `exit_code: 1` terminations, pending their separately authorized owner repairs.
+- Attempt 6 initially retained two transitions while removing the stale Dev probe, so the coverage gate correctly rejected an `in_progress` to `in_progress` setup edge. The repair removed that duplicate setup only; `Start()`'s `*issues.InvalidTransitionError`, `CurrentState`, and no-journal-append assertions are unchanged. The later exact coverage gate passed.
+- DEC-167 supersedes the prior owner-routing conclusions for the tagged integration and Dev rows. This report preserves their failed evidence but records the accepted-change provenance above instead.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Route `cmd/fid/integration/e2e_v01_closure_test.go` AC verification to Task 9 and `internal/dev/start_test.go` V1 Claim removal to Task 20 before rerunning Task 12's exact gate.
+- None.
 
 ## Dependency-budget note
 
@@ -121,8 +156,8 @@
 
 ## Commit hash
 
-- `02baf2b112fc761465878f246e3371bb930d32fe`
+- Pending commit
 
 ## Commit subject
 
-- `fix(workflow): require claim worktree for execution transitions`
+- Pending commit
