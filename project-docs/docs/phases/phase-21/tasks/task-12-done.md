@@ -156,8 +156,8 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 
 ## Commit hash
 
-- Pending commit
+- `16b15d8134e7b29f27cf996486bff997a080fcc3`
 
 ## Commit subject
 
-- Pending commit
+- `test(integration): converge retained closure journey`
