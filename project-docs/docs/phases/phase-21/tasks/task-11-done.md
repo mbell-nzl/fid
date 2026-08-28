@@ -38,7 +38,7 @@
 - QA rework GREEN attempt 1 - `go test -race ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`). The new test referenced an undefined test-helper result type.
 - QA rework GREEN attempt 2 - `go test -race ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`). The inactive-Claim setup used an invalid Claim release reason and did not create the intended released Claim.
 - QA rework GREEN - `go test -race ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	192.627s` (terminated `exit_code: 0`). This runs the qualifying/rejected Run start matrix, one-way finish, all prohibited continuation-absence checks, and retained generic Run tests.
-- `go build -o /tmp/fid-task11-matrix ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `go build -o /tmp/fid-task11-matrix ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 - `go test -race ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  161.767s` (terminated `exit_code: 0`)
