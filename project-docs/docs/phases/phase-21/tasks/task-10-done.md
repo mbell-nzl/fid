@@ -98,8 +98,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `59b079a5a271cc65f7964a471b6383b9c2dd6677`
 
 ## Commit subject
 
-- Pending commit
+- `test(claims): cover generic claim binding rejections`
