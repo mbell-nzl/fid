@@ -934,6 +934,228 @@
   `v1-convergence-inventory.md` sections 1, 1.2, and 4;
   `08_QUALITY_PLAN.md` section 3.
 
+### DEC-168: A child QA session's lifetime is not bounded by its artifact's command budget; the Group 1 checkpoint reruns unchanged. Closes ESC-21-010
+
+- **Date:** 2026-08-29
+- **Context:** TRG-21-014 BLOCKed the phase as `unavailable external capability /
+  bounded QA-session liveness` after three fresh independent QA Lead checkpoint
+  sessions each returned `STATUS: INTERRUPTED` with no artifact, commit, verdict,
+  or command session. The condition is real - there is no
+  `qa/group-1-checkpoint-review.md` - but the recorded cause is wrong.
+  - **The budget was applied to the wrong object.** `qa-plan.md` §11 declares
+    "each FEAS probe at most 120s wall clock; the whole FEAS set at most 900s;
+    the tagged real-process journey gate ... at most 300s". Those bound *command
+    execution*. Orchestration applied the 900s FEAS-set figure as the lifetime of
+    the entire QA Lead child session, which also has to build a probe harness,
+    audit twelve committed completion reports and their report-lint evidence for
+    VAL-042, classify and prove isolation of the eleven-item temporary V1
+    inventory for VAL-043, and write one artifact. Each attempt was killed at the
+    same wall-clock point, before the artifact.
+  - **Each retry restarted from zero.** The probes must be session-captured, so
+    every fresh attempt re-created scratch, re-authored `child/main.go`, and
+    re-ran the early probes with the same time left. Three attempts against an
+    unchanged cut-off could only produce the same result.
+  - **The capability is available.** Preserved scratch `/tmp/tmp.zQAE0hBrd2`
+    contains the built `child-bin` plus materialized outputs for essentially the
+    whole probe set: `out.txt`/`err.txt` (FEAS-02), `badutf8.bin` (FEAS-03),
+    `flood.out`/`flood.err` (FEAS-07), `canary.txt` (FEAS-09),
+    `outside/target.txt` with the escaping symlink (FEAS-10),
+    `hash-before.txt`/`hash-after.txt` (FEAS-11),
+    `store/objects/55b62c00...` (FEAS-12), a two-commit `repo-tree/` (FEAS-14),
+    `restored-object.bak` (FEAS-15), `ar-one.zip`/`ar-two.zip` (FEAS-16),
+    `ar.zip`/`ar-warning.zip` (FEAS-17), and `absence/` (FEAS-18). A fresh
+    diagnostic run of `go test -tags integration -race ./cmd/fid/integration/...`
+    outside any checkpoint session likewise completed. Nothing here was blocked
+    by the environment; the session envelope ran out.
+  - **None of that material is checkpoint evidence.** The accepted contract
+    requires probes executed and observed *in the checkpoint session* by the
+    independent reviewer. Preserved scratch is a diagnostic artefact of a killed
+    session, and the diagnostic tagged run was not session-captured. Both are
+    inadmissible for FEAS or for any PASS. They establish availability for this
+    decision only.
+  - **The QA Lead behaved correctly.** Returning no artifact rather than partial,
+    transcribed, or wrapper-completion evidence is exactly what the contract
+    demands. `09_AI_WORKFLOW.md` §9 also makes interrupted sessions `REPAIR` by
+    default, and DEC-167 item 8 counts only attempts whose directive permitted a
+    causal repair; none of the three did.
+  - **The identity churn is a separate defect.** TRG-21-013 recorded
+    `Originating task: N/A` with a `phase-21:` trigger signature, which schema v2
+    cannot bind because it requires the trigger signature to begin with the
+    originating task. TRG-21-014 exists only to re-label the same block onto
+    `task-13`. This is the third such correction cycle in Phase 21 after
+    TRG-21-002/003 and TRG-21-005/006.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-013 and TRG-21-014 are **not sustained on their
+     recorded category**. The blocking condition was real and correctly refused,
+     but it is an orchestration defect in how a bounded command budget was applied
+     to an agent session, not an unavailable external capability. The corrected
+     category is orchestration session-liveness.
+  2. **Binding reading of the declared budgets, which do not change.** 120s bounds
+     each individual FEAS probe. 900s bounds the FEAS set, meaning the aggregate
+     wall-clock execution of the FEAS-01..FEAS-19 probe commands. 300s
+     independently bounds the tagged integration command
+     `go test -tags integration -race ./cmd/fid/integration/...` (FEAS-19), and
+     that 300s is not carved out of anything else. **No budget bounds the QA Lead
+     child session's total lifetime**, which additionally covers harness setup,
+     the VAL-042 and VAL-043 audits, and artifact authoring. No edit to
+     `qa-plan.md` §11 or `group-1-checkpoint-contract.md` is authorized or
+     required; this item records the reading, and the artifacts stand unchanged.
+  3. **Nothing is weakened, split, or substituted.** VAL-042, VAL-043,
+     FEAS-01..FEAS-19, the three separately decided checkpoint parts, the
+     fresh-session evidence rule, observed-termination rules, the exact commands,
+     the accepted statuses, the per-probe and per-set budgets, reviewer
+     independence, and the single-artifact `PASS`/`REPAIR`/`BLOCK` verdict
+     structure are all unchanged. The checkpoint is **not** split across sessions.
+     Partial, conditional, transcribed, or undocumented status still never
+     dispatches Group 2.
+  4. **Fresh scratch only.** `/tmp/tmp.YC4EUO3gMN` and `/tmp/tmp.zQAE0hBrd2` are
+     preserved as evidence of the failed attempts and must not be reused, read
+     into, or copied from. The attempt allocates new scratch with `mktemp -d`,
+     rebuilds `child/main.go` and `child-bin`, and reruns every probe fresh. The
+     diagnostic tagged run is not FEAS-19; FEAS-19 runs again in session.
+  5. **Orchestration obligations for the attempt.** The Phase Runner dispatches
+     one fresh independent QA Lead checkpoint session and **waits for that child to
+     terminate on its own**. It must not interrupt, cancel, or time out the child
+     at 900 seconds or at any other whole-session figure; the only enforced
+     budgets are the per-probe, per-set, and tagged-command budgets of item 2,
+     which the QA Lead enforces on its own commands and records with observed
+     termination. The QA Lead **writes `qa/group-1-checkpoint-review.md`
+     incrementally during the attempt**, appending each probe and audit result as
+     it is observed, so that an interruption leaves inspectable partial evidence.
+     A partially written artifact is still never a `PASS`.
+  6. **Authorization.** One fresh independent checkpoint attempt is authorized as
+     attempt 4 under the retained trigger signature. ESC-21-010 is closed. Task 13
+     Developer dispatch remains prohibited until the committed checkpoint artifact
+     records `PASS` and the Phase Runner has independently verified that commit.
+  7. **Exact one-off resume directive.** Schema v2 has no representation for a
+     phase-scoped STOP recovery, so this decision binds the existing
+     TRG-21-014/ESC-21-010 STOP to `task-13` as a one-off orchestration wrapper.
+     The Phase Runner appends, with no other event between them:
+
+     `RUN-RESUME`
+     - `Sequence contract: v2`
+     - `Recovery directive schema: v2`
+     - `Prior run/session or STOP: 2026-08-28 23:21 STOP / TRG-21-014 / ESC-21-010`
+     - `Governing TRG: TRG-21-014`
+     - `Governing ESC: ESC-21-010`
+     - `Trigger signature: task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted`
+     - `Attempt count: 4`
+     - `Checkpoint:` runner-verified phase HEAD with matched subject, absent
+       `qa/group-1-checkpoint-review.md`, and the preceding STOP
+     - `Resolution evidence:` DEC-168 and its Resolution Note are committed, the
+       category is corrected to orchestration session-liveness, ESC-21-010 is
+       closed, and one fresh attempt is authorized with no contract change
+     - `Resolution authority: DEC-168`
+     - `Continuing task: task-13`
+     - `Next recovery: task-13 | session-continuation | task-scope | task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted | 4`
+
+     `TASK-RECOVERY task-13`
+     - `Source: TRG-21-014 / DEC-168`
+     - `Category: session-continuation`
+     - `Repair mode: task-scope`
+     - `Repair authority: TRG-21-014 / DEC-168`
+     - `Triage disposition: N/A`
+     - `Trigger signature: task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted`
+     - `Attempt count: 4`
+     - `Control contract: N/A`
+     - `Control mismatch: N/A`
+     - `Allowed files: project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md; after a verified checkpoint PASS, ordinary task scope under project-docs/docs/phases/phase-21/tasks/task-13-executor-policy.md`
+     - `Forbidden changes:` do not interrupt or time-bound the QA Lead child
+       session; do not dispatch the task-13 Developer before a verified committed
+       checkpoint `PASS`; do not reuse `/tmp/tmp.YC4EUO3gMN` or
+       `/tmp/tmp.zQAE0hBrd2` or any prior scratch; do not accept transcribed,
+       partial, promised, or wrapper-completion evidence; do not change
+       `qa/group-1-checkpoint-contract.md`, `qa/qa-plan.md`,
+       `qa/validation-contract.md`, VAL-042, VAL-043, FEAS-01..FEAS-19, any probe
+       command, budget, tolerance, threshold, accepted status, or task
+       specification; no product, test, migration, spec, decision, or prior-ledger
+       edit under this recovery
+     - `Originating report: N/A`
+     - `Exact verification: N/A`
+     - `Control repair base: N/A`
+     - `Consecutive no-progress attempts: 0/2`
+     - `Checkpoint:` as above, plus the `RUN-RESUME` attempt 4 as the immediately
+       preceding ledger event
+     - `Phase worktree:` current branch and dirty-path statement
+     - `Temporary repair worktree: N/A for task-scope`
+     - `Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden`
+     - `Resolution evidence: PENDING -` run one fresh independent checkpoint
+       session to its own termination, commit `qa/group-1-checkpoint-review.md`
+       with separate VAL-042 and VAL-043 decisions and FEAS-01..FEAS-19 observed
+       termination, then dispatch task 13 only on a verified `PASS`
+     - `Next action:` dispatch only a fresh independent QA Lead checkpoint session
+       under the unchanged contract and QA plan §§10-11; wait for it to finish;
+       verify the committed artifact and its verdict
+     - `Human attention required: no`
+  8. **The wrapper is orchestration, not task-13 work.** The open recovery names
+     `task-13` solely because schema v2 requires a task-prefixed identity. The
+     Phase Runner dispatches the **QA Lead first**. Only after the committed
+     artifact records `PASS` and the Runner has verified the commit may it dispatch
+     the task-13 Developer under the unchanged `task-13-executor-policy.md` and its
+     seven unchanged required commands. The checkpoint outcome is **not** recorded
+     as a `REVIEW` event: ledger review IDs are `review-N`/`infra-review-N`, and
+     `review-5` belongs to the tasks 13-15 window. The checkpoint commit is carried
+     in the `REPAIR` event instead.
+  9. **Closure sequence.** On a verified checkpoint `PASS` followed by a completed
+     task 13, the Phase Runner appends `REPAIR task-13` with the same trigger
+     signature and `Attempt count: 4`, `Starting checkpoint` naming the resumed
+     STOP state, `Ending checkpoint` naming the verified checkpoint-artifact commit
+     **and** the verified task-13 implementation and report commits with the seven
+     command results and the two-argument report-lint result, `Control repair
+     base: N/A`, `Control repair head: N/A`, `Control scope check: N/A for
+     task-scope`, `Phase-branch integration: N/A for task-scope`,
+     `Outcome: RESOLVED`, resolution evidence, and
+     `Next checkpoint: VERIFY/REPORT/REVIEW`. It then appends `TASK task-13
+     COMPLETE` with `Report:
+     project-docs/docs/phases/phase-21/tasks/task-13-done.md`, `report-lint: PASS -
+     OUTCOME COMPLETE`, the verified commits, and the QA-plan-commands line. That
+     closes the wrapper and returns the run to the normal loop at the tasks 13-15
+     window.
+  10. **Branches, so the Runner does not improvise.** (a) If the checkpoint
+      returns `REPAIR` or `BLOCK`, append `REPAIR task-13` with
+      `Outcome: MATERIAL-PROGRESS` recording the delivered verdict, route the QA
+      outcome through `workflow-route.sh`, and expect `TRIAGE` and `STOP`: the
+      findings belong to Group 1 tasks 1-12, and a continuing recovery cannot
+      change task identity while this wrapper is open, so ownership routing and
+      the checkpoint repeat are a Tech Lead decision. (b) If the child is
+      interrupted again, append `REPAIR task-13` with `Outcome: NO-PROGRESS`; the
+      next `TASK-RECOVERY` is attempt 5 with `1/2`, same task, trigger, and repair
+      mode, and a second consecutive `NO-PROGRESS` forces `TRIAGE`. Per DEC-167
+      item 8, an interruption caused by orchestration failing to wait is not a
+      counting no-progress attempt. (c) If the checkpoint passes but task 13 needs
+      ordinary Developer rework, append `REPAIR task-13`
+      `Outcome: MATERIAL-PROGRESS` and continue at attempt 5 with the same trigger
+      and repair mode under category `in-scope-implementation`; normal task-13
+      recovery rules apply from that point.
+  11. **Deferred to workflow maintenance, not this phase.** A general schema-v2
+      identity for phase-scoped triggers, and a ledger event for an interrupted
+      child session, are real gaps - three identity-correction cycles and three
+      unrecorded checkpoint attempts prove it - but designing them is workflow
+      infrastructure outside the Phase 21 recovery loop. This decision solves the
+      instance with the one-off wrapper above and changes no verifier, template,
+      or workflow definition.
+- **Consequences:** ESC-21-010 is closed with no change to any accepted contract,
+  assertion, command, budget, or task specification, and with no split of the
+  checkpoint. The next attempt is the fourth attempt at the same unchanged
+  checkpoint; its cost is a full independent session, and the Runner is expected
+  to wait for it. If it passes, Group 2 opens. The workflow carries one recorded
+  one-off wrapper whose only purpose is to make a phase-scoped resume expressible.
+- **Verification evidence:** `qa-plan.md:686-689` states the three budgets and
+  attaches them to "the checkpoint session"; `qa-plan.md:657-660` requires probes
+  executed in the checkpoint session and rejects transcribed evidence;
+  `group-1-checkpoint-contract.md:72-80` defines the three verdicts;
+  `workflow-sequence-lint.sh:577` accepts `session-continuation` as a recovery
+  category; `:903-904` requires the schema-v2 trigger signature to begin with the
+  originating task, which is why TRG-21-013 could not bind; `:413` limits REVIEW
+  IDs to `review-N`/`infra-review-N`; `:657-659` defines the exact `Next recovery`
+  tuple; `:1023-1034` and `:1043-1053` define the `REPAIR`/`TASK-COMPLETE` closure
+  used above. `run-ledger.md:2321-2339` holds the governing TRIAGE and STOP, and
+  contains no event for the three interrupted attempts.
+- **Refs:** TRG-21-013; TRG-21-014; ESC-21-010; DEC-157; DEC-158; DEC-167;
+  `qa/group-1-checkpoint-contract.md`; `qa/qa-plan.md` §§10-11;
+  `qa/validation-contract.md` VAL-042 and VAL-043;
+  `tasks/task-13-executor-policy.md`; `09_AI_WORKFLOW.md` §§2.4 and 9.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

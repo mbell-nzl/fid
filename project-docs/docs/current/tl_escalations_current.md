@@ -7,6 +7,30 @@
 
 None.
 
+---
+
+DEC-168 resolved ESC-21-010 on 2026-08-29. TRG-21-013 and TRG-21-014 are not
+sustained on their recorded category. The blocking condition was real and the
+refusal to dispatch task 13 on partial evidence was correct, but the QA
+capability is available: preserved scratch `/tmp/tmp.zQAE0hBrd2` holds a built
+`child-bin` and materialized outputs for essentially the whole probe set, and a
+fresh diagnostic tagged integration run outside any checkpoint session completed.
+The cause is orchestration applying the 900-second FEAS-set command budget as the
+QA Lead child session's total lifetime and restarting each attempt from zero.
+DEC-168 records the binding reading - 120s per probe, 900s for the FEAS set, 300s
+independently for the tagged integration command, and no budget on the child
+session's lifetime - with no edit to the QA plan or checkpoint contract. VAL-042,
+VAL-043, FEAS-01..FEAS-19, fresh-session evidence, observed termination,
+commands, accepted statuses, budgets, and reviewer independence are unchanged,
+and the checkpoint is not split. Preserved scratch and the diagnostic run are
+inadmissible as checkpoint evidence. One fresh independent attempt is authorized:
+the Phase Runner appends RUN-RESUME then one `TASK-RECOVERY task-13`, category
+`session-continuation`, mode `task-scope`, attempt 4, waits for the QA Lead child
+to finish without interrupting it at 900 seconds, and dispatches the task-13
+Developer only after the committed checkpoint artifact records a verified PASS.
+The general phase-scoped trigger identity and interrupted-child ledger event are
+deferred to workflow maintenance.
+
 DEC-167 resolved ESC-21-009 on 2026-08-28. TRG-21-012 is not sustained. Both
 owner routings are wrong and the recovery-budget category does not hold. The
 `internal/dev` failure is task 12's own collateral from removing the V1 Claim

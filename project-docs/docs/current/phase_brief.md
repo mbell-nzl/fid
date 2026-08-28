@@ -28,22 +28,25 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   exhaustive V1 disposition, achievable checkpoint, and tasks 19-22 order.
 - DEC-158/159: QA refinements, four Human subchecks, three `<30 s` rebuild
   samples, Ready QA, and Human execution approval.
-- DEC-160/161: role-free bootstrap stays exact with a task-2 nonpersistent V1
-  policy vocabulary bridge that task 20 deletes; plain task-prefixed schema-v2
-  identity values are canonical.
+- DEC-160/161: role-free bootstrap stays exact with the task-2 nonpersistent V1
+  bridge task 20 deletes; schema-v2 identity values are plain, task-prefixed.
 - DEC-162: retained V1 tests are not protected contracts; the invalidating task
   converges them without weakening. Tasks 2, 8, 9, and 20 inherit the rule.
 - DEC-163/164: QA `REPAIR` carries one ordered owner list and each owner repairs
   before fresh re-review, `CORRECTION` is evidence-only; ordinary schema-v2
   recovery names its TRG in `Source` and preserves external `Repair authority`.
-- DEC-165: convergence follows the invalidating change, so task 9 owns its
-  incidental reads while V1 claim/run/dev/closure behavior stays byte-identical.
-- DEC-166: historical task labels do not establish current ownership; the Phase
-  20 request fixture is task-9 convergence, not Phase 21 generic-Claims work.
+- DEC-165/166: convergence follows the invalidating change and historical task
+  labels never establish current ownership; task 9 owns its incidental reads and
+  the Phase 20 request fixture, with V1 behavior byte-identical.
 - DEC-167: a required gate must exercise the scope its task owns. Task 12 owns
   its `internal/dev` collateral and the accumulated `cmd/fid/integration/`
   convergence, with per-row provenance. Reaching a later journey step is
   progress; a directive-suppressed attempt does not consume recovery budget.
+- DEC-168: 120s bounds each FEAS probe, 900s the FEAS set, 300s the tagged
+  integration command; no budget bounds the QA Lead child session's lifetime.
+  The checkpoint reruns unchanged and unsplit as attempt 4 under a one-off
+  `task-13 | session-continuation | task-scope` wrapper; the Runner waits for the
+  QA Lead and dispatches task 13 only on a verified checkpoint PASS.
 
 ## Planning Authorities
 
@@ -124,26 +127,24 @@ negative checks; never create a second Envelope revision.
 
 All four planning gates are complete: Heavy shape and Gate D3.2 accepted, plan
 Ready at `e8a636e`, no unresolved refinement, Human execution approval under
-DEC-159. Tasks 1-11 and review windows 1-3 are complete. Task 12 is open with a
-committed `RECOVERY_REQUIRED` report at
-`af4c9ecf9d1be5668725d8287fde5bc531ea2fe3`. TRG-21-012 routed its two remaining
-gate failures to tasks 9 and 20 and declared the budget exhausted; DEC-167
-rejects all three premises. The `internal/dev` failure is task 12's own
-collateral, `issue ac verify` is an accepted VAL-030 fail-closed surface rather
-than a transport gap, and both no-progress attempts were forbidden by directive
-from touching the failing rows.
+DEC-159. Tasks 1-12 and review windows 1-4 are complete, `review-4b` PASS. The
+run is STOPPED after TRIAGE TRG-21-014 / ESC-21-010: three fresh QA Lead Group 1
+checkpoint sessions were interrupted with no artifact. DEC-168 resolves it - the
+cause was orchestration applying the 900s FEAS-set command budget as the whole
+child-session lifetime, not an unavailable capability.
 
-The ledger is STOPPED after TRIAGE TRG-21-012. The Phase Runner appends
-`RUN-RESUME` naming that STOP, governing `TRG-21-012`, governing `ESC-21-009`,
-trigger signature
-`task-12:gate-repair:task-12-done.md:tagged-integration-retained-claim-transition-collateral`,
-attempt 6, and resolution authority `DEC-167`. It then appends one same-task
-`TASK-RECOVERY task-12` with `Source` and `Repair authority` `TRG-21-012 /
-DEC-167`, category `in-scope-implementation`, repair mode `task-scope`, the same
-trigger, attempt 6, and no-progress `0/2`, then dispatches only the task-12
-continuation under the amended spec. All six commands rerun byte-identically; no
-gate, VAL, command, or accepted contract changes.
+The Phase Runner appends `RUN-RESUME` naming that STOP, governing `TRG-21-014`,
+governing `ESC-21-010`, trigger signature
+`task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted`, attempt 4,
+resolution authority `DEC-168`, continuing task `task-13`, and next recovery
+`task-13 | session-continuation | task-scope | <that trigger> | 4`. It then
+appends one `TASK-RECOVERY task-13` with `Source` and `Repair authority`
+`TRG-21-014 / DEC-168`, category `session-continuation`, mode `task-scope`,
+attempt 4, and no-progress `0/2`.
 
-Task 12's tagged journey blocks one step at a time: a later step is progress and
-resets no-progress `0/2`. A gate failing outside named scope is a scope gap to
-report, never an invented owner routing.
+That recovery is an orchestration wrapper. Dispatch the QA Lead checkpoint first,
+wait for that child to terminate on its own, and never interrupt it at 900s. Every
+probe reruns fresh in newly allocated scratch; preserved scratch and any
+diagnostic run are inadmissible. Dispatch the task-13 Developer only after the
+committed `qa/group-1-checkpoint-review.md` records a verified PASS. DEC-168 items
+9-10 fix the REPAIR/TASK COMPLETE closure and every non-PASS branch.

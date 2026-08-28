@@ -557,3 +557,113 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **Historical integrity:** TRG-21-012, ESC-21-009, their ledger TRIAGE/STOP, the
   attempt 1-5 evidence, and all failed command results remain unchanged. The
   Phase Runner appends the recovery events; this note does not edit the ledger.
+
+---
+
+## TRG-21-013 - Group 1 independent checkpoint QA capability unavailable after bounded sessions
+
+- **Trigger:** the required Phase 21 Group 1 independent checkpoint has no usable QA artifact after three fresh bounded QA Lead sessions; each exceeded the declared 900-second FEAS-set budget and was explicitly interrupted before returning a checkpoint verdict. This is a possible unavailable external capability / bounded QA-session liveness blocker, not a product finding.
+- **Originating task:** N/A
+- **Trigger signature:** phase-21:group-1-checkpoint:qa-lead-feasibility-session-interrupted
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** Phase 21 Group 1 checkpoint QA session; preserved fresh scratch paths `/tmp/tmp.YC4EUO3gMN` and `/tmp/tmp.zQAE0hBrd2`.
+- **Candidate:** unavailable external capability / bounded QA-session liveness blocker
+- **Attempt count:** 3
+- **Checkpoint:** phase HEAD `6caaa6f7dc7cca0c5e9e4306f81ae53228f25d25`, verified by prompt-attached `git rev-parse --verify HEAD^{commit}` result and subject match `docs(qa): pass phase 21 window 4 re-review`; required artifact `project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md` is absent.
+- **Verdict:** BLOCK
+- **Reasoning:** The checkpoint is an accepted Group 2 dispatch prerequisite and requires one fresh independent artifact that separately decides VAL-042 and VAL-043 and records FEAS-01 through FEAS-19 with observed termination. Three fresh bounded QA Lead attempts each exhausted the declared 900-second FEAS-set budget and returned `STATUS: INTERRUPTED`, without a verdict, artifact, commit, or command session. No evidence establishes that a fourth identical bounded QA-session retry can complete, while task 13 cannot advance on partial, undocumented, or transcribed evidence.
+- **Local decisions made:** none
+- **Resolution evidence:** Required result: one fresh independent Group 1 checkpoint artifact, separately deciding VAL-042 and VAL-043 and recording FEAS-01..FEAS-19 with observed termination, committed before task 13 dispatch. Observed result: attempts 1, 2, and 3 each returned `STATUS: INTERRUPTED` after the 900-second budget, with no artifact, commit, or command session; attempt 3 reached child build and fresh FEAS setup/materials but still produced no artifact. The liveness route returned `ACTION REPAIR` for each terminated interruption, but the bounded recovery has now produced no usable checkpoint artifact after all three fresh attempts.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** do not edit product code, tests, task specs, QA plan/contract, validation contract, decisions, triage/escalations, or run ledger; do not weaken checkpoint requirements, FEAS budgets, observed-termination rules, or any protected contract.
+- **Exact verification:** N/A; Phase Runner will verify any later checkpoint artifact and commit independently.
+- **Originating report:** N/A
+- **Control repair base:** 6caaa6f7dc7cca0c5e9e4306f81ae53228f25d25
+- **If BLOCK:** category unavailable external capability / bounded QA-session liveness; ESC-21-010 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human restores or provides an independent QA capability that can execute the unchanged checkpoint and return one complete artifact, or records an authorized protected resolution for the checkpoint/capability route.
+- **Human attention required:** yes
+- **References:** project-docs/docs/current/phase_brief.md Group 1 and Dispatch Controls; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-contract.md Verdict; project-docs/docs/phases/phase-21/qa/qa-plan.md sections 10-11; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/templates/triage-log-template.md.
+
+---
+
+## TRG-21-014 - Corrected task identity for the blocked Group 1 checkpoint
+
+- **Trigger:** correction of malformed TRG-21-013 identity for the already-blocked Phase 21 Group 1 independent checkpoint.
+- **Originating task:** task-13
+- **Trigger signature:** task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** correction source TRG-21-013 / existing ESC-21-010; Phase Runner schema-v2 append rejection because TRG-21-013 recorded `Originating task: N/A` against a concrete checkpoint trigger.
+- **Candidate:** already-blocked unavailable external capability / bounded QA-session liveness condition; orchestration-record identity correction for ledger consumption.
+- **Attempt count:** 3
+- **Checkpoint:** current phase HEAD `6caaa6f7dc7cca0c5e9e4306f81ae53228f25d25`, verified by prompt-attached `git rev-parse --verify HEAD^{commit}` result and subject match `docs(qa): pass phase 21 window 4 re-review`; required artifact `project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md` remains absent.
+- **Verdict:** BLOCK
+- **Reasoning:** The independent checkpoint remains an accepted task-13 dispatch prerequisite. It requires one fresh artifact that separately decides VAL-042 and VAL-043 and records FEAS-01 through FEAS-19 with observed termination. Three fresh independent QA Lead sessions each returned `STATUS: INTERRUPTED` after the declared 900-second FEAS-set budget with no artifact, commit, verdict, or command session; attempt 3 reached fresh child build and FEAS setup but still produced no artifact. This corrects only the malformed external identity so the schema-v2 ledger can bind the existing stop; it does not create a new capability result or escalation.
+- **Local decisions made:** corrected the external triage identity to task-13 and task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted for ledger consumption; retained the existing BLOCK and ESC-21-010 without dispatching task 13.
+- **Resolution evidence:** none. The existing protected unavailable-QA-capability condition remains: a fresh independent checkpoint artifact must separately decide VAL-042 and VAL-043 and record FEAS-01..FEAS-19 with observed termination before task 13 dispatch; no such artifact exists.
+- **If REPAIR:** N/A
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** do not weaken or bypass the accepted checkpoint contract, VAL-042/VAL-043, FEAS-01..FEAS-19, per-probe/whole-set budgets, or observed-termination requirements; do not dispatch task 13; do not edit the run ledger or protected project artifacts.
+- **Exact verification:** N/A; Phase Runner will verify any later checkpoint artifact and commit independently.
+- **Originating report:** N/A
+- **Control repair base:** 6caaa6f7dc7cca0c5e9e4306f81ae53228f25d25
+- **If BLOCK:** category unavailable external capability / bounded QA-session liveness; ESC-21-010 referenced in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human restores or provides an independent QA capability that can execute the unchanged checkpoint and return one complete artifact, or records an authorized protected resolution for the checkpoint/capability route.
+- **Human attention required:** yes
+- **References:** TRG-21-013; ESC-21-010 in project-docs/docs/current/tl_escalations_current.md; project-docs/docs/current/phase_brief.md Group 1 and Dispatch Controls; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-contract.md Verdict; project-docs/docs/phases/phase-21/qa/qa-plan.md sections 10-11; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/templates/triage-log-template.md.
+
+## Resolution Note For TRG-21-013 And TRG-21-014
+
+- **Decision authority:** DEC-168, 2026-08-29.
+- **Verdict audit:** **not sustained on the recorded category.** The blocking
+  condition was real - no `qa/group-1-checkpoint-review.md` exists - and refusing
+  to dispatch task 13 on partial or transcribed evidence was correct. The
+  category was wrong. The QA capability is available: preserved scratch
+  `/tmp/tmp.zQAE0hBrd2` holds a built `child-bin` and materialized outputs for
+  essentially the whole probe set, and a fresh diagnostic tagged integration run
+  outside any checkpoint session completed. The real cause is orchestration
+  applying the 900-second FEAS-set command budget as the QA Lead child session's
+  total lifetime, then restarting each attempt from zero.
+- **TRG-21-013:** retained as historical evidence. Its `Originating task: N/A`
+  with a `phase-21:` trigger signature cannot bind under schema v2 and is not a
+  governing recovery record.
+- **TRG-21-014:** retained as the sole governing STOP record; its identity
+  correction is mechanically valid and its BLOCK is superseded by DEC-168, not
+  rewritten.
+- **Resolution:** DEC-168 records the binding reading of the declared budgets -
+  120s per probe, 900s for the FEAS set, 300s independently for the tagged
+  integration command, and no budget on the child session's lifetime - with no
+  edit to `qa-plan.md` or `group-1-checkpoint-contract.md`. VAL-042, VAL-043,
+  FEAS-01..FEAS-19, fresh-session evidence, observed termination, commands,
+  accepted statuses, and reviewer independence are unchanged, and the checkpoint
+  is not split. Preserved scratch and the diagnostic run are inadmissible as
+  checkpoint evidence; all probes rerun fresh in newly allocated scratch, and the
+  QA Lead writes the artifact incrementally during the attempt.
+- **Recovery:** RUN-RESUME from the STOP retains TRG-21-014 and ESC-21-010, uses
+  resolution authority DEC-168, continuing task task-13, attempt 4, and next
+  recovery tuple
+  `task-13 | session-continuation | task-scope | task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted | 4`,
+  then one `TASK-RECOVERY task-13` with `Source` and `Repair authority`
+  `TRG-21-014 / DEC-168`, category `session-continuation`, mode `task-scope`, and
+  no-progress `0/2`. This is an orchestration wrapper: the Phase Runner dispatches
+  the QA Lead first, must not interrupt it at 900 seconds, and must not dispatch
+  the task-13 Developer until the committed checkpoint artifact records a verified
+  PASS. DEC-168 items 9 and 10 fix the REPAIR/TASK COMPLETE closure and every
+  branch. ESC-21-010 is resolved.
+- **Recurrence note:** third identity-correction cycle after TRG-21-002/003 and
+  TRG-21-005/006, and the first phase-scoped trigger with no valid schema-v2
+  identity. The three interrupted attempts also have no ledger event. DEC-168
+  item 11 defers both general fixes to workflow maintenance rather than solving
+  them inside this phase.
+- **Historical integrity:** TRG-21-013, TRG-21-014, ESC-21-010, the ledger TRIAGE
+  and STOP, the rejected TRG-21-013 append, and the preserved scratch paths remain
+  unchanged. The Phase Runner appends the RUN-RESUME; this note does not edit
+  `run-ledger.md`.
