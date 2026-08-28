@@ -74,10 +74,10 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 - `go test ./cmd/fid --run '^TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.210s` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid --run '^(TestV01DClosureLifecycleSmokeAndRebuildParity|TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.235s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestV01ClosureJourneyAndRebuildParity$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): the restored closure journey reaches Task 9's `issue ac verify ... --status pass` and receives `error: unknown flag: --status`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the retained AC success call passed removed `--status` and stopped before the VAL-030 unavailable leaf.
-- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after AC and Concern convergence, the journey reached removed `run record`.
-- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after the `run record` rejection, maintenance exposed the expected `telemetry_gaps` warning rather than the stale `pass` status.
-- `go test -race -coverprofile=coverage.out ./...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the initial Dev convergence retained two `in_progress` transitions; the second rejected as an invalid edge.
+- Historical expected-red tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the retained AC success call passed removed `--status` and stopped before the VAL-030 unavailable leaf.
+- Historical expected-red tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after AC and Concern convergence, the journey reached removed `run record`.
+- Historical expected-red tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): after the `run record` rejection, maintenance exposed the expected `telemetry_gaps` warning rather than the stale `pass` status.
+- Historical expected-red coverage evidence: `go test -race -coverprofile=coverage.out ./...` - FAIL (expected red) - `FAIL` (terminated `exit_code: 1`): the initial Dev convergence retained two `in_progress` transitions; the second rejected as an invalid edge.
 - `go test -race ./internal/dev` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/dev\t10.125s` (terminated `exit_code: 0`)
 - Real entrypoint: `go build -o /tmp/fid-task12-attempt6 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt6 --json issue ac verify FID-1 AC-1 --actor agent:qa_lead` in `/tmp/fid-task12-attempt6.dHeJ9O` - PASS (expected capability-unavailable rejection) - `{"contract_version":"fid-cli.v1","error":{"category":"authority","code":"capability-unavailable","details":{"available":false,"capability_id":"reviews.coverage.v1","owner_phase":23},"message":"capability is unavailable","retryable":false,"subject":{"id":"reviews.coverage.v1","type":"capability"}},"ok":false,"operation":"issue.ac.verify"}` (terminated `exit_code: 1`).
 - Real entrypoint: `go build -o /tmp/fid-task12-attempt2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`); `/tmp/fid-task12-attempt2 issue transition FID-70fcfa --to in_progress --actor agent:qa_reviewer --idempotency-key task12-entry-transition` in `/tmp/fid-task12-entry.y8p4B8` - PASS - `transitioned FID-70fcfa: todo → in_progress` (terminated `exit_code: 0`).
@@ -95,44 +95,44 @@ The retained Task 8 Event-actor and `issue create --by` assertions remain in `Te
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t65.3%` (terminated `exit_code: 0`)
 
 - Attempt 6 first coverage attempt:
-- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`): `TestStartRejectsInvalidWorkflowEdgeBeforeAppend` exposed the duplicate setup transition; the stale V1 Claim-rejection probe was removed, leaving the original post-Claim transition as the only setup transition.
+- Historical Attempt 6 first coverage evidence: `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`): `TestStartRejectsInvalidWorkflowEdgeBeforeAppend` exposed the duplicate setup transition; the stale V1 Claim-rejection probe was removed, leaving the original post-Claim transition as the only setup transition.
 
 - Attempt 5 (this continuation):
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t173.260s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
+- Historical Attempt 5 tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
+- Historical Attempt 5 coverage evidence: `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
 
 - Attempt 3 (this continuation):
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t172.951s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
+- Historical Attempt 3 tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
 - `gofmt -l cmd internal` - FAIL - `cmd/fid/task12_execution_transition_test.go` (terminated `exit_code: 0`): the new assertion required formatting.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
+- Historical Attempt 3 coverage evidence: `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
 
 - Historical continuation attempt 2:
 
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.975s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
+- Historical continuation attempt 2 tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` reaches Task 9's `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`; Task 12 must preserve this external failure.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
+- Historical continuation attempt 2 coverage evidence: `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition; later Task 20 owns that fixture and Task 12 must not repair it.
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
 
 - Historical continuation attempt 1:
 
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - FAIL - `FAIL` (terminated `exit_code: 1`): retained V1 Claim-precondition tests still expected the obsolete standalone Claim gate.
 - `go test -race ./internal/workflow ./internal/issues ./internal/policy ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t171.603s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` now reaches `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`. This is Task 9's accepted fail-closed AC verification surface, not Claim-observation collateral.
+- Historical continuation attempt 1 tagged integration evidence: `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `TestV01ClosureJourneyAndRebuildParity` now reaches `issue ac verify ... --status pass --by qa_lead`, which exits 1 with `error: unknown flag: --status`. This is Task 9's accepted fail-closed AC verification surface, not Claim-observation collateral.
 - `gofmt -l cmd internal` - FAIL - `internal/issues/transition_test.go` (terminated `exit_code: 0`): the command reported an unformatted edited file.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `1 issues:` (terminated `exit_code: 1`): `entersStartedCategory` became unused after removal of the V1 Claim fallback.
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition. `internal/dev` is outside Task 12 scope and its Dev assertion is expressly forbidden from this repair.
+- Historical continuation attempt 1 coverage evidence: `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`): `internal/dev/TestStartRejectsInvalidWorkflowEdgeBeforeAppend` still expects the removed V1 Claim precondition. `internal/dev` is outside Task 12 scope and its Dev assertion is expressly forbidden from this repair.
 - `go tool cover -func=coverage.out` - PASS - `65.3%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
