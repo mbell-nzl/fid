@@ -2337,3 +2337,77 @@ and need not be contiguous. Ordering is not authority.
 - Triage: TRG-21-014 (BLOCK, escalated as ESC-21-010)
 - Protected category: unavailable external capability / bounded QA-session liveness
 - Next Human or external-authority action: Full Tech Lead or Human must restore or provide an independent QA capability that can execute the unchanged Group 1 checkpoint and return one complete committed artifact, or record an authorized protected resolution; task 13 must not be dispatched until then
+
+### 2026-08-29 09:09 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-08-28 23:21 STOP / TRG-21-014 / ESC-21-010
+- Governing TRG: TRG-21-014
+- Governing ESC: ESC-21-010
+- Trigger signature: task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted
+- Attempt count: 4
+- Checkpoint: runner-verified phase HEAD 6825d59e282c3795213fada9f6e9b082f4db3354 with matched subject Phase 21 escalation; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md is absent; preceding ledger event is the 2026-08-28 23:21 STOP
+- Resolution evidence: DEC-168 and its Resolution Note are committed, the category is corrected to orchestration session-liveness, ESC-21-010 is closed, and one fresh attempt is authorized with no contract change
+- Resolution authority: DEC-168
+- Continuing task: task-13
+- Next recovery: task-13 | session-continuation | task-scope | task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted | 4
+
+### 2026-08-29 09:09 TASK-RECOVERY task-13
+
+- Source: TRG-21-014 / DEC-168
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: TRG-21-014 / DEC-168
+- Triage disposition: N/A
+- Trigger signature: task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md; after a verified checkpoint PASS, ordinary task scope under project-docs/docs/phases/phase-21/tasks/task-13-executor-policy.md
+- Forbidden changes: do not interrupt or time-bound the QA Lead child session; do not dispatch the task-13 Developer before a verified committed checkpoint PASS; do not reuse /tmp/tmp.YC4EUO3gMN or /tmp/tmp.zQAE0hBrd2 or any prior scratch; do not accept transcribed, partial, promised, or wrapper-completion evidence; do not change qa/group-1-checkpoint-contract.md, qa/qa-plan.md, qa/validation-contract.md, VAL-042, VAL-043, FEAS-01..FEAS-19, any probe command, budget, tolerance, threshold, accepted status, or task specification; no product, test, migration, spec, decision, or prior-ledger edit under this recovery
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: runner-verified phase HEAD 6825d59e282c3795213fada9f6e9b082f4db3354 with matched subject Phase 21 escalation; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md is absent; the preceding ledger event is RUN-RESUME attempt 4
+- Phase worktree: /home/mark/projects/fid on branch phase-21; the runner-owned run ledger is the only dirty path; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - run one fresh independent checkpoint session to its own termination, commit project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md with separate VAL-042 and VAL-043 decisions and FEAS-01..FEAS-19 observed termination, then dispatch task 13 only on a verified PASS
+- Next action: dispatch only a fresh independent QA Lead checkpoint session under the unchanged contract and QA plan sections 10-11; wait for it to finish; verify the committed artifact and its verdict
+- Human attention required: no
+
+### 2026-08-29 09:43 REPAIR task-13
+
+- Trigger signature: task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY task-13 attempt 4; phase-21 HEAD 6825d59e282c3795213fada9f6e9b082f4db3354 verified with subject Phase 21 escalation; the DEC-168 one-off checkpoint recovery was pending and task 13 was not dispatched
+- Ending checkpoint: phase-21 HEAD 9a4ed612abf8430332585555d2b35a8f289c3fe2 verified with subject docs(qa): record phase 21 group 1 checkpoint; committed checkpoint artifact contains VAL-042 PASS, VAL-043 PASS, FEAS-01..FEAS-19 PASS, and overall REPAIR with MF-1 owned by task-4 and MF-2 owned by task-9; task 13 was not dispatched
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: one fresh independent checkpoint session completed without the prior whole-session cutoff, recorded all fresh FEAS-01..FEAS-19 results with observed termination, separately passed VAL-042 and VAL-043, and committed the artifact. The checkpoint identified two bounded Must-fix findings: task-4 Activation prepare replay returned exit_code: 1 with no output instead of the original Event with replayed:true; task-9 AC verification, Concern raise/address, and maintenance vacuum returned capability-unavailable but exited 1 instead of accepted exit 5.
+- Next checkpoint: TRIAGE/STOP
+
+### 2026-08-29 09:47 TRIAGE TRG-21-015
+
+- Trigger: Fresh Group 1 checkpoint REPAIR requires completed-task owner routing under DEC-168
+- Originating task: task-13
+- Trigger signature: task-13:group-1-checkpoint:checkpoint-review.md:must-fix-owner-routing
+- Attempt count: 1
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-21 HEAD 9a4ed612abf8430332585555d2b35a8f289c3fe2 verified with subject docs(qa): record phase 21 group 1 checkpoint; the committed artifact separately records VAL-042 PASS, VAL-043 PASS, FEAS-01..FEAS-19 PASS, and overall REPAIR with MF-1 owned by task-4 and MF-2 owned by task-9
+- Verdict: BLOCK (escalated as ESC-21-011)
+- Resolution evidence: The checkpoint is not PASS: the independent review reproduced a task-4 Activation idempotent-replay defect and a task-9 fail-closed process-exit defect. DEC-168 item 10(a) prohibits the open task-13 wrapper from changing owner identity to completed tasks and requires Tech Lead authority for owner routing and checkpoint repetition.
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-015 confirmed; ESC-21-011 confirmed in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-08-29 09:47 STOP
+
+- Cause: task-13 / TRG-21-015 / ESC-21-011 - the complete Group 1 checkpoint is REPAIR with bounded task-4 and task-9 findings, but the DEC-168 task-13 wrapper cannot authorize cross-task owner routing
+- Triage: TRG-21-015 (BLOCK, escalated as ESC-21-011)
+- Protected category: cross-task ownership and phase-order authority under DEC-168 item 10(a)
+- Next Human or external-authority action: Full Tech Lead must select and authorize the task-4/task-9 recovery order and exact task-scope authority, require each exact command gate and committed report with two-argument report-lint, then require the unchanged complete independent Group 1 checkpoint rerun before any task-13 Developer dispatch

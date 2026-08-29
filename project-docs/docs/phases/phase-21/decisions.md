@@ -1156,6 +1156,206 @@
   `qa/validation-contract.md` VAL-042 and VAL-043;
   `tasks/task-13-executor-policy.md`; `09_AI_WORKFLOW.md` §§2.4 and 9.
 
+### DEC-169: Task 4 owns the Activation replay ordering; task 9 owns the whole section-7 exit contract. Closes ESC-21-011
+
+- **Date:** 2026-08-29
+- **Context:** The fresh Group 1 checkpoint ran to completion under DEC-168 and
+  returned `VAL-042 PASS`, `VAL-043 PASS`, `FEAS-01..FEAS-19 PASS`, and an overall
+  `REPAIR` with two bounded Must-fix findings. TRG-21-015 then stopped the run
+  exactly as DEC-168 item 10(a) instructs, because the open task-13 wrapper cannot
+  change owner identity. **The stop is correct and by design**; this decision
+  supplies the owner routing it asks for.
+  - **MF-1 is real and is task 4's.** `internal/workflow/activation.go:176` calls
+    `assertActivationAvailable` before `journal.CommitIdempotent` at `:213`, so the
+    `ActivationConflictError` at `:125-132` preempts an exact same-key,
+    same-digest replay that the idempotency layer would have served. The same
+    ordering exists in the component path (`:305-330`) and in
+    `transitionActivation`, where `build(conn, activation)` evaluates preconditions
+    at `:471` before the commit at `:502`. This contradicts `public-interface.md`
+    §6, which requires a same-key/same-digest replay to return the original Event
+    and domain fields with only `replayed:true` and no new Event. The generic
+    layer is fine - the checkpoint separately observed `claim.acquire` replaying
+    correctly - so the defect is the Activation caller path, which task 4 authored
+    and owns in its file scope. VAL-005 is task 2's journal-layer observable and
+    stays green; no Group 1 acceptance criterion asserted caller-path replay, which
+    is why twelve tasks passed over it.
+  - **One evidence detail must be pinned down during repair.** The review recorded
+    that the second call emitted no stdout or stderr, but
+    `cmd/fid/activation.go:273-313` maps `ActivationConflictError` to an
+    `activation-conflict` failure envelope on stderr. Either the second call did
+    emit that envelope and the review's silence detail is imprecise, or a second
+    output-channel defect exists. The red test records both streams verbatim; if
+    the process really is silent, that silence is part of the same repair.
+  - **MF-2 is real but is not a task-9 value choice.** `cmd/fid/main.go:5-9` holds
+    the only `os.Exit` in the product and always exits 1. `internal/cli` has no
+    exit concept at all, and 28 `cli.WriteFailure` call sites across 16 files
+    return untyped errors afterwards. The entire section 7 class table - `2`
+    invalid input, `3` not found, `4` conflict/precondition, `5`
+    authority/capability, `6` integrity, `7` internal, `8` observed gate
+    non-success, plus unknown-command `2` - is unimplemented. Task 9's four
+    fail-closed leaves emit exactly the right envelope; they are simply the first
+    real-process observation of a phase-wide gap.
+  - **Why nobody saw it.** No Group 1 required command runs a real built binary,
+    and `cmd/fid/integration/` contains no exit-status assertion whatsoever. This is
+    the fifth occurrence of the DEC-167 item 7 pattern: an accepted contract with
+    no gate that can observe it. It is already scheduled to bite again - QA-69
+    expects `fid export import` unknown-command exit 2 at task 19, and VAL-072
+    verifies every leaf's exit contract at task 22.
+  - **The fix is small.** `internal/cli/codes.go:10-19` and `:164+` already attach a
+    closed `Category` to every code, so the mapping is a seven-entry
+    category-to-exit function plus a typed error, not a per-code rewrite.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-015 is **sustained**. The Phase Runner and TL-Lite
+     followed DEC-168 item 10(a) precisely, and the checkpoint artifact is high
+     quality: it separated the three decided parts, kept VAL-042/VAL-043 passing on
+     their own evidence, and classified both findings as decision-free and bounded
+     with no blocker candidate. The only correction is scope: MF-2 named the right
+     owning task for the wrong-sized defect.
+  2. **MF-1 owner: task 4.** Repair boundary: no lifecycle precondition may preempt
+     an exact same-key, same-digest idempotent replay anywhere in the Activation
+     family - `prepare`, `component`, and the `commit`/`abort`/`finalize`
+     transitions. A replay returns the original Event, entity, and domain fields
+     with only `replayed:true` and appends no Event. New-key lifecycle conflicts and
+     same-key/different-digest conflicts still fail exactly as they do now, with
+     byte-identical envelopes. Every error path emits its typed failure envelope on
+     the accepted channel; a silent nonzero exit is a defect. No Event schema,
+     persistence, public-interface, result-shape, or command-grammar change.
+  3. **MF-2 owner: task 9, widened to the whole contract.** Task 9 implements the
+     complete section 7 mapping, not the single `capability-unavailable` value:
+     a category-to-exit function in `internal/cli` covering `invalid-input`→2,
+     `not-found`→3, `conflict`→4, `precondition`→4, `authority`→5, `integrity`→6,
+     `internal`→7, and `gate-unsuccessful`→8; a typed error that carries the
+     failure's code/category out of the leaf; `cmd/fid/main.go` wired to it;
+     Cobra unknown-command, unknown-flag, and usage errors mapped to 2; and every
+     existing `cli.WriteFailure` call site converted to return it. Human-mode
+     failures take the same exit class as JSON. Streaming `gate run` terminal-frame
+     exit semantics are untouched and stay with tasks 14-15. **Nothing about any
+     envelope changes**: no JSON field, code, category, message, subject, details,
+     channel, command grammar, capability availability, or writer absence moves.
+     Success stays exit 0.
+  4. **Why task 9 owns the sweep.** This is a bounded, recorded departure from
+     DEC-162's default owner, on the DEC-167 precedent: task 9 owns `internal/cli/`
+     and `cmd/fid/` in its file scope, its VAL-030 observable is the reproduced
+     failure, and it is the first task obligated to make the observable green. The
+     alternative - a one-code special case now and sixteen files of conversion
+     discovered at task 19 and task 22 - is the accumulation this project has
+     already paid for four times. The conversion is mechanical and envelope
+     preserving, and no existing test asserts a process exit, so the blast radius
+     is the contract itself.
+  5. **Gate coverage (DEC-167 item 7 compliance).** Both tasks are amended to name
+     the `cmd/fid/integration/` package in file scope and to carry
+     `go test -tags integration -race ./cmd/fid/integration/...` in `## Exact
+     Commands To Run`. Task 4's real-process regression proves the two-call
+     Activation result and zero Event delta; task 9's proves the four fail-closed
+     leaves at exit 5, one representative each of exit 2, 3, and 4, and
+     unknown-command exit 2. Without those gate additions neither scope is
+     assignable.
+  6. **No contract change.** VAL-030 with its accepted QA-29 exit-5 evidence and
+     VAL-072 already own these observables. No VAL, QA plan, checkpoint contract,
+     public interface, Event schema, migration, budget, threshold, or accepted
+     status changes. Standing rule for the rest of the phase: every leaf failure
+     returns the typed exit error, and any leaf added by tasks 13-22 uses the same
+     mapping rather than reintroducing an untyped error.
+  7. **Order and closure.** Task 4 first, then task 9. Each returns its own
+     committed report with fresh two-argument report-lint. Then one fresh
+     independent QA Lead reviewer repeats the **complete, unsplit** Group 1
+     checkpoint, all FEAS probes fresh in newly allocated scratch, and appends the
+     second complete review to `qa/group-1-checkpoint-review.md`, preserving the
+     first verdict verbatim. The task-13 Developer is dispatched only on that
+     rerun's verified `PASS`.
+  8. **Exact ledger route.** The task-13 wrapper is open at needs-continuation and
+     only a `RUN-RESUME` clears it, while a resume is bound to its governing
+     TRIAGE's task-prefixed trigger signature. TRG-21-015 is `task-13`-prefixed, so
+     reaching task 4 requires an identity-only successor triage, exactly as
+     TRG-21-014 succeeded TRG-21-013. The Phase Runner appends, in this order:
+     1. `REVIEW infra-review-1` - `Path:
+        project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md`,
+        `Tasks covered: task-1 through task-12 Group 1 independent checkpoint`,
+        `Outcome: REPAIR`, `Owning task: task-4, task-9`, `Re-review of: none`,
+        `Must-fix: 2 / Improvement: 0 / blocker candidates: 0`. This records the
+        already-committed artifact under the accepted DEC-163 multi-owner
+        representation and mechanically forbids a checkpoint rerun before both
+        owners complete. It is appended before the successor triage because a
+        `TRIAGE BLOCK` must be immediately followed by `STOP`, and because owner
+        state is only captured for recoveries appended after the review. This
+        supersedes DEC-168 item 8's no-REVIEW instruction; `infra-review-N` is a
+        non-window review ID and does not consume `review-5`.
+     2. `TRIAGE TRG-21-016` - identity-only successor of TRG-21-015, allocated by
+        TL-Lite in the triage log under this decision, retaining ESC-21-011 rather
+        than allocating a new escalation: `Originating task: task-4`,
+        `Trigger signature:
+        task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay`,
+        `Attempt count: 1`, `Repair category: N/A`, `Repair authority: N/A`,
+        `Verdict: BLOCK (escalated as ESC-21-011)`. Its triage-log section must
+        contain `- **Verdict:** BLOCK` and reference `ESC-21-011`.
+     3. `STOP` - required immediately after the TRIAGE BLOCK, naming TRG-21-016 and
+        ESC-21-011.
+     4. `RUN-RESUME` - `Prior run/session or STOP: <that STOP> / TRG-21-016 /
+        ESC-21-011`, `Governing TRG: TRG-21-016`, `Governing ESC: ESC-21-011`,
+        `Trigger signature:
+        task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay`,
+        `Attempt count: 2`, `Resolution authority: DEC-169`,
+        `Continuing task: task-4`, `Next recovery: task-4 | qa-rework |
+        task-scope |
+        task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay
+        | 2`.
+     5. `TASK-RECOVERY task-4` - `Source: TRG-21-016 / DEC-169`, `Repair authority:
+        TRG-21-016 / DEC-169`, `Category: qa-rework`, `Repair mode: task-scope`,
+        the same trigger signature, `Attempt count: 2`, `Consecutive no-progress
+        attempts: 0/2`, allowed files the amended task-4 scope, forbidden changes
+        per item 2. Then `REPAIR task-4` and, on `Outcome: RESOLVED`,
+        `TASK task-4 COMPLETE` with `Report:
+        project-docs/docs/phases/phase-21/tasks/task-4-done.md` and `report-lint:
+        PASS - OUTCOME COMPLETE`.
+     6. `TASK-RECOVERY task-9` - authorized by the open review, no further resume:
+        `Source: group-1-checkpoint-review.md MF-2 / DEC-169`, `Repair authority:
+        DEC-169`, `Category: qa-rework`, `Repair mode: task-scope`,
+        `Trigger signature:
+        task-9:checkpoint-repair:group-1-checkpoint-review.md:mf-2-failure-exit-class`,
+        `Attempt count: 1`, `Consecutive no-progress attempts: 0/2`. Then
+        `REPAIR task-9` and `TASK task-9 COMPLETE` the same way.
+     7. `REVIEW infra-review-1b` - same `Path`, `Outcome: PASS`, `Owning task:
+        none`, `Re-review of: infra-review-1`, `Must-fix: 0 / Improvement: 0 /
+        blocker candidates: 0`, appended only after the rerun checkpoint's own
+        `PASS` and only after both owners are complete.
+     8. The ledger is then `ADVANCEABLE` and task 13 dispatches normally. The
+        task-13 wrapper is dissolved by the `RUN-RESUME` at step 4 and is not
+        reopened; task 13 completes as an ordinary task.
+  9. **Branches.** A failed task-4 or task-9 repair is ordinary same-task recovery
+     under its own trigger signature, with the two-attempt no-progress budget and
+     DEC-167 item 8 accounting. A `REPAIR` verdict on the checkpoint rerun returns
+     to this decision's owner-routing route with a fresh review ID; a `BLOCK`
+     verdict escalates. The Phase Runner still never improvises cross-task work
+     inside an open recovery.
+  10. **Deferred, again.** This is the second instance of the DEC-168 item 11 gap:
+      schema v2 can express neither a phase-scoped trigger nor a STOP whose repair
+      belongs to a different task than the stopped one, so both instances have cost
+      an identity-only successor triage. The general fix stays with workflow
+      maintenance, outside this phase; this decision does not change any verifier,
+      template, or workflow definition.
+- **Consequences:** ESC-21-011 closes with no contract change and no re-slicing.
+  Phase 21 gains the exit-class implementation it had specified but never built,
+  thirteen tasks before the conformance corpus would have found it, and the
+  Activation family gains the replay behaviour the interface always required.
+  Reviewers should expect two bounded repairs, then a complete checkpoint rerun
+  whose FEAS set runs fresh again.
+- **Verification evidence:** `cmd/fid/main.go:5-9` is the only product `os.Exit`
+  and is unconditional `os.Exit(1)`; a repository search for `os.Exit`,
+  `ExitStatus`, or an exit mapping in `internal/cli` returns nothing outside test
+  `TestMain` helpers; `cli.WriteFailure` has 28 call sites across 16 files;
+  `internal/cli/codes.go:10-19` defines the closed `Category` set the mapping keys
+  on; `cmd/fid/integration/` contains no `ExitCode` or `ProcessState` assertion;
+  `internal/workflow/activation.go:176` precedes `:213`; `public-interface.md:402`
+  requires exit 5 for the four fail-closed leaves and `:441-445` defines the class
+  table; `qa-plan.md:428` (QA-29) and `:496` (QA-69) already expect exit 5 and exit
+  2 respectively.
+- **Refs:** TRG-21-015; ESC-21-011; DEC-168 items 8 and 10; DEC-167 items 3, 7,
+  and 8; DEC-163; DEC-162; `qa/group-1-checkpoint-review.md` MF-1 and MF-2;
+  `qa/group-1-checkpoint-contract.md`; `qa/qa-plan.md` §§10-11 and QA-29;
+  `qa/validation-contract.md` VAL-005, VAL-030, VAL-072;
+  `public-interface.md` §§6-7; `tasks/task-4-activation-trust.md`;
+  `tasks/task-9-retained-actor-policy-removal.md`.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

@@ -9,6 +9,28 @@ None.
 
 ---
 
+DEC-169 resolved ESC-21-011 on 2026-08-29. TRG-21-015 is sustained: DEC-168 item
+10(a) required exactly that stop and the checkpoint artifact is high quality.
+MF-1 is correctly task 4's - `internal/workflow/activation.go:176` evaluates
+`assertActivationAvailable` before `CommitIdempotent` at `:213`, so an exact
+same-key/same-digest replay is rejected by a lifecycle conflict, and the same
+ordering exists in the component and transition paths. MF-2 names the right task
+for a wrong-sized defect: `cmd/fid/main.go` holds the only product `os.Exit` and
+always exits 1, `internal/cli` has no exit concept, and 28 `cli.WriteFailure`
+sites across 16 files return untyped errors, so the whole section 7 exit class
+table is unimplemented and the four fail-closed leaves are simply its first
+real-process observation. No Group 1 command runs a real binary, the fifth
+DEC-167 item 7 occurrence. DEC-169 keeps both owners, widens MF-1 to the whole
+Activation family and MF-2 to the complete category-to-exit mapping, adds the
+tagged integration gate and `cmd/fid/integration/` scope to tasks 4 and 9, and
+changes no VAL, QA plan, checkpoint contract, public interface, or Event schema.
+Order is task 4, then task 9, then one complete unsplit independent checkpoint
+rerun; task 13 dispatches only on its PASS. The ledger route is
+`REVIEW infra-review-1` (REPAIR, owners `task-4, task-9`), `TRIAGE TRG-21-016`
+(identity-only successor of TRG-21-015 retaining ESC-21-011), `STOP`,
+`RUN-RESUME` continuing task-4 at attempt 2 under DEC-169, both owner triples,
+then `REVIEW infra-review-1b` PASS.
+
 DEC-168 resolved ESC-21-010 on 2026-08-29. TRG-21-013 and TRG-21-014 are not
 sustained on their recorded category. The blocking condition was real and the
 refusal to dispatch task 13 on partial evidence was correct, but the QA

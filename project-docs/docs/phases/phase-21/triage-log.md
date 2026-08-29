@@ -667,3 +667,85 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   and STOP, the rejected TRG-21-013 append, and the preserved scratch paths remain
   unchanged. The Phase Runner appends the RUN-RESUME; this note does not edit
   `run-ledger.md`.
+
+## Resolution Note For TRG-21-015
+
+- **Decision authority:** DEC-169, 2026-08-29.
+- **Verdict audit:** **sustained.** DEC-168 item 10(a) required exactly this stop,
+  and the Phase Runner and TL-Lite followed it precisely. The checkpoint artifact
+  is high quality: three separately decided parts, VAL-042 and VAL-043 passing on
+  their own evidence, FEAS-01..FEAS-19 fresh, and two decision-free bounded
+  findings with no blocker candidate. The only correction is finding scope, not
+  triage conduct.
+- **MF-1 routing:** correct. `internal/workflow/activation.go:176` evaluates
+  `assertActivationAvailable` before `journal.CommitIdempotent` at `:213`, so an
+  exact same-key/same-digest replay is rejected by a lifecycle conflict the
+  idempotency layer would have served; the same ordering exists in the component
+  path and in `transitionActivation`. Task 4 authored and owns that path. DEC-169
+  widens the repair to the whole Activation family and requires both streams of
+  the pre-repair second call to be recorded, because the review's "no output"
+  detail conflicts with the `activation-conflict` envelope mapped at
+  `cmd/fid/activation.go:284-294`.
+- **MF-2 routing:** right task, wrong-sized defect. `cmd/fid/main.go:5-9` is the
+  only product `os.Exit` and is unconditionally `os.Exit(1)`; `internal/cli` has no
+  exit concept; 28 `cli.WriteFailure` sites across 16 files return untyped errors.
+  The whole section 7 class table is unimplemented, so task 9's four fail-closed
+  leaves are the first real-process observation of a phase-wide gap, not a wrong
+  value choice. No Group 1 required command runs a real binary and
+  `cmd/fid/integration/` asserts no exit status anywhere - the fifth occurrence of
+  the DEC-167 item 7 pattern. DEC-169 keeps task 9 as owner and widens the repair
+  to the complete category-to-exit mapping, because the alternative accumulates the
+  same defect to QA-69 at task 19 and VAL-072 at task 22.
+- **Recovery:** DEC-169 item 8 fixes the exact route. Because schema v2 binds a
+  resume to its governing TRIAGE's task-prefixed trigger and TRG-21-015 is
+  `task-13`-prefixed, reaching task 4 needs an identity-only successor triage,
+  exactly as TRG-21-014 succeeded TRG-21-013. TL-Lite allocates **TRG-21-016**
+  under DEC-169, retaining ESC-21-011 rather than allocating a new escalation:
+  `Originating task: task-4`, `Trigger signature:
+  task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay`,
+  `Attempt count: 1`, `Repair category: N/A`, `Repair authority: N/A`,
+  `Verdict: BLOCK (escalated as ESC-21-011)`. The ledger order is
+  `REVIEW infra-review-1` (REPAIR, owners `task-4, task-9`), `TRIAGE TRG-21-016`,
+  `STOP`, `RUN-RESUME` (continuing task-4, attempt 2, authority DEC-169), the
+  task-4 recovery/repair/complete triple, the task-9 triple, then
+  `REVIEW infra-review-1b` PASS after the complete checkpoint rerun. ESC-21-011 is
+  resolved.
+- **Recurrence note:** second instance of the DEC-168 item 11 identity gap, now
+  cross-task rather than phase-scoped: schema v2 cannot express a STOP whose repair
+  belongs to a task other than the stopped one. Both instances cost an identity-only
+  successor triage. The general fix remains deferred to workflow maintenance.
+- **Historical integrity:** TRG-21-015, ESC-21-011, their ledger TRIAGE and STOP,
+  the committed checkpoint artifact, and all recorded evidence remain unchanged.
+  The Phase Runner appends the new events; this note does not edit
+  `run-ledger.md`.
+
+---
+
+## TRG-21-015 - Group 1 checkpoint repair requires completed-task owner routing
+
+- **Trigger:** fresh Group 1 checkpoint evidence has real Must-fix findings after VAL-042, VAL-043, and FEAS-01..FEAS-19 passed; the DEC-168 one-off task-13 wrapper cannot change owner identity while open.
+- **Originating task:** task-13
+- **Trigger signature:** task-13:group-1-checkpoint:checkpoint-review.md:must-fix-owner-routing
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md
+- **Candidate:** independent checkpoint REPAIR with MF-1 assigned to completed task-4 and MF-2 assigned to completed task-9.
+- **Attempt count:** 1
+- **Checkpoint:** committed `9a4ed612abf8430332585555d2b35a8f289c3fe2`; prompt-attached `git rev-parse --verify 9a4ed612abf8430332585555d2b35a8f289c3fe2^{commit}` returned the exact hash and the subject matched `docs(qa): record phase 21 group 1 checkpoint`.
+- **Verdict:** BLOCK
+- **Reasoning:** The checkpoint is not PASS: its independent contract review returned REPAIR with two reproduced product-conformance defects. MF-1 is bounded to task 4's Activation caller path and MF-2 to task 9's fail-closed process-exit mapping, but DEC-168 item 10(a) expressly prohibits the open task-13 orchestration wrapper from changing to either completed task owner and requires TRIAGE/STOP for ownership routing and the required complete checkpoint repeat. Selecting and sequencing those two task recoveries changes accepted work across task boundaries and cannot be decided locally.
+- **Local decisions made:** retained VAL-042 PASS, VAL-043 PASS, and fresh FEAS-01..FEAS-19 PASS as evidence only; they do not convert the checkpoint verdict to PASS. Did not reopen TRG-21-014: its distinct trigger was unavailable checkpoint execution, while this trigger is verified, newly delivered two-owner repair evidence.
+- **Resolution evidence:** MF-1 reproduced a byte-identical second `activation prepare` that emitted no output and terminated `exit_code: 1`, rather than returning the original Event and domain fields with `replayed:true` and no appended Event. MF-2 reproduced four `capability-unavailable` envelopes that each terminated `exit_code: 1`, rather than the accepted exit 5, with no journal mutation. Both findings preserve the accepted public contracts and require task-4/task-9 conformance repairs followed by a fresh complete independent checkpoint.
+- **If REPAIR:** N/A; the open task-13 wrapper cannot authorize or dispatch completed task-4 and task-9 owner recoveries, and the checkpoint repeat/order requires full Tech Lead authority under DEC-168 item 10(a).
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** do not dispatch task-13 before a verified checkpoint PASS; do not alter the accepted Group 1 checkpoint, VAL-042/VAL-043, FEAS-01..FEAS-19, command budgets/statuses, task specifications, public interface, Event schema, or workflow policy; do not route work by unverified owner inference; preserve the committed checkpoint and all evidence.
+- **Exact verification:** N/A
+- **Originating report:** N/A
+- **Control repair base:** 9a4ed612abf8430332585555d2b35a8f289c3fe2
+- **If BLOCK:** category cross-task ownership and phase-order authority under DEC-168 item 10(a); ESC-21-011 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead selects the task-4/task-9 recovery order and exact authority, requires their bounded conformance evidence and reports, then requires the unchanged complete independent Group 1 checkpoint rerun before task-13 dispatch.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/decisions.md DEC-168 items 8 and 10; project-docs/docs/current/phase_brief.md Group 1 and Dispatch Controls; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md MF-1, MF-2, and Findings And Verdict; project-docs/docs/phases/phase-21/tasks/task-4-activation-trust.md Scope and Exact Commands To Run; project-docs/docs/phases/phase-21/tasks/task-9-retained-actor-policy-removal.md Scope, Convergence Ownership, and Exact Commands To Run; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.

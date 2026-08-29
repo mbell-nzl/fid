@@ -25,8 +25,20 @@ Implement prepare/component/commit/abort/finalize/status for one Activation and 
 - `internal/workflow/`
 - `internal/policy/`
 - `internal/cli/`
-- `cmd/fid/`
+- `cmd/fid/` (including the `cmd/fid/integration/` package, DEC-169)
 - `project-docs/docs/phases/phase-21/tasks/task-4-done.md`
+
+### Checkpoint Repair Obligation (DEC-169, MF-1)
+
+No lifecycle precondition may preempt an exact same-key, same-digest idempotent
+replay anywhere in the Activation family: `prepare`, `component`, and the
+`commit`/`abort`/`finalize` transitions. A replay returns the original Event,
+entity, and domain fields with only `replayed:true` and appends no Event.
+New-key lifecycle conflicts and same-key/different-digest conflicts still fail
+with byte-identical envelopes. Every error path emits its typed failure envelope
+on the accepted channel; a silent nonzero exit is a defect. The red test records
+both streams verbatim for the pre-repair second call. No Event schema,
+persistence, public-interface, result-shape, or command-grammar change.
 
 ### Files To Read For Context
 
@@ -58,6 +70,7 @@ Run exactly:
 
 ```text
 go test -race ./internal/workflow ./internal/policy ./internal/cli ./cmd/fid/...
+go test -tags integration -race ./cmd/fid/integration/...
 rg -n --glob '*.go' --glob '!**/*_test.go' 'Use:\s*"recover|newActivationRecover|activation\.recover' cmd/fid internal
 gofmt -l cmd internal
 golangci-lint run ./...

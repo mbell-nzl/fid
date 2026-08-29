@@ -92,6 +92,28 @@ including in fixtures whose headline subject belongs to task 10, 11, or 20.
 - `t.Skip`, build tags, `-run` narrowing, threshold changes, and silent
   assertion loss are never convergence.
 
+### Checkpoint Repair Obligation (DEC-169, MF-2)
+
+Implement the complete `public-interface.md` section 7 process exit contract, not
+only the reproduced `capability-unavailable` value:
+
+- a category-to-exit function in `internal/cli` covering `invalid-input`→2,
+  `not-found`→3, `conflict`→4, `precondition`→4, `authority`→5, `integrity`→6,
+  `internal`→7, and `gate-unsuccessful`→8, keyed on the closed `Category` already
+  attached to every code in `internal/cli/codes.go`;
+- a typed error that carries the failure's code/category out of the leaf, with
+  `cmd/fid/main.go` wired to it and Cobra unknown-command, unknown-flag, and usage
+  errors mapped to exit 2;
+- every existing `cli.WriteFailure` call site converted to return it, so Human and
+  JSON failures share the same exit class.
+
+Nothing about any envelope changes: no JSON field, code, category, message,
+subject, details, channel, command grammar, capability availability, or writer
+absence moves, and success stays exit 0. Streaming `gate run` terminal-frame exit
+semantics are untouched and remain with tasks 14-15. Real-process coverage in
+`cmd/fid/integration/` proves the four fail-closed leaves at exit 5, one
+representative each of exit 2, 3, and 4, and unknown-command exit 2.
+
 ## Acceptance Criteria
 
 - [ ] Every retained family has exact attributed/idempotent behavior. (VAL-028)
@@ -113,6 +135,7 @@ Run exactly:
 
 ```text
 go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...
+go test -tags integration -race ./cmd/fid/integration/...
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...

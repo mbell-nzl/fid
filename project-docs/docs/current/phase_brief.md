@@ -19,9 +19,8 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 ## Binding Decisions
 
 - DEC-152 as refined by DEC-158: Phase 20 retrospective controls task size,
-  feasibility, report lint, review cadence, and checkpoint timing.
-- DEC-153, DEC-154, DEC-155: Gate D3.2 DP-1..DP-7 stay accepted; exact initial
-  slice/schema contract; carry-forward disposition.
+  feasibility, report lint, review cadence, and checkpoint timing. DEC-153/154/155
+  keep Gate D3.2 DP-1..DP-7, the exact slice/schema contract, and carry-forward.
 - DEC-156: gate evidence guards terminal-success transition before completion;
   both use one shared Obligation evaluator.
 - DEC-157: complete wire contract, kebab-case public enums, role-free bootstrap,
@@ -32,21 +31,20 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   bridge task 20 deletes; schema-v2 identity values are plain, task-prefixed.
 - DEC-162: retained V1 tests are not protected contracts; the invalidating task
   converges them without weakening. Tasks 2, 8, 9, and 20 inherit the rule.
-- DEC-163/164: QA `REPAIR` carries one ordered owner list and each owner repairs
-  before fresh re-review, `CORRECTION` is evidence-only; ordinary schema-v2
-  recovery names its TRG in `Source` and preserves external `Repair authority`.
+- DEC-163/164: QA `REPAIR` carries one ordered owner list, each owner repairs
+  before fresh re-review; ordinary recovery names its TRG in `Source`.
 - DEC-165/166: convergence follows the invalidating change and historical task
-  labels never establish current ownership; task 9 owns its incidental reads and
-  the Phase 20 request fixture, with V1 behavior byte-identical.
-- DEC-167: a required gate must exercise the scope its task owns. Task 12 owns
-  its `internal/dev` collateral and the accumulated `cmd/fid/integration/`
-  convergence, with per-row provenance. Reaching a later journey step is
-  progress; a directive-suppressed attempt does not consume recovery budget.
+  labels never establish ownership; V1 behavior stays byte-identical.
+- DEC-167: a required gate must exercise the scope its task owns; task 12 owns its
+  `internal/dev` and `cmd/fid/integration/` convergence with per-row provenance. A
+  directive-suppressed attempt does not consume recovery budget.
 - DEC-168: 120s bounds each FEAS probe, 900s the FEAS set, 300s the tagged
-  integration command; no budget bounds the QA Lead child session's lifetime.
-  The checkpoint reruns unchanged and unsplit as attempt 4 under a one-off
-  `task-13 | session-continuation | task-scope` wrapper; the Runner waits for the
-  QA Lead and dispatches task 13 only on a verified checkpoint PASS.
+  integration command; no budget bounds the QA Lead child session's lifetime. The
+  Runner waits for the QA Lead and dispatches task 13 only on a verified PASS.
+- DEC-169: the checkpoint returned REPAIR. Task 4 owns Activation same-key replay
+  ordering across the whole family; task 9 owns the complete section-7
+  category-to-exit mapping, not one code. Both gain `cmd/fid/integration/` scope
+  and the tagged gate. Order: task 4, task 9, complete checkpoint rerun.
 
 ## Planning Authorities
 
@@ -128,23 +126,25 @@ negative checks; never create a second Envelope revision.
 All four planning gates are complete: Heavy shape and Gate D3.2 accepted, plan
 Ready at `e8a636e`, no unresolved refinement, Human execution approval under
 DEC-159. Tasks 1-12 and review windows 1-4 are complete, `review-4b` PASS. The
-run is STOPPED after TRIAGE TRG-21-014 / ESC-21-010: three fresh QA Lead Group 1
-checkpoint sessions were interrupted with no artifact. DEC-168 resolves it - the
-cause was orchestration applying the 900s FEAS-set command budget as the whole
-child-session lifetime, not an unavailable capability.
+Group 1 checkpoint ran complete under DEC-168 with VAL-042, VAL-043, and
+FEAS-01..FEAS-19 all PASS, and returned `REPAIR` on two bounded findings. The run
+is STOPPED after TRIAGE TRG-21-015 / ESC-21-011, exactly as DEC-168 item 10(a)
+requires. DEC-169 supplies the owner routing and resolves it.
 
-The Phase Runner appends `RUN-RESUME` naming that STOP, governing `TRG-21-014`,
-governing `ESC-21-010`, trigger signature
-`task-13:group-1-checkpoint:qa-lead-feasibility-session-interrupted`, attempt 4,
-resolution authority `DEC-168`, continuing task `task-13`, and next recovery
-`task-13 | session-continuation | task-scope | <that trigger> | 4`. It then
-appends one `TASK-RECOVERY task-13` with `Source` and `Repair authority`
-`TRG-21-014 / DEC-168`, category `session-continuation`, mode `task-scope`,
-attempt 4, and no-progress `0/2`.
+The Phase Runner appends, in order: `REVIEW infra-review-1` recording the
+committed checkpoint (`Outcome: REPAIR`, `Owning task: task-4, task-9`);
+`TRIAGE TRG-21-016`, the identity-only successor of TRG-21-015 that TL-Lite
+allocates under DEC-169 retaining ESC-21-011, `Originating task: task-4`,
+trigger signature
+`task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay`;
+`STOP`; then `RUN-RESUME` with that trigger, attempt 2, resolution authority
+`DEC-169`, continuing task `task-4`, and next recovery
+`task-4 | qa-rework | task-scope | <that trigger> | 2`.
 
-That recovery is an orchestration wrapper. Dispatch the QA Lead checkpoint first,
-wait for that child to terminate on its own, and never interrupt it at 900s. Every
-probe reruns fresh in newly allocated scratch; preserved scratch and any
-diagnostic run are inadmissible. Dispatch the task-13 Developer only after the
-committed `qa/group-1-checkpoint-review.md` records a verified PASS. DEC-168 items
-9-10 fix the REPAIR/TASK COMPLETE closure and every non-PASS branch.
+Task 4 repairs MF-1 first, then task 9 repairs MF-2 under an unbound
+`TASK-RECOVERY task-9` authorized by the open review. Each returns its own
+committed report and fresh two-argument report-lint. Then one fresh independent
+reviewer repeats the complete unsplit checkpoint with all FEAS probes fresh and
+appends the second review to the same artifact, recorded as `REVIEW
+infra-review-1b` PASS. Task 13 dispatches only after that. DEC-169 item 8 holds
+the exact field values.
