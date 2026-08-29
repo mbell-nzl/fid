@@ -128,7 +128,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			if err != nil {
 				return err
 			}
-			prepared = GateRunResult{Attempt: Attempt{ID: receipt.AttemptID}, Receipt: &receipt, Live: LiveResult{Outcome: "succeeded", ExitCode: receipt.ExitCode, Signal: receipt.Signal, TimedOut: receipt.TimedOut, OutputBytes: receipt.OutputBytes, OutputTruncated: receipt.OutputTruncated, RedactionApplied: receipt.RedactionApplied, RejectedArtifacts: receipt.RejectedArtifacts, executionID: receipt.AttemptID}, EventID: outcome.EventID, EventOccurredAt: occurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
+			prepared = GateRunResult{Attempt: Attempt{ID: receipt.AttemptID}, Receipt: &receipt, Live: LiveResult{Outcome: receipt.Outcome, ExitCode: receipt.ExitCode, Signal: receipt.Signal, TimedOut: receipt.TimedOut, OutputBytes: receipt.OutputBytes, OutputTruncated: receipt.OutputTruncated, RedactionApplied: receipt.RedactionApplied, RejectedArtifacts: receipt.RejectedArtifacts, executionID: receipt.AttemptID}, EventID: outcome.EventID, EventOccurredAt: occurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
 			return nil
 		}
 
@@ -331,13 +331,6 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	}
 	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: []any{}, RejectedArtifacts: append([]ArtifactRejection(nil), live.RejectedArtifacts...)}
 	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), options.Request.Repository)
-	if receipt.Outcome != "succeeded" {
-		appended, err := journal.CommitEvent(lock, conn, event)
-		if err != nil {
-			return Receipt{}, "", err
-		}
-		return receipt, appended.EventID, nil
-	}
 	resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"receipt": receipt, "idempotency_key": options.IdempotencyKey, "replayed": false})
 	if err != nil {
 		return Receipt{}, "", err

@@ -26,6 +26,9 @@ func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 	if table == "activity_log" && effect.Op != "activity" {
 		return fmt.Errorf("project event %q: activity_log writes require effect op %q", input.Event.EventID, "activity")
 	}
+	if table == "execution_receipts" && effect.Op != "insert" {
+		return fmt.Errorf("project event %q: execution_receipts are immutable", input.Event.EventID)
+	}
 
 	switch effect.Op {
 	case "insert":

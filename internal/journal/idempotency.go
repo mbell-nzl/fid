@@ -37,8 +37,6 @@ type IdempotencyConflictError struct {
 }
 
 // CommitEvent appends and projects one non-idempotent Event-v2 mutation.
-// Attempt and unsuccessful Receipt facts intentionally use this path because
-// they must remain durable observations without creating a replayable result.
 func CommitEvent(lock *WriteLock, conn *sql.DB, event Event) (Event, error) {
 	if lock == nil {
 		return Event{}, fmt.Errorf("commit Event: lock is nil")
