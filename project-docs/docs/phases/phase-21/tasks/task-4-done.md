@@ -105,10 +105,10 @@
 
 ## Commit hash
 
-- Pending commit
+- `0444ccc458f3ac5a720724825f7f81589cb41e09`
 
 ## Commit subject
 
-- Pending commit
+- `fix(activation): replay stored activation results`
 
 OUTCOME COMPLETE
