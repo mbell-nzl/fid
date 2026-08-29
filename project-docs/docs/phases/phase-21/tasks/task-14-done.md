@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `f0eec233bba8695c2b33b5a74237fc0eea591ff7`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): add live output framing`
