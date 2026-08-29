@@ -246,22 +246,19 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
 	var notFound *workflow.NotFoundError
 	if errors.As(cause, &notFound) {
 		failure, err := cli.NewFailure(cli.CodeWorkflowNotFound, "workflow was not found", &cli.Subject{Type: cli.SubjectWorkflow, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	var duplicate *workflow.DuplicateError
 	if errors.As(cause, &duplicate) {
@@ -271,10 +268,13 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	var limit *workflow.ResultLimitExceededError
 	if errors.As(cause, &limit) {
@@ -282,10 +282,13 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	return renderIssueMutationError(cmd, operation, "", cause)
 }

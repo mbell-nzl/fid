@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,28 @@ func execute() error {
 	if err != nil {
 		return err
 	}
-	return cmd.Execute()
+	err = cmd.Execute()
+	if err != nil && isCobraInputError(err) {
+		failure, failureErr := cli.NewFailure(cli.CodeInvalidArgument, "invalid command request", nil, map[string]any{
+			"argument": "request",
+			"value":    nil,
+			"allowed":  []string{"accepted command input"},
+		})
+		if failureErr != nil {
+			return failureErr
+		}
+		return cli.NewFailureError(failure, err)
+	}
+	return err
+}
+
+func isCobraInputError(err error) bool {
+	message := err.Error()
+	return strings.HasPrefix(message, "unknown command ") ||
+		strings.HasPrefix(message, "unknown flag: ") ||
+		strings.HasPrefix(message, "accepts ") ||
+		strings.HasPrefix(message, "requires at least ") ||
+		strings.HasPrefix(message, "requires at most ")
 }
 
 func newRootCommand() (*cobra.Command, error) {

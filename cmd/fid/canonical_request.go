@@ -43,13 +43,6 @@ func renderCanonicalRequestError(cmd *cobra.Command, operation string, cause err
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
-
 	failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid command request", nil, map[string]any{
 		"argument": "request",
 		"value":    nil,
@@ -58,8 +51,11 @@ func renderCanonicalRequestError(cmd *cobra.Command, operation string, cause err
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, cause)
 	}
-	return cause
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }

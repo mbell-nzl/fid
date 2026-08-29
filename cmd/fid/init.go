@@ -135,15 +135,12 @@ func renderInitFailure(cmd *cobra.Command, workspaceRoot string, initErr error) 
 		return err
 	}
 	if jsonMode {
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), "project.init", failure); err != nil {
-			return err
-		}
-		return initErr
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.init", failure, initErr)
 	}
 	if err := renderInitError(cmd, initErr); err != nil {
 		return err
 	}
-	return initErr
+	return cli.NewFailureError(failure, initErr)
 }
 
 func initFailure(workspaceRoot string, initErr error) (cli.Failure, error) {

@@ -275,42 +275,29 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 	if err != nil {
 		return err
 	}
+	failure, err := activationFailure(cause)
+	if err != nil {
+		return err
+	}
 	if !jsonMode {
 		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
 			return err
 		}
-		return cause
+		return cli.NewFailureError(failure, cause)
 	}
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
+}
+
+func activationFailure(cause error) (cli.Failure, error) {
 	var conflict *workflow.ActivationConflictError
 	if errors.As(cause, &conflict) {
-		failure, err := cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})
-		if err == nil {
-			err = cli.WriteFailure(cmd.ErrOrStderr(), operation, failure)
-		}
-		if err != nil {
-			return err
-		}
-		return cause
+		return cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})
 	}
 	var recovery *workflow.ActivationRecoveryUnavailableError
 	if errors.As(cause, &recovery) {
-		failure, err := cli.NewFailure(cli.CodeActivationRecoveryUnavailable, "activation recovery is unavailable", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": recovery.Status, "point_of_no_return": true, "owner_phase": 22})
-		if err == nil {
-			err = cli.WriteFailure(cmd.ErrOrStderr(), operation, failure)
-		}
-		if err != nil {
-			return err
-		}
-		return cause
+		return cli.NewFailure(cli.CodeActivationRecoveryUnavailable, "activation recovery is unavailable", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": recovery.Status, "point_of_no_return": true, "owner_phase": 22})
 	}
-	failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
-	if err != nil {
-		return err
-	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
-	}
-	return cause
+	return cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
 }
 
 func activationConflictID(value *string) any {

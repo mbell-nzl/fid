@@ -168,28 +168,25 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cause
-	}
 	var notFound *workflow.EnvelopeNotFoundError
 	var authority *workflow.EnvelopeAuthorityError
 	if errors.As(cause, &notFound) {
-		return writeEnvelopeFailure(cmd, operation, cli.CodeEnvelopeNotFound, "envelope was not found", &cli.Subject{Type: cli.SubjectEnvelope, ID: notFound.ID}, map[string]any{"id": notFound.ID})
+		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeEnvelopeNotFound, "envelope was not found", &cli.Subject{Type: cli.SubjectEnvelope, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	if errors.As(cause, &authority) {
-		return writeEnvelopeFailure(cmd, operation, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
+		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
 	}
-	return writeEnvelopeFailure(cmd, operation, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
-func writeEnvelopeFailure(cmd *cobra.Command, operation string, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
+func writeEnvelopeFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
 	failure, err := cli.NewFailure(code, message, subject, details)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		_ = renderIssueError(cmd.ErrOrStderr(), cause)
+		return cli.NewFailureError(failure, cause)
 	}
-	return fmt.Errorf("%s failed", operation)
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

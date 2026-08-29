@@ -60,22 +60,19 @@ func renderCapabilitiesInvalidRequest(cmd *cobra.Command, argument, value string
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
 	failure, err := cli.NewFailure(cli.CodeInvalidArgument, "capabilities accepts no arguments", nil, map[string]any{
 		"allowed": []string{"no arguments"}, "argument": argument, "value": value,
 	})
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), "capabilities.get", failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, cause)
 	}
-	return cause
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "capabilities.get", failure, cause)
 }
 
 func renderCapabilitiesError(cmd *cobra.Command, cause error) error {
@@ -83,18 +80,15 @@ func renderCapabilitiesError(cmd *cobra.Command, cause error) error {
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
 	failure, err := cli.NewFailure(cli.CodeInternalError, "capability discovery failed", nil, map[string]any{})
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), "capabilities.get", failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, cause)
 	}
-	return cause
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "capabilities.get", failure, cause)
 }

@@ -181,34 +181,30 @@ func renderClaimError(cmd *cobra.Command, operation string, cause error) error {
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cause
-	}
 	var notFound *claims.ClaimNotFoundError
 	if errors.As(cause, &notFound) {
-		return writeClaimFailure(cmd, operation, cli.CodeClaimNotFound, "claim was not found", &cli.Subject{Type: cli.SubjectClaim, ID: notFound.ID}, map[string]any{"id": notFound.ID})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeClaimNotFound, "claim was not found", &cli.Subject{Type: cli.SubjectClaim, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	var conflict *claims.ClaimConflictError
 	var expired *claims.ClaimExpiredError
 	var stale *claims.ClaimStaleError
 	switch {
 	case errors.As(cause, &conflict):
-		return writeClaimConflict(cmd, operation, cli.CodeClaimConflict, (*claims.ClaimConflictError)(conflict))
+		return writeClaimConflict(cmd, jsonMode, operation, cause, cli.CodeClaimConflict, (*claims.ClaimConflictError)(conflict))
 	case errors.As(cause, &expired):
-		return writeClaimConflict(cmd, operation, cli.CodeClaimExpired, (*claims.ClaimConflictError)(expired))
+		return writeClaimConflict(cmd, jsonMode, operation, cause, cli.CodeClaimExpired, (*claims.ClaimConflictError)(expired))
 	case errors.As(cause, &stale):
-		return writeClaimConflict(cmd, operation, cli.CodeClaimStale, (*claims.ClaimConflictError)(stale))
+		return writeClaimConflict(cmd, jsonMode, operation, cause, cli.CodeClaimStale, (*claims.ClaimConflictError)(stale))
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
-		return writeClaimFailure(cmd, operation, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+		return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
 	}
-	return writeClaimFailure(cmd, operation, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeClaimFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid claim request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
-func writeClaimConflict(cmd *cobra.Command, operation string, code cli.Code, cause *claims.ClaimConflictError) error {
-	return writeClaimFailure(cmd, operation, code, string(code), &cli.Subject{Type: cli.SubjectClaim, ID: claimErrorID(cause)}, map[string]any{"issue_id": cause.IssueID, "claim_id": claimErrorString(cause.ClaimID), "expected_version": claimErrorVersion(cause.ExpectedVersion), "actual_version": claimErrorVersion(cause.ActualVersion), "expires_at": claimErrorString(cause.ExpiresAt)})
+func writeClaimConflict(cmd *cobra.Command, jsonMode bool, operation string, original error, code cli.Code, cause *claims.ClaimConflictError) error {
+	return writeClaimFailure(cmd, jsonMode, operation, original, code, string(code), &cli.Subject{Type: cli.SubjectClaim, ID: claimErrorID(cause)}, map[string]any{"issue_id": cause.IssueID, "claim_id": claimErrorString(cause.ClaimID), "expected_version": claimErrorVersion(cause.ExpectedVersion), "actual_version": claimErrorVersion(cause.ActualVersion), "expires_at": claimErrorString(cause.ExpiresAt)})
 }
 
 func claimErrorID(cause *claims.ClaimConflictError) string {
@@ -232,13 +228,14 @@ func claimErrorVersion(value *int) any {
 	return *value
 }
 
-func writeClaimFailure(cmd *cobra.Command, operation string, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
+func writeClaimFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
 	failure, err := cli.NewFailure(code, message, subject, details)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		_ = renderIssueError(cmd.ErrOrStderr(), cause)
+		return cli.NewFailureError(failure, cause)
 	}
-	return fmt.Errorf("%s failed", operation)
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

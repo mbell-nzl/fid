@@ -3,10 +3,10 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: none
-- Condition: DEC-166 resolved TRG-21-010's stale ownership classification and the final task-9 gate remains green. The tagged integration source then exposed retained task-9 `--by` transports; this continuation converged those calls while preserving later-owner Issue/Event failures reached afterward.
-- Recovery attempts: 13
-- Next action: Phase Runner verifies this committed report with the two-argument report lint and routes the remaining tagged integration failures to their owning accepted scope before task-12 continuation.
+- Category: qa-rework
+- Condition: DEC-169 MF-2 required the complete public-interface section 7 process exit contract after every fail-closed leaf emitted the exact envelope but terminated `exit_code: 1`.
+- Recovery attempts: 1
+- Next action: Phase Runner verifies this committed report with the two-argument report lint, records the DEC-169 task-9 repair, and returns the complete Group 1 checkpoint for its required independent rerun.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -22,6 +22,8 @@
 - Renamed the Phase 20 task-labelled request fixture to `retained_actor_request_contract_test.go` and converged its Task-9-owned attribution rows to canonical invalid-argument JSON, concise Human `--actor`/Actor-grammar errors, and selected-project actor/idempotency requests.
 - QA Review Window 3 repair: removed the retired public `role` grouping normalization and added a CLI stats conformance matrix for explicit actor, epic, and model envelopes plus rejection/no-journal-mutation checks for role, another unknown group, and retired `--by`.
 - Converged the retained tagged integration fixture transport through one allowlisted adapter: workflow define/assign, AC add, labels, links, and requirement sync now use `--actor agent:<role>` with unique idempotency keys. Issue creation, Claim, Run, AC verification, concern, dev, completion, and closure behaviors remain untouched.
+- DEC-169 checkpoint recovery: added the complete closed failure-category to process-exit mapping, a typed failure error that retains code/category through Cobra, and `main.go` process exit selection. Converted every `cli.WriteFailure` leaf to return the typed exit class while preserving its existing Human or JSON output.
+- Added real built-binary integration coverage for the four retained fail-closed leaves at exit `5`, representatives for exits `2`, `3`, and `4`, plus Cobra unknown-command, unknown-flag, and usage input at exit `2`.
 
 ## Files created or modified
 
@@ -71,6 +73,26 @@
 - `internal/requirements/types.go`
 - `internal/dev/finish_test.go`
 - `cmd/fid/retained_actor_request_contract_test.go` (renamed from `cmd/fid/task10_contract_test.go`)
+- `cmd/fid/activation.go`
+- `cmd/fid/canonical_request.go`
+- `cmd/fid/capabilities.go`
+- `cmd/fid/claim.go`
+- `cmd/fid/envelope.go`
+- `cmd/fid/gate.go`
+- `cmd/fid/init.go`
+- `cmd/fid/issue_get_list.go`
+- `cmd/fid/issue_mutation_response.go`
+- `cmd/fid/label_response.go`
+- `cmd/fid/link_response.go`
+- `cmd/fid/main.go`
+- `cmd/fid/maintenance.go`
+- `cmd/fid/rebuild.go`
+- `cmd/fid/run.go`
+- `cmd/fid/unavailable.go`
+- `cmd/fid/workflow.go`
+- `cmd/fid/integration/exit_contract_test.go`
+- `internal/cli/exit.go`
+- `internal/cli/exit_test.go`
 
 ## Documentation updated
 
@@ -99,6 +121,8 @@
 - Attempt 10 update: The exact package and coverage gates reduce to `TestTask10JSONMissingActorsUseAuthorityEnvelope` and `TestTask10RequiredActorHumanErrorsRemainProse` in `cmd/fid/task10_contract_test.go:79` and `:140`. Those byte-identical assertions require `--by` behavior on Task 9 actor/idempotency leaves. The current command implementations are unchanged from `HEAD`; restoring the demanded behavior would violate the task's accepted no-`--by` contract and DEC-165. VAL-028 through VAL-031 therefore remain BLOCKED by the protected contradiction rather than incomplete local fixture work.
 
 - QA Review Window 3 repair attempt 1: MF-1 showed that the preceding VAL-031 evidence covered actor and epic but not model or closed-value rejection, while `internal/stats/stats.go` still normalized public `role` to actor. `TestStatsTokensAcceptsOnlyClosedGroupByValues` now supplies the missing real-CLI evidence. Its red run observed the accepted role success envelope below; the green rerun, exact five-command gate, and live initialized-workspace probe establish the repaired behavior without changing the journal.
+- DEC-169 MF-2: VAL-030 remains PASS. `TestProcessExitContract` (`cmd/fid/integration/exit_contract_test.go:12`) uses the real compiled `fid` entrypoint and proves `issue ac verify`, `concern raise`, `concern address`, and `maintenance vacuum` each keep the existing `capability-unavailable` envelope while terminating `exit_code: 5`. The same test proves one representative each of exit `2` invalid input, exit `3` not found, exit `4` conflict, and unknown-command, unknown-flag, and usage exit `2`.
+- VAL-043: preserved checkpoint PASS. This recovery changes only CLI process termination after the existing leaf output; it does not add a generic V1 dependency, capability, writer, or journal mutation. `group-1-checkpoint-review.md` MF-2 remains the preserved isolation evidence.
 
 ## Tests run
 
@@ -121,6 +145,9 @@
 - `go test -tags integration -race ./cmd/fid/integration --run '^TestTask9IntegrationMutationRequestsUseActorAndIdempotency$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.426s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`; after task-9 transport convergence it reaches preserved task-8 Event actor and `issue create --by` assertions in `TestP20StandaloneIssueJourneyJSONAndRebuildParity`, `TestV01ClosureJourneyAndRebuildParity`, and `TestV02aWorkflowAuthoringExitScenarioAndRebuildParity`.)
 - `/tmp/fid-task9-integration-bin --json workflow define --name integration-task --applies-to task --states todo,in_progress,cancelled --categories unstarted,started,cancelled --transitions 'todo->in_progress,in_progress->cancelled' --actor agent:tl --idempotency-key integration-workflow-define` (working directory `/tmp/fid-task9-integration.216Ye4`) - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260827-000002","occurred_at":"2026-08-27T10:22:15.237678985Z"},"ok":true,"operation":"workflow.define","result":{"idempotency_key":"integration-workflow-define","replayed":false,"workflow":{"applies_to":"task","id":"integration-task","name":"integration-task","state_count":3,"transition_count":3}}}` (terminated `exit_code: 0`)
+- `go test -race ./internal/cli` - FAIL - `FAIL` (terminated `exit_code: 1`; red TDD proof that `CategoryGateUnsuccessful` and `ExitCodeForCategory` were absent)
+- `go test -race ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	1.070s` (terminated `exit_code: 0`)
+- Real-process entrypoint exercise: `TestProcessExitContract` built `cmd/fid`, initialized a temporary project with `fid init --prefix FID`, and ran all four fail-closed leaves, invalid-input, unknown-flag, usage, not-found, conflict, and unknown-command cases. The test passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.470s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -212,6 +239,15 @@
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 33.5% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total: (statements) 65.3%` (terminated `exit_code: 0`)
 
+### DEC-169 MF-2 exact task-gate rerun (final result)
+
+- `go test -race ./internal/policy ./internal/workflow ./internal/issues ./internal/labels ./internal/links ./internal/requirements ./internal/activity ./internal/stats ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	260.926s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	(cached)` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 32.9% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)									65.4%` (terminated `exit_code: 0`)
+
 ## Deviations from spec
 
 - No accepted-contract deviations.
@@ -232,10 +268,11 @@
 - QA Review Window 3 repair attempt 1 preserves the original task evidence and corrects only MF-1. The red `go test -race ./cmd/fid` result was `FAIL` (terminated `exit_code: 1`) because the old production branch accepted `--group-by role` as actor. The causal repair deletes that normalization, and the byte-identical green rerun ended `ok  github.com/mbell-nzl/fid/cmd/fid 148.050s` (terminated `exit_code: 0`). The fresh exact task gate later passed. No command, threshold, test selection, QA/spec/validation artifact, Event schema, public interface, or unrelated assertion changed.
 
 - Integration-fixture convergence attempt 1 preserves the source tagged-gate failure `FAIL` (terminated `exit_code: 1`) caused by removed `--by` transport on task-9 workflow/label family calls. The allowlisted test adapter converts only workflow define/assign, AC add, label, issue-label, link, and requirement-sync calls to `--actor agent:<role>` plus idempotency. The subsequent byte-identical tagged run remains `FAIL` (terminated `exit_code: 1`) only after reaching the preserved task-8 Event actor and `issue create --by` assertions; this continuation does not change them. No policy command, V1 Claim/Run/dev/closure behavior, writer, test selection, gate, public contract, Event schema, or task-10/task-11 behavior changed.
+- DEC-169 MF-2: the first red TDD command failed with `FAIL` (terminated `exit_code: 1`) because the new exit category and mapper did not yet exist. The first real-process integration fixture attempt failed with `error: invalid project initialization argument` (terminated `exit_code: 1`) because its generated temporary directory created an invalid default Issue prefix. The fixture was repaired to pass the accepted explicit `--prefix FID`; no product contract, output envelope, command definition, assertion scope, gate, capability, writer, threshold, or policy changed. The byte-identical required six-command rerun later passed.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The tagged integration gate now reaches task-8-owned Event-v2 actor inspection and retained `issue create --by` assertions in the P20 and closure journeys. They remain red with `FAIL` (terminated `exit_code: 1`) and require their owning accepted convergence scope before task 12 can rerun its integration gate.
+- None.
 
 ## Dependency-budget note
 
@@ -243,8 +280,8 @@
 
 ## Commit hash
 
-- `942abad7e9b6a0b0fb9fd009d074aeab79042457`
+- Pending commit
 
 ## Commit subject
 
-- `test(integration): converge retained task-9 actor transport`
+- Pending commit

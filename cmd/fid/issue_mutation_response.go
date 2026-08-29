@@ -99,21 +99,17 @@ func renderIssueMutationError(cmd *cobra.Command, operation, issueID string, mut
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), mutationErr); err != nil {
-			return err
-		}
-		return mutationErr
-	}
-
 	failure, err := issueMutationFailure(cmd, operation, issueID, mutationErr)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), mutationErr); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, mutationErr)
 	}
-	return mutationErr
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, mutationErr)
 }
 
 func issueMutationFlagError(operation string) func(*cobra.Command, error) error {
@@ -121,12 +117,6 @@ func issueMutationFlagError(operation string) func(*cobra.Command, error) error 
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
 			return err
-		}
-		if !jsonMode {
-			if err := writeIssueLine(cmd.ErrOrStderr(), "error: invalid Issue mutation request\n"); err != nil {
-				return err
-			}
-			return flagErr
 		}
 		failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid Issue mutation request", nil, map[string]any{
 			"argument": "request",
@@ -136,10 +126,13 @@ func issueMutationFlagError(operation string) func(*cobra.Command, error) error 
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := writeIssueLine(cmd.ErrOrStderr(), "error: invalid Issue mutation request\n"); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, flagErr)
 		}
-		return flagErr
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, flagErr)
 	}
 }
 

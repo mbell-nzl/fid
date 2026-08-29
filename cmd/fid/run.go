@@ -189,34 +189,31 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		_ = renderIssueError(cmd.ErrOrStderr(), cause)
-		return cause
-	}
 	var notFound *workflow.RunNotFoundError
 	if errors.As(cause, &notFound) {
-		return writeRunFailure(cmd, operation, cli.CodeRunNotFound, "run was not found", &cli.Subject{Type: cli.SubjectRun, ID: notFound.ID}, map[string]any{"id": notFound.ID})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunNotFound, "run was not found", &cli.Subject{Type: cli.SubjectRun, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	var inactive *workflow.RunInactiveError
 	if errors.As(cause, &inactive) {
-		return writeRunFailure(cmd, operation, cli.CodeRunInactive, "run is not active", &cli.Subject{Type: cli.SubjectRun, ID: inactive.RunID}, map[string]any{"run_id": inactive.RunID, "status": inactive.Status})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunInactive, "run is not active", &cli.Subject{Type: cli.SubjectRun, ID: inactive.RunID}, map[string]any{"run_id": inactive.RunID, "status": inactive.Status})
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
-		return writeRunFailure(cmd, operation, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
 	}
-	return writeRunFailure(cmd, operation, cli.CodeInvalidArgument, "invalid Run request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+	return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Run request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
 }
 
-func writeRunFailure(cmd *cobra.Command, operation string, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
+func writeRunFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
 	failure, err := cli.NewFailure(code, message, subject, details)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		_ = renderIssueError(cmd.ErrOrStderr(), cause)
+		return cli.NewFailureError(failure, cause)
 	}
-	return fmt.Errorf("%s failed", operation)
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }
 
 func changedOptionalString(cmd *cobra.Command, name, value string) *string {

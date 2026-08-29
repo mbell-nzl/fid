@@ -13,22 +13,19 @@ func renderLabelError(cmd *cobra.Command, operation string, cause error) error {
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
 	var duplicate *labels.DuplicateLabelError
 	if errors.As(cause, &duplicate) {
 		failure, err := cli.NewFailure(cli.CodeDuplicateEntity, "entity already exists", &cli.Subject{Type: cli.SubjectLabel, ID: duplicate.Name}, map[string]any{"entity_type": "label", "identity": map[string]any{"fields": []string{"name"}, "values": []string{duplicate.Name}}})
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	var limit *labels.ResultLimitExceededError
 	if errors.As(cause, &limit) {
@@ -36,10 +33,13 @@ func renderLabelError(cmd *cobra.Command, operation string, cause error) error {
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	return renderIssueMutationError(cmd, operation, "", cause)
 }
