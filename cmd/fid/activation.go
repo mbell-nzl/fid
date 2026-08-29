@@ -283,7 +283,7 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 	}
 	var conflict *workflow.ActivationConflictError
 	if errors.As(cause, &conflict) {
-		failure, err := cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": conflict.ActiveID, "nonterminal_id": conflict.NonterminalID, "requested_direction": "activate"})
+		failure, err := cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})
 		if err == nil {
 			err = cli.WriteFailure(cmd.ErrOrStderr(), operation, failure)
 		}
@@ -311,4 +311,11 @@ func renderActivationError(cmd *cobra.Command, operation string, cause error) er
 		return err
 	}
 	return cause
+}
+
+func activationConflictID(value *string) any {
+	if value == nil {
+		return nil
+	}
+	return *value
 }

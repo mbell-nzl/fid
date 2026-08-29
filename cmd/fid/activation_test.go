@@ -57,6 +57,158 @@ func TestActivationPrepareCreatesPreparedActivation(t *testing.T) {
 	}
 }
 
+func TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	preparePath := filepath.Join(workspace, "activation-replay-prepare.json")
+	writeActivationInput(t, preparePath, map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "kit", "phase": 21})
+	prepare := assertActivationReplay(t, workspace, "prepare", preparePath, "activation-replay-prepare")
+	activationID := activationIDFromReplay(t, prepare)
+
+	newKey := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "prepare", "--input", preparePath, "--idempotency-key", "activation-replay-new-key")
+	assertActivationTypedFailure(t, newKey, "activation-conflict")
+
+	profilePath := filepath.Join(workspace, "activation-replay-profile.json")
+	writeActivationInput(t, profilePath, map[string]any{
+		"activation_id": activationID, "component_type": "authority-profile", "component_id": "replay-builders",
+		"component_version": 1, "expected_prior_digest": nil,
+		"content": []any{map[string]any{
+			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/replay-builders", "session_ref": nil,
+			"capabilities": []string{"claim.acquire", "gate.register"},
+		}},
+	})
+	profile := assertActivationReplay(t, workspace, "component", profilePath, "activation-replay-profile")
+	profileDigest := componentDigestFromReplay(t, profile)
+
+	writeActivationInput(t, profilePath, map[string]any{
+		"activation_id": activationID, "component_type": "authority-profile", "component_id": "replay-builders",
+		"component_version": 1, "expected_prior_digest": nil,
+		"content": []any{map[string]any{
+			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/replay-builders-v2", "session_ref": nil,
+			"capabilities": []string{"claim.acquire", "gate.register"},
+		}},
+	})
+	assertActivationStableDigestConflict(t, workspace, "component", profilePath, "activation-replay-profile")
+
+	gatePath := filepath.Join(workspace, "activation-replay-gates.json")
+	writeActivationInput(t, gatePath, map[string]any{
+		"activation_id": activationID, "component_type": "gate-definitions", "component_id": "replay-gates",
+		"component_version": 1, "expected_prior_digest": nil, "content": validGateDefinitions(),
+	})
+	gate := assertActivationReplay(t, workspace, "component", gatePath, "activation-replay-gates")
+	gateDigest := componentDigestFromReplay(t, gate)
+
+	digests := []string{profileDigest, gateDigest}
+	sort.Strings(digests)
+	commitPath := filepath.Join(workspace, "activation-replay-commit.json")
+	writeActivationInput(t, commitPath, map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
+	assertActivationReplay(t, workspace, "commit", commitPath, "activation-replay-commit")
+
+	finalizePath := filepath.Join(workspace, "activation-replay-finalize.json")
+	writeActivationInput(t, finalizePath, map[string]any{"activation_id": activationID, "expected_status": "committed"})
+	assertActivationReplay(t, workspace, "finalize", finalizePath, "activation-replay-finalize")
+
+	abortWorkspace := clonePristineWorkspace(t)
+	abortPreparePath := filepath.Join(abortWorkspace, "activation-replay-abort-prepare.json")
+	writeActivationInput(t, abortPreparePath, map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "kit", "phase": 21})
+	abortPrepare := assertActivationReplay(t, abortWorkspace, "prepare", abortPreparePath, "activation-replay-abort-prepare")
+	abortPath := filepath.Join(abortWorkspace, "activation-replay-abort.json")
+	writeActivationInput(t, abortPath, map[string]any{"activation_id": activationIDFromReplay(t, abortPrepare), "expected_status": "prepared", "reason": "replay"})
+	assertActivationReplay(t, abortWorkspace, "abort", abortPath, "activation-replay-abort")
+}
+
+func assertActivationReplay(t *testing.T, workspace, operation, inputPath, key string) map[string]any {
+	t.Helper()
+	args := []string{"--project", workspace, "--json", "activation", operation, "--input", inputPath, "--idempotency-key", key}
+	before := journalEventCount(t, workspace)
+	first := executeCommandForTest(workspace, args...)
+	if first.err != nil || first.stderr != "" {
+		t.Fatalf("first activation %s = %#v, want stdout-only success", operation, first)
+	}
+	afterFirst := journalEventCount(t, workspace)
+	if afterFirst != before+1 {
+		t.Fatalf("first activation %s Event count = %d, want %d", operation, afterFirst, before+1)
+	}
+	second := executeCommandForTest(workspace, args...)
+	t.Logf("pre-repair second activation %s stdout=%q stderr=%q", operation, second.stdout, second.stderr)
+	if second.err != nil || second.stderr != "" {
+		t.Fatalf("second activation %s = %#v, want stdout-only replay", operation, second)
+	}
+	if afterSecond := journalEventCount(t, workspace); afterSecond != afterFirst {
+		t.Fatalf("replayed activation %s Event count = %d, want %d", operation, afterSecond, afterFirst)
+	}
+
+	firstEnvelope := decodeActivationEnvelope(t, first.stdout)
+	secondEnvelope := decodeActivationEnvelope(t, second.stdout)
+	firstResult, ok := firstEnvelope["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("first activation %s result = %#v, want object", operation, firstEnvelope["result"])
+	}
+	firstResult["replayed"] = true
+	if !reflect.DeepEqual(firstEnvelope, secondEnvelope) {
+		t.Fatalf("activation %s replay = %#v, want original Event/entity/domain fields with only replayed:true from %#v", operation, secondEnvelope, firstEnvelope)
+	}
+	return secondEnvelope
+}
+
+func assertActivationStableDigestConflict(t *testing.T, workspace, operation, inputPath, key string) {
+	t.Helper()
+	args := []string{"--project", workspace, "--json", "activation", operation, "--input", inputPath, "--idempotency-key", key}
+	before := journalEventCount(t, workspace)
+	first := executeCommandForTest(workspace, args...)
+	assertActivationTypedFailure(t, first, "invalid-argument")
+	second := executeCommandForTest(workspace, args...)
+	assertActivationTypedFailure(t, second, "invalid-argument")
+	if first.stderr != second.stderr {
+		t.Fatalf("same-key different-digest failures differ: first=%q second=%q", first.stderr, second.stderr)
+	}
+	if after := journalEventCount(t, workspace); after != before {
+		t.Fatalf("same-key different-digest Event count = %d, want %d", after, before)
+	}
+}
+
+func assertActivationTypedFailure(t *testing.T, result commandExecutionResult, code string) {
+	t.Helper()
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"`+code+`"`) {
+		t.Fatalf("activation failure = %#v, want stderr-only %s envelope", result, code)
+	}
+}
+
+func decodeActivationEnvelope(t *testing.T, raw string) map[string]any {
+	t.Helper()
+	var envelope map[string]any
+	if err := json.Unmarshal([]byte(raw), &envelope); err != nil {
+		t.Fatalf("decode activation envelope: %v; stdout=%q", err, raw)
+	}
+	return envelope
+}
+
+func activationIDFromReplay(t *testing.T, envelope map[string]any) string {
+	t.Helper()
+	return activationReplayString(t, envelope, "activation", "id")
+}
+
+func componentDigestFromReplay(t *testing.T, envelope map[string]any) string {
+	t.Helper()
+	return activationReplayString(t, envelope, "component", "digest")
+}
+
+func activationReplayString(t *testing.T, envelope map[string]any, object, field string) string {
+	t.Helper()
+	result, ok := envelope["result"].(map[string]any)
+	if !ok {
+		t.Fatalf("activation replay result = %#v, want object", envelope["result"])
+	}
+	value, ok := result[object].(map[string]any)
+	if !ok {
+		t.Fatalf("activation replay %s = %#v, want object", object, result[object])
+	}
+	text, ok := value[field].(string)
+	if !ok || text == "" {
+		t.Fatalf("activation replay %s.%s = %#v, want nonempty string", object, field, value[field])
+	}
+	return text
+}
+
 func TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation(t *testing.T) {
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)

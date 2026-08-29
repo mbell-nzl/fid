@@ -173,6 +173,25 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 			return err
 		}
 		defer closeWorkflowDB(conn)
+		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return fmt.Errorf("prepare activation: read project config: %w", err)
+		}
+		requestDigest, err := activationRequestDigest("activation.prepare", project.ProjectID, options.BootstrapActor, options.Request)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "activation.prepare:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			decoded, err := activationPrepareResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 		if err := assertActivationAvailable(conn); err != nil {
 			return err
 		}
@@ -183,10 +202,6 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 		})
 		if err != nil {
 			return err
-		}
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
-		if err != nil {
-			return fmt.Errorf("prepare activation: read project config: %w", err)
 		}
 		createdAt := time.Now().UTC()
 		activation := Activation{ID: activationID, Status: "prepared", KitIdentity: options.Request.KitIdentity, BackendIdentity: options.Request.BackendIdentity, Phase: 21, Direction: "activate", ComponentDigests: []string{}, CreatedAt: createdAt.Format(time.RFC3339Nano), UpdatedAt: createdAt.Format(time.RFC3339Nano)}
@@ -202,26 +217,21 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 				},
 			}},
 		}
-		requestDigest, err := activationRequestDigest("activation.prepare", project.ProjectID, options.BootstrapActor, options.Request)
-		if err != nil {
-			return err
-		}
 		resultJSON, err := activationResultJSON(activation, options.IdempotencyKey)
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "activation.prepare:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: activationID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
 			return err
 		}
-		if err := loadActivationResult(conn, outcome.EntityID, &result); err != nil {
+		decoded, err := activationPrepareResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		if err != nil {
 			return err
 		}
-		result.IdempotencyKey = options.IdempotencyKey
-		result.Replayed = outcome.Replayed
-		result.EventID = outcome.EventID
+		result = decoded
 		return nil
 	})
 	if err != nil {
@@ -291,16 +301,31 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 			return err
 		}
 		defer closeWorkflowDB(conn)
+		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return fmt.Errorf("stage activation component: read project config: %w", err)
+		}
+		requestDigest, err := activationRequestDigest("activation.component", project.ProjectID, options.BootstrapActor, options.Request)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "activation.component:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			decoded, err := activationComponentResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 		activation, err := loadActivation(conn, options.Request.ActivationID)
 		if err != nil {
 			return err
 		}
 		if activation.Status != "prepared" && activation.Status != "staged" {
 			return &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"prepared", "staged"}}
-		}
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
-		if err != nil {
-			return fmt.Errorf("stage activation component: read project config: %w", err)
 		}
 		nextSequence, err := activationComponentSequence(conn, activation.ID)
 		if err != nil {
@@ -314,10 +339,6 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 			Aggregate:   journal.Aggregate{ID: activation.ID, Sequence: nextSequence, Type: "activation"},
 			CommandName: "activation.component", Effects: effects,
 		}
-		requestDigest, err := activationRequestDigest("activation.component", project.ProjectID, options.BootstrapActor, options.Request)
-		if err != nil {
-			return err
-		}
 		staged := activation
 		staged.Status, staged.UpdatedAt = "staged", updatedAt
 		staged.ComponentDigests = append(staged.ComponentDigests, component.Digest)
@@ -325,17 +346,17 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "activation.component:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: activation.ID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
 			return err
 		}
-		loaded, err := loadActivation(conn, outcome.EntityID)
+		decoded, err := activationComponentResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
 		if err != nil {
 			return err
 		}
-		result = ActivationComponentResult{Activation: loaded, Component: component, IdempotencyKey: options.IdempotencyKey, Replayed: outcome.Replayed, EventID: outcome.EventID}
+		result = decoded
 		return nil
 	})
 	if err != nil {
@@ -464,15 +485,30 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 			return err
 		}
 		defer closeWorkflowDB(conn)
+		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return err
+		}
+		requestDigest, err := activationRequestDigest(operation, project.ProjectID, options.BootstrapActor, request)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			decoded, err := activationPrepareResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+			if err != nil {
+				return err
+			}
+			result = decoded
+			return nil
+		}
 		activation, err := loadActivation(conn, strings.TrimSpace(activationID))
 		if err != nil {
 			return err
 		}
 		effects, err := build(conn, activation)
-		if err != nil {
-			return err
-		}
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
 		if err != nil {
 			return err
 		}
@@ -487,10 +523,6 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		if operation == "activation.abort" {
 			event.EventType = "activation.aborted"
 		}
-		requestDigest, err := activationRequestDigest(operation, project.ProjectID, options.BootstrapActor, request)
-		if err != nil {
-			return err
-		}
 		updated := activation
 		updated.Status = status
 		updated.PointOfNoReturn = status == "committed" || activation.PointOfNoReturn
@@ -499,16 +531,17 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: operation + ":" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: activation.ID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
 			return err
 		}
-		if err := loadActivationResult(conn, outcome.EntityID, &result); err != nil {
+		decoded, err := activationPrepareResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		if err != nil {
 			return err
 		}
-		result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, outcome.Replayed, outcome.EventID
+		result = decoded
 		return nil
 	})
 	if err != nil {
@@ -645,15 +678,6 @@ func assertActivationAvailable(conn *sql.DB) error {
 	return nil
 }
 
-func loadActivationResult(conn *sql.DB, id string, result *ActivationPrepareResult) error {
-	activation, err := loadActivation(conn, id)
-	if err != nil {
-		return err
-	}
-	result.Activation = activation
-	return nil
-}
-
 func loadActivation(conn *sql.DB, id string) (Activation, error) {
 	var activation Activation
 	var pointOfNoReturn int
@@ -709,6 +733,29 @@ func activationComponentResultJSON(activation Activation, component ActivationCo
 		return "", err
 	}
 	return string(payload), nil
+}
+
+func activationPrepareResultFromJSON(raw, eventID string, replayed bool) (ActivationPrepareResult, error) {
+	var value struct {
+		Activation     Activation `json:"activation"`
+		IdempotencyKey string     `json:"idempotency_key"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return ActivationPrepareResult{}, fmt.Errorf("decode stored activation result: %w", err)
+	}
+	return ActivationPrepareResult{Activation: value.Activation, IdempotencyKey: value.IdempotencyKey, Replayed: replayed, EventID: eventID}, nil
+}
+
+func activationComponentResultFromJSON(raw, eventID string, replayed bool) (ActivationComponentResult, error) {
+	var value struct {
+		Activation     Activation          `json:"activation"`
+		Component      ActivationComponent `json:"component"`
+		IdempotencyKey string              `json:"idempotency_key"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return ActivationComponentResult{}, fmt.Errorf("decode stored activation component result: %w", err)
+	}
+	return ActivationComponentResult{Activation: value.Activation, Component: value.Component, IdempotencyKey: value.IdempotencyKey, Replayed: replayed, EventID: eventID}, nil
 }
 
 func optionalString(value sql.NullString) *string {
