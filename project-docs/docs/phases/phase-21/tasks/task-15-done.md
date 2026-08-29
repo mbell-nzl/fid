@@ -74,8 +74,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `b69499116e70d4c88423a30daa2010a4ff221f14`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): persist gate attempts and receipts`
