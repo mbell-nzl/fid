@@ -3,6 +3,7 @@ package evidence
 import (
 	"context"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -132,6 +133,22 @@ func TestRunLiveDrainsBothPipesAfterTruncationAndPreservesOutcome(t *testing.T) 
 	}
 	if emitted > int(definition.OutputBytes) {
 		t.Fatalf("emitted process data = %d, want at most %d", emitted, definition.OutputBytes)
+	}
+}
+
+func TestAppendFidErrorClosesStartedStreamWithoutReceipt(t *testing.T) {
+	result := LiveResult{
+		Frames:      []LiveFrame{{FrameSchema: liveFrameSchema, ExecutionID: "EXE-fid-error", Sequence: 1, Stream: "stdout", Data: map[string]any{"encoding": "utf-8", "text": "started"}}},
+		Outcome:     "failed",
+		executionID: "EXE-fid-error",
+	}
+	response := map[string]any{"contract_version": "fid-cli.v1", "error": map[string]any{"code": "internal-error"}, "ok": false, "operation": "gate.run"}
+	if err := result.AppendFidError("ATT-fid-error", response); err != nil {
+		t.Fatalf("AppendFidError() error = %v", err)
+	}
+	terminal := result.Frames[len(result.Frames)-1]
+	if terminal.Stream != "terminal" || terminal.Data["outcome"] != "fid-error" || terminal.Data["receipt_id"] != nil || !reflect.DeepEqual(terminal.Data["response"], response) {
+		t.Fatalf("fid-error terminal = %#v, want frame-only internal-error terminal", terminal)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"unicode/utf8"
 )
 
@@ -96,7 +97,7 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 	reads := make(chan liveRead, 2)
 	go readLivePipe(stdout, "stdout", reads)
 	go readLivePipe(stderr, "stderr", reads)
-	result := LiveResult{executionID: executionID}
+	result := LiveResult{executionID: executionID, RejectedArtifacts: []ArtifactRejection{}}
 	sources := redactionSources(definition)
 	redactors := map[string]*liveRedactor{"stdout": newLiveRedactor(sources), "stderr": newLiveRedactor(sources)}
 	completedReads := 0
@@ -126,6 +127,14 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 	if command.ProcessState != nil {
 		exitCode := command.ProcessState.ExitCode()
 		result.ExitCode = &exitCode
+		if status, ok := command.ProcessState.Sys().(syscall.WaitStatus); ok && status.Signaled() {
+			signal := status.Signal().String()
+			result.Signal = &signal
+			result.ExitCode = nil
+			if !result.TimedOut {
+				result.Outcome = "signaled"
+			}
+		}
 		if result.Outcome == "succeeded" && !containsExitCode(definition.SuccessExitCodes, exitCode) {
 			result.Outcome = "failed"
 		}
@@ -161,7 +170,7 @@ func readLivePipe(reader io.Reader, stream string, reads chan<- liveRead) {
 }
 
 func spawnFailedLiveResult(executionID string) LiveResult {
-	return LiveResult{executionID: executionID, Outcome: "spawn-failed"}
+	return LiveResult{executionID: executionID, Outcome: "spawn-failed", RejectedArtifacts: []ArtifactRejection{}}
 }
 
 func (result *LiveResult) consumeLiveData(stream string, text string, limit int64) {
@@ -236,6 +245,23 @@ func (result *LiveResult) AppendTerminal(terminal LiveTerminal) error {
 		"output_bytes": result.OutputBytes, "output_truncated": result.OutputTruncated,
 		"redaction_applied": result.RedactionApplied, "artifact_ids": artifacts,
 		"rejected_artifacts": rejected, "response": terminal.Response, "replayed": terminal.Replayed,
+	})
+	result.terminalFrameEmitted = true
+	return nil
+}
+
+// AppendFidError closes a started stream when fid itself cannot complete the
+// persistence path. It intentionally creates neither a Receipt nor an
+// idempotency result.
+func (result *LiveResult) AppendFidError(attemptID string, response map[string]any) error {
+	if result.terminalFrameEmitted || len(result.Frames) == 0 || strings.TrimSpace(attemptID) == "" || response == nil {
+		return fmt.Errorf("append live fid error: started frames, attempt ID, and response are required")
+	}
+	result.appendFrame("terminal", map[string]any{
+		"attempt_id": attemptID, "receipt_id": nil, "outcome": "fid-error", "exit_code": nil, "signal": nil,
+		"timed_out": false, "output_bytes": result.OutputBytes, "output_truncated": result.OutputTruncated,
+		"redaction_applied": result.RedactionApplied, "artifact_ids": []string{}, "rejected_artifacts": result.RejectedArtifacts,
+		"response": response, "replayed": false,
 	})
 	result.terminalFrameEmitted = true
 	return nil

@@ -36,6 +36,46 @@ type IdempotencyConflictError struct {
 	SuppliedRequestDigest string
 }
 
+// CommitEvent appends and projects one non-idempotent Event-v2 mutation.
+// Attempt and unsuccessful Receipt facts intentionally use this path because
+// they must remain durable observations without creating a replayable result.
+func CommitEvent(lock *WriteLock, conn *sql.DB, event Event) (Event, error) {
+	if lock == nil {
+		return Event{}, fmt.Errorf("commit Event: lock is nil")
+	}
+	if conn == nil {
+		return Event{}, fmt.Errorf("commit Event: connection is nil")
+	}
+	if !event.IsV2() {
+		return Event{}, fmt.Errorf("commit Event: Event-v2 is required")
+	}
+	prepared, err := PrepareEvent(lock, event)
+	if err != nil {
+		return Event{}, err
+	}
+	if err := DryRunProjectEvent(conn, prepared); err != nil {
+		return Event{}, err
+	}
+	appended, err := AppendEvent(lock, prepared)
+	if err != nil {
+		return Event{}, err
+	}
+	eventHash, err := HashEvent(appended)
+	if err != nil {
+		return Event{}, fmt.Errorf("commit Event: hash Event %q: %w", appended.EventID, err)
+	}
+	journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
+	journalPath := filepath.Join(lock.workspaceRoot, ".fid", "journal", journalFile)
+	info, err := os.Stat(journalPath)
+	if err != nil {
+		return Event{}, fmt.Errorf("commit Event: stat journal %q: %w", journalPath, err)
+	}
+	if err := ProjectEvent(conn, ProjectionInput{Event: appended, EventHash: eventHash, File: journalFile, Offset: info.Size()}); err != nil {
+		return Event{}, err
+	}
+	return appended, nil
+}
+
 func (err *IdempotencyConflictError) Error() string {
 	if err == nil {
 		return "<nil>"

@@ -83,6 +83,10 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 }
 
 func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationView) {
+	return finalizedEnvelopeWorkspaceWithDefinition(t, nil)
+}
+
+func finalizedEnvelopeWorkspaceWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, gateRegistrationView) {
 	t.Helper()
 	workspace := clonePristineWorkspace(t)
 	created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
@@ -105,7 +109,11 @@ func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationV
 		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/envelope-builders", "session_ref": nil,
 		"capabilities": authorityCapabilities(),
 	}})
-	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", validGateDefinitions())
+	definitions := validGateDefinitions()
+	if modifyDefinition != nil {
+		modifyDefinition(definitions[0].(map[string]any))
+	}
+	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
 	digests := []string{profileDigest, gateDigest}
 	sort.Strings(digests)
 	commitPath := filepath.Join(workspace, "activation-commit-envelope.json")

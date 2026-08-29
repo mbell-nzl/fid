@@ -192,13 +192,18 @@ func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
 
 func runEnvelopeForTest(t *testing.T) (string, string, string) {
 	t.Helper()
-	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	return runEnvelopeForTestWithDefinition(t, nil)
+}
+
+func runEnvelopeForTestWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	t.Helper()
+	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinition(t, modifyDefinition)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
-	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "run.finish", "run.start"}
+	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.start"}
 	grant["actor_selector"] = map[string]any{
 		"actor_id":              "actor-builder",
-		"required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "run.finish", "run.start"},
+		"required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.start"},
 	}
 	path := filepath.Join(workspace, "run-envelope.json")
 	writeActivationInput(t, path, input)

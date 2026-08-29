@@ -56,6 +56,7 @@ const (
 	CodeClaimStale                    Code = "claim-stale"
 	CodeRunNotFound                   Code = "run-not-found"
 	CodeRunInactive                   Code = "run-inactive"
+	CodeGateUnsuccessful              Code = "gate-unsuccessful"
 )
 
 type SubjectType string
@@ -73,6 +74,7 @@ const (
 	SubjectEnvelope         SubjectType = "envelope"
 	SubjectClaim            SubjectType = "claim"
 	SubjectRun              SubjectType = "run"
+	SubjectReceipt          SubjectType = "receipt"
 	SubjectCapability       SubjectType = "capability"
 )
 
@@ -208,6 +210,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
+	CodeGateUnsuccessful: definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt},
+		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
 }
 
 var registeredCodes = []Code{
@@ -220,6 +224,7 @@ var registeredCodes = []Code{
 	CodeActivationRecoveryUnavailable,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
+	CodeGateUnsuccessful,
 }
 
 func findingFields() []detailField {

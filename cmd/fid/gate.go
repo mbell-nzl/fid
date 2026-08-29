@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -16,13 +18,133 @@ import (
 func init() {
 	rootFlagCapabilities["gate register"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["gate resolve"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["gate run"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newGateCommand() *cobra.Command {
 	cmd := &cobra.Command{Use: "gate", Short: "Register immutable gate definitions."}
 	cmd.AddCommand(newGateRegisterCommand())
 	cmd.AddCommand(newGateResolveCommand())
+	cmd.AddCommand(newGateRunCommand())
 	return cmd
+}
+
+func newGateRunCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "run", Short: "Execute one registered gate.", Args: canonicalNoArgs("gate.run"), RunE: func(cmd *cobra.Command, _ []string) error {
+		for _, flag := range []string{"input", "actor", "idempotency-key"} {
+			if err := requireCanonicalFlag(cmd, "gate.run", flag); err != nil {
+				return err
+			}
+		}
+		var request evidence.GateRunRequest
+		if err := decodeClosedGateInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			return renderGateError(cmd, "gate.run", err)
+		}
+		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderGateError(cmd, "gate.run", err)
+		}
+		result, err := evidence.RunGate(context.Background(), evidence.GateRunOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key, Request: request})
+		if err != nil {
+			if len(result.Live.Frames) == 0 {
+				return renderGateError(cmd, "gate.run", err)
+			}
+			response := gateInternalFailureEnvelope()
+			if appendErr := result.Live.AppendFidError(result.Attempt.ID, response); appendErr != nil {
+				return appendErr
+			}
+			return writeGateLiveResult(cmd, result.Live, "unsatisfied", true)
+		}
+		if result.Receipt == nil {
+			return fmt.Errorf("gate run: terminal execution has no receipt")
+		}
+		response, failure, err := gateTerminalResponse(result)
+		if err != nil {
+			return err
+		}
+		if err := result.Live.AppendTerminal(evidence.LiveTerminal{AttemptID: result.Attempt.ID, ReceiptID: &result.Receipt.ID, Outcome: result.Receipt.Outcome, ExitCode: result.Receipt.ExitCode, Signal: result.Receipt.Signal, TimedOut: result.Receipt.TimedOut, ArtifactIDs: []string{}, Response: response, Replayed: result.Replayed}); err != nil {
+			return err
+		}
+		if err := writeGateLiveResult(cmd, result.Live, "unsatisfied", false); err != nil {
+			return err
+		}
+		if failure != nil {
+			return cli.NewFailureError(*failure, fmt.Errorf("gate run observed %s", result.Receipt.Outcome))
+		}
+		return nil
+	}}
+	cmd.Flags().StringVar(&inputPath, "input", "", "Gate run JSON input")
+	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError("gate.run"))
+	return cmd
+}
+
+func gateTerminalResponse(result evidence.GateRunResult) (map[string]any, *cli.Failure, error) {
+	if result.Receipt.Outcome == "succeeded" {
+		return map[string]any{"contract_version": cli.ContractVersion, "event": map[string]any{"id": result.EventID, "occurred_at": result.EventOccurredAt}, "ok": true, "operation": "gate.run", "result": map[string]any{"receipt": result.Receipt, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}}, nil, nil
+	}
+	failure, err := cli.NewFailure(cli.CodeGateUnsuccessful, "gate execution was unsuccessful", &cli.Subject{Type: cli.SubjectReceipt, ID: result.Receipt.ID}, map[string]any{"attempt_id": result.Attempt.ID, "receipt_id": result.Receipt.ID, "outcome": result.Receipt.Outcome, "exit_code": optionalExitCode(result.Receipt.ExitCode), "signal": optionalSignal(result.Receipt.Signal), "timed_out": result.Receipt.TimedOut})
+	if err != nil {
+		return nil, nil, err
+	}
+	return failureEnvelope("gate.run", failure), &failure, nil
+}
+
+func optionalExitCode(value *int) any {
+	if value == nil {
+		return nil
+	}
+	return *value
+}
+
+func optionalSignal(value *string) any {
+	if value == nil {
+		return nil
+	}
+	return *value
+}
+
+func gateInternalFailureEnvelope() map[string]any {
+	failure, err := cli.NewFailure(cli.CodeInternalError, "gate execution infrastructure failed", nil, map[string]any{})
+	if err != nil {
+		panic(err)
+	}
+	return failureEnvelope("gate.run", failure)
+}
+
+func failureEnvelope(operation string, failure cli.Failure) map[string]any {
+	var output bytes.Buffer
+	if err := cli.WriteFailure(&output, operation, failure); err != nil {
+		panic(err)
+	}
+	var envelope map[string]any
+	if err := json.Unmarshal(output.Bytes(), &envelope); err != nil {
+		panic(err)
+	}
+	return envelope
+}
+
+func writeGateLiveResult(cmd *cobra.Command, result evidence.LiveResult, obligationStatus string, fidError bool) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	if jsonMode {
+		for _, line := range result.JSONLines() {
+			if _, err := fmt.Fprintln(cmd.OutOrStdout(), line); err != nil {
+				return err
+			}
+		}
+		if fidError {
+			failure, _ := cli.NewFailure(cli.CodeInternalError, "gate execution infrastructure failed", nil, map[string]any{})
+			return cli.NewFailureError(failure, fmt.Errorf("gate execution infrastructure failed"))
+		}
+		return nil
+	}
+	_, err = fmt.Fprint(cmd.OutOrStdout(), renderLiveHuman(result, obligationStatus))
+	return err
 }
 
 func newGateRegisterCommand() *cobra.Command {
