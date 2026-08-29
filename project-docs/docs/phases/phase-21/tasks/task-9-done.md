@@ -280,8 +280,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `1d89aa409bc71443c712948c54c2c10faba1c809`
 
 ## Commit subject
 
-- Pending commit
+- `fix(cli): map failure categories to process exits`
