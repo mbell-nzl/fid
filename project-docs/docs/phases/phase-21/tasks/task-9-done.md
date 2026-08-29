@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: qa-rework
+- Category: none
 - Condition: DEC-169 MF-2 required the complete public-interface section 7 process exit contract after every fail-closed leaf emitted the exact envelope but terminated `exit_code: 1`.
 - Recovery attempts: 1
 - Next action: Phase Runner verifies this committed report with the two-argument report lint, records the DEC-169 task-9 repair, and returns the complete Group 1 checkpoint for its required independent rerun.
