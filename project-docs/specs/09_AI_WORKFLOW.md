@@ -413,13 +413,17 @@ Responsibilities:
    command must be recorded as `PASS`, or as `BLOCKED` with reason in a
    non-complete report. Missing, silently skipped, or narrower substituted
    required commands prevent completion and enter recovery.
-10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
-    recovery-budget results through
+10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness,
+    child-session-liveness, and recovery-budget results through
     `project-docs/tools/workflow-route.sh <source> <outcome> [attempts]` and
     follow its literal `ACTION` result. `WAIT` retains and polls a live command
     session; `EVALUATE` inspects its observed terminated result. Invalid router
     input is an orchestration defect to repair, not permission to invent a
-    route.
+    route. A parent polling wait timeout is not child termination: route
+    `session WAIT_TIMEOUT`, retain the same child on `ACTION WAIT`, and poll it
+    again. Route an externally interrupted child as
+    `session INTERRUPTED <consecutive-count>`; the first interruption repairs
+    and the second triages orchestration session-liveness.
     Every newly appended RUN-START/RUN-RESUME carries exactly one
     `Sequence contract: v2` and exactly one `Recovery directive schema: v2` in
     that same event; both become effective immediately and schema cannot
@@ -520,8 +524,18 @@ Responsibilities:
     relevant in-scope change tied to the trigger is progress only when it newly
     satisfies or removes an obligation, or verification demonstrably narrows
     the failure. Formatting and metadata-only or unrelated changes do not
-    qualify; no-op churn is not progress. On exhaustion, triage the protected
-    `recovery-budget-exhausted` candidate.
+    qualify; no-op churn is not progress. An attempt whose child session is
+    interrupted, cancelled, timed out, or shut down from outside, and which
+    never returns a typed result, does not consume the budget; no budget bounds
+    a child session's lifetime, and only declared per-command budgets are
+    enforced. Its ledger REPAIR uses `Outcome: INTERRUPTED`, preserves the
+    preceding no-progress count, and records the interruption cause, elapsed
+    session duration, and command in flight. Two consecutive externally
+    interrupted attempts are triaged as `orchestration session-liveness`,
+    never as recovery-budget exhaustion. A TRIAGE `REPAIR` advances the next
+    total attempt, preserves the no-progress count, and starts a new
+    interruption streak. On exhaustion by reporting attempts, triage the
+    protected `recovery-budget-exhausted` candidate.
 17. After all tasks complete, spawn QA Lead for final review and human
     checklist.
 18. Append the RUN-END entry to the run ledger and notify the Human with the

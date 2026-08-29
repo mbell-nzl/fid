@@ -401,6 +401,9 @@ function finish_event() {
   if (recovery_stage == "needs-triage" && event != "" && event != "TRIAGE") {
     invalid("recovery no-progress budget requires TRIAGE before " event)
   }
+  if (recovery_stage == "needs-session-triage" && event != "" && event != "TRIAGE") {
+    invalid("orchestration session-liveness requires TRIAGE before " event)
+  }
   if (resume_recovery_pending && event != "" && event != "TASK-RECOVERY") {
     invalid("RUN-RESUME must be followed by its bound TASK-RECOVERY before " event)
   }
@@ -617,10 +620,11 @@ function finish_event() {
       invalid("TASK-RECOVERY must record Human attention required: no")
     }
     if (triage_repair_pending) {
+      expected_triage_attempt = triage_session_liveness_pending ? latest_triage_attempt + 1 : latest_triage_attempt
       if (event_directive_v2) {
         if (event_task != latest_triage_task ||
             event_trigger_signature != latest_triage_trigger ||
-            event_attempt != latest_triage_attempt ||
+            event_attempt != expected_triage_attempt ||
             event_category != latest_triage_category ||
             event_repair_authority != latest_triage_authority ||
             !references_id(event_source, latest_triage_id)) {
@@ -628,10 +632,13 @@ function finish_event() {
         }
       } else if (event_trigger_signature != latest_triage_trigger ||
                  index(event_trigger_signature, event_task ":") != 1 ||
-                 event_attempt != latest_triage_attempt ||
+                 event_attempt != expected_triage_attempt ||
                  !references_id(event_source, latest_triage_id) ||
                  !references_id(event_repair_authority, latest_triage_id)) {
         invalid("TASK-RECOVERY does not preserve its governing TRIAGE REPAIR authority")
+      }
+      if (triage_session_liveness_pending && event_no_progress != recovery_no_progress) {
+        invalid("session-liveness TRIAGE repair changed Consecutive no-progress attempts")
       }
     }
     if (resume_recovery_pending) {
@@ -661,7 +668,8 @@ function finish_event() {
       }
     }
     if (recovery_task != "" && recovery_stage == "needs-repair" &&
-        !(event_directive_v2 && triage_repair_pending && event_task == recovery_task)) {
+        !(triage_repair_pending && event_task == recovery_task &&
+          (event_directive_v2 || triage_session_liveness_pending))) {
       invalid("overlapping TASK-RECOVERY precedes required REPAIR")
     } else if (recovery_task != "" && recovery_stage == "needs-continuation") {
       if (event_task != recovery_task || event_trigger_signature != recovery_trigger) {
@@ -672,6 +680,8 @@ function finish_event() {
       }
       if (recovery_last_outcome == "NO-PROGRESS") {
         expected_no_progress = (substr(recovery_no_progress, 1, 1) + 1) "/2"
+      } else if (recovery_last_outcome == "INTERRUPTED") {
+        expected_no_progress = recovery_no_progress
       } else {
         expected_no_progress = "0/2"
       }
@@ -699,6 +709,8 @@ function finish_event() {
       }
     } else if (recovery_task != "" && recovery_stage == "needs-triage") {
       invalid("recovery budget is exhausted; TASK-RECOVERY cannot precede TRIAGE")
+    } else if (recovery_task != "" && recovery_stage == "needs-session-triage") {
+      invalid("orchestration session-liveness requires TRIAGE before TASK-RECOVERY")
     } else if (recovery_task != "" && recovery_stage == "needs-report") {
       expected_report = "project-docs/docs/phases/phase-" phase_number "/tasks/" recovery_task "-done.md"
       if (recovery_mode != "control-conformance" || event_repair_mode != "task-scope" ||
@@ -826,8 +838,18 @@ function finish_event() {
     if (event_control_scope_check == "") {
       invalid("REPAIR is missing Control scope check")
     }
-    if (event_outcome !~ /^(RESOLVED|MATERIAL-PROGRESS|NO-PROGRESS)$/) {
+    if (event_outcome !~ /^(RESOLVED|MATERIAL-PROGRESS|NO-PROGRESS|INTERRUPTED)$/) {
       invalid("REPAIR has missing or invalid Outcome")
+    }
+    if (event_outcome == "INTERRUPTED" &&
+        (!exact_once(event_interruption_cause_count, event_interruption_cause) ||
+         !exact_once(event_elapsed_session_count, event_elapsed_session) ||
+         !exact_once(event_command_in_flight_count, event_command_in_flight))) {
+      invalid("INTERRUPTED REPAIR must record interruption cause, elapsed session duration, and command in flight")
+    }
+    if (event_outcome != "INTERRUPTED" &&
+        (event_interruption_cause_count || event_elapsed_session_count || event_command_in_flight_count)) {
+      invalid("non-INTERRUPTED REPAIR cannot carry interruption context")
     }
     if (event_resolution_evidence == "") {
       invalid("REPAIR is missing Resolution evidence")
@@ -920,6 +942,15 @@ function finish_event() {
          event_attempt != recovery_attempt)) {
       invalid("exhausted no-progress recovery TRIAGE changed task, trigger, or attempt")
     }
+    if (recovery_stage == "needs-session-triage" &&
+        (event_trigger_signature != recovery_trigger ||
+         index(event_trigger_signature, recovery_task ":") != 1 ||
+         event_attempt != recovery_attempt)) {
+      invalid("orchestration session-liveness TRIAGE changed task, trigger, or attempt")
+    }
+    if (recovery_stage == "needs-session-triage" && event_verdict ~ /^RESUME/) {
+      invalid("orchestration session-liveness TRIAGE must REPAIR or BLOCK")
+    }
   }
   if (event_strict && event_directive_strict && event == "RUN-RESUME" && stopped) {
     if (event_prior_run == "" || event_trigger_signature == "" ||
@@ -984,6 +1015,7 @@ function finish_event() {
   if (event == "TASK-RECOVERY") {
     if (recovery_task == "") {
       recovery_head = ""
+      recovery_consecutive_interruptions = 0
     }
     if (review_open && !(event_task in review_owner_position)) {
       invalid("QA repair owner " review_owner " does not match recovery task " event_task)
@@ -1009,7 +1041,11 @@ function finish_event() {
     recovery_report = event_originating_report
     recovery_verification = event_exact_verification
     recovery_base = event_control_base
+    if (triage_session_liveness_pending) {
+      recovery_consecutive_interruptions = 0
+    }
     triage_repair_pending = 0
+    triage_session_liveness_pending = 0
     resume_recovery_pending = 0
     if (review_open && event_task == review_owner_tasks[review_next_owner]) {
       review_owner_recovery_seen[event_task] = 1
@@ -1029,8 +1065,18 @@ function finish_event() {
       } else if (event_outcome == "NO-PROGRESS" && recovery_no_progress == "1/2") {
         recovery_stage = "needs-triage"
         triage_needed = 1
+        recovery_consecutive_interruptions = 0
+      } else if (event_outcome == "INTERRUPTED") {
+        recovery_consecutive_interruptions++
+        if (recovery_consecutive_interruptions >= 2) {
+          recovery_stage = "needs-session-triage"
+          triage_needed = 1
+        } else {
+          recovery_stage = "needs-continuation"
+        }
       } else {
         recovery_stage = "needs-continuation"
+        recovery_consecutive_interruptions = 0
       }
       recovery_last_outcome = event_outcome
       if (recovery_mode == "control-conformance" && event_control_head != "") {
@@ -1120,6 +1166,8 @@ function finish_event() {
     }
   } else if (event == "TRIAGE") {
     triage_was_exhaustion = (recovery_stage == "needs-triage")
+    triage_was_session_liveness = (recovery_stage == "needs-session-triage")
+    triage_session_liveness_pending = 0
     latest_triage_id = event_id
     latest_triage_trigger = event_trigger_signature
     latest_triage_verdict = event_verdict
@@ -1134,10 +1182,16 @@ function finish_event() {
     } else if (event_verdict ~ /^REPAIR/) {
       triage_needed = 0
       triage_repair_pending = 1
+      if (triage_was_session_liveness) {
+        recovery_stage = "needs-repair"
+        triage_session_liveness_pending = 1
+      }
     } else if (event_verdict ~ /^BLOCK/) {
-      if (triage_was_exhaustion) {
+      if (triage_was_exhaustion || triage_was_session_liveness) {
         recovery_task = ""
         recovery_stage = ""
+        recovery_consecutive_interruptions = 0
+        triage_session_liveness_pending = 0
       }
       stop_entry_pending = 1
       triage_needed = 0
@@ -1159,6 +1213,7 @@ function finish_event() {
         recovery_last_outcome = ""
         recovery_no_progress = ""
         recovery_head = ""
+        recovery_consecutive_interruptions = 0
         resume_triage = latest_triage_id
         resume_task = event_continuing_task
         resume_trigger = event_trigger_signature
@@ -1248,6 +1303,9 @@ function finish_event() {
   event_phase_worktree = ""
   event_temporary_worktree = ""
   event_hidden_flags = ""
+  event_interruption_cause = ""
+  event_elapsed_session = ""
+  event_command_in_flight = ""
   event_cause = ""
   event_starting_checkpoint = ""
   event_ending_checkpoint = ""
@@ -1293,6 +1351,9 @@ function finish_event() {
   event_phase_worktree_count = 0
   event_temporary_worktree_count = 0
   event_hidden_flags_count = 0
+  event_interruption_cause_count = 0
+  event_elapsed_session_count = 0
+  event_command_in_flight_count = 0
   event_verdict_count = 0
   event_triage_log_count = 0
   event_originating_task_count = 0
@@ -1554,6 +1615,18 @@ event == "REPAIR" && /^- Control scope check: / {
 event == "REPAIR" && /^- Outcome: / {
   event_outcome_count++
   event_outcome = substr($0, length("- Outcome: ") + 1)
+}
+event == "REPAIR" && /^- Interruption cause: / {
+  event_interruption_cause_count++
+  event_interruption_cause = substr($0, length("- Interruption cause: ") + 1)
+}
+event == "REPAIR" && /^- Elapsed session duration: / {
+  event_elapsed_session_count++
+  event_elapsed_session = substr($0, length("- Elapsed session duration: ") + 1)
+}
+event == "REPAIR" && /^- Command in flight: / {
+  event_command_in_flight_count++
+  event_command_in_flight = substr($0, length("- Command in flight: ") + 1)
 }
 event == "REPAIR" && /^- Next checkpoint: / {
   event_next_checkpoint_count++

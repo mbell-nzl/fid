@@ -193,13 +193,26 @@ evidence; this event records what the continuation changed and proved.
 - Control scope check: <N/A for task-scope | PASS control repair scope: <base> -> <head>; allowed=<exact Allowed files> (terminated exit_code: 0) from the trusted-base verifier blob>
 - Phase-branch integration: <N/A for task-scope | PASS fast-forward from
   directive base to repair HEAD after scope PASS, phase worktree ledger-only>
-- Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
+- Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS | INTERRUPTED>
+- Interruption cause: <required exactly once for INTERRUPTED; otherwise omit>
+- Elapsed session duration: <required exactly once for INTERRUPTED; otherwise omit>
+- Command in flight: <exact command | none observed | unknown after external
+  termination; required exactly once for INTERRUPTED; otherwise omit>
 - Resolution evidence: <relevant in-scope change tied to the trigger that
   satisfies/removes an obligation; narrower failure; or byte-identical rerun
   result with observed termination. Formatting/metadata/unrelated churn is not
   progress>
 - Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
   recovery-budget-exhausted>
+
+`INTERRUPTED` means the child was ended from outside before returning a typed
+result. It is not `NO-PROGRESS`: the next TASK-RECOVERY increments total
+`Attempt count` but preserves the prior `Consecutive no-progress attempts`
+value. A parent polling wait timeout is not an interruption and produces no
+REPAIR event; retain and poll the live child. Two consecutive `INTERRUPTED`
+outcomes require orchestration session-liveness TRIAGE before another recovery.
+A TRIAGE `REPAIR` advances the next total `Attempt count`, preserves the prior
+no-progress count, and starts a new consecutive-interruption streak.
 
 For `REPAIR / control-conformance`, leave the dirty run ledger in the phase
 worktree, with no other dirt, and create a dedicated clean temporary repair

@@ -102,6 +102,29 @@ attempts whose directive actually permitted causal repair of the failing rows;
 an attempt forbidden from touching the only cause of the failure is a
 mis-scoped directive, not evidence of exhausted repair capability.
 
+The same budget counts only attempts that reported an outcome. An attempt whose
+session is interrupted, cancelled, timed out, or shut down from outside, and
+which therefore never returns a typed result, does not consume it: the budget
+measures a repair that cannot converge, and an interrupted attempt was never
+allowed to finish converging. No budget bounds a child session's lifetime; only
+declared per-command budgets are enforced, and the orchestrator waits for the
+session to end on its own. Repeated external interruption is its own condition -
+orchestration session-liveness - recorded with the interruption cause, elapsed
+duration, and command in flight, because its remedy is the session shape rather
+than the repair. Where verification cost approaches the session window, commit
+durable work before the long commands and append each command result as it
+terminates, so an interruption leaves inspectable evidence instead of an
+unchanged tree that reads as no progress.
+
+A parent polling wait timeout is not child termination and never authorizes an
+interrupt: retain the same child and poll again. The first actual external
+interruption routes to same-task recovery; the second consecutive one routes to
+orchestration session-liveness triage. The ledger records a typed
+`Outcome: INTERRUPTED` and preserves the preceding no-progress count rather
+than incrementing or resetting it. When that triage authorizes repair, the next
+recovery increments total attempt count, preserves the no-progress count, and
+starts a new consecutive-interruption streak.
+
 ## 4. Critical scenario inventory
 
 The conformance and workflow suites must cover at least these scenarios:

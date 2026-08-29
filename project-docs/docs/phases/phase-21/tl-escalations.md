@@ -2,11 +2,38 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-164 resolve ESC-21-001..006. The ledger is valid at
-`REPAIR_PENDING` after TRG-21-007; DEC-164 authorizes the verifier correction
-that lets Phase Runner append its exact ordinary task-8 recovery.
+None. DEC-160 through DEC-170 resolve ESC-21-001..012. The run is stopped after
+TRG-21-018; DEC-170 authorizes the task-15 attempt-6 continuation that clears it.
 
 ## Resolved Escalations
+
+### ESC-21-012 - Task-15 Window 5 QA recovery budget exhausted
+
+- **Raised by:** TRG-21-017, corrected for identity by TRG-21-018, after the
+  Window 5 task-15 QA rework for MF-15-01 and MF-15-02 recorded two consecutive
+  no-progress attempts.
+- **Protected category claimed:** recovery-budget-exhausted.
+- **Resolution:** DEC-170, 2026-08-30. **Not sustained on that category.** All
+  five attempts under `task-15:qa-rework:review-5:MF-15-01-MF-15-02` ended with
+  the Developer child shut down by the orchestrator while running
+  (`run-ledger.md:2730`, `:2773`, `:2816`, `:2859`, `:2902`); none returned a
+  typed result, so the NO-PROGRESS verdicts measured interruption rather than
+  repair capability. The corrected category is orchestration session-liveness,
+  as in DEC-168. The durable tree already contains MF-15-01's causal fix and
+  MF-15-02's four negative cases, so the repair is at verification and closure.
+  DEC-170 makes an externally interrupted attempt never consume the no-progress
+  budget, restates that no budget bounds a Developer child session's lifetime
+  while fixing per-command budgets for the unchanged task-15 block, orders the
+  durable work committed before the long commands with each result appended as
+  it terminates, treats the recorded attempt-5 gate rows as unverified until
+  rerun in session, and replaces MF-15-02's history-rewriting provenance route
+  with a forward-only one because `79e3a93` and `8491cde` are ancestors of the
+  control repair base `09a2a7b`.
+- **Recovery:** `RUN-RESUME` retaining TRG-21-018 and ESC-21-012 with resolution
+  authority `DEC-170`, then one `TASK-RECOVERY task-15`, category
+  `session-continuation`, mode `task-scope`, attempt 6, consecutive no-progress
+  `0/2`. Task 16 waits for a fresh independent `review-5b` PASS. No finding,
+  assertion, command, VAL, QA artifact, contract, schema, or ownership changes.
 
 ### ESC-21-006 - Schema-v2 ordinary repair authority cannot bind TASK-RECOVERY
 

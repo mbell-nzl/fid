@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / Task 12 STOPPED / Recovery Authorized (DEC-167)**
+> Status: **Active / Window 5 task-15 STOPPED / Recovery Authorized (DEC-170)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -45,6 +45,14 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   ordering across the whole family; task 9 owns the complete section-7
   category-to-exit mapping, not one code. Both gain `cmd/fid/integration/` scope
   and the tagged gate. Order: task 4, task 9, complete checkpoint rerun.
+- DEC-170: an externally interrupted attempt never consumes the no-progress
+  budget, and no budget bounds a Developer child session's lifetime; only the
+  declared per-command budgets apply. Commit durable work before long commands
+  and append each result as it terminates. MF-15-02's provenance is satisfied
+  forward-only; no commit at or before `09a2a7b` is rewritten.
+- DEC-171: parent polling waits never terminate children; typed session routing,
+  ledger `INTERRUPTED` evidence, generated prompts, workflow lint, and drill 19
+  make DEC-170's liveness accounting executable before attempt 6.
 
 ## Planning Authorities
 
@@ -125,26 +133,23 @@ negative checks; never create a second Envelope revision.
 
 All four planning gates are complete: Heavy shape and Gate D3.2 accepted, plan
 Ready at `e8a636e`, no unresolved refinement, Human execution approval under
-DEC-159. Tasks 1-12 and review windows 1-4 are complete, `review-4b` PASS. The
-Group 1 checkpoint ran complete under DEC-168 with VAL-042, VAL-043, and
-FEAS-01..FEAS-19 all PASS, and returned `REPAIR` on two bounded findings. The run
-is STOPPED after TRIAGE TRG-21-015 / ESC-21-011, exactly as DEC-168 item 10(a)
-requires. DEC-169 supplies the owner routing and resolves it.
+DEC-159. Tasks 1-15 are complete and review windows 1-4 plus the Group 1
+checkpoint rerun (`infra-review-1b`) are PASS. Window 5 (`review-5`) returned
+`REPAIR` with two bounded task-15 Must-fixes. The run is STOPPED after TRIAGE
+TRG-21-018 / ESC-21-012; DEC-170 resolves it.
 
-The Phase Runner appends, in order: `REVIEW infra-review-1` recording the
-committed checkpoint (`Outcome: REPAIR`, `Owning task: task-4, task-9`);
-`TRIAGE TRG-21-016`, the identity-only successor of TRG-21-015 that TL-Lite
-allocates under DEC-169 retaining ESC-21-011, `Originating task: task-4`,
-trigger signature
-`task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay`;
-`STOP`; then `RUN-RESUME` with that trigger, attempt 2, resolution authority
-`DEC-169`, continuing task `task-4`, and next recovery
-`task-4 | qa-rework | task-scope | <that trigger> | 2`.
+The Phase Runner appends `RUN-RESUME` - `Governing TRG: TRG-21-018`,
+`Governing ESC: ESC-21-012`, trigger signature
+`task-15:qa-rework:review-5:MF-15-01-MF-15-02`, `Attempt count: 6`,
+`Resolution authority: DEC-170`, `Continuing task: task-15` - then one
+`TASK-RECOVERY task-15`, `Source`/`Repair authority` `TRG-21-018 / DEC-170`,
+category `session-continuation`, mode `task-scope`, attempt 6, consecutive
+no-progress `0/2`.
 
-Task 4 repairs MF-1 first, then task 9 repairs MF-2 under an unbound
-`TASK-RECOVERY task-9` authorized by the open review. Each returns its own
-committed report and fresh two-argument report-lint. Then one fresh independent
-reviewer repeats the complete unsplit checkpoint with all FEAS probes fresh and
-appends the second review to the same artifact, recorded as `REVIEW
-infra-review-1b` PASS. Task 13 dispatches only after that. DEC-169 item 8 holds
-the exact field values.
+Attempt 6 commits the existing durable repair with its `Refs: phase-21/task-15`
+footer first, then runs the five unchanged task-15 commands under the DEC-170
+per-command budgets, appending each observed termination to the report as it
+terminates. The recorded attempt-5 rows are unverified and are rerun in session.
+No commit at or before `09a2a7b` is amended. Then `REPAIR task-15`, `TASK task-15
+COMPLETE`, and a fresh independent `REVIEW review-5b` (`Re-review of: review-5`);
+task 16 dispatches only on its PASS. DEC-170 item 9 holds the exact field values.

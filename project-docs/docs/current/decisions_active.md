@@ -96,6 +96,23 @@
   per-row provenance. A no-progress recovery budget counts only attempts whose
   directive permitted causal repair of the failing rows. Canonical text is
   `08_QUALITY_PLAN.md` §3.
+- **Session liveness and budget accounting (DEC-170, standing):** an attempt
+  whose child session is interrupted, cancelled, timed out, or shut down from
+  outside, and which never returns a typed result, does not consume the
+  no-progress budget. No budget bounds a child session's lifetime; only declared
+  per-command budgets are enforced and the orchestrator waits for the session to
+  end on its own. Repeated external interruption is triaged as orchestration
+  session-liveness, never as `recovery-budget-exhausted`. Where verification cost
+  approaches the session window, commit durable work before the long commands and
+  append each command result as it terminates. Canonical text is
+  `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16.
+- **Executable session-liveness controls (DEC-171, standing):** a parent polling
+  wait timeout routes to `WAIT`; an external child interruption is recorded as
+  typed `INTERRUPTED` evidence and preserves the prior no-progress count. The
+  first interruption repairs, the second requires orchestration
+  session-liveness triage. Canonical Phase Runner prompts, routing, ledger
+  validation, workflow lint, and drill 19 enforce the rule without changing
+  product or task-15 contracts.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

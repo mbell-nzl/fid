@@ -407,6 +407,17 @@ signature. Same-session red/green work is not an orchestration Recovery attempt.
 Use when: recording total and consecutive no-progress attempts.
 Avoid: resetting the count for context refresh or planned handoff.
 
+**Orchestration session-liveness (V1)**
+Definition: A child-agent execution condition in which the child is externally
+interrupted before returning a typed result, distinct from a command timeout or
+a parent polling wait timeout. The ledger records `Outcome: INTERRUPTED` with
+the cause, elapsed session duration, and command in flight.
+Use when: preserving the no-progress count after one interruption and triaging
+the execution shape after two consecutive interruptions. A repair verdict
+advances total attempt count while starting a new interruption streak.
+Avoid: charging an interruption to repair capability, resetting an existing
+no-progress count, or treating an expired parent wait as child termination.
+
 **V1 recovery ledger event**
 Definition: An append-only run-ledger entry: `TASK-RECOVERY` records a
 classified recovery need and checkpoint; `REPAIR` records one continuation and

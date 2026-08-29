@@ -1356,6 +1356,236 @@
   `public-interface.md` §§6-7; `tasks/task-4-activation-trust.md`;
   `tasks/task-9-retained-actor-policy-removal.md`.
 
+---
+
+### DEC-170: An externally interrupted attempt never consumes the no-progress budget; task-15 Window 5 repair resumes at attempt 6. Closes ESC-21-012
+
+- **Date:** 2026-08-30
+- **Context:** Review 5 returned `REPAIR` with two bounded task-15 Must-fixes.
+  Five runner-mediated continuations followed; TRG-21-017 and its identity
+  successor TRG-21-018 triaged attempts 4 and 5 as consecutive no-progress and
+  escalated `recovery-budget-exhausted` as ESC-21-012. Four facts decide it.
+  - **Not one of the five attempts returned a typed result.** The ledger records
+    the same ending for every attempt: "Developer continuation **was shut down**"
+    while "in running state" - `run-ledger.md:2730` (attempt 1),
+    `:2773` (~30 min), `:2816` (~40 min), `:2859` (several hours), and `:2902`
+    (~20 min). No child self-terminated, produced a report, or reported command
+    termination. A `NO-PROGRESS` verdict over that population measures the
+    orchestrator's shutdown policy, not the Developer's repair capability. This
+    is **exactly the DEC-168 defect on the Developer side**: a whole-session
+    lifetime cap applied where only per-command budgets exist.
+  - **The durable tree contradicts exhaustion.** MF-15-01's causal fix is
+    present: `internal/evidence/execution.go:339` now routes *every* observed
+    process outcome through one `journal.CommitIdempotent` path, `:120` replays
+    the stored outcome, and `internal/journal/project_effects.go` rejects
+    non-insert Receipt effects. MF-15-02's four negative cases are present:
+    `cmd/fid/gate_run_test.go:141` (Attempt-append failure, no spawn), `:170`
+    (frame-only handled `fid-error`), `:210` (non-success replay matrix), plus
+    `assertCompleteReceiptBinding:328` and
+    `assertReceiptMutationRejectedAndImmutable:344`. The modified
+    `task-15-done.md` records all five required commands PASS with concrete
+    durations. The repair is at verification-and-closure, not stalled.
+  - **One honest verification pass cannot fit in the observed session window.**
+    Required command 1 alone terminated at 219-235 s in this task's own records,
+    and the repository coverage command runs the whole tree under `-race`; a
+    single byte-identical pass is roughly 15-25 minutes of pure command
+    wall-clock. Attempts 2, 3, and 5 were shut down at ~30, ~40, and ~20
+    minutes. No attempt could both author and verify. Because nothing was ever
+    committed, each shutdown discarded the *evidence* of progress and
+    re-presented an unchanged tree to the next attempt, which is how genuine
+    progress kept reading as no-progress.
+  - **MF-15-02's provenance element is unexecutable as written.** `79e3a93` and
+    `8491cde` are ancestors of `09a2a7b`. Amending their messages rewrites the
+    review-5 commit itself and every hash cited as phase HEAD or control repair
+    base by TRG-21-015 through TRG-21-018, the two STOPs, ESC-21-011,
+    ESC-21-012, and DEC-168/DEC-169. `task-15-done.md:79` already asserts the
+    rewrite happened; the branch says otherwise. An instruction that can only be
+    obeyed by destroying the phase's immutable evidence chain is a defective
+    repair route, not work the Developer failed to do.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-017 and TRG-21-018 are **not sustained on their
+     recorded category**. The behaviour around them was right: the Runner
+     preserved both findings, kept task-15 ownership, refused to advance, and
+     TRG-21-018's identity correction to the last actual TASK-RECOVERY was
+     correct. Only the classification is wrong. The corrected category is
+     **orchestration session-liveness**, the same correction DEC-168 item 1
+     made. `recovery-budget-exhausted` does not hold, so ESC-21-012's protected
+     premise fails and no protected authority is required to continue.
+  2. **Standing accounting rule.** An attempt whose child session is
+     interrupted, cancelled, timed out, or shut down by the orchestrator while
+     running, and which therefore never returns a typed result, **does not
+     consume the two-attempt no-progress budget**. The budget exists to detect a
+     repair that cannot converge, so it counts only attempts that actually
+     exercised repair capability and reported an outcome. This generalises
+     DEC-167 item 8: a directive-suppressed attempt could not have made
+     progress, and an interrupted attempt was never allowed to finish making it.
+     Under this rule the consecutive count for
+     `task-15:qa-rework:review-5:MF-15-01-MF-15-02` is **0/2**.
+  3. **No session-lifetime budget, restated for Developer children.** DEC-168
+     item 5 already binds this for QA Lead children; it applies identically
+     here. The Phase Runner dispatches the continuation and **waits for the
+     child to terminate on its own**. Only per-command budgets are enforced, and
+     the task-15 block's budgets are: 900 s for
+     `go test -race ./internal/evidence ./internal/journal ./internal/cli ./cmd/fid/...`,
+     60 s for `gofmt -l cmd internal`, 300 s for `golangci-lint run ./...`,
+     1800 s for `go test -race -coverprofile=coverage.out ./...`, and 60 s for
+     `go tool cover -func=coverage.out`. These bound commands, not the session,
+     and **change no command, threshold, or accepted status**.
+  4. **Loop guard.** Two consecutive externally interrupted attempts under item
+     2 are themselves a condition: TL-Lite triages them as
+     `orchestration session-liveness`, naming the observed interruption cause,
+     the elapsed session duration, and which command was in flight, and
+     escalates for an execution-shape decision. That condition never re-enters
+     `recovery-budget-exhausted`, because its remedy is the session shape, not
+     the repair.
+  5. **Durability first.** Attempt 6's first action, before any long command, is
+     to commit the existing durable repair - `internal/evidence/execution.go`,
+     `internal/journal/idempotency.go`, `internal/journal/project_effects.go`,
+     and `cmd/fid/gate_run_test.go` - as a checkpoint commit carrying
+     `Refs: phase-21/task-15`. Five sessions and roughly five hours have already
+     produced zero commits; no further interruption may be allowed to discard
+     this work. Each required command's result is then appended to
+     `task-15-done.md` with its observed termination **as that command
+     terminates**, so an interruption always leaves inspectable partial
+     evidence, exactly as DEC-168 item 5 requires of the QA Lead artifact.
+  6. **The recorded attempt-5 gate rows are not evidence.** Every command row
+     currently in `task-15-done.md` for the repair is unverified: no
+     runner-observed termination and no commit exist for it. Each is rerun
+     **byte-identically in session** and replaced with the in-session observed
+     value; prior rows may be retained only if labelled as historical attempt
+     evidence and never presented as the gate result. The header's recovery
+     attempt count is corrected to 6.
+  7. **MF-15-02 provenance: forward-only, no history rewrite.** No commit at or
+     before `09a2a7b` is amended, rebased, or replaced. The finding's observable
+     - task-15's commit history is traceable to its phase and task, and the
+     omission is on the record - is satisfied forward: every task-15 commit from
+     attempt 6 onward carries `Refs: phase-21/task-15`, and the report's
+     Deviations section names `79e3a93` and `8491cde`, states that they omit the
+     footer required by `AGENTS.md`, and records that they are not rewritten
+     because they are ancestors of the control repair base cited throughout the
+     ledger, triage log, and ESC-21-011/012. The false claim at
+     `task-15-done.md:79` is replaced by that statement. This is a Tech Lead
+     disposition of a QA finding's **repair route**, taken because the reviewer's
+     route collides with the phase's historical-integrity rule; the assertion is
+     not weakened, dropped, or re-pointed, and the re-reviewer still verifies
+     provenance with `git show -s --format=fuller`.
+  8. **Nothing else moves.** Task-15 ownership, MF-15-01, MF-15-02's four test
+     elements, the five required commands byte-for-byte, all failed evidence and
+     prior attempts, VAL-051..054, QA-49..QA-52, the QA plan, validation
+     contract, public interface, Event schema, migrations, exit classes,
+     thresholds, and budgets are unchanged. No cross-task rerouting: MF-15-01 is
+     `internal/evidence/` and MF-15-02 is task-15 tests and report, both inside
+     task-15's accepted scope. A **fresh independent Window 5 re-review** still
+     gates task 16.
+  9. **Exact ledger route.** TRG-21-018's trigger signature is already
+     `task-15`-prefixed and its continuing task is task-15, so no identity-only
+     successor triage is needed this time. The Phase Runner appends, in order:
+     1. `RUN-RESUME` - `Prior run/session or STOP: 2026-08-30 08:36 STOP /
+        TRG-21-018 / ESC-21-012`, `Governing TRG: TRG-21-018`,
+        `Governing ESC: ESC-21-012`, `Trigger signature:
+        task-15:qa-rework:review-5:MF-15-01-MF-15-02`, `Attempt count: 6`,
+        `Resolution authority: DEC-170`, `Continuing task: task-15`,
+        `Next recovery: task-15 | session-continuation | task-scope |
+        task-15:qa-rework:review-5:MF-15-01-MF-15-02 | 6`.
+     2. `TASK-RECOVERY task-15` - `Source: TRG-21-018 / DEC-170`,
+        `Repair authority: TRG-21-018 / DEC-170`,
+        `Category: session-continuation`, `Repair mode: task-scope`, the same
+        trigger signature, `Attempt count: 6`,
+        `Consecutive no-progress attempts: 0/2` under item 2, allowed files the
+        ordinary task-15 scope plus `tasks/task-15-done.md`, forbidden changes
+        as in attempt 5 **plus** no rewrite, amend, rebase, or replacement of any
+        commit at or before `09a2a7b`.
+     3. `REPAIR task-15`; on `Outcome: RESOLVED`, `TASK task-15 COMPLETE` with
+        the two-argument report-lint recorded `PASS`.
+     4. A fresh independent QA Reviewer performs the linked Window 5 re-review
+        and the Runner records `REVIEW review-5b` with
+        `Re-review of: review-5`. Task 16 dispatches only on its `PASS`.
+  10. **Branches.** If the reran gate is red, that is ordinary in-scope task-15
+      repair under this same trigger and directive, and item 2's accounting
+      applies to any further attempt. A red result that requires a protected
+      contract change is a new triage on its own category, not a return to this
+      one.
+  11. **Spec sync.** `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16
+      record item 2 and item 3 as standing rules. No other specification,
+      template, verifier, or workflow definition changes.
+- **Consequences:** ESC-21-012 closes with no contract change, no re-slicing, no
+  weakened assertion, and no rewritten history. Phase 21 stops converting
+  orchestration interruptions into protected escalations - the third such
+  conversion after ESC-21-010 - and the recovery budget once again measures only
+  what it was designed to measure. Reviewers should expect one commit-first
+  task-15 continuation, byte-identical gate reruns, and a report whose provenance
+  deviation is stated rather than fabricated.
+- **Verification evidence:** `run-ledger.md:2730`, `:2773`, `:2816`, `:2859`, and
+  `:2902` each record an externally shut-down child in running state with no
+  returned result; `:2865` and `:2908` are the two `NO-PROGRESS` entries;
+  `:2913` and `:2928` are the TRIAGE and STOP. `internal/evidence/execution.go`
+  contains exactly one `CommitEvent` (`:298`, the Attempt) and one
+  `CommitIdempotent` (`:339`, every Receipt outcome). `cmd/fid/gate_run_test.go`
+  defines the four `TestGateRun*` cases and the two `assert*` helpers at the
+  lines the report cites. `git log` orders `09a2a7b` after `8491cde` after
+  `79e3a93`, so the requested amendment rewrites the review commit.
+  `task-15-done.md:79` claims an amendment that phase HEAD contradicts.
+  `AGENTS.md:65` is the `Refs: phase-N/task-M` convention MF-15-02 relies on.
+- **Refs:** TRG-21-017; TRG-21-018; ESC-21-012; DEC-168 items 1, 2, and 5;
+  DEC-167 items 7 and 8; DEC-162; `qa/review-5.md` MF-15-01, MF-15-02, and the
+  Repair Plan; `qa/qa-plan.md` QA-49..QA-52; `qa/validation-contract.md`
+  VAL-051..054; `tasks/task-15-attempt-receipt.md`; `tasks/task-15-done.md`;
+  `08_QUALITY_PLAN.md` §3; `09_AI_WORKFLOW.md` §§2.3, 9, and step 16.
+
+### DEC-171: Make DEC-170 session-liveness accounting executable in the workflow controls
+
+- **Date:** 2026-08-30
+- **Context:** DEC-170 accepted the standing distinction between a parent
+  polling wait, a bounded command, and an externally interrupted child, but its
+  item 11 deliberately changed only the specifications. The canonical Phase
+  Runner prompt still contained the older two-attempt rule, the router had no
+  child-session input, and the ledger verifier rejected any outcome other than
+  `RESOLVED`, `MATERIAL-PROGRESS`, or `NO-PROGRESS`. A resumed Runner could
+  therefore repeat the same misclassification. The Human directed the super
+  agent to make all necessary workflow updates before starting a new Runner.
+- **Decision:**
+  1. `workflow-route.sh` gains typed child-session outcomes. `WAIT_TIMEOUT` and
+     `LIVE` return `ACTION WAIT`; `RETURNED` returns `ACTION EVALUATE`; the
+     first consecutive `INTERRUPTED` returns `ACTION REPAIR` and the second
+     returns `ACTION TRIAGE`.
+  2. `workflow-sequence-lint.sh` accepts `REPAIR Outcome: INTERRUPTED` only
+     with exactly one interruption cause, elapsed session duration, and command
+     in flight. The following recovery increments total attempt count while
+     preserving the prior no-progress count. A second consecutive interruption
+     requires TRIAGE before another recovery; a TRIAGE repair advances the next
+     total attempt, preserves no-progress, and starts a new interruption streak.
+  3. The canonical Phase Runner source, generated provider prompts, operator
+     prompt template, run-ledger template, playbook, glossary, quality/workflow
+     specs, and tools documentation carry the same rule. A parent polling wait
+     timeout never authorizes child interruption.
+  4. Mechanical drill 19 proves all routes, required interruption context,
+     no-progress preservation, and the two-interruption triage guard.
+     `workflow-lint.sh` checks the canonical and generated prompt surfaces so
+     provider sync cannot remove the rule.
+  5. This is protected workflow-control implementation under the Human's
+     explicit authority. It supersedes DEC-170 item 11 only to the extent that
+     verifier, template, prompt, and drill changes are required to enforce
+     DEC-170 items 2-4. It does not change task-15 ownership, product code,
+     product Event schema, VAL-051..054, QA-49..52, the five task commands or
+     their budgets, TRG/ESC identity, or DEC-170's exact attempt-6 ledger route.
+- **Consequences:** A wait poll can expire repeatedly without killing a healthy
+  child. Actual external interruption is durable typed evidence, cannot be
+  scored as Developer no-progress, and cannot loop indefinitely without a
+  distinct orchestration session-liveness triage after the second occurrence.
+  The Phase Runner still appends DEC-170's RUN-RESUME and TASK-RECOVERY before
+  dispatching task-15 attempt 6.
+- **Verification evidence:** the first red drill-19 run returned nine mechanical
+  misses (terminated `exit_code: 9`). A later red schema-v2 case exposed the
+  post-triage attempt-number defect (terminated `exit_code: 1`). After repair,
+  `project-docs/tools/drills/run-drills.sh` passed with `DRILLS PASS mechanical
+  drills completed with no misses` (terminated `exit_code: 0`),
+  `project-docs/tools/workflow-lint.sh` passed with `PASS workflow-lint
+  completed with no failures` (terminated `exit_code: 0`), generated-agent
+  sync check terminated `exit_code: 0`, and the unchanged phase ledger returned
+  `VALID state=STOPPED` (terminated `exit_code: 0`).
+- **Refs:** DEC-170; DEC-168; ESC-21-012; TRG-21-017; TRG-21-018;
+  `08_QUALITY_PLAN.md` §3; `09_AI_WORKFLOW.md` steps 10 and 16.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

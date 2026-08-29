@@ -22,6 +22,7 @@
 #   drill-16  bounded QA finding routes to repair
 #   drill-17  protected triage and exhausted budget routes
 #   drill-18  bounded control-conformance routing, scope, and ledger directive
+#   drill-19  child-session polling and external-interruption accounting
 #
 # Agent drills (workspaces materialized with --agent; scored by a human using
 # each drill's DRILL.md and the SCORECARD.md):
@@ -304,6 +305,10 @@ run_route "drill-17 exhausted no-progress budget routes to triage" TRIAGE recove
 run_route "drill-18 control conformance defect routes to bounded repair" REPAIR control CONFORMANCE_DEFECT
 run_route "drill-18 control definition change routes through triage" TRIAGE control DEFINITION_CHANGE
 run_route "drill-18 ambiguous control change routes through triage" TRIAGE control AMBIGUOUS
+run_route "drill-19 parent wait timeout keeps child session live" WAIT session WAIT_TIMEOUT
+run_route "drill-19 live child session remains polled" WAIT session LIVE
+run_route "drill-19 first external interruption routes to recovery" REPAIR session INTERRUPTED 1
+run_route "drill-19 second external interruption routes to liveness triage" TRIAGE session INTERRUPTED 2
 
 # --- Drill 18: control-scope lint isolation and lifecycle ---
 scope_repo="$workspace/control-scope"
@@ -2338,6 +2343,248 @@ cat >> "$third_no_progress_recovery" <<'EOF'
 EOF
 run_invalid_sequence "drill-18 exhausted no-progress budget cannot dispatch again" "requires TRIAGE" "$third_no_progress_recovery"
 
+interrupted_recovery="$workspace/interrupted-recovery.md"
+cat > "$interrupted_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: failed exact gate
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: one earlier reporting attempt made no progress
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: parent polling wait was misapplied as child cancellation
+- Elapsed session duration: 37m
+- Command in flight: none observed
+- Resolution evidence: child was externally interrupted before returning a typed result
+- Next checkpoint: another TASK-RECOVERY without consuming no-progress budget
+### 2026-08-15 10:03 TASK-RECOVERY task-1
+- Source: externally interrupted child session
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first externally interrupted continuation
+- Resolution evidence: PENDING - continue repair without charging no-progress
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+EOF
+run_sequence "drill-19 first interruption preserves prior no-progress count" REPAIR_PENDING "$interrupted_recovery"
+
+reset_after_interruption="$workspace/reset-after-interruption.md"
+sed '0,/Consecutive no-progress attempts: 1\/2/! s/Consecutive no-progress attempts: 1\/2/Consecutive no-progress attempts: 0\/2/' \
+  "$interrupted_recovery" > "$reset_after_interruption"
+run_invalid_sequence "drill-19 interruption cannot reset prior no-progress count" \
+  "expected 1/2" "$reset_after_interruption"
+
+missing_interruption_context="$workspace/missing-interruption-context.md"
+grep -v '^- Command in flight:' "$interrupted_recovery" > "$missing_interruption_context"
+run_invalid_sequence "drill-19 interrupted outcome requires liveness context" \
+  "INTERRUPTED REPAIR must record interruption cause, elapsed session duration, and command in flight" \
+  "$missing_interruption_context"
+
+twice_interrupted_recovery="$workspace/twice-interrupted-recovery.md"
+cat "$interrupted_recovery" > "$twice_interrupted_recovery"
+cat >> "$twice_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:04 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Control scope check: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: child execution surface ended externally
+- Elapsed session duration: 42m
+- Command in flight: go test -race ./...
+- Resolution evidence: a second consecutive child ended without a typed result
+- Next checkpoint: triage as orchestration session-liveness
+EOF
+run_sequence "drill-19 second interruption requires liveness triage" TRIAGE_PENDING "$twice_interrupted_recovery"
+
+third_interrupted_recovery="$workspace/third-interrupted-recovery.md"
+cat "$twice_interrupted_recovery" > "$third_interrupted_recovery"
+cat >> "$third_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:05 TASK-RECOVERY task-1
+- Source: retry after two external interruptions
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 3
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: two externally interrupted child sessions
+- Resolution evidence: PENDING - retry without liveness triage
+- Next action: retry the child directly
+- Human attention required: no
+EOF
+run_invalid_sequence "drill-19 two interruptions cannot bypass liveness triage" \
+  "orchestration session-liveness requires TRIAGE" "$third_interrupted_recovery"
+
+session_liveness_phase="$workspace/session-liveness/project-docs/docs/phases/phase-1"
+mkdir -p "$session_liveness_phase"
+cat > "$session_liveness_phase/triage-log.md" <<'EOF'
+## TRG-1-019 - orchestration session-liveness repair
+
+- **Originating task:** task-1
+- **Trigger signature:** task-1:gate-repair:exact-gate
+- **Attempt count:** 2
+- **Repair category:** session-continuation
+- **Repair authority:** task-1 spec
+- **Verdict:** REPAIR
+EOF
+triaged_interrupted_recovery="$session_liveness_phase/run-ledger.md"
+cat > "$triaged_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: failed exact gate
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: one earlier reporting attempt made no progress
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Starting checkpoint: one earlier reporting attempt made no progress
+- Ending checkpoint: child ended before returning a typed result
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: parent polling wait was misapplied as child cancellation
+- Elapsed session duration: 37m
+- Command in flight: none observed
+- Resolution evidence: child was externally interrupted before returning a typed result
+- Next checkpoint: another TASK-RECOVERY without consuming no-progress budget
+### 2026-08-15 10:03 TASK-RECOVERY task-1
+- Source: externally interrupted child session
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first externally interrupted continuation
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - continue repair without charging no-progress
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:04 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Starting checkpoint: first externally interrupted continuation
+- Ending checkpoint: second child ended before returning a typed result
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: child execution surface ended externally
+- Elapsed session duration: 42m
+- Command in flight: go test -race ./...
+- Resolution evidence: a second consecutive child ended without a typed result
+- Next checkpoint: triage as orchestration session-liveness
+### 2026-08-15 10:05 TRIAGE TRG-1-019
+- Trigger: two consecutive child sessions ended before returning
+- Originating task: task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Repair category: session-continuation
+- Repair authority: task-1 spec
+- Checkpoint: second consecutive external interruption
+- Verdict: REPAIR
+- Resolution evidence: change the orchestration session shape before retrying
+- Triage log: orchestration session-liveness repair confirmed
+### 2026-08-15 10:06 TASK-RECOVERY task-1
+- Source: TRG-1-019 orchestration session-liveness repair
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 3
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: liveness triage authorized a new child session
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - retry with the repaired session shape
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+EOF
+run_sequence "drill-19 liveness triage advances attempt and preserves no-progress" \
+  REPAIR_PENDING "$triaged_interrupted_recovery"
+
+reset_after_liveness_triage="$session_liveness_phase/reset-no-progress.md"
+sed '/^### 2026-08-15 10:06 TASK-RECOVERY task-1$/,$ s/Consecutive no-progress attempts: 1\/2/Consecutive no-progress attempts: 0\/2/' \
+  "$triaged_interrupted_recovery" > "$reset_after_liveness_triage"
+run_invalid_sequence "drill-19 liveness triage cannot reset no-progress" \
+  "session-liveness TRIAGE repair changed" "$reset_after_liveness_triage"
+
 wrong_task="$workspace/wrong-task.md"
 cat > "$wrong_task" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
@@ -3104,6 +3351,7 @@ Model/prompt configuration under test: <fill in>
 | drill-15 | live/missing command termination routes | workflow-route | auto |
 | drill-16 | QA repair route | workflow-route | auto |
 | drill-17 | protected stop and recovery budget | workflow-route | auto |
+| drill-19 | child-session liveness and interruption accounting | workflow-route / workflow-sequence-lint | auto |
 | drill-05 | weakened test | QA Reviewer | DETECTED / MISS |
 | drill-06 | unrecorded spec deviation | QA Reviewer | DETECTED / MISS |
 | drill-07 | stale doc claim | QA Reviewer | DETECTED / MISS |

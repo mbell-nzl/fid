@@ -4,10 +4,11 @@
 
 ## Project State
 
-**Phase 21 is active at the Group 1 independent checkpoint with the ledger
-STOPPED after TRG-21-015; the checkpoint ran complete and returned REPAIR, and
-DEC-169 resolves ESC-21-011 by routing MF-1 to task 4 and MF-2 to task 9.** Tasks
-1-12 and reviews 1/1b, 2/2b, 3/3b, and 4/4b are mechanically complete. Phase 20
+**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-018; QA
+Review Window 5 returned REPAIR on two bounded task-15 Must-fixes, and DEC-170
+resolves ESC-21-012 by correcting the recovery category and authorizing the
+task-15 attempt-6 continuation.** Tasks 1-15, reviews 1/1b, 2/2b, 3/3b, 4/4b, and
+the Group 1 checkpoint rerun `infra-review-1b` are mechanically complete. Phase 20
 completed/wrapped on 2026-08-22. The Phase 20 retrospective is committed in
 `../reviews/2026-08-22-phase-20-retrospective.md`; Gate D3.2 is closed by
 DEC-153; the initial slice/spec contract is DEC-154; carry-forward disposition
@@ -43,7 +44,18 @@ same-key idempotent replay across the whole Activation family, and task 9
 implements the complete `public-interface.md` section 7 category-to-exit mapping
 rather than one code, because `cmd/fid/main.go` currently exits 1 for every
 failure. Both tasks gain `cmd/fid/integration/` scope and the tagged integration
-gate; no VAL, QA plan, checkpoint contract, or public contract changes.
+gate; no VAL, QA plan, checkpoint contract, or public contract changes. Both
+repairs and the complete checkpoint rerun then passed, and tasks 13-15 completed.
+DEC-170 corrects the Window 5 task-15 escalation: all five attempts were shut
+down by the orchestrator while running, so the NO-PROGRESS verdicts measured
+interruption rather than repair capability. An externally interrupted attempt
+never consumes the no-progress budget, no budget bounds a Developer child
+session's lifetime, durable work is committed before the long commands, and
+MF-15-02's provenance is satisfied forward-only rather than by rewriting commits
+at or before `09a2a7b`. No finding, command, VAL, QA artifact, or contract
+changes. DEC-171 makes that standing rule executable in the Phase Runner
+prompts, session router, ledger verifier, workflow lint, and drill 19 without
+changing DEC-170's attempt-6 route.
 
 ## Planned Boundary
 
@@ -61,11 +73,12 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-12 COMPLETE; CHECKPOINT REPAIR, STOPPED AFTER
-  TRG-21-015**. Under DEC-169 the Phase Runner appends `REVIEW infra-review-1`
-  (REPAIR, owners `task-4, task-9`), `TRIAGE TRG-21-016`, `STOP`, and a
-  `RUN-RESUME` continuing task-4 at attempt 2, then dispatches task 4 and task 9
-  in that order. Task 13 waits for a PASS on the complete checkpoint rerun.
+- Dispatch state: **TASKS 1-15 COMPLETE; WINDOW 5 REPAIR, STOPPED AFTER
+  TRG-21-018**. Under DEC-170 the Phase Runner appends `RUN-RESUME` retaining
+  TRG-21-018/ESC-21-012 with resolution authority `DEC-170`, then one
+  `TASK-RECOVERY task-15`, `session-continuation`, `task-scope`, attempt 6,
+  consecutive no-progress `0/2`. Task 16 waits for a fresh independent
+  `review-5b` PASS.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
   `exit_code: 0` after the DEC-159 approval-state update.
@@ -78,20 +91,17 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Phase Runner appends the DEC-169 item 8 sequence: `REVIEW infra-review-1`,
-   `TRIAGE TRG-21-016` (TL-Lite allocates the identity-only successor of
-   TRG-21-015, retaining ESC-21-011), `STOP`, and the `RUN-RESUME` continuing
-   task-4 at attempt 2 with its bound `TASK-RECOVERY task-4`.
-2. Task 4 repairs MF-1: no lifecycle precondition preempts an exact
-   same-key/same-digest replay anywhere in the Activation family; conflicts stay
-   byte-identical; every error path emits its typed envelope. Then task 9 repairs
-   MF-2: the complete section 7 category-to-exit mapping, typed error, `main.go`
-   wiring, unknown-command exit 2, and every `cli.WriteFailure` site converted,
-   with no envelope change. Both run the tagged integration gate and return a
-   committed report with fresh two-argument report-lint.
-3. A fresh independent reviewer repeats the complete unsplit checkpoint with all
-   FEAS probes fresh, appends the second review to
-   `qa/group-1-checkpoint-review.md`, and the Runner records `REVIEW
-   infra-review-1b` PASS. Only then does task 13 dispatch, followed by QA Review
-   Window 5 for tasks 13-15. The reviewer still treats the first green tagged
-   closure journey as new evidence, not continuity (DEC-167 QA note).
+1. Phase Runner appends the DEC-170 item 9 sequence: `RUN-RESUME` bound to
+   TRG-21-018/ESC-21-012 at attempt 6, then `TASK-RECOVERY task-15`
+   (`session-continuation`, `task-scope`, attempt 6, no-progress `0/2`), and
+   waits for the Developer child to end on its own.
+2. Task 15 commits the existing durable repair with its `Refs: phase-21/task-15`
+   footer before any long command, then runs the five unchanged commands under
+   the DEC-170 per-command budgets, appending each observed termination to the
+   report as it terminates. The unverified attempt-5 rows are rerun in session,
+   and the report's provenance deviation names `79e3a93` and `8491cde` instead of
+   claiming an amendment; no commit at or before `09a2a7b` is rewritten.
+3. `REPAIR task-15`, then `TASK task-15 COMPLETE` with two-argument report-lint,
+   then a fresh independent QA Reviewer writes the linked Window 5 re-review and
+   the Runner records `REVIEW review-5b` (`Re-review of: review-5`). Task 16
+   dispatches only on its PASS, followed by Window 6 for tasks 16-18.

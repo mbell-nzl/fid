@@ -749,3 +749,120 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **If BLOCK:** category cross-task ownership and phase-order authority under DEC-168 item 10(a); ESC-21-011 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead selects the task-4/task-9 recovery order and exact authority, requires their bounded conformance evidence and reports, then requires the unchanged complete independent Group 1 checkpoint rerun before task-13 dispatch.
 - **Human attention required:** yes
 - **References:** project-docs/docs/phases/phase-21/decisions.md DEC-168 items 8 and 10; project-docs/docs/current/phase_brief.md Group 1 and Dispatch Controls; project-docs/docs/phases/phase-21/qa/group-1-checkpoint-review.md MF-1, MF-2, and Findings And Verdict; project-docs/docs/phases/phase-21/tasks/task-4-activation-trust.md Scope and Exact Commands To Run; project-docs/docs/phases/phase-21/tasks/task-9-retained-actor-policy-removal.md Scope, Convergence Ownership, and Exact Commands To Run; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+---
+
+## TRG-21-016 - DEC-169 identity-only successor for checkpoint MF-1
+
+- **Originating task:** task-4
+- **Trigger signature:** task-4:checkpoint-repair:group-1-checkpoint-review.md:mf-1-activation-idempotent-replay
+- **Attempt count:** 1
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Existing escalation:** ESC-21-011 retained exactly; no new escalation allocated.
+- **Verdict:** BLOCK
+
+---
+
+## TRG-21-017 - Task-15 Window 5 QA recovery budget exhausted
+
+- **Trigger:** recovery-budget-exhausted for the Window 5 task-15 QA repair after two consecutive runner-mediated no-progress attempts with no command termination, commit, or report completion.
+- **Originating task:** task-15
+- **Trigger signature:** task-15:qa-rework:review-5:MF-15-01-MF-15-02
+- **Attempt count:** 6
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/qa/review-5.md and project-docs/docs/phases/phase-21/run-ledger.md task-15 recovery history
+- **Candidate:** recovery-budget-exhausted after ordinary task-scope QA repair
+- **Checkpoint:** phase HEAD remains 09a2a7be2db6282a6e7592dda9ca6c698f5a9061; durable uncommitted task-15 edits and modified report remain; no repair commit, report completion, or observed termination for the required command block exists.
+- **Verdict:** BLOCK
+- **Reasoning:** Review-5 has two bounded Must-fix findings owned by task-15, and its original TASK-RECOVERY plus attempts 4 and 5 each permitted causal repair in the task-15 ordinary scope. Attempt 3 was material progress and reset the consecutive counter; attempts 4 and 5 then made no relevant change or verification progress and ended without command termination, commit, or report completion. The ledger records those attempts as consecutive 1/2 and 2/2, so the identical trigger's permitted no-progress budget is exhausted.
+- **Local decisions made:** none.
+- **Resolution evidence:** No commit-verification evidence is attached and the trigger is not cleared. A new same-task continuation would exceed the two-attempt no-progress budget; only full Tech Lead authority may determine a recovery disposition while preserving MF-15-01, MF-15-02, all failed evidence, the accepted task-15 command block, and the required fresh independent Window 5 re-review.
+- **If REPAIR:** N/A; ordinary task-scope recovery authority is exhausted for this trigger.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no protected contract, public-interface, Event schema, policy, validation contract, migration, decision, QA-artifact, task-specification, run-ledger, or triage-log changes; no weakened, narrowed, deleted, or re-pointed assertions; no t.Skip, build tags, -run narrowing, threshold, budget, tolerance, or policy changes; no cross-task owner rerouting.
+- **Exact verification:** N/A for ordinary task-scope triage.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-15-done.md
+- **Control repair base:** 09a2a7be2db6282a6e7592dda9ca6c698f5a9061
+- **If BLOCK:** category recovery-budget-exhausted; ESC-21-012 raised in `tl_escalations_current.md`; resolution condition full Tech Lead resolves the exhausted ordinary task-15 recovery authority without changing accepted definitions, or records the protected authority required for an alternative.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/run-ledger.md:2698, 2811, 2854, 2897; project-docs/docs/phases/phase-21/qa/review-5.md:85; project-docs/docs/phases/phase-21/tasks/task-15-attempt-receipt.md:19; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9; project-docs/docs/current/decisions_active.md DEC-167.
+
+---
+
+## TRG-21-018 - Successor correction for task-15 Window 5 QA recovery identity
+
+- **Trigger:** recovery-budget-exhausted for the Window 5 task-15 QA repair after two consecutive runner-mediated no-progress attempts with no command termination, commit, or report completion.
+- **Originating task:** task-15
+- **Trigger signature:** task-15:qa-rework:review-5:MF-15-01-MF-15-02
+- **Attempt count:** 5
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/qa/review-5.md and project-docs/docs/phases/phase-21/run-ledger.md task-15 recovery history
+- **Candidate:** recovery-budget-exhausted after ordinary task-scope QA repair; labelled successor/correction of the unbound malformed orchestration record TRG-21-017.
+- **Checkpoint:** phase HEAD remains 09a2a7be2db6282a6e7592dda9ca6c698f5a9061; durable uncommitted task-15 edits and modified report remain; no repair commit, report completion, or observed termination for the required command block exists.
+- **Verdict:** BLOCK
+- **Reasoning:** The preceding TRG-21-017 is an orchestration identity correction because its attempt field was one greater than the last actual TASK-RECOVERY; attempts 4 and 5 were consecutive no-progress after attempt 3 material progress reset the counter, so the ordinary task-scope budget is exhausted.
+- **Local decisions made:** retained TRG-21-017 as an unbound malformed orchestration record; this successor is the record the Phase Runner binds in the append-only schema-v2 ledger.
+- **Resolution evidence:** the task-15 repair is not cleared; only full Tech Lead authority may determine a recovery disposition while preserving MF-15-01, MF-15-02, all failed evidence, the unchanged task-15 command block, and the required fresh independent Window 5 re-review.
+- **If REPAIR:** N/A; ordinary task-scope recovery authority is exhausted for this trigger.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no protected contract, public-interface, Event schema, policy, validation contract, migration, decision, QA-artifact, task-specification, run-ledger, or triage-log changes; no weakened, narrowed, deleted, or re-pointed assertions; no t.Skip, build tags, -run narrowing, threshold, budget, tolerance, or policy changes; no cross-task owner rerouting.
+- **Exact verification:** N/A for ordinary task-scope triage.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-15-done.md
+- **Control repair base:** 09a2a7be2db6282a6e7592dda9ca6c698f5a9061
+- **If BLOCK:** category recovery-budget-exhausted; ESC-21-012 referenced in `tl_escalations_current.md`; resolution condition full Tech Lead determines a recovery disposition while preserving the unchanged task-15 command block, MF-15-01, MF-15-02, all failed evidence, and the required fresh independent Window 5 re-review.
+- **Human attention required:** yes
+- **References:** TRG-21-017; ESC-21-012; project-docs/docs/phases/phase-21/run-ledger.md; project-docs/docs/phases/phase-21/qa/review-5.md.
+
+## Resolution Note For TRG-21-017 And TRG-21-018
+
+- **Decision authority:** DEC-170, 2026-08-30.
+- **Verdict audit:** **not sustained on their recorded category.** The refusal to
+  advance without authority, the preservation of MF-15-01/MF-15-02 and all failed
+  evidence, the retained task-15 ownership, and TRG-21-018's identity correction
+  to the last actual TASK-RECOVERY were all correct. The category is wrong.
+  Every one of the five attempts under this trigger ended with the Developer
+  child **shut down by the orchestrator while running** (`run-ledger.md:2730`,
+  `:2773`, `:2816`, `:2859`, `:2902`); none returned a typed result. A
+  `NO-PROGRESS` verdict over that population measures interruption, not repair
+  capability. The corrected category is **orchestration session-liveness**, the
+  same correction DEC-168 item 1 made for the QA Lead child.
+- **Counter-evidence to exhaustion:** the durable tree already holds MF-15-01's
+  causal fix (`internal/evidence/execution.go:339` commits every observed outcome
+  idempotently) and MF-15-02's four negative cases
+  (`cmd/fid/gate_run_test.go:141`, `:170`, `:210`, plus the two assertion
+  helpers). The repair is at verification and closure.
+- **Resolution:** DEC-170 rules that an externally interrupted attempt never
+  consumes the no-progress budget, restates that no budget bounds a Developer
+  child session's lifetime, sets per-command budgets for the unchanged task-15
+  block, requires the durable work to be committed before the long commands, and
+  replaces MF-15-02's history-rewriting provenance route with a forward-only one
+  because `79e3a93` and `8491cde` are ancestors of the control repair base
+  `09a2a7b`. No finding, assertion, command, VAL, QA artifact, contract, or
+  ownership changes.
+- **Recovery:** the consecutive no-progress count resets to `0/2`. RUN-RESUME
+  from the STOP retains TRG-21-018 and ESC-21-012, uses resolution authority
+  `DEC-170`, and binds one same-task `TASK-RECOVERY task-15`, category
+  `session-continuation`, mode `task-scope`, trigger signature
+  `task-15:qa-rework:review-5:MF-15-01-MF-15-02`, attempt 6, `Source` and
+  `Repair authority` `TRG-21-018 / DEC-170`. ESC-21-012 is resolved. A fresh
+  independent Window 5 re-review still gates task 16.
+- **Historical integrity:** TRG-21-017, TRG-21-018, ESC-21-012, their ledger
+  TRIAGE/STOP, every interrupted-attempt record, and all committed task-15
+  history remain unchanged. The Phase Runner appends the recovery events; this
+  note does not edit the ledger.
+- **Workflow implementation:** DEC-171 makes DEC-170's standing rule
+  executable through typed child-session routing, ledger `INTERRUPTED`
+  evidence, canonical/generated Phase Runner prompts, workflow lint, and drill
+  19. It leaves this resolution's attempt-6 route and all task-15 authorities
+  unchanged.
