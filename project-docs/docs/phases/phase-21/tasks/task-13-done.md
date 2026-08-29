@@ -64,8 +64,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `d2feab0be5c53f46553cc18b79e605e6586da434`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): add portable executor policy`
