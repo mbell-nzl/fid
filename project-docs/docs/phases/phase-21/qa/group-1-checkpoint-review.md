@@ -274,3 +274,275 @@ required.
 - Independent Group 1 Contract Review: REPAIR (MF-1, MF-2).
 
 CHECKPOINT VERDICT: REPAIR
+
+---
+
+# Phase 21 Group 1 Checkpoint - Second Independent Review
+
+Date: 2026-08-29
+
+Reviewer: fresh independent QA Lead
+
+Group 1 HEAD reviewed: `5aeb19b1e51a78386e0a51aac00fb20f9ec44172`
+
+Fresh feasibility scratch: `/tmp/tmp.tauoSIKOsG`
+
+Review scope: complete checkpoint rerun after the DEC-169 task 4 and task 9
+repairs and before task 13 dispatch
+
+The first review above, including its `CHECKPOINT VERDICT: REPAIR`, is retained
+verbatim. Before this append it occupied 276 lines and had SHA-256
+`2c476e24b31185c730f4cd58720c4bf2b7ae5501c07c5b594702166f55f499c1`.
+No prior checkpoint scratch or diagnostic path was used as evidence in this
+review. Task 13 was not dispatched or inspected as implementation work.
+
+## Authority And Provenance
+
+The checkpoint was rerun against these exact governing revisions:
+
+- Group 1 checkpoint contract:
+  `ead4258d787bc942bc8394c061afc1e58e903627`.
+- QA plan, including sections 7.5 and 11:
+  `e8a636e5f19d8f1d2fcf1e9157d6eb42ac6ebb4c`.
+- Validation contract:
+  `95b8bc854988e12a5d6a19159b24f5d8ffe8637f`.
+- Public-interface contract:
+  `95b8bc854988e12a5d6a19159b24f5d8ffe8637f`.
+- V1 convergence inventory:
+  `05d3dc6e1aa388d50b7fa842c2de9537b5208f2b`.
+- Phase decisions, including DEC-167 item 8, DEC-168, and DEC-169:
+  `8daf8dd88d852e7ac81ca3e1d20a244d2ad56cb1`.
+
+The task-spec, implementation, and committed completion-report provenance is:
+
+| Task | Spec revision | Implementation | Report revision |
+|---|---|---|---|
+| 1 | `95b8bc854988e12a5d6a19159b24f5d8ffe8637f` | `a094e690815c9940ca926bcad68aedacea663c43` | `a169b4114dfbd6f3d19625dd577cf6867bc707cc` |
+| 2 | `05d3dc6e1aa388d50b7fa842c2de9537b5208f2b` | `c0fd2cd8343826fdcd1a597f8f2f3a671e0e15dc` | `e6946c891c1ed554dc2ed087f359643cb7ee4f06` |
+| 3 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `401f609d4d7e24c0ab5ca45d27a16424000ded9f` | `68cc7ab9c028d9588e2455e18ad56fa5a8474578` |
+| 4 | `8daf8dd88d852e7ac81ca3e1d20a244d2ad56cb1` | `0444ccc458f3ac5a720724825f7f81589cb41e09` | `ae8ddb2b8e4faf03fb95d28586686f3f81a4149f` |
+| 5 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `0c4c04ea0c7d0786e2e6cf88a7573d8a3105aef5` | `b794ffe066b0ef16d455948175dd2d117cb4cb3a` |
+| 6 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `56dad8fa0dcb9b79f7df2a31b356f1b2eb8a694e` | `10fd45f8a58d3c304c56eb0b1349cae5aaeb73b7` |
+| 7 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `817ad7c50469c51dc12f88a4bc081ecd7a384d7e` | `541869b92471f86df93a574ceeeb75fc878df1d5` |
+| 8 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `9f1c6d03aef12723aad6387b3096c7485655a2ed` | `9b6dccf4ac291e20a50f7f406b285c7ee803aa60` |
+| 9 | `8daf8dd88d852e7ac81ca3e1d20a244d2ad56cb1` | `1d89aa409bc71443c712948c54c2c10faba1c809` | `5aeb19b1e51a78386e0a51aac00fb20f9ec44172` |
+| 10 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `59b079a5a271cc65f7964a471b6383b9c2dd6677` | `1c4d222b998374c97134e06420fc1a7dcb0cac79` |
+| 11 | `b367a3be2a34abd91bb094069afae8cd4c1e3bb8` | `8c763e9cddee1d4ff0df3379e08b286ef74d5300` | `1f24ea26e0d0ad0b32c33d2dec37ec811b631f27` |
+| 12 | `aa2c263190801659383d2b1e900d0cbcb08d757b` | `0ced511b2e6a7e1f252260024176705106e9b793` | `20e6760726edc718fe6d0a79df046835202c9b85` |
+
+The worktree started at the required HEAD with only Phase Runner-owned changes
+to `run-ledger.md` and `triage-log.md`. This review did not stage or modify
+either file.
+
+## Checkpoint Preconditions And VAL-042
+
+`VAL-042: PASS`.
+
+- All task 1 through task 12 specs and committed completion reports exist.
+  Each fresh two-argument `report-lint.sh <report> <spec>` run terminated
+  `exit_code: 0` with `PASS report-lint completed with no failures` and each
+  report states `OUTCOME COMPLETE`.
+- The run-ledger audit found each task's completion only after its committed
+  implementation, committed report, and Phase Runner two-argument report-lint
+  evidence. The task 4 and task 9 repair completions are represented by their
+  later report commits shown above.
+- Window 1-3 review `17d4e22d15b6fdc0024a8fd8ff539ae6f7ceeb5b`
+  is closed by independent re-review
+  `44c0b21f990dd31281d0069886e6dc61c17f8343` with `PASS`.
+- Window 4-6 review `8ca2f8aacfbcd75809a0e661f037063fd8a2fd32`
+  is closed by independent re-review
+  `df1b46a5e5e7fbf1656c2824d886b84d2b8e0e82` with `PASS`.
+- Window 7-9 review `303c75e8de363b5f30b614b7eea878a137fb7cac`
+  is closed by independent re-review
+  `cba74981c16c6855139708beccc8dff9f159de7d` with `PASS`.
+- Window 10-12 review `11396b45a79244a00c7379800d7a647fa32c0cb0`
+  is closed by independent re-review
+  `6caaa6f7dc7cca0c5e9e4306f81ae53228f25d25` with `PASS`.
+
+No task-window finding remains open.
+
+## Independent Contract Review
+
+Result: `PASS`.
+
+- Fresh, cache-bypassed package execution
+  `timeout 120s go test -race -count=1 ./internal/journal ./internal/policy
+  ./internal/workflow ./internal/claims ./internal/evidence ./internal/issues`
+  terminated `exit_code: 0`. The last package token was
+  `ok github.com/mbell-nzl/fid/internal/issues 76.728s`.
+- Fresh focused command tests for public `fid policy` absence, exact deferred
+  capability rows, complete Envelope authority binding, finalized Activation
+  requirements for Gate registration, generic Run V1 independence, and
+  execution-bound transition V1 independence terminated `exit_code: 0` with
+  `ok github.com/mbell-nzl/fid/cmd/fid 10.279s`.
+- Event-v2 validation, journal-first idempotency, capability publication,
+  Activation, Gate registration, Envelope values, authority evaluation,
+  generic Claim, generic Run, and execution-bound transition remain within
+  the accepted Group 1 contract. No Group 2 executor, live-frame, receipt,
+  Artifact, evidence-link, or export implementation was pulled forward.
+- The production absence inventory found no `internal/executor`,
+  `internal/artifacts`, or `internal/export` package (`ls` terminated
+  `exit_code: 2`, no output). The only Group 2 term found in Group 1 source was
+  the accepted `gate.run` capability vocabulary in the closed Activation
+  authority profile, not an executor or streaming implementation.
+
+### DEC-169 Task 4 Repair
+
+The former MF-1 is resolved within task 4's accepted boundary.
+
+- Fresh
+  `TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks`
+  execution terminated `exit_code: 0` with
+  `ok github.com/mbell-nzl/fid/cmd/fid 3.242s`.
+- Exact same-key/same-digest replay is selected before lifecycle rejection for
+  prepare, authority-profile component, gate-definition component, commit,
+  abort, and finalize. Each replay retained the original Event, Entity, and
+  Domain result, emitted no new Event, and changed only `replayed` to `true`.
+- New-key lifecycle conflicts and same-key/different-digest conflicts retained
+  byte-identical typed conflict envelopes and emitted no Event.
+- The task 4 report preserves both red streams and observed failure: the first
+  same-key replay returned empty stdout and stderr; the intermediate repair
+  exposed the optional-ID rendering defect and remained red; the final green
+  followed the renderer repair. This rerun is the first fresh green checkpoint
+  evidence after the repair, not a transcription of that report.
+
+### DEC-169 Task 9 Repair
+
+The former MF-2 is resolved within task 9's accepted boundary.
+
+- `internal/cli.ExitCode` implements the complete public-interface section 7
+  map: invalid input 2, not found 3, conflict and precondition 4, authority 5,
+  integrity 6, internal 7, and gate-unsuccessful 8. `FailureError` carries both
+  code and category through the renderer boundary; `main.go` exits with that
+  mapping. Cobra unknown-command, unknown-flag, and usage failures map to 2.
+- Fresh category/typed-error unit tests terminated `exit_code: 0`; all eight
+  category cases passed. Fresh real-process `TestProcessExitContract`
+  terminated `exit_code: 0` with
+  `ok github.com/mbell-nzl/fid/cmd/fid/integration 1.838s`.
+- The four fail-closed leaves, AC verify, concern raise, concern address, and
+  maintenance vacuum, now retain their exact capability-unavailable envelope
+  and terminate 5. A fresh Human-mode vacuum process also terminated 5 with
+  `error: capability is unavailable`.
+- All 28 pre-repair `cli.WriteFailure` sites were audited. Current production
+  source has no direct `cli.WriteFailure(` call (`rg` terminated
+  `exit_code: 1`, no output); each error-returning leaf propagates the typed
+  result, while Human renderers retain the same category.
+- The repair left capability values, domain writers, envelope fields, and
+  output writers unchanged. The gate command diff only propagates existing
+  registration failures. No live gate-run terminal-frame implementation
+  exists before tasks 14-15, so accepted future streaming semantics are
+  untouched.
+
+## Temporary Inventory And VAL-043
+
+`VAL-043: PASS`.
+
+The four section 7 classification commands were executed fresh at Group 1
+HEAD. Every `role_policy`/role attribution match, every `--by` match, every
+temporary-table reference, and every `EventType` reference maps to the exact
+retained, replaced, frozen, or current category in
+`v1-convergence-inventory.md`. `UNCLASSIFIED: 0`. Final V1 absence remains
+correctly deferred to tasks 20-21 and was not imposed at this checkpoint.
+
+Fresh structural isolation evidence:
+
+- `go list -deps ./internal/workflow ./internal/policy ./internal/claims
+  ./internal/evidence` terminated `exit_code: 0` and listed neither
+  `internal/dev` nor `internal/runs`.
+- The direct generic-package import scan for those two packages terminated
+  `exit_code: 1`, no output.
+- The exact generic source and extracted execution-bound transition-path scan
+  for `roles`, `gate_runs`, `task_completions`, `agent_runs`,
+  `ac_verifications`, `concerns`, and `internal/dev` terminated
+  `exit_code: 1`, no output. The only broader transition match is the retained
+  standalone V1 fail-closed reason; source control flow proves that evaluator
+  runs only when the transition is not execution-bound.
+
+A scratch-only compiler overlay then seeded hostile rows in all temporary
+tables: `roles`, `claims`, `task_completions`, `ac_verifications`,
+`agent_runs`, `gate_runs`, `concerns`, and `workflow_transition_requires`.
+Both attempts used the exact command:
+
+```text
+timeout 120s go test -overlay=/tmp/tmp.tauoSIKOsG/overlay.json -race ./cmd/fid -run '^TestGroup1CheckpointAdversarialTemporaryV1Isolation$' -count=1 -v
+```
+
+The first overlay attempt terminated `exit_code: 1` because the QA fixture
+omitted the required concern ID and therefore observed canonical invalid-input
+instead of the intended fail-closed leaf; its failing token identified the
+concern-address probe and the `invalid-argument` category. No product file
+changed. After
+repairing only the fresh scratch fixture, the byte-identical test command
+terminated `exit_code: 0` with these tokens:
+
+```text
+PASS hostile rows: roles=1 claims=1 task_completions=1 ac_verifications=1 agent_runs=1 gate_runs=1 concerns=1 workflow_transition_requires=1
+PASS generic paths: activation=ACT-2d4094 registration=REG-b760ba envelope=ENV-dfce46 claim=CLM-091ec6 run=active transition=in_progress capabilities=byte-identical replay=true fail-closed=4
+ok github.com/mbell-nzl/fid/cmd/fid 4.781s
+```
+
+This fresh adversarial run proves unchanged Activation prepare/component/
+commit/finalize, Registration, Envelope create/activate, direct Grant, Claim,
+Run, nonterminal execution-bound transition, capabilities, and same-key Claim
+idempotency despite hostile V1 state. AC verification, concern raise/address,
+and maintenance vacuum remained fail-closed and produced no Event. Separate
+focused fail-closed and no-writer tests also terminated `exit_code: 0`.
+
+## Command And Feasibility Validation
+
+Fresh scratch was allocated in this checkpoint session by `mktemp -d` as
+`/tmp/tmp.tauoSIKOsG`. Setup `go vet ./...` and
+`go build -buildvcs=false -o /tmp/tmp.tauoSIKOsG/child-bin ./child` each
+terminated `exit_code: 0`. Every FEAS-01..FEAS-18 child command was separately
+bounded to 120 seconds. Their observed nested wall times total less than 30
+seconds, within the separate 900-second aggregate budget. FEAS-19 was run
+separately under its 300-second bound.
+
+| Probe | Result | Fresh token and observed termination |
+|---|---|---|
+| FEAS-01 | PASS | `argv=["arg-1","arg-2"]`, `out-1`, `out-2`, `err-1`; `exit_code: 0` |
+| FEAS-02 | PASS | stdout held only argv/out lines; stderr only `err-1`; each inspection and child `exit_code: 0` |
+| FEAS-03 | PASS | `00000000: 41ff fe1b 5b33 316d 0d0a`; writer and `xxd` `exit_code: 0` |
+| FEAS-04 | PASS | TERM timeout produced no output; `exit_code: 124`, 4.913s |
+| FEAS-05 | PASS | KILL timeout `exit_code: 124`, 4.918s; survivor scan `exit_code: 1`, no output |
+| FEAS-06 | PASS | fresh nonexistent executable reported `No such file or directory`; `exit_code: 127` |
+| FEAS-07 | PASS | `8388608` bytes on each stream, `16777216 total`; producer and `wc` `exit_code: 0` |
+| FEAS-08 | PASS | exact sorted environment `HOME=/tmp`, `PATH=/usr/bin`, `PROBE_MODE=env`; `exit_code: 0` |
+| FEAS-09 | PASS | fresh canary `CANARY-g1b-tauoSIKOsG-829` found as `1:token=...`; writer and `rg` `exit_code: 0` |
+| FEAS-10 | PASS | `ESCAPES /tmp/tmp.tauoSIKOsG/cwd -> /tmp/tmp.tauoSIKOsG/outside/target.txt`; `exit_code: 0` |
+| FEAS-11 | PASS | source changed from `465599f9...cf70` to `d3e9d084...30a2`; copy retained first digest; `exit_code: 0` |
+| FEAS-12 | PASS | digest `55b62c00...b6a3`; `ATOMIC_STORE ... tmp-empty object-present`; `exit_code: 0` |
+| FEAS-13 | PASS | nested statuses copied directly: FEAS-04 `124`, FEAS-05 `124`, FEAS-06 `127`, FEAS-07 `0` |
+| FEAS-14 | PASS | scratch tree OIDs `15e8e4f9...cef99` then `4708f942...4709c`; all git commands `exit_code: 0` |
+| FEAS-15 | PASS | `MISSING_OBSERVABLE: PASS`, then `RESTORED_OBSERVABLE: PASS`; each `exit_code: 0` |
+| FEAS-16 | PASS | two archives, at least 1.1s apart, both `a68d8fed...5b55`; `cmp` `exit_code: 0` |
+| FEAS-17 | PASS after preserved retry | clean `unzip -t` `exit_code: 0`, digest unchanged; first corruption attempt honestly failed the contract with `exit_code: 2`; retry from clean changed local flag byte 7 and produced required `exit_code: 1` |
+| FEAS-18 | PASS | all 16 fresh absence shapes produced no output: shapes 1-11 observed expected `exit_code: 1`; shapes 12-16 observed expected `exit_code: 2` |
+| FEAS-19 | PASS | `ok github.com/mbell-nzl/fid/cmd/fid/integration 7.536s`; `exit_code: 0`, observed wall 8.206s under 300s |
+
+FEAS-17's first corruption choice zeroed offset 50 and made `unzip -t`
+terminate 2 with `bad CRC` and `At least one error was detected`. That failed
+attempt is immutable evidence. The successful retry started from the clean
+archive, wrote `0x08` at byte 7, and made `unzip -t` report
+`mismatch between local and central GPF bit 11` and terminate 1. It closed the
+exact probe without changing its accepted status.
+
+Per DEC-167 item 8,
+`TestV01ClosureJourneyAndRebuildParity` had never been green in Phase 21 before
+its first green run. The fresh FEAS-19 green result above is new evidence, not
+a continuity claim.
+
+## Findings And Outcomes
+
+Must-fix findings: none.
+
+Improvement findings: none.
+
+Blocker candidates: none.
+
+- VAL-042: PASS.
+- VAL-043: PASS.
+- Fresh feasibility FEAS-01..FEAS-19: PASS.
+- Independent Group 1 Contract Review: PASS.
+
+CHECKPOINT VERDICT: PASS
