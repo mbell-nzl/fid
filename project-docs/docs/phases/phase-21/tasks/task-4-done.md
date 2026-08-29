@@ -57,7 +57,8 @@
 - Focused green evidence for the byte-identical lifecycle table run retained token `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t6.723s` with observed termination `exit_code: 0`; all new MF-1 rows pass.
 - `go test -race ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`). DEC-169 red: `TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks` logged the pre-repair second `activation prepare` verbatim as `stdout="" stderr=""`, then failed because the second call returned a nonzero error instead of a replay.
 - `go test -race ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`). First post-replay-ordering attempt: the second prepare replay succeeded, but the newly exercised new-key lifecycle conflict was silent because `ActivationConflictError` optional IDs were passed to the envelope validator as pointers.
-- `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t261.433s` (terminated `exit_code: 0`). Green: the whole Activation replay/conflict regression, including prepare, component, commit, abort, and finalize, passed after the renderer repair.
+- `go test -race ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t261.433s` (terminated `exit_code: 0`)
+  Green: the whole Activation replay/conflict regression, including prepare, component, commit, abort, and finalize, passed after the renderer repair.
 - Real entrypoint: `go build -o /tmp/fid-task4-dec169 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). In fresh `/tmp/tmp.RDCykF21jj`, `/tmp/fid-task4-dec169 --project <workspace> --json init --prefix FID` followed by two byte-identical stdin `activation prepare` calls with key `runtime-activation-replay` returned original `EVT-20260829-000002`, original Activation fields, and only `replayed:true` on the second call (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
