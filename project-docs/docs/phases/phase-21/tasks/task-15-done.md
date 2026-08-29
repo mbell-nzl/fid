@@ -45,23 +45,25 @@
 ## Tests run
 
 - `go test -race ./cmd/fid -run '^TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`) - red test before `gate run` existed.
-- `go test -race ./cmd/fid -run '^TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  3.699s` (terminated `exit_code: 0`) - green after implementation.
-- `go test -race ./internal/evidence -run '^TestSameGateRepositoryMatchesEqualOptionalValues$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/evidence  1.015s` (terminated `exit_code: 0`).
-- `go build -o /tmp/fid-task15 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `go test -race ./cmd/fid -run '^TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	3.699s` (terminated `exit_code: 0`)
+- Focused command test became green after implementation.
+- `go test -race ./internal/evidence -run '^TestSameGateRepositoryMatchesEqualOptionalValues$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	1.015s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid-task15 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `/tmp/fid-task15 --json gate run` - observed `invalid-argument` response with `"operation":"gate.run"` for missing required input (terminated `exit_code: 2`).
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/evidence ./internal/journal ./internal/cli ./cmd/fid/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid  219.353s` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow  (cached)  coverage: 32.9% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:                                  (statements)             65.1%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration  5.627s` (terminated `exit_code: 0`).
+- `go test -race ./internal/evidence ./internal/journal ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	219.353s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 32.9% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					65.1%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.627s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
 - Required command 1 first failed with `FAIL` (terminated `exit_code: 1`) because `TestLiveLeafCommandsMatchContractInventories` retained a closed command inventory that omitted the accepted `gate run` leaf. The in-scope repair added that leaf and updated the expected count from 50 to 51; the byte-identical later attempt passed with `ok  github.com/mbell-nzl/fid/cmd/fid  219.353s` (terminated `exit_code: 0`).
+- The first `report-lint.sh` attempt ended `exit_code: 9` with `FAIL report-lint found 9 failure(s)` because PASS rows had prose or punctuation after the observed termination tuple. This report-only repair ends each PASS row at that tuple before the byte-identical rerun.
 - No product or public-interface deviation.
 
 ## Concerns, technical debt, or notes for the Tech Lead
