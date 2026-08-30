@@ -80,8 +80,8 @@
 
 ## Commit hash
 
-- `b98fcb1a323504d77ed51d5c92cd4fd4d6acd6bb`
+- `aef03cf`
 
 ## Commit subject
 
-- `feat(convergence): begin V1 authority execution removal`
+- `style(convergence): format V1 removal checkpoint`
