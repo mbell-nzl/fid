@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: Pending required quality-gate completion.
+- Condition: None.
 - Recovery attempts: 0
-- Next action: Run the exact six-command task gate and finalize this report.
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -52,19 +52,21 @@
 - `go test -race ./cmd/fid -run '^TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation$' -count=1` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 2.188s` (terminated `exit_code: 1`)
 - `go test -race ./cmd/fid -run '^TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 3.483s` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^(TestLiveLeafCommandsMatchContractInventories|TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease|TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation|TestResumeReadsDurableFactsWithoutMutation|TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence)$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 15.395s` (terminated `exit_code: 0`)
+- `/tmp/fid-task18 --project /tmp/FIDtask18vy8P2y --json resume FID-missing` - OBSERVED (non-gate) - `{"contract_version":"fid-cli.v1","error":{"category":"not-found","code":"envelope-not-found","details":{"id":"FID-missing"},"message":"envelope was not found","retryable":false,"subject":{"id":"FID-missing","type":"envelope"}},"ok":false,"operation":"projection.resume"}` (expected read-only absent-Envelope response; terminated `exit_code: 3`)
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/workflow ./internal/issues ./internal/evidence ./internal/validation ./internal/cli ./cmd/fid/...` - Pending required command.
-- `go test -tags integration -race ./cmd/fid/integration/...` - Pending required command.
-- `gofmt -l cmd internal` - Pending required command.
-- `golangci-lint run ./...` - Pending required command.
-- `go test -race -coverprofile=coverage.out ./...` - Pending required command.
-- `go tool cover -func=coverage.out` - Pending required command.
+- `go test -race ./internal/workflow ./internal/issues ./internal/evidence ./internal/validation ./internal/cli ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 270.363s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 6.201s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 25.538s coverage: 29.2% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total: (statements) 62.0%` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- None.
+- First required command failure retained: `go test -race ./internal/workflow ./internal/issues ./internal/evidence ./internal/validation ./internal/cli ./cmd/fid/...` ended with `FAIL` (terminated `exit_code: 1`) because `TestReasonCodeDetailSchemaIsExactForEveryCode` still expected the pre-task-18 closed registry length of 37. The in-scope repair added the accepted `obligation-unsatisfied` schema expectation in `internal/cli/codes_test.go`; the byte-identical rerun passed with `ok github.com/mbell-nzl/fid/cmd/fid 263.427s` (terminated `exit_code: 0`), and the final complete task block passed from the first command again.
+- Lint first failed with `* unused: 1` (terminated `exit_code: 1`) because `task18DecodeResult` was unused in the new task test. The repair removed that helper; the byte-identical rerun passed with `0 issues.` (terminated `exit_code: 0`).
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -76,8 +78,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `2313235ba463060538f2f0d4bcfa61f039fcdc13`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): guard terminal completion and resume`
