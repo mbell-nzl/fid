@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -17,6 +18,124 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
+
+func TestPhase21AttentionBoundary(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	discovery := executeCommandForTest(workspace, "--json", "capabilities")
+	if discovery.err != nil || discovery.stderr != "" {
+		t.Fatalf("capability discovery = %#v, want stdout-only success", discovery)
+	}
+
+	var envelope struct {
+		Result struct {
+			Items []struct {
+				Available    bool           `json:"available"`
+				CapabilityID string         `json:"capability_id"`
+				Limits       map[string]any `json:"limits"`
+				SchemaMax    int            `json:"schema_max"`
+				SchemaMin    int            `json:"schema_min"`
+				TrustSource  string         `json:"trust_source"`
+			} `json:"items"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(discovery.stdout), &envelope); err != nil {
+		t.Fatalf("decode capability discovery = %v", err)
+	}
+
+	var matches []struct {
+		Available    bool           `json:"available"`
+		CapabilityID string         `json:"capability_id"`
+		Limits       map[string]any `json:"limits"`
+		SchemaMax    int            `json:"schema_max"`
+		SchemaMin    int            `json:"schema_min"`
+		TrustSource  string         `json:"trust_source"`
+	}
+	for _, item := range envelope.Result.Items {
+		if item.CapabilityID == "attention.v1" {
+			matches = append(matches, item)
+		}
+	}
+	if len(matches) != 1 {
+		t.Fatalf("attention capability rows = %#v, want one canonical unavailable row", matches)
+	}
+	if got, want := matches[0], (struct {
+		Available    bool           `json:"available"`
+		CapabilityID string         `json:"capability_id"`
+		Limits       map[string]any `json:"limits"`
+		SchemaMax    int            `json:"schema_max"`
+		SchemaMin    int            `json:"schema_min"`
+		TrustSource  string         `json:"trust_source"`
+	}{
+		Available:    false,
+		CapabilityID: "attention.v1",
+		Limits:       map[string]any{"state": false},
+		SchemaMax:    1,
+		SchemaMin:    1,
+		TrustSource:  "phase-22-unavailable",
+	}); !reflect.DeepEqual(got, want) {
+		t.Fatalf("attention capability row = %#v, want %#v", got, want)
+	}
+
+	journalPath := mustJournalPath(t, workspace)
+	journalBefore := mustReadCommandFile(t, journalPath)
+	projectionBefore := commandProjectionTableCounts(t, workspace)
+	probe := executeCommandForTest(workspace, "--json", "attention", "list")
+	if probe.err == nil || probe.stdout != "" || !strings.Contains(probe.err.Error(), `unknown command "attention"`) {
+		t.Fatalf("fid --json attention list = %#v, want unavailable no-leaf rejection", probe)
+	}
+	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+		t.Fatal("fid --json attention list changed journal bytes")
+	}
+	if projectionAfter := commandProjectionTableCounts(t, workspace); !reflect.DeepEqual(projectionAfter, projectionBefore) {
+		t.Fatalf("fid --json attention list changed projection counts: got %#v, want %#v", projectionAfter, projectionBefore)
+	}
+
+	if got, want := phase21AttentionProductionMatches(t), []string{
+		"internal/workflow/capabilities.go:{\"attention.v1\", false, `{\"state\":false}`, \"phase-22-unavailable\"},",
+	}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("production Attention matches = %v, want exactly %v", got, want)
+	}
+}
+
+func phase21AttentionProductionMatches(t *testing.T) []string {
+	t.Helper()
+	repoRoot := commandTestRepositoryRoot(t)
+	var matches []string
+	for _, root := range []string{
+		filepath.Join(repoRoot, "cmd", "fid"),
+		filepath.Join(repoRoot, "internal"),
+		filepath.Join(repoRoot, "migrations"),
+	} {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() || (filepath.Ext(path) != ".go" && filepath.Ext(path) != ".sql") || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			relative, err := filepath.Rel(repoRoot, path)
+			if err != nil {
+				return err
+			}
+			for _, line := range strings.Split(string(content), "\n") {
+				lower := strings.ToLower(line)
+				if strings.Contains(lower, "attention") || strings.Contains(lower, "attention_items") {
+					matches = append(matches, filepath.ToSlash(relative)+":"+strings.TrimSpace(line))
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("inventory %q: %v", root, err)
+		}
+	}
+	sort.Strings(matches)
+	return matches
+}
 
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	retained := []string{
@@ -34,6 +153,9 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"envelope create",
 		"envelope get",
 		"envelope activate",
+		"evidence link",
+		"evidence get",
+		"evidence evaluate",
 		"claim acquire",
 		"claim renew",
 		"claim release",
@@ -83,8 +205,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"journal inspect",
 	}
 
-	if len(retained) != 52 || len(legacy) != 7 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 52 and 7", len(retained), len(legacy))
+	if len(retained) != 55 || len(legacy) != 7 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 55 and 7", len(retained), len(legacy))
 	}
 	want := append(append([]string{}, retained...), legacy...)
 	sort.Strings(want)

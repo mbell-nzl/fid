@@ -41,14 +41,53 @@ type ObligationEvaluationInput struct {
 	Evidence    map[string]bool
 }
 
+// ObligationEvidenceState carries the independent Evidence dimensions used by
+// pure evaluation and guarded transitions.
+type ObligationEvidenceState struct {
+	ObligationID         string
+	EvidenceID           string
+	ReceiptID            string
+	ReceiptSuccessful    bool
+	Validity             string
+	Freshness            string
+	ArtifactAvailability string
+	ArtifactIDs          []string
+}
+
 // EvaluateObligations returns the same ordered result for each guarded action.
 // Later Evidence work supplies the remaining Receipt, validity, freshness, and
 // Artifact dimensions through this one boundary.
 func EvaluateObligations(input ObligationEvaluationInput) []EvaluationReason {
-	reasons := make([]EvaluationReason, 0, len(input.Obligations))
+	states := make([]ObligationEvidenceState, 0, len(input.Obligations))
 	for _, obligation := range input.Obligations {
-		if !input.Evidence[obligation.ID] {
-			reasons = append(reasons, evaluationReason("obligation-evidence-absent", "qualifying Evidence is absent", obligation.ID, "obligation"))
+		states = append(states, ObligationEvidenceState{ObligationID: obligation.ID, Validity: "valid", Freshness: "fresh", ArtifactAvailability: "available", ReceiptSuccessful: input.Evidence[obligation.ID]})
+	}
+	return EvaluateEvidenceStates(states)
+}
+
+// EvaluateEvidenceStates returns every independent Evidence failure in the
+// accepted reason order. A missing Evidence record is distinct from an
+// unsuccessful Receipt and from each persisted Evidence dimension.
+func EvaluateEvidenceStates(states []ObligationEvidenceState) []EvaluationReason {
+	reasons := make([]EvaluationReason, 0, len(states)*3)
+	for _, state := range states {
+		if state.EvidenceID == "" && !state.ReceiptSuccessful {
+			reasons = append(reasons, evaluationReason("obligation-evidence-absent", "qualifying Evidence is absent", state.ObligationID, "obligation"))
+			continue
+		}
+		if !state.ReceiptSuccessful {
+			reasons = append(reasons, evaluationReason("receipt-unsuccessful", "Receipt outcome is not succeeded", state.ReceiptID, "receipt"))
+		}
+		if state.Validity != "valid" {
+			reasons = append(reasons, evaluationReason("evidence-invalid", "Evidence validity is invalid", state.EvidenceID, "evidence"))
+		}
+		if state.Freshness != "fresh" {
+			reasons = append(reasons, evaluationReason("evidence-stale", "repository tree differs from Evidence target", state.EvidenceID, "evidence"))
+		}
+		if state.ArtifactAvailability != "available" {
+			for _, artifactID := range state.ArtifactIDs {
+				reasons = append(reasons, evaluationReason("artifact-unavailable", "required Artifact is unavailable", artifactID, "artifact"))
+			}
 		}
 	}
 	return sortEvaluationReasons(reasons)
@@ -186,7 +225,8 @@ func evaluationReason(code, detail, subjectID, subjectType string) EvaluationRea
 }
 
 func sortEvaluationReasons(reasons []EvaluationReason) []EvaluationReason {
-	ordered := append([]EvaluationReason(nil), reasons...)
+	ordered := make([]EvaluationReason, len(reasons))
+	copy(ordered, reasons)
 	precedence := map[string]int{
 		"authority-unavailable": 1, "envelope-inactive": 2, "claim-missing": 3, "claim-expired": 4,
 		"run-inactive": 5, "issue-revision-conflict": 6, "workflow-transition-invalid": 7,
