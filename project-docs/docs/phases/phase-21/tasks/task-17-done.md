@@ -3,8 +3,11 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Recovery authority: TRG-21-019 / DEC-172, attempt 3.
-- The DEC-172 boundary test retains the exact unavailable `attention.v1` discovery row, rejects the absent CLI leaf without journal or projection mutation, and permits no other production Attention match.
+- Category: none
+- Condition: None.
+- Recovery attempts: 4
+- Next action: None.
+- Human attention required: no
 
 ## Summary of what was implemented
 
@@ -48,10 +51,10 @@
 - `go test -race ./internal/cli -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/cli 1.058s` (terminated `exit_code: 0`)
 - `go test -race ./internal/workflow -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 20.641s` (terminated `exit_code: 0`)
 - `go test -race ./internal/evidence -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/evidence 2.270s` (terminated `exit_code: 0`)
-- `go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1` - FAIL - `cmd/fid/contract_surface_test.go:94:64: missing ',' in composite literal` (terminated `exit_code: 1`)
+- Compile diagnostic preserved from the focused `TestPhase21AttentionBoundary` red run: `cmd/fid/contract_surface_test.go:94:64: missing ',' in composite literal` (terminated `exit_code: 1`).
 - `go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1` - FAIL - `FAIL github.com/mbell-nzl/fid/cmd/fid 0.955s` (terminated `exit_code: 1`)
 - `go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 2.085s` (terminated `exit_code: 0`)
-- `/tmp/fid --json attention list` - PASS - `exit 2 (no output)` (expected unavailable no-leaf rejection; terminated `exit_code: 2`). The real compiled CLI rejected the deferred leaf; `TestPhase21AttentionBoundary` separately proves no journal or projection mutation.
+- `/tmp/fid --json attention list` - OBSERVED (non-gate) - `exit 2 (no output)` (expected unavailable no-leaf rejection; terminated `exit_code: 2`). The real compiled CLI rejected the deferred leaf; `TestPhase21AttentionBoundary` separately proves no journal or projection mutation.
 
 ## Exact quality-gate results
 
@@ -71,6 +74,7 @@
 ## Deviations from spec
 
 - DEC-172 replaced only the defective broad expected-nonzero search after TRG-21-019 correctly recorded its protected contradiction. The original failed row above remains historical failed evidence; the distinct named boundary-test command is the authorized replacement gate. No production interface, validation contract, or Attention surface was changed.
+- The prior committed-report lint attempt printed `OUTCOME COMPLETE` but terminated `exit_code: 10` with missing canonical workflow fields, an invalid COMPLETE disposition, the CLI exit-2 observation labelled PASS, and the preserved compile diagnostic in place of a terminal go-test token. This report-only correction restores the canonical COMPLETE fields, retains the diagnostic separately from the terminal red/green rows, and records the CLI rejection as an observed non-gate result.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
