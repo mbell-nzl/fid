@@ -216,7 +216,7 @@ func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string,
 		IssueID, EnvelopeID, ActorID, WorktreeID, Status, ExpiresAt string
 		EnvelopeRevision, Version                                   int
 	}
-	err := conn.QueryRow(`SELECT issue_id, envelope_id, envelope_revision, actor_id, worktree_id, version, status, expires_at FROM work_claims WHERE id = ?`, request.ClaimID).Scan(&claim.IssueID, &claim.EnvelopeID, &claim.EnvelopeRevision, &claim.ActorID, &claim.WorktreeID, &claim.Version, &claim.Status, &claim.ExpiresAt)
+	err := conn.QueryRow(`SELECT issue_id, envelope_id, envelope_revision, actor_id, worktree_id, version, status, expires_at FROM claims WHERE id = ?`, request.ClaimID).Scan(&claim.IssueID, &claim.EnvelopeID, &claim.EnvelopeRevision, &claim.ActorID, &claim.WorktreeID, &claim.Version, &claim.Status, &claim.ExpiresAt)
 	if err == sql.ErrNoRows {
 		return invalidRun("run claim was not found")
 	}

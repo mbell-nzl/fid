@@ -140,7 +140,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		}
 		claimID, err := journal.GenerateID("CLM", func(candidate string) (bool, error) {
 			var found int
-			err := conn.QueryRow(`SELECT 1 FROM work_claims WHERE id = ?`, candidate).Scan(&found)
+		err := conn.QueryRow(`SELECT 1 FROM claims WHERE id = ?`, candidate).Scan(&found)
 			return err == nil, nil
 		})
 		if err != nil {
@@ -148,7 +148,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		}
 		claim := GenericClaim{ID: claimID, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ActorID: options.ActorID, WorktreeID: request.WorktreeID, Scope: request.Scope, Mode: "mutation", Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, envelope.RepositoryScope, claimID, 1, "claim.acquired", claimAcquireAction, []journal.Effect{{
-			Op: "insert", Table: "work_claims", PK: map[string]any{"id": claimID}, Values: claimValues(claim),
+			Op: "insert", Table: "claims", PK: map[string]any{"id": claimID}, Values: claimValues(claim),
 		}})
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -182,7 +182,7 @@ func RenewGeneric(options MutationOptions, request RenewRequest) (MutationResult
 		claim.Version++
 		claim.ExpiresAt = now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, mustClaimEnvelope(options, claim), claim.ID, claim.Version, "claim.renewed", claimRenewAction, []journal.Effect{{
-			Op: "update", Table: "work_claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "expires_at": claim.ExpiresAt}, Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
+			Op: "update", Table: "claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "expires_at": claim.ExpiresAt}, Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
 		}})
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -218,7 +218,7 @@ func ReleaseGeneric(options MutationOptions, request ReleaseRequest) (MutationRe
 		releasedAt := now.Format(time.RFC3339Nano)
 		claim.ReleasedAt, claim.ReleaseReason = &releasedAt, &request.Reason
 		event, err := genericClaimEvent(options.WorkspaceRoot, actor, mustClaimEnvelope(options, claim), claim.ID, claim.Version, "claim.released", claimReleaseAction, []journal.Effect{{
-			Op: "update", Table: "work_claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "status": claim.Status, "released_at": releasedAt, "release_reason": request.Reason}, Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
+			Op: "update", Table: "claims", PK: map[string]any{"id": claim.ID}, Values: map[string]any{"version": claim.Version, "status": claim.Status, "released_at": releasedAt, "release_reason": request.Reason}, Preconditions: map[string]any{"version": claim.Version - 1, "status": "active", "actor_id": options.ActorID},
 		}})
 		if err != nil {
 			return journal.Event{}, GenericClaim{}, err
@@ -326,7 +326,7 @@ func loadGenericClaim(conn *sql.DB, id string) (GenericClaim, error) {
 	var claim GenericClaim
 	var scopeJSON string
 	var releasedAt, reason sql.NullString
-	err := conn.QueryRow(`SELECT id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at, released_at, release_reason FROM work_claims WHERE id = ?`, id).Scan(&claim.ID, &claim.IssueID, &claim.EnvelopeID, &claim.EnvelopeRevision, &claim.ActorID, &claim.WorktreeID, &scopeJSON, &claim.Mode, &claim.Version, &claim.Status, &claim.AcquiredAt, &claim.ExpiresAt, &releasedAt, &reason)
+	err := conn.QueryRow(`SELECT id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at, released_at, release_reason FROM claims WHERE id = ?`, id).Scan(&claim.ID, &claim.IssueID, &claim.EnvelopeID, &claim.EnvelopeRevision, &claim.ActorID, &claim.WorktreeID, &scopeJSON, &claim.Mode, &claim.Version, &claim.Status, &claim.AcquiredAt, &claim.ExpiresAt, &releasedAt, &reason)
 	if err == sql.ErrNoRows {
 		return GenericClaim{}, &ClaimNotFoundError{ID: id}
 	}
@@ -347,7 +347,7 @@ func loadGenericClaim(conn *sql.DB, id string) (GenericClaim, error) {
 
 func loadGenericActiveForIssue(conn *sql.DB, issueID string) (*GenericClaim, error) {
 	var id string
-	err := conn.QueryRow(`SELECT id FROM work_claims WHERE issue_id = ? AND status = 'active'`, issueID).Scan(&id)
+	err := conn.QueryRow(`SELECT id FROM claims WHERE issue_id = ? AND status = 'active'`, issueID).Scan(&id)
 	if err == sql.ErrNoRows {
 		return nil, nil
 	}
@@ -446,7 +446,7 @@ func ListGeneric(options GenericListOptions) ([]GenericClaim, error) {
 		return nil, err
 	}
 	defer closeClaimsConn(conn)
-	query := `SELECT id FROM work_claims WHERE 1 = 1`
+	query := `SELECT id FROM claims WHERE 1 = 1`
 	args := []any{}
 	if options.IssueID != "" {
 		query += ` AND issue_id = ?`

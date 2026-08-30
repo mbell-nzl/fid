@@ -224,7 +224,7 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open claim database: %v", err)
 	}
-	if _, err := conn.Exec(`UPDATE work_claims SET expires_at = '2000-01-01T00:00:00Z' WHERE id = ?`, claim["id"]); err != nil {
+	if _, err := conn.Exec(`UPDATE claims SET expires_at = '2000-01-01T00:00:00Z' WHERE id = ?`, claim["id"]); err != nil {
 		_ = conn.Close()
 		t.Fatalf("expire claim: %v", err)
 	}

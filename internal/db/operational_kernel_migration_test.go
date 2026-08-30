@@ -44,6 +44,80 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 	}
 }
 
+func TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
+	migrator, conn := newTestMigrator(t, dbPath, testMigrationsDir(t))
+	defer closeMigrator(t, migrator, conn)
+
+	if err := migrator.Migrate(13); err != nil {
+		t.Fatalf("Migrate(13) error = %v", err)
+	}
+
+	for _, table := range []string{"roles", "claims", "gate_runs", "work_claims", "task_completions", "agent_runs", "ac_verifications", "concerns"} {
+		if !tableExists(t, conn, table) {
+			t.Fatalf("pre-0014 table %q is absent", table)
+		}
+	}
+
+	if err := migrator.Migrate(14); err != nil {
+		t.Fatalf("Migrate(14) error = %v", err)
+	}
+
+	for _, table := range []string{"roles", "gate_runs", "work_claims"} {
+		if tableExists(t, conn, table) {
+			t.Fatalf("post-0014 removed table %q is present", table)
+		}
+	}
+	if !tableExists(t, conn, "claims") {
+		t.Fatal("post-0014 generic claims table is absent")
+	}
+	for _, table := range []string{"task_completions", "agent_runs", "ac_verifications", "concerns"} {
+		if !tableExists(t, conn, table) {
+			t.Fatalf("post-0014 frozen table %q is absent", table)
+		}
+	}
+
+	var claimColumns string
+	if err := conn.QueryRow(`SELECT group_concat(name, ',') FROM pragma_table_info('claims')`).Scan(&claimColumns); err != nil {
+		t.Fatalf("inspect post-0014 claims columns: %v", err)
+	}
+	if !strings.Contains(claimColumns, "envelope_id") || strings.Contains(claimColumns, "ref_type") {
+		t.Fatalf("post-0014 claims columns = %q, want generic claim shape only", claimColumns)
+	}
+
+	rows, err := conn.Query(`SELECT workflow_id, rule FROM workflow_transition_requires ORDER BY workflow_id, rowid`)
+	if err != nil {
+		t.Fatalf("query post-0014 transition requirements: %v", err)
+	}
+	defer closeRows(t, rows)
+	var rules []string
+	for rows.Next() {
+		var workflowID, rule string
+		if err := rows.Scan(&workflowID, &rule); err != nil {
+			t.Fatalf("scan post-0014 transition requirement: %v", err)
+		}
+		rules = append(rules, workflowID+":"+rule)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate post-0014 transition requirements: %v", err)
+	}
+	if want := []string{"epic-default:all_child_tasks_done_or_cancelled", "escalation-default:linked_to_decision"}; !reflect.DeepEqual(rules, want) {
+		t.Fatalf("post-0014 transition requirements = %v, want %v", rules, want)
+	}
+
+	if err := migrator.Migrate(13); err != nil {
+		t.Fatalf("Migrate(13) after 0014 error = %v", err)
+	}
+	for _, table := range []string{"roles", "claims", "gate_runs", "work_claims"} {
+		if !tableExists(t, conn, table) {
+			t.Fatalf("empty-state 0014 down table %q is absent", table)
+		}
+	}
+	if err := migrator.Migrate(14); err != nil {
+		t.Fatalf("second Migrate(14) error = %v", err)
+	}
+}
+
 func TestOperationalKernelInventoryComparisonRejectsSchemaDrift(t *testing.T) {
 	want := map[string]string{
 		"table:expected": "CREATE TABLE expected (id TEXT PRIMARY KEY)",

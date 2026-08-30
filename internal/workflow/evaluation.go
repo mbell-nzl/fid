@@ -173,7 +173,7 @@ func loadExecutionClaim(conn *sql.DB, issueID string, envelope Envelope) (execut
 	var claim executionClaim
 	err := conn.QueryRow(`
 		SELECT id, actor_id, expires_at
-		FROM work_claims
+		FROM claims
 		WHERE issue_id = ? AND envelope_id = ? AND envelope_revision = ? AND worktree_id = ? AND status = 'active'
 		ORDER BY id
 		LIMIT 1

@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -264,15 +263,6 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		effects = append(effects, revisionEffects...)
-		if leavesStartedCategory(registry, current.WorkflowID, current.Status, toState) {
-			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, actor.id)
-			if err != nil {
-				return err
-			}
-			if releaseEffect != nil {
-				effects = append(effects, *releaseEffect)
-			}
-		}
 		event.Effects = effects
 		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {

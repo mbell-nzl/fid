@@ -136,7 +136,7 @@ func resumeClaim(conn *sql.DB, issueID string) (*ResumeClaim, error) {
 	var releasedAt, releaseReason sql.NullString
 	err := conn.QueryRow(`
 		SELECT id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at, released_at, release_reason
-		FROM work_claims WHERE issue_id = ? AND status = 'active' ORDER BY id LIMIT 1
+		FROM claims WHERE issue_id = ? AND status = 'active' ORDER BY id LIMIT 1
 	`, issueID).Scan(&claim.ID, &claim.IssueID, &claim.EnvelopeID, &claim.EnvelopeRevision, &claim.ActorID, &claim.WorktreeID, &scope, &claim.Mode, &claim.Version, &claim.Status, &claim.AcquiredAt, &claim.ExpiresAt, &releasedAt, &releaseReason)
 	if err == sql.ErrNoRows {
 		return nil, nil

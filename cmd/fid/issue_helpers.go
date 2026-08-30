@@ -9,9 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/spf13/cobra"
 )
 
@@ -25,32 +23,6 @@ func issueMigrationsDir() string {
 }
 
 func renderIssueError(writer io.Writer, err error) error {
-	var missingRoleErr *policy.MissingRoleError
-	if errors.As(err, &missingRoleErr) {
-		return writeIssueLine(writer, "error: %s\n", missingRoleErr.Error())
-	}
-
-	var unknownRoleErr *policy.UnknownRoleError
-	if errors.As(err, &unknownRoleErr) {
-		if err := writeIssueLine(writer, "error: %s\n", unknownRoleErr.Error()); err != nil {
-			return err
-		}
-		return writeIssueLine(writer, "  known roles: %s\n", joinCommaSeparated(unknownRoleErr.KnownRoles))
-	}
-
-	var permissionDeniedErr *policy.PermissionDeniedError
-	if errors.As(err, &permissionDeniedErr) {
-		if err := writeIssueLine(writer, "error: %s\n", permissionDeniedErr.Error()); err != nil {
-			return err
-		}
-		return writeIssueLine(writer, "  check `fid policy show` for permitted role/action combinations\n")
-	}
-
-	var claimNotHeldErr *claims.ClaimNotHeldError
-	if errors.As(err, &claimNotHeldErr) {
-		return writeIssueLine(writer, "error: %s\n", claimNotHeldErr.Error())
-	}
-
 	handled, renderErr := renderJournalReplayError(func(format string, args ...any) error {
 		return writeIssueLine(writer, format, args...)
 	}, err, "read stopped - manual repair required")
@@ -78,16 +50,6 @@ func writeIssueLine(writer io.Writer, format string, args ...any) error {
 	return nil
 }
 
-func joinCommaSeparated(values []string) string {
-	if len(values) == 0 {
-		return ""
-	}
-	result := values[0]
-	for _, value := range values[1:] {
-		result += ", " + value
-	}
-	return result
-}
 
 func issueCreateParentID(kind, epicID, parentID string) (*string, error) {
 	trimmedEpicID := strings.TrimSpace(epicID)

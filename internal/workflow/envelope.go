@@ -290,7 +290,7 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return &EnvelopeInvalidError{Reason: "envelope is not draft"}
 		}
 		var activeClaim int
-		if err := conn.QueryRow(`SELECT COUNT(*) FROM work_claims WHERE issue_id = ? AND status = 'active'`, envelope.PrimaryIssueID).Scan(&activeClaim); err != nil {
+		if err := conn.QueryRow(`SELECT COUNT(*) FROM claims WHERE issue_id = ? AND status = 'active'`, envelope.PrimaryIssueID).Scan(&activeClaim); err != nil {
 			return fmt.Errorf("activate envelope: read active claims: %w", err)
 		}
 		if activeClaim != 0 {

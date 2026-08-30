@@ -75,7 +75,7 @@ func TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation(t *tes
 
 func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t *testing.T) {
 	workspace, issueID, _, _ := executionTransitionFixture(t)
-	mutateExecutionTransitionFixture(t, workspace, `UPDATE work_claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
+	mutateExecutionTransitionFixture(t, workspace, `UPDATE claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
 	assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID,
 		"in_progress", "agent:actor-builder", "1", "execution-transition-claim-worktree",
 		[]string{"claim-missing", "run-inactive"},
@@ -90,12 +90,12 @@ func TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards(t *
 	}{
 		{
 			name:        "wrong holder",
-			updateClaim: `UPDATE work_claims SET actor_id = 'actor-other' WHERE issue_id = ?`,
+			updateClaim: `UPDATE claims SET actor_id = 'actor-other' WHERE issue_id = ?`,
 			want:        []string{"claim-missing", "run-inactive"},
 		},
 		{
 			name:        "expired",
-			updateClaim: `UPDATE work_claims SET expires_at = '2000-01-01T00:00:00Z' WHERE issue_id = ?`,
+			updateClaim: `UPDATE claims SET expires_at = '2000-01-01T00:00:00Z' WHERE issue_id = ?`,
 			want:        []string{"claim-expired", "run-inactive"},
 		},
 	}
@@ -143,7 +143,7 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 		{
 			name: "claim worktree mismatched",
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
-				mutateExecutionTransitionFixture(t, workspace, `UPDATE work_claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
+				mutateExecutionTransitionFixture(t, workspace, `UPDATE claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
 			},
 			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
 			want: []string{"claim-missing", "run-inactive"},
