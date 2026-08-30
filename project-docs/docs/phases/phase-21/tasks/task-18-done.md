@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: qa-rework
+- Category: none
 - Condition: Resolved review-6 MF-18-01 and MF-18-02 evidence gaps.
 - Recovery attempts: 1
 - Next action: None.
@@ -83,6 +83,7 @@
 - First required command failure retained: `go test -race ./internal/workflow ./internal/issues ./internal/evidence ./internal/validation ./internal/cli ./cmd/fid/...` ended with `FAIL` (terminated `exit_code: 1`) because `TestReasonCodeDetailSchemaIsExactForEveryCode` still expected the pre-task-18 closed registry length of 37. The in-scope repair added the accepted `obligation-unsatisfied` schema expectation in `internal/cli/codes_test.go`; the byte-identical rerun passed with `ok github.com/mbell-nzl/fid/cmd/fid 263.427s` (terminated `exit_code: 0`), and the final complete task block passed from the first command again.
 - Lint first failed with `* unused: 1` (terminated `exit_code: 1`) because `task18DecodeResult` was unused in the new task test. The repair removed that helper; the byte-identical rerun passed with `0 issues.` (terminated `exit_code: 0`).
 - Review-6 QA repair focused tests first failed with `FAIL github.com/mbell-nzl/fid/cmd/fid [build failed]` (terminated `exit_code: 1`) while the test matrix referenced its not-yet-added local fixture helpers. The next focused attempt failed with `FAIL github.com/mbell-nzl/fid/cmd/fid 22.635s` (terminated `exit_code: 1`) because the resume fixture used the default gate command in an isolated temporary workspace. The final assertion-only red was `FAIL github.com/mbell-nzl/fid/cmd/fid 26.586s` (terminated `exit_code: 1`): Obligation reasons correctly exclude the completion-only `issue-not-terminal-success` reason. Added the local helpers, used the established `/bin/true` fixture, and asserted Obligation and completion reasons independently; the byte-identical focused rerun passed with `ok github.com/mbell-nzl/fid/cmd/fid 27.820s` (terminated `exit_code: 0`). No production repair was required.
+- First post-commit report-lint attempt failed with `FAIL report-lint found 1 failure(s)` (terminated `exit_code: 1`) because the COMPLETE report used `Category: qa-rework`; the canonical report contract requires `Category: none` for COMPLETE. Replaced only that typed category while retaining the recovery condition and attempt count; the identical rerun is recorded after this report amendment.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
