@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -96,10 +97,100 @@ func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
 			input := map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}}
 			input[proof] = true
 			writeActivationInput(t, path, input)
+			beforeEvents, beforeEvidence := evidenceStateCounts(t, workspace)
 			result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", path, "--idempotency-key", "caller-"+proof)
-			if result.err == nil || result.stdout != "" {
-				t.Fatalf("caller-authored %s proof = %#v, want typed rejection and no Evidence", proof, result)
+			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, beforeEvents, beforeEvidence)
+		})
+	}
+}
+
+func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
+	testCases := []struct {
+		name       string
+		mutate     func(t *testing.T, conn *sql.DB, receiptID string)
+		mutateLink func(t *testing.T, repository map[string]any)
+	}{
+		{
+			name: "Obligation",
+			mutate: func(t *testing.T, conn *sql.DB, receiptID string) {
+				t.Helper()
+				updateReceiptAttemptField(t, conn, receiptID, "obligation_id", "OBL-mismatched")
+			},
+		},
+		{
+			name: "Registration",
+			mutate: func(t *testing.T, conn *sql.DB, receiptID string) {
+				t.Helper()
+				updateReceiptAttemptField(t, conn, receiptID, "registration_id", "REG-mismatched")
+			},
+		},
+		{
+			name: "Run",
+			mutate: func(t *testing.T, conn *sql.DB, receiptID string) {
+				t.Helper()
+				if _, err := conn.Exec(`UPDATE runs SET envelope_revision = 2 WHERE id = (SELECT a.run_id FROM execution_receipts r JOIN execution_attempts a ON a.id = r.attempt_id WHERE r.id = ?)`, receiptID); err != nil {
+					t.Fatalf("mismatch Receipt Run binding: %v", err)
+				}
+			},
+		},
+		{
+			name: "Issue",
+			mutate: func(t *testing.T, conn *sql.DB, receiptID string) {
+				t.Helper()
+				if _, err := conn.Exec(`UPDATE runs SET issue_id = 'ISS-mismatched' WHERE id = (SELECT a.run_id FROM execution_receipts r JOIN execution_attempts a ON a.id = r.attempt_id WHERE r.id = ?)`, receiptID); err != nil {
+					t.Fatalf("mismatch Receipt Issue binding: %v", err)
+				}
+			},
+		},
+		{
+			name: "repository target",
+			mutateLink: func(t *testing.T, repository map[string]any) {
+				t.Helper()
+				repository["tree_oid"] = strings.Repeat("f", 40)
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+				definition["argv"] = []string{"/bin/true"}
+			})
+			terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "binding-mismatch-"+strings.ReplaceAll(testCase.name, " ", "-"))
+			if gateRun.err != nil || terminal.Data.ReceiptID == "" {
+				t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 			}
+
+			conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+			if err != nil {
+				t.Fatalf("open projection: %v", err)
+			}
+			if testCase.mutate != nil {
+				if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+					_ = conn.Close()
+					t.Fatalf("disable foreign keys for persisted mismatch fixture: %v", err)
+				}
+				testCase.mutate(t, conn, terminal.Data.ReceiptID)
+			}
+			if err := conn.Close(); err != nil {
+				t.Fatalf("close projection: %v", err)
+			}
+
+			repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+			if testCase.mutateLink != nil {
+				testCase.mutateLink(t, repository)
+			}
+			linkPath := filepath.Join(workspace, "binding-mismatch-evidence.json")
+			writeActivationInput(t, linkPath, map[string]any{
+				"obligation_id": evidenceObligationID(t, workspace, envelopeID), "receipt_id": terminal.Data.ReceiptID,
+				"target_repository": repository, "required_artifact_ids": []string{},
+			})
+			beforeEvents, beforeEvidence := evidenceStateCounts(t, workspace)
+			result := executeCommandForTest(workspace,
+				"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
+				"--input", linkPath, "--idempotency-key", "binding-mismatch-"+strings.ReplaceAll(testCase.name, " ", "-"),
+			)
+			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, beforeEvents, beforeEvidence)
 		})
 	}
 }
@@ -161,4 +252,35 @@ func cloneJSONMap(t *testing.T, value map[string]any) map[string]any {
 		t.Fatalf("unmarshal map: %v", err)
 	}
 	return cloned
+}
+
+func updateReceiptAttemptField(t *testing.T, conn *sql.DB, receiptID, field, value string) {
+	t.Helper()
+	if _, err := conn.Exec(`UPDATE execution_attempts SET `+field+` = ? WHERE id = (SELECT attempt_id FROM execution_receipts WHERE id = ?)`, value, receiptID); err != nil {
+		t.Fatalf("mismatch Receipt %s binding: %v", field, err)
+	}
+}
+
+func evidenceStateCounts(t *testing.T, workspace string) (int, int) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open projection for Evidence count: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	var evidenceRecords int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records`).Scan(&evidenceRecords); err != nil {
+		t.Fatalf("count Evidence records: %v", err)
+	}
+	return journalEventCount(t, workspace), evidenceRecords
+}
+
+func assertEvidenceLinkRejectedWithoutEvidenceEvent(t *testing.T, workspace string, result commandExecutionResult, wantEvents, wantEvidence int) {
+	t.Helper()
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
+		t.Fatalf("evidence link = %#v, want typed rejection", result)
+	}
+	if gotEvents, gotEvidence := evidenceStateCounts(t, workspace); gotEvents != wantEvents || gotEvidence != wantEvidence {
+		t.Fatalf("Evidence rejection state = events:%d evidence:%d, want events:%d evidence:%d", gotEvents, gotEvidence, wantEvents, wantEvidence)
+	}
 }
