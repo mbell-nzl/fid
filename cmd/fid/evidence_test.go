@@ -11,9 +11,70 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) {
+	t.Run("validity changes only validity", func(t *testing.T) {
+		fixture := newLinkedEvidenceFixture(t, "validity")
+		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+		fixture.updateValidity(t, "invalid")
+		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "invalid", "fresh", "available", []string{"evidence-invalid"})
+	})
+
+	t.Run("tree state changes freshness while branch label does not", func(t *testing.T) {
+		fixture := newLinkedEvidenceFixture(t, "freshness")
+		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+
+		branchMoved := cloneJSONMap(t, fixture.repository)
+		branchMoved["head_oid"] = strings.Repeat("c", 40)
+		assertEvaluation(t, fixture.evaluate(t, branchMoved), "valid", "fresh", "available", []string{})
+
+		changedTree := cloneJSONMap(t, fixture.repository)
+		changedTree["tree_oid"] = strings.Repeat("d", 40)
+		assertEvaluation(t, fixture.evaluate(t, changedTree), "valid", "stale", "available", []string{"evidence-stale"})
+	})
+
+	t.Run("Artifact availability changes only Artifact availability", func(t *testing.T) {
+		fixture := newLinkedEvidenceFixture(t, "artifact")
+		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
+		fixture.updateArtifactAvailability(t, "missing")
+		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
+	})
+}
+
+func TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild(t *testing.T) {
+	fixture := newLinkedEvidenceFixture(t, "golden")
+	fixture.observeArtifactMissing(t)
+	staleRepository := cloneJSONMap(t, fixture.repository)
+	staleRepository["tree_oid"] = strings.Repeat("e", 40)
+
+	assertEvaluation(t, fixture.evaluate(t, staleRepository), "valid", "stale", "missing", []string{"evidence-stale", "artifact-unavailable"})
+	first := fixture.evaluateGolden(t, staleRepository)
+	if repeated := fixture.evaluateGolden(t, staleRepository); repeated != first {
+		t.Fatalf("repeated multi-failure Evaluation = %s, want byte-identical %s", repeated, first)
+	}
+
+	rebuilt := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "rebuild")
+	if rebuilt.err != nil || rebuilt.stderr != "" {
+		t.Fatalf("rebuild Evidence fixture = %#v, want journal rebuild", rebuilt)
+	}
+	if afterRebuild := fixture.evaluateGolden(t, staleRepository); afterRebuild != first {
+		t.Fatalf("post-rebuild multi-failure Evaluation = %s, want byte-identical %s", afterRebuild, first)
+	}
+}
+
+type linkedEvidenceFixture struct {
+	workspace    string
+	obligationID string
+	evidenceID   string
+	artifactID   string
+	digest       string
+	repository   map[string]any
+}
+
+func newLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture {
+	t.Helper()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"evidence.txt"}
@@ -21,7 +82,7 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 	if err := os.WriteFile(filepath.Join(workspace, "evidence.txt"), []byte("trusted evidence\n"), 0o600); err != nil {
 		t.Fatalf("write declared Artifact: %v", err)
 	}
-	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "evidence-source")
+	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "evidence-"+key)
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 	}
@@ -31,8 +92,8 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 		t.Fatalf("open projection: %v", err)
 	}
 	defer func() { _ = conn.Close() }()
-	var artifactID string
-	if err := conn.QueryRow(`SELECT artifact_id FROM receipt_artifacts WHERE receipt_id = ?`, terminal.Data.ReceiptID).Scan(&artifactID); err != nil {
+	var artifactID, digest string
+	if err := conn.QueryRow(`SELECT a.id, a.digest FROM referenced_artifacts a JOIN receipt_artifacts l ON l.artifact_id = a.id WHERE l.receipt_id = ?`, terminal.Data.ReceiptID).Scan(&artifactID, &digest); err != nil {
 		t.Fatalf("read Receipt Artifact: %v", err)
 	}
 	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
@@ -42,43 +103,78 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 		"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID,
 		"target_repository": repository, "required_artifact_ids": []string{artifactID},
 	})
-
 	linked := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
-		"--input", linkPath, "--idempotency-key", "evidence-link-qualified",
+		"--input", linkPath, "--idempotency-key", "evidence-link-"+key,
 	)
 	if linked.err != nil || linked.stderr != "" {
 		t.Fatalf("evidence link = %#v, want trusted Receipt link", linked)
 	}
-	linkedResult := decodeCanonicalResult(t, linked.stdout)
-	evidence := linkedResult["evidence"].(map[string]any)
+	evidence := decodeCanonicalResult(t, linked.stdout)["evidence"].(map[string]any)
 	if evidence["receipt_id"] != terminal.Data.ReceiptID || evidence["producer"] != "fid" || evidence["trust_source"] != "fid-executed" {
 		t.Fatalf("linked Evidence = %#v, want exact fid-executed Receipt binding", evidence)
 	}
-	assertEvaluation(t, linkedResult["evaluation"].(map[string]any), "valid", "fresh", "available", []string{})
+	return linkedEvidenceFixture{workspace: workspace, obligationID: obligationID, evidenceID: evidence["id"].(string), artifactID: artifactID, digest: digest, repository: repository}
+}
 
-	evaluatePath := filepath.Join(workspace, "evidence-evaluate.json")
-	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID, "target_repository": repository})
-	first := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluatePath)
-	if first.err != nil || first.stderr != "" {
-		t.Fatalf("fresh evidence evaluate = %#v", first)
+func (fixture linkedEvidenceFixture) evaluate(t *testing.T, repository map[string]any) map[string]any {
+	t.Helper()
+	path := filepath.Join(fixture.workspace, "evidence-evaluate.json")
+	writeActivationInput(t, path, map[string]any{"obligation_id": fixture.obligationID, "target_repository": repository})
+	result := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "evidence", "evaluate", "--input", path)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("evidence evaluate = %#v", result)
 	}
-	assertEvaluation(t, decodeCanonicalResult(t, first.stdout)["evaluation"].(map[string]any), "valid", "fresh", "available", []string{})
+	return decodeCanonicalResult(t, result.stdout)["evaluation"].(map[string]any)
+}
 
-	if _, err := conn.Exec(`UPDATE evidence_records SET validity = 'invalid' WHERE id = ?`, evidence["id"]); err != nil {
-		t.Fatalf("make Evidence invalid: %v", err)
+func (fixture linkedEvidenceFixture) evaluateGolden(t *testing.T, repository map[string]any) string {
+	t.Helper()
+	payload, err := journal.MarshalCanonicalJSON(fixture.evaluate(t, repository))
+	if err != nil {
+		t.Fatalf("canonicalize Evaluation: %v", err)
 	}
-	if _, err := conn.Exec(`UPDATE referenced_artifacts SET availability = 'missing' WHERE id = ?`, artifactID); err != nil {
-		t.Fatalf("make required Artifact missing: %v", err)
+	return string(payload)
+}
+
+func (fixture linkedEvidenceFixture) updateValidity(t *testing.T, validity string) {
+	t.Helper()
+	fixture.updateProjection(t, `UPDATE evidence_records SET validity = ? WHERE id = ?`, validity, fixture.evidenceID)
+}
+
+func (fixture linkedEvidenceFixture) updateArtifactAvailability(t *testing.T, availability string) {
+	t.Helper()
+	fixture.updateProjection(t, `UPDATE referenced_artifacts SET availability = ? WHERE id = ?`, availability, fixture.artifactID)
+}
+
+func (fixture linkedEvidenceFixture) updateProjection(t *testing.T, query string, arguments ...any) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(fixture.workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open projection: %v", err)
 	}
-	staleRepository := cloneJSONMap(t, repository)
-	staleRepository["tree_oid"] = strings.Repeat("c", 40)
-	writeActivationInput(t, evaluatePath, map[string]any{"obligation_id": obligationID, "target_repository": staleRepository})
-	second := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluatePath)
-	if second.err != nil || second.stderr != "" {
-		t.Fatalf("multi-failure evidence evaluate = %#v", second)
+	defer func() { _ = conn.Close() }()
+	if _, err := conn.Exec(query, arguments...); err != nil {
+		t.Fatalf("update Evidence fixture: %v", err)
 	}
-	assertEvaluation(t, decodeCanonicalResult(t, second.stdout)["evaluation"].(map[string]any), "invalid", "stale", "missing", []string{"evidence-invalid", "evidence-stale", "artifact-unavailable"})
+}
+
+func (fixture linkedEvidenceFixture) observeArtifactMissing(t *testing.T) {
+	t.Helper()
+	path := filepath.Join(fixture.workspace, config.WorkspaceDirName, "artifacts", strings.TrimPrefix(fixture.digest, "sha256:"))
+	if err := os.Remove(path); err != nil {
+		t.Fatalf("remove stored Artifact: %v", err)
+	}
+	inputPath := filepath.Join(fixture.workspace, "artifact-verify.json")
+	writeActivationInput(t, inputPath, map[string]any{"artifact_id": fixture.artifactID})
+	result := executeCommandForTest(fixture.workspace,
+		"--project", fixture.workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
+		"--input", inputPath, "--idempotency-key", "artifact-verify-missing",
+	)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("missing Artifact verify = %#v, want availability observation", result)
+	}
+	assertArtifactVerifyResult(t, result.stdout, "missing", true)
 }
 
 func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
