@@ -62,6 +62,7 @@ const (
 	CodeArtifactUnavailable           Code = "artifact-unavailable"
 	CodeGateUnsuccessful              Code = "gate-unsuccessful"
 	CodeObligationUnsatisfied         Code = "obligation-unsatisfied"
+	CodeArchiveInvalid                Code = "archive-invalid"
 )
 
 type SubjectType string
@@ -83,6 +84,7 @@ const (
 	SubjectEvidence         SubjectType = "evidence"
 	SubjectArtifact         SubjectType = "artifact"
 	SubjectCapability       SubjectType = "capability"
+	SubjectExport           SubjectType = "export"
 )
 
 type Subject struct {
@@ -225,6 +227,8 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
 	CodeObligationUnsatisfied: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
 		objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeArchiveInvalid: definition(CategoryIntegrity, false, []SubjectType{SubjectExport},
+		stringField("archive_path"), objectsField("checks", stringField("code"), nullableStringField("entry"), stringField("detail"))),
 }
 
 var registeredCodes = []Code{
@@ -239,6 +243,7 @@ var registeredCodes = []Code{
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
 	CodeGateUnsuccessful,
 	CodeObligationUnsatisfied,
+	CodeArchiveInvalid,
 }
 
 func findingFields() []detailField {

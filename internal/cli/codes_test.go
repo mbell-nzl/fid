@@ -114,6 +114,11 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 				stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type"),
 			}},
 		}},
+		{CodeArchiveInvalid, CategoryIntegrity, false, []SubjectType{SubjectExport}, []detailExpectation{
+			stringDetail("archive_path"), {name: "checks", kind: detailObjectsKind, children: []detailExpectation{
+				stringDetail("code"), nullableStringDetail("entry"), stringDetail("detail"),
+			}},
+		}},
 	}
 
 	registered := RegisteredCodes()
