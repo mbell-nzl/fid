@@ -154,7 +154,7 @@ func evaluateExecutionTransition(conn *sql.DB, workspaceRoot, migrationsDir stri
 		reasons = append(reasons, evaluationReason("workflow-transition-invalid", "workflow edge", request.IssueID, "issue"))
 	}
 	if request.TerminalSuccess {
-		obligationReasons, err := evaluateObligations(conn, envelope.Obligations)
+		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, envelope.RepositoryScope)
 		if err != nil {
 			return ExecutionTransitionEvaluation{}, err
 		}
@@ -208,16 +208,86 @@ func executionRunActive(conn *sql.DB, claim executionClaim, usableClaim bool, en
 	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil && sameRepository(repository, envelope.RepositoryScope)
 }
 
-func evaluateObligations(conn *sql.DB, obligations []Obligation) ([]EvaluationReason, error) {
-	evidence := make(map[string]bool, len(obligations))
+func evaluateObligations(conn *sql.DB, obligations []Obligation, current Repository) ([]EvaluationReason, error) {
+	states := make([]ObligationEvidenceState, 0, len(obligations))
 	for _, obligation := range obligations {
-		var count int
-		if err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records WHERE obligation_id = ?`, obligation.ID).Scan(&count); err != nil {
-			return nil, fmt.Errorf("evaluate obligation %q: %w", obligation.ID, err)
+		loaded, err := loadObligationEvidenceStates(conn, obligation.ID, current)
+		if err != nil {
+			return nil, err
 		}
-		evidence[obligation.ID] = count > 0
+		states = append(states, loaded...)
 	}
-	return EvaluateObligations(ObligationEvaluationInput{Action: "issue.transition-terminal-success", Obligations: obligations, Evidence: evidence}), nil
+	return EvaluateEvidenceStates(states), nil
+}
+
+func loadObligationEvidenceStates(conn *sql.DB, obligationID string, current Repository) ([]ObligationEvidenceState, error) {
+	rows, err := conn.Query(`
+		SELECT e.id, e.receipt_id, e.validity, e.target_repository_json, r.terminal_status
+		FROM evidence_records e
+		JOIN execution_receipts r ON r.id = e.receipt_id
+		WHERE e.obligation_id = ?
+		ORDER BY e.id
+	`, obligationID)
+	if err != nil {
+		return nil, fmt.Errorf("evaluate obligation %q: %w", obligationID, err)
+	}
+	defer func() { _ = rows.Close() }()
+
+	states := []ObligationEvidenceState{}
+	for rows.Next() {
+		var evidenceID, receiptID, validity, targetJSON, outcome string
+		if err := rows.Scan(&evidenceID, &receiptID, &validity, &targetJSON, &outcome); err != nil {
+			return nil, err
+		}
+		var target Repository
+		if err := json.Unmarshal([]byte(targetJSON), &target); err != nil {
+			return nil, fmt.Errorf("decode Evidence target repository: %w", err)
+		}
+		state := ObligationEvidenceState{
+			ObligationID: obligationID, EvidenceID: evidenceID, ReceiptID: receiptID,
+			ReceiptSuccessful: outcome == "succeeded", Validity: validity,
+			Freshness: evidenceFreshness(target, current), ArtifactAvailability: "available",
+		}
+		artifactRows, err := conn.Query(`
+			SELECT l.artifact_id, a.availability
+			FROM evidence_artifact_links l
+			JOIN referenced_artifacts a ON a.id = l.artifact_id
+			WHERE l.evidence_id = ? AND l.required_material = 1
+			ORDER BY l.artifact_id
+		`, evidenceID)
+		if err != nil {
+			return nil, fmt.Errorf("evaluate obligation artifacts: %w", err)
+		}
+		for artifactRows.Next() {
+			var artifactID, availability string
+			if err := artifactRows.Scan(&artifactID, &availability); err != nil {
+				_ = artifactRows.Close()
+				return nil, err
+			}
+			state.ArtifactIDs = append(state.ArtifactIDs, artifactID)
+			if availability != "available" {
+				state.ArtifactAvailability = "missing"
+			}
+		}
+		if err := artifactRows.Close(); err != nil {
+			return nil, err
+		}
+		states = append(states, state)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(states) == 0 {
+		states = append(states, ObligationEvidenceState{ObligationID: obligationID})
+	}
+	return states, nil
+}
+
+func evidenceFreshness(target, current Repository) string {
+	if sameRepository(target, current) {
+		return "fresh"
+	}
+	return "stale"
 }
 
 func evaluationReason(code, detail, subjectID, subjectType string) EvaluationReason {

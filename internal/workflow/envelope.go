@@ -106,6 +106,21 @@ type EnvelopeActivateRequest struct {
 	ExpectedRevision int    `json:"expected_revision"`
 }
 
+type EnvelopeCompleteRequest struct {
+	EnvelopeID       string     `json:"envelope_id"`
+	ExpectedRevision int        `json:"expected_revision"`
+	Repository       Repository `json:"repository"`
+}
+
+type ObligationEvaluation struct {
+	ObligationID         string             `json:"obligation_id"`
+	Status               string             `json:"status"`
+	Validity             string             `json:"validity"`
+	Freshness            string             `json:"freshness"`
+	ArtifactAvailability string             `json:"artifact_availability"`
+	Reasons              []EvaluationReason `json:"reasons"`
+}
+
 type Envelope struct {
 	ID              string           `json:"id"`
 	CurrentRevision int              `json:"current_revision"`
@@ -151,6 +166,15 @@ func (err *EnvelopeNotFoundError) Error() string {
 type EnvelopeInvalidError struct{ Reason string }
 
 func (err *EnvelopeInvalidError) Error() string { return err.Reason }
+
+type EnvelopeCompletionError struct {
+	EnvelopeID string
+	Reasons    []EvaluationReason
+}
+
+func (err *EnvelopeCompletionError) Error() string {
+	return fmt.Sprintf("complete envelope %q is not permitted", err.EnvelopeID)
+}
 
 type EnvelopeAuthorityError struct {
 	ActorID    string
@@ -299,6 +323,148 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 		return nil
 	})
 	return result, err
+}
+
+func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) (EnvelopeMutationResult, error) {
+	if err := validateEnvelopeOptions(options); err != nil || strings.TrimSpace(request.EnvelopeID) == "" || request.ExpectedRevision != 1 || !validEnvelopeRepository(request.Repository) {
+		return EnvelopeMutationResult{}, &EnvelopeInvalidError{Reason: "envelope completion input is invalid"}
+	}
+	var result EnvelopeMutationResult
+	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid envelope complete"}, func(lock *journal.WriteLock) error {
+		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
+			return err
+		}
+		conn, err := openWorkflowDB(options.WorkspaceRoot)
+		if err != nil {
+			return err
+		}
+		defer closeWorkflowDB(conn)
+		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+		if err != nil {
+			return fmt.Errorf("complete envelope: read project config: %w", err)
+		}
+		requestDigest, err := envelopeRequestDigest("envelope.complete", project.ProjectID, options.ActorID, request)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.complete:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			loaded, err := loadEnvelope(conn, outcome.EntityID)
+			if err != nil {
+				return err
+			}
+			evaluation, err := currentEnvelopeEvaluation(conn, loaded, request.Repository)
+			if err != nil {
+				return err
+			}
+			result = EnvelopeMutationResult{Envelope: loaded, Evaluation: evaluation, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: outcome.EventID}
+			return nil
+		}
+
+		envelope, err := loadEnvelope(conn, request.EnvelopeID)
+		if err != nil {
+			return err
+		}
+		reasons, evaluation, err := evaluateEnvelopeCompletion(options, conn, envelope, request)
+		if err != nil {
+			return err
+		}
+		if len(reasons) > 0 {
+			return &EnvelopeCompletionError{EnvelopeID: envelope.ID, Reasons: reasons}
+		}
+		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
+		if err != nil {
+			return err
+		}
+		completedAt := time.Now().UTC().Format(time.RFC3339Nano)
+		sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: envelope.ID, Type: "envelope"})
+		if err != nil {
+			return err
+		}
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.completed", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelope.ID, Sequence: sequence, Type: "envelope"}, CommandName: "envelope.complete", Repository: envelopeRepository(request.Repository), Effects: []journal.Effect{
+			{Op: "update", Table: "work_envelopes", PK: map[string]any{"id": envelope.ID}, Values: map[string]any{"status": "completed"}, Preconditions: map[string]any{"status": "active"}},
+			{Op: "update", Table: "envelope_revisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1}, Values: map[string]any{"status": "completed", "completed_at": completedAt}, Preconditions: map[string]any{"status": "active"}},
+		}}
+		resultJSON, err := envelopeCompleteResultJSON(envelope, completedAt, evaluation, options.IdempotencyKey)
+		if err != nil {
+			return err
+		}
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			return journal.IdempotencyMutation{EntityID: envelope.ID, ResultJSON: resultJSON}, nil
+		})
+		if err != nil {
+			return err
+		}
+		loaded, err := loadEnvelope(conn, outcome.EntityID)
+		if err != nil {
+			return err
+		}
+		result = EnvelopeMutationResult{Envelope: loaded, Evaluation: evaluation, IdempotencyKey: options.IdempotencyKey, Replayed: outcome.Replayed, EventID: outcome.EventID}
+		return nil
+	})
+	return result, err
+}
+
+func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope Envelope, request EnvelopeCompleteRequest) ([]EvaluationReason, ObligationEvaluation, error) {
+	reasons := []EvaluationReason{}
+	if err := AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: "envelope.complete", Capability: "envelope.complete", IssueID: envelope.PrimaryIssueID, EnvelopeID: envelope.ID, Revision: envelope.CurrentRevision}); err != nil {
+		reasons = append(reasons, evaluationReason("authority-unavailable", "envelope.complete", options.ActorID, "actor"))
+	}
+	if envelope.Status != "active" {
+		reasons = append(reasons, evaluationReason("envelope-inactive", envelope.Status, envelope.ID, "envelope"))
+	}
+	evaluation, err := currentEnvelopeEvaluation(conn, envelope, request.Repository)
+	if err != nil {
+		return nil, ObligationEvaluation{}, err
+	}
+	reasons = append(reasons, evaluation.Reasons...)
+	terminal, err := issueTerminalSuccess(conn, envelope.PrimaryIssueID)
+	if err != nil {
+		return nil, ObligationEvaluation{}, err
+	}
+	if !terminal {
+		reasons = append(reasons, evaluationReason("issue-not-terminal-success", "completed workflow category", envelope.PrimaryIssueID, "issue"))
+	}
+	return sortEvaluationReasons(reasons), evaluation, nil
+}
+
+func currentEnvelopeEvaluation(conn *sql.DB, envelope Envelope, repository Repository) (ObligationEvaluation, error) {
+	states, err := loadObligationEvidenceStates(conn, envelope.Obligations[0].ID, repository)
+	if err != nil {
+		return ObligationEvaluation{}, err
+	}
+	reasons := EvaluateEvidenceStates(states)
+	evaluation := ObligationEvaluation{ObligationID: envelope.Obligations[0].ID, Status: "unsatisfied", Validity: "invalid", Freshness: "stale", ArtifactAvailability: "missing", Reasons: reasons}
+	for _, state := range states {
+		if state.Validity == "valid" {
+			evaluation.Validity = "valid"
+		}
+		if state.Freshness == "fresh" {
+			evaluation.Freshness = "fresh"
+		}
+		if state.ArtifactAvailability == "available" {
+			evaluation.ArtifactAvailability = "available"
+		}
+	}
+	if len(reasons) == 0 {
+		evaluation.Status, evaluation.Validity, evaluation.Freshness, evaluation.ArtifactAvailability = "satisfied", "valid", "fresh", "available"
+	}
+	return evaluation, nil
+}
+
+func issueTerminalSuccess(conn *sql.DB, issueID string) (bool, error) {
+	var workflowID, status string
+	if err := conn.QueryRow(`SELECT workflow_id, status FROM issues WHERE id = ?`, issueID).Scan(&workflowID, &status); err != nil {
+		return false, fmt.Errorf("load completion Issue: %w", err)
+	}
+	registry, err := Load(conn)
+	if err != nil {
+		return false, err
+	}
+	category, found := registry.CategoryForState(workflowID, status)
+	return found && category == "completed", nil
 }
 
 func validateEnvelopeOptions(options EnvelopeOptions) error {
@@ -598,6 +764,12 @@ func envelopeResultJSON(envelope Envelope, key string) (string, error) {
 func envelopeActivateResultJSON(envelope Envelope, activatedAt, key string) (string, error) {
 	envelope.Status, envelope.ActivatedAt = "active", &activatedAt
 	payload, err := journal.MarshalCanonicalJSON(map[string]any{"envelope": envelope, "evaluation": envelopeEvaluation(envelope), "idempotency_key": key, "replayed": false})
+	return string(payload), err
+}
+
+func envelopeCompleteResultJSON(envelope Envelope, completedAt string, evaluation ObligationEvaluation, key string) (string, error) {
+	envelope.Status, envelope.CompletedAt = "completed", &completedAt
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"envelope": envelope, "evaluation": evaluation, "idempotency_key": key, "replayed": false})
 	return string(payload), err
 }
 

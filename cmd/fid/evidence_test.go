@@ -109,8 +109,8 @@ func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]a
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinition(t, modifyDefinition)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
-	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "evidence.link", "gate.run", "run.finish", "run.start"}
-	grant["actor_selector"] = map[string]any{"actor_id": "actor-builder", "required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "evidence.link", "gate.run", "run.finish", "run.start"}}
+	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.finish", "run.start"}
+	grant["actor_selector"] = map[string]any{"actor_id": "actor-builder", "required_capabilities": []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.finish", "run.start"}}
 	path := filepath.Join(workspace, "evidence-envelope.json")
 	writeActivationInput(t, path, input)
 	created := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", path, "--idempotency-key", "evidence-envelope-create")

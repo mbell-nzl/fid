@@ -17,6 +17,7 @@ func init() {
 	rootFlagCapabilities["envelope create"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["envelope get"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["envelope activate"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["envelope complete"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newEnvelopeCommand() *cobra.Command {
@@ -24,6 +25,7 @@ func newEnvelopeCommand() *cobra.Command {
 	cmd.AddCommand(newEnvelopeCreateCommand())
 	cmd.AddCommand(newEnvelopeGetCommand())
 	cmd.AddCommand(newEnvelopeActivateCommand())
+	cmd.AddCommand(newEnvelopeCompleteCommand())
 	return cmd
 }
 
@@ -117,6 +119,35 @@ func newEnvelopeActivateCommand() *cobra.Command {
 	return cmd
 }
 
+func newEnvelopeCompleteCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "complete", Short: "Complete a terminal envelope.", Args: canonicalNoArgs("envelope.complete"), RunE: func(cmd *cobra.Command, _ []string) error {
+		for _, flag := range []string{"input", "actor", "idempotency-key"} {
+			if err := requireCanonicalFlag(cmd, "envelope.complete", flag); err != nil {
+				return err
+			}
+		}
+		var request workflow.EnvelopeCompleteRequest
+		if err := decodeClosedEnvelopeInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			return renderEnvelopeError(cmd, "envelope.complete", err, actor)
+		}
+		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderEnvelopeError(cmd, "envelope.complete", err, actor)
+		}
+		result, err := workflow.CompleteEnvelope(workflow.EnvelopeOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderEnvelopeError(cmd, "envelope.complete", err, actor)
+		}
+		return writeEnvelopeSuccess(cmd, "envelope.complete", result, true)
+	}}
+	cmd.Flags().StringVar(&inputPath, "input", "", "Envelope completion JSON input")
+	cmd.Flags().StringVar(&actor, "actor", "", "Finalized activation actor ID")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError("envelope.complete"))
+	return cmd
+}
+
 func writeEnvelopeSuccess(cmd *cobra.Command, operation string, result workflow.EnvelopeMutationResult, withEvaluation bool) error {
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
@@ -130,6 +161,9 @@ func writeEnvelopeSuccess(cmd *cobra.Command, operation string, result workflow.
 		occurredAt := result.Envelope.CreatedAt
 		if withEvaluation && result.Envelope.ActivatedAt != nil {
 			occurredAt = *result.Envelope.ActivatedAt
+		}
+		if operation == "envelope.complete" && result.Envelope.CompletedAt != nil {
+			occurredAt = *result.Envelope.CompletedAt
 		}
 		return cli.WriteSuccess(cmd.OutOrStdout(), operation, payload, &cli.Event{ID: result.EventID, OccurredAt: occurredAt})
 	}
@@ -170,13 +204,25 @@ func renderEnvelopeError(cmd *cobra.Command, operation string, cause error, acto
 	}
 	var notFound *workflow.EnvelopeNotFoundError
 	var authority *workflow.EnvelopeAuthorityError
+	var completion *workflow.EnvelopeCompletionError
 	if errors.As(cause, &notFound) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeEnvelopeNotFound, "envelope was not found", &cli.Subject{Type: cli.SubjectEnvelope, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 	}
 	if errors.As(cause, &authority) {
 		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized envelope authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": actor, "required_actions": []string{authority.Capability}, "required_capabilities": []string{authority.Capability}})
 	}
+	if errors.As(cause, &completion) {
+		return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeObligationUnsatisfied, "Envelope completion obligations are unsatisfied", &cli.Subject{Type: cli.SubjectEnvelope, ID: completion.EnvelopeID}, map[string]any{"reasons": envelopeReasonValues(completion.Reasons)})
+	}
 	return writeEnvelopeFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid envelope input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func envelopeReasonValues(reasons []workflow.EvaluationReason) []any {
+	values := make([]any, 0, len(reasons))
+	for _, reason := range reasons {
+		values = append(values, map[string]any{"code": reason.Code, "detail": reason.Detail, "subject_id": reason.SubjectID, "subject_type": reason.SubjectType})
+	}
+	return values
 }
 
 func writeEnvelopeFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
