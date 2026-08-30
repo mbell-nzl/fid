@@ -6,9 +6,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
@@ -68,8 +71,186 @@ func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 	}
 }
 
+func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testing.T) {
+	cases := []struct {
+		name       string
+		path       string
+		reason     string
+		definition func(map[string]any)
+		setup      func(*testing.T, string)
+	}{
+		{
+			name:   "changed during copy",
+			path:   "changed.txt",
+			reason: "changed-during-copy",
+			definition: func(definition map[string]any) {
+				definition["argv"] = []string{os.Args[0], "-test.run=^TestArtifactMutationHelperProcess$", "--"}
+				definition["artifact_bytes"] = 512 * 1024 * 1024
+				definition["timeout_ms"] = 10_000
+				definition["environment"] = []any{map[string]any{"name": "FID_ARTIFACT_HELPER", "source": "literal", "value": "writer"}}
+			},
+		},
+		{
+			name:   "directory",
+			path:   "directory",
+			reason: "directory",
+			setup: func(t *testing.T, workspace string) {
+				t.Helper()
+				if err := os.Mkdir(filepath.Join(workspace, "directory"), 0o700); err != nil {
+					t.Fatalf("create declared directory: %v", err)
+				}
+			},
+		},
+		{
+			name:   "missing",
+			path:   "missing.txt",
+			reason: "missing",
+		},
+		{
+			name:   "non regular",
+			path:   "pipe",
+			reason: "non-regular",
+			setup: func(t *testing.T, workspace string) {
+				t.Helper()
+				if err := syscall.Mkfifo(filepath.Join(workspace, "pipe"), 0o600); err != nil {
+					t.Fatalf("create declared FIFO: %v", err)
+				}
+			},
+		},
+		{
+			name:   "outside cwd",
+			path:   "escape/outside.txt",
+			reason: "outside-cwd",
+			definition: func(definition map[string]any) {
+				definition["argv"] = []string{os.Args[0], "-test.run=^TestArtifactMutationHelperProcess$", "--"}
+				definition["timeout_ms"] = 10_000
+				definition["environment"] = []any{map[string]any{"name": "FID_ARTIFACT_HELPER", "source": "literal", "value": "outside"}}
+			},
+		},
+		{
+			name:   "oversized",
+			path:   "oversized.txt",
+			reason: "oversized",
+			definition: func(definition map[string]any) {
+				definition["artifact_bytes"] = 1
+			},
+			setup: func(t *testing.T, workspace string) {
+				t.Helper()
+				if err := os.WriteFile(filepath.Join(workspace, "oversized.txt"), []byte("too large"), 0o600); err != nil {
+					t.Fatalf("write oversized candidate: %v", err)
+				}
+			},
+		},
+		{
+			name:   "symlink",
+			path:   "symlink",
+			reason: "symlink",
+			setup: func(t *testing.T, workspace string) {
+				t.Helper()
+				target := filepath.Join(workspace, "target.txt")
+				if err := os.WriteFile(target, []byte("target\n"), 0o600); err != nil {
+					t.Fatalf("write symlink target: %v", err)
+				}
+				if err := os.Symlink(target, filepath.Join(workspace, "symlink")); err != nil {
+					t.Fatalf("create declared symlink: %v", err)
+				}
+			},
+		},
+	}
+
+	for _, testCase := range cases {
+		testCase := testCase
+		t.Run(testCase.name, func(t *testing.T) {
+			workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+				definition["argv"] = []string{"/bin/true"}
+				definition["artifact_paths"] = []string{testCase.path}
+				if testCase.definition != nil {
+					testCase.definition(definition)
+				}
+			})
+			if testCase.setup != nil {
+				testCase.setup(t, workspace)
+			}
+
+			terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "artifact-rejected-"+strings.ReplaceAll(testCase.name, " ", "-"))
+			if result.err != nil || terminal.Data.ReceiptID == "" {
+				t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt with rejected Artifact", result, terminal)
+			}
+			assertArtifactRejectedControl(t, result.stdout, testCase.path, testCase.reason)
+			assertReceiptHasNoArtifacts(t, workspace, terminal.Data.ReceiptID)
+
+			repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+			obligationID := evidenceObligationID(t, workspace, envelopeID)
+			assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "invalid", "stale", "missing", []string{"obligation-evidence-absent"})
+			if testCase.name == "changed during copy" {
+				waitForArtifactMutation(t, workspace)
+			}
+		})
+	}
+}
+
+func TestArtifactMutationHelperProcess(t *testing.T) {
+	switch os.Getenv("FID_ARTIFACT_HELPER") {
+	case "writer":
+		candidate, err := os.OpenFile("changed.txt", os.O_CREATE|os.O_WRONLY, 0o600)
+		if err != nil {
+			t.Fatalf("create changed candidate: %v", err)
+		}
+		if err := candidate.Truncate(64 * 1024 * 1024); err != nil {
+			_ = candidate.Close()
+			t.Fatalf("create changed candidate: %v", err)
+		}
+		if err := candidate.Close(); err != nil {
+			t.Fatalf("close changed candidate: %v", err)
+		}
+		mutator := exec.Command(os.Args[0], "-test.run=^TestArtifactMutationHelperProcess$", "--")
+		mutator.Env = append(os.Environ(), "FID_ARTIFACT_HELPER=mutator")
+		if err := mutator.Start(); err != nil {
+			t.Fatalf("start Artifact mutator: %v", err)
+		}
+	case "mutator":
+		defer func() { _ = os.WriteFile("changed.mutator.done", []byte("done"), 0o600) }()
+		deadline := time.Now().Add(500 * time.Millisecond)
+		for time.Now().Before(deadline) {
+			if err := os.Truncate("changed.txt", 96*1024*1024); err != nil {
+				t.Fatalf("grow changed candidate: %v", err)
+			}
+			time.Sleep(time.Millisecond)
+			if err := os.Truncate("changed.txt", 64*1024*1024); err != nil {
+				t.Fatalf("shrink changed candidate: %v", err)
+			}
+			time.Sleep(time.Millisecond)
+		}
+	case "outside":
+		outside := filepath.Join("..", "outside-artifact")
+		if err := os.MkdirAll(outside, 0o700); err != nil {
+			t.Fatalf("create outside candidate directory: %v", err)
+		}
+		if err := os.WriteFile(filepath.Join(outside, "outside.txt"), []byte("outside\n"), 0o600); err != nil {
+			t.Fatalf("write outside candidate: %v", err)
+		}
+		if err := os.Symlink(outside, "escape"); err != nil {
+			t.Fatalf("create escaping parent symlink: %v", err)
+		}
+	default:
+		return
+	}
+}
+
+func waitForArtifactMutation(t *testing.T, workspace string) {
+	t.Helper()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, err := os.Stat(filepath.Join(workspace, "changed.mutator.done")); err == nil {
+			return
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+	t.Fatal("Artifact mutator did not terminate")
+}
+
 func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *testing.T) {
-	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"artifact.txt"}
 	})
@@ -77,9 +258,9 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	if err := os.WriteFile(filepath.Join(workspace, "artifact.txt"), content, 0o600); err != nil {
 		t.Fatalf("write declared Artifact: %v", err)
 	}
-	_, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "artifact-verify-source")
-	if result.err != nil {
-		t.Fatalf("gate run: %v; stderr=%q", result.err, result.stderr)
+	terminal, result := executeGateRunForTest(t, workspace, issueID, envelopeID, "artifact-verify-source")
+	if result.err != nil || terminal.Data.ReceiptID == "" {
+		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", result, terminal)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
@@ -88,7 +269,27 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	}
 	defer func() { _ = conn.Close() }()
 	artifactID, digest, receiptID := receiptArtifactIdentity(t, conn)
+	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	linkPath := filepath.Join(workspace, "artifact-lifecycle-evidence.json")
+	writeActivationInput(t, linkPath, map[string]any{
+		"obligation_id": obligationID, "receipt_id": receiptID,
+		"target_repository": repository, "required_artifact_ids": []string{artifactID},
+	})
+	linked := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
+		"--input", linkPath, "--idempotency-key", "artifact-lifecycle-evidence-link",
+	)
+	if linked.err != nil || linked.stderr != "" {
+		t.Fatalf("link lifecycle Evidence = %#v, want qualifying Evidence", linked)
+	}
+	linkedResult := decodeCanonicalResult(t, linked.stdout)
+	evidenceID := linkedResult["evidence"].(map[string]any)["id"].(string)
+	assertEvaluation(t, linkedResult["evaluation"].(map[string]any), "valid", "fresh", "available", []string{})
 	before := artifactIdentitySnapshot(t, conn, artifactID, receiptID)
+	if before.EvidenceID != evidenceID || before.EvidenceReceiptID != receiptID {
+		t.Fatalf("initial Artifact/Receipt/Evidence snapshot = %#v, want Evidence %q bound to Receipt %q", before, evidenceID, receiptID)
+	}
 	path := filepath.Join(workspace, ".fid", "artifacts", digest[len("sha256:"):])
 	if err := os.Remove(path); err != nil {
 		t.Fatalf("remove stored Artifact: %v", err)
@@ -104,8 +305,11 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 		t.Fatalf("missing Artifact verify = %#v, want availability observation", missing)
 	}
 	assertArtifactVerifyResult(t, missing.stdout, "missing", true)
-	if afterMissing := artifactIdentitySnapshot(t, conn, artifactID, receiptID); afterMissing != before {
-		t.Fatalf("missing observation changed Artifact/Receipt identity = %#v, want %#v", afterMissing, before)
+	assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
+	wantMissing := before
+	wantMissing.Availability = "missing"
+	if afterMissing := artifactIdentitySnapshot(t, conn, artifactID, receiptID); afterMissing != wantMissing {
+		t.Fatalf("missing observation snapshot = %#v, want %#v", afterMissing, wantMissing)
 	}
 
 	if err := os.WriteFile(path, content, 0o600); err != nil {
@@ -119,8 +323,9 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 		t.Fatalf("restored Artifact verify = %#v, want availability observation", restored)
 	}
 	assertArtifactVerifyResult(t, restored.stdout, "available", true)
+	assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "valid", "fresh", "available", []string{})
 	if afterRestored := artifactIdentitySnapshot(t, conn, artifactID, receiptID); afterRestored != before {
-		t.Fatalf("restored observation changed Artifact/Receipt identity = %#v, want %#v", afterRestored, before)
+		t.Fatalf("restored observation snapshot = %#v, want %#v", afterRestored, before)
 	}
 	unchanged := executeCommandForTest(workspace,
 		"--project", workspace, "--json", "artifact", "verify", "--actor", "actor-builder",
@@ -161,9 +366,12 @@ func TestArtifactVerifyAuthorityFailureNamesArtifactVerify(t *testing.T) {
 }
 
 type artifactSnapshot struct {
-	ArtifactID string
-	Digest     string
-	ReceiptID  string
+	ArtifactID        string
+	Digest            string
+	Availability      string
+	ReceiptID         string
+	EvidenceID        string
+	EvidenceReceiptID string
 }
 
 func receiptArtifactIdentity(t *testing.T, conn *sql.DB) (string, string, string) {
@@ -178,13 +386,60 @@ func receiptArtifactIdentity(t *testing.T, conn *sql.DB) (string, string, string
 func artifactIdentitySnapshot(t *testing.T, conn *sql.DB, artifactID, receiptID string) artifactSnapshot {
 	t.Helper()
 	var snapshot artifactSnapshot
-	if err := conn.QueryRow(`SELECT id, digest FROM referenced_artifacts WHERE id = ?`, artifactID).Scan(&snapshot.ArtifactID, &snapshot.Digest); err != nil {
+	if err := conn.QueryRow(`SELECT id, digest, availability FROM referenced_artifacts WHERE id = ?`, artifactID).Scan(&snapshot.ArtifactID, &snapshot.Digest, &snapshot.Availability); err != nil {
 		t.Fatalf("read Artifact snapshot: %v", err)
 	}
 	if err := conn.QueryRow(`SELECT id FROM execution_receipts WHERE id = ?`, receiptID).Scan(&snapshot.ReceiptID); err != nil {
 		t.Fatalf("read Receipt snapshot: %v", err)
 	}
+	if err := conn.QueryRow(`SELECT id, receipt_id FROM evidence_records WHERE receipt_id = ?`, receiptID).Scan(&snapshot.EvidenceID, &snapshot.EvidenceReceiptID); err != nil {
+		t.Fatalf("read Evidence snapshot: %v", err)
+	}
 	return snapshot
+}
+
+func evaluateEvidenceForArtifactTest(t *testing.T, workspace, obligationID string, repository map[string]any) map[string]any {
+	t.Helper()
+	path := filepath.Join(workspace, "artifact-lifecycle-evaluate.json")
+	writeActivationInput(t, path, map[string]any{"obligation_id": obligationID, "target_repository": repository})
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", path)
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("evaluate lifecycle Evidence = %#v, want evaluation", result)
+	}
+	return decodeCanonicalResult(t, result.stdout)["evaluation"].(map[string]any)
+}
+
+func assertArtifactRejectedControl(t *testing.T, output, path, reason string) {
+	t.Helper()
+	for _, line := range strings.Split(strings.TrimSpace(output), "\n") {
+		var frame struct {
+			Stream string         `json:"stream"`
+			Data   map[string]any `json:"data"`
+		}
+		if err := json.Unmarshal([]byte(line), &frame); err != nil {
+			t.Fatalf("decode gate frame: %v; frame=%q", err, line)
+		}
+		if frame.Stream == "control" && frame.Data["kind"] == "artifact-rejected" && frame.Data["path"] == path && frame.Data["reason"] == reason {
+			return
+		}
+	}
+	t.Fatalf("artifact-rejected control for path=%q reason=%q is absent from %q", path, reason, output)
+}
+
+func assertReceiptHasNoArtifacts(t *testing.T, workspace, receiptID string) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open projection: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM receipt_artifacts WHERE receipt_id = ?`, receiptID).Scan(&count); err != nil {
+		t.Fatalf("count rejected Receipt Artifacts: %v", err)
+	}
+	if count != 0 {
+		t.Fatalf("rejected Receipt Artifact count = %d, want 0", count)
+	}
 }
 
 func assertArtifactVerifyResult(t *testing.T, output, availability string, changed bool) {
