@@ -503,10 +503,6 @@ func journalArchiveEntries(workspaceRoot string) ([]archiveEntry, int, string, e
 	return entries, eventCount, terminalHash, nil
 }
 
-func validateJournalBytes(data []byte) (int, string, error) {
-	return validateJournalBytesWithTracker(data, newJournalTracker())
-}
-
 type journalTracker struct {
 	eventIDs   map[string]struct{}
 	aggregates map[string]int
