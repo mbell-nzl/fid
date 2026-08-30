@@ -50,7 +50,6 @@ func writeIssueLine(writer io.Writer, format string, args ...any) error {
 	return nil
 }
 
-
 func issueCreateParentID(kind, epicID, parentID string) (*string, error) {
 	trimmedEpicID := strings.TrimSpace(epicID)
 	trimmedParentID := strings.TrimSpace(parentID)

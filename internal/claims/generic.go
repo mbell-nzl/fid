@@ -140,7 +140,7 @@ func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationRe
 		}
 		claimID, err := journal.GenerateID("CLM", func(candidate string) (bool, error) {
 			var found int
-		err := conn.QueryRow(`SELECT 1 FROM claims WHERE id = ?`, candidate).Scan(&found)
+			err := conn.QueryRow(`SELECT 1 FROM claims WHERE id = ?`, candidate).Scan(&found)
 			return err == nil, nil
 		})
 		if err != nil {
