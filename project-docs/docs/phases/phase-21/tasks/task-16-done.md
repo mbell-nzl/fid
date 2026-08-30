@@ -73,8 +73,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `89edce34bca87308117a1fe4bafad56c6e9bc292`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): retain safe referenced artifacts`
