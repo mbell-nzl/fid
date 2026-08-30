@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -205,13 +204,4 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 		t.Fatalf("count legacy completions: %v", err)
 	}
 	return evidence, legacy
-}
-
-func task18DecodeResult(t *testing.T, output string) map[string]any {
-	t.Helper()
-	var envelope map[string]any
-	if err := json.Unmarshal([]byte(output), &envelope); err != nil {
-		t.Fatalf("decode task 18 result: %v", err)
-	}
-	return envelope
 }
