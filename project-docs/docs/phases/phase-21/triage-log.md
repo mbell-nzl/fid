@@ -866,3 +866,60 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   evidence, canonical/generated Phase Runner prompts, workflow lint, and drill
   19. It leaves this resolution's attempt-6 route and all task-15 authorities
   unchanged.
+
+---
+
+## TRG-21-019 - Task-17 Attention absence control contradicts the unavailable capability matrix
+
+- **Trigger:** task-17 required Attention absence control contradicts accepted unavailable capability matrix.
+- **Originating task:** task-17
+- **Trigger signature:** task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-17-done.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 2
+- **Checkpoint:** runner-recorded phase HEAD `cc890a8ed796d19e48daee78d58656e2b4c7eff7`; the task implementation and typed blocker report are intentionally uncommitted. Prompt-attached report-lint returned `OUTCOME BLOCKED` (terminated `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Reasoning:** The task's accepted VAL-063 control requires the exact production-source search to find no Attention match and terminate `exit_code: 1`. The accepted capability availability contract requires the public unavailable row `attention.v1` with `available:false` and trust source `phase-22-unavailable`, which is the exact observed search match. Removing that row changes an accepted public interface; concealing it or narrowing the search changes the accepted assertion semantics. Neither outcome is a decision-free task-17 repair.
+- **Local decisions made:** none
+- **Resolution evidence:** The prompt reproduces the byte-identical required command with `internal/workflow/capabilities.go:105: {"attention.v1", false, {"state":false}, "phase-22-unavailable"},` and observed `exit_code: 0`, against task 17's declared expected `exit_code: 1`. The first required focused package gate passed; later commands were correctly recorded BLOCKED rather than altered or skipped.
+- **If REPAIR:** N/A; resolution requires protected public-interface/specification authority before any same-task continuation can be authorized.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no unilateral removal or concealment of the accepted `attention.v1` public capability row; no weakening, narrowing, deleting, re-pointing, or changing the expected-nonzero VAL-063 command; no change to task-17 product implementation, tests, public interface, Event schema, policy, validation contract, migrations, task spec, QA artifacts, decisions, or prior evidence.
+- **Exact verification:** `rg -n -i --glob '*.go' --glob '!**/*_test.go' '\battention\b|attention_items' cmd/fid internal` in `/home/mark/projects/fid`; observed `internal/workflow/capabilities.go:105: {"attention.v1", false, {"state":false}, "phase-22-unavailable"},` (expected `exit_code: 1`; terminated `exit_code: 0`).
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-17-done.md
+- **Control repair base:** cc890a8ed796d19e48daee78d58656e2b4c7eff7
+- **If BLOCK:** category specification contradiction and public interface; ESC-21-013 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision reconciles VAL-063's exact Attention absence-control semantics with the accepted unavailable `attention.v1` capability-matrix row, then supplies the bounded recovery route without rewriting failed evidence.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/tasks/task-17-evidence-evaluation.md:50,64-77; project-docs/docs/phases/phase-21/tasks/task-17-done.md:5-10,41,56-69; project-docs/docs/phases/phase-21/contracts.md:74-103,300,461-485; project-docs/docs/phases/phase-21/qa/validation-contract.md:96; project-docs/docs/phases/phase-21/decisions.md DEC-154; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-019
+
+- **Decision authority:** DEC-172, 2026-08-30.
+- **Verdict audit:** sustained. Task 17 correctly stopped rather than removing
+  the accepted public row or silently changing a protected command. The
+  conflicting evidence recipe was added after the capability contract and
+  could not distinguish unavailable capability metadata from implemented
+  Attention state/effects.
+- **Canonical disposition:** retain the exact `attention.v1`, `available:false`,
+  `{"state":false}`, `phase-22-unavailable` row. It is required discovery
+  metadata and the sole allowed Phase 21 production Attention match. Tables,
+  Events, Effects, CLI leaves, and other Attention state/operation surfaces
+  remain absent and Phase 22-owned.
+- **Control correction:** DEC-172 replaces the broad expected-nonzero `rg` command with `go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1`. The test must require the exact
+  false row and reject any additional production Attention match or unavailable
+  leaf mutation. The old command remains failed historical evidence.
+- **Recovery:** RUN-RESUME retains TRG-21-019 / ESC-21-013 at attempt 3 under
+  DEC-172, followed by task-17 `gate-repair` in task scope with
+  no-progress `0/2`. The Developer adds the boundary test, preserves and
+  commits the existing implementation, reruns the revised complete command
+  block, finalizes the report, and returns completion. Task 18 remains gated on
+  task 17; Window 6 review remains after task 18.
+- **Historical integrity:** this note does not rewrite the TRIAGE, STOP,
+  blocker report, or failed gate. ESC-21-013 is archived as resolved only after
+  DEC-172 supplies the protected route.

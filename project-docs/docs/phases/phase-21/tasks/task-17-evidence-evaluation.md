@@ -18,6 +18,10 @@ Link only exact fid-executed Receipts and evaluate validity, repository-tree fre
 - Caller-authored pass, command text, import, attestation, and role-looking records cannot qualify.
 - Validity, freshness, and availability remain independent.
 - Return every reason; never short-circuit or raise Attention.
+- The exact unavailable `attention.v1` capability row is required discovery
+  metadata, not Attention state or an Attention effect. It is the only allowed
+  production Attention match in Phase 21; every table, Event, Effect, command
+  leaf, and other state/operation surface remains absent under DEC-172.
 
 ## Scope
 
@@ -51,7 +55,12 @@ Link only exact fid-executed Receipts and evaluate validity, repository-tree fre
 
 ## First Failing Test
 
-Add the binding matrix, three paired dimension tests, multi-reason golden, and Attention absence proof.
+Add the binding matrix, three paired dimension tests, multi-reason golden, and
+`TestPhase21AttentionBoundary`. The boundary test must require the exact
+`attention.v1` false row, prove an `attention` CLI probe is unavailable and
+mutates neither journal nor projection, inventory non-test production Go plus
+SQL migrations, and fail on a missing/mutated row or any additional Attention
+match.
 
 ## Documentation Updates
 
@@ -63,7 +72,7 @@ Run exactly:
 
 ```text
 go test -race ./internal/evidence ./internal/validation ./internal/workflow ./internal/cli ./cmd/fid/...
-rg -n -i --glob '*.go' --glob '!**/*_test.go' '\battention\b|attention_items' cmd/fid internal
+go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1
 gofmt -l cmd internal
 golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
@@ -72,13 +81,12 @@ go tool cover -func=coverage.out
 
 Every command is required and must terminate with session-captured evidence. Report lint is not a Developer task-gate command; after the report commit, the Phase Runner runs the phase brief's two-argument pre-dispatch control. A Ready QA plan may add a task-specific command; the Tech Lead must amend this section before authorization if it does.
 
-## Expected Non-Zero Commands
-
-- `rg -n -i --glob '*.go' --glob '!**/*_test.go' '\battention\b|attention_items' cmd/fid internal` - expected `exit_code: 1` - no Phase 21 production Attention state or effect
-
 ## Notes For Developer
 
 - Start after tasks 15-16 close.
+- DEC-172 replaces only the defective broad Attention search. Preserve its
+  `exit_code: 0` result as failed historical attempt evidence; do not relabel it
+  PASS, delete it, or present it as the revised gate.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-17-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

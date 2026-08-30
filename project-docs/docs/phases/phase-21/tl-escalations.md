@@ -2,10 +2,30 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-170 resolve ESC-21-001..012. The run is stopped after
-TRG-21-018; DEC-170 authorizes the task-15 attempt-6 continuation that clears it.
+None. DEC-160 through DEC-172 resolve ESC-21-001..013. The run is stopped after
+TRG-21-019; DEC-172 authorizes the task-17 attempt-3 continuation that clears it.
 
 ## Resolved Escalations
+
+### ESC-21-013 - Task-17 Attention absence control versus unavailable capability matrix
+
+- **Raised by:** TRG-21-019 after the required broad production-source search
+  matched the exact accepted unavailable `attention.v1` capability row.
+- **Protected category:** specification contradiction and public interface.
+- **Resolution:** DEC-172, 2026-08-30. The row remains exact and public with
+  `available:false`, `{"state":false}`, and `phase-22-unavailable`; negative
+  discovery metadata is not Attention state/effect. The later QA evidence
+  recipe was defective because zero matches would also conceal the required
+  row. VAL-063, QA-61, and task 17 now use
+  `TestPhase21AttentionBoundary`, which requires that row as the sole production
+  Attention match and rejects any additional table, Event, Effect, CLI leaf,
+  state, operation, or mutation. The old failed command and blocker evidence
+  remain unchanged.
+- **Recovery:** RUN-RESUME retains TRG-21-019 / ESC-21-013 with DEC-172 at
+  attempt 3, then task-17 `gate-repair` in ordinary task scope.
+  The Developer adds the boundary test, preserves and commits the existing
+  implementation, reruns the revised six-command block, finalizes the report,
+  and completes task 17 before task 18 dispatch.
 
 ### ESC-21-012 - Task-15 Window 5 QA recovery budget exhausted
 

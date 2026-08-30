@@ -4,11 +4,11 @@
 
 ## Project State
 
-**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-018; QA
-Review Window 5 returned REPAIR on two bounded task-15 Must-fixes, and DEC-170
-resolves ESC-21-012 by correcting the recovery category and authorizing the
-task-15 attempt-6 continuation.** Tasks 1-15, reviews 1/1b, 2/2b, 3/3b, 4/4b, and
-the Group 1 checkpoint rerun `infra-review-1b` are mechanically complete. Phase 20
+**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-019 /
+ESC-21-013 at task 17; DEC-172 resolves the protected contradiction between
+VAL-063's broad absence recipe and the required unavailable `attention.v1`
+capability row.** Tasks 1-16, reviews 1/1b, 2/2b, 3/3b, 4/4b, 5/5b, and the Group
+1 checkpoint rerun `infra-review-1b` are mechanically complete. Phase 20
 completed/wrapped on 2026-08-22. The Phase 20 retrospective is committed in
 `../reviews/2026-08-22-phase-20-retrospective.md`; Gate D3.2 is closed by
 DEC-153; the initial slice/spec contract is DEC-154; carry-forward disposition
@@ -55,7 +55,12 @@ MF-15-02's provenance is satisfied forward-only rather than by rewriting commits
 at or before `09a2a7b`. No finding, command, VAL, QA artifact, or contract
 changes. DEC-171 makes that standing rule executable in the Phase Runner
 prompts, session router, ledger verifier, workflow lint, and drill 19 without
-changing DEC-170's attempt-6 route.
+changing DEC-170's attempt-6 route. Task 15 then completed with a fresh
+`review-5b` PASS, and task 16 completed. DEC-172 retains the exact public
+unavailable capability row and replaces the defective zero-match search with a
+named boundary test that requires that row while rejecting any Attention state,
+effect, CLI leaf, or additional production match. The prior failed command and
+STOP remain historical evidence.
 
 ## Planned Boundary
 
@@ -73,12 +78,11 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-15 COMPLETE; WINDOW 5 REPAIR, STOPPED AFTER
-  TRG-21-018**. Under DEC-170 the Phase Runner appends `RUN-RESUME` retaining
-  TRG-21-018/ESC-21-012 with resolution authority `DEC-170`, then one
-  `TASK-RECOVERY task-15`, `session-continuation`, `task-scope`, attempt 6,
-  consecutive no-progress `0/2`. Task 16 waits for a fresh independent
-  `review-5b` PASS.
+- Dispatch state: **TASKS 1-16 COMPLETE; TASK 17 STOPPED AFTER TRG-21-019 /
+  ESC-21-013 WITH RECOVERY AUTHORIZED BY DEC-172**. The Phase Runner appends
+  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 3, and
+  resolution authority `DEC-172`, then one `TASK-RECOVERY task-17` with
+  `gate-repair`, `task-scope`, and no-progress `0/2`.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
   `exit_code: 0` after the DEC-159 approval-state update.
@@ -91,17 +95,14 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Phase Runner appends the DEC-170 item 9 sequence: `RUN-RESUME` bound to
-   TRG-21-018/ESC-21-012 at attempt 6, then `TASK-RECOVERY task-15`
-   (`session-continuation`, `task-scope`, attempt 6, no-progress `0/2`), and
-   waits for the Developer child to end on its own.
-2. Task 15 commits the existing durable repair with its `Refs: phase-21/task-15`
-   footer before any long command, then runs the five unchanged commands under
-   the DEC-170 per-command budgets, appending each observed termination to the
-   report as it terminates. The unverified attempt-5 rows are rerun in session,
-   and the report's provenance deviation names `79e3a93` and `8491cde` instead of
-   claiming an amendment; no commit at or before `09a2a7b` is rewritten.
-3. `REPAIR task-15`, then `TASK task-15 COMPLETE` with two-argument report-lint,
-   then a fresh independent QA Reviewer writes the linked Window 5 re-review and
-   the Runner records `REVIEW review-5b` (`Re-review of: review-5`). Task 16
-   dispatches only on its PASS, followed by Window 6 for tasks 16-18.
+1. Phase Runner appends the DEC-172 recovery sequence: `RUN-RESUME` bound to
+   TRG-21-019 / ESC-21-013 with the recorded trigger, attempt 3, resolution
+   authority `DEC-172`, and the exact next-recovery tuple from DEC-172; it then
+   appends the matching `TASK-RECOVERY task-17` with no-progress `0/2`.
+2. The Developer adds `TestPhase21AttentionBoundary`, commits the preserved
+   task-17 implementation and test with `Refs: phase-21/task-17` before long
+   commands, and runs the complete revised six-command block. The old failed
+   `rg` result remains in the report as historical evidence.
+3. After the report commit and two-argument report-lint PASS, the Runner records
+   `REPAIR task-17 RESOLVED` and `TASK task-17 COMPLETE`, then dispatches task
+   18. Window 6 review remains gated on completion of tasks 16-18.

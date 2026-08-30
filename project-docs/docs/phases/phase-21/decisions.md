@@ -1586,6 +1586,81 @@
 - **Refs:** DEC-170; DEC-168; ESC-21-012; TRG-21-017; TRG-21-018;
   `08_QUALITY_PLAN.md` §3; `09_AI_WORKFLOW.md` steps 10 and 16.
 
+### DEC-172: Keep the unavailable Attention capability row and replace the defective task-17 absence recipe. Closes ESC-21-013
+
+- **Date:** 2026-08-30
+- **Context:** Task 17 correctly stopped after its required production-source
+  search matched `internal/workflow/capabilities.go`'s exact accepted row
+  `{"attention.v1", false, {"state":false}, "phase-22-unavailable"}`. The
+  command expected no matches and `exit_code: 1`, but terminated `exit_code: 0`.
+  TRG-21-019 correctly classified this as a protected specification/public-
+  interface contradiction. The authorities and chronology resolve it:
+  `contracts.md` section 2 and DEC-153/154 require every incomplete capability
+  to remain discoverable as `available:false`; the row entered the accepted
+  contract before QA refinement commit `b367a3b` later added the broad search.
+  VAL-063's behavior is no Attention state/effect, not erasure of negative
+  capability metadata. Existing capability tests already require the false row
+  and reject an `attention` leaf without mutation.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-019 and the STOP were correct under available
+     authority. Preserve them, ESC-21-013, the failed command, the blocker
+     report, and all dirty task-17 implementation. The contradiction is real,
+     but its defective side is the later evidence recipe.
+  2. **Canonical boundary.** Keep the exact public `attention.v1` row with
+     schema 1..1, `available:false`, limits `{"state":false}`, and trust source
+     `phase-22-unavailable`. It is required discovery metadata, not Attention
+     state or an Effect. Actual Attention tables, Events, Effects, CLI leaves,
+     and state/operation surfaces remain deferred to Phase 22.
+  3. **Protected evidence-method correction.** Replace only task 17's broad
+     expected-nonzero search with:
+     `go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1`.
+     This Human-authorized change alters an accepted gate definition while
+     preserving and strengthening VAL-063's behavior: zero matches could hide
+     the required false row, whereas the new boundary requires that exact row
+     and rejects any additional production Attention surface.
+  4. **Boundary-test contract.** `TestPhase21AttentionBoundary` uses only the
+     existing Go toolchain/stdlib and must: require exactly one canonical
+     unavailable discovery row; prove `fid --json attention list` is unavailable
+     with no journal/projection mutation; inventory non-test production Go under
+     `cmd/fid` and `internal` plus SQL migrations; and fail if the canonical row
+     is missing/mutated or any other case-insensitive `attention` or
+     `attention_items` production match exists. Test-only fixture text is not a
+     product surface.
+  5. **Synchronized assertion.** VAL-063 and QA-61 use the paired positive and
+     negative proof: the task-17 evaluation returns status/reasons; discovery
+     retains the exact false row; and the boundary test proves no additional
+     state/table/Event/Effect/leaf surface or mutation. The capability matrix,
+     product JSON, Phase 22 ownership, task-17 feature scope, VAL identity, and
+     validator remain unchanged.
+  6. **Failed evidence stays failed.** `task-17-done.md` retains the original
+     `rg` row as the pre-DEC-172 failed attempt with observed `exit_code: 0`.
+     The continuation adds a distinct revised-gate row and reruns the complete
+     six-command task block in session. No result is relabelled, deleted, or
+     transcribed from the stopped session.
+  7. **Exact recovery route.** The Phase Runner appends `RUN-RESUME` retaining
+     TRG-21-019 and ESC-21-013, trigger signature
+     `task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability`,
+     `Attempt count: 3`, `Resolution authority: DEC-172`, `Continuing task:
+     task-17`, and `Next recovery: task-17 | gate-repair |
+     task-scope | task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability | 3`.
+     The following TASK-RECOVERY uses `Source` and `Repair authority`
+     `TRG-21-019 / DEC-172`, category `gate-repair`, task scope,
+     attempt 3, and consecutive no-progress `0/2`.
+  8. **Continuation and advance.** The task-17 Developer adds the boundary test,
+     preserves the existing implementation, commits implementation/test with
+     `Refs: phase-21/task-17` before long commands, runs the revised six-command
+     block, updates/commits the report, and returns typed completion. After
+     two-argument report lint and `TASK task-17 COMPLETE`, task 18 may dispatch.
+     Window 6 review remains after tasks 16-18; no special re-review or task-18
+     scope change is introduced.
+- **Consequences:** ESC-21-013 closes without removing or concealing the public
+  unavailable row and without implementing Phase 22 Attention early. The new
+  proof is non-vacuous in both directions: it fails if the negative capability
+  advertisement disappears and if any real Attention surface appears.
+- **Refs:** TRG-21-019; ESC-21-013; DEC-153; DEC-154; DEC-158; VAL-010;
+  VAL-063; QA-09; QA-61; `contracts.md` sections 2, 10, and 15;
+  `tasks/task-17-evidence-evaluation.md`; `tasks/task-17-done.md`.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

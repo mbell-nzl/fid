@@ -233,11 +233,11 @@ VAL-046, no Phase 21 contract containment claim (task 13), expected
 rg -n -i -e 'sandboxed' -e 'seccomp' -e 'chroot' -e 'namespace isolation' -e 'privilege (drop|separation)' -e 'network (blocked|denied|disabled|isolated)' -e 'filesystem (isolation|containment)' -e 'isolated (process|environment|execution)' -e 'contained (process|execution)' project-docs/docs/phases/phase-21/contracts.md project-docs/docs/phases/phase-21/public-interface.md
 ```
 
-VAL-063, no production Attention state or effect (task 17), expected
-`exit_code: 1`:
+VAL-063, exact unavailable row plus no production Attention state or effect
+(task 17, DEC-172), expected `exit_code: 0`:
 
 ```text
-rg -n -i --glob '*.go' --glob '!**/*_test.go' '\battention\b|attention_items' cmd/fid internal
+go test -race ./cmd/fid -run '^TestPhase21AttentionBoundary$' -count=1
 ```
 
 VAL-071, no export import command or path (task 19), expected `exit_code: 1`:
@@ -326,7 +326,7 @@ stated.
 | `project-docs/tools/report-lint.sh --self-test` | executed | PASS | `SELF-TEST PASS report-lint self-test completed with no failures`; terminated `exit_code: 0` |
 | `project-docs/tools/report-lint.sh <report> <task-spec>` two-argument form | documented usage inspection plus argument-count guard inspection in the script (it exits 2 with usage when fewer than two arguments are supplied) | PASS | script header `Usage: project-docs/tools/report-lint.sh <completion-report.md> <task-spec.md> [--repo <git-dir>]` |
 | task 4 recovery-absence recipe, run verbatim from the spec (VAL-013) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` in the task's new `## Expected Non-Zero Commands` |
-| task 17 Attention-absence recipe, run verbatim from the spec (VAL-063) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
+| pre-DEC-172 task 17 Attention-absence recipe, run verbatim from the planning spec (VAL-063) | executed `[R2]`; superseded during execution by DEC-172 | PASS for the planning tree only | no match, terminated `exit_code: 1`; later capability implementation correctly added the accepted unavailable row, exposing the recipe defect preserved by TRG-21-019 |
 | task 19 import-absence recipe, run verbatim from the spec (VAL-071) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
 | task 13 containment lexicon over the two phase contracts (VAL-046) | executed `[R2]` | PASS | no match, terminated `exit_code: 1`; declared `exit_code: 1` |
 | task 20 broad table-reader classification recipe | executed `[R2]` | PASS | 54 matching lines, terminated `exit_code: 0`; correctly **not** declared in the task's expected-non-zero section |
@@ -480,7 +480,7 @@ the same checkpoint session before task 13 dispatch.
 | QA-58 | Confirm a repository-tree change stales Evidence while the original target stays fresh, and that branch labels do not drive freshness `(qa-lead)` | VAL-060 | git tree change test showing `fresh` for the original tree and `stale` after the tree OID changes, terminated `exit_code: 0` |
 | QA-59 | Confirm required Artifact availability changes only the Artifact reason and status dimension `(qa-lead)` | VAL-061 | available/missing paired evaluation with an isolated field diff, terminated `exit_code: 0` |
 | QA-60 | Confirm evaluation returns every reason deduplicated in the fixed section 10 precedence and bytewise tie order, stable across repeat and rebuild `(qa-lead)` | VAL-062 | repeated and post-rebuild multi-failure golden byte-identical to the reference, terminated `exit_code: 0` |
-| QA-61 | Confirm unsatisfied Obligations stay queryable and never create Attention `(qa-lead)` | VAL-063 | positive: the evaluation read returning status and reasons; negative: the task-17 declared Attention-absence recipe (section 5.1) terminated `exit_code: 1`, plus the Attention table, Event-family, and `attention.v1` capability-leaf absence proofs |
+| QA-61 | Confirm unsatisfied Obligations stay queryable and never create Attention `(qa-lead)` | VAL-063 | positive: the evaluation read returns status/reasons and capability discovery retains the exact unavailable `attention.v1` row; negative: `TestPhase21AttentionBoundary` proves that row is the sole production Attention match, no table/Event/Effect/leaf/state surface exists, and an unavailable-leaf probe mutates nothing, terminated `exit_code: 0` |
 | QA-62 | Confirm that after a qualifying Receipt link and evaluation the terminal-success Issue transition commits through the shared evaluator `(qa-lead)` | VAL-064 | positive guarded transition test asserting the evaluator identity used, with exactly one transition Event, terminated `exit_code: 0` |
 | QA-63 | Confirm missing, unsuccessful, invalid, stale, and Artifact-missing evidence each block the terminal-success transition atomically `(qa-lead)` | VAL-065 | negative evidence matrix with exact reasons and a zero-Event delta per case, terminated `exit_code: 0` |
 | QA-64 | Confirm Envelope completion reuses the shared evaluator and commits only with a terminal-success Issue plus all required Obligations satisfied `(qa-lead)` | VAL-066 | positive completion test plus an evaluator-identity assertion showing the same result object, with one `envelope.completed` Event, terminated `exit_code: 0` |
@@ -831,7 +831,7 @@ contract, checkpoint contract, or task spec.
 | R-09 | Applied with an accepted Tech Lead correction | QA had assumed all four section 7 recipes terminate 0 at task 20. DEC-158 correctly separates them: the role-policy and `--by` recipes are already predeclared absence controls that must terminate `exit_code: 1` at final task-20 HEAD, while only the broad table-reader and `EventType` recipes terminate `exit_code: 0` as classified inventories. QA accepts this and has corrected sections 5.1, 7.5, 7.8, and QA-93. Verified: the two broad recipes were added to task 20, both terminate `exit_code: 0` today (54 and 22 matching lines), neither is declared expected-non-zero, the expected-non-zero section still holds exactly the 10 original declarations, and the inventory file plus the task's Notes forbid narrowing them |
 | R-10 | Applied | Task 4 adds the declared recovery-absence recipe; terminated `exit_code: 1` |
 | R-11 | Applied | Task 19 adds the declared import-absence recipe; terminated `exit_code: 1` |
-| R-12 | Applied | Task 17 adds the declared Attention-absence recipe; terminated `exit_code: 1` |
+| R-12 | Superseded during execution by DEC-172 | The planning-tree Attention search terminated `exit_code: 1`, but later correctly matched the accepted unavailable `attention.v1` row. TRG-21-019 preserves that failed execution evidence; DEC-172 replaces the recipe with the paired `TestPhase21AttentionBoundary` without weakening VAL-063. |
 | R-13 | Applied | Tasks 5 and 19 note that they create `internal/evidence/` and `internal/export/` and that the focused package command is valid only from that task onward |
 | R-14 | Applied | VAL-044 and VAL-045 are explicitly cross-paired; an unpaired positive-only or negative-only claim now fails by contract |
 | R-15 | Applied | `phase_brief.md` gains a Dispatch Controls section naming the two-argument control and all nine QA artifact paths |

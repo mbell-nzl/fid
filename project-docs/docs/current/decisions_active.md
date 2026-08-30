@@ -113,6 +113,13 @@
   session-liveness triage. Canonical Phase Runner prompts, routing, ledger
   validation, workflow lint, and drill 19 enforce the rule without changing
   product or task-15 contracts.
+- **Unavailable capability metadata versus absent behavior (DEC-172,
+  standing):** a required `available:false` discovery row is not implementation
+  of that capability. Phase 21 retains the exact unavailable `attention.v1`
+  row and proves Attention deferral with a paired boundary test that requires
+  that row as the sole production match while rejecting any table, Event,
+  Effect, leaf, state, or operation surface. A zero-match search is invalid
+  because it can hide required negative capability metadata.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

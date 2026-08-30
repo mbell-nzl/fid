@@ -51,6 +51,11 @@
 
 ## Task Status
 
-Task 1: Ready for Phase Runner dispatch. Tasks 2-22: pending recorded
-dependencies and review controls. No product code or test has been changed by
-the Tech Lead.
+Tasks 1-16 are complete, including task 15's DEC-170/171 repair, fresh
+`review-5b` PASS, and task 16. Task 17 is preserved in progress with the ledger
+STOPPED after TRG-21-019 / ESC-21-013. DEC-172 authorizes attempt 3 as a
+task-scope `gate-repair`: retain the required unavailable
+`attention.v1` row, replace the defective broad absence search with the named
+`TestPhase21AttentionBoundary` control, preserve the failed search as historical
+evidence, and rerun the complete revised command block. Task 18 remains gated
+on task 17; Window 6 remains gated on tasks 16-18.

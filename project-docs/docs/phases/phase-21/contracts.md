@@ -102,6 +102,13 @@ No omitted row, partial/experimental state, caller override, or optimistic
 default is permitted. Rebuild must reproduce the same matrix for the same
 binary and migration state.
 
+The required unavailable `attention.v1` discovery row is capability metadata,
+not Attention state or an Attention effect. In Phase 21 it is the sole allowed
+production `Attention` match: its exact false row must exist, while no Attention
+table, Event family, Effect, command leaf, or other state/operation surface may
+exist. Missing or changing the false row fails capability conformance; any
+additional production match fails the Phase 21 deferral boundary.
+
 ## 3. Idempotency
 
 Every Phase 21 mutation, plus retained retryable Issue create and transition,

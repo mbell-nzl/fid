@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / Window 5 task-15 STOPPED / Recovery Authorized (DEC-170)**
+> Status: **Active / task-17 STOPPED / Recovery Authorized (DEC-172)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -53,6 +53,10 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 - DEC-171: parent polling waits never terminate children; typed session routing,
   ledger `INTERRUPTED` evidence, generated prompts, workflow lint, and drill 19
   make DEC-170's liveness accounting executable before attempt 6.
+- DEC-172: the unavailable `attention.v1` discovery row is required negative
+  capability metadata, not Attention state/effect. Task 17 replaces the
+  zero-match search with a boundary test that requires the row as the sole
+  production Attention match and rejects every additional surface.
 
 ## Planning Authorities
 
@@ -131,25 +135,22 @@ negative checks; never create a second Envelope revision.
 
 ## Dispatch Authorization
 
-All four planning gates are complete: Heavy shape and Gate D3.2 accepted, plan
-Ready at `e8a636e`, no unresolved refinement, Human execution approval under
-DEC-159. Tasks 1-15 are complete and review windows 1-4 plus the Group 1
-checkpoint rerun (`infra-review-1b`) are PASS. Window 5 (`review-5`) returned
-`REPAIR` with two bounded task-15 Must-fixes. The run is STOPPED after TRIAGE
-TRG-21-018 / ESC-21-012; DEC-170 resolves it.
+All four planning gates are complete under DEC-159. Tasks 1-16 are complete;
+task 15's DEC-170/171 repair and independent `review-5b` passed, and task 16
+then passed. Task 17's implementation is preserved uncommitted after the
+accepted zero-match Attention recipe collided with the required unavailable
+capability row. The run is STOPPED after TRG-21-019 / ESC-21-013; DEC-172
+resolves the protected contradiction without changing the product interface.
 
-The Phase Runner appends `RUN-RESUME` - `Governing TRG: TRG-21-018`,
-`Governing ESC: ESC-21-012`, trigger signature
-`task-15:qa-rework:review-5:MF-15-01-MF-15-02`, `Attempt count: 6`,
-`Resolution authority: DEC-170`, `Continuing task: task-15` - then one
-`TASK-RECOVERY task-15`, `Source`/`Repair authority` `TRG-21-018 / DEC-170`,
-category `session-continuation`, mode `task-scope`, attempt 6, consecutive
+The Phase Runner appends `RUN-RESUME` retaining TRG-21-019 / ESC-21-013, trigger
+`task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability`,
+attempt 3, resolution authority DEC-172, continuing task 17, and the exact `task-17 | gate-repair | task-scope | task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability | 3` tuple.
+The bound TASK-RECOVERY uses source/authority `TRG-21-019 / DEC-172` and
 no-progress `0/2`.
 
-Attempt 6 commits the existing durable repair with its `Refs: phase-21/task-15`
-footer first, then runs the five unchanged task-15 commands under the DEC-170
-per-command budgets, appending each observed termination to the report as it
-terminates. The recorded attempt-5 rows are unverified and are rerun in session.
-No commit at or before `09a2a7b` is amended. Then `REPAIR task-15`, `TASK task-15
-COMPLETE`, and a fresh independent `REVIEW review-5b` (`Re-review of: review-5`);
-task 16 dispatches only on its PASS. DEC-170 item 9 holds the exact field values.
+The Developer adds `TestPhase21AttentionBoundary`, preserves the old failed
+`rg` row as historical evidence, commits the existing task-17 implementation
+and test with `Refs: phase-21/task-17` before long commands, and runs the full
+revised six-command block. After the report commit, two-argument report lint,
+REPAIR RESOLVED, and TASK task-17 COMPLETE, task 18 may dispatch. Window 6
+review remains after tasks 16-18.
