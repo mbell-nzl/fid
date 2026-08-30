@@ -106,6 +106,9 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 	}
 	event.Idempotency = &EventIdempotency{request.IdempotencyKey, request.RequestDigest, request.OperationScope}
 	prepared, err := PrepareEvent(lock, event)
+	if len(event.Effects) == 0 {
+		prepared, err = prepareIdempotentEvent(lock, event)
+	}
 	if err != nil {
 		return IdempotencyOutcome{}, err
 	}
@@ -122,6 +125,9 @@ func CommitIdempotent(lock *WriteLock, conn *sql.DB, request IdempotencyRequest,
 	}
 
 	prepared.Effects = append(prepared.Effects, idempotencyResultEffect(request, prepared, mutation.EntityID, resultJSON))
+	if err := validateV2Event(prepared); err != nil {
+		return IdempotencyOutcome{}, err
+	}
 	if err := DryRunProjectEvent(conn, prepared); err != nil {
 		return IdempotencyOutcome{}, err
 	}

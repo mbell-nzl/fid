@@ -257,9 +257,10 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	var registrationErr *evidence.RegistrationNotFoundError
 	var actorErr *evidence.TrustedActorUnavailableError
 	var deniedErr *evidence.AuthorityDeniedError
+	requiredCapability := gateOperationCapability(operation)
 	switch {
 	case errors.As(cause, &unavailable):
-		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized activation authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": nil, "required_actions": []string{"gate.register"}, "required_capabilities": []string{"gate.register"}})
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnavailable, "finalized activation authority is unavailable", nil, map[string]any{"operation": operation, "actor_id": nil, "required_actions": []string{requiredCapability}, "required_capabilities": []string{requiredCapability}})
 	case errors.As(cause, &policyErr):
 		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeExecutorPolicyUnsupported, "executor policy is unsupported", &cli.Subject{Type: cli.SubjectGateDefinition, ID: ""}, map[string]any{"fields": policyErr.Fields, "supported": map[string]any{"sandbox": "none", "network": "allowed", "write": "allowed", "shell": false}})
 	case errors.As(cause, &definitionErr):
@@ -267,11 +268,22 @@ func renderGateError(cmd *cobra.Command, operation string, cause error) error {
 	case errors.As(cause, &registrationErr):
 		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeRegistrationNotFound, "gate registration was not found", &cli.Subject{Type: cli.SubjectGateRegistration, ID: registrationErr.ID}, map[string]any{"id": registrationErr.ID})
 	case errors.As(cause, &actorErr):
-		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnknownActor, "finalized activation actor is unknown", nil, map[string]any{"operation": operation, "actor_id": actorErr.ActorID, "required_actions": []string{"gate.register"}, "required_capabilities": []string{"gate.register"}})
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityUnknownActor, "finalized activation actor is unknown", nil, map[string]any{"operation": operation, "actor_id": actorErr.ActorID, "required_actions": []string{requiredCapability}, "required_capabilities": []string{requiredCapability}})
 	case errors.As(cause, &deniedErr):
-		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "finalized activation actor is denied", nil, map[string]any{"operation": operation, "actor_id": deniedErr.ActorID, "required_actions": []string{"gate.register"}, "required_capabilities": []string{"gate.register"}})
+		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "finalized activation actor is denied", nil, map[string]any{"operation": operation, "actor_id": deniedErr.ActorID, "required_actions": []string{requiredCapability}, "required_capabilities": []string{requiredCapability}})
 	default:
 		return writeGateFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid gate request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted gate registration input"}})
+	}
+}
+
+func gateOperationCapability(operation string) string {
+	switch operation {
+	case "artifact.verify":
+		return "artifact.verify"
+	case "gate.run":
+		return "gate.run"
+	default:
+		return "gate.register"
 	}
 }
 

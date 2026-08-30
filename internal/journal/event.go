@@ -162,6 +162,10 @@ type eventV2Wire struct {
 }
 
 func validateV2Event(event Event) error {
+	return validateV2EventFields(event, true)
+}
+
+func validateV2EventFields(event Event, requireEffects bool) error {
 	if event.EventID == "" {
 		return fmt.Errorf("Event-v2 event_id is required")
 	}
@@ -189,7 +193,7 @@ func validateV2Event(event Event) error {
 		}
 		return nil
 	}
-	if len(event.Effects) == 0 {
+	if requireEffects && len(event.Effects) == 0 {
 		return fmt.Errorf("Event-v2 %q requires effects", event.EventType)
 	}
 	return nil

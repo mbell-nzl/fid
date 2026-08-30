@@ -96,8 +96,9 @@ func ValidateGateDefinition(workspaceRoot string, definition GateDefinition) err
 	if !sortedUniqueStrings(definition.ArtifactPaths) || !containedPath(workspaceRoot, definition.CWD) {
 		fields = append(fields, "cwd")
 	}
+	artifactRoot := filepath.Join(workspaceRoot, definition.CWD)
 	for _, path := range definition.ArtifactPaths {
-		if !containedPath(workspaceRoot, path) {
+		if !containedPath(artifactRoot, path) {
 			fields = append(fields, "artifact_paths")
 			break
 		}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 	"syscall"
@@ -144,7 +143,7 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 	if result.RedactionApplied {
 		result.appendControl(map[string]any{"kind": "redaction-applied", "replacements": result.RedactionReplaced})
 	}
-	result.RejectedArtifacts = rejectedArtifacts(workspaceRoot, definition.ArtifactPaths, sources)
+	result.RejectedArtifacts = rejectedArtifacts(workspaceRoot, definition.CWD, definition.ArtifactPaths, sources)
 	for _, rejected := range result.RejectedArtifacts {
 		result.appendControl(map[string]any{"kind": "artifact-rejected", "path": rejected.Path, "reason": rejected.Reason})
 	}
@@ -399,10 +398,10 @@ func validUTF8(value []byte) string {
 	return builder.String()
 }
 
-func rejectedArtifacts(workspaceRoot string, paths, sources []string) []ArtifactRejection {
+func rejectedArtifacts(workspaceRoot, cwd string, paths, sources []string) []ArtifactRejection {
 	rejected := make([]ArtifactRejection, 0)
 	for _, path := range paths {
-		reason := artifactRejectionReason(workspaceRoot, path)
+		reason := artifactRejectionReason(workspaceRoot, cwd, path)
 		if reason != "" {
 			rejected = append(rejected, ArtifactRejection{Path: redactText(path, sources), Reason: reason})
 		}
@@ -421,23 +420,7 @@ func redactText(text string, sources []string) string {
 	return redactor.Transform([]byte(text), true)
 }
 
-func artifactRejectionReason(workspaceRoot, path string) string {
-	fullPath := filepath.Join(workspaceRoot, path)
-	info, err := os.Lstat(fullPath)
-	if os.IsNotExist(err) {
-		return "missing"
-	}
-	if err != nil {
-		return "outside-cwd"
-	}
-	if info.Mode()&os.ModeSymlink != 0 {
-		return "symlink"
-	}
-	if info.IsDir() {
-		return "directory"
-	}
-	if !info.Mode().IsRegular() {
-		return "non-regular"
-	}
-	return ""
+func artifactRejectionReason(workspaceRoot, cwd, path string) string {
+	_, reason := artifactCandidatePath(workspaceRoot, cwd, path)
+	return reason
 }

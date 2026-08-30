@@ -61,7 +61,7 @@ type Receipt struct {
 	OutputBytes         int64               `json:"output_bytes"`
 	OutputTruncated     bool                `json:"output_truncated"`
 	RedactionApplied    bool                `json:"redaction_applied"`
-	Artifacts           []any               `json:"artifacts"`
+	Artifacts           []Artifact          `json:"artifacts"`
 	RejectedArtifacts   []ArtifactRejection `json:"rejected_artifacts"`
 }
 
@@ -167,7 +167,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		if err != nil {
 			return err
 		}
-		receipt, eventID, err := appendReceipt(lock, conn, binding, prepared.Attempt, options, requestDigest, live)
+		receipt, eventID, err := appendReceipt(lock, conn, binding, prepared.Attempt, options, requestDigest, &prepared.Live)
 		if err != nil {
 			return err
 		}
@@ -301,7 +301,10 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	return attempt, nil
 }
 
-func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, attempt Attempt, options GateRunOptions, requestDigest string, live LiveResult) (Receipt, string, error) {
+func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, attempt Attempt, options GateRunOptions, requestDigest string, live *LiveResult) (Receipt, string, error) {
+	if live == nil {
+		return Receipt{}, "", fmt.Errorf("run gate: live result is required")
+	}
 	if live.Outcome == "" {
 		return Receipt{}, "", fmt.Errorf("run gate: process termination was not observed")
 	}
@@ -314,7 +317,7 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Receipt{}, "", err
 	}
 	endedAt := time.Now().UTC()
-	output := liveOutput(live)
+	output := liveOutput(*live)
 	digest := sha256.Sum256([]byte(output))
 	excerpt := output
 	if int64(len(excerpt)) > binding.registration.Policy.ExcerptBytes {
@@ -329,8 +332,22 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if err != nil {
 		return Receipt{}, "", err
 	}
-	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: []any{}, RejectedArtifacts: append([]ArtifactRejection(nil), live.RejectedArtifacts...)}
-	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), options.Request.Repository)
+	retained, rejected, err := retainArtifacts(options.WorkspaceRoot, binding.registration.Policy)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	for _, rejection := range rejected {
+		if !containsArtifactRejection(live.RejectedArtifacts, rejection) {
+			live.RejectedArtifacts = append(live.RejectedArtifacts, rejection)
+			live.appendControl(map[string]any{"kind": "artifact-rejected", "path": rejection.Path, "reason": rejection.Reason})
+		}
+	}
+	artifacts, effects, err := receiptArtifactEffects(conn, retained, endedAt)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: append([]ArtifactRejection(nil), live.RejectedArtifacts...)}
+	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), options.Request.Repository, effects)
 	resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"receipt": receipt, "idempotency_key": options.IdempotencyKey, "replayed": false})
 	if err != nil {
 		return Receipt{}, "", err
@@ -345,8 +362,13 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	return receipt, outcome.EventID, nil
 }
 
-func receiptEvent(actor storedActor, receipt Receipt, repositoryJSON, toolchainJSON string, repository Repository) journal.Event {
-	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.receipt-recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: receipt.ID, Sequence: 1, Type: "receipt"}, CommandName: "gate.run", CorrelationID: &receipt.RunID, Repository: repositoryEventValue(repository), Effects: []journal.Effect{{Op: "insert", Table: "execution_receipts", PK: map[string]any{"id": receipt.ID}, Values: map[string]any{"attempt_id": receipt.AttemptID, "trust_source": receipt.TrustSource, "terminal_status": receipt.Outcome, "exit_code": receipt.ExitCode, "signal": receipt.Signal, "timed_out": receipt.TimedOut, "started_at": receipt.StartedAt, "ended_at": receipt.EndedAt, "terminal_repository_json": repositoryJSON, "toolchain_json": toolchainJSON, "output_excerpt": receipt.OutputExcerpt, "output_digest": receipt.OutputDigest, "output_bytes": receipt.OutputBytes, "output_truncated": receipt.OutputTruncated, "redaction_applied": receipt.RedactionApplied}}}}
+func receiptEvent(actor storedActor, receipt Receipt, repositoryJSON, toolchainJSON string, repository Repository, artifactEffects []journal.Effect) journal.Event {
+	effects := append([]journal.Effect{}, artifactEffects...)
+	effects = append(effects, journal.Effect{Op: "insert", Table: "execution_receipts", PK: map[string]any{"id": receipt.ID}, Values: map[string]any{"attempt_id": receipt.AttemptID, "trust_source": receipt.TrustSource, "terminal_status": receipt.Outcome, "exit_code": receipt.ExitCode, "signal": receipt.Signal, "timed_out": receipt.TimedOut, "started_at": receipt.StartedAt, "ended_at": receipt.EndedAt, "terminal_repository_json": repositoryJSON, "toolchain_json": toolchainJSON, "output_excerpt": receipt.OutputExcerpt, "output_digest": receipt.OutputDigest, "output_bytes": receipt.OutputBytes, "output_truncated": receipt.OutputTruncated, "redaction_applied": receipt.RedactionApplied}})
+	for _, artifact := range receipt.Artifacts {
+		effects = append(effects, journal.Effect{Op: "insert", Table: "receipt_artifacts", PK: map[string]any{"receipt_id": receipt.ID, "artifact_id": artifact.ID}, Values: map[string]any{"declared_path": artifact.DeclaredPath}})
+	}
+	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.receipt-recorded", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: receipt.ID, Sequence: 1, Type: "receipt"}, CommandName: "gate.run", CorrelationID: &receipt.RunID, Repository: repositoryEventValue(repository), Effects: effects}
 }
 
 func liveOutput(live LiveResult) string {
@@ -375,6 +397,9 @@ func loadReceipt(conn *sql.DB, id string) (Receipt, error) {
 	if err := json.Unmarshal([]byte(toolchainJSON), &receipt.Toolchain); err != nil {
 		return Receipt{}, fmt.Errorf("load receipt toolchain: %w", err)
 	}
-	receipt.Artifacts = []any{}
+	receipt.Artifacts, err = loadReceiptArtifacts(conn, id)
+	if err != nil {
+		return Receipt{}, err
+	}
 	return receipt, nil
 }
