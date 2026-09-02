@@ -1,0 +1,5 @@
+{
+  "operation": "workflow.list",
+  "command": "fid workflow list",
+  "kind": "accepted"
+}

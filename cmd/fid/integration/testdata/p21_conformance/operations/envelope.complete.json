@@ -1,0 +1,5 @@
+{
+  "operation": "envelope.complete",
+  "command": "fid envelope complete",
+  "kind": "accepted"
+}

@@ -1,0 +1,5 @@
+{
+  "operation": "concern.list",
+  "command": "fid concern list",
+  "kind": "accepted"
+}

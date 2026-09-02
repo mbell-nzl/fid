@@ -1,0 +1,5 @@
+{
+  "operation": "link.remove",
+  "command": "fid link remove \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
+  "kind": "accepted"
+}

@@ -1,0 +1,5 @@
+{
+  "operation": "receipt.get",
+  "command": "fid receipt get \u003creceipt-id\u003e",
+  "kind": "accepted"
+}

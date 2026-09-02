@@ -1,0 +1,5 @@
+{
+  "operation": "link.list",
+  "command": "fid link list \u003cid\u003e",
+  "kind": "accepted"
+}

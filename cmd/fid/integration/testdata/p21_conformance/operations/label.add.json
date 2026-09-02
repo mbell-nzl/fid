@@ -1,0 +1,5 @@
+{
+  "operation": "label.add",
+  "command": "fid label add \u003cname\u003e",
+  "kind": "accepted"
+}

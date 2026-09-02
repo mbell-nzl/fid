@@ -1,0 +1,5 @@
+{
+  "operation": "stats.tokens",
+  "command": "fid stats tokens",
+  "kind": "accepted"
+}

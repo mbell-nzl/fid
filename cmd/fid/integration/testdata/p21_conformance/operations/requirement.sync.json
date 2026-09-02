@@ -1,0 +1,5 @@
+{
+  "operation": "requirement.sync",
+  "command": "fid requirement sync",
+  "kind": "accepted"
+}

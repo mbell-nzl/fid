@@ -1,0 +1,5 @@
+{
+  "operation": "activation.status",
+  "command": "fid activation status \u003cactivation-id\u003e",
+  "kind": "accepted"
+}

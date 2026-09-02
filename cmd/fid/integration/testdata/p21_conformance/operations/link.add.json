@@ -1,0 +1,5 @@
+{
+  "operation": "link.add",
+  "command": "fid link add \u003cfrom-id\u003e \u003cLinkRelation\u003e \u003cto-id\u003e",
+  "kind": "accepted"
+}

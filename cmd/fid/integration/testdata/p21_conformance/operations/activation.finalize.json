@@ -1,0 +1,5 @@
+{
+  "operation": "activation.finalize",
+  "command": "fid activation finalize",
+  "kind": "accepted"
+}
