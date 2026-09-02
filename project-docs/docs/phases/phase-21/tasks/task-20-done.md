@@ -233,6 +233,7 @@
 - Attempt 6 command 17 failed after the preceding 16 commands met their exact pass conditions. Its failures are retained test assertions in authorized DEC-173 packages; no command, expected status, protected contract, or prior failed evidence was changed.
 - First report-lint attempt returned `FAIL report-lint found 11 failure(s)` (terminated `exit_code: 11`) because command escaping and post-termination annotations were not byte-exact; this report correction preserves the gate evidence and will rerun the same lint command.
 - Second report-lint attempt returned `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`); the recovery report remains committed, but its preserved PASS rows need report-format convergence before the control can return a clean recovery receipt.
+- Attempt 6 exact report-lint command returned `FAIL report-lint found 13 failure(s)` (terminated `exit_code: 13`; observed `OUTCOME RECOVERY_REQUIRED`, not required literal `OUTCOME COMPLETE`). The validator rejects preserved attempt-1 through attempt-4 PASS rows with legacy post-termination annotations and the historical abbreviated snake-case Event command; this report preserves those failed rows exactly as directed and does not modify the control.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
