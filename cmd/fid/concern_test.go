@@ -201,20 +201,14 @@ func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, add
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	_, firstCompleteStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
+	firstCompletionID := fmt.Sprintf("TC-%s-raised", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
+	seedFrozenTaskCompletion(t, workspace, firstCompletionID, issueID)
 
 	concernID := fmt.Sprintf("CON-%s", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
 	addressCompletionID := ""
 	if address {
-		_, secondCompleteStderr := runFIDCommand(t, workspace, "issue", "complete", issueID, "--by", "developer")
-		addressCompletionID = parseCompletionID(t, secondCompleteStderr)
+		addressCompletionID = fmt.Sprintf("TC-%s-addressed", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
+		seedFrozenTaskCompletion(t, workspace, addressCompletionID, issueID)
 	}
 	status := "open"
 	var addressed any
@@ -224,6 +218,18 @@ func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, add
 	}
 	seedConcernProjection(t, workspace, concernID, issueID, firstCompletionID, summary, status, addressed)
 	return issueID, concernID
+}
+
+func seedFrozenTaskCompletion(t *testing.T, workspace, completionID, issueID string) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open frozen completion projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	if _, err := conn.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number, developer_role, status, completed_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`, completionID, issueID, 1, "developer", "dev_complete"); err != nil {
+		t.Fatalf("seed frozen completion projection: %v", err)
+	}
 }
 
 func seedConcernProjection(t *testing.T, workspace, concernID, issueID, raisedCompletionID, summary, status string, addressedCompletionID any) {

@@ -167,6 +167,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"run finish",
 		"run get",
 		"run list",
+		"run",
 		"init",
 		"rebuild",
 		"resume",
@@ -180,6 +181,7 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue ac verify",
 		"issue label add",
 		"issue label remove",
+		"issue",
 		"label add",
 		"label list",
 		"link add",
@@ -199,18 +201,10 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"stats tokens",
 		"stats cost",
 	}
-	legacy := []string{
-		"dev start",
-		"dev gate",
-		"dev finish",
-		"dev block",
-		"issue complete",
-		"sql",
-		"journal inspect",
-	}
+	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 59 || len(legacy) != 7 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 59 and 7", len(retained), len(legacy))
+	if len(retained) != 61 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 61 and 2", len(retained), len(legacy))
 	}
 	want := append(append(append([]string{}, retained...), "export"), legacy...)
 	sort.Strings(want)
@@ -221,6 +215,9 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
+		if command == "issue" || command == "run" {
+			continue
+		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
 	}
 	wantCapabilities["export"] = rootFlagCapability{Project: true, JSON: true}
@@ -244,11 +241,6 @@ type legacyLeafInvocation struct {
 
 func legacyLeafInvocations() []legacyLeafInvocation {
 	return []legacyLeafInvocation{
-		{command: "dev start", args: []string{"dev", "start", "FID-legacy"}},
-		{command: "dev gate", args: []string{"dev", "gate", "FID-legacy"}},
-		{command: "dev finish", args: []string{"dev", "finish", "FID-legacy"}},
-		{command: "dev block", args: []string{"dev", "block", "FID-legacy"}},
-		{command: "issue complete", args: []string{"issue", "complete", "FID-legacy"}},
 		{command: "sql", args: []string{"sql", "SELECT 1"}},
 		{command: "journal inspect", args: []string{"journal", "inspect", "EVT-legacy"}},
 	}

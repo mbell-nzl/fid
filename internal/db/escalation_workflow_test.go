@@ -19,8 +19,8 @@ func TestMigration0010SeedsEscalationDefaultExactlyAndPreservesV01Tuples(t *test
 	}
 	defaultsBefore := workflowTableTuples(t, conn, []string{"epic-default", "task-default", "subtask-default"})
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("Up() error = %v", err)
+	if err := migrator.Migrate(13); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Migrate(13) error = %v", err)
 	}
 	gotSeed := workflowTableTuples(t, conn, []string{"escalation-default"})
 	wantSeed := map[string][]string{

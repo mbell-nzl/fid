@@ -27,23 +27,6 @@ func TestPolymorphicRefTriggersRejectDanglingRefsAndAllowResolvableRows(t *testi
 	})
 	insertRefTriggerRequirement(t, conn, "REQ-ref-001")
 
-	t.Run("claims reject dangling issue ref", func(t *testing.T) {
-		_, err := conn.Exec(`
-			INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note)
-			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-missing-issue", "developer", "2026-06-07T15:00:00Z", 1800, "missing issue")
-		assertRefSQLErrorContains(t, err, "claims: ref_type/ref_id must resolve to an existing row")
-	})
-
-	t.Run("claims accept resolvable issue ref", func(t *testing.T) {
-		if _, err := conn.Exec(`
-			INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note)
-			VALUES (?, ?, ?, ?, ?, ?)
-		`, "issue", "FID-ref-task", "developer", "2026-06-07T15:01:00Z", 1800, "task claim"); err != nil {
-			t.Fatalf("insert claims(valid) error = %v", err)
-		}
-	})
-
 	t.Run("links reject dangling from endpoint", func(t *testing.T) {
 		_, err := conn.Exec(`
 			INSERT INTO links (from_type, from_id, relation, to_type, to_id, created_at)
@@ -173,35 +156,7 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 	})
 }
 
-func TestClaimScopeTriggersRejectUnsupportedRefTypeAndAllowIssueRef(t *testing.T) {
-	t.Parallel()
-
-	conn := openRefTriggerDB(t)
-	defer closeRefTriggerDB(t, conn)
-
-	insertRefTriggerIssue(t, conn, issueRow{
-		id:         "FID-claim-task",
-		kind:       "task",
-		workflowID: "task-default",
-		status:     "todo",
-		title:      "Claim task",
-	})
-
-	_, err := conn.Exec(`
-		INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, "qa_review", "QA-001", "developer", "2026-06-07T15:20:00Z", 1800, "unsupported type")
-	assertRefSQLErrorContains(t, err, "claims: ref_type must be issue in v0.1")
-
-	if _, err := conn.Exec(`
-		INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, "issue", "FID-claim-task", "developer", "2026-06-07T15:21:00Z", 1800, "supported type"); err != nil {
-		t.Fatalf("insert claims(issue) error = %v", err)
-	}
-}
-
-func TestValidJournalProjectedRowsStillApplyWithRefTriggersActive(t *testing.T) {
+func TestValidJournalProjectedLinkAndActivityRowsStillApplyWithRefTriggersActive(t *testing.T) {
 	t.Parallel()
 
 	conn := openRefTriggerDB(t)
@@ -252,20 +207,6 @@ func TestValidJournalProjectedRowsStillApplyWithRefTriggersActive(t *testing.T) 
 			},
 			{
 				Op:    "insert",
-				Table: "claims",
-				PK: map[string]any{
-					"ref_type": "issue",
-					"ref_id":   "FID-journal-ref-task",
-				},
-				Values: map[string]any{
-					"claimed_by":  "developer",
-					"claimed_at":  "2026-06-07T15:31:00Z",
-					"ttl_seconds": 1800,
-					"note":        "journal claim",
-				},
-			},
-			{
-				Op:    "insert",
 				Table: "links",
 				PK: map[string]any{
 					"from_type": "issue",
@@ -299,7 +240,6 @@ func TestValidJournalProjectedRowsStillApplyWithRefTriggersActive(t *testing.T) 
 
 	projectRefDBEvent(t, conn, event)
 
-	assertRefRowCount(t, conn, "claims", 1)
 	assertRefRowCount(t, conn, "links", 1)
 	assertRefRowCount(t, conn, "activity_log", 1)
 }

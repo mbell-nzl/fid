@@ -466,13 +466,7 @@ func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	}
 	defer closeCommandDB(t, conn)
 
-	var roleCount int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles`).Scan(&roleCount); err != nil {
-		t.Fatalf("QueryRow(role count) error = %v", err)
-	}
-	if roleCount != 0 {
-		t.Fatalf("projected role count = %d, want 0 from role-free bootstrap", roleCount)
-	}
+	assertRoleTableAbsent(t, conn)
 }
 
 func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
@@ -517,7 +511,7 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
-	beforeRoles := readRoleNames(t, conn)
+	assertRoleTableAbsent(t, conn)
 	beforeMeta, found, err := fiddb.ReadProjectionMeta(conn)
 	if err != nil {
 		t.Fatalf("ReadProjectionMeta() error = %v", err)
@@ -544,20 +538,13 @@ func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(
 	}
 	defer closeCommandDB(t, rebuiltConn)
 
-	afterRoles := readRoleNames(t, rebuiltConn)
+	assertRoleTableAbsent(t, rebuiltConn)
 	afterMeta, found, err := fiddb.ReadProjectionMeta(rebuiltConn)
 	if err != nil {
 		t.Fatalf("ReadProjectionMeta() rebuilt error = %v", err)
 	}
 	if !found {
 		t.Fatal("ReadProjectionMeta() rebuilt found = false, want true")
-	}
-
-	if !reflect.DeepEqual(afterRoles, beforeRoles) {
-		t.Fatalf("rebuilt roles = %v, want %v", afterRoles, beforeRoles)
-	}
-	if len(afterRoles) != 0 {
-		t.Fatalf("rebuilt roles = %v, want role-free bootstrap projection", afterRoles)
 	}
 
 	if beforeMeta.JournalFile != afterMeta.JournalFile ||
@@ -754,29 +741,14 @@ func snapshotWorkspaceState(t *testing.T, root string) map[string]string {
 	return state
 }
 
-func readRoleNames(t *testing.T, conn *sql.DB) []string {
+func assertRoleTableAbsent(t *testing.T, conn *sql.DB) {
 	t.Helper()
 
-	rows, err := conn.Query(`SELECT name FROM roles ORDER BY name`)
-	if err != nil {
-		t.Fatalf("Query() roles error = %v", err)
+	var name string
+	err := conn.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'roles'`).Scan(&name)
+	if err != sql.ErrNoRows {
+		t.Fatalf("roles table lookup error = %v, want no roles table", err)
 	}
-	defer closeRows(t, rows)
-
-	var names []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("Scan() role error = %v", err)
-		}
-		names = append(names, name)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("rows.Err() = %v", err)
-	}
-
-	sort.Strings(names)
-	return names
 }
 
 func closeRows(t *testing.T, rows interface{ Close() error }) {

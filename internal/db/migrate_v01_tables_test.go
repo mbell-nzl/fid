@@ -12,7 +12,7 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 )
 
-func TestMigrateUpCreatesPhaseTwoV01TablesAndConstraints(t *testing.T) {
+func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 	t.Parallel()
 
 	dbPath := filepath.Join(t.TempDir(), "fid.sqlite")
@@ -48,12 +48,6 @@ func TestMigrateUpCreatesPhaseTwoV01TablesAndConstraints(t *testing.T) {
 			foreignKeyContains: []string{"ac_id->acceptance_criteria.id", "completion_id->task_completions.id"},
 		},
 		{
-			table:              "gate_runs",
-			columns:            []string{"id", "issue_id", "attempt_number", "agent_run_id", "command", "exit_code", "ran_at"},
-			checkSQLFragments:  []string{"CHECK (attempt_number > 0)"},
-			foreignKeyContains: []string{"issue_id->issues.id", "agent_run_id->agent_runs.id"},
-		},
-		{
 			table:              "task_completions",
 			columns:            []string{"id", "issue_id", "attempt_number", "status", "gate_results", "human_intervention", "completed_at"},
 			foreignKeyContains: []string{"issue_id->issues.id"},
@@ -86,8 +80,9 @@ func TestMigrateUpCreatesPhaseTwoV01TablesAndConstraints(t *testing.T) {
 			columns: []string{"from_type", "from_id", "relation", "to_type", "to_id", "created_at"},
 		},
 		{
-			table:   "claims",
-			columns: []string{"ref_type", "ref_id", "claimed_by", "claimed_at", "ttl_seconds", "note"},
+			table:              "claims",
+			columns:            []string{"id", "issue_id", "envelope_id", "envelope_revision", "actor_id", "worktree_id", "scope_json", "mode", "version", "status", "acquired_at", "expires_at", "released_at", "release_reason"},
+			foreignKeyContains: []string{"issue_id->issues.id", "envelope_id->envelope_revisions.envelope_id", "envelope_revision->envelope_revisions.revision"},
 		},
 		{
 			table:   "activity_log",
@@ -122,6 +117,7 @@ func TestMigrateUpCreatesPhaseTwoV01TablesAndConstraints(t *testing.T) {
 			}
 		})
 	}
+	assertTableDoesNotExist(t, conn, "gate_runs")
 }
 
 func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *testing.T) {

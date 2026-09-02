@@ -251,11 +251,11 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 			},
 		},
 		{
-			name:            "unsatisfied precondition",
-			toState:         "dev_complete",
-			actor:           "developer",
-			wantFrom:        "in_progress",
-			wantUnsatisfied: []string{"has_completion_report"},
+			name:        "retired completion precondition is absent",
+			toState:     "dev_complete",
+			actor:       "developer",
+			wantSuccess: true,
+			wantFrom:    "in_progress",
 			setup: func(t *testing.T, workspace, issueID string) {
 				started := executeCommandForTest(workspace, "--json", "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 				if started.err != nil || started.stderr != "" {
@@ -631,7 +631,7 @@ func TestIssueTransitionRejectsInvalidEdgeAndLeavesStateUnchanged(t *testing.T) 
 	}
 }
 
-func TestIssueTransitionRendersRuleFailures(t *testing.T) {
+func TestIssueTransitionDoesNotEnforceRetiredV1Rules(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -639,48 +639,11 @@ func TestIssueTransitionRendersRuleFailures(t *testing.T) {
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "CLI rule failure", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	appendCommandIssueEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "acceptance_criteria.seeded",
-		Actor: journal.Actor{
-			Role: "qa_lead",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: "0.1.0",
-		},
-		Effects: []journal.Effect{
-			{
-				Op:    "insert",
-				Table: "acceptance_criteria",
-				PK:    map[string]any{"id": "AC-cli-001"},
-				Values: map[string]any{
-					"issue_id": issueID,
-					"ordinal":  1,
-					"text":     "CLI AC",
-				},
-			},
-		},
-	})
-
 	runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:developer")
-	if err == nil {
-		t.Fatal("Execute() error = nil, want rule rejection")
-	}
-	if stdout != "" {
-		t.Fatalf("stdout = %q, want empty", stdout)
-	}
-	for _, want := range []string{
-		"all_acs_verified",
-		"has_completion_report",
-		"AC-cli-001",
-	} {
-		if !strings.Contains(stderr, want) {
-			t.Fatalf("stderr = %q, want substring %q", stderr, want)
-		}
+	stdout, stderr := runFIDCommand(t, workspace, "issue", "transition", issueID, "--to", "dev_complete", "--actor", "agent:developer")
+	if stdout != "" || !strings.Contains(stderr, "transitioned "+issueID+": in_progress → dev_complete") {
+		t.Fatalf("retired-requirement transition stdout/stderr = %q/%q, want successful transition", stdout, stderr)
 	}
 }
 
@@ -745,7 +708,6 @@ func TestIssueTransitionUsesStandaloneActorAttribution(t *testing.T) {
 		t.Fatalf("transition Event actor = %#v, want qa_reviewer standalone attribution", last.ActorV2)
 	}
 }
-
 
 func closeTransitionCommandDB(t *testing.T, conn *sql.DB) {
 	t.Helper()

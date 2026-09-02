@@ -21,8 +21,8 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 	}
 	before := snapshotDatabaseState(t, conn)
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("Up() error = %v", err)
+	if err := migrator.Migrate(13); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("Migrate(13) error = %v", err)
 	}
 	afterUp := snapshotDatabaseState(t, conn)
 
@@ -36,8 +36,8 @@ func TestMigration0013OperationalKernelInventoryAndRoundTrip(t *testing.T) {
 		t.Fatalf("state after 0013 down = %#v, want pre-0013 state %#v", afterDown, before)
 	}
 
-	if err := migrator.Up(); err != nil && err != migrate.ErrNoChange {
-		t.Fatalf("second Up() error = %v", err)
+	if err := migrator.Migrate(13); err != nil && err != migrate.ErrNoChange {
+		t.Fatalf("second Migrate(13) error = %v", err)
 	}
 	if afterSecondUp := snapshotDatabaseState(t, conn); !reflect.DeepEqual(afterSecondUp, afterUp) {
 		t.Fatalf("state after second 0013 up = %#v, want first post-up state %#v", afterSecondUp, afterUp)
