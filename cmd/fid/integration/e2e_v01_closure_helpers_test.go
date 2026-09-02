@@ -348,8 +348,8 @@ func assertClosureMaintenanceAndReadCommands(t *testing.T, binary, workspace, is
 	t.Helper()
 
 	check, _ := closureRunFID(t, binary, workspace, "--json", "maintenance", "check")
-	if !strings.Contains(check, `"status":"warn"`) || !strings.Contains(check, `"check":"telemetry_gaps"`) {
-		t.Fatalf("maintenance check = %q, want telemetry_gaps warning", check)
+	if !strings.Contains(check, `"status":"pass"`) || strings.Contains(check, `"check":"telemetry_gaps"`) {
+		t.Fatalf("maintenance check = %q, want no retired telemetry warning", check)
 	}
 	assertClosureJournalBytesEqual(t, closureJournalPath(t, workspace), journalBefore, "maintenance check")
 	stdout, stderr, err := closureRunFIDExpectError(t, binary, workspace, "maintenance", "vacuum")
@@ -453,7 +453,7 @@ var closureProjectedTableQueries = []struct {
 	},
 	{
 		name:  "claims",
-		query: "SELECT * FROM claims ORDER BY ref_type, ref_id, claimed_by",
+		query: "SELECT * FROM claims ORDER BY id",
 	},
 	{
 		name:  "concerns",
@@ -470,10 +470,6 @@ var closureProjectedTableQueries = []struct {
 	{
 		name:  "escalations",
 		query: "SELECT * FROM escalations ORDER BY id",
-	},
-	{
-		name:  "gate_runs",
-		query: "SELECT * FROM gate_runs ORDER BY id",
 	},
 	{
 		name:  "issue_labels",
@@ -498,10 +494,6 @@ var closureProjectedTableQueries = []struct {
 	{
 		name:  "requirements",
 		query: "SELECT * FROM requirements ORDER BY id",
-	},
-	{
-		name:  "roles",
-		query: "SELECT * FROM roles ORDER BY name",
 	},
 	{
 		name:  "task_completions",

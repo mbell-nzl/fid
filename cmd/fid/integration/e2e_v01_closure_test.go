@@ -32,14 +32,11 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 
 	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer"},
-		"has_completion_report")
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer")
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
 		[]string{"--json", "issue", "ac", "verify", mainIssueID, acID, "--actor", "agent:qa_lead"},
 		`"code":"capability-unavailable"`)
-	firstCompletionID := closureCompleteIssue(t, binary, workspace, mainIssueID)
-	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, firstCompletionID)
+	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, "TC-unavailable")
 	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
@@ -59,7 +56,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureReadyTask(t, binary, workspace, priorityEpicID, priorityHighID)
 
 	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"run", "record", "--issue", mainIssueID, "--completion", firstCompletionID,
+		[]string{"run", "record", "--issue", mainIssueID, "--completion", "TC-unavailable",
 			"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer"})
 
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
