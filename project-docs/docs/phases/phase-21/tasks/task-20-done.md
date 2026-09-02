@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: DEC-173 convergence is checkpointed through retained Actor attribution, lock metadata, retired workflow requirement Effects, and the `--by` reader. The attempt-2 package and repository gates remain red because retained V1 test fixtures still compile against removed roles, legacy Claim/Run, and dropped final-schema columns.
-- Recovery attempts: 2
-- Next action: converge the retained V1 test fixtures and final-schema readers in the amended source scope, preserve their assertion strength, then rerun the complete byte-identical command block.
+- Condition: Attempt 3 converged the journal role/dev golden fixtures and final-schema rebuild fixture, but the package, integration, lint, and coverage gates remain red because retained V1 Claim, policy, completion, Run, and closure fixtures/readers still compile against the final schema.
+- Recovery attempts: 3
+- Next action: converge the retained V1 Claim/policy/Run fixtures and readers in the amended source scope, remove the empty obsolete package directories, then rerun the complete byte-identical command block.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -92,6 +92,35 @@
 - `internal/claims/generic.go:90` - invalidating change: deletion of the legacy Claim shared file; accepted replacement: retained generic Claim owns its connection/row close helpers.
 - `internal/workflow/authoring.go:61`, `authoring_effects.go:10`, `authoring_effects_test.go:9`, and `authoring_test.go:74` - invalidating change: 0014 drops seeded V1 requirement Effects; accepted replacement: a non-empty retired requirement is explicitly rejected and no dropped-table Effect is emitted.
 
+### Attempt 3 exact command results (TRG-21-020 / DEC-173)
+
+- `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; retained V1 Claim readers in maintenance/issues and `cmd/fid/stats_test.go` still imports removed `internal/runs`.)
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; `cmd/fid/response_errors.go` still names removed V1 policy error types.)
+- `ls internal/dev` - BLOCKED - `exit 0 (no output)` (expected `exit_code: 2`; terminated `exit_code: 0`; the removed package directory is empty but remains on disk.)
+- `ls internal/runs` - BLOCKED - `exit 0 (no output)` (expected `exit_code: 2`; terminated `exit_code: 0`; the removed package directory is empty but remains on disk.)
+- `ls cmd/fid/dev.go` - PASS - `ls: cannot access 'cmd/fid/dev.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/policy.go` - PASS - `ls: cannot access 'cmd/fid/policy.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/issue_complete.go` - PASS - `ls: cannot access 'cmd/fid/issue_complete.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'String(Var)?\([^\n]*"by"|GetString\("by"|--by' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'policy\.Authorize|KnownRoles|ActorRole|Role:' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(FROM|INTO|UPDATE|JOIN|DELETE FROM) (roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)\b|Table:\s*"(roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)"' cmd/fid internal` - BLOCKED - `internal/issues/concern_list.go:116:\t\tFROM concerns` (terminated `exit_code: 0`; broad inventory output changed after the journal fixture conversion and needs refreshed per-line classification.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\s*"' cmd/fid internal` - BLOCKED - `internal/workflow/assign.go:111: EventType: "workflow.assigned",` (terminated `exit_code: 0`; broad inventory output changed after the journal fixture conversion and needs refreshed per-line classification.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(INTO|UPDATE|DELETE FROM) (roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)\b|Table:\s*"(roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n 'EventType:\s*"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)|"event_type":"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)' cmd/fid internal testdata` - BLOCKED - `cmd/fid/issue_transition_test.go:875:\t\tEventType:   "issue.claim.seeded",` (expected `exit_code: 1`; terminated `exit_code: 0`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '"event"\s*:\s*"[a-z0-9]+_[a-z0-9_]+"|Event:\s*"[a-z0-9]+_[a-z0-9_]"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - BLOCKED - `internal/workflow/workflow_test.go` (terminated `exit_code: 0`; emitted paths require formatting.)
+- `golangci-lint run ./...` - BLOCKED - `* typecheck: 1` (terminated `exit_code: 1`; retained V1 policy tests refer to deleted authority types.)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; retained V1 Claim/policy/Run fixtures and final-schema readers remain red.)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t\t\t52.2%` (terminated `exit_code: 0`). Generated from the failed coverage attempt and not completion evidence.
+
+### Attempt 3 convergence provenance
+
+- `internal/journal/project_test.go:18`, `replay_test.go:73`, `rebuild_scale_test.go:192`, `phase2_rebuild_test.go:188`, and `writer_test.go:476` - invalidating change: migration 0014 drops `roles`; accepted replacement: each projection, replay, scale, writer, and rebuild fixture exercises the same Effect behavior against the surviving `labels` table.
+- `testdata/journal/replay-v1.golden.jsonl:1` and `corrupt-tail.jsonl:1` - invalidating change: migration 0014 drops `roles`; accepted replacement: the fixture seeds one `labels` row while preserving ordered replay/corrupt-tail subjects.
+- `testdata/journal/p20-issue-revision-effects.golden.jsonl:4` - invalidating change: V1 dev Event removal; accepted replacement: three retained Issue Event families carry the same revision Effects and preserve the ten-Event chain.
+- `internal/journal/replay_test.go:130` - invalidating change: the three dev fixture values become retained Issue values; accepted replacement: revision assertions use fixture position, preserving every prior/value/precondition check despite repeated Issue family names.
+- `internal/journal/phase2_rebuild_test.go:187` - invalidating change: migration 0014 drops V1 Claim/Gate and freezes completion/judgment/telemetry state; accepted replacement: the parity fixture retains its surviving issue/workflow/requirement/link/activity projection subject without Effects on dropped or frozen tables.
+
 ## Deviations from spec
 
 - The required no-role search cannot pass inside the named task-20 scope: its live production matches include `internal/bootstrap/init.go`, `internal/journal/lock.go`, `internal/labels/`, `internal/links/`, and `internal/requirements/`. The task does not authorize changes there; this report preserves the exact broad command rather than narrowing it.
@@ -109,8 +138,8 @@
 
 ## Commit hash
 
-- `556b4e65e39865a836b955ffa77f85857818d9fc`
+- `598d3d3`
 
 ## Commit subject
 
-- `fix(convergence): remove retired workflow requirement effects`
+- `test(convergence): update final-schema journal fixtures`
