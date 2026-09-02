@@ -475,13 +475,13 @@ func writerRoleEvent(eventID string) Event {
 		Effects: []Effect{
 			{
 				Op:    "insert",
-				Table: "roles",
+				Table: "labels",
 				PK: map[string]any{
 					"name": eventID,
 				},
 				Values: map[string]any{
 					"description": eventID,
-					"active":      true,
+					"colour":      "#00ff00",
 				},
 			},
 		},

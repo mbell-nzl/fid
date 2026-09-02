@@ -195,12 +195,11 @@ func scaleRoleSeedEvent(sequence int) Event {
 		[]string{"fid", "init"},
 		[]Effect{{
 			Op:    "insert",
-			Table: "roles",
+			Table: "labels",
 			PK:    map[string]any{"name": "developer"},
 			Values: map[string]any{
 				"description": "developer",
-				"active":      true,
-				"is_human":    false,
+				"colour":      "#00ff00",
 			},
 		}},
 	)
@@ -368,8 +367,8 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 		query string
 	}{
 		{
-			name:  "roles",
-			query: `SELECT name, COALESCE(description, 'NULL'), active, is_human FROM roles ORDER BY name`,
+			name:  "labels",
+			query: `SELECT name, COALESCE(description, 'NULL'), COALESCE(colour, 'NULL') FROM labels ORDER BY name`,
 		},
 		{
 			name: "issues",

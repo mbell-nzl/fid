@@ -90,12 +90,12 @@ func TestReplayJournalAppliesGoldenV1JournalInFileOrder(t *testing.T) {
 		t.Fatalf("upgraded events = %d, want %d", stats.UpgradedEvents, 0)
 	}
 
-	var roleCount int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles WHERE name = ?`, "developer").Scan(&roleCount); err != nil {
-		t.Fatalf("query roles: %v", err)
+	var labelCount int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM labels WHERE name = ?`, "developer").Scan(&labelCount); err != nil {
+		t.Fatalf("query labels: %v", err)
 	}
-	if roleCount != 1 {
-		t.Fatalf("projected role count = %d, want %d", roleCount, 1)
+	if labelCount != 1 {
+		t.Fatalf("projected label count = %d, want %d", labelCount, 1)
 	}
 
 	var title, workflowID, status string
@@ -130,7 +130,8 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(payload)), "\n")
-	wantTypes := []string{"issue.created", "issue.updated", "issue.transitioned", "dev.started", "dev.finished", "dev.blocked", "issue.ac_added", "label.added", "issue.label.added", "issue.label.removed"}
+	wantTypes := []string{"issue.created", "issue.updated", "issue.transitioned", "issue.updated", "issue.transitioned", "issue.updated", "issue.ac_added", "label.added", "issue.label.added", "issue.label.removed"}
+	wantPriorRevisions := []float64{0, 1, 2, 3, 4, 5, 6, 0, 7, 8}
 	if len(lines) != len(wantTypes) {
 		t.Fatalf("golden Event count = %d, want %d", len(lines), len(wantTypes))
 	}
@@ -155,17 +156,7 @@ func TestReplayJournalAppliesPhase20IssueRevisionGolden(t *testing.T) {
 			}
 			continue
 		}
-		priorByType := map[string]float64{
-			"issue.updated":       1,
-			"issue.transitioned":  2,
-			"dev.started":         3,
-			"dev.finished":        4,
-			"dev.blocked":         5,
-			"issue.ac_added":      6,
-			"issue.label.added":   7,
-			"issue.label.removed": 8,
-		}
-		prior := priorByType[event.EventType]
+		prior := wantPriorRevisions[index]
 		var revisionEffect *Effect
 		for effectIndex := range event.Effects {
 			candidate := &event.Effects[effectIndex]
@@ -691,8 +682,8 @@ func TestReplayJournalHonorsStartOffset(t *testing.T) {
 	}
 
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles`).Scan(&count); err != nil {
-		t.Fatalf("count roles: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM labels`).Scan(&count); err != nil {
+		t.Fatalf("count labels: %v", err)
 	}
 	if count != 1 {
 		t.Fatalf("projected role count = %d, want %d", count, 1)
@@ -771,8 +762,8 @@ func snapshotReplayState(t *testing.T, conn *sql.DB) string {
 	t.Helper()
 
 	var roleName string
-	if err := conn.QueryRow(`SELECT name FROM roles ORDER BY name LIMIT 1`).Scan(&roleName); err != nil {
-		t.Fatalf("query snapshot role: %v", err)
+	if err := conn.QueryRow(`SELECT name FROM labels ORDER BY name LIMIT 1`).Scan(&roleName); err != nil {
+		t.Fatalf("query snapshot label: %v", err)
 	}
 
 	var title string
@@ -815,13 +806,13 @@ func replayRoleEvent(eventID, roleName string) Event {
 		Effects: []Effect{
 			{
 				Op:    "insert",
-				Table: "roles",
+				Table: "labels",
 				PK: map[string]any{
 					"name": roleName,
 				},
 				Values: map[string]any{
 					"description": roleName,
-					"active":      true,
+					"colour":      "#00ff00",
 				},
 			},
 		},

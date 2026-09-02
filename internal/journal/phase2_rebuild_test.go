@@ -186,103 +186,12 @@ func phaseTwoFullSchemaEvent() Event {
 			},
 			{
 				Op:    "insert",
-				Table: "task_completions",
-				PK:    map[string]any{"id": "TC-p2-001"},
-				Values: map[string]any{
-					"issue_id":               "FID-p2-task-a",
-					"attempt_number":         1,
-					"developer_role":         "developer",
-					"model":                  "gpt-5",
-					"status":                 "dev_complete",
-					"notes_md_path":          "project-docs/completions/TC-p2-001.md",
-					"actual_tokens":          1234,
-					"commit_hashes":          `["abc123"]`,
-					"files_touched":          `["internal/db/ref_triggers_test.go"]`,
-					"expected_files_touched": `["migrations/0005_v01_ref_triggers.up.sql"]`,
-					"gates_passed":           3,
-					"gates_failed":           0,
-					"gate_results":           `[{"cmd":"go test ./...","exit_code":0}]`,
-					"human_intervention":     false,
-					"completed_at":           "2026-06-07T15:45:00Z",
-				},
-			},
-			{
-				Op:    "insert",
 				Table: "acceptance_criteria",
 				PK:    map[string]any{"id": "AC-p2-001"},
 				Values: map[string]any{
 					"issue_id": "FID-p2-task-a",
 					"ordinal":  1,
 					"text":     "Ref triggers protect widened schema rows",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "ac_verifications",
-				PK:    map[string]any{"id": "ACV-p2-001"},
-				Values: map[string]any{
-					"ac_id":          "AC-p2-001",
-					"verifier_role":  "qa_lead",
-					"verifier_actor": "agent",
-					"status":         "pass",
-					"evidence_type":  "test",
-					"evidence_ref":   "internal/journal/phase2_rebuild_test.go",
-					"notes":          "Deterministic rebuild proof",
-					"completion_id":  "TC-p2-001",
-					"verified_at":    "2026-06-07T15:46:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "agent_runs",
-				PK:    map[string]any{"id": "RUN-p2-001"},
-				Values: map[string]any{
-					"issue_id":           "FID-p2-task-a",
-					"completion_id":      "TC-p2-001",
-					"role":               "developer",
-					"model":              "gpt-5",
-					"tokens_in":          500,
-					"tokens_out":         734,
-					"price_in_per_mtok":  0.5,
-					"price_out_per_mtok": 1.5,
-					"cost_usd":           0.11,
-					"tool_call_count":    4,
-					"provider_run_id":    "run-p2-001",
-					"provider_cost_usd":  0.11,
-					"started_at":         "2026-06-07T15:30:00Z",
-					"ended_at":           "2026-06-07T15:45:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "gate_runs",
-				PK:    map[string]any{"id": "GATE-p2-001"},
-				Values: map[string]any{
-					"issue_id":         "FID-p2-task-a",
-					"attempt_number":   1,
-					"agent_run_id":     "RUN-p2-001",
-					"recorded_by_role": "developer",
-					"command":          "go test ./...",
-					"exit_code":        0,
-					"output_excerpt":   "ok",
-					"ran_at":           "2026-06-07T15:44:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "concerns",
-				PK:    map[string]any{"id": "CON-p2-001"},
-				Values: map[string]any{
-					"issue_id":                "FID-p2-task-a",
-					"raised_in_completion_id": "TC-p2-001",
-					"raised_by_role":          "developer",
-					"summary":                 "Validate rebuild parity",
-					"body_md_path":            "project-docs/concerns/CON-p2-001.md",
-					"status":                  "open",
-					"escalated_to_esc_id":     "ESC-p2-001",
-					"triaged_in_event_id":     "TRG-p2-001",
-					"created_at":              "2026-06-07T15:47:00Z",
-					"updated_at":              "2026-06-07T15:47:00Z",
 				},
 			},
 			{
@@ -315,20 +224,6 @@ func phaseTwoFullSchemaEvent() Event {
 				},
 				Values: map[string]any{
 					"created_at": "2026-06-07T15:48:00Z",
-				},
-			},
-			{
-				Op:    "insert",
-				Table: "claims",
-				PK: map[string]any{
-					"ref_type": "issue",
-					"ref_id":   "FID-p2-task-a",
-				},
-				Values: map[string]any{
-					"claimed_by":  "developer",
-					"claimed_at":  "2026-06-07T15:49:00Z",
-					"ttl_seconds": 1800,
-					"note":        "active claim",
 				},
 			},
 			{
@@ -367,8 +262,8 @@ func snapshotPhaseTwoProjectionState(t *testing.T, conn *sql.DB) string {
 			`,
 		},
 		{
-			name:  "roles",
-			query: `SELECT name, COALESCE(description, 'NULL'), active FROM roles ORDER BY name`,
+			name:  "labels",
+			query: `SELECT name, COALESCE(description, 'NULL'), COALESCE(colour, 'NULL') FROM labels ORDER BY name`,
 		},
 		{
 			name: "issues",
@@ -403,28 +298,8 @@ func snapshotPhaseTwoProjectionState(t *testing.T, conn *sql.DB) string {
 			query: `SELECT id, epic_id, issue_id, triager_role, source, COALESCE(source_ref_id, 'NULL'), verdict, COALESCE(esc_id, 'NULL'), COALESCE(reasoning_md, 'NULL'), COALESCE(created_at, 'NULL') FROM triage_events ORDER BY id`,
 		},
 		{
-			name:  "task_completions",
-			query: `SELECT id, issue_id, attempt_number, COALESCE(developer_role, 'NULL'), COALESCE(model, 'NULL'), COALESCE(status, 'NULL'), COALESCE(notes_md_path, 'NULL'), COALESCE(actual_tokens, -1), COALESCE(commit_hashes, 'NULL'), COALESCE(files_touched, 'NULL'), COALESCE(expected_files_touched, 'NULL'), COALESCE(gates_passed, -1), COALESCE(gates_failed, -1), COALESCE(gate_results, 'NULL'), human_intervention, COALESCE(human_intervention_note, 'NULL'), COALESCE(completed_at, 'NULL') FROM task_completions ORDER BY id`,
-		},
-		{
 			name:  "acceptance_criteria",
 			query: `SELECT id, issue_id, ordinal, text FROM acceptance_criteria ORDER BY id`,
-		},
-		{
-			name:  "ac_verifications",
-			query: `SELECT id, ac_id, verifier_role, COALESCE(verifier_actor, 'NULL'), status, COALESCE(evidence_type, 'NULL'), COALESCE(evidence_ref, 'NULL'), COALESCE(notes, 'NULL'), COALESCE(completion_id, 'NULL'), verified_at FROM ac_verifications ORDER BY id`,
-		},
-		{
-			name:  "agent_runs",
-			query: `SELECT id, COALESCE(issue_id, 'NULL'), COALESCE(completion_id, 'NULL'), role, model, COALESCE(tokens_in, -1), COALESCE(tokens_out, -1), COALESCE(price_in_per_mtok, -1), COALESCE(price_out_per_mtok, -1), COALESCE(cost_usd, -1), COALESCE(token_breakdown_json, 'NULL'), COALESCE(tool_call_count, -1), COALESCE(provider_run_id, 'NULL'), COALESCE(provider_cost_usd, -1), COALESCE(started_at, 'NULL'), COALESCE(ended_at, 'NULL') FROM agent_runs ORDER BY id`,
-		},
-		{
-			name:  "gate_runs",
-			query: `SELECT id, issue_id, attempt_number, COALESCE(agent_run_id, 'NULL'), recorded_by_role, command, exit_code, COALESCE(output_excerpt, 'NULL'), ran_at FROM gate_runs ORDER BY id`,
-		},
-		{
-			name:  "concerns",
-			query: `SELECT id, issue_id, raised_in_completion_id, raised_by_role, summary, COALESCE(body_md_path, 'NULL'), status, COALESCE(addressed_in_completion_id, 'NULL'), COALESCE(escalated_to_esc_id, 'NULL'), COALESCE(triaged_in_event_id, 'NULL'), COALESCE(created_at, 'NULL'), COALESCE(updated_at, 'NULL') FROM concerns ORDER BY id`,
 		},
 		{
 			name:  "labels",
@@ -437,10 +312,6 @@ func snapshotPhaseTwoProjectionState(t *testing.T, conn *sql.DB) string {
 		{
 			name:  "links",
 			query: `SELECT from_type, from_id, relation, to_type, to_id, COALESCE(created_at, 'NULL') FROM links ORDER BY from_type, from_id, relation, to_type, to_id`,
-		},
-		{
-			name:  "claims",
-			query: `SELECT ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, COALESCE(note, 'NULL') FROM claims ORDER BY ref_type, ref_id`,
 		},
 		{
 			name:  "activity_log",
