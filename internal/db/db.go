@@ -13,6 +13,7 @@ import (
 const driverName = "sqlite"
 
 var requiredPragmas = []string{
+	"busy_timeout(5000)",
 	"foreign_keys(1)",
 	"recursive_triggers(1)",
 }

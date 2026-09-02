@@ -42,6 +42,7 @@ func TestCheckErrorsReportsAllSeededStructuralViolationFamilies(t *testing.T) {
 		"foreign_key_integrity",
 		"foreign_key_integrity",
 		"foreign_key_integrity",
+		"frozen-state-present",
 		"kind_hierarchy",
 		"kind_hierarchy",
 		"kind_hierarchy",
@@ -104,7 +105,7 @@ func assertActionableFindings(t *testing.T, findings []Finding) {
 	}
 }
 
-func TestCheckErrorsExcludesEveryResolvedV01Rule(t *testing.T) {
+func TestCheckReportsFrozenStateForRetainedV01FixtureWithoutStructuralErrors(t *testing.T) {
 	t.Parallel()
 
 	fixture := newValidStructuralFixture(t)
@@ -112,8 +113,13 @@ func TestCheckErrorsExcludesEveryResolvedV01Rule(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Check() error = %v", err)
 	}
-	if len(got.Errors) != 0 {
-		t.Fatalf("Check().Errors = %#v, want no errors", got.Errors)
+	want := []Finding{{
+		Check:    "frozen-state-present",
+		EntityID: "task_completions",
+		Message:  "task_completions has 2 row(s); frozen state is non-authoritative",
+	}}
+	if !reflect.DeepEqual(got.Errors, want) {
+		t.Fatalf("Check().Errors = %#v, want %#v", got.Errors, want)
 	}
 }
 
