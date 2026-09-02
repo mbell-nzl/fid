@@ -1212,11 +1212,11 @@ func seedConcernRaiseIssueAndCompletion(t *testing.T, workspace string) (string,
 	t.Helper()
 
 	created, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "task",
-		Title:         "Concern history task",
-		Actor:         testActorForRole("developer"),
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  testIssueMigrationsDir(t),
+		Kind:           "task",
+		Title:          "Concern history task",
+		Actor:          testActorForRole("developer"),
 		IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {

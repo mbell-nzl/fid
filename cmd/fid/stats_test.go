@@ -189,13 +189,13 @@ func createStatsCommandIssue(t *testing.T, workspace, kind, title string, parent
 	t.Helper()
 
 	options := issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: issueMigrationsDir(),
-		Kind:          kind,
-		Title:         title,
-		Actor:         "agent:developer",
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  issueMigrationsDir(),
+		Kind:           kind,
+		Title:          title,
+		Actor:          "agent:developer",
 		IdempotencyKey: fmt.Sprintf("stats-command-create-%d", atomic.AddUint64(&statsCommandFixtureSequence, 1)),
-		ParentID:      parentID,
+		ParentID:       parentID,
 	}
 	if kind == "epic" {
 		options.Actor = "agent:tl"

@@ -156,11 +156,11 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
 	created, err := issues.Create(issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: issueMigrationsDir(),
-		Kind:          "task",
-		Title:         title,
-		Actor:         "agent:developer",
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  issueMigrationsDir(),
+		Kind:           "task",
+		Title:          title,
+		Actor:          "agent:developer",
 		IdempotencyKey: "activity-command-create-" + title,
 	})
 	if err != nil {
