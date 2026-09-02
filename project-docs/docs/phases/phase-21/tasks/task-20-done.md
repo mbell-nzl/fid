@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: in-scope-implementation
-- Condition: Finalization attempt 6 ran every amended task command to termination. Command 17 remains red because `internal/sqlquery/sqlquery_test.go:113` mutates the removed `roles` table instead of proving read-only rejection against a surviving table, and `internal/workflow/define_test.go:32` requests the retired `has_completion_report` transition requirement instead of asserting its accepted fail-closed rejection.
-- Recovery attempts: 6
-- Next action: converge those two retained assertions under DEC-173 without weakening their subjects, then rerun the complete byte-identical command block from command 1 and record a real CLI entrypoint exercise.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 7
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -15,12 +15,15 @@
 - Added red/green migration and command-tree removal guards, removed the V1 dev, completion, policy, legacy Claim, and legacy Run production implementations, and retained generic Claim/Run command leaves.
 - Retargeted generic Claim/workflow production queries and Effects to the final `claims` table.
 - Removed the last production `--by` reader and retired `workflow_transition_requires` emission. Retained workflow definition requests now fail closed when they contain retired transition requirements; generic Claim still closes its projection handles after the V1 shared helper was removed.
+- Converged the final two retained final-schema fixtures: the read-only SQL connection now attempts a surviving `labels` mutation, and workflow definition proves retired transition requirements reject without journal mutation before asserting the structural Event-v2 definition.
 
 ## Files created or modified
 
 - `migrations/0014_p21_retire_v1_authority_execution.up.sql`
 - `migrations/0014_p21_retire_v1_authority_execution.down.sql`
 - `internal/db/operational_kernel_migration_test.go`
+- `internal/sqlquery/sqlquery_test.go`
+- `internal/workflow/define_test.go`
 - `cmd/fid/`, `internal/claims/`, `internal/dev/`, `internal/issues/`, `internal/policy/`, `internal/runs/`, and `internal/workflow/`
 
 ## Documentation updated
@@ -29,18 +32,20 @@
 
 ## Validation Contract Coverage
 
-- VAL-002: PARTIAL - `TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction` at `internal/db/operational_kernel_migration_test.go:43` first failed because 0014 was absent, then passed after the exact migration files were added; repository-wide migration regressions remain red.
-- VAL-074: PARTIAL - the fresh broad table/Event inventories below are classified line by line with `UNCLASSIFIED=0`, but retained frozen/diagnostic dispositions are not yet all converged.
-- VAL-075: PARTIAL - `TestTask20V1CommandsAreAbsent` at `cmd/fid/task20_removal_test.go:5` first failed with `fid [dev] resolved command "fid dev"`; source leaves are removed, but the declared absence searches still find V1 residue.
-- Attempt 6 current disposition: VAL-002 is PARTIAL because the scoped migration/package gate passes but the repository-wide coverage gate is BLOCKED by a retained final-schema test. VAL-074 is PARTIAL because both required broad inventories are fully classified below with `UNCLASSIFIED=0`, but command 17 is BLOCKED. VAL-075 is PARTIAL because every final V1 path, source, Event, and snake-case absence control passed, while command 17 remains red.
+- VAL-002: PASS - `TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction` at `internal/db/operational_kernel_migration_test.go:43` passed after proving the exact destructive 0014 migration sequence and empty-state reversal; attempt-7 command 17 is repository-wide green.
+- VAL-074: PASS - `TestDefineAppendsOneAtomicWorkflowDefinedEvent` at `internal/workflow/define_test.go:17` proves retired transition requirements fail closed with no journal mutation and a structural definition still appends one Event-v2 fact; attempt-7 broad table and Event inventories are fully classified below with `UNCLASSIFIED=0`.
+- VAL-075: PASS - attempt-7 commands 3-9 and 12-14 prove the removed paths, V1 policy/role callers, V1 writers/events, and snake-case production Event values are absent at their declared statuses; command 17 passes repository-wide.
 
 ## Tests run
 
 - `go test -race ./internal/db -run '^TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; red: `Migrate(14) error = no migration found for version 14: read down for version 14 .: file does not exist`)
 - `go test -race ./internal/db -run '^TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	1.677s` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^TestTask20V1CommandsAreAbsent$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; red: `fid [dev] resolved command "fid dev" with err <nil>, want unknown command`)
-- Real entrypoint exercise: BLOCKED - the exact required package command did not build `cmd/fid`, so no binary could be truthfully exercised after the removal checkpoint.
-- Real entrypoint exercise for attempt 6: UNVERIFIED - the dispatch authorized only the 18 task-spec commands; command 1 compiled and tested `cmd/fid/...`, but no additional CLI command was authorized before the required repository-wide gate failed.
+- `go test -race ./internal/sqlquery -run '^TestReadOnlyConnectionRejectsMutationWhenClassifierIsBypassed$'` - FAIL - `FAIL` (terminated `exit_code: 1`; red: `Exec(INSERT) error = SQL logic error: no such table: roles (1), want readonly failure`)
+- `go test -race ./internal/sqlquery -run '^TestReadOnlyConnectionRejectsMutationWhenClassifierIsBypassed$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/sqlquery	1.991s` (terminated `exit_code: 0`)
+- `go test -race ./internal/workflow -run '^TestDefineAppendsOneAtomicWorkflowDefinedEvent$'` - FAIL - `FAIL` (terminated `exit_code: 1`; red: `Define() error = workflow transition requirements are unavailable`)
+- `go test -race ./internal/workflow -run '^TestDefineAppendsOneAtomicWorkflowDefinedEvent$'` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	2.153s` (terminated `exit_code: 0`)
+- Real entrypoint exercise: the required `go test -tags integration -race ./cmd/fid/integration/...` command exercised the real `fid` CLI process and passed with `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.280s` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
@@ -226,6 +231,32 @@
 - `internal/workflow/activation.go:209` - retained Event-v2 `activation.prepared`; V1 Run removal replacement: activation Event.
 - `internal/workflow/activation.go:337` - retained Event-v2 `activation.component-staged`; V1 Run removal replacement: activation Event.
 
+### Attempt 7 final ordered command results (TRG-21-020 / ESC-21-014 / DEC-173)
+
+- `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	322.921s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	6.280s` (terminated `exit_code: 0`)
+- `ls internal/dev` - PASS - `ls: cannot access 'internal/dev': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls internal/runs` - PASS - `ls: cannot access 'internal/runs': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/dev.go` - PASS - `ls: cannot access 'cmd/fid/dev.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/policy.go` - PASS - `ls: cannot access 'cmd/fid/policy.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/issue_complete.go` - PASS - `ls: cannot access 'cmd/fid/issue_complete.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'String(Var)?\\([^\\n]*"by"|GetString\\("by"|--by' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'policy\\.Authorize|KnownRoles|ActorRole|Role:' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(FROM|INTO|UPDATE|JOIN|DELETE FROM) (roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)\\b|Table:\\s*"(roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)"' cmd/fid internal` - PASS - `FROM workflow_transition_requires` (terminated `exit_code: 0`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\\s*"' cmd/fid internal` - PASS - `EventType: "issue.created"` (terminated `exit_code: 0`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(INTO|UPDATE|DELETE FROM) (roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)\\b|Table:\\s*"(roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n 'EventType:\\s*"(dev\\.|issue\\.completed|issue\\.claim\\.|run\\.recorded)|"event_type":"(dev\\.|issue\\.completed|issue\\.claim\\.|run\\.recorded)' cmd/fid internal testdata` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '"event"\\s*:\\s*"[a-z0-9]+_[a-z0-9_]+"|Event:\\s*"[a-z0-9]+_[a-z0-9_]+"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	25.433s	coverage: 27.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:` (terminated `exit_code: 0`)
+
+### Attempt 7 per-row classifications
+
+- Broad table inventory current matches are each classified by the corresponding same-path row in the preserved Attempt 6 per-row classifications above: `internal/workflow/run.go:219`, `evaluation.go:176`, `resume.go:139`, `envelope.go:293`, `registry.go:183`; `internal/stats/stats.go:206`; `internal/claims/generic.go:151,159,193,229,337,358,457`; `internal/issues/detail.go:129,133,167,208`, `concern_list.go:116`, `transition_rules.go:112,125`; and `internal/maintenance/warnings.go:42,164,165,191,192`. Each is respectively a retained final `claims` reader/Effect or a frozen read-only diagnostic reader, with the migration 0014 or V1 writer-removal replacement stated on that row. `UNCLASSIFIED=0`.
+- Event inventory current matches are each classified by the corresponding same-path row in the preserved Attempt 6 per-row classifications above: `internal/links/add.go:112`, `labels/add.go:119`, `links/remove.go:126`; `internal/evidence/evidence.go:152`, `execution.go:297,371`, `artifact.go:434`, `registration.go:180`; `internal/bootstrap/init.go:345`; `internal/issues/create_commit.go:133`, `transition.go:230`, `ac.go:135`, `update.go:145`; `internal/requirements/sync.go:94`; and `internal/workflow/define.go:107`, `envelope.go:234,304,386`, `assign.go:111`, `activation.go:209,337`. Each is retained or frozen Event-v2 with the same per-row V1-removal/ActorRole-deletion replacement stated above. `UNCLASSIFIED=0`.
+
 ## Deviations from spec
 
 - The required no-role search cannot pass inside the named task-20 scope: its live production matches include `internal/bootstrap/init.go`, `internal/journal/lock.go`, `internal/labels/`, `internal/links/`, and `internal/requirements/`. The task does not authorize changes there; this report preserves the exact broad command rather than narrowing it.
@@ -237,7 +268,7 @@
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- Scope gap: the protected command-8 absence contract requires edits outside task-20's named source scope, notably the task-21-owned bootstrap/journal paths and task-9-owned attribution packages.
+- None.
 
 ## Dependency-budget note
 
