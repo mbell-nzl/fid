@@ -494,24 +494,3 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 		t.Fatalf("journal lines after rejected remove = %d, want %d", got, linesBefore)
 	}
 }
-
-func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	rows := legacyPolicyRows(t)
-
-	for _, action := range []string{"issue.label.add", "issue.label.remove"} {
-		for _, role := range []string{"developer", "tl", "workflow_runner", "human"} {
-			if !commandPolicyCellAllowed(t, rows, action, role) {
-				t.Fatalf("policy show %s/%s = false, want true", role, action)
-			}
-		}
-		for _, role := range []string{"qa_reviewer", "qa_lead", "tl_lite"} {
-			if commandPolicyCellAllowed(t, rows, action, role) {
-				t.Fatalf("policy show %s/%s = true, want false", role, action)
-			}
-		}
-	}
-}

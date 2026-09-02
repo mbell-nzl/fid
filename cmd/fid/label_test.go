@@ -295,26 +295,3 @@ func TestLabelAddRejectsDuplicateDeniedAndUnknownBeforeAppend(t *testing.T) {
 		}
 	})
 }
-
-func TestLabelAddPolicyShowIncludesMatrixRow(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	rows := legacyPolicyRows(t)
-	if !commandPolicyCellAllowed(t, rows, "label.add", "developer") {
-		t.Fatal("policy show developer/label.add = false, want true")
-	}
-	if !commandPolicyCellAllowed(t, rows, "label.add", "tl") {
-		t.Fatal("policy show tl/label.add = false, want true")
-	}
-	if !commandPolicyCellAllowed(t, rows, "label.add", "workflow_runner") {
-		t.Fatal("policy show workflow_runner/label.add = false, want true")
-	}
-	if !commandPolicyCellAllowed(t, rows, "label.add", "human") {
-		t.Fatal("policy show human/label.add = false, want true")
-	}
-	if commandPolicyCellAllowed(t, rows, "label.add", "qa_lead") {
-		t.Fatal("policy show qa_lead/label.add = true, want false")
-	}
-}

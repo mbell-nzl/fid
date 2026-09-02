@@ -72,7 +72,6 @@ func Check(options CheckOptions) (Result, error) {
 		checkDependentRowKinds,
 		checkSequenceScheduling,
 		checkLinkReferences,
-		checkClaimReferences,
 		checkActivityReferences,
 		checkForeignKeys,
 		checkWorkflowStates,

@@ -275,49 +275,6 @@ func linkEntityID(fromType, fromID, relation, toType, toID string) string {
 	return fromType + ":" + fromID + ":" + relation + ":" + toType + ":" + toID
 }
 
-func checkClaimReferences(db *sql.DB, _ string) ([]Finding, error) {
-	rows, err := db.Query(`SELECT ref_type, ref_id FROM claims ORDER BY ref_type, ref_id`)
-	if err != nil {
-		return nil, fmt.Errorf("check claim references: query claims: %w", err)
-	}
-
-	claims := make([]claimRow, 0)
-	for rows.Next() {
-		var claim claimRow
-		if err := rows.Scan(&claim.refType, &claim.refID); err != nil {
-			_ = rows.Close()
-			return nil, fmt.Errorf("check claim references: scan claim: %w", err)
-		}
-		claims = append(claims, claim)
-	}
-	if err := rows.Err(); err != nil {
-		_ = rows.Close()
-		return nil, fmt.Errorf("check claim references: iterate claims: %w", err)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, fmt.Errorf("check claim references: close claims: %w", err)
-	}
-
-	findings := make([]Finding, 0)
-	for _, claim := range claims {
-		entityID := claim.refType + ":" + claim.refID
-		if claim.refType != "issue" {
-			findings = append(findings, Finding{Check: "claim_scope", EntityID: entityID, Message: fmt.Sprintf("claim %s must reference an issue in v0.1", entityID)})
-			continue
-		}
-		exists, err := referencedEntityExists(db, claim.refType, claim.refID)
-		if err != nil {
-			return nil, fmt.Errorf("check claim references: query %s: %w", entityID, err)
-		}
-		if !exists {
-			findings = append(findings, Finding{Check: "claim_refs", EntityID: entityID, Message: fmt.Sprintf("claim %s references a missing issue", entityID)})
-		}
-	}
-	return findings, nil
-}
-
-type claimRow struct{ refType, refID string }
-
 func referencedEntityExists(db *sql.DB, refType, refID string) (bool, error) {
 	table, ok := referenceTable(refType)
 	if !ok {

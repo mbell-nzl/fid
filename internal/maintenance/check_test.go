@@ -26,8 +26,6 @@ func TestCheckErrorsReportsAllSeededStructuralViolationFamilies(t *testing.T) {
 		"activity_journal_events",
 		"activity_refs",
 		"activity_refs",
-		"claim_refs",
-		"claim_scope",
 		"dependent_row_kind",
 		"dependent_row_kind",
 		"dependent_row_kind",

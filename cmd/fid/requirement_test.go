@@ -269,21 +269,6 @@ func TestRequirementSyncAuthorizationAndPolicyShowParity(t *testing.T) {
 		}
 	})
 
-	t.Run("policy show includes requirement sync row", func(t *testing.T) {
-		workspace := t.TempDir()
-		clonePristineWorkspaceInto(t, workspace)
-
-		rows := legacyPolicyRows(t)
-		if !commandPolicyCellAllowed(t, rows, "requirement.sync", "tl") {
-			t.Fatal("policy show tl/requirement.sync = false, want true")
-		}
-		if !commandPolicyCellAllowed(t, rows, "requirement.sync", "human") {
-			t.Fatal("policy show human/requirement.sync = false, want true")
-		}
-		if commandPolicyCellAllowed(t, rows, "requirement.sync", "developer") {
-			t.Fatal("policy show developer/requirement.sync = true, want false")
-		}
-	})
 }
 
 type requirementRow struct {

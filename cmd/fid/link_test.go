@@ -422,24 +422,15 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	rows := legacyPolicyRows(t)
-	for _, action := range []string{"link.add", "link.remove"} {
-		for _, role := range []string{"developer", "qa_reviewer", "qa_lead", "tl_lite", "tl", "workflow_runner", "human"} {
-			if got := commandPolicyCellAllowed(t, rows, action, role); !got {
-				t.Fatalf("policy show %s/%s = false, want true", action, role)
-			}
-		}
-	}
-
 	firstIssueID := createCommandIssue(t, workspace, "First issue")
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	rejectedStdout, rejectedStderr, err := runFIDCommandExpectError(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "intern")
-	if err != nil || rejectedStderr != "" || rejectedStdout == "" {
-		t.Fatalf("project-local actor result = (%q, %q, %v), want stdout success", rejectedStdout, rejectedStderr, err)
+	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:intern")
+	if stderr != "" || stdout == "" {
+		t.Fatalf("project-local actor result = (%q, %q), want stdout success", stdout, stderr)
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
 		t.Fatalf("journal lines after project-local actor = %d, want %d", got, linesBefore+1)

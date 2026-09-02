@@ -68,9 +68,6 @@ func TestV01DClosureLifecycleSmokeAndRebuildParity(t *testing.T) {
 	}
 	expectedJournalLines++
 	assertClosureJournalLines(t, journalPath, expectedJournalLines, "standalone issue transition")
-	if claims := mustReadIssueClaimsSection(t, workspace, primaryIssueID); len(claims) != 0 {
-		t.Fatalf("claims after standalone transition = %#v, want empty", claims)
-	}
 	assertClosureIssueState(t, workspace, primaryIssueID, "in_progress", "started", []string{"lifecycle"})
 
 	rejectStdout, rejectStderr, rejectErr := runFIDCommandExpectError(

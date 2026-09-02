@@ -1,6 +1,9 @@
 package main
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestTask20V1CommandsAreAbsent(t *testing.T) {
 	root := newRootCommandAt(t.TempDir())
@@ -12,9 +15,10 @@ func TestTask20V1CommandsAreAbsent(t *testing.T) {
 		{"issue", "unclaim"},
 		{"run", "record"},
 	} {
-		command, _, err := root.Find(path)
-		if err == nil || command != root {
-			t.Fatalf("fid %v resolved command %q with err %v, want unknown command", path, command.CommandPath(), err)
+		root.SetArgs(path)
+		err := root.Execute()
+		if err == nil || !strings.Contains(err.Error(), `unknown command "`+path[len(path)-1]+`"`) {
+			t.Fatalf("fid %v Execute() error = %v, want unknown command", path, err)
 		}
 	}
 }

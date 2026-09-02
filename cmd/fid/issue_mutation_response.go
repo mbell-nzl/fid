@@ -148,11 +148,6 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		}
 		return cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: path}, map[string]any{"path": path})
 	}
-	if failure, handled, err := authorityFailure(operation, "", mutationErr); err != nil {
-		return cli.Failure{}, err
-	} else if handled {
-		return failure, nil
-	}
 	if failure, handled, err := lockUnavailableFailure(mutationErr); err != nil {
 		return cli.Failure{}, err
 	} else if handled {

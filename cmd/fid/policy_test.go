@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"database/sql"
 	"os"
 	"path/filepath"
@@ -87,88 +86,6 @@ func TestPolicyShowIsReadOnlyAndDoesNotAcceptByFlag(t *testing.T) {
 	}
 }
 
-func TestPolicyShowDoesNotGrantStandaloneIssueAuthority(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	rows := legacyPolicyRows(t)
-	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "developer"); got {
-		t.Fatal("policy show developer/issue.create.epic = true, want false")
-	}
-	if got := commandPolicyCellAllowed(t, rows, "issue.create.epic", "tl"); !got {
-		t.Fatal("policy show tl/issue.create.epic = false, want true")
-	}
-	for _, action := range []string{"workflow.define", "workflow.assign"} {
-		if got := commandPolicyCellAllowed(t, rows, action, "tl"); !got {
-			t.Fatalf("policy show tl/%s = false, want true", action)
-		}
-		if got := commandPolicyCellAllowed(t, rows, action, "human"); !got {
-			t.Fatalf("policy show human/%s = false, want true", action)
-		}
-		if got := commandPolicyCellAllowed(t, rows, action, "developer"); got {
-			t.Fatalf("policy show developer/%s = true, want false", action)
-		}
-	}
-
-	attributedStdout, attributedStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "epic",
-		"--title", "Denied parity epic",
-		"--scheduling", "sequential",
-		"--actor", "agent:developer",
-	)
-	if attributedStdout != "" {
-		t.Fatalf("developer epic create stdout = %q, want empty", attributedStdout)
-	}
-	if !strings.Contains(attributedStderr, "created issue ") || !strings.Contains(attributedStderr, "(epic)") {
-		t.Fatalf("developer epic create stderr = %q, want standalone attribution confirmation", attributedStderr)
-	}
-
-	allowedStdout, allowedStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "epic",
-		"--title", "Permitted parity epic",
-		"--scheduling", "sequential",
-		"--actor", "agent:tl",
-	)
-	if allowedStdout != "" {
-		t.Fatalf("tl epic create stdout = %q, want empty", allowedStdout)
-	}
-	if !strings.Contains(allowedStderr, "created issue ") || !strings.Contains(allowedStderr, "(epic)") {
-		t.Fatalf("tl epic create stderr = %q, want create confirmation", allowedStderr)
-	}
-}
-
-func TestWorkflowAuthoringDoesNotNeedPublicPolicyInspection(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	rows := legacyPolicyRows(t)
-	for _, action := range []string{"workflow.define", "workflow.assign"} {
-		if !commandPolicyCellAllowed(t, rows, action, "tl") || !commandPolicyCellAllowed(t, rows, action, "human") {
-			t.Fatalf("policy show missing allowed %s row", action)
-		}
-	}
-}
-
-func legacyPolicyRows(t *testing.T) []any {
-	t.Helper()
-
-	stdout := &bytes.Buffer{}
-	cmd := newPolicyShowCommand()
-	cmd.SetOut(stdout)
-	if err := cmd.Execute(); err != nil {
-		t.Fatalf("unregistered policy helper = %v", err)
-	}
-	return decodeCommandJSONStructure(t, stdout.String()).([]any)
-}
-
 func countActivityLogRows(t *testing.T, conn *sql.DB) int {
 	t.Helper()
 
@@ -177,25 +94,4 @@ func countActivityLogRows(t *testing.T, conn *sql.DB) int {
 		t.Fatalf("count activity_log rows: %v", err)
 	}
 	return count
-}
-
-// Retained V1 dev/completion fixtures continue to use this internal matrix helper
-// until their replacement-bound callers are removed in task 20.
-func commandPolicyCellAllowed(t *testing.T, rows []any, action, role string) bool {
-	t.Helper()
-
-	for _, row := range rows {
-		fields, ok := row.(map[string]any)
-		if !ok || fields["action"] != action {
-			continue
-		}
-		value, ok := fields[role].(bool)
-		if !ok {
-			t.Fatalf("policy row %q missing boolean role %q: %#v", action, role, fields)
-		}
-		return value
-	}
-
-	t.Fatalf("policy row %q not found", action)
-	return false
 }

@@ -23,7 +23,6 @@ func TestJournalInspectCommandUsesDirectLegacyJSONWithoutRevert(t *testing.T) {
 		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
-	claimIssueForTransitionCLI(t, workspace, issueID, "developer")
 	_, transitionStderr := runFIDCommand(
 		t,
 		workspace,

@@ -126,8 +126,6 @@ func seedImpossibleStructuralRows(t *testing.T, db *sql.DB) {
 	seedLink(t, db, "issue", "FID-parent-task", "relates_to", "requirement", "REQ-missing-link-to")
 	seedLink(t, db, "issue", "FID-parent-task", "implements", "issue", "FID-parent-epic")
 	seedLink(t, db, "decision", "DEC-valid", "relates_to", "issue", "FID-parent-task")
-	seedClaim(t, db, "qa_review", "QA-invalid")
-	seedClaim(t, db, "issue", "FID-missing-claim")
 	seedActivity(t, db, "ACT-invalid-ref", "EVT-20260715-000001", "issue", "FID-missing-activity")
 	seedActivity(t, db, "ACT-invalid-type", "EVT-20260715-000001", "unknown", "UNKNOWN-1")
 	seedActivity(t, db, "ACT-missing-event", "EVT-20260715-999999", "decision", "DEC-valid")
@@ -158,7 +156,6 @@ func seedValidStructuralRows(t *testing.T, db *sql.DB) {
 	seedLink(t, db, "issue", "FID-task-sequential", "implements", "requirement", "REQ-valid")
 	seedLink(t, db, "requirement", "REQ-valid", "implemented_by", "issue", "FID-task-sequential")
 	seedLink(t, db, "issue", "FID-task-prioritised", "relates_to", "requirement", "REQ-valid")
-	seedClaim(t, db, "issue", "FID-task-sequential")
 	seedActivity(t, db, "ACT-issue", "EVT-20260715-000001", "issue", "FID-task-sequential")
 	seedActivity(t, db, "ACT-requirement", "EVT-20260715-000001", "requirement", "REQ-valid")
 	seedActivity(t, db, "ACT-decision", "EVT-20260715-000001", "decision", "DEC-valid")
@@ -174,11 +171,10 @@ func dropStructuralTriggers(t *testing.T, db *sql.DB) {
 		"acceptance_criteria_issue_kind_guard_insert", "task_completions_issue_kind_guard_insert",
 		"epic_metadata_issue_kind_guard_insert", "triage_events_epic_kind_guard_insert",
 		"decisions_epic_kind_guard_insert", "issues_kind_immutable",
-		"claims_scope_guard_insert", "links_endpoint_scope_guard_insert",
+		"links_endpoint_scope_guard_insert",
 		"links_from_ref_integrity_guard_insert", "links_to_ref_integrity_guard_insert",
-		"links_relation_compatibility_guard_insert", "claims_scope_guard_update",
-		"claims_ref_integrity_guard_insert", "activity_log_ref_integrity_guard_insert",
-		"claims_ref_integrity_guard_update", "issues_sequence_scheduling_guard_insert",
+		"links_relation_compatibility_guard_insert", "activity_log_ref_integrity_guard_insert",
+		"issues_sequence_scheduling_guard_insert",
 		"issues_sequence_scheduling_guard_update",
 	}
 	for _, trigger := range triggers {
@@ -283,16 +279,6 @@ func seedLink(t *testing.T, db *sql.DB, fromType, fromID, relation, toType, toID
 		VALUES (?, ?, ?, ?, ?)
 	`, fromType, fromID, relation, toType, toID); err != nil {
 		t.Fatalf("insert link %s:%s: %v", fromType, fromID, err)
-	}
-}
-
-func seedClaim(t *testing.T, db *sql.DB, refType, refID string) {
-	t.Helper()
-	if _, err := db.Exec(`
-		INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at)
-		VALUES (?, ?, 'developer', '2026-07-15T00:00:00Z')
-	`, refType, refID); err != nil {
-		t.Fatalf("insert claim %s:%s: %v", refType, refID, err)
 	}
 }
 
@@ -463,10 +449,28 @@ func seedIssueAt(t *testing.T, db *sql.DB, id, kind, status string, createdAt ti
 
 func seedClaimAt(t *testing.T, db *sql.DB, issueID string, claimedAt time.Time, ttlSeconds int) {
 	t.Helper()
+	envelopeID := "ENV-" + issueID
 	if _, err := db.Exec(`
-		INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds)
-		VALUES ('issue', ?, 'developer', ?, ?)
-	`, issueID, claimedAt.Format(time.RFC3339), ttlSeconds); err != nil {
+		INSERT INTO work_envelopes (id, current_revision, status, created_at)
+		VALUES (?, 1, 'active', ?)
+	`, envelopeID, claimedAt.Format(time.RFC3339)); err != nil {
+		t.Fatalf("insert claim envelope %q: %v", envelopeID, err)
+	}
+	if _, err := db.Exec(`
+		INSERT INTO envelope_revisions (
+			envelope_id, revision, outcome, non_goals_json, risk_result_json,
+			repository_scope_json, status, created_actor_id, approved_actor_id,
+			created_at, activated_at
+		) VALUES (?, 1, 'maintenance claim fixture', '[]', '{}', '{}', 'active', 'agent:developer', 'agent:developer', ?, ?)
+	`, envelopeID, claimedAt.Format(time.RFC3339), claimedAt.Format(time.RFC3339)); err != nil {
+		t.Fatalf("insert claim envelope revision %q: %v", envelopeID, err)
+	}
+	if _, err := db.Exec(`
+		INSERT INTO claims (
+			id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id,
+			scope_json, mode, version, status, acquired_at, expires_at
+		) VALUES (?, ?, ?, 1, 'agent:developer', 'maintenance', '{}', 'mutation', 1, 'active', ?, ?)
+	`, "CLM-"+issueID, issueID, envelopeID, claimedAt.Format(time.RFC3339), claimedAt.Add(time.Duration(ttlSeconds)*time.Second).Format(time.RFC3339)); err != nil {
 		t.Fatalf("insert dated claim %q: %v", issueID, err)
 	}
 }

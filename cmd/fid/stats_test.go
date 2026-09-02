@@ -3,12 +3,15 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
+	"sync/atomic"
 	"testing"
 
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/runs"
 )
 
 func TestStatsTokensDefaultsToJSONByActorAttribution(t *testing.T) {
@@ -190,11 +193,12 @@ func createStatsCommandIssue(t *testing.T, workspace, kind, title string, parent
 		MigrationsDir: issueMigrationsDir(),
 		Kind:          kind,
 		Title:         title,
-		ActorRole:     "developer",
+		Actor:         "agent:developer",
+		IdempotencyKey: fmt.Sprintf("stats-command-create-%d", atomic.AddUint64(&statsCommandFixtureSequence, 1)),
 		ParentID:      parentID,
 	}
 	if kind == "epic" {
-		options.ActorRole = "tl"
+		options.Actor = "agent:tl"
 		options.Scheduling = "prioritised"
 	}
 
@@ -205,23 +209,39 @@ func createStatsCommandIssue(t *testing.T, workspace, kind, title string, parent
 	return created.ID
 }
 
-func recordStatsCommandRun(t *testing.T, workspace, issueID, runRole, model string, tokensIn, tokensOut int) runs.RecordResult {
+var statsCommandFixtureSequence uint64
+
+type statsCommandRunFixture struct {
+	CostUSD *float64
+}
+
+func recordStatsCommandRun(t *testing.T, workspace, issueID, runRole, model string, tokensIn, tokensOut int) statsCommandRunFixture {
 	t.Helper()
 
-	result, err := runs.Record(runs.RecordOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: issueMigrationsDir(),
-		IssueID:       issueID,
-		ActorRole:     runRole,
-		RunRole:       runRole,
-		Model:         model,
-		TokensIn:      intPointer(tokensIn),
-		TokensOut:     intPointer(tokensOut),
-	})
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
-		t.Fatalf("Record() error = %v", err)
+		t.Fatalf("open frozen telemetry fixture: %v", err)
 	}
-	return result
+	defer closeCommandDB(t, conn)
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM agent_runs`).Scan(&count); err != nil {
+		t.Fatalf("count frozen telemetry rows: %v", err)
+	}
+	var cost any
+	var costResult *float64
+	if model != "mystery-model" {
+		value := float64(tokensIn+tokensOut) / 1_000_000
+		cost = value
+		costResult = &value
+	}
+	if _, err := conn.Exec(`
+		INSERT INTO agent_runs (id, issue_id, role, model, tokens_in, tokens_out, cost_usd)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, fmt.Sprintf("STATS-%03d", count+1), issueID, runRole, model, tokensIn, tokensOut, cost); err != nil {
+		t.Fatalf("insert frozen telemetry fixture: %v", err)
+	}
+	return statsCommandRunFixture{CostUSD: costResult}
 }
 
 func expectedCommandStructure(t *testing.T, value any) any {

@@ -52,9 +52,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		if got.Links == nil || len(got.Links) != 0 {
 			t.Fatalf("Get() links = %#v, want empty array", got.Links)
 		}
-		if got.Claims == nil || len(got.Claims) != 0 {
-			t.Fatalf("Get() claims = %#v, want empty array", got.Claims)
-		}
 		if got.ConcernsRaised {
 			t.Fatal("Get() concerns_raised = true, want false")
 		}
@@ -126,30 +123,6 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 		}
 		if got.Links[0].TargetTitle == nil || *got.Links[0].TargetTitle != "Schema migration runner" {
 			t.Fatalf("Get() first link target_title = %#v, want Schema migration runner", got.Links[0].TargetTitle)
-		}
-		if len(got.Claims) != 1 || got.Claims[0].ClaimedBy != "developer" {
-			t.Fatalf("Get() claims = %#v, want one live developer claim", got.Claims)
-		}
-		if len(got.Gates) != 2 {
-			t.Fatalf("Get() gates = %#v, want two gate runs", got.Gates)
-		}
-		if got.Gates[0].ID != "GATE-000401" || got.Gates[0].AttemptNumber != 1 || got.Gates[0].Command != "go test ./..." {
-			t.Fatalf("Get() first gate = %#v, want attempt 1 go test gate", got.Gates[0])
-		}
-		if got.Gates[0].AgentRunID == nil || *got.Gates[0].AgentRunID != "RUN-000401" {
-			t.Fatalf("Get() first gate agent_run_id = %#v, want RUN-000401", got.Gates[0].AgentRunID)
-		}
-		if got.Gates[0].OutputExcerpt == nil || *got.Gates[0].OutputExcerpt != "ok" {
-			t.Fatalf("Get() first gate output_excerpt = %#v, want ok", got.Gates[0].OutputExcerpt)
-		}
-		if got.Gates[1].ID != "GATE-000402" || got.Gates[1].AttemptNumber != 2 || got.Gates[1].Command != "golangci-lint run ./..." {
-			t.Fatalf("Get() second gate = %#v, want attempt 2 golangci-lint gate", got.Gates[1])
-		}
-		if got.Gates[1].AgentRunID != nil {
-			t.Fatalf("Get() second gate agent_run_id = %#v, want nil", got.Gates[1].AgentRunID)
-		}
-		if got.Gates[1].OutputExcerpt != nil {
-			t.Fatalf("Get() second gate output_excerpt = %#v, want nil", got.Gates[1].OutputExcerpt)
 		}
 		if len(got.Completions) == 0 || len(got.Completions[0].GateResults) != 2 {
 			t.Fatalf("Get() completions gate_results = %#v, want completion snapshot preserved separately", got.Completions)
@@ -399,33 +372,6 @@ func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 		},
 		{
 			query: `
-				INSERT INTO gate_runs (
-					id, issue_id, attempt_number, agent_run_id, recorded_by_role, command, exit_code, output_excerpt, ran_at
-				) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"GATE-000401",
-				"FID-a1b2c3",
-				1,
-				"RUN-000401",
-				"developer",
-				"go test ./...",
-				0,
-				"ok",
-				"2026-05-27T09:20:00Z",
-				"GATE-000402",
-				"FID-a1b2c3",
-				2,
-				nil,
-				"developer",
-				"golangci-lint run ./...",
-				1,
-				nil,
-				"2026-05-27T10:25:00Z",
-			},
-		},
-		{
-			query: `
 				INSERT INTO ac_verifications (id, ac_id, verifier_role, status, completion_id, verified_at)
 				VALUES (?, ?, ?, ?, ?, ?), (?, ?, ?, ?, ?, ?)
 			`,
@@ -498,20 +444,6 @@ func seedIssueDetailFixture(t *testing.T, conn *sql.DB) {
 				"requirement",
 				"PRD-ISSUE-001",
 				"2026-05-27T10:19:00Z",
-			},
-		},
-		{
-			query: `
-				INSERT INTO claims (ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note)
-				VALUES (?, ?, ?, ?, ?, ?)
-			`,
-			args: []any{
-				"issue",
-				"FID-a1b2c3",
-				"developer",
-				"2026-05-27T09:50:00Z",
-				1800,
-				"Working the flush path",
 			},
 		},
 	}

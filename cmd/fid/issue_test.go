@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,12 +11,9 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 
-	claimsdomain "github.com/mbell-nzl/fid/internal/claims"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
@@ -837,12 +833,6 @@ func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
 	args = withIssueMutationTestKey(args)
-	if stdout, stderr, err, handled := runLegacyClaimFixture(workspace, args); handled {
-		if err != nil {
-			t.Fatalf("Execute(%v) error = %v", args, err)
-		}
-		return stdout, stderr
-	}
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -868,9 +858,6 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (string, string, error) {
 	t.Helper()
 	args = withIssueMutationTestKey(args)
-	if stdout, stderr, err, handled := runLegacyClaimFixture(workspace, args); handled {
-		return stdout, stderr, err
-	}
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -883,113 +870,6 @@ func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (s
 	err := cmd.Execute()
 	return stdout.String(), stderr.String(), err
 }
-
-// runLegacyClaimFixture keeps retained V1 state setup out of the new generic
-// Claim transport. The product tree does not register these spellings.
-func runLegacyClaimFixture(workspace string, args []string) (string, string, error, bool) {
-	if len(args) >= 2 && args[0] == "claim" && args[1] == "list" {
-		items, err := claimsdomain.List(claimsdomain.ListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ClaimedBy: legacyClaimFlag(args, "--by"), StaleOnly: legacyClaimHasFlag(args, "--stale")})
-		if err != nil {
-			return "", legacyClaimFixtureError(err), err, true
-		}
-		payload, err := json.Marshal(items)
-		if err != nil {
-			return "", "", err, true
-		}
-		return string(payload) + "\n", "", nil, true
-	}
-	if len(args) < 3 || args[0] != "issue" || (args[1] != "claim" && args[1] != "unclaim") {
-		return "", "", nil, false
-	}
-	issueID, actor := args[2], legacyClaimFlag(args, "--by")
-	if actor == "" {
-		err := fmt.Errorf("--by is required")
-		return "", legacyClaimFixtureError(err), err, true
-	}
-	if args[1] == "unclaim" {
-		result, err := claimsdomain.Release(claimsdomain.ReleaseOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), IssueID: issueID, ActorRole: actor})
-		if err != nil {
-			return "", legacyClaimFixtureError(err), err, true
-		}
-		return "", fmt.Sprintf("released claim on %s by %s\n", result.RefID, result.ReleasedBy), nil, true
-	}
-	if legacyClaimHasFlag(args, "--force") && legacyClaimHasFlag(args, "--renew") {
-		err := fmt.Errorf("--force and --renew are mutually exclusive")
-		return "", legacyClaimFixtureError(err), err, true
-	}
-	ttl, err := legacyClaimTTL(args)
-	if err != nil {
-		return "", "error: parse --ttl: " + err.Error() + "\n", err, true
-	}
-	if legacyClaimHasFlag(args, "--renew") {
-		result, err := claimsdomain.Renew(claimsdomain.RenewOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), IssueID: issueID, ActorRole: actor, TTLSeconds: ttl})
-		if err != nil {
-			return "", legacyClaimFixtureError(err), err, true
-		}
-		return "", fmt.Sprintf("renewed claim on %s by %s (expires %s)\n", result.RefID, result.ClaimedBy, result.ExpiresAt), nil, true
-	}
-	note := legacyClaimFlag(args, "--note")
-	var notePointer *string
-	if note != "" {
-		notePointer = &note
-	}
-	result, err := claimsdomain.Acquire(claimsdomain.AcquireOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), IssueID: issueID, ActorRole: actor, TTLSeconds: ttl, Note: notePointer, Force: legacyClaimHasFlag(args, "--force")})
-	if err != nil {
-		return "", legacyClaimFixtureError(err), err, true
-	}
-	if legacyClaimHasFlag(args, "--force") && result.Previous != nil {
-		return "", fmt.Sprintf("force-acquired claim on %s by %s (previously held by %s until %s)\n", result.RefID, result.ClaimedBy, result.Previous.ClaimedBy, result.Previous.ExpiresAt), nil, true
-	}
-	return "", fmt.Sprintf("claimed %s by %s (expires %s)\n", result.RefID, result.ClaimedBy, result.ExpiresAt), nil, true
-}
-
-func legacyClaimFlag(args []string, name string) string {
-	for index := 0; index+1 < len(args); index++ {
-		if args[index] == name {
-			return args[index+1]
-		}
-	}
-	return ""
-}
-
-func legacyClaimHasFlag(args []string, name string) bool {
-	for _, arg := range args {
-		if arg == name {
-			return true
-		}
-	}
-	return false
-}
-
-func legacyClaimTTL(args []string) (*int, error) {
-	value := legacyClaimFlag(args, "--ttl")
-	if value == "" {
-		return nil, nil
-	}
-	duration, err := time.ParseDuration(value)
-	if err != nil || duration <= 0 || duration%time.Second != 0 {
-		if err == nil {
-			err = fmt.Errorf("must be a positive whole-second duration")
-		}
-		return nil, err
-	}
-	seconds := int(duration / time.Second)
-	return &seconds, nil
-}
-
-func legacyClaimFixtureError(err error) string {
-	message := "error: " + err.Error()
-	var unknown *policy.UnknownRoleError
-	if errors.As(err, &unknown) {
-		message += "\nknown roles: " + strings.Join(unknown.KnownRoles, ", ")
-	}
-	var denied *policy.PermissionDeniedError
-	if errors.As(err, &denied) {
-		message += "\ncheck `fid policy show` for permitted role/action combinations"
-	}
-	return message + "\n"
-}
-
 func parseCreatedIssueID(t *testing.T, stderr string) string {
 	t.Helper()
 
@@ -1099,8 +979,7 @@ func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event
 	t.Helper()
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: event.Actor.Role,
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err
