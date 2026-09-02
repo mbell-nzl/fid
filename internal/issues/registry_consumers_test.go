@@ -12,7 +12,7 @@ func TestGetListAndReadyUseProjectedWorkflowCategories(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Projected category consumer",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)

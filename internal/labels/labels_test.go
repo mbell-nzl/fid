@@ -29,7 +29,7 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 		Name:          "core",
 		Colour:        &colour,
 		Description:   &description,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Add() error = %v", err)
@@ -76,7 +76,7 @@ func TestAddStoresOptionalFieldsAndRejectsDuplicateBeforeAppend(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLabelsMigrationsDir(t),
 		Name:          "core",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("duplicate Add() error = nil, want rejection")
@@ -100,7 +100,7 @@ func TestAddAppliesClosedLabelValueBoundariesBeforeAppend(t *testing.T) {
 		workspace := newLabelsWorkspace(t)
 		colour := strings.Repeat("c", 64)
 		description := strings.Repeat("d", 4096)
-		result, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: strings.Repeat("n", 255), Colour: &colour, Description: &description, ActorRole: "developer"})
+		result, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: strings.Repeat("n", 255), Colour: &colour, Description: &description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 		if err != nil || len(result.Label.Name) != 255 || len(*result.Label.Colour) != 64 || len(*result.Label.Description) != 4096 {
 			t.Fatalf("Add() = (%#v, %v), want exact maxima", result, err)
 		}
@@ -128,7 +128,7 @@ func TestAddAppliesClosedLabelValueBoundariesBeforeAppend(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newLabelsWorkspace(t)
 			before := countLabelJournalEvents(t, workspace)
-			_, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: test.label, Colour: test.colour, Description: test.description, ActorRole: "developer"})
+			_, err := Add(AddOptions{WorkspaceRoot: workspace, MigrationsDir: testLabelsMigrationsDir(t), Name: test.label, Colour: test.colour, Description: test.description, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err == nil || err.Error() != test.wantErr {
 				t.Fatalf("Add() error = %v, want %q", err, test.wantErr)
 			}
@@ -184,7 +184,7 @@ func TestListReturnsLabelsInNameOrderWithNilOptionalFields(t *testing.T) {
 		MigrationsDir: testLabelsMigrationsDir(t),
 		Name:          "journal",
 		Description:   &description,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Add(journal) error = %v", err)
 	}
@@ -192,7 +192,7 @@ func TestListReturnsLabelsInNameOrderWithNilOptionalFields(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLabelsMigrationsDir(t),
 		Name:          "core",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Add(core) error = %v", err)
 	}
@@ -253,7 +253,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 				_, err := Add(AddOptions{
 					MigrationsDir: migrationsDir,
 					Name:          "core",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -265,7 +265,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 				_, err := Add(AddOptions{
 					WorkspaceRoot: workspace,
 					Name:          "core",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -278,7 +278,7 @@ func TestAddAndListValidateRequiredInputs(t *testing.T) {
 					WorkspaceRoot: workspace,
 					MigrationsDir: migrationsDir,
 					Name:          "   ",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},

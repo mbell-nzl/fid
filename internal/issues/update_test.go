@@ -20,11 +20,11 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement update command",
-		ActorRole:     "developer",
-		Priority:      intPointer(2),
-		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
-		Labels:        []string{"core"},
-		OwnerActor:    stringPointer("agent:before"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Priority:   intPointer(2),
+		SpecMDPath: stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
+		Labels:     []string{"core"},
+		OwnerActor: stringPointer("agent:before"),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -43,9 +43,9 @@ func TestUpdateChangesTitleAndPriorityAndPreservesUntouchedFields(t *testing.T) 
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ActorRole:     "developer",
-		Title:         stringPointer("Implement issue update"),
-		Priority:      intPointer(1),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Title:    stringPointer("Implement issue update"),
+		Priority: intPointer(1),
 	})
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -86,7 +86,7 @@ func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Record revision",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -96,8 +96,8 @@ func TestUpdateEventRecordsReplayableRevision(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ActorRole:     "developer",
-		Title:         stringPointer("Record updated revision"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Title: stringPointer("Record updated revision"),
 	}); err != nil {
 		t.Fatalf("Update() error = %v", err)
 	}
@@ -140,9 +140,9 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			name: "priority out of range",
 			mutate: func(createdID string) UpdateOptions {
 				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					Priority:  intPointer(7),
+					ID:    createdID,
+					Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Priority: intPointer(7),
 				}
 			},
 			wantErr: "update issue: priority must be between 0 and 5",
@@ -151,9 +151,9 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			name: "blank title",
 			mutate: func(createdID string) UpdateOptions {
 				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					Title:     stringPointer("   "),
+					ID:    createdID,
+					Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Title: stringPointer("   "),
 				}
 			},
 			wantErr: "update issue: title must not be blank",
@@ -163,9 +163,9 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 			mutate: func(createdID string) UpdateOptions {
 				labels := []string{"core", "missing"}
 				return UpdateOptions{
-					ID:        createdID,
-					ActorRole: "developer",
-					Labels:    &labels,
+					ID:    createdID,
+					Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Labels: &labels,
 				}
 			},
 			wantErr: `update issue: label "missing" does not exist`,
@@ -182,9 +182,9 @@ func TestUpdateRejectsInvalidChangesWithoutAppending(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Reject invalid update",
-				ActorRole:     "developer",
-				Priority:      intPointer(2),
-				Labels:        []string{"core"},
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				Priority: intPointer(2),
+				Labels:   []string{"core"},
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -242,10 +242,10 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Initial update target",
-		ActorRole:     "developer",
-		Priority:      intPointer(2),
-		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
-		Labels:        []string{"core", "legacy"},
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Priority:   intPointer(2),
+		SpecMDPath: stringPointer("project-docs/specs/02_TRD.md"),
+		Labels:     []string{"core", "legacy"},
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -267,11 +267,11 @@ func TestUpdateAppendsOneEventProjectsActivityAndRebuilds(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ActorRole:     "tl",
-		Title:         stringPointer("Updated issue target"),
-		Priority:      intPointer(1),
-		Labels:        &labels,
-		SpecMDPath:    stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Title:      stringPointer("Updated issue target"),
+		Priority:   intPointer(1),
+		Labels:     &labels,
+		SpecMDPath: stringPointer("project-docs/specs/06_DESIGN_PLAN_CLI.md"),
 	})
 	if err != nil {
 		t.Fatalf("Update() error = %v", err)
@@ -441,7 +441,7 @@ func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "No-op target",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -454,8 +454,8 @@ func TestUpdateRejectsNoOpWithoutAppending(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
-		ActorRole:     "developer",
-		Title:         stringPointer("No-op target"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Title: stringPointer("No-op target"),
 	})
 	if err == nil {
 		t.Fatal("Update() error = nil, want no-op rejection")

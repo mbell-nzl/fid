@@ -23,7 +23,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 		if _, err := Define(DefineOptions{
 			WorkspaceRoot: workspace,
 			MigrationsDir: migrationsDir,
-			ActorRole:     "tl",
+			Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 			Request: DefinitionRequest{
 				Name:        fixture.name,
 				AppliesTo:   fixture.appliesTo,
@@ -64,7 +64,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 		t.Run(fixture.name, func(t *testing.T) {
 			journalPath := workflowJournalPath(t, workspace)
 			beforeLines := strings.Split(strings.TrimSpace(string(readWorkflowTestFile(t, journalPath))), "\n")
-			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: fixture.first}); err != nil {
+			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: fixture.first}); err != nil {
 				t.Fatalf("Assign(first) error = %v", err)
 			}
 			first := assignmentEventAt(t, journalPath, len(beforeLines))
@@ -74,7 +74,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 			if got := first.Effects[0].Values["workflow_id"]; got != fixture.firstID {
 				t.Fatalf("first workflow_id = %#v, want %q", got, fixture.firstID)
 			}
-			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: fixture.second}); err != nil {
+			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: fixture.second}); err != nil {
 				t.Fatalf("Assign(second) error = %v", err)
 			}
 			second := assignmentEventAt(t, journalPath, len(beforeLines)+1)

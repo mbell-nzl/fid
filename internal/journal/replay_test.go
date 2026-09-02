@@ -585,7 +585,7 @@ func TestEnsureProjectionFreshWithLockRebuildsMissingSQLiteProjection(t *testing
 	}
 
 	var result EnsureProjectionResult
-	err = WithLock(workspace, LockOwner{Command: "fid catch-up", ActorRole: "developer"}, func(lock *WriteLock) error {
+	err = WithLock(workspace, LockOwner{Command: "fid catch-up"}, func(lock *WriteLock) error {
 		if _, statErr := os.Stat(filepath.Join(workspace, ".fid", lockDirectoryName)); statErr != nil {
 			return fmt.Errorf("caller-held lock missing before catch-up: %w", statErr)
 		}

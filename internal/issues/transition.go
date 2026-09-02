@@ -19,7 +19,6 @@ type TransitionOptions struct {
 	ToState          string
 	Actor            string
 	IdempotencyKey   string
-	ActorRole        string
 	ExpectedRevision *int
 	now              func() time.Time
 }
@@ -121,7 +120,6 @@ type issueTransitionState struct {
 }
 
 func Transition(options TransitionOptions) (TransitionResult, error) {
-	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: workspace root is required")
 	}
@@ -131,7 +129,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: issue id is required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return TransitionResult{}, err
 	}
@@ -155,8 +153,7 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	commandArgv := issueTransitionArgv(options.ID, toState, options.Actor, options.IdempotencyKey, options.ExpectedRevision)
 	var result TransitionResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)

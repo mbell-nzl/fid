@@ -19,7 +19,6 @@ type UpdateOptions struct {
 	ID             string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 	Title          *string
 	Priority       *int
 	Labels         *[]string
@@ -59,7 +58,6 @@ type issueUpdateState struct {
 }
 
 func Update(options UpdateOptions) (UpdateResult, error) {
-	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: workspace root is required")
 	}
@@ -69,7 +67,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: issue id is required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return UpdateResult{}, err
 	}
@@ -93,8 +91,7 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	commandArgv := issueUpdateArgv(options.ID, options.Actor, options.IdempotencyKey, request, options.ExpectedRevision)
 	var result UpdateResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)

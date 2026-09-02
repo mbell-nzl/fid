@@ -22,7 +22,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	result, err := Define(DefineOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: migrationsDir,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		Request: DefinitionRequest{
 			Name:        "direct-flow",
 			AppliesTo:   "task",
@@ -77,7 +77,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if activityCount != 0 {
 		t.Fatalf("activity_log rows = %d, want 0", activityCount)
 	}
-	if _, err := Define(DefineOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: DefinitionRequest{Name: "direct-flow", AppliesTo: "task", States: []string{"todo", "cancelled"}, Categories: []string{"unstarted", "cancelled"}, Transitions: []Transition{{From: "todo", To: "cancelled"}}}}); err == nil {
+	if _, err := Define(DefineOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: DefinitionRequest{Name: "direct-flow", AppliesTo: "task", States: []string{"todo", "cancelled"}, Categories: []string{"unstarted", "cancelled"}, Transitions: []Transition{{From: "todo", To: "cancelled"}}}}); err == nil {
 		t.Fatal("duplicate Define() error = nil, want rejection")
 	}
 	if finalJournal := readWorkflowTestFile(t, journalPath); !bytes.Equal(finalJournal, afterJournal) {

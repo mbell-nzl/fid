@@ -8,7 +8,6 @@ type SyncOptions struct {
 	SourceDoc      string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 	TypeFilter     string
 	RequirementID  string
 }

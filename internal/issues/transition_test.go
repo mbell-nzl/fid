@@ -23,7 +23,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Transition me",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -38,7 +38,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition() error = %v", err)
@@ -186,7 +186,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry edge source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -208,7 +208,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want missing registry edge rejection")
@@ -252,7 +252,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry rule source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -263,7 +263,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -283,7 +283,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "dev_complete",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(in_progress->dev_complete) error = %v", err)
 	}
@@ -297,7 +297,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry category source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -319,7 +319,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -333,7 +333,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Explicit cancellation edge",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -354,7 +354,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "cancelled",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want missing cancelled registry edge rejection")
@@ -371,7 +371,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Reserved gate seam",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -397,7 +397,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want reserved-rule rejection")
@@ -428,7 +428,7 @@ func TestTransitionIntoStartedAllowsStandaloneActorWithoutGenericClaim(t *testin
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Started claim gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -442,7 +442,7 @@ func TestTransitionIntoStartedAllowsStandaloneActorWithoutGenericClaim(t *testin
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition() error = %v", err)
@@ -512,7 +512,7 @@ func TestTransitionIntoStartedIgnoresRetainedV1Claims(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         tt.name,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -538,7 +538,7 @@ func TestTransitionIntoStartedIgnoresRetainedV1Claims(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				ID:            created.ID,
 				ToState:       "in_progress",
-				ActorRole:     tt.transitionRole,
+				Actor:         testActorForRole(tt.transitionRole), IdempotencyKey: testIdempotencyKey(),
 			})
 			if err != nil {
 				t.Fatalf("Transition() error = %v", err)
@@ -576,7 +576,7 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Parent task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent) error = %v", err)
@@ -586,8 +586,8 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Releasable subtask",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(parent.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
@@ -599,7 +599,7 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -612,7 +612,7 @@ func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "done",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition(in_progress->done) error = %v", err)
@@ -690,7 +690,7 @@ func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *t
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Parent task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent) error = %v", err)
@@ -700,8 +700,8 @@ func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *t
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Rebuild released caller claim",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(parent.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
@@ -713,7 +713,7 @@ func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *t
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -738,7 +738,7 @@ func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *t
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "done",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(in_progress->done) error = %v", err)
 	}
@@ -782,7 +782,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Reject invalid transition",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -805,7 +805,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "done",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want rejection")
@@ -852,7 +852,7 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Developer gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -869,7 +869,7 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -882,7 +882,7 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "dev_complete",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(in_progress->dev_complete) error = nil, want rejection")
@@ -914,7 +914,7 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "dev_complete",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition(dev_complete success) error = %v", err)
@@ -949,7 +949,7 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "QA gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -969,25 +969,25 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "in_progress",
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		},
 		{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "dev_complete",
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		},
 		{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "qa_review",
-			ActorRole:     "qa_reviewer",
+			Actor:         testActorForRole("qa_reviewer"), IdempotencyKey: testIdempotencyKey(),
 		},
 	} {
 		if options.ToState == "in_progress" {
-			claimTransitionIssue(t, workspace, created.ID, options.ActorRole)
+			claimTransitionIssue(t, workspace, created.ID, "developer")
 		}
 		if _, err := Transition(options); err != nil {
 			t.Fatalf("Transition(%s) error = %v", options.ToState, err)
@@ -1002,7 +1002,7 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "qa_pass",
-		ActorRole:     "qa_lead",
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(qa_review->qa_pass) error = nil, want rejection")
@@ -1029,7 +1029,7 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "qa_pass",
-		ActorRole:     "qa_lead",
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(qa_pass success) error = %v", err)
 	}
@@ -1060,8 +1060,8 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Wrap epic",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -1072,9 +1072,9 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Child one",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epic.ID),
-		Sequence:      intPointer(1),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(1),
 	})
 	if err != nil {
 		t.Fatalf("Create(child one) error = %v", err)
@@ -1084,9 +1084,9 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Child two",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epic.ID),
-		Sequence:      intPointer(2),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(2),
 	})
 	if err != nil {
 		t.Fatalf("Create(child two) error = %v", err)
@@ -1098,7 +1098,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "in_progress",
-		ActorRole:     "workflow_runner",
+		Actor:         testActorForRole("workflow_runner"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(epic todo->in_progress) error = %v", err)
 	}
@@ -1111,7 +1111,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "wrapped",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(epic in_progress->wrapped) error = nil, want rejection")
@@ -1137,7 +1137,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "wrapped",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(epic wrapped success) error = %v", err)
 	}
@@ -1168,7 +1168,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Parent task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent) error = %v", err)
@@ -1178,8 +1178,8 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Child subtask",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(parent.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
@@ -1190,7 +1190,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Cancel from todo",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -1201,7 +1201,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(subtask todo->in_progress) error = %v", err)
 	}
@@ -1226,7 +1226,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            task.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(task todo->cancelled) error = %v", err)
 	}
@@ -1235,7 +1235,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(subtask in_progress->cancelled) error = %v", err)
 	}
@@ -1248,7 +1248,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(cancelled->cancelled) error = nil, want rejection")

@@ -23,7 +23,6 @@ type AddAcceptanceCriterionOptions struct {
 	Ordinal        int
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type AddAcceptanceCriterionResult struct {
@@ -39,7 +38,6 @@ type AddAcceptanceCriterionResult struct {
 }
 
 func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanceCriterionResult, error) {
-	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: workspace root is required")
 	}
@@ -63,7 +61,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if options.Ordinal > 2147483647 {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: ordinal must be between 1 and 2147483647")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
@@ -83,8 +81,7 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	commandArgv := issueACAddArgv(issueID, text, options.Ordinal, options.Actor, options.IdempotencyKey)
 	var result AddAcceptanceCriterionResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)

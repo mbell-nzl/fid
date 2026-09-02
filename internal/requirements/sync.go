@@ -17,7 +17,6 @@ import (
 // Sync parses requirement pointers from a markdown source document and upserts
 // them into the requirements table through one journal event.
 func Sync(options SyncOptions) (SyncResult, error) {
-	options.IdempotencyKey = requirementIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return SyncResult{}, fmt.Errorf("requirement sync: workspace root is required")
 	}
@@ -28,7 +27,7 @@ func Sync(options SyncOptions) (SyncResult, error) {
 	if sourceDoc == "" {
 		return SyncResult{}, fmt.Errorf("requirement sync: --source-doc is required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return SyncResult{}, err
 	}
@@ -45,8 +44,7 @@ func Sync(options SyncOptions) (SyncResult, error) {
 	}
 
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err

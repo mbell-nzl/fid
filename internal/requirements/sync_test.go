@@ -34,7 +34,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(first) error = %v", err)
@@ -59,7 +59,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(second) error = %v", err)
@@ -85,7 +85,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(third) error = %v", err)
@@ -128,8 +128,8 @@ func TestSyncSupportsTypeAndIDFilters(t *testing.T) {
 			WorkspaceRoot: workspace,
 			MigrationsDir: testRequirementsMigrationsDir(t),
 			SourceDoc:     sourceDoc,
-			ActorRole:     "human",
-			TypeFilter:    "PRD",
+			Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
+			TypeFilter: "PRD",
 		})
 		if err != nil {
 			t.Fatalf("Sync(type filter) error = %v", err)
@@ -164,7 +164,7 @@ func TestSyncSupportsTypeAndIDFilters(t *testing.T) {
 			WorkspaceRoot: workspace,
 			MigrationsDir: testRequirementsMigrationsDir(t),
 			SourceDoc:     sourceDoc,
-			ActorRole:     "tl",
+			Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 			RequirementID: "TRD-ARCH-010",
 		})
 		if err != nil {
@@ -303,7 +303,7 @@ This file has no canonical requirement rows.
 				WorkspaceRoot: workspace,
 				MigrationsDir: testRequirementsMigrationsDir(t),
 				SourceDoc:     sourceDoc,
-				ActorRole:     tt.role,
+				Actor:         testActorForRole(tt.role), IdempotencyKey: testIdempotencyKey(),
 				TypeFilter:    tt.typeFilter,
 				RequirementID: tt.requirement,
 			})

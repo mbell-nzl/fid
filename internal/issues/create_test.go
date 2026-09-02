@@ -10,28 +10,28 @@ func TestCreateAllowsLegalHierarchy(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 
 	epic := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:       "epic",
-		Title:      "Root epic",
-		ActorRole:  "tl",
+		Kind:  "epic",
+		Title: "Root epic",
+		Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		Scheduling: "sequential",
 	})
 	mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "task",
-		Title:     "Root task",
-		ActorRole: "developer",
+		Kind:  "task",
+		Title: "Root task",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	task := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "task",
-		Title:     "Epic task",
-		ActorRole: "developer",
-		ParentID:  stringPointer(epic.ID),
-		Sequence:  intPointer(1),
+		Kind:  "task",
+		Title: "Epic task",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(1),
 	})
 	mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "subtask",
-		Title:     "Task subtask",
-		ActorRole: "developer",
-		ParentID:  stringPointer(task.ID),
+		Kind:  "subtask",
+		Title: "Task subtask",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(task.ID),
 	})
 }
 
@@ -39,27 +39,27 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 	workspace := newIssueWorkspace(t)
 
 	epic := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:       "epic",
-		Title:      "Hierarchy epic",
-		ActorRole:  "tl",
+		Kind:  "epic",
+		Title: "Hierarchy epic",
+		Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		Scheduling: "prioritised",
 	})
 	rootTask := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "task",
-		Title:     "Root task",
-		ActorRole: "developer",
+		Kind:  "task",
+		Title: "Root task",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	childTask := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "task",
-		Title:     "Epic child task",
-		ActorRole: "developer",
-		ParentID:  stringPointer(epic.ID),
+		Kind:  "task",
+		Title: "Epic child task",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
 	})
 	childSubtask := mustCreateHierarchyIssue(t, workspace, CreateOptions{
-		Kind:      "subtask",
-		Title:     "Task child subtask",
-		ActorRole: "developer",
-		ParentID:  stringPointer(childTask.ID),
+		Kind:  "subtask",
+		Title: "Task child subtask",
+		Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(childTask.ID),
 	})
 
 	journalPath := journalPathForWorkspace(t, workspace)
@@ -74,9 +74,9 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 		{
 			name: "epic with parent",
 			options: CreateOptions{
-				Kind:       "epic",
-				Title:      "Nested epic",
-				ActorRole:  "tl",
+				Kind:  "epic",
+				Title: "Nested epic",
+				Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 				ParentID:   stringPointer(rootTask.ID),
 				Scheduling: "sequential",
 			},
@@ -90,10 +90,10 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 		{
 			name: "subtask under epic",
 			options: CreateOptions{
-				Kind:      "subtask",
-				Title:     "Wrong subtask parent",
-				ActorRole: "developer",
-				ParentID:  stringPointer(epic.ID),
+				Kind:  "subtask",
+				Title: "Wrong subtask parent",
+				Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: stringPointer(epic.ID),
 			},
 			wantHierarchy: &HierarchyInvalidError{
 				Kind:       "subtask",
@@ -105,9 +105,9 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 		{
 			name: "subtask without parent",
 			options: CreateOptions{
-				Kind:      "subtask",
-				Title:     "Orphan subtask",
-				ActorRole: "developer",
+				Kind:  "subtask",
+				Title: "Orphan subtask",
+				Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantHierarchy: &HierarchyInvalidError{
 				Kind: "subtask",
@@ -117,10 +117,10 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 		{
 			name: "task under subtask",
 			options: CreateOptions{
-				Kind:      "task",
-				Title:     "Too-deep task",
-				ActorRole: "developer",
-				ParentID:  stringPointer(childSubtask.ID),
+				Kind:  "task",
+				Title: "Too-deep task",
+				Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: stringPointer(childSubtask.ID),
 			},
 			wantHierarchy: &HierarchyInvalidError{
 				Kind:       "task",
@@ -132,10 +132,10 @@ func TestCreateRejectsIllegalHierarchyBeforeAppend(t *testing.T) {
 		{
 			name: "missing parent",
 			options: CreateOptions{
-				Kind:      "subtask",
-				Title:     "Missing parent subtask",
-				ActorRole: "developer",
-				ParentID:  stringPointer("FID-missing-parent"),
+				Kind:  "subtask",
+				Title: "Missing parent subtask",
+				Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: stringPointer("FID-missing-parent"),
 			},
 			wantNotFound: "FID-missing-parent",
 		},

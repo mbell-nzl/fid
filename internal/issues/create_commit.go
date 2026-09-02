@@ -36,7 +36,7 @@ func normalizeCreateRequest(options CreateOptions) (createRequest, error) {
 		return createRequest{}, &UnsupportedKindError{Kind: request.kind}
 	}
 	var err error
-	if request.actor, err = standaloneActorForOptions(options.Actor, options.ActorRole); err != nil {
+	if request.actor, err = standaloneActorForOptions(options.Actor); err != nil {
 		return createRequest{}, err
 	}
 	if request.labels, err = normalizedLabels(options.Labels); err != nil {
@@ -59,7 +59,7 @@ func commitCreate(options CreateOptions, request createRequest) (CreateResult, e
 	}
 	argv := issueCreateArgv(request.kind, options.Title, options.Actor, options.IdempotencyKey, request.parentID, options.Priority, options.Sequence, request.specMDPath, request.labels, request.scheduling)
 	var result CreateResult
-	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: strings.Join(argv, " "), ActorRole: request.actor.id}, func(lock *journal.WriteLock) error {
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: strings.Join(argv, " ")}, func(lock *journal.WriteLock) error {
 		conn, err := fiddb.Open(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
 		if err != nil {
 			return err

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-	"sync/atomic"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -15,24 +14,12 @@ type standaloneActor struct {
 	typeName string
 }
 
-var legacyIdempotencySequence uint64
-
-func standaloneActorForOptions(value, legacyRole string) (standaloneActor, error) {
-	if strings.TrimSpace(value) == "" && strings.TrimSpace(legacyRole) != "" {
-		value = "agent:" + strings.TrimSpace(legacyRole)
-	}
+func standaloneActorForOptions(value string) (standaloneActor, error) {
 	parts := strings.SplitN(value, ":", 2)
 	if len(parts) != 2 || !validActorType(parts[0]) || !validActorID(parts[1]) {
 		return standaloneActor{}, fmt.Errorf("label actor must match <agent|human|service>:<id>")
 	}
 	return standaloneActor{id: parts[1], typeName: parts[0]}, nil
-}
-
-func labelIdempotencyKey(key, legacyRole string) string {
-	if strings.TrimSpace(key) != "" || strings.TrimSpace(legacyRole) == "" {
-		return key
-	}
-	return fmt.Sprintf("legacy-in-process-%d", atomic.AddUint64(&legacyIdempotencySequence, 1))
 }
 
 func validActorType(value string) bool {

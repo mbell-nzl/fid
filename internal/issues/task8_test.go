@@ -70,16 +70,16 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Legacy in-process Issue",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 	updated, err := Update(UpdateOptions{
-		WorkspaceRoot:    workspace,
-		MigrationsDir:    testIssueMigrationsDir(t),
-		ID:               created.ID,
-		ActorRole:        "developer",
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		Title:            stringPointer("Legacy in-process update"),
 		ExpectedRevision: intPointer(1),
 	})
@@ -87,11 +87,11 @@ func TestTask8LegacyInProcessIssueMutationsReceiveIdempotencyKeys(t *testing.T) 
 		t.Fatalf("Update() error = %v", err)
 	}
 	transitioned, err := Transition(TransitionOptions{
-		WorkspaceRoot:    workspace,
-		MigrationsDir:    testIssueMigrationsDir(t),
-		ID:               created.ID,
-		ToState:          "cancelled",
-		ActorRole:        "developer",
+		WorkspaceRoot: workspace,
+		MigrationsDir: testIssueMigrationsDir(t),
+		ID:            created.ID,
+		ToState:       "cancelled",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		ExpectedRevision: intPointer(2),
 	})
 	if err != nil {

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"fmt"
 	"strings"
-	"sync/atomic"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -15,8 +14,6 @@ type standaloneActor struct {
 	typeName string
 }
 
-var legacyInProcessIdempotencySequence uint64
-
 func parseStandaloneActor(value string) (standaloneActor, error) {
 	parts := strings.SplitN(value, ":", 2)
 	if len(parts) != 2 || !validStandaloneActorType(parts[0]) || !validStandaloneActorID(parts[1]) {
@@ -25,23 +22,8 @@ func parseStandaloneActor(value string) (standaloneActor, error) {
 	return standaloneActor{id: parts[1], typeName: parts[0]}, nil
 }
 
-// standaloneActorForOptions preserves retained in-process test callers while
-// CLI transport remains restricted to the typed Actor field.
-func standaloneActorForOptions(actor, legacyRole string) (standaloneActor, error) {
-	if strings.TrimSpace(actor) != "" {
-		return parseStandaloneActor(actor)
-	}
-	if strings.TrimSpace(legacyRole) != "" {
-		return parseStandaloneActor("agent:" + legacyRole)
-	}
+func standaloneActorForOptions(actor string) (standaloneActor, error) {
 	return parseStandaloneActor(actor)
-}
-
-func idempotencyKeyForOptions(key, legacyRole string) string {
-	if strings.TrimSpace(key) != "" || strings.TrimSpace(legacyRole) == "" {
-		return key
-	}
-	return fmt.Sprintf("legacy-in-process-%d", atomic.AddUint64(&legacyInProcessIdempotencySequence, 1))
 }
 
 func validStandaloneActorType(value string) bool {

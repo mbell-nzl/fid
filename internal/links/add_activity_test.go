@@ -30,7 +30,7 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 			FromID:        firstIssueID,
 			Relation:      "blocks",
 			ToID:          secondIssueID,
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil {
 			t.Fatalf("Add(blocks) error = %v", err)
@@ -117,7 +117,7 @@ func TestAddProjectsLinkAddedActivityForIssueAndRequirementLinks(t *testing.T) {
 			FromID:        issueID,
 			Relation:      "implements",
 			ToID:          requirementID,
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		}); err != nil {
 			t.Fatalf("Add(implements) error = %v", err)
 		}
@@ -160,7 +160,7 @@ func TestAddRejectsDuplicateWithoutActivityAppend(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(blocks) error = %v", err)
 	}
@@ -176,7 +176,7 @@ func TestAddRejectsDuplicateWithoutActivityAppend(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Add(duplicate) error = nil, want rejection")

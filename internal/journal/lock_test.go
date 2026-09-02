@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"encoding/json"
 	"errors"
 	"os"
 	"path/filepath"
@@ -14,8 +15,7 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
 	owner := LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --actor agent:developer",
 	}
 	err := withLockOptions(workspace, owner, defaultLockOptions(), func(lock *WriteLock) error {
 		metadata, readErr := readLockMetadata(lock.path)
@@ -35,8 +35,12 @@ func TestWithLockWritesOwnerMetadata(t *testing.T) {
 		if metadata.Command != owner.Command {
 			t.Fatalf("lock command = %q, want %q", metadata.Command, owner.Command)
 		}
-		if metadata.ActorRole == nil || *metadata.ActorRole != owner.ActorRole {
-			t.Fatalf("lock actor role = %v, want %q", metadata.ActorRole, owner.ActorRole)
+		payload, marshalErr := json.Marshal(metadata)
+		if marshalErr != nil {
+			t.Fatalf("marshal lock metadata: %v", marshalErr)
+		}
+		if strings.Contains(string(payload), "actor_role") {
+			t.Fatalf("lock metadata = %s, want no actor_role", payload)
 		}
 
 		return nil
@@ -55,8 +59,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
 	heldLock, err := acquireLock(workspace, LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --by developer",
 	}, defaultLockOptions())
 	if err != nil {
 		t.Fatalf("acquireLock() error = %v", err)
@@ -68,8 +71,7 @@ func TestWithLockTimesOutWithTypedUnavailableError(t *testing.T) {
 	})
 
 	err = withLockOptions(workspace, LockOwner{
-		Command:   "fid issue create --by qa_lead",
-		ActorRole: "qa_lead",
+		Command: "fid issue create --by qa_lead",
 	}, lockOptions{
 		waitTimeout: 20 * time.Millisecond,
 		retryDelay:  time.Millisecond,
@@ -128,8 +130,7 @@ func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
 	mustMkdirAll(t, filepath.Join(workspace, ".fid"))
 
 	heldLock, err := acquireLock(workspace, LockOwner{
-		Command:   "fid issue claim FID-123 --by developer",
-		ActorRole: "developer",
+		Command: "fid issue claim FID-123 --by developer",
 	}, defaultLockOptions())
 	if err != nil {
 		t.Fatalf("acquireLock() error = %v", err)
@@ -143,8 +144,7 @@ func TestWithLockDefaultWaitsForShortHeldLock(t *testing.T) {
 
 	acquired := false
 	err = withLockOptions(workspace, LockOwner{
-		Command:   "fid issue claim FID-123 --by qa_reviewer",
-		ActorRole: "qa_reviewer",
+		Command: "fid issue claim FID-123 --by qa_reviewer",
 	}, defaultLockOptions(), func(lock *WriteLock) error {
 		acquired = true
 		return nil

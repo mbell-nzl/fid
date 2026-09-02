@@ -20,14 +20,11 @@ type CreateOptions struct {
 	Title          string
 	Actor          string
 	IdempotencyKey string
-	// ActorRole is retained temporarily for V1 in-process test callers. CLI
-	// transport only supplies Actor and never uses role authority.
-	ActorRole  string
-	ParentID   *string
-	Priority   *int
-	Sequence   *int
-	SpecMDPath *string
-	Labels     []string
+	ParentID       *string
+	Priority       *int
+	Sequence       *int
+	SpecMDPath     *string
+	Labels         []string
 	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
 	// in-process callers. Canonical Issue commands never populate them.
 	OwnerRole  *string

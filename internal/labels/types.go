@@ -12,7 +12,6 @@ type AddOptions struct {
 	Description    *string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type AddResult struct {

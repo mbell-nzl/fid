@@ -19,7 +19,7 @@ func TestGetReturnsCentralizedDetailShape(t *testing.T) {
 			MigrationsDir: testIssueMigrationsDir(t),
 			Kind:          "task",
 			Title:         "Render empty detail",
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)

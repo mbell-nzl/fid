@@ -27,7 +27,6 @@ func (err *DuplicateLabelError) Error() string {
 }
 
 func Add(options AddOptions) (AddResult, error) {
-	options.IdempotencyKey = labelIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	name, colour, description, actor, commandArgv, err := prepareLabelAdd(options)
 	if err != nil {
 		return AddResult{}, err
@@ -42,8 +41,7 @@ func Add(options AddOptions) (AddResult, error) {
 	}
 	var result AddResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		return addLabelLocked(lock, options, actor, name, colour, description, digest, &result)
 	})
@@ -69,7 +67,7 @@ func prepareLabelAdd(options AddOptions) (string, *string, *string, standaloneAc
 	if err != nil {
 		return "", nil, nil, standaloneActor{}, nil, err
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return "", nil, nil, standaloneActor{}, nil, err
 	}

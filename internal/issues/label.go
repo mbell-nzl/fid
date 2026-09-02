@@ -23,7 +23,6 @@ type AddLabelOptions struct {
 	Label          string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type AddLabelResult struct {
@@ -43,7 +42,6 @@ type RemoveLabelOptions struct {
 	Label          string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type RemoveLabelResult struct {
@@ -57,14 +55,12 @@ type RemoveLabelResult struct {
 }
 
 func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
-	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	request, err := prepareIssueLabelWrite(
 		options.WorkspaceRoot,
 		options.MigrationsDir,
 		options.IssueID,
 		options.Label,
 		options.Actor,
-		options.ActorRole,
 		options.IdempotencyKey,
 		issueLabelAddArgv,
 		"issue label add",
@@ -88,14 +84,12 @@ func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 }
 
 func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
-	options.IdempotencyKey = idempotencyKeyForOptions(options.IdempotencyKey, options.ActorRole)
 	request, err := prepareIssueLabelWrite(
 		options.WorkspaceRoot,
 		options.MigrationsDir,
 		options.IssueID,
 		options.Label,
 		options.Actor,
-		options.ActorRole,
 		options.IdempotencyKey,
 		issueLabelRemoveArgv,
 		"issue label remove",
@@ -149,7 +143,7 @@ type issueLabelWriteResult struct {
 }
 
 func prepareIssueLabelWrite(
-	workspaceRoot, migrationsDir, issueID, label, actorValue, legacyRole, idempotencyKey string,
+	workspaceRoot, migrationsDir, issueID, label, actorValue, idempotencyKey string,
 	argvBuilder func(string, string, string, string) []string,
 	opName string,
 	spec issueLabelOperationSpec,
@@ -172,7 +166,7 @@ func prepareIssueLabelWrite(
 	if err != nil {
 		return issueLabelWriteRequest{}, err
 	}
-	actor, err := standaloneActorForOptions(actorValue, legacyRole)
+	actor, err := standaloneActorForOptions(actorValue)
 	if err != nil {
 		return issueLabelWriteRequest{}, err
 	}
@@ -193,8 +187,7 @@ func prepareIssueLabelWrite(
 func issueLabelWrite(request issueLabelWriteRequest) (issueLabelWriteResult, error) {
 	var result issueLabelWriteResult
 	err := journal.WithLock(request.workspaceRoot, journal.LockOwner{
-		Command:   strings.Join(request.commandArgv, " "),
-		ActorRole: request.actor.id,
+		Command: strings.Join(request.commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		return issueLabelWriteLocked(lock, request, &result)
 	})

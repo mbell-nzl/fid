@@ -17,7 +17,6 @@ import (
 type DefineOptions struct {
 	WorkspaceRoot  string
 	MigrationsDir  string
-	ActorRole      string
 	Actor          string
 	IdempotencyKey string
 	Request        DefinitionRequest
@@ -38,22 +37,20 @@ type DefineResult struct {
 
 // Define appends and projects one atomic workflow.defined event.
 func Define(options DefineOptions) (DefineResult, error) {
-	options.IdempotencyKey = workflowIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return DefineResult{}, fmt.Errorf("define workflow: workspace root is required")
 	}
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return DefineResult{}, fmt.Errorf("define workflow: migrations dir is required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return DefineResult{}, err
 	}
 
 	result := DefineResult{Name: options.Request.Name, AppliesTo: options.Request.AppliesTo}
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(workflowDefineArgv(options), " "),
-		ActorRole: actor.id,
+		Command: strings.Join(workflowDefineArgv(options), " "),
 	}, func(lock *journal.WriteLock) error {
 		return defineWorkflowLocked(lock, options, actor, &result)
 	})

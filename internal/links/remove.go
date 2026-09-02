@@ -14,7 +14,6 @@ import (
 )
 
 func Remove(options RemoveOptions) (RemoveResult, error) {
-	options.IdempotencyKey = linkIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return RemoveResult{}, fmt.Errorf("link remove: workspace root is required")
 	}
@@ -24,7 +23,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
 		return RemoveResult{}, fmt.Errorf("link remove: from and to ids are required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return RemoveResult{}, err
 	}
@@ -50,8 +49,7 @@ func Remove(options RemoveOptions) (RemoveResult, error) {
 	commandArgv := linkRemoveArgv(fromID, fromType, relation, toID, toType, options.Actor, options.IdempotencyKey)
 	var result RemoveResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err

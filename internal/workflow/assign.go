@@ -16,7 +16,6 @@ import (
 type AssignOptions struct {
 	WorkspaceRoot  string
 	MigrationsDir  string
-	ActorRole      string
 	Actor          string
 	IdempotencyKey string
 	Request        AssignmentRequest
@@ -35,22 +34,20 @@ type AssignResult struct {
 
 // Assign appends and projects one atomic workflow.assigned event.
 func Assign(options AssignOptions) (AssignResult, error) {
-	options.IdempotencyKey = workflowIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AssignResult{}, fmt.Errorf("assign workflow: workspace root is required")
 	}
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return AssignResult{}, fmt.Errorf("assign workflow: migrations dir is required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return AssignResult{}, err
 	}
 
 	result := AssignResult{Name: options.Request.Name, Kind: options.Request.Kind, Project: options.Request.Project}
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(workflowAssignArgv(options), " "),
-		ActorRole: actor.id,
+		Command: strings.Join(workflowAssignArgv(options), " "),
 	}, func(lock *journal.WriteLock) error {
 		return assignWorkflowLocked(lock, options, actor, &result)
 	})

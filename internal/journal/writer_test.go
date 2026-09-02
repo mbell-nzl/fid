@@ -45,8 +45,7 @@ func TestAppendEventWritesOneJSONLLineWithFirstSequence(t *testing.T) {
 	var appended Event
 	clockReads := 0
 	err := withLockOptions(workspace, LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --by developer",
 	}, defaultLockOptions(), func(lock *WriteLock) error {
 		var appendErr error
 		appended, appendErr = appendEventWithClock(lock, event, func() time.Time {
@@ -99,8 +98,7 @@ func TestAppendEventWrapperUsesRealClockPath(t *testing.T) {
 
 	var appended Event
 	err := withLockOptions(workspace, LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --by developer",
 	}, defaultLockOptions(), func(lock *WriteLock) error {
 		var appendErr error
 		appended, appendErr = AppendEvent(lock, testAppendEvent("Append wrapper"))
@@ -136,7 +134,7 @@ func TestPrepareEventAssignsNextIDWithoutAppendingJournalBytes(t *testing.T) {
 	input.OccurredAt = time.Date(2026, time.June, 5, 14, 23, 11, 0, time.UTC)
 
 	var prepared Event
-	err = WithLock(workspace, LockOwner{Command: "fid issue create --by developer", ActorRole: "developer"}, func(lock *WriteLock) error {
+	err = WithLock(workspace, LockOwner{Command: "fid issue create --by developer"}, func(lock *WriteLock) error {
 		var prepareErr error
 		prepared, prepareErr = PrepareEvent(lock, input)
 		return prepareErr
@@ -198,8 +196,7 @@ func TestAppendEventRejectsClockSkewWithoutAppending(t *testing.T) {
 
 	fixedNow := time.Date(2026, time.June, 5, 9, 0, 0, 0, time.UTC)
 	err := withLockOptions(workspace, LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --by developer",
 	}, defaultLockOptions(), func(lock *WriteLock) error {
 		_, appendErr := appendEventWithClock(lock, testAppendEvent("Clock skew rejected"), func() time.Time {
 			return fixedNow
@@ -246,8 +243,7 @@ func TestConcurrentWritesAppendDistinctEventsWithMonotonicSequences(t *testing.T
 			<-start
 
 			err := withLockOptions(workspace, LockOwner{
-				Command:   "fid issue create --by developer",
-				ActorRole: "developer",
+				Command: "fid issue create --by developer",
 			}, defaultLockOptions(), func(lock *WriteLock) error {
 				appended, appendErr := appendEventWithClock(lock, testAppendEvent(title), func() time.Time {
 					return fixedNow
@@ -382,8 +378,7 @@ func TestWriterHelpersDetermineLatestDateAndNextSequence(t *testing.T) {
 func appendTestEvent(workspace string, fixedNow time.Time, title string) (Event, error) {
 	var appended Event
 	err := withLockOptions(workspace, LockOwner{
-		Command:   "fid issue create --by developer",
-		ActorRole: "developer",
+		Command: "fid issue create --by developer",
 	}, defaultLockOptions(), func(lock *WriteLock) error {
 		var appendErr error
 		appended, appendErr = appendEventWithClock(lock, testAppendEvent(title), func() time.Time {

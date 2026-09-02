@@ -15,12 +15,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-type RoleSeed struct {
-	Name        string
-	Description string
-	IsHuman     bool
-}
-
 type InitOptions struct {
 	WorkspaceRoot string
 	MigrationsDir string
@@ -293,24 +287,9 @@ func DefaultPrefix(workspaceRoot string) string {
 	return strings.ToUpper(filepath.Base(workspaceRoot))
 }
 
-func DefaultRoles() []RoleSeed {
-	return []RoleSeed{
-		{Name: "developer", Description: "Developer"},
-		{Name: "qa_reviewer", Description: "QA Reviewer"},
-		{Name: "qa_lead", Description: "QA Lead"},
-		{Name: "tl_lite", Description: "TL-Lite"},
-		{Name: "tl", Description: "TL"},
-		{Name: "workflow_runner", Description: "Workflow Runner"},
-		{Name: "human", Description: "Human", IsHuman: true},
-	}
-}
-
 func initializeJournaledState(workspaceRoot, dbPath, projectID, prefix string) (InitResult, error) {
 	var result InitResult
-	err := journal.WithLock(workspaceRoot, journal.LockOwner{
-		Command:   "fid init",
-		ActorRole: "human",
-	}, func(lock *journal.WriteLock) error {
+	err := journal.WithLock(workspaceRoot, journal.LockOwner{Command: "fid init"}, func(lock *journal.WriteLock) error {
 		event := BuildProjectInitializedEvent(projectID)
 		appended, err := journal.AppendEvent(lock, event)
 		if err != nil {
@@ -374,15 +353,6 @@ func BuildProjectInitializedEvent(projectID string) journal.Event {
 		CommandName: "project.init",
 		Effects:     []journal.Effect{},
 	}
-}
-
-func SeededRoleNames() []string {
-	roles := DefaultRoles()
-	names := make([]string, 0, len(roles))
-	for _, role := range roles {
-		names = append(names, role.Name)
-	}
-	return names
 }
 
 func closeBootstrapDB(conn *sql.DB) {

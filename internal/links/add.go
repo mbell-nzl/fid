@@ -14,7 +14,6 @@ import (
 )
 
 func Add(options AddOptions) (AddResult, error) {
-	options.IdempotencyKey = linkIdempotencyKey(options.IdempotencyKey, options.ActorRole)
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
 		return AddResult{}, fmt.Errorf("link add: workspace root is required")
 	}
@@ -24,7 +23,7 @@ func Add(options AddOptions) (AddResult, error) {
 	if strings.TrimSpace(options.FromID) == "" || strings.TrimSpace(options.ToID) == "" {
 		return AddResult{}, fmt.Errorf("link add: from and to ids are required")
 	}
-	actor, err := standaloneActorForOptions(options.Actor, options.ActorRole)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return AddResult{}, err
 	}
@@ -54,8 +53,7 @@ func Add(options AddOptions) (AddResult, error) {
 	var result AddResult
 	commandArgv := linkAddArgv(fromID, fromType, declaredRelation, toID, toType, options.Actor, options.IdempotencyKey)
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: actor.id,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err

@@ -22,8 +22,8 @@ func TestAddLabelAddsOneRowWithoutReplacingOthersAndProjectsActivity(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Domain issue label add",
-		ActorRole:     "developer",
-		Labels:        []string{"core", "legacy"},
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Labels: []string{"core", "legacy"},
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -37,7 +37,7 @@ func TestAddLabelAddsOneRowWithoutReplacingOthersAndProjectsActivity(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       created.ID,
 		Label:         "api",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddLabel() error = %v", err)
@@ -136,8 +136,8 @@ func TestAddLabelRejectsMissingOrExistingLabelBeforeAppend(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Reject issue label add",
-				ActorRole:     "developer",
-				Labels:        []string{"core"},
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				Labels: []string{"core"},
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -151,7 +151,7 @@ func TestAddLabelRejectsMissingOrExistingLabelBeforeAppend(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				IssueID:       created.ID,
 				Label:         tt.label,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			})
 			if err == nil {
 				t.Fatal("AddLabel() error = nil, want rejection")
@@ -187,8 +187,8 @@ func TestRemoveLabelRemovesOneRowPreservesLabelTableAndProjectsActivity(t *testi
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Domain issue label remove",
-		ActorRole:     "developer",
-		Labels:        []string{"api", "core", "legacy"},
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Labels: []string{"api", "core", "legacy"},
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -202,7 +202,7 @@ func TestRemoveLabelRemovesOneRowPreservesLabelTableAndProjectsActivity(t *testi
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       created.ID,
 		Label:         "legacy",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("RemoveLabel() error = %v", err)
@@ -271,8 +271,8 @@ func TestRemoveLabelRejectsAbsentLabelBeforeAppend(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Reject issue label remove",
-		ActorRole:     "developer",
-		Labels:        []string{"core"},
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Labels: []string{"core"},
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -286,7 +286,7 @@ func TestRemoveLabelRejectsAbsentLabelBeforeAppend(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       created.ID,
 		Label:         "legacy",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("RemoveLabel() error = nil, want rejection")
@@ -307,14 +307,14 @@ func TestIssueLabelMutationsApplyClosedTokenBoundariesBeforeAppend(t *testing.T)
 		workspace := newIssueWorkspace(t)
 		label := strings.Repeat("l", 255)
 		seedIssueLabels(t, workspace, label)
-		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label boundary", ActorRole: "developer"})
+		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label boundary", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)
 		}
-		if _, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: label, ActorRole: "developer"}); err != nil {
+		if _, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: label, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()}); err != nil {
 			t.Fatalf("AddLabel(exact maximum) error = %v", err)
 		}
-		if _, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: label, ActorRole: "developer"}); err != nil {
+		if _, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: label, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()}); err != nil {
 			t.Fatalf("RemoveLabel(exact maximum) error = %v", err)
 		}
 	})
@@ -334,11 +334,11 @@ func TestIssueLabelMutationsApplyClosedTokenBoundariesBeforeAppend(t *testing.T)
 		run  func(string, string, string) error
 	}{
 		{name: "add", run: func(workspace, issueID, label string) error {
-			_, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: issueID, Label: label, ActorRole: "developer"})
+			_, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: issueID, Label: label, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			return err
 		}},
 		{name: "remove", run: func(workspace, issueID, label string) error {
-			_, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: issueID, Label: label, ActorRole: "developer"})
+			_, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: issueID, Label: label, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			return err
 		}},
 	} {
@@ -346,7 +346,7 @@ func TestIssueLabelMutationsApplyClosedTokenBoundariesBeforeAppend(t *testing.T)
 			for _, test := range tests {
 				t.Run(test.name, func(t *testing.T) {
 					workspace := newIssueWorkspace(t)
-					created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label rejection", ActorRole: "developer"})
+					created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label rejection", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 					if err != nil {
 						t.Fatalf("Create() error = %v", err)
 					}
@@ -372,7 +372,7 @@ func TestIssueLabelMutationsApplyClosedTokenBoundariesBeforeAppend(t *testing.T)
 func TestIssueLabelAddRejectsNestedLimitWithoutAppend(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label limit", ActorRole: "developer"})
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "Issue label limit", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -399,7 +399,7 @@ func TestIssueLabelAddRejectsNestedLimitWithoutAppend(t *testing.T) {
 
 	journalPath := journalPathForWorkspace(t, workspace)
 	before := countJournalLines(journalPath)
-	_, err = AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-100", ActorRole: "developer"})
+	_, err = AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-100", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	var limit *ResultLimitExceededError
 	if !errors.As(err, &limit) || limit.Collection != "issue_labels" || limit.Limit != 100 || limit.Observed != 101 {
 		t.Fatalf("AddLabel() error = %#v, want issue_labels 101/100 limit", err)
@@ -407,10 +407,10 @@ func TestIssueLabelAddRejectsNestedLimitWithoutAppend(t *testing.T) {
 	if got := countJournalLines(journalPath); got != before {
 		t.Fatalf("journal lines after limit rejection = %d, want %d", got, before)
 	}
-	if _, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-000", ActorRole: "developer"}); err != nil {
+	if _, err := RemoveLabel(RemoveLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-000", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()}); err != nil {
 		t.Fatalf("RemoveLabel(at limit) error = %v", err)
 	}
-	if _, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-100", ActorRole: "developer"}); err != nil {
+	if _, err := AddLabel(AddLabelOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Label: "limit-100", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()}); err != nil {
 		t.Fatalf("AddLabel(after removal) error = %v", err)
 	}
 }

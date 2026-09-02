@@ -21,11 +21,8 @@ var definitions = map[string]Definition{
 				"in_progress": nil,
 			},
 			"in_progress": {
-				"dev_complete": {
-					{Name: RuleAllACsVerified, RequiredRoles: []string{"developer"}},
-					{Name: RuleHasCompletionReport},
-				},
-				"failed_gate": nil,
+				"dev_complete": nil,
+				"failed_gate":  nil,
 			},
 			"failed_gate": {
 				"in_progress": nil,
@@ -34,9 +31,7 @@ var definitions = map[string]Definition{
 				"qa_review": nil,
 			},
 			"qa_review": {
-				"qa_pass": {
-					{Name: RuleAllACsVerified, RequiredRoles: []string{"qa_lead"}},
-				},
+				"qa_pass":  nil,
 				"qa_block": nil,
 			},
 			"qa_block": {

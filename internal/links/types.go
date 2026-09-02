@@ -10,7 +10,6 @@ type AddOptions struct {
 	ToID           string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type AddResult struct {
@@ -33,7 +32,6 @@ type RemoveOptions struct {
 	ToID           string
 	Actor          string
 	IdempotencyKey string
-	ActorRole      string
 }
 
 type RemoveResult struct {

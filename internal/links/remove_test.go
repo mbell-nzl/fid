@@ -20,7 +20,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(blocks) error = %v", err)
 	}
@@ -33,7 +33,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Remove() error = %v", err)
@@ -89,7 +89,7 @@ func TestRemoveRejectsMissingLinkBeforeAppend(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Remove() error = nil, want rejection")
@@ -117,7 +117,7 @@ func TestRemoveSupportsRequirementInverse(t *testing.T) {
 		FromID:        issueID,
 		Relation:      "implements",
 		ToID:          requirementID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(implements) error = %v", err)
 	}
@@ -128,7 +128,7 @@ func TestRemoveSupportsRequirementInverse(t *testing.T) {
 		FromID:        issueID,
 		Relation:      "implements",
 		ToID:          requirementID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Remove(implements) error = %v", err)
