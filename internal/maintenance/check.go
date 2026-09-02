@@ -76,6 +76,7 @@ func Check(options CheckOptions) (Result, error) {
 		checkForeignKeys,
 		checkWorkflowStates,
 		checkWorkflowAssignments,
+		checkOperationalIntegrity,
 	}
 	result := Result{Errors: make([]Finding, 0), Warnings: make([]Finding, 0)}
 	for _, check := range checks {
