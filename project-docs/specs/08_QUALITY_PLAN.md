@@ -96,6 +96,15 @@ accumulated convergence belongs to the first unit whose required gate runs it,
 and that unit records per-row provenance - file, line, invalidating change, and
 originating unit - so the audit trail survives the reassignment.
 
+The converse also holds. A unit of work that owns a required absence or
+inventory control owns every path that control walks, and its file scope must
+cover every search root and every package its required gates compile. A
+control that reaches beyond the listed scope is an incomplete planning
+assignment, not a boundary the implementer must honour by leaving the control
+red; it is corrected by amending the scope before dispatch, never by narrowing
+the control. Planning checks each task's search roots and test package
+arguments against its file list.
+
 A sequential end-to-end fixture reveals one blocking step at a time. Reaching a
 later step is material progress. A no-progress recovery budget counts only
 attempts whose directive actually permitted causal repair of the failing rows;

@@ -2,10 +2,34 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-172 resolve ESC-21-001..013. The run is stopped after
-TRG-21-019; DEC-172 authorizes the task-17 attempt-3 continuation that clears it.
+None. DEC-160 through DEC-173 resolve ESC-21-001..014. The run is stopped after
+TRG-21-020; DEC-173 authorizes the task-20 attempt-2 continuation that clears it.
 
 ## Resolved Escalations
+
+### ESC-21-014 - Task-20 V1 absence controls exceed its accepted source scope
+
+- **Raised by:** TRG-21-020 after task 20's required absence controls still
+  matched production in `internal/bootstrap/`, `internal/journal/`,
+  `internal/labels/`, `internal/links/`, and `internal/requirements/`, none of
+  which the task's Files To Create Or Modify list named.
+- **Protected category:** specification contradiction and protected
+  task-boundary authority.
+- **Resolution:** DEC-173, 2026-09-02. The inventory (§1.1, §6) and DEC-160 §5
+  already assign task 20 every residue: the `ActorRole`/`legacyRole` fallback
+  readers, the role-bearing lock/bootstrap metadata, the bootstrap fixed-role
+  registry, the `dev.*` golden, every `roles` fixture 0014 orphans, and the
+  V1 closure journey. The file list was the incomplete artifact, so it is
+  amended with bounded subject-preserving dispositions and task 20 gains the
+  tagged integration gate under DEC-167. The ten absence declarations, both
+  broad inventories, VAL-002/074/075, 0014, the frozen-table policy, and the
+  public interface are unchanged. `08_QUALITY_PLAN.md` §3 records the converse
+  executable-ownership rule.
+- **Recovery:** RUN-RESUME retains TRG-21-020 / ESC-21-014 with DEC-173 at
+  attempt 2, then task-20 `in-scope-implementation` in ordinary task scope.
+  The Developer continues from `aef03cf`, converges the enumerated residues and
+  fixtures with per-row provenance, reruns the complete amended command block,
+  finalizes the report, and completes task 20 before task 21 dispatch.
 
 ### ESC-21-013 - Task-17 Attention absence control versus unavailable capability matrix
 

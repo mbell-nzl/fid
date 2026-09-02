@@ -120,6 +120,13 @@
   that row as the sole production match while rejecting any table, Event,
   Effect, leaf, state, or operation surface. A zero-match search is invalid
   because it can hide required negative capability metadata.
+- **A control's reach bounds the owning scope (DEC-173, standing):** the
+  converse of DEC-167. A task that owns a required absence or inventory control
+  owns every path that control walks, and its file scope must cover every
+  search root and every package its gates compile. A control reaching beyond
+  the listed scope is an incomplete planning assignment, corrected by amending
+  the scope before dispatch, never by narrowing the control. Canonical text is
+  `08_QUALITY_PLAN.md` §3.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

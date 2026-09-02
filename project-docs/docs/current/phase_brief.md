@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-17 STOPPED / Recovery Authorized (DEC-172)**
+> Status: **Active / task-20 STOPPED / Recovery Authorized (DEC-173)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -38,25 +38,19 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 - DEC-167: a required gate must exercise the scope its task owns; task 12 owns its
   `internal/dev` and `cmd/fid/integration/` convergence with per-row provenance. A
   directive-suppressed attempt does not consume recovery budget.
-- DEC-168: 120s bounds each FEAS probe, 900s the FEAS set, 300s the tagged
-  integration command; no budget bounds the QA Lead child session's lifetime. The
-  Runner waits for the QA Lead and dispatches task 13 only on a verified PASS.
-- DEC-169: the checkpoint returned REPAIR. Task 4 owns Activation same-key replay
-  ordering across the whole family; task 9 owns the complete section-7
-  category-to-exit mapping, not one code. Both gain `cmd/fid/integration/` scope
-  and the tagged gate. Order: task 4, task 9, complete checkpoint rerun.
-- DEC-170: an externally interrupted attempt never consumes the no-progress
-  budget, and no budget bounds a Developer child session's lifetime; only the
-  declared per-command budgets apply. Commit durable work before long commands
-  and append each result as it terminates. MF-15-02's provenance is satisfied
-  forward-only; no commit at or before `09a2a7b` is rewritten.
-- DEC-171: parent polling waits never terminate children; typed session routing,
-  ledger `INTERRUPTED` evidence, generated prompts, workflow lint, and drill 19
-  make DEC-170's liveness accounting executable before attempt 6.
-- DEC-172: the unavailable `attention.v1` discovery row is required negative
-  capability metadata, not Attention state/effect. Task 17 replaces the
-  zero-match search with a boundary test that requires the row as the sole
-  production Attention match and rejects every additional surface.
+- DEC-168/169: 120s per FEAS probe, 900s the FEAS set, 300s the tagged
+  integration command; no lifetime budget on QA child sessions. Checkpoint
+  repairs: task 4 owns Activation replay, task 9 the section-7 exit mapping.
+- DEC-170/171: an externally interrupted attempt never consumes the no-progress
+  budget; commit durable work before long commands; executable in the Runner.
+- DEC-172: the unavailable `attention.v1` row is required negative capability
+  metadata; task 17 proves the Attention boundary with a named test, not a
+  zero-match search.
+- DEC-173: a task that owns an absence/inventory control owns every path it
+  walks. Task 20's scope is amended (bootstrap, journal, labels, links,
+  requirements, db, testdata/journal, integration) with bounded
+  subject-preserving dispositions and gains the tagged integration gate. No
+  command, expected status, VAL, 0014, frozen-table, or public contract changes.
 
 ## Planning Authorities
 
@@ -86,9 +80,7 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 | 12 | shared evaluator/nonterminal transition | 7,10-11 | 038-041 |
 
 QA Reviews follow tasks 1-3, 4-6, 7-9, and 10-12; the independent checkpoint
-owns VAL-042/043. Temporary replacement-bound V1 state may remain as
-inventoried; PASS proves new generic paths do not consult it. Task 13 needs
-checkpoint PASS and fresh Group 2 feasibility.
+owns VAL-042/043. Group 1 and its checkpoint are complete.
 
 ## Group 2 - Trusted Execution And Convergence
 
@@ -115,7 +107,8 @@ Before each next dispatch the Phase Runner runs
 observed termination. Reviews are `qa/review-1.md`..`qa/review-7.md`; checkpoint
 `qa/group-1-checkpoint-review.md`; final `qa/final-review.md` plus
 `qa/human-checklist.md`. A task's required commands must exercise every file
-scope it owns (DEC-167).
+scope it owns, and a task's scope must cover every path its controls walk
+(DEC-167, DEC-173).
 
 Every external schema-v2 `Originating task`, `Trigger signature`, `Attempt
 count`, `Repair category`, and `Repair authority` value is a plain scalar, never
@@ -135,22 +128,21 @@ negative checks; never create a second Envelope revision.
 
 ## Dispatch Authorization
 
-All four planning gates are complete under DEC-159. Tasks 1-16 are complete;
-task 15's DEC-170/171 repair and independent `review-5b` passed, and task 16
-then passed. Task 17's implementation is preserved uncommitted after the
-accepted zero-match Attention recipe collided with the required unavailable
-capability row. The run is STOPPED after TRG-21-019 / ESC-21-013; DEC-172
-resolves the protected contradiction without changing the product interface.
+Tasks 1-19 and reviews 1-6 are complete. Task 20 committed migration 0014 and
+the first V1 source removals (`aef03cf`, report `f189a37`) and returned
+`RECOVERY_REQUIRED`; the run is STOPPED after TRG-21-020 / ESC-21-014. DEC-173
+resolves the scope-versus-reach contradiction without changing any command.
 
-The Phase Runner appends `RUN-RESUME` retaining TRG-21-019 / ESC-21-013, trigger
-`task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability`,
-attempt 3, resolution authority DEC-172, continuing task 17, and the exact `task-17 | gate-repair | task-scope | task-17:specification-contradiction:task-17-done.md:attention-absence-vs-unavailable-capability | 3` tuple.
-The bound TASK-RECOVERY uses source/authority `TRG-21-019 / DEC-172` and
-no-progress `0/2`.
+The Phase Runner appends `RUN-RESUME` retaining TRG-21-020 / ESC-21-014, trigger
+`task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates`,
+attempt 2, resolution authority DEC-173, continuing task 20, and the exact
+`task-20 | in-scope-implementation | task-scope | task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates | 2`
+tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-020 / DEC-173`
+and no-progress `0/2`.
 
-The Developer adds `TestPhase21AttentionBoundary`, preserves the old failed
-`rg` row as historical evidence, commits the existing task-17 implementation
-and test with `Refs: phase-21/task-17` before long commands, and runs the full
-revised six-command block. After the report commit, two-argument report lint,
-REPAIR RESOLVED, and TASK task-17 COMPLETE, task 18 may dispatch. Window 6
-review remains after tasks 16-18.
+The Developer continues from `aef03cf` under the amended
+`tasks/task-20-v1-removal.md`, commits durable work before long commands, runs
+the complete byte-identical amended block (now including the tagged integration
+gate), records per-row provenance and `UNCLASSIFIED=0`, and finalizes the
+report. After two-argument report lint, REPAIR RESOLVED, and TASK task-20
+COMPLETE, task 21 may dispatch. Window 7 review remains after tasks 19-21.

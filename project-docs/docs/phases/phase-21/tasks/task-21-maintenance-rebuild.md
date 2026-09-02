@@ -22,6 +22,7 @@ Against the post-0014 binary, prove fresh init and delete-projection/rebuild are
 - Record the DEC-158 reference identity exactly: `go1.26.2 linux/amd64`, `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`, 6 logical processors, `AMD Ryzen 7 5700G with Radeon Graphics`, and `8133236 kB` `MemTotal`.
 - Run the bounded 100k benchmark in three consecutive fresh processes. Every sample must preserve parity and terminate under 30 seconds; best/median sampling is forbidden, and the benchmark's per-sample `<30s` `b.Fatalf` remains part of the general phase gate.
 - If any sample fails, optimize the implementation within task scope and rerun the byte-identical three-sample sequence; do not weaken, average, or rebaseline the protected threshold.
+- DEC-173 coordination: task 20 deleted `LockOwner.ActorRole`/`actor_role`, the bootstrap `RoleSeed`/`DefaultRoles`/`SeededRoleNames` registry, and every `roles` seed in the journal goldens and scale fixture. Do not reintroduce a role lock value, role registry, role fixture, or any projection tolerance for Effects on dropped tables; prove the final state on the fixtures task 20 left.
 
 ## Scope
 

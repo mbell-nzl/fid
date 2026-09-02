@@ -1661,6 +1661,177 @@
   VAL-063; QA-09; QA-61; `contracts.md` sections 2, 10, and 15;
   `tasks/task-17-evidence-evaluation.md`; `tasks/task-17-done.md`.
 
+### DEC-173: Task 20 owns every path its absence controls walk; bounded source-scope amendment. Closes ESC-21-014
+
+- **Date:** 2026-09-02
+- **Context:** TRG-21-020 BLOCKed task 20 at attempt 1 with migration 0014 and
+  the first V1 source removals committed (`aef03cf`, report `f189a37`). The
+  required absence controls still match production in `internal/bootstrap/`,
+  `internal/journal/`, `internal/labels/`, `internal/links/`, and
+  `internal/requirements/`, none of which the task's Files To Create Or Modify
+  list names. Live inspection of the residues at that checkpoint:
+  - `internal/journal/lock.go:20,45,149-150` `LockOwner.ActorRole` and the
+    `actor_role` field of `.fid/write.lock/owner.json`;
+    `internal/bootstrap/init.go:312` passes `ActorRole: "human"` into it, and
+    every retained mutation passes `ActorRole: actor.id`. `04_TRD_CONFIG.md`
+    names `write.lock` only as an ignored cross-process lock with no field
+    contract; the field is V1 lock attribution, not a public surface.
+  - `internal/bootstrap/init.go:18,296,379` `RoleSeed`, `DefaultRoles`, and
+    `SeededRoleNames`: a fixed seven-name role registry with no remaining
+    production caller once `internal/policy`'s bridge is gone.
+  - `internal/labels/{add,attribution,types}.go`,
+    `internal/links/{add,remove,attribution,types}.go`,
+    `internal/requirements/{sync,attribution,types}.go`, and the in-scope
+    `internal/workflow/{define,assign,attribution}.go` and
+    `internal/issues/{actor,issue,...}.go`: an `ActorRole` option field whose
+    only readers are `standaloneActorForOptions(actor, legacyRole)`, which
+    synthesizes `agent:<role>` when `Actor` is empty, and
+    `*IdempotencyKey(key, legacyRole)`, which synthesizes
+    `legacy-in-process-N` keys. Both are the "fallback reader" that acceptance
+    criterion 4 already orders deleted.
+  - In-scope residues the report already classifies for removal:
+    `internal/issues/{ac_verify,concern_raise,concern_address}.go` writers,
+    `internal/maintenance/vacuum.go:29-30`,
+    `cmd/fid/issue_mutation_response.go:237`, the retained `internal/dev`,
+    `internal/runs`, and `internal/policy` V1 tests, and the
+    `issue.claim.seeded` fixtures in `internal/issues/transition_test.go:1408`
+    and `cmd/fid/issue_transition_test.go:875`.
+
+  The gate reaches further than the file list in three more places the report
+  did not name: (a) `testdata/journal/p20-issue-revision-effects.golden.jsonl`
+  carries `dev.started|finished|blocked` and is matched by the required Event
+  fixture search whose roots are `cmd/fid internal testdata`; (b) 0014 drops
+  `roles`, but `testdata/journal/replay-v1.golden.jsonl`,
+  `testdata/journal/corrupt-tail.jsonl`, the `internal/journal` replay,
+  projection, phase-2 rebuild, and 100k scale fixtures
+  (`rebuild_scale_test.go:191` seeds a `roles` insert), `internal/db/*_test.go`,
+  `internal/sqlquery/sqlquery_test.go`, and `cmd/fid/init_test.go` still seed or
+  query it, and `go test -race -coverprofile=coverage.out ./...` runs all of
+  them; (c) the build-tagged `cmd/fid/integration/` closure journey still drives
+  `issue complete`, `run record`, `gate_runs`/`task_completions`/`agent_runs`
+  snapshots, and the `has_completion_report` rule, and no task-20 command runs
+  that suite, so its convergence would otherwise land on task 21 under
+  DEC-167 with task-20 provenance.
+
+  `v1-convergence-inventory.md` §1.1 names task 20 as co-owner of every one of
+  the production files above (rows "tasks 2, 20, 21" and "tasks 9, 20"); §6
+  assigns task 20 "every mutation `--by`", "the task-2 nonpersistent V1 role
+  vocabulary bridge", and "accepted V1 dev/completion/claim/run fixtures";
+  DEC-160 §5 states task 20 deletes the bridge and proves the role absence
+  control. The inventory, the ten absence declarations, VAL-074/075, 0014, and
+  the frozen-table policy are consistent with each other. The task's file list
+  is the incomplete artifact: it was written from the removal targets and not
+  from the reach of the task's own commands.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-020's BLOCK was correct under available
+     authority: an explicit file list is a task boundary, the inventory's
+     co-ownership rows do not override it, and the Developer was right not to
+     widen scope alone. Preserve TRG-21-020, ESC-21-014, both checkpoints, and
+     every failed command row as immutable evidence.
+  2. **Bounded source-scope amendment.** Task 20's Files To Create Or Modify
+     additionally covers `internal/bootstrap/`, `internal/journal/`,
+     `internal/labels/`, `internal/links/`, `internal/requirements/`,
+     `internal/db/`, `internal/activity/` and `internal/stats/` and
+     `internal/sqlquery/` (test convergence only), `testdata/journal/`, and
+     `cmd/fid/integration/`. Production edits in the added packages are
+     limited to the enumerated dispositions in item 3; every other edit there
+     is subject-preserving convergence of an assertion that 0014, a V1 leaf
+     removal, or the `ActorRole` deletion invalidated, recorded with per-row
+     provenance (file, line, invalidating change, accepted replacement).
+  3. **Subject-preserving final dispositions.**
+     - `internal/journal/lock.go`: delete `LockOwner.ActorRole` and
+       `lockMetadata.ActorRole`; `pid`, `hostname`, `started_at`, and `command`
+       remain; every `LockOwner{...}` call site drops the field.
+     - `internal/bootstrap/init.go`: drop the `ActorRole` lock value and delete
+       `RoleSeed`, `DefaultRoles`, and `SeededRoleNames`.
+       `BuildProjectInitializedEvent`, the VAL-008 fixture, and init/rebuild
+       behaviour are untouched.
+     - Retained families (labels, links, requirements, workflow, Issue
+       create/update/transition/AC-add/label): delete the `ActorRole` option
+       field, the `legacyRole` fallback, and the `legacy-in-process-N` key
+       synthesis; `Actor` plus `IdempotencyKey` are the only inputs. Public
+       `--actor`/`--idempotency-key` grammar, Event-v2 bytes, digests, replay,
+       error envelopes, and every VAL-028..031 assertion keep full strength;
+       in-process test callers converge to `Actor: "agent:<role>"` plus an
+       explicit key.
+     - `testdata/journal/p20-issue-revision-effects.golden.jsonl` and
+       `internal/journal/replay_test.go`: the three `dev.*` Events become
+       retained Issue families carrying the same revision Effects, and the
+       paired `wantTypes`/`priorByType` tables change by the same substitution
+       only. The ten-Event revision chain is the preserved subject.
+     - `roles` seeds and assertions in journal goldens, `rebuild_scale_test.go`,
+       `internal/db`, `internal/sqlquery`, and `cmd/fid` tests converge to a
+       surviving table with identical assertion strength and, for the scale
+       fixture, identical Event count and shape. Adding a projection branch
+       that ignores, skips, or tolerates an Effect on a dropped table is a
+       data-model decision and is forbidden; if a fixture's subject genuinely
+       requires a legacy `roles` Effect against the final schema, stop and
+       escalate.
+     - `cmd/fid/integration/`: apply the DEC-162 order to the closure journey.
+       Removed-behaviour steps (`issue complete`, `run record`, `policy show`,
+       `has_completion_report`, frozen/dropped table snapshots) become their
+       accepted behaviour - unknown command, journal unchanged, table absent or
+       empty - and every retained assertion stays byte-identical; a step is
+       deleted only where a named surviving test owns the accepted equivalent.
+  4. **Executable ownership (DEC-167).** Task 20 gains
+     `go test -tags integration -race ./cmd/fid/integration/...` as a required
+     command under the DEC-168 300 s budget, inserted after its package gate.
+     Nothing else in Exact Commands To Run, Expected Non-Zero Commands, the two
+     broad inventories, VAL-002/074/075, QA-71/72/93, 0014, the frozen-table
+     policy, the public interface, the Event schema, or the QA plan changes.
+  5. **Coordination constraints.** Task 9 is complete and its public contract
+     is frozen: task 20 may touch task-9 packages only for item 3 and must
+     leave every VAL-028..031 test passing at unchanged strength. Task 21
+     retains final-schema init/rebuild/maintenance/export parity and the 100k
+     benchmark: task 20 may not change `BuildProjectInitializedEvent`,
+     projection or rebuild semantics, maintenance findings, export, or the
+     benchmark threshold/shape; task 21 must not reintroduce a role lock value,
+     role registry, or role fixture, and its spec gains that bullet.
+  6. **Standing rule.** `08_QUALITY_PLAN.md` §3 gains the converse of
+     DEC-167: a unit of work that owns a required absence or inventory control
+     owns every path that control walks, and its file scope must cover every
+     search root and every package its required gates compile. A control
+     that reaches beyond the listed scope is an incomplete planning
+     assignment, not a Developer boundary, and is corrected by amending the
+     scope, never by narrowing the control.
+  7. **Recovery route.** The Phase Runner appends `RUN-RESUME` naming the
+     2026-08-30 19:15 STOP, governing TRG-21-020, governing ESC-21-014,
+     trigger signature
+     `task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates`,
+     `Attempt count: 2`, `Resolution authority: DEC-173`, `Continuing task:
+     task-20`, and `Next recovery: task-20 | in-scope-implementation |
+     task-scope | task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates | 2`.
+     The following `TASK-RECOVERY task-20` uses `Source` and `Repair
+     authority` `TRG-21-020 / DEC-173`, category `in-scope-implementation`,
+     repair mode `task-scope`, attempt 2, consecutive no-progress `0/2`, and
+     allowed files "ordinary task scope under the amended
+     task-20-v1-removal.md plus task-20-done.md". The Tech Lead does not edit
+     `run-ledger.md`.
+  8. **Continuation and advance.** The Developer continues from `aef03cf`,
+     commits durable work before the long commands (DEC-170), reruns the
+     complete byte-identical amended command block, records `UNCLASSIFIED=0`
+     for both broad inventories, and lists per-row provenance for every
+     converged row outside the original file list. After the report commit,
+     two-argument report lint, `REPAIR task-20 RESOLVED`, and
+     `TASK task-20 COMPLETE`, task 21 may dispatch. Window 7 review remains
+     after tasks 19-21.
+  9. **Triage audit.** This is the fourth escalation whose root cause was a
+     task scope narrower than the reach of its own gate (DEC-162, DEC-165,
+     DEC-167, DEC-173). Items 2-6 close this instance; the wrap-up
+     retrospective should evaluate a planning-time check that compares each
+     task's `rg` roots and `go test` package arguments with its file list.
+- **Consequences:** ESC-21-014 closes with no change to any command, expected
+  status, assertion, migration, or public contract. Task 20 finishes the
+  removal the inventory already assigned it, task 21 starts on a green tagged
+  suite and a role-free journal fixture set, and the standing rule makes the
+  scope-versus-reach check a planning obligation.
+- **Refs:** TRG-21-020; ESC-21-014; DEC-160; DEC-162; DEC-165; DEC-166;
+  DEC-167; DEC-168; DEC-170; `v1-convergence-inventory.md` §§1, 1.1, 1.2, 3,
+  4, 6, 7; `tasks/task-20-v1-removal.md`; `tasks/task-20-done.md`;
+  `tasks/task-21-maintenance-rebuild.md`; `04_TRD_CONFIG.md` §1;
+  `08_QUALITY_PLAN.md` §3; VAL-002; VAL-028..031; VAL-074; VAL-075; QA-71;
+  QA-72; QA-93.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -1676,7 +1847,7 @@ verdicts are completed at phase wrap-up.
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, and retained-test phase provenance are explicit. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), and interrupted-attempt accounting are explicit in §3. |
 | `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | Schema-v2 identity/binding and QA repair ownership are explicit; retained-test escalation now requires phase provenance before cross-task classification. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
@@ -1715,6 +1886,15 @@ the bound task-8 recovery replace the pending task-8 dispatch that produced the
 classified blocker candidate.
 Hindsight verdict: both outcomes were correct under the authority available;
 no historical record needs correction.
+
+TRG-21-020 correctly BLOCKed task 20: the explicit file list is a task boundary
+and the inventory's co-ownership rows do not override it. In hindsight the
+defect was planning-side - the task's absence controls walk `cmd/fid internal
+testdata` and its coverage gate compiles `./...`, but its file list was written
+from the removal targets rather than from that reach. DEC-173 amends the scope,
+adds the tagged gate the removed fixtures need (DEC-167), and records the
+converse executable-ownership rule so the next task pack is checked for
+scope-versus-reach before dispatch. No historical record needs correction.
 
 ## Workflow Notes
 
