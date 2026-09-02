@@ -42,8 +42,8 @@
 
 - `go test ./internal/export` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.114s` (terminated `exit_code: 0`)
 - `go test ./internal/export -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; red: the newly added uncorrupted corpus rows received `validate error = <nil>` instead of their expected `archive-invalid` checks.)
-- `go test ./internal/export -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.849s` (terminated `exit_code: 0`; green: the full eleven-code corruption corpus passed.)
-- `go test -race ./internal/export -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	14.202s` (terminated `exit_code: 0`; each corpus row retained an identical before/after `.fid` tree digest.)
+- `go test ./internal/export -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	0.849s` (terminated `exit_code: 0`) green: the full eleven-code corruption corpus passed.
+- `go test -race ./internal/export -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/export	14.202s` (terminated `exit_code: 0`) each corpus row retained an identical before/after `.fid` tree digest.
 - `go test ./cmd/fid -run TestExportCreateValidateAndImportRemainsAbsent` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.060s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid ./internal/export ./internal/cli` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	(cached)` (terminated `exit_code: 0`)
 - `/tmp/fid --project /tmp/tmp.f9uDkl9Ton export create /tmp/tmp.f9uDkl9Ton/recovery.zip --json` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"export.create","result":{"export":{"archive_path":"/tmp/tmp.f9uDkl9Ton/recovery.zip","archive_digest":"sha256:7d0b6337ed251c49effd7dab67c60a436a2a1a3bbb080c588c9fc59bfaa78ee4","manifest_schema":"fid.export-manifest.v1","project_id":"project-918ca2004c738264387b828de5c3ab1f","event_count":1,"terminal_event_hash":"sha256:f96fe3cd377f4ad8d243ca05475bcd87be6666426416a59a3632fc2bf2c37b0b","projection_schema":14,"entry_count":2}}}` (terminated `exit_code: 0`)
