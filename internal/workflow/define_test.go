@@ -19,6 +19,28 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	journalPath := workflowJournalPath(t, workspace)
 	beforeJournal := readWorkflowTestFile(t, journalPath)
 
+	_, err := Define(DefineOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: migrationsDir,
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Request: DefinitionRequest{
+			Name:        "requirement-flow",
+			AppliesTo:   "task",
+			States:      []string{"todo", "done", "cancelled"},
+			Categories:  []string{"unstarted", "completed", "cancelled"},
+			Transitions: []Transition{{From: "todo", To: "done"}},
+			Requirements: []Requirement{{
+				From: "todo", To: "done", Rule: RuleHasCompletionReport,
+			}},
+		},
+	})
+	if err == nil || err.Error() != "workflow transition requirements are unavailable" {
+		t.Fatalf("Define() error = %v, want unavailable transition requirements", err)
+	}
+	if afterRejectedJournal := readWorkflowTestFile(t, journalPath); !bytes.Equal(afterRejectedJournal, beforeJournal) {
+		t.Fatal("rejected transition requirements changed journal bytes")
+	}
+
 	result, err := Define(DefineOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: migrationsDir,
@@ -29,15 +51,12 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 			States:      []string{"todo", "done", "cancelled"},
 			Categories:  []string{"unstarted", "completed", "cancelled"},
 			Transitions: []Transition{{From: "todo", To: "done"}},
-			Requirements: []Requirement{{
-				From: "todo", To: "done", Rule: RuleHasCompletionReport,
-			}},
 		},
 	})
 	if err != nil {
 		t.Fatalf("Define() error = %v", err)
 	}
-	if result.Name != "direct-flow" || result.AppliesTo != "task" || result.States != 3 || result.Transitions != 3 || result.Requirements != 1 || result.EventID == "" || result.OccurredAt.IsZero() {
+	if result.Name != "direct-flow" || result.AppliesTo != "task" || result.States != 3 || result.Transitions != 3 || result.Requirements != 0 || result.EventID == "" || result.OccurredAt.IsZero() {
 		t.Fatalf("Define() result = %#v, want projected counts and appended Event identity", result)
 	}
 
@@ -54,7 +73,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if event.EventType != "workflow.defined" || event.EventSchema != journal.EventSchemaV2 {
 		t.Fatalf("appended event = (%q, schema %d), want Event-v2 workflow.defined", event.EventType, event.EventSchema)
 	}
-	if got, want := len(event.Effects), 9; got != want || event.Effects[len(event.Effects)-1].Table != "idempotency_results" {
+	if got, want := len(event.Effects), 8; got != want || event.Effects[len(event.Effects)-1].Table != "idempotency_results" {
 		t.Fatalf("event effects = %#v, want workflow effects plus idempotency result", event.Effects)
 	}
 
