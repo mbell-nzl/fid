@@ -70,6 +70,179 @@ func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
 	}
 }
 
+func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
+	binary := integrationFIDBinary(t)
+	workspace := t.TempDir()
+	init := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P21")
+	projectID := p21PathString(t, init, "result", "project", "id")
+	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 21 conformance journey", "--actor", "agent:developer", "--idempotency-key", "p21-issue")
+	issueID := p21PathString(t, issue, "result", "issue", "id")
+
+	activationID := p21Activation(t, binary, workspace, "prepare", "p21-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p21", "phase": 21})
+	capabilities := []string{"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.start"}
+	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p21-authority", []any{map[string]any{"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:p21", "session_ref": nil, "capabilities": capabilities}})
+	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p21-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": []string{}, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-unit", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
+	digests := []string{profileDigest, gateDigest}
+	sort.Strings(digests)
+	p21Activation(t, binary, workspace, "commit", "p21-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
+	p21Activation(t, binary, workspace, "finalize", "p21-activation-finalize", map[string]any{"activation_id": activationID, "expected_status": "committed"})
+
+	repository := map[string]any{"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil, "head_oid": strings.Repeat("a", 40), "project_id": projectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1"}
+	registerInput := p21Input(t, workspace, "gate-register", map[string]any{"definition_id": "gate-unit", "definition_version": 1, "worktree_id": "worktree-1", "scope": map[string]any{"issue_id": issueID}, "repository": repository})
+	registered := p21Run(t, binary, workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-builder", "--input", registerInput, "--idempotency-key", "p21-gate-register")
+	registrationID := p21PathString(t, registered, "result", "registration", "id")
+	registrationVersion := p21Path(t, registered, "result", "registration", "version")
+
+	source := map[string]any{"digest": "sha256:" + strings.Repeat("0", 64), "display_label": "Phase 21", "external_id": nil, "path": "project-docs/gates/p21.json", "repository": repository, "section": nil, "source_type": "project-file"}
+	envelopeInput := p21Input(t, workspace, "envelope-create", map[string]any{
+		"outcome": "Exercise the one Issue walking skeleton", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
+		"authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}},
+		"obligations":      []any{map[string]any{"id": "OBL-1", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}},
+		"budgets":          []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "unavailable", "consumed": nil, "remaining": nil}},
+	})
+	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", envelopeInput, "--idempotency-key", "p21-envelope-create")
+	envelopeID := p21PathString(t, created, "result", "envelope", "id")
+	activateInput := p21Input(t, workspace, "envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", activateInput, "--idempotency-key", "p21-envelope-activate")
+
+	claimInput := p21Input(t, workspace, "claim-acquire", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/integration"}}, "ttl_seconds": 60})
+	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", claimInput, "--idempotency-key", "p21-claim-acquire")
+	claimID := p21PathString(t, claim, "result", "claim", "id")
+	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "repository": repository})
+	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runInput, "--idempotency-key", "p21-run-start")
+	runID := p21PathString(t, run, "result", "run", "id")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
+
+	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
+	receiptID := p21PathString(t, gate, "result", "receipt", "id")
+	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "receipt_id": receiptID, "target_repository": repository, "required_artifact_ids": []string{}})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkInput, "--idempotency-key", "p21-evidence-link")
+	evaluateInput := p21Input(t, workspace, "evidence-evaluate", map[string]any{"obligation_id": "OBL-1", "target_repository": repository})
+	evaluation := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluateInput)
+	if status := p21PathString(t, evaluation, "result", "evaluation", "status"); status != "satisfied" {
+		t.Fatalf("Gate Evidence evaluation status = %q, want satisfied", status)
+	}
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "done", "--actor", "agent:actor-builder", "--expected-revision", "2", "--idempotency-key", "p21-transition-terminal")
+	finishInput := p21Input(t, workspace, "run-finish", map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishInput, "--idempotency-key", "p21-run-finish")
+	releaseInput := p21Input(t, workspace, "claim-release", map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releaseInput, "--idempotency-key", "p21-claim-release")
+	completeInput := p21Input(t, workspace, "envelope-complete", map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completeInput, "--idempotency-key", "p21-envelope-complete")
+
+	if events := p21JournalEventCount(t, workspace); events != 20 {
+		t.Fatalf("complete journey Event count = %d, want 20", events)
+	}
+}
+
+func p21GateRun(t *testing.T, binary, workspace string, input map[string]any) map[string]any {
+	t.Helper()
+	path := p21Input(t, workspace, "gate-run", input)
+	stdout, stderr, err := closureRunCommand(workspace, binary, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", path, "--idempotency-key", "p21-gate-run")
+	if err != nil || stderr != "" {
+		t.Fatalf("gate run = err:%v stdout:%q stderr:%q", err, stdout, stderr)
+	}
+	lines := strings.FieldsFunc(stdout, func(r rune) bool { return r == '\n' })
+	if len(lines) == 0 {
+		t.Fatal("gate run emitted no live frames")
+	}
+	var terminal map[string]any
+	for _, line := range lines {
+		var frame map[string]any
+		if err := json.Unmarshal([]byte(line), &frame); err != nil {
+			t.Fatalf("decode live frame: %v; line=%q", err, line)
+		}
+		if frame["stream"] == "terminal" {
+			terminal, _ = frame["data"].(map[string]any)
+		}
+	}
+	if terminal == nil || terminal["outcome"] != "succeeded" || terminal["replayed"] != false {
+		t.Fatalf("gate terminal = %#v, want one non-replayed succeeded terminal frame", terminal)
+	}
+	response, ok := terminal["response"].(map[string]any)
+	if !ok {
+		t.Fatalf("gate terminal response = %#v, want success envelope", terminal["response"])
+	}
+	return response
+}
+
+func p21Activation(t *testing.T, binary, workspace, operation, key string, input map[string]any) string {
+	t.Helper()
+	path := p21Input(t, workspace, "activation-"+operation, input)
+	result := p21Run(t, binary, workspace, "--project", workspace, "--json", "activation", operation, "--input", path, "--idempotency-key", key)
+	return p21PathString(t, result, "result", "activation", "id")
+}
+
+func p21Component(t *testing.T, binary, workspace, activationID, componentType, componentID string, content []any) string {
+	t.Helper()
+	path := p21Input(t, workspace, componentID, map[string]any{"activation_id": activationID, "component_type": componentType, "component_id": componentID, "component_version": 1, "expected_prior_digest": nil, "content": content})
+	result := p21Run(t, binary, workspace, "--project", workspace, "--json", "activation", "component", "--input", path, "--idempotency-key", "p21-"+componentID)
+	return p21PathString(t, result, "result", "component", "digest")
+}
+
+func p21Input(t *testing.T, workspace, name string, value map[string]any) string {
+	t.Helper()
+	contents, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("marshal %s input: %v", name, err)
+	}
+	path := filepath.Join(workspace, name+".json")
+	if err := os.WriteFile(path, contents, 0o600); err != nil {
+		t.Fatalf("write %s input: %v", name, err)
+	}
+	return path
+}
+
+func p21Run(t *testing.T, binary, workspace string, args ...string) map[string]any {
+	t.Helper()
+	stdout, stderr, err := closureRunCommand(workspace, binary, args...)
+	if err != nil || stderr != "" {
+		t.Fatalf("fid %s = err:%v stdout:%q stderr:%q", strings.Join(args, " "), err, stdout, stderr)
+	}
+	var envelope map[string]any
+	if err := json.Unmarshal([]byte(stdout), &envelope); err != nil {
+		t.Fatalf("decode fid %s response: %v; stdout=%q", strings.Join(args, " "), err, stdout)
+	}
+	return envelope
+}
+
+func p21PathString(t *testing.T, value map[string]any, path ...string) string {
+	t.Helper()
+	item := p21Path(t, value, path...)
+	text, ok := item.(string)
+	if !ok || text == "" {
+		t.Fatalf("path %s = %#v, want non-empty string", strings.Join(path, "."), item)
+	}
+	return text
+}
+
+func p21Path(t *testing.T, value map[string]any, path ...string) any {
+	t.Helper()
+	var item any = value
+	for _, key := range path {
+		object, ok := item.(map[string]any)
+		if !ok {
+			t.Fatalf("path %s traverses %#v, want object", strings.Join(path, "."), item)
+		}
+		item = object[key]
+	}
+	return item
+}
+
+func p21JournalEventCount(t *testing.T, workspace string) int {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	if err != nil {
+		t.Fatalf("read journal: %v", err)
+	}
+	count := 0
+	for _, entry := range entries {
+		contents := readP21File(t, filepath.Join(workspace, ".fid", "journal", entry.Name()))
+		count += len(bytes.FieldsFunc(contents, func(r rune) bool { return r == '\n' }))
+	}
+	return count
+}
+
 func p21ExpectedCorpus(t *testing.T, publicInterface string) map[string][]byte {
 	t.Helper()
 	operations := p21OperationRows(t, publicInterface)
