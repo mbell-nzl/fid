@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: 0014 and the first legacy source removals are checkpointed, but the required gate exposes remaining V1 fixture convergence and required absence residues. Several residues are in `internal/bootstrap/`, `internal/journal/`, `internal/labels/`, `internal/links/`, and `internal/requirements/`, which are outside task-20's named source scope.
-- Recovery attempts: 1
-- Next action: converge the retained tests/readers allowed by task scope, then obtain direction for the named out-of-scope absence-control residues before rerunning the byte-identical gate.
+- Condition: DEC-173 convergence is checkpointed through retained Actor attribution, lock metadata, retired workflow requirement Effects, and the `--by` reader. The attempt-2 package and repository gates remain red because retained V1 test fixtures still compile against removed roles, legacy Claim/Run, and dropped final-schema columns.
+- Recovery attempts: 2
+- Next action: converge the retained V1 test fixtures and final-schema readers in the amended source scope, preserve their assertion strength, then rerun the complete byte-identical command block.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -14,6 +14,7 @@
 - Added migration 0014: it drops `roles`, V1 `claims`, and `gate_runs`; renames `work_claims` to final `claims`; preserves frozen Phase 23/25 tables; and removes only seeded Issue role/judgment requirements.
 - Added red/green migration and command-tree removal guards, removed the V1 dev, completion, policy, legacy Claim, and legacy Run production implementations, and retained generic Claim/Run command leaves.
 - Retargeted generic Claim/workflow production queries and Effects to the final `claims` table.
+- Removed the last production `--by` reader and retired `workflow_transition_requires` emission. Retained workflow definition requests now fail closed when they contain retired transition requirements; generic Claim still closes its projection handles after the V1 shared helper was removed.
 
 ## Files created or modified
 
@@ -64,6 +65,33 @@
 - Broad table inventory: `internal/claims/generic.go:151,185,221` are retained final generic Claim writers; `internal/workflow/authoring_effects.go:97` is retained structural workflow authoring; `internal/issues/concern_raise.go:222`, `internal/issues/concern_address.go:196`, and `internal/issues/ac_verify.go:160` are prohibited frozen-state writers awaiting in-scope removal. `UNCLASSIFIED=0`.
 - Event inventory: `internal/workflow/{activation,authoring,define,assign,envelope,run}.go`, `internal/evidence/{artifact,evidence,execution,registration}.go`, and `internal/issues/{create_commit,update,transition,ac}.go` are retained Event-v2 families. `internal/bootstrap/init.go:366` is the frozen task-21 bootstrap reader/writer boundary. `internal/labels/{add}.go`, `internal/links/{add,remove}.go`, and `internal/requirements/sync.go` are retained task-9 attribution families outside task-20 scope. `internal/issues/{ac_verify,concern_raise,concern_address}.go` are prohibited V1 judgment Event writers awaiting in-scope removal. `UNCLASSIFIED=0`.
 
+### Attempt 2 exact command results (TRG-21-020 / DEC-173)
+
+- `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; retained V1 db, maintenance, and cmd fixtures still reference removed tables/packages.)
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; generic Claim compilation first exposed the deleted legacy close helpers.)
+- `ls internal/dev` - BLOCKED - `exit 0 (no output)` (expected `exit_code: 2`; terminated `exit_code: 0`; the empty removed-package directory remains.)
+- `ls internal/runs` - BLOCKED - `exit 0 (no output)` (expected `exit_code: 2`; terminated `exit_code: 0`; the empty removed-package directory remains.)
+- `ls cmd/fid/dev.go` - PASS - `ls: cannot access 'cmd/fid/dev.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/policy.go` - PASS - `ls: cannot access 'cmd/fid/policy.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/issue_complete.go` - PASS - `ls: cannot access 'cmd/fid/issue_complete.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'String(Var)?\([^\n]*"by"|GetString\("by"|--by' cmd/fid internal` - BLOCKED - `cmd/fid/issue_mutation_response.go:237: value, err := cmd.Flags().GetString("by")` (expected `exit_code: 1`; terminated `exit_code: 0`; repaired in checkpoint `556b4e6`, rerun required.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'policy\.Authorize|KnownRoles|ActorRole|Role:' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(FROM|INTO|UPDATE|JOIN|DELETE FROM) (roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)\b|Table:\s*"(roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)"' cmd/fid internal` - PASS - `internal/issues/transition_rules.go:125: FROM concerns` (terminated `exit_code: 0`; classified in the retained broad inventory; `UNCLASSIFIED=0`.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\s*"' cmd/fid internal` - PASS - `internal/workflow/assign.go:111: EventType: "workflow.assigned",` (terminated `exit_code: 0`; classified in the retained broad inventory; `UNCLASSIFIED=0`.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(INTO|UPDATE|DELETE FROM) (roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)\b|Table:\s*"(roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)"' cmd/fid internal` - BLOCKED - `internal/workflow/authoring_effects.go:97: Op: "insert", Table: "workflow_transition_requires",` (expected `exit_code: 1`; terminated `exit_code: 0`; repaired in checkpoint `556b4e6`, rerun required.)
+- `rg -n 'EventType:\s*"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)|"event_type":"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)' cmd/fid internal testdata` - BLOCKED - `internal/issues/transition_test.go:1408: EventType: "issue.claim.seeded",` (expected `exit_code: 1`; terminated `exit_code: 0`.)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '"event"\s*:\s*"[a-z0-9]+_[a-z0-9_]+"|Event:\s*"[a-z0-9]+_[a-z0-9_]"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - BLOCKED - `internal/workflow/workflow_test.go` (terminated `exit_code: 0`; emitted paths require formatting.)
+- `golangci-lint run ./...` - BLOCKED - `* typecheck: 1` (terminated `exit_code: 1`; retained policy tests refer to removed V1 authority functions.)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; package failures include V1 Claim, role, and Run fixtures.)
+- `go tool cover -func=coverage.out` - PASS - `total:                                (statements)                                48.4%` (terminated `exit_code: 0`; generated from the failed coverage test command and not used as completion evidence.)
+
+### Attempt 2 convergence provenance
+
+- `cmd/fid/issue_mutation_response.go:151` and `:236` - invalidating change: removal of the V1 `--by` contract; accepted replacement: no legacy actor reader is used for authority failures.
+- `internal/claims/generic.go:90` - invalidating change: deletion of the legacy Claim shared file; accepted replacement: retained generic Claim owns its connection/row close helpers.
+- `internal/workflow/authoring.go:61`, `authoring_effects.go:10`, `authoring_effects_test.go:9`, and `authoring_test.go:74` - invalidating change: 0014 drops seeded V1 requirement Effects; accepted replacement: a non-empty retired requirement is explicitly rejected and no dropped-table Effect is emitted.
+
 ## Deviations from spec
 
 - The required no-role search cannot pass inside the named task-20 scope: its live production matches include `internal/bootstrap/init.go`, `internal/journal/lock.go`, `internal/labels/`, `internal/links/`, and `internal/requirements/`. The task does not authorize changes there; this report preserves the exact broad command rather than narrowing it.
@@ -80,8 +108,8 @@
 
 ## Commit hash
 
-- `aef03cf`
+- `556b4e65e39865a836b955ffa77f85857818d9fc`
 
 ## Commit subject
 
-- `style(convergence): format V1 removal checkpoint`
+- `fix(convergence): remove retired workflow requirement effects`
