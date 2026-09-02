@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: COMPLETE
-- Category: none
-- Condition: None.
+- Task outcome: RECOVERY_REQUIRED
+- Category: report-repair
+- Condition: The post-commit report-lint command terminated `exit_code: 18` with `FAIL report-lint found 18 failure(s)`: preserved attempt-1 through attempt-6 PASS rows contain legacy post-termination annotations or escaped command text that the current parser rejects, despite the final attempt-7 command coverage being PASS.
 - Recovery attempts: 7
-- Next action: None.
+- Next action: Obtain report-repair authority that preserves every historical failed row while making the legacy PASS evidence mechanically parseable, then rerun the exact post-commit report-lint command.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -265,6 +265,7 @@
 - First report-lint attempt returned `FAIL report-lint found 11 failure(s)` (terminated `exit_code: 11`) because command escaping and post-termination annotations were not byte-exact; this report correction preserves the gate evidence and will rerun the same lint command.
 - Second report-lint attempt returned `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`); the recovery report remains committed, but its preserved PASS rows need report-format convergence before the control can return a clean recovery receipt.
 - Attempt 6 exact report-lint command returned `FAIL report-lint found 13 failure(s)` (terminated `exit_code: 13`; observed `OUTCOME RECOVERY_REQUIRED`, not required literal `OUTCOME COMPLETE`). The validator rejects preserved attempt-1 through attempt-4 PASS rows with legacy post-termination annotations and the historical abbreviated snake-case Event command; this report preserves those failed rows exactly as directed and does not modify the control.
+- Attempt 7 exact report-lint command returned `FAIL report-lint found 18 failure(s)` (terminated `exit_code: 18`; the command emitted an initial `OUTCOME COMPLETE` workflow field but did not complete with the required literal final outcome or exit status). The failures are report-format conformance in preserved historical PASS rows; the final attempt-7 command coverage is recorded PASS and cannot override those prior parse failures.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
