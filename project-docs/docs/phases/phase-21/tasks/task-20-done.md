@@ -97,6 +97,7 @@
 - The required no-role search cannot pass inside the named task-20 scope: its live production matches include `internal/bootstrap/init.go`, `internal/journal/lock.go`, `internal/labels/`, `internal/links/`, and `internal/requirements/`. The task does not authorize changes there; this report preserves the exact broad command rather than narrowing it.
 - The first gate failure is immutable evidence. Its root cause is the accepted 0014 final-table rename and V1 source deletion exposing retained readers/tests; the next repair must converge them without changing any command, assertion semantics, or frozen-table policy.
 - First report-lint attempt returned `FAIL report-lint found 11 failure(s)` (terminated `exit_code: 11`) because command escaping and post-termination annotations were not byte-exact; this report correction preserves the gate evidence and will rerun the same lint command.
+- Second report-lint attempt returned `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`); the recovery report remains committed, but its preserved PASS rows need report-format convergence before the control can return a clean recovery receipt.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
