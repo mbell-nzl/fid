@@ -91,8 +91,8 @@ Reference identity for the DEC-158 samples: `go1.26.2 linux/amd64`; `Linux 6.6.1
 
 ## Commit hash
 
-- Pending commit
+- `76ad781727b9e8545e069c4ac0e9f926012e6af9`
 
 ## Commit subject
 
-- Pending commit
+- `test(gate): stabilize signaled process outcome`
