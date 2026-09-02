@@ -73,12 +73,12 @@ func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
 		require Requirement
 		wantErr string
 	}{
-		{"reserved v0.2b", Requirement{From: "todo", To: "done", Rule: RuleRequiredGatesCurrent}, "v0.2b"},
-		{"reserved v0.2c", Requirement{From: "todo", To: "done", Rule: RuleHasCompletion}, "v0.2c"},
-		{"reserved v0.2d", Requirement{From: "todo", To: "done", Rule: RuleLinkedToDecision}, "v0.2d"},
-		{"unknown rule", Requirement{From: "todo", To: "done", Rule: "invented_rule"}, `"invented_rule"`},
-		{"invalid json", Requirement{From: "todo", To: "done", Rule: RuleHasCompletionReport, ParamsJSON: "{"}, "invalid JSON"},
-		{"all acs without roles", Requirement{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":[]}`}, "non-empty roles"},
+		{"reserved v0.2b", Requirement{From: "todo", To: "done", Rule: RuleRequiredGatesCurrent}, "requirements are unavailable"},
+		{"reserved v0.2c", Requirement{From: "todo", To: "done", Rule: RuleHasCompletion}, "requirements are unavailable"},
+		{"reserved v0.2d", Requirement{From: "todo", To: "done", Rule: RuleLinkedToDecision}, "requirements are unavailable"},
+		{"unknown rule", Requirement{From: "todo", To: "done", Rule: "invented_rule"}, "requirements are unavailable"},
+		{"invalid json", Requirement{From: "todo", To: "done", Rule: RuleHasCompletionReport, ParamsJSON: "{"}, "requirements are unavailable"},
+		{"all acs without roles", Requirement{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":[]}`}, "requirements are unavailable"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -88,22 +88,9 @@ func TestDefinitionRuleVocabularyAndParams(t *testing.T) {
 	}
 
 	request := withDefinition(func(request *DefinitionRequest) {
-		request.Requirements = []Requirement{
-			{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":["developer"]}`},
-			{From: "todo", To: "done", Rule: RuleHasCompletionReport, ParamsJSON: `{"note":"complete"}`},
-			{From: "todo", To: "done", Rule: RuleConcernsAddressed, ParamsJSON: `{"note":"clear"}`},
-			{From: "todo", To: "done", Rule: RuleAllChildTasksDoneOrCanceled, ParamsJSON: `{"children":true}`},
-		}
+		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":["developer"]}`}}
 	})
-	effects, err := BuildDefinitionEffects(conn, request)
-	if err != nil {
-		t.Fatalf("BuildDefinitionEffects() error = %v", err)
-	}
-	for _, requirement := range request.Requirements {
-		if !hasRequirementEffect(effects, requirement.From, requirement.To, requirement.Rule, requirement.ParamsJSON) {
-			t.Fatalf("effects = %#v, missing %#v", effects, requirement)
-		}
-	}
+	assertDefinitionError(t, conn, request, "requirements are unavailable")
 }
 
 func TestValidateDefinitionRequestRequirementEdges(t *testing.T) {
@@ -112,14 +99,12 @@ func TestValidateDefinitionRequestRequirementEdges(t *testing.T) {
 	unknown := withDefinition(func(request *DefinitionRequest) {
 		request.Requirements = []Requirement{{From: "done", To: "todo", Rule: RuleHasCompletionReport}}
 	})
-	assertDefinitionError(t, conn, unknown, `"done" -> "todo"`)
+	assertDefinitionError(t, conn, unknown, "requirements are unavailable")
 
 	declared := withDefinition(func(request *DefinitionRequest) {
 		request.Requirements = []Requirement{{From: "todo", To: "done", Rule: RuleHasCompletionReport}}
 	})
-	if _, err := BuildDefinitionEffects(conn, declared); err != nil {
-		t.Fatalf("BuildDefinitionEffects(declared requirement) error = %v", err)
-	}
+	assertDefinitionError(t, conn, declared, "requirements are unavailable")
 }
 
 func TestBuildDefinitionEffectsCancelledStatePolicy(t *testing.T) {

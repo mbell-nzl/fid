@@ -24,10 +24,6 @@ func TestBuildDefinitionEffectsIsOrderedAndDeterministic(t *testing.T) {
 			{From: "in_progress", To: "done"},
 			{From: "todo", To: "cancelled"},
 		},
-		Requirements: []Requirement{
-			{From: "in_progress", To: "done", Rule: RuleAllACsVerified, ParamsJSON: `{"roles":["developer"]}`},
-			{From: "in_progress", To: "done", Rule: RuleHasCompletionReport},
-		},
 	}
 
 	got, err := BuildDefinitionEffects(conn, request)
@@ -53,15 +49,13 @@ func TestBuildDefinitionEffectsIsOrderedAndDeterministic(t *testing.T) {
 		{Op: "insert", Table: "workflow_transitions", PK: map[string]any{"workflow_id": "release-flow", "from_state": "todo", "to_state": "cancelled"}},
 		{Op: "insert", Table: "workflow_transitions", PK: map[string]any{"workflow_id": "release-flow", "from_state": "in_progress", "to_state": "cancelled"}},
 		{Op: "insert", Table: "workflow_transitions", PK: map[string]any{"workflow_id": "release-flow", "from_state": "done", "to_state": "cancelled"}},
-		{Op: "insert", Table: "workflow_transition_requires", PK: map[string]any{"workflow_id": "release-flow", "from_state": "in_progress", "to_state": "done", "rule": RuleAllACsVerified}, Values: map[string]any{"params_json": `{"roles":["developer"]}`}},
-		{Op: "insert", Table: "workflow_transition_requires", PK: map[string]any{"workflow_id": "release-flow", "from_state": "in_progress", "to_state": "done", "rule": RuleHasCompletionReport}, Values: map[string]any{"params_json": nil}},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("effects = %#v, want %#v", got, want)
 	}
 }
 
-func TestBuildDefinitionEffectsAcceptsRequirementOnMaterializedEdge(t *testing.T) {
+func TestBuildDefinitionEffectsRejectsRetiredRequirement(t *testing.T) {
 	t.Parallel()
 	conn := migratedWorkflowRegistryDB(t)
 	defer closeRegistryDB(t, conn)
@@ -77,21 +71,7 @@ func TestBuildDefinitionEffectsAcceptsRequirementOnMaterializedEdge(t *testing.T
 		}},
 	}
 
-	effects, err := BuildDefinitionEffects(conn, request)
-	if err != nil {
-		t.Fatalf("BuildDefinitionEffects() error = %v", err)
+	if _, err := BuildDefinitionEffects(conn, request); err == nil || err.Error() != "workflow transition requirements are unavailable" {
+		t.Fatalf("BuildDefinitionEffects() error = %v, want retired requirement rejection", err)
 	}
-	if !hasRequirementEffect(effects, "done", "cancelled", RuleHasCompletionReport, nil) {
-		t.Fatalf("effects = %#v, want requirement on materialized done -> cancelled edge", effects)
-	}
-}
-
-func hasRequirementEffect(effects []journal.Effect, from, to, rule string, params any) bool {
-	for _, effect := range effects {
-		if effect.Table != "workflow_transition_requires" || effect.PK["from_state"] != from || effect.PK["to_state"] != to || effect.PK["rule"] != rule {
-			continue
-		}
-		return reflect.DeepEqual(effect.Values["params_json"], params)
-	}
-	return false
 }

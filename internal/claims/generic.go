@@ -115,6 +115,14 @@ type GenericClaimInvalidError struct{ Reason string }
 
 func (err *GenericClaimInvalidError) Error() string { return err.Reason }
 
+func closeClaimsConn(conn *sql.DB) {
+	_ = conn.Close()
+}
+
+func closeClaimsRows(rows *sql.Rows) {
+	_ = rows.Close()
+}
+
 func AcquireGeneric(options MutationOptions, request AcquireRequest) (MutationResult, error) {
 	if err := validateMutationOptions(options); err != nil || !validAcquireRequest(request) {
 		return MutationResult{}, invalidGenericClaim("claim acquire input is invalid")

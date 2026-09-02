@@ -15,7 +15,6 @@ func BuildDefinitionEffects(conn *sql.DB, request DefinitionRequest) ([]journal.
 	effects = append(effects, buildStateEffects(request)...)
 	transitions := materializedTransitions(request)
 	effects = append(effects, buildTransitionEffects(request.Name, transitions)...)
-	effects = append(effects, buildRequirementEffects(request)...)
 	return effects, nil
 }
 
@@ -81,22 +80,6 @@ func buildTransitionEffects(workflowID string, transitions []Transition) []journ
 		effects = append(effects, journal.Effect{
 			Op: "insert", Table: "workflow_transitions",
 			PK: map[string]any{"workflow_id": workflowID, "from_state": transition.From, "to_state": transition.To},
-		})
-	}
-	return effects
-}
-
-func buildRequirementEffects(request DefinitionRequest) []journal.Effect {
-	effects := make([]journal.Effect, 0, len(request.Requirements))
-	for _, requirement := range request.Requirements {
-		paramsJSON := any(nil)
-		if requirement.ParamsJSON != "" {
-			paramsJSON = requirement.ParamsJSON
-		}
-		effects = append(effects, journal.Effect{
-			Op: "insert", Table: "workflow_transition_requires",
-			PK:     map[string]any{"workflow_id": request.Name, "from_state": requirement.From, "to_state": requirement.To, "rule": requirement.Rule},
-			Values: map[string]any{"params_json": paramsJSON},
 		})
 	}
 	return effects

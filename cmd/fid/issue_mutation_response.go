@@ -148,7 +148,7 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 		}
 		return cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: path}, map[string]any{"path": path})
 	}
-	if failure, handled, err := authorityFailure(operation, mutationActor(cmd), mutationErr); err != nil {
+	if failure, handled, err := authorityFailure(operation, "", mutationErr); err != nil {
 		return cli.Failure{}, err
 	} else if handled {
 		return failure, nil
@@ -231,12 +231,4 @@ func optionalString(value *string) any {
 		return nil
 	}
 	return *value
-}
-
-func mutationActor(cmd *cobra.Command) string {
-	value, err := cmd.Flags().GetString("by")
-	if err != nil {
-		return ""
-	}
-	return value
 }

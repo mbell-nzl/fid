@@ -58,11 +58,14 @@ func ValidateDefinitionRequest(conn *sql.DB, request DefinitionRequest) error {
 	if err := validateCancelledStates(request.AppliesTo, cancelled); err != nil {
 		return err
 	}
-	transitions, err := validateTransitions(request.Transitions, states)
+	_, err = validateTransitions(request.Transitions, states)
 	if err != nil {
 		return err
 	}
-	return validateRequirements(request.Requirements, materializedTransitionKeys(request, transitions))
+	if len(request.Requirements) != 0 {
+		return fmt.Errorf("workflow transition requirements are unavailable")
+	}
+	return nil
 }
 
 func rejectExistingWorkflow(conn *sql.DB, name string) error {
