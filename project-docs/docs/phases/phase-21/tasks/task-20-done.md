@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Attempt 4 converged final-schema Claim readers in `internal/issues` and `internal/maintenance`, V1 policy/command fixtures, and direct frozen telemetry fixtures. The package gate remains red because retained DB migration inventories, V1 closure tests, bootstrap role assertions, and command-surface inventory tests still expect removed V1 behavior.
-- Recovery attempts: 4
-- Next action: converge the retained `internal/db` migration/ref-trigger tests and `cmd/fid` V1 closure/bootstrap/inventory tests, remove the now-empty obsolete directories, then rerun the complete byte-identical command block.
+- Condition: Finalization attempt 6 ran every amended task command to termination. Command 17 remains red because `internal/sqlquery/sqlquery_test.go:113` mutates the removed `roles` table instead of proving read-only rejection against a surviving table, and `internal/workflow/define_test.go:32` requests the retired `has_completion_report` transition requirement instead of asserting its accepted fail-closed rejection.
+- Recovery attempts: 6
+- Next action: converge those two retained assertions under DEC-173 without weakening their subjects, then rerun the complete byte-identical command block from command 1 and record a real CLI entrypoint exercise.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -32,6 +32,7 @@
 - VAL-002: PARTIAL - `TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction` at `internal/db/operational_kernel_migration_test.go:43` first failed because 0014 was absent, then passed after the exact migration files were added; repository-wide migration regressions remain red.
 - VAL-074: PARTIAL - the fresh broad table/Event inventories below are classified line by line with `UNCLASSIFIED=0`, but retained frozen/diagnostic dispositions are not yet all converged.
 - VAL-075: PARTIAL - `TestTask20V1CommandsAreAbsent` at `cmd/fid/task20_removal_test.go:5` first failed with `fid [dev] resolved command "fid dev"`; source leaves are removed, but the declared absence searches still find V1 residue.
+- Attempt 6 current disposition: VAL-002 is PARTIAL because the scoped migration/package gate passes but the repository-wide coverage gate is BLOCKED by a retained final-schema test. VAL-074 is PARTIAL because both required broad inventories are fully classified below with `UNCLASSIFIED=0`, but command 17 is BLOCKED. VAL-075 is PARTIAL because every final V1 path, source, Event, and snake-case absence control passed, while command 17 remains red.
 
 ## Tests run
 
@@ -39,6 +40,7 @@
 - `go test -race ./internal/db -run '^TestMigration0014RetiresV1AuthorityExecutionWithoutReconstruction$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/db	1.677s` (terminated `exit_code: 0`)
 - `go test -race ./cmd/fid -run '^TestTask20V1CommandsAreAbsent$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`; red: `fid [dev] resolved command "fid dev" with err <nil>, want unknown command`)
 - Real entrypoint exercise: BLOCKED - the exact required package command did not build `cmd/fid`, so no binary could be truthfully exercised after the removal checkpoint.
+- Real entrypoint exercise for attempt 6: UNVERIFIED - the dispatch authorized only the 18 task-spec commands; command 1 compiled and tested `cmd/fid/...`, but no additional CLI command was authorized before the required repository-wide gate failed.
 
 ## Exact quality-gate results
 
@@ -125,10 +127,110 @@
 - `internal/journal/replay_test.go:130` - invalidating change: the three dev fixture values become retained Issue values; accepted replacement: revision assertions use fixture position, preserving every prior/value/precondition check despite repeated Issue family names.
 - `internal/journal/phase2_rebuild_test.go:187` - invalidating change: migration 0014 drops V1 Claim/Gate and freezes completion/judgment/telemetry state; accepted replacement: the parity fixture retains its surviving issue/workflow/requirement/link/activity projection subject without Effects on dropped or frozen tables.
 
+### Attempt 6 final ordered command results (TRG-21-020 / DEC-173)
+
+- `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - PASS - `ok  ` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  ` (terminated `exit_code: 0`)
+- `ls internal/dev` - PASS - `ls: cannot access 'internal/dev': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls internal/runs` - PASS - `ls: cannot access 'internal/runs': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/dev.go` - PASS - `ls: cannot access 'cmd/fid/dev.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/policy.go` - PASS - `ls: cannot access 'cmd/fid/policy.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `ls cmd/fid/issue_complete.go` - PASS - `ls: cannot access 'cmd/fid/issue_complete.go': No such file or directory` (expected `exit_code: 2`; terminated `exit_code: 2`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'String(Var)?\([^\n]*"by"|GetString\("by"|--by' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'policy\.Authorize|KnownRoles|ActorRole|Role:' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(FROM|INTO|UPDATE|JOIN|DELETE FROM) (roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)\b|Table:\s*"(roles|claims|agent_runs|task_completions|gate_runs|ac_verifications|concerns|workflow_transition_requires)"' cmd/fid internal` - PASS - `completion.id` (terminated `exit_code: 0`). Classified below.
+- `rg -n --glob '*.go' --glob '!**/*_test.go' 'EventType:\s*"' cmd/fid internal` - PASS - `activation.component-staged` (terminated `exit_code: 0`). Classified below.
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '(INTO|UPDATE|DELETE FROM) (roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)\b|Table:\s*"(roles|gate_runs|task_completions|agent_runs|ac_verifications|concerns)"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n 'EventType:\s*"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)|"event_type":"(dev\.|issue\.completed|issue\.claim\.|run\.recorded)' cmd/fid internal testdata` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `rg -n --glob '*.go' --glob '!**/*_test.go' '"event"\s*:\s*"[a-z0-9]+_[a-z0-9_]+"|Event:\s*"[a-z0-9]+_[a-z0-9_]+"' cmd/fid internal` - PASS - `exit 1 (no output)` (expected `exit_code: 1`; terminated `exit_code: 1`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; `TestReadOnlyConnectionRejectsMutationWhenClassifierIsBypassed` at `internal/sqlquery/sqlquery_test.go:113` inserts into removed `roles`, and `TestDefineAppendsOneAtomicWorkflowDefinedEvent` at `internal/workflow/define_test.go:32` requests the retired completion-report transition requirement. This immutable failed attempt requires in-scope assertion convergence.)
+- `go tool cover -func=coverage.out` - PASS - `total:` (terminated `exit_code: 0`). Generated from the failed coverage attempt and not completion evidence.
+
+### Attempt 6 broad table inventory provenance
+
+- `internal/workflow/run.go:219` - final `claims` reader; invalidating change: migration 0014 renames `work_claims`; accepted replacement: generic Claim final-table lookup.
+- `internal/workflow/evaluation.go:176` - final `claims` reader; invalidating change: migration 0014 renames `work_claims`; accepted replacement: final Claim obligation evaluation.
+- `internal/workflow/resume.go:139` - final `claims` reader; invalidating change: migration 0014 renames `work_claims`; accepted replacement: active final Claim resume lookup.
+- `internal/workflow/envelope.go:293` - final `claims` reader; invalidating change: migration 0014 renames `work_claims`; accepted replacement: active final Claim count.
+- `internal/workflow/registry.go:183` - frozen transition-requirement diagnostic reader; invalidating change: 0014 removes only displaced role/judgment rows; accepted replacement: retained final-schema registry inspection with unavailable requirements rejected before a dropped-table Effect.
+- `internal/stats/stats.go:206` - frozen `agent_runs` diagnostic reader; invalidating change: task-20 removes V1 Run writers; accepted replacement: read-only telemetry aggregation.
+- `internal/claims/generic.go:151,159,193,229,337,358,457` - final `claims` readers and generic Claim Effects; invalidating change: migration 0014 renames `work_claims`; accepted replacement: final generic Claim lifecycle subject with unchanged assertion strength.
+- `internal/issues/detail.go:129,133` - frozen `ac_verifications` diagnostic reader; invalidating change: task-20 removes V1 completion writers; accepted replacement: read-only Issue detail inspection.
+- `internal/issues/detail.go:167` - frozen `concerns` diagnostic reader; invalidating change: task-20 removes V1 judgment writers; accepted replacement: read-only Issue detail inspection.
+- `internal/issues/detail.go:208` - frozen `task_completions` diagnostic reader; invalidating change: task-20 removes V1 completion writers; accepted replacement: read-only Issue detail inspection.
+- `internal/issues/concern_list.go:116` - frozen `concerns` diagnostic reader; invalidating change: task-20 removes V1 judgment writers; accepted replacement: read-only concern listing.
+- `internal/issues/transition_rules.go:112,125` - frozen `task_completions` and `concerns` diagnostic readers; invalidating change: task-20 removes V1 completion/judgment writers; accepted replacement: guarded transition diagnosis without state mutation.
+- `internal/maintenance/warnings.go:42` - final `claims` reader; invalidating change: migration 0014 renames `work_claims`; accepted replacement: final Claim maintenance warning.
+- `internal/maintenance/warnings.go:164,165,191,192` - frozen `ac_verifications`, `task_completions`, and `agent_runs` diagnostic joins; invalidating change: task-20 removes V1 writers; accepted replacement: read-only maintenance findings.
+- Broad table inventory: `UNCLASSIFIED=0`.
+
+### Attempt 6 Event inventory provenance
+
+- `internal/links/add.go:112` and `internal/links/remove.go:126` - retained Event-v2 link families; invalidating change: ActorRole deletion; accepted replacement: generic Actor-v2 attribution.
+- `internal/labels/add.go:119` - retained Event-v2 label family; invalidating change: ActorRole deletion; accepted replacement: generic Actor-v2 attribution.
+- `internal/evidence/evidence.go:152`, `execution.go:297,371`, `artifact.go:434`, and `registration.go:180` - retained Phase 21 Event-v2 evidence families; invalidating change: V1 Run/Gate removal; accepted replacement: Receipt/Evidence execution Events.
+- `internal/bootstrap/init.go:345` - frozen VAL-008 `project.initialized` Event; invalidating change: role bootstrap removal; accepted replacement: byte-identical project initialization Event.
+- `internal/issues/create_commit.go:133`, `transition.go:230`, `ac.go:135`, and `update.go:145` - retained Event-v2 Issue families; invalidating change: dev/completion/legacy Claim Event removal; accepted replacement: Issue lifecycle Events.
+- `internal/requirements/sync.go:94` - retained Event-v2 requirement-sync family; invalidating change: ActorRole deletion; accepted replacement: generic Actor-v2 attribution.
+- `internal/workflow/define.go:107`, `assign.go:111`, `envelope.go:234,304,386`, and `activation.go:209,337` - retained Event-v2 workflow families; invalidating change: V1 role/judgment/Run removal; accepted replacement: final work-envelope and activation Events.
+- Event inventory: `UNCLASSIFIED=0`.
+
+### Attempt 6 per-row classifications
+
+- `internal/workflow/run.go:219` - retained final `claims` reader; migration 0014 replacement: final Claim lookup.
+- `internal/workflow/evaluation.go:176` - retained final `claims` reader; migration 0014 replacement: final Claim obligation evaluation.
+- `internal/workflow/resume.go:139` - retained final `claims` reader; migration 0014 replacement: active Claim resume lookup.
+- `internal/workflow/envelope.go:293` - retained final `claims` reader; migration 0014 replacement: active Claim count.
+- `internal/workflow/registry.go:183` - frozen `workflow_transition_requires` diagnostic reader; 0014 replacement: final-schema inspection with retired requirements rejected before Effects.
+- `internal/stats/stats.go:206` - frozen `agent_runs` diagnostic reader; V1 Run removal replacement: read-only telemetry aggregation.
+- `internal/claims/generic.go:151` - retained final `claims` reader; migration 0014 replacement: generic Claim uniqueness lookup.
+- `internal/claims/generic.go:159` - retained final `claims` Effect writer; migration 0014 replacement: generic Claim acquire Effect.
+- `internal/claims/generic.go:193` - retained final `claims` Effect writer; migration 0014 replacement: generic Claim renew Effect.
+- `internal/claims/generic.go:229` - retained final `claims` Effect writer; migration 0014 replacement: generic Claim release Effect.
+- `internal/claims/generic.go:337` - retained final `claims` reader; migration 0014 replacement: generic Claim get lookup.
+- `internal/claims/generic.go:358` - retained final `claims` reader; migration 0014 replacement: active Claim lookup.
+- `internal/claims/generic.go:457` - retained final `claims` reader; migration 0014 replacement: generic Claim list query.
+- `internal/issues/detail.go:129` - frozen `ac_verifications` diagnostic reader; V1 completion writer removal replacement: read-only Issue detail.
+- `internal/issues/detail.go:133` - frozen `ac_verifications` diagnostic reader; V1 completion writer removal replacement: read-only Issue detail.
+- `internal/issues/detail.go:167` - frozen `concerns` diagnostic reader; V1 judgment writer removal replacement: read-only Issue detail.
+- `internal/issues/detail.go:208` - frozen `task_completions` diagnostic reader; V1 completion writer removal replacement: read-only Issue detail.
+- `internal/issues/concern_list.go:116` - frozen `concerns` diagnostic reader; V1 judgment writer removal replacement: read-only concern list.
+- `internal/issues/transition_rules.go:112` - frozen `task_completions` diagnostic reader; V1 completion writer removal replacement: guarded transition diagnosis.
+- `internal/issues/transition_rules.go:125` - frozen `concerns` diagnostic reader; V1 judgment writer removal replacement: guarded transition diagnosis.
+- `internal/maintenance/warnings.go:42` - retained final `claims` reader; migration 0014 replacement: Claim maintenance warning.
+- `internal/maintenance/warnings.go:164` - frozen `ac_verifications` diagnostic reader; V1 completion writer removal replacement: read-only maintenance finding.
+- `internal/maintenance/warnings.go:165` - frozen `task_completions` diagnostic reader; V1 completion writer removal replacement: read-only maintenance finding.
+- `internal/maintenance/warnings.go:191` - frozen `task_completions` diagnostic reader; V1 completion writer removal replacement: read-only maintenance finding.
+- `internal/maintenance/warnings.go:192` - frozen `agent_runs` diagnostic reader; V1 Run writer removal replacement: read-only maintenance finding.
+- `internal/links/add.go:112` - retained Event-v2 `link.added`; ActorRole deletion replacement: generic Actor-v2 attribution.
+- `internal/labels/add.go:119` - retained Event-v2 `label.added`; ActorRole deletion replacement: generic Actor-v2 attribution.
+- `internal/links/remove.go:126` - retained Event-v2 `link.removed`; ActorRole deletion replacement: generic Actor-v2 attribution.
+- `internal/evidence/evidence.go:152` - retained Event-v2 `evidence.linked`; V1 Run/Gate removal replacement: Receipt/Evidence event family.
+- `internal/evidence/execution.go:297` - retained Event-v2 `gate.execution-started`; V1 Run/Gate removal replacement: Receipt/Evidence event family.
+- `internal/evidence/execution.go:371` - retained Event-v2 `gate.receipt-recorded`; V1 Run/Gate removal replacement: Receipt/Evidence event family.
+- `internal/evidence/artifact.go:434` - retained Event-v2 `artifact.availability-observed`; V1 Run/Gate removal replacement: Receipt/Evidence event family.
+- `internal/bootstrap/init.go:345` - frozen VAL-008 Event-v2 `project.initialized`; role bootstrap removal replacement: byte-identical initialization Event.
+- `internal/evidence/registration.go:180` - retained Event-v2 `gate.registered`; V1 Run/Gate removal replacement: Gate Registration event.
+- `internal/issues/create_commit.go:133` - retained Event-v2 `issue.created`; V1 dev/completion/Claim Event removal replacement: Issue lifecycle Event.
+- `internal/issues/transition.go:230` - retained Event-v2 `issue.transitioned`; V1 dev/completion/Claim Event removal replacement: Issue lifecycle Event.
+- `internal/requirements/sync.go:94` - retained Event-v2 `requirement.synced`; ActorRole deletion replacement: generic Actor-v2 attribution.
+- `internal/workflow/define.go:107` - retained Event-v2 `workflow.defined`; V1 role/judgment removal replacement: final workflow definition Event.
+- `internal/issues/ac.go:135` - retained Event-v2 `issue.ac-added`; V1 completion Event removal replacement: Issue lifecycle Event.
+- `internal/issues/update.go:145` - retained Event-v2 `issue.updated`; V1 dev/Claim Event removal replacement: Issue lifecycle Event.
+- `internal/workflow/envelope.go:234` - retained Event-v2 `envelope.created`; V1 Run removal replacement: work-envelope Event.
+- `internal/workflow/envelope.go:304` - retained Event-v2 `envelope.activated`; V1 Run removal replacement: work-envelope Event.
+- `internal/workflow/envelope.go:386` - retained Event-v2 `envelope.completed`; V1 Run removal replacement: work-envelope Event.
+- `internal/workflow/assign.go:111` - retained Event-v2 `workflow.assigned`; V1 role removal replacement: final workflow assignment Event.
+- `internal/workflow/activation.go:209` - retained Event-v2 `activation.prepared`; V1 Run removal replacement: activation Event.
+- `internal/workflow/activation.go:337` - retained Event-v2 `activation.component-staged`; V1 Run removal replacement: activation Event.
+
 ## Deviations from spec
 
 - The required no-role search cannot pass inside the named task-20 scope: its live production matches include `internal/bootstrap/init.go`, `internal/journal/lock.go`, `internal/labels/`, `internal/links/`, and `internal/requirements/`. The task does not authorize changes there; this report preserves the exact broad command rather than narrowing it.
 - The first gate failure is immutable evidence. Its root cause is the accepted 0014 final-table rename and V1 source deletion exposing retained readers/tests; the next repair must converge them without changing any command, assertion semantics, or frozen-table policy.
+- Attempt 6 command 17 failed after the preceding 16 commands met their exact pass conditions. Its failures are retained test assertions in authorized DEC-173 packages; no command, expected status, protected contract, or prior failed evidence was changed.
 - First report-lint attempt returned `FAIL report-lint found 11 failure(s)` (terminated `exit_code: 11`) because command escaping and post-termination annotations were not byte-exact; this report correction preserves the gate evidence and will rerun the same lint command.
 - Second report-lint attempt returned `FAIL report-lint found 9 failure(s)` (terminated `exit_code: 9`); the recovery report remains committed, but its preserved PASS rows need report-format convergence before the control can return a clean recovery receipt.
 
@@ -142,8 +244,8 @@
 
 ## Commit hash
 
-- `598d3d3`
+- `8cad753ad612ea5fe252afe55b25ba0874039694`
 
 ## Commit subject
 
-- `test(convergence): update final-schema journal fixtures`
+- `test(convergence): remove unreachable V1 fixture helpers`
