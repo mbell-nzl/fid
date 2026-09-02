@@ -224,6 +224,7 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 		}, "timed-out", nil, true, true},
 		{"signaled", func(definition map[string]any) {
 			definition["argv"] = []string{os.Args[0], "-test.run=^TestGateRunHelperProcess$", "--"}
+			definition["timeout_ms"] = 10_000
 			definition["environment"] = []any{map[string]any{"name": "FID_GATE_HELPER", "source": "literal", "value": "signal"}}
 		}, "signaled", nil, true, false},
 	}
