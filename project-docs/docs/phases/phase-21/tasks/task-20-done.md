@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: Attempt 3 converged the journal role/dev golden fixtures and final-schema rebuild fixture, but the package, integration, lint, and coverage gates remain red because retained V1 Claim, policy, completion, Run, and closure fixtures/readers still compile against the final schema.
-- Recovery attempts: 3
-- Next action: converge the retained V1 Claim/policy/Run fixtures and readers in the amended source scope, remove the empty obsolete package directories, then rerun the complete byte-identical command block.
+- Condition: Attempt 4 converged final-schema Claim readers in `internal/issues` and `internal/maintenance`, V1 policy/command fixtures, and direct frozen telemetry fixtures. The package gate remains red because retained DB migration inventories, V1 closure tests, bootstrap role assertions, and command-surface inventory tests still expect removed V1 behavior.
+- Recovery attempts: 4
+- Next action: converge the retained `internal/db` migration/ref-trigger tests and `cmd/fid` V1 closure/bootstrap/inventory tests, remove the now-empty obsolete directories, then rerun the complete byte-identical command block.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -41,6 +41,10 @@
 - Real entrypoint exercise: BLOCKED - the exact required package command did not build `cmd/fid`, so no binary could be truthfully exercised after the removal checkpoint.
 
 ## Exact quality-gate results
+
+### Attempt 4 package-gate result (TRG-21-020 / DEC-173)
+
+- `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; completed after 327.878s. Remaining failures are retained V1 DB migration/ref-trigger inventories, V1 closure/bootstrap fixtures, and command-surface expectations. The attempt is preserved as failed evidence.)
 
 - `go test -race ./internal/db ./internal/maintenance ./internal/cli ./cmd/fid/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`; generic `claims` has exposed retained V1 readers/tests and deleted-package test fixtures.)
 - `ls internal/dev` - BLOCKED - `start_test.go` (expected `exit_code: 2`; terminated `exit_code: 0`; source is removed but V1 tests leave the directory present.)
