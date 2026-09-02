@@ -45,35 +45,58 @@
 
 ## Tests run
 
-- Red: `go test ./internal/maintenance -run '^TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); the new test exposed no operational findings before implementation.
-- Green: `go test ./internal/maintenance -run '^TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/maintenance 0.041s` (terminated `exit_code: 0`).
-- Red: `go test ./internal/journal -run '^TestScaleReplayFixtureUsesRoleFreeEventV2Facts$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`); the retained scale event reported schema `1`, not Event-v2.
-- Green: `go test ./internal/journal -run '^(TestScaleReplayFixtureUsesRoleFreeEventV2Facts|TestRebuildWorkspace100kEvents)$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 1.039s` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestFinalBinaryInitAndRebuildRemainRoleFree$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 1.935s` (terminated `exit_code: 0`); this builds and invokes the final `fid` binary for the changed runtime entrypoint.
-- `go test ./cmd/fid -run '^TestFinalSchemaNamedReadsAndExportMatchAfterRebuild$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.684s` (terminated `exit_code: 0`).
-- `go test -race ./internal/journal -run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=100` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 52.909s` (terminated `exit_code: 0`).
-- `go test -race ./cmd/fid -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=10` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 99.840s` (terminated `exit_code: 0`).
+Focused red evidence: command `go test ./internal/maintenance -run '^TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair$' -count=1`; result FAIL; token `FAIL`; termination `exit_code: 1`. The new test exposed no operational findings before implementation.
+
+Focused green evidence: command `go test ./internal/maintenance -run '^TestCheckReportsFinalSchemaIntegrityClassesWithoutRepair$' -count=1`; result PASS; token `ok github.com/mbell-nzl/fid/internal/maintenance 0.041s`; termination `exit_code: 0`.
+
+Focused red evidence: command `go test ./internal/journal -run '^TestScaleReplayFixtureUsesRoleFreeEventV2Facts$' -count=1`; result FAIL; token `FAIL`; termination `exit_code: 1`. The retained scale event reported schema `1`, not Event-v2.
+
+Focused green evidence: command `go test ./internal/journal -run '^(TestScaleReplayFixtureUsesRoleFreeEventV2Facts|TestRebuildWorkspace100kEvents)$' -count=1`; result PASS; token `ok github.com/mbell-nzl/fid/internal/journal 1.039s`; termination `exit_code: 0`.
+
+Focused runtime-entrypoint evidence: command `go test -tags integration -race ./cmd/fid/integration/... -run '^TestFinalBinaryInitAndRebuildRemainRoleFree$' -count=1`; result PASS; token `ok github.com/mbell-nzl/fid/cmd/fid/integration 1.935s`; termination `exit_code: 0`. This builds and invokes the final `fid` binary for the changed runtime entrypoint.
+
+Focused named-read evidence: command `go test ./cmd/fid -run '^TestFinalSchemaNamedReadsAndExportMatchAfterRebuild$' -count=1`; result PASS; token `ok github.com/mbell-nzl/fid/cmd/fid 0.684s`; termination `exit_code: 0`.
+
+Focused concurrency evidence: command `go test -race ./internal/journal -run '^TestCommitIdempotentSerializesConcurrentSameKeyCalls$' -count=100`; result PASS; token `ok github.com/mbell-nzl/fid/internal/journal 52.909s`; termination `exit_code: 0`.
+
+Focused signaled-process evidence: command `go test -race ./cmd/fid -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=10`; result PASS; token `ok github.com/mbell-nzl/fid/cmd/fid 99.840s`; termination `exit_code: 0`.
 
 ## Exact quality-gate results
 
-- `go test -race ./internal/bootstrap ./internal/maintenance ./internal/journal ./internal/db ./internal/export ./internal/cli ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 339.436s` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 7.125s` (terminated `exit_code: 0`).
-- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`).
-- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`).
-- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`).
-- `nproc` - PASS - `6` (terminated `exit_code: 0`).
-- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name\t: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`).
-- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`).
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` (fresh process sample 1) - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.506s` (terminated `exit_code: 0`); `BenchmarkRebuildWorkspace100kEvents-6 1 27804406580 ns/op 27804 ms/rebuild`.
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` (fresh process sample 2) - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.543s` (terminated `exit_code: 0`); `BenchmarkRebuildWorkspace100kEvents-6 1 27865944299 ns/op 27866 ms/rebuild`.
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` (fresh process sample 3) - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.650s` (terminated `exit_code: 0`); `BenchmarkRebuildWorkspace100kEvents-6 1 27906022596 ns/op 27906 ms/rebuild`.
-- `go test -bench . -benchmem ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 2.260s` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 27.5% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.3%` (terminated `exit_code: 0`).
+- `go test -race ./internal/bootstrap ./internal/maintenance ./internal/journal ./internal/db ./internal/export ./internal/cli ./cmd/fid/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 339.436s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid/integration 7.125s` (terminated `exit_code: 0`)
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`)
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`)
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`)
+- `nproc` - PASS - `6` (terminated `exit_code: 0`)
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name\t: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`)
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`)
 
-Reference identity for the DEC-158 samples: `go1.26.2 linux/amd64`; `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`; `6` logical processors; `AMD Ryzen 7 5700G with Radeon Graphics`; `MemTotal 8133236 kB`.
+Fresh-process 100k benchmark sample 1, first in the required consecutive sequence:
+
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.506s` (terminated `exit_code: 0`)
+
+Recorded benchmark output for sample 1: `BenchmarkRebuildWorkspace100kEvents-6 1 27804406580 ns/op 27804 ms/rebuild`.
+
+Fresh-process 100k benchmark sample 2, second in the required consecutive sequence:
+
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.543s` (terminated `exit_code: 0`)
+
+Recorded benchmark output for sample 2: `BenchmarkRebuildWorkspace100kEvents-6 1 27865944299 ns/op 27866 ms/rebuild`.
+
+Fresh-process 100k benchmark sample 3, third in the required consecutive sequence:
+
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 30.650s` (terminated `exit_code: 0`)
+
+Recorded benchmark output for sample 3: `BenchmarkRebuildWorkspace100kEvents-6 1 27906022596 ns/op 27906 ms/rebuild`.
+
+- `go test -bench . -benchmem ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 2.260s` (terminated `exit_code: 0`)
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow (cached) coverage: 27.5% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.3%` (terminated `exit_code: 0`)
+
+Reference identity for the DEC-158 samples: `go1.26.2 linux/amd64`; `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64`; `6 processors`; `AMD Ryzen 7 5700G with Radeon Graphics`; `MemTotal 8133236 kB`.
 
 ## Deviations from spec
 
