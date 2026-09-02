@@ -883,13 +883,6 @@ type acceptanceCriterionSeed struct {
 	Text    string
 }
 
-type acVerificationSeed struct {
-	ID     string
-	ACID   string
-	Role   string
-	Status string
-}
-
 func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, criteria ...acceptanceCriterionSeed) {
 	t.Helper()
 
@@ -918,66 +911,6 @@ func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, c
 			FIDVersion: fidVersion,
 		},
 		Effects: effects,
-	})
-}
-
-func seedTransitionACVerifications(t *testing.T, workspace string, verifications ...acVerificationSeed) {
-	t.Helper()
-
-	effects := make([]journal.Effect, 0, len(verifications))
-	for _, verification := range verifications {
-		effects = append(effects, journal.Effect{
-			Op:    "insert",
-			Table: "ac_verifications",
-			PK:    map[string]any{"id": verification.ID},
-			Values: map[string]any{
-				"ac_id":         verification.ACID,
-				"verifier_role": verification.Role,
-				"status":        verification.Status,
-				"verified_at":   "2026-06-13T10:00:00Z",
-			},
-		})
-	}
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "ac_verifications.seeded",
-		Actor: journal.Actor{
-			Role: "qa_lead",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: effects,
-	})
-}
-
-func seedTransitionCompletionReport(t *testing.T, workspace, issueID, completionID string) {
-	t.Helper()
-
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "task_completion.seeded",
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{{
-			Op:    "insert",
-			Table: "task_completions",
-			PK:    map[string]any{"id": completionID},
-			Values: map[string]any{
-				"issue_id":       issueID,
-				"attempt_number": 1,
-				"status":         "dev_complete",
-				"completed_at":   "2026-06-13T10:05:00Z",
-			},
-		}},
 	})
 }
 

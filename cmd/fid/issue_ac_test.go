@@ -418,21 +418,6 @@ func assertIssueACVerifyUnavailable(t *testing.T, workspace, issueID, criterionI
 	}
 }
 
-func seedHistoricalACVerification(t *testing.T, workspace, criterionID, role string) {
-	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open AC verification projection: %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`
-		INSERT INTO ac_verifications (id, ac_id, verifier_role, verifier_actor, status, verified_at)
-		VALUES (?, ?, ?, ?, ?, ?)
-	`, "ACV-historical-"+criterionID+"-"+role, criterionID, role, role, "pass", "2026-08-25T00:00:00Z"); err != nil {
-		t.Fatalf("seed historical AC verification: %v", err)
-	}
-}
-
 func TestIssueACListCommandMatchesClosedHumanAndJSONContracts(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")

@@ -750,11 +750,3 @@ func assertRoleTableAbsent(t *testing.T, conn *sql.DB) {
 		t.Fatalf("roles table lookup error = %v, want no roles table", err)
 	}
 }
-
-func closeRows(t *testing.T, rows interface{ Close() error }) {
-	t.Helper()
-
-	if err := rows.Close(); err != nil {
-		t.Fatalf("Close() rows error = %v", err)
-	}
-}

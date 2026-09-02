@@ -101,22 +101,6 @@ func issueCreateOptionalString(cmd *cobra.Command, flagName, value string) *stri
 	return &value
 }
 
-func issueSplitCommaSeparated(value string) []string {
-	if strings.TrimSpace(value) == "" {
-		return nil
-	}
-	parts := strings.Split(value, ",")
-	result := make([]string, 0, len(parts))
-	for _, part := range parts {
-		trimmed := strings.TrimSpace(part)
-		if trimmed == "" {
-			continue
-		}
-		result = append(result, trimmed)
-	}
-	return result
-}
-
 func issueOptionalStringSlice(cmd *cobra.Command, flagName string, values []string) *[]string {
 	if !cmd.Flags().Changed(flagName) {
 		return nil

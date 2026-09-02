@@ -227,21 +227,3 @@ func writeRunFailure(cmd *cobra.Command, jsonMode bool, operation string, cause 
 	}
 	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }
-
-func changedOptionalString(cmd *cobra.Command, name, value string) *string {
-	if !cmd.Flags().Changed(name) {
-		return nil
-	}
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return nil
-	}
-	return &trimmed
-}
-
-func changedOptionalInt(cmd *cobra.Command, name string, value int) *int {
-	if !cmd.Flags().Changed(name) {
-		return nil
-	}
-	return &value
-}

@@ -255,11 +255,12 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
 	result, err := issues.Create(issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testActivityMigrationsDir(t),
-		Kind:          "task",
-		Title:         title,
-		ActorRole:     "developer",
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  testActivityMigrationsDir(t),
+		Kind:           "task",
+		Title:          title,
+		Actor:          "agent:developer",
+		IdempotencyKey: "activity-create-" + title,
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -335,8 +336,7 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 	}
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: seed.actor,
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err

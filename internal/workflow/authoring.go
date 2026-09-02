@@ -2,10 +2,8 @@ package workflow
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"regexp"
-	"strings"
 )
 
 var (
@@ -134,70 +132,6 @@ func validateTransitions(transitions []Transition, states map[string]bool) (map[
 		known[key] = true
 	}
 	return known, nil
-}
-
-func materializedTransitionKeys(request DefinitionRequest, declared map[string]bool) map[string]bool {
-	keys := make(map[string]bool, len(declared)+len(request.States))
-	for key := range declared {
-		keys[key] = true
-	}
-	cancelled := cancelledState(request)
-	if cancelled == "" {
-		return keys
-	}
-	for index, state := range request.States {
-		if request.Categories[index] != "cancelled" {
-			keys[transitionKeyFor(state, cancelled)] = true
-		}
-	}
-	return keys
-}
-
-func validateRequirements(requirements []Requirement, transitions map[string]bool) error {
-	for _, requirement := range requirements {
-		if !transitions[transitionKeyFor(requirement.From, requirement.To)] {
-			return fmt.Errorf("workflow requirement edge %q -> %q is not declared", requirement.From, requirement.To)
-		}
-		if err := validateRule(requirement.Rule); err != nil {
-			return err
-		}
-		if err := validateRequirementParams(requirement.Rule, requirement.ParamsJSON); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func validateRule(rule string) error {
-	if IsImplementedRule(rule) {
-		return nil
-	}
-	switch rule {
-	case RuleRequiredGatesCurrent:
-		return fmt.Errorf("workflow rule %q is reserved for v0.2b", rule)
-	case RuleHasCompletion:
-		return fmt.Errorf("workflow rule %q is reserved for v0.2c", rule)
-	case RuleLinkedToDecision:
-		return fmt.Errorf("workflow rule %q is reserved for v0.2d", rule)
-	default:
-		return fmt.Errorf("unknown workflow rule %q", rule)
-	}
-}
-
-func validateRequirementParams(rule, paramsJSON string) error {
-	if strings.TrimSpace(paramsJSON) != "" && !json.Valid([]byte(paramsJSON)) {
-		return fmt.Errorf("invalid JSON params for workflow rule %q", rule)
-	}
-	if rule != RuleAllACsVerified {
-		return nil
-	}
-	var params struct {
-		Roles []string `json:"roles"`
-	}
-	if err := json.Unmarshal([]byte(paramsJSON), &params); err != nil || len(params.Roles) == 0 {
-		return fmt.Errorf("workflow rule %q requires a non-empty roles array", rule)
-	}
-	return nil
 }
 
 func isWorkflowCategory(category string) bool {

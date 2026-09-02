@@ -162,19 +162,6 @@ func TestConcernListUsesDirectLegacyJSON(t *testing.T) {
 	}
 }
 
-func parseCompletionID(t *testing.T, stderr string) string {
-	t.Helper()
-
-	for _, line := range strings.Split(stderr, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "completion: ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "completion: "))
-		}
-	}
-	t.Fatalf("stderr = %q, want completion line", stderr)
-	return ""
-}
-
 func assertConcernMutationUnavailable(t *testing.T, workspace string, args []string) {
 	t.Helper()
 	journalPath := mustJournalPath(t, workspace)
@@ -244,18 +231,6 @@ func seedConcernProjection(t *testing.T, workspace, concernID, issueID, raisedCo
 		VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
 	`, concernID, issueID, raisedCompletionID, "developer", summary, status, addressedCompletionID); err != nil {
 		t.Fatalf("seed concern projection: %v", err)
-	}
-}
-
-func updateConcernProjection(t *testing.T, workspace, concernID, completionID string) {
-	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
-	if err != nil {
-		t.Fatalf("open concern projection: %v", err)
-	}
-	defer closeCommandDB(t, conn)
-	if _, err := conn.Exec(`UPDATE concerns SET status = 'addressed', addressed_in_completion_id = ?, updated_at = datetime('now') WHERE id = ?`, completionID, concernID); err != nil {
-		t.Fatalf("update concern projection: %v", err)
 	}
 }
 

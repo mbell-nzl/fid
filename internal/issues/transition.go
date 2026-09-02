@@ -289,23 +289,3 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 func transitionRequestValue(toState string, expectedRevision *int) map[string]any {
 	return map[string]any{"expected_revision": expectedRevision, "to": toState}
 }
-
-func leavesStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
-	if !ok {
-		return false
-	}
-	return fromCategory == "started" && toCategory != "started"
-}
-
-func transitionCategories(registry *workflow.Registry, workflowID, fromState, toState string) (string, string, bool) {
-	fromCategory, ok := registry.CategoryForState(workflowID, fromState)
-	if !ok {
-		return "", "", false
-	}
-	toCategory, ok := registry.CategoryForState(workflowID, toState)
-	if !ok {
-		return "", "", false
-	}
-	return fromCategory, toCategory, true
-}
