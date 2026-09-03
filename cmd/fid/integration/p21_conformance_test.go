@@ -75,6 +75,11 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	workspace := t.TempDir()
 	init := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P21")
 	projectID := p21PathString(t, init, "result", "project", "id")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "define", "--name", "p21-journey", "--applies-to", "task",
+		"--states", "unstarted,started,completed,cancelled",
+		"--categories", "unstarted,started,completed,cancelled",
+		"--transitions", "unstarted->started,started->completed", "--actor", "agent:developer", "--idempotency-key", "p21-workflow-define")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "assign", "--name", "p21-journey", "--kind", "task", "--actor", "agent:developer", "--idempotency-key", "p21-workflow-assign")
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 21 conformance journey", "--actor", "agent:developer", "--idempotency-key", "p21-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
 
@@ -111,7 +116,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "repository": repository})
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runInput, "--idempotency-key", "p21-run-start")
 	runID := p21PathString(t, run, "result", "run", "id")
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "started", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
 
 	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
 	receiptID := p21PathString(t, gate, "result", "receipt", "id")
@@ -122,7 +127,8 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	if status := p21PathString(t, evaluation, "result", "evaluation", "status"); status != "satisfied" {
 		t.Fatalf("Gate Evidence evaluation status = %q, want satisfied", status)
 	}
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "done", "--actor", "agent:actor-builder", "--expected-revision", "2", "--idempotency-key", "p21-transition-terminal")
+	p21AssertUndeclaredTransitionRejected(t, binary, workspace, issueID, "unstarted", 2, "p21-transition-undeclared-before-rebuild")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "completed", "--actor", "agent:actor-builder", "--expected-revision", "2", "--idempotency-key", "p21-transition-terminal")
 	finishInput := p21Input(t, workspace, "run-finish", map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishInput, "--idempotency-key", "p21-run-finish")
 	releaseInput := p21Input(t, workspace, "claim-release", map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
@@ -130,8 +136,64 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	completeInput := p21Input(t, workspace, "envelope-complete", map[string]any{"envelope_id": envelopeID, "expected_revision": 1, "repository": repository})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "complete", "--actor", "actor-builder", "--input", completeInput, "--idempotency-key", "p21-envelope-complete")
 
-	if events := p21JournalEventCount(t, workspace); events != 20 {
-		t.Fatalf("complete journey Event count = %d, want 20", events)
+	p21AssertJournalTypes(t, workspace, []string{
+		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
+		"activation.prepared", "activation.component-staged", "activation.component-staged",
+		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
+		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
+		"gate.execution-started", "gate.receipt-recorded", "evidence.linked", "issue.transitioned",
+		"run.finished", "claim.released", "envelope.completed",
+	})
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "projection", "resume", issueID)
+	beforeArchive := filepath.Join(workspace, "p21-before-rebuild.zip")
+	beforeExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", beforeArchive)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", beforeArchive)
+
+	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+		t.Fatalf("delete derived projection: %v", err)
+	}
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "rebuild")
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "capabilities")
+	completed := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
+	if status := p21PathString(t, completed, "result", "envelope", "status"); status != "completed" {
+		t.Fatalf("rebuilt Envelope status = %q, want completed", status)
+	}
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "receipt", "get", receiptID)
+	postRebuildEvaluation := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluateInput)
+	if status := p21PathString(t, postRebuildEvaluation, "result", "evaluation", "status"); status != "satisfied" {
+		t.Fatalf("rebuilt Gate Evidence evaluation status = %q, want satisfied", status)
+	}
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "projection", "resume", issueID)
+	afterArchive := filepath.Join(workspace, "p21-after-rebuild.zip")
+	afterExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", afterArchive)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", afterArchive)
+	if beforeDigest, afterDigest := p21PathString(t, beforeExport, "result", "export", "archive_digest"), p21PathString(t, afterExport, "result", "export", "archive_digest"); beforeDigest != afterDigest {
+		t.Fatalf("export digest after rebuild = %q, want %q", afterDigest, beforeDigest)
+	}
+	p21AssertUndeclaredTransitionRejected(t, binary, workspace, issueID, "started", 3, "p21-transition-undeclared-after-rebuild")
+	p21AssertJournalTypes(t, workspace, []string{
+		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
+		"activation.prepared", "activation.component-staged", "activation.component-staged",
+		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
+		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
+		"gate.execution-started", "gate.receipt-recorded", "evidence.linked", "issue.transitioned",
+		"run.finished", "claim.released", "envelope.completed",
+	})
+}
+
+func p21AssertUndeclaredTransitionRejected(t *testing.T, binary, workspace, issueID, target string, revision int, key string) {
+	t.Helper()
+	before := p21JournalEventCount(t, workspace)
+	stdout, stderr, err := closureRunCommand(workspace, binary, "--project", workspace, "--json", "issue", "transition", issueID, "--to", target, "--actor", "agent:actor-builder", "--expected-revision", fmt.Sprint(revision), "--idempotency-key", key)
+	if got := processExitCode(t, err); got != 4 {
+		t.Fatalf("undeclared transition %q exit code = %d, want 4; stdout=%q stderr=%q", target, got, stdout, stderr)
+	}
+	if stdout != "" || !strings.Contains(stderr, `"code":"transition-not-permitted"`) || !strings.Contains(stderr, "workflow-transition-invalid") {
+		t.Fatalf("undeclared transition %q = stdout:%q stderr:%q, want transition-not-permitted/workflow-transition-invalid", target, stdout, stderr)
+	}
+	if after := p21JournalEventCount(t, workspace); after != before {
+		t.Fatalf("undeclared transition %q appended Event count %d, want %d", target, after, before)
 	}
 }
 
@@ -231,16 +293,45 @@ func p21Path(t *testing.T, value map[string]any, path ...string) any {
 
 func p21JournalEventCount(t *testing.T, workspace string) int {
 	t.Helper()
+	return len(p21JournalEventTypes(t, workspace))
+}
+
+func p21AssertJournalTypes(t *testing.T, workspace string, want []string) {
+	t.Helper()
+	got := p21JournalEventTypes(t, workspace)
+	if len(got) != len(want) {
+		t.Fatalf("journal Event count = %d, want %d; types=%v", len(got), len(want), got)
+	}
+	for index, eventType := range want {
+		if got[index] != eventType {
+			t.Fatalf("journal Event %d = %q, want %q; types=%v", index+1, got[index], eventType, got)
+		}
+	}
+}
+
+func p21JournalEventTypes(t *testing.T, workspace string) []string {
+	t.Helper()
 	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
 	if err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
-	count := 0
+	var types []string
 	for _, entry := range entries {
 		contents := readP21File(t, filepath.Join(workspace, ".fid", "journal", entry.Name()))
-		count += len(bytes.FieldsFunc(contents, func(r rune) bool { return r == '\n' }))
+		for _, line := range bytes.FieldsFunc(contents, func(r rune) bool { return r == '\n' }) {
+			var event struct {
+				Type string `json:"event_type"`
+			}
+			if err := json.Unmarshal(line, &event); err != nil {
+				t.Fatalf("decode journal Event: %v", err)
+			}
+			if event.Type == "" {
+				t.Fatal("journal Event has empty type")
+			}
+			types = append(types, event.Type)
+		}
 	}
-	return count
+	return types
 }
 
 func p21ExpectedCorpus(t *testing.T, publicInterface string) map[string][]byte {
