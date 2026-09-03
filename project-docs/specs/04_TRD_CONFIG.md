@@ -46,10 +46,8 @@ issue_prefix = "FID"
 artifact_root = "artifacts"
 
 [executor_limits]
-max_timeout_ms = 600000
 max_output_bytes = 10485760
 max_excerpt_bytes = 16384
-max_artifact_bytes = 1073741824
 
 [maintenance]
 abandoned_attempt_grace_seconds = 300
