@@ -86,7 +86,10 @@ The DEC-158 rerun also proved:
 - task 21 records the full reference identity and three identical bounded
   benchmark invocations; and
 - task 22 owns the committed conformance corpus and exact 20-Event,
-  one-`envelope.created`, zero-post-rebuild-delta controls.
+  one-`envelope.created`, zero-post-rebuild-delta controls. (The count is
+  superseded by DEC-174: the accepted prefix is exactly 22 Events. This audit
+  checked that the count was stated and agreed across artifacts, not that it was
+  achievable against the shipped workflows - the gap DEC-174 item 8 records.)
 
 Observed result:
 `REMOVAL_COMMAND_AGREEMENT INVENTORY_COMMANDS=4 TASK20_MISSING=0`

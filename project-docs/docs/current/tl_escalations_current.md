@@ -5,29 +5,36 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-173 resolve ESC-21-001..014. The run is stopped after
-TRG-21-020; DEC-173 authorizes the task-20 attempt-2 continuation that clears it.
+None. ESC-21-015 was resolved by DEC-174 on 2026-09-03.
 
 ## Latest Resolution
 
-DEC-173 resolved ESC-21-014 on 2026-09-02. TRG-21-020 correctly stopped task
-20: its required absence controls walk `cmd/fid internal testdata` and its
-coverage gate compiles `./...`, but its file list omitted `internal/bootstrap/`,
-`internal/journal/`, `internal/labels/`, `internal/links/`,
-`internal/requirements/`, `internal/db/`, `testdata/journal/`, and
-`cmd/fid/integration/`. The inventory already names task 20 co-owner of every
-residue file; the file list was the incomplete artifact.
+DEC-174 resolved ESC-21-015 on 2026-09-03. TRG-21-021 correctly stopped task
+22, but its category was wider than the fact. The product is correct: the
+transition engine resolves edges and the terminal-success `completed` category
+from the projected workflow tables, and its exit-4 rejection of an undeclared
+edge is the guard working. The defective artifact is `contracts.md` §16, which
+fixed an exact 20-Event prefix with a direct terminal edge that no workflow
+available to kind `task` provides, and never named the journey's workflow.
+`task-default` needs four edges to reach a `completed` state,
+`subtask-default` needs a second `issue.created` for the required task parent,
+and `epic-default` adds a rule-guarded intermediate state.
 
-Task 20's scope is amended with bounded subject-preserving dispositions: delete
-`LockOwner.ActorRole`/`actor_role`, the bootstrap fixed-role registry, and the
-`ActorRole`/`legacyRole` fallback readers; converge the `dev.*` golden and every
-`roles` fixture to surviving families/tables; converge the tagged closure
-journey to accepted behaviour. Task 20 gains the tagged integration gate
-(DEC-167). No command, expected status, VAL, 0014, frozen-table, or public
-contract changes. `08_QUALITY_PLAN.md` §3 gains the converse executable-
-ownership rule. Recovery is RUN-RESUME under TRG-21-020 / ESC-21-014 / DEC-173,
-task-20 attempt 2, `in-scope-implementation` in task scope; task 21 remains
-gated on task-20 completion.
+The journey now authors its own workflow with the already-accepted
+`workflow define --applies-to task` and `workflow assign --kind task` leaves
+before `issue create`: one `unstarted`, one `started`, one `completed`, one
+PRD-WF-013 `cancelled` state, and exactly the edges `unstarted -> started` and
+`started -> completed`. §16's prefix is exactly 22 Events, inserting
+`workflow.defined` and `workflow.assigned` after `project.initialized`, and
+VAL-086's counts are amended to match. VAL-084/085/086 keep their identity,
+subject, and strength; the observed rejection becomes required VAL-085 negative
+coverage. No product, command, public-interface, Event-schema, transition, or
+frozen-workflow change. Recovery is RUN-RESUME under TRG-21-021 / ESC-21-015 /
+DEC-174, task-22 attempt 2, `in-scope-implementation` in task scope.
+
+DEC-173 resolved ESC-21-014 on 2026-09-02: task 20's scope was amended to cover
+every path its absence controls walk, and it gained the tagged integration gate
+under DEC-167. Detail is in the Phase 21 archive.
 
 ## Archive Pointers
 

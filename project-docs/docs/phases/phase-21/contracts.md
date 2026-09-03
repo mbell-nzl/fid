@@ -498,7 +498,8 @@ or exposed by fid.
 
 ## 16. Required Parity And Journey
 
-The dedicated real-process integration journey mutates once. It performs the
+The dedicated real-process integration journey mutates once. It authors and
+assigns the journey workflow, creates the Issue on it, performs the
 nonterminal transition, executes the Gate, links/evaluates its Receipt, then
 uses the shared evaluator for terminal-success transition and later Envelope
 completion. It tests the negative counterpart of each authority, policy,
@@ -511,13 +512,32 @@ bindings, Attempt-without-Receipt as non-passing, Receipt mismatch, missing
 Artifact, invalid active Activation, frozen-table writes, and removed V1 state.
 No implementation or QA task reads held-out scenarios or evaluator prompts.
 
-The mutation prefix commits exactly 20 Events: `project.initialized`,
-`issue.created`, `activation.prepared`, two `activation.component-staged`,
+The journey's Issue runs on a project-authored workflow, never on a
+migration-seeded reference workflow. The seeded `task-default` reference
+reaches a `completed` state only through `todo -> in_progress -> dev_complete
+-> qa_review -> qa_pass`: retained V1 role choreography that cannot express one
+nonterminal and one terminal-success transition, and that Gate D2 retires.
+Before the Issue is created, the journey therefore defines one workflow with
+`--applies-to task`, exactly one `unstarted`, one `started`, one `completed`,
+and one `cancelled` state, and exactly the two edges `unstarted -> started` and
+`started -> completed`, then assigns it to kind `task`. State IDs are opaque and
+match `^[a-z][a-z0-9_]{0,63}$`. The `cancelled` state exists only because an
+Issue-applicable workflow must declare one; the journey never enters it. This is
+project-owned policy compiled into fid under Gate B1/B3, not a fid behaviour
+change: the transition engine already resolves edges and the terminal-success
+`completed` category from the projected workflow tables.
+
+The mutation prefix commits exactly 22 Events: `project.initialized`,
+`workflow.defined`, `workflow.assigned`, `issue.created`,
+`activation.prepared`, two `activation.component-staged`,
 `activation.committed`, `activation.finalized`, `gate.registered`,
 `envelope.created`, `envelope.activated`, `claim.acquired`, `run.started`, the
 nonterminal `issue.transitioned`, `gate.execution-started`,
 `gate.receipt-recorded`, `evidence.linked`, the terminal-success
 `issue.transitioned`, `run.finished`, `claim.released`, and
 `envelope.completed`. The complete journey contains exactly one
-`envelope.created`. Post-rebuild commands append zero Events; a count other
-than 20 before rebuild or any later increase is a conformance failure.
+`envelope.created`, one `workflow.defined`, and one `workflow.assigned`.
+Post-rebuild commands append zero Events; a count other than 22 before rebuild
+or any later increase is a conformance failure. The section 14 Event fixture is
+an illustrative Event shape whose `task-default` precondition value carries no
+journey-workflow authority.

@@ -1832,6 +1832,142 @@
   `08_QUALITY_PLAN.md` §3; VAL-002; VAL-028..031; VAL-074; VAL-075; QA-71;
   QA-72; QA-93.
 
+### DEC-174: The journey authors its own workflow; the section 16 prefix is 22 Events. Closes ESC-21-015
+
+- **Date:** 2026-09-03
+- **Context:** TRG-21-021 BLOCKed task 22 at attempt 1 with the conformance
+  corpus (`a99b427`) and the real-process journey guard (`236540c`) committed.
+  The journey reached Gate execution and Receipt Evidence link/evaluation, then
+  the terminal `in_progress -> done` transition returned
+  `transition-not-permitted` / `workflow-transition-invalid` with process
+  `exit_code: 4`. Live inspection of the shipped product at that checkpoint:
+  - `internal/workflow/definitions_fixture.go:6-44`: the migration-seeded
+    `task-default` reference workflow has states
+    `todo/in_progress/dev_complete/qa_review/qa_block/failed_gate/qa_pass/done/
+    cancelled` and no `in_progress -> done` edge. Its shortest path from `todo`
+    into a `completed`-category state is four edges
+    (`todo -> in_progress -> dev_complete -> qa_review -> qa_pass`), and
+    `qa_pass` and `done` are both `completed`, so the shipped default would
+    produce three surplus transitions and two separate terminal-success guard
+    evaluations. The exact-20 prefix is unsatisfiable on it, exactly as the
+    report records.
+  - `internal/issues/create.go:80-108`: `subtask-default`
+    (`todo -> in_progress -> done`) is unreachable without a second
+    `issue.created`, because a subtask must have a task parent. `epic-default`
+    needs `in_progress -> wrapped -> closed` plus the
+    `all_child_tasks_done_or_canceled` rule. No seeded workflow satisfies the
+    accepted shape.
+  - `internal/workflow/registry.go:23-102` and `internal/issues/transition.go:
+    176-200`: the transition engine resolves edges and
+    `TerminalSuccess: toCategory == "completed"` from the *projected* workflow
+    tables through `workflow.Load`, not from the frozen fixture map. A
+    project-authored workflow is therefore first-class to the guard.
+  - `internal/workflow/resolve.go:16-50`: `ResolveIssueWorkflow` prefers a
+    `kind`-scoped then a project-scoped `workflow_assignments` row and only
+    then falls back to the seeded default, so an assignment recorded before
+    `issue create` binds the new Issue to the authored workflow.
+  - `public-interface.md` §4.1 already accepts `workflow.define` and
+    `workflow.assign` as retained leaves emitting `workflow.defined` and
+    `workflow.assigned`; `cmd/fid/integration/e2e_p20_issue_journey_test.go:
+    22-32` already drives exactly that define-then-assign-then-create sequence
+    against the real binary. The route is shipped, accepted, and proven.
+  - `internal/workflow/authoring.go:11,112-120`: an Issue-applicable workflow
+    must declare exactly one `cancelled` state (PRD-WF-013), and state IDs
+    match `^[a-z][a-z0-9_]{0,63}$`, so the authored workflow has four states
+    and snake-case IDs.
+
+  The accepted contracts do not contradict each other and the product is
+  correct: the guard fail-closed on an undeclared edge is the behaviour
+  Phase 21 exists to prove. `contracts.md` §16 was written assuming a direct
+  terminal edge that no workflow available to kind `task` provides, and never
+  named the journey's workflow. §16 is the defective artifact. No canonical
+  spec fixes the count: `07_DESIGN_PLAN_FLOWS.md` §10 and
+  `08_QUALITY_PLAN.md` §8 require only "mutates once" and no second Envelope.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-021's BLOCK was correct. The Developer reached
+     the real failure, refused to edit the frozen workflow or the accepted
+     contract, and correctly identified in its Concerns that define/assign was
+     a mutation outside the enumerated budget - which is precisely why the
+     route needed this authority. The recorded category is narrowed in
+     hindsight from "specification contradiction, public interface, and
+     workflow contract" to a phase planning-authority defect in §16 alone: no
+     public interface, Event schema, transition contract, or product workflow
+     changes. Preserve TRG-21-021, ESC-21-015, both commits, and every failed
+     command row as immutable evidence.
+  2. **The journey authors its own workflow.** `contracts.md` §16 now requires
+     the journey to define one workflow with `--applies-to task`, exactly one
+     `unstarted`, one `started`, one `completed`, and one `cancelled` state,
+     and exactly the edges `unstarted -> started` and `started -> completed`,
+     then assign it to kind `task`, both before `issue create`. The journey
+     never enters the `cancelled` state, which exists only to satisfy
+     PRD-WF-013. This is project-owned policy compiled into fid under
+     Gate B1/B3, not a product change; the seeded `task-default` chain is
+     retained V1 role choreography that Gate D2 retires and is not the V2
+     journey's authority.
+  3. **Exact Event budget.** The mutation prefix is exactly 22 Events:
+     `project.initialized`, `workflow.defined`, `workflow.assigned`, then the
+     unchanged prior enumeration in unchanged relative order. The journey
+     contains exactly one `envelope.created`, one `workflow.defined`, and one
+     `workflow.assigned`; post-rebuild Event delta stays zero; any other count
+     is a conformance failure. VAL-086 is amended to the same numbers. This is
+     an exact-count assertion replacing an exact-count assertion, with named
+     membership on both sides; it is not a weakening, and VAL-084/085/086 keep
+     their identity, subject, and strength.
+  4. **The failure becomes coverage.** The observed `transition-not-permitted`
+     / `workflow-transition-invalid` exit-4 rejection of an undeclared edge is
+     required VAL-085 negative-matrix coverage, not discarded evidence. Task
+     22's acceptance criteria name it.
+  5. **Unchanged.** No change to the task-22 command block, Expected Non-Zero
+     Commands, the Event schema, the public interface, the transition or error
+     contract, the accepted mutation ordering, the frozen v0.1 reference
+     workflows, migration 0014, the frozen-table policy, task-20/21 evidence,
+     or any other VAL row. §14's illustrative Event fixture keeps its
+     `task-default` precondition value and carries no journey-workflow
+     authority. The QA plan's derivation rows for the former count of 20
+     (`qa-plan.md` R-17 and the VAL-086 feasibility row) are superseded by this
+     decision; Final QA re-derives the enumeration against the amended §16 and
+     records the amended count rather than editing the Ready plan's history.
+  6. **Recovery route.** The Phase Runner appends `RUN-RESUME` naming the
+     2026-09-02 22:26 STOP, governing TRG-21-021, governing ESC-21-015,
+     trigger signature
+     `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
+     `Attempt count: 2`, `Resolution authority: DEC-174`, `Continuing task:
+     task-22`, and `Next recovery: task-22 | in-scope-implementation |
+     task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 2`.
+     The following `TASK-RECOVERY task-22` uses `Source` and `Repair
+     authority` `TRG-21-021 / DEC-174`, category `in-scope-implementation`,
+     repair mode `task-scope`, attempt 2, consecutive no-progress `0/2`, and
+     allowed files "ordinary task scope under the amended
+     task-22-walking-skeleton.md plus task-22-done.md". The Tech Lead does not
+     edit `run-ledger.md`.
+  7. **Continuation and advance.** The Developer continues from `236540c`,
+     keeps the committed corpus and journey guard, extends the journey through
+     the authored workflow to completion/export and the post-rebuild repeat,
+     commits durable work before the long commands (DEC-170), and runs the
+     complete byte-identical eight-command block; the eight `not run` rows are
+     replaced by observed terminations. After the report commit, two-argument
+     report lint, `REPAIR task-22 RESOLVED`, and `TASK task-22 COMPLETE`, the
+     phase proceeds to final QA and VAL-087.
+  8. **Triage audit.** This is the fifth escalation whose root cause was a
+     planning artifact narrower or more optimistic than the shipped surface it
+     governs (DEC-162, DEC-165, DEC-167, DEC-173, DEC-174). The four prior
+     instances were scope-versus-reach; this one is a hand-derived exact
+     expected value that no one executed against the product during planning.
+     The wrap-up retrospective should evaluate requiring every exact count,
+     enumeration, or ordering assertion in a phase contract to be derived from
+     an executed probe before it is accepted, alongside the DEC-173
+     scope-versus-reach check.
+- **Consequences:** ESC-21-015 closes with no product, command, public-contract,
+  Event-schema, or VAL-identity change. Task 22 gains a journey that is
+  expressible, that keeps every accepted ordering and guard assertion, and that
+  additionally proves two accepted authoring leaves and the undeclared-edge
+  negative branch end to end against the real binary.
+- **Refs:** TRG-21-021; ESC-21-015; DEC-156; DEC-157; DEC-158; DEC-167;
+  DEC-170; DEC-173; `contracts.md` §§14, 16; `public-interface.md` §4.1;
+  `tasks/task-22-walking-skeleton.md`; `tasks/task-22-done.md`;
+  `qa/validation-contract.md` VAL-084/085/086; `07_DESIGN_PLAN_FLOWS.md` §10;
+  `08_QUALITY_PLAN.md` §8; ADR-0011 Gate B1/B3/D2.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -1846,7 +1982,7 @@ verdicts are completed at phase wrap-up.
 | `04_TRD_CONFIG.md` | touched: see DEC-157 | Exact public executor bounds agree with the closed input contract. |
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
-| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope. |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157, DEC-174 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope; the operational journey runs on a project-authored workflow, not on a seeded V1 reference chain. |
 | `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), and interrupted-attempt accounting are explicit in §3. |
 | `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | Schema-v2 identity/binding and QA repair ownership are explicit; retained-test escalation now requires phase provenance before cross-task classification. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
@@ -1895,6 +2031,17 @@ from the removal targets rather than from that reach. DEC-173 amends the scope,
 adds the tagged gate the removed fixtures need (DEC-167), and records the
 converse executable-ownership rule so the next task pack is checked for
 scope-versus-reach before dispatch. No historical record needs correction.
+
+TRG-21-021 correctly BLOCKed task 22. The real-process failure was reproduced,
+the accepted contract and the frozen workflow were both left intact, and the
+Concerns section correctly named define/assign as a route the exact Event budget
+forbade. In hindsight the defect was planning-side and narrower than recorded:
+`contracts.md` §16 assumed a direct terminal edge that no workflow available to
+kind `task` provides and never named the journey's workflow, while the product,
+public interface, and Event schema were consistent throughout. DEC-174 amends
+§16 and VAL-086, keeps every product and interface contract, and turns the
+observed rejection into required negative coverage. No historical record needs
+correction.
 
 ## Workflow Notes
 

@@ -17,6 +17,7 @@ Prove every final accepted/fail-closed public leaf, all kebab-case closed values
 - Build and invoke the final binary; do not mock or use in-process substitutes for the journey.
 - Mutate once, rebuild durable facts, then repeat only specified reads/evaluation/completion state/resume/export/negative checks.
 - Do not read held-out scenarios or create a second Envelope.
+- Author the journey workflow with `workflow define` then `workflow assign --kind task` before `issue create`, exactly as `contracts.md` §16 specifies (DEC-174). Do not modify, extend, or reinterpret the migration-seeded `task-default`, `subtask-default`, or `epic-default` reference workflows, and do not add a product transition, category, or workflow behaviour to reach terminal success.
 
 ## Scope
 
@@ -42,13 +43,13 @@ Prove every final accepted/fail-closed public leaf, all kebab-case closed values
 
 - [ ] The committed `p21_conformance/` corpus is regenerated and byte-compared by the tagged suite: `manifest.json`; one `operations/<operation>.json` fixture for every accepted and fail-closed operation row in `public-interface.md` §§4.1-4.2; one `failures/<failure-code>.json` fixture for every §7 failure; and one `live/<variant>.jsonl` fixture for every §8 stdout, stderr, control-kind, terminal-outcome, and replay variant. (VAL-072)
 - [ ] Corpus extraction proves non-vacuity by requiring every closed member from `public-interface.md` §§3, 7, and 8 in the extracted set, and every extracted public enum value is lowercase kebab-case. (VAL-073)
-- [ ] Happy journey follows Gate/evidence before terminal transition and completes. (VAL-084)
-- [ ] All negative counterparts fail closed. (VAL-085)
-- [ ] Before rebuild, the journey has exactly 20 Events and exactly one `envelope.created`; after rebuild, the repeat performs no second Envelope or other mutation and the Event count remains exactly 20. (VAL-086)
+- [ ] Happy journey defines and assigns the §16 journey workflow, creates its Issue on that workflow, and follows Gate/evidence before the single terminal-success transition through completion. (VAL-084)
+- [ ] All negative counterparts fail closed, including a transition request for an edge the authored workflow does not declare, which returns `transition-not-permitted` / `workflow-transition-invalid` with exit 4 and appends no Event. (VAL-085)
+- [ ] Before rebuild, the journey has exactly 22 Events and exactly one each of `envelope.created`, `workflow.defined`, and `workflow.assigned`; after rebuild, the repeat performs no second Envelope, workflow definition, assignment, or other mutation and the Event count remains exactly 22. (VAL-086)
 
 ## First Failing Test
 
-Add the failing committed-corpus regeneration/byte-comparison and complete-member non-vacuity tests, then the forbidden-enum inventory, ordered binary journey, negative matrix, exact 20-Event/one-`envelope.created` pre-rebuild controls, and post-rebuild zero-delta assertion.
+Add the failing committed-corpus regeneration/byte-comparison and complete-member non-vacuity tests, then the forbidden-enum inventory, ordered binary journey, negative matrix, exact 22-Event/one-`envelope.created` pre-rebuild controls, and post-rebuild zero-delta assertion. The committed corpus and the already-committed journey guard are retained work; the recovery continues from them.
 
 ## Documentation Updates
 
@@ -74,6 +75,8 @@ Every command is required and must terminate with session-captured evidence. Rep
 ## Notes For Developer
 
 - Start after task 21 and QA Review window 7 close. Final QA follows; this task does not authorize its own contract refinements.
+- The authored workflow needs a `cancelled` state only because an Issue-applicable workflow must declare one (PRD-WF-013). Every non-`cancelled` state has an implicit edge into it, so the VAL-085 undeclared-edge negative must target a non-`cancelled` state, and the journey never enters `cancelled`.
+- DEC-174 recovery: continue from `236540c` under the amended §16 journey. Preserve the attempt-1 blocker evidence, including the recorded `transition-not-permitted` failure, and reuse it as the VAL-085 undeclared-edge negative counterpart rather than deleting it. All eight required commands must run and terminate with session-captured evidence; the eight `not run` rows are not carried forward.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-22-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

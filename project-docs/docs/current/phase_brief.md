@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-20 STOPPED / Recovery Authorized (DEC-173)**
+> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-174)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -47,10 +47,14 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   metadata; task 17 proves the Attention boundary with a named test, not a
   zero-match search.
 - DEC-173: a task that owns an absence/inventory control owns every path it
-  walks. Task 20's scope is amended (bootstrap, journal, labels, links,
-  requirements, db, testdata/journal, integration) with bounded
-  subject-preserving dispositions and gains the tagged integration gate. No
-  command, expected status, VAL, 0014, frozen-table, or public contract changes.
+  walks; task 20's scope was amended to its gates' reach and it gained the
+  tagged integration gate. Closed with task 20.
+- DEC-174: the §16 journey authors its own workflow (`workflow define
+  --applies-to task` then `workflow assign --kind task`, before `issue create`)
+  with exactly the edges `unstarted -> started` and `started -> completed`; no
+  seeded reference workflow can express the accepted shape. The exact mutation
+  prefix is 22 Events and VAL-086 matches. No product, command,
+  public-interface, Event-schema, transition, or frozen-workflow change.
 
 ## Planning Authorities
 
@@ -62,43 +66,20 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 - QA: `qa/qa-lead-handoff.md`, `qa/qa-plan.md` (Ready at `e8a636e`), audit
   `planning-audit.md`; tasks `../phases/phase-21/tasks/task-<N>-*.md`
 
-## Group 1 - Authority Foundation
+## Task Pack
+
+Group 1 (tasks 1-12, VAL-001/003-041), its reviews 1-4, and the independent
+checkpoint (VAL-042/043) are complete. Group 2 tasks 13-21 (VAL-036,
+044-071, 002, 074-083) and reviews 5-7b are complete. Per-task titles,
+dependencies, and VAL ownership are in
+`../phases/phase-21/tasks/task-<N>-*.md`.
 
 | Task | Title | Depends on | VAL ownership |
 |---:|---|---|---|
-| 1 | 0013 schema/constraints | approval only | 001 |
-| 2 | Event v2, idempotency, role-free bootstrap | 1 | 003-008 |
-| 3 | capability discovery | 1-2 | 009-010 |
-| 4 | Activation trust | 2-3 | 011-015 |
-| 5 | Gate Registration | 4 | 016-018 |
-| 6 | Envelope values | 5 | 019-022 |
-| 7 | generic authority | 4,6 | 023-024 |
-| 8 | Issue Actor/Event convergence | 2,7 | 025-027 |
-| 9 | retained attribution/judgment freeze | 7-8 | 028-031 |
-| 10 | generic Claims | 6-7 | 032-034 |
-| 11 | generic Runs | 10 | 035,037 |
-| 12 | shared evaluator/nonterminal transition | 7,10-11 | 038-041 |
-
-QA Reviews follow tasks 1-3, 4-6, 7-9, and 10-12; the independent checkpoint
-owns VAL-042/043. Group 1 and its checkpoint are complete.
-
-## Group 2 - Trusted Execution And Convergence
-
-| Task | Title | Depends on | VAL ownership |
-|---:|---|---|---|
-| 13 | portable executor policy | checkpoint | 044-046 |
-| 14 | live framing/redaction/controls | 13 | 036,047-050 |
-| 15 | Attempt/Receipt | 13-14 | 051-054 |
-| 16 | Artifacts | 15 | 055-057 |
-| 17 | Evidence evaluation | 15-16 | 058-063 |
-| 18 | terminal guard/completion/resume | 12,17 | 064-068 |
-| 19 | export create/validate | 18 | 069-071 |
-| 20 | V1 removal and migration 0014 | 1-19 | 002,074-075 |
-| 21 | final-schema init/maintenance/rebuild/export parity | 20 | 076-083 |
 | 22 | final interface/journey conformance | 21 | 072-073,084-086 |
 
-QA Reviews follow tasks 13-15, 16-18, and 19-21. Final QA owns task 22
-evidence and phase-end VAL-087. VAL-036 is the sole Human checklist assertion.
+Final QA owns task-22 evidence and phase-end VAL-087. VAL-036 is the sole
+Human checklist assertion.
 
 ## Dispatch Controls
 
@@ -119,30 +100,34 @@ Ordinary recovery names its TRG in `Source` without changing the exact-bound
 
 ## Journey Order
 
-Mutate once: init/Issue; discover; activate; register; create/activate Envelope;
-resolve Actor; Claim/Run; nonterminal transition; execute Gate; persist/link
-Receipt; evaluate Evidence; terminal-success transition; finish/release;
-complete; resume; export/validate. Delete the projection and rebuild, then
+Mutate once: init; define/assign the journey workflow; Issue; discover;
+activate; register; create/activate Envelope; resolve Actor; Claim/Run;
+nonterminal transition; execute Gate; persist/link Receipt; evaluate Evidence;
+terminal-success transition; finish/release; complete; resume; export/validate.
+Exactly 22 Events before rebuild. Delete the projection and rebuild, then
 repeat only named reads, evaluation, completion state, resume, export, and
-negative checks; never create a second Envelope revision.
+negative checks; never create a second Envelope revision, workflow definition,
+or assignment.
 
 ## Dispatch Authorization
 
-Tasks 1-19 and reviews 1-6 are complete. Task 20 committed migration 0014 and
-the first V1 source removals (`aef03cf`, report `f189a37`) and returned
-`RECOVERY_REQUIRED`; the run is STOPPED after TRG-21-020 / ESC-21-014. DEC-173
-resolves the scope-versus-reach contradiction without changing any command.
+Tasks 1-21 and reviews 1-7b are complete. Task 22 committed the conformance
+corpus (`a99b427`) and the real-process journey guard (`236540c`), then returned
+`BLOCKED`; the run is STOPPED after TRG-21-021 / ESC-21-015. DEC-174 resolves
+the §16 journey defect without changing any command or product contract.
 
-The Phase Runner appends `RUN-RESUME` retaining TRG-21-020 / ESC-21-014, trigger
-`task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates`,
-attempt 2, resolution authority DEC-173, continuing task 20, and the exact
-`task-20 | in-scope-implementation | task-scope | task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates | 2`
-tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-020 / DEC-173`
+The Phase Runner appends `RUN-RESUME` retaining TRG-21-021 / ESC-21-015, trigger
+`task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
+attempt 2, resolution authority DEC-174, continuing task 22, and the exact
+`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 2`
+tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-021 / DEC-174`
 and no-progress `0/2`.
 
-The Developer continues from `aef03cf` under the amended
-`tasks/task-20-v1-removal.md`, commits durable work before long commands, runs
-the complete byte-identical amended block (now including the tagged integration
-gate), records per-row provenance and `UNCLASSIFIED=0`, and finalizes the
-report. After two-argument report lint, REPAIR RESOLVED, and TASK task-20
-COMPLETE, task 21 may dispatch. Window 7 review remains after tasks 19-21.
+The Developer continues from `236540c` under the amended
+`tasks/task-22-walking-skeleton.md`, keeps the committed corpus and journey
+guard, authors the §16 journey workflow, extends the journey through completion,
+export, and the post-rebuild repeat, commits durable work before long commands,
+and runs the complete byte-identical eight-command block with observed
+terminations replacing the eight `not run` rows. After two-argument report lint,
+REPAIR RESOLVED, and TASK task-22 COMPLETE, final QA owns task-22 evidence,
+VAL-087, and the Human checklist.

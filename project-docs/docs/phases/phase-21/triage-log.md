@@ -923,3 +923,105 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **Historical integrity:** this note does not rewrite the TRIAGE, STOP,
   blocker report, or failed gate. ESC-21-013 is archived as resolved only after
   DEC-172 supplies the protected route.
+
+---
+
+## TRG-21-020 - Task-20 V1 absence controls exceed its accepted source scope
+
+- **Trigger:** task-20 required V1 convergence gates conflict with the task's named file scope after its committed removal checkpoint.
+- **Originating task:** task-20
+- **Trigger signature:** task-20:specification-contradiction:v1-convergence-scope-vs-absence-gates
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-20-done.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 1
+- **Checkpoint:** prompt-attached verification establishes report checkpoint `f189a376e3ad21593bfeed69589499abcd0d2d92` with subject `docs(task): refresh recovery checkpoint for phase-21 task-20` and implementation checkpoint `aef03cf7e1f601c88a179dcd2638a83ede7ce38c` with subject `style(convergence): format V1 removal checkpoint` and `Refs: phase-21/task-20`.
+- **Verdict:** BLOCK
+- **Reasoning:** Task 20's binding acceptance criteria and exact absence commands require removal of every mutation `--by`, V1 role vocabulary, and frozen-state writer. The protected convergence inventory classifies the observed `internal/bootstrap/`, `internal/journal/`, `internal/labels/`, `internal/links/`, and `internal/requirements/` production paths as jointly or separately owned by tasks 2/20/21 and 9/20, but task 20's accepted Files To Create Or Modify list does not name those directories. The inventory does not uniquely select task 20 as the permitted editor or override the task's explicit scope, while edits may alter retained task-9 attribution or task-21 bootstrap/rebuild behavior. This is a specification/task-boundary contradiction requiring protected authority, not a factual same-task repair.
+- **Local decisions made:** none
+- **Resolution evidence:** The supplied required commands observe `ls internal/dev` and `ls internal/runs` at `exit_code: 0` from retained V1 tests, `--by` and role-vocabulary absence searches at `exit_code: 0`, and the frozen-state writer search at `exit_code: 0` from `internal/issues/ac_verify.go`. Task 20 directly scopes the retained package/tests and `internal/issues/`, but the completion report identifies further required role-vocabulary residues outside its named source scope. The supplied broad inventories are correctly classified commands at `exit_code: 0`, and the report-lint/coverage evidence remains ordinary repair once a lawful scope is selected; none authorizes an out-of-scope production edit.
+- **If REPAIR:** N/A; no same-task recovery is authorized until a full Tech Lead decision either explicitly amends task 20's allowed files with bounded subject-preserving dispositions or changes the protected task/gate contract.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no unilateral edit of `internal/bootstrap/`, `internal/journal/`, `internal/labels/`, `internal/links/`, or `internal/requirements/`; no change to task-20 commands, expected exit statuses, assertion semantics, broad-inventory classification requirements, VAL-074/VAL-075, migration 0014, public behavior, frozen-table policy, task spec, QA contract, decisions, or prior failed evidence.
+- **Exact verification:** N/A; TL-Lite does not execute quality gates. The next authorized recovery must preserve the task-20 commands byte-for-byte and capture their termination evidence.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-20-done.md
+- **Control repair base:** f189a376e3ad21593bfeed69589499abcd0d2d92
+- **If BLOCK:** category specification contradiction and protected task-boundary authority; ESC-21-014 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead records whether task 20 receives a bounded, exact source-scope amendment for the named residues or the acceptance/gate contract is revised under the authority that owns it, preserving the accepted V1 removal behavior and failed evidence.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/tasks/task-20-v1-removal.md Scope, Acceptance Criteria, Exact Commands To Run, and Notes For Developer; project-docs/docs/phases/phase-21/tasks/task-20-done.md Workflow outcome, Exact quality-gate results, Classified live inventories, and Deviations from spec; project-docs/docs/phases/phase-21/v1-convergence-inventory.md sections 1, 1.1, 1.2, 3, 4, 6, and 7; project-docs/docs/phases/phase-21/decisions.md DEC-162, DEC-165, and DEC-166; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+---
+
+## TRG-21-021 - Task-22 exact Event budget contradicts the task-default workflow transition chain
+
+- **Trigger:** Phase 21 task-22 real-process journey cannot satisfy the accepted exact-20-Event mutation prefix because the shipped task-default workflow requires extra transitions before terminal success.
+- **Originating task:** task-22
+- **Trigger signature:** task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 1
+- **Checkpoint:** prompt-attached commit verification establishes corpus commit `a99b4270f70e98111b5bae43c54ed92aed7078c6`, journey-guard commit `236540c48a2129d70480b3222ba4122a5471eb48`, blocker-report commit `c964b1ffbfd88bc9d6bf4abc04fa3d5679fb99b3`, and phase HEAD `c964b1ffbfd88bc9d6bf4abc04fa3d5679fb99b3`.
+- **Verdict:** BLOCK
+- **Reasoning:** Contracts section 16 requires a mutation prefix of exactly 20 Events, including exactly one nonterminal and one terminal-success `issue.transitioned`; it also makes any count other than 20 a conformance failure. The shipped task-default workflow requires `todo -> in_progress -> dev_complete -> qa_review -> qa_pass -> done`, so the observed real-binary journey cannot perform the required direct terminal `in_progress -> done` transition and must add three transitions to reach `done`, producing 23 Events. Changing the exact Event enumeration, terminal transition/error contract, or task-default workflow semantics is a protected specification, public-interface, and workflow-contract change; no decision-free task-22 repair is authorized.
+- **Local decisions made:** none
+- **Resolution evidence:** The prompt-attached byte-identical `go test -tags integration ./cmd/fid/integration/...` reproduction reaches Gate execution and Receipt Evidence link/evaluation, then terminal `in_progress -> done` returns `transition-not-permitted` with `workflow-transition-invalid` and process `exit_code: 4`; the Go command terminates `exit_code: 1`. The report records that adding the mandatory default-workflow transitions reaches `done` only with 23 Events. This is not a canonical control implementation mismatch.
+- **If REPAIR:** N/A; no same-task recovery is authorized until a full Tech Lead/Human decision reconciles the accepted section 16 journey with the accepted task-default workflow under protected contract authority.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** do not change contracts.md section 16 exact 20-Event enumeration, public-interface transition/error contract, task-default workflow semantics, Event schema, accepted mutation ordering, task-22 command block, VAL-072/073/084/085/086, or task-22 scope; do not add a second Envelope, use a substitute workflow, implement import/recovery/Review/Human Outcome/Attention, read held-out scenarios, skip/narrow/tag-gate tests, weaken assertions, relabel failed evidence, or modify task-20/task-21 evidence.
+- **Exact verification:** N/A; TL-Lite does not execute verification commands.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- **Control repair base:** c964b1ffbfd88bc9d6bf4abc04fa3d5679fb99b3
+- **If BLOCK:** category specification contradiction, public interface, and workflow contract; ESC-21-015 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead/Human decision selects and records the authoritative reconciliation of section 16's exact 20-Event journey and the shipped task-default workflow transition chain, preserving failed evidence and supplying any lawful recovery route.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/contracts.md section 16; project-docs/docs/phases/phase-21/tasks/task-22-done.md Workflow outcome, Validation Contract Coverage, Tests run, and Concerns; project-docs/docs/current/decisions_active.md DEC-156 and DEC-159; project-docs/docs/current/phase_brief.md Binding Decisions; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-021
+
+- **Decision authority:** DEC-174, 2026-09-03.
+- **Verdict audit:** **sustained as a STOP, category narrowed.** The BLOCK was
+  correct: the failure is real, the exact-20 prefix is unsatisfiable for kind
+  `task`, and the Developer refused to edit the frozen workflow or the accepted
+  contract. Its Concerns correctly identified define/assign as the route the
+  Event budget forbade. The recorded category "specification contradiction,
+  public interface, and workflow contract" was wider than the fact: the product,
+  public interface, Event schema, and transition contract are consistent and
+  correct, and the `transition-not-permitted` rejection of an undeclared edge is
+  the guard behaving as designed. The defective artifact is `contracts.md` §16
+  alone, which assumed a direct terminal edge no workflow available to kind
+  `task` provides and never named the journey's workflow.
+- **Resolution:** DEC-174 makes the journey author its own workflow -
+  `workflow define --applies-to task` with one `unstarted`, one `started`, one
+  `completed`, and one `cancelled` state and exactly the edges
+  `unstarted -> started` and `started -> completed`, then
+  `workflow assign --kind task`, both before `issue create` - and sets the exact
+  mutation prefix at 22 Events by inserting `workflow.defined` and
+  `workflow.assigned` after `project.initialized`. The route is already shipped
+  and accepted (`public-interface.md` §4.1; the DB-backed registry at
+  `internal/workflow/registry.go`; `ResolveIssueWorkflow`'s assignment
+  precedence; the same sequence in the retained Phase 20 journey test).
+  VAL-086's counts are amended; VAL-084/085/086 keep their identity, subject,
+  and strength, and the observed exit-4 rejection becomes required VAL-085
+  negative coverage.
+- **Recovery:** RUN-RESUME from the STOP retains TRG-21-021 and ESC-21-015,
+  uses resolution authority DEC-174, and binds one same-task TASK-RECOVERY for
+  task 22 with trigger signature
+  `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
+  category `in-scope-implementation`, mode `task-scope`, attempt 2, `Source`
+  and `Repair authority` `TRG-21-021 / DEC-174`, and no-progress `0/2`. All
+  eight required commands run byte-identically and must terminate with observed
+  evidence. ESC-21-015 is resolved.
+- **Historical integrity:** TRG-21-021, ESC-21-015, their ledger TRIAGE/STOP,
+  the BLOCKED report, the committed corpus and journey guard, and all failed
+  command evidence remain unchanged. The Phase Runner appends the recovery
+  events; this note does not edit the ledger.

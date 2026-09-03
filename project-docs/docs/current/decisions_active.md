@@ -127,6 +127,18 @@
   the listed scope is an incomplete planning assignment, corrected by amending
   the scope before dispatch, never by narrowing the control. Canonical text is
   `08_QUALITY_PLAN.md` §3.
+- **The operational journey authors its own workflow (DEC-174):** the
+  migration-seeded `task-default`, `subtask-default`, and `epic-default`
+  reference workflows are retained V1 choreography and are not the V2 journey's
+  authority. The Phase 21 §16 journey defines one workflow
+  (`--applies-to task`, one `unstarted`/`started`/`completed`/`cancelled` state,
+  exactly the edges `unstarted -> started` and `started -> completed`) and
+  assigns it to kind `task` before `issue create`; the transition engine already
+  resolves edges and the terminal-success `completed` category from the
+  projected workflow tables, so this is project-owned policy under Gate B1/B3,
+  not a fid behaviour change. The exact mutation prefix is 22 Events and
+  VAL-086 matches. No product, command, public-interface, Event-schema,
+  transition, or frozen-workflow change.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

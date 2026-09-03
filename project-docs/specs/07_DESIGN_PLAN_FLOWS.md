@@ -159,6 +159,12 @@ repeats capability/Envelope/Receipt/Evidence reads, evaluation, completion
 state, resume, export create/validate, and negative conformance checks. It does
 not create a second Envelope revision or repeat the mutation journey.
 
+An operational journey runs on a project-authored workflow. The project defines
+and assigns the workflow before the Issue is created, and fid enforces its
+declared edges and terminal-success category generically from the projection.
+The migration-seeded reference workflows are retained V1 role choreography, are
+not the operational journey's authority, and are not extended to suit one.
+
 ## 11. Pre-Dogfood Convergence
 
 1. A D3 slice specifies its JSON contracts, DDL, Event fixtures, conformance
