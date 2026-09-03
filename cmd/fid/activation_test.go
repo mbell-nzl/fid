@@ -463,6 +463,24 @@ func activationLifecycleFixtureAt(t *testing.T, status string) activationLifecyc
 	return activationLifecycleFixture{}
 }
 
+func TestActivationTransitionsEmitPublicEventTypes(t *testing.T) {
+	for _, testCase := range []struct {
+		status, wantEventType string
+	}{
+		{status: "aborted", wantEventType: "activation.aborted"},
+		{status: "committed", wantEventType: "activation.committed"},
+		{status: "finalized", wantEventType: "activation.finalized"},
+	} {
+		t.Run(testCase.status, func(t *testing.T) {
+			fixture := activationLifecycleFixtureAt(t, testCase.status)
+			event := lastCommandJournalEvent(t, mustJournalPath(t, fixture.workspace))
+			if event.EventType != testCase.wantEventType {
+				t.Fatalf("activation %s Event type = %q, want %q", testCase.status, event.EventType, testCase.wantEventType)
+			}
+		})
+	}
+}
+
 func rejectActivationLifecycleTransition(t *testing.T, fixture activationLifecycleFixture, operation, name string) commandExecutionResult {
 	t.Helper()
 	inputPath := filepath.Join(fixture.workspace, "activation-reject-"+strings.ReplaceAll(name, " ", "-")+".json")

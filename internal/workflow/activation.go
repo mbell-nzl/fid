@@ -146,6 +146,12 @@ func (err *ActivationRecoveryUnavailableError) Error() string {
 	return fmt.Sprintf("activation recovery is unavailable after %s", err.Status)
 }
 
+type ActivationOperationError struct{ Operation string }
+
+func (err *ActivationOperationError) Error() string {
+	return fmt.Sprintf("activation operation %q is invalid", err.Operation)
+}
+
 type TrustedActorUnavailableError struct{ ActorID string }
 
 func (err *TrustedActorUnavailableError) Error() string {
@@ -516,13 +522,18 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		if err != nil {
 			return err
 		}
-		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: operation + "ted", ActorV2: journal.EventActor{ActorID: "fid-bootstrap", ActorType: "service", Producer: "fid", ProvenanceRef: "activation:bootstrap"}, Aggregate: journal.Aggregate{ID: activation.ID, Sequence: nextSequence, Type: "activation"}, CommandName: operation, Effects: effects}
-		if operation == "activation.commit" {
-			event.EventType = "activation.committed"
+		var eventType string
+		switch operation {
+		case "activation.commit":
+			eventType = "activation.committed"
+		case "activation.abort":
+			eventType = "activation.aborted"
+		case "activation.finalize":
+			eventType = "activation.finalized"
+		default:
+			return &ActivationOperationError{Operation: operation}
 		}
-		if operation == "activation.abort" {
-			event.EventType = "activation.aborted"
-		}
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: "fid-bootstrap", ActorType: "service", Producer: "fid", ProvenanceRef: "activation:bootstrap"}, Aggregate: journal.Aggregate{ID: activation.ID, Sequence: nextSequence, Type: "activation"}, CommandName: operation, Effects: effects}
 		updated := activation
 		updated.Status = status
 		updated.PointOfNoReturn = status == "committed" || activation.PointOfNoReturn
