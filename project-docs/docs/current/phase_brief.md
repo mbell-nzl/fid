@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-175/176)**
+> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-177)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -64,6 +64,10 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 - DEC-176: the immutable TRG-21-022 attempt-3 TRIAGE makes the schema-v2 STOP
   resume attempt 4. DEC-175 remains the product/scope authority; DEC-176 changes
   only append-only orchestration identity and restarts no-progress at `0/2`.
+- DEC-177: Task 22 owns the missing accepted Receipt get/list surface and the
+  minimum migration/schema/golden change that makes rejected-Artifact metadata
+  durable and canonical. The stale Resume prose is corrected to `fid resume`;
+  every accepted wire behavior, 22-Event budget, VAL, and command remains fixed.
 
 ## Planning Authorities
 
@@ -123,26 +127,23 @@ or assignment.
 Tasks 1-21 and reviews 1-7b are complete. Task 22 committed the conformance
 corpus (`a99b427`), the journey guard (`236540c`), and the DEC-174 authored
 workflow with its 22-Event and undeclared-edge assertions (`a6b3a44`). Attempt 2
-is recorded `MATERIAL-PROGRESS`; the run is STOPPED at the 2026-09-03 16:57 STOP
-after TRG-21-022 / ESC-21-016. DEC-175 resolves it as a bounded product repair
-and DEC-176 reconciles its recovery as attempt 4, with no contract, command,
-corpus, VAL, or budget change.
+and attempt 4 are recorded `MATERIAL-PROGRESS`; the run is STOPPED at the
+2026-09-03 18:35 STOP after TRG-21-023 / ESC-21-017. DEC-177 authorizes the
+minimum Receipt read/persistence repair as attempt 6, with no accepted wire,
+command, corpus, VAL, Event-budget, or prior-evidence change.
 
-The Phase Runner appends `RUN-RESUME` naming that STOP and retaining TRG-21-022
-/ ESC-21-016, trigger
+The Phase Runner appends `RUN-RESUME` naming that STOP and retaining TRG-21-023
+/ ESC-21-017, trigger
 `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
-attempt 4, resolution authority DEC-176, continuing task 22, and the exact
-`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 4`
-tuple. The bound TASK-RECOVERY uses source/authority
-`TRG-21-022 / DEC-175 / DEC-176`
+attempt 6, resolution authority DEC-177, continuing task 22, and the exact
+`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 6`
+tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-023 / DEC-177`
 and no-progress `0/2`.
 
-The Developer continues from `a6b3a44` under the amended
-`tasks/task-22-walking-skeleton.md`, keeps the committed corpus, journey, and
-negative matrix, writes the `cmd/fid/activation_test.go` Event-type regression
-assertion red, makes the bounded `internal/workflow/activation.go` derivation
-repair, completes the post-rebuild repeat, commits durable work before long
-commands, and runs the complete byte-identical eight-command block with observed
-terminations. The report preserves the attempt-1 and attempt-2 failed evidence.
+The Developer continues under the amended `tasks/task-22-walking-skeleton.md`,
+keeps the committed corpus, journey, negative matrix, activation fix, and Resume
+correction, writes focused Receipt read/persistence assertions red, makes the
+bounded DEC-177 repair, and runs the complete byte-identical eight-command block
+with observed terminations. The report preserves all prior failed evidence.
 After two-argument report lint, REPAIR RESOLVED, and TASK task-22 COMPLETE,
 final QA owns task-22 evidence, VAL-087, and the Human checklist.

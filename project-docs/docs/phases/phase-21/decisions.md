@@ -2171,6 +2171,62 @@
   `tasks/task-22-walking-skeleton.md`; `tasks/task-22-done.md`;
   `09_AI_WORKFLOW.md` §2.3.
 
+### DEC-177: Complete the accepted Receipt read and persistence surface in Task 22
+
+- **Date:** 2026-09-03
+- **Context:** After the DEC-175 activation repair, Task 22 recovery attempt 4
+  advanced through projection rebuild and then proved that the accepted
+  `receipt.get` and `receipt.list` leaves have no registered command or domain
+  read API. The public `Receipt` also includes durable `rejected_artifacts`,
+  while migration 0013 and `loadReceipt` retain only accepted Artifact links;
+  an idempotent replay or post-rebuild read therefore loses rejection facts.
+  Separately, `contracts.md` §10 retains the stale prose path `fid projection
+  resume`, although the exact wire authority, corpus, Task 18 implementation,
+  and root command all agree on `fid resume`.
+- **Decision:**
+  1. TRG-21-023 and ESC-21-017 are sustained as a protected task-boundary and
+     data-model gap. The accepted public interface uniquely determines the
+     missing behavior; no new product choice is introduced.
+  2. Task 22 owns the minimum causal implementation: read-only Receipt get/list
+     APIs in `internal/evidence`; CLI registration/adapters and permanent tests
+     in `cmd/fid`; the existing real-process journey; and exact migration,
+     schema, golden, and Event-effect updates needed to store
+     `rejected_artifacts` canonically as a required JSON array on each Receipt.
+     The field sorts by path then reason on write and read. No new table, Event,
+     operation, dependency, or mutation leaf is added.
+  3. Migration 0013 gains non-null `rejected_artifacts_json` with JSON validity
+     and array-type checks. This is an accepted pre-baseline replacement under
+     ADR-0011, not a compatibility migration: Phase 21 has not established a
+     supported external baseline, task 21's final-schema assertions are updated
+     in the same first-observing task, and rebuild remains journal-canonical.
+  4. Receipt get returns the exact complete Receipt or
+     `receipt-not-found` / not-found / exit 3. Receipt list supports only the
+     accepted `--run`, `--obligation`, closed `--outcome`, and `--limit
+     <1..10000>` filters, returns exact complete Receipts ordered by
+     `started_at,id`, and performs no mutation. Both commands emit no Event.
+  5. `contracts.md` §10 is corrected only from `fid projection resume` to the
+     already-authoritative `fid resume`. The Receipt Event row is clarified to
+     include the canonical rejection JSON in the complete Receipt insert while
+     rejected candidates still produce no Artifact or link Effect.
+  6. All Task 22 accepted corpus rows, result types, negative matrix, 22-Event
+     budget, VAL identities, and eight required commands remain unchanged. New
+     focused red/green assertions execute under the existing repository-wide
+     unit gate; the tagged journey must pass Receipt get before and after
+     rebuild with a zero Event delta.
+  7. The Phase Runner resumes the 2026-09-03 18:35 STOP under TRG-21-023 /
+     ESC-21-017 / DEC-177 at attempt 6, one greater than the immutable TRIAGE
+     attempt 5, then appends one Task 22 `in-scope-implementation` /
+     `task-scope` recovery with no-progress `0/2`. Attempt 4 remains
+     `MATERIAL-PROGRESS` and its two tagged failures remain immutable.
+- **Consequences:** The final conformance journey can exercise every accepted
+  Receipt read before and after rebuild without fabricating or dropping public
+  Receipt facts. Task 22 reruns the complete byte-identical eight-command block,
+  finalizes its report, and then advances to end-of-phase QA.
+- **Refs:** TRG-21-023; ESC-21-017; ADR-0011; DEC-167; DEC-173; DEC-175;
+  `public-interface.md` §§3, 4.2, 6, 7; `contracts.md` §§10, 14, 16;
+  `03_TRD_SCHEMA.md` §5; `tasks/task-22-walking-skeleton.md`;
+  `qa/validation-contract.md` VAL-052/072/084/086.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive

@@ -312,7 +312,7 @@ The terminal transition may additionally return action predicates 1..7.
 Completion may additionally return 1, 2, and 13; it does not require an active
 Claim or Run, so the accepted journey can finish/release before completion.
 
-`fid projection resume <issue-id>` is a read-only bounded projection. It returns active
+`fid resume <issue-id>` is a read-only bounded projection. It returns active
 Envelope/revision, current Issue/revision, current Claim or null, active Run or
 last terminal Run, repository identity, Obligation statuses with all reasons,
 and `next_actions` from a closed list sorted by precedence. It reads durable
@@ -445,7 +445,7 @@ the canonical non-replayed Response Envelope for this Event.
 | `run.started` | Run | `insert(runs)`, then `insert(run_budget_bindings)` by budget name |
 | `run.finished` | Run | `update(runs:{status,terminal_repository_json,ended_at})` |
 | `gate.execution-started` | Attempt | `insert(execution_attempts)` |
-| `gate.receipt-recorded` | Receipt | new accepted `insert(referenced_artifacts)` by digest, then `insert(execution_receipts)`, then `insert(receipt_artifacts)` by Artifact ID; an already stored digest omits its Artifact insert; rejected candidates have no Artifact/link Effect |
+| `gate.receipt-recorded` | Receipt | new accepted `insert(referenced_artifacts)` by digest, then `insert(execution_receipts)` including canonical `rejected_artifacts_json`, then `insert(receipt_artifacts)` by Artifact ID; an already stored digest omits its Artifact insert; rejected candidates have no Artifact/link Effect |
 | `evidence.linked` | Evidence | `insert(evidence_records)`, then `insert(evidence_artifact_links)` by Artifact ID |
 | `artifact.availability-observed` | Artifact | optional `update(referenced_artifacts:{availability})` when state changed; unchanged observation has only the required idempotency Effect |
 | `issue.created` | Issue | `insert(issues)`, labels by name, optional scheduling, then `insert(activity_log)` |

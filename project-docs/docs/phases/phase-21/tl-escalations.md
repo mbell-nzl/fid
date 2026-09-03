@@ -2,27 +2,26 @@
 
 ## Open Escalations
 
-ESC-21-017 is open after TRG-21-023: Task 22's repaired journey reached the
-accepted `fid receipt get` leaf and proved that neither Receipt get nor list is
-implemented. Full Tech Lead authority must assign bounded executable ownership
-and reconcile the stale Resume command prose before recovery.
+None.
+
+## Resolved Escalations
 
 ### ESC-21-017 - Accepted Receipt get/list leaves are not implemented
 
 - **Raised by:** TRG-21-023 after the Task 22 attempt-4 tagged gate reached
   `fid receipt get` and received unknown-command exit 2; inventory also found no
   Receipt list or read API.
-- **Protected category:** task-boundary authority for missing accepted public
-  read leaves and protected contract-prose reconciliation.
-- **Resolution condition:** A full Tech Lead assigns the smallest task with
-  `internal/evidence` Receipt get/list, `cmd/fid` wiring/tests, and Task 22
-  journey coverage, preserving the accepted filters, ordering, limits, failure
-  semantics, read-only behavior, command block, corpus, VALs, and prior
-  evidence. The same decision may correct only `contracts.md` §10's stale
-  `fid projection resume` spelling to exact wire command `fid resume`.
-- **Recovery:** pending protected decision.
-
-## Resolved Escalations
+- **Protected category:** task-boundary and data-model authority for missing
+  accepted public read leaves, durable rejected-Artifact facts, and protected
+  contract-prose reconciliation.
+- **Resolution:** DEC-177 assigns Task 22 the minimum Receipt get/list domain,
+  CLI, persistence, golden, schema, and regression-test scope. Migration 0013
+  stores canonical `rejected_artifacts_json` under ADR-0011's pre-baseline
+  replacement policy; `contracts.md` §10 changes only the stale command spelling
+  to exact `fid resume`. No operation, result, filter, ordering, error, Event,
+  command block, corpus, VAL, budget, or prior evidence changes.
+- **Recovery:** RUN-RESUME attempt 6 under TRG-21-023 / ESC-21-017 / DEC-177,
+  then Task 22 `in-scope-implementation` in task scope with no-progress `0/2`.
 
 ### ESC-21-016 - Task-22 activation Event writer is outside accepted scope
 

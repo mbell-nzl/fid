@@ -126,7 +126,7 @@ indexes, checks, and migration numbers are accepted with the owning slice.
 |---|---|---|
 | `gate_registrations` | registration ID/version/status, definition ID/version/digest, binding digest, project/overlay/repository/scope binding, authorization provenance, structured execution policy, created Event | Immutable; content/binding change creates a new version. |
 | `execution_attempts` | execution ID, registration, subject, Run, start repository identity, resolved policy digest, producer, started time | Appended before spawn. |
-| `execution_receipts` | Receipt ID, execution ID, trust source, terminal status, exit/signal, timing, terminal repository identity, toolchain, sanitized excerpt/hash/size flags, Artifact ref | Immutable; one per execution. |
+| `execution_receipts` | Receipt ID, execution ID, trust source, terminal status, exit/signal, timing, terminal repository identity, toolchain, sanitized excerpt/hash/size flags, canonical rejected-Artifact metadata | Immutable; one per execution. |
 | `evidence_records` | Evidence ID, Obligation, evidence type/ref, producer, trust source, target identity, validity, created time | Append-only; no caller-authored pass flag. |
 | `referenced_artifacts` | opaque/content ID, digest, media/type, retention class, availability, location policy, created/expiry time | Loss changes availability, not Evidence identity. |
 | `evidence_artifact_links` | Evidence ID, Artifact ID, required-material flag | Composite primary key. |
@@ -557,6 +557,8 @@ CREATE TABLE execution_receipts (
   output_bytes INTEGER NOT NULL CHECK (output_bytes >= 0),
   output_truncated INTEGER NOT NULL CHECK (output_truncated IN (0, 1)),
   redaction_applied INTEGER NOT NULL CHECK (redaction_applied IN (0, 1)),
+  rejected_artifacts_json TEXT NOT NULL
+    CHECK (json_valid(rejected_artifacts_json) AND json_type(rejected_artifacts_json) = 'array'),
   CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
       OR (terminal_status = 'timed-out' AND timed_out = 1)
       OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)

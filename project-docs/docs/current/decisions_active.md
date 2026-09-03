@@ -87,53 +87,30 @@
   interruption is session-liveness, not exhaustion. Only declared command
   budgets apply. Commit before long commands and append results as they
   terminate. See `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16.
-- **Executable session-liveness controls (DEC-171, standing):** a parent polling
-  wait timeout routes to `WAIT`; an external child interruption is recorded as
-  typed `INTERRUPTED` evidence and preserves the prior no-progress count. The
-  first interruption repairs, the second requires orchestration
-  session-liveness triage. Canonical Phase Runner prompts, routing, ledger
-  validation, workflow lint, and drill 19 enforce the rule without changing
-  product or task-15 contracts.
-- **Unavailable capability metadata versus absent behavior (DEC-172,
-  standing):** a required `available:false` discovery row is not implementation
-  of that capability. Phase 21 retains the exact unavailable `attention.v1`
-  row and proves Attention deferral with a paired boundary test that requires
-  that row as the sole production match while rejecting any table, Event,
-  Effect, leaf, state, or operation surface. A zero-match search is invalid
-  because it can hide required negative capability metadata.
+- **Late execution refinements (DEC-171/172):** polling timeout routes to WAIT;
+  externally interrupted children retain no-progress state. The unavailable
+  `attention.v1` discovery row is required negative metadata, while a paired
+  boundary test proves that no Attention behavior exists.
 - **A control's reach bounds the owning scope (DEC-173, standing):** the
-  converse of DEC-167. A task that owns a required absence or inventory control
-  owns every path that control walks, and its file scope must cover every
-  search root and every package its gates compile. A control reaching beyond
-  the listed scope is an incomplete planning assignment, corrected by amending
-  the scope before dispatch, never by narrowing the control. Canonical text is
-  `08_QUALITY_PLAN.md` §3.
+  converse of DEC-167. Task scope covers every path its required controls walk;
+  an incomplete assignment is amended before dispatch, never narrowed.
 - **The operational journey authors its own workflow (DEC-174):** the
-  migration-seeded `task-default`, `subtask-default`, and `epic-default`
-  reference workflows are retained V1 choreography and are not the V2 journey's
-  authority. The Phase 21 §16 journey defines one workflow
-  (`--applies-to task`, one `unstarted`/`started`/`completed`/`cancelled` state,
-  exactly the edges `unstarted -> started` and `started -> completed`) and
-  assigns it to kind `task` before `issue create`; the transition engine already
-  resolves edges and the terminal-success `completed` category from the
-  projected workflow tables, so this is project-owned policy under Gate B1/B3,
-  not a fid behaviour change. The exact mutation prefix is 22 Events and
-  VAL-086 matches. No product, command, public-interface, Event-schema,
-  transition, or frozen-workflow change.
+  Phase 21 §16 journey defines and assigns its task workflow before Issue
+  creation; the exact mutation prefix is 22 Events and VAL-086 matches.
 - **First-observing ownership of a latent production defect (DEC-175,
   standing):** where an accepted contract was implemented wrongly and no earlier
   required gate could observe it, the defect belongs to the first unit of work
-  whose required gate observes it, not to the unit that wrote the code. That
-  unit receives the minimum source scope for the causal repair plus a regression
-  assertion executed by a command it already runs; it gains no generic access to
-  the owning package, and the originating unit is not reopened. Phase 21 applies
-  it to task 22's bounded `internal/workflow/activation.go` Event-type
-  derivation repair (`activation.finalized`). Canonical text is
-  `08_QUALITY_PLAN.md` §3.
+  whose gate observes it. That unit receives minimum causal source and
+  regression scope; the originating unit is not reopened.
 - **Task 22 append-only attempt identity (DEC-176):** TRG-21-022's immutable
   TRIAGE already carries attempt 3, so its schema-v2 STOP resume and matching
   recovery use attempt 4. DEC-175 remains the product/scope authority; DEC-176
   changes only recovery identity and leaves no-progress at `0/2`.
+- **Task 22 Receipt completion (DEC-177):** Task 22 owns accepted read-only
+  Receipt get/list plus the minimum pre-baseline migration/schema/golden change
+  that durably stores canonical `rejected_artifacts`. It corrects only stale
+  Resume prose to `fid resume`; accepted operations, wire shapes, filters,
+  errors, Events, 22-Event budget, VALs, and commands stay fixed.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
