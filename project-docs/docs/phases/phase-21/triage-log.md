@@ -1109,3 +1109,75 @@ execution approval; task 1 is ready for Phase Runner dispatch.
 - **Recovery:** RUN-RESUME attempt 4, followed by one matching Task 22
   `in-scope-implementation` / `task-scope` TASK-RECOVERY whose `Source` and
   `Repair authority` both name `TRG-21-022 / DEC-175 / DEC-176`.
+
+## TRG-21-023 - Task-22 journey reaches missing accepted Receipt read leaves
+
+- **Trigger:** Task 22 attempt-4 tagged integration advanced through the
+  activation Event repair, accepted root `fid resume`, projection rebuild, and
+  capability/Envelope reads, then `fid receipt get <receipt-id>` returned Cobra
+  unknown-command exit 2 with empty output because no Receipt command is
+  registered. Repository inventory also finds no `receipt.list` implementation.
+- **Originating task:** task-22
+- **Trigger signature:** task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** Task 22 exact tagged integration gate and
+  `project-docs/docs/phases/phase-21/public-interface.md` §4.2
+- **Candidate:** blocker candidate
+- **Attempt count:** 5
+- **Checkpoint:** activation repair commit
+  `c3290ad063e31523bd35e78b6eae8a2db86dc806` and accepted-resume invocation
+  commit `a6e05b31dd1bed9274619879849799574278d243` are verified; attempt 4 is
+  ledger-recorded `MATERIAL-PROGRESS`; the byte-identical tagged gate ended
+  `FAIL` with observed `exit_code: 1` at `receipt get`; only the runner-owned
+  ledger is dirty.
+- **Verdict:** BLOCK
+- **Reasoning:** The exact accepted public-interface rows and committed Task 22
+  corpus require both `receipt.get` / `fid receipt get` and `receipt.list` /
+  `fid receipt list`, but `cmd/fid/root.go` registers no Receipt command and
+  `internal/evidence` exposes no read API. The accepted contracts uniquely
+  determine read-only behavior, filters, outcomes, limit, ordering, and JSON
+  result shape, but Task 22's current bounded production authority covers only
+  the activation Event derivation. Implementing the missing leaves requires a
+  protected task-boundary amendment. Separately, `contracts.md` §10 says
+  `fid projection resume` while the exact wire authority, corpus, Task 18
+  implementation, and root command all say `fid resume`; that stale prose also
+  requires protected documentation reconciliation.
+- **Local decisions made:** The two failed tagged gate attempts remain immutable.
+  The journey's accepted Receipt read and root Resume assertions are unchanged;
+  no command, expected exit, result schema, filter, ordering, limit, Event,
+  mutation, or VAL assertion may be weakened or removed.
+- **Resolution evidence:** `go test -tags integration -race
+  ./cmd/fid/integration/...` first failed at the stale `projection resume`
+  invocation and, after the in-scope correction to exact wire command `fid
+  resume`, reran byte-identically and failed at `fid receipt get RCP-52fc0d =
+  err:exit status 2 stdout:"" stderr:""`; both commands terminated
+  `exit_code: 1`. `rg` found the accepted Receipt rows and corpus fixtures but no
+  registered Receipt command or read API.
+- **If REPAIR:** N/A until a full Tech Lead supplies bounded product and
+  documentation scope.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no change to accepted Receipt/Resume operation names,
+  command paths, args/flags, result shapes, filters, outcome vocabulary, limit,
+  ordering, failure/exit semantics, Event or mutation behavior, Task 22 command
+  block, corpus, journey strength, VAL identity, thresholds, budgets,
+  tolerances, policy, or prior evidence; no generic package access.
+- **Exact verification:** `go test -tags integration -race
+  ./cmd/fid/integration/...` in `/home/mark/projects/fid`, requiring accepted
+  Receipt get before and after rebuild and unchanged 22-Event count.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- **Control repair base:** a6e05b31dd1bed9274619879849799574278d243
+- **If BLOCK:** category protected task-boundary authority for missing accepted
+  public read leaves and protected contract-prose reconciliation; ESC-21-017
+  raised in `tl_escalations_current.md`; resolution requires a full Tech Lead to
+  assign the smallest executable owner/scope for Receipt get/list with permanent
+  tests and correct only the stale Resume command spelling in `contracts.md`.
+- **Human attention required:** yes
+- **References:** `public-interface.md` §§4.2, 6, 7;
+  `contracts.md` §§10, 16; `tasks/task-15-attempt-receipt.md`;
+  `tasks/task-22-walking-skeleton.md`; `tasks/task-22-done.md`;
+  `qa/validation-contract.md` VAL-052/084/086; DEC-167/173/175/176.

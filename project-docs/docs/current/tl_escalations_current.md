@@ -5,9 +5,17 @@
 
 ## Open Escalations
 
-None. ESC-21-016 was resolved by DEC-175 on 2026-09-03, with its append-only
-attempt identity reconciled by DEC-176; ESC-21-015 was resolved by DEC-174 on
-2026-09-03.
+### ESC-21-017 - Accepted Receipt get/list leaves are not implemented
+
+TRG-21-023 BLOCKs Task 22 after its repaired real-process journey reaches
+`fid receipt get` and Cobra returns unknown-command exit 2; repository inventory
+also finds no Receipt list leaf or read API. The exact public interface and
+committed corpus require read-only get/list, while Task 22's current production
+scope is limited to the activation Event derivation. Full Tech Lead authority
+must assign the smallest executable Receipt-read scope with permanent tests and
+correct the stale `fid projection resume` spelling in `contracts.md` §10 to the
+already-accepted `fid resume` wire command. No accepted interface, command,
+schema, ordering, limit, failure, gate, corpus, VAL, or prior evidence changes.
 
 ## Latest Resolution
 

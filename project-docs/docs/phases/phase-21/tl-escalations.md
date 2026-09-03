@@ -2,9 +2,25 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-175 resolve ESC-21-001..016. DEC-176 reconciles the
-append-only Task 22 recovery identity as attempt 4 without changing DEC-175's
-product/scope authority.
+ESC-21-017 is open after TRG-21-023: Task 22's repaired journey reached the
+accepted `fid receipt get` leaf and proved that neither Receipt get nor list is
+implemented. Full Tech Lead authority must assign bounded executable ownership
+and reconcile the stale Resume command prose before recovery.
+
+### ESC-21-017 - Accepted Receipt get/list leaves are not implemented
+
+- **Raised by:** TRG-21-023 after the Task 22 attempt-4 tagged gate reached
+  `fid receipt get` and received unknown-command exit 2; inventory also found no
+  Receipt list or read API.
+- **Protected category:** task-boundary authority for missing accepted public
+  read leaves and protected contract-prose reconciliation.
+- **Resolution condition:** A full Tech Lead assigns the smallest task with
+  `internal/evidence` Receipt get/list, `cmd/fid` wiring/tests, and Task 22
+  journey coverage, preserving the accepted filters, ordering, limits, failure
+  semantics, read-only behavior, command block, corpus, VALs, and prior
+  evidence. The same decision may correct only `contracts.md` §10's stale
+  `fid projection resume` spelling to exact wire command `fid resume`.
+- **Recovery:** pending protected decision.
 
 ## Resolved Escalations
 
