@@ -7,10 +7,6 @@
 
 - [ADR-0001](../../../docs/adr/0001-journal-canonical-db-derived.md): the
   append-only journal is canonical; SQLite is a rebuildable projection.
-- [ADR-0002](../../../docs/adr/0002-configurable-roles-default-profile.md):
-  superseded for forward product scope by ADR-0010/0011.
-- [ADR-0003](../../../docs/adr/0003-three-tier-qa-model.md): superseded for
-  forward product scope by ADR-0011.
 - [ADR-0004](../../../docs/adr/0004-operational-work-state-boundary.md): the
   project and kit own intent and policy; fid owns Issue and operational facts.
 - [ADR-0005](../../../docs/adr/0005-issues-are-the-durable-work-graph.md): Issues
@@ -66,11 +62,8 @@
   phases. Each phase owns explicit legacy removals and may contain multiple
   bounded Developer tasks under the current V1 delivery process.
 - **Gate D3.2:** one Heavy Phase 21 delivers the one-Issue walking skeleton in
-  two internal task groups separated by an independent checkpoint. Attention,
-  Stops, budget consumption/exhaustion, automatic respawn/recovery, and export
-  import belong to Phase 22; one gate-evidence Obligation and only enforceable
-  executor policy values land in Phase 21. Incomplete capabilities remain
-  unavailable.
+  two groups with an independent checkpoint. Phase 22 owns Attention, Stops,
+  recovery, and export import; incomplete capabilities remain unavailable.
 - **Gate D3.2 terminal amendment (DEC-156):** gate execution, qualifying
   Receipt linking, and satisfied Evidence precede the terminal-success Issue
   transition. Envelope completion later re-evaluates the same Obligation and
@@ -83,29 +76,17 @@
   Runner pre-dispatch control, not a Developer task command. The unchanged
   100k rebuild target is three consecutive self-asserted `<30 s` samples on
   the recorded Phase 21 reference instance; one failure fails VAL-083.
-- **Phase 21 execution approval (DEC-159):** the QA Lead's Ready plan at
-  `e8a636e` and the Human's 2026-08-23 approval accept VAL-001..087 and the
-  ordered Heavy task pack. Task 1 is authorized for Phase Runner dispatch;
-  every later task remains dependency- and review-gated.
-- **Executable ownership (DEC-167, standing):** a task's required commands must
-  exercise every file scope it owns. A build-tagged or otherwise gated suite
-  covering owned files must have its gate named in that same task, or the scope
-  is not assignable to it. Where a gated suite first becomes required several
-  tasks after the changes that invalidated its assertions, the accumulated
-  convergence belongs to the first task whose gate runs it, recorded with
-  per-row provenance. A no-progress recovery budget counts only attempts whose
-  directive permitted causal repair of the failing rows. Canonical text is
-  `08_QUALITY_PLAN.md` §3.
-- **Session liveness and budget accounting (DEC-170, standing):** an attempt
-  whose child session is interrupted, cancelled, timed out, or shut down from
-  outside, and which never returns a typed result, does not consume the
-  no-progress budget. No budget bounds a child session's lifetime; only declared
-  per-command budgets are enforced and the orchestrator waits for the session to
-  end on its own. Repeated external interruption is triaged as orchestration
-  session-liveness, never as `recovery-budget-exhausted`. Where verification cost
-  approaches the session window, commit durable work before the long commands and
-  append each command result as it terminates. Canonical text is
-  `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16.
+- **Phase 21 execution approval (DEC-159):** QA Ready commit `e8a636e` and the
+  2026-08-23 Human approval accept VAL-001..087 and the ordered Heavy task pack.
+- **Executable ownership (DEC-167, standing):** required commands exercise every
+  owned scope, including tagged suites. Delayed convergence belongs to the first
+  task whose gate runs it, with per-row provenance. No-progress counts only when
+  the directive permitted causal repair. See `08_QUALITY_PLAN.md` §3.
+- **Session liveness and budget accounting (DEC-170, standing):** external
+  interruption without a typed result does not consume no-progress; repeated
+  interruption is session-liveness, not exhaustion. Only declared command
+  budgets apply. Commit before long commands and append results as they
+  terminate. See `08_QUALITY_PLAN.md` §3 and `09_AI_WORKFLOW.md` step 16.
 - **Executable session-liveness controls (DEC-171, standing):** a parent polling
   wait timeout routes to `WAIT`; an external child interruption is recorded as
   typed `INTERRUPTED` evidence and preserves the prior no-progress count. The
@@ -149,6 +130,10 @@
   it to task 22's bounded `internal/workflow/activation.go` Event-type
   derivation repair (`activation.finalized`). Canonical text is
   `08_QUALITY_PLAN.md` §3.
+- **Task 22 append-only attempt identity (DEC-176):** TRG-21-022's immutable
+  TRIAGE already carries attempt 3, so its schema-v2 STOP resume and matching
+  recovery use attempt 4. DEC-175 remains the product/scope authority; DEC-176
+  changes only recovery identity and leaves no-progress at `0/2`.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

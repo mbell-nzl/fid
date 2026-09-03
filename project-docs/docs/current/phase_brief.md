@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-175)**
+> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-175/176)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -61,6 +61,9 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   bounded `internal/workflow/activation.go` Event-type derivation repair
   (`activation.finalized`, not `activation.finalizeted`); task 4 is not
   reopened. No contract, schema, interface, command, corpus, or VAL change.
+- DEC-176: the immutable TRG-21-022 attempt-3 TRIAGE makes the schema-v2 STOP
+  resume attempt 4. DEC-175 remains the product/scope authority; DEC-176 changes
+  only append-only orchestration identity and restarts no-progress at `0/2`.
 
 ## Planning Authorities
 
@@ -122,14 +125,16 @@ corpus (`a99b427`), the journey guard (`236540c`), and the DEC-174 authored
 workflow with its 22-Event and undeclared-edge assertions (`a6b3a44`). Attempt 2
 is recorded `MATERIAL-PROGRESS`; the run is STOPPED at the 2026-09-03 16:57 STOP
 after TRG-21-022 / ESC-21-016. DEC-175 resolves it as a bounded product repair
-with no contract, command, corpus, or VAL change.
+and DEC-176 reconciles its recovery as attempt 4, with no contract, command,
+corpus, VAL, or budget change.
 
 The Phase Runner appends `RUN-RESUME` naming that STOP and retaining TRG-21-022
 / ESC-21-016, trigger
 `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
-attempt 3, resolution authority DEC-175, continuing task 22, and the exact
-`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 3`
-tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-022 / DEC-175`
+attempt 4, resolution authority DEC-176, continuing task 22, and the exact
+`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 4`
+tuple. The bound TASK-RECOVERY uses source/authority
+`TRG-21-022 / DEC-175 / DEC-176`
 and no-progress `0/2`.
 
 The Developer continues from `a6b3a44` under the amended

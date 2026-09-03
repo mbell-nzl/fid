@@ -5,7 +5,8 @@
 ## Project State
 
 **Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-022 /
-ESC-21-016 at task 22; DEC-175 resolves it as a bounded product repair, giving
+ESC-21-016 at task 22; DEC-175 resolves it as a bounded product repair and
+DEC-176 reconciles the append-only recovery as attempt 4, giving
 task 22 the causal `internal/workflow/activation.go` Event-name fix its own gate
 is the only one to observe.** Tasks 1-21, reviews 1/1b through 7b, and the Group 1
 checkpoint are mechanically complete. Phase 20 completed/wrapped on 2026-08-22;
@@ -63,6 +64,12 @@ plus a non-tagged regression assertion under an already-required command. No
 contract, schema, interface, command, corpus, or VAL change. `08_QUALITY_PLAN.md`
 §3 records the first-observing ownership rule for latent production defects.
 
+DEC-176 (2026-09-03) preserves the immutable TRG-21-022 attempt-3 TRIAGE and
+corrects only the next recovery identity: schema v2 requires the STOP resume to
+increment its governing TRIAGE, so Task 22 resumes at attempt 4 with no-progress
+`0/2`. DEC-175 remains the product/scope authority; no command, contract,
+assertion, budget, or evidence changes.
+
 ## Planned Boundary
 
 One Heavy Phase 21 uses 22 bounded Developer tasks in two internal groups. An
@@ -80,9 +87,9 @@ one Human terminal-output parent assertion with four Human subchecks apply.
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
 - Dispatch state: **TASKS 1-21 COMPLETE; TASK 22 STOPPED AFTER TRG-21-022 /
-  ESC-21-016 WITH RECOVERY AUTHORIZED BY DEC-175**. The Phase Runner appends
-  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 3, and
-  resolution authority `DEC-175`, then one `TASK-RECOVERY task-22` with
+  ESC-21-016 WITH RECOVERY AUTHORIZED BY DEC-175/176**. The Phase Runner appends
+  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 4, and
+  resolution authority `DEC-176`, then one `TASK-RECOVERY task-22` with
   `in-scope-implementation`, `task-scope`, and no-progress `0/2`.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
@@ -96,10 +103,10 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Phase Runner appends the DEC-175 recovery sequence: `RUN-RESUME` naming the
+1. Phase Runner appends the DEC-175/176 recovery sequence: `RUN-RESUME` naming the
    2026-09-03 16:57 STOP and bound to TRG-21-022 / ESC-21-016 with the recorded
-   trigger, attempt 3, resolution authority `DEC-175`, and the exact
-   next-recovery tuple from DEC-175 item 6; it then appends the matching
+   trigger, attempt 4, resolution authority `DEC-176`, and the exact
+   next-recovery tuple from DEC-176 item 3; it then appends the matching
    `TASK-RECOVERY task-22` with no-progress `0/2`.
 2. The Developer continues task 22 from `a6b3a44` under the amended spec: keeps
    the committed corpus, journey, and negative matrix, writes the

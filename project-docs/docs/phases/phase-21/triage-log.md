@@ -1096,3 +1096,16 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   the RECOVERY_REQUIRED report, the committed corpus and journey, and all failed
   command evidence remain unchanged. The Phase Runner appends the recovery
   events; this note does not edit the ledger.
+
+### DEC-176 Attempt-Identity Reconciliation
+
+- **Reason:** TRG-21-022 already records attempt 3, so schema v2 correctly
+  rejected DEC-175's attempt-3 RUN-RESUME candidate because a STOP resume must
+  increment its governing TRIAGE.
+- **Resolution authority:** DEC-176 retains TRG-21-022, ESC-21-016, DEC-175,
+  the STOP, and all failed evidence. It authorizes the identical bounded repair
+  as attempt 4 with typed resolution authority DEC-176 and no-progress `0/2`.
+  DEC-175 remains the product and task-scope authority.
+- **Recovery:** RUN-RESUME attempt 4, followed by one matching Task 22
+  `in-scope-implementation` / `task-scope` TASK-RECOVERY whose `Source` and
+  `Repair authority` both name `TRG-21-022 / DEC-175 / DEC-176`.

@@ -2,10 +2,41 @@
 
 ## Open Escalations
 
-None. DEC-160 through DEC-173 resolve ESC-21-001..014. The run is stopped after
-TRG-21-020; DEC-173 authorizes the task-20 attempt-2 continuation that clears it.
+None. DEC-160 through DEC-175 resolve ESC-21-001..016. DEC-176 reconciles the
+append-only Task 22 recovery identity as attempt 4 without changing DEC-175's
+product/scope authority.
 
 ## Resolved Escalations
+
+### ESC-21-016 - Task-22 activation Event writer is outside accepted scope
+
+- **Raised by:** TRG-21-022 after Task 22's attempt-2 tagged integration gate
+  observed `activation.finalizeted` instead of accepted
+  `activation.finalized`.
+- **Protected category:** task-boundary authority for a production
+  implementation repair affecting an accepted public Event contract.
+- **Resolution:** DEC-175 gives Task 22 the bounded Event-type derivation repair
+  and non-tagged regression assertion. DEC-176 preserves the immutable
+  attempt-3 TRIAGE and reconciles the schema-v2 STOP resume as attempt 4. No
+  contract, schema, interface, command, corpus, VAL, budget, or prior evidence
+  changes.
+- **Recovery:** RUN-RESUME attempt 4 with resolution authority DEC-176, then
+  Task 22 `in-scope-implementation` in task scope under DEC-175/176 with
+  no-progress `0/2`.
+
+### ESC-21-015 - Task-22 exact journey cannot use a seeded reference workflow
+
+- **Raised by:** TRG-21-021 after the accepted 20-Event direct-terminal journey
+  conflicted with every migration-seeded task-applicable workflow.
+- **Protected category:** specification contradiction, public interface, and
+  workflow contract.
+- **Resolution:** DEC-174 makes the journey define and assign its own accepted
+  two-edge task workflow before Issue creation and amends the exact prefix to
+  22 Events. The observed seeded-workflow rejection remains VAL-085 negative
+  evidence.
+- **Recovery:** Task 22 attempt 2 completed the authored-workflow journey to
+  the independent activation Event-name defect and recorded
+  `MATERIAL-PROGRESS`.
 
 ### ESC-21-014 - Task-20 V1 absence controls exceed its accepted source scope
 

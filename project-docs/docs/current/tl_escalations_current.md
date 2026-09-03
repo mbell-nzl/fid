@@ -5,8 +5,9 @@
 
 ## Open Escalations
 
-None. ESC-21-016 was resolved by DEC-175 on 2026-09-03; ESC-21-015 was resolved
-by DEC-174 on 2026-09-03.
+None. ESC-21-016 was resolved by DEC-175 on 2026-09-03, with its append-only
+attempt identity reconciled by DEC-176; ESC-21-015 was resolved by DEC-174 on
+2026-09-03.
 
 ## Latest Resolution
 
@@ -34,8 +35,10 @@ Task 22 gains `internal/workflow/activation.go` bounded to one exhaustive
 operation-to-Event-type mapping, and `cmd/fid/activation_test.go` for a
 non-tagged regression assertion that runs under an already-required command. No
 Event-schema, public-interface, contract, command, corpus, or VAL change.
-Recovery is RUN-RESUME under TRG-21-022 / ESC-21-016 / DEC-175, task-22 attempt
-3, `in-scope-implementation` in task scope, no-progress `0/2`.
+TRG-21-022 already records attempt 3, so DEC-176 preserves it and authorizes
+RUN-RESUME under TRG-21-022 / ESC-21-016 at task-22 attempt 4, with resolution
+authority DEC-176 and product/scope authority DEC-175,
+`in-scope-implementation` in task scope, no-progress `0/2`.
 
 DEC-174 resolved ESC-21-015 on 2026-09-03: the §16 journey authors its own
 workflow before `issue create` and its exact prefix is 22 Events, with no

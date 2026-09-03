@@ -2128,6 +2128,49 @@
   `tasks/task-22-done.md`; `qa/validation-contract.md` VAL-011..015 and
   VAL-084/085/086; `08_QUALITY_PLAN.md` §3.
 
+### DEC-176: Reconcile Task 22 recovery attempt identity append-only
+
+- **Date:** 2026-09-03
+- **Context:** DEC-175 correctly authorizes the bounded Task 22 product repair,
+  but its recovery route calls the next recovery attempt 3. The immutable
+  schema-v2 TRIAGE TRG-21-022 already records `Attempt count: 3`, while the
+  preceding TASK-RECOVERY/REPAIR pair records attempt 2 as
+  `MATERIAL-PROGRESS`. The Phase Runner's exact DEC-175 RUN-RESUME candidate was
+  therefore rejected with `INVALID RUN-RESUME Attempt count must increment its
+  governing TRIAGE`. The append-only ledger retains the TRIAGE, STOP, failed
+  append evidence, and a CORRECTION that names the mismatch.
+- **Decision:**
+  1. TRG-21-022, ESC-21-016, the 2026-09-03 16:57 STOP, DEC-175, the failed
+     RUN-RESUME candidate, and all Task 22 command/report evidence remain
+     immutable. No historical entry is rewritten or reclassified.
+  2. The TRIAGE's attempt identity is authoritative for sequence validation.
+     The resumed recovery is attempt 4, exactly one greater than TRG-21-022.
+     This numbering reconciliation does not create a product attempt, does not
+     consume the no-progress budget, and does not change attempt 2's recorded
+     `MATERIAL-PROGRESS`; the resumed recovery starts at `0/2` as DEC-175
+     requires.
+  3. The Phase Runner appends `RUN-RESUME` naming the 2026-09-03 16:57 STOP,
+     TRG-21-022, ESC-21-016, the unchanged trigger signature, `Attempt count:
+     4`, `Resolution authority: DEC-176`, `Continuing task: task-22`, and `Next
+     recovery: task-22 | in-scope-implementation | task-scope |
+     task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+     | 4`. The matching TASK-RECOVERY uses `TRG-21-022 / DEC-175 / DEC-176` in
+     both `Source` and `Repair authority`, attempt 4, and no-progress `0/2`.
+  4. DEC-175 remains the sole product/scope authority. DEC-176 changes only the
+     orchestration attempt identity and supplies the typed STOP-resolution
+     authority required by schema v2. It changes no task scope, allowed file,
+     forbidden change, command, expected status, assertion, contract, public
+     interface, Event schema, transition behavior, threshold, budget,
+     tolerance, policy, corpus, VAL identity, or prior evidence.
+- **Consequences:** The accepted verifier can validate the append-only recovery
+  without a protected control-definition change. Task 22 may execute the exact
+  DEC-175 repair as recovery attempt 4 and advance to final QA after its eight
+  commands, report lint, REPAIR RESOLVED, and TASK COMPLETE all succeed.
+- **Refs:** DEC-175; TRG-21-022; ESC-21-016; `run-ledger.md` 2026-09-03 16:56
+  TRIAGE, 16:57 STOP, and 17:44 CORRECTION;
+  `tasks/task-22-walking-skeleton.md`; `tasks/task-22-done.md`;
+  `09_AI_WORKFLOW.md` §2.3.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
