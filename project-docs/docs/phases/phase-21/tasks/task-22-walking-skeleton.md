@@ -26,6 +26,17 @@ Prove every final accepted/fail-closed public leaf, all kebab-case closed values
 - `cmd/fid/integration/`
 - `cmd/fid/integration/testdata/p21_conformance/`
 - `internal/cli/`
+- `internal/workflow/activation.go` - **bounded (DEC-175):** the Event-type
+  derivation in `transitionActivation` only. Replace `operation + "ted"` and its
+  two ad-hoc overrides with one explicit, exhaustive operation-to-Event-type
+  mapping: `activation.commit` -> `activation.committed`, `activation.abort` ->
+  `activation.aborted`, `activation.finalize` -> `activation.finalized`,
+  returning a typed error for any unmapped operation. The commit and abort
+  values stay byte-identical. No other change to this file or any other
+  production file is authorized.
+- `cmd/fid/activation_test.go` - **bounded (DEC-175):** add the regression
+  assertion in the acceptance criteria only; do not modify or weaken any
+  existing assertion in this file.
 - `project-docs/docs/phases/phase-21/tasks/task-22-done.md`
 
 ### Files To Read For Context
@@ -38,6 +49,9 @@ Prove every final accepted/fail-closed public leaf, all kebab-case closed values
 ### Out Of Scope
 
 - Product repairs outside accepted contracts, import, recovery, Review/Human Outcome, and held-out scenarios.
+- Any `internal/workflow/activation.go` change beyond the DEC-175 Event-type
+  derivation: no lifecycle, precondition, Effect, persistence, result-shape,
+  idempotency, or attribution change.
 
 ## Acceptance Criteria
 
@@ -46,6 +60,7 @@ Prove every final accepted/fail-closed public leaf, all kebab-case closed values
 - [ ] Happy journey defines and assigns the §16 journey workflow, creates its Issue on that workflow, and follows Gate/evidence before the single terminal-success transition through completion. (VAL-084)
 - [ ] All negative counterparts fail closed, including a transition request for an edge the authored workflow does not declare, which returns `transition-not-permitted` / `workflow-transition-invalid` with exit 4 and appends no Event. (VAL-085)
 - [ ] Before rebuild, the journey has exactly 22 Events and exactly one each of `envelope.created`, `workflow.defined`, and `workflow.assigned`; after rebuild, the repeat performs no second Envelope, workflow definition, assignment, or other mutation and the Event count remains exactly 22. (VAL-086)
+- [ ] Each activation transition emits its `public-interface.md` §4.1 Event type verbatim - `activation.committed`, `activation.aborted`, and `activation.finalized` - asserted by a non-tagged regression test in `cmd/fid/activation_test.go` that runs under `go test -race -coverprofile=coverage.out ./...`. (DEC-175; supports VAL-084 and VAL-086)
 
 ## First Failing Test
 
@@ -77,6 +92,7 @@ Every command is required and must terminate with session-captured evidence. Rep
 - Start after task 21 and QA Review window 7 close. Final QA follows; this task does not authorize its own contract refinements.
 - The authored workflow needs a `cancelled` state only because an Issue-applicable workflow must declare one (PRD-WF-013). Every non-`cancelled` state has an implicit edge into it, so the VAL-085 undeclared-edge negative must target a non-`cancelled` state, and the journey never enters `cancelled`.
 - DEC-174 recovery: continue from `236540c` under the amended §16 journey. Preserve the attempt-1 blocker evidence, including the recorded `transition-not-permitted` failure, and reuse it as the VAL-085 undeclared-edge negative counterpart rather than deleting it. All eight required commands must run and terminate with session-captured evidence; the eight `not run` rows are not carried forward.
+- DEC-175 recovery (attempt 3): continue from `a6b3a44`. Keep the committed corpus, journey, and negative matrix. The tagged gate's `journal Event 9 = "activation.finalizeted", want "activation.finalized"` is a product defect, not a contract question: `internal/workflow/activation.go:519` builds the Event type as `operation + "ted"` and overrides only `activation.commit` and `activation.abort`, so `activation.finalize` emits the misspelling. `public-interface.md` §4.1, `contracts.md` §14, and `contracts.md` §16 all require `activation.finalized`. Write the new `cmd/fid/activation_test.go` assertion red first, then make the bounded derivation repair. Nothing else changes: no Event schema, public interface, contract, command, expected exit, assertion strength, corpus, or seeded workflow edit, and no `t.Skip`, build tag, or `-run` narrowing. Preserve the attempt-1 and attempt-2 failed evidence verbatim in the report and add this attempt's red/green evidence. Every other Event family in the §16 sequence was verified present in a product writer, so no further name defect is expected; stop and report if one appears.
 - Completion report: `project-docs/docs/phases/phase-21/tasks/task-22-done.md`.
 - Stop for a protected contract change; ordinary in-scope red/green repair remains this task.
 - Do not read held-out scenario material.

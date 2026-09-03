@@ -139,6 +139,16 @@
   not a fid behaviour change. The exact mutation prefix is 22 Events and
   VAL-086 matches. No product, command, public-interface, Event-schema,
   transition, or frozen-workflow change.
+- **First-observing ownership of a latent production defect (DEC-175,
+  standing):** where an accepted contract was implemented wrongly and no earlier
+  required gate could observe it, the defect belongs to the first unit of work
+  whose required gate observes it, not to the unit that wrote the code. That
+  unit receives the minimum source scope for the causal repair plus a regression
+  assertion executed by a command it already runs; it gains no generic access to
+  the owning package, and the originating unit is not reopened. Phase 21 applies
+  it to task 22's bounded `internal/workflow/activation.go` Event-type
+  derivation repair (`activation.finalized`). Canonical text is
+  `08_QUALITY_PLAN.md` §3.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current

@@ -4,10 +4,10 @@
 
 ## Project State
 
-**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-021 /
-ESC-21-015 at task 22; DEC-174 resolves the defect in `contracts.md` §16, whose
-exact 20-Event journey assumed a direct terminal edge no workflow available to
-kind `task` provides.** Tasks 1-21, reviews 1/1b through 7b, and the Group 1
+**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-022 /
+ESC-21-016 at task 22; DEC-175 resolves it as a bounded product repair, giving
+task 22 the causal `internal/workflow/activation.go` Event-name fix its own gate
+is the only one to observe.** Tasks 1-21, reviews 1/1b through 7b, and the Group 1
 checkpoint are mechanically complete. Phase 20 completed/wrapped on 2026-08-22;
 its retrospective is in
 `../reviews/2026-08-22-phase-20-retrospective.md`.
@@ -50,6 +50,19 @@ command, public-interface, Event-schema, transition, or frozen-workflow change.
 TRG-21-021, ESC-21-015, the committed corpus and journey guard, and all failed
 evidence remain historical.
 
+DEC-175 (2026-09-03) closes ESC-21-016. The DEC-174 journey was implemented and
+committed at `a6b3a44` (attempt 2, `MATERIAL-PROGRESS`), and the tagged gate then
+narrowed to one product defect: `internal/workflow/activation.go:519` derives the
+Event type as `operation + "ted"` and overrides only commit and abort, so
+finalize emits `activation.finalizeted` where `public-interface.md` §4.1,
+`contracts.md` §14, and `contracts.md` §16 all require `activation.finalized`.
+TRG-21-022's BLOCK is sustained on its category. The repair belongs to task 22,
+not a reopened task 4, because task 22's gates are the only ones that execute the
+accepted Event name (DEC-167, DEC-173); its scope gains the bounded derivation
+plus a non-tagged regression assertion under an already-required command. No
+contract, schema, interface, command, corpus, or VAL change. `08_QUALITY_PLAN.md`
+§3 records the first-observing ownership rule for latent production defects.
+
 ## Planned Boundary
 
 One Heavy Phase 21 uses 22 bounded Developer tasks in two internal groups. An
@@ -66,10 +79,10 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-21 COMPLETE; TASK 22 STOPPED AFTER TRG-21-021 /
-  ESC-21-015 WITH RECOVERY AUTHORIZED BY DEC-174**. The Phase Runner appends
-  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 2, and
-  resolution authority `DEC-174`, then one `TASK-RECOVERY task-22` with
+- Dispatch state: **TASKS 1-21 COMPLETE; TASK 22 STOPPED AFTER TRG-21-022 /
+  ESC-21-016 WITH RECOVERY AUTHORIZED BY DEC-175**. The Phase Runner appends
+  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 3, and
+  resolution authority `DEC-175`, then one `TASK-RECOVERY task-22` with
   `in-scope-implementation`, `task-scope`, and no-progress `0/2`.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
@@ -83,17 +96,18 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Phase Runner appends the DEC-174 recovery sequence: `RUN-RESUME` bound to
-   TRG-21-021 / ESC-21-015 with the recorded trigger, attempt 2, resolution
-   authority `DEC-174`, and the exact next-recovery tuple from DEC-174 item 6;
-   it then appends the matching `TASK-RECOVERY task-22` with no-progress `0/2`.
-2. The Developer continues task 22 from `236540c` under the amended spec: keeps
-   the committed corpus and journey guard, authors and assigns the §16 journey
-   workflow before `issue create`, extends the journey through completion,
-   export, and the post-rebuild repeat, asserts the exact 22-Event prefix and
-   zero post-rebuild delta, keeps the observed undeclared-edge rejection as
-   VAL-085 coverage, commits durable work before long commands, and runs the
-   complete byte-identical eight-command block.
+1. Phase Runner appends the DEC-175 recovery sequence: `RUN-RESUME` naming the
+   2026-09-03 16:57 STOP and bound to TRG-21-022 / ESC-21-016 with the recorded
+   trigger, attempt 3, resolution authority `DEC-175`, and the exact
+   next-recovery tuple from DEC-175 item 6; it then appends the matching
+   `TASK-RECOVERY task-22` with no-progress `0/2`.
+2. The Developer continues task 22 from `a6b3a44` under the amended spec: keeps
+   the committed corpus, journey, and negative matrix, writes the
+   `cmd/fid/activation_test.go` Event-type regression assertion red, makes the
+   bounded `internal/workflow/activation.go` derivation repair, completes the
+   post-rebuild repeat, preserves the attempt-1 and attempt-2 failed evidence,
+   commits durable work before long commands, and runs the complete
+   byte-identical eight-command block.
 3. After the report commit and two-argument report-lint PASS, the Runner records
    `REPAIR task-22 RESOLVED` and `TASK task-22 COMPLETE`, then final QA owns
    task-22 evidence, VAL-087, and the Human checklist.

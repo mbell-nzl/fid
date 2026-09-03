@@ -105,6 +105,16 @@ red; it is corrected by amending the scope before dispatch, never by narrowing
 the control. Planning checks each task's search roots and test package
 arguments against its file list.
 
+The same reasoning assigns a latent production defect. Where an accepted
+contract was implemented wrongly and no earlier required gate could observe it,
+the defect belongs to the first unit of work whose required gate does observe
+it, not to the unit that wrote the code. That unit receives the minimum source
+scope needed for the causal repair, plus a regression assertion executed by a
+command it already runs, so the amended scope stays executable; it does not
+receive generic access to the owning package, and the originating unit is not
+reopened. The repair corrects the implementation to the accepted contract and
+changes nothing else.
+
 A sequential end-to-end fixture reveals one blocking step at a time. Reaching a
 later step is material progress. A no-progress recovery budget counts only
 attempts whose directive actually permitted causal repair of the failing rows;

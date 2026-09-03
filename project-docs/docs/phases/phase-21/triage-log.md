@@ -1025,3 +1025,74 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   the BLOCKED report, the committed corpus and journey guard, and all failed
   command evidence remain unchanged. The Phase Runner appends the recovery
   events; this note does not edit the ledger.
+
+---
+
+## TRG-21-022 - Task-22 authored-workflow journey exposes an out-of-scope activation Event writer defect
+
+- **Trigger:** task-22 attempt-2 tagged integration gate exposes a deterministic Event-name mismatch after DEC-174 authored-workflow convergence.
+- **Originating task:** task-22
+- **Trigger signature:** task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- **Candidate:** blocker candidate
+- **Attempt count:** 3
+- **Checkpoint:** implementation commit a6b3a448aef6fcaab5aed3f3e46dad1df6b2cb1d and report checkpoint f4d6ffe60691f4487312cf9ce76d58afb513f640 are prompt-attached as verified commits with matching subjects; the supplied two-argument report-lint result is `OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`, terminated `exit_code: 0`.
+- **Verdict:** BLOCK
+- **Reasoning:** Contracts section 16 and public-interface section 4.1 uniquely require `activation.finalized`, and the reproduced tagged integration gate deterministically observes the misspelled `activation.finalizeted`. The writer is `internal/workflow/activation.go`, which the amended task-22 scope does not authorize. This is not a canonical verification/workflow control implementation or self-test under `project-docs/tools/`, so the guarded control-conformance route cannot authorize the production writer. Authorizing an ordinary repair requires a protected task-boundary/scope decision; neither the Event schema nor any test or command may be changed to bypass it.
+- **Local decisions made:** control-conformance is ineligible because the causal writer is a production workflow source path rather than an allowed tools-only canonical control path; the accepted Event spelling and tagged integration assertion remain unchanged.
+- **Resolution evidence:** The prompt-attached exact command `go test -tags integration -race ./cmd/fid/integration/...` in `/home/mark/projects/fid` required Event 9 `activation.finalized` but observed `p21_conformance_test.go:139: journal Event 9 = "activation.finalizeted", want "activation.finalized"`, terminated `exit_code: 1`. The task-22 completion report records the same mismatch after material journey progress through the DEC-174 authored workflow, Gate execution, Receipt linking/evaluation, terminal transition, Run finish, Claim release, and Envelope completion.
+- **If REPAIR:** N/A; no ordinary task-22 recovery or control-conformance directive is authorized until a full Tech Lead records the lawful bounded production-source authority.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no change to `project-docs/tools/workflow-control-scope-lint.sh` or `project-docs/tools/workflow-sequence-lint.sh`; no product/spec/prompt/template/dependency/task/QA-contract/report/generated changes under a control route; no change to any command, expected exit status, assertion semantics, accepted status/scope, Event schema, transition engine, frozen workflow, public interface, threshold, budget, tolerance, policy, prior failed evidence, or task-22 corpus/journey assertions; no `t.Skip`, build tags, `-run` narrowing, assertion loss, or generic out-of-scope access.
+- **Exact verification:** `go test -tags integration -race ./cmd/fid/integration/...` in `/home/mark/projects/fid`; required PASS with Event 9 `activation.finalized`; observed FAIL at `activation.finalizeted`, terminated `exit_code: 1`.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- **Control repair base:** f4d6ffe60691f4487312cf9ce76d58afb513f640
+- **If BLOCK:** category protected task-boundary authority for a production implementation repair affecting the accepted public Event contract; ESC-21-016 raised in `tl_escalations_current.md`; resolution condition a full Tech Lead records whether task 22 receives a bounded source-scope amendment authorizing only the causal Event-name implementation repair with unchanged accepted contract and byte-identical gate, or selects another protected recovery authority.
+- **Human attention required:** yes
+- **References:** project-docs/docs/phases/phase-21/tasks/task-22-walking-skeleton.md Scope and Exact Commands To Run; project-docs/docs/phases/phase-21/tasks/task-22-done.md Workflow outcome, Validation Contract Coverage, Exact quality-gate results, and Concerns; project-docs/docs/phases/phase-21/contracts.md sections 14 and 16; project-docs/docs/phases/phase-21/public-interface.md section 4.1; project-docs/docs/phases/phase-21/decisions.md DEC-174; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.
+
+## Resolution Note For TRG-21-022
+
+- **Decision authority:** DEC-175, 2026-09-03.
+- **Verdict audit:** **sustained on its recorded category.** The condition was a
+  real protected task-boundary question. The Developer reproduced a
+  deterministic failure, refused to change the Event contract, assertion,
+  command, or test to make the gate pass, and correctly reported the causal
+  writer as outside its named source scope; TL-Lite was right that the
+  tools-only control-conformance route cannot reach a production workflow source
+  path. No local authority could have repaired it.
+- **Root cause:** `internal/workflow/activation.go:519` derives the Event type
+  as `operation + "ted"` and overrides only `activation.commit` (line 521) and
+  `activation.abort` (line 524), so `activation.finalize` emits
+  `activation.finalizeted`. `public-interface.md` §4.1, `contracts.md` §14, and
+  `contracts.md` §16 all require `activation.finalized`. The accepted artifacts
+  agree with each other; only the product disagrees. `finalizeted` appears in no
+  source, test, fixture, corpus, migration, or golden file - only in this
+  recovery's own evidence - and rebuild is Effect-driven, so the repair changes
+  no other observable.
+- **Resolution:** DEC-175 assigns the repair to task 22 rather than reopening
+  task 4, because task 22's required commands are the only gates that execute
+  the accepted activation Event-type name and the assertion that executes it is
+  task 22's own (DEC-167, DEC-173). Task 22's scope gains
+  `internal/workflow/activation.go` bounded to the Event-type derivation and
+  `cmd/fid/activation_test.go` for a non-tagged regression assertion that runs
+  under an already-required command. No contract, schema, interface, command,
+  corpus, or VAL change.
+- **Recovery:** RUN-RESUME from the 2026-09-03 16:57 STOP retains TRG-21-022 and
+  ESC-21-016, uses resolution authority DEC-175, and binds one same-task
+  TASK-RECOVERY for task 22 with trigger signature
+  `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
+  category `in-scope-implementation`, mode `task-scope`, attempt 3, `Source` and
+  `Repair authority` `TRG-21-022 / DEC-175`, and no-progress `0/2` - attempt 2
+  is recorded `MATERIAL-PROGRESS`. All eight task commands rerun
+  byte-identically. ESC-21-016 is resolved.
+- **Historical integrity:** TRG-21-022, ESC-21-016, their ledger TRIAGE/STOP,
+  the RECOVERY_REQUIRED report, the committed corpus and journey, and all failed
+  command evidence remain unchanged. The Phase Runner appends the recovery
+  events; this note does not edit the ledger.

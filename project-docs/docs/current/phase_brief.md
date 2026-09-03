@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-174)**
+> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-175)**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -55,6 +55,12 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   seeded reference workflow can express the accepted shape. The exact mutation
   prefix is 22 Events and VAL-086 matches. No product, command,
   public-interface, Event-schema, transition, or frozen-workflow change.
+- DEC-175: a latent production defect no earlier gate could observe belongs to
+  the first task whose required gate observes it, with minimum source scope plus
+  a regression assertion under a command it already runs. Task 22 owns the
+  bounded `internal/workflow/activation.go` Event-type derivation repair
+  (`activation.finalized`, not `activation.finalizeted`); task 4 is not
+  reopened. No contract, schema, interface, command, corpus, or VAL change.
 
 ## Planning Authorities
 
@@ -112,22 +118,26 @@ or assignment.
 ## Dispatch Authorization
 
 Tasks 1-21 and reviews 1-7b are complete. Task 22 committed the conformance
-corpus (`a99b427`) and the real-process journey guard (`236540c`), then returned
-`BLOCKED`; the run is STOPPED after TRG-21-021 / ESC-21-015. DEC-174 resolves
-the §16 journey defect without changing any command or product contract.
+corpus (`a99b427`), the journey guard (`236540c`), and the DEC-174 authored
+workflow with its 22-Event and undeclared-edge assertions (`a6b3a44`). Attempt 2
+is recorded `MATERIAL-PROGRESS`; the run is STOPPED at the 2026-09-03 16:57 STOP
+after TRG-21-022 / ESC-21-016. DEC-175 resolves it as a bounded product repair
+with no contract, command, corpus, or VAL change.
 
-The Phase Runner appends `RUN-RESUME` retaining TRG-21-021 / ESC-21-015, trigger
+The Phase Runner appends `RUN-RESUME` naming that STOP and retaining TRG-21-022
+/ ESC-21-016, trigger
 `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
-attempt 2, resolution authority DEC-174, continuing task 22, and the exact
-`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 2`
-tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-021 / DEC-174`
+attempt 3, resolution authority DEC-175, continuing task 22, and the exact
+`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 3`
+tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-022 / DEC-175`
 and no-progress `0/2`.
 
-The Developer continues from `236540c` under the amended
-`tasks/task-22-walking-skeleton.md`, keeps the committed corpus and journey
-guard, authors the §16 journey workflow, extends the journey through completion,
-export, and the post-rebuild repeat, commits durable work before long commands,
-and runs the complete byte-identical eight-command block with observed
-terminations replacing the eight `not run` rows. After two-argument report lint,
-REPAIR RESOLVED, and TASK task-22 COMPLETE, final QA owns task-22 evidence,
-VAL-087, and the Human checklist.
+The Developer continues from `a6b3a44` under the amended
+`tasks/task-22-walking-skeleton.md`, keeps the committed corpus, journey, and
+negative matrix, writes the `cmd/fid/activation_test.go` Event-type regression
+assertion red, makes the bounded `internal/workflow/activation.go` derivation
+repair, completes the post-rebuild repeat, commits durable work before long
+commands, and runs the complete byte-identical eight-command block with observed
+terminations. The report preserves the attempt-1 and attempt-2 failed evidence.
+After two-argument report lint, REPAIR RESOLVED, and TASK task-22 COMPLETE,
+final QA owns task-22 evidence, VAL-087, and the Human checklist.

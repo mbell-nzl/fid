@@ -3947,3 +3947,78 @@ and need not be contiguous. Ordering is not authority.
 - Triage: TRG-21-021 (BLOCK, escalated as ESC-21-015)
 - Protected category: specification contradiction, public interface, and workflow contract
 - Next Human or external-authority action: Full Tech Lead/Human authority must reconcile contracts.md section 16 exact 20-Event mutation ordering and direct terminal-success transition with the shipped task-default todo -> in_progress -> dev_complete -> qa_review -> qa_pass -> done chain, explicitly preserving the task-22 command block, VAL-072/073/084/085/086, Event schema, public transition/error contract, accepted mutation ordering, and all failed evidence before supplying any lawful recovery route
+
+### 2026-09-03 16:31 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-02 22:26 STOP / TRG-21-021 / ESC-21-015
+- Governing TRG: TRG-21-021
+- Governing ESC: ESC-21-015
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 2
+- Checkpoint: phase-21 HEAD d55e210148511b2dc7b23ee7ac52ae0333a7191b verified; DEC-174 commit 27479ac73c9b03f3549e74577eb1d27a7d1382ee verified with matching subject docs(tl): resolve ESC-21-015 with DEC-174; the amended task-22 specification is present; the prior STOP at c964b1ffbfd88bc9d6bf4abc04fa3d5679fb99b3, TRG-21-021, and ESC-21-015 remain preserved
+- Resolution evidence: git rev-parse --verify 27479ac73c9b03f3549e74577eb1d27a7d1382ee^{commit} returned the decision commit with terminated exit_code: 0; git show at current HEAD confirms DEC-174 amends contracts.md section 16 and VAL-086 to the authored-workflow 22-Event journey, retains VAL-084/085/086 identity and strength, and authorizes the task-22 attempt-2 continuation; workflow-sequence-lint.sh returned VALID state=STOPPED with terminated exit_code: 0 before resume; current escalation state records ESC-21-015 resolved
+- Resolution authority: DEC-174
+- Continuing task: task-22
+- Next recovery: task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 2
+
+### 2026-09-03 16:31 TASK-RECOVERY task-22
+
+- Source: TRG-21-021 / DEC-174
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-021 / DEC-174
+- Triage disposition: N/A
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope under the amended task-22-walking-skeleton.md plus task-22-done.md
+- Forbidden changes: no change to any task-22 command or expected exit status, public interface, Event schema, transition engine, frozen task-default/subtask-default/epic-default workflows, VAL-072/073/084/085/086, or prior corpus/journey guard/failed evidence; no product behavior change, second Envelope, import, recovery, Review/Human Outcome, Attention, held-out scenarios, t.Skip, build tags, -run narrowing, or assertion loss; author only the DEC-174 workflow define/assign journey and required task-22 test/report evidence
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD d55e210148511b2dc7b23ee7ac52ae0333a7191b verified; DEC-174 is verified and the amended task-22 specification is present; task-22 attempt-1 corpus commit a99b4270f70e98111b5bae43c54ed92aed7078c6 and journey-guard commit 236540c48a2129d70480b3222ba4122a5471eb48 remain preserved; blocker report c964b1ffbfd88bc9d6bf4abc04fa3d5679fb99b3, TRG-21-021, ESC-21-015, and all prior failed evidence remain preserved; only the runner-owned run ledger is dirty; no hidden index flags are present
+- Phase worktree: /home/mark/projects/fid on branch phase-21; runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - keep the committed conformance corpus and journey guard, author the §16 workflow with workflow define --applies-to task followed by workflow assign --kind task before issue create, produce the exact 22-Event journey and specified post-rebuild zero-delta checks, reuse the observed transition-not-permitted / workflow-transition-invalid exit-4 rejection as the non-cancelled undeclared-edge VAL-085 negative, run the complete byte-identical eight-command task block with every command terminating, replace the eight prior not-run rows with observed results while preserving the attempt-1 blocker evidence, commit durable work before long commands under DEC-170, finalize the report, and pass the exact two-argument report-lint control
+- Next action: dispatch the same-task task-22 Developer continuation from the 236540c journey-guard checkpoint under the amended task-22 specification; after typed completion independently verify all eight command results, report identity, and report-lint before recording REPAIR task-22 RESOLVED and TASK task-22 COMPLETE
+- Human attention required: no
+
+### 2026-09-03 16:52 REPAIR task-22
+
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY task-22 at 2026-09-03 16:31; phase-21 HEAD d55e210148511b2dc7b23ee7ac52ae0333a7191b; DEC-174 authored-workflow continuation authorized; consecutive no-progress attempts were 0/2
+- Ending checkpoint: implementation commit a6b3a448aef6fcaab5aed3f3e46dad1df6b2cb1d; report checkpoint commits b98d4cc4604d60465abdc9819b4cc14cd2c07311 and f4d6ffe60691f4487312cf9ce76d58afb513f640; phase-21 HEAD f4d6ffe60691f4487312cf9ce76d58afb513f640; report-lint returned OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; tagged integration gate remains FAIL terminated exit_code: 1 at activation.finalizeted
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the DEC-174 workflow define/assign journey, exact 22-Event assertion, and undeclared-edge exit-4/no-mutation guard are implemented and committed; seven required task commands passed with observed termination, while the byte-identical tagged integration gate narrowed the remaining failure to the canonical activation writer emitting activation.finalizeted instead of the accepted activation.finalized; the report preserves attempt-1 and current failed evidence and is mechanically valid but correctly remains RECOVERY_REQUIRED
+- Next checkpoint: control-conformance triage for the accepted Event-name mismatch, followed by a bound same-task recovery or protected STOP
+- Human attention required: no
+
+### 2026-09-03 16:56 TRIAGE TRG-21-022
+
+- Trigger: task-22 attempt-2 tagged integration gate exposes a deterministic Event-name mismatch after DEC-174 authored-workflow convergence
+- Originating task: task-22
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 3
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: runner-recorded phase HEAD f4d6ffe60691f4487312cf9ce76d58afb513f640 verified; implementation commit a6b3a448aef6fcaab5aed3f3e46dad1df6b2cb1d and report checkpoint f4d6ffe60691f4487312cf9ce76d58afb513f640 verified with matching subjects; report-lint returned OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; only runner-owned run-ledger.md plus TL-Lite triage/escalation updates are dirty; no hidden index flags are present
+- Verdict: BLOCK (escalated as ESC-21-016)
+- Resolution evidence: contracts.md section 16 and public-interface.md section 4.1 uniquely require activation.finalized, while the exact tagged integration gate observes activation.finalizeted from internal/workflow/activation.go and terminates exit_code: 1; the production writer is outside task-22 scope and is not an eligible project-docs/tools control-conformance artifact, so repairing it requires protected task-boundary authority
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-022 entry confirmed; ESC-21-016 confirmed in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-03 16:57 STOP
+
+- Cause: task-22 is blocked because the amended DEC-174 journey exposes the deterministic production Event typo activation.finalizeted versus accepted activation.finalized, and the causal writer internal/workflow/activation.go is outside task-22 scope and ineligible for the tools-only control-conformance route; TRG-21-022 / ESC-21-016 govern the stop
+- Triage: TRG-21-022 (BLOCK, escalated as ESC-21-016)
+- Protected category: protected task-boundary authority for a production implementation repair affecting the accepted public Event contract
+- Next Human or external-authority action: Full Tech Lead must record a bounded task-22 production-source scope amendment authorizing only the causal activation Event-name repair with unchanged Event schema, public interface, command, assertion semantics, accepted status/scope, transition and frozen-workflow behavior, thresholds, budgets, tolerances, policy, corpus, journey assertions, and all failed evidence; or record another protected recovery route. Do not change or narrow the tagged integration gate, weaken assertions, conceal the typo, or grant generic out-of-scope access

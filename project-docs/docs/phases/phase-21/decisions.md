@@ -1968,6 +1968,166 @@
   `qa/validation-contract.md` VAL-084/085/086; `07_DESIGN_PLAN_FLOWS.md` §10;
   `08_QUALITY_PLAN.md` §8; ADR-0011 Gate B1/B3/D2.
 
+### DEC-175: Task 22 owns the bounded activation Event-name repair. Closes ESC-21-016
+
+- **Date:** 2026-09-03
+- **Context:** TRG-21-022 BLOCKed task 22 at attempt 2 with the DEC-174 authored
+  workflow, the exact 22-Event assertion, and the undeclared-edge negative
+  implemented and committed at `a6b3a44`. Seven required commands passed; the
+  byte-identical tagged integration gate failed at
+  `cmd/fid/integration/p21_conformance_test.go:139` with `journal Event 9 =
+  "activation.finalizeted", want "activation.finalized"`. Live inspection of the
+  shipped product at that checkpoint:
+  - `internal/workflow/activation.go:519`: the shared `transitionActivation`
+    writer derives its Event type by string suffix, `EventType: operation +
+    "ted"`, then overrides two of the three operations it serves -
+    `activation.commit` to `activation.committed` at line 521 and
+    `activation.abort` to `activation.aborted` at line 524. `activation.finalize`
+    (line 431) has no override, so the derivation emits
+    `activation.finalize` + `ted`. The defect is a missing third case in a
+    per-operation exception list, not a contract question.
+  - The accepted name is fixed and unambiguous in three places:
+    `public-interface.md` §4.1 line 369 (`activation.finalize` emits
+    `activation.finalized`), `contracts.md` §14 line 436, and `contracts.md` §16
+    line 533. All three agree; the product disagrees with all three. There is no
+    contradiction to resolve, only an implementation to correct.
+  - The misspelling exists in no product source, test, fixture, corpus,
+    migration, or golden file. A repository-wide search finds `finalizeted` only
+    in `run-ledger.md`, `triage-log.md`, `tl_escalations_current.md`, and
+    `task-22-done.md` - that is, only in this recovery's own evidence. No test
+    asserts it, so nothing locks the defect in and no assertion is weakened by
+    removing it.
+  - Rebuild is Effect-driven. No reducer, projection, or rebuild path switches on
+    an activation Event type (`internal/journal/event.go:190` special-cases only
+    `project.initialized`), so correcting the string changes no derived state,
+    no export digest, and no other observable.
+  - The committed conformance corpus is derived from `public-interface.md`
+    operation/command/kind rows, not from emitted Event types
+    (`testdata/p21_conformance/manifest.json:373-377`), so VAL-072 and VAL-073
+    stay byte-exact and require no regeneration.
+  - Every other family in the §16 sequence exists verbatim in a product writer:
+    `project.initialized` (`internal/bootstrap/init.go:345`), `workflow.defined`
+    (`internal/workflow/define.go:107`), `workflow.assigned`
+    (`internal/workflow/assign.go:111`), `issue.created`
+    (`internal/issues/create_commit.go:133`), `issue.transitioned`
+    (`internal/issues/transition.go:230`), `activation.prepared` and
+    `activation.component-staged` (`internal/workflow/activation.go:209,337`),
+    `activation.committed`, `gate.registered`
+    (`internal/evidence/registration.go:180`), `envelope.created`,
+    `envelope.activated`, `envelope.completed`
+    (`internal/workflow/envelope.go:234,304,386`), `claim.acquired` and
+    `claim.released` (`internal/claims/generic.go:158,228`), `run.started` and
+    `run.finished` (`internal/workflow/run.go:119,148`),
+    `gate.execution-started` and `gate.receipt-recorded`
+    (`internal/evidence/execution.go:297,371`), and `evidence.linked`
+    (`internal/evidence/evidence.go:152`). This is the only mismatch in the
+    sequence, so the repair is expected to clear the assertion outright rather
+    than expose a queue of further name defects.
+  - Provenance: the writer was introduced by task 4, which owned
+    `internal/workflow/`. Task 4 could not have observed the defect. Its VAL rows
+    assert lifecycle ordering (VAL-011), pre-commit abort (VAL-012), recovery
+    unavailability (VAL-013), and trusted-profile resolution (VAL-014/015); none
+    asserts an emitted Event-type name, and no non-tagged test in the repository
+    asserts any activation Event type. The assertion that catches this was
+    authored by task 22 and did not exist before it.
+- **Decision:**
+  1. **Verdict audit.** TRG-21-022's BLOCK is sustained on its recorded category.
+     The Developer reproduced a deterministic failure, refused to change the
+     Event contract, the assertion, the command, or the test to make the gate
+     pass, and correctly reported that the causal writer was outside its named
+     source scope. Protected task-boundary authority was genuinely required; this
+     is the correct behaviour, and TL-Lite was right that the tools-only
+     control-conformance route cannot reach a production workflow source path.
+     TRG-21-022, ESC-21-016, the STOP, the report, and every failed command row
+     remain immutable evidence.
+  2. **Ownership: task 22, not a reopened task 4.** DEC-167 makes ownership
+     assignable only where it is executable, and DEC-173 makes a control's reach
+     bound the owning scope. Task 22's required commands are the only gates in
+     the phase that execute the accepted activation Event-type name, and the
+     assertion that executes it is task 22's own. Reopening a closed, reviewed,
+     checkpointed task 4 for a defect none of its gates could observe would
+     invert the phase order and add sequencing risk without adding coverage.
+     Task 22 owns the repair.
+  3. **Bounded source-scope amendment.** Task 22's file scope gains
+     `internal/workflow/activation.go`, limited to the Event-type derivation in
+     `transitionActivation`, and `cmd/fid/activation_test.go` for the regression
+     assertion in item 4. The repair replaces the `operation + "ted"` suffix
+     derivation and its two ad-hoc overrides with one explicit, exhaustive
+     operation-to-Event-type mapping covering `activation.commit` ->
+     `activation.committed`, `activation.abort` -> `activation.aborted`, and
+     `activation.finalize` -> `activation.finalized`, returning a typed error for
+     any unmapped operation rather than silently synthesising a name. The emitted
+     values for commit and abort stay byte-identical. This authority extends to
+     nothing else in that file and to no other production file.
+  4. **The gate hole closes with the defect.** Task 22 adds a non-tagged
+     regression assertion in `cmd/fid/activation_test.go` requiring each
+     activation transition to emit its `public-interface.md` §4.1 Event type
+     verbatim. It runs under the already-required
+     `go test -race -coverprofile=coverage.out ./...`, so the amended scope is
+     executable under the existing command block and no command is added,
+     removed, reordered, or narrowed. Amending scope without amending the gate
+     that runs it would repeat the defect DEC-167 exists to prevent.
+  5. **Unchanged.** No change to the Event schema, the public interface, the
+     contracts, any command, expected exit, error contract, assertion semantics
+     or strength, accepted status or scope values, the transition engine, the
+     frozen v0.1 reference workflows, migrations, the committed
+     `p21_conformance` corpus, task 22's eight-command block, any VAL row's
+     identity, subject, or strength, any threshold, budget, tolerance, or
+     policy, or any prior task's accepted evidence. No canonical spec names an
+     activation Event type, so no canonical spec edit follows from the repair
+     itself; item 8's standing rule is the only spec change.
+  6. **Recovery route.** The Phase Runner appends `RUN-RESUME` naming the
+     2026-09-03 16:57 STOP, governing TRG-21-022, governing ESC-21-016, trigger
+     signature
+     `task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
+     `Attempt count: 3`, `Resolution authority: DEC-175`, `Continuing task:
+     task-22`, and `Next recovery: task-22 | in-scope-implementation |
+     task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 3`.
+     The following `TASK-RECOVERY task-22` uses `Source` and `Repair authority`
+     `TRG-21-022 / DEC-175`, category `in-scope-implementation`, repair mode
+     `task-scope`, attempt 3, consecutive no-progress `0/2`, and allowed files
+     "ordinary task scope under the amended task-22-walking-skeleton.md plus
+     task-22-done.md". Attempt 2 is recorded `MATERIAL-PROGRESS` and reached
+     Gate execution, Receipt evidence, the terminal transition, Run finish,
+     Claim release, and Envelope completion, so under DEC-167 and
+     `08_QUALITY_PLAN.md` §3 it does not consume the no-progress budget. The
+     Tech Lead does not edit `run-ledger.md`.
+  7. **Continuation and advance.** The Developer continues from `a6b3a44`, keeps
+     the committed corpus, journey, and negative matrix, applies the item 3
+     repair with the item 4 regression assertion as its red test, commits durable
+     work before the long commands (DEC-170), and runs the complete
+     byte-identical eight-command block with observed terminations. The report
+     preserves the attempt-1 and attempt-2 failed evidence verbatim and records
+     the repair's red/green evidence. After the report commit, two-argument
+     report lint, `REPAIR task-22 RESOLVED`, and `TASK task-22 COMPLETE`, the
+     phase proceeds to final QA and VAL-087.
+  8. **Standing rule.** A latent production defect that no earlier required gate
+     could observe is owned by the first unit of work whose required gate
+     observes it. That unit receives the minimum source scope needed for the
+     causal repair plus a regression assertion executed by a command it already
+     runs; it does not receive generic access to the owning package, and the
+     originating unit is not reopened. Canonical text is
+     `08_QUALITY_PLAN.md` §3.
+  9. **Triage audit.** Every prior Phase 21 escalation root-caused to a planning
+     artifact narrower or more optimistic than the shipped surface (DEC-162,
+     DEC-165, DEC-167, DEC-173, DEC-174). This is the first whose root cause is a
+     product defect: a public contract string synthesised by suffix
+     concatenation with per-operation exceptions, and never asserted by any gate
+     until the phase's final conformance journey. The wrap-up retrospective
+     should evaluate a standing conformance check that every accepted Event type
+     in the public interface is emitted verbatim by a product writer, alongside
+     DEC-174 item 8's rule that exact expected values be derived from an executed
+     probe.
+- **Consequences:** ESC-21-016 closes with no contract, schema, interface,
+  command, corpus, or VAL change. The product converges to the Event name three
+  accepted artifacts already require, the accepted name gains permanent
+  non-tagged coverage, and task 22 resumes with its assertions intact.
+- **Refs:** TRG-21-022; ESC-21-016; DEC-167; DEC-170; DEC-173; DEC-174;
+  `internal/workflow/activation.go:431,519-525`; `public-interface.md` §4.1;
+  `contracts.md` §§14, 16; `tasks/task-22-walking-skeleton.md`;
+  `tasks/task-22-done.md`; `qa/validation-contract.md` VAL-011..015 and
+  VAL-084/085/086; `08_QUALITY_PLAN.md` §3.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -1983,7 +2143,7 @@ verdicts are completed at phase wrap-up.
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
 | `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157, DEC-174 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope; the operational journey runs on a project-authored workflow, not on a seeded V1 reference chain. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), and interrupted-attempt accounting are explicit in §3. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173, DEC-175 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), first-observing ownership of a latent production defect, and interrupted-attempt accounting are explicit in §3. |
 | `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | Schema-v2 identity/binding and QA repair ownership are explicit; retained-test escalation now requires phase provenance before cross-task classification. |
 | `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
 | `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |

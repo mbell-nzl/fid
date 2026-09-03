@@ -5,36 +5,44 @@
 
 ## Open Escalations
 
-None. ESC-21-015 was resolved by DEC-174 on 2026-09-03.
+None. ESC-21-016 was resolved by DEC-175 on 2026-09-03; ESC-21-015 was resolved
+by DEC-174 on 2026-09-03.
 
 ## Latest Resolution
 
-DEC-174 resolved ESC-21-015 on 2026-09-03. TRG-21-021 correctly stopped task
-22, but its category was wider than the fact. The product is correct: the
-transition engine resolves edges and the terminal-success `completed` category
-from the projected workflow tables, and its exit-4 rejection of an undeclared
-edge is the guard working. The defective artifact is `contracts.md` §16, which
-fixed an exact 20-Event prefix with a direct terminal edge that no workflow
-available to kind `task` provides, and never named the journey's workflow.
-`task-default` needs four edges to reach a `completed` state,
-`subtask-default` needs a second `issue.created` for the required task parent,
-and `epic-default` adds a rule-guarded intermediate state.
+DEC-175 resolved ESC-21-016 on 2026-09-03. TRG-21-022's BLOCK is sustained on
+its recorded category: the Developer reproduced a deterministic failure,
+refused to change the Event contract, assertion, command, or test to make the
+gate pass, and correctly reported the causal writer as outside its named source
+scope, and the tools-only control-conformance route genuinely cannot reach a
+production workflow path.
 
-The journey now authors its own workflow with the already-accepted
-`workflow define --applies-to task` and `workflow assign --kind task` leaves
-before `issue create`: one `unstarted`, one `started`, one `completed`, one
-PRD-WF-013 `cancelled` state, and exactly the edges `unstarted -> started` and
-`started -> completed`. §16's prefix is exactly 22 Events, inserting
-`workflow.defined` and `workflow.assigned` after `project.initialized`, and
-VAL-086's counts are amended to match. VAL-084/085/086 keep their identity,
-subject, and strength; the observed rejection becomes required VAL-085 negative
-coverage. No product, command, public-interface, Event-schema, transition, or
-frozen-workflow change. Recovery is RUN-RESUME under TRG-21-021 / ESC-21-015 /
-DEC-174, task-22 attempt 2, `in-scope-implementation` in task scope.
+The cause is a product defect, not a contract question.
+`internal/workflow/activation.go:519` builds the Event type as
+`operation + "ted"` and overrides only `activation.commit` and
+`activation.abort`, so `activation.finalize` emits `activation.finalizeted`.
+`public-interface.md` §4.1, `contracts.md` §14, and `contracts.md` §16 all
+require `activation.finalized`; only the product disagrees. The misspelling
+exists in no source, test, fixture, corpus, migration, or golden file, and
+rebuild is Effect-driven, so the repair changes no other observable. Every other
+family in the §16 sequence was verified present verbatim in a product writer.
 
-DEC-173 resolved ESC-21-014 on 2026-09-02: task 20's scope was amended to cover
-every path its absence controls walk, and it gained the tagged integration gate
-under DEC-167. Detail is in the Phase 21 archive.
+The repair belongs to task 22, not a reopened task 4: task 22's required
+commands are the only gates that execute the accepted activation Event-type
+name, and the assertion that executes it is task 22's own (DEC-167, DEC-173).
+Task 22 gains `internal/workflow/activation.go` bounded to one exhaustive
+operation-to-Event-type mapping, and `cmd/fid/activation_test.go` for a
+non-tagged regression assertion that runs under an already-required command. No
+Event-schema, public-interface, contract, command, corpus, or VAL change.
+Recovery is RUN-RESUME under TRG-21-022 / ESC-21-016 / DEC-175, task-22 attempt
+3, `in-scope-implementation` in task scope, no-progress `0/2`.
+
+DEC-174 resolved ESC-21-015 on 2026-09-03: the §16 journey authors its own
+workflow before `issue create` and its exact prefix is 22 Events, with no
+product, command, public-interface, Event-schema, transition, or frozen-workflow
+change. DEC-173 resolved ESC-21-014 on 2026-09-02: task 20's scope was amended
+to cover every path its absence controls walk. Detail for both is in the Phase
+21 archive.
 
 ## Archive Pointers
 
