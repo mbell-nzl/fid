@@ -111,6 +111,10 @@
   that durably stores canonical `rejected_artifacts`. It corrects only stale
   Resume prose to `fid resume`; accepted operations, wire shapes, filters,
   errors, Events, 22-Event budget, VALs, and commands stay fixed.
+- **Phase 21 final-review remediation (DEC-178):** shipped migration `0014` is
+  the exact authority and §8.2 is reconciled to it; task 13 owns only the
+  invalid config-example correction and its executable documentation proof.
+  Fresh final QA must re-decide VAL-002 and verify MF-2; VAL-036 remains Human.
 
 The detailed scenarios and reasoning are in
 `../reviews/2026-08-08-fid-v2-direction-decision-session.md` and the current
@@ -132,7 +136,7 @@ normal authority.
 | CF-020 | Scheduled Phase 21 task 8 / VAL-026: Event sequence replaces synthetic future occurrence time when the retained Issue/Event path converts to v2. |
 | CF-022 | Cancel. Generic Markdown formatter characterization is retired. |
 | CF-023 | Reassess only as temporary repository-delivery tooling while the V1 development procedure remains active; it is not product scope. |
-| CF-024 | Scheduled Phase 21 task 21 / VAL-083: exercise the accepted 100k-Event rebuild target under the evidence event load. |
+| CF-024 | Phase 21 VAL-083 passed, but final QA left only 2.6-3.0 seconds of headroom. Re-issue the same three-consecutive-fresh-sample rule in Phase 22 while recovery/import extend replay. |
 | CF-026a | Candidate tracker/workflow inspection projection; no committed slice. |
 | CF-026b | Candidate Issue-workflow lifecycle design; requires a decision before scheduling. |
 | CF-027 | Scheduled Phase 21 task 8 / VAL-027: decompose reopened `internal/issues/create.go`; the `writeMarkdown` half remains cancelled. |
@@ -141,6 +145,9 @@ normal authority.
 | CF-030 | Improve `report-lint.sh` rejected-token diagnostics so they state the accepted token shape. |
 | CF-031 | Closed in Phase 20: PASS termination validation and expected-nonzero parsing are implemented and drilled. |
 | CF-032 | Scheduled Phase 21 task 12: add direct invalid-input tests before `internal/issues/revision.go` changes. |
+| CF-033 | At Phase 22 kickoff, reconcile the `AGENTS.md` Architecture package inventory against the retained live tree and the accepted Phase 22 boundaries. |
+| CF-034 | The first Phase 22 tasks reopening `internal/evidence` and `internal/workflow` add direct in-package recovery-branch tests and record package coverage before/after; no numeric threshold. |
+| CF-035 | At Phase 22 planning, decide whether unknown project-config keys must reject on every command or only on paths that consume config, before broadening config validation. |
 
 Optional product ideas are not carry-forwards. Their evidence triggers live only
 in ADR-0011's concise candidate ledger.

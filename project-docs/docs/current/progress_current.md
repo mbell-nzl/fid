@@ -4,13 +4,13 @@
 
 ## Project State
 
-**Phase 21 is active with all 22 tasks complete and is ready for final QA.**
-Reviews 1/1b through 7b and the Group 1 checkpoint are complete. Task 22's
-attempt-6 recovery, eight-command gate, committed report, authoritative
-two-argument report lint, `REPAIR RESOLVED`, and `TASK COMPLETE` are recorded;
-the ledger state is `ADVANCEABLE`. Phase 20 completed/wrapped on 2026-08-22;
-its retrospective is in
-`../reviews/2026-08-22-phase-20-retrospective.md`.
+**Phase 21 is active in final-review remediation.** Initial final review
+`1eee01c` records BLOCK with 85 of 87 assertions PASS, VAL-002
+blocked by contradictory migration prose, and VAL-036 awaiting the Human.
+DEC-178 reconciles the protected migration authority, corrects IMP-1/2,
+amends task 13 for executable MF-2 documentation repair, and schedules
+IMP-3/4 as Phase 22 carry-forwards. Phase 20 completed/wrapped on 2026-08-22;
+its retrospective is in `../reviews/2026-08-22-phase-20-retrospective.md`.
 
 Phase 21 planning decisions: DEC-153 (Gate D3.2), DEC-154 (slice/spec
 contract), DEC-155 (carry-forward), DEC-156 (terminal gate), DEC-157 (complete
@@ -78,6 +78,15 @@ attempt-6 recovery implemented the accepted surface without changing its wire
 contract, Event budget, VALs, or gates. Product commit `ac6270a` and report
 commit `5d8204c` close the task with all prior failed evidence preserved.
 
+DEC-178 (2026-09-03) accepts the shipped migration `0014` as the exact
+authority and reconciles `03_TRD_SCHEMA.md` §8.2 to it without changing code,
+migration, or VAL-002 semantics. It remaps stale validation sources, places
+`fid resume` correctly at root in the CLI design, and corrects the final
+review's task-13 scope claim by granting only the config-example edit plus a
+fresh-workspace command that exercises the document. CF-033/034/035 and the
+renewed CF-024 carry inherited inventory, targeted coverage, config-validation,
+and rebuild-headroom work into Phase 22 planning.
+
 ## Planned Boundary
 
 One Heavy Phase 21 uses 22 bounded Developer tasks in two internal groups. An
@@ -94,24 +103,26 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-22 COMPLETE; FINAL QA AUTHORIZED**. No task
-  recovery or escalation remains open. The ledger validates as `ADVANCEABLE`.
+- Dispatch state: **FINAL REVIEW BLOCK RECORDED IN ARTIFACT; REMEDIATION
+  AUTHORIZED BY DEC-178**. The Runner must append the REVIEW through its ledger
+  control, route it through TL-Lite, and follow the typed result before task-13
+  recovery.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
   `exit_code: 0` after the DEC-159 approval-state update.
 
 ## Carry-Forward
 
-DEC-155 schedules CF-020/027 in task 8, CF-032 in task 12, and CF-024 in task
-21. CF-008/018/023/026a/026b/028/029/030 are explicitly re-deferred; closed or
-cancelled rows remain closed/cancelled.
+DEC-155 schedules CF-020/027 in task 8 and CF-032 in task 12. DEC-178 renews
+CF-024 for Phase 22 and adds CF-033/034/035. CF-008/018/023/026a/026b/028/029/030
+remain explicitly re-deferred; closed or cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. QA Lead executes `qa/qa-plan.md` QA-81..93 in a fresh final-QA session,
-   writes `qa/final-review.md`, and records every VAL-001..087 outcome with
-   session-captured evidence.
-2. The Human completes `qa/human-checklist.md` HUMAN-01a..01d for VAL-036; QA
-   must not pre-answer or infer these checks.
-3. Phase Runner records the final `REVIEW` outcome. Only a passing review and
-   completed Human checklist permit `RUN-END` and Tech Lead phase wrap-up.
+1. Phase Runner records `qa/final-review.md` as REVIEW BLOCK, routes it through
+   TL-Lite with DEC-178 evidence, and follows the typed task-13 repair route.
+2. Task 13 removes only the two invalid example keys, runs its amended exact
+   commands, updates and commits its report, and passes two-argument report lint.
+3. The Human completes `qa/human-checklist.md` HUMAN-01a..01d for VAL-036.
+4. A fresh independent QA Lead writes a new final review and re-decides
+   VAL-002 plus MF-2. Only PASS and completed Human evidence permit `RUN-END`.

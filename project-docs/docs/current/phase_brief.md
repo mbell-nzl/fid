@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / Tasks 1-22 Complete / Ready For Final QA**
+> Status: **Active / Final QA Blocked / DEC-178 Remediation Authorized**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -68,6 +68,10 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
   minimum migration/schema/golden change that makes rejected-Artifact metadata
   durable and canonical. The stale Resume prose is corrected to `fid resume`;
   every accepted wire behavior, 22-Event budget, VAL, and command remains fixed.
+- DEC-178: the shipped migration `0014` governs and §8.2 now matches it;
+  existing task 13 owns only final-review MF-2's config-example correction.
+  IMP-1/2 are fixed, IMP-3/4 are Phase 22 carry-forwards, and VAL-036 remains
+  Human-owned.
 
 ## Planning Authorities
 
@@ -81,11 +85,11 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 
 ## Task Pack
 
-All 22 tasks, reviews 1-7b, and the independent Group 1 checkpoint are
-complete. Task 22's final interface/journey conformance report is committed at
-`5d8204c`; its product commit is `ac6270a`. Final QA independently verifies
-task-22 evidence and phase-end VAL-087. VAL-036 remains the sole Human
-checklist assertion.
+All 22 tasks, reviews 1-7b, and the independent Group 1 checkpoint completed.
+Initial final review `1eee01c` records BLOCK: DEC-178 has reconciled protected
+MF-1 and the two Tech Lead-owned improvements, while existing task 13 is
+authorized for bounded MF-2 documentation recovery. IMP-3/4 are scheduled as
+CF-033/034. VAL-036 remains the sole Human checklist assertion.
 
 ## Dispatch Controls
 
@@ -117,14 +121,15 @@ or assignment.
 
 ## Dispatch Authorization
 
-Tasks 1-22 are complete. Task 22 recovery attempt 6 is closed by `REPAIR
-task-22 RESOLVED` and `TASK task-22 COMPLETE` at the end of the ledger. Its
-eight-command gate and the Phase Runner's authoritative two-argument report
-lint passed with observed terminations. The ledger validates as
-`ADVANCEABLE`; no escalation or task recovery remains open.
+Tasks 1-22 remain historically complete. The Phase Runner first records
+`qa/final-review.md` as REVIEW BLOCK through the append validator and routes it
+through TL-Lite. DEC-178 clears the protected specification question and
+authorizes only task-13 QA rework under the amended task spec; the Runner must
+follow the returned typed route and may not infer or preallocate a TRG/ESC.
 
-The next authorized action is final QA under `qa/qa-plan.md` section 7.9. The
-QA Lead creates `qa/final-review.md`, records an outcome for every VAL, runs
-QA-81..93 including the full phase gate in its own session, and presents
-`qa/human-checklist.md` for the Human-owned VAL-036 checks. Do not append
-`RUN-END` until final QA passes and the Human checklist is complete.
+After task 13 reruns every amended command, commits its updated report, and
+passes two-argument report lint, a fresh independent QA Lead writes a new final
+review. It re-decides VAL-002, verifies MF-2 and IMP-1/2 from fresh evidence,
+and records prior-finding resolution. The Human completes HUMAN-01a..01d.
+Do not append `RUN-END` or begin Phase 22 until final QA passes and VAL-036 is
+answered.

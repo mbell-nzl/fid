@@ -2227,6 +2227,77 @@
   `03_TRD_SCHEMA.md` §5; `tasks/task-22-walking-skeleton.md`;
   `qa/validation-contract.md` VAL-052/072/084/086.
 
+### DEC-178: Reconcile the final-review specification blocker and bound remediation
+
+- **Date:** 2026-09-03
+- **Context:** Initial final review `1eee01c` records `VERDICT: BLOCK`. MF-1
+  proves that the accepted `03_TRD_SCHEMA.md` §8.2 `0014` SQL contradicts the
+  shipped migration, live convergence inventory, task-20 binding constraint,
+  and observed final index name, leaving VAL-002 uncertifiable. MF-2 proves
+  that two unsupported keys in `04_TRD_CONFIG.md` §2 make its example invalid.
+  IMP-1..4 identify stale validation sources, a stale Resume grouping,
+  inherited package-inventory drift, and thin in-package coverage. Contrary to
+  MF-2's scope note, the accepted task-13 spec held `04_TRD_CONFIG.md` only as
+  read context, so a scope and executable-gate amendment is required.
+- **Decision:**
+  1. Phase 21 remains the approved Heavy phase and enters final-review
+     remediation. Phase 22 does not start while VAL-002 or VAL-036 is open.
+  2. The shipped `0014_p21_retire_v1_authority_execution` up/down files are the
+     exact migration authority. They uniquely agree with
+     `v1-convergence-inventory.md` §§4/6 and task 20: remove the three V1
+     tables, preserve and rename the replacement Claim index, and delete only
+     the displaced role/judgment rules on Issue workflows. §8.2 is corrected
+     byte-for-byte to those files. No migration, product behavior, VAL-002
+     wording, evidence method, pass/fail criterion, or status is changed.
+  3. IMP-1 is fixed now in the Tech Lead-owned validation contract:
+     VAL-030 cites PRD-ISSUE-007/PRD-HUM-001; VAL-032 cites
+     PRD-RUN-001/002; VAL-033 cites PRD-RUN-001/002/004; and VAL-034 cites
+     PRD-RUN-004. Only traceability changes.
+  4. IMP-2 is fixed now in `06_DESIGN_PLAN_CLI.md`: `fid resume <issue-id>` is
+     a root derived-read leaf, while the remaining named reads stay under
+     `fid projection`. The canonical operation remains `projection.resume`.
+  5. MF-2 remains Developer-owned QA rework under existing task 13. Amend its
+     writable scope to only the §2 example and its report, remove only
+     `max_timeout_ms` and `max_artifact_bytes`, and add the exact fresh-workspace
+     documented-example command before the unchanged task gate. The Developer
+     preserves the initial exit-2 reproduction, reruns the command
+     byte-identically to exit 0, changes no product code or test, runs every
+     amended task command, commits the report, and obtains Phase Runner
+     two-argument report lint.
+  6. IMP-3 becomes CF-033 for Phase 22 kickoff: reconcile the `AGENTS.md`
+     Architecture package inventory against the live retained tree after the
+     Phase 22 boundary is sliced, so it includes current packages and does not
+     advertise nonexistent boundaries.
+  7. IMP-4 becomes CF-034 and is scheduled, not thresholded: the first Phase 22
+     tasks reopening `internal/evidence` and `internal/workflow` must add direct
+     in-package tests for their new recovery branches and report package
+     coverage before/after. Repository and real-process coverage remain
+     required; no numeric coverage threshold is introduced.
+  8. Keep CF-024 active in Phase 22 with the existing three-consecutive-fresh
+     sample rule because final QA observed only 2.6-3.0 seconds of rebuild
+     headroom. Record the inherited path-dependent unknown-config-key question
+     as CF-035 for an explicit Phase 22 planning disposition before config
+     validation behavior is broadened.
+  9. VAL-036 is not carried forward. The Human must answer HUMAN-01a..01d before
+     the fresh final review can pass and before the Runner may append RUN-END.
+  10. The Phase Runner records the initial final-review BLOCK and routes it
+      through TL-Lite as required. This committed decision clears the protected
+      MF-1 authority question and authorizes only task-13 QA rework for MF-2.
+      After task-13 completion, a fresh independent QA Lead writes a new final
+      review, re-decides VAL-002 from fresh migration/spec evidence, verifies
+      MF-2 with the documented example and bogus-key control, confirms IMP-1/2,
+      and preserves every original finding and failed attempt.
+- **Consequences:** No new task or phase is created. The repair order is
+  specification reconciliation already committed by the Tech Lead, task-13
+  documentation recovery, Human VAL-036, and fresh independent final review.
+  IMP-3/4 and the two named risks are explicit Phase 22 planning inputs rather
+  than silent Phase 21 scope growth.
+- **Refs:** `qa/final-review.md` MF-1, MF-2, IMP-1..4 and BC-F1;
+  `qa/human-checklist.md`; `qa/validation-contract.md` VAL-002/030/032/033/034/036;
+  `tasks/task-13-executor-policy.md`; `03_TRD_SCHEMA.md` §8.2;
+  `04_TRD_CONFIG.md` §2; `06_DESIGN_PLAN_CLI.md`; DEC-154; DEC-157;
+  DEC-167; DEC-173; ADR-0011.
+
 ## Spec Sync Verdict
 
 Planning-time changes are recorded with their owning decisions. Full positive
@@ -2237,10 +2308,10 @@ verdicts are completed at phase wrap-up.
 | `00_PROJECT_CHARTER.md` | pending wrap audit | - |
 | `01_PRD.md` | touched: see DEC-156 | Phase 21 qualification makes the terminal-success Issue transition and later Envelope completion independently evaluate the same gate-evidence Obligation. |
 | `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157, DEC-158 | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, executor boundary, and the unchanged deterministic rebuild target are explicit. |
-| `03_TRD_SCHEMA.md` | touched: see DEC-157 | Exact migrations, kebab checks, displaced rule deletion, and role-free bootstrap fixture are accepted for review. |
-| `04_TRD_CONFIG.md` | touched: see DEC-157 | Exact public executor bounds agree with the closed input contract. |
+| `03_TRD_SCHEMA.md` | touched: see DEC-157, DEC-178 | Final-review reconciliation makes the §8.2 `0014` blocks byte-identical to the shipped migration and live removal authority. |
+| `04_TRD_CONFIG.md` | remediation pending: see DEC-178 | Task 13 must remove only the two unsupported example keys and prove the documented example is accepted verbatim. |
 | `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
-| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157 | Complete leaves, flags, inputs, results, errors, exits, and enum spelling are explicit. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157, DEC-178 | Complete leaves remain explicit; the target grouping now places `fid resume` at root as the accepted wire contract requires. |
 | `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157, DEC-174 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope; the operational journey runs on a project-authored workflow, not on a seeded V1 reference chain. |
 | `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173, DEC-175 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), first-observing ownership of a latent production defect, and interrupted-attempt accounting are explicit in §3. |
 | `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | Schema-v2 identity/binding and QA repair ownership are explicit; retained-test escalation now requires phase provenance before cross-task classification. |

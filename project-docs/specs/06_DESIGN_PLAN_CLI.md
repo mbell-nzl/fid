@@ -139,12 +139,14 @@ links only. Requirement prose is never imported.
 ```text
 fid envelope create|get|revise|activate|complete|cancel
 fid next
-fid projection context|resume|changes|completion|human-brief
+fid resume <issue-id>
+fid projection context|changes|completion|human-brief
 ```
 
-Envelope writes consume an approved versioned JSON value. `next` and all
-projection commands are derived reads. `human-brief` may explicitly render its
-named Human schema as terminal text, Markdown, or HTML; JSON remains canonical.
+Envelope writes consume an approved versioned JSON value. `resume`, `next`, and
+all projection commands are derived reads. `human-brief` may explicitly render
+its named Human schema as terminal text, Markdown, or HTML; JSON remains
+canonical.
 
 ### Claims, Runs, Stops, and Attention
 

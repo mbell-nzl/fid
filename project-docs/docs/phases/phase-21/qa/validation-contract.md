@@ -55,11 +55,11 @@ judgment. `VAL-036` is the only Human assertion.
 | VAL-027 | CF-027; Quality Plan budgets | Reopened Issue creation code meets non-test file/function targets without contract drift. | Size inventory plus Issue corpus. | QA Reviewer | task 8 | File <=400 lines and functions target <=60. | inherited breach or behavior drift fails. | Accepted | N/A |
 | VAL-028 | interface §4.1; convergence inventory | Retained AC add, labels, links, requirement sync, workflow define/assign, and normalized activity reads implement their project-local inventory contracts only. | Operation/read matrix and authority probes. | QA Reviewer | task 9 | Exact results/Events/activity values and no protected authority. | A missing family, snake activity value, or authority inference fails. | Accepted | N/A |
 | VAL-029 | PRD-WF-004; Phase 23 deferral | Workflow authoring cannot add role/judgment predicates and structural predicates never become kit authority. | Authoring/registry negative tests. | QA Reviewer | task 9 | `--require` absent and role-shaped input rejects. | authority inference fails. | Accepted | N/A |
-| VAL-030 | PRD-AC-002; PRD-HUM-001 | AC verification and concern raise/address are fail-closed unavailable with no writer until Phase 23. | CLI/write inventory. | QA Reviewer | task 9 | Exact capability failure/no row/Event. | mutation succeeds fails. | Accepted | N/A |
+| VAL-030 | PRD-ISSUE-007; PRD-HUM-001 | AC verification and concern raise/address are fail-closed unavailable with no writer until Phase 23. | CLI/write inventory. | QA Reviewer | task 9 | Exact capability failure/no row/Event. | mutation succeeds fails. | Accepted | N/A |
 | VAL-031 | convergence inventory §1 | Stats accepts exactly `--group-by actor`, `--group-by epic`, or `--group-by model`; legacy attribution remains historical telemetry only. | CLI/result/source test. | QA Reviewer | task 9 | Exact flag/result and no `--by`/authority inference. | Any other grouping or authority inference fails. | Accepted | N/A |
-| VAL-032 | PRD-CLM-001/002 | Claim acquire binds the exact Issue/Envelope/revision/Actor/worktree/scope/TTL and permits one active mutation Claim. | Acquire matrix. | QA Reviewer | task 10 | Only complete valid binding commits. | missing/wrong binding fails. | Accepted | N/A |
-| VAL-033 | PRD-CLM-003/004 | Conflicting Claim, wrong Actor/worktree, and expired Claim fail without supersession. | Conflict/expiry matrix. | QA Reviewer | task 10 | Exact reasons/no mutation. | force/silent takeover fails. | Accepted | N/A |
-| VAL-034 | PRD-CLM-005 | Renew/release require current Claim version and release replay is idempotent for same version/reason. | Version lifecycle test. | QA Reviewer | task 10 | Exact version advance/replay. | stale change fails. | Accepted | N/A |
+| VAL-032 | PRD-RUN-001/002 | Claim acquire binds the exact Issue/Envelope/revision/Actor/worktree/scope/TTL and permits one active mutation Claim. | Acquire matrix. | QA Reviewer | task 10 | Only complete valid binding commits. | missing/wrong binding fails. | Accepted | N/A |
+| VAL-033 | PRD-RUN-001/002/004 | Conflicting Claim, wrong Actor/worktree, and expired Claim fail without supersession. | Conflict/expiry matrix. | QA Reviewer | task 10 | Exact reasons/no mutation. | force/silent takeover fails. | Accepted | N/A |
+| VAL-034 | PRD-RUN-004 | Renew/release require current Claim version and release replay is idempotent for same version/reason. | Version lifecycle test. | QA Reviewer | task 10 | Exact version advance/replay. | stale change fails. | Accepted | N/A |
 | VAL-035 | PRD-RUN-001/002 | Run start binds active Claim, Issue, Envelope revision, Actor, repository, and immutable budgets. | Start binding matrix. | QA Reviewer | task 11 | Only exact active binding commits. | mismatch succeeds fails. | Accepted | N/A |
 | VAL-036 | PRD-FOUND-005; Design §5 | A Human can safely and correctly interpret one complete rendered Gate session. | Recorded terminal session and HUMAN-01a..01d fan-out. | Human | task 14 | All four subchecks pass: stream identity, typed controls, terminal result, and no raw-control display effect. | any ambiguous dimension or raw control effect fails the parent assertion. | Accepted | N/A |
 | VAL-037 | PRD-RUN-003/004 | Explicit finish terminalizes one active Run once; recovery, predecessor, continuation, and respawn remain absent. | Finish/repeat/absence test. | QA Reviewer | task 11 | Exact terminal state and unavailable repeats/recovery. | reopen/respawn fails. | Accepted | N/A |
@@ -138,3 +138,9 @@ judgment. `VAL-036` is the only Human assertion.
   must pass the same terminal fixture.
 - Group 2 dispatch requires PASS for both `VAL-042` and `VAL-043` plus every
   fresh feasibility probe in `group-1-checkpoint-contract.md`.
+
+## Revision Log
+
+| Date | Assertion | Change | Reason | Decision reference |
+|---|---|---|---|---|
+| 2026-09-03 | VAL-030, VAL-032..034 | Replaced retired `PRD-AC-*` and `PRD-CLM-*` source identifiers with live PRD requirements; behavior, evidence, owners, criteria, and status are unchanged. | Final-review IMP-1 found unresolvable traceability links. | DEC-178 |

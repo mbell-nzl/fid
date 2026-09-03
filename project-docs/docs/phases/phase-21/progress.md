@@ -71,3 +71,23 @@
 - Phase 21 is ready for final QA under `qa/qa-plan.md` QA-81..93. VAL-036 and
   HUMAN-01a..01d remain Human-owned and intentionally pending; `RUN-END` is not
   authorized until final QA and the Human checklist pass.
+
+## Final Review Remediation - 2026-09-03
+
+- Initial final review `1eee01c` records BLOCK with all phase gates passing,
+  85 VAL assertions PASS, VAL-002 blocked by contradictory `0014` specification
+  prose, and VAL-036 awaiting the Human checklist.
+- DEC-178 selects the shipped `0014` migration as the exact authority because
+  it uniquely matches the accepted convergence inventory, task-20 removal
+  boundary, and final schema. `03_TRD_SCHEMA.md` §8.2 now matches it without a
+  product, migration, or validation-semantics change.
+- IMP-1 validation sources and IMP-2 root `fid resume` grouping are corrected.
+  IMP-3/4 become CF-033/034; CF-024 remains active for Phase 22 headroom
+  monitoring and CF-035 records the path-dependent unknown-config-key question.
+- The review incorrectly described `04_TRD_CONFIG.md` as writable task-13
+  scope. DEC-178 amends the task to own only the section 2 example and adds a
+  fresh-workspace command that loads that example verbatim and exercises a
+  config-reading mutation.
+- Next sequence: Runner records REVIEW BLOCK, obtains typed TL-Lite routing,
+  completes bounded task-13 repair/report lint, obtains fresh independent final
+  re-review, and waits for HUMAN-01a..01d before RUN-END.
