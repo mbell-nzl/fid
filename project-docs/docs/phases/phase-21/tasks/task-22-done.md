@@ -50,7 +50,7 @@
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 27.5% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t61.5%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
   Failure detail: `p21_conformance_test.go:139: journal Event 9 = "activation.finalizeted", want "activation.finalized"`.
 - `ls cmd/fid/integration/testdata/p21_conformance` - PASS - `operations` (terminated `exit_code: 0`)
 - `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t2.334s` (terminated `exit_code: 0`)
