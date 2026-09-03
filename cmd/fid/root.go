@@ -94,6 +94,7 @@ func newRootCommandAt(workingDirectory string) *cobra.Command {
 	cmd.AddCommand(newLinkCommand())
 	cmd.AddCommand(newMaintenanceCommand())
 	cmd.AddCommand(newReadyCommand())
+	cmd.AddCommand(newReceiptCommand())
 	cmd.AddCommand(newResumeCommand())
 	cmd.AddCommand(newRequirementCommand())
 	cmd.AddCommand(newRebuildCommand())

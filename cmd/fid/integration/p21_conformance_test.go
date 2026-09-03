@@ -145,6 +145,8 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		"run.finished", "claim.released", "envelope.completed",
 	})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "receipt", "get", receiptID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "receipt", "list", "--run", runID, "--obligation", "OBL-1", "--outcome", "succeeded")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "resume", issueID)
 	beforeArchive := filepath.Join(workspace, "p21-before-rebuild.zip")
 	beforeExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", beforeArchive)
@@ -160,6 +162,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		t.Fatalf("rebuilt Envelope status = %q, want completed", status)
 	}
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "receipt", "get", receiptID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "receipt", "list", "--run", runID, "--obligation", "OBL-1", "--outcome", "succeeded")
 	postRebuildEvaluation := p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "evaluate", "--input", evaluateInput)
 	if status := p21PathString(t, postRebuildEvaluation, "result", "evaluation", "status"); status != "satisfied" {
 		t.Fatalf("rebuilt Gate Evidence evaluation status = %q, want satisfied", status)

@@ -260,6 +260,8 @@ CREATE TABLE execution_receipts (
   output_bytes INTEGER NOT NULL CHECK (output_bytes >= 0),
   output_truncated INTEGER NOT NULL CHECK (output_truncated IN (0, 1)),
   redaction_applied INTEGER NOT NULL CHECK (redaction_applied IN (0, 1)),
+  rejected_artifacts_json TEXT NOT NULL
+    CHECK (json_valid(rejected_artifacts_json) AND json_type(rejected_artifacts_json) = 'array'),
   CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
       OR (terminal_status = 'timed-out' AND timed_out = 1)
       OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)

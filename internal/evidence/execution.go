@@ -346,8 +346,15 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if err != nil {
 		return Receipt{}, "", err
 	}
-	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: append([]ArtifactRejection(nil), live.RejectedArtifacts...)}
-	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), options.Request.Repository, effects)
+	rejectedArtifacts := append([]ArtifactRejection{}, live.RejectedArtifacts...)
+	sortArtifactRejections(rejectedArtifacts)
+	live.RejectedArtifacts = append([]ArtifactRejection{}, rejectedArtifacts...)
+	rejectedJSON, err := journal.MarshalCanonicalJSON(rejectedArtifacts)
+	if err != nil {
+		return Receipt{}, "", fmt.Errorf("run gate: canonicalize rejected Artifacts: %w", err)
+	}
+	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: rejectedArtifacts}
+	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), string(rejectedJSON), options.Request.Repository, effects)
 	resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"receipt": receipt, "idempotency_key": options.IdempotencyKey, "replayed": false})
 	if err != nil {
 		return Receipt{}, "", err
@@ -362,9 +369,9 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	return receipt, outcome.EventID, nil
 }
 
-func receiptEvent(actor storedActor, receipt Receipt, repositoryJSON, toolchainJSON string, repository Repository, artifactEffects []journal.Effect) journal.Event {
+func receiptEvent(actor storedActor, receipt Receipt, repositoryJSON, toolchainJSON, rejectedJSON string, repository Repository, artifactEffects []journal.Effect) journal.Event {
 	effects := append([]journal.Effect{}, artifactEffects...)
-	effects = append(effects, journal.Effect{Op: "insert", Table: "execution_receipts", PK: map[string]any{"id": receipt.ID}, Values: map[string]any{"attempt_id": receipt.AttemptID, "trust_source": receipt.TrustSource, "terminal_status": receipt.Outcome, "exit_code": receipt.ExitCode, "signal": receipt.Signal, "timed_out": receipt.TimedOut, "started_at": receipt.StartedAt, "ended_at": receipt.EndedAt, "terminal_repository_json": repositoryJSON, "toolchain_json": toolchainJSON, "output_excerpt": receipt.OutputExcerpt, "output_digest": receipt.OutputDigest, "output_bytes": receipt.OutputBytes, "output_truncated": receipt.OutputTruncated, "redaction_applied": receipt.RedactionApplied}})
+	effects = append(effects, journal.Effect{Op: "insert", Table: "execution_receipts", PK: map[string]any{"id": receipt.ID}, Values: map[string]any{"attempt_id": receipt.AttemptID, "trust_source": receipt.TrustSource, "terminal_status": receipt.Outcome, "exit_code": receipt.ExitCode, "signal": receipt.Signal, "timed_out": receipt.TimedOut, "started_at": receipt.StartedAt, "ended_at": receipt.EndedAt, "terminal_repository_json": repositoryJSON, "toolchain_json": toolchainJSON, "output_excerpt": receipt.OutputExcerpt, "output_digest": receipt.OutputDigest, "output_bytes": receipt.OutputBytes, "output_truncated": receipt.OutputTruncated, "redaction_applied": receipt.RedactionApplied, "rejected_artifacts_json": rejectedJSON}})
 	for _, artifact := range receipt.Artifacts {
 		effects = append(effects, journal.Effect{Op: "insert", Table: "receipt_artifacts", PK: map[string]any{"receipt_id": receipt.ID, "artifact_id": artifact.ID}, Values: map[string]any{"declared_path": artifact.DeclaredPath}})
 	}
@@ -379,27 +386,4 @@ func liveOutput(live LiveResult) string {
 		}
 	}
 	return output.String()
-}
-
-func loadReceipt(conn *sql.DB, id string) (Receipt, error) {
-	var receipt Receipt
-	var repositoryJSON, toolchainJSON string
-	err := conn.QueryRow(`SELECT r.id, r.attempt_id, a.registration_id, a.registration_version, a.obligation_id, a.run_id, a.actor_id, r.trust_source, r.terminal_status, r.exit_code, r.signal, r.timed_out, r.started_at, r.ended_at, r.terminal_repository_json, r.toolchain_json, r.output_excerpt, r.output_digest, r.output_bytes, r.output_truncated, r.redaction_applied FROM execution_receipts r JOIN execution_attempts a ON a.id = r.attempt_id WHERE r.id = ?`, id).Scan(&receipt.ID, &receipt.AttemptID, &receipt.RegistrationID, &receipt.RegistrationVersion, &receipt.ObligationID, &receipt.RunID, &receipt.ActorID, &receipt.TrustSource, &receipt.Outcome, &receipt.ExitCode, &receipt.Signal, &receipt.TimedOut, &receipt.StartedAt, &receipt.EndedAt, &repositoryJSON, &toolchainJSON, &receipt.OutputExcerpt, &receipt.OutputDigest, &receipt.OutputBytes, &receipt.OutputTruncated, &receipt.RedactionApplied)
-	if err == sql.ErrNoRows {
-		return Receipt{}, fmt.Errorf("load receipt %q: not found", id)
-	}
-	if err != nil {
-		return Receipt{}, fmt.Errorf("load receipt %q: %w", id, err)
-	}
-	if err := json.Unmarshal([]byte(repositoryJSON), &receipt.TerminalRepository); err != nil {
-		return Receipt{}, fmt.Errorf("load receipt repository: %w", err)
-	}
-	if err := json.Unmarshal([]byte(toolchainJSON), &receipt.Toolchain); err != nil {
-		return Receipt{}, fmt.Errorf("load receipt toolchain: %w", err)
-	}
-	receipt.Artifacts, err = loadReceiptArtifacts(conn, id)
-	if err != nil {
-		return Receipt{}, err
-	}
-	return receipt, nil
 }
