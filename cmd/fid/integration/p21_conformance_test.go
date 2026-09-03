@@ -145,7 +145,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		"run.finished", "claim.released", "envelope.completed",
 	})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "projection", "resume", issueID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "resume", issueID)
 	beforeArchive := filepath.Join(workspace, "p21-before-rebuild.zip")
 	beforeExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", beforeArchive)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", beforeArchive)
@@ -164,7 +164,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	if status := p21PathString(t, postRebuildEvaluation, "result", "evaluation", "status"); status != "satisfied" {
 		t.Fatalf("rebuilt Gate Evidence evaluation status = %q, want satisfied", status)
 	}
-	p21Run(t, binary, workspace, "--project", workspace, "--json", "projection", "resume", issueID)
+	p21Run(t, binary, workspace, "--project", workspace, "--json", "resume", issueID)
 	afterArchive := filepath.Join(workspace, "p21-after-rebuild.zip")
 	afterExport := p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "create", afterArchive)
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "export", "validate", afterArchive)
