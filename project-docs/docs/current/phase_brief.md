@@ -1,6 +1,6 @@
 # Phase Brief - Phase 21
 
-> Status: **Active / task-22 STOPPED / Recovery Authorized (DEC-177)**
+> Status: **Active / Tasks 1-22 Complete / Ready For Final QA**
 > Branch: `phase-21`
 > Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
 
@@ -81,18 +81,11 @@ two internal groups, one independent checkpoint; no 21A/21B exists.
 
 ## Task Pack
 
-Group 1 (tasks 1-12, VAL-001/003-041), its reviews 1-4, and the independent
-checkpoint (VAL-042/043) are complete. Group 2 tasks 13-21 (VAL-036,
-044-071, 002, 074-083) and reviews 5-7b are complete. Per-task titles,
-dependencies, and VAL ownership are in
-`../phases/phase-21/tasks/task-<N>-*.md`.
-
-| Task | Title | Depends on | VAL ownership |
-|---:|---|---|---|
-| 22 | final interface/journey conformance | 21 | 072-073,084-086 |
-
-Final QA owns task-22 evidence and phase-end VAL-087. VAL-036 is the sole
-Human checklist assertion.
+All 22 tasks, reviews 1-7b, and the independent Group 1 checkpoint are
+complete. Task 22's final interface/journey conformance report is committed at
+`5d8204c`; its product commit is `ac6270a`. Final QA independently verifies
+task-22 evidence and phase-end VAL-087. VAL-036 remains the sole Human
+checklist assertion.
 
 ## Dispatch Controls
 
@@ -124,26 +117,14 @@ or assignment.
 
 ## Dispatch Authorization
 
-Tasks 1-21 and reviews 1-7b are complete. Task 22 committed the conformance
-corpus (`a99b427`), the journey guard (`236540c`), and the DEC-174 authored
-workflow with its 22-Event and undeclared-edge assertions (`a6b3a44`). Attempt 2
-and attempt 4 are recorded `MATERIAL-PROGRESS`; the run is STOPPED at the
-2026-09-03 18:35 STOP after TRG-21-023 / ESC-21-017. DEC-177 authorizes the
-minimum Receipt read/persistence repair as attempt 6, with no accepted wire,
-command, corpus, VAL, Event-budget, or prior-evidence change.
+Tasks 1-22 are complete. Task 22 recovery attempt 6 is closed by `REPAIR
+task-22 RESOLVED` and `TASK task-22 COMPLETE` at the end of the ledger. Its
+eight-command gate and the Phase Runner's authoritative two-argument report
+lint passed with observed terminations. The ledger validates as
+`ADVANCEABLE`; no escalation or task recovery remains open.
 
-The Phase Runner appends `RUN-RESUME` naming that STOP and retaining TRG-21-023
-/ ESC-21-017, trigger
-`task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain`,
-attempt 6, resolution authority DEC-177, continuing task 22, and the exact
-`task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 6`
-tuple. The bound TASK-RECOVERY uses source/authority `TRG-21-023 / DEC-177`
-and no-progress `0/2`.
-
-The Developer continues under the amended `tasks/task-22-walking-skeleton.md`,
-keeps the committed corpus, journey, negative matrix, activation fix, and Resume
-correction, writes focused Receipt read/persistence assertions red, makes the
-bounded DEC-177 repair, and runs the complete byte-identical eight-command block
-with observed terminations. The report preserves all prior failed evidence.
-After two-argument report lint, REPAIR RESOLVED, and TASK task-22 COMPLETE,
-final QA owns task-22 evidence, VAL-087, and the Human checklist.
+The next authorized action is final QA under `qa/qa-plan.md` section 7.9. The
+QA Lead creates `qa/final-review.md`, records an outcome for every VAL, runs
+QA-81..93 including the full phase gate in its own session, and presents
+`qa/human-checklist.md` for the Human-owned VAL-036 checks. Do not append
+`RUN-END` until final QA passes and the Human checklist is complete.

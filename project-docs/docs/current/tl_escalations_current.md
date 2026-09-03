@@ -11,14 +11,16 @@ None.
 
 DEC-177 resolved ESC-21-017 on 2026-09-03. TRG-21-023's BLOCK is sustained:
 Task 22 exposed accepted Receipt get/list leaves with no command or domain read
-API, plus Receipt rejection facts that were public but not durable. Task 22 now
-owns the minimum domain, CLI, migration, golden, schema, and regression-test
-scope. Migration 0013 stores canonical `rejected_artifacts_json` under
+API, plus Receipt rejection facts that were public but not durable. Task 22
+received the minimum domain, CLI, migration, golden, schema, and regression-test
+scope. Migration 0013 now stores canonical `rejected_artifacts_json` under
 ADR-0011's pre-baseline replacement policy; the stale `fid projection resume`
 prose becomes the already-authoritative `fid resume`. The accepted operations,
 results, filters, ordering, errors, Events, 22-Event budget, command block,
-corpus, VALs, and prior evidence remain unchanged. Recovery resumes at attempt
-6 under TRG-21-023 / ESC-21-017 / DEC-177 with no-progress `0/2`.
+corpus, VALs, and prior evidence remain unchanged. Attempt 6 completed under
+TRG-21-023 / ESC-21-017 / DEC-177: product commit `ac6270a`, report commit
+`5d8204c`, authoritative report lint PASS, and the ledger's `REPAIR RESOLVED`
+plus `TASK COMPLETE` leave no open escalation.
 
 DEC-175 resolved ESC-21-016 on 2026-09-03. TRG-21-022's BLOCK is sustained on
 its recorded category: the Developer reproduced a deterministic failure,

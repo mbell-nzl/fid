@@ -4,11 +4,11 @@
 
 ## Project State
 
-**Phase 21 is active in Group 2 with the ledger STOPPED after TRG-21-023 /
-ESC-21-017 at task 22; DEC-177 authorizes recovery attempt 6 for the missing
-accepted Receipt get/list surface and its durable rejected-Artifact facts.**
-Tasks 1-21, reviews 1/1b through 7b, and the Group 1 checkpoint are mechanically
-complete. Phase 20 completed/wrapped on 2026-08-22;
+**Phase 21 is active with all 22 tasks complete and is ready for final QA.**
+Reviews 1/1b through 7b and the Group 1 checkpoint are complete. Task 22's
+attempt-6 recovery, eight-command gate, committed report, authoritative
+two-argument report lint, `REPAIR RESOLVED`, and `TASK COMPLETE` are recorded;
+the ledger state is `ADVANCEABLE`. Phase 20 completed/wrapped on 2026-08-22;
 its retrospective is in
 `../reviews/2026-08-22-phase-20-retrospective.md`.
 
@@ -74,7 +74,9 @@ DEC-177 (2026-09-03) closes ESC-21-017. Task 22 owns the minimum
 for accepted read-only Receipt get/list and durable canonical
 `rejected_artifacts`. `contracts.md` §10 changes only to the accepted root
 `fid resume` spelling. The two attempt-4 tagged failures remain immutable; the
-recovery resumes at attempt 6 with no-progress `0/2` and unchanged gates.
+attempt-6 recovery implemented the accepted surface without changing its wire
+contract, Event budget, VALs, or gates. Product commit `ac6270a` and report
+commit `5d8204c` close the task with all prior failed evidence preserved.
 
 ## Planned Boundary
 
@@ -92,11 +94,8 @@ one Human terminal-output parent assertion with four Human subchecks apply.
 - QA Lead Heavy QA plan with fresh feasibility: **READY** at `e8a636e`; no
   outstanding Must-fix.
 - Product implementation: **AUTHORIZED UNDER THE ORDERED TASK PACK**.
-- Dispatch state: **TASKS 1-21 COMPLETE; TASK 22 STOPPED AFTER TRG-21-023 /
-  ESC-21-017 WITH RECOVERY AUTHORIZED BY DEC-177**. The Phase Runner appends
-  `RUN-RESUME` retaining those IDs, the exact recorded trigger, attempt 6, and
-  resolution authority `DEC-177`, then one `TASK-RECOVERY task-22` with
-  `in-scope-implementation`, `task-scope`, and no-progress `0/2`.
+- Dispatch state: **TASKS 1-22 COMPLETE; FINAL QA AUTHORIZED**. No task
+  recovery or escalation remains open. The ledger validates as `ADVANCEABLE`.
 - Planning verification: **PASS** - deterministic coverage/inventory audit,
   `project-docs/tools/workflow-lint.sh`, and `git diff --check` all terminated
   `exit_code: 0` after the DEC-159 approval-state update.
@@ -109,16 +108,10 @@ cancelled rows remain closed/cancelled.
 
 ## Next Work
 
-1. Phase Runner appends the DEC-177 recovery sequence: `RUN-RESUME` naming the
-   2026-09-03 18:35 STOP and bound to TRG-21-023 / ESC-21-017 with the recorded
-   trigger, attempt 6, resolution authority `DEC-177`, and the exact
-   next-recovery tuple from DEC-177 item 7; it then appends the matching
-   `TASK-RECOVERY task-22` with no-progress `0/2`.
-2. The Developer continues task 22 from its committed activation and Resume
-   corrections, adds focused Receipt read/persistence regressions red, makes
-   only the DEC-177 domain/CLI/schema repair, completes the unchanged journey,
-   preserves every prior failed attempt, commits durable work before long
-   commands, and runs the complete byte-identical eight-command block.
-3. After the report commit and two-argument report-lint PASS, the Runner records
-   `REPAIR task-22 RESOLVED` and `TASK task-22 COMPLETE`, then final QA owns
-   task-22 evidence, VAL-087, and the Human checklist.
+1. QA Lead executes `qa/qa-plan.md` QA-81..93 in a fresh final-QA session,
+   writes `qa/final-review.md`, and records every VAL-001..087 outcome with
+   session-captured evidence.
+2. The Human completes `qa/human-checklist.md` HUMAN-01a..01d for VAL-036; QA
+   must not pre-answer or infer these checks.
+3. Phase Runner records the final `REVIEW` outcome. Only a passing review and
+   completed Human checklist permit `RUN-END` and Tech Lead phase wrap-up.

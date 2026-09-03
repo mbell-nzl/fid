@@ -49,13 +49,25 @@
 - The post-approval planning audit, workflow lint, and whitespace check all
   terminated `exit_code: 0`.
 
-## Task Status
+## Task Status - 2026-09-03
 
-Tasks 1-16 are complete, including task 15's DEC-170/171 repair, fresh
-`review-5b` PASS, and task 16. Task 17 is preserved in progress with the ledger
-STOPPED after TRG-21-019 / ESC-21-013. DEC-172 authorizes attempt 3 as a
-task-scope `gate-repair`: retain the required unavailable
-`attention.v1` row, replace the defective broad absence search with the named
-`TestPhase21AttentionBoundary` control, preserve the failed search as historical
-evidence, and rerun the complete revised command block. Task 18 remains gated
-on task 17; Window 6 remains gated on tasks 16-18.
+- Tasks 1-22, reviews 1/1b through 7b, and the independent Group 1 checkpoint
+  are complete.
+- DEC-172 through DEC-177 resolved the bounded late-phase defects and scope
+  gaps without weakening a protected command, VAL assertion, or accepted wire
+  contract. Their failed attempts remain preserved in task reports and the
+  append-only run ledger.
+- Task 22's final remediation added accepted Receipt get/list reads, durable
+  canonical `rejected_artifacts`, the activation Event-name correction, and
+  the exact authored-workflow 22-Event journey. Product commit `ac6270a` and
+  report commit `5d8204c` close the task.
+- The exact Task 22 eight-command gate passed with observed termination for
+  every command. The authoritative post-commit two-argument report lint
+  returned `OUTCOME COMPLETE` and `PASS report-lint completed with no
+  failures`.
+- The ledger records attempt-6 `REPAIR task-22 RESOLVED` followed by `TASK
+  task-22 COMPLETE` and validates as `ADVANCEABLE`. No escalation or recovery
+  remains open.
+- Phase 21 is ready for final QA under `qa/qa-plan.md` QA-81..93. VAL-036 and
+  HUMAN-01a..01d remain Human-owned and intentionally pending; `RUN-END` is not
+  authorized until final QA and the Human checklist pass.
