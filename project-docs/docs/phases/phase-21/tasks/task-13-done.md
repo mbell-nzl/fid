@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
-- Category: qa-rework
+- Category: none
 - Condition: None.
 - Recovery attempts: 1
 - Next action: None.
