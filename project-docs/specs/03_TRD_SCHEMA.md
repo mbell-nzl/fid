@@ -714,4 +714,10 @@ amendments neither silently rewrite section 8.2's historical Phase 21 SQL nor
 authorize an old-data migration. Once accepted, their explicit replacements
 are the Phase 22 baseline, and shipped SQL must match this incorporated source.
 
+DEC-184's QA refinement makes run_recoveries.observation_id non-null and gives
+attention_items.code the same seven-code CHECK as stops.code. Disposition Event
+references are distinct from their underlying qualifying fact references.
+DEC-187 keeps recovery-export binding in the kit coordinator's activation
+record; no such column is implied in fid activation_recoveries.
+
 *Last updated: 2026-09-05 (Phase 22 proposed DDL/Event contract; DEC-180)*

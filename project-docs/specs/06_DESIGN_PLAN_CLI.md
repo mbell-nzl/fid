@@ -329,6 +329,11 @@ recovery, liveness, Stop/Attention, budget, derived Run closure, activation
 recovery, and portable-import leaf schemas, errors, exits, and live frames.
 It explicitly replaces caller-controlled `run finish` and the walking-skeleton
 recovery-unavailable response, and updates affected reads and capability rows.
+DEC-184 retains `--project`, pins the 23 activated actions and bootstrap
+exceptions, requires recovery/abandon observation IDs, defines executor reuse
+errors and Attention disposition references, and separates activation version
+conflict from competing prepare. DEC-185 supplies the canonical repository
+digest contract; DEC-187 records external kit port mappings and exclusions.
 The proposal is not an accepted leaf contract until the Human approves DEC-180
 after independent QA consistency review and a Ready QA plan.
 

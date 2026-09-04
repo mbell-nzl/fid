@@ -105,6 +105,97 @@
   another agent activation by Tech Lead. Existing STOP/recovery rules remain.
 - **Refs:** Phase 21 Workflow Notes/DEC-179; `qa/qa-lead-handoff.md`.
 
+### DEC-184: Resolve QA's Wire, Authority, And Resolution Ambiguities
+
+- **Date:** 2026-09-05.
+- **Status:** PROPOSED contract refinements; Human acceptance with DEC-180.
+- **Decision:** Apply R-01/02/04/05/06/07/09/10/11/12 now. Retain `--project`;
+  enumerate 23 final activated actions and their first domain owners; remove
+  run.finish authority in task 9; retain bootstrap activation without invented
+  activation capabilities. Require observation IDs for recovery and abandonment.
+  Reused executor identity uses duplicate-entity with an exact run identity
+  shape. Attention cites disposition-containing Events, never just underlying
+  facts; rejected recovery raises no Stop. Add Attention's seven-code CHECK,
+  separate activation-version-conflict, explicit grammar exceptions, and opaque
+  owner_phase semantics. Tasks 2..11 and 18 receive matching obligations.
+- **Why:** These close contradictory/undefined inputs before implementation.
+  The extra abandonment nullability correction follows the same existing
+  liveness rule as R-04; it adds no authorized takeover state.
+- **Spec impact:** public-interface.md, contracts.md, schema.md, owning task
+  criteria, validation rows and canonical CLI/schema/glossary pointers.
+- **Evidence limit:** QA's original DDL feasibility applies to its reviewed
+  draft. The amended constraints are not freshly executed by this TL; task 1
+  and QA must prove the exact accepted DDL. No previous gate is relabelled.
+
+### DEC-185: Define One Canonical Repository Dirty Digest
+
+- **Date:** 2026-09-05.
+- **Status:** PROPOSED contract refinement; Human acceptance with DEC-180.
+- **Decision:** Apply R-03 through contracts.md sections 3.1/3.2. Define the
+  versioned canonical JSON input, per-path HEAD/index/worktree images, modes,
+  byte hashing, ordering, exclusions, rejection cases, and separate complete
+  reconciliation digest. Caller fields retain their shape and must use the
+  same algorithm; legacy synthetic digest strings are not translated.
+- **Ownership:** Task 4 implements observation and deterministic vectors;
+  task 12 exercises real unchanged dirty proof and same-HEAD byte-change
+  staleness. Both own only the fixtures their accepted changes displace, under
+  ordinary and tagged gates. Recovery/import preserve history and never refresh
+  proof. No runtime dependency or repository mutation is authorized.
+- **Spec impact:** contracts.md, task 4/12, VAL-014/048/049, TRD and glossary.
+
+### DEC-186: Make Boundary Evidence And Known Repairs Executable
+
+- **Date:** 2026-09-05.
+- **Status:** Planning decision; applies to the approved pack.
+- **Decision:** Apply R-08 as an explicit VAL-056 acceptance matrix with every
+  declared limit and unsafe-entry case, including cumulative bytes measured
+  during decompression. Preserve the exact resource ceilings; require no forged
+  ZIP mode rejected before streaming by archive/zip. Apply R-13 with one exact
+  fresh reference sample at tasks 1 and 16. Three fresh samples at task 17 and
+  final QA and the 30 s threshold remain unchanged.
+- **R-14 ownership:** Task 8 explicitly owns cmd/fid/gate_run_test.go and its
+  signal/timeout fixture repair alongside cancelled-outcome work. Preserve
+  exact expected outcomes, real subprocesses, and failed evidence; synchronize
+  signal completion and prove timeout occurs after spawn. No test deletion,
+  broadened outcome acceptance, production deadline change, or retries to find
+  green. Repeated focused execution and two full benchmark-gate runs are named
+  there; task 17 also includes QA-78's two runs.
+- **Provenance correction:** git log -S and blame in this TL session identify
+  b69499116e70d4c88423a30daa2010a4ff221f14 (phase-21/task-15) as introducing
+  both cases, including timeout_ms=1. git show 76ad781727b9e8545e069c4ac0e9f926012e6af9
+  (phase-21/task-21) adds 10000 ms to the *signal* case only. QA R-14's claim
+  that it touched timeout_ms=1 is incorrect. Both precede planning base
+  89d964a84dbdd297fdf472d6f78b001e2efac702; the original QA report is retained.
+- **Earlier failure route:** Ordinary gates already execute this test before
+  task 8. If it fails in tasks 1..7, the Runner obtains a bounded same-task
+  scope amendment for this exact fixture repair before retrying; do not wait
+  for task 8, ignore a failure, or spend attempts forbidden to repair it.
+  Task 8 then verifies the integrated repair and owns cancellation convergence.
+- **Spec impact:** VAL-056, task 1/8/13/16/17/18 evidence obligations and scope
+  inventory; quality section 8 distinguishes historical Phase 21 checkpoints
+  from proposed Phase 22 cadence. This planning addition does not modify a protected gate's accepted
+  outcome, command body, budget, or tolerance.
+
+### DEC-187: Disposition Every Independent Kit Comparison Item
+
+- **Date:** 2026-09-05.
+- **Status:** PROPOSED boundary decisions; Human acceptance with DEC-180.
+- **Decision:** Adopt kit-contract-mapping.md as the complete C-01..C-13
+  disposition register. C-06b assigns recovery export binding to the kit's
+  durable activation coordinator, with Phase 25 qualification proof. Export
+  availability alone is insufficient. C-08 keeps fid-derived terminal truth;
+  the kit terminalState is a checked expectation, not a fid outcome input.
+- **Follow-through:** Record every other RECORD item, including revision-1
+  scope, deferred Review/retry units, validate-only mapping, Attention identity
+  and disposition, repository observation, derived resumption counts, and code
+  mappings. CF-037 tracks adapter/kit contract work until Phase 25 qualification;
+  Phase 23/24 roadmap notes own their vocabulary extensions. Unmapped Stop codes
+  and absent scope/asOf semantics cannot silently qualify via fallback.
+- **Authority limit:** This resolves fid's planning choice and records accepted
+  exclusions; it does not approve or edit the external kit contract. Production
+  adapter qualification remains unclaimed. VAL-080 still requires independent
+  QA recheck of the final implementation and pin currency.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

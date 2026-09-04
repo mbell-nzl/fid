@@ -250,8 +250,8 @@ A slice is not complete if it leaves two authoritative models for the same
 fact. Temporary compilation scaffolding is allowed only inside the slice and
 must not be advertised as a supported capability.
 
-For Heavy Phase 21, three-task QA Review windows apply. A separate independent
-Group 1 checkpoint must PASS after the authority/Activation/Registration/
+For the completed Heavy Phase 21, three-task QA Review windows applied. Its
+separate independent Group 1 checkpoint must PASS after the authority/Activation/Registration/
 Envelope/Claim/Run foundation and before executor implementation begins. That
 checkpoint re-runs fresh feasibility for every non-default verifier, fixture,
 environment assumption, expected non-zero proof, and time budget prescribed
@@ -267,6 +267,16 @@ performs final-schema fresh init, role-free rebuild, maintenance, live/rebuild/
 export parity, and the 100k Event-v2 check. Task 22 performs final wire and
 real-process conformance. The journey mutates once; post-rebuild evidence is
 read/evaluation/export/negative parity, not a second Envelope mutation.
+
+For proposed Heavy Phase 22 (DEC-180/186), reviews follow tasks 3/6/9/12/15/18;
+the independent task-12 checkpoint precedes archive/import work. Its QA plan
+and TL refinement addendum enumerate the deterministic/Human checks. Tasks 1
+and 16 add one fresh reference rebuild sample each, without replacing task 17
+or final QA's unchanged three-sample rule. Task 8 owns the known terminal-outcome
+fixture repair; earlier failures require the bounded scope amendment in DEC-186.
+The explicit VAL-056 boundary matrix uses real measured decompression at the
+unchanged ceilings. Phase 21's historical checkpoints are not extra Phase 22
+task dependencies; the standing evidence and report-lint rules remain binding.
 
 ## 9. First supported baseline
 

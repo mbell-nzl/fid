@@ -18,6 +18,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 3; public-interface.md Reconciliation.
+- DEC-185/contracts sections 3.1/3.2 are the exact dirty/reconciliation digest
+  algorithms. Add independently pinned canonical-byte/hash vectors for staged,
+  unstaged, mode-only, deleted, renamed and untracked paths, symlink payloads,
+  exclusions, stable repeated capture, and rejected unsupported state.
+- Add exactly run.checkpoint to the activated action set in this task.
 - Parse structured NUL-delimited Git output; bound path count and input size.
 - Checkpoint is an observed fact, never a Git commit; bind version and digest.
 - Snapshot refs/index/stash/worktree before and after every positive/negative scenario.
@@ -37,6 +42,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/workflow/reconciliation_test.go`
 - `internal/workflow/run_checkpoint.go`
 - `internal/workflow/run_checkpoint_test.go`
+- `internal/workflow/activation.go` - only the run.checkpoint action addition.
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
 - `project-docs/docs/phases/phase-22/tasks/task-4-done.md`.
@@ -59,7 +65,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Acceptance Criteria
 
 - [ ] Clean unchanged repository state qualifies for ordinary reconciliation. (VAL-013)
-- [ ] Dirty in-scope work requires exact recorded adoption. (VAL-014)
+- [ ] Dirty in-scope work requires exact recorded adoption, with canonical
+  digest vectors independent of the observer and invariant under branch rename
+  and operational .fid writes. (VAL-014)
 - [ ] Unsafe or ambiguous repository state blocks recovery. (VAL-015)
 - [ ] Recovery never changes source files or Git state. (VAL-016)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt

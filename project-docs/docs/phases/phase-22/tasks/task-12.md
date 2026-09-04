@@ -19,6 +19,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 9; public-interface.md Resume.
+- DEC-185/contracts sections 3.1/3.2 bind all comparisons. Reuse task 4's
+  observer and independent vectors; do not invent a freshness-specific digest.
+  Use a real repository to capture canonical dirty targets through public
+  inspection and retained Receipt/Evidence input paths. Prove an unchanged
+  dirty target stays fresh and a one-byte same-HEAD change becomes stale.
+  Legacy arbitrary digest strings are preserved, never silently refreshed.
 - Run/Registration repository matching must allow the reconciled current target within unchanged approved location/path scope; do not silently widen scope.
 - Adoption, branch rename, and recovery do not refresh proof.
 - An unavailable Findings dimension is explicit; no empty-list claim of completed Review support.
@@ -64,8 +70,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Acceptance Criteria
 
-- [ ] A changed repository target stales prior repository-bound proof. (VAL-048)
-- [ ] An unchanged target retains proof through recovery. (VAL-049)
+- [ ] A changed repository target, including one dirty byte at unchanged HEAD,
+  stales prior repository-bound proof without changing Evidence identity. (VAL-048)
+- [ ] An unchanged clean or canonical dirty target retains proof through
+  recovery and branch rename; dirty coverage cannot use synthetic matching
+  strings without actual observation. (VAL-049)
 - [ ] Artifact loss preserves Evidence identity while changing only availability and policy outcome. (VAL-050)
 - [ ] Fresh resume reconstructs bounded recovery context without prior chat. (VAL-051)
 - [ ] Resume action eligibility matches actual mutation predicates. (VAL-052)

@@ -24,6 +24,16 @@ Full sources, pass/fail criteria, and validator ownership are in
 - contracts.md sections 1-12; public-interface.md sections 1-6.
 - The same cases execute against a test-only semantic fake and the fid JSON adapter; the fake never opens fid SQLite/journal/.fid files.
 - Pin kit backend-port.v1 at c5229617220f97ff9228df261e24718b1d1d6d89 for semantic comparison; any mismatch requires explicit TL disposition.
+- DEC-187/kit-contract-mapping.md dispositions bind the comparison. The kit's
+  archive binding and terminalState adapter obligations remain Phase 25
+  qualification work, not behavior to invent in this final assembly task.
+- DEC-184/VAL-075: independently pin all 23 final activated actions, compare
+  against the documented table, and exercise actual profile/grant acceptance
+  plus unknown/retired rejection. Assert the expected count and exact members;
+  deriving both expected and actual lists from the same document is insufficient.
+  Include activation bootstrap exclusion, non-null recovery/abandon observations,
+  duplicate executor failure, disposition Event sets, and distinct activation
+  version/direction/competing-prepare error shapes already owned by earlier tasks.
 - No new domain behavior is assigned to this final assembly task. Return causal findings for minimum-scope amendment per DEC-175.
 - Developer produces runnable Human fixtures; only Human may judge VAL-076..078.
 - `execution-scope.md` is incorporated into this scope: it assigns only
@@ -50,6 +60,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `project-docs/docs/phases/phase-22/public-interface.md` - owned input/result/error types.
 - `project-docs/docs/phases/phase-22/schema.md` - owned DDL and Event rows.
 - `project-docs/docs/phases/phase-22/execution-scope.md` and `v1-convergence-inventory.md`.
+- `project-docs/docs/phases/phase-22/kit-contract-mapping.md` and
+  `qa/tl-refinement.md` - accepted comparison/evidence refinements.
 - Canonical source sections cited by this task's validation rows.
 - `project-docs/docs/phases/phase-22/tasks/task-17-done.md` - actual predecessor hand-back.
 
@@ -122,4 +134,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

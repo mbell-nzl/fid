@@ -85,6 +85,56 @@ source paths are outside-scope, and Git metadata or `.fid/` internals are
 protected. Protected metadata can never be adopted through force authority;
 normal fid operational writes are not recovered source changes.
 
+### 3.1 Canonical Dirty Digest
+
+`dirty_digest` is `sha256:` plus lowercase hex SHA-256 of the canonical JSON
+object `{schema:"fid.repository-dirty.v1",entries:[...]}`. Use the existing
+Event canonical JSON grammar, UTF-8, and no trailing newline. Each entry is
+`{path,head,index,worktree}`; entries sort by raw UTF-8 path bytes. Each image
+is null for absence or `{mode,digest}`, where mode is the Git mode string
+`100644`, `100755`, or `120000` and digest hashes the exact file/blob bytes.
+For symlinks hash the link target bytes without following the link. HEAD/index
+images use their blob bytes, never an OID as a content digest. Worktree images
+use on-disk bytes with no newline, encoding, or clean/smudge normalization.
+
+The input path set is every tracked path changed in the index or worktree
+relative to HEAD, plus untracked non-ignored files. Enumerate tracked changes
+and untracked files using structured NUL-delimited Git output; disable rename
+detection so a rename is a deletion plus addition. Include tracked files even
+when matched by ignore rules. Exclude untracked ignored files, root `.fid/`
+and its descendants, and Git administrative storage; never hash operational
+metadata. Git ignore rules select untracked inputs, not tracked ones. Mode-only
+changes and staged changes restored in the worktree remain in the input set.
+
+Empty input means `dirty:false,dirty_digest:null`; otherwise `dirty:true` and
+the digest above. No absolute path, branch label, timestamp, Actor, Claim scope,
+checkpoint ID, or observation time enters this digest. Invalid UTF-8/escaping
+paths, unmerged index stages, changed submodules/gitlinks, unreadable files,
+and unsupported file types fail closed with `recovery-state-conflict`; do not
+omit them. Reject a repository using tracked assume-unchanged/skip-worktree
+entries whose contents cannot be completely observed. Observation must detect
+changes during capture and reject, never combine images from different states.
+
+Retained caller-supplied Repository targets use this same algorithm; their
+wire fields remain assertions, not a competing algorithm or an observation
+authority. Existing Phase 21 synthetic digests are not a compatibility promise.
+Task 4 owns the observer and fixed canonical-byte/hash vectors plus convergence
+of displaced repository fixtures. Task 12 owns comparison against canonical
+Receipt/Evidence targets, including a real unchanged dirty target and a
+single-byte change with unchanged HEAD. Nonconforming historical digests are
+never silently translated, refreshed, or treated as current proof. Rebuild
+and import preserve them verbatim; canonical mismatch is stale proof.
+
+### 3.2 Reconciliation Digest
+
+Reconciliation.digest hashes the canonical JSON of the complete Reconciliation
+object with only its `digest` member omitted, using the same `sha256:` encoding.
+Its paths/classifications, checkpoint, repository identity, ancestry, unmerged
+paths, and operation are therefore bound. Unlike dirty_digest, this digest is
+scope/checkpoint-specific. Repeated unchanged inspection gives the same digest;
+no capture time or random ID enters it. Recovery recomputes the full value under
+the write lock. Neither digest makes a liveness claim.
+
 ## 4. Atomic Linked Recovery
 
 Ordinary recovery needs a trusted terminal executor observation, a released or
@@ -100,6 +150,12 @@ observation. Record the live observation and force provenance permanently, and
 fence every subsequent fid mutation by the predecessor. fid cannot fence a
 process's direct filesystem writes; this local operator action accepts that
 residual risk explicitly and never claims that the old process was killed.
+
+Every recovery and abandonment supplies a non-null existing observation ID
+bound to its exact predecessor Run/executor. Missing/null IDs fail input
+validation; nonexistent IDs return `observation-not-found`; wrong-subject
+observations fail binding. Ordinary uses terminated; force may use known-live;
+an unknown observation never qualifies.
 
 One `run.recovered` Event atomically terminalizes an active predecessor as
 `interrupted`, disposes the old Claim, creates a new Claim and active Run,
@@ -126,6 +182,11 @@ The last requires a real authorized policy/intervention reason, not a progress
 message. A rejected read or ordinary validation request creates no Stop.
 Explicit `stop.raise`, budget boundaries, and activation recovery transitions
 are the only Stop producers in this slice.
+In particular a rejected `run.recover` returning `executor-liveness-unknown`,
+`recovery-state-conflict`, or `capability-unavailable` appends no Event and
+raises no Stop/Attention. Those same-named Stop codes are produced only by an
+explicit authorized `stop.raise`. Automatic budget/activation producers retain
+their separately declared atomic effects. An error code is not a Stop fact.
 
 Attention identity is SHA-256 of canonical `{subject,code,resolution_condition}`.
 Equivalent open requests share one Attention ID; distinct Stop IDs and their
@@ -163,6 +224,13 @@ Budget and capability conditions bind their named budget/capability; arbitrary
 Event references of the correct family cannot resolve another subject's Stop.
 Attention resolution cites the corresponding stop.resolved Event IDs, including
 an embedded Stop disposition's containing recovery Event where applicable.
+The request is the sorted unique exact set of `stop_resolutions.created_event_id`
+values for all linked Stops. A containing activation recovery Event may dispose
+several Stops and appears once. Underlying `fact_event_id` values alone are
+insufficient; missing, extra, duplicate, and wrong-subject references reject.
+Revalidate each disposition's underlying fact and present-state condition.
+`attention.resolved` changes only Attention state; it never inserts a Stop
+disposition. Call `stop.resolve` first where no lifecycle Event disposed it.
 
 ## 6. Durable Budgets
 
@@ -329,6 +397,14 @@ subset of Claims. The fake is test-only. Cross-product consistency review is
 required before acceptance; it must identify the kit port contract/version it
 compared and cannot substitute an invented production fake. Phase 25 still
 owns qualification of all twelve capabilities together and first adoption.
+The accepted comparison dispositions are in `kit-contract-mapping.md`
+(DEC-187). In particular fid activation state does not bind a recovery archive:
+the kit coordinator must bind the archive identity/digest and fid activation ID
+in its own durable activation record before any destructive materialization.
+Portable export alone does not prove that binding. Phase 25 qualification must
+exercise the coordinator's binding and terminal-outcome mapping; Phase 22
+advertisement is limited to the documented fid operations and is not kit port
+qualification.
 
 ## 12. Config Decision
 

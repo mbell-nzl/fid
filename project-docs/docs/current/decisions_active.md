@@ -68,10 +68,15 @@ DEC-180 proposed Heavy mode/18-task/80-VAL product contract;
 DEC-181 executable ownership and early journey;
 DEC-182 complete CF disposition including proposed CF-035 behavior;
 DEC-183 pinned kit comparison and separate workflow-maintenance recommendation.
+DEC-184 closed wire/authority/observation/Stop refinements;
+DEC-185 canonical dirty/reconciliation digest;
+DEC-186 boundary evidence, early rebuild samples and bounded R-14 repair;
+DEC-187 complete kit comparison dispositions and CF-037 qualification work.
 
-No product proposal is ratified merely by being written. Human approval,
-independent QA consistency/feasibility, a Ready QA plan, and TL refinements are
-required before implementation. Current branch is `phase-22`; Phase 21 is merged.
+No product proposal is ratified merely by being written. QA assessment is
+recorded and all refinements are dispositioned in `qa/tl-refinement.md`;
+the combined plan is ready for Human approval, which remains required before
+implementation. Current branch is `phase-22`; Phase 21 is merged.
 
 ## Carry-Forward Register
 
@@ -80,17 +85,18 @@ required before implementation. Current branch is `phase-22`; Phase 21 is merged
 | CF-008 | Re-defer until a retained Issue-cancellation vocabulary use case; Run abandonment does not fire it. |
 | CF-018 | Split production `internal/sqlquery/sqlquery.go` (596 lines) when that file next changes. No planned edit; test-only convergence does not fire it. |
 | CF-023 | Re-defer temporary repository-delivery tooling to dedicated workflow maintenance. |
-| CF-024 | Task 17/final QA, VAL-071: unchanged three-fresh-sample <30 s reference rule; Phase 21's 27.3-27.5 s leaves little headroom. |
+| CF-024 | Task 17/final QA, VAL-071: unchanged three-fresh-sample <30 s reference rule; task 1/16 add single early samples (DEC-186). |
 | CF-026a | Candidate inspection projection; not scheduled beyond accepted recovery resume. |
 | CF-026b | Issue lifecycle design requires its own product decision; deferred. |
 | CF-029 | QA review evidence-token validator work deferred to workflow maintenance. |
 | CF-030 | Report-lint rejected-token diagnostics deferred; no new product need. |
-| CF-033 | Kickoff live package inventory recorded in Phase 22 execution-scope.md/TRD. Matching AGENTS inventory-only edit remains for separate workflow maintenance. |
+| CF-033 | Kickoff inventory recorded in Phase 22 execution-scope.md/TRD. Separate AGENTS maintenance still owns matching package inventory and correction of its nonexistent quality §5.2 pointer (QA plan incidental finding). |
 | CF-034 | Task 2 workflow and task 7 evidence: direct recovery-branch tests plus before/after package coverage; VAL-079/035, no numeric threshold. |
 | CF-035 | Proposal: whole-config validation on consuming paths, preserving config-independent diagnostics. Task 11/VAL-047; Human acceptance pending. |
 | CF-036 | New from DEC-183: dedicated workflow-maintenance planning for phase/cross-task ledger identities and fail-closed ESC registration; product Phase 22 does not change controls. |
+| CF-037 | DEC-187: kit V2-3 adapter/Phase 25 qualification must prove activation export binding, terminalState expectation mapping, scope/asOf/validate-only, dedup-key agreement and explicit unmapped Stop-code representations. Exact obligations: Phase 22 kit-contract-mapping.md. |
 
-All rows were dispositioned against the Phase 22 task scope in DEC-182/183;
+All rows were dispositioned against the Phase 22 task scope in DEC-182..187;
 check triggers again at task-12 checkpoint and wrap-up. Closed CF IDs remain in
 phase archives and are never reused. Optional product ideas remain in ADR-0011's
 candidate ledger rather than this register.

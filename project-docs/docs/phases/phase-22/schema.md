@@ -48,7 +48,7 @@ CREATE TABLE run_recoveries (
   successor_run_id TEXT NOT NULL UNIQUE REFERENCES runs(id),
   prior_claim_id TEXT NOT NULL REFERENCES claims(id),
   successor_claim_id TEXT NOT NULL UNIQUE REFERENCES claims(id),
-  observation_id TEXT REFERENCES run_observations(id),
+  observation_id TEXT NOT NULL REFERENCES run_observations(id),
   reconciliation_json TEXT NOT NULL CHECK (json_valid(reconciliation_json)),
   adopted_paths_json TEXT NOT NULL CHECK (json_valid(adopted_paths_json)),
   authority_json TEXT NOT NULL CHECK (json_valid(authority_json)),
@@ -108,7 +108,11 @@ CREATE TABLE attention_items (
   semantic_key TEXT NOT NULL,
   subject_type TEXT NOT NULL CHECK (subject_type IN ('run','envelope','activation')),
   subject_id TEXT NOT NULL,
-  code TEXT NOT NULL,
+  code TEXT NOT NULL CHECK (code IN (
+    'executor-liveness-unknown','recovery-state-conflict','budget-exhausted',
+    'budget-data-unavailable','activation-incomplete','capability-unavailable',
+    'operator-stop'
+  )),
   status TEXT NOT NULL CHECK (status IN ('open','resolved')),
   version INTEGER NOT NULL CHECK (version > 0),
   raised_at TEXT NOT NULL,

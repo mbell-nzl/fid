@@ -69,15 +69,15 @@ after Human acceptance. The kit source is pinned in qa/qa-lead-handoff.md.
 | VAL-045 | PRD-OPS-008; CLI §3 | Activation recovery commands expose closed results and typed direction errors. | CLI schema and exit corpus | QA Lead | task-11 / window-4 | Every new/amended leaf matches section 3/4; old unavailability error removed. | Undefined shape or obsolete error used. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-046 | PRD-OPS-004/006; FLOWS §2 | Activation recovers at every durable boundary through the built binary. | Fault-point process journey | QA Lead | task-11 / window-4 | Prepare/stage/commit/finalize interruptions recover in required direction. | Only happy path exercised or trust disagreement persists. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-047 | CF-035; CONFIG §2; contracts §12 | Whole-config validation occurs before a consuming operation uses values. | Unknown-key consuming/non-consuming paired cases | QA Lead | task-11 / window-4 | Consuming command rejects unknown key; help/archive validation remains available. | Unknown key used or global parser blocks diagnostics. | Draft | Phase 22 one-Issue scope; see exclusions below. |
-| VAL-048 | PRD-EVID-003 | A changed repository target stales prior repository-bound proof. | Changed tree and dirty-digest cases | QA Lead | task-12 / window-4 | Same Evidence identity projects stale against changed target. | Old proof qualifies on changed target. | Draft | Phase 22 one-Issue scope; see exclusions below. |
-| VAL-049 | PRD-EVID-003 | An unchanged target retains proof through recovery. | Recovery/branch-rename with identical target | QA Lead | task-12 / window-4 | Proof remains valid when all declared input identities match. | Recovery alone stales or refreshes proof. | Draft | Phase 22 one-Issue scope; see exclusions below. |
+| VAL-048 | PRD-EVID-003; DEC-185; contracts §3.1 | A changed repository target stales prior repository-bound proof. | Changed tree and real same-HEAD one-byte dirty change using canonical vectors | QA Lead | task-12 / window-4 | Same Evidence identity projects stale against the changed observed target. | Old proof qualifies on changed target or fixture bypasses actual observation. | Draft | Phase 22 one-Issue scope; see exclusions below. |
+| VAL-049 | PRD-EVID-003; DEC-185; contracts §3.1 | An unchanged target retains proof through recovery. | Real clean and dirty targets through recovery/branch rename | QA Lead | task-12 / window-4 | Proof remains valid when canonical observed identities match in both clean and dirty cases. | Recovery alone stales or refreshes proof, or matching synthetic digests replace observation. | Draft | No conversion of historical nonconforming digests. |
 | VAL-050 | PRD-EVID-002/004/005 | Artifact loss preserves Evidence identity while changing only availability and policy outcome. | Required-material versus metadata-sufficient cases | QA Lead | task-12 / window-4 | Digest/provenance retained; outcome follows explicit Artifact policy. | Missing artifact erases proof or availability conflated with validity. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-051 | PRD-RUN-014; PRD-PROJ-002/003 | Fresh resume reconstructs bounded recovery context without prior chat. | New process after interruption and rebuild | QA Lead | task-12 / window-4 | All specified context dimensions present from durable facts. | Stored next-action state, omitted Stops/budgets, or prose dependency. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-052 | PRD-RUN-014; PRD-PROJ-001 | Resume action eligibility matches actual mutation predicates. | Eligible/ineligible action matrix | QA Lead | task-12 / window-4 | Advertised executable actions succeed at matching revision; blocked actions carry reasons. | Impossible action advertised as executable. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-053 | PRD-PROJ-005; CLI §7 | Human and JSON recovery views use the same semantic projection. | Paired render fixtures | QA Lead | task-18 / window-6 | IDs, status, reasons, budgets, and uncertainty agree across renderings. | Human rendering invents different state. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-054 | PRD-REC-001 | Manifest v2 contains all facts needed for recovery without project prose or SQLite. | Archive entry and source-reference corpus | QA Lead | task-13 / window-5 | All accepted recovery identities/history/config present; forbidden content absent. | Missing reconstruction data or raw project/DB copy. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-055 | PRD-REC-001; FLOWS §10 | Valid hashes cannot conceal invalid recovery history or references. | Integrity-valid but semantic-invalid archive cases | QA Lead | task-13 / window-5 | Unknown Effects/schema, duplicate IDs, broken references/order reject. | Malformed history validates or mutates state. | Draft | Phase 22 one-Issue scope; see exclusions below. |
-| VAL-056 | PRD-OPS-007; TRD §8; contracts §10 | Archive extraction enforces size and path boundaries. | Declared/actual size, traversal, symlink, duplicate-entry cases | QA Lead | task-13 / window-5 | Boundary-valid archive accepted; exceeding/unsafe archive rejects before publication. | ZIP metadata bypass, unbounded expansion, or path escape. | Draft | Phase 22 one-Issue scope; see exclusions below. |
+| VAL-056 | PRD-OPS-007; TRD §8; contracts §10; DEC-186 | Archive validation obeys every case in the explicit boundary acceptance matrix below. | Named per-boundary cases 056-a..k, measured decompression and filesystem snapshots | QA Lead | task-13 / window-5 | Every permitted boundary passes its limit check; every excess/unsafe case rejects before publication; cumulative cap uses measured expanded bytes. | Missing matrix row, unbounded expansion, unsafe entry accepted, or only declared sizes checked. | Draft | No forged ZIP metadata bypass required; all resource ceilings unchanged. |
 | VAL-057 | PRD-REC-002 | Archive validation has no project or destination effects. | Before/after file/journal/projection snapshots | QA Lead | task-13 / window-5 | Valid and invalid validation leave all state unchanged. | Validation imports, repairs, writes, or silently catches up project. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-058 | PRD-REC-003 | Import preserves stable entity and Event identity/history. | Ordered source/import identity comparison | QA Lead | task-14 / window-5 | IDs, Event bytes/order/hashes, idempotency history identical. | Identity remap or rewritten/dropped history. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-059 | PRD-REC-004; PRD-OPS-001 | Import publishes all reconstructed state or no target project. | Fault injection at staging/fsync/rename boundaries | QA Lead | task-14 / window-5 | No partial .fid before publication; complete recoverable state after. | Visible partial installation or overwritten project. | Draft | Phase 22 one-Issue scope; see exclusions below. |
@@ -96,12 +96,70 @@ after Human acceptance. The kit source is pinned in qa/qa-lead-handoff.md.
 | VAL-072 | SCHEMA §7; PRD-REC-004 | Final schema 16 initializes and rebuilds without retired authority. | Fresh init/reset/rebuild process tests | QA Lead | task-17 / window-6 | Final schema/current bootstrap/capability paths agree. | Schema-14 assumption, missing migration, or legacy bootstrap. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-073 | Roadmap §7; TRD §3; kit backend-port.v1 | One shared semantic case set passes against fake and fid recovery adapters. | Tagged dual-adapter conformance | QA Lead | task-18 / window-6 | Same inputs/expected semantic outputs and negative cases; no fake backend access. | Separate weakened expectations or production fake fallback. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-074 | Roadmap §5 Phase 22 | The full one-Issue failure/recovery journey completes through public operations. | Tagged final journey with failure injection | QA Lead | task-18 / window-6 | Interrupt, reconcile, linked retry, Stop, fresh proof, export/import, rebuild, resume are coherent. | Disconnected demos or skipped failed step. | Draft | Phase 22 one-Issue scope; see exclusions below. |
-| VAL-075 | PRD-OPS-008; CLI contract amendment | Every amended wire variant has a non-vacuous deterministic conformance fixture. | Operation/error/frame inventory compared with accepted tables | QA Lead | task-18 / window-6 | No missing leaf, closed value, error, replay or live-frame variant. | Empty corpus, uncovered variant, or mismatching fixture. | Draft | Phase 22 one-Issue scope; see exclusions below. |
+| VAL-075 | PRD-OPS-008; CLI contract amendment; DEC-184 | Every amended wire variant has a non-vacuous deterministic conformance fixture. | Operation/error/frame inventory and explicit 23-action set compared with independently pinned corpus members and actual requests | QA Lead | task-18 / window-6 | No missing leaf, closed value, error, replay or live-frame variant; retired/unknown actions reject. | Empty corpus, self-derived expectation, uncovered variant, or mismatching fixture. | Draft | Activation operations are bootstrap operations, not activated grant actions. |
 | VAL-076 | DESIGN §§4/6; phase brief | A Human can choose the next recovery action from a fresh resume view. | Human recovery checkpoint | Human | task-18 / window-6 | Human records a clear actionable choice without prior chat. | Human cannot determine action or mistakes adoption for proof. | Draft | Developer supplies fixture only. |
 | VAL-077 | PRD-OPS-006; phase brief | A Human can distinguish restore-prior from complete-forward recovery. | Human paired activation checkpoints | Human | task-18 / window-6 | Direction and irreversible commit consequence are understood. | Human believes post-commit rollback occurred. | Draft | Developer supplies fixture only. |
 | VAL-078 | PRD-REC-003; phase brief | A Human can recognize restored work and its remaining intervention need. | Human imported-project checkpoint | Human | task-18 / window-6 | Identity and remaining work are recognizable from restored views. | Restored project appears complete or unrelated incorrectly. | Draft | Developer supplies fixture only. |
 | VAL-079 | CF-034 | Reopened workflow recovery branches have direct package tests and measured coverage. | Before/after go test -race -cover ./internal/workflow outputs | QA Lead | task-2 / window-1 | Both measured values and direct positive/rejection tests reported. | Missing baseline/final coverage or only CLI tests. | Draft | Phase 22 one-Issue scope; see exclusions below. |
 | VAL-080 | Roadmap §7; QUALITY §8 | Independent review finds no unresolved cross-product recovery contract mismatch. | QA comparison with pinned kit interface/decisions | QA Lead | task-18 / window-6 | Exact semantic mapping and any accepted differences recorded before execution; final changes rechecked. | Unknown source version or unresolved contract difference. | Draft | Independent QA; TL planning is not its evidence. |
+
+## VAL-056 Boundary Acceptance Matrix
+
+VAL-056's single observable is conformance to this finite acceptance matrix,
+following the same matrix treatment as VAL-024/069/075. Each case has separate
+evidence; one success cannot stand in for the others. Sizes use binary units.
+For a numeric ceiling L, exercise L-1, L, and L+1. Permitted means that limit
+check accepts; full archive acceptance still requires every semantic check.
+Use valid complete controls as well, and identify which boundary each negative
+actually reaches so an earlier unrelated rejection cannot stand in for proof.
+
+| Case | Boundary | Required result |
+|---|---|---|
+| 056-a | 1000000 entries | Count at/below ceiling accepted; next entry rejected. |
+| 056-b | 64 MiB per non-Artifact entry | Actual streamed bytes at/below accepted; excess rejected. |
+| 056-c | 1 GiB per Artifact | Actual streamed bytes at/below accepted; excess rejected. |
+| 056-d | 8 GiB cumulative expanded bytes | Many individually permitted entries reach the total; measured decompressed byte L+1 trips the cap. |
+| 056-e | 1 MiB per Event line | Exact line boundary accepted; overlong line rejected even across read/chunk boundaries. |
+| 056-f | Relative normalized safe path versus traversal | Safe file accepted; parent traversal and escaping components rejected. |
+| 056-g | Relative versus absolute path | Safe relative file accepted; absolute/drive-rooted paths rejected. |
+| 056-h | Regular file versus symlink | Regular file accepted; symlink entry rejected without following it. |
+| 056-i | Regular file versus device | Regular file accepted; device entry rejected. |
+| 056-j | File versus explicit directory entry | Regular file accepted; directory entry rejected. |
+| 056-k | Unique versus duplicate entry name | Unique accepted; duplicate rejected before extraction/publication. |
+
+Generate large compressed/count fixtures per run, never commit them or
+materialize expanded gigabytes. Stream while counting/discarding; for the
+cumulative case keep individual entries within their own limits. Metadata
+limits may reject early, but evidence must also exercise the measured-byte
+limiter on actual decompression. A malformed raw ZIP rejected by archive/zip
+before output is corruption evidence only, not measured-cap evidence.
+Use one filesystem for import staging and its target; avoid RAM-backed /tmp
+for fixtures that truly require large materialized files.
+
+## Refinement Evidence Obligations
+
+- VAL-001/003: non-null recovery observation FK and equal Stop/Attention code
+  CHECKs in the amended exact DDL, including corrupt/replay rejection.
+- VAL-006: exact disposition-containing Event set, underlying facts revalidated;
+  missing/extra/duplicate/wrong-subject/underlying-only requests reject.
+- VAL-012/023: reused executor identity has the declared duplicate-entity shape;
+  same-key replay wins before conflict checking, with no extra effects.
+- VAL-014: task 4's canonical byte/hash vectors bind staged/unstaged/mode/rename/
+  deletion/untracked cases and exclusions; no observer-derived expectation.
+- VAL-019/020/034: null/missing/nonexistent/wrong-subject observation references
+  reject, terminated ordinary qualifies, known-live requires force, unknown
+  always rejects. No rejection creates a Stop as a side effect.
+- VAL-031: exact signal/timeout/cancelled outcomes with synchronized real
+  subprocesses under bounded load; DEC-186 assigns the known fixture repair.
+- VAL-036/037/039: distinguish explicit Stop facts from non-mutating recovery
+  errors, enforce the action table, and remove run.finish leaf/action/Event.
+- VAL-045: activation-version-conflict, competing-prepare activation-conflict,
+  and activation-direction-conflict each have one closed details shape.
+- VAL-071: task 1/16 single early samples supplement, never replace, task 17
+  and final QA's three fresh samples at the unchanged reference/threshold.
+- VAL-080: audit every C-01..C-13 disposition in kit-contract-mapping.md against
+  as-built behavior and current pin; a documented Phase 22 exclusion does not
+  prove the corresponding production kit obligation is implemented.
 
 ## Requirement Coverage And Explicit Exclusions
 
@@ -115,6 +173,13 @@ after Human acceptance. The kit source is pinned in qa/qa-lead-handoff.md.
   exception remains deferred because this phase enables no such target type.
 - PRD-HUM-002/003 map to VAL-005..007. Protected Human Outcome and Review
   implementation remain Phase 23; operational fact resolution is in scope.
+- DEC-187: Review budget charging/review_cycles and review-rework-exhausted are
+  Phase 23; generic retry-exhausted is Phase 24. circuit-breaker classification
+  belongs to the kit coordinator, not fid Attention in this slice.
+- DEC-187/CF-037: kit recovery-export binding, scope/asOf mapping, unresolved
+  kit code representations and terminalState adapter expectation checking are
+  Phase 25 qualification obligations. The fid semantics and disclosed limits
+  are in scope for VAL-080; the production adapter is not.
 - PRD-REC-001..004 map to VAL-054..065. PRD-PROJ-001..003/005 are covered only
   for recovery/resume/Attention by VAL-051..053; other named projections and
   trajectory summaries retain their roadmap owners.
@@ -149,3 +214,4 @@ Do not weaken an assertion to accommodate an implementation or fixture failure.
 | Date | Assertion | Change | Reason | Decision reference |
 |---|---|---|---|---|
 | 2026-09-05 | VAL-001..080 | Drafted with task/evidence ownership | Phase 22 kickoff | DEC-180/181 |
+| 2026-09-05 | VAL-001/003/006/012/014/019/020/023/031/034/036/037/039/045/048/049/056/071/075/080 | Pin exact evidence cases and accepted differences; enumerate VAL-056 without changing ceilings or adding/removing IDs | QA R-01..14 and C-01..13 | DEC-184..187 |

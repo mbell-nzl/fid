@@ -21,6 +21,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Do not drop triage_events or its Issue projection (Phase 24), or Concern/Review/telemetry history owned by Phases 23/25.
 - Latest-schema tests change to absence; historical migration tests retain their original scope/strength.
 - Current-schema tests must reject removed-table Effects; no permissive replay fallback.
+- DEC-186/R-13: record one fresh schema-16 reference rebuild sample before
+  hand-back. Preserve parity and <30000 ms self-assertion; do not defer a causal
+  removal regression to task 17 or replace its three final samples with this one.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
@@ -97,6 +100,13 @@ golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 go test -tags integration -race ./cmd/fid/integration/...
+go version
+go env GOOS GOARCH
+uname -srm
+nproc
+grep -m1 '^model name' /proc/cpuinfo
+grep -m1 '^MemTotal:' /proc/meminfo
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
 ```
 
 No exception to the full task gate. Commands whose expected pass is nonzero:
@@ -115,4 +125,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

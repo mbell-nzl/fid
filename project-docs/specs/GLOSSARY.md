@@ -304,6 +304,26 @@ trusted execution proof. A budget sample is an append-only observed measurement
 or fid-derived charge, not an editable counter. Detailed proposed value schemas
 are in `../docs/phases/phase-22/public-interface.md`.
 
+**Dirty Digest (Phase 22 proposal, DEC-185)**
+Definition: The versioned SHA-256 of canonical changed-path HEAD/index/worktree
+images, as specified in Phase 22 contracts section 3.1. It excludes operational
+metadata, branch names, and capture time; clean state uses null.
+Use when: comparing the same source target across caller inputs and observations.
+Avoid: arbitrary caller hashes, raw Git status text, or the reconciliation digest.
+
+**Reconciliation Digest (Phase 22 proposal, DEC-185)**
+Definition: The canonical hash of the entire reconciliation apart from its own
+digest member, binding repository, checkpoint, paths, classification and safety
+state under Phase 22 contracts section 3.2.
+Use when: binding exact checkpoint/adoption/recovery requests to observed state.
+Avoid: substituting it for a dirty digest or for executor liveness proof.
+
+**Stop Disposition Event (Phase 22 proposal, DEC-184)**
+Definition: The Event that records a Stop resolution, distinct from the durable
+fact used to justify it. One activation recovery Event may dispose several Stops.
+Use when: naming the exact Event set required by Attention resolution.
+Avoid: passing only the underlying observation/fact IDs to resolve Attention.
+
 **Kit Activation**
 Definition: The durable cross-resource state that aligns one kit version,
 overlay, provider projections, and backend migration before normal execution.

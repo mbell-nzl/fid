@@ -3,6 +3,9 @@
 > QA Lead (Claude Opus 5), 2026-09-05. Input to `qa-plan.md`; covers VAL-080.
 > This review is independent evidence. The Tech Lead's own planning comparison
 > was read as an input, not relied on as proof.
+> Tech Lead disposition, 2026-09-05: DEC-187 and
+> [kit-contract-mapping.md](../kit-contract-mapping.md) address every item below.
+> The original independent assessment is retained; final QA recheck is pending.
 
 ## 1. Sources And Version Currency
 

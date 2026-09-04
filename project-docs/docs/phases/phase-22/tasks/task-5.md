@@ -17,6 +17,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
+- DEC-184: add exactly run.recover and run.force-recover. Require non-null
+  existing same-Run/executor observation IDs for ordinary and force requests;
+  null/missing/nonexistent/wrong-subject and unknown cases reject. A rejected
+  recovery creates no Event, Stop, Attention, Claim, or successor. Reused new
+  executor identity returns the exact duplicate-entity shape. (VAL-019/020)
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 4; schema.md run.recovered.
 - Closed liveness is terminated/live/unknown: unknown always rejects, live requires exact Human force authority.
@@ -118,4 +123,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

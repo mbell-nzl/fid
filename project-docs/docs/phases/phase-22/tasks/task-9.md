@@ -22,6 +22,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Extend task 6's shared case runner/fake with these implemented operations;
   identical semantic expectations must pass against both fake and fid now.
 - Remove finish parsing/outcome requests and current run.finished fixture acceptance only after close/abandon replacements pass.
+- Remove run.finish from activated profile and Envelope grant acceptance in
+  the same task; both the retired action and retired leaf must reject. Final
+  action membership is public-interface section 2.1, never inferred from help.
+- Distinguish recovery errors with no durable Stop from explicit stop.raise
+  and committed budget denials; Attention requires disposition Event IDs.
 - Retained tests converge by invalidating change, including Phase 21 journey closure steps.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
@@ -39,6 +44,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `cmd/fid/response_errors.go`
 - `internal/cli/`
 - `internal/workflow/evaluation.go`
+- `internal/workflow/activation.go` - remove run.finish action acceptance.
+- `internal/workflow/envelope.go` - converge grant validation for retired action.
+- `internal/journal/` - retire current run.finished Event acceptance.
 - `internal/validation/`
 - `internal/issues/transition.go`
 - `cmd/fid/integration/p22_recovery_journey_test.go`
@@ -67,7 +75,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] Stop, Attention, budget, and closure leaves implement their declared contracts. (VAL-036)
 - [ ] All guarded actions apply the same scoped Stop predicates. (VAL-037)
 - [ ] A committed execution denial names its durable effects without implying execution success. (VAL-038)
-- [ ] Caller-reported run.finish is absent after derived closure lands. (VAL-039)
+- [ ] Caller-reported run.finish leaf, action, and current Event acceptance are
+  absent after derived closure lands; old names reject in the corpus. (VAL-039)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,

@@ -12,8 +12,9 @@ export the same state, rebuild, and resume without contradictory facts.
 **Planning; execution unauthorized.** Branch `phase-22`, created from merged
 main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 is wrapped under
 DEC-179 and already merged. Phase 22's proposed contracts and task pack are
-written; a Ready QA plan, independent consistency review, TL refinements, and
-Human acceptance are pending. Do not dispatch a Developer yet.
+refined against QA R-01..14 and all kit comparison items (DEC-184..187).
+The QA plan plus `qa/tl-refinement.md` is ready for Human approval; execution
+and implementation evidence remain pending. Do not dispatch a Developer yet.
 
 ## Operating Mode
 
@@ -68,7 +69,8 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 | Artifact | Path under phase-22/ | Status |
 |---|---|---|
 | QA Lead handoff | qa/qa-lead-handoff.md | Written |
-| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | Pending QA Lead |
+| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | QA assessment recorded |
+| TL refinement / readiness | qa/tl-refinement.md | Ready for Human approval |
 | Mid-phase reviews | qa/review-1.md through qa/review-6.md | After tasks 3,6,9,12,15,18 |
 | Independent checkpoint | qa/checkpoint-after-task-12.md | Required before task 13 |
 | Final review / Human checklist | qa/final-review.md / qa/human-checklist.md | Pending |
@@ -76,7 +78,7 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 ## Active Constraints
 
 - Proposed semantic/wire/DDL authority: `../phases/phase-22/contracts.md`,
-  `public-interface.md`, and `schema.md`. DEC-180 requires Human acceptance.
+  `public-interface.md`, and `schema.md`. DEC-180/184..187 require Human acceptance.
 - Exact removal and executable ownership: `v1-convergence-inventory.md` and
   `execution-scope.md` in that phase directory; DEC-181.
 - Every task runs the ordinary full task gate AND tagged integration gate.
@@ -85,10 +87,16 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
   takeover requires an exact current Human force grant; no automatic respawn.
 - No recovery Git mutation or budget reset. Adoption is not trusted evidence.
 - Claims capability stays false until Phase 24 parallel semantics qualify.
-- CF-024 unchanged three-fresh-sample <30 s rebuild rule; CF-034 direct workflow/
+- CF-024 unchanged three-fresh-sample <30 s rebuild rule, early samples at 1/16;
+  R-14 synchronized fixture repair at task 8, earlier-failure route in DEC-186.
+- CF-034 direct workflow/
   evidence coverage in tasks 2/7; CF-035 consuming-config proposal in task 11.
 - CF-033 inventory is recorded; AGENTS maintenance edit remains separately
   scheduled. CF-018 fires only if production sqlquery.go is edited.
+- Canonical digests: contracts sections 3.1/3.2. Closed 23-action set:
+  public-interface section 2.1; activation remains bootstrap-attributed.
+- Kit RECORD/DECIDE dispositions: `kit-contract-mapping.md`; CF-037 retains
+  external adapter obligations for Phase 25 qualification.
 - No product code/tests, gates, or agent activation by Tech Lead.
   Runner report lint and schema-v2 ledger rules remain unchanged.
 
@@ -113,13 +121,13 @@ in the task specs, not inferred from this summary.
 - Limited rebuild headroom; retain reference and per-sample failure semantics.
 - Force recovery fences fid authority, not a live process's direct file writes.
 - Archive validation/publication and cross-resource agreement need fault evidence.
-- Cross-product semantic review is pending against the kit commit pinned in the
-  QA handoff; no production adapter qualification is inferred.
+- QA reviewed the pinned kit; DEC-187 records every difference and later owner.
+  Final QA must recheck currency/as-built behavior; no production adapter qualifies.
 
 ## Open Questions
 
-Human acceptance of Heavy mode and DEC-180/182 proposals is pending.
-QA must resolve the handoff's feasibility/consistency items before Ready.
+Human acceptance of Heavy mode, DEC-180/182 and DEC-184..187 is pending.
+All 14 QA planning refinements are dispositioned; runtime proofs remain required.
 
 ## Success / Exit Criteria
 
@@ -130,6 +138,6 @@ No first-adoption or release authorization is implied.
 
 ## Next Planning Checkpoint
 
-QA Lead prepares the plan and independent contract review; Tech Lead refines the
-pack and Human approves execution. Phase 23 review/Human judgment follows this
+Human reviews the refined pack and approves execution. The QA assessment and
+TL refinement addendum are read together. Phase 23 review/Human judgment follows this
 phase's signed-off recovery boundary.

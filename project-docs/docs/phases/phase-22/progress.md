@@ -13,3 +13,22 @@
 - Pending: independent QA consistency/feasibility review and Ready QA plan;
   Tech Lead refinements; Human acceptance of mode/task list/product proposals.
 - Task status: 1..18 pending. Execution is unauthorized. No RUN-START exists.
+
+## 2026-09-05 - QA Assessment And Tech Lead Refinement
+
+- QA committed its fresh assessment in 28cb985a1a773169492376c46ca98b50f6a3f729:
+  14 refinements and the pinned kit comparison. Its raw statuses and failures
+  remain in the QA documents; this TL does not attest them as fresh gate runs.
+- Applied all R-01..14, including improvements, through DEC-184..186; amended
+  slice/wire/DDL, task evidence and canonical spec pointers in the same change.
+- Recorded both DECIDE items and every RECORD item in kit-contract-mapping.md
+  under DEC-187; CF-037 retains external coordinator/adapter qualification work.
+- Corrected R-14 provenance from git history, explicitly owned its repair in
+  task 8, and defined the bounded route if an earlier required gate encounters it.
+- Added task 1/16 early rebuild samples, task 8 repeated regression/full-gate
+  verification, and task 17's second full benchmark run required by QA-78.
+- Ready for Human approval: Heavy, 18 ordered tasks, 80 VAL assertions, six
+  review windows and task-12 checkpoint unchanged. qa/tl-refinement.md is the
+  readiness addendum to the preserved independent QA assessment.
+- No product/test edits, quality gate execution or agent activation by TL.
+  All implementation tasks remain pending; execution remains unauthorized.

@@ -22,6 +22,13 @@ Full sources, pass/fail criteria, and validator ownership are in
 - CF-034: capture workflow package coverage before edits and after completion; add direct in-package positive and rejection branch tests. No numeric threshold.
 - Resolving Attention never deletes Stops or accepts an unqualified reference.
 - Extend the activated capability allowlist only for accepted Stop/Attention actions.
+- DEC-184/public-interface section 2.1 enumerates the exact actions and the
+  activation-subject profile-only case; do not invent an Envelope for activation.
+- Attention input cites disposition-containing Events for every linked Stop,
+  not underlying facts. Missing/extra/duplicate/wrong-subject sets reject;
+  resolving Attention never inserts a Stop disposition.
+- Rejected recovery errors do not produce Stops. Exercise explicit Stop
+  production separately; automatic budget/activation producers have later owners.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
@@ -60,7 +67,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - [ ] A Stop's original fact remains immutable after resolution. (VAL-004)
 - [ ] Equivalent Attention requests share one open identity without losing distinct Stops. (VAL-005)
-- [ ] Attention resolution requires qualifying facts for every linked Stop. (VAL-006)
+- [ ] Attention resolution requires the exact disposition Event set for every
+  linked Stop and revalidates their qualifying facts; invalid sets have no
+  effects. (VAL-006)
 - [ ] Routine status and warnings do not create Attention. (VAL-007)
 - [ ] Reopened workflow recovery branches have direct package tests and measured coverage. (VAL-079)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
@@ -122,4 +131,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

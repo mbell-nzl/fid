@@ -21,6 +21,8 @@
 | `internal/activity/`; `internal/journal/project_effects.go`; maintenance activity readers | Event-derived activity rows, some frozen V1 attribution | Retain read-only projection; prohibit Stop/Run takeover truth in activity; task 16 classifies current writers/readers, task 17 audits integrity |
 | `internal/issues/get.go`, `issue.go`; `issues_enriched`; `triage_events`; `idx_triage_issue_created` | Legacy triage-status inspection still live | Frozen, no recovery authority. Phase 24 removal; task 16 only converges removed escalation refs, not triage semantics |
 | `cmd/fid/integration/` and `testdata/p21_conformance/`; `cmd/fid/task*` tests | Historical phase/task names and exact schema/command/availability fixtures | Subject-preserving convergence belongs to each invalidating task above; full tagged gate runs from task 1 |
+| `cmd/fid/gate_run_test.go` TestGateRunRecordsExactNonSuccessTerminalOutcomes and TestGateRunHelperProcess | Signal helper can exit success; 1 ms timeout can precede spawn; both predate Phase 22 | Task 8 owns synchronized signal/timeout fixtures alongside cancellation; ordinary + focused repeated + two full benchmark gates. Earlier failure gets bounded same-task scope amendment per DEC-186, never a waiver |
+| `internal/workflow/activation.go` accepted actions and `internal/workflow/envelope.go` grants | Phase 21 13-name set includes run.finish | Exact staged additions under public-interface section 2.1; task 9 removes run.finish and task 18 audits the final 23-member set through both gates |
 
 No escalation CLI leaf exists at the planning base. Task 16 proves it remains
 absent rather than creating an alias to Stop/Attention. Searches must distinguish
@@ -37,6 +39,8 @@ Introducing commits observed with `git log --diff-filter=A`, all before planning
 | generic Run implementation | 5ca732f / phase-21/task-11 |
 | Activation implementation | ad9098f / phase-21/task-4 |
 | Attempt/Receipt implementation | b694991 / phase-21/task-15 |
+| Signal helper and timeout_ms=1 fixture | b69499116e70d4c88423a30daa2010a4ff221f14 / phase-21/task-15; git log -S and blame observed by TL |
+| Signal-case timeout extension only | 76ad781727b9e8545e069c4ac0e9f926012e6af9 / phase-21/task-21; does not change timeout_ms=1 (corrects QA R-14 prose) |
 | resume implementation | 2313235 / phase-21/task-18 |
 | export implementation | 35a75ba / phase-21/task-19 |
 | escalation workflow test/seed | a509d59 / phase-19/task-1 |

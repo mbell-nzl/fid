@@ -19,6 +19,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
+- DEC-184/public-interface section 2.1: add exactly run.observe-budget to
+  profile/grant acceptance; activation and binary capability IDs are not actions.
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 6; schema.md budget Effects.
 - CF-034: capture evidence package coverage before edits and after completion, with direct tests of budget and abandoned-execution branches.
@@ -129,4 +131,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

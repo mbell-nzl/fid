@@ -5,10 +5,13 @@
 
 ## 1. Transport And Shared Grammar
 
-Retain `fid-cli.v1`, `--json`, `--project-root`, existing error envelope, and
+Retain `fid-cli.v1`, `--json`, `--project`, existing error envelope, and
 exit mapping. Added mutations take no positional arguments and require
 `--input <file|->`, `--actor <activated-actor-id>`, and `--idempotency-key`.
 Activation recovery uses the existing optional bootstrap-attribution `--actor`.
+Read leaves, including positional `run.inspect <run-id>`, use their declared
+read grammar. `export.import <archive-path>` is the mutation exception: it
+requires `--repository` and `--idempotency-key`, with no `--input` or `--actor`.
 No mutation accepts a caller success flag, executor argv, claimed capability,
 SQL, or raw log. All request objects are closed recursively; unknown/duplicate
 keys, missing required fields, trailing JSON, and wrong nullability reject.
@@ -41,7 +44,7 @@ no effects except the explicitly committed execution denial described below.
 | PathChange | `{path:text,before_digest:?digest,after_digest:?digest,classification:"in-scope"\|"outside-scope"\|"protected"}`; add/delete uses one null digest |
 | Reconciliation | `{repository:Repository,checkpoint_id:?ID,paths:PathChange[],unmerged_paths:text[],operation:"none"\|"merge"\|"rebase"\|"cherry-pick"\|"revert"\|"bisect",ancestry:"unchanged"\|"descendant"\|"conflict"\|"unknown",digest:digest}` |
 | RecoveryAuthority | `{mode:"ordinary"\|"force",actor_id:ID,reason:text,reference:?text,grant_ref:?{envelope_id:ID,revision:1,ordinal:int}}`; force requires reference, exact current grant_ref, and trusted Human; ordinary grant_ref is null |
-| Recovery | `{id:ID,prior_run_id:ID,successor_run_id:ID,prior_claim_id:ID,successor_claim_id:ID,observation_id:?ID,reconciliation:Reconciliation,adopted_paths:text[],authority:RecoveryAuthority,event_id:ID}` |
+| Recovery | `{id:ID,prior_run_id:ID,successor_run_id:ID,prior_claim_id:ID,successor_claim_id:ID,observation_id:ID,reconciliation:Reconciliation,adopted_paths:text[],authority:RecoveryAuthority,event_id:ID}` |
 | Condition | `{type:"executor-terminated"\|"run-recovered"\|"activation-recovered"\|"capability-available"\|"budget-observed"\|"work-ended",subject:Subject,budget_name:?ID,capability_id:?ID}`; only budget/capability condition uses its matching non-null field |
 | Stop | `{id:ID,subject:Subject,code:StopCode,blocked_actions:text[],details:StopDetails,resolution_condition:Condition,resolver_capability:ID,actor_id:ID,raised_at:timestamp,resolution:?StopResolution}` |
 | StopResolution | `{actor_id:ID,fact_event_id:ID,resolved_at:timestamp,event_id:ID}` |
@@ -71,6 +74,68 @@ StopDetails is selected by code, with no additional properties:
 | capability-unavailable | `{capability_id:ID,available:false,owner_phase:int}` |
 | operator-stop | `{reason:text,reference:text}` |
 
+`owner_phase` is opaque delivery scheduling metadata, never an authorization,
+retry, resolution, or adapter control-flow input. Recovery requests require an
+observation ID; nullable IDs in liveness errors/StopDetails describe missing
+observations and do not authorize recovery. Repository dirty digests use
+`contracts.md` section 3.1; Reconciliation.digest uses section 3.2.
+
+### 2.1 Activated Capabilities And Grant Actions
+
+The final closed set contains exactly these 23 names. Every name is legal in
+an activated profile and an Envelope grant; runtime use still checks the
+applicable subject and authority. Binary capability IDs such as `attention.v1`
+are a different namespace and are never grant actions.
+
+| Name | Admission rule / implementation owner |
+|---|---|
+| `artifact.verify` | Retained Phase 21 |
+| `attention.resolve` | Profile plus subject Envelope grant; task 2 |
+| `claim.acquire` | Retained Phase 21 |
+| `claim.expire` | Profile plus subject Envelope grant; task 3 |
+| `claim.release` | Retained Phase 21 |
+| `claim.renew` | Retained Phase 21 |
+| `envelope.activate` | Retained Phase 21 |
+| `envelope.complete` | Retained Phase 21 |
+| `envelope.create` | Retained profile-only pre-Envelope authorization |
+| `evidence.link` | Retained Phase 21 |
+| `gate.register` | Retained profile-only pre-Envelope authorization |
+| `gate.run` | Retained Phase 21 |
+| `issue.transition` | Retained Phase 21 |
+| `run.abandon` | Profile plus Envelope grant; task 8 |
+| `run.checkpoint` | Activated harness plus Envelope grant; task 4 |
+| `run.close` | Profile plus Envelope grant; task 8 |
+| `run.force-recover` | Additional exact Human authority under section 3; task 5 |
+| `run.observe` | Activated harness plus Envelope grant; task 3 |
+| `run.observe-budget` | Activated harness plus Envelope grant; task 7 |
+| `run.recover` | Profile plus Envelope grant; task 5 |
+| `run.start` | Retained Phase 21 |
+| `stop.raise` | Profile plus subject Envelope grant; task 2 |
+| `stop.resolve` | Profile plus subject Envelope grant and resolver capability; task 2 |
+
+For Stop/Attention with activation subjects there is no Envelope: explicit
+operations require the matching capability in the selected finalized profile
+(and the Stop's resolver capability for resolution). Without finalized trust,
+only the activation lifecycle's automatic Stop/disposition effects are usable.
+For Run subjects, resolve the grant through that Run's Envelope; for Envelope
+subjects use that Envelope. Actor attribution never supplies authority.
+
+All activation leaves retain bootstrap attribution, including resource and
+recovery leaves. They do not require an activated capability or Envelope grant:
+recovery must remain possible when no finalized profile exists. Consequently
+`activation.prepare`, `activation.component`, `activation.commit`,
+`activation.abort`, `activation.finalize`, `activation.resource`,
+`activation.recover`, and `activation.recover-complete` are operation IDs only,
+excluded from this allowlist. Import and read operations are also excluded.
+
+During ordered implementation, add each action at its listed domain task.
+`run.finish` is the sole temporary retained action through task 8; task 9
+removes it from profile/grant acceptance together with its leaf and current
+Event acceptance. Unknown actions reject. Historical documentation is not
+current acceptance authority. Task 18 compares the explicit 23-name set with
+independently pinned corpus members and exercised allow/reject cases; parsing
+an empty table or deriving both actual and expected values from it cannot pass.
+
 ## 3. New And Replaced Leaves
 
 Each input lists every required key. Shared flags follow section 1 unless the
@@ -83,15 +148,15 @@ row says read-only. No new flag-only mutation grammar is introduced.
 | `run.observe` / `fid run observe` | `{run_id:ID,expected_version:int,liveness:Liveness}` | `{observation:{id:ID,run_id:ID,kind:"liveness",actor_id:ID,observed_at:timestamp,liveness:Liveness},run:Run,idempotency_key:ID,replayed:boolean}` | run.observed / 3,6 |
 | `run.inspect` / `fid run inspect <run-id>` | read; optional `--repository <path>` default current worktree | `{run:Run,reconciliation:Reconciliation,liveness:?Liveness}` | null / 4,6 |
 | `run.checkpoint` / `fid run checkpoint` | `{run_id:ID,expected_version:int,reconciliation_digest:digest}` | `{checkpoint:{id:ID,run_id:ID,kind:"checkpoint",actor_id:ID,observed_at:timestamp,reconciliation:Reconciliation},run:Run,idempotency_key:ID,replayed:boolean}` | run.checkpointed / 4,6 |
-| `run.recover` / `fid run recover` | `{prior_run_id:ID,expected_run_version:int,expected_claim_version:int,observation_id:?ID,reconciliation_digest:digest,adopted_paths:text[],authority:RecoveryAuthority,executor:Executor,ttl_seconds:int}` | `{recovery:Recovery,run:Run,claim:Claim,idempotency_key:ID,replayed:boolean}` | run.recovered / 5,6 |
+| `run.recover` / `fid run recover` | `{prior_run_id:ID,expected_run_version:int,expected_claim_version:int,observation_id:ID,reconciliation_digest:digest,adopted_paths:text[],authority:RecoveryAuthority,executor:Executor,ttl_seconds:int}` | `{recovery:Recovery,run:Run,claim:Claim,idempotency_key:ID,replayed:boolean}` | run.recovered / 5,6 |
 | `stop.raise` / `fid stop raise` | `{subject:Subject,code:StopCode,blocked_actions:text[],details:StopDetails,resolution_condition:Condition,resolver_capability:ID}` | `{stop:Stop,attention:Attention,idempotency_key:ID,replayed:boolean}` | stop.raised / 2,9 |
 | `stop.resolve` / `fid stop resolve` | `{stop_id:ID,fact_event_id:ID}` | Mutation keyed `stop`: Stop | stop.resolved / 2,9 |
 | `stop.list` / `fid stop list` | read; optional `--subject <run\|envelope\|activation>:<id>`, `--status <open\|resolved>`, `--limit` | `{items:Stop[]}` | null / 9 |
 | `attention.list` / `fid attention list` | same read flags as stop.list | `{items:Attention[]}` | null / 9 |
-| `attention.resolve` / `fid attention resolve` | `{attention_id:ID,expected_version:int,fact_event_ids:ID[]}`; exact qualifying resolutions for all linked Stops | Mutation keyed `attention`: Attention | attention.resolved / 2,9 |
+| `attention.resolve` / `fid attention resolve` | `{attention_id:ID,expected_version:int,fact_event_ids:ID[]}`; sorted unique exact set of containing disposition Event IDs for all linked Stops, not their underlying qualifying fact IDs | Mutation keyed `attention`: Attention | attention.resolved / 2,9 |
 | `run.observe-budget` / `fid run observe-budget` | `{run_id:ID,expected_version:int,budget_name:ID,source_sample_id:ID,sample_kind:"delta"\|"baseline",previous_sample_id:?ID,value:?int,measurement_ref:?Source,observed_at:timestamp}` | `{sample:BudgetSample,budget:Budget,stops:Stop[],attention:Attention[],idempotency_key:ID,replayed:boolean}` | run.budget-observed / 7,9 |
 | `run.close` / `fid run close` | `{run_id:ID,expected_version:int,observation_id:ID,repository:Repository}` | Mutation keyed `run`: Run | run.closed / 8,9 |
-| `run.abandon` / `fid run abandon` | `{run_id:ID,expected_version:int,expected_claim_version:int,observation_id:?ID,authority:RecoveryAuthority,repository:Repository}` | `{run:Run,claim:Claim,idempotency_key:ID,replayed:boolean}` | run.abandoned / 8,9 |
+| `run.abandon` / `fid run abandon` | `{run_id:ID,expected_version:int,expected_claim_version:int,observation_id:ID,authority:RecoveryAuthority,repository:Repository}` | `{run:Run,claim:Claim,idempotency_key:ID,replayed:boolean}` | run.abandoned / 8,9 |
 | `activation.prepare` / existing leaf | Phase 21 input plus `{expected_prior_activation_id:?ID,expected_prior_version:?int,resources:{component:text,old_identity:?text,new_identity:text}[]}`; exactly five distinct resource names | existing activation mutation with extended Activation | activation.prepared / 10,11 |
 | `activation.component`, `activation.commit`, `activation.abort`, `activation.finalize` / existing leaves | Existing Phase 21 closed input plus `{expected_version:int}` | Existing result with amended Activation | existing activation family / 10,11 |
 | `activation.resource` / `fid activation resource` | `{activation_id:ID,component:text,expected_activation_version:int,expected_version:int,observed_identity:?text,state:"old"\|"new"\|"error",evidence_ref:text,error_code:?text}` | `{activation:Activation,resource:ActivationResource,idempotency_key:ID,replayed:boolean}` | activation.resource-observed / 10,11 |
@@ -107,7 +172,7 @@ Run version solely because their own Attempt/Receipt aggregate advances.
 Every activation mutation checks/increments Activation.version; resource writes
 also check their own expected_version. Existing component/commit/abort/finalize
 leaves require the added activation expected_version field. A version mismatch
-uses activation-conflict/4 with closed details
+uses activation-version-conflict/4 with closed details
 `{activation_id:ID,expected_version:int,actual_version:int}`; competing prepare
 retains the Phase 21 activation-conflict details variant. Missing predecessor
 uses both expected_prior fields null; otherwise both must match current state.
@@ -121,7 +186,8 @@ capabilities. Ordinary `run.recover` requires `run.recover`; force additionally
 requires `run.force-recover`. Claims use their corresponding action capability;
 checkpoint/observe/budget need matching activated harness capabilities and
 Envelope grants. Stop raise/resolve and Attention resolve require their exact
-action capabilities/grants. Abandon needs `run.abandon`, plus force authority
+action capabilities/grants under section 2.1. Close needs `run.close`. Abandon
+needs `run.abandon`, plus force authority
 for a known-live observation; absent/unknown liveness cannot authorize it.
 Force requests reference an existing live observation, never null. Ordinary
 recovery requires a terminated observation. Read operations are inspection only.
@@ -144,6 +210,7 @@ or export. All are retryable false. Transient lock errors retain retryable true.
 | recovery-state-conflict | conflict / 4 | `{run_id:ID,observation_digest:?digest,paths:text[],reasons:text[]}` |
 | run-version-conflict | conflict / 4 | `{run_id:ID,expected_version:int,actual_version:int}` |
 | attention-version-conflict | conflict / 4 | `{attention_id:ID,expected_version:int,actual_version:int}` |
+| activation-version-conflict | conflict / 4 | `{activation_id:ID,expected_version:int,actual_version:int}` |
 | recovery-already-linked | conflict / 4 | `{run_id:ID,successor_run_id:ID}` |
 | stop-not-found / attention-not-found / observation-not-found | not-found / 3 | `{id:ID}` |
 | stop-unresolved | precondition / 4 | `{stop_ids:ID[],reasons:Reason[]}` |
@@ -153,6 +220,14 @@ or export. All are retryable false. Transient lock errors retain retryable true.
 | activation-direction-conflict | precondition / 4 | `{activation_id:ID,point_of_no_return:boolean,required_direction:"restore-prior"\|"complete-forward"}` |
 | activation-incomplete | precondition / 4 | `{activation_id:ID,components:text[],reasons:Reason[]}` |
 | import-target-conflict | conflict / 4 | `{target_root:text,reason:"populated"\|"different-import"\|"unsafe-path"}` |
+
+Reusing `executor.id` in start or recovery returns retained `duplicate-entity`,
+conflict / exit 4, subject `{type:"run",id:null}` for start or
+`{type:"run",id:<prior_run_id>}` for recovery,
+and exact details `{entity_type:"run",identity:{fields:["executor_id"],values:[<reused ID>]}}`.
+Identity is unique across all project Runs, including terminal/imported ones;
+same-key replay is checked first and returns its original result. No new Event,
+Claim, successor, or Stop is created on a conflicting new request.
 
 `activation-recovery-unavailable` is removed once activation recovery exists;
 post-commit abort returns `activation-direction-conflict`. Unknown schemas and

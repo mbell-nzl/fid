@@ -17,6 +17,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
+- DEC-184/public-interface section 2.1: add exactly claim.expire and run.observe.
+  Executor IDs are project-global immutable identities; conflicting new start
+  or imported identity reuse returns the declared duplicate-entity shape with
+  no effects. Same-key replay returns the original result first. (VAL-012)
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 2; schema.md section 5.
 - Unknown liveness is not termination; expiry equality is expired.
@@ -117,4 +121,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

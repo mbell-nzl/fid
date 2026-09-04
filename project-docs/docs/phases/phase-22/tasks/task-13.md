@@ -8,7 +8,7 @@ Create bounded manifest-v2 recovery exports and validate their full identity, re
 
 - VAL-054: Manifest v2 contains all facts needed for recovery without project prose or SQLite.
 - VAL-055: Valid hashes cannot conceal invalid recovery history or references.
-- VAL-056: Archive extraction enforces size and path boundaries.
+- VAL-056: Archive validation obeys every case in the explicit boundary acceptance matrix.
 - VAL-057: Archive validation has no project or destination effects.
 
 Full sources, pass/fail criteria, and validator ownership are in
@@ -20,6 +20,15 @@ Full sources, pass/fail criteria, and validator ownership are in
 - contracts.md section 10; public-interface.md section 5.
 - Use stdlib ZIP/JSON and existing Event appliers; no runtime dependency.
 - Bound actual expanded bytes and line sizes, reject unknown Effects and special/path-escaping entries.
+- DEC-186: implement every 056-a..k case in the validation contract, with
+  below/equal/above numeric boundaries and named permitted/rejected path types.
+  Show which limiter each test reaches; an unrelated early rejection is not
+  boundary proof. A forged raw ZIP rejected before decompression cannot prove
+  the cumulative measured-byte cap. Keep all contract ceilings unchanged.
+- Generate large compressed/count fixtures per run, never commit them. Stream
+  measured expanded bytes to a discard/count path without gigabyte allocation;
+  the total-cap fixture uses individually permitted entries. Keep actual import
+  stage and destination on one filesystem and materialized large files off tmpfs.
 - Manifest-v1 validation stays read-only; import-v1 is explicitly unsupported.
 - Split export.go by archive writing/validation responsibilities while preserving its accepted behavior; it already exceeds the file target.
 - `execution-scope.md` is incorporated into this scope: it assigns only
@@ -60,7 +69,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - [ ] Manifest v2 contains all facts needed for recovery without project prose or SQLite. (VAL-054)
 - [ ] Valid hashes cannot conceal invalid recovery history or references. (VAL-055)
-- [ ] Archive extraction enforces size and path boundaries. (VAL-056)
+- [ ] Every 056-a..k boundary case has its own passing/rejecting evidence,
+  including the 8 GiB measured cumulative cap; full valid controls and unchanged
+  filesystem snapshots accompany the matrix. (VAL-056)
 - [ ] Archive validation has no project or destination effects. (VAL-057)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
@@ -114,4 +125,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

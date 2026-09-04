@@ -19,6 +19,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 8; schema.md activation resources/recovery.
+- DEC-184: version mismatch uses activation-version-conflict; competing prepare
+  retains its separate activation-conflict shape. Recovery leaves retain
+  bootstrap attribution and add no activated action or Envelope grant.
+- DEC-187/kit-contract-mapping.md: fid persists component agreement; the kit
+  coordinator owns durable recovery-export binding. No fid archive field or
+  claim that portable availability proves that external binding is authorized.
 - Five resource identities plus authority/Gate content are immutable prepare inputs; observations use expected versions.
 - Kit materializes files; fid records and validates agreement without editing provider/project files.
 - Converge the existing activation.prepare adapter input and all resource fixtures now; task 11 adds the new recovery leaves, not delayed parser compatibility.
@@ -38,6 +44,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/evidence/registration.go`
 - `internal/journal/`
 - `cmd/fid/activation.go`
+- `cmd/fid/response_errors.go` - exact version-conflict mapping for amended leaves.
+- `internal/cli/` - register activation-version-conflict with its closed shape.
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
 - `project-docs/docs/phases/phase-22/tasks/task-10-done.md`.

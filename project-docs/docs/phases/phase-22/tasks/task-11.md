@@ -15,6 +15,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
+- DEC-184: cover activation-version-conflict separately from competing prepare
+  and direction conflict, including closed details for each. Bootstrap recovery
+  remains callable without finalized Actor authority. (VAL-045)
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - public-interface.md activation leaves; contracts.md section 12.
 - CF-035 uses consuming-path validation; help and archive validation must remain usable with malformed project config.

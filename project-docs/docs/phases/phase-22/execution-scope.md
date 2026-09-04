@@ -57,6 +57,8 @@ QA Lead must perform fresh feasibility validation in Heavy mode before Ready.
 | 6,9,11,15,18 | CLI/JSON/live outputs, shared semantic fixtures, process journeys | both gates; tagged integration is mandatory, never substituted |
 | 13-14 | Archive parser, effect validation, staging/publication fault injection | ordinary race/coverage; process corpus advances in task 15 |
 | 2,7 | CF-034 workflow/evidence branch coverage | named package `go test -race -cover` before and after edits |
+| 1,16 | R-13 early reference rebuild regression | one exact fresh-process 100k benchmark plus instance identity; unchanged parity/<30 s self-assert |
+| 8 | R-14 signal/timeout helper repair and cancelled outcome | cmd/fid ordinary suite, named 15-repeat focused race command and two full benchmark-gate runs |
 | 17 | CF-024 reference rebuild and phase performance | three exact fresh-process benchmark commands, then general benchmark gate |
 
 The tag selection is case-sensitive and remains exactly:
@@ -64,6 +66,23 @@ The tag selection is case-sensitive and remains exactly:
 No other environment-gated suite is assigned. New source helpers and fake
 adapters must be used by real assertions; merely compiling unused helpers is
 not behavioral evidence.
+
+DEC-184 names each action's first owning task in public-interface section 2.1.
+In particular task 4 adds run.checkpoint, task 8 adds close/abandon, task 9
+removes finish action/Event acceptance, and task 10 adds no bootstrap action.
+Task 4's canonical digest vectors execute in ordinary in-package tests; its
+displaced subprocess fixtures execute in the tagged suite. Task 12 exercises
+actual repository observations through retained target/evidence paths.
+
+DEC-186's R-14 fixture repair is explicitly assigned to task 8, whose accepted
+terminal-outcome change extends the same test. The file has no build tag and
+is exercised by every ordinary task gate, so earlier tasks may encounter it.
+On such a failure the Runner must obtain a bounded same-task scope amendment
+for the exact cmd/fid/gate_run_test.go repair before retrying. The amendment
+includes the repeated focused and full benchmark verification from task 8;
+failure is never waived until the scheduled owner. No unrestricted earlier-task
+repair or gate change is authorized. Keep both failure and integrated repair
+provenance; task 8 retains cancellation ownership and checks the repair.
 
 ## 4. Review And Command Accounting
 

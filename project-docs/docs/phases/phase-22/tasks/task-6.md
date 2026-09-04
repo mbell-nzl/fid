@@ -15,6 +15,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
+- DEC-184: retain --project; cover required observation IDs, duplicate executor
+  details, and rejection-without-Stop behavior in the shared corpus. (VAL-023/024)
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - public-interface.md run/claim recovery leaves; contracts.md sections 2-4.
 - Run a real subprocess, never replace this journey with an in-process command test.

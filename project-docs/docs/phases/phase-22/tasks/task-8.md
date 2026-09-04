@@ -19,6 +19,18 @@ Full sources, pass/fail criteria, and validator ownership are in
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - contracts.md section 7; public-interface.md run.close/run.abandon.
 - Cancellation, timeout, signal, spawn failure, and harness failure are distinct non-success observations.
+- DEC-184: add exactly run.close/run.abandon actions; abandonment requires a
+  non-null existing observation just as recovery does. Keep run.finish only
+  until task 9 removes its leaf, action, and current Event acceptance.
+- DEC-186/R-14: repair the existing signal/timeout cases in
+  TestGateRunRecordsExactNonSuccessTerminalOutcomes while adding cancellation.
+  After self-signalling, the helper must block until observed termination;
+  it must not return into os.Exit(0). The timeout fixture uses a blocking child,
+  verifies it spawned, and leaves adequate startup time before its actual gate
+  deadline. Synchronize on child readiness, not arbitrary sleep or signal order.
+  Include bounded CPU-load coverage with cleanup of helpers. Preserve exact
+  outcome/exit/signal assertions and production timeout semantics; never accept
+  spawn-failed as a timeout, disable parallel tests, or retry until green.
 - A lost executor response cannot manufacture a Receipt or imply pass.
 - Run success requires shared evaluator success and qualifying executor/Claim authority; abandonment requires terminal proof or exact force authority.
 - `execution-scope.md` is incorporated into this scope: it assigns only
@@ -37,6 +49,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/workflow/run.go`
 - `internal/workflow/run_close.go`
 - `internal/workflow/run_close_test.go`
+- `internal/workflow/activation.go` - only close/abandon action admission.
+- `cmd/fid/gate_run_test.go` - cancelled outcome and bounded R-14 fixture repair.
 - `internal/validation/`
 - `internal/journal/`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
@@ -61,6 +75,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Acceptance Criteria
 
 - [ ] Observed unsuccessful termination cannot produce a passing Receipt. (VAL-031)
+- [ ] The signal and timeout regressions retain their exact subjects and pass
+  with synchronized subprocesses under load. Record per-row provenance using
+  DEC-186's corrected b694991/76ad781 history, red/green, and every attempt.
+  The focused repeated command and two consecutive full benchmark-gate runs
+  terminate successfully; no discarded first failure. (VAL-031)
 - [ ] An abandoned Attempt cannot be replayed into an automatic second spawn. (VAL-032)
 - [ ] Run success is derived from qualifying trusted facts. (VAL-033)
 - [ ] Intentional abandonment is distinct from interruption and proof. (VAL-034)
@@ -98,6 +117,9 @@ golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 go test -tags integration -race ./cmd/fid/integration/...
+go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid
+go test -bench . -benchmem ./...
+go test -bench . -benchmem ./...
 ```
 
 No exception to the full task gate. Commands whose expected pass is nonzero:
@@ -110,10 +132,12 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 ## Notes For Developer
 
 - Start after task 7 closes.
+- If an earlier task integrated the bounded R-14 repair under DEC-186, inspect
+  its actual commit and retain its evidence; verify it here and converge the
+  cancellation extension. Do not reintroduce the defect to manufacture red.
 - One task per Developer session; recovery may continue the same task.
 - This task belongs to QA Review window 3.
 - Commit using Conventional Commits with `Refs: phase-22/task-8`.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

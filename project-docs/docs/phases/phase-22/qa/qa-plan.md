@@ -3,10 +3,14 @@
 > Phase: 22 - Failure And Recovery
 > Refreshed: 2026-09-05
 > QA Lead: Claude Opus 5
-> Status: **PENDING TECH LEAD REFINEMENT** - not Ready.
+> Original QA assessment: **PENDING TECH LEAD REFINEMENT** - not Ready at assessment.
+> Tech Lead planning update, 2026-09-05: **READY FOR HUMAN APPROVAL** with
+> [tl-refinement.md](tl-refinement.md), DEC-184..187. All original findings and
+> measurements below are retained; this update records no new QA execution.
 > Not `BLOCKED`: every required command is concrete and was executed or
 > feasibility-proven fresh in this session (section 6). The plan becomes Ready
-> when the Tech Lead dispositions R-01..R-14 in section 2.8.
+> when the Tech Lead dispositions R-01..R-14 in section 2.8; the linked addendum
+> records those dispositions and the exact task/validation refinements.
 > Operating mode: Heavy. No command or feasibility result carries forward.
 
 ## 1. Scope And Source Documents

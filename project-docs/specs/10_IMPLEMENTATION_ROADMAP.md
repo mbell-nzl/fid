@@ -1,6 +1,6 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 21 complete and merged; Phase 22 planning draft awaits QA and Human approval
+**Status:** Phase 21 complete and merged; Phase 22 QA refinements recorded, awaiting Human approval
 **Last updated:** 2026-09-05
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
@@ -65,8 +65,9 @@ migrations `0013`/`0014`. Incomplete semantic capabilities remain
 `available:false`. Phase 21 is merged at
 `89d964a84dbdd297fdf472d6f78b001e2efac702`. **Phase 22 (failure and recovery)
 has a proposed Heavy pack: 18 tasks and 80 validation assertions.** The pack is
-under `../docs/phases/phase-22/` and awaits independent QA consistency/fresh
-feasibility, a Ready QA plan, Tech Lead refinements, and Human acceptance.
+under `../docs/phases/phase-22/`. QA recorded fresh feasibility and independent
+consistency assessment; DEC-184..187 and `qa/tl-refinement.md` disposition all
+findings. The combined plan is ready for Human acceptance; execution is pending.
 
 ## 3. Foundation to retain
 
@@ -139,6 +140,15 @@ until Phase 24's parallel-conflict semantics qualify (DEC-180). The Phase 22
 row's "only when complete" condition does not authorize partial advertisement.
 Recovery operations and limits advance in Phase 22; the three other named
 capabilities require their complete scoped conformance before enablement.
+
+Phase 22 DEC-187 records the kit comparison in
+`../docs/phases/phase-22/kit-contract-mapping.md`. Receiving work is explicit:
+Phase 23 plans Review charge semantics, review_cycles and review-rework-exhausted;
+Phase 24 plans generic retry-exhausted and removes the revision-1 limitation.
+Phase 25 qualification (CF-037) must prove kit coordinator recovery-export
+binding, derived terminalState expectation mapping, validate-only/scope/asOf
+mapping, deduplication-key agreement and explicit representations for unmapped
+Stop codes. No fid capability advertisement alone closes these adapter duties.
 
 ### 5.1 Current implementation ownership check
 
@@ -252,13 +262,14 @@ reading `.fid/` internals.
    one-Issue operational walking skeleton and its owned V1 removal; all 87 VAL
    assertions and all four Human checks pass. The delivered wire contract is
    `../docs/phases/phase-21/public-interface.md` and the sign-off is DEC-179.
-5. **Planning draft written (2026-09-05).** Review the Phase 22 Heavy mode,
+5. **Planning refined (2026-09-05).** Review the Phase 22 Heavy mode,
    18-task pack, 80-assertion validation contract, exact slice/wire/DDL/Event
    amendments, removal inventory, and QA handoff in `../docs/phases/phase-22/`.
    DEC-182 dispositions every carry-forward; DEC-183 schedules the remaining
-   delivery-control retrospective work separately as CF-036. QA Lead prepares
-   fresh feasibility and independent kit consistency review, then Tech Lead
-   applies refinements. No implementation begins before a Ready QA plan and
+   delivery-control retrospective work separately as CF-036. QA's fresh
+   feasibility/consistency assessment and TL R-01..14/C-01..13 dispositions are
+   recorded; DEC-184..187 refine the pack and CF-037 owns remaining kit
+   qualification duties. No implementation begins before the refined plan and
    Human acceptance of the mode, product amendments, and ordered task list.
 
 No implementation task should cite the superseded historical version roadmap

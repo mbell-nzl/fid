@@ -18,6 +18,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
 - schema.md sections 1-3,5-6.
 - Apply exactly the DDL in schema.md; no migration of old fid journals.
+- DEC-184: prove non-null recovery observation references and the identical
+  seven-code Stop/Attention constraints, including invalid insert/replay cases.
+- DEC-186/R-13: capture one fresh 100k reference rebuild sample at schema 15;
+  preserve CF-024's parity self-assert and <30000 ms limit. This sample is an
+  early required regression check, not task 17's three-sample qualification.
 - Converge active schema reporting in rebuild/export and their fixtures now; do not hard-code final schema 16.
 - Do not enable domain operations or mark recovery capabilities available.
 - `execution-scope.md` is incorporated into this scope: it assigns only
@@ -58,6 +63,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] Fresh init installs the recovery schema and enforces its identity constraints. (VAL-001)
 - [ ] Disposable full down/up restores the same accepted empty baseline. (VAL-002)
 - [ ] The same closed Event semantics govern live apply and replay. (VAL-003)
+- [ ] The schema-15 reference sample terminates within the unchanged bound;
+  report instance identity and real output (early warning; final qualification owner
+  remains task 17). Route any known R-14 fixture failure per DEC-186.
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,
@@ -92,6 +100,13 @@ golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 go test -tags integration -race ./cmd/fid/integration/...
+go version
+go env GOOS GOARCH
+uname -srm
+nproc
+grep -m1 '^model name' /proc/cpuinfo
+grep -m1 '^MemTotal:' /proc/meminfo
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
 ```
 
 No exception to the full task gate. Commands whose expected pass is nonzero:
@@ -110,4 +125,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-

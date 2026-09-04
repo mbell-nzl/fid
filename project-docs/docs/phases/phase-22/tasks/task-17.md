@@ -111,6 +111,7 @@ go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benc
 go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
 go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
 go test -bench . -benchmem ./...
+go test -bench . -benchmem ./...
 go build -o /tmp/fid ./cmd/fid
 ```
 
@@ -123,6 +124,9 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 
 ## Notes For Developer
 
+- QA-78/DEC-186 requires two consecutive clean full benchmark-gate runs and
+  the task-8 R-14 repair evidence. Each occurrence above has a separate observed
+  result. Any failure remains in the report; repair causally, never mine green.
 - Start after task 16 closes.
 - One task per Developer session; recovery may continue the same task.
 - This task belongs to QA Review window 6.
@@ -130,4 +134,3 @@ Report lint is a Runner control after the report commit, not a Developer gate.
 - Never infer ownership from a historical filename or task label. No-progress
   budgets exclude interruptions and attempts forbidden from repairing the cause.
 - Do not read held-out scenario material or activate another agent.
-
