@@ -4022,3 +4022,271 @@ and need not be contiguous. Ordering is not authority.
 - Triage: TRG-21-022 (BLOCK, escalated as ESC-21-016)
 - Protected category: protected task-boundary authority for a production implementation repair affecting the accepted public Event contract
 - Next Human or external-authority action: Full Tech Lead must record a bounded task-22 production-source scope amendment authorizing only the causal activation Event-name repair with unchanged Event schema, public interface, command, assertion semantics, accepted status/scope, transition and frozen-workflow behavior, thresholds, budgets, tolerances, policy, corpus, journey assertions, and all failed evidence; or record another protected recovery route. Do not change or narrow the tagged integration gate, weaken assertions, conceal the typo, or grant generic out-of-scope access
+
+### 2026-09-03 17:44 CORRECTION
+
+- Supersedes: none; this correction records an orchestration identity inconsistency without rewriting the accepted 2026-09-03 16:56 TRIAGE TRG-21-022 or 2026-09-03 16:57 STOP
+- Error: the preserved TRG-21-022 ledger TRIAGE records Attempt count: 3, but DEC-175 and the requested recovery route identify attempt 2 as the completed MATERIAL-PROGRESS recovery and require RUN-RESUME Attempt count: 3; schema-v2 validation requires a STOP resume Attempt count exactly one greater than its governing TRIAGE
+- Evidence: the exact schema-v2 RUN-RESUME candidate naming 2026-09-03 16:57 STOP, governing TRG-21-022 / ESC-21-016, DEC-175, and Attempt count: 3 was rejected with INVALID RUN-RESUME Attempt count must increment its governing TRIAGE; the ledger remained byte-for-byte unchanged and standalone validation remained VALID state=STOPPED
+- Correction: the prior TRIAGE, STOP, DEC-175, and all task-22 evidence remain immutable; no RUN-RESUME, TASK-RECOVERY, or Developer dispatch is authorized until an append-only authoritative reconciliation resolves the attempt-identity mismatch without replacing TRG-21-022 or ESC-21-016
+- Human attention required: yes
+
+### 2026-09-03 18:09 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-03 16:57 STOP / TRG-21-022 / ESC-21-016
+- Governing TRG: TRG-21-022
+- Governing ESC: ESC-21-016
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 4
+- Checkpoint: phase-21 HEAD db3640d2dd198289ddc04023e8b7b4416af4d253 verified with subject docs(tl): reconcile task 22 recovery identity; DEC-175 commit 8f435cb and DEC-176 commit db3640d are present; the prior TRIAGE, STOP, rejected attempt-3 append evidence, corpus, journey, report, and all failed evidence remain preserved; only runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Resolution evidence: workflow-sequence-lint.sh returned VALID state=STOPPED with terminated exit_code: 0 before resume; DEC-176 preserves TRG-21-022 attempt 3 and authorizes the identical bounded DEC-175 product repair as recovery attempt 4; git rev-parse HEAD returned db3640d2dd198289ddc04023e8b7b4416af4d253 with terminated exit_code: 0; current escalation state records no open escalation
+- Resolution authority: DEC-176
+- Continuing task: task-22
+- Next recovery: task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 4
+
+### 2026-09-03 18:09 TASK-RECOVERY task-22
+
+- Source: TRG-21-022 / DEC-175 / DEC-176
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-022 / DEC-175 / DEC-176
+- Triage disposition: N/A
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope under the amended task-22-walking-skeleton.md plus task-22-done.md
+- Forbidden changes: no change beyond the DEC-175 Event-type derivation in internal/workflow/activation.go and its cmd/fid/activation_test.go regression assertion; no change to any task-22 command or expected exit status, public interface, Event schema, transition engine, frozen task-default/subtask-default/epic-default workflows, VAL-072/073/084/085/086, prior corpus/journey/negative assertions/failed evidence, threshold, budget, tolerance, or policy; no second Envelope, import, recovery, Review/Human Outcome, Attention, held-out scenarios, t.Skip, build tags, -run narrowing, or assertion loss
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD db3640d2dd198289ddc04023e8b7b4416af4d253 verified; DEC-175 and DEC-176 are committed; task-22 corpus commit a99b4270f70e98111b5bae43c54ed92aed7078c6, journey-guard commit 236540c48a2129d70480b3222ba4122a5471eb48, authored-workflow implementation commit a6b3a448aef6fcaab5aed3f3e46dad1df6b2cb1d, and recovery report commit f4d6ffe60691f4487312cf9ce76d58afb513f640 remain preserved; attempt 2 is MATERIAL-PROGRESS; attempt 3 is only the immutable TRIAGE identity; only runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Phase worktree: /home/mark/projects/fid on branch phase-21; runner-owned run-ledger.md is the only dirty path; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - retain the committed corpus, authored workflow, 22-Event journey, and negative matrix; add the non-tagged activation Event-type regression assertion red first; replace only the transitionActivation Event-type suffix derivation and ad-hoc overrides with the DEC-175 exhaustive mapping and typed unmapped-operation error; run the complete byte-identical eight-command task block with observed terminations; preserve attempt-1 and attempt-2 failed evidence; finalize the report; and pass two-argument report-lint
+- Next action: execute the same-task Task 22 Developer continuation from a6b3a44 under DEC-175/176; after typed completion independently verify all eight command results, report identity, and report-lint before recording REPAIR task-22 RESOLVED and TASK task-22 COMPLETE
+- Human attention required: no
+
+### 2026-09-03 18:33 REPAIR task-22
+
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 4
+- Starting checkpoint: TASK-RECOVERY task-22 at 2026-09-03 18:09; phase-21 HEAD db3640d2dd198289ddc04023e8b7b4416af4d253; DEC-175/176 bounded activation Event-name repair authorized; consecutive no-progress attempts were 0/2
+- Ending checkpoint: activation repair commit c3290ad063e31523bd35e78b6eae8a2db86dc806 and accepted-resume invocation commit a6e05b31dd1bed9274619879849799574278d243; phase-21 HEAD a6e05b31dd1bed9274619879849799574278d243; activation red/green completed; formatting, lint, race/coverage, and coverage-report commands passed; the first tagged integration attempt failed at the stale projection resume invocation and the byte-identical rerun advanced to the absent receipt get leaf; only runner-owned run-ledger.md is dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: `go test -race ./cmd/fid` first failed at activation finalized Event type activation.finalizeted versus activation.finalized with terminated exit_code: 1, then passed after the bounded mapping repair with `ok github.com/mbell-nzl/fid/cmd/fid 344.360s` and terminated exit_code: 0; the exact gate sequence passed gofmt, lint, repository race/coverage, and coverage report; the tagged integration command failed at `projection resume` with exit 2, the in-scope correction aligned it to the accepted `fid resume` wire row, and the byte-identical rerun failed later at `receipt get` with exit 2 because the accepted Receipt read command is not registered; both tagged attempts terminated exit_code: 1 and remain failed evidence
+- Next checkpoint: protected task-boundary triage for the missing accepted receipt.get and receipt.list implementation, plus the stale contracts.md resume spelling, before another bound same-task recovery or STOP
+
+### 2026-09-03 18:35 TRIAGE TRG-21-023
+
+- Trigger: task-22 attempt-4 tagged integration gate reaches accepted Receipt get after activation and resume convergence, but Receipt get/list are absent from the shipped command tree
+- Originating task: task-22
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 5
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: runner-recorded phase HEAD a582a6f73d81a88acefe82807423366fa83a65b4 verified; activation repair c3290ad063e31523bd35e78b6eae8a2db86dc806 and accepted-resume correction a6e05b31dd1bed9274619879849799574278d243 verified; Task 22 attempt 4 is MATERIAL-PROGRESS; the byte-identical tagged gate terminated exit_code: 1 at fid receipt get unknown-command exit 2; only runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Verdict: BLOCK (escalated as ESC-21-017)
+- Resolution evidence: public-interface.md section 4.2 and the committed p21_conformance corpus require receipt.get / fid receipt get and receipt.list / fid receipt list with closed read-only filters, ordering, limit, result and failure contracts; root.go registers no Receipt command and internal/evidence exposes no Receipt read API; the current Task 22 recovery production authority is limited to the activation Event derivation; contracts.md section 10 also retains stale fid projection resume prose contrary to the exact fid resume wire row
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-023 entry confirmed; ESC-21-017 confirmed in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-03 18:35 STOP
+
+- Cause: task-22 is blocked because its repaired final journey reaches the accepted fid receipt get leaf, but neither Receipt get nor list is implemented and the causal internal/evidence plus cmd/fid paths are outside the current DEC-175 bounded production scope; TRG-21-023 / ESC-21-017 govern the stop
+- Triage: TRG-21-023 (BLOCK, escalated as ESC-21-017)
+- Protected category: protected task-boundary authority for missing accepted public Receipt read leaves and protected Resume contract-prose reconciliation
+- Next Human or external-authority action: Full Tech Lead must assign the smallest executable task scope for read-only receipt.get/list implementation, CLI wiring, permanent tests, and the Task 22 journey, and may correct only contracts.md section 10 stale fid projection resume prose to accepted fid resume; preserve exact operation/command/args/filter/outcome/ordering/limit/result/failure/exit contracts, Task 22 command block, corpus, journey strength, VAL identity, thresholds, budgets, tolerances, policy, and all failed evidence
+
+### 2026-09-03 18:43 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-03 18:35 STOP / TRG-21-023 / ESC-21-017
+- Governing TRG: TRG-21-023
+- Governing ESC: ESC-21-017
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 6
+- Checkpoint: phase-21 HEAD 42a8a68e387f0f1ebaef9923bc7688f8c60a7fea verified with subject docs(tl): authorize receipt read completion; DEC-177, amended Task 22 scope, Receipt persistence schema, exact contracts, and resolved ESC-21-017 are committed; attempt-4 activation and Resume corrections plus all prior failed evidence remain preserved; only runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Resolution evidence: workflow-lint completed with no failures and terminated exit_code: 0; git diff --check terminated exit_code: 0; DEC-177 sustains TRG-21-023 and authorizes the minimum accepted Receipt read/persistence repair as recovery attempt 6; git rev-parse HEAD returned 42a8a68e387f0f1ebaef9923bc7688f8c60a7fea with terminated exit_code: 0; current escalation state records no open escalation
+- Resolution authority: DEC-177
+- Continuing task: task-22
+- Next recovery: task-22 | in-scope-implementation | task-scope | task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain | 6
+
+### 2026-09-03 18:43 TASK-RECOVERY task-22
+
+- Source: TRG-21-023 / DEC-177
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-21-023 / DEC-177
+- Triage disposition: N/A
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 6
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope under the DEC-175/177 amended task-22-walking-skeleton.md plus task-22-done.md
+- Forbidden changes: no change to accepted Receipt or Resume operation names, command paths, arguments, flags, result shapes, filters, outcome vocabulary, limit, ordering, failure or exit semantics, Event or mutation behavior, exact 22-Event budget, Task 22 command block, corpus, journey assertion strength, VAL identity, thresholds, budgets, tolerances, policy, or prior evidence; no production change beyond the DEC-175 activation mapping and DEC-177 Receipt read/persistence implementation; no second Envelope, import, recovery, Review/Human Outcome, Attention, held-out scenarios, t.Skip, build-tag narrowing, -run narrowing, or assertion loss
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 42a8a68e387f0f1ebaef9923bc7688f8c60a7fea verified; DEC-177 and its accepted spec/task amendments are committed; activation repair c3290ad063e31523bd35e78b6eae8a2db86dc806 and accepted-Resume invocation correction a6e05b31dd1bed9274619879849799574278d243 remain preserved; attempts 1, 2, and 4 plus their failures remain immutable; only runner-owned run-ledger.md is dirty; no hidden index flags are present
+- Phase worktree: /home/mark/projects/fid on branch phase-21; runner-owned run-ledger.md is the only dirty path; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - add focused Receipt domain/CLI/migration assertions red first; implement exact get/list, typed failures, filters, ordering, read-only behavior, and canonical durable rejected_artifacts under DEC-177; keep the existing journey/corpus/negative matrix and exact 22-Event budget; rerun the complete byte-identical eight-command block with observed terminations; preserve every prior failed attempt and record mandatory deviations; finalize the report and pass two-argument report lint
+- Next action: execute the same-task Task 22 Developer continuation under DEC-177; after typed completion independently verify all eight command results, report identity, and report lint before recording REPAIR task-22 RESOLVED and TASK task-22 COMPLETE
+- Human attention required: no
+
+### 2026-09-03 19:05 REPAIR task-22
+
+- Trigger signature: task-22:specification-contradiction:contracts-16-event-budget-vs-task-default-transition-chain
+- Attempt count: 6
+- Starting checkpoint: TASK-RECOVERY task-22 at 2026-09-03 18:43; phase-21 HEAD 42a8a68e387f0f1ebaef9923bc7688f8c60a7fea; DEC-177 Receipt read/persistence repair authorized; consecutive no-progress attempts were 0/2
+- Ending checkpoint: Receipt implementation/test commit ac6270ad34d51f5d39dedd2bff1fddeb7f9e5632 and final report commit 5d8204c02447286ab7de0cbc8786a131b495a0b5; phase-21 HEAD 5d8204c02447286ab7de0cbc8786a131b495a0b5; report is committed and clean; only runner-owned run-ledger.md remains dirty
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: DEC-177 red evidence ended FAIL with terminated exit_code: 1 for the missing Receipt leaves and lost rejection facts; the focused byte-identical rerun passed at ok github.com/mbell-nzl/fid/cmd/fid 7.981s with terminated exit_code: 0; all eight exact task commands then terminated exit_code: 0, including repository race/coverage, tagged real-process journey at ok github.com/mbell-nzl/fid/cmd/fid/integration 7.927s, benchmark suite, and final binary build; the tagged journey proves Receipt get/list before and after rebuild with unchanged ordered 22 Events; two-argument report-lint returned OUTCOME COMPLETE and PASS report-lint completed with no failures with terminated exit_code: 0; every prior failed attempt remains in the report and ledger
+- Next checkpoint: end-of-phase QA review, VAL-087, and Human checklist
+- Human attention required: no
+
+### 2026-09-03 19:05 TASK task-22 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-22-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: ac6270ad34d51f5d39dedd2bff1fddeb7f9e5632 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-04 07:34 REVIEW review-8
+
+- Path: project-docs/docs/phases/phase-21/qa/final-review.md
+- Tasks covered: task-1 through task-22
+- Outcome: BLOCK
+- Owning task: none
+- Re-review of: none
+- Must-fix: 2 / Improvement: 4 / blocker candidates: 1
+
+### 2026-09-04 07:37 TRIAGE TRG-21-024
+
+- Trigger: the initial Phase 21 final review is BLOCKED by MF-1 and MF-2, but DEC-178 resolves the protected MF-1 authority question and leaves a bounded task-13 documentation repair for MF-2.
+- Originating task: task-13
+- Trigger signature: task-13:qa-rework:final-review:MF-2
+- Attempt count: 1
+- Repair category: qa-rework
+- Repair authority: QA review review-8 / DEC-178
+- Checkpoint: runner-verified phase HEAD def5f9e95b17249887a3bbc2b0289a8d13374574 with matching subject; DEC-178 is present and resolves MF-1; the initial final review is recorded as REVIEW review-8 BLOCK; only the runner-owned run ledger and TL-Lite triage-log update are dirty; no hidden index flags are present
+- Verdict: REPAIR
+- Resolution evidence: DEC-178 resolves MF-1 by making the section 8.2 migration 0014 SQL match the shipped migration without changing accepted behavior, validation criterion, or status; MF-2 remains real and is bounded to removing max_timeout_ms and max_artifact_bytes from the section 2 config example, preserving all other rules, implementation, commands, assertions, and evidence
+- Triage log: project-docs/docs/phases/phase-21/triage-log.md TRG-21-024 entry confirmed; no ESC created
+
+### 2026-09-04 07:37 TASK-RECOVERY task-13
+
+- Source: TRG-21-024 / DEC-178
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review review-8 / DEC-178
+- Triage disposition: N/A
+- Trigger signature: task-13:qa-rework:final-review:MF-2
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/specs/04_TRD_CONFIG.md,project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- Forbidden changes: no product code or tests; no change outside the section 2 example block or task-13-done.md; no rules-paragraph, accepted-bounds, implementation, migration 0014, VAL-002 wording/evidence/pass-fail criterion/status, command, assertion, scope, threshold, budget, tolerance, policy, task, QA-contract, decision, or prior-evidence change; preserve the initial exit_code: 2 reproduction and all prior evidence
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD def5f9e95b17249887a3bbc2b0289a8d13374574 verified; DEC-178 and the amended task-13 specification are committed; initial final review REVIEW review-8 is BLOCK and TRG-21-024 authorizes only the bounded MF-2 documentation recovery; only runner-owned run-ledger.md and TL-Lite triage-log.md are dirty; no hidden index flags are present
+- Phase worktree: /home/mark/projects/fid on branch phase-21; runner-owned run-ledger.md and TL-Lite triage-log.md are dirty; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve the initial documented-example exit_code: 2 reproduction, remove only max_timeout_ms and max_artifact_bytes from the section 2 example, rerun that byte-identical documented-example command to exit_code: 0, run every amended task-13 command with observed termination, commit the documentation and report changes, pass the authoritative two-argument report-lint control, and obtain a fresh independent final review
+- Next action: dispatch the same-task task-13 Developer continuation under the amended task-13 specification; it edits only the two allowlisted files, preserves all failed evidence, runs the exact amended command block, commits the work and report, returns a typed outcome, and then the Phase Runner independently verifies the eight task commands, report identity, and report-lint
+- Human attention required: no
+
+### 2026-09-04 07:54 REPAIR task-13
+
+- Trigger signature: task-13:qa-rework:final-review:MF-2
+- Attempt count: 1
+- Starting checkpoint: TASK-RECOVERY task-13 at 2026-09-04 07:37; phase-21 HEAD def5f9e95b17249887a3bbc2b0289a8d13374574; DEC-178 bounded MF-2 documentation repair authorized; consecutive no-progress attempts were 0/2
+- Ending checkpoint: implementation commit abf6614e0d02e8e713d5df478284a26ca759c260 and report commit 6ddb5ffb967574ec35db118c5962e5d83d4f6cf3; phase-21 HEAD 6ddb5ffb967574ec35db118c5962e5d83d4f6cf3; all eight exact task commands passed with observed terminations; report-lint terminated exit_code: 1 because Completion category is qa-rework
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: the bounded config example repair removed only max_timeout_ms and max_artifact_bytes; the initial documented-example exit_code: 2 reproduction, byte-identical exit_code: 0 rerun, all eight amended task commands, observed terminations, and prior failed evidence are preserved; report-lint narrowed the remaining obligation to the canonical Completion category, which must be none for a complete report
+- Next checkpoint: another TASK-RECOVERY task-13 report-repair continuation limited to task-13-done.md
+- Human attention required: no
+
+### 2026-09-04 07:54 TASK-RECOVERY task-13
+
+- Source: report-lint project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-13:qa-rework:final-review:MF-2
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- Forbidden changes: edit only the exact task-13 completion report to set the canonical Completion category to none; preserve the initial exit_code: 2 reproduction, byte-identical exit_code: 0 rerun, every amended command row, observed terminations, all prior failed evidence, implementation, tests, task specification, validation contract, QA plan, decisions, triage log, run ledger, and accepted contracts; do not change product code, tests, commands, specifications, QA artifacts, decisions, or gate semantics
+- Originating report: project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-13-done.md project-docs/docs/phases/phase-21/tasks/task-13-executor-policy.md
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-21 HEAD 6ddb5ffb967574ec35db118c5962e5d83d4f6cf3 verified; implementation commit abf6614e0d02e8e713d5df478284a26ca759c260 and report commit 6ddb5ffb967574ec35db118c5962e5d83d4f6cf3 are present with matching subjects and Refs: phase-21/task-13; all eight exact task commands are recorded with observed terminations; report-lint terminated exit_code: 1 because Completion category is qa-rework; only runner-owned run-ledger.md and TL-Lite triage-log.md are dirty; no hidden index flags are present
+- Phase worktree: /home/mark/projects/fid on branch phase-21; runner-owned run-ledger.md and TL-Lite triage-log.md are dirty; no hidden index flags are present
+- Temporary repair worktree: N/A for task-scope
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve every prior failed and passing evidence row; change only the canonical Completion category to none; rerun the exact two-argument report-lint control to literal OUTCOME COMPLETE with observed exit_code: 0; commit the report repair and return its typed outcome
+- Next action: dispatch the same-task task-13 Developer continuation limited to the exact report path; after typed return, independently verify the report commit and exact two-argument report-lint before recording REPAIR task-13 RESOLVED and TASK task-13 COMPLETE
+- Human attention required: no
+
+### 2026-09-04 07:56 REPAIR task-13
+
+- Trigger signature: task-13:qa-rework:final-review:MF-2
+- Attempt count: 2
+- Starting checkpoint: TASK-RECOVERY task-13 at 2026-09-04 07:54; phase-21 HEAD 6ddb5ffb967574ec35db118c5962e5d83d4f6cf3; report-lint terminated exit_code: 1 because Completion category was qa-rework; consecutive no-progress attempts were 0/2
+- Ending checkpoint: report repair commit 9897272f684fef749ceac51b4f2c01e461f7d907; phase-21 HEAD 9897272f684fef749ceac51b4f2c01e461f7d907; task-13 report committed and clean; report-lint independently returned OUTCOME COMPLETE and terminated exit_code: 0
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: the report-only continuation changed only Completion category from qa-rework to none; the initial documented-example exit_code: 2 reproduction, byte-identical exit_code: 0 rerun, all eight amended task commands with observed terminations, expected non-zero declarations, deviation evidence, and prior failed evidence remain preserved; report commit 9897272f684fef749ceac51b4f2c01e461f7d907 and subject docs(task): repair task-13 completion category were verified with Refs: phase-21/task-13; the exact two-argument report-lint control independently terminated exit_code: 0 with literal OUTCOME COMPLETE and no failures
+- Next checkpoint: verify/report task-13 completion, then fresh independent final review of all Phase 21 findings
+- Human attention required: no
+
+### 2026-09-04 07:57 TASK task-13 COMPLETE
+
+- Report: project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: abf6614e0d02e8e713d5df478284a26ca759c260 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-04 08:23 REVIEW review-8b
+
+- Path: project-docs/docs/phases/phase-21/qa/final-review-2.md
+- Tasks covered: task-1 through task-22
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-8
+- Must-fix: 0 / Improvement: 2 / blocker candidates: 0
+
+### 2026-09-04 16:56 RUN-END
+
+- All tasks complete. Final review: project-docs/docs/phases/phase-21/qa/final-review-2.md
+- Human checklist: project-docs/docs/phases/phase-21/qa/human-checklist.md
+- Phase ready for Tech Lead wrap-up.

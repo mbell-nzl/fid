@@ -1181,3 +1181,34 @@ execution approval; task 1 is ready for Phase Runner dispatch.
   `contracts.md` §§10, 16; `tasks/task-15-attempt-receipt.md`;
   `tasks/task-22-walking-skeleton.md`; `tasks/task-22-done.md`;
   `qa/validation-contract.md` VAL-052/084/086; DEC-167/173/175/176.
+
+---
+
+## TRG-21-024 - Final-review MF-2 requires bounded task-13 documentation recovery
+
+- **Trigger:** the initial Phase 21 final review is BLOCKED by MF-1 and MF-2, but DEC-178 resolves the protected MF-1 authority question and leaves a bounded task-13 documentation repair for MF-2.
+- **Originating task:** task-13
+- **Trigger signature:** task-13:qa-rework:final-review:MF-2
+- **Repair category:** qa-rework
+- **Repair authority:** QA review review-8 / DEC-178
+- **Source:** project-docs/docs/phases/phase-21/qa/final-review.md
+- **Candidate:** QA REPAIR
+- **Attempt count:** 1
+- **Checkpoint:** prompt-attached verification establishes phase HEAD def5f9e95b17249887a3bbc2b0289a8d13374574 with subject docs(tl): plan phase 21 final review remediation; DEC-178 is recorded in the Phase 21 decisions and active decisions, and the current escalation register has no open ESC.
+- **Verdict:** REPAIR
+- **Reasoning:** DEC-178 resolves MF-1 by making the §8.2 migration 0014 SQL match the shipped migration without changing its accepted behavior, validation criterion, or status. MF-2 remains real: the §2 config example lists two unsupported executor-limit keys, but the accepted DEC-178 scope and amended task-13 policy uniquely bound a documentation-only correction to an existing task and report.
+- **Local decisions made:** MF-1 is resolved authority evidence only and is not reopened. MF-2 recovery is ordinary task-scope QA rework; it neither changes product behavior nor authorizes a protected control, specification, assertion, command, or status change.
+- **Resolution evidence:** `final-review.md` Repair Plan assigns MF-2 to task-13, limits the repair to removal of `max_timeout_ms` and `max_artifact_bytes` from the §2 example, requires the fresh-workspace documented-example acceptance proof plus task-13's full command block, a committed report, two-argument report lint, and fresh independent final re-review. The amended task-13 policy names only the §2 example block and task-13-done.md for this recovery.
+- **If REPAIR:** owning task task-13; category qa-rework; next action dispatch one same-task continuation to edit only project-docs/specs/04_TRD_CONFIG.md section 2 example block and project-docs/docs/phases/phase-21/tasks/task-13-done.md, preserve the initial exit-2 reproduction, rerun the byte-identical documented-example command to exit_code 0 and every amended task-13 command with observed termination, commit the report, pass the two-argument report-lint, then obtain a fresh independent final re-review; no ESC.
+- **Control trigger signature:** N/A
+- **Control attempt count:** N/A
+- **Control contract:** N/A
+- **Control mismatch:** N/A
+- **Allowed files:** N/A
+- **Forbidden changes:** no product code or tests; no change outside the §2 example block or task-13-done.md; no rules-paragraph, accepted-bounds, implementation, migration 0014, VAL-002 wording/evidence/pass-fail criterion/status, command, assertion, scope, threshold, budget, tolerance, policy, task, QA-contract, decision, or prior-evidence change.
+- **Exact verification:** the amended task-13 Exact Commands To Run, including the byte-identical fresh-workspace documented-example command, in /home/mark/projects/fid; required documented-example transition from preserved exit_code 2 to exit_code 0 and observed termination for every command, followed by project-docs/tools/report-lint.sh project-docs/docs/phases/phase-21/tasks/task-13-done.md project-docs/docs/phases/phase-21/tasks/task-13-executor-policy.md in /home/mark/projects/fid.
+- **Originating report:** project-docs/docs/phases/phase-21/tasks/task-13-done.md
+- **Control repair base:** N/A
+- **If BLOCK:** N/A
+- **Human attention required:** no
+- **References:** project-docs/docs/phases/phase-21/qa/final-review.md MF-1, MF-2, Repair Plan, and Final Decision; project-docs/docs/phases/phase-21/decisions.md DEC-178; project-docs/docs/current/decisions_active.md DEC-178; project-docs/docs/phases/phase-21/tasks/task-13-executor-policy.md Binding Constraints, Scope, Acceptance Criteria, Exact Commands To Run, and Notes For Developer; project-docs/specs/04_TRD_CONFIG.md section 2; project-docs/specs/03_TRD_SCHEMA.md section 8.2; project-docs/specs/09_AI_WORKFLOW.md sections 2.3 and 9.

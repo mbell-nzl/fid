@@ -40,10 +40,10 @@ Notes on the setup:
 
 | Test ID | Covers | Test | Expected Result | Outcome | Notes |
 |---|---|---|---|---|---|
-| HUMAN-01a | VAL-036 | Reading the recorded session, tell which lines came from the child process's stdout and which came from its stderr, without consulting any other artifact | yes - stream origin is unambiguous for every process-output line | | |
-| HUMAN-01b | VAL-036 | Reading the same session, identify each typed control notice as a distinct, named event rather than as process output | yes - every control notice is recognisable as fid's own typed notice, and you can name each one you found | | |
-| HUMAN-01c | VAL-036 | Reading the same session, state the terminal result: whether a Receipt exists, the outcome, the exit or signal or timeout, Artifact IDs and rejections, and the Obligation status | yes - you can restate the complete terminal result in your own words from the session alone | | |
-| HUMAN-01d | VAL-036 | While the file is displayed with `cat` in a real terminal, watch for any raw control byte taking effect: colour change, cursor movement, bell, or line overwrite | yes - no display change occurs; the terminal renders plain text only | | |
+| HUMAN-01a | VAL-036 | Reading the recorded session, tell which lines came from the child process's stdout and which came from its stderr, without consulting any other artifact | yes - stream origin is unambiguous for every process-output line | PASS | n/a |
+| HUMAN-01b | VAL-036 | Reading the same session, identify each typed control notice as a distinct, named event rather than as process output | yes - every control notice is recognisable as fid's own typed notice, and you can name each one you found | PASS | n/a |
+| HUMAN-01c | VAL-036 | Reading the same session, state the terminal result: whether a Receipt exists, the outcome, the exit or signal or timeout, Artifact IDs and rejections, and the Obligation status | yes - you can restate the complete terminal result in your own words from the session alone | PASS | n/a |
+| HUMAN-01d | VAL-036 | While the file is displayed with `cat` in a real terminal, watch for any raw control byte taking effect: colour change, cursor movement, bell, or line overwrite | yes - no display change occurs; the terminal renders plain text only | PASS | n/a |
 
 Note for HUMAN-01c: the recorded session is a **non-success** execution. Judge
 whether the terminal frame reports that honestly and legibly, not whether the
@@ -53,14 +53,14 @@ gate passed.
 
 | Section | Total | Pass | Fail | Partial | Blank |
 |---|---:|---:|---:|---:|---:|
-| Gate Session Comprehension (VAL-036) | 4 | | | | |
-| **Total** | 4 | | | | |
+| Gate Session Comprehension (VAL-036) | 4 | 4 | 0 | 0 | 0 |
+| **Total** | 4 | 4 | 0 | 0 | 0 |
 
 | | |
 |---|---|
-| **Overall result** | |
-| **Date completed** | |
-| **Notes** | |
+| **Overall result** | PASS |
+| **Date completed** | 2026-09-04 |
+| **Notes** | n/a |
 
 <!--
 Outcome values: pass, fail, partial, blank.
