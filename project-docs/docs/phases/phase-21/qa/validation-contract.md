@@ -1,5 +1,11 @@
 # Phase 21 Validation Contract
 
+> Final outcome: **CLOSED 2026-09-04 (DEC-179) - 87 PASS / 0 FAIL / 0 BLOCKED /
+> 0 CARRY-FORWARD.** The 86 deterministic outcomes are recorded in
+> `final-review-2.md`; `VAL-036` is PASS on `human-checklist.md`
+> (HUMAN-01a..01d, 4/4). The `Status` column below is the accepted-for-execution
+> state of each row and is not an outcome.
+>
 > Status: **ACCEPTED FOR EXECUTION - DEC-159**
 > Operating mode: Heavy
 > Owner: Tech Lead

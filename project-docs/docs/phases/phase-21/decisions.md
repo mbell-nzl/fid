@@ -2298,25 +2298,129 @@
   `04_TRD_CONFIG.md` §2; `06_DESIGN_PLAN_CLI.md`; DEC-154; DEC-157;
   DEC-167; DEC-173; ADR-0011.
 
+### DEC-179: Phase 21 sign-off - one-Issue operational walking skeleton accepted
+
+- **Date:** 2026-09-04
+- **Status:** Phase 21 sign-off. Product and validation outcomes are binding;
+  delivery-process carry-forwards remain temporary V1 repository tooling.
+- **Context:** The fresh independent `qa/final-review-2.md` returned
+  `VERDICT: PASS` at HEAD `9897272` with 0 Must-fix, 0 blocker candidates, 2
+  deferred improvements, and 86 deterministic assertions PASS. The Human then
+  recorded `qa/human-checklist.md` HUMAN-01a, 01b, 01c, and 01d all PASS with
+  overall PASS on 2026-09-04, so `VAL-036` is answered inside Phase 21 as
+  DEC-178 item 9 required. The Phase Runner appended `RUN-END` at
+  2026-09-04 16:56 and the ledger remains sequence-valid.
+- **Decision:**
+  1. Phase 21 is **COMPLETE / WRAPPED**. The final validation outcome is
+     **87 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD**: the 86 deterministic
+     rows carried by `final-review-2.md` plus `VAL-036` PASS on the Human
+     checklist. No assertion is carried into Phase 22 and no assertion was
+     weakened, merged, delegated, or restated to reach that outcome.
+  2. Final-review recommendation disposition, one per finding: **MF-1 do now**
+     (discharged by DEC-178 item 2; independently re-verified byte-exact),
+     **MF-2 do now** (discharged by the amended task-13 recovery and its
+     documented-example proof), **IMP-1 do now** (DEC-178 item 3),
+     **IMP-2 do now** (DEC-178 item 4), **IMP-3 defer as CF-033**, and
+     **IMP-4 defer as CF-034**. The recorded risks are dispositioned as renewed
+     **CF-024** (rebuild headroom) and new **CF-035** (path-dependent unknown
+     config-key validation). Nothing is cancelled or rejected.
+  3. Two QA-plan text items are closed as **superseded, not defective**: §7.9
+     QA-85's literal pre-rebuild Event count `20` is superseded by DEC-174 and
+     the amended `VAL-086` at 22 Events, and §5.1's "six task-20 absence
+     searches" prose is editorial against its own correct list of five `rg`
+     plus five `ls` controls. Both were executed correctly. A closed QA-owned
+     artifact is not retro-edited at wrap-up; the validation contract governs.
+  4. **Escalation-register repair.** ESC-21-007 through ESC-21-011 were
+     allocated by `triage-log.md`, resolved by DEC-165, DEC-166, DEC-167,
+     DEC-168, and DEC-169, and recorded in the ledger, but were never written
+     into `tl-escalations.md` or the current register. Wrap-up writes them into
+     the phase archive now from their governing decisions. No identifier is
+     reallocated, reused, or renumbered, and no resolution is invented: each
+     archive entry cites the decision that already resolved it. The omission is
+     reported as a workflow defect in the notes below, not silently absorbed.
+  5. **Triage audit.** `TRG-21-001..TRG-21-024` is a contiguous, unique,
+     non-placeholder identifier set. Every BLOCK names a governing ESC, except
+     the two deliberate identity-only successors: TRG-21-014 retains
+     ESC-21-010 for TRG-21-013 and TRG-21-016 retains ESC-21-011 for
+     TRG-21-015, each under an explicit decision, which is correct and must not
+     allocate a duplicate escalation. TRG-21-011 is the phase's only `RESUME`
+     and is **sustained in hindsight**: it refused to treat a supplementary
+     integration failure as a task-10 defect and routed it to the already-open
+     task-12 continuation, which is exactly where DEC-167 later fixed it. The
+     `REPAIR` verdicts TRG-21-007 and TRG-21-024 are also sustained: each was
+     ordinary bounded rework under an existing accepted authority. The six
+     BLOCKs that were **not sustained on their recorded category**
+     (TRG-21-004, 009, 010, 012, 013/014, 017/018) are already adjudicated in
+     their resolution notes; none was a wrong stop, and every one of them was a
+     correct refusal to weaken an assertion on child authority.
+  6. **Carry-forward trigger audit against what the phase actually changed.**
+     - **CF-028 is CLOSED.** Its trigger fired - task 2 and task 20 both
+       reopened `internal/bootstrap/init.go` - which DEC-155 wrongly predicted
+       would not happen. The debt is discharged by observation rather than by
+       the deferred split: removing role bootstrap took the file from 427 to
+       **366 lines**, inside the 400-line budget, so the staging/fsync split
+       has no remaining justification.
+     - **CF-018 is RE-TARGETED,** not re-deferred by default. Its trigger read
+       "if `internal/sqlquery` is reopened", and Phase 21 did reopen the
+       package - but only `internal/sqlquery/sqlquery_test.go` under DEC-162
+       retained-test convergence. The debt subject
+       `internal/sqlquery/sqlquery.go` is untouched and still **596 lines**.
+       The trigger is narrowed to that exact production file so that it fires
+       on a real reopen and cannot be discharged by a test-only edit.
+     - **CF-020, CF-027, and CF-032 are CLOSED as delivered:** VAL-026 replaced
+       synthetic future occurrence time with Event-v2 sequence, VAL-027 recorded
+       the decomposed `internal/issues/create.go` inventory inside the size
+       targets, and task 12 added the direct `BuildIssueRevisionEffects`
+       invalid-input tests proven by VAL-041.
+     - **CF-008, CF-023, CF-026a, CF-026b, and CF-029 did not fire** and are
+       re-deferred unchanged. **CF-030 is re-deferred with its near-miss
+       recorded:** report-lint did reject a token this phase
+       (`COMPLETE category must be none: qa-rework`, task-13 attempt 2), but the
+       message already states the accepted shape, so the diagnostic defect the
+       carry-forward describes did not recur.
+     - **CF-017, CF-022, and CF-031** remain cancelled or closed. **CF-024,
+       CF-033, CF-034, and CF-035** are the active inputs to Phase 22 planning.
+  7. Developer deviations, validation-contract deviations, and report
+     deviations across all 22 reports are repaired attempt evidence, not
+     unresolved product or specification divergence: report lint passes for
+     22/22 reports on fresh two-argument runs, no report records a dependency
+     change, and every failed attempt remains preserved in the reports and the
+     append-only ledger.
+  8. No phase is active after this sign-off. Phase 22 (failure and recovery) is
+     the next planning unit and inherits CF-024/033/034/035 plus the DEC-167,
+     DEC-170, DEC-173, and DEC-175 standing rules. The `phase-21` branch may
+     merge.
+- **Consequences:** Phase 21 delivers the accepted one-Issue operational
+  walking skeleton end to end and completes the owned V1 removal. A deep
+  retrospective is recommended before Phase 22 planning because the product
+  slice closed cleanly while the delivery workflow again generated 24 triage
+  identifiers and 17 escalations, most of them from two repeating generators
+  rather than from product uncertainty.
+- **Refs:** `qa/final-review.md`; `qa/final-review-2.md`; `qa/human-checklist.md`;
+  `qa/validation-contract.md`; `run-ledger.md` `RUN-END`; `triage-log.md`;
+  `tl-escalations.md`; `progress.md`; DEC-155; DEC-178;
+  `../../current/decisions_active.md` carry-forward table.
+
 ## Spec Sync Verdict
 
-Planning-time changes are recorded with their owning decisions. Full positive
-verdicts are completed at phase wrap-up.
+Planning-time changes are recorded with their owning decisions. The wrap
+verdict column is a positive review assertion made at sign-off, not a default.
 
-| Spec | Planning verdict | Evidence / Reference |
-|---|---|---|
-| `00_PROJECT_CHARTER.md` | pending wrap audit | - |
-| `01_PRD.md` | touched: see DEC-156 | Phase 21 qualification makes the terminal-success Issue transition and later Envelope completion independently evaluate the same gate-evidence Obligation. |
-| `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157, DEC-158 | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, executor boundary, and the unchanged deterministic rebuild target are explicit. |
-| `03_TRD_SCHEMA.md` | touched: see DEC-157, DEC-178 | Final-review reconciliation makes the §8.2 `0014` blocks byte-identical to the shipped migration and live removal authority. |
-| `04_TRD_CONFIG.md` | remediation pending: see DEC-178 | Task 13 must remove only the two unsupported example keys and prove the documented example is accepted verbatim. |
-| `05_DESIGN_PLAN.md` | touched: see DEC-157 | Exact live NDJSON payload union and Human rendering authority is the public-interface contract. |
-| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157, DEC-178 | Complete leaves remain explicit; the target grouping now places `fid resume` at root as the accepted wire contract requires. |
-| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157, DEC-174 | Gate/evidence precede terminal transition; rebuild repeats reads and checks without a second Envelope; the operational journey runs on a project-authored workflow, not on a seeded V1 reference chain. |
-| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173, DEC-175 | Checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse (a control's reach bounds the owning scope), first-observing ownership of a latent production defect, and interrupted-attempt accounting are explicit in §3. |
-| `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | Schema-v2 identity/binding and QA repair ownership are explicit; retained-test escalation now requires phase provenance before cross-task classification. |
-| `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | Gate closed; one Heavy Phase 21/two groups; terminal guard and tasks 19-22 ordering fixed. |
-| `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | Routine, capability availability, public enum, attribution, and terminal-success are unambiguous. |
+| Spec | Planning verdict | Wrap verdict | Evidence / Reference |
+|---|---|---|---|
+| `00_PROJECT_CHARTER.md` | pending wrap audit | verified-no-change | The delivered slice matches the charter's ownership boundary and principles: Issues remain the only durable work graph, the journal stays canonical, gate Receipts come from fid-observed execution, and no live adoption or second durable store appears. |
+| `01_PRD.md` | touched: see DEC-156 | touched: see DEC-156 | Phase 21 qualification makes the terminal-success Issue transition and later Envelope completion independently evaluate the same gate-evidence Obligation. Final QA maps every in-scope PRD family to a passing assertion; IMP-1's stale `PRD-AC-*`/`PRD-CLM-*` citations were validation-contract text, so no requirement identifier moved. |
+| `02_TRD.md` | touched: see DEC-154, DEC-156, DEC-157, DEC-158 | verified-no-change since planning | Capability availability, shared evaluator, bootstrap, public enums, trust, idempotency, and executor boundary match the shipped binary; §9's six reference-instance identity values were re-captured exactly and the `<30 s` 100k rebuild target held on three fresh samples. |
+| `03_TRD_SCHEMA.md` | touched: see DEC-157, DEC-178 | touched: see DEC-177, DEC-178 | §8.2 `0013` carries the DEC-177 `rejected_artifacts_json` column and its `json_valid`/`json_type` CHECK, and the `0014` up/down blocks are byte-identical to the shipped migration (up 477 bytes, down 1002 bytes, hashes recorded in `final-review-2.md`). |
+| `04_TRD_CONFIG.md` | remediation pending: see DEC-178 | touched: see DEC-178 | Task 13 removed only `max_timeout_ms` and `max_artifact_bytes` from the §2 example. The example now names exactly `max_output_bytes` and `max_excerpt_bytes`, agrees with its own rules paragraph and `internal/config/project_config.go`, and was proven acceptable verbatim in a fresh workspace against a rejecting bogus-key control. |
+| `05_DESIGN_PLAN.md` | touched: see DEC-157 | verified-no-change | The live NDJSON payload union and Human rendering authority remain the public-interface contract; the recorded Human session renders exactly the declared frame kinds with no raw control byte. |
+| `06_DESIGN_PLAN_CLI.md` | touched: see DEC-157, DEC-178 | touched: see DEC-178 | Complete leaves remain explicit, Receipt `get|list` is listed, and the target grouping now places `fid resume <issue-id>` at root while the canonical operation stays `projection.resume`. |
+| `07_DESIGN_PLAN_FLOWS.md` | touched: see DEC-156, DEC-157, DEC-174 | verified-no-change since planning | §10's project-authored-workflow and rebuild-repeat prose matches the shipped tagged journey exactly, including the 22-Event prefix and the read-only post-rebuild trace. |
+| `08_QUALITY_PLAN.md` | touched: see DEC-152, DEC-157, DEC-158, DEC-162, DEC-165, DEC-166, DEC-167, DEC-170, DEC-173, DEC-175 | touched: see DEC-167, DEC-173, DEC-175 (standing rules retained) | §3 states checkpoint isolation, removal-before-parity, cadence, feasibility, committed-report lint ownership, superseded-contract convergence, invalidating-change ownership, retained-test phase provenance, executable ownership and its converse, first-observing ownership of a latent production defect, and interrupted-attempt accounting. Coverage remains diagnostic with no numeric threshold, which CF-034 preserves. |
+| `09_AI_WORKFLOW.md` | touched: see DEC-161, DEC-163, DEC-164, DEC-166 | touched: see DEC-170, DEC-171 | Schema-v2 identity/binding, ordered multi-owner QA repair, phase-provenance-before-ownership, and session-liveness accounting (step 16, `session INTERRUPTED` routing) are all explicit and drilled. |
+| `10_IMPLEMENTATION_ROADMAP.md` | touched: see DEC-153, DEC-156, DEC-157 | touched at wrap: see DEC-179 | Phase 21 is recorded complete with its delivered journey; Phase 22 (failure and recovery) becomes the next planning unit. |
+| `GLOSSARY.md` | touched: see DEC-153, DEC-156, DEC-157 | verified-no-change | Work Envelope, Obligation, Registration, Attempt, Receipt, Evidence Record, Referenced Artifact, Activation, Claim, Run, capability availability, terminal-success, Routine, and public enum are all defined and were used consistently by the delivered surface; the phase introduced no new durable noun. |
+| `AGENTS.md`, role prompts, playbook | not a canonical spec | deferred: CF-033 | The Architecture package inventory drift is inherited from before the phase-21 merge base `f8a720b`, is not Phase 21 interface drift, and is scheduled for reconciliation at Phase 22 kickoff. Phase 21's own new package `internal/evidence` is already listed. |
 
 ## Triage-Log Audit
 
@@ -2373,10 +2477,130 @@ public interface, and Event schema were consistent throughout. DEC-174 amends
 observed rejection into required negative coverage. No historical record needs
 correction.
 
+### Wrap-Up Triage Audit (DEC-179)
+
+- [x] Walked every `TRG-21-001..TRG-21-024`. The set is contiguous, unique, and
+  free of placeholder identifiers; each entry carries a real trigger, verdict,
+  checkpoint, and evidence block.
+- [x] Confirmed every BLOCK names its governing ESC. The only entries without
+  their own ESC are the two deliberate identity-only successors: TRG-21-014
+  (retains ESC-21-010) and TRG-21-016 (retains ESC-21-011). Both are explicit
+  decisions, not missing allocations.
+- [x] Confirmed the one `RESUME` verdict in hindsight. **TRG-21-011 is
+  sustained.** It refused to accept a task-10 BLOCKED disposition for a failure
+  that belonged to the task-12 execution-bound transition; DEC-167 later
+  confirmed exactly that ownership. No RESUME should have escalated.
+- [x] Confirmed both `REPAIR` verdicts in hindsight. TRG-21-007 (task-8
+  convergence under DEC-162) and TRG-21-024 (task-13 MF-2 documentation rework
+  under DEC-178) were correctly bounded and neither needed protected authority.
+- [x] Confirmed no BLOCK was a wrong stop. Six were **not sustained on their
+  recorded category** and are adjudicated in their own resolution notes; in
+  every case the escalating agent correctly refused to widen scope or weaken an
+  assertion on child authority, and the misclassification was planning-side.
+- [x] Confirmed autonomous TL-Lite resume remains permanently enabled
+  (DEC-002); no warm-up tally exists or was maintained.
+- [ ] **Workflow defect found, not backfilled silently.** ESC-21-007 through
+  ESC-21-011 were allocated in `triage-log.md`, cited by the ledger, and
+  resolved by DEC-165..DEC-169, but never recorded in `tl-escalations.md` or in
+  the current register while they were open. DEC-179 item 4 writes them into the
+  phase archive from their governing decisions and reports the omission here.
+  The register, not the triage log, is the artifact a resuming session reads for
+  open protected work; five silent gaps in one phase is a control weakness worth
+  a rule at Phase 22 planning.
+
+Late-phase entries not covered by an earlier resolution note:
+
+TRG-21-023 correctly BLOCKed task 22. Its category is sustained: the accepted
+public interface and the committed conformance corpus both required
+`receipt get` and `receipt list`, no command or read API existed, and no bounded
+task authority could add a public leaf. DEC-177 supplied the minimum scope. In
+hindsight the defect is planning-side and of the same family as TRG-21-020: the
+task pack accepted a wire contract whose leaves no earlier task owned, and the
+first gate that executed the whole contract was the last task in the phase.
+
+TRG-21-024 correctly returned REPAIR for final-review MF-2 rather than a second
+escalation. DEC-178 had already resolved the protected question, so the only
+open work was bounded documentation rework inside an existing task with an
+executable proof command. Its follow-on report-repair attempt (`COMPLETE
+category must be none: qa-rework`) was ordinary report lint doing its job.
+
 ## Workflow Notes
 
-To be completed at phase wrap-up.
+Completed at phase wrap-up.
+
+- **What worked well?** The slice itself. One Heavy phase produced a real
+  end-to-end operational journey - activation, immutable Registration, Envelope
+  and Obligation, generic Actor/Claim/Run authority, fid-executed Receipts with
+  live framed output and redaction, a guarded terminal transition, completion,
+  resume, export parity, and the owned V1 removal - proven through the built
+  binary rather than in-process substitutes. Writing the complete wire contract
+  (`public-interface.md`) and a live caller inventory
+  (`v1-convergence-inventory.md`) before task 1 paid for itself repeatedly:
+  almost every mid-phase dispute was resolved by reading an accepted artifact
+  rather than by inventing an answer. The independent Group 1 checkpoint earned
+  its cost by catching two real conformance defects (Activation replay ordering,
+  process exit mapping) that unit evidence had missed. Seven review windows plus
+  bounded re-reviews produced no closed `REPAIR` on implementation evidence
+  alone. The final BLOCK was correct and valuable: it caught an accepted
+  specification that contradicted the shipped migration, which no gate could see.
+- **What was inefficient?** Two generators produced most of the 24 triage
+  identifiers and 17 escalations, and both were planning defects, not product
+  uncertainty. The first was **ownership**: retained V1 tests broken by an
+  accepted change were repeatedly classified by file subject or historical task
+  label instead of by invalidating change (TRG-21-004, 009, 010, 012). DEC-162,
+  DEC-165, and DEC-166 fixed the rule; DEC-167 finally removed the real
+  generator, which was **unexecutable ownership** - scope assigned to a task
+  whose required commands never compiled it, so a build-tagged suite silently
+  accumulated debt until the first task that ran it. That same shape recurred
+  three more times (DEC-169's section-7 exit mapping, DEC-173's task-20 absence
+  controls, DEC-175's activation Event name), each time as the first gate that
+  could observe a defect nobody's gate had run. The second generator was
+  **schema-v2 identity expressiveness**: four separate identity-only correction
+  cycles (TRG-21-002/003, 005/006, 013/014, 015/016) cost a full triage, stop,
+  and resume each, because the ledger cannot express a phase-scoped trigger or a
+  stop whose repair belongs to a different task. Both DEC-168 and DEC-169
+  explicitly deferred that fix. Finally, five escalations never reached the
+  escalation register at all.
+- **Were tasks the right size?** Mostly yes for Group 1: tasks 1-12 were
+  single-session, single-subject, and closed on their own gates. The tail was
+  not. Task 20 (V1 removal) and task 22 (final conformance journey) each became
+  a phase-end integration event rather than a task: task 20 needed a scope
+  amendment to cover the paths its own controls walked, and task 22 absorbed a
+  journey redesign, a latent production defect, and a missing public read
+  surface across six attempts. A task whose gate is the first execution of the
+  whole contract is not a task-sized unit; the phase would have been cheaper
+  with an earlier thin end-to-end task that ran the tagged journey against a
+  stub-free but incomplete surface.
+- **Did the QA review cadence feel right?** Yes. Three-task windows with a fresh
+  independent reviewer for every re-review found real defects at every window,
+  and the Group 1 checkpoint was correctly placed. The cadence's cost was
+  concentrated in child-session liveness rather than review value: the
+  checkpoint and window 5 both stalled on interrupted QA children until DEC-168
+  and DEC-170 separated a command budget from a session lifetime. That rule
+  should now be applied at planning time, not discovered at the third
+  interruption.
+- **Were there token-efficiency opportunities missed?** Yes, three. First,
+  planning declared CF-018 and CF-028 non-firing and nobody re-checked the
+  triggers against the diff until wrap-up, when both had fired - one of them
+  discharged for free by the phase's own removals. Second, several long
+  escalation/decision cycles re-derived facts that a five-minute provenance
+  check would have settled (DEC-166's whole argument is `git log` on one file).
+  Third, the same ownership rule was re-litigated four times before DEC-167
+  named the executable cause; recording the standing rule after the first
+  occurrence instead of the fourth would have saved three stop/resume cycles.
 
 ### Deep Retrospective Recommendation
 
-To be completed at phase wrap-up.
+**Recommended, before Phase 22 planning.** Phase 21 delivered a clean product
+slice while its delivery workflow produced 24 triage identifiers and 17
+escalations, and this is the second consecutive phase with that shape (Phase 20:
+23 and 19). The retrospective should not re-examine the product. It should
+answer four questions: (1) can task packs be mechanically checked for
+scope-versus-reach before dispatch, so DEC-167/DEC-173 stop being discovered
+mid-phase; (2) should schema v2 gain an identity for a phase-scoped trigger and
+for a stop whose repair belongs to another task, which cost four correction
+cycles here and was deferred twice; (3) what makes the escalation register
+fail-closed, since five escalations were resolved without ever appearing in it;
+and (4) whether a phase should require an early thin end-to-end task so the
+final conformance task is a check rather than an integration event. Carry
+CF-024, CF-033, CF-034, and CF-035 into Phase 22 planning as inputs.

@@ -1,5 +1,11 @@
 # Phase 21 - TL Escalations
 
+> Status: **CLOSED with the phase (DEC-179, 2026-09-04).** All seventeen
+> allocated Phase 21 escalations are resolved. ESC-21-007 through ESC-21-011
+> were resolved by DEC-165..DEC-169 during execution but were never written to
+> this register while open; DEC-179 item 4 records them here from their
+> governing decisions and reports the omission as a workflow defect.
+
 ## Open Escalations
 
 None.
@@ -124,6 +130,122 @@ None.
   `session-continuation`, mode `task-scope`, attempt 6, consecutive no-progress
   `0/2`. Task 16 waits for a fresh independent `review-5b` PASS. No finding,
   assertion, command, VAL, QA artifact, contract, schema, or ownership changes.
+
+### ESC-21-011 - Group 1 checkpoint repair needs completed-task owner routing
+
+- **Recorded at wrap-up (DEC-179 item 4).** Allocated by TRG-21-015 and retained
+  by the identity-only successor TRG-21-016; resolved 2026-08-29 but never
+  written to this register while open.
+- **Raised by:** TRG-21-015 after the independent Group 1 checkpoint returned
+  REPAIR with MF-1 owned by completed task 4 and MF-2 owned by completed task 9,
+  which the open DEC-168 task-13 orchestration wrapper could not re-own.
+- **Protected category:** cross-task ownership and phase-order authority under
+  DEC-168 item 10(a).
+- **Resolution:** DEC-169. MF-1 routing is correct and widens to the whole
+  Activation family, because `assertActivationAvailable` runs before
+  `journal.CommitIdempotent` and rejects an exact same-key replay. MF-2 keeps
+  task 9 as owner but widens to the complete section-7 category-to-exit mapping,
+  because `cmd/fid/main.go` was unconditionally `os.Exit(1)` and no Group 1
+  command ran a real binary - the fifth instance of the DEC-167 executable
+  ownership gap. VAL-042/043, FEAS-01..19, reviewer independence, and the
+  checkpoint contract are unchanged, and the complete checkpoint reruns.
+- **Recovery:** TL-Lite allocates identity-only successor TRG-21-016
+  (`Originating task: task-4`), retaining ESC-21-011. The ledger runs
+  `REVIEW infra-review-1` REPAIR with owners `task-4, task-9`, TRIAGE, STOP,
+  RUN-RESUME at attempt 2 under DEC-169, the task-4 and task-9 recovery triples,
+  then `REVIEW infra-review-1b` PASS on the complete rerun.
+
+### ESC-21-010 - Group 1 checkpoint unavailable after interrupted QA sessions
+
+- **Recorded at wrap-up (DEC-179 item 4).** Allocated by TRG-21-013, corrected
+  for identity by TRG-21-014; resolved 2026-08-29 but never written to this
+  register while open.
+- **Raised by:** TRG-21-013 after three fresh bounded QA Lead checkpoint
+  sessions were each interrupted before returning a verdict, leaving no
+  `qa/group-1-checkpoint-review.md`.
+- **Protected category claimed:** unavailable external capability.
+- **Resolution:** DEC-168. **Not sustained on that category.** The QA capability
+  was available; orchestration was applying the 900-second FEAS-set command
+  budget as the child session's total lifetime and restarting from zero. The
+  binding reading is 120s per FEAS probe, 900s for the FEAS set, 300s for the
+  tagged integration command, and **no budget on a child session's lifetime**.
+  `qa-plan.md` and `group-1-checkpoint-contract.md` are not edited; VAL-042,
+  VAL-043, FEAS-01..19, commands, statuses, and reviewer independence are
+  unchanged; preserved scratch and diagnostic runs are inadmissible, so every
+  probe reruns fresh and the artifact is written incrementally.
+- **Recovery:** RUN-RESUME retaining TRG-21-014 / ESC-21-010 under DEC-168,
+  continuing task-13 at attempt 4, then one `session-continuation` task-scope
+  recovery. The runner dispatches the QA Lead first, must not interrupt it at
+  900 seconds, and must not dispatch the task-13 Developer before a committed
+  checkpoint PASS.
+
+### ESC-21-009 - Task-12 recovery budget claimed exhausted on owner-routed gates
+
+- **Recorded at wrap-up (DEC-179 item 4).** Allocated by TRG-21-012; resolved
+  2026-08-28 but never written to this register while open.
+- **Raised by:** TRG-21-012 after two consecutive runner-mediated task-12
+  continuations failed the unchanged required gates on failures attributed to
+  task 9 and future task 20.
+- **Protected category claimed:** recovery-budget-exhausted plus task-boundary
+  and phase-order authority.
+- **Resolution:** DEC-167. **Not sustained.** The `internal/dev` failure was
+  task 12's own collateral, the `issue ac verify` failure was VAL-030's
+  fail-closed leaf rather than a transport gap, and the budget did not apply
+  because the ledger directive had forbidden task 12 from repairing the only two
+  failing rows - both no-progress outcomes were guaranteed by directive. The
+  root cause is gate coverage, not ownership: `cmd/fid/integration/` is
+  build-tagged and DEC-165 had assigned task 9 that package without a command
+  that runs it. Task 12's scope is amended to `internal/dev/` and
+  `cmd/fid/integration/` with per-row provenance, and `08_QUALITY_PLAN.md` §3
+  gains both standing rules.
+- **Recovery:** RUN-RESUME retaining TRG-21-012 / ESC-21-009 under DEC-167, then
+  one same-task task-12 `in-scope-implementation` recovery at attempt 6 with
+  no-progress `0/2`; all six task-12 commands rerun byte-identically.
+
+### ESC-21-008 - Retained `TestTask10*` fixtures treated as cross-task property
+
+- **Recorded at wrap-up (DEC-179 item 4).** Allocated by TRG-21-010; resolved
+  2026-08-26 but never written to this register while open.
+- **Raised by:** TRG-21-010 after task 9 stopped on red rows in
+  `cmd/fid/task10_contract_test.go` that still expected the Phase 20 `--by`
+  transport, reading the filename and `TestTask10` prefix as Phase 21 task-10
+  ownership.
+- **Protected category claimed:** scope boundary / accepted-contract
+  contradiction.
+- **Resolution:** DEC-166. **Not sustained on that category.** Commit
+  provenance places the file and its assertions in **phase-20** task-10, and
+  Phase 21 task 10 is generic Claim work that owns none of those leaves; the
+  implementation's rejection of `--by` is correct. A filename, test name, task
+  number, or prose label is not current-phase ownership evidence. Task 9 owns
+  and may rename the stale rows to subject-based names, preserving every
+  assertion subject and strength. Recurrence of a classification is not evidence
+  that it is correct and creates no protected category.
+- **Recovery:** RUN-RESUME retaining TRG-21-010 / ESC-21-008 under DEC-166,
+  continuing task 9 at attempt 12, then one same-task `in-scope-implementation`
+  recovery with all five task-9 commands rerun byte-identically.
+
+### ESC-21-007 - Task-9 closure attributed to task-10 Claim/Run fixtures
+
+- **Recorded at wrap-up (DEC-179 item 4).** Allocated by TRG-21-009; resolved
+  2026-08-25 but never written to this register while open.
+- **Raised by:** TRG-21-009 after eight task-9 attempts, reporting that the
+  required gates stayed red on replacement-bound task-10 Claim/Run fixtures its
+  Out Of Scope forbade it to touch.
+- **Protected category claimed:** protected task-boundary / cross-task
+  authority.
+- **Resolution:** DEC-165. **Not sustained on that category.** No generic
+  Claim/Run fixture existed in the tree; every red row failed on an incidental
+  read of a surface task 9 itself removed or renamed (`policy show`, the `--by`
+  to `--group-by` stats rename, the fail-closed vacuum). Convergence ownership
+  follows the invalidating accepted change, not the fixture's headline subject.
+  Task 9's Out Of Scope is clarified to exclude Claim/Run implementation and
+  semantics only, incidental `policy show` reads are repointed onto the retained
+  legacy matrix helper with byte-identical assertions, and the V1 Claim, Run,
+  dev, and closure behavioural assertions keep full strength until their own
+  owner replaces them.
+- **Recovery:** RUN-RESUME retaining TRG-21-009 / ESC-21-007 under DEC-165, then
+  one same-task task-9 `in-scope-implementation` recovery at attempt 9 with
+  no-progress `0/2`.
 
 ### ESC-21-006 - Schema-v2 ordinary repair authority cannot bind TASK-RECOVERY
 

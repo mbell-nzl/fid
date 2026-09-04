@@ -1,5 +1,10 @@
 # Phase 21 Progress
 
+> Status: **COMPLETE / WRAPPED (2026-09-04, DEC-179).** All 22 tasks, seven
+> review windows, the independent Group 1 checkpoint, and both final reviews are
+> closed. `VAL-001..VAL-087` are 87 PASS / 0 FAIL / 0 BLOCKED / 0
+> CARRY-FORWARD, the Human checklist is 4/4 PASS, and no escalation remains.
+
 ## 2026-08-22 - Planning Pack Revised After Human Review
 
 - Phase 20 deep retrospective completed and recorded by DEC-152.
@@ -91,3 +96,74 @@
 - Next sequence: Runner records REVIEW BLOCK, obtains typed TL-Lite routing,
   completes bounded task-13 repair/report lint, obtains fresh independent final
   re-review, and waits for HUMAN-01a..01d before RUN-END.
+
+## Phase Complete - 2026-09-04
+
+### Delivered Outcome
+
+Phase 21 delivered the one-Issue operational walking skeleton end to end
+through the built binary: activate one kit/project/backend contract, register an
+immutable Gate Definition from that activated trust, create one Work Envelope
+revision carrying one gate-evidence Obligation with immutable budgets, resolve a
+generic Actor and acquire a Claim and Run, make a nonterminal execution-bound
+transition, have fid execute the Registration with live framed stdout/stderr,
+redaction, truncation, and Artifact safety, persist an immutable Attempt and
+Receipt with durable canonical rejected-Artifact facts, link and evaluate
+Evidence, pass the guarded terminal-success transition, finish the Run, release
+the Claim, complete the Envelope, resume, and create and validate an export -
+then delete the projection, rebuild, and repeat every named read, evaluation,
+completion state, resume, export, and negative check with byte-identical
+results and zero new Events. The exact mutation prefix is 22 Events.
+
+The phase also completed its owned V1 removal through migrations `0013`/`0014`:
+the role matrix and `fid policy show`, every `--by` actor attribution,
+role-bound Claim/Run commands, `fid dev start|gate|finish|block`, reported
+`gate_runs`, and completion-report-as-state writers are gone, with role-free
+bootstrap and rebuild proven on the final binary.
+
+### Completion Summary
+
+| Area | Outcome |
+|---|---|
+| Tasks 1-22 | Complete |
+| Review windows 1-7 and bounded re-reviews (1b, 2b, 3b, 4b, 5b, 6b, 6c, 7b) | Closed |
+| Independent Group 1 checkpoint | PASS (second independent decision at `5aeb19b`) |
+| Initial final review | BLOCK (`qa/final-review.md`, MF-1 + MF-2) |
+| Fresh independent final review | PASS (`qa/final-review-2.md`, 0 Must-fix, 0 blocker candidates) |
+| Human VAL-036 | PASS, 4/4 (`qa/human-checklist.md`) |
+| Validation contract | 87 PASS / 0 FAIL / 0 BLOCKED / 0 CARRY-FORWARD |
+| Triage | TRG-21-001..024; one RESUME sustained; every BLOCK carries an ESC |
+| Escalations | 17 allocated, all resolved; ESC-21-007..011 archived at wrap-up |
+| Run ledger | `RUN-END` appended 2026-09-04 16:56; sequence remains valid |
+
+### Final Verification
+
+- All seven `AGENTS.md` phase-gate commands passed in the final QA session with
+  observed terminations, including `-race` coverage, the tagged integration
+  gate, and benchmarks.
+- `03_TRD_SCHEMA.md` §8.2 is byte-identical to both shipped `0014` migration
+  files, and the `04_TRD_CONFIG.md` §2 example was proven acceptable verbatim in
+  a fresh workspace against a rejecting bogus-key control.
+- The 100k-Event rebuild held under the unchanged `<30 s` target on three
+  consecutive fresh samples (27.311 s, 27.300 s, 27.482 s) on the recorded
+  reference instance.
+- 22/22 completion reports pass fresh two-argument report lint;
+  `workflow-sequence-lint.sh` reports the ledger valid.
+
+### Wrap-Up Disposition
+
+- CF-020, CF-027, CF-032 **closed as delivered** (VAL-026, VAL-027, task 12).
+- CF-028 **closed**: its trigger fired and role-bootstrap removal took
+  `internal/bootstrap/init.go` to 366 lines, inside the 400-line budget.
+- CF-018 **re-targeted** to `internal/sqlquery/sqlquery.go` (596 lines) so a
+  test-only convergence edit can no longer discharge it.
+- CF-024 renewed, CF-033/034/035 opened for Phase 22 planning.
+- CF-008/023/026a/026b/029/030 re-deferred; their triggers did not fire.
+- A deep retrospective is recommended before Phase 22 planning: the product
+  slice closed cleanly while the delivery workflow generated 24 triage
+  identifiers and 17 escalations from two repeating planning-side generators.
+
+### Next Checkpoint
+
+Plan Phase 22 (failure and recovery) from `10_IMPLEMENTATION_ROADMAP.md` §5,
+carrying CF-024, CF-033, CF-034, and CF-035 as inputs.

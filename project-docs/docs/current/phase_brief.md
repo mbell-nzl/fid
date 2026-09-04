@@ -1,135 +1,78 @@
-# Phase Brief - Phase 21
+# Phase Brief - No Active Phase
 
-> Status: **Active / Final QA Blocked / DEC-178 Remediation Authorized**
-> Branch: `phase-21`
-> Product implementation: **AUTHORIZED BY DEC-159 UNDER THE TASK PACK**
+> Status: **NO PHASE ACTIVE.** Phase 21 completed and wrapped on 2026-09-04
+> (DEC-179). Phase 22 is not planned.
+> Branch: `phase-21` (wrapped; merge at the Human's discretion)
+> Product implementation: **UNAUTHORIZED** until a Phase 22 pack is approved.
 
-## Goal And Mode
+## Last Completed Phase
 
-Deliver one Heavy one-Issue operational walking skeleton: activated trust,
-immutable Gate Registration, one Work Envelope/revision, one gate-evidence
-Obligation, generic Actor/Claim/Run authority, fid-executed Receipt Evidence,
-guarded transition, completion, resume, export, parity, and owned V1 removal.
+Phase 21 - one-Issue operational walking skeleton (Heavy, 22 tasks, two internal
+groups, one independent checkpoint). Final outcome: **87 PASS / 0 FAIL / 0
+BLOCKED / 0 CARRY-FORWARD** across `VAL-001..VAL-087`, Human checklist 4/4 PASS,
+`RUN-END` appended, no open escalation.
 
-**Operating mode: Heavy.** Authority, public JSON/Event contracts, destructive
-schema convergence, local process execution, credentials/redaction, Artifact
-safety, completion, and rebuild cross protected boundaries. One numeric phase,
-two internal groups, one independent checkpoint; no 21A/21B exists.
+Delivered: activation-sourced trust, immutable Gate Registration, one Work
+Envelope revision with one gate-evidence Obligation and immutable budgets,
+generic Actor/Claim/Run authority, fid-executed Attempts and Receipts with live
+framed output, redaction and Artifact safety, the guarded terminal-success
+transition, Envelope completion, resume, export create/validate, rebuild parity
+over an exact 22-Event journey, and the owned V1 removal through migrations
+`0013`/`0014`.
 
-## Binding Decisions
+Archive: `../phases/phase-21/` - `decisions.md` (DEC-152..179), `progress.md`,
+`contracts.md`, `public-interface.md`, `v1-convergence-inventory.md`,
+`qa/validation-contract.md`, `qa/final-review-2.md`, `qa/human-checklist.md`,
+`triage-log.md`, `tl-escalations.md`, `run-ledger.md`.
 
-- DEC-152 as refined by DEC-158: Phase 20 retrospective controls task size,
-  feasibility, report lint, review cadence, and checkpoint timing. DEC-153/154/155
-  keep Gate D3.2 DP-1..DP-7, the exact slice/schema contract, and carry-forward.
-- DEC-156: gate evidence guards terminal-success transition before completion;
-  both use one shared Obligation evaluator.
-- DEC-157: complete wire contract, kebab-case public enums, role-free bootstrap,
-  exhaustive V1 disposition, achievable checkpoint, and tasks 19-22 order.
-- DEC-158/159: QA refinements, four Human subchecks, three `<30 s` rebuild
-  samples, Ready QA, and Human execution approval.
-- DEC-160/161: role-free bootstrap stays exact with the task-2 nonpersistent V1
-  bridge task 20 deletes; schema-v2 identity values are plain, task-prefixed.
-- DEC-162: retained V1 tests are not protected contracts; the invalidating task
-  converges them without weakening. Tasks 2, 8, 9, and 20 inherit the rule.
-- DEC-163/164: QA `REPAIR` carries one ordered owner list, each owner repairs
-  before fresh re-review; ordinary recovery names its TRG in `Source`.
-- DEC-165/166: convergence follows the invalidating change and historical task
-  labels never establish ownership; V1 behavior stays byte-identical.
-- DEC-167: a required gate must exercise the scope its task owns; task 12 owns its
-  `internal/dev` and `cmd/fid/integration/` convergence with per-row provenance. A
-  directive-suppressed attempt does not consume recovery budget.
-- DEC-168/169: 120s per FEAS probe, 900s the FEAS set, 300s the tagged
-  integration command; no lifetime budget on QA child sessions. Checkpoint
-  repairs: task 4 owns Activation replay, task 9 the section-7 exit mapping.
-- DEC-170/171: an externally interrupted attempt never consumes the no-progress
-  budget; commit durable work before long commands; executable in the Runner.
-- DEC-172: the unavailable `attention.v1` row is required negative capability
-  metadata; task 17 proves the Attention boundary with a named test, not a
-  zero-match search.
-- DEC-173: a task that owns an absence/inventory control owns every path it
-  walks; task 20's scope was amended to its gates' reach and it gained the
-  tagged integration gate. Closed with task 20.
-- DEC-174: the §16 journey authors its own workflow (`workflow define
-  --applies-to task` then `workflow assign --kind task`, before `issue create`)
-  with exactly the edges `unstarted -> started` and `started -> completed`; no
-  seeded reference workflow can express the accepted shape. The exact mutation
-  prefix is 22 Events and VAL-086 matches. No product, command,
-  public-interface, Event-schema, transition, or frozen-workflow change.
-- DEC-175: a latent production defect no earlier gate could observe belongs to
-  the first task whose required gate observes it, with minimum source scope plus
-  a regression assertion under a command it already runs. Task 22 owns the
-  bounded `internal/workflow/activation.go` Event-type derivation repair
-  (`activation.finalized`, not `activation.finalizeted`); task 4 is not
-  reopened. No contract, schema, interface, command, corpus, or VAL change.
-- DEC-176: the immutable TRG-21-022 attempt-3 TRIAGE makes the schema-v2 STOP
-  resume attempt 4. DEC-175 remains the product/scope authority; DEC-176 changes
-  only append-only orchestration identity and restarts no-progress at `0/2`.
-- DEC-177: Task 22 owns the missing accepted Receipt get/list surface and the
-  minimum migration/schema/golden change that makes rejected-Artifact metadata
-  durable and canonical. The stale Resume prose is corrected to `fid resume`;
-  every accepted wire behavior, 22-Event budget, VAL, and command remains fixed.
-- DEC-178: the shipped migration `0014` governs and §8.2 now matches it;
-  existing task 13 owns only final-review MF-2's config-example correction.
-  IMP-1/2 are fixed, IMP-3/4 are Phase 22 carry-forwards, and VAL-036 remains
-  Human-owned.
+## Next Planning Unit
 
-## Planning Authorities
+**Phase 22 - failure and recovery**, per `../../specs/10_IMPLEMENTATION_ROADMAP.md`
+§5: interrupt or abandon execution, recover liveness, reconcile repository
+state, start a linked Run, retry or stop safely, stale prior proof,
+import/export recovery state, rebuild, and resume without contradictory truth.
+It completes typed Stops, Attention disposition, budget consumption and
+exhaustion, lease/liveness rules, explicit recovery without automatic respawn,
+activation recovery, freshness failure, and import identity/history
+preservation, and advertises `kit.activation.v1`, `work.claims.v1`,
+`attention.v1`, and `export.portable.v1` only when they are complete.
 
-- Slice semantics/Event fixtures: `../phases/phase-21/contracts.md`; complete
-  public interface: `../phases/phase-21/public-interface.md`
-- Live V1 inventory: `../phases/phase-21/v1-convergence-inventory.md`; checkpoint
-  `../phases/phase-21/qa/group-1-checkpoint-contract.md`
-- Validation: `../phases/phase-21/qa/validation-contract.md` (VAL-001..087)
-- QA: `qa/qa-lead-handoff.md`, `qa/qa-plan.md` (Ready at `e8a636e`), audit
-  `planning-audit.md`; tasks `../phases/phase-21/tasks/task-<N>-*.md`
+Nothing is authorized yet. Phase 22 needs an operating mode, a validation
+contract, an ordered task pack, a QA Lead handoff, a Ready QA plan, and Human
+execution approval before any implementation task is dispatched.
 
-## Task Pack
+## Inputs Waiting For Phase 22 Planning
 
-All 22 tasks, reviews 1-7b, and the independent Group 1 checkpoint completed.
-Initial final review `1eee01c` records BLOCK: DEC-178 has reconciled protected
-MF-1 and the two Tech Lead-owned improvements, while existing task 13 is
-authorized for bounded MF-2 documentation recovery. IMP-3/4 are scheduled as
-CF-033/034. VAL-036 remains the sole Human checklist assertion.
+- **CF-024** - keep the three-consecutive-fresh-sample 100k rebuild rule; final
+  Phase 21 QA left only about 2.5-3.0 seconds of headroom under the 30 s target
+  while recovery and import will extend the same replay path.
+- **CF-033** - reconcile the `AGENTS.md` Architecture package inventory at
+  kickoff, against the retained live tree and the accepted Phase 22 boundaries.
+- **CF-034** - the first tasks reopening `internal/evidence` or
+  `internal/workflow` add direct in-package recovery-branch tests and record
+  package coverage before and after; no numeric threshold is introduced.
+- **CF-035** - decide whether unknown project-config keys must reject on every
+  command or only on config-reading paths, before broadening config validation.
+- **CF-018** (re-targeted) - split `internal/sqlquery/sqlquery.go` (596 lines)
+  if that production file is reopened.
+- **Deep retrospective (recommended, DEC-179)** - before planning, review
+  scope-versus-reach checking of task packs, ledger identity expressiveness for
+  phase-scoped and cross-task stops, fail-closed escalation registration, and
+  whether a phase should carry an early thin end-to-end task.
 
-## Dispatch Controls
+## Standing Rules That Survive The Phase
 
-Before each next dispatch the Phase Runner runs
-`project-docs/tools/report-lint.sh <committed-report> <task-spec>` and records
-observed termination. Reviews are `qa/review-1.md`..`qa/review-7.md`; checkpoint
-`qa/group-1-checkpoint-review.md`; final `qa/final-review.md` plus
-`qa/human-checklist.md`. A task's required commands must exercise every file
-scope it owns, and a task's scope must cover every path its controls walk
-(DEC-167, DEC-173).
+These are recorded in `decisions_active.md` and `08_QUALITY_PLAN.md` §3; do not
+re-derive them during Phase 22 planning.
 
-Every external schema-v2 `Originating task`, `Trigger signature`, `Attempt
-count`, `Repair category`, and `Repair authority` value is a plain scalar, never
-backtick-wrapped; each trigger begins with its exact originating task plus `:`.
-Ordinary recovery names its TRG in `Source` without changing the exact-bound
-`Repair authority`. A REVIEW `REPAIR` lists every Must-fix owner in the one
-`Owning task` field in Repair Plan order, each repaired before the re-review.
-
-## Journey Order
-
-Mutate once: init; define/assign the journey workflow; Issue; discover;
-activate; register; create/activate Envelope; resolve Actor; Claim/Run;
-nonterminal transition; execute Gate; persist/link Receipt; evaluate Evidence;
-terminal-success transition; finish/release; complete; resume; export/validate.
-Exactly 22 Events before rebuild. Delete the projection and rebuild, then
-repeat only named reads, evaluation, completion state, resume, export, and
-negative checks; never create a second Envelope revision, workflow definition,
-or assignment.
-
-## Dispatch Authorization
-
-Tasks 1-22 remain historically complete. The Phase Runner first records
-`qa/final-review.md` as REVIEW BLOCK through the append validator and routes it
-through TL-Lite. DEC-178 clears the protected specification question and
-authorizes only task-13 QA rework under the amended task spec; the Runner must
-follow the returned typed route and may not infer or preallocate a TRG/ESC.
-
-After task 13 reruns every amended command, commits its updated report, and
-passes two-argument report lint, a fresh independent QA Lead writes a new final
-review. It re-decides VAL-002, verifies MF-2 and IMP-1/2 from fresh evidence,
-and records prior-finding resolution. The Human completes HUMAN-01a..01d.
-Do not append `RUN-END` or begin Phase 22 until final QA passes and VAL-036 is
-answered.
+- **DEC-167** - a required command must exercise every scope its task owns;
+  delayed convergence belongs to the first task whose gate runs it.
+- **DEC-173** - the converse: a task's scope must cover every path its required
+  controls walk. Amend before dispatch; never narrow the control.
+- **DEC-175** - a latent production defect no earlier gate could observe belongs
+  to the first task whose gate observes it, with minimum causal scope.
+- **DEC-162 / DEC-165 / DEC-166** - retained-test convergence follows the
+  invalidating change; a filename, test name, or historical task label is not
+  ownership evidence.
+- **DEC-170 / DEC-171** - an externally interrupted attempt never consumes the
+  no-progress budget; only declared command budgets apply.

@@ -1,7 +1,7 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Gate D3.2 accepted; Phase 21 planning awaiting execution approval
-**Last updated:** 2026-08-22
+**Status:** Phase 21 complete; Phase 22 (failure and recovery) is next to plan
+**Last updated:** 2026-09-04
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
@@ -46,14 +46,23 @@ migrations, and formatters are removed rather than deprecated.
 **Gate D3.1** ratified the vertical-slice order and initial removal owners in
 section 5. Phase 20 completed on 2026-08-22 with 46/46 validation assertions
 PASS and its standalone Issue journey accepted. **Gate D3.2 was accepted on
-2026-08-22**: one Heavy Phase 21 uses two internal task groups with an
+2026-08-22**: one Heavy Phase 21 used two internal task groups with an
 independent authority/executor-feasibility checkpoint between them. `Routine`
 remains external kit risk-lane language, not fid state.
-DEC-156 fixes the vertical order: trusted gate Evidence precedes and guards
+DEC-156 fixed the vertical order: trusted gate Evidence precedes and guards
 terminal-success Issue transition; completion later reuses the same evaluator.
-DEC-157 fixes the complete interface, role-free bootstrap, live V1 inventory,
-and final task order. Phase 21 remains Planning / Awaiting Human Execution
-Approval.
+DEC-157 fixed the complete interface, role-free bootstrap, live V1 inventory,
+and final task order.
+
+**Phase 21 completed on 2026-09-04** (DEC-179) with 87/87 validation assertions
+PASS and a 4/4 Human checklist. The one-Issue operational walking skeleton runs
+end to end through the built binary over an exact 22-Event journey - activation,
+immutable Gate Registration, one Envelope revision and gate-evidence Obligation,
+generic Actor/Claim/Run authority, fid-executed Attempts and Receipts, guarded
+terminal-success transition, completion, resume, export create/validate, and
+rebuild parity - and the section 5 Phase 21 removal column is discharged through
+migrations `0013`/`0014`. Incomplete semantic capabilities remain
+`available:false`. **Phase 22 (failure and recovery) is the next phase to plan.**
 
 ## 3. Foundation to retain
 
@@ -229,10 +238,16 @@ reading `.fid/` internals.
    recorded at `../docs/reviews/2026-08-22-phase-20-retrospective.md`.
 3. **Complete (2026-08-22).** Gate D3.2 is accepted with the amendments in
    `../docs/phases/phase-21/gate-d3-2-proposal.md` and ADR-0012.
-4. Review the exact Phase 21 semantic contract, public-interface contract,
-   convergence inventory, VAL-001..087 contract, Heavy task pack, checkpoint,
-   QA Lead handoff, and phase brief. Tasks 19-22 are export; removal/0014;
-   final-schema init/maintenance/rebuild/export parity; and final conformance.
+4. **Complete (2026-09-04).** Phase 21 delivered and independently validated the
+   one-Issue operational walking skeleton and its owned V1 removal; all 87 VAL
+   assertions and all four Human checks pass. The delivered wire contract is
+   `../docs/phases/phase-21/public-interface.md` and the sign-off is DEC-179.
+5. Plan Phase 22 (failure and recovery) from the section 5 row: operating mode,
+   exact slice and wire contract, validation contract, ordered task pack, QA
+   Lead handoff, and Ready QA plan. Carry CF-024 (rebuild headroom), CF-033
+   (`AGENTS.md` package inventory), CF-034 (in-package recovery-branch
+   coverage), CF-035 (unknown config-key validation), and re-targeted CF-018 as
+   planning inputs. A deep delivery-workflow retrospective is recommended first.
    No implementation begins before a Ready QA plan, Tech Lead refinements, and
    Human execution approval.
 
