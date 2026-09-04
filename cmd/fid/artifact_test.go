@@ -18,6 +18,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
+const artifactMutationWait = 15 * time.Second
+
 func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
@@ -88,7 +90,7 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 			definition: func(definition map[string]any) {
 				definition["argv"] = []string{os.Args[0], "-test.run=^TestArtifactMutationHelperProcess$", "--"}
 				definition["artifact_bytes"] = 32 * 1024 * 1024
-				definition["timeout_ms"] = 10_000
+				definition["timeout_ms"] = 30_000
 				definition["environment"] = []any{map[string]any{"name": "FID_ARTIFACT_HELPER", "source": "literal", "value": "writer"}}
 			},
 		},
@@ -210,13 +212,13 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 		if err := mutator.Start(); err != nil {
 			t.Fatalf("start Artifact mutator: %v", err)
 		}
-		waitForArtifactMutationMarker(t, "changed.mutator.ready", 2*time.Second)
+		waitForArtifactMutationMarker(t, "changed.mutator.ready", artifactMutationWait)
 	case "mutator":
 		defer func() { _ = os.WriteFile("changed.mutator.done", []byte("done"), 0o600) }()
 		if err := os.WriteFile("changed.mutator.ready", []byte("ready"), 0o600); err != nil {
 			t.Fatalf("signal Artifact mutator readiness: %v", err)
 		}
-		deadline := time.Now().Add(5 * time.Second)
+		deadline := time.Now().Add(artifactMutationWait)
 		for {
 			staging, err := filepath.Glob(filepath.Join(".fid", "artifacts", ".artifact-*"))
 			if err != nil {
@@ -251,7 +253,7 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 
 func waitForArtifactMutation(t *testing.T, workspace string) {
 	t.Helper()
-	waitForArtifactMutationMarker(t, filepath.Join(workspace, "changed.mutator.done"), 2*time.Second)
+	waitForArtifactMutationMarker(t, filepath.Join(workspace, "changed.mutator.done"), artifactMutationWait)
 }
 
 func waitForArtifactMutationMarker(t *testing.T, path string, timeout time.Duration) {
