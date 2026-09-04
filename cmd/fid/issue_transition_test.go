@@ -60,6 +60,7 @@ func TestIssueTransitionJSONAllowsStandaloneActorWithoutGenericClaim(t *testing.
 }
 
 func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		operation        string
 		expectedRevision string
@@ -177,6 +178,7 @@ func TestIssueTransitionExpectedRevisionMatrix(t *testing.T) {
 }
 
 func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name            string
 		toState         string
@@ -361,6 +363,7 @@ func TestIssueTransitionCanonicalOutcomeTable(t *testing.T) {
 }
 
 func TestIssueMutationCanonicalAttributionAvoidsProtectedEffects(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name  string
 		setup func(t *testing.T, workspace string) string

@@ -523,6 +523,7 @@ func TestLinkListEmptyResult(t *testing.T) {
 }
 
 func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -563,6 +564,7 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 }
 
 func TestLinkMutationsJSONMatchContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First JSON link issue")
@@ -583,6 +585,7 @@ func TestLinkMutationsJSONMatchContract(t *testing.T) {
 }
 
 func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First link failure issue")
@@ -669,6 +672,7 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 }
 
 func TestLinkJSONDependencyCycleHasExactPathAndNoAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First cycle issue")

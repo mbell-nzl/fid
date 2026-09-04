@@ -10,6 +10,7 @@ import (
 )
 
 func TestLinkListJSONHonorsAtAndOverLimitWithoutTruncation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	primaryID := createCommandIssue(t, workspace, "Link list limit primary")

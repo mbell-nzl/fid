@@ -17,6 +17,7 @@ import (
 const capabilitiesGolden = `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"capabilities.get","result":{"items":[{"available":false,"capability_id":"attention.v1","limits":{"state":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"evidence.freshness.v1","limits":{"branch_labels":false,"target":"repository-tree"},"schema_max":1,"schema_min":1,"trust_source":"fid-git-observation"},{"available":true,"capability_id":"evidence.gate-definitions.v1","limits":{"executor_policy":"standard-library","network":"allowed","sandbox":"none","write":"allowed"},"schema_max":1,"schema_min":1,"trust_source":"active-kit-activation"},{"available":true,"capability_id":"evidence.receipts.v1","limits":{"attestation":false,"producer":"fid","terminal_receipts":true},"schema_max":1,"schema_min":1,"trust_source":"fid-executed"},{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"human.outcomes.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"reviews.coverage.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"telemetry.trajectory.v1","limits":{"ingest":false},"schema_max":1,"schema_min":1,"trust_source":"phase-25-unavailable"},{"available":false,"capability_id":"work.claims.v1","limits":{"max_active_per_issue":1,"parallelism":false,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"workflow.state.v1","limits":{"max_envelope_revisions":1,"max_primary_issues":1,"related_issues":false},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"},{"available":true,"capability_id":"workflow.transitions.v1","limits":{"execution_bound":true,"terminal_evidence_guard":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}]}}`
 
 func TestCapabilitiesJSONGoldenAndProjectionRows(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	result := executeCommandForTest(workspace, "--json", "capabilities")
 	if result.err != nil || result.stderr != "" {
@@ -56,6 +57,7 @@ func TestCapabilitiesJSONGoldenAndProjectionRows(t *testing.T) {
 }
 
 func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	if result := executeCommandForTest(workspace, "--json", "capabilities"); result.err != nil {
 		t.Fatalf("initialize capability projection = %#v", result)
@@ -100,6 +102,7 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 }
 
 func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	initial := executeCommandForTest(workspace, "--json", "capabilities")
 	if initial.err != nil || initial.stderr != "" {

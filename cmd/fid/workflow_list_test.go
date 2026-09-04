@@ -9,6 +9,7 @@ import (
 )
 
 func TestWorkflowListJSONMatchesContractAndUsesNullAssignmentScope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "list-flow", "any")
@@ -57,6 +58,7 @@ func TestWorkflowListJSONMatchesContractAndUsesNullAssignmentScope(t *testing.T)
 }
 
 func TestWorkflowListRejectsNonIssueKind(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	result := executeCommandForTest(workspace, "--json", "workflow", "list", "--kind", "qa_review")
@@ -67,6 +69,7 @@ func TestWorkflowListRejectsNonIssueKind(t *testing.T) {
 }
 
 func TestWorkflowListEnforcesCollectionLimitWithoutTruncation(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	conn := openWorkflowCommandDB(t, workspace)

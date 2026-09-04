@@ -13,6 +13,7 @@ import (
 )
 
 func TestActivationPrepareCreatesPreparedActivation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	inputPath := filepath.Join(workspace, "activation-prepare.json")
 	writeActivationInput(t, inputPath, map[string]any{
@@ -58,6 +59,7 @@ func TestActivationPrepareCreatesPreparedActivation(t *testing.T) {
 }
 
 func TestActivationReplaysAcrossLifecycleWithoutPreemptingLifecycleChecks(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	preparePath := filepath.Join(workspace, "activation-replay-prepare.json")
 	writeActivationInput(t, preparePath, map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "kit", "phase": 21})
@@ -210,6 +212,7 @@ func activationReplayString(t *testing.T, envelope map[string]any, object, field
 }
 
 func TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	componentPath := filepath.Join(workspace, "activation-profile.json")
@@ -309,6 +312,7 @@ func prepareActivationForTest(t *testing.T, workspace string) string {
 }
 
 func TestActivationCommitIsPointOfNoReturn(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
@@ -350,6 +354,7 @@ func TestActivationCommitIsPointOfNoReturn(t *testing.T) {
 }
 
 func TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		name, status, operation, wantCode string
 	}{
@@ -383,6 +388,7 @@ func TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents(t *te
 }
 
 func TestActivationAbortPreCommitLeavesNoTrustedActor(t *testing.T) {
+	t.Parallel()
 	for _, status := range []string{"prepared", "staged"} {
 		t.Run(status, func(t *testing.T) {
 			fixture := activationLifecycleFixtureAt(t, status)
@@ -464,6 +470,7 @@ func activationLifecycleFixtureAt(t *testing.T, status string) activationLifecyc
 }
 
 func TestActivationTransitionsEmitPublicEventTypes(t *testing.T) {
+	t.Parallel()
 	for _, testCase := range []struct {
 		status, wantEventType string
 	}{
@@ -525,6 +532,7 @@ func activationStatusFromResult(t *testing.T, output string) string {
 }
 
 func TestActivationFinalizeAndStatusExposeOnlyFinalLifecycleState(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
@@ -565,6 +573,7 @@ func TestActivationFinalizeAndStatusExposeOnlyFinalLifecycleState(t *testing.T) 
 }
 
 func TestFinalizedActivationIsTheOnlyTrustedActorSource(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{

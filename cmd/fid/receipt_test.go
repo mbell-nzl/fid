@@ -9,6 +9,7 @@ import (
 )
 
 func TestReceiptReadsAreExactFilteredOrderedAndReadOnly(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"missing.txt"}
@@ -68,6 +69,7 @@ func TestReceiptReadsAreExactFilteredOrderedAndReadOnly(t *testing.T) {
 }
 
 func TestReceiptReadFailuresAreTypedAndClosed(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	notFound := executeCommandForTest(workspace, "--project", workspace, "--json", "receipt", "get", "RCP-missing")
 	if notFound.err == nil || notFound.stdout != "" || !strings.Contains(notFound.stderr, `"code":"receipt-not-found"`) || !strings.Contains(notFound.stderr, `"category":"not-found"`) {
@@ -88,6 +90,7 @@ func TestReceiptReadFailuresAreTypedAndClosed(t *testing.T) {
 }
 
 func TestGateRunReplayRetainsRejectedArtifacts(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"missing.txt"}

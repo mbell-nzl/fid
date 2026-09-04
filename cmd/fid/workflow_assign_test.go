@@ -12,6 +12,7 @@ import (
 )
 
 func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "project-flow", "any")
@@ -59,6 +60,7 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 }
 
 func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journal := mustJournalPath(t, workspace)
@@ -91,6 +93,7 @@ func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.
 }
 
 func TestWorkflowAssignCombinesRootProjectSelectorAndProjectWideScope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "root-project-flow", "any")

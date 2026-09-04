@@ -221,6 +221,7 @@ func containsTestArgument(args []string, target string) bool {
 }
 
 func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.T) {
+	t.Parallel()
 	args := withIssueMutationTestKey([]string{"label", "add", "core", "--by", "developer"})
 	if containsTestArgument(args, "--by") {
 		t.Fatalf("retained fixture args = %v, want no V1 --by", args)
@@ -236,6 +237,7 @@ func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.
 }
 
 func TestTask9FixtureAdapterLeavesJudgmentAndPolicyCommandsUntouched(t *testing.T) {
+	t.Parallel()
 	for _, args := range [][]string{
 		{"concern", "raise", "--by", "developer"},
 		{"policy", "show"},

@@ -7,6 +7,7 @@ import (
 )
 
 func TestTask8IssueCreateRequiresStandaloneActorAndIdempotencyKey(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	result := executeCommandForTest(
@@ -41,6 +42,7 @@ func TestTask8IssueCreateRequiresStandaloneActorAndIdempotencyKey(t *testing.T) 
 }
 
 func TestTask8IssueCreateReplaysTheOriginalMutation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	args := []string{
 		"--project", workspace,
@@ -84,6 +86,7 @@ func TestTask8IssueCreateReplaysTheOriginalMutation(t *testing.T) {
 }
 
 func TestTask8IssueUpdateUsesStandaloneActorAndReplaysOriginalMutation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	issueID := createTask8Issue(t, workspace, "Task 8 update")
 	args := []string{
@@ -130,6 +133,7 @@ func TestTask8IssueUpdateUsesStandaloneActorAndReplaysOriginalMutation(t *testin
 }
 
 func TestTask8IssueTransitionUsesStandaloneActorAndReplaysOriginalMutation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	issueID := createTask8Issue(t, workspace, "Task 8 transition")
 	args := []string{
@@ -176,6 +180,7 @@ func TestTask8IssueTransitionUsesStandaloneActorAndReplaysOriginalMutation(t *te
 }
 
 func TestTask8IssueMutationsRejectLegacyByFlag(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	for _, args := range [][]string{
 		{"issue", "create", "--kind", "task", "--title", "Legacy flag", "--actor", "agent:task-8", "--idempotency-key", "legacy-create", "--by", "developer"},

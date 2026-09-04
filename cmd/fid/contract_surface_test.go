@@ -20,6 +20,7 @@ import (
 )
 
 func TestPhase21AttentionBoundary(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	discovery := executeCommandForTest(workspace, "--json", "capabilities")
 	if discovery.err != nil || discovery.stderr != "" {
@@ -138,6 +139,7 @@ func phase21AttentionProductionMatches(t *testing.T) []string {
 }
 
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
+	t.Parallel()
 	retained := []string{
 		"capabilities",
 		"activation prepare",
@@ -293,6 +295,7 @@ func liveExecutableLeafCommands(root *cobra.Command) []string {
 }
 
 func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
+	t.Parallel()
 	repoRoot := commandTestRepositoryRoot(t)
 	allowed := map[string]bool{
 		"TestIssueGetRejectsRetiredFormatFlags":                                     true,
@@ -343,6 +346,7 @@ func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
 }
 
 func TestLiveCobraTreeContainsNoUniversalFormatFlags(t *testing.T) {
+	t.Parallel()
 	root := newRootCommandAt(t.TempDir())
 	if violations := liveUniversalFormatFlagViolations(root); len(violations) != 0 {
 		t.Fatalf("live Cobra tree universal format flags = %v, want none", violations)
@@ -350,6 +354,7 @@ func TestLiveCobraTreeContainsNoUniversalFormatFlags(t *testing.T) {
 }
 
 func TestProductSourceContainsNoUniversalSerializers(t *testing.T) {
+	t.Parallel()
 	repoRoot := commandTestRepositoryRoot(t)
 	violations, err := universalSerializerSourceViolations(repoRoot)
 	if err != nil {
@@ -361,6 +366,7 @@ func TestProductSourceContainsNoUniversalSerializers(t *testing.T) {
 }
 
 func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
+	t.Parallel()
 	t.Run("inherited persistent flag", func(t *testing.T) {
 		root := newRootCommandAt(t.TempDir())
 		root.PersistentFlags().String("format", "", "injected test flag")

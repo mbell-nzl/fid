@@ -120,6 +120,7 @@ func TestLabelAddJSONMatchesContract(t *testing.T) {
 }
 
 func TestLabelAddJSONDuplicateUsesSpecificAtomicFailureCode(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
@@ -137,6 +138,7 @@ func TestLabelAddJSONDuplicateUsesSpecificAtomicFailureCode(t *testing.T) {
 }
 
 func TestLabelAddRejectsExplicitlyEmptyOptionalFlagsBeforeAppend(t *testing.T) {
+	t.Parallel()
 	for _, flag := range []string{"colour", "description"} {
 		t.Run(flag, func(t *testing.T) {
 			workspace := t.TempDir()
@@ -225,6 +227,7 @@ func TestLabelListRejectsLegacyFormatFlag(t *testing.T) {
 }
 
 func TestLabelListJSONReportsOverLimitWithoutOutput(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

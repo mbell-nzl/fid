@@ -14,6 +14,7 @@ import (
 )
 
 func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/false"}
 	})
@@ -52,6 +53,7 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 }
 
 func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name         string
 		withArtifact bool
@@ -111,6 +113,7 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 }
 
 func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
@@ -183,6 +186,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 }
 
 func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
 	beforeEvents := journalEventCount(t, workspace)
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "resume", issueID)
@@ -199,6 +203,7 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 }
 
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
+	t.Parallel()
 	t.Run("active", func(t *testing.T) {
 		workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
@@ -271,6 +276,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 }
 
 func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
 	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout

@@ -10,6 +10,7 @@ import (
 )
 
 func TestReadyHumanSuccessUsesStdout(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -324,6 +325,7 @@ func TestReadyProjectWideUsesMixedSourceSelectionOrder(t *testing.T) {
 }
 
 func TestReadyRejectsRetiredFormatFlag(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	if result := executeCommandForTest(workspace, "ready", "--format", "json"); result.err == nil {
 		t.Fatal("--format was accepted")

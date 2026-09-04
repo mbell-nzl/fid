@@ -19,6 +19,7 @@ import (
 )
 
 func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
@@ -139,6 +140,7 @@ func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testin
 }
 
 func TestGateRunAttemptAppendFailureDoesNotSpawn(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/touch", "attempt-append-spawned"}
 	})
@@ -168,6 +170,7 @@ func TestGateRunAttemptAppendFailureDoesNotSpawn(t *testing.T) {
 }
 
 func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/echo", "started"}
 	})
@@ -208,6 +211,7 @@ func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
 }
 
 func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name         string
 		modify       func(map[string]any)

@@ -7,6 +7,7 @@ import (
 )
 
 func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
@@ -77,6 +78,7 @@ func TestRetainedInventoryJSONRequestErrorsUseCanonicalEnvelope(t *testing.T) {
 }
 
 func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
@@ -139,6 +141,7 @@ func TestRetainedInventoryJSONMissingActorsUseCanonicalEnvelope(t *testing.T) {
 }
 
 func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journalPath := mustJournalPath(t, workspace)
@@ -171,6 +174,7 @@ func TestRetainedInventoryRequiredActorHumanErrorsRemainProse(t *testing.T) {
 }
 
 func TestRetainedInventoryOperationsUseSelectedProjectOutsideWorkingDirectory(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	outside := t.TempDir()
@@ -201,6 +205,7 @@ func TestRetainedInventoryOperationsUseSelectedProjectOutsideWorkingDirectory(t 
 }
 
 func TestIssueACVerifyRemainsGuardedLegacyLeaf(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	issueID, criterionID := seedIssueAcceptanceCriterion(t, workspace, "Legacy verify guard")

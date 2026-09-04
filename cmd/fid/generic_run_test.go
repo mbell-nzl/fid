@@ -7,6 +7,7 @@ import (
 )
 
 func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-start-claim")
 	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
@@ -54,6 +55,7 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 }
 
 func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	t.Run("qualifying", func(t *testing.T) {
 		workspace, issueID, envelopeID := runEnvelopeForTest(t)
 		claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-binding-qualified-claim")
@@ -147,6 +149,7 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 }
 
 func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-finish-claim")
 	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
@@ -282,6 +285,7 @@ func assertRunStartInvalidArgument(t *testing.T, result commandExecutionResult) 
 }
 
 func TestGenericRunUsesNoHistoricalAgentRunsTable(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-table-claim")
 	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)

@@ -10,6 +10,7 @@ import (
 )
 
 func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
 	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)
@@ -63,6 +64,7 @@ func TestClaimAcquireBindsActiveEnvelopeActorWorktreeScopeAndTTL(t *testing.T) {
 }
 
 func TestClaimAcquireBindingMatrixRejectsWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	qualifying := map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
@@ -199,6 +201,7 @@ func assertClaimStateUnchanged(t *testing.T, workspace, claimID, wantClaim strin
 }
 
 func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "claim-acquire-conflict")
 	before := journalEventCount(t, workspace)
@@ -240,6 +243,7 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 }
 
 func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "claim-acquire-lifecycle")
 	renewPath := filepath.Join(workspace, "claim-renew.json")
@@ -343,6 +347,7 @@ func claimResponseReplayed(t *testing.T, output string) bool {
 }
 
 func TestLegacyIssueClaimSpellingsAreNotAliases(t *testing.T) {
+	t.Parallel()
 	for _, legacy := range []string{"issue claim", "issue unclaim"} {
 		for _, leaf := range liveExecutableLeafCommands(newRootCommandAt(t.TempDir())) {
 			if leaf == legacy {
@@ -353,6 +358,7 @@ func TestLegacyIssueClaimSpellingsAreNotAliases(t *testing.T) {
 }
 
 func TestClaimResponseCarriesOnlyContractFields(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "claim-contract-fields")
 	encoded, err := json.Marshal(claim)

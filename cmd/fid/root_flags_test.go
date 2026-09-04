@@ -10,6 +10,7 @@ import (
 )
 
 func TestRootCommandUsesInjectedWorkingDirectoryWithoutChangingProcess(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	originalDirectory, err := os.Getwd()
 	if err != nil {
@@ -41,6 +42,7 @@ func TestRootCommandUsesInjectedWorkingDirectoryWithoutChangingProcess(t *testin
 }
 
 func TestRootCommandCapturesCurrentWorkingDirectory(t *testing.T) {
+	t.Parallel()
 	want, err := os.Getwd()
 	if err != nil {
 		t.Fatalf("Getwd() error = %v", err)
@@ -59,6 +61,7 @@ func TestRootCommandCapturesCurrentWorkingDirectory(t *testing.T) {
 }
 
 func TestRootCommandResolvesRelativeProjectFromInjectedWorkingDirectory(t *testing.T) {
+	t.Parallel()
 	base := t.TempDir()
 	workspace := filepath.Join(base, "relative-project")
 	if err := os.Mkdir(workspace, 0o755); err != nil {
@@ -106,6 +109,7 @@ func TestRootFlagsAllowRebuildForAnExplicitProject(t *testing.T) {
 }
 
 func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
+	t.Parallel()
 	for _, fixture := range []struct {
 		name string
 		args []string
@@ -141,6 +145,7 @@ func TestRootFlagsRejectBeforeLegacyAndUnmigratedLeafHandlers(t *testing.T) {
 }
 
 func TestRootFlagsAcceptConvertedReadsAndRejectOnlyLegacyDiagnostics(t *testing.T) {
+	t.Parallel()
 	for _, fixture := range []struct {
 		name    string
 		command []string

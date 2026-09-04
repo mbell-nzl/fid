@@ -6,6 +6,7 @@ import (
 )
 
 func TestTask20V1CommandsAreAbsent(t *testing.T) {
+	t.Parallel()
 	root := newRootCommandAt(t.TempDir())
 	for _, path := range [][]string{
 		{"dev"},

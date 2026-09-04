@@ -11,6 +11,7 @@ import (
 )
 
 func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
 	inputPath := filepath.Join(workspace, "envelope.json")
 	input := envelopeCreateInput(t, workspace, issueID, registration)

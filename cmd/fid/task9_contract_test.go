@@ -8,6 +8,7 @@ import (
 )
 
 func TestTask9RetainedInventorySurface(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 
 	tests := []struct {

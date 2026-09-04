@@ -19,6 +19,7 @@ import (
 )
 
 func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"artifact.txt"}
@@ -72,6 +73,7 @@ func TestGateRunPublishesSanitizedArtifactByDigest(t *testing.T) {
 }
 
 func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		name       string
 		path       string
@@ -250,6 +252,7 @@ func waitForArtifactMutation(t *testing.T, workspace string) {
 }
 
 func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"artifact.txt"}
@@ -353,6 +356,7 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 }
 
 func TestArtifactVerifyAuthorityFailureNamesArtifactVerify(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	inputPath := filepath.Join(workspace, "artifact-verify.json")
 	writeActivationInput(t, inputPath, map[string]any{"artifact_id": "ART-missing"})

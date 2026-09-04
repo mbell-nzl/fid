@@ -15,6 +15,7 @@ import (
 )
 
 func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) {
+	t.Parallel()
 	t.Run("validity changes only validity", func(t *testing.T) {
 		fixture := newLinkedEvidenceFixture(t, "validity")
 		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
@@ -44,6 +45,7 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 }
 
 func TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild(t *testing.T) {
+	t.Parallel()
 	fixture := newLinkedEvidenceFixture(t, "golden")
 	fixture.observeArtifactMissing(t)
 	staleRepository := cloneJSONMap(t, fixture.repository)
@@ -178,6 +180,7 @@ func (fixture linkedEvidenceFixture) observeArtifactMissing(t *testing.T) {
 }
 
 func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
@@ -201,6 +204,7 @@ func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
 }
 
 func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name       string
 		mutate     func(t *testing.T, conn *sql.DB, receiptID string)

@@ -13,6 +13,7 @@ import (
 )
 
 func TestGateRegisterRequiresFinalizedActivatedDefinition(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	activationID := prepareActivationForTest(t, workspace)
 	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
@@ -69,6 +70,7 @@ func TestGateRegisterRequiresFinalizedActivatedDefinition(t *testing.T) {
 }
 
 func TestGateRegisterRejectsUnsupportedPolicyWithoutPersistence(t *testing.T) {
+	t.Parallel()
 	testCases := []struct {
 		name  string
 		apply func(map[string]any)
@@ -110,6 +112,7 @@ func TestGateRegisterRejectsUnsupportedPolicyWithoutPersistence(t *testing.T) {
 }
 
 func TestGateRegisterReusesBindingAndVersionsChangedBinding(t *testing.T) {
+	t.Parallel()
 	workspace := finalizedGateWorkspace(t, func(map[string]any) {})
 	inputPath := filepath.Join(workspace, "gate-register.json")
 	writeActivationInput(t, inputPath, gateRegisterInput(t, workspace))
@@ -135,6 +138,7 @@ func TestGateRegisterReusesBindingAndVersionsChangedBinding(t *testing.T) {
 }
 
 func TestGateRegisterRejectsRuntimePolicyOverride(t *testing.T) {
+	t.Parallel()
 	workspace := finalizedGateWorkspace(t, func(map[string]any) {})
 	inputPath := filepath.Join(workspace, "gate-register.json")
 	request := gateRegisterInput(t, workspace)

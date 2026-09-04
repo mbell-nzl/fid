@@ -7,6 +7,7 @@ import (
 )
 
 func TestExportCreateValidateAndImportRemainsAbsent(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	archivePath := filepath.Join(t.TempDir(), "fid-export.zip")
 

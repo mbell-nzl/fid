@@ -11,6 +11,7 @@ import (
 )
 
 func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, envelopeID, repository := executionTransitionFixture(t)
 	before := journalEventCount(t, workspace)
 
@@ -51,6 +52,7 @@ func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRev
 }
 
 func TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, _, _ := executionTransitionFixture(t)
 	expectedRevision := 2
 	evaluation, err := workflow.EvaluateExecutionTransition(workspace, issueMigrationsDir(), workflow.ExecutionTransitionRequest{
@@ -74,6 +76,7 @@ func TestExecutionBoundTransitionReturnsEveryOrderedReasonWithoutMutation(t *tes
 }
 
 func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t *testing.T) {
+	t.Parallel()
 	workspace, issueID, _, _ := executionTransitionFixture(t)
 	mutateExecutionTransitionFixture(t, workspace, `UPDATE claims SET worktree_id = 'other-worktree' WHERE issue_id = ?`, issueID)
 	assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID,
@@ -83,6 +86,7 @@ func TestExecutionBoundTransitionRejectsMismatchedClaimWorktreeWithoutMutation(t
 }
 
 func TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name        string
 		updateClaim string
@@ -112,6 +116,7 @@ func TestExecutionBoundTransitionRetainsClaimHolderAndExpiryNoMutationGuards(t *
 }
 
 func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
+	t.Parallel()
 	rows := []struct {
 		name     string
 		prepare  func(t *testing.T, workspace, issueID, envelopeID string)

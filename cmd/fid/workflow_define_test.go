@@ -8,6 +8,7 @@ import (
 )
 
 func TestWorkflowDefineJSONMatchesContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	result := executeCommandForTest(workspace, "--json", "workflow", "define", "--name", "contract-flow", "--applies-to", "task", "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done", "--by", "tl")
@@ -48,6 +49,7 @@ func TestWorkflowDefineJSONMatchesContract(t *testing.T) {
 }
 
 func TestWorkflowDefineRejectsRemovedAndInvalidRequestsBeforeAppend(t *testing.T) {
+	t.Parallel()
 	for _, test := range []struct {
 		name string
 		args []string
@@ -78,6 +80,7 @@ func TestWorkflowDefineRejectsRemovedAndInvalidRequestsBeforeAppend(t *testing.T
 }
 
 func TestWorkflowDefineDuplicateIsTyped(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	args := []string{"--json", "workflow", "define", "--name", "once-flow", "--applies-to", "task", "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done", "--by", "tl"}
@@ -103,6 +106,7 @@ func TestWorkflowDefineDuplicateIsTyped(t *testing.T) {
 }
 
 func TestWorkflowDefineHumanSuccessUsesStdoutOnly(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	result := executeCommandForTest(workspace, "workflow", "define", "--name", "human-flow", "--applies-to", "task", "--states", "todo,done,cancelled", "--categories", "unstarted,completed,cancelled", "--transitions", "todo->done", "--by", "tl")

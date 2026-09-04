@@ -14,6 +14,7 @@ import (
 )
 
 func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -94,6 +95,7 @@ func TestAcceptanceCriterionAddJSONMatchesContract(t *testing.T) {
 }
 
 func TestAcceptanceCriterionAddJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC JSON failures", "--actor", "agent:developer")
@@ -533,6 +535,7 @@ func TestIssueACListCommandRejectsLegacyFormatsAndHandlesEmptyAndMissingIssues(t
 }
 
 func TestIssueACListJSONReportsOverLimitWithoutOutput(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "AC list limit", "--actor", "agent:developer")

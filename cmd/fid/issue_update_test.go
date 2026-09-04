@@ -223,6 +223,7 @@ func TestIssueUpdateJSONOrdersChangesByField(t *testing.T) {
 }
 
 func TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure(t *testing.T) {
+	t.Parallel()
 	for _, flag := range []string{"owner-role", "owner-actor"} {
 		t.Run(flag, func(t *testing.T) {
 			workspace := t.TempDir()
@@ -256,6 +257,7 @@ func TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure(t *testing.T) {
 }
 
 func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		operation string
 		flag      string
@@ -340,6 +342,7 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 }
 
 func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -449,6 +452,7 @@ func sameCommandOptionalString(left, right *string) bool {
 }
 
 func TestIssueMutationHumanSuccessUsesStdoutOnly(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 

@@ -38,6 +38,7 @@ func TestStatsTokensDefaultsToJSONByActorAttribution(t *testing.T) {
 }
 
 func TestStatsTokensAcceptsOnlyClosedGroupByValues(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	epicID := createStatsCommandIssue(t, workspace, "epic", "Closed stats grouping epic", nil)
 	taskID := createStatsCommandIssue(t, workspace, "task", "Closed stats grouping task", stringPointer(epicID))
