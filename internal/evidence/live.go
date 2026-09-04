@@ -349,6 +349,9 @@ func redactionSources(definition GateDefinition) []string {
 }
 
 func (redactor *liveRedactor) Transform(data []byte, final bool) string {
+	if len(redactor.sources) == 0 {
+		return validUTF8(data)
+	}
 	redactor.pending = append(redactor.pending, data...)
 	var output []byte
 	for len(redactor.pending) > 0 {
@@ -386,6 +389,9 @@ func (redactor *liveRedactor) pendingCouldBeSource() bool {
 }
 
 func validUTF8(value []byte) string {
+	if utf8.Valid(value) {
+		return string(value)
+	}
 	var builder strings.Builder
 	for len(value) > 0 {
 		runeValue, size := utf8.DecodeRune(value)

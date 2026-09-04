@@ -1,11 +1,26 @@
 package evidence
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"syscall"
 	"testing"
 )
+
+func TestWriteSanitizedArtifactChunkPreservesValidAndSanitizesInvalidUTF8(t *testing.T) {
+	var output bytes.Buffer
+	redactor := newLiveRedactor(nil)
+	if err := writeSanitizedArtifactChunk(&output, redactor, []byte("valid "), false); err != nil {
+		t.Fatalf("write valid chunk: %v", err)
+	}
+	if err := writeSanitizedArtifactChunk(&output, redactor, []byte{'a', 0xff, 'b'}, true); err != nil {
+		t.Fatalf("write invalid chunk: %v", err)
+	}
+	if got := output.String(); got != "valid a\uFFFDb" {
+		t.Fatalf("sanitized output = %q, want valid bytes preserved and invalid UTF-8 replaced", got)
+	}
+}
 
 func TestArtifactCandidatePathRejectsEveryUnsafeCandidate(t *testing.T) {
 	workspace := t.TempDir()

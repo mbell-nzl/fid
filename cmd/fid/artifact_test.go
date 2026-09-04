@@ -87,7 +87,7 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 			reason: "changed-during-copy",
 			definition: func(definition map[string]any) {
 				definition["argv"] = []string{os.Args[0], "-test.run=^TestArtifactMutationHelperProcess$", "--"}
-				definition["artifact_bytes"] = 512 * 1024 * 1024
+				definition["artifact_bytes"] = 32 * 1024 * 1024
 				definition["timeout_ms"] = 10_000
 				definition["environment"] = []any{map[string]any{"name": "FID_ARTIFACT_HELPER", "source": "literal", "value": "writer"}}
 			},
@@ -163,7 +163,7 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 	for _, testCase := range cases {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+			workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 				definition["argv"] = []string{"/bin/true"}
 				definition["artifact_paths"] = []string{testCase.path}
 				if testCase.definition != nil {
@@ -181,8 +181,8 @@ func TestGateRunUnsafeArtifactsEmitControlsAndRemainRequiredUnavailable(t *testi
 			assertArtifactRejectedControl(t, result.stdout, testCase.path, testCase.reason)
 			assertReceiptHasNoArtifacts(t, workspace, terminal.Data.ReceiptID)
 
-			repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-			obligationID := evidenceObligationID(t, workspace, envelopeID)
+			repository := runRepositoryForTest(t, workspace)
+			obligationID := testEvidenceObligationID
 			assertEvaluation(t, evaluateEvidenceForArtifactTest(t, workspace, obligationID, repository), "invalid", "stale", "missing", []string{"obligation-evidence-absent"})
 			if testCase.name == "changed during copy" {
 				waitForArtifactMutation(t, workspace)
@@ -198,7 +198,7 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 		if err != nil {
 			t.Fatalf("create changed candidate: %v", err)
 		}
-		if err := candidate.Truncate(64 * 1024 * 1024); err != nil {
+		if err := candidate.Truncate(8 * 1024 * 1024); err != nil {
 			_ = candidate.Close()
 			t.Fatalf("create changed candidate: %v", err)
 		}
@@ -210,18 +210,28 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 		if err := mutator.Start(); err != nil {
 			t.Fatalf("start Artifact mutator: %v", err)
 		}
+		waitForArtifactMutationMarker(t, "changed.mutator.ready", 2*time.Second)
 	case "mutator":
 		defer func() { _ = os.WriteFile("changed.mutator.done", []byte("done"), 0o600) }()
-		deadline := time.Now().Add(500 * time.Millisecond)
-		for time.Now().Before(deadline) {
-			if err := os.Truncate("changed.txt", 96*1024*1024); err != nil {
-				t.Fatalf("grow changed candidate: %v", err)
+		if err := os.WriteFile("changed.mutator.ready", []byte("ready"), 0o600); err != nil {
+			t.Fatalf("signal Artifact mutator readiness: %v", err)
+		}
+		deadline := time.Now().Add(5 * time.Second)
+		for {
+			staging, err := filepath.Glob(filepath.Join(".fid", "artifacts", ".artifact-*"))
+			if err != nil {
+				t.Fatalf("inspect Artifact staging files: %v", err)
+			}
+			if len(staging) > 0 {
+				break
+			}
+			if time.Now().After(deadline) {
+				t.Fatal("Artifact staging file did not appear")
 			}
 			time.Sleep(time.Millisecond)
-			if err := os.Truncate("changed.txt", 64*1024*1024); err != nil {
-				t.Fatalf("shrink changed candidate: %v", err)
-			}
-			time.Sleep(time.Millisecond)
+		}
+		if err := os.Truncate("changed.txt", 12*1024*1024); err != nil {
+			t.Fatalf("grow changed candidate: %v", err)
 		}
 	case "outside":
 		outside := filepath.Join("..", "outside-artifact")
@@ -241,19 +251,24 @@ func TestArtifactMutationHelperProcess(t *testing.T) {
 
 func waitForArtifactMutation(t *testing.T, workspace string) {
 	t.Helper()
-	deadline := time.Now().Add(2 * time.Second)
+	waitForArtifactMutationMarker(t, filepath.Join(workspace, "changed.mutator.done"), 2*time.Second)
+}
+
+func waitForArtifactMutationMarker(t *testing.T, path string, timeout time.Duration) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
 	for time.Now().Before(deadline) {
-		if _, err := os.Stat(filepath.Join(workspace, "changed.mutator.done")); err == nil {
+		if _, err := os.Stat(path); err == nil {
 			return
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	t.Fatal("Artifact mutator did not terminate")
+	t.Fatalf("Artifact mutation marker %q did not appear", path)
 }
 
 func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"artifact.txt"}
 	})
@@ -272,8 +287,8 @@ func TestArtifactVerifyObservesLossAndRestorationWithoutIdentityMutation(t *test
 	}
 	defer func() { _ = conn.Close() }()
 	artifactID, digest, receiptID := receiptArtifactIdentity(t, conn)
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
+	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "artifact-lifecycle-evidence.json")
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "receipt_id": receiptID,

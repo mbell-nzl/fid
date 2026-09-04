@@ -29,10 +29,35 @@ var reusableWorkspaceFixtures = struct {
 	items map[string]*reusableWorkspaceFixture
 }{items: make(map[string]*reusableWorkspaceFixture)}
 
+var envelopeBindingsForTest sync.Map
+
 type reusableWorkspaceFixture struct {
 	sync.Mutex
 	root   string
 	values []string
+}
+
+type envelopeBindingForTest struct {
+	registrationID      string
+	registrationVersion int
+	obligationID        string
+	claimID             string
+	runID               string
+}
+
+func rememberEnvelopeBindingForTest(t *testing.T, workspace string, binding envelopeBindingForTest) {
+	t.Helper()
+	envelopeBindingsForTest.Store(workspace, binding)
+	t.Cleanup(func() { envelopeBindingsForTest.Delete(workspace) })
+}
+
+func envelopeBindingForWorkspace(t *testing.T, workspace string) envelopeBindingForTest {
+	t.Helper()
+	value, ok := envelopeBindingsForTest.Load(workspace)
+	if !ok {
+		t.Fatalf("workspace %q has no cached Envelope binding", workspace)
+	}
+	return value.(envelopeBindingForTest)
 }
 
 func TestMain(m *testing.M) {
@@ -220,6 +245,27 @@ func copyWorkspaceFile(source, destination string, mode fs.FileMode) error {
 type workspaceSnapshotEntry struct {
 	Mode fs.FileMode
 	Data []byte
+}
+
+type workspacePersistenceSnapshot struct {
+	database []byte
+	journal  []byte
+}
+
+func snapshotWorkspacePersistence(t *testing.T, workspace string) workspacePersistenceSnapshot {
+	t.Helper()
+	return workspacePersistenceSnapshot{
+		database: mustReadCommandFile(t, config.WorkspacePathsForRoot(workspace).DatabasePath),
+		journal:  mustReadCommandFile(t, mustJournalPath(t, workspace)),
+	}
+}
+
+func (snapshot workspacePersistenceSnapshot) equal(other workspacePersistenceSnapshot) bool {
+	return bytes.Equal(snapshot.database, other.database) && bytes.Equal(snapshot.journal, other.journal)
+}
+
+func (snapshot workspacePersistenceSnapshot) eventCount() int {
+	return len(splitJournalLines(snapshot.journal))
 }
 
 type commandExecutionResult struct {

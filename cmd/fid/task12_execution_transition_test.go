@@ -349,7 +349,7 @@ func buildExecutionTransitionFixture(t *testing.T) (string, string, string, map[
 		t.Fatalf("activate execution envelope: %v; stderr=%q", activated.err, activated.stderr)
 	}
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "execution-transition-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	runPath := filepath.Join(workspace, "execution-transition-run.json")
 	writeActivationInput(t, runPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,

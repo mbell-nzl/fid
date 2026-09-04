@@ -2,6 +2,7 @@ package main
 
 import (
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -10,7 +11,7 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-start-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	path := filepath.Join(workspace, "run-start.json")
 	writeActivationInput(t, path, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
@@ -59,11 +60,11 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 	t.Run("qualifying", func(t *testing.T) {
 		workspace, issueID, envelopeID := runEnvelopeForTest(t)
 		claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-binding-qualified-claim")
-		repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+		repository := runRepositoryForTest(t, workspace)
 		path := filepath.Join(workspace, "run-binding-qualified.json")
 		writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
 
-		beforeRuns, beforeEvents := runStateSnapshot(t, workspace)
+		before := snapshotWorkspacePersistence(t, workspace)
 		started := executeCommandForTest(workspace,
 			"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
 			"--input", path, "--idempotency-key", "run-binding-qualified",
@@ -74,9 +75,9 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 		if run := runFromResponse(t, started.stdout); run["status"] != "active" || run["budgets"] == nil {
 			t.Fatalf("qualifying run = %#v, want active Run with bound budgets", run)
 		}
-		afterRuns, afterEvents := runStateSnapshot(t, workspace)
-		if afterRuns == beforeRuns || afterEvents != beforeEvents+1 {
-			t.Fatalf("qualifying Run state = (%q, %d), want changed runs and Event count %d", afterRuns, afterEvents, beforeEvents+1)
+		after := snapshotWorkspacePersistence(t, workspace)
+		if after.equal(before) || after.eventCount() != before.eventCount()+1 {
+			t.Fatalf("qualifying Run persistence changed=%t events=%d, want changed state and Event count %d", !after.equal(before), after.eventCount(), before.eventCount()+1)
 		}
 	})
 
@@ -120,7 +121,7 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			workspace, issueID, envelopeID := runEnvelopeForTest(t)
 			claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-binding-"+strings.ReplaceAll(testCase.name, " ", "-"))
-			repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+			repository := runRepositoryForTest(t, workspace)
 			input := runStartInput(issueID, envelopeID, claim["id"], repository)
 			if testCase.releaseClaim {
 				releasePath := filepath.Join(workspace, "run-binding-release.json")
@@ -137,13 +138,13 @@ func TestRunStartBindingMatrixRejectsWithoutMutation(t *testing.T) {
 			path := filepath.Join(workspace, "run-binding-rejected.json")
 			writeActivationInput(t, path, input)
 
-			beforeRuns, beforeEvents := runStateSnapshot(t, workspace)
+			before := snapshotWorkspacePersistence(t, workspace)
 			result := executeCommandForTest(workspace,
 				"--project", workspace, "--json", "run", "start", "--actor", testCase.actor,
 				"--input", path, "--idempotency-key", "run-binding-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
 			assertRunStartInvalidArgument(t, result)
-			assertRunStateUnchanged(t, workspace, beforeRuns, beforeEvents)
+			assertRunStateUnchanged(t, workspace, before)
 		})
 	}
 }
@@ -152,7 +153,7 @@ func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-finish-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	startPath := filepath.Join(workspace, "run-finish-start.json")
 	writeActivationInput(t, startPath, map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
@@ -203,13 +204,20 @@ func runEnvelopeForTestWithDefinition(t *testing.T, modifyDefinition func(map[st
 	definitions := gateDefinitionsForTest(modifyDefinition)
 	key := reusableWorkspaceFixtureKey(t, "run-envelope", definitions)
 	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID := buildRunEnvelopeForTest(t, definitions)
-		return workspace, []string{issueID, envelopeID}
+		workspace, issueID, envelopeID, registration := buildRunEnvelopeForTest(t, definitions)
+		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
+	})
+	registrationVersion, err := strconv.Atoi(values[3])
+	if err != nil {
+		t.Fatalf("decode cached registration version: %v", err)
+	}
+	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
+		registrationID: values[2], registrationVersion: registrationVersion, obligationID: testEvidenceObligationID,
 	})
 	return workspace, values[0], values[1]
 }
 
-func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, string) {
+func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, string, gateRegistrationView) {
 	t.Helper()
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
@@ -232,16 +240,12 @@ func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, s
 	if activated.err != nil {
 		t.Fatalf("activate run envelope: %v; stderr=%q", activated.err, activated.stderr)
 	}
-	return workspace, issueID, envelopeID
+	return workspace, issueID, envelopeID, registration
 }
 
-func runRepositoryForTest(t *testing.T, workspace, issueID, envelopeID string) map[string]any {
+func runRepositoryForTest(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	output := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	if output.err != nil {
-		t.Fatalf("get envelope: %v; stderr=%q", output.err, output.stderr)
-	}
-	return decodeCommandJSONStructure(t, output.stdout).(map[string]any)["result"].(map[string]any)["envelope"].(map[string]any)["repository_scope"].(map[string]any)
+	return cloneJSONMap(t, testEnvelopeRepository(t, workspace))
 }
 
 func runFromResponse(t *testing.T, output string) map[string]any {
@@ -256,20 +260,11 @@ func runStartInput(issueID, envelopeID, claimID any, repository map[string]any) 
 	}
 }
 
-func runStateSnapshot(t *testing.T, workspace string) (string, int) {
+func assertRunStateUnchanged(t *testing.T, workspace string, want workspacePersistenceSnapshot) {
 	t.Helper()
-	listed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "list")
-	if listed.err != nil || listed.stderr != "" {
-		t.Fatalf("run list snapshot = %#v, want stdout-only success", listed)
-	}
-	return listed.stdout, journalEventCount(t, workspace)
-}
-
-func assertRunStateUnchanged(t *testing.T, workspace, wantRuns string, wantEvents int) {
-	t.Helper()
-	gotRuns, gotEvents := runStateSnapshot(t, workspace)
-	if gotRuns != wantRuns || gotEvents != wantEvents {
-		t.Fatalf("Run state after rejection = (%q, %d), want (%q, %d)", gotRuns, gotEvents, wantRuns, wantEvents)
+	got := snapshotWorkspacePersistence(t, workspace)
+	if !got.equal(want) {
+		t.Fatalf("Run rejection changed persisted projection or journal; events=%d, want %d", got.eventCount(), want.eventCount())
 	}
 }
 
@@ -299,7 +294,7 @@ func TestGenericRunUsesNoHistoricalAgentRunsTable(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-table-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	path := filepath.Join(workspace, "run-table-start.json")
 	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claim["id"], "claim_version": 1, "repository": repository})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "run-table-start")

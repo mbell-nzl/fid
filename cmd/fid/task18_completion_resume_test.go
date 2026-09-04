@@ -15,7 +15,7 @@ import (
 
 func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/false"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-unsuccessful")
@@ -23,10 +23,10 @@ func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.
 		t.Fatalf("failed gate run = %#v, terminal=%#v, want failed Receipt", gateRun, terminal)
 	}
 
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
-		"obligation_id": evidenceObligationID(t, workspace, envelopeID),
+		"obligation_id": testEvidenceObligationID,
 		"receipt_id":    terminal.Data.ReceiptID, "target_repository": repository,
 		"required_artifact_ids": []string{},
 	})
@@ -113,16 +113,16 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-qualified")
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("qualified gate run = %#v, terminal=%#v", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	linkPath := filepath.Join(workspace, "task18-qualified-evidence.json")
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	obligationID := testEvidenceObligationID
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID,
 		"target_repository": repository, "required_artifact_ids": []string{},
@@ -204,7 +204,7 @@ func TestResumeReadsDurableFactsWithoutMutation(t *testing.T) {
 func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *testing.T) {
 	t.Parallel()
 	t.Run("active", func(t *testing.T) {
-		workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+		workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
 		terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-resume-active")
@@ -224,15 +224,15 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 	})
 
 	t.Run("completed", func(t *testing.T) {
-		workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+		workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 			definition["argv"] = []string{"/bin/true"}
 		})
 		terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-resume-completed")
 		if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 			t.Fatalf("completed resume gate run = %#v, terminal=%#v", gateRun, terminal)
 		}
-		repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-		obligationID := evidenceObligationID(t, workspace, envelopeID)
+		repository := runRepositoryForTest(t, workspace)
+		obligationID := testEvidenceObligationID
 		linkPath := filepath.Join(workspace, "task18-resume-completed-evidence.json")
 		writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}})
 		linked := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task18-resume-completed-evidence")
@@ -277,7 +277,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
 	beforeEvents := journalEventCount(t, workspace)
@@ -318,6 +318,10 @@ func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 
 func task18RunAndClaim(t *testing.T, workspace, issueID string) (string, string) {
 	t.Helper()
+	binding := envelopeBindingForWorkspace(t, workspace)
+	if binding.runID != "" && binding.claimID != "" {
+		return binding.runID, binding.claimID
+	}
 	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
 	if err != nil {
 		t.Fatalf("open task 18 projection: %v", err)
@@ -349,7 +353,7 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 
 func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		if withArtifact {
 			definition["artifact_paths"] = []string{"task18-evidence.txt"}
@@ -364,8 +368,8 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("qualified terminal gate run = %#v, terminal=%#v", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
+	obligationID := testEvidenceObligationID
 	artifactID := ""
 	if withArtifact {
 		conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))

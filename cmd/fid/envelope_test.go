@@ -10,6 +10,8 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 )
 
+const testEvidenceObligationID = "OBL-1"
+
 func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
@@ -173,14 +175,7 @@ func authorityCapabilities() []string {
 
 func envelopeCreateInput(t *testing.T, workspace, issueID string, registration gateRegistrationView) map[string]any {
 	t.Helper()
-	project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
-	if err != nil {
-		t.Fatalf("read project config: %v", err)
-	}
-	repository := map[string]any{
-		"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil,
-		"head_oid": strings.Repeat("a", 40), "project_id": project.ProjectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1",
-	}
+	repository := testEnvelopeRepository(t, workspace)
 	source := map[string]any{
 		"digest": "sha256:" + strings.Repeat("0", 64), "display_label": "Gate policy", "external_id": nil,
 		"path": "project-docs/gates/unit.json", "repository": repository, "section": nil, "source_type": "project-file",
@@ -195,7 +190,7 @@ func envelopeCreateInput(t *testing.T, workspace, issueID string, registration g
 			"scope":          map[string]any{"issue_id": issueID},
 		}},
 		"obligations": []any{map[string]any{
-			"id": "OBL-1", "type": "gate-evidence", "applicability": "required",
+			"id": testEvidenceObligationID, "type": "gate-evidence", "applicability": "required",
 			"guarded_actions":         []string{"envelope.complete", "issue.transition-terminal-success"},
 			"subject":                 map[string]any{"type": "issue", "id": issueID},
 			"registration":            map[string]any{"id": registration.ID, "version": registration.Version},
@@ -206,6 +201,18 @@ func envelopeCreateInput(t *testing.T, workspace, issueID string, registration g
 			"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil,
 			"exhaustion_action": "unavailable", "consumed": nil, "remaining": nil,
 		}},
+	}
+}
+
+func testEnvelopeRepository(t *testing.T, workspace string) map[string]any {
+	t.Helper()
+	project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatalf("read project config: %v", err)
+	}
+	return map[string]any{
+		"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil,
+		"head_oid": strings.Repeat("a", 40), "project_id": project.ProjectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1",
 	}
 }
 

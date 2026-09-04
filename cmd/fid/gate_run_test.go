@@ -24,7 +24,7 @@ func TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame(t *testin
 		definition["argv"] = []string{"/bin/true"}
 	})
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "gate-run-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
 	runPath := filepath.Join(workspace, "gate-run-start.json")
 	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
 	started := executeCommandForTest(workspace,
@@ -389,43 +389,21 @@ func readImmutableReceiptFields(t *testing.T, conn *sql.DB, receiptID string) im
 
 func gateRunInputForTest(t *testing.T, workspace, issueID, envelopeID, key string) (string, string) {
 	t.Helper()
-	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, key+"-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	runPath := filepath.Join(workspace, key+"-run.json")
-	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
-	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runPath, "--idempotency-key", key+"-start")
-	if started.err != nil {
-		t.Fatalf("start Run: %v; stderr=%q", started.err, started.stderr)
-	}
-	envelopeResult := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	if envelopeResult.err != nil {
-		t.Fatalf("get envelope: %v; stderr=%q", envelopeResult.err, envelopeResult.stderr)
-	}
-	obligation := decodeCommandJSONStructure(t, envelopeResult.stdout).(map[string]any)["result"].(map[string]any)["envelope"].(map[string]any)["obligations"].([]any)[0].(map[string]any)
-	registration := obligation["registration"].(map[string]any)
+	repository := runRepositoryForTest(t, workspace)
+	binding := envelopeBindingForWorkspace(t, workspace)
+	runID := activeRunIDForGateTest(t, workspace, issueID, envelopeID, key, repository, binding)
 	inputPath := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, inputPath, map[string]any{"registration_id": registration["id"], "registration_version": registration["version"], "obligation_id": obligation["id"], "run_id": runFromResponse(t, started.stdout)["id"], "repository": repository})
+	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
 	return inputPath, key
 }
 
 func executeGateRunForTest(t *testing.T, workspace, issueID, envelopeID, key string) (gateTerminalFrame, commandExecutionResult) {
 	t.Helper()
-	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, key+"-claim")
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	runPath := filepath.Join(workspace, key+"-run.json")
-	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
-	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runPath, "--idempotency-key", key+"-start")
-	if started.err != nil {
-		t.Fatalf("start Run: %v; stderr=%q", started.err, started.stderr)
-	}
-	envelopeResult := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	if envelopeResult.err != nil {
-		t.Fatalf("get envelope: %v; stderr=%q", envelopeResult.err, envelopeResult.stderr)
-	}
-	obligation := decodeCommandJSONStructure(t, envelopeResult.stdout).(map[string]any)["result"].(map[string]any)["envelope"].(map[string]any)["obligations"].([]any)[0].(map[string]any)
-	registration := obligation["registration"].(map[string]any)
+	repository := runRepositoryForTest(t, workspace)
+	binding := envelopeBindingForWorkspace(t, workspace)
+	runID := activeRunIDForGateTest(t, workspace, issueID, envelopeID, key, repository, binding)
 	inputPath := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, inputPath, map[string]any{"registration_id": registration["id"], "registration_version": registration["version"], "obligation_id": obligation["id"], "run_id": runFromResponse(t, started.stdout)["id"], "repository": repository})
+	writeActivationInput(t, inputPath, map[string]any{"registration_id": binding.registrationID, "registration_version": binding.registrationVersion, "obligation_id": binding.obligationID, "run_id": runID, "repository": repository})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", key)
 	lines := strings.Split(strings.TrimSpace(result.stdout), "\n")
 	if len(lines) == 0 || lines[0] == "" {
@@ -436,4 +414,19 @@ func executeGateRunForTest(t *testing.T, workspace, issueID, envelopeID, key str
 		t.Fatalf("decode terminal frame: %v; frame=%q", err, lines[len(lines)-1])
 	}
 	return terminal, result
+}
+
+func activeRunIDForGateTest(t *testing.T, workspace, issueID, envelopeID, key string, repository map[string]any, binding envelopeBindingForTest) string {
+	t.Helper()
+	if binding.runID != "" {
+		return binding.runID
+	}
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, key+"-claim")
+	runPath := filepath.Join(workspace, key+"-run.json")
+	writeActivationInput(t, runPath, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runPath, "--idempotency-key", key+"-start")
+	if started.err != nil {
+		t.Fatalf("start Run: %v; stderr=%q", started.err, started.stderr)
+	}
+	return runFromResponse(t, started.stdout)["id"].(string)
 }

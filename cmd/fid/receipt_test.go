@@ -10,7 +10,7 @@ import (
 
 func TestReceiptReadsAreExactFilteredOrderedAndReadOnly(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"missing.txt"}
 	})
@@ -91,7 +91,7 @@ func TestReceiptReadFailuresAreTypedAndClosed(t *testing.T) {
 
 func TestGateRunReplayRetainsRejectedArtifacts(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"missing.txt"}
 	})

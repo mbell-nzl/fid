@@ -79,6 +79,13 @@ func TestRunLiveFramesInterleavedOutputControlsAndFailure(t *testing.T) {
 	}
 }
 
+func TestLiveRedactorWithoutSourcesPreservesUTF8Sanitization(t *testing.T) {
+	redactor := newLiveRedactor(nil)
+	if got := redactor.Transform([]byte{'a', 0xff, 'b'}, true); got != "a\uFFFDb" {
+		t.Fatalf("Transform() = %q, want invalid UTF-8 replaced", got)
+	}
+}
+
 func TestLiveProcessChild(t *testing.T) {
 	if !containsArgument(os.Args, "--live-process-child") {
 		return

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -94,7 +95,7 @@ func newLinkedEvidenceFixture(t *testing.T, _ string) linkedEvidenceFixture {
 
 func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture {
 	t.Helper()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		definition["artifact_paths"] = []string{"evidence.txt"}
 	})
@@ -115,8 +116,8 @@ func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture 
 	if err := conn.QueryRow(`SELECT a.id, a.digest FROM referenced_artifacts a JOIN receipt_artifacts l ON l.artifact_id = a.id WHERE l.receipt_id = ?`, terminal.Data.ReceiptID).Scan(&artifactID, &digest); err != nil {
 		t.Fatalf("read Receipt Artifact: %v", err)
 	}
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
+	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "evidence-link.json")
 	writeActivationInput(t, linkPath, map[string]any{
 		"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID,
@@ -198,24 +199,24 @@ func (fixture linkedEvidenceFixture) observeArtifactMissing(t *testing.T) {
 
 func TestEvidenceLinkRejectsEveryCallerAuthoredProof(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "caller-proof-source")
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("gate run = %#v, terminal=%#v, want successful Receipt", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
+	obligationID := testEvidenceObligationID
 	for _, proof := range []string{"pass", "command", "import", "attestation", "role"} {
 		t.Run(proof, func(t *testing.T) {
 			path := filepath.Join(workspace, proof+"-evidence.json")
 			input := map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}}
 			input[proof] = true
 			writeActivationInput(t, path, input)
-			beforeEvents, beforeEvidence := evidenceStateCounts(t, workspace)
+			before := snapshotWorkspacePersistence(t, workspace)
 			result := executeCommandForTest(workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", path, "--idempotency-key", "caller-"+proof)
-			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, beforeEvents, beforeEvidence)
+			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, before)
 		})
 	}
 }
@@ -270,7 +271,7 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+			workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 				definition["argv"] = []string{"/bin/true"}
 			})
 			terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "binding-mismatch-"+strings.ReplaceAll(testCase.name, " ", "-"))
@@ -293,21 +294,21 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 				t.Fatalf("close projection: %v", err)
 			}
 
-			repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
+			repository := runRepositoryForTest(t, workspace)
 			if testCase.mutateLink != nil {
 				testCase.mutateLink(t, repository)
 			}
 			linkPath := filepath.Join(workspace, "binding-mismatch-evidence.json")
 			writeActivationInput(t, linkPath, map[string]any{
-				"obligation_id": evidenceObligationID(t, workspace, envelopeID), "receipt_id": terminal.Data.ReceiptID,
+				"obligation_id": testEvidenceObligationID, "receipt_id": terminal.Data.ReceiptID,
 				"target_repository": repository, "required_artifact_ids": []string{},
 			})
-			beforeEvents, beforeEvidence := evidenceStateCounts(t, workspace)
+			before := snapshotWorkspacePersistence(t, workspace)
 			result := executeCommandForTest(workspace,
 				"--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder",
 				"--input", linkPath, "--idempotency-key", "binding-mismatch-"+strings.ReplaceAll(testCase.name, " ", "-"),
 			)
-			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, beforeEvents, beforeEvidence)
+			assertEvidenceLinkRejectedWithoutEvidenceEvent(t, workspace, result, before)
 		})
 	}
 }
@@ -317,13 +318,51 @@ func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]a
 	definitions := gateDefinitionsForTest(modifyDefinition)
 	key := reusableWorkspaceFixtureKey(t, "evidence-envelope", definitions)
 	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID := buildEvidenceEnvelopeForTest(t, definitions)
-		return workspace, []string{issueID, envelopeID}
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions)
+		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
+	})
+	registrationVersion, err := strconv.Atoi(values[3])
+	if err != nil {
+		t.Fatalf("decode cached registration version: %v", err)
+	}
+	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
+		registrationID: values[2], registrationVersion: registrationVersion, obligationID: testEvidenceObligationID,
 	})
 	return workspace, values[0], values[1]
 }
 
-func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any) (string, string, string) {
+func gateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	t.Helper()
+	definitions := gateDefinitionsForTest(modifyDefinition)
+	key := reusableWorkspaceFixtureKey(t, "gate-ready-evidence-envelope", definitions)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions)
+		claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
+		repository := testEnvelopeRepository(t, workspace)
+		path := filepath.Join(workspace, "gate-ready-run.json")
+		writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
+		started := executeCommandForTest(workspace,
+			"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
+			"--input", path, "--idempotency-key", "gate-ready-run",
+		)
+		if started.err != nil {
+			t.Fatalf("start cached gate-ready Run: %v; stderr=%q", started.err, started.stderr)
+		}
+		runID := runFromResponse(t, started.stdout)["id"].(string)
+		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version), runID, claim["id"].(string)}
+	})
+	registrationVersion, err := strconv.Atoi(values[3])
+	if err != nil {
+		t.Fatalf("decode cached registration version: %v", err)
+	}
+	rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{
+		registrationID: values[2], registrationVersion: registrationVersion,
+		obligationID: testEvidenceObligationID, runID: values[4], claimID: values[5],
+	})
+	return workspace, values[0], values[1]
+}
+
+func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any) (string, string, string, gateRegistrationView) {
 	t.Helper()
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
@@ -343,16 +382,7 @@ func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any) (string, stri
 	if activated.err != nil {
 		t.Fatalf("activate evidence envelope: %v; stderr=%q", activated.err, activated.stderr)
 	}
-	return workspace, issueID, envelopeID
-}
-
-func evidenceObligationID(t *testing.T, workspace, envelopeID string) string {
-	t.Helper()
-	output := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
-	if output.err != nil {
-		t.Fatalf("get evidence envelope: %v; stderr=%q", output.err, output.stderr)
-	}
-	return decodeCanonicalResult(t, output.stdout)["envelope"].(map[string]any)["obligations"].([]any)[0].(map[string]any)["id"].(string)
+	return workspace, issueID, envelopeID, registration
 }
 
 func assertEvaluation(t *testing.T, evaluation map[string]any, validity, freshness, availability string, reasonCodes []string) {
@@ -389,26 +419,13 @@ func updateReceiptAttemptField(t *testing.T, conn *sql.DB, receiptID, field, val
 	}
 }
 
-func evidenceStateCounts(t *testing.T, workspace string) (int, int) {
-	t.Helper()
-	conn, err := fiddb.Open(filepath.Join(workspace, config.WorkspaceDirName, config.DatabaseFileName))
-	if err != nil {
-		t.Fatalf("open projection for Evidence count: %v", err)
-	}
-	defer func() { _ = conn.Close() }()
-	var evidenceRecords int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM evidence_records`).Scan(&evidenceRecords); err != nil {
-		t.Fatalf("count Evidence records: %v", err)
-	}
-	return journalEventCount(t, workspace), evidenceRecords
-}
-
-func assertEvidenceLinkRejectedWithoutEvidenceEvent(t *testing.T, workspace string, result commandExecutionResult, wantEvents, wantEvidence int) {
+func assertEvidenceLinkRejectedWithoutEvidenceEvent(t *testing.T, workspace string, result commandExecutionResult, want workspacePersistenceSnapshot) {
 	t.Helper()
 	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"invalid-argument"`) {
 		t.Fatalf("evidence link = %#v, want typed rejection", result)
 	}
-	if gotEvents, gotEvidence := evidenceStateCounts(t, workspace); gotEvents != wantEvents || gotEvidence != wantEvidence {
-		t.Fatalf("Evidence rejection state = events:%d evidence:%d, want events:%d evidence:%d", gotEvents, gotEvidence, wantEvents, wantEvidence)
+	got := snapshotWorkspacePersistence(t, workspace)
+	if !got.equal(want) {
+		t.Fatalf("Evidence rejection changed persisted projection or journal; events=%d, want %d", got.eventCount(), want.eventCount())
 	}
 }

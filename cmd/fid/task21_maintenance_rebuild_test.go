@@ -64,15 +64,15 @@ func task21Read(t *testing.T, workspace string, args ...string) string {
 
 func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task21-parity-gate")
 	if gateRun.err != nil || terminal.Data.ReceiptID == "" {
 		t.Fatalf("run qualifying Gate = %#v, terminal=%#v", gateRun, terminal)
 	}
-	repository := runRepositoryForTest(t, workspace, issueID, envelopeID)
-	obligationID := evidenceObligationID(t, workspace, envelopeID)
+	repository := runRepositoryForTest(t, workspace)
+	obligationID := testEvidenceObligationID
 	linkPath := filepath.Join(workspace, "task21-link-evidence.json")
 	writeActivationInput(t, linkPath, map[string]any{"obligation_id": obligationID, "receipt_id": terminal.Data.ReceiptID, "target_repository": repository, "required_artifact_ids": []string{}})
 	task21Mutate(t, workspace, "evidence", "link", "--actor", "actor-builder", "--input", linkPath, "--idempotency-key", "task21-link-evidence")

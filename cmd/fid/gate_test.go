@@ -94,12 +94,24 @@ func TestGateRegisterRejectsUnsupportedPolicyWithoutPersistence(t *testing.T) {
 		{"artifact path", func(definition map[string]any) { definition["artifact_paths"] = []string{"../outside"} }, "artifact_paths"},
 		{"cwd", func(definition map[string]any) { definition["cwd"] = "../outside" }, "cwd"},
 	}
+	definitions := make([]any, 0, len(testCases))
+	definitionIDs := make(map[string]string, len(testCases))
+	for _, testCase := range testCases {
+		definition := gateDefinitionsForTest(nil)[0].(map[string]any)
+		definitionID := "gate-unsupported-" + strings.ReplaceAll(testCase.name, " ", "-")
+		definition["definition_id"] = definitionID
+		testCase.apply(definition)
+		definitions = append(definitions, definition)
+		definitionIDs[testCase.name] = definitionID
+	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace := finalizedGateWorkspace(t, func(definition map[string]any) { testCase.apply(definition) })
+			workspace := finalizedGateWorkspaceWithDefinitions(t, definitions)
 			inputPath := filepath.Join(workspace, "gate-register.json")
-			writeActivationInput(t, inputPath, gateRegisterInput(t, workspace))
+			request := gateRegisterInput(t, workspace)
+			request["definition_id"] = definitionIDs[testCase.name]
+			writeActivationInput(t, inputPath, request)
 			result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "gate-register-policy-"+strings.ReplaceAll(testCase.name, " ", "-"))
 			if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, `"code":"executor-policy-unsupported"`) || !strings.Contains(result.stderr, `"fields":["`+testCase.field+`"]`) {
 				t.Fatalf("policy %s stdout=%q stderr=%q err=%v, want typed %q rejection", testCase.name, result.stdout, result.stderr, result.err, testCase.field)
@@ -176,7 +188,11 @@ func registerGateForTest(t *testing.T, workspace, inputPath, key string) gateReg
 
 func finalizedGateWorkspace(t *testing.T, modifyDefinition func(map[string]any)) string {
 	t.Helper()
-	definitions := gateDefinitionsForTest(modifyDefinition)
+	return finalizedGateWorkspaceWithDefinitions(t, gateDefinitionsForTest(modifyDefinition))
+}
+
+func finalizedGateWorkspaceWithDefinitions(t *testing.T, definitions []any) string {
+	t.Helper()
 	key := reusableWorkspaceFixtureKey(t, "finalized-gate", definitions)
 	workspace, _ := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
 		return buildFinalizedGateWorkspace(t, definitions), nil

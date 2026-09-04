@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
@@ -175,7 +176,7 @@ func publishArtifactCandidate(candidate, declaredPath, storeRoot string, limit i
 				_ = staging.Close()
 				return retainedArtifact{}, "oversized", nil
 			}
-			if _, err := io.WriteString(writer, redactor.Transform(buffer[:count], false)); err != nil {
+			if err := writeSanitizedArtifactChunk(writer, redactor, buffer[:count], false); err != nil {
 				_ = staging.Close()
 				return retainedArtifact{}, "", fmt.Errorf("retain Artifact: write staging file: %w", err)
 			}
@@ -188,7 +189,7 @@ func publishArtifactCandidate(candidate, declaredPath, storeRoot string, limit i
 			return retainedArtifact{}, "", fmt.Errorf("retain Artifact: read candidate: %w", readErr)
 		}
 	}
-	if _, err := io.WriteString(writer, redactor.Transform(nil, true)); err != nil {
+	if err := writeSanitizedArtifactChunk(writer, redactor, nil, true); err != nil {
 		_ = staging.Close()
 		return retainedArtifact{}, "", fmt.Errorf("retain Artifact: finalize sanitized content: %w", err)
 	}
@@ -226,6 +227,15 @@ func publishArtifactCandidate(candidate, declaredPath, storeRoot string, limit i
 	}
 	artifact := Artifact{Digest: digest, MediaType: mediaType, SizeBytes: info.Size(), RetentionClass: "evidence", Availability: "available", LocationPolicy: "content-addressed", DeclaredPath: declaredPath}
 	return retainedArtifact{Artifact: artifact, DeclaredPath: declaredPath}, "", nil
+}
+
+func writeSanitizedArtifactChunk(writer io.Writer, redactor *liveRedactor, data []byte, final bool) error {
+	if len(redactor.sources) == 0 && utf8.Valid(data) {
+		_, err := writer.Write(data)
+		return err
+	}
+	_, err := io.WriteString(writer, redactor.Transform(data, final))
+	return err
 }
 
 func publishArtifactFile(stagingPath, destination, digest string) error {
