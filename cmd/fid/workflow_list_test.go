@@ -76,8 +76,16 @@ func TestWorkflowListEnforcesCollectionLimitWithoutTruncation(t *testing.T) {
 	defer closeCommandDB(t, conn)
 	resetWorkflowListFixture(t, conn)
 
+	seedTx, err := conn.Begin()
+	if err != nil {
+		t.Fatalf("begin workflow list fixture transaction: %v", err)
+	}
+	defer func() { _ = seedTx.Rollback() }()
 	for index := 0; index < 10000; index++ {
-		insertWorkflowListFixture(t, conn, index)
+		insertWorkflowListFixture(t, seedTx, index)
+	}
+	if err := seedTx.Commit(); err != nil {
+		t.Fatalf("commit workflow list fixture transaction: %v", err)
 	}
 	atLimit := executeCommandForTest(workspace, "--json", "workflow", "list")
 	if atLimit.err != nil || atLimit.stderr != "" {
@@ -139,7 +147,9 @@ func resetWorkflowListFixture(t *testing.T, conn *sql.DB) {
 	}
 }
 
-func insertWorkflowListFixture(t *testing.T, conn *sql.DB, index int) {
+func insertWorkflowListFixture(t *testing.T, conn interface {
+	Exec(query string, args ...any) (sql.Result, error)
+}, index int) {
 	t.Helper()
 	id := fmt.Sprintf("limit-%05d", index)
 	name := fmt.Sprintf("limit workflow %05d", index)

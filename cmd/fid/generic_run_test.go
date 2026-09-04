@@ -200,7 +200,18 @@ func runEnvelopeForTest(t *testing.T) (string, string, string) {
 
 func runEnvelopeForTestWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
 	t.Helper()
-	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinition(t, modifyDefinition)
+	definitions := gateDefinitionsForTest(modifyDefinition)
+	key := reusableWorkspaceFixtureKey(t, "run-envelope", definitions)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		workspace, issueID, envelopeID := buildRunEnvelopeForTest(t, definitions)
+		return workspace, []string{issueID, envelopeID}
+	})
+	return workspace, values[0], values[1]
+}
+
+func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, string) {
+	t.Helper()
+	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.start"}

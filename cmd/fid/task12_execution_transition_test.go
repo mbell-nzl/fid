@@ -310,6 +310,23 @@ func mutateExecutionTransitionFixture(t *testing.T, workspace, statement string,
 
 func executionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "execution-transition", func() (string, []string) {
+		workspace, issueID, envelopeID, repository := buildExecutionTransitionFixture(t)
+		repositoryJSON, err := json.Marshal(repository)
+		if err != nil {
+			t.Fatalf("encode execution-transition repository: %v", err)
+		}
+		return workspace, []string{issueID, envelopeID, string(repositoryJSON)}
+	})
+	repository := make(map[string]any)
+	if err := json.Unmarshal([]byte(values[2]), &repository); err != nil {
+		t.Fatalf("decode execution-transition repository: %v", err)
+	}
+	return workspace, values[0], values[1], repository
+}
+
+func buildExecutionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
+	t.Helper()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)

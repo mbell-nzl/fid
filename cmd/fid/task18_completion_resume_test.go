@@ -102,11 +102,10 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 	for _, testCase := range testCases {
 		t.Run(testCase.name, func(t *testing.T) {
-			workspace, issueID, _, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, testCase.withArtifact, testCase.name != "missing")
+			workspace, issueID, _, evidenceID, artifactID := task18TerminalGuardFixture(t, testCase.withArtifact, testCase.name != "missing")
 			if testCase.mutate != nil {
 				testCase.mutate(t, workspace, evidenceID, artifactID)
 			}
-			task18AdvanceToTerminalGuard(t, workspace, issueID)
 			assertExecutionTransitionRejectionWithoutMutation(t, workspace, issueID, "qa_pass", "agent:actor-builder", "4", "task18-terminal-"+strings.ReplaceAll(testCase.name, " ", "-"), []string{testCase.wantReason})
 		})
 	}
@@ -396,6 +395,17 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 	}
 	evidenceID := decodeCanonicalResult(t, linked.stdout)["evidence"].(map[string]any)["id"].(string)
 	return workspace, issueID, envelopeID, evidenceID, artifactID
+}
+
+func task18TerminalGuardFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
+	t.Helper()
+	key := "task18-terminal-guard:" + strconv.FormatBool(withArtifact) + ":" + strconv.FormatBool(linkEvidence)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		workspace, issueID, envelopeID, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, withArtifact, linkEvidence)
+		task18AdvanceToTerminalGuard(t, workspace, issueID)
+		return workspace, []string{issueID, envelopeID, evidenceID, artifactID}
+	})
+	return workspace, values[0], values[1], values[2], values[3]
 }
 
 func task18AdvanceToTerminalGuard(t *testing.T, workspace, issueID string) {

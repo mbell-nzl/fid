@@ -299,6 +299,15 @@ func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 
 func claimEnvelopeForTest(t *testing.T) (string, string, string) {
 	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "claim-envelope", func() (string, []string) {
+		workspace, issueID, envelopeID := buildClaimEnvelopeForTest(t)
+		return workspace, []string{issueID, envelopeID}
+	})
+	return workspace, values[0], values[1]
+}
+
+func buildClaimEnvelopeForTest(t *testing.T) (string, string, string) {
+	t.Helper()
 	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
 	envelopeInput := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := envelopeInput["authority_grants"].([]any)[0].(map[string]any)

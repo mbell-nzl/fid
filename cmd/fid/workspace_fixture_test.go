@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +11,7 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 
@@ -21,6 +23,17 @@ import (
 var pristineWorkspaceRoot string
 
 var issueMutationTestSequence uint64
+
+var reusableWorkspaceFixtures = struct {
+	sync.Mutex
+	items map[string]*reusableWorkspaceFixture
+}{items: make(map[string]*reusableWorkspaceFixture)}
+
+type reusableWorkspaceFixture struct {
+	sync.Mutex
+	root   string
+	values []string
+}
 
 func TestMain(m *testing.M) {
 	exitCode := runCommandTestSuite(m)
@@ -46,6 +59,12 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	}
 
 	exitCode := m.Run()
+	if err := cleanupReusableWorkspaceFixtures(); err != nil {
+		fmt.Fprintf(os.Stderr, "remove reusable workspace fixtures: %v\n", err)
+		if exitCode == 0 {
+			exitCode = 1
+		}
+	}
 	if err := os.RemoveAll(templateRoot); err != nil {
 		fmt.Fprintf(os.Stderr, "remove pristine workspace root: %v\n", err)
 		if exitCode == 0 {
@@ -77,6 +96,73 @@ func clonePristineWorkspaceInto(t *testing.T, destination string) {
 	}
 	if err := copyWorkspaceTree(pristineWorkspaceRoot, destination); err != nil {
 		t.Fatalf("clone pristine workspace: %v", err)
+	}
+}
+
+func cloneReusableWorkspaceFixture(t *testing.T, key string, build func() (string, []string)) (string, []string) {
+	t.Helper()
+	fixture := reusableWorkspaceFixtureFor(key)
+	fixture.Lock()
+	defer fixture.Unlock()
+	if fixture.root == "" {
+		workspace, values := build()
+		templateRoot, err := os.MkdirTemp("", "fid-reusable-workspace-")
+		if err != nil {
+			t.Fatalf("create reusable workspace fixture: %v", err)
+		}
+		if err := copyWorkspaceTree(workspace, templateRoot); err != nil {
+			_ = os.RemoveAll(templateRoot)
+			t.Fatalf("snapshot reusable workspace fixture: %v", err)
+		}
+		fixture.root = templateRoot
+		fixture.values = append([]string(nil), values...)
+		return workspace, append([]string(nil), values...)
+	}
+
+	workspace := t.TempDir()
+	cloneWorkspaceTreeInto(t, fixture.root, workspace)
+	return workspace, append([]string(nil), fixture.values...)
+}
+
+func reusableWorkspaceFixtureKey(t *testing.T, prefix string, value any) string {
+	t.Helper()
+	payload, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("encode reusable workspace fixture key: %v", err)
+	}
+	return prefix + ":" + string(payload)
+}
+
+func reusableWorkspaceFixtureFor(key string) *reusableWorkspaceFixture {
+	reusableWorkspaceFixtures.Lock()
+	defer reusableWorkspaceFixtures.Unlock()
+	fixture := reusableWorkspaceFixtures.items[key]
+	if fixture == nil {
+		fixture = &reusableWorkspaceFixture{}
+		reusableWorkspaceFixtures.items[key] = fixture
+	}
+	return fixture
+}
+
+func cleanupReusableWorkspaceFixtures() error {
+	reusableWorkspaceFixtures.Lock()
+	defer reusableWorkspaceFixtures.Unlock()
+	var firstErr error
+	for key, fixture := range reusableWorkspaceFixtures.items {
+		if fixture.root != "" {
+			if err := os.RemoveAll(fixture.root); err != nil && firstErr == nil {
+				firstErr = fmt.Errorf("remove %q: %w", key, err)
+			}
+		}
+		delete(reusableWorkspaceFixtures.items, key)
+	}
+	return firstErr
+}
+
+func cloneWorkspaceTreeInto(t *testing.T, source, destination string) {
+	t.Helper()
+	if err := copyWorkspaceTree(source, destination); err != nil {
+		t.Fatalf("clone reusable workspace fixture: %v", err)
 	}
 }
 
@@ -324,6 +410,44 @@ func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
 	}
 	if got := snapshotWorkspace(t, pristineWorkspaceRoot); !reflect.DeepEqual(got, templateBefore) {
 		t.Fatal("concurrent commands changed pristine template")
+	}
+}
+
+func TestReusableWorkspaceFixtureBuildsOnceAndKeepsClonesIsolated(t *testing.T) {
+	t.Parallel()
+	var builds atomic.Int32
+	key := filepath.Join(t.TempDir(), "reusable-fixture")
+	build := func() (string, []string) {
+		builds.Add(1)
+		workspace := clonePristineWorkspace(t)
+		if err := os.WriteFile(filepath.Join(workspace, "checkpoint.txt"), []byte("cached\n"), 0o600); err != nil {
+			t.Fatalf("write reusable fixture checkpoint: %v", err)
+		}
+		return workspace, []string{"fixture-id"}
+	}
+
+	first, firstValues := cloneReusableWorkspaceFixture(t, key, build)
+	second, secondValues := cloneReusableWorkspaceFixture(t, key, build)
+	if builds.Load() != 1 {
+		t.Fatalf("reusable fixture builds = %d, want 1", builds.Load())
+	}
+	if first == second || firstValues[0] != "fixture-id" || secondValues[0] != "fixture-id" {
+		t.Fatalf("reusable fixture clones = (%q, %v) and (%q, %v), want distinct roots and preserved metadata", first, firstValues, second, secondValues)
+	}
+
+	firstValues[0] = "mutated"
+	if err := os.WriteFile(filepath.Join(first, "checkpoint.txt"), []byte("changed\n"), 0o600); err != nil {
+		t.Fatalf("mutate first reusable fixture clone: %v", err)
+	}
+	third, thirdValues := cloneReusableWorkspaceFixture(t, key, build)
+	if builds.Load() != 1 || thirdValues[0] != "fixture-id" {
+		t.Fatalf("reused fixture = builds %d metadata %v, want one build and immutable metadata", builds.Load(), thirdValues)
+	}
+	if got := string(readWorkspaceFixtureFile(t, filepath.Join(second, "checkpoint.txt"))); got != "cached\n" {
+		t.Fatalf("second reusable fixture checkpoint = %q, want cached state", got)
+	}
+	if got := string(readWorkspaceFixtureFile(t, filepath.Join(third, "checkpoint.txt"))); got != "cached\n" {
+		t.Fatalf("third reusable fixture checkpoint = %q, want cached state", got)
 	}
 }
 

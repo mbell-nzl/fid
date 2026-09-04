@@ -75,7 +75,24 @@ type linkedEvidenceFixture struct {
 	repository   map[string]any
 }
 
-func newLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture {
+func newLinkedEvidenceFixture(t *testing.T, _ string) linkedEvidenceFixture {
+	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "linked-evidence", func() (string, []string) {
+		fixture := buildLinkedEvidenceFixture(t, "cached")
+		repositoryJSON, err := json.Marshal(fixture.repository)
+		if err != nil {
+			t.Fatalf("encode linked Evidence repository: %v", err)
+		}
+		return fixture.workspace, []string{fixture.obligationID, fixture.evidenceID, fixture.artifactID, fixture.digest, string(repositoryJSON)}
+	})
+	repository := make(map[string]any)
+	if err := json.Unmarshal([]byte(values[4]), &repository); err != nil {
+		t.Fatalf("decode linked Evidence repository: %v", err)
+	}
+	return linkedEvidenceFixture{workspace: workspace, obligationID: values[0], evidenceID: values[1], artifactID: values[2], digest: values[3], repository: repository}
+}
+
+func buildLinkedEvidenceFixture(t *testing.T, key string) linkedEvidenceFixture {
 	t.Helper()
 	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
@@ -297,7 +314,18 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 
 func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
 	t.Helper()
-	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinition(t, modifyDefinition)
+	definitions := gateDefinitionsForTest(modifyDefinition)
+	key := reusableWorkspaceFixtureKey(t, "evidence-envelope", definitions)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		workspace, issueID, envelopeID := buildEvidenceEnvelopeForTest(t, definitions)
+		return workspace, []string{issueID, envelopeID}
+	})
+	return workspace, values[0], values[1]
+}
+
+func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any) (string, string, string) {
+	t.Helper()
+	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.finish", "run.start"}

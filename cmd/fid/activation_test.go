@@ -422,6 +422,15 @@ type activationLifecycleFixture struct {
 
 func activationLifecycleFixtureAt(t *testing.T, status string) activationLifecycleFixture {
 	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "activation-lifecycle:"+status, func() (string, []string) {
+		fixture := buildActivationLifecycleFixtureAt(t, status)
+		return fixture.workspace, append([]string{fixture.activationID}, fixture.componentDigests...)
+	})
+	return activationLifecycleFixture{workspace: workspace, activationID: values[0], componentDigests: append([]string(nil), values[1:]...)}
+}
+
+func buildActivationLifecycleFixtureAt(t *testing.T, status string) activationLifecycleFixture {
+	t.Helper()
 	fixture := activationLifecycleFixture{workspace: clonePristineWorkspace(t)}
 	fixture.activationID = prepareActivationForTest(t, fixture.workspace)
 	fixture.componentDigests = []string{

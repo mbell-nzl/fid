@@ -89,31 +89,53 @@ func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationV
 
 func finalizedEnvelopeWorkspaceWithDefinition(t *testing.T, modifyDefinition func(map[string]any)) (string, string, gateRegistrationView) {
 	t.Helper()
-	workspace := clonePristineWorkspace(t)
-	created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
-	if created.err != nil {
-		t.Fatalf("create issue: %v; stderr=%q", created.err, created.stderr)
-	}
-	var issue struct {
-		Result struct {
-			Issue struct {
-				ID string `json:"id"`
-			} `json:"issue"`
-		} `json:"result"`
-	}
-	if err := json.Unmarshal([]byte(created.stdout), &issue); err != nil || issue.Result.Issue.ID == "" {
-		t.Fatalf("decode created issue: %v; stdout=%q", err, created.stdout)
-	}
+	return finalizedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(modifyDefinition))
+}
 
-	activationID := prepareActivationForTest(t, workspace)
-	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "envelope-builders", []any{map[string]any{
-		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/envelope-builders", "session_ref": nil,
-		"capabilities": authorityCapabilities(),
-	}})
-	definitions := validGateDefinitions()
-	if modifyDefinition != nil {
-		modifyDefinition(definitions[0].(map[string]any))
+func finalizedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
+	t.Helper()
+	key := reusableWorkspaceFixtureKey(t, "finalized-envelope", definitions)
+	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		workspace, issueID, registration := buildFinalizedEnvelopeWorkspace(t, definitions)
+		registrationJSON, err := json.Marshal(registration)
+		if err != nil {
+			t.Fatalf("encode cached gate registration: %v", err)
+		}
+		return workspace, []string{issueID, string(registrationJSON)}
+	})
+	var registration gateRegistrationView
+	if err := json.Unmarshal([]byte(values[1]), &registration); err != nil {
+		t.Fatalf("decode cached gate registration: %v", err)
 	}
+	return workspace, values[0], registration
+}
+
+func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
+	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "prepared-envelope", func() (string, []string) {
+		workspace := clonePristineWorkspace(t)
+		created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
+		if created.err != nil {
+			t.Fatalf("create issue: %v; stderr=%q", created.err, created.stderr)
+		}
+		var issue struct {
+			Result struct {
+				Issue struct {
+					ID string `json:"id"`
+				} `json:"issue"`
+			} `json:"result"`
+		}
+		if err := json.Unmarshal([]byte(created.stdout), &issue); err != nil || issue.Result.Issue.ID == "" {
+			t.Fatalf("decode created issue: %v; stdout=%q", err, created.stdout)
+		}
+		activationID := prepareActivationForTest(t, workspace)
+		profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "envelope-builders", []any{map[string]any{
+			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/envelope-builders", "session_ref": nil,
+			"capabilities": authorityCapabilities(),
+		}})
+		return workspace, []string{issue.Result.Issue.ID, activationID, profileDigest}
+	})
+	issueID, activationID, profileDigest := values[0], values[1], values[2]
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
 	digests := []string{profileDigest, gateDigest}
 	sort.Strings(digests)
@@ -128,10 +150,18 @@ func finalizedEnvelopeWorkspaceWithDefinition(t *testing.T, modifyDefinition fun
 		t.Fatalf("finalize activation: %v; stderr=%q", result.err, result.stderr)
 	}
 	registrationInput := gateRegisterInput(t, workspace)
-	registrationInput["scope"] = map[string]any{"issue_id": issue.Result.Issue.ID}
+	registrationInput["scope"] = map[string]any{"issue_id": issueID}
 	registrationPath := filepath.Join(workspace, "gate-register-envelope.json")
 	writeActivationInput(t, registrationPath, registrationInput)
-	return workspace, issue.Result.Issue.ID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+	return workspace, issueID, registerGateForTest(t, workspace, registrationPath, "gate-register-envelope")
+}
+
+func gateDefinitionsForTest(modifyDefinition func(map[string]any)) []any {
+	definitions := validGateDefinitions()
+	if modifyDefinition != nil {
+		modifyDefinition(definitions[0].(map[string]any))
+	}
+	return definitions
 }
 
 func authorityCapabilities() []string {

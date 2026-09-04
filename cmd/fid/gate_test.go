@@ -176,15 +176,26 @@ func registerGateForTest(t *testing.T, workspace, inputPath, key string) gateReg
 
 func finalizedGateWorkspace(t *testing.T, modifyDefinition func(map[string]any)) string {
 	t.Helper()
-	workspace := clonePristineWorkspace(t)
-	activationID := prepareActivationForTest(t, workspace)
-	profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
-		"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builders", "session_ref": nil,
-		"capabilities": []string{"gate.register"},
-	}})
-	definitions := validGateDefinitions()
-	definition := definitions[0].(map[string]any)
-	modifyDefinition(definition)
+	definitions := gateDefinitionsForTest(modifyDefinition)
+	key := reusableWorkspaceFixtureKey(t, "finalized-gate", definitions)
+	workspace, _ := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
+		return buildFinalizedGateWorkspace(t, definitions), nil
+	})
+	return workspace
+}
+
+func buildFinalizedGateWorkspace(t *testing.T, definitions []any) string {
+	t.Helper()
+	workspace, values := cloneReusableWorkspaceFixture(t, "prepared-gate", func() (string, []string) {
+		workspace := clonePristineWorkspace(t)
+		activationID := prepareActivationForTest(t, workspace)
+		profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "builders", []any{map[string]any{
+			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/builders", "session_ref": nil,
+			"capabilities": []string{"gate.register"},
+		}})
+		return workspace, []string{activationID, profileDigest}
+	})
+	activationID, profileDigest := values[0], values[1]
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
 	digests := []string{profileDigest, gateDigest}
 	sort.Strings(digests)
