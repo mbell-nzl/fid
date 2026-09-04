@@ -17,8 +17,8 @@ func TestListFiltersByKind(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Phase 4 discovery",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -29,9 +29,9 @@ func TestListFiltersByKind(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement issue list",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epic.ID),
-		Sequence:      intPointer(1),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(1),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -42,8 +42,8 @@ func TestListFiltersByKind(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Add filter coverage",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(task.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(task.ID),
 	}); err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
 	}

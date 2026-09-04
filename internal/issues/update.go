@@ -3,7 +3,6 @@ package issues
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -12,31 +11,34 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 type UpdateOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	ID            string
-	ActorRole     string
-	Title         *string
-	Priority      *int
-	Labels        *[]string
-	SpecMDPath    *string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	ID             string
+	Actor          string
+	IdempotencyKey string
+	Title          *string
+	Priority       *int
+	Labels         *[]string
+	SpecMDPath     *string
 	// OwnerRole and OwnerActor are retained only for source compatibility with
 	// V1 in-process callers. Canonical Issue updates deliberately ignore them.
 	OwnerRole        *string
 	OwnerActor       *string
 	ExpectedRevision *int
+	now              func() time.Time
 }
 
 type UpdateResult struct {
-	ID         string
-	Revision   int
-	Changes    []FieldChange
-	EventID    string
-	OccurredAt string
+	ID             string
+	Revision       int
+	Changes        []FieldChange
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type FieldChange struct {
@@ -65,10 +67,10 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return UpdateResult{}, fmt.Errorf("update issue: issue id is required")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueUpdate); err != nil {
+	actor, err := standaloneActorForOptions(options.Actor)
+	if err != nil {
 		return UpdateResult{}, err
 	}
-
 	request, err := normalizeUpdateRequest(options)
 	if err != nil {
 		return UpdateResult{}, err
@@ -77,12 +79,19 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return UpdateResult{}, err
 	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return UpdateResult{}, err
+	}
+	requestDigest, err := issueRequestDigest("issue.update", projectConfig.ProjectID, actor, updateRequestValue(request, options.ExpectedRevision))
+	if err != nil {
+		return UpdateResult{}, err
+	}
 
-	commandArgv := issueUpdateArgv(options.ID, options.ActorRole, request, options.ExpectedRevision)
+	commandArgv := issueUpdateArgv(options.ID, options.Actor, options.IdempotencyKey, request, options.ExpectedRevision)
 	var result UpdateResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
@@ -90,6 +99,13 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 			return err
 		}
 		defer closeIssueDB(conn)
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.update:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			result, err = updateResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			return err
+		}
 
 		current, err := loadIssueUpdateState(conn, options.ID)
 		if err != nil {
@@ -116,31 +132,22 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 			return fmt.Errorf("update issue: at least one field must change")
 		}
 
-		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
-			return activityIDExists(conn, candidate)
-		})
+		activityID, err := nextIssueActivityID(conn)
 		if err != nil {
 			return err
 		}
-		occurredAt := nextIssueUpdateTime(current.UpdatedAt, time.Now().UTC())
-
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
+		if err != nil {
+			return err
+		}
+		event := journal.Event{
+			EventSchema: journal.EventSchemaV2,
 			EventType:   "issue.updated",
-			OccurredAt:  occurredAt,
-			Actor: journal.Actor{
-				Role: options.ActorRole,
-			},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-		})
-		if err != nil {
-			return err
+			OccurredAt:  issueMutationNow(options.now),
+			ActorV2:     actor.eventActor(),
+			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: aggregateSequence, Type: "issue"},
+			CommandName: "issue.update",
 		}
-
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
 		scalarValues["updated_at"] = timestamp
 		scalarPreconditions["updated_at"] = current.UpdatedAt
@@ -165,69 +172,40 @@ func Update(options UpdateOptions) (UpdateResult, error) {
 		}
 		effects = append(effects, revisionEffects...)
 		effects = append(effects, labelEffects...)
-		effects = append(effects, journal.Effect{
-			Op:    "activity",
-			Table: "activity_log",
-			PK:    map[string]any{"id": activityID},
-			Values: map[string]any{
-				"journal_event_id": event.EventID,
-				"ref_type":         "issue",
-				"ref_id":           current.ID,
-				"event":            "issue_updated",
-				"details": map[string]any{
-					"changes": activityDetailChanges(changes),
-				},
-				"actor":       options.ActorRole,
-				"occurred_at": timestamp,
-			},
-		})
 		event.Effects = effects
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
 			return err
 		}
-
-		eventHash, err := journal.HashEvent(appended)
+		event.Effects = append(effects, issueActivityEffect(activityID, prepared.EventID, actor.id, timestamp, current.ID, "issue-updated", map[string]any{"changes": activityDetailChanges(changes)}))
+		resultJSON, err := updateResultJSON(UpdateResult{ID: current.ID, Revision: current.Revision + 1, Changes: changes, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
 		if err != nil {
-			return fmt.Errorf("hash issue event %q: %w", appended.EventID, err)
-		}
-
-		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-		info, err := os.Stat(journalPath)
-		if err != nil {
-			return fmt.Errorf("stat issue journal %q: %w", journalPath, err)
-		}
-
-		if err := journal.ProjectEvent(conn, journal.ProjectionInput{
-			Event:     appended,
-			EventHash: eventHash,
-			File:      journalFile,
-			Line:      countJournalLines(journalPath),
-			Offset:    info.Size(),
-		}); err != nil {
 			return err
 		}
-
-		result = UpdateResult{
-			ID:         current.ID,
-			Revision:   current.Revision + 1,
-			Changes:    changes,
-			EventID:    appended.EventID,
-			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			return journal.IdempotencyMutation{EntityID: current.ID, ResultJSON: resultJSON}, nil
+		})
+		if err != nil {
+			return err
 		}
-		return nil
+		result, err = updateResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		return err
 	})
 	if err != nil {
 		return UpdateResult{}, err
 	}
 
 	return result, nil
+}
+
+func updateRequestValue(request normalizedUpdateRequest, expectedRevision *int) map[string]any {
+	return map[string]any{
+		"expected_revision": expectedRevision,
+		"labels":            request.labels,
+		"priority":          request.priority,
+		"spec_md_path":      request.specMDPath,
+		"title":             request.title,
+	}
 }
 
 func loadIssueUpdateState(conn *sql.DB, issueID string) (issueUpdateState, error) {

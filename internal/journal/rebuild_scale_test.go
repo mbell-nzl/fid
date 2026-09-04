@@ -39,7 +39,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -59,7 +59,7 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 		t.Fatalf("rebuilt state after delete = %q, want %q", afterDeleteRebuild, before)
 	}
 
-	secondRebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	secondRebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() second pass error = %v", err)
 	}
@@ -76,6 +76,27 @@ func TestRebuildWorkspaceIsDeterministicAtSingleProjectScale(t *testing.T) {
 	afterSecondRebuild := snapshotScaleProjectionState(t, secondConn)
 	if afterDeleteRebuild != afterSecondRebuild {
 		t.Fatalf("rebuilt state after second rebuild = %q, want %q", afterSecondRebuild, afterDeleteRebuild)
+	}
+}
+
+func TestScaleReplayFixtureUsesRoleFreeEventV2Facts(t *testing.T) {
+	count := 0
+	forEachScaleReplayEvent(100, func(event Event) {
+		count++
+		if !event.IsV2() {
+			t.Fatalf("scale Event %q schema = %d, want Event-v2", event.EventID, event.EventSchema)
+		}
+		if event.Actor.Role != "" || len(event.Command.Argv) != 0 {
+			t.Fatalf("scale Event %q retains role attribution", event.EventID)
+		}
+		for _, effect := range event.Effects {
+			if effect.Table == "roles" || effect.Table == "work_claims" || effect.Table == "gate_runs" {
+				t.Fatalf("scale Event %q writes removed table %q", event.EventID, effect.Table)
+			}
+		}
+	})
+	if count != 100 {
+		t.Fatalf("scale Event count = %d, want 100", count)
 	}
 }
 
@@ -130,6 +151,7 @@ func writeScaleReplayWorkspace(tb testing.TB, path string, targetEvents int) int
 func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 	labels := []string{"perf", "scale", "benchmark"}
 	eventCount := 0
+	issueSequences := make(map[int]int)
 	appendEvent := func(event Event) bool {
 		if eventCount >= targetEvents {
 			return false
@@ -140,7 +162,7 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 	}
 
 	nextSequence := 1
-	if !appendEvent(scaleRoleSeedEvent(nextSequence)) {
+	if !appendEvent(scaleBootstrapEvent(nextSequence)) {
 		return
 	}
 	nextSequence++
@@ -153,27 +175,27 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 	}
 
 	for issueIndex := 1; eventCount < targetEvents; issueIndex++ {
-		if !appendEvent(scaleIssueCreatedEvent(nextSequence, issueIndex)) {
+		if !appendEvent(scaleIssueCreatedEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
 			return
 		}
 		nextSequence++
 
 		if issueIndex%3 == 0 {
-			if !appendEvent(scaleAcceptanceCriterionEvent(nextSequence, issueIndex)) {
+			if !appendEvent(scaleAcceptanceCriterionEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
 				return
 			}
 			nextSequence++
 		}
 
 		if issueIndex%4 == 0 {
-			if !appendEvent(scaleIssueLabelEvent(nextSequence, issueIndex, labels[issueIndex%len(labels)])) {
+			if !appendEvent(scaleIssueLabelEvent(nextSequence, issueIndex, labels[issueIndex%len(labels)], nextScaleIssueSequence(issueSequences, issueIndex))) {
 				return
 			}
 			nextSequence++
 		}
 
 		if issueIndex%5 == 0 {
-			if !appendEvent(scaleIssueTransitionEvent(nextSequence, issueIndex)) {
+			if !appendEvent(scaleIssueTransitionEvent(nextSequence, issueIndex, nextScaleIssueSequence(issueSequences, issueIndex))) {
 				return
 			}
 			nextSequence++
@@ -188,29 +210,20 @@ func forEachScaleReplayEvent(targetEvents int, visit func(Event)) {
 	}
 }
 
-func scaleRoleSeedEvent(sequence int) Event {
-	return scaleEvent(
-		sequence,
-		"project.initialized",
-		[]string{"fid", "init"},
-		[]Effect{{
-			Op:    "insert",
-			Table: "roles",
-			PK:    map[string]any{"name": "developer"},
-			Values: map[string]any{
-				"description": "developer",
-				"active":      true,
-				"is_human":    false,
-			},
-		}},
-	)
+func nextScaleIssueSequence(sequences map[int]int, issueIndex int) int {
+	sequences[issueIndex]++
+	return sequences[issueIndex]
+}
+
+func scaleBootstrapEvent(sequence int) Event {
+	return scaleEvent(sequence, "project.initialized", Aggregate{ID: "project-scale", Type: "project", Sequence: 1}, []Effect{})
 }
 
 func scaleLabelSeedEvent(sequence int, label string) Event {
 	return scaleEvent(
 		sequence,
-		"label.created",
-		[]string{"fid", "label", "add", label, "--by", "developer"},
+		"label.added",
+		Aggregate{ID: "LABEL-" + label, Type: "label", Sequence: 1},
 		[]Effect{{
 			Op:    "insert",
 			Table: "labels",
@@ -223,14 +236,14 @@ func scaleLabelSeedEvent(sequence int, label string) Event {
 	)
 }
 
-func scaleIssueCreatedEvent(sequence, issueIndex int) Event {
+func scaleIssueCreatedEvent(sequence, issueIndex, aggregateSequence int) Event {
 	occurredAt := scaleEventTime(sequence)
 	issueID := scaleIssueID(issueIndex)
 
 	return scaleEvent(
 		sequence,
 		"issue.created",
-		[]string{"fid", "issue", "create", "--kind", "task", "--title", "Scale task", "--by", "developer"},
+		Aggregate{ID: issueID, Type: "issue", Sequence: aggregateSequence},
 		[]Effect{{
 			Op:    "insert",
 			Table: "issues",
@@ -241,7 +254,6 @@ func scaleIssueCreatedEvent(sequence, issueIndex int) Event {
 				"workflow_id": "task-default",
 				"status":      "todo",
 				"priority":    issueIndex % 5,
-				"owner_role":  "developer",
 				"created_at":  occurredAt.Format(time.RFC3339),
 				"updated_at":  occurredAt.Format(time.RFC3339),
 			},
@@ -249,11 +261,11 @@ func scaleIssueCreatedEvent(sequence, issueIndex int) Event {
 	)
 }
 
-func scaleAcceptanceCriterionEvent(sequence, issueIndex int) Event {
+func scaleAcceptanceCriterionEvent(sequence, issueIndex, aggregateSequence int) Event {
 	return scaleEvent(
 		sequence,
-		"issue.ac.added",
-		[]string{"fid", "issue", "ac", "add", scaleIssueID(issueIndex), "--by", "developer"},
+		"issue.ac-added",
+		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
 		[]Effect{{
 			Op:    "insert",
 			Table: "acceptance_criteria",
@@ -267,11 +279,11 @@ func scaleAcceptanceCriterionEvent(sequence, issueIndex int) Event {
 	)
 }
 
-func scaleIssueLabelEvent(sequence, issueIndex int, label string) Event {
+func scaleIssueLabelEvent(sequence, issueIndex int, label string, aggregateSequence int) Event {
 	return scaleEvent(
 		sequence,
-		"issue.label.added",
-		[]string{"fid", "issue", "label", "add", scaleIssueID(issueIndex), label, "--by", "developer"},
+		"issue.label-added",
+		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
 		[]Effect{{
 			Op:    "insert",
 			Table: "issue_labels",
@@ -284,13 +296,13 @@ func scaleIssueLabelEvent(sequence, issueIndex int, label string) Event {
 	)
 }
 
-func scaleIssueTransitionEvent(sequence, issueIndex int) Event {
+func scaleIssueTransitionEvent(sequence, issueIndex, aggregateSequence int) Event {
 	occurredAt := scaleEventTime(sequence)
 
 	return scaleEvent(
 		sequence,
 		"issue.transitioned",
-		[]string{"fid", "issue", "transition", scaleIssueID(issueIndex), "--to", "in_progress", "--by", "developer"},
+		Aggregate{ID: scaleIssueID(issueIndex), Type: "issue", Sequence: aggregateSequence},
 		[]Effect{{
 			Op:    "update",
 			Table: "issues",
@@ -315,8 +327,8 @@ func scaleIssueLinkEvent(sequence, issueIndex int) Event {
 
 	return scaleEvent(
 		sequence,
-		"issue.linked",
-		[]string{"fid", "link", "add", scaleIssueID(issueIndex), "--relation", "blocks", "--target", scaleIssueID(issueIndex - 1), "--by", "developer"},
+		"link.added",
+		Aggregate{ID: fmt.Sprintf("LINK-scale-%05d", issueIndex), Type: "link", Sequence: 1},
 		[]Effect{{
 			Op:    "insert",
 			Table: "links",
@@ -334,21 +346,21 @@ func scaleIssueLinkEvent(sequence, issueIndex int) Event {
 	)
 }
 
-func scaleEvent(sequence int, eventType string, argv []string, effects []Effect) Event {
+func scaleEvent(sequence int, eventType string, aggregate Aggregate, effects []Effect) Event {
 	return Event{
 		EventID:     fmt.Sprintf("EVT-20260607-%06d", sequence),
-		EventSchema: EventSchemaV1,
+		EventSchema: EventSchemaV2,
 		EventType:   eventType,
 		OccurredAt:  scaleEventTime(sequence),
-		Actor: Actor{
-			Role: "developer",
+		ActorV2: EventActor{
+			ActorID:       "actor-benchmark",
+			ActorType:     "service",
+			Producer:      "fid",
+			ProvenanceRef: "benchmark:rebuild",
 		},
-		Command: Command{
-			Argv:       argv,
-			CWD:        ".",
-			FIDVersion: "0.1.0",
-		},
-		Effects: effects,
+		Aggregate:   aggregate,
+		CommandName: "benchmark.replay",
+		Effects:     effects,
 	}
 }
 
@@ -368,13 +380,13 @@ func snapshotScaleProjectionState(t *testing.T, conn *sql.DB) string {
 		query string
 	}{
 		{
-			name:  "roles",
-			query: `SELECT name, COALESCE(description, 'NULL'), active, is_human FROM roles ORDER BY name`,
+			name:  "labels",
+			query: `SELECT name, COALESCE(description, 'NULL'), COALESCE(colour, 'NULL') FROM labels ORDER BY name`,
 		},
 		{
 			name: "issues",
 			query: `
-				SELECT id, kind, title, workflow_id, status, COALESCE(priority, -1), COALESCE(owner_role, 'NULL'), COALESCE(created_at, 'NULL'), COALESCE(updated_at, 'NULL')
+				SELECT id, kind, title, workflow_id, status, COALESCE(priority, -1), COALESCE(created_at, 'NULL'), COALESCE(updated_at, 'NULL')
 				FROM issues
 				ORDER BY id
 			`,

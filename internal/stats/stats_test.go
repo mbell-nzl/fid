@@ -1,14 +1,16 @@
 package stats
 
 import (
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"sync/atomic"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/issues"
-	"github.com/mbell-nzl/fid/internal/runs"
 )
 
 func TestTokensGroupsByRole(t *testing.T) {
@@ -248,15 +250,16 @@ func createStatsIssue(t *testing.T, workspace, kind, title string, parentID *str
 	t.Helper()
 
 	options := issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testStatsMigrationsDir(t),
-		Kind:          kind,
-		Title:         title,
-		ActorRole:     "developer",
-		ParentID:      parentID,
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  testStatsMigrationsDir(t),
+		Kind:           kind,
+		Title:          title,
+		Actor:          "agent:developer",
+		IdempotencyKey: fmt.Sprintf("stats-create-%d", atomic.AddUint64(&statsFixtureSequence, 1)),
+		ParentID:       parentID,
 	}
 	if kind == "epic" {
-		options.ActorRole = "tl"
+		options.Actor = "agent:tl"
 		options.Scheduling = "prioritised"
 	}
 
@@ -267,23 +270,39 @@ func createStatsIssue(t *testing.T, workspace, kind, title string, parentID *str
 	return created.ID
 }
 
-func recordStatsRun(t *testing.T, workspace, issueID, runRole, model string, tokensIn, tokensOut int) runs.RecordResult {
+var statsFixtureSequence uint64
+
+type statsRunFixture struct {
+	CostUSD *float64
+}
+
+func recordStatsRun(t *testing.T, workspace, issueID, runRole, model string, tokensIn, tokensOut int) statsRunFixture {
 	t.Helper()
 
-	result, err := runs.Record(runs.RecordOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testStatsMigrationsDir(t),
-		IssueID:       issueID,
-		ActorRole:     runRole,
-		RunRole:       runRole,
-		Model:         model,
-		TokensIn:      intPointer(tokensIn),
-		TokensOut:     intPointer(tokensOut),
-	})
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
-		t.Fatalf("Record() error = %v", err)
+		t.Fatalf("open frozen telemetry fixture: %v", err)
 	}
-	return result
+	defer func() { _ = conn.Close() }()
+
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM agent_runs`).Scan(&count); err != nil {
+		t.Fatalf("count frozen telemetry rows: %v", err)
+	}
+	var cost any
+	var costResult *float64
+	if model != "mystery-model" {
+		value := float64(tokensIn+tokensOut) / 1_000_000
+		cost = value
+		costResult = &value
+	}
+	if _, err := conn.Exec(`
+		INSERT INTO agent_runs (id, issue_id, role, model, tokens_in, tokens_out, cost_usd)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+	`, fmt.Sprintf("STATS-%03d", count+1), issueID, runRole, model, tokensIn, tokensOut, cost); err != nil {
+		t.Fatalf("insert frozen telemetry fixture: %v", err)
+	}
+	return statsRunFixture{CostUSD: costResult}
 }
 
 func testStatsMigrationsDir(t *testing.T) string {
@@ -295,10 +314,6 @@ func testStatsMigrationsDir(t *testing.T) string {
 	}
 
 	return filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "migrations"))
-}
-
-func intPointer(value int) *int {
-	return &value
 }
 
 func stringPointer(value string) *string {

@@ -30,27 +30,13 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	peerIssueID := closureCreateIssue(t, binary, workspace, "task", "Closure linked peer", nil, nil, nil)
 	closureRunFID(t, binary, workspace, "issue", "label", "add", mainIssueID, "release", "--by", "developer")
 
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "qa_reviewer"},
-		`role "qa_reviewer" not permitted`)
-	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer"},
-		`has no live claim held by "developer"`)
-
-	closureRunFID(t, binary, workspace, "issue", "claim", mainIssueID, "--by", "developer")
-	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--by", "developer")
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "in_progress", "--actor", "agent:qa_reviewer")
 	acID := closureAddAcceptanceCriterion(t, binary, workspace, mainIssueID)
+	closureRunFID(t, binary, workspace, "issue", "transition", mainIssueID, "--to", "dev_complete", "--actor", "agent:developer")
 	assertClosureRejectedWithoutJournalAppend(t, binary, workspace, journalPath,
-		[]string{"issue", "transition", mainIssueID, "--to", "dev_complete", "--by", "developer"},
-		"has_completion_report")
-	closureRunFID(t, binary, workspace, "issue", "ac", "verify", mainIssueID, acID, "--status", "pass", "--by", "qa_lead")
-	firstCompletionID := closureCompleteIssue(t, binary, workspace, mainIssueID)
-	concernID, addressCompletionID := closureRaiseAndAddressConcern(t, binary, workspace, mainIssueID, firstCompletionID)
-	if concernID == "" {
-		t.Fatal("addressed concern id = empty")
-	}
-	closureRunFID(t, binary, workspace, "issue", "unclaim", mainIssueID, "--by", "developer")
-
+		[]string{"--json", "issue", "ac", "verify", mainIssueID, acID, "--actor", "agent:qa_lead"},
+		`"code":"capability-unavailable"`)
+	assertClosureConcernMutationsUnavailable(t, binary, workspace, mainIssueID, "TC-unavailable")
 	closureRunFID(t, binary, workspace, "link", "add", mainIssueID, "implements", "PRD-LINK-002", "--from-type", "issue", "--to-type", "requirement", "--by", "developer")
 	closureRunFID(t, binary, workspace, "link", "add", peerIssueID, "discovered_from", mainIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 	assertClosureLinkReadback(t, binary, workspace, mainIssueID, peerIssueID)
@@ -61,7 +47,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	seqEpicID := closureCreateIssue(t, binary, workspace, "epic", "Sequential closure epic", stringPointer("sequential"), nil, nil)
 	seqCurrentID := closureCreateIssue(t, binary, workspace, "task", "Sequential current", nil, stringPointer(seqEpicID), intPointer(1))
 	seqNextID := closureCreateIssue(t, binary, workspace, "task", "Sequential next", nil, stringPointer(seqEpicID), intPointer(2))
-	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--by", "tl")
+	closureRunFID(t, binary, workspace, "issue", "transition", seqCurrentID, "--to", "cancelled", "--actor", "agent:tl")
 	assertClosureReadyTask(t, binary, workspace, seqEpicID, seqNextID)
 
 	priorityEpicID := closureCreateIssue(t, binary, workspace, "epic", "Prioritised closure epic", stringPointer("prioritised"), nil, nil)
@@ -69,11 +55,9 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	priorityHighID := closureCreateIssue(t, binary, workspace, "task", "Higher priority", nil, stringPointer(priorityEpicID), nil, "--priority", "0")
 	assertClosureReadyTask(t, binary, workspace, priorityEpicID, priorityHighID)
 
-	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", firstCompletionID,
-		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer")
-	closureRunFID(t, binary, workspace, "run", "record", "--issue", mainIssueID, "--completion", addressCompletionID,
-		"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "0", "--tokens-out", "0", "--by", "developer")
-	assertClosureTelemetry(t, binary, workspace, mainIssueID, firstCompletionID)
+	assertClosureUnknownCommandWithoutJournalAppend(t, binary, workspace, journalPath,
+		[]string{"run", "record", "--issue", mainIssueID, "--completion", "TC-unavailable",
+			"--role", "developer", "--model", "claude-sonnet-4-6", "--tokens-in", "1200", "--tokens-out", "3400", "--by", "developer"})
 
 	journalBeforeNonJournal := closureReadFile(t, journalPath)
 	journalFilesBefore := closureJournalFileBytes(t, workspace)
@@ -110,7 +94,7 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	if err := os.Remove(dbPath); err != nil {
 		t.Fatalf("remove derived DB: %v", err)
 	}
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalBytesEqual(t, journalPath, journalBeforeNonJournal, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "delete-and-rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
@@ -120,10 +104,10 @@ func TestV01ClosureJourneyAndRebuildParity(t *testing.T) {
 	assertClosureForeignKeysClean(t, binary, workspace)
 	afterMaintenance := closureMaintenanceResultAt(t, workspace, maintenanceNow)
 	assertClosureMaintenanceStateEqual(t, afterMaintenance, beforeMaintenance)
-	assertClosureRolesAfterRebuild(t, binary, workspace)
+	assertClosureWorkflowsAfterRebuild(t, binary, workspace)
 	assertClosureJournalTracked(t, workspace)
 
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), journalFilesBefore, "second rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)
 	if afterSchema := closureSchemaSnapshot(t, binary, workspace); afterSchema != beforeSchema {

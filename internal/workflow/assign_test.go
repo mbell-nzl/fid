@@ -23,7 +23,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 		if _, err := Define(DefineOptions{
 			WorkspaceRoot: workspace,
 			MigrationsDir: migrationsDir,
-			ActorRole:     "tl",
+			Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 			Request: DefinitionRequest{
 				Name:        fixture.name,
 				AppliesTo:   fixture.appliesTo,
@@ -64,22 +64,22 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 		t.Run(fixture.name, func(t *testing.T) {
 			journalPath := workflowJournalPath(t, workspace)
 			beforeLines := strings.Split(strings.TrimSpace(string(readWorkflowTestFile(t, journalPath))), "\n")
-			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: fixture.first}); err != nil {
+			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: fixture.first}); err != nil {
 				t.Fatalf("Assign(first) error = %v", err)
 			}
 			first := assignmentEventAt(t, journalPath, len(beforeLines))
-			if first.EventType != "workflow.assigned" || len(first.Effects) != 1 || first.Effects[0].Op != "insert" {
-				t.Fatalf("first effects = %#v, want one insert", first.Effects)
+			if first.EventType != "workflow.assigned" || first.EventSchema != journal.EventSchemaV2 || len(first.Effects) != 2 || first.Effects[0].Op != "insert" || first.Effects[1].Table != "idempotency_results" {
+				t.Fatalf("first effects = %#v, want Event-v2 assignment insert plus idempotency result", first.Effects)
 			}
 			if got := first.Effects[0].Values["workflow_id"]; got != fixture.firstID {
 				t.Fatalf("first workflow_id = %#v, want %q", got, fixture.firstID)
 			}
-			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: fixture.second}); err != nil {
+			if _, err := Assign(AssignOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: fixture.second}); err != nil {
 				t.Fatalf("Assign(second) error = %v", err)
 			}
 			second := assignmentEventAt(t, journalPath, len(beforeLines)+1)
-			if len(second.Effects) != 2 || second.Effects[0].Op != "delete" || second.Effects[1].Op != "insert" {
-				t.Fatalf("second effects = %#v, want delete then insert", second.Effects)
+			if len(second.Effects) != 3 || second.Effects[0].Op != "delete" || second.Effects[1].Op != "insert" || second.Effects[2].Table != "idempotency_results" {
+				t.Fatalf("second effects = %#v, want delete, insert, and idempotency result", second.Effects)
 			}
 			if got := second.Effects[0].PK; !mapsEqual(got, fixture.delete) {
 				t.Fatalf("delete PK = %#v, want %#v", got, fixture.delete)
@@ -87,7 +87,7 @@ func TestAssignEmitsScopeAwareReplacementEffects(t *testing.T) {
 			if got := second.Effects[1].Values["workflow_id"]; got != fixture.lastID {
 				t.Fatalf("second workflow_id = %#v, want %q", got, fixture.lastID)
 			}
-			if _, err := journal.RebuildWorkspace(workspace, migrationsDir, "tl"); err != nil {
+			if _, err := journal.RebuildWorkspace(workspace, migrationsDir); err != nil {
 				t.Fatalf("RebuildWorkspace() error = %v", err)
 			}
 			rebuilt, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))

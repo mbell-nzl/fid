@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/requirements"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +23,8 @@ func newRequirementSyncCommand() *cobra.Command {
 		sourceDoc     string
 		typeFilter    string
 		requirementID string
-		actorRole     string
+		actor         string
+		key           string
 	)
 
 	cmd := &cobra.Command{
@@ -30,18 +32,24 @@ func newRequirementSyncCommand() *cobra.Command {
 		Short: "Sync requirement pointers from a source markdown document.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			for _, flag := range []string{"source-doc", "actor", "idempotency-key"} {
+				if err := requireCanonicalFlag(cmd, "requirement.sync", flag); err != nil {
+					return err
+				}
+			}
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
 
 			result, err := requirements.Sync(requirements.SyncOptions{
-				WorkspaceRoot: workspaceRoot,
-				MigrationsDir: issueMigrationsDir(),
-				SourceDoc:     sourceDoc,
-				ActorRole:     actorRole,
-				TypeFilter:    typeFilter,
-				RequirementID: requirementID,
+				WorkspaceRoot:  workspaceRoot,
+				MigrationsDir:  issueMigrationsDir(),
+				SourceDoc:      sourceDoc,
+				Actor:          actor,
+				IdempotencyKey: key,
+				TypeFilter:     typeFilter,
+				RequirementID:  requirementID,
 			})
 			if err != nil {
 				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
@@ -50,7 +58,14 @@ func newRequirementSyncCommand() *cobra.Command {
 				return err
 			}
 
-			if _, err := fmt.Fprintf(cmd.ErrOrStderr(),
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
+				return err
+			}
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "requirement.sync", map[string]any{"source_doc": result.SourceDoc, "created": result.Created, "updated": result.Updated, "unchanged": result.Unchanged, "requirement_ids": result.RequirementIDs, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
+			}
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(),
 				"synced requirements from %s\n  created: %d\n  updated: %d\n  unchanged: %d\n",
 				result.SourceDoc,
 				result.Created,
@@ -66,6 +81,12 @@ func newRequirementSyncCommand() *cobra.Command {
 	cmd.Flags().StringVar(&sourceDoc, "source-doc", "", "Path to the source markdown document")
 	cmd.Flags().StringVar(&typeFilter, "type", "", "Optional requirement type filter: PRD or TRD")
 	cmd.Flags().StringVar(&requirementID, "id", "", "Optional single requirement ID to sync")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError("requirement.sync"))
 	return cmd
+}
+
+func init() {
+	rootFlagCapabilities["requirement sync"] = rootFlagCapability{Project: true, JSON: true}
 }

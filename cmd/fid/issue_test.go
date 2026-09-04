@@ -19,7 +19,7 @@ import (
 func TestIssueGetHumanSuccessUsesStdout(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Human read", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Human read", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	result := executeCommandForTest(workspace, "issue", "get", issueID)
 	if result.err != nil || result.stderr != "" || !strings.Contains(result.stdout, issueID) || strings.Contains(result.stdout, ".fid/") {
@@ -31,7 +31,7 @@ func TestIssueCreateEpicAcceptsSchedulingAndReturnsDefaultReadShape(t *testing.T
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	if !strings.Contains(stderr, fmt.Sprintf("created issue %s (epic) %q", issueID, "Phase 4 authoring")) {
@@ -115,7 +115,7 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		t.Fatalf("insert labels: %v", err)
 	}
 
-	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	epicID := parseCreatedIssueID(t, epicStderr)
 
 	_, taskStderr := runFIDCommand(
@@ -130,14 +130,14 @@ func TestIssueCreateSupportsHierarchyAndAuthoringFlags(t *testing.T) {
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
 		"--label", "phase-4",
 		"--label", "core",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	taskID := parseCreatedIssueID(t, taskStderr)
 
-	_, unattachedStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Inbox capture", "--by", "developer")
+	_, unattachedStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Inbox capture", "--actor", "agent:developer")
 	unattachedTaskID := parseCreatedIssueID(t, unattachedStderr)
 
-	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--by", "developer")
+	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--actor", "agent:developer")
 	subtaskID := parseCreatedIssueID(t, subtaskStderr)
 
 	type issueJSON struct {
@@ -247,43 +247,43 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 		{
 			name: "task rejects subtask parent flag",
 			args: func(t *testing.T, workspace string) []string {
-				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Parent task", "--by", "developer")
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Parent task", "--actor", "agent:developer")
 				taskID := parseCreatedIssueID(t, stderr)
-				return []string{"issue", "create", "--kind", "task", "--title", "Wrong flag", "--parent", taskID, "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "Wrong flag", "--parent", taskID, "--actor", "agent:developer"}
 			},
 			wantErr: "create issue: --parent is only valid for subtasks",
 		},
 		{
 			name: "subtask rejects task epic flag",
 			args: func(t *testing.T, workspace string) []string {
-				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--by", "tl")
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--actor", "agent:tl")
 				epicID := parseCreatedIssueID(t, stderr)
-				return []string{"issue", "create", "--kind", "subtask", "--title", "Wrong flag", "--epic", epicID, "--by", "developer"}
+				return []string{"issue", "create", "--kind", "subtask", "--title", "Wrong flag", "--epic", epicID, "--actor", "agent:developer"}
 			},
 			wantErr: "create issue: --epic is only valid for tasks",
 		},
 		{
 			name: "task under sequential epic requires sequence",
 			args: func(t *testing.T, workspace string) []string {
-				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--by", "tl")
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Sequential parent", "--scheduling", "sequential", "--actor", "agent:tl")
 				epicID := parseCreatedIssueID(t, stderr)
-				return []string{"issue", "create", "--kind", "task", "--title", "Missing sequence", "--epic", epicID, "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "Missing sequence", "--epic", epicID, "--actor", "agent:developer"}
 			},
 			wantErr: "issues: task under sequential epic requires sequence",
 		},
 		{
 			name: "task under prioritised epic must not set sequence",
 			args: func(t *testing.T, workspace string) []string {
-				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Prioritised parent", "--scheduling", "prioritised", "--by", "tl")
+				_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Prioritised parent", "--scheduling", "prioritised", "--actor", "agent:tl")
 				epicID := parseCreatedIssueID(t, stderr)
-				return []string{"issue", "create", "--kind", "task", "--title", "Prioritised sequence", "--epic", epicID, "--sequence", "1", "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "Prioritised sequence", "--epic", epicID, "--sequence", "1", "--actor", "agent:developer"}
 			},
 			wantErr: "issues: task under prioritised epic must not have sequence",
 		},
 		{
 			name: "unattached task must not set sequence",
 			args: func(t *testing.T, workspace string) []string {
-				return []string{"issue", "create", "--kind", "task", "--title", "Unattached sequence", "--sequence", "1", "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "Unattached sequence", "--sequence", "1", "--actor", "agent:developer"}
 			},
 			wantErr: "issues: unattached task must not have sequence",
 		},
@@ -310,7 +310,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 				); err != nil {
 					t.Fatalf("insert metadata-less epic: %v", err)
 				}
-				return []string{"issue", "create", "--kind", "task", "--title", "No metadata", "--epic", "FID-nometa", "--sequence", "1", "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "No metadata", "--epic", "FID-nometa", "--sequence", "1", "--actor", "agent:developer"}
 			},
 			wantErr: "issues: task parent epic must have epic_metadata",
 		},
@@ -318,7 +318,7 @@ func TestIssueCreateRejectsInvalidFlagsAndConstraintViolations(t *testing.T) {
 			name: "unknown label rejected without auto-create",
 			args: func(t *testing.T, workspace string) []string {
 				seedCommandLabels(t, workspace, "known")
-				return []string{"issue", "create", "--kind", "task", "--title", "Unknown label", "--label", "known", "--label", "missing", "--by", "developer"}
+				return []string{"issue", "create", "--kind", "task", "--title", "Unknown label", "--label", "known", "--label", "missing", "--actor", "agent:developer"}
 			},
 			wantErr: `create issue: label "missing" does not exist`,
 			verify: func(t *testing.T, workspace string) {
@@ -388,7 +388,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 	}
 	beforeLines := splitJournalLines(beforePayload)
 
-	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--by", "tl")
+	_, epicStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Phase 4 authoring", "--scheduling", "sequential", "--actor", "agent:tl")
 	epicID := parseCreatedIssueID(t, epicStderr)
 	afterEpicLines := splitJournalLines(mustReadCommandFile(t, journalPath))
 	if len(afterEpicLines) != len(beforeLines)+1 {
@@ -407,7 +407,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		"--spec-md", "project-docs/docs/phases/phase-4/tasks/task-2.md",
 		"--label", "phase-4",
 		"--label", "core",
-		"--by", "tl",
+		"--actor", "agent:tl",
 	)
 	taskID := parseCreatedIssueID(t, taskStderr)
 	afterTaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
@@ -415,7 +415,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		t.Fatalf("journal lines after task = %d, want %d", len(afterTaskLines), len(afterEpicLines)+1)
 	}
 
-	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--by", "developer")
+	_, subtaskStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "subtask", "--title", "Cover rebuild parity", "--parent", taskID, "--actor", "agent:developer")
 	subtaskID := parseCreatedIssueID(t, subtaskStderr)
 	afterSubtaskLines := splitJournalLines(mustReadCommandFile(t, journalPath))
 	if len(afterSubtaskLines) != len(afterTaskLines)+1 {
@@ -441,7 +441,7 @@ func TestIssueCreateUsesOneJournalEventPerCommandAndRebuildsRepresentativeHierar
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	for issueID, want := range beforeRebuild {
 		if got := mustGetIssueJSON(t, workspace, issueID); got != want {
@@ -454,7 +454,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Surface enriched issue state", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Surface enriched issue state", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	appendCommandIssueEvent(t, workspace, journal.Event{
@@ -569,7 +569,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	afterStdout := mustGetIssueJSON(t, workspace, issueID)
 	if beforeStdout != afterStdout {
@@ -586,7 +586,7 @@ func TestIssueGetReturnsEnrichedJSONAndRebuildParity(t *testing.T) {
 func TestIssueGetRejectsRetiredFormatFlags(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format retirement", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format retirement", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, flag := range []string{"--format", "--section"} {
 		args := []string{"issue", "get", issueID, flag, "json"}
@@ -610,7 +610,7 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	}
 	beforeLines := splitJournalLines(beforePayload)
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Append one event", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Append one event", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	afterPayload, err := os.ReadFile(journalPath)
@@ -629,8 +629,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	if event.EventType != "issue.created" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "issue.created")
 	}
-	if event.EventID == "" || event.EventSchema != journal.EventSchemaV1 || event.Actor.Role != "developer" || len(event.Command.Argv) == 0 {
-		t.Fatalf("event envelope = %+v, want populated v1 envelope", event)
+	if event.EventID == "" || event.EventSchema != journal.EventSchemaV2 || event.ActorV2.ActorID != "developer" || event.ActorV2.ActorType != "agent" || event.ActorV2.Producer != "fid-standalone" || event.ActorV2.ProvenanceRef != "project-local-attribution" || event.Aggregate.ID != issueID || event.Aggregate.Sequence != 1 || event.CommandName != "issue.create" || event.Idempotency == nil {
+		t.Fatalf("event envelope = %+v, want populated v2 standalone Issue Event", event)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -668,8 +668,8 @@ func TestIssueCreateAppendsOneEventAndProjectsOneIssue(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_created" {
-		t.Fatalf("activity_log event = %q, want issue_created", activityEvent)
+	if activityEvent != "issue-created" {
+		t.Fatalf("activity_log event = %q, want issue-created", activityEvent)
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
@@ -685,7 +685,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Rebuild parity", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Rebuild parity", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	beforeStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
@@ -695,7 +695,7 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runFIDCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runFIDCommand(t, workspace, "rebuild")
 
 	afterStdout, _ := runFIDCommand(t, workspace, "issue", "get", issueID)
 	if beforeStdout != afterStdout {
@@ -703,95 +703,39 @@ func TestIssueCreateAndRebuildRoundTripReturnsIdenticalJSON(t *testing.T) {
 	}
 }
 
-func TestIssueCreateAndRebuildValidateRoleExistence(t *testing.T) {
+func TestIssueCreateStandaloneActorIsAttributionOnly(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	t.Run("issue create missing by", func(t *testing.T) {
+	t.Run("issue create missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Missing role")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
+			t.Fatal("Execute() error = nil, want missing --actor rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
+		if !strings.Contains(stderr, "error: --actor is required") {
+			t.Fatalf("stderr = %q, want missing --actor error", stderr)
 		}
 	})
 
-	t.Run("issue create unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "create", "--kind", "task", "--title", "Unknown role", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
+	t.Run("unregistered actor is recorded as attribution", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Unregistered actor", "--actor", "agent:intern")
+		issueID := parseCreatedIssueID(t, stderr)
+		tail := lastCommandJournalEvent(t, mustJournalPath(t, workspace))
+		if tail.ActorV2.ActorID != "intern" || tail.ActorV2.ActorType != "agent" || tail.Aggregate.ID != issueID {
+			t.Fatalf("Event Actor/aggregate = (%#v, %#v), want agent intern attribution for %q", tail.ActorV2, tail.Aggregate, issueID)
 		}
 	})
 
-	t.Run("issue create denied role leaves journal unchanged", func(t *testing.T) {
-		journalPath := mustJournalPath(t, workspace)
-		linesBefore := splitJournalLines(mustReadCommandFile(t, journalPath))
-
-		stdout, stderr, err := runFIDCommandExpectError(
-			t,
-			workspace,
-			"issue", "create",
-			"--kind", "epic",
-			"--title", "Denied epic create",
-			"--scheduling", "sequential",
-			"--by", "developer",
-		)
-		if err == nil {
-			t.Fatal("Execute() error = nil, want permission rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		for _, want := range []string{
-			`error: role "developer" not permitted for action "issue.create.epic"`,
-			"check `fid policy show` for permitted role/action combinations",
-		} {
-			if !strings.Contains(stderr, want) {
-				t.Fatalf("stderr = %q, want substring %q", stderr, want)
-			}
-		}
-
-		linesAfter := splitJournalLines(mustReadCommandFile(t, journalPath))
-		if len(linesAfter) != len(linesBefore) {
-			t.Fatalf("journal lines after rejection = %d, want unchanged %d", len(linesAfter), len(linesBefore))
+	t.Run("actor does not select standalone create authority", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "epic", "--title", "Attributed epic create", "--scheduling", "sequential", "--actor", "agent:developer")
+		if issueID := parseCreatedIssueID(t, stderr); issueID == "" {
+			t.Fatal("attributed epic create did not return an Issue ID")
 		}
 	})
 
-	t.Run("rebuild missing by", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "rebuild")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
-		}
-	})
-
-	t.Run("rebuild unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "rebuild", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
-		}
-	})
 }
 
 func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
@@ -799,7 +743,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		workspace := t.TempDir()
 		runInitCommand(t, workspace, "init")
 
-		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--by", "developer")
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up corruption", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
 
 		stdout := mustGetIssueJSON(t, workspace, issueID)
@@ -825,7 +769,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 		workspace := t.TempDir()
 		runInitCommand(t, workspace, "init")
 
-		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--by", "developer")
+		_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Catch-up conflict", "--actor", "agent:developer")
 		issueID := parseCreatedIssueID(t, stderr)
 
 		stdout := mustGetIssueJSON(t, workspace, issueID)
@@ -840,7 +784,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 				Role: "tl",
 			},
 			Command: journal.Command{
-				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--by", "tl"},
+				Argv:       []string{"fid", "issue", "transition", issueID, "--to", "done", "--actor", "agent:tl"},
 				CWD:        ".",
 				FIDVersion: "0.1.0",
 			},
@@ -877,7 +821,7 @@ func TestIssueGetStopsOnJournalCatchUpErrors(t *testing.T) {
 func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format rejection", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Format rejection", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 	for _, value := range []string{"json", "toon", "yaml", "markdown", "xml"} {
 		if result := executeCommandForTest(workspace, "issue", "get", issueID, "--format", value); result.err == nil {
@@ -888,6 +832,7 @@ func TestIssueGetRejectsAllFormatValues(t *testing.T) {
 
 func runFIDCommand(t *testing.T, workspace string, args ...string) (string, string) {
 	t.Helper()
+	args = withIssueMutationTestKey(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -912,6 +857,7 @@ func runFIDCommand(t *testing.T, workspace string, args ...string) (string, stri
 
 func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (string, string, error) {
 	t.Helper()
+	args = withIssueMutationTestKey(args)
 
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -924,7 +870,6 @@ func runFIDCommandExpectError(t *testing.T, workspace string, args ...string) (s
 	err := cmd.Execute()
 	return stdout.String(), stderr.String(), err
 }
-
 func parseCreatedIssueID(t *testing.T, stderr string) string {
 	t.Helper()
 
@@ -1034,8 +979,7 @@ func appendCommandIssueEvent(t *testing.T, workspace string, event journal.Event
 	t.Helper()
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: event.Actor.Role,
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err

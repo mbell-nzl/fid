@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -13,31 +14,35 @@ import (
 const fidVersion = "0.1.0"
 
 type CreateOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	Kind          string
-	Title         string
-	ActorRole     string
-	ParentID      *string
-	Priority      *int
-	Sequence      *int
-	SpecMDPath    *string
-	Labels        []string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	Kind           string
+	Title          string
+	Actor          string
+	IdempotencyKey string
+	ParentID       *string
+	Priority       *int
+	Sequence       *int
+	SpecMDPath     *string
+	Labels         []string
 	// OwnerRole and OwnerActor remain compatibility inputs for retained V1
 	// in-process callers. Canonical Issue commands never populate them.
 	OwnerRole  *string
 	OwnerActor *string
 	Scheduling string
+	now        func() time.Time
 }
 
 type CreateResult struct {
-	ID         string
-	Kind       string
-	Title      string
-	Status     string
-	Revision   int
-	EventID    string
-	OccurredAt string
+	ID             string
+	Kind           string
+	Title          string
+	Status         string
+	Revision       int
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type GetOptions struct {
@@ -131,8 +136,6 @@ type Issue struct {
 	Concerns           []IssueConcern        `json:"-"`
 	Completions        []IssueCompletion     `json:"completions"`
 	Links              []IssueLink           `json:"-"`
-	Claims             []IssueClaim          `json:"-"`
-	Gates              []IssueGate           `json:"-"`
 }
 
 type AcceptanceCriterion struct {

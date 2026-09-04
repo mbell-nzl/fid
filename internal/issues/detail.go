@@ -53,27 +53,6 @@ type IssueLink struct {
 	TargetTitle *string `json:"target_title"`
 }
 
-type IssueClaim struct {
-	RefType    string  `json:"ref_type"`
-	RefID      string  `json:"ref_id"`
-	ClaimedBy  string  `json:"claimed_by"`
-	ClaimedAt  string  `json:"claimed_at"`
-	TTLSeconds int     `json:"ttl_seconds"`
-	ExpiresAt  *string `json:"expires_at"`
-	Note       *string `json:"note"`
-}
-
-type IssueGate struct {
-	ID             string  `json:"id"`
-	AttemptNumber  int     `json:"attempt_number"`
-	AgentRunID     *string `json:"agent_run_id"`
-	RecordedByRole string  `json:"recorded_by_role"`
-	Command        string  `json:"command"`
-	ExitCode       int     `json:"exit_code"`
-	OutputExcerpt  *string `json:"output_excerpt"`
-	RanAt          string  `json:"ran_at"`
-}
-
 func issueParentTitle(conn *sql.DB, parentID *string) (*string, error) {
 	if parentID == nil {
 		return nil, nil
@@ -340,67 +319,6 @@ func issueLinks(conn *sql.DB, issueID string) ([]IssueLink, error) {
 		return nil, fmt.Errorf("iterate issue links for %q: %w", issueID, err)
 	}
 	return links, nil
-}
-
-func issueClaims(conn *sql.DB, issueID string) ([]IssueClaim, error) {
-	rows, err := conn.Query(`
-		SELECT ref_type, ref_id, claimed_by, claimed_at, ttl_seconds, note
-		FROM claims
-		WHERE ref_type = 'issue' AND ref_id = ?
-		ORDER BY claimed_at DESC
-	`, issueID)
-	if err != nil {
-		return nil, fmt.Errorf("query claims for %q: %w", issueID, err)
-	}
-	defer closeIssueRows(rows)
-
-	claims := []IssueClaim{}
-	for rows.Next() {
-		var claim IssueClaim
-		var note sql.NullString
-		if err := rows.Scan(&claim.RefType, &claim.RefID, &claim.ClaimedBy, &claim.ClaimedAt, &claim.TTLSeconds, &note); err != nil {
-			return nil, fmt.Errorf("scan claim for %q: %w", issueID, err)
-		}
-		claim.Note = nullStringPointer(note)
-		if claimedAt, err := time.Parse(time.RFC3339, claim.ClaimedAt); err == nil {
-			expiresAt := claimedAt.Add(time.Duration(claim.TTLSeconds) * time.Second).Format(time.RFC3339)
-			claim.ExpiresAt = &expiresAt
-		}
-		claims = append(claims, claim)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate claims for %q: %w", issueID, err)
-	}
-	return claims, nil
-}
-
-func issueGates(conn *sql.DB, issueID string) ([]IssueGate, error) {
-	rows, err := conn.Query(`
-		SELECT id, attempt_number, agent_run_id, recorded_by_role, command, exit_code, output_excerpt, ran_at
-		FROM gate_runs
-		WHERE issue_id = ?
-		ORDER BY attempt_number, ran_at, id
-	`, issueID)
-	if err != nil {
-		return nil, fmt.Errorf("query gates for %q: %w", issueID, err)
-	}
-	defer closeIssueRows(rows)
-
-	gates := []IssueGate{}
-	for rows.Next() {
-		var gate IssueGate
-		var agentRunID, outputExcerpt sql.NullString
-		if err := rows.Scan(&gate.ID, &gate.AttemptNumber, &agentRunID, &gate.RecordedByRole, &gate.Command, &gate.ExitCode, &outputExcerpt, &gate.RanAt); err != nil {
-			return nil, fmt.Errorf("scan gate for %q: %w", issueID, err)
-		}
-		gate.AgentRunID = nullStringPointer(agentRunID)
-		gate.OutputExcerpt = nullStringPointer(outputExcerpt)
-		gates = append(gates, gate)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("iterate gates for %q: %w", issueID, err)
-	}
-	return gates, nil
 }
 
 func closeIssueRows(rows *sql.Rows) {

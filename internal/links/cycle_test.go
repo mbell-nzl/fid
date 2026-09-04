@@ -18,7 +18,7 @@ func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
 			FromID:        edge[0],
 			Relation:      "blocks",
 			ToID:          edge[1],
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil {
 			t.Fatalf("add %q blocks %q: %v", edge[0], edge[1], err)
@@ -32,7 +32,7 @@ func TestAddRejectsThreeNodeDependencyCycle(t *testing.T) {
 		FromID:        thirdID,
 		Relation:      "blocks",
 		ToID:          firstID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	var cycle *DependencyCycleError
 	if !errors.As(err, &cycle) {
@@ -59,7 +59,7 @@ func TestAddRejectsSelfDependencyCycle(t *testing.T) {
 		Relation:      "blocks",
 		ToType:        "issue",
 		ToID:          issueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	var cycle *DependencyCycleError
 	if !errors.As(err, &cycle) {
@@ -132,7 +132,7 @@ func addDependency(t *testing.T, workspace, fromID, relation, toID string) {
 		Relation:      relation,
 		ToType:        "issue",
 		ToID:          toID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Add(%q %s %q) error = %v", fromID, relation, toID, err)
 	}
@@ -149,7 +149,7 @@ func assertDependencyCycle(t *testing.T, workspace, fromID, relation, toID strin
 		Relation:      relation,
 		ToType:        "issue",
 		ToID:          toID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	var cycle *DependencyCycleError
 	if !errors.As(err, &cycle) {

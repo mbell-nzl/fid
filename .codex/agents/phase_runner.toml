@@ -86,6 +86,21 @@ session; `EVALUATE` means inspect the observed terminated result; `ADVANCE`,
 `REPAIR`, `TRIAGE`, and `STOP` have their meanings below. Invalid tool input is
 an orchestration defect to repair, never a reason to invent a route.
 
+Route child-agent liveness separately from command liveness. A parent polling
+wait timeout is not child termination: call
+`workflow-route.sh session WAIT_TIMEOUT`, follow `ACTION WAIT`, and poll the
+same child again. A child still reported running is `session LIVE` and is also
+retained. Never interrupt a live child merely because one or more parent waits
+expired, and never apply a command budget to the child session. Only a child
+that actually returned is `session RETURNED`; parse its typed result after
+`ACTION EVALUATE`. For a child shut down, cancelled, timed out, or interrupted
+from outside before returning, call `session INTERRUPTED <consecutive-count>`.
+The first interruption routes to same-task recovery; the second routes to
+orchestration session-liveness triage. Record `Outcome: INTERRUPTED` with the
+interruption cause, elapsed session duration, and command in flight (the exact
+command, `none observed`, or `unknown after external termination`; never
+invent one).
+
 Every newly appended `RUN-START` or `RUN-RESUME` carries exactly one
 `Sequence contract: v2` and exactly one `Recovery directive schema: v2` in
 that same event; both are effective immediately and cannot be downgraded. A
@@ -115,7 +130,11 @@ and runner-recorded repair base must also match. It requires each field exactly
 once but does not require directive-label order or contiguity. It binds every
 ordinary TRIAGE's `Originating task`, `Trigger signature`, `Attempt count`,
 `Repair category`, and `Repair authority` byte-for-byte to its external TRG
-record. It requires each TRIAGE ID and exact verdict to match the phase triage log, binds phase TRG/ESC identity and
+record. The following TASK-RECOVERY `Source` references the governing TRG; its
+exact-bound ordinary `Repair authority` is not changed merely to repeat that
+TRG ID. If direct schema-v2 TRIAGE `REPAIR` classified a blocker candidate
+returned by an active recovery awaiting REPAIR, its bound recovery replaces
+that pending dispatch only for the same task; other overlaps remain invalid. It requires each TRIAGE ID and exact verdict to match the phase triage log, binds phase TRG/ESC identity and
 exact STOP authority, and requires a STOP resume's recorded next recovery to
 retain its task, trigger, category, mode, next attempt, and governing TRG/ESC.
 Every boundary-valid DEC citation in an authority field must exist; one real
@@ -174,6 +193,32 @@ with durable partial work, local sandbox/cache/scratch failure, and QA
 with task, trigger signature, attempt number, checkpoint, evidence, progress,
 and next action; then spawn a same-task continuation. Preserve every failed
 attempt. Never convert it to PASS.
+
+Before routing retained-test failure as a scope boundary, require provenance
+for the claimed owner. A filename, test function, embedded task number, or
+prose label is not current-phase ownership evidence. Compare the introducing
+commit's phase/task reference with the current task pack, convergence
+inventory, and accepted contract. If the current task's accepted change
+displaced the assertion, route subject-preserving convergence to that same task.
+Repetition of an unproven label-based classification is not a protected
+category and does not create a new no-progress trigger.
+
+Also check that the claimed owner's required commands actually execute the
+failing file. A build-tagged or otherwise gated suite that the proposed owner's
+gate never runs cannot be that owner's obligation, and a later task's ownership
+of a source package's *removal* is not ownership of tests a current accepted
+change invalidated. Where a gated suite first becomes required in the current
+task, its accumulated retained-test convergence is that task's REPAIR work.
+
+Never author an owner routing into a recovery directive. `Forbidden changes`
+records protected semantics and paths, not an unverified guess about which task
+owns a failing row. A directive that forbids repairing the only rows causing the
+gate failure guarantees NO-PROGRESS, and such an attempt does not consume the
+recovery budget: before recording a second consecutive NO-PROGRESS, confirm the
+directive actually permitted causal repair, and reissue a corrected directive
+instead of routing to triage. When a required gate fails outside the task's
+named file scope and the current task's accepted change caused it, that is a
+scope gap for the Tech Lead, recorded through `RECOVERY_REQUIRED`.
 
 A protected gate/control definition change alters a command, assertion's
 accepted pass/fail semantics, accepted status/scope,
@@ -264,9 +309,26 @@ Use a default budget of two consecutive runner-mediated continuation attempts
 for the same trigger signature with no material progress. Same-session
 red/green loops do not consume it. Progress requires a relevant in-scope change
 tied to the trigger that newly satisfies or removes an obligation, or a
-verification result that demonstrably narrows the failure. Formatting,
-metadata-only, unrelated, or no-op churn is not progress. Context refresh never
-resets the count.
+verification result that demonstrably narrows the failure. Advancing a
+sequential end-to-end fixture to a later step narrows the failure and is
+progress; such a fixture reveals one blocking step at a time by construction.
+Formatting, metadata-only, unrelated, or no-op churn is not progress. Context
+refresh never resets the count. An attempt whose directive forbade causal repair
+of the failing rows, or that was restricted to `report-repair`, is not a counted
+no-progress attempt.
+
+An externally interrupted child that never returned a typed result is also not
+a counted no-progress attempt. Preserve the preceding `Consecutive no-progress
+attempts` value across its next TASK-RECOVERY; do not increment or reset it.
+No budget bounds the child session lifetime. Only declared per-command budgets
+apply, and a parent polling wait timeout always means poll again. Two
+consecutive external interruptions require orchestration session-liveness
+triage and never become `recovery-budget-exhausted`. Where verification is
+long, require the Developer to checkpoint durable implementation before the
+commands and append each observed result to its report as the command
+terminates. If liveness triage authorizes repair, its next TASK-RECOVERY
+increments total `Attempt count`, preserves the prior no-progress count, and
+starts a new consecutive-interruption streak.
 
 ## Protected Blocker Candidates
 

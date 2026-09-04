@@ -1,6 +1,9 @@
 package issues
 
-import "testing"
+import (
+	"math"
+	"testing"
+)
 
 func TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults(t *testing.T) {
 	effects, err := BuildIssueRevisionEffects([]IssueRevision{
@@ -33,5 +36,26 @@ func TestBuildIssueRevisionEffectsSortsObservedRevisionsAndDerivesResults(t *tes
 		if got := effect.Preconditions["revision"]; got != want.prior {
 			t.Fatalf("effect %d revision precondition = %#v, want %d", index, got, want.prior)
 		}
+	}
+}
+
+func TestBuildIssueRevisionEffectsRejectsInvalidInputsWithoutEffects(t *testing.T) {
+	for _, testCase := range []struct {
+		name     string
+		observed []IssueRevision
+	}{
+		{name: "whitespace Issue ID", observed: []IssueRevision{{IssueID: " ISS-1", Observed: 1}}},
+		{name: "trimmed duplicate Issue ID", observed: []IssueRevision{{IssueID: "ISS-1", Observed: 1}, {IssueID: "ISS-1 ", Observed: 2}}},
+		{name: "revision overflow", observed: []IssueRevision{{IssueID: "ISS-1", Observed: math.MaxInt}}},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			effects, err := BuildIssueRevisionEffects(testCase.observed)
+			if err == nil {
+				t.Fatal("BuildIssueRevisionEffects() error = nil, want invalid input rejection")
+			}
+			if effects != nil {
+				t.Fatalf("BuildIssueRevisionEffects() effects = %#v, want no effects", effects)
+			}
+		})
 	}
 }

@@ -11,7 +11,6 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/spf13/cobra"
 )
@@ -21,7 +20,6 @@ func init() {
 }
 
 func newRebuildCommand() *cobra.Command {
-	var actorRole string
 	var verbose bool
 
 	cmd := &cobra.Command{
@@ -46,12 +44,8 @@ func newRebuildCommand() *cobra.Command {
 				return renderRebuildProjectError(cmd, jsonMode, err)
 			}
 
-			if err := policy.Authorize(workspaceRoot, actorRole, "maintenance.rebuild"); err != nil {
-				return renderRebuildAuthorityError(cmd, jsonMode, actorRole, err)
-			}
-
 			startedAt := time.Now()
-			stats, err := journal.RebuildWorkspace(workspaceRoot, rebuildMigrationsDir(), actorRole)
+			stats, err := journal.RebuildWorkspace(workspaceRoot, rebuildMigrationsDir())
 			if err != nil {
 				return renderRebuildOperationError(cmd, jsonMode, err)
 			}
@@ -89,7 +83,6 @@ func newRebuildCommand() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
 	cmd.Flags().BoolVar(&verbose, "verbose", false, "Print per-file replay details")
 
 	return cmd
@@ -158,29 +151,16 @@ func renderRebuildProjectError(cmd *cobra.Command, jsonMode bool, rebuildErr err
 	}, map[string]any{"path": projectPath})
 }
 
-func renderRebuildAuthorityError(cmd *cobra.Command, jsonMode bool, actorRole string, rebuildErr error) error {
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), rebuildErr); err != nil {
-			return err
-		}
-		return rebuildErr
-	}
-	failure, handled, err := authorityFailure("project.rebuild", actorRole, rebuildErr)
-	if err != nil {
-		return err
-	}
-	if handled {
-		return renderRebuildFailure(cmd, jsonMode, failure.Code, failure.Message, failure.Subject, failure.Details)
-	}
-	return renderRebuildOperationError(cmd, jsonMode, rebuildErr)
-}
-
 func renderRebuildOperationError(cmd *cobra.Command, jsonMode bool, rebuildErr error) error {
 	if !jsonMode {
 		if renderErr := renderRebuildError(cmd, rebuildErr); renderErr != nil {
 			return renderErr
 		}
-		return rebuildErr
+		failure, err := cli.NewFailure(cli.CodeInternalError, "projection rebuild failed", nil, map[string]any{})
+		if err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, rebuildErr)
 	}
 	if failure, handled, err := lockUnavailableFailure(rebuildErr); err != nil {
 		return err
@@ -196,10 +176,7 @@ func renderRebuildOperationError(cmd *cobra.Command, jsonMode bool, rebuildErr e
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), "project.rebuild", failure); err != nil {
-		return err
-	}
-	return rebuildErr
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, rebuildErr)
 }
 
 func renderRebuildFailure(cmd *cobra.Command, jsonMode bool, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
@@ -208,15 +185,12 @@ func renderRebuildFailure(cmd *cobra.Command, jsonMode bool, code cli.Code, mess
 		return err
 	}
 	if jsonMode {
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), "project.rebuild", failure); err != nil {
-			return err
-		}
-		return fmt.Errorf("%s", code)
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "project.rebuild", failure, fmt.Errorf("%s", code))
 	}
 	if err := writeRebuildLine(cmd.ErrOrStderr(), "error: %s\n", message); err != nil {
 		return err
 	}
-	return fmt.Errorf("%s", code)
+	return cli.NewFailureError(failure, fmt.Errorf("%s", code))
 }
 
 func rebuildMigrationsDir() string {

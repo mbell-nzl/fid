@@ -30,7 +30,7 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 		"--title", "CLI issue label add",
 		"--label", "core",
 		"--label", "legacy",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -123,8 +123,8 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_label_added" {
-		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue_label_added")
+	if activityEvent != "issue-label-added" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue-label-added")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
@@ -137,10 +137,11 @@ func TestIssueLabelAddPreservesExistingLabelsAndProjectsActivity(t *testing.T) {
 }
 
 func TestIssueLabelMutationsJSONMatchContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label envelope", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label envelope", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -152,10 +153,11 @@ func TestIssueLabelMutationsJSONMatchContract(t *testing.T) {
 }
 
 func TestIssueLabelJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	runFIDCommand(t, workspace, "label", "add", "core", "--by", "developer")
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON failures", "--label", "core", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON failures", "--label", "core", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -187,9 +189,10 @@ func TestIssueLabelJSONUsesSpecificAtomicFailureCodes(t *testing.T) {
 }
 
 func TestIssueLabelAddJSONReportsNestedLimitWithoutAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Issue label JSON limit", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -243,7 +246,7 @@ func assertIssueLabelMutationEnvelope(t *testing.T, result commandExecutionResul
 		t.Fatalf("Unmarshal(%s stdout) error = %v; stdout = %q", operation, err, result.stdout)
 	}
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertExactKeys(t, envelope.Result, []string{"issue_id", "label", "issue_revision"})
+	assertExactKeys(t, envelope.Result, []string{"idempotency_key", "issue_id", "issue_revision", "label", "replayed"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
 	if envelope.ContractVersion != "fid-cli.v1" || !envelope.OK || envelope.Operation != operation {
 		t.Fatalf("envelope = %#v, want fid-cli.v1 %s success", envelope, operation)
@@ -271,7 +274,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 			"--kind", "task",
 			"--title", "CLI issue label rejection",
 			"--label", "core",
-			"--by", "developer",
+			"--actor", "agent:developer",
 		)
 		issueID := parseCreatedIssueID(t, createStderr)
 
@@ -305,7 +308,7 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 		}
 	})
 
-	t.Run("permissions reject denied and unknown roles", func(t *testing.T) {
+	t.Run("project-local actors are accepted without role policy", func(t *testing.T) {
 		workspace := t.TempDir()
 		clonePristineWorkspaceInto(t, workspace)
 
@@ -316,37 +319,23 @@ func TestIssueLabelCommandsRejectBeforeAppendAndHonorPermissions(t *testing.T) {
 			"issue", "create",
 			"--kind", "task",
 			"--title", "CLI issue label permissions",
-			"--by", "developer",
+			"--actor", "agent:developer",
 		)
 		issueID := parseCreatedIssueID(t, createStderr)
 
 		journalPath := mustJournalPath(t, workspace)
 		linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "label", "add", issueID, "core", "--by", "qa_reviewer")
-		if err == nil {
-			t.Fatal("Execute(denied add) error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("denied add stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "qa_reviewer" not permitted for action "issue.label.add"`) {
-			t.Fatalf("denied add stderr = %q, want permission error", stderr)
+		for _, fixture := range []struct{ label, actor string }{{"qa", "agent:qa_reviewer"}, {"intern", "agent:intern"}} {
+			runFIDCommand(t, workspace, "label", "add", fixture.label, "--actor", fixture.actor)
+			stdout, stderr := runFIDCommand(t, workspace, "issue", "label", "add", issueID, fixture.label, "--actor", fixture.actor)
+			if stderr != "" || !strings.Contains(stdout, "added label") {
+				t.Fatalf("%s actor issue label = (%q, %q), want stdout confirmation", fixture.actor, stdout, stderr)
+			}
 		}
 
-		stdout, stderr, err = runFIDCommandExpectError(t, workspace, "issue", "label", "add", issueID, "core", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute(unknown add role) error = nil, want rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("unknown add role stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("unknown add role stderr = %q, want unknown-role error", stderr)
-		}
-
-		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-			t.Fatalf("journal lines after rejected permission checks = %d, want %d", got, linesBefore)
+		if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+4 {
+			t.Fatalf("journal lines after project-local actor checks = %d, want %d", got, linesBefore+4)
 		}
 	})
 }
@@ -369,7 +358,7 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 		"--label", "api",
 		"--label", "core",
 		"--label", "legacy",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -461,8 +450,8 @@ func TestIssueLabelRemovePreservesRemainingLabelsAndProjectsActivity(t *testing.
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if activityEvent != "issue_label_removed" {
-		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue_label_removed")
+	if activityEvent != "issue-label-removed" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "issue-label-removed")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
@@ -487,7 +476,7 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 		"--kind", "task",
 		"--title", "CLI issue label absent removal",
 		"--label", "core",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
@@ -506,30 +495,5 @@ func TestIssueLabelRemoveRejectsAbsentLabelBeforeAppend(t *testing.T) {
 	}
 	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
 		t.Fatalf("journal lines after rejected remove = %d, want %d", got, linesBefore)
-	}
-}
-
-func TestIssueLabelCommandsPolicyShowIncludesMatrixRows(t *testing.T) {
-	t.Parallel()
-	workspace := t.TempDir()
-	clonePristineWorkspaceInto(t, workspace)
-
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-
-	for _, action := range []string{"issue.label.add", "issue.label.remove"} {
-		for _, role := range []string{"developer", "tl", "workflow_runner", "human"} {
-			if !commandPolicyCellAllowed(t, rows, action, role) {
-				t.Fatalf("policy show %s/%s = false, want true", role, action)
-			}
-		}
-		for _, role := range []string{"qa_reviewer", "qa_lead", "tl_lite"} {
-			if commandPolicyCellAllowed(t, rows, action, role) {
-				t.Fatalf("policy show %s/%s = true, want false", role, action)
-			}
-		}
 	}
 }

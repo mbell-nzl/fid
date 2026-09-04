@@ -11,8 +11,9 @@ type SchemaUpgrader struct {
 }
 
 type UpgradeChain struct {
-	currentSchema int
-	upgraders     map[int]SchemaUpgrader
+	currentSchema       int
+	upgraders           map[int]SchemaUpgrader
+	allowLegacyIdentity bool
 }
 
 var defaultUpgradeChain = mustNewDefaultUpgradeChain()
@@ -72,6 +73,9 @@ func (chain UpgradeChain) Upgrade(event Event) (Event, error) {
 
 		if upgrader.ToSchema == current.EventSchema {
 			if current.EventSchema != chain.currentSchema {
+				if chain.allowLegacyIdentity {
+					return next, nil
+				}
 				return Event{}, fmt.Errorf("upgrade event %q: identity upgrader for non-current schema %d", current.EventID, current.EventSchema)
 			}
 			if next.EventSchema != current.EventSchema {
@@ -92,16 +96,24 @@ func (chain UpgradeChain) Upgrade(event Event) (Event, error) {
 }
 
 func mustNewDefaultUpgradeChain() UpgradeChain {
-	chain, err := NewUpgradeChain(CurrentEventSchema, SchemaUpgrader{
-		FromSchema: EventSchemaV1,
-		ToSchema:   EventSchemaV1,
-		Upgrade: func(event Event) (Event, error) {
-			return event, nil
-		},
-	})
+	chain, err := NewUpgradeChain(EventSchemaV2,
+		SchemaUpgrader{
+			FromSchema: EventSchemaV1,
+			ToSchema:   EventSchemaV1,
+			Upgrade: func(event Event) (Event, error) {
+				return event, nil
+			},
+		}, SchemaUpgrader{
+			FromSchema: EventSchemaV2,
+			ToSchema:   EventSchemaV2,
+			Upgrade: func(event Event) (Event, error) {
+				return event, nil
+			},
+		})
 	if err != nil {
 		panic(err)
 	}
 
+	chain.allowLegacyIdentity = true
 	return chain
 }

@@ -425,7 +425,7 @@ func TestInitCommandRequiresExplicitPrefixForInvalidDirectoryBasename(t *testing
 	}
 }
 
-func TestInitCommandSeedsExactlyOneBootstrapEventAndSevenRoles(t *testing.T) {
+func TestInitCommandSeedsExactlyOneRoleFreeBootstrapEvent(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init", "--prefix", "FID")
 
@@ -447,6 +447,18 @@ func TestInitCommandSeedsExactlyOneBootstrapEventAndSevenRoles(t *testing.T) {
 	if event.EventType != "project.initialized" {
 		t.Fatalf("event_type = %q, want %q", event.EventType, "project.initialized")
 	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	if err != nil {
+		t.Fatalf("ReadProjectConfig() error = %v", err)
+	}
+	if event.EventSchema != journal.EventSchemaV2 || event.ActorV2.ActorID != "fid-bootstrap" ||
+		event.ActorV2.ActorType != "service" || event.ActorV2.Producer != "fid" ||
+		event.ActorV2.ProvenanceRef != "fid:init" || event.ActorV2.SessionRef != nil ||
+		event.Aggregate.ID != projectConfig.ProjectID || event.Aggregate.Type != "project" || event.Aggregate.Sequence != 1 ||
+		event.CommandName != "project.init" || event.CausationID != nil || event.CorrelationID != nil ||
+		event.Repository != nil || event.Idempotency != nil || len(event.Effects) != 0 {
+		t.Fatalf("bootstrap Event = %#v, want exact role-free Event-v2 genesis", event)
+	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -454,36 +466,7 @@ func TestInitCommandSeedsExactlyOneBootstrapEventAndSevenRoles(t *testing.T) {
 	}
 	defer closeCommandDB(t, conn)
 
-	var projectedRoles []string
-	rows, err := conn.Query(`SELECT name FROM roles ORDER BY name`)
-	if err != nil {
-		t.Fatalf("Query() roles error = %v", err)
-	}
-	defer closeRows(t, rows)
-
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("Scan() role error = %v", err)
-		}
-		projectedRoles = append(projectedRoles, name)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("rows.Err() = %v", err)
-	}
-
-	wantRoles := []string{
-		"developer",
-		"human",
-		"qa_lead",
-		"qa_reviewer",
-		"tl",
-		"tl_lite",
-		"workflow_runner",
-	}
-	if !reflect.DeepEqual(projectedRoles, wantRoles) {
-		t.Fatalf("projected roles = %v, want %v", projectedRoles, wantRoles)
-	}
+	assertRoleTableAbsent(t, conn)
 }
 
 func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
@@ -517,7 +500,7 @@ func TestInitCommandRejectsReinitWithoutChanges(t *testing.T) {
 	}
 }
 
-func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T) {
+func TestInitCommandRebuildRoundTripPreservesRoleFreeBootstrapAndProjectionMeta(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -528,7 +511,7 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 	if err != nil {
 		t.Fatalf("Open() error = %v", err)
 	}
-	beforeRoles := readRoleNames(t, conn)
+	assertRoleTableAbsent(t, conn)
 	beforeMeta, found, err := fiddb.ReadProjectionMeta(conn)
 	if err != nil {
 		t.Fatalf("ReadProjectionMeta() error = %v", err)
@@ -547,7 +530,7 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	runInitCommand(t, workspace, "rebuild", "--by", "workflow_runner")
+	runInitCommand(t, workspace, "rebuild")
 
 	rebuiltConn, err := fiddb.Open(dbPath)
 	if err != nil {
@@ -555,17 +538,13 @@ func TestInitCommandRebuildRoundTripRecreatesRolesAndProjectionMeta(t *testing.T
 	}
 	defer closeCommandDB(t, rebuiltConn)
 
-	afterRoles := readRoleNames(t, rebuiltConn)
+	assertRoleTableAbsent(t, rebuiltConn)
 	afterMeta, found, err := fiddb.ReadProjectionMeta(rebuiltConn)
 	if err != nil {
 		t.Fatalf("ReadProjectionMeta() rebuilt error = %v", err)
 	}
 	if !found {
 		t.Fatal("ReadProjectionMeta() rebuilt found = false, want true")
-	}
-
-	if !reflect.DeepEqual(afterRoles, beforeRoles) {
-		t.Fatalf("rebuilt roles = %v, want %v", afterRoles, beforeRoles)
 	}
 
 	if beforeMeta.JournalFile != afterMeta.JournalFile ||
@@ -762,35 +741,12 @@ func snapshotWorkspaceState(t *testing.T, root string) map[string]string {
 	return state
 }
 
-func readRoleNames(t *testing.T, conn *sql.DB) []string {
+func assertRoleTableAbsent(t *testing.T, conn *sql.DB) {
 	t.Helper()
 
-	rows, err := conn.Query(`SELECT name FROM roles ORDER BY name`)
-	if err != nil {
-		t.Fatalf("Query() roles error = %v", err)
-	}
-	defer closeRows(t, rows)
-
-	var names []string
-	for rows.Next() {
-		var name string
-		if err := rows.Scan(&name); err != nil {
-			t.Fatalf("Scan() role error = %v", err)
-		}
-		names = append(names, name)
-	}
-	if err := rows.Err(); err != nil {
-		t.Fatalf("rows.Err() = %v", err)
-	}
-
-	sort.Strings(names)
-	return names
-}
-
-func closeRows(t *testing.T, rows interface{ Close() error }) {
-	t.Helper()
-
-	if err := rows.Close(); err != nil {
-		t.Fatalf("Close() rows error = %v", err)
+	var name string
+	err := conn.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'roles'`).Scan(&name)
+	if err != sql.ErrNoRows {
+		t.Fatalf("roles table lookup error = %v, want no roles table", err)
 	}
 }

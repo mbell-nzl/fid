@@ -1,0 +1,5 @@
+{
+  "operation": "gate.run",
+  "command": "fid gate run",
+  "kind": "accepted"
+}

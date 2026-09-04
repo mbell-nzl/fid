@@ -72,11 +72,11 @@ func Check(options CheckOptions) (Result, error) {
 		checkDependentRowKinds,
 		checkSequenceScheduling,
 		checkLinkReferences,
-		checkClaimReferences,
 		checkActivityReferences,
 		checkForeignKeys,
 		checkWorkflowStates,
 		checkWorkflowAssignments,
+		checkOperationalIntegrity,
 	}
 	result := Result{Errors: make([]Finding, 0), Warnings: make([]Finding, 0)}
 	for _, check := range checks {

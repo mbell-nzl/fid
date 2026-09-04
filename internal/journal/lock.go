@@ -16,8 +16,7 @@ const (
 )
 
 type LockOwner struct {
-	Command   string
-	ActorRole string
+	Command string
 }
 
 type LockUnavailableError struct {
@@ -42,7 +41,6 @@ type lockMetadata struct {
 	Hostname  string    `json:"hostname"`
 	StartedAt time.Time `json:"started_at"`
 	Command   string    `json:"command"`
-	ActorRole *string   `json:"actor_role,omitempty"`
 }
 
 type lockOptions struct {
@@ -146,10 +144,6 @@ func buildLockMetadata(owner LockOwner, now func() time.Time) (lockMetadata, err
 		StartedAt: now().UTC(),
 		Command:   owner.Command,
 	}
-	if owner.ActorRole != "" {
-		metadata.ActorRole = &owner.ActorRole
-	}
-
 	return metadata, nil
 }
 

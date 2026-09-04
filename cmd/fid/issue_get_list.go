@@ -96,20 +96,17 @@ func readJSONMode(cmd *cobra.Command) (bool, error) {
 }
 
 func renderIssueReadError(cmd *cobra.Command, jsonMode bool, operation string, readErr error) error {
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), readErr); err != nil {
-			return err
-		}
-		return readErr
-	}
 	failure, err := issueReadFailure(operation, readErr)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), readErr); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, readErr)
 	}
-	return readErr
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, readErr)
 }
 
 func issueReadFailure(operation string, readErr error) (cli.Failure, error) {

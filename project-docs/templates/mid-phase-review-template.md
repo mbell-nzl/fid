@@ -99,6 +99,11 @@ task must already be in the reviewed window, and the repair must not change
 accepted product, architecture, data-model, public-interface, dependency,
 security, or validation-contract decisions.
 
+Findings may be owned by more than one task. Order the rows in the required
+repair order; the Phase Runner copies those owners, in that order, into the
+single `Owning task` field of the ledger REVIEW event, and every listed owner is
+repaired before the fresh re-review.
+
 | Finding | Owning task | Affected assertion | Exact repair boundary | Required evidence | Fresh re-review scope |
 |---|---|---|---|---|---|
 | <finding ID> | task-<M> | VAL-NNN / no VAL | <bounded files/behavior> | <exact test, gate, report, or file-state proof> | <what the new reviewer must inspect and rerun> |

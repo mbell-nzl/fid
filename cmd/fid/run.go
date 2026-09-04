@@ -1,158 +1,229 @@
 package main
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
-	"strconv"
+	"io"
+	"os"
 	"strings"
 
-	"github.com/mbell-nzl/fid/internal/runs"
+	"github.com/mbell-nzl/fid/internal/cli"
+	"github.com/mbell-nzl/fid/internal/policy"
+	"github.com/mbell-nzl/fid/internal/workflow"
 	"github.com/spf13/cobra"
 )
+
+func init() {
+	for _, operation := range []string{"run start", "run finish", "run get", "run list"} {
+		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
+	}
+}
 
 func newRunCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "run",
-		Short: "Manage recorded agent runs.",
-	}
-
-	cmd.AddCommand(newRunRecordCommand())
-	return cmd
-}
-
-func newRunRecordCommand() *cobra.Command {
-	var (
-		issueID            string
-		runRole            string
-		model              string
-		tokensIn           int
-		tokensOut          int
-		tokenBreakdownJSON string
-		toolCallCount      int
-		providerRunID      string
-		providerCostUSD    float64
-		completionID       string
-		actorRole          string
-	)
-
-	cmd := &cobra.Command{
-		Use:   "record",
-		Short: "Record one agent run.",
-		Args:  cobra.NoArgs,
-		RunE: func(cmd *cobra.Command, args []string) error {
-			requiredFlags := []string{"issue", "role", "model", "by"}
-			for _, name := range requiredFlags {
-				if cmd.Flags().Changed(name) {
-					continue
-				}
-				err := fmt.Errorf("--%s is required", name)
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+		Short: "Manage generic Runs.",
+		Args: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return nil
 			}
-
-			workspaceRoot, err := commandWorkingDirectory(cmd)
-			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
-			}
-
-			result, err := runs.Record(runs.RecordOptions{
-				WorkspaceRoot:      workspaceRoot,
-				MigrationsDir:      issueMigrationsDir(),
-				IssueID:            issueID,
-				CompletionID:       changedOptionalString(cmd, "completion", completionID),
-				ActorRole:          actorRole,
-				RunRole:            runRole,
-				Model:              model,
-				TokensIn:           changedOptionalInt(cmd, "tokens-in", tokensIn),
-				TokensOut:          changedOptionalInt(cmd, "tokens-out", tokensOut),
-				TokenBreakdownJSON: changedOptionalString(cmd, "token-breakdown-json", tokenBreakdownJSON),
-				ToolCallCount:      changedOptionalInt(cmd, "tool-call-count", toolCallCount),
-				ProviderRunID:      changedOptionalString(cmd, "provider-run-id", providerRunID),
-				ProviderCostUSD:    changedOptionalFloat(cmd, "provider-cost-usd", providerCostUSD),
-			})
-			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-
-			if result.Warning != nil {
-				if err := writeIssueLine(cmd.ErrOrStderr(), "%s\n", *result.Warning); err != nil {
-					return err
-				}
-			}
-			if err := writeIssueLine(cmd.ErrOrStderr(), "recorded agent run %s on %s\n", result.ID, result.IssueID); err != nil {
-				return err
-			}
-			if err := writeIssueLine(cmd.ErrOrStderr(), "  role: %s, model: %s\n", result.RunRole, result.Model); err != nil {
-				return err
-			}
-			if err := writeIssueLine(cmd.ErrOrStderr(), "  tokens: %d in, %d out\n", optionalInt(result.TokensIn), optionalInt(result.TokensOut)); err != nil {
-				return err
-			}
-			if result.CostUSD != nil {
-				return writeIssueLine(cmd.ErrOrStderr(), "  cost: $%s\n", formatRunCost(*result.CostUSD))
-			}
-			return writeIssueLine(cmd.ErrOrStderr(), "  cost: unknown\n")
+			return fmt.Errorf("unknown command %q for %q", args[0], cmd.CommandPath())
+		},
+		RunE: func(cmd *cobra.Command, _ []string) error {
+			return cmd.Help()
 		},
 	}
-
-	cmd.Flags().StringVar(&issueID, "issue", "", "Issue ID")
-	cmd.Flags().StringVar(&runRole, "role", "", "Agent role that ran")
-	cmd.Flags().StringVar(&model, "model", "", "Model used")
-	cmd.Flags().IntVar(&tokensIn, "tokens-in", 0, "Input tokens")
-	cmd.Flags().IntVar(&tokensOut, "tokens-out", 0, "Output tokens")
-	cmd.Flags().StringVar(&tokenBreakdownJSON, "token-breakdown-json", "", "Provider-native token categories JSON")
-	cmd.Flags().IntVar(&toolCallCount, "tool-call-count", 0, "Number of tool calls made by the run")
-	cmd.Flags().StringVar(&providerRunID, "provider-run-id", "", "Provider request or run identifier")
-	cmd.Flags().Float64Var(&providerCostUSD, "provider-cost-usd", 0, "Provider-billed cost in USD")
-	cmd.Flags().StringVar(&completionID, "completion", "", "Associated completion ID")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunGetCommand(), newRunListCommand())
 	return cmd
 }
 
-func changedOptionalString(cmd *cobra.Command, name string, value string) *string {
-	if !cmd.Flags().Changed(name) {
-		return nil
-	}
-	trimmed := strings.TrimSpace(value)
-	if trimmed == "" {
-		return nil
-	}
-	return &trimmed
+func newRunStartCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "start", Short: "Start one Run from an active Claim.", Args: canonicalNoArgs("run.start"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunStartRequest
+		if err := runRequest(cmd, "run.start", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.start", err)
+		}
+		result, err := workflow.StartRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.start", err)
+		}
+		return writeRunSuccess(cmd, "run.start", result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
 }
 
-func changedOptionalInt(cmd *cobra.Command, name string, value int) *int {
-	if !cmd.Flags().Changed(name) {
+func newRunFinishCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "finish", Short: "Terminalize one active Run.", Args: canonicalNoArgs("run.finish"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunFinishRequest
+		if err := runRequest(cmd, "run.finish", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.finish", err)
+		}
+		result, err := workflow.FinishRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.finish", err)
+		}
+		return writeRunSuccess(cmd, "run.finish", result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
+}
+
+func newRunGetCommand() *cobra.Command {
+	cmd := &cobra.Command{Use: "get <run-id>", Short: "Read one Run.", Args: canonicalExactArgs("run.get", 1), RunE: func(cmd *cobra.Command, args []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.get", err)
+		}
+		run, err := workflow.GetRun(workspace, issueMigrationsDir(), args[0])
+		if err != nil {
+			return renderRunError(cmd, "run.get", err)
+		}
+		if jsonMode, err := readJSONMode(cmd); err != nil {
+			return err
+		} else if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "run.get", map[string]any{"run": run}, nil)
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", run.ID, run.Status)
+		return err
+	}}
+	cmd.SetFlagErrorFunc(canonicalFlagError("run.get"))
+	return cmd
+}
+
+func newRunListCommand() *cobra.Command {
+	var issueID, envelopeID, status string
+	var limit int
+	cmd := &cobra.Command{Use: "list", Short: "List generic Runs.", Args: canonicalNoArgs("run.list"), RunE: func(cmd *cobra.Command, _ []string) error {
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.list", err)
+		}
+		items, err := workflow.ListRuns(workflow.RunListOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), IssueID: issueID, EnvelopeID: envelopeID, Status: status, Limit: limit})
+		if err != nil {
+			return renderRunError(cmd, "run.list", err)
+		}
+		if jsonMode, err := readJSONMode(cmd); err != nil {
+			return err
+		} else if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "run.list", map[string]any{"items": items}, nil)
+		}
+		for _, run := range items {
+			if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", run.ID, run.Status); err != nil {
+				return err
+			}
+		}
 		return nil
-	}
-	cloned := value
-	return &cloned
+	}}
+	cmd.Flags().StringVar(&issueID, "issue", "", "Issue ID")
+	cmd.Flags().StringVar(&envelopeID, "envelope", "", "Envelope ID")
+	cmd.Flags().StringVar(&status, "status", "", "Run status")
+	cmd.Flags().IntVar(&limit, "limit", 100, "Maximum Runs")
+	cmd.SetFlagErrorFunc(canonicalFlagError("run.list"))
+	return cmd
 }
 
-func changedOptionalFloat(cmd *cobra.Command, name string, value float64) *float64 {
-	if !cmd.Flags().Changed(name) {
-		return nil
-	}
-	cloned := value
-	return &cloned
+func runMutationFlags(cmd *cobra.Command, inputPath, actor, key *string) {
+	cmd.Flags().StringVar(inputPath, "input", "", "Run JSON input")
+	cmd.Flags().StringVar(actor, "actor", "", "Finalized activation actor ID")
+	cmd.Flags().StringVar(key, "idempotency-key", "", "Idempotency key")
+	cmd.SetFlagErrorFunc(canonicalFlagError(strings.ReplaceAll(rootCommandKey(cmd), " ", ".")))
 }
 
-func optionalInt(value *int) int {
-	if value == nil {
-		return 0
+func runRequest(cmd *cobra.Command, operation, inputPath, actor, key string, target any) error {
+	for _, flag := range []string{"input", "actor", "idempotency-key"} {
+		if err := requireCanonicalFlag(cmd, operation, flag); err != nil {
+			return err
+		}
 	}
-	return *value
+	if err := decodeClosedRunInput(cmd.InOrStdin(), inputPath, target); err != nil {
+		return renderRunError(cmd, operation, err)
+	}
+	return nil
 }
 
-func formatRunCost(value float64) string {
-	text := strconv.FormatFloat(value, 'f', 6, 64)
-	text = strings.TrimRight(text, "0")
-	text = strings.TrimRight(text, ".")
-	if text == "" {
-		return "0"
+func decodeClosedRunInput(stdin io.Reader, path string, target any) error {
+	var payload []byte
+	var err error
+	if path == "-" {
+		payload, err = io.ReadAll(io.LimitReader(stdin, 1_048_577))
+	} else {
+		payload, err = os.ReadFile(path)
 	}
-	return text
+	if err != nil {
+		return fmt.Errorf("read run input: %w", err)
+	}
+	if len(payload) > 1_048_576 {
+		return fmt.Errorf("run input exceeds 1048576 bytes")
+	}
+	decoder := json.NewDecoder(strings.NewReader(string(payload)))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(target); err != nil {
+		return fmt.Errorf("decode run input: %w", err)
+	}
+	var extra any
+	if err := decoder.Decode(&extra); err != io.EOF {
+		return fmt.Errorf("run input must contain one object")
+	}
+	return nil
+}
+
+func writeRunSuccess(cmd *cobra.Command, operation string, result workflow.RunMutationResult) error {
+	if jsonMode, err := readJSONMode(cmd); err != nil {
+		return err
+	} else if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), operation, map[string]any{"run": result.Run, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: runEventTime(result.Run)})
+	}
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "%s Run %s\n", result.Run.Status, result.Run.ID)
+	return err
+}
+
+func runEventTime(run workflow.Run) string {
+	if run.EndedAt != nil {
+		return *run.EndedAt
+	}
+	return run.StartedAt
+}
+
+func renderRunError(cmd *cobra.Command, operation string, cause error) error {
+	jsonMode, err := readJSONMode(cmd)
+	if err != nil {
+		return err
+	}
+	var notFound *workflow.RunNotFoundError
+	if errors.As(cause, &notFound) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunNotFound, "run was not found", &cli.Subject{Type: cli.SubjectRun, ID: notFound.ID}, map[string]any{"id": notFound.ID})
+	}
+	var inactive *workflow.RunInactiveError
+	if errors.As(cause, &inactive) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunInactive, "run is not active", &cli.Subject{Type: cli.SubjectRun, ID: inactive.RunID}, map[string]any{"run_id": inactive.RunID, "status": inactive.Status})
+	}
+	var denied *policy.EnvelopeAuthorityDeniedError
+	if errors.As(cause, &denied) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeAuthorityDenied, "active envelope authority is denied", nil, map[string]any{"operation": operation, "actor": denied.ActorID})
+	}
+	return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeInvalidArgument, "invalid Run request", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted " + operation + " input"}})
+}
+
+func writeRunFailure(cmd *cobra.Command, jsonMode bool, operation string, cause error, code cli.Code, message string, subject *cli.Subject, details map[string]any) error {
+	failure, err := cli.NewFailure(code, message, subject, details)
+	if err != nil {
+		return err
+	}
+	if !jsonMode {
+		_ = renderIssueError(cmd.ErrOrStderr(), cause)
+		return cli.NewFailureError(failure, cause)
+	}
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, fmt.Errorf("%s failed", operation))
 }

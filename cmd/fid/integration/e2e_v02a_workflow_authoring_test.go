@@ -78,7 +78,7 @@ func assertWholeProjectionRebuildParity(t *testing.T, binary, workspace, journal
 	beforeSchema := closureSchemaSnapshot(t, binary, workspace)
 	beforeJournal := closureJournalFileBytes(t, workspace)
 	assertClosureForeignKeysClean(t, binary, workspace)
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "tl")
+	closureRunFID(t, binary, workspace, "rebuild")
 	assertClosureJournalBytesEqual(t, journalPath, beforeJournal[filepath.Base(journalPath)], "rebuild")
 	assertClosureJournalFilesEqual(t, closureJournalFileBytes(t, workspace), beforeJournal, "rebuild")
 	assertClosureProjectedTablesEqual(t, closureProjectedTableSnapshots(t, binary, workspace), beforeTables)

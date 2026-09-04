@@ -35,7 +35,7 @@ func TestV01ParityFixtureRebuildPreservesEveryProjectionTable(t *testing.T) {
 	closureRunFID(t, binary, workspace, "--json", "issue", "get", "FID-a10001")
 	before := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 
-	closureRunFID(t, binary, workspace, "rebuild", "--by", "workflow_runner")
+	closureRunFID(t, binary, workspace, "rebuild")
 	after := parityProjectionDump(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if before != after {
 		t.Fatalf("fixture projection after rebuild differs:\n%s", parityDiff([]byte(before), []byte(after)))

@@ -18,7 +18,7 @@ func TestSQLCommandRejectsMutationAttemptsWithoutChangingProjectedCounts(t *test
 		"issue", "create",
 		"--kind", "task",
 		"--title", "SQL integration issue",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 	if issueID == "" {

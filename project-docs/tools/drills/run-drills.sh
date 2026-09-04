@@ -22,6 +22,7 @@
 #   drill-16  bounded QA finding routes to repair
 #   drill-17  protected triage and exhausted budget routes
 #   drill-18  bounded control-conformance routing, scope, and ledger directive
+#   drill-19  child-session polling and external-interruption accounting
 #
 # Agent drills (workspaces materialized with --agent; scored by a human using
 # each drill's DRILL.md and the SCORECARD.md):
@@ -304,6 +305,10 @@ run_route "drill-17 exhausted no-progress budget routes to triage" TRIAGE recove
 run_route "drill-18 control conformance defect routes to bounded repair" REPAIR control CONFORMANCE_DEFECT
 run_route "drill-18 control definition change routes through triage" TRIAGE control DEFINITION_CHANGE
 run_route "drill-18 ambiguous control change routes through triage" TRIAGE control AMBIGUOUS
+run_route "drill-19 parent wait timeout keeps child session live" WAIT session WAIT_TIMEOUT
+run_route "drill-19 live child session remains polled" WAIT session LIVE
+run_route "drill-19 first external interruption routes to recovery" REPAIR session INTERRUPTED 1
+run_route "drill-19 second external interruption routes to liveness triage" TRIAGE session INTERRUPTED 2
 
 # --- Drill 18: control-scope lint isolation and lifecycle ---
 scope_repo="$workspace/control-scope"
@@ -1411,7 +1416,7 @@ cat > "$ordinary_phase/triage-log.md" <<'EOF'
 - **Originating task:** task-1
 - **Trigger signature:** task-1:focused-test:legacy-assertion
 - **Repair category:** gate-repair
-- **Repair authority:** TRG-1-030 task spec
+- **Repair authority:** task-1 specification
 - **Attempt count:** 1
 - **Verdict:** REPAIR
 EOF
@@ -1430,7 +1435,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
 - Repair category: gate-repair
-- Repair authority: TRG-1-030 task spec
+- Repair authority: task-1 specification
 - Checkpoint: focused test failed on in-scope legacy assertion
 - Verdict: REPAIR
 - Resolution evidence: bounded same-task repair is authorized
@@ -1439,7 +1444,7 @@ cat > "$ordinary_repair" <<'EOF'
 - Source: TRG-1-030
 - Category: gate-repair
 - Repair mode: task-scope
-- Repair authority: TRG-1-030 task spec
+- Repair authority: task-1 specification
 - Triage disposition: N/A
 - Trigger signature: task-1:focused-test:legacy-assertion
 - Attempt count: 1
@@ -1461,6 +1466,83 @@ cat > "$ordinary_repair" <<'EOF'
 EOF
 run_sequence "drill-18 schema v2 ordinary TRIAGE binds exact recovery identity" \
   REPAIR_PENDING "$ordinary_repair"
+
+misbound_ordinary_source="$ordinary_phase/misbound-source.md"
+sed '0,/^- Source: TRG-1-030$/s//- Source: task-1 report/' \
+  "$ordinary_repair" > "$misbound_ordinary_source"
+run_invalid_sequence "drill-18 ordinary TRIAGE recovery Source retains its governing TRG" \
+  "does not preserve its governing schema v2 TRIAGE REPAIR authority" \
+  "$misbound_ordinary_source"
+
+pending_ordinary_repair="$ordinary_phase/pending-recovery-triage-repair.md"
+cat > "$pending_ordinary_repair" <<'EOF'
+### 2026-08-15 12:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 12:01 TASK-RECOVERY task-1
+- Source: task-1 report recovery
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 specification
+- Triage disposition: N/A
+- Trigger signature: task-1:gate-repair:initial-attempt
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: initial same-task recovery dispatched
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - classify the child blocker candidate
+- Next action: triage the child blocker candidate
+- Human attention required: no
+### 2026-08-15 12:02 TRIAGE TRG-1-030
+- Trigger: child blocker candidate is ordinary retained-assertion repair
+- Originating task: task-1
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Repair category: gate-repair
+- Repair authority: task-1 specification
+- Checkpoint: prior same-task recovery returned a blocker candidate
+- Verdict: REPAIR
+- Resolution evidence: bounded same-task repair is authorized
+- Triage log: unique phase triage entry confirmed
+### 2026-08-15 12:03 TASK-RECOVERY task-1
+- Source: TRG-1-030
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 specification
+- Triage disposition: N/A
+- Trigger signature: task-1:focused-test:legacy-assertion
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: TRG-1-030 replaces the returned same-task dispatch
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun the exact test
+- Next action: same-task repair and exact test rerun
+- Human attention required: no
+EOF
+run_sequence "drill-18 TRIAGE REPAIR replaces its pending same-task recovery" \
+  REPAIR_PENDING "$pending_ordinary_repair"
 
 misbound_ordinary_phase="$workspace/misbound-ordinary/phase-1"
 mkdir -p "$misbound_ordinary_phase"
@@ -2261,6 +2343,248 @@ cat >> "$third_no_progress_recovery" <<'EOF'
 EOF
 run_invalid_sequence "drill-18 exhausted no-progress budget cannot dispatch again" "requires TRIAGE" "$third_no_progress_recovery"
 
+interrupted_recovery="$workspace/interrupted-recovery.md"
+cat > "$interrupted_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: failed exact gate
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: one earlier reporting attempt made no progress
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: parent polling wait was misapplied as child cancellation
+- Elapsed session duration: 37m
+- Command in flight: none observed
+- Resolution evidence: child was externally interrupted before returning a typed result
+- Next checkpoint: another TASK-RECOVERY without consuming no-progress budget
+### 2026-08-15 10:03 TASK-RECOVERY task-1
+- Source: externally interrupted child session
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first externally interrupted continuation
+- Resolution evidence: PENDING - continue repair without charging no-progress
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+EOF
+run_sequence "drill-19 first interruption preserves prior no-progress count" REPAIR_PENDING "$interrupted_recovery"
+
+reset_after_interruption="$workspace/reset-after-interruption.md"
+sed '0,/Consecutive no-progress attempts: 1\/2/! s/Consecutive no-progress attempts: 1\/2/Consecutive no-progress attempts: 0\/2/' \
+  "$interrupted_recovery" > "$reset_after_interruption"
+run_invalid_sequence "drill-19 interruption cannot reset prior no-progress count" \
+  "expected 1/2" "$reset_after_interruption"
+
+missing_interruption_context="$workspace/missing-interruption-context.md"
+grep -v '^- Command in flight:' "$interrupted_recovery" > "$missing_interruption_context"
+run_invalid_sequence "drill-19 interrupted outcome requires liveness context" \
+  "INTERRUPTED REPAIR must record interruption cause, elapsed session duration, and command in flight" \
+  "$missing_interruption_context"
+
+twice_interrupted_recovery="$workspace/twice-interrupted-recovery.md"
+cat "$interrupted_recovery" > "$twice_interrupted_recovery"
+cat >> "$twice_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:04 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Control scope check: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: child execution surface ended externally
+- Elapsed session duration: 42m
+- Command in flight: go test -race ./...
+- Resolution evidence: a second consecutive child ended without a typed result
+- Next checkpoint: triage as orchestration session-liveness
+EOF
+run_sequence "drill-19 second interruption requires liveness triage" TRIAGE_PENDING "$twice_interrupted_recovery"
+
+third_interrupted_recovery="$workspace/third-interrupted-recovery.md"
+cat "$twice_interrupted_recovery" > "$third_interrupted_recovery"
+cat >> "$third_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:05 TASK-RECOVERY task-1
+- Source: retry after two external interruptions
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 3
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: two externally interrupted child sessions
+- Resolution evidence: PENDING - retry without liveness triage
+- Next action: retry the child directly
+- Human attention required: no
+EOF
+run_invalid_sequence "drill-19 two interruptions cannot bypass liveness triage" \
+  "orchestration session-liveness requires TRIAGE" "$third_interrupted_recovery"
+
+session_liveness_phase="$workspace/session-liveness/project-docs/docs/phases/phase-1"
+mkdir -p "$session_liveness_phase"
+cat > "$session_liveness_phase/triage-log.md" <<'EOF'
+## TRG-1-019 - orchestration session-liveness repair
+
+- **Originating task:** task-1
+- **Trigger signature:** task-1:gate-repair:exact-gate
+- **Attempt count:** 2
+- **Repair category:** session-continuation
+- **Repair authority:** task-1 spec
+- **Verdict:** REPAIR
+EOF
+triaged_interrupted_recovery="$session_liveness_phase/run-ledger.md"
+cat > "$triaged_interrupted_recovery" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 10:01 TASK-RECOVERY task-1
+- Source: failed exact gate
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: one earlier reporting attempt made no progress
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - repair and rerun
+- Next action: repair task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:02 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 1
+- Starting checkpoint: one earlier reporting attempt made no progress
+- Ending checkpoint: child ended before returning a typed result
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: parent polling wait was misapplied as child cancellation
+- Elapsed session duration: 37m
+- Command in flight: none observed
+- Resolution evidence: child was externally interrupted before returning a typed result
+- Next checkpoint: another TASK-RECOVERY without consuming no-progress budget
+### 2026-08-15 10:03 TASK-RECOVERY task-1
+- Source: externally interrupted child session
+- Category: gate-repair
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: first externally interrupted continuation
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - continue repair without charging no-progress
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+### 2026-08-15 10:04 REPAIR task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Starting checkpoint: first externally interrupted continuation
+- Ending checkpoint: second child ended before returning a typed result
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A for task-scope
+- Phase-branch integration: N/A for task-scope
+- Outcome: INTERRUPTED
+- Interruption cause: child execution surface ended externally
+- Elapsed session duration: 42m
+- Command in flight: go test -race ./...
+- Resolution evidence: a second consecutive child ended without a typed result
+- Next checkpoint: triage as orchestration session-liveness
+### 2026-08-15 10:05 TRIAGE TRG-1-019
+- Trigger: two consecutive child sessions ended before returning
+- Originating task: task-1
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 2
+- Repair category: session-continuation
+- Repair authority: task-1 spec
+- Checkpoint: second consecutive external interruption
+- Verdict: REPAIR
+- Resolution evidence: change the orchestration session shape before retrying
+- Triage log: orchestration session-liveness repair confirmed
+### 2026-08-15 10:06 TASK-RECOVERY task-1
+- Source: TRG-1-019 orchestration session-liveness repair
+- Category: session-continuation
+- Repair mode: task-scope
+- Repair authority: task-1 spec
+- Triage disposition: N/A
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Trigger signature: task-1:gate-repair:exact-gate
+- Attempt count: 3
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: liveness triage authorized a new child session
+- Phase worktree: workspace/phase-1 on phase-1; ledger-only dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - retry with the repaired session shape
+- Next action: continue task-1 and rerun the exact gate
+- Human attention required: no
+EOF
+run_sequence "drill-19 liveness triage advances attempt and preserves no-progress" \
+  REPAIR_PENDING "$triaged_interrupted_recovery"
+
+reset_after_liveness_triage="$session_liveness_phase/reset-no-progress.md"
+sed '/^### 2026-08-15 10:06 TASK-RECOVERY task-1$/,$ s/Consecutive no-progress attempts: 1\/2/Consecutive no-progress attempts: 0\/2/' \
+  "$triaged_interrupted_recovery" > "$reset_after_liveness_triage"
+run_invalid_sequence "drill-19 liveness triage cannot reset no-progress" \
+  "session-liveness TRIAGE repair changed" "$reset_after_liveness_triage"
+
 wrong_task="$workspace/wrong-task.md"
 cat > "$wrong_task" <<'EOF'
 ### 2026-08-15 10:00 RUN-START
@@ -2309,6 +2633,165 @@ cat > "$valid_qa" <<'EOF'
 - Re-review of: review-1
 EOF
 run_sequence "drill-16 lifecycle: QA repair closes on linked fresh re-review" ADVANCEABLE "$valid_qa"
+
+multi_owner_qa="$workspace/valid-multi-owner-qa-rereview.md"
+cat > "$multi_owner_qa" <<'EOF'
+### 2026-08-15 10:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v1
+### 2026-08-15 10:01 REVIEW review-1
+- Outcome: REPAIR
+- Owning task: task-1 , task-3
+- Re-review of: none
+### 2026-08-15 10:02 TASK-RECOVERY task-1
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 task-1 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-1 and continue the owner list
+- Human attention required: no
+### 2026-08-15 10:03 REPAIR task-1
+- Trigger signature: task-1:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-1 review finding repaired
+- Next checkpoint: next review owner
+### 2026-08-15 10:04 TASK task-1 COMPLETE
+### 2026-08-15 10:05 TASK-RECOVERY task-3
+- Source: review-1
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: review-1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: ordinary task scope
+- Forbidden changes: protected decisions and out-of-scope files
+- Trigger signature: task-3:qa-rework:review-1
+- Attempt count: 1
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: review-1 task-3 repair finding
+- Resolution evidence: PENDING - repair and re-review
+- Next action: repair task-3 and obtain linked re-review
+- Human attention required: no
+### 2026-08-15 10:06 REPAIR task-3
+- Trigger signature: task-3:qa-rework:review-1
+- Attempt count: 1
+- Control scope check: N/A for task-scope
+- Outcome: RESOLVED
+- Resolution evidence: task-3 review finding repaired
+- Next checkpoint: REVIEW
+### 2026-08-15 10:07 TASK task-3 COMPLETE
+### 2026-08-15 10:08 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_sequence "drill-16 multi-owner QA repair closes after every ordered owner" \
+  ADVANCEABLE "$multi_owner_qa"
+
+partial_multi_owner_qa="$workspace/partial-multi-owner-qa-rereview.md"
+sed '/^### 2026-08-15 10:05 TASK-RECOVERY task-3$/,$d' \
+  "$multi_owner_qa" > "$partial_multi_owner_qa"
+cat >> "$partial_multi_owner_qa" <<'EOF'
+### 2026-08-15 10:08 REVIEW review-1b
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+EOF
+run_invalid_sequence "drill-16 multi-owner QA repair cannot close after only its first owner" \
+  "QA re-review passed before owning task completed: task-1 , task-3" \
+  "$partial_multi_owner_qa"
+
+nonmember_multi_owner_qa="$workspace/nonmember-multi-owner-qa-recovery.md"
+sed '/^### 2026-08-15 10:03 REPAIR task-1$/,$d' "$multi_owner_qa" \
+  | sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$ {
+      s/TASK-RECOVERY task-1/TASK-RECOVERY task-2/
+      s/task-1:qa-rework:review-1/task-2:qa-rework:review-1/
+    }' > "$nonmember_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a nonmember recovery" \
+  "QA repair owner task-1 , task-3 does not match recovery task task-2" \
+  "$nonmember_multi_owner_qa"
+
+out_of_order_multi_owner_qa="$workspace/out-of-order-multi-owner-qa-recovery.md"
+sed '/^### 2026-08-15 10:03 REPAIR task-1$/,$d' "$multi_owner_qa" \
+  | sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$ {
+      s/TASK-RECOVERY task-1/TASK-RECOVERY task-3/
+      s/task-1:qa-rework:review-1/task-3:qa-rework:review-1/
+    }' > "$out_of_order_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair enforces owner order" \
+  "QA repair owner task-1 , task-3 requires recovery task task-1 before task-3" \
+  "$out_of_order_multi_owner_qa"
+
+duplicate_multi_owner_qa="$workspace/duplicate-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1, task-1/' \
+  > "$duplicate_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a duplicate owner" \
+  "REVIEW REPAIR has duplicate owning task task-1: review-1" \
+  "$duplicate_multi_owner_qa"
+
+malformed_multi_owner_qa="$workspace/malformed-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1, task-X/' \
+  > "$malformed_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects a malformed owner" \
+  "REVIEW REPAIR has invalid owning task task-X: review-1" \
+  "$malformed_multi_owner_qa"
+
+empty_multi_owner_qa="$workspace/empty-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: task-1,, task-3/' \
+  > "$empty_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair rejects an empty owner token" \
+  "REVIEW REPAIR has empty owning task: review-1" "$empty_multi_owner_qa"
+
+ownerless_multi_owner_qa="$workspace/ownerless-multi-owner-qa-review.md"
+sed '/^### 2026-08-15 10:02 TASK-RECOVERY task-1$/,$d' "$multi_owner_qa" \
+  | sed 's/- Owning task: task-1 , task-3/- Owning task: none/' \
+  > "$ownerless_multi_owner_qa"
+run_invalid_sequence "drill-16 multi-owner QA repair still rejects Owning task none" \
+  "REVIEW REPAIR has no owning task: review-1" "$ownerless_multi_owner_qa"
+
+duplicate_multi_owner_field="$review_phase/duplicate-multi-owner-field.md"
+cat > "$duplicate_multi_owner_field" <<'EOF'
+### 2026-08-15 09:00 RUN-START
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Branch: phase-1
+- ESC baseline (Open at run start): none
+- Warm-up/autonomous-resume state: warm-up complete
+- Starting task: task-1
+### 2026-08-15 09:01 REVIEW review-1
+- Path: project-docs/docs/phases/phase-1/qa/review-1.md
+- Tasks covered: task-1..task-3
+- Outcome: REPAIR
+- Owning task: task-1
+- Owning task: task-3
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0; QA minted no ESC
+EOF
+run_invalid_sequence "drill-16 multi-owner QA repair still rejects duplicate Owning task fields" \
+  "REVIEW must contain each review field exactly once" "$duplicate_multi_owner_field"
+
+run_end_during_multi_owner_qa="$workspace/run-end-during-multi-owner-qa.md"
+sed '/^### 2026-08-15 10:05 TASK-RECOVERY task-3$/,$d' \
+  "$multi_owner_qa" > "$run_end_during_multi_owner_qa"
+cat >> "$run_end_during_multi_owner_qa" <<'EOF'
+### 2026-08-15 10:08 RUN-END
+EOF
+run_invalid_sequence "drill-16 RUN-END cannot bypass an incomplete multi-owner repair" \
+  "RUN-END precedes completion of every QA repair owner: task-1 , task-3" \
+  "$run_end_during_multi_owner_qa"
 
 valid_sequential_qa="$workspace/valid-sequential-qa-repair.md"
 cat > "$valid_sequential_qa" <<'EOF'
@@ -2868,6 +3351,7 @@ Model/prompt configuration under test: <fill in>
 | drill-15 | live/missing command termination routes | workflow-route | auto |
 | drill-16 | QA repair route | workflow-route | auto |
 | drill-17 | protected stop and recovery budget | workflow-route | auto |
+| drill-19 | child-session liveness and interruption accounting | workflow-route / workflow-sequence-lint | auto |
 | drill-05 | weakened test | QA Reviewer | DETECTED / MISS |
 | drill-06 | unrecorded spec deviation | QA Reviewer | DETECTED / MISS |
 | drill-07 | stale doc claim | QA Reviewer | DETECTED / MISS |

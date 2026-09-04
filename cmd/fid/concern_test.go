@@ -1,110 +1,20 @@
 package main
 
 import (
-	"encoding/json"
-	"os"
+	"bytes"
+	"fmt"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
 func TestConcernRaiseCreatesConcernAndPrintsConfirmation(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
-
-	_, createStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "task",
-		"--title", "Raise CLI concern",
-		"--by", "developer",
-	)
-	issueID := parseCreatedIssueID(t, createStderr)
-
-	_, completeStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	completionID := parseCompletionID(t, completeStderr)
-
-	bodyPath := filepath.Join(workspace, "concern.md")
-	if err := os.WriteFile(bodyPath, []byte("# Concern\n\nNeeds follow-up.\n"), 0o644); err != nil {
-		t.Fatalf("WriteFile(%q) error = %v", bodyPath, err)
-	}
-
-	_, stderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", completionID,
-		"--summary", "Potential race condition",
-		"--body-md", bodyPath,
-	)
-
-	if !strings.Contains(stderr, "raised concern CON-") {
-		t.Fatalf("stderr = %q, want concern confirmation", stderr)
-	}
-	if !strings.Contains(stderr, issueID) {
-		t.Fatalf("stderr = %q, want issue id", stderr)
-	}
-	if !strings.Contains(stderr, `"Potential race condition"`) {
-		t.Fatalf("stderr = %q, want summary", stderr)
-	}
-
-	concernsStdout, concernsStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
-	if concernsStderr != "" {
-		t.Fatalf("issue get concerns stderr = %q, want empty", concernsStderr)
-	}
-
-	var concerns []struct {
-		ID                   string  `json:"id"`
-		RaisedInCompletionID string  `json:"raised_in_completion_id"`
-		RaisedByRole         string  `json:"raised_by_role"`
-		Summary              string  `json:"summary"`
-		BodyMDPath           *string `json:"body_md_path"`
-		Status               string  `json:"status"`
-	}
-	if err := json.Unmarshal([]byte(concernsStdout), &concerns); err != nil {
-		t.Fatalf("Unmarshal(concerns) error = %v", err)
-	}
-	if len(concerns) != 1 {
-		t.Fatalf("concerns len = %d, want 1", len(concerns))
-	}
-	if !strings.HasPrefix(concerns[0].ID, "CON-") {
-		t.Fatalf("concern id = %q, want CON- prefix", concerns[0].ID)
-	}
-	if concerns[0].RaisedInCompletionID != completionID {
-		t.Fatalf("raised_in_completion_id = %q, want %q", concerns[0].RaisedInCompletionID, completionID)
-	}
-	if concerns[0].RaisedByRole != "developer" {
-		t.Fatalf("raised_by_role = %q, want developer", concerns[0].RaisedByRole)
-	}
-	if concerns[0].Summary != "Potential race condition" {
-		t.Fatalf("summary = %q, want summary", concerns[0].Summary)
-	}
-	if concerns[0].BodyMDPath == nil || *concerns[0].BodyMDPath != bodyPath {
-		t.Fatalf("body_md_path = %#v, want %q", concerns[0].BodyMDPath, bodyPath)
-	}
-	if concerns[0].Status != "open" {
-		t.Fatalf("status = %q, want open", concerns[0].Status)
-	}
-
-	openConcerns := 0
-	for _, concern := range concerns {
-		if concern.Status == "open" {
-			openConcerns++
-		}
-	}
-	if openConcerns != 1 {
-		t.Fatalf("open concerns = %d, want 1", openConcerns)
-	}
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "raise", "--on", "FID-task01", "--actor", "agent:developer", "--in-completion", "TC-000001", "--summary", "Potential race condition"})
 }
 
 func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
@@ -117,7 +27,7 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 		workspace,
 		"concern", "raise",
 		"--on", "FID-task01",
-		"--by", "developer",
+		"--actor", "agent:developer",
 		"--in-completion", "TC-000001",
 	)
 	if err == nil {
@@ -126,8 +36,8 @@ func TestConcernRaiseRequiresSummaryFlag(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "error: --summary is required") {
-		t.Fatalf("stderr = %q, want missing summary error", stderr)
+	if !strings.Contains(stderr, "capability is unavailable") {
+		t.Fatalf("stderr = %q, want typed capability-unavailable error", stderr)
 	}
 }
 
@@ -136,128 +46,7 @@ func TestConcernAddressUpdatesConcernAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "create",
-		"--kind", "task",
-		"--title", "Address CLI concern",
-		"--by", "developer",
-	)
-	issueID := parseCreatedIssueID(t, createStderr)
-
-	_, firstCompleteStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
-
-	_, raiseStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", firstCompletionID,
-		"--summary", "Needs follow-up",
-	)
-	concernID := parseConcernID(t, raiseStderr)
-
-	_, secondCompleteStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	addressCompletionID := parseCompletionID(t, secondCompleteStderr)
-
-	_, addressStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "address", concernID,
-		"--in-completion", addressCompletionID,
-		"--by", "developer",
-	)
-
-	if !strings.Contains(addressStderr, "addressed concern "+concernID) {
-		t.Fatalf("stderr = %q, want addressed concern confirmation", addressStderr)
-	}
-	if !strings.Contains(addressStderr, addressCompletionID) {
-		t.Fatalf("stderr = %q, want addressing completion id", addressStderr)
-	}
-
-	concernsStdout, concernsStderr := runFIDCommand(t, workspace, "concern", "list", "--issue", issueID)
-	if concernsStderr != "" {
-		t.Fatalf("issue get concerns stderr = %q, want empty", concernsStderr)
-	}
-
-	var concerns []struct {
-		ID                      string  `json:"id"`
-		Status                  string  `json:"status"`
-		UpdatedAt               string  `json:"updated_at"`
-		RaisedInCompletionID    string  `json:"raised_in_completion_id"`
-		AddressedInCompletionID *string `json:"addressed_in_completion_id"`
-	}
-	if err := json.Unmarshal([]byte(concernsStdout), &concerns); err != nil {
-		t.Fatalf("Unmarshal(concerns) error = %v", err)
-	}
-	if len(concerns) != 1 {
-		t.Fatalf("concerns len = %d, want 1", len(concerns))
-	}
-	if concerns[0].ID != concernID {
-		t.Fatalf("concern id = %q, want %q", concerns[0].ID, concernID)
-	}
-	if concerns[0].Status != "addressed" {
-		t.Fatalf("status = %q, want addressed", concerns[0].Status)
-	}
-	if concerns[0].AddressedInCompletionID == nil || *concerns[0].AddressedInCompletionID != addressCompletionID {
-		t.Fatalf("addressed_in_completion_id = %#v, want %q", concerns[0].AddressedInCompletionID, addressCompletionID)
-	}
-
-	listStdout, listStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "list",
-		"--issue", issueID,
-	)
-	if listStderr != "" {
-		t.Fatalf("concern list stderr = %q, want empty", listStderr)
-	}
-
-	var listedConcerns []struct {
-		ID                      string  `json:"id"`
-		Status                  string  `json:"status"`
-		AddressedInCompletionID *string `json:"addressed_in_completion_id"`
-	}
-	if err := json.Unmarshal([]byte(listStdout), &listedConcerns); err != nil {
-		t.Fatalf("Unmarshal(concern list) error = %v", err)
-	}
-	if len(listedConcerns) != 1 {
-		t.Fatalf("listed concerns len = %d, want 1", len(listedConcerns))
-	}
-	if listedConcerns[0].ID != concernID {
-		t.Fatalf("listed concern id = %q, want %q", listedConcerns[0].ID, concernID)
-	}
-	if listedConcerns[0].Status != "addressed" {
-		t.Fatalf("listed concern status = %q, want addressed", listedConcerns[0].Status)
-	}
-	if listedConcerns[0].AddressedInCompletionID == nil || *listedConcerns[0].AddressedInCompletionID != addressCompletionID {
-		t.Fatalf("listed addressed_in_completion_id = %#v, want %q", listedConcerns[0].AddressedInCompletionID, addressCompletionID)
-	}
-
-	openConcerns := 0
-	for _, concern := range listedConcerns {
-		if concern.Status == "open" {
-			openConcerns++
-		}
-	}
-	if openConcerns != 0 {
-		t.Fatalf("open concerns = %d, want 0", openConcerns)
-	}
+	assertConcernMutationUnavailable(t, workspace, []string{"concern", "address", "CON-test", "--actor", "human:reviewer", "--in-completion", "TC-000001"})
 }
 
 func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
@@ -269,7 +58,7 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 		t,
 		workspace,
 		"concern", "address", "CON-test",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if err == nil {
 		t.Fatal("Execute() error = nil, want missing completion rejection")
@@ -277,8 +66,8 @@ func TestConcernAddressRequiresCompletionFlag(t *testing.T) {
 	if stdout != "" {
 		t.Fatalf("stdout = %q, want empty", stdout)
 	}
-	if !strings.Contains(stderr, "error: --in-completion is required") {
-		t.Fatalf("stderr = %q, want missing completion error", stderr)
+	if !strings.Contains(stderr, "capability is unavailable") {
+		t.Fatalf("stderr = %q, want typed capability-unavailable error", stderr)
 	}
 }
 
@@ -373,30 +162,17 @@ func TestConcernListUsesDirectLegacyJSON(t *testing.T) {
 	}
 }
 
-func parseCompletionID(t *testing.T, stderr string) string {
+func assertConcernMutationUnavailable(t *testing.T, workspace string, args []string) {
 	t.Helper()
-
-	for _, line := range strings.Split(stderr, "\n") {
-		line = strings.TrimSpace(line)
-		if strings.HasPrefix(line, "completion: ") {
-			return strings.TrimSpace(strings.TrimPrefix(line, "completion: "))
-		}
+	journalPath := mustJournalPath(t, workspace)
+	before := mustReadCommandFile(t, journalPath)
+	result := executeCommandForTest(workspace, args...)
+	if result.err == nil || result.stdout != "" || !strings.Contains(result.stderr, "capability is unavailable") {
+		t.Fatalf("concern mutation %v = %#v, want typed capability-unavailable rejection", args, result)
 	}
-	t.Fatalf("stderr = %q, want completion line", stderr)
-	return ""
-}
-
-func parseConcernID(t *testing.T, stderr string) string {
-	t.Helper()
-
-	fields := strings.Fields(stderr)
-	for index := range fields {
-		if fields[index] == "concern" && index+1 < len(fields) {
-			return strings.TrimSpace(fields[index+1])
-		}
+	if after := mustReadCommandFile(t, journalPath); !bytes.Equal(after, before) {
+		t.Fatalf("concern mutation %v changed journal bytes", args)
 	}
-	t.Fatalf("stderr = %q, want concern line", stderr)
-	return ""
 }
 
 func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, address bool) (string, string) {
@@ -408,52 +184,54 @@ func seedConcernListIssueAndConcern(t *testing.T, workspace, summary string, add
 		"issue", "create",
 		"--kind", "task",
 		"--title", summary,
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	_, firstCompleteStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	firstCompletionID := parseCompletionID(t, firstCompleteStderr)
+	firstCompletionID := fmt.Sprintf("TC-%s-raised", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
+	seedFrozenTaskCompletion(t, workspace, firstCompletionID, issueID)
 
-	_, raiseStderr := runFIDCommand(
-		t,
-		workspace,
-		"concern", "raise",
-		"--on", issueID,
-		"--by", "developer",
-		"--in-completion", firstCompletionID,
-		"--summary", summary,
-	)
-	concernID := parseConcernID(t, raiseStderr)
-
-	if !address {
-		return issueID, concernID
+	concernID := fmt.Sprintf("CON-%s", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
+	addressCompletionID := ""
+	if address {
+		addressCompletionID = fmt.Sprintf("TC-%s-addressed", strings.ToUpper(strings.ReplaceAll(summary, " ", "")))
+		seedFrozenTaskCompletion(t, workspace, addressCompletionID, issueID)
 	}
-
-	_, secondCompleteStderr := runFIDCommand(
-		t,
-		workspace,
-		"issue", "complete",
-		issueID,
-		"--by", "developer",
-	)
-	addressCompletionID := parseCompletionID(t, secondCompleteStderr)
-
-	_, _ = runFIDCommand(
-		t,
-		workspace,
-		"concern", "address", concernID,
-		"--in-completion", addressCompletionID,
-		"--by", "developer",
-	)
-
+	status := "open"
+	var addressed any
+	if address {
+		status = "addressed"
+		addressed = addressCompletionID
+	}
+	seedConcernProjection(t, workspace, concernID, issueID, firstCompletionID, summary, status, addressed)
 	return issueID, concernID
+}
+
+func seedFrozenTaskCompletion(t *testing.T, workspace, completionID, issueID string) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open frozen completion projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	if _, err := conn.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number, developer_role, status, completed_at) VALUES (?, ?, ?, ?, ?, datetime('now'))`, completionID, issueID, 1, "developer", "dev_complete"); err != nil {
+		t.Fatalf("seed frozen completion projection: %v", err)
+	}
+}
+
+func seedConcernProjection(t *testing.T, workspace, concernID, issueID, raisedCompletionID, summary, status string, addressedCompletionID any) {
+	t.Helper()
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open concern projection: %v", err)
+	}
+	defer closeCommandDB(t, conn)
+	if _, err := conn.Exec(`
+		INSERT INTO concerns (id, issue_id, raised_in_completion_id, raised_by_role, summary, status, addressed_in_completion_id, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
+	`, concernID, issueID, raisedCompletionID, "developer", summary, status, addressedCompletionID); err != nil {
+		t.Fatalf("seed concern projection: %v", err)
+	}
 }
 
 func commandConcernListIDs(rows []any) []string {

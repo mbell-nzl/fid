@@ -1,0 +1,5 @@
+{
+  "operation": "export.create",
+  "command": "fid export create \u003carchive-path\u003e",
+  "kind": "accepted"
+}

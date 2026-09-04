@@ -1,0 +1,5 @@
+{
+  "operation": "envelope.activate",
+  "command": "fid envelope activate",
+  "kind": "accepted"
+}

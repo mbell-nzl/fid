@@ -1,0 +1,5 @@
+{
+  "operation": "maintenance.vacuum",
+  "command": "fid maintenance vacuum",
+  "kind": "fail-closed"
+}

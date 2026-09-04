@@ -2,9 +2,9 @@ package labels
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -12,13 +12,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/validation"
-)
-
-const (
-	actionLabelAdd = "label.add"
-	fidVersion     = "0.1.0"
 )
 
 type DuplicateLabelError struct {
@@ -33,16 +27,23 @@ func (err *DuplicateLabelError) Error() string {
 }
 
 func Add(options AddOptions) (AddResult, error) {
-	name, colour, description, commandArgv, err := prepareLabelAdd(options)
+	name, colour, description, actor, commandArgv, err := prepareLabelAdd(options)
+	if err != nil {
+		return AddResult{}, err
+	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return AddResult{}, err
+	}
+	digest, err := labelRequestDigest("label.add", projectConfig.ProjectID, actor, map[string]any{"colour": colour, "description": description, "name": name})
 	if err != nil {
 		return AddResult{}, err
 	}
 	var result AddResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
-		return addLabelLocked(lock, options, name, colour, description, commandArgv, &result)
+		return addLabelLocked(lock, options, actor, name, colour, description, digest, &result)
 	})
 	if err != nil {
 		return AddResult{}, err
@@ -51,37 +52,38 @@ func Add(options AddOptions) (AddResult, error) {
 	return result, nil
 }
 
-func prepareLabelAdd(options AddOptions) (string, *string, *string, []string, error) {
+func prepareLabelAdd(options AddOptions) (string, *string, *string, standaloneActor, []string, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" {
-		return "", nil, nil, nil, fmt.Errorf("label add: workspace root is required")
+		return "", nil, nil, standaloneActor{}, nil, fmt.Errorf("label add: workspace root is required")
 	}
 	if strings.TrimSpace(options.MigrationsDir) == "" {
-		return "", nil, nil, nil, fmt.Errorf("label add: migrations dir is required")
+		return "", nil, nil, standaloneActor{}, nil, fmt.Errorf("label add: migrations dir is required")
 	}
 
 	if strings.TrimSpace(options.Name) == "" {
-		return "", nil, nil, nil, fmt.Errorf("label add: label name is required")
+		return "", nil, nil, standaloneActor{}, nil, fmt.Errorf("label add: label name is required")
 	}
 	name, err := validation.NormalizeText("label name", options.Name, 255)
 	if err != nil {
-		return "", nil, nil, nil, err
+		return "", nil, nil, standaloneActor{}, nil, err
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionLabelAdd); err != nil {
-		return "", nil, nil, nil, err
+	actor, err := standaloneActorForOptions(options.Actor)
+	if err != nil {
+		return "", nil, nil, standaloneActor{}, nil, err
 	}
 
 	colour, err := normalizeOptionalLabelText("label colour", options.Colour, 64)
 	if err != nil {
-		return "", nil, nil, nil, err
+		return "", nil, nil, standaloneActor{}, nil, err
 	}
 	description, err := normalizeOptionalLabelText("label description", options.Description, 4096)
 	if err != nil {
-		return "", nil, nil, nil, err
+		return "", nil, nil, standaloneActor{}, nil, err
 	}
-	return name, colour, description, labelAddArgv(name, colour, description, options.ActorRole), nil
+	return name, colour, description, actor, labelAddArgv(name, colour, description, options.Actor, options.IdempotencyKey), nil
 }
 
-func addLabelLocked(lock *journal.WriteLock, options AddOptions, name string, colour, description *string, commandArgv []string, result *AddResult) error {
+func addLabelLocked(lock *journal.WriteLock, options AddOptions, actor standaloneActor, name string, colour, description *string, digest string, result *AddResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
 	}
@@ -92,47 +94,51 @@ func addLabelLocked(lock *journal.WriteLock, options AddOptions, name string, co
 	}
 	defer closeLabelsConn(conn)
 
-	if err := requireMissingLabel(conn, name); err != nil {
-		return err
-	}
-
-	event, err := prepareLabelAddEvent(lock, name, colour, description, options.ActorRole, commandArgv)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
 	if err != nil {
 		return err
 	}
-	if err := appendAndProjectLabelEvent(options.WorkspaceRoot, lock, conn, event); err != nil {
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "label.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+		return err
+	} else if found {
+		decoded, err := labelResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+		if err != nil {
+			return err
+		}
+		*result = decoded
+		return nil
+	}
+	if err := requireMissingLabel(conn, name); err != nil {
 		return err
 	}
-
-	*result = AddResult{Label: Label{Name: name, Colour: colour, Description: description}, EventID: event.EventID, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano)}
+	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: name, Type: "label"})
+	if err != nil {
+		return err
+	}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "label.added", ActorV2: actor.eventActor(), Aggregate: journal.Aggregate{ID: name, Sequence: sequence, Type: "label"}, CommandName: "label.add", Effects: []journal.Effect{{Op: "insert", Table: "labels", PK: map[string]any{"name": name}, Values: labelAddEffectValues(colour, description)}}}
+	seed := AddResult{Label: Label{Name: name, Colour: colour, Description: description}, IdempotencyKey: options.IdempotencyKey}
+	outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+		seed.OccurredAt = prepared.OccurredAt.UTC().Format(time.RFC3339Nano)
+		encoded, err := labelResultJSON(seed)
+		if err != nil {
+			return journal.IdempotencyMutation{}, err
+		}
+		return journal.IdempotencyMutation{EntityID: name, ResultJSON: encoded}, nil
+	})
+	if err != nil {
+		return err
+	}
+	decoded, err := labelResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+	if err != nil {
+		return err
+	}
+	*result = decoded
 	return nil
 }
 
 func openLabelsProjectDB(workspaceRoot string) (*sql.DB, error) {
 	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
-}
-
-func prepareLabelAddEvent(lock *journal.WriteLock, name string, colour, description *string, actorRole string, commandArgv []string) (journal.Event, error) {
-	return journal.PrepareEvent(lock, journal.Event{
-		EventSchema: journal.CurrentEventSchema,
-		EventType:   "label.added",
-		Actor: journal.Actor{
-			Role: actorRole,
-		},
-		Command: journal.Command{
-			Argv:       commandArgv,
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{
-			{
-				Op:     "insert",
-				Table:  "labels",
-				PK:     map[string]any{"name": name},
-				Values: labelAddEffectValues(colour, description),
-			},
-		},
-	})
 }
 
 func labelAddEffectValues(colour, description *string) map[string]any {
@@ -144,18 +150,6 @@ func labelAddEffectValues(colour, description *string) map[string]any {
 		values["description"] = *description
 	}
 	return values
-}
-
-func appendAndProjectLabelEvent(workspaceRoot string, lock *journal.WriteLock, conn *sql.DB, event journal.Event) error {
-	if err := journal.DryRunProjectEvent(conn, event); err != nil {
-		return err
-	}
-
-	appended, err := journal.AppendEvent(lock, event)
-	if err != nil {
-		return err
-	}
-	return projectLabelsEvent(workspaceRoot, conn, appended)
 }
 
 func requireMissingLabel(conn *sql.DB, name string) error {
@@ -170,7 +164,7 @@ func requireMissingLabel(conn *sql.DB, name string) error {
 	return fmt.Errorf("query label %q: %w", name, err)
 }
 
-func labelAddArgv(name string, colour, description *string, actorRole string) []string {
+func labelAddArgv(name string, colour, description *string, actor, key string) []string {
 	argv := []string{"fid", "label", "add", name}
 	if colour != nil {
 		argv = append(argv, "--colour", *colour)
@@ -178,41 +172,7 @@ func labelAddArgv(name string, colour, description *string, actorRole string) []
 	if description != nil {
 		argv = append(argv, "--description", *description)
 	}
-	return append(argv, "--by", actorRole)
-}
-
-func projectLabelsEvent(workspaceRoot string, conn *sql.DB, event journal.Event) error {
-	eventHash, err := journal.HashEvent(event)
-	if err != nil {
-		return fmt.Errorf("hash label event %q: %w", event.EventID, err)
-	}
-
-	journalFile := event.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-	info, err := os.Stat(journalPath)
-	if err != nil {
-		return fmt.Errorf("stat label journal %q: %w", journalPath, err)
-	}
-
-	return journal.ProjectEvent(conn, journal.ProjectionInput{
-		Event:     event,
-		EventHash: eventHash,
-		File:      journalFile,
-		Line:      countJournalLines(journalPath),
-		Offset:    info.Size(),
-	})
-}
-
-func countJournalLines(path string) int {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return 0
-	}
-	trimmed := strings.TrimSpace(string(payload))
-	if trimmed == "" {
-		return 0
-	}
-	return len(strings.Split(trimmed, "\n"))
+	return append(argv, "--actor", actor, "--idempotency-key", key)
 }
 
 func normalizeOptionalLabelText(field string, value *string, maximumBytes int) (*string, error) {
@@ -228,4 +188,21 @@ func normalizeOptionalLabelText(field string, value *string, maximumBytes int) (
 
 func closeLabelsConn(conn *sql.DB) {
 	_ = conn.Close()
+}
+
+func labelResultJSON(result AddResult) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"event_occurred_at": result.OccurredAt, "idempotency_key": result.IdempotencyKey, "label": result.Label, "replayed": false})
+	return string(payload), err
+}
+
+func labelResultFromJSON(raw, eventID string, replayed bool) (AddResult, error) {
+	var value struct {
+		OccurredAt     string `json:"event_occurred_at"`
+		IdempotencyKey string `json:"idempotency_key"`
+		Label          Label  `json:"label"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return AddResult{}, fmt.Errorf("decode stored label add result: %w", err)
+	}
+	return AddResult{Label: value.Label, EventID: eventID, OccurredAt: value.OccurredAt, IdempotencyKey: value.IdempotencyKey, Replayed: replayed}, nil
 }

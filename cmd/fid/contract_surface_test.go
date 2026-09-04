@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -18,10 +19,162 @@ import (
 	"github.com/spf13/pflag"
 )
 
+func TestPhase21AttentionBoundary(t *testing.T) {
+	t.Parallel()
+	workspace := clonePristineWorkspace(t)
+	discovery := executeCommandForTest(workspace, "--json", "capabilities")
+	if discovery.err != nil || discovery.stderr != "" {
+		t.Fatalf("capability discovery = %#v, want stdout-only success", discovery)
+	}
+
+	var envelope struct {
+		Result struct {
+			Items []struct {
+				Available    bool           `json:"available"`
+				CapabilityID string         `json:"capability_id"`
+				Limits       map[string]any `json:"limits"`
+				SchemaMax    int            `json:"schema_max"`
+				SchemaMin    int            `json:"schema_min"`
+				TrustSource  string         `json:"trust_source"`
+			} `json:"items"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(discovery.stdout), &envelope); err != nil {
+		t.Fatalf("decode capability discovery = %v", err)
+	}
+
+	var matches []struct {
+		Available    bool           `json:"available"`
+		CapabilityID string         `json:"capability_id"`
+		Limits       map[string]any `json:"limits"`
+		SchemaMax    int            `json:"schema_max"`
+		SchemaMin    int            `json:"schema_min"`
+		TrustSource  string         `json:"trust_source"`
+	}
+	for _, item := range envelope.Result.Items {
+		if item.CapabilityID == "attention.v1" {
+			matches = append(matches, item)
+		}
+	}
+	if len(matches) != 1 {
+		t.Fatalf("attention capability rows = %#v, want one canonical unavailable row", matches)
+	}
+	if got, want := matches[0], (struct {
+		Available    bool           `json:"available"`
+		CapabilityID string         `json:"capability_id"`
+		Limits       map[string]any `json:"limits"`
+		SchemaMax    int            `json:"schema_max"`
+		SchemaMin    int            `json:"schema_min"`
+		TrustSource  string         `json:"trust_source"`
+	}{
+		Available:    false,
+		CapabilityID: "attention.v1",
+		Limits:       map[string]any{"state": false},
+		SchemaMax:    1,
+		SchemaMin:    1,
+		TrustSource:  "phase-22-unavailable",
+	}); !reflect.DeepEqual(got, want) {
+		t.Fatalf("attention capability row = %#v, want %#v", got, want)
+	}
+
+	journalPath := mustJournalPath(t, workspace)
+	journalBefore := mustReadCommandFile(t, journalPath)
+	projectionBefore := commandProjectionTableCounts(t, workspace)
+	probe := executeCommandForTest(workspace, "--json", "attention", "list")
+	if probe.err == nil || probe.stdout != "" || !strings.Contains(probe.err.Error(), `unknown command "attention"`) {
+		t.Fatalf("fid --json attention list = %#v, want unavailable no-leaf rejection", probe)
+	}
+	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
+		t.Fatal("fid --json attention list changed journal bytes")
+	}
+	if projectionAfter := commandProjectionTableCounts(t, workspace); !reflect.DeepEqual(projectionAfter, projectionBefore) {
+		t.Fatalf("fid --json attention list changed projection counts: got %#v, want %#v", projectionAfter, projectionBefore)
+	}
+
+	if got, want := phase21AttentionProductionMatches(t), []string{
+		"internal/workflow/capabilities.go:{\"attention.v1\", false, `{\"state\":false}`, \"phase-22-unavailable\"},",
+	}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("production Attention matches = %v, want exactly %v", got, want)
+	}
+}
+
+func phase21AttentionProductionMatches(t *testing.T) []string {
+	t.Helper()
+	repoRoot := commandTestRepositoryRoot(t)
+	var matches []string
+	for _, root := range []string{
+		filepath.Join(repoRoot, "cmd", "fid"),
+		filepath.Join(repoRoot, "internal"),
+		filepath.Join(repoRoot, "migrations"),
+	} {
+		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if entry.IsDir() || (filepath.Ext(path) != ".go" && filepath.Ext(path) != ".sql") || strings.HasSuffix(path, "_test.go") {
+				return nil
+			}
+			content, err := os.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			relative, err := filepath.Rel(repoRoot, path)
+			if err != nil {
+				return err
+			}
+			for _, line := range strings.Split(string(content), "\n") {
+				lower := strings.ToLower(line)
+				if strings.Contains(lower, "attention") || strings.Contains(lower, "attention_items") {
+					matches = append(matches, filepath.ToSlash(relative)+":"+strings.TrimSpace(line))
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("inventory %q: %v", root, err)
+		}
+	}
+	sort.Strings(matches)
+	return matches
+}
+
 func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
+	t.Parallel()
 	retained := []string{
+		"capabilities",
+		"activation prepare",
+		"activation component",
+		"activation commit",
+		"activation abort",
+		"activation finalize",
+		"activation status",
+		"artifact verify",
+		"gate register",
+		"gate resolve",
+		"gate run",
+		"envelope create",
+		"envelope get",
+		"envelope activate",
+		"envelope complete",
+		"evidence link",
+		"evidence get",
+		"evidence evaluate",
+		"export create",
+		"export validate",
+		"claim acquire",
+		"claim renew",
+		"claim release",
+		"claim list",
+		"run start",
+		"run finish",
+		"run get",
+		"run list",
+		"run",
+		"receipt get",
+		"receipt list",
 		"init",
 		"rebuild",
+		"resume",
 		"issue create",
 		"issue get",
 		"issue list",
@@ -29,8 +182,10 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"issue transition",
 		"issue ac add",
 		"issue ac list",
+		"issue ac verify",
 		"issue label add",
 		"issue label remove",
+		"issue",
 		"label add",
 		"label list",
 		"link add",
@@ -41,35 +196,21 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"workflow assign",
 		"workflow list",
 		"maintenance check",
-	}
-	legacy := []string{
-		"policy show",
-		"dev start",
-		"dev gate",
-		"dev finish",
-		"dev block",
-		"claim list",
-		"run record",
-		"issue claim",
-		"issue unclaim",
-		"issue complete",
+		"maintenance vacuum",
 		"activity list",
 		"concern list",
 		"concern address",
 		"concern raise",
 		"requirement sync",
-		"issue ac verify",
 		"stats tokens",
 		"stats cost",
-		"sql",
-		"journal inspect",
-		"maintenance vacuum",
 	}
+	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 21 || len(legacy) != 21 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 21 each", len(retained), len(legacy))
+	if len(retained) != 63 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 63 and 2", len(retained), len(legacy))
 	}
-	want := append(append([]string{}, retained...), legacy...)
+	want := append(append(append([]string{}, retained...), "export"), legacy...)
 	sort.Strings(want)
 	got := liveExecutableLeafCommands(newRootCommandAt(t.TempDir()))
 	if !reflect.DeepEqual(got, want) {
@@ -78,8 +219,12 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 
 	wantCapabilities := make(map[string]rootFlagCapability, len(retained))
 	for _, command := range retained {
+		if command == "issue" || command == "run" {
+			continue
+		}
 		wantCapabilities[command] = rootFlagCapability{Project: true, JSON: true}
 	}
+	wantCapabilities["export"] = rootFlagCapability{Project: true, JSON: true}
 	if !reflect.DeepEqual(rootFlagCapabilities, wantCapabilities) {
 		t.Fatalf("root flag capabilities = %#v, want exact retained inventory %#v", rootFlagCapabilities, wantCapabilities)
 	}
@@ -100,27 +245,8 @@ type legacyLeafInvocation struct {
 
 func legacyLeafInvocations() []legacyLeafInvocation {
 	return []legacyLeafInvocation{
-		{command: "policy show", args: []string{"policy", "show"}},
-		{command: "dev start", args: []string{"dev", "start", "FID-legacy"}},
-		{command: "dev gate", args: []string{"dev", "gate", "FID-legacy"}},
-		{command: "dev finish", args: []string{"dev", "finish", "FID-legacy"}},
-		{command: "dev block", args: []string{"dev", "block", "FID-legacy"}},
-		{command: "claim list", args: []string{"claim", "list"}},
-		{command: "run record", args: []string{"run", "record"}},
-		{command: "issue claim", args: []string{"issue", "claim", "FID-legacy"}},
-		{command: "issue unclaim", args: []string{"issue", "unclaim", "FID-legacy"}},
-		{command: "issue complete", args: []string{"issue", "complete", "FID-legacy"}},
-		{command: "activity list", args: []string{"activity", "list"}},
-		{command: "concern list", args: []string{"concern", "list"}},
-		{command: "concern address", args: []string{"concern", "address", "CON-legacy"}},
-		{command: "concern raise", args: []string{"concern", "raise"}},
-		{command: "requirement sync", args: []string{"requirement", "sync"}},
-		{command: "issue ac verify", args: []string{"issue", "ac", "verify", "FID-legacy", "AC-legacy"}},
-		{command: "stats tokens", args: []string{"stats", "tokens"}},
-		{command: "stats cost", args: []string{"stats", "cost"}},
 		{command: "sql", args: []string{"sql", "SELECT 1"}},
 		{command: "journal inspect", args: []string{"journal", "inspect", "EVT-legacy"}},
-		{command: "maintenance vacuum", args: []string{"maintenance", "vacuum"}},
 	}
 }
 
@@ -169,6 +295,7 @@ func liveExecutableLeafCommands(root *cobra.Command) []string {
 }
 
 func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
+	t.Parallel()
 	repoRoot := commandTestRepositoryRoot(t)
 	allowed := map[string]bool{
 		"TestIssueGetRejectsRetiredFormatFlags":                                     true,
@@ -219,6 +346,7 @@ func TestLiveTestsContainNoUniversalFormatInvocation(t *testing.T) {
 }
 
 func TestLiveCobraTreeContainsNoUniversalFormatFlags(t *testing.T) {
+	t.Parallel()
 	root := newRootCommandAt(t.TempDir())
 	if violations := liveUniversalFormatFlagViolations(root); len(violations) != 0 {
 		t.Fatalf("live Cobra tree universal format flags = %v, want none", violations)
@@ -226,6 +354,7 @@ func TestLiveCobraTreeContainsNoUniversalFormatFlags(t *testing.T) {
 }
 
 func TestProductSourceContainsNoUniversalSerializers(t *testing.T) {
+	t.Parallel()
 	repoRoot := commandTestRepositoryRoot(t)
 	violations, err := universalSerializerSourceViolations(repoRoot)
 	if err != nil {
@@ -237,6 +366,7 @@ func TestProductSourceContainsNoUniversalSerializers(t *testing.T) {
 }
 
 func TestLiveCobraTreeUniversalFormatGuardDetectsInjectedFlags(t *testing.T) {
+	t.Parallel()
 	t.Run("inherited persistent flag", func(t *testing.T) {
 		root := newRootCommandAt(t.TempDir())
 		root.PersistentFlags().String("format", "", "injected test flag")

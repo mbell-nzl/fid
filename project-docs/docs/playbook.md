@@ -187,6 +187,16 @@ failure is progress. Attempt counts are monotonic across sessions, branches,
 and worktrees; material progress resets only consecutive no-progress to `0/2`.
 A second consecutive no-progress result exhausts the budget, and a context
 refresh or renamed recovery cannot reset it.
+
+An externally interrupted child that never returns a typed result does not
+consume or reset that budget. A parent polling wait timeout means poll the same
+child again; it never authorizes interruption. Route the first actual external
+interruption to same-task recovery and the second to orchestration
+session-liveness triage. Record ledger `Outcome: INTERRUPTED` with the
+interruption cause, elapsed session duration, and command in flight. Only
+declared per-command budgets apply; no budget bounds the child session itself.
+A liveness-triage `REPAIR` advances the total attempt, preserves the
+no-progress count, and starts a new interruption streak.
 - If a task mixes logic/data with UI/wiring, re-slice before execution.
 
 ## 5. Review And Close

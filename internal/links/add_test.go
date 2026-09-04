@@ -73,7 +73,7 @@ func TestAddSupportsInverseDeclaredRelationAndRequirementEndpoints(t *testing.T)
 			FromID:        secondIssueID,
 			Relation:      "blocked_by",
 			ToID:          firstIssueID,
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil {
 			t.Fatalf("Add(blocked_by) error = %v", err)
@@ -108,7 +108,7 @@ func TestAddSupportsInverseDeclaredRelationAndRequirementEndpoints(t *testing.T)
 			FromID:        issueID,
 			Relation:      "implements",
 			ToID:          requirementID,
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil {
 			t.Fatalf("Add(implements) error = %v", err)
@@ -148,7 +148,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 					FromID:        firstIssueID,
 					Relation:      "blocks",
 					ToID:          secondIssueID,
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				}); err != nil {
 					t.Fatalf("seed Add(blocks) error = %v", err)
 				}
@@ -158,7 +158,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						FromID:        firstIssueID,
 						Relation:      "blocks",
 						ToID:          secondIssueID,
-						ActorRole:     "developer",
+						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
 						var target *DuplicateLinkError
@@ -179,7 +179,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						FromID:        firstIssueID,
 						Relation:      "parent_of",
 						ToID:          secondIssueID,
-						ActorRole:     "developer",
+						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
 						var target *UnknownRelationError
@@ -199,7 +199,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						FromID:        issueID,
 						Relation:      "relates_to",
 						ToID:          issueID,
-						ActorRole:     "developer",
+						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
 						var target *SelfLinkError
@@ -220,7 +220,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						FromID:        firstIssueID,
 						Relation:      "implements",
 						ToID:          secondIssueID,
-						ActorRole:     "developer",
+						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
 						var target *IncompatibleRelationError
@@ -242,7 +242,7 @@ func TestAddRejectsInvalidRequestsBeforeAppend(t *testing.T) {
 						Relation:      "implements",
 						ToType:        "requirement",
 						ToID:          "PRD-LINK-002",
-						ActorRole:     "developer",
+						Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 					}, func(t *testing.T, err error) {
 						t.Helper()
 						var target *EndpointNotFoundError
@@ -304,7 +304,7 @@ func createLinksIssue(t *testing.T, workspace, title string) string {
 		MigrationsDir: testLinksMigrationsDir(t),
 		Kind:          "task",
 		Title:         title,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(%q) error = %v", title, err)
@@ -336,7 +336,7 @@ func syncLinksRequirement(t *testing.T, workspace, requirementID string) string 
 		WorkspaceRoot: workspace,
 		MigrationsDir: testLinksMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		RequirementID: requirementID,
 	}); err != nil {
 		t.Fatalf("Sync(%q) error = %v", requirementID, err)

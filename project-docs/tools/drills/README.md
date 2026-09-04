@@ -28,6 +28,7 @@ decay before a real defect exploits it.
 | drill-15 | live and missing-termination command handling | `workflow-route.sh` |
 | drill-16 | bounded QA finding next action | `workflow-route.sh` |
 | drill-17 | protected stop and no-progress budget | `workflow-route.sh` |
+| drill-19 | parent wait expiry and externally interrupted child accounting | `workflow-route.sh`, `workflow-sequence-lint.sh` |
 | drill-05 | weakened/vacuous test | QA Reviewer |
 | drill-06 | unrecorded spec deviation | QA Reviewer |
 | drill-07 | stale doc claim | QA Reviewer |
@@ -48,6 +49,11 @@ Drill 15 separately proves that a live command routes to `WAIT`, while missing
 termination routes to `REPAIR`. Together they cover both the evidence defect
 and the orchestration behavior that caused ESC-20-003. See
 `project-docs/docs/reviews/2026-07-26-workflow-retrospective.md` (DEC-087).
+
+Drill 19 proves that a parent polling timeout retains a live child, an external
+interruption does not consume or reset the no-progress budget, and two
+consecutive external interruptions require orchestration session-liveness
+triage with the interruption cause, elapsed duration, and command in flight.
 
 ## Running
 

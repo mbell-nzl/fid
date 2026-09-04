@@ -12,6 +12,7 @@ import (
 )
 
 func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "project-flow", "any")
@@ -40,7 +41,7 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 		t.Fatalf("assignment response = %+v, err = %v", envelope, err)
 	}
 	tail := mustReadLastJournalEvent(t, mustJournalPath(t, workspace))
-	if tail.EventID != envelope.Event.ID || tail.OccurredAt.UTC().Format(time.RFC3339) != envelope.Event.OccurredAt {
+	if tail.EventID != envelope.Event.ID || tail.OccurredAt.UTC().Format(time.RFC3339Nano) != envelope.Event.OccurredAt {
 		t.Fatalf("assignment event = %+v, journal tail = %#v; want matching identity", envelope.Event, tail)
 	}
 	conn := openWorkflowCommandDB(t, workspace)
@@ -59,6 +60,7 @@ func TestWorkflowAssignJSONPrecedenceAndScopedReplacement(t *testing.T) {
 }
 
 func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	journal := mustJournalPath(t, workspace)
@@ -91,6 +93,7 @@ func TestWorkflowAssignRequiresExactlyOneScopeAndMapsUnknownWorkflow(t *testing.
 }
 
 func TestWorkflowAssignCombinesRootProjectSelectorAndProjectWideScope(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	defineWorkflowForTest(t, workspace, "root-project-flow", "any")

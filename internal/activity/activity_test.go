@@ -71,7 +71,7 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 			JournalEventID: firstEntry.eventID,
 			RefType:        "issue",
 			RefID:          primaryIssueID,
-			Event:          "status_changed",
+			Event:          "status-changed",
 			Actor:          "developer",
 			OccurredAt:     firstEntry.occurredAt,
 			Details:        map[string]any{"from": "todo", "to": "in_progress"},
@@ -81,7 +81,7 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 			JournalEventID: secondEntry.eventID,
 			RefType:        "issue",
 			RefID:          secondaryIssueID,
-			Event:          "comment_added",
+			Event:          "comment-added",
 			Actor:          "qa_reviewer",
 			OccurredAt:     secondEntry.occurredAt,
 			Details:        map[string]any{"text": "Needs evidence"},
@@ -91,7 +91,7 @@ func TestListReturnsChronologicalEntriesWithStructuredDetails(t *testing.T) {
 			JournalEventID: thirdEntry.eventID,
 			RefType:        "issue",
 			RefID:          primaryIssueID,
-			Event:          "issue_updated",
+			Event:          "issue-updated",
 			Actor:          "developer",
 			OccurredAt:     thirdEntry.occurredAt,
 			Details:        map[string]any{"field": "title", "to": "Refined title"},
@@ -184,7 +184,7 @@ func TestListFiltersByOnSinceAndEvent(t *testing.T) {
 			options: ListOptions{
 				WorkspaceRoot: workspace,
 				MigrationsDir: testActivityMigrationsDir(t),
-				Event:         "issue_updated",
+				Event:         "issue-updated",
 			},
 			wantIDs: []string{thirdEntry.activityID},
 		},
@@ -255,11 +255,12 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
 	result, err := issues.Create(issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testActivityMigrationsDir(t),
-		Kind:          "task",
-		Title:         title,
-		ActorRole:     "developer",
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  testActivityMigrationsDir(t),
+		Kind:           "task",
+		Title:          title,
+		Actor:          "agent:developer",
+		IdempotencyKey: "activity-create-" + title,
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -273,7 +274,7 @@ func createActivityIssue(t *testing.T, workspace, title string) string {
 
 	if _, err := conn.Exec(`
 		DELETE FROM activity_log
-		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue_created'
+		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue-created'
 	`, result.ID); err != nil {
 		t.Fatalf("delete create activity row: %v", err)
 	}
@@ -335,8 +336,7 @@ func appendActivityEvent(t *testing.T, workspace string, seed activitySeedEvent)
 	}
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: seed.actor,
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err

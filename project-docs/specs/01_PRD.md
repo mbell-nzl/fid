@@ -73,6 +73,15 @@ backend critical path. Evidence-gated ideas live only in ADR-0011.
 | PRD-ENV-009 | P0 | Cancellation shall not satisfy completion or dependencies. |
 | PRD-ENV-010 | P0 | Obligations shall directly encode applicability, accepted evidence/trust, producer independence, artifact policy, freshness, and guarded action without a QA Plan or Validation Contract hierarchy. |
 
+**Phase 21 qualification (DEC-156).** For the one selected Issue, the supported
+gate-evidence Obligation guards the terminal-success Issue transition. Gate
+execution, qualifying Receipt linking, and satisfied Evidence evaluation occur
+before that transition. Envelope completion is a later mutation that
+re-evaluates the same Obligation and also requires the terminal-success Issue.
+Both actions use one evaluator and return the same all-reasons semantics from
+PRD-EVID-006. This qualification does not change the broader target ownership
+of Review/Human Obligations in later phases.
+
 ## 6. Claims, Runs, Stops, And Recovery
 
 | ID | Priority | Requirement |
@@ -173,4 +182,4 @@ The first supported baseline exists only when:
 - the migration and journal baseline has been consolidated; and
 - a disposable project rehearsal completes before live dogfood.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+*Last updated: 2026-08-22 (Phase 21 DEC-156 qualification)*

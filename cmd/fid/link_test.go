@@ -17,10 +17,10 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, firstStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "First issue", "--by", "developer")
+	_, firstStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "First issue", "--actor", "agent:developer")
 	firstIssueID := parseCreatedIssueID(t, firstStderr)
 
-	_, secondStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Second issue", "--by", "developer")
+	_, secondStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Second issue", "--actor", "agent:developer")
 	secondIssueID := parseCreatedIssueID(t, secondStderr)
 
 	journalPath := mustJournalPath(t, workspace)
@@ -66,8 +66,8 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	}
 
 	event := mustReadLastJournalEvent(t, journalPath)
-	if len(event.Effects) != 5 {
-		t.Fatalf("effect count = %d, want 5", len(event.Effects))
+	if len(event.Effects) != 6 {
+		t.Fatalf("effect count = %d, want link effects plus idempotency result", len(event.Effects))
 	}
 	insertEffects := 0
 	activityEffects := 0
@@ -78,6 +78,7 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 		case effect.Op == "activity" && effect.Table == "activity_log":
 			activityEffects++
 		case effect.Op == "update" && effect.Table == "issues":
+		case effect.Op == "insert" && effect.Table == "idempotency_results":
 		default:
 			t.Fatalf("unexpected effect = %#v", effect)
 		}
@@ -98,8 +99,8 @@ func TestLinkAddCreatesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) {
 	`, event.EventID).Scan(&activityEvent, &actor, &details); err != nil {
 		t.Fatalf("query activity_log row: %v", err)
 	}
-	if activityEvent != "link_added" {
-		t.Fatalf("activity_log event = %q, want link_added", activityEvent)
+	if activityEvent != "link-added" {
+		t.Fatalf("activity_log event = %q, want link-added", activityEvent)
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
@@ -294,8 +295,8 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 	}
 
 	event := mustReadLastJournalEvent(t, journalPath)
-	if len(event.Effects) != 5 {
-		t.Fatalf("effect count = %d, want 5", len(event.Effects))
+	if len(event.Effects) != 6 {
+		t.Fatalf("effect count = %d, want link effects plus idempotency result", len(event.Effects))
 	}
 
 	deleteEffects := 0
@@ -307,6 +308,7 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 		case effect.Op == "activity" && effect.Table == "activity_log":
 			activityEffects++
 		case effect.Op == "update" && effect.Table == "issues":
+		case effect.Op == "insert" && effect.Table == "idempotency_results":
 		default:
 			t.Fatalf("unexpected effect = %#v", effect)
 		}
@@ -327,8 +329,8 @@ func TestLinkRemoveDeletesDeclaredAndInverseRowsInOneJournalEvent(t *testing.T) 
 	`, event.EventID).Scan(&activityEvent, &actor, &details); err != nil {
 		t.Fatalf("query activity_log row: %v", err)
 	}
-	if activityEvent != "link_removed" {
-		t.Fatalf("activity_log event = %q, want %q", activityEvent, "link_removed")
+	if activityEvent != "link-removed" {
+		t.Fatalf("activity_log event = %q, want %q", activityEvent, "link-removed")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
@@ -351,6 +353,7 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 		setup         func(t *testing.T, workspace string) []string
 		command       []string
 		wantSubstring string
+		wantSuccess   bool
 	}{
 		{
 			name: "missing link",
@@ -361,15 +364,15 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 			wantSubstring: "error: link remove: link does not exist:",
 		},
 		{
-			name: "unknown role",
+			name: "project-local actor",
 			setup: func(t *testing.T, workspace string) []string {
 				firstIssueID := createCommandIssue(t, workspace, "First issue")
 				secondIssueID := createCommandIssue(t, workspace, "Second issue")
 				runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "developer")
 				return []string{firstIssueID, secondIssueID}
 			},
-			command:       []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "intern"},
-			wantSubstring: `error: role "intern" not in project profile`,
+			command:     []string{"link", "remove", "", "blocks", "", "--from-type", "issue", "--to-type", "issue", "--by", "intern"},
+			wantSuccess: true,
 		},
 	}
 
@@ -387,6 +390,15 @@ func TestLinkRemoveRejectsInvalidInputBeforeAppend(t *testing.T) {
 			linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
 			stdout, stderr, err := runFIDCommandExpectError(t, workspace, command...)
+			if tt.wantSuccess {
+				if err != nil || stdout == "" || stderr != "" {
+					t.Fatalf("project-local actor result = (%q, %q, %v), want stdout success", stdout, stderr, err)
+				}
+				if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+					t.Fatalf("journal lines after project-local actor = %d, want %d", got, linesBefore+1)
+				}
+				return
+			}
 			if err == nil {
 				t.Fatal("Execute() error = nil, want rejection")
 			}
@@ -410,38 +422,18 @@ func TestLinkAddPolicyShowParityAndUnknownRoleRejection(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	stdout, stderr := runFIDCommand(t, workspace, "policy", "show")
-	if stderr != "" {
-		t.Fatalf("policy show stderr = %q, want empty", stderr)
-	}
-
-	rows := decodeCommandJSONStructure(t, stdout).([]any)
-	for _, action := range []string{"link.add", "link.remove"} {
-		for _, role := range []string{"developer", "qa_reviewer", "qa_lead", "tl_lite", "tl", "workflow_runner", "human"} {
-			if got := commandPolicyCellAllowed(t, rows, action, role); !got {
-				t.Fatalf("policy show %s/%s = false, want true", action, role)
-			}
-		}
-	}
-
 	firstIssueID := createCommandIssue(t, workspace, "First issue")
 	secondIssueID := createCommandIssue(t, workspace, "Second issue")
 
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	rejectedStdout, rejectedStderr, err := runFIDCommandExpectError(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--by", "intern")
-	if err == nil {
-		t.Fatal("Execute() error = nil, want unknown-role rejection")
+	stdout, stderr := runFIDCommand(t, workspace, "link", "add", firstIssueID, "blocks", secondIssueID, "--from-type", "issue", "--to-type", "issue", "--actor", "agent:intern")
+	if stderr != "" || stdout == "" {
+		t.Fatalf("project-local actor result = (%q, %q), want stdout success", stdout, stderr)
 	}
-	if rejectedStdout != "" {
-		t.Fatalf("stdout = %q, want empty", rejectedStdout)
-	}
-	if !strings.Contains(rejectedStderr, `error: role "intern" not in project profile`) {
-		t.Fatalf("stderr = %q, want unknown-role error", rejectedStderr)
-	}
-	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore {
-		t.Fatalf("journal lines after unknown-role rejection = %d, want %d", got, linesBefore)
+	if got := len(splitJournalLines(mustReadCommandFile(t, journalPath))); got != linesBefore+1 {
+		t.Fatalf("journal lines after project-local actor = %d, want %d", got, linesBefore+1)
 	}
 }
 
@@ -531,6 +523,7 @@ func TestLinkListEmptyResult(t *testing.T) {
 }
 
 func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
@@ -571,6 +564,7 @@ func TestLinkAddUsesSuppliedTypeForAmbiguousSameIDEndpoints(t *testing.T) {
 }
 
 func TestLinkMutationsJSONMatchContract(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First JSON link issue")
@@ -591,6 +585,7 @@ func TestLinkMutationsJSONMatchContract(t *testing.T) {
 }
 
 func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First link failure issue")
@@ -677,6 +672,7 @@ func TestLinkJSONRequestAndTypedFailuresAreAtomic(t *testing.T) {
 }
 
 func TestLinkJSONDependencyCycleHasExactPathAndNoAppend(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 	firstID := createCommandIssue(t, workspace, "First cycle issue")
@@ -716,7 +712,7 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, jou
 		t.Fatalf("Unmarshal(%s stdout) error = %v; stdout = %q", operation, err, result.stdout)
 	}
 	assertEnvelopeKeySet(t, []byte(result.stdout), []string{"contract_version", "event", "ok", "operation", "result"})
-	assertExactKeys(t, envelope.Result, []string{"issue_revisions", "link"})
+	assertExactKeys(t, envelope.Result, []string{"idempotency_key", "issue_revisions", "link", "replayed"})
 	assertExactKeys(t, envelope.Event, []string{"id", "occurred_at"})
 	link := envelope.Result["link"].(map[string]any)
 	assertExactKeys(t, link, []string{"from_id", "from_type", "relation", "to_id", "to_type"})
@@ -740,11 +736,11 @@ func assertLinkMutationEnvelope(t *testing.T, result commandExecutionResult, jou
 	}
 
 	last := mustReadLastJournalEvent(t, journalPath)
-	if last.EventType != eventType || last.Actor.Role != "developer" || envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
+	if last.EventType != eventType || last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || envelope.Event["id"] != last.EventID || envelope.Event["occurred_at"] != last.OccurredAt.UTC().Format(time.RFC3339Nano) {
 		t.Fatalf("%s envelope event = %#v, journal tail = %#v", operation, envelope.Event, last)
 	}
-	if len(last.Effects) != 5 {
-		t.Fatalf("%s effect count = %d, want 5", operation, len(last.Effects))
+	if len(last.Effects) != 6 {
+		t.Fatalf("%s effect count = %d, want link effects plus idempotency result", operation, len(last.Effects))
 	}
 	for _, effect := range last.Effects {
 		if effect.Table == "evidence" || effect.Table == "outcomes" || effect.Table == "claims" {
@@ -854,7 +850,7 @@ func containsCommandLinkRow(rows []commandLinkRow, want commandLinkRow) bool {
 func createCommandIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", title, "--actor", "agent:developer")
 	return parseCreatedIssueID(t, stderr)
 }
 
@@ -869,8 +865,8 @@ func syncCommandRequirementWithSummary(t *testing.T, workspace, requirementID, s
 
 	writeRequirementFixture(t, workspace, "project-docs/specs/link_requirements.md", "# Requirements\n\n## 3.8 Cross-Entity Links\n\n| ID | Requirement | Priority | Notes |\n|---|---|---|---|\n| PRD-LINK-002 | "+summary+" | Must | v0.1 |\n")
 
-	_, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/link_requirements.md", "--id", requirementID, "--by", "tl")
-	if !strings.Contains(stderr, "synced requirements from project-docs/specs/link_requirements.md") {
-		t.Fatalf("stderr = %q, want requirement sync confirmation", stderr)
+	stdout, stderr := runFIDCommand(t, workspace, "requirement", "sync", "--source-doc", "project-docs/specs/link_requirements.md", "--id", requirementID, "--by", "tl")
+	if stderr != "" || !strings.Contains(stdout, "synced requirements from project-docs/specs/link_requirements.md") {
+		t.Fatalf("requirement sync = (%q, %q), want stdout confirmation", stdout, stderr)
 	}
 }

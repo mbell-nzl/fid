@@ -1,0 +1,5 @@
+{
+  "operation": "claim.acquire",
+  "command": "fid claim acquire",
+  "kind": "accepted"
+}

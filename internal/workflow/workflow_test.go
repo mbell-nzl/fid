@@ -69,19 +69,14 @@ func TestRulesForEdgeMatchesTRDRequirements(t *testing.T) {
 			workflowID: "task-default",
 			fromState:  "in_progress",
 			toState:    "dev_complete",
-			want: []RuleReference{
-				{Name: "all_acs_verified", RequiredRoles: []string{"developer"}},
-				{Name: "has_completion_report"},
-			},
+			want:       nil,
 		},
 		{
 			name:       "task qa pass requires qa lead verification",
 			workflowID: "task-default",
 			fromState:  "qa_review",
 			toState:    "qa_pass",
-			want: []RuleReference{
-				{Name: "all_acs_verified", RequiredRoles: []string{"qa_lead"}},
-			},
+			want:       nil,
 		},
 		{
 			name:       "epic wrapped requires child task rule",
@@ -160,11 +155,8 @@ func TestWorkflowDefinitionsMatchTRDExactly(t *testing.T) {
 					"in_progress": nil,
 				},
 				"in_progress": {
-					"dev_complete": {
-						{Name: RuleAllACsVerified, RequiredRoles: []string{"developer"}},
-						{Name: RuleHasCompletionReport},
-					},
-					"failed_gate": nil,
+					"dev_complete": nil,
+					"failed_gate":  nil,
 				},
 				"failed_gate": {
 					"in_progress": nil,
@@ -173,9 +165,7 @@ func TestWorkflowDefinitionsMatchTRDExactly(t *testing.T) {
 					"qa_review": nil,
 				},
 				"qa_review": {
-					"qa_pass": {
-						{Name: RuleAllACsVerified, RequiredRoles: []string{"qa_lead"}},
-					},
+					"qa_pass":  nil,
 					"qa_block": nil,
 				},
 				"qa_block": {

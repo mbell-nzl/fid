@@ -75,6 +75,7 @@ func TestIssueListFiltersAndOrdering(t *testing.T) {
 }
 
 func TestIssueListRejectsRetiredFormatFlag(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	if result := executeCommandForTest(workspace, "issue", "list", "--format", "json"); result.err == nil {
 		t.Fatal("--format was accepted")

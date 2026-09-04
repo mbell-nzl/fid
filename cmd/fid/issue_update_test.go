@@ -16,7 +16,7 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Implement issue update", "--priority", "2", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Implement issue update", "--priority", "2", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	_, updateStderr := runFIDCommand(
@@ -25,7 +25,7 @@ func TestIssueUpdateChangesFieldsAndPrintsConfirmation(t *testing.T) {
 		"issue", "update", issueID,
 		"--title", "Ship issue update",
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	gotLines := strings.Split(strings.TrimSpace(updateStderr), "\n")
 	wantLines := []string{
@@ -64,7 +64,7 @@ func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Single field update", "--priority", "2", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Single field update", "--priority", "2", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	_, updateStderr := runFIDCommand(
@@ -72,7 +72,7 @@ func TestIssueUpdateSingleFieldPrintsExactlyOneChangedFieldLine(t *testing.T) {
 		workspace,
 		"issue", "update", issueID,
 		"--priority", "1",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 
 	gotLines := strings.Split(strings.TrimSpace(updateStderr), "\n")
@@ -95,7 +95,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Reject invalid update", "--priority", "2", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Reject invalid update", "--priority", "2", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
 	beforeStdout := mustGetIssueJSON(t, workspace, issueID)
@@ -103,7 +103,7 @@ func TestIssueUpdateRejectsInvalidInputAndLeavesStateUnchanged(t *testing.T) {
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
 
-	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--priority", "8", "--by", "developer")
+	stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--priority", "8", "--actor", "agent:developer")
 	if err == nil {
 		t.Fatal("Execute() error = nil, want invalid update rejection")
 	}
@@ -130,7 +130,7 @@ func TestIssueUpdateRejectsStaleExpectedRevision(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createOutput := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Concurrency target", "--by", "developer")
+	_, createOutput := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Concurrency target", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createOutput)
 	journalPath := mustJournalPath(t, workspace)
 	linesBefore := len(splitJournalLines(mustReadCommandFile(t, journalPath)))
@@ -139,7 +139,7 @@ func TestIssueUpdateRejectsStaleExpectedRevision(t *testing.T) {
 		"--json", "issue", "update", issueID,
 		"--title", "Rejected stale update",
 		"--expected-revision", "2",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if result.err == nil {
 		t.Fatal("Execute() error = nil, want stale revision rejection")
@@ -177,7 +177,7 @@ func TestIssueUpdateJSONOrdersChangesByField(t *testing.T) {
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	create := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Ordered changes", "--by", "developer")
+	create := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Ordered changes", "--actor", "agent:developer")
 	if create.err != nil {
 		t.Fatalf("issue create error = %v, stderr = %q", create.err, create.stderr)
 	}
@@ -197,7 +197,7 @@ func TestIssueUpdateJSONOrdersChangesByField(t *testing.T) {
 		"--title", "Ordered changes updated",
 		"--priority", "2",
 		"--spec-md", "project-docs/specs/02_TRD.md",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if updated.err != nil {
 		t.Fatalf("issue update error = %v, stderr = %q", updated.err, updated.stderr)
@@ -223,6 +223,7 @@ func TestIssueUpdateJSONOrdersChangesByField(t *testing.T) {
 }
 
 func TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure(t *testing.T) {
+	t.Parallel()
 	for _, flag := range []string{"owner-role", "owner-actor"} {
 		t.Run(flag, func(t *testing.T) {
 			workspace := t.TempDir()
@@ -231,7 +232,7 @@ func TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure(t *testing.T) {
 			result := executeCommandForTest(workspace,
 				"--json", "issue", "create",
 				"--kind", "task", "--title", "Removed owner input",
-				"--"+flag, "qa_lead", "--by", "developer",
+				"--"+flag, "qa_lead", "--actor", "agent:developer",
 			)
 			if result.err == nil {
 				t.Fatalf("issue create error = nil, want unknown %s rejection", flag)
@@ -256,6 +257,7 @@ func TestIssueCreateRejectsRemovedOwnerFlagsWithJSONFailure(t *testing.T) {
 }
 
 func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		operation string
 		flag      string
@@ -272,7 +274,7 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 			clonePristineWorkspaceInto(t, workspace)
 			issueID := ""
 			if tt.operation == "update" {
-				created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Owner flag target", "--by", "developer")
+				created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Owner flag target", "--actor", "agent:developer")
 				if created.err != nil || created.stderr != "" {
 					t.Fatalf("issue create = %#v, want stdout-only success", created)
 				}
@@ -340,10 +342,11 @@ func TestIssueCreateAndUpdateRejectRemovedOwnerFlagsWithCanonicalFailures(t *tes
 }
 
 func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Owner projection target", "--by", "developer")
+	created := executeCommandForTest(workspace, "--json", "issue", "create", "--kind", "task", "--title", "Owner projection target", "--actor", "agent:developer")
 	if created.err != nil || created.stderr != "" {
 		t.Fatalf("issue create = %#v, want stdout-only success", created)
 	}
@@ -376,7 +379,7 @@ func TestIssueUpdateCanonicalChangesExcludeOwnerAndPreserveProjection(t *testing
 		"--priority", "2",
 		"--labels", "api",
 		"--spec-md", "project-docs/specs/02_TRD.md",
-		"--by", "developer",
+		"--actor", "agent:developer",
 	)
 	if updated.err != nil || updated.stderr != "" {
 		t.Fatalf("issue update = %#v, want stdout-only success", updated)
@@ -449,61 +452,52 @@ func sameCommandOptionalString(left, right *string) bool {
 }
 
 func TestIssueMutationHumanSuccessUsesStdoutOnly(t *testing.T) {
+	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	created := executeCommandForTest(workspace, "issue", "create", "--kind", "task", "--title", "Human mutation channels", "--by", "developer")
+	created := executeCommandForTest(workspace, "issue", "create", "--kind", "task", "--title", "Human mutation channels", "--actor", "agent:developer")
 	if created.err != nil || created.stderr != "" || !strings.Contains(created.stdout, "created issue ") {
 		t.Fatalf("create = %#v, want stdout-only success", created)
 	}
 	issueID := parseCreatedIssueID(t, created.stdout)
 
-	updated := executeCommandForTest(workspace, "issue", "update", issueID, "--priority", "2", "--by", "developer")
+	updated := executeCommandForTest(workspace, "issue", "update", issueID, "--priority", "2", "--actor", "agent:developer")
 	if updated.err != nil || updated.stderr != "" || !strings.Contains(updated.stdout, "updated "+issueID) {
 		t.Fatalf("update = %#v, want stdout-only success", updated)
 	}
 
-	claimed := executeCommandForTest(workspace, "issue", "claim", issueID, "--by", "developer")
-	if claimed.err != nil {
-		t.Fatalf("issue claim error = %v, stderr = %q", claimed.err, claimed.stderr)
-	}
-	transitioned := executeCommandForTest(workspace, "issue", "transition", issueID, "--to", "in_progress", "--by", "developer")
+	transitioned := executeCommandForTest(workspace, "issue", "transition", issueID, "--to", "in_progress", "--actor", "agent:developer")
 	if transitioned.err != nil || transitioned.stderr != "" || !strings.Contains(transitioned.stdout, "transitioned "+issueID) {
 		t.Fatalf("transition = %#v, want stdout-only success", transitioned)
 	}
 }
 
-func TestIssueUpdateRequiresKnownByRole(t *testing.T) {
+func TestIssueUpdateUsesStandaloneActorAttribution(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
 
-	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Role validation update", "--by", "developer")
+	_, createStderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Role validation update", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, createStderr)
 
-	t.Run("missing by", func(t *testing.T) {
+	t.Run("missing actor", func(t *testing.T) {
 		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--title", "No role")
 		if err == nil {
-			t.Fatal("Execute() error = nil, want missing --by rejection")
+			t.Fatal("Execute() error = nil, want missing --actor rejection")
 		}
 		if stdout != "" {
 			t.Fatalf("stdout = %q, want empty", stdout)
 		}
-		if !strings.Contains(stderr, "error: --by is required") {
-			t.Fatalf("stderr = %q, want missing --by error", stderr)
+		if !strings.Contains(stderr, "error: --actor is required") {
+			t.Fatalf("stderr = %q, want missing --actor error", stderr)
 		}
 	})
 
-	t.Run("unknown role", func(t *testing.T) {
-		stdout, stderr, err := runFIDCommandExpectError(t, workspace, "issue", "update", issueID, "--title", "Unknown role", "--by", "intern")
-		if err == nil {
-			t.Fatal("Execute() error = nil, want unknown role rejection")
-		}
-		if stdout != "" {
-			t.Fatalf("stdout = %q, want empty", stdout)
-		}
-		if !strings.Contains(stderr, `error: role "intern" not in project profile`) {
-			t.Fatalf("stderr = %q, want unknown role error", stderr)
+	t.Run("unregistered actor updates as attribution", func(t *testing.T) {
+		_, stderr := runFIDCommand(t, workspace, "issue", "update", issueID, "--title", "Unregistered actor", "--actor", "agent:intern")
+		if !strings.Contains(stderr, "updated "+issueID) {
+			t.Fatalf("stderr = %q, want update confirmation", stderr)
 		}
 	})
 }

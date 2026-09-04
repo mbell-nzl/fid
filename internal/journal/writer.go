@@ -20,6 +20,10 @@ func PrepareEvent(lock *WriteLock, event Event) (Event, error) {
 	return prepareEventWithClock(lock, event, time.Now)
 }
 
+func prepareIdempotentEvent(lock *WriteLock, event Event) (Event, error) {
+	return prepareEventWithClockOptions(lock, event, time.Now, true)
+}
+
 func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (Event, error) {
 	prepared, err := prepareEventWithClock(lock, event, now)
 	if err != nil {
@@ -54,6 +58,10 @@ func appendEventWithClock(lock *WriteLock, event Event, now func() time.Time) (E
 }
 
 func prepareEventWithClock(lock *WriteLock, event Event, now func() time.Time) (Event, error) {
+	return prepareEventWithClockOptions(lock, event, now, false)
+}
+
+func prepareEventWithClockOptions(lock *WriteLock, event Event, now func() time.Time, allowIdempotencyEffectOnly bool) (Event, error) {
 	if lock == nil {
 		return Event{}, fmt.Errorf("append event: lock is nil")
 	}
@@ -91,6 +99,14 @@ func prepareEventWithClock(lock *WriteLock, event Event, now func() time.Time) (
 	if event.EventID == "" {
 		event.EventID, err = FormatEventID(event.OccurredAt, sequence)
 		if err != nil {
+			return Event{}, err
+		}
+	}
+	if event.IsV2() {
+		if err := validateV2EventFields(event, !allowIdempotencyEffectOnly); err != nil {
+			return Event{}, err
+		}
+		if err := validateNextAggregateSequence(journalDir, event); err != nil {
 			return Event{}, err
 		}
 	}

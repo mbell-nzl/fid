@@ -307,7 +307,12 @@ uses v2. Every mandatory schema-v2 event field occurs exactly once, with `N/A`
 only where the ledger template permits it; field order and contiguity do not
 matter. Every schema-v2 external TRG and ledger TRIAGE binds exactly one
 `Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
-and `Repair authority`; direct REPAIR binds all five into TASK-RECOVERY.
+and `Repair authority`; direct REPAIR binds all five into TASK-RECOVERY. That
+recovery's `Source` references the governing TRG, while its exact-bound
+ordinary `Repair authority` is not changed merely to repeat the TRG ID.
+When direct schema-v2 TRIAGE `REPAIR` classifies a blocker candidate returned
+by an active recovery awaiting REPAIR, its bound recovery replaces that pending
+dispatch only for the same task; other overlaps remain invalid.
 
 A normal non-STOP RUN-RESUME records `N/A` governing IDs and `Next recovery`.
 A STOP resume retains the governing TRG/ESC and binds its exact next recovery;

@@ -60,6 +60,90 @@ Table-driven unit tests and temporary SQLite databases are the default Go
 patterns. Golden fixtures are appropriate for canonical JSON and event
 compatibility only after that contract is accepted for a slice.
 
+A test encodes a contract; it is not itself an authority. When an accepted
+change supersedes the contract a test encodes, the change owner adapts that test
+in the same unit of work and under the same gate, preserving the test's subject
+and assertion strength. Dropping a removed argument, converting an assertion
+about removed behaviour into the accepted behaviour, or repointing incidental
+reads is convergence. Deleting an assertion requires another test that already
+owns the accepted equivalent. Skips, build tags, narrowed test selection, and
+relaxed thresholds are never convergence.
+
+Convergence ownership follows the invalidating change, not the file. A test
+file's primary subject may belong to a different unit of work; that does not
+transfer or defer the obligation, and it is not a scope boundary. The change
+owner converges only the assertions its own change invalidated and leaves every
+other assertion in that file byte-identical, so the other subject keeps full
+strength until its own owner replaces it.
+
+Task numbering in a retained filename, test function, fixture label, or prose
+name is historical metadata, not current-phase ownership evidence. Before
+classifying retained-test convergence as cross-task or protected, establish the
+introducing phase/task from commit provenance and compare the assertion with
+the current task pack, convergence inventory, and accepted contract. A
+historical label transfers ownership only when the current task pack explicitly
+adopts it. Repetition of an unproven filename-based classification does not make
+it a specification contradiction or exhaust a causal recovery budget.
+
+A unit of work's required commands must exercise every file scope it owns.
+Convergence ownership is only assignable where it is executable: a build-tagged,
+environment-gated, or otherwise excluded suite covering owned files must have
+the gate that runs it named in that same unit of work, or the scope does not
+belong to it. Adding files to a scope without adding the gate that exercises
+them is an incomplete assignment. Where a gated suite first becomes required
+several units of work after the changes that invalidated its assertions, the
+accumulated convergence belongs to the first unit whose required gate runs it,
+and that unit records per-row provenance - file, line, invalidating change, and
+originating unit - so the audit trail survives the reassignment.
+
+The converse also holds. A unit of work that owns a required absence or
+inventory control owns every path that control walks, and its file scope must
+cover every search root and every package its required gates compile. A
+control that reaches beyond the listed scope is an incomplete planning
+assignment, not a boundary the implementer must honour by leaving the control
+red; it is corrected by amending the scope before dispatch, never by narrowing
+the control. Planning checks each task's search roots and test package
+arguments against its file list.
+
+The same reasoning assigns a latent production defect. Where an accepted
+contract was implemented wrongly and no earlier required gate could observe it,
+the defect belongs to the first unit of work whose required gate does observe
+it, not to the unit that wrote the code. That unit receives the minimum source
+scope needed for the causal repair, plus a regression assertion executed by a
+command it already runs, so the amended scope stays executable; it does not
+receive generic access to the owning package, and the originating unit is not
+reopened. The repair corrects the implementation to the accepted contract and
+changes nothing else.
+
+A sequential end-to-end fixture reveals one blocking step at a time. Reaching a
+later step is material progress. A no-progress recovery budget counts only
+attempts whose directive actually permitted causal repair of the failing rows;
+an attempt forbidden from touching the only cause of the failure is a
+mis-scoped directive, not evidence of exhausted repair capability.
+
+The same budget counts only attempts that reported an outcome. An attempt whose
+session is interrupted, cancelled, timed out, or shut down from outside, and
+which therefore never returns a typed result, does not consume it: the budget
+measures a repair that cannot converge, and an interrupted attempt was never
+allowed to finish converging. No budget bounds a child session's lifetime; only
+declared per-command budgets are enforced, and the orchestrator waits for the
+session to end on its own. Repeated external interruption is its own condition -
+orchestration session-liveness - recorded with the interruption cause, elapsed
+duration, and command in flight, because its remedy is the session shape rather
+than the repair. Where verification cost approaches the session window, commit
+durable work before the long commands and append each command result as it
+terminates, so an interruption leaves inspectable evidence instead of an
+unchanged tree that reads as no progress.
+
+A parent polling wait timeout is not child termination and never authorizes an
+interrupt: retain the same child and poll again. The first actual external
+interruption routes to same-task recovery; the second consecutive one routes to
+orchestration session-liveness triage. The ledger records a typed
+`Outcome: INTERRUPTED` and preserves the preceding no-progress count rather
+than incrementing or resetting it. When that triage authorizes repair, the next
+recovery increments total attempt count, preserves the no-progress count, and
+starts a new consecutive-interruption streak.
+
 ## 4. Critical scenario inventory
 
 The conformance and workflow suites must cover at least these scenarios:
@@ -165,6 +249,24 @@ under the active V1 workflow.
 A slice is not complete if it leaves two authoritative models for the same
 fact. Temporary compilation scaffolding is allowed only inside the slice and
 must not be advertised as a supported capability.
+
+For Heavy Phase 21, three-task QA Review windows apply. A separate independent
+Group 1 checkpoint must PASS after the authority/Activation/Registration/
+Envelope/Claim/Run foundation and before executor implementation begins. That
+checkpoint re-runs fresh feasibility for every non-default verifier, fixture,
+environment assumption, expected non-zero proof, and time budget prescribed
+for Group 2. Findings return to their owning task; implementation momentum is
+not evidence. Report lint is not a Developer task-gate command: after the
+Developer's report commit, the Phase Runner runs the exact two-argument
+report/task-spec control before the next task is dispatched.
+
+The checkpoint proves new generic Group 1 paths are isolated from the exact
+temporary V1 inventory; it does not require final absence before the removal
+task. Phase 21 task 20 performs migration 0014 and V1 removal. Task 21 then
+performs final-schema fresh init, role-free rebuild, maintenance, live/rebuild/
+export parity, and the 100k Event-v2 check. Task 22 performs final wire and
+real-process conformance. The journey mutates once; post-rebuild evidence is
+read/evaluation/export/negative parity, not a second Envelope mutation.
 
 ## 9. First supported baseline
 

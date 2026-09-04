@@ -1,9 +1,7 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/stats"
 	"github.com/spf13/cobra"
 )
@@ -19,6 +17,11 @@ func newStatsCommand() *cobra.Command {
 	return cmd
 }
 
+func init() {
+	rootFlagCapabilities["stats tokens"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["stats cost"] = rootFlagCapability{Project: true, JSON: true}
+}
+
 func newStatsTokensCommand() *cobra.Command {
 	var (
 		by     string
@@ -28,11 +31,11 @@ func newStatsTokensCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "tokens",
 		Short: "Aggregate run tokens.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("stats.tokens"),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueReadError(cmd, true, "stats.tokens", err)
 			}
 
 			items, err := stats.Tokens(stats.TokensOptions{
@@ -42,26 +45,15 @@ func newStatsTokensCommand() *cobra.Command {
 				EpicID:        epicID,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueReadError(cmd, true, "stats.tokens", err)
 			}
-
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetEscapeHTML(false)
-			if err := encoder.Encode(items); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-			return nil
+			return cli.WriteSuccess(cmd.OutOrStdout(), "stats.tokens", map[string]any{"items": tokenStatsResult(items)}, nil)
 		},
 	}
 
-	cmd.Flags().StringVar(&by, "by", string(stats.GroupByRole), "Group by role, model, or epic")
+	cmd.Flags().StringVar(&by, "group-by", string(stats.GroupByActor), "Group by actor, model, or epic")
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by owning epic ID")
+	cmd.SetFlagErrorFunc(canonicalFlagError("stats.tokens"))
 	return cmd
 }
 
@@ -74,11 +66,11 @@ func newStatsCostCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "cost",
 		Short: "Aggregate run costs.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("stats.cost"),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
+				return renderIssueReadError(cmd, true, "stats.cost", err)
 			}
 
 			items, err := stats.Cost(stats.CostOptions{
@@ -88,25 +80,32 @@ func newStatsCostCommand() *cobra.Command {
 				EpicID:        epicID,
 			})
 			if err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
+				return renderIssueReadError(cmd, true, "stats.cost", err)
 			}
-
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetEscapeHTML(false)
-			if err := encoder.Encode(items); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
-				return err
-			}
-			return nil
+			return cli.WriteSuccess(cmd.OutOrStdout(), "stats.cost", map[string]any{"items": costStatsResult(items)}, nil)
 		},
 	}
 
-	cmd.Flags().StringVar(&by, "by", string(stats.GroupByRole), "Group by role, model, or epic")
+	cmd.Flags().StringVar(&by, "group-by", string(stats.GroupByActor), "Group by actor, model, or epic")
 	cmd.Flags().StringVar(&epicID, "epic", "", "Filter by owning epic ID")
+	cmd.SetFlagErrorFunc(canonicalFlagError("stats.cost"))
 	return cmd
+}
+
+func tokenStatsResult(items []stats.TokensRow) []map[string]any {
+	result := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		row := map[string]any{"actor_attribution": item.Role, "epic_id": item.EpicID, "model": item.Model, "run_count": item.RunCount, "total_tokens_in": item.TotalTokensIn, "total_tokens_out": item.TotalTokensOut}
+		result = append(result, row)
+	}
+	return result
+}
+
+func costStatsResult(items []stats.CostRow) []map[string]any {
+	result := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		row := map[string]any{"actor_attribution": item.Role, "epic_id": item.EpicID, "model": item.Model, "run_count": item.RunCount, "total_cost_usd": item.TotalCostUSD, "total_tokens_in": item.TotalTokensIn, "total_tokens_out": item.TotalTokensOut}
+		result = append(result, row)
+	}
+	return result
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
@@ -10,6 +11,8 @@ import (
 	"reflect"
 	"runtime"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
@@ -18,6 +21,44 @@ import (
 )
 
 var pristineWorkspaceRoot string
+
+var issueMutationTestSequence uint64
+
+var reusableWorkspaceFixtures = struct {
+	sync.Mutex
+	items map[string]*reusableWorkspaceFixture
+}{items: make(map[string]*reusableWorkspaceFixture)}
+
+var envelopeBindingsForTest sync.Map
+
+type reusableWorkspaceFixture struct {
+	sync.Mutex
+	root   string
+	values []string
+}
+
+type envelopeBindingForTest struct {
+	registrationID      string
+	registrationVersion int
+	obligationID        string
+	claimID             string
+	runID               string
+}
+
+func rememberEnvelopeBindingForTest(t *testing.T, workspace string, binding envelopeBindingForTest) {
+	t.Helper()
+	envelopeBindingsForTest.Store(workspace, binding)
+	t.Cleanup(func() { envelopeBindingsForTest.Delete(workspace) })
+}
+
+func envelopeBindingForWorkspace(t *testing.T, workspace string) envelopeBindingForTest {
+	t.Helper()
+	value, ok := envelopeBindingsForTest.Load(workspace)
+	if !ok {
+		t.Fatalf("workspace %q has no cached Envelope binding", workspace)
+	}
+	return value.(envelopeBindingForTest)
+}
 
 func TestMain(m *testing.M) {
 	exitCode := runCommandTestSuite(m)
@@ -43,6 +84,12 @@ func runCommandTestSuite(m interface{ Run() int }) int {
 	}
 
 	exitCode := m.Run()
+	if err := cleanupReusableWorkspaceFixtures(); err != nil {
+		fmt.Fprintf(os.Stderr, "remove reusable workspace fixtures: %v\n", err)
+		if exitCode == 0 {
+			exitCode = 1
+		}
+	}
 	if err := os.RemoveAll(templateRoot); err != nil {
 		fmt.Fprintf(os.Stderr, "remove pristine workspace root: %v\n", err)
 		if exitCode == 0 {
@@ -74,6 +121,73 @@ func clonePristineWorkspaceInto(t *testing.T, destination string) {
 	}
 	if err := copyWorkspaceTree(pristineWorkspaceRoot, destination); err != nil {
 		t.Fatalf("clone pristine workspace: %v", err)
+	}
+}
+
+func cloneReusableWorkspaceFixture(t *testing.T, key string, build func() (string, []string)) (string, []string) {
+	t.Helper()
+	fixture := reusableWorkspaceFixtureFor(key)
+	fixture.Lock()
+	defer fixture.Unlock()
+	if fixture.root == "" {
+		workspace, values := build()
+		templateRoot, err := os.MkdirTemp("", "fid-reusable-workspace-")
+		if err != nil {
+			t.Fatalf("create reusable workspace fixture: %v", err)
+		}
+		if err := copyWorkspaceTree(workspace, templateRoot); err != nil {
+			_ = os.RemoveAll(templateRoot)
+			t.Fatalf("snapshot reusable workspace fixture: %v", err)
+		}
+		fixture.root = templateRoot
+		fixture.values = append([]string(nil), values...)
+		return workspace, append([]string(nil), values...)
+	}
+
+	workspace := t.TempDir()
+	cloneWorkspaceTreeInto(t, fixture.root, workspace)
+	return workspace, append([]string(nil), fixture.values...)
+}
+
+func reusableWorkspaceFixtureKey(t *testing.T, prefix string, value any) string {
+	t.Helper()
+	payload, err := json.Marshal(value)
+	if err != nil {
+		t.Fatalf("encode reusable workspace fixture key: %v", err)
+	}
+	return prefix + ":" + string(payload)
+}
+
+func reusableWorkspaceFixtureFor(key string) *reusableWorkspaceFixture {
+	reusableWorkspaceFixtures.Lock()
+	defer reusableWorkspaceFixtures.Unlock()
+	fixture := reusableWorkspaceFixtures.items[key]
+	if fixture == nil {
+		fixture = &reusableWorkspaceFixture{}
+		reusableWorkspaceFixtures.items[key] = fixture
+	}
+	return fixture
+}
+
+func cleanupReusableWorkspaceFixtures() error {
+	reusableWorkspaceFixtures.Lock()
+	defer reusableWorkspaceFixtures.Unlock()
+	var firstErr error
+	for key, fixture := range reusableWorkspaceFixtures.items {
+		if fixture.root != "" {
+			if err := os.RemoveAll(fixture.root); err != nil && firstErr == nil {
+				firstErr = fmt.Errorf("remove %q: %w", key, err)
+			}
+		}
+		delete(reusableWorkspaceFixtures.items, key)
+	}
+	return firstErr
+}
+
+func cloneWorkspaceTreeInto(t *testing.T, source, destination string) {
+	t.Helper()
+	if err := copyWorkspaceTree(source, destination); err != nil {
+		t.Fatalf("clone reusable workspace fixture: %v", err)
 	}
 }
 
@@ -133,6 +247,27 @@ type workspaceSnapshotEntry struct {
 	Data []byte
 }
 
+type workspacePersistenceSnapshot struct {
+	database []byte
+	journal  []byte
+}
+
+func snapshotWorkspacePersistence(t *testing.T, workspace string) workspacePersistenceSnapshot {
+	t.Helper()
+	return workspacePersistenceSnapshot{
+		database: mustReadCommandFile(t, config.WorkspacePathsForRoot(workspace).DatabasePath),
+		journal:  mustReadCommandFile(t, mustJournalPath(t, workspace)),
+	}
+}
+
+func (snapshot workspacePersistenceSnapshot) equal(other workspacePersistenceSnapshot) bool {
+	return bytes.Equal(snapshot.database, other.database) && bytes.Equal(snapshot.journal, other.journal)
+}
+
+func (snapshot workspacePersistenceSnapshot) eventCount() int {
+	return len(splitJournalLines(snapshot.journal))
+}
+
 type commandExecutionResult struct {
 	stdout string
 	stderr string
@@ -140,6 +275,7 @@ type commandExecutionResult struct {
 }
 
 func executeCommandForTest(workingDirectory string, args ...string) commandExecutionResult {
+	args = withIssueMutationTestKey(args)
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	cmd := newRootCommandAt(workingDirectory)
@@ -148,6 +284,101 @@ func executeCommandForTest(workingDirectory string, args ...string) commandExecu
 	cmd.SetArgs(args)
 	err := cmd.Execute()
 	return commandExecutionResult{stdout: stdout.String(), stderr: stderr.String(), err: err}
+}
+
+func withIssueMutationTestKey(args []string) []string {
+	args = migrateTask9RetainedMutationFixture(args)
+	if (!isTypedIssueMutation(args) && !isTask9RetainedMutation(args)) || containsTestArgument(args, "--idempotency-key") {
+		return args
+	}
+	return append(args, "--idempotency-key", fmt.Sprintf("mutation-test-%d", atomic.AddUint64(&issueMutationTestSequence, 1)))
+}
+
+func isTypedIssueMutation(args []string) bool {
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] == "issue" && (args[index+1] == "create" || args[index+1] == "update" || args[index+1] == "transition") {
+			return containsTestArgument(args, "--actor")
+		}
+	}
+	return false
+}
+
+func migrateTask9RetainedMutationFixture(args []string) []string {
+	if !isTask9RetainedMutation(args) || containsTestArgument(args, "--actor") {
+		return args
+	}
+	for index := 0; index+1 < len(args); index++ {
+		if args[index] != "--by" {
+			continue
+		}
+		migrated := append([]string{}, args...)
+		migrated[index] = "--actor"
+		migrated[index+1] = "agent:" + args[index+1]
+		return migrated
+	}
+	return args
+}
+
+func isTask9RetainedMutation(args []string) bool {
+	for index := range args {
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "ac" && args[index+2] == "add" {
+			return true
+		}
+		if index+2 < len(args) && args[index] == "issue" && args[index+1] == "label" && (args[index+2] == "add" || args[index+2] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "label" && args[index+1] == "add" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "link" && (args[index+1] == "add" || args[index+1] == "remove") {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "requirement" && args[index+1] == "sync" {
+			return true
+		}
+		if index+1 < len(args) && args[index] == "workflow" && (args[index+1] == "define" || args[index+1] == "assign") {
+			return true
+		}
+	}
+	return false
+}
+
+func containsTestArgument(args []string, target string) bool {
+	for _, argument := range args {
+		if argument == target {
+			return true
+		}
+	}
+	return false
+}
+
+func TestTask9RetainedMutationFixtureArgumentsUseActorAndIdempotency(t *testing.T) {
+	t.Parallel()
+	args := withIssueMutationTestKey([]string{"label", "add", "core", "--by", "developer"})
+	if containsTestArgument(args, "--by") {
+		t.Fatalf("retained fixture args = %v, want no V1 --by", args)
+	}
+	if !containsTestArgument(args, "--actor") || !containsTestArgument(args, "--idempotency-key") {
+		t.Fatalf("retained fixture args = %v, want standalone actor and idempotency key", args)
+	}
+	for index := range args {
+		if args[index] == "--actor" && (index+1 == len(args) || args[index+1] != "agent:developer") {
+			t.Fatalf("retained fixture actor = %v, want agent:developer", args)
+		}
+	}
+}
+
+func TestTask9FixtureAdapterLeavesJudgmentAndPolicyCommandsUntouched(t *testing.T) {
+	t.Parallel()
+	for _, args := range [][]string{
+		{"concern", "raise", "--by", "developer"},
+		{"policy", "show"},
+	} {
+		got := withIssueMutationTestKey(args)
+		if !reflect.DeepEqual(got, args) {
+			t.Fatalf("fixture adapter(%v) = %v, want unchanged", args, got)
+		}
+	}
 }
 
 func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) {
@@ -162,7 +393,7 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 		t.Fatal("second clone differs from pristine template")
 	}
 
-	runFIDCommand(t, cloneA, "issue", "create", "--kind", "task", "--title", "Fixture isolation", "--by", "developer")
+	runFIDCommand(t, cloneA, "issue", "create", "--kind", "task", "--title", "Fixture isolation", "--actor", "agent:developer")
 	if got := snapshotWorkspace(t, cloneA); reflect.DeepEqual(got, want) {
 		t.Fatal("mutated clone still equals pristine template")
 	}
@@ -175,7 +406,7 @@ func TestPristineWorkspaceClonePreservesRebuildParityAndIsolation(t *testing.T) 
 
 	databasePath := config.WorkspacePathsForRoot(cloneA).DatabasePath
 	beforeRebuild := readWorkspaceFixtureFile(t, databasePath)
-	if _, err := journal.RebuildWorkspace(cloneA, filepath.Join("..", "..", "migrations"), "workflow_runner"); err != nil {
+	if _, err := journal.RebuildWorkspace(cloneA, filepath.Join("..", "..", "migrations")); err != nil {
 		t.Fatalf("rebuild cloned workspace: %v", err)
 	}
 	afterRebuild := readWorkspaceFixtureFile(t, databasePath)
@@ -202,7 +433,7 @@ func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
 		go func() {
 			<-start
 			results <- executeCommandForTest(item.workspace,
-				"issue", "create", "--kind", "task", "--title", item.title, "--by", "developer")
+				"issue", "create", "--kind", "task", "--title", item.title, "--actor", "agent:developer")
 		}()
 	}
 	close(start)
@@ -225,6 +456,44 @@ func TestConcurrentClonedWorkspaceCommandsRemainIsolated(t *testing.T) {
 	}
 	if got := snapshotWorkspace(t, pristineWorkspaceRoot); !reflect.DeepEqual(got, templateBefore) {
 		t.Fatal("concurrent commands changed pristine template")
+	}
+}
+
+func TestReusableWorkspaceFixtureBuildsOnceAndKeepsClonesIsolated(t *testing.T) {
+	t.Parallel()
+	var builds atomic.Int32
+	key := filepath.Join(t.TempDir(), "reusable-fixture")
+	build := func() (string, []string) {
+		builds.Add(1)
+		workspace := clonePristineWorkspace(t)
+		if err := os.WriteFile(filepath.Join(workspace, "checkpoint.txt"), []byte("cached\n"), 0o600); err != nil {
+			t.Fatalf("write reusable fixture checkpoint: %v", err)
+		}
+		return workspace, []string{"fixture-id"}
+	}
+
+	first, firstValues := cloneReusableWorkspaceFixture(t, key, build)
+	second, secondValues := cloneReusableWorkspaceFixture(t, key, build)
+	if builds.Load() != 1 {
+		t.Fatalf("reusable fixture builds = %d, want 1", builds.Load())
+	}
+	if first == second || firstValues[0] != "fixture-id" || secondValues[0] != "fixture-id" {
+		t.Fatalf("reusable fixture clones = (%q, %v) and (%q, %v), want distinct roots and preserved metadata", first, firstValues, second, secondValues)
+	}
+
+	firstValues[0] = "mutated"
+	if err := os.WriteFile(filepath.Join(first, "checkpoint.txt"), []byte("changed\n"), 0o600); err != nil {
+		t.Fatalf("mutate first reusable fixture clone: %v", err)
+	}
+	third, thirdValues := cloneReusableWorkspaceFixture(t, key, build)
+	if builds.Load() != 1 || thirdValues[0] != "fixture-id" {
+		t.Fatalf("reused fixture = builds %d metadata %v, want one build and immutable metadata", builds.Load(), thirdValues)
+	}
+	if got := string(readWorkspaceFixtureFile(t, filepath.Join(second, "checkpoint.txt"))); got != "cached\n" {
+		t.Fatalf("second reusable fixture checkpoint = %q, want cached state", got)
+	}
+	if got := string(readWorkspaceFixtureFile(t, filepath.Join(third, "checkpoint.txt"))); got != "cached\n" {
+		t.Fatalf("third reusable fixture checkpoint = %q, want cached state", got)
 	}
 }
 

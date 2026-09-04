@@ -202,6 +202,35 @@ when it crosses one of these triggers.
   in-scope quality-gate failure, missing/skipped command, session ending with
   durable partial work, or incomplete implementation is normally REPAIR.
   Incomplete work is not a blocker.
+- Before classifying retained-test work as cross-task, protected assertion
+  semantics, or a specification contradiction, require current-phase ownership
+  evidence. A filename, test function, embedded task number, or prose label is
+  insufficient. Use attached introducing-commit phase/task provenance and
+  compare the assertion with the current task pack, convergence inventory, and
+  accepted contract. If the current task's change displaced it, the repair is
+  subject-preserving convergence for that task. Repetition of the same
+  unproven label-based inference is not a protected category or a new causal
+  no-progress condition.
+- Never accept a report's routing of a failure to another task as established
+  fact. Test it: name the accepted change that invalidated the assertion, and
+  check whether the proposed owner's required commands even execute the failing
+  file. A build-tagged or otherwise gated suite that the proposed owner's gate
+  never runs cannot be that owner's obligation. Where a gated suite first
+  becomes required in the current task, the accumulated convergence is REPAIR
+  for the current task, not a protected boundary. Removal of a source package
+  assigned to a later task is not ownership of tests that a current accepted
+  change invalidated.
+- Where the failing surface is fail-closed or removed by an accepted decision,
+  the repair is converting the retained call into an explicit rejection
+  assertion, not a flag or transport change. Say so; a routing that implies a
+  transport fix on a fail-closed surface is misdiagnosed.
+- `recovery-budget-exhausted` requires that each counted no-progress attempt was
+  actually permitted to repair the failing rows. Check the attached recovery
+  directives. An attempt forbidden by its own `Forbidden changes` from touching
+  the only cause of the failure, or one restricted to report-repair, is a
+  mis-scoped directive and does not consume the budget; the verdict is REPAIR
+  under a corrected directive. For a sequential end-to-end fixture, reaching a
+  later step is material progress and resets the consecutive count.
 - For QA REPAIR, confirm each Must-fix finding names an owning task, bounded
   decision-free scope, required evidence, and a fresh independent re-review.
 - BLOCK requires a protected category: product, architecture, data model,

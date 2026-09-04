@@ -2,8 +2,8 @@ package workflow
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -11,28 +11,28 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
-
-const workflowFIDVersion = "0.1.0"
 
 // DefineOptions supplies a validated workflow declaration and its write context.
 type DefineOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	ActorRole     string
-	Request       DefinitionRequest
+	WorkspaceRoot  string
+	MigrationsDir  string
+	Actor          string
+	IdempotencyKey string
+	Request        DefinitionRequest
 }
 
 // DefineResult reports the projected rows written for one workflow declaration.
 type DefineResult struct {
-	Name         string
-	AppliesTo    string
-	States       int
-	Transitions  int
-	Requirements int
-	EventID      string
-	OccurredAt   time.Time
+	Name           string
+	AppliesTo      string
+	States         int
+	Transitions    int
+	Requirements   int
+	EventID        string
+	OccurredAt     time.Time
+	IdempotencyKey string
+	Replayed       bool
 }
 
 // Define appends and projects one atomic workflow.defined event.
@@ -43,25 +43,16 @@ func Define(options DefineOptions) (DefineResult, error) {
 	if strings.TrimSpace(options.MigrationsDir) == "" {
 		return DefineResult{}, fmt.Errorf("define workflow: migrations dir is required")
 	}
-	if err := AuthorizeDefinition(options.WorkspaceRoot, options.ActorRole); err != nil {
-		return DefineResult{}, err
-	}
-	conn, err := openWorkflowDB(options.WorkspaceRoot)
-	if err != nil {
-		return DefineResult{}, err
-	}
-	_, err = BuildDefinitionEffects(conn, options.Request)
-	closeWorkflowDB(conn)
+	actor, err := standaloneActorForOptions(options.Actor)
 	if err != nil {
 		return DefineResult{}, err
 	}
 
 	result := DefineResult{Name: options.Request.Name, AppliesTo: options.Request.AppliesTo}
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(workflowDefineArgv(options), " "),
-		ActorRole: options.ActorRole,
+		Command: strings.Join(workflowDefineArgv(options), " "),
 	}, func(lock *journal.WriteLock) error {
-		return defineWorkflowLocked(lock, options, &result)
+		return defineWorkflowLocked(lock, options, actor, &result)
 	})
 	if err != nil {
 		return DefineResult{}, err
@@ -69,12 +60,13 @@ func Define(options DefineOptions) (DefineResult, error) {
 	return result, nil
 }
 
-// AuthorizeDefinition verifies the actor may define workflows before parsing work begins.
+// AuthorizeDefinition remains for legacy in-process callers; standalone attribution
+// deliberately grants no workflow authority.
 func AuthorizeDefinition(workspaceRoot, actorRole string) error {
-	return policy.Authorize(workspaceRoot, actorRole, "workflow.define")
+	return nil
 }
 
-func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, result *DefineResult) error {
+func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, actor standaloneActor, result *DefineResult) error {
 	if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 		return err
 	}
@@ -83,40 +75,95 @@ func defineWorkflowLocked(lock *journal.WriteLock, options DefineOptions, result
 		return err
 	}
 	defer closeWorkflowDB(conn)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return err
+	}
+	digest, err := workflowRequestDigest("workflow.define", projectConfig.ProjectID, actor, options.Request)
+	if err != nil {
+		return err
+	}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: "workflow.define:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: digest}
+	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+		return err
+	} else if found {
+		decoded, err := defineResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+		if err != nil {
+			return err
+		}
+		*result = decoded
+		return nil
+	}
 	effects, err := BuildDefinitionEffects(conn, options.Request)
 	if err != nil {
 		return err
 	}
-	event, err := journal.PrepareEvent(lock, journal.Event{
-		EventSchema: journal.CurrentEventSchema,
+	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: options.Request.Name, Type: "workflow"})
+	if err != nil {
+		return err
+	}
+	event := journal.Event{
+		EventSchema: journal.EventSchemaV2,
 		EventType:   "workflow.defined",
-		Actor:       journal.Actor{Role: options.ActorRole},
-		Command: journal.Command{
-			Argv:       workflowDefineArgv(options),
-			CWD:        ".",
-			FIDVersion: workflowFIDVersion,
-		},
-		Effects: effects,
+		OccurredAt:  time.Now().UTC(),
+		ActorV2:     actor.eventActor(),
+		Aggregate:   journal.Aggregate{ID: options.Request.Name, Sequence: sequence, Type: "workflow"},
+		CommandName: "workflow.define",
+		Effects:     effects,
+	}
+	result.Name, result.AppliesTo, result.OccurredAt = options.Request.Name, options.Request.AppliesTo, event.OccurredAt.UTC()
+	if err := loadDefinitionCountsAfterEffects(conn, options.Request, result); err != nil {
+		return err
+	}
+	result.IdempotencyKey = options.IdempotencyKey
+	resultJSON, err := defineResultJSON(*result)
+	if err != nil {
+		return err
+	}
+	outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		return journal.IdempotencyMutation{EntityID: result.Name, ResultJSON: resultJSON}, nil
 	})
 	if err != nil {
 		return err
 	}
-	if err := journal.DryRunProjectEvent(conn, event); err != nil {
-		return err
-	}
-	appended, err := journal.AppendEvent(lock, event)
+	decoded, err := defineResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
 	if err != nil {
 		return err
 	}
-	if err := projectWorkflowEvent(options.WorkspaceRoot, conn, appended); err != nil {
-		return err
-	}
-	if err := loadDefinitionCounts(conn, options.Request.Name, result); err != nil {
-		return err
-	}
-	result.EventID = appended.EventID
-	result.OccurredAt = appended.OccurredAt.UTC()
+	*result = decoded
 	return nil
+}
+
+func loadDefinitionCountsAfterEffects(conn *sql.DB, request DefinitionRequest, result *DefineResult) error {
+	result.States = len(request.States)
+	result.Transitions = len(materializedTransitions(request))
+	result.Requirements = len(request.Requirements)
+	return nil
+}
+
+func defineResultJSON(result DefineResult) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"applies_to": result.AppliesTo, "event_occurred_at": result.OccurredAt.Format(time.RFC3339Nano), "idempotency_key": result.IdempotencyKey, "name": result.Name, "requirements": result.Requirements, "replayed": false, "state_count": result.States, "transition_count": result.Transitions})
+	return string(payload), err
+}
+
+func defineResultFromJSON(raw, eventID string, replayed bool) (DefineResult, error) {
+	var result struct {
+		AppliesTo      string `json:"applies_to"`
+		OccurredAt     string `json:"event_occurred_at"`
+		IdempotencyKey string `json:"idempotency_key"`
+		Name           string `json:"name"`
+		Requirements   int    `json:"requirements"`
+		States         int    `json:"state_count"`
+		Transitions    int    `json:"transition_count"`
+	}
+	if err := json.Unmarshal([]byte(raw), &result); err != nil {
+		return DefineResult{}, fmt.Errorf("decode stored workflow define result: %w", err)
+	}
+	occurredAt, err := time.Parse(time.RFC3339Nano, result.OccurredAt)
+	if err != nil {
+		return DefineResult{}, fmt.Errorf("decode stored workflow define occurred_at: %w", err)
+	}
+	return DefineResult{Name: result.Name, AppliesTo: result.AppliesTo, States: result.States, Transitions: result.Transitions, Requirements: result.Requirements, EventID: eventID, OccurredAt: occurredAt, IdempotencyKey: result.IdempotencyKey, Replayed: replayed}, nil
 }
 
 func openWorkflowDB(workspaceRoot string) (*sql.DB, error) {
@@ -125,48 +172,6 @@ func openWorkflowDB(workspaceRoot string) (*sql.DB, error) {
 
 func closeWorkflowDB(conn *sql.DB) {
 	_ = conn.Close()
-}
-
-func projectWorkflowEvent(workspaceRoot string, conn *sql.DB, event journal.Event) error {
-	eventHash, err := journal.HashEvent(event)
-	if err != nil {
-		return fmt.Errorf("hash workflow event %q: %w", event.EventID, err)
-	}
-	journalFile := event.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-	journalPath := filepath.Join(workspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-	info, err := os.Stat(journalPath)
-	if err != nil {
-		return fmt.Errorf("stat workflow journal %q: %w", journalPath, err)
-	}
-	return journal.ProjectEvent(conn, journal.ProjectionInput{
-		Event: event, EventHash: eventHash, File: journalFile,
-		Line: workflowJournalLineCount(journalPath), Offset: info.Size(),
-	})
-}
-
-func workflowJournalLineCount(path string) int {
-	payload, err := os.ReadFile(path)
-	if err != nil {
-		return 0
-	}
-	trimmed := strings.TrimSpace(string(payload))
-	if trimmed == "" {
-		return 0
-	}
-	return len(strings.Split(trimmed, "\n"))
-}
-
-func loadDefinitionCounts(conn *sql.DB, name string, result *DefineResult) error {
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_states WHERE workflow_id = ?`, name).Scan(&result.States); err != nil {
-		return fmt.Errorf("count workflow %q states: %w", name, err)
-	}
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_transitions WHERE workflow_id = ?`, name).Scan(&result.Transitions); err != nil {
-		return fmt.Errorf("count workflow %q transitions: %w", name, err)
-	}
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM workflow_transition_requires WHERE workflow_id = ?`, name).Scan(&result.Requirements); err != nil {
-		return fmt.Errorf("count workflow %q requirements: %w", name, err)
-	}
-	return nil
 }
 
 func workflowDefineArgv(options DefineOptions) []string {
@@ -185,5 +190,5 @@ func workflowDefineArgv(options DefineOptions) []string {
 	for _, requirement := range request.Requirements {
 		argv = append(argv, "--require", requirement.From+"->"+requirement.To+":"+requirement.Rule+requirement.ParamsJSON)
 	}
-	return append(argv, "--by", options.ActorRole)
+	return append(argv, "--actor", options.Actor, "--idempotency-key", options.IdempotencyKey)
 }

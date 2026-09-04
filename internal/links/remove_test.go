@@ -20,7 +20,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(blocks) error = %v", err)
 	}
@@ -33,7 +33,7 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Remove() error = %v", err)
@@ -58,8 +58,8 @@ func TestRemoveDeletesDeclaredAndInverseRowsAndProjectsActivity(t *testing.T) {
 	stored := readLinkStoredEvents(t, filepath.Join(workspace, ".fid", "journal"))
 	last := stored[len(stored)-1]
 	eventName, actor, details := loadSingleActivityByEvent(t, conn, last.EventID)
-	if eventName != "link_removed" {
-		t.Fatalf("activity_log event = %q, want %q", eventName, "link_removed")
+	if eventName != "link-removed" {
+		t.Fatalf("activity_log event = %q, want %q", eventName, "link-removed")
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want %q", actor, "developer")
@@ -89,7 +89,7 @@ func TestRemoveRejectsMissingLinkBeforeAppend(t *testing.T) {
 		FromID:        firstIssueID,
 		Relation:      "blocks",
 		ToID:          secondIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Remove() error = nil, want rejection")
@@ -117,7 +117,7 @@ func TestRemoveSupportsRequirementInverse(t *testing.T) {
 		FromID:        issueID,
 		Relation:      "implements",
 		ToID:          requirementID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(implements) error = %v", err)
 	}
@@ -128,7 +128,7 @@ func TestRemoveSupportsRequirementInverse(t *testing.T) {
 		FromID:        issueID,
 		Relation:      "implements",
 		ToID:          requirementID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Remove(implements) error = %v", err)

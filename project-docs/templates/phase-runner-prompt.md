@@ -77,6 +77,17 @@ Execution rules:
   its literal ACTION. WAIT retains and polls the live command session;
   EVALUATE inspects the observed terminated result. Invalid router input is a
   recoverable orchestration defect, not permission to invent a route.
+- Route child-agent liveness separately. A parent polling wait timeout is not
+  child termination: route `session WAIT_TIMEOUT`, follow `ACTION WAIT`, and
+  poll the same child again. A running child routes as `session LIVE`; never
+  interrupt it because a parent wait expired or a command budget elapsed at the
+  session level. A returned child routes as `session RETURNED` before its typed
+  result is evaluated. A child externally interrupted before returning routes
+  as `session INTERRUPTED <consecutive-count>`: first to recovery, second to
+  orchestration session-liveness triage. Record ledger `Outcome: INTERRUPTED`
+  with interruption cause, elapsed session duration, and command in flight;
+  use the exact command, `none observed`, or `unknown after external
+  termination`, never an invented value.
 - Put exactly one `Sequence contract: v2` and exactly one
   `Recovery directive schema: v2` in every newly appended
   RUN-START/RUN-RESUME. Both become effective in that event and schema may
@@ -101,6 +112,11 @@ Execution rules:
   originating report. It also binds the external TRG and ledger TRIAGE's exact
   `Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
   and `Repair authority`; direct REPAIR carries all five into TASK-RECOVERY.
+  That recovery's Source references the governing TRG, while its exact-bound
+  ordinary Repair authority is not changed merely to repeat the TRG ID.
+  When direct schema-v2 TRIAGE REPAIR classifies a blocker candidate returned
+  by an active recovery awaiting REPAIR, its bound recovery replaces that
+  pending dispatch only for the same task; other overlaps remain invalid.
   It rejects STOP without a preceding TRIAGE BLOCK and concrete ESC, validates
   every DEC citation in an authority field, and binds a STOP resume to its
   exact next recovery. It requires the same task across recovery, a recorded
@@ -126,6 +142,16 @@ Execution rules:
   in-scope change tied to the trigger satisfies/removes an obligation or
   verification demonstrably narrows the failure. Formatting, metadata-only,
   unrelated, or no-op churn is not progress.
+- An externally interrupted child that returned no typed result never consumes
+  the no-progress budget and does not reset it. Preserve the prior count in the
+  next TASK-RECOVERY. No budget bounds the child session lifetime; only
+  declared per-command budgets apply, and a parent polling wait timeout means
+  poll again. Two consecutive external interruptions require orchestration
+  session-liveness triage, never `recovery-budget-exhausted`. For long
+  verification, checkpoint durable implementation before running commands and
+  append each result to the report as it terminates. A repair verdict from that
+  triage advances total attempt count, preserves the no-progress count, and
+  starts a new interruption streak.
 - Keep attempt count and consecutive no-progress count monotonic for a trigger
   signature across runner sessions, branches, and worktrees. Material progress
   resets only consecutive no-progress to 0/2. A second consecutive no-progress

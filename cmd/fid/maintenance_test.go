@@ -172,9 +172,13 @@ func TestMaintenanceCheckHumanSuccessAndVacuumJSONRejection(t *testing.T) {
 	if human.err != nil || human.stderr != "" || !strings.Contains(human.stdout, "maintenance check: pass") {
 		t.Fatalf("human maintenance.check = %+v, want stdout-only success", human)
 	}
-	vacuum := executeCommandForTest(workspace, "--json", "maintenance", "vacuum", "--by", "tl")
-	if vacuum.err == nil || vacuum.stdout != "" || !strings.Contains(vacuum.stderr, "--json is not available for maintenance vacuum") {
-		t.Fatalf("maintenance.vacuum --json = %+v, want legacy root-flag rejection", vacuum)
+	vacuum := executeCommandForTest(workspace, "--json", "maintenance", "vacuum")
+	if vacuum.err == nil || vacuum.stdout != "" {
+		t.Fatalf("maintenance.vacuum = %+v, want typed unavailable rejection", vacuum)
+	}
+	vacuumError := decodeMaintenanceEnvelope(t, vacuum.stderr)["error"].(map[string]any)
+	if vacuumError["code"] != "capability-unavailable" {
+		t.Fatalf("maintenance.vacuum error = %#v, want capability-unavailable", vacuumError)
 	}
 }
 

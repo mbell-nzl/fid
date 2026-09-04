@@ -103,9 +103,15 @@ embedded strings such as `NOTDEC-123X` are not decision citations.
 - Path: `project-docs/docs/phases/phase-<N>/qa/review-<M>.md`
 - Tasks covered: <task range>
 - Outcome: <PASS | REPAIR | BLOCK>
-- Owning task: <task-M for REPAIR | none>
+- Owning task: <ordered comma-separated task IDs for REPAIR, e.g. `task-1, task-3` | none>
 - Re-review of: <prior review ID for a repair-closing PASS | none>
 - Must-fix: <n> / Improvement: <n> / blocker candidates: <n; QA minted no ESC>
+
+Use exactly one `Owning task` field. For `REPAIR`, list every Must-fix owner in
+the review's Repair Plan row order; that order is the repair order. Each listed
+owner needs its own `TASK-RECOVERY`, `REPAIR`, and `TASK COMPLETE` before a
+linked re-review may close or replace the review. `none` is only for `PASS` and
+`BLOCK`.
 
 ### <YYYY-MM-DD HH:MM> TASK-RECOVERY task-<M>
 
@@ -160,6 +166,13 @@ For an ordinary TRIAGE `REPAIR`, the heading task, `Trigger signature`,
 external triage record's `Originating task`, `Trigger signature`, `Attempt
 count`, `Repair category`, and `Repair authority`. A triage record is not
 merely a reference: it is the authority for those recovery identity fields.
+`Source` references the governing TRG. Do not prefix or otherwise change the
+ordinary `Repair authority` merely to repeat that TRG ID; control-conformance
+authority naming remains governed by the preceding paragraph.
+If the TRIAGE `REPAIR` classified a blocker candidate returned by an active
+schema-v2 recovery awaiting its REPAIR event, this bound TASK-RECOVERY replaces
+that pending dispatch only for the same task. Other overlap and recovery-stage
+checks remain unchanged.
 After `MATERIAL-PROGRESS` or the first `NO-PROGRESS`, the next
 control-conformance `TASK-RECOVERY` increments `Attempt count`, records the
 prior integrated HEAD as its new runner-owned `Control repair base`, and keeps
@@ -180,13 +193,26 @@ evidence; this event records what the continuation changed and proved.
 - Control scope check: <N/A for task-scope | PASS control repair scope: <base> -> <head>; allowed=<exact Allowed files> (terminated exit_code: 0) from the trusted-base verifier blob>
 - Phase-branch integration: <N/A for task-scope | PASS fast-forward from
   directive base to repair HEAD after scope PASS, phase worktree ledger-only>
-- Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS>
+- Outcome: <RESOLVED | MATERIAL-PROGRESS | NO-PROGRESS | INTERRUPTED>
+- Interruption cause: <required exactly once for INTERRUPTED; otherwise omit>
+- Elapsed session duration: <required exactly once for INTERRUPTED; otherwise omit>
+- Command in flight: <exact command | none observed | unknown after external
+  termination; required exactly once for INTERRUPTED; otherwise omit>
 - Resolution evidence: <relevant in-scope change tied to the trigger that
   satisfies/removes an obligation; narrower failure; or byte-identical rerun
   result with observed termination. Formatting/metadata/unrelated churn is not
   progress>
 - Next checkpoint: <VERIFY/REPORT/REVIEW | another TASK-RECOVERY | triage as
   recovery-budget-exhausted>
+
+`INTERRUPTED` means the child was ended from outside before returning a typed
+result. It is not `NO-PROGRESS`: the next TASK-RECOVERY increments total
+`Attempt count` but preserves the prior `Consecutive no-progress attempts`
+value. A parent polling wait timeout is not an interruption and produces no
+REPAIR event; retain and poll the live child. Two consecutive `INTERRUPTED`
+outcomes require orchestration session-liveness TRIAGE before another recovery.
+A TRIAGE `REPAIR` advances the next total `Attempt count`, preserves the prior
+no-progress count, and starts a new consecutive-interruption streak.
 
 For `REPAIR / control-conformance`, leave the dirty run ledger in the phase
 worktree, with no other dirt, and create a dedicated clean temporary repair

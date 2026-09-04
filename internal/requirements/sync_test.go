@@ -12,7 +12,6 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/bootstrap"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
-	"github.com/mbell-nzl/fid/internal/policy"
 )
 
 func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
@@ -35,7 +34,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(first) error = %v", err)
@@ -60,7 +59,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(second) error = %v", err)
@@ -86,7 +85,7 @@ func TestSyncCreatesThenSkipsUnchangedThenUpdatesChangedRows(t *testing.T) {
 		WorkspaceRoot: workspace,
 		MigrationsDir: testRequirementsMigrationsDir(t),
 		SourceDoc:     sourceDoc,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Sync(third) error = %v", err)
@@ -129,8 +128,8 @@ func TestSyncSupportsTypeAndIDFilters(t *testing.T) {
 			WorkspaceRoot: workspace,
 			MigrationsDir: testRequirementsMigrationsDir(t),
 			SourceDoc:     sourceDoc,
-			ActorRole:     "human",
-			TypeFilter:    "PRD",
+			Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
+			TypeFilter: "PRD",
 		})
 		if err != nil {
 			t.Fatalf("Sync(type filter) error = %v", err)
@@ -165,7 +164,7 @@ func TestSyncSupportsTypeAndIDFilters(t *testing.T) {
 			WorkspaceRoot: workspace,
 			MigrationsDir: testRequirementsMigrationsDir(t),
 			SourceDoc:     sourceDoc,
-			ActorRole:     "tl",
+			Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 			RequirementID: "TRD-ARCH-010",
 		})
 		if err != nil {
@@ -273,7 +272,7 @@ This file has no canonical requirement rows.
 			},
 		},
 		{
-			name: "denied role",
+			name: "missing actor",
 			sourceBody: `# Sample
 
 ## 3.11 Governance
@@ -282,12 +281,11 @@ This file has no canonical requirement rows.
 |---|---|---|---|
 | PRD-GOV-006 | Pointer requirement. | Must | v0.1 |
 `,
-			role: "developer",
+			role: "",
 			assertError: func(t *testing.T, err error) {
 				t.Helper()
-				var target *policy.PermissionDeniedError
-				if !errors.As(err, &target) {
-					t.Fatalf("error = %T, want *PermissionDeniedError", err)
+				if !strings.Contains(err.Error(), "requirement actor must match <agent|human|service>:<id>") {
+					t.Fatalf("error = %q, want malformed standalone actor rejection", err)
 				}
 			},
 		},
@@ -305,7 +303,7 @@ This file has no canonical requirement rows.
 				WorkspaceRoot: workspace,
 				MigrationsDir: testRequirementsMigrationsDir(t),
 				SourceDoc:     sourceDoc,
-				ActorRole:     tt.role,
+				Actor:         testActorForRole(tt.role), IdempotencyKey: testIdempotencyKey(),
 				TypeFilter:    tt.typeFilter,
 				RequirementID: tt.requirement,
 			})

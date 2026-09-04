@@ -1,0 +1,5 @@
+{
+  "operation": "activity.list",
+  "command": "fid activity list",
+  "kind": "accepted"
+}

@@ -18,13 +18,18 @@ func newWorkflowCommand() *cobra.Command {
 }
 
 func newWorkflowDefineCommand() *cobra.Command {
-	var name, appliesTo, states, categories, transitions, actorRole string
+	var name, appliesTo, states, categories, transitions, actor, key string
 	cmd := &cobra.Command{
 		Use:   "define",
 		Short: "Define a workflow.",
 		Args:  canonicalNoArgs("workflow.define"),
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			for _, flag := range []string{"name", "applies-to", "states", "categories", "transitions"} {
+				if err := requireCanonicalFlag(cmd, "workflow.define", flag); err != nil {
+					return err
+				}
+			}
+			for _, flag := range []string{"actor", "idempotency-key"} {
 				if err := requireCanonicalFlag(cmd, "workflow.define", flag); err != nil {
 					return err
 				}
@@ -38,7 +43,7 @@ func newWorkflowDefineCommand() *cobra.Command {
 				return renderWorkflowError(cmd, "workflow.define", err)
 			}
 			result, err := workflow.Define(workflow.DefineOptions{
-				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorRole: actorRole, Request: request,
+				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Actor: actor, IdempotencyKey: key, Request: request,
 			})
 			if err != nil {
 				return renderWorkflowError(cmd, "workflow.define", err)
@@ -51,7 +56,7 @@ func newWorkflowDefineCommand() *cobra.Command {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "workflow.define", map[string]any{"workflow": map[string]any{
 					"id": result.Name, "name": result.Name, "applies_to": result.AppliesTo,
 					"state_count": result.States, "transition_count": result.Transitions,
-				}}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339)})
+				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339Nano)})
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "defined workflow %s\n", result.Name)
 			return err
@@ -62,13 +67,14 @@ func newWorkflowDefineCommand() *cobra.Command {
 	cmd.Flags().StringVar(&states, "states", "", "Comma-separated workflow states")
 	cmd.Flags().StringVar(&categories, "categories", "", "Comma-separated state categories")
 	cmd.Flags().StringVar(&transitions, "transitions", "", "Comma-separated workflow transitions")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("workflow.define"))
 	return cmd
 }
 
 func newWorkflowAssignCommand() *cobra.Command {
-	var name, kind, actorRole string
+	var name, kind, actor, key string
 	var projectWide bool
 	cmd := &cobra.Command{
 		Use:   "assign",
@@ -77,6 +83,11 @@ func newWorkflowAssignCommand() *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			if err := requireCanonicalFlag(cmd, "workflow.assign", "name"); err != nil {
 				return err
+			}
+			for _, flag := range []string{"actor", "idempotency-key"} {
+				if err := requireCanonicalFlag(cmd, "workflow.assign", flag); err != nil {
+					return err
+				}
 			}
 			if cmd.Flags().Changed("kind") == projectWide {
 				return renderCanonicalRequestError(cmd, "workflow.assign", fmt.Errorf("exactly one of --kind and --project-wide is required"))
@@ -89,7 +100,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 				return renderWorkflowError(cmd, "workflow.assign", err)
 			}
 			result, err := workflow.Assign(workflow.AssignOptions{
-				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), ActorRole: actorRole,
+				WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), Actor: actor, IdempotencyKey: key,
 				Request: workflow.AssignmentRequest{Name: strings.TrimSpace(name), Kind: strings.TrimSpace(kind), Project: projectWide},
 			})
 			if err != nil {
@@ -106,7 +117,7 @@ func newWorkflowAssignCommand() *cobra.Command {
 			if jsonMode {
 				return cli.WriteSuccess(cmd.OutOrStdout(), "workflow.assign", map[string]any{"assignment": map[string]any{
 					"scope_type": map[bool]string{true: "project", false: "kind"}[result.Project], "scope_value": scopeValue, "workflow_id": result.Name,
-				}}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339)})
+				}, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt.Format(time.RFC3339Nano)})
 			}
 			_, err = fmt.Fprintf(cmd.OutOrStdout(), "assigned workflow %s\n", result.Name)
 			return err
@@ -115,7 +126,8 @@ func newWorkflowAssignCommand() *cobra.Command {
 	cmd.Flags().StringVar(&name, "name", "", "Workflow slug")
 	cmd.Flags().StringVar(&kind, "kind", "", "Issue kind")
 	cmd.Flags().BoolVar(&projectWide, "project-wide", false, "Assign as project default")
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
 	cmd.SetFlagErrorFunc(canonicalFlagError("workflow.assign"))
 	return cmd
 }
@@ -234,22 +246,19 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
 	var notFound *workflow.NotFoundError
 	if errors.As(cause, &notFound) {
 		failure, err := cli.NewFailure(cli.CodeWorkflowNotFound, "workflow was not found", &cli.Subject{Type: cli.SubjectWorkflow, ID: notFound.ID}, map[string]any{"id": notFound.ID})
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	var duplicate *workflow.DuplicateError
 	if errors.As(cause, &duplicate) {
@@ -259,10 +268,13 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	var limit *workflow.ResultLimitExceededError
 	if errors.As(cause, &limit) {
@@ -270,10 +282,13 @@ func renderWorkflowError(cmd *cobra.Command, operation string, cause error) erro
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, cause)
 		}
-		return cause
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 	}
 	return renderIssueMutationError(cmd, operation, "", cause)
 }

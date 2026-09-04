@@ -9,8 +9,7 @@ import (
 )
 
 type claimRecord struct {
-	refType, refID, claimedBy, claimedAt string
-	ttlSeconds                           int
+	id, issueID, actorID, expiresAt, status string
 }
 
 func checkWarnings(db *sql.DB, now time.Time, graceSeconds int) ([]Finding, error) {
@@ -40,7 +39,7 @@ func checkWarnings(db *sql.DB, now time.Time, graceSeconds int) ([]Finding, erro
 }
 
 func loadClaims(db *sql.DB) ([]claimRecord, error) {
-	rows, err := db.Query(`SELECT ref_type, ref_id, claimed_by, claimed_at, ttl_seconds FROM claims ORDER BY rowid`)
+	rows, err := db.Query(`SELECT id, issue_id, actor_id, expires_at, status FROM claims ORDER BY id`)
 	if err != nil {
 		return nil, fmt.Errorf("check claims: query claims: %w", err)
 	}
@@ -49,7 +48,7 @@ func loadClaims(db *sql.DB) ([]claimRecord, error) {
 	claims := make([]claimRecord, 0)
 	for rows.Next() {
 		var claim claimRecord
-		if err := rows.Scan(&claim.refType, &claim.refID, &claim.claimedBy, &claim.claimedAt, &claim.ttlSeconds); err != nil {
+		if err := rows.Scan(&claim.id, &claim.issueID, &claim.actorID, &claim.expiresAt, &claim.status); err != nil {
 			return nil, fmt.Errorf("check claims: scan claim: %w", err)
 		}
 		claims = append(claims, claim)
@@ -70,8 +69,8 @@ func staleClaimFindings(claims []claimRecord, now time.Time) ([]Finding, error) 
 		if !live {
 			findings = append(findings, Finding{
 				Check:    "stale_claims",
-				EntityID: claim.refID,
-				Message:  fmt.Sprintf("claim on %s by %s expired at %s", claim.refID, claim.claimedBy, expiresAt.Format(time.RFC3339)),
+				EntityID: claim.issueID,
+				Message:  fmt.Sprintf("claim on %s by %s expired at %s", claim.issueID, claim.actorID, expiresAt.Format(time.RFC3339)),
 			})
 		}
 	}
@@ -79,12 +78,12 @@ func staleClaimFindings(claims []claimRecord, now time.Time) ([]Finding, error) 
 }
 
 func (claim claimRecord) liveAt(now time.Time) (bool, time.Time, error) {
-	claimedAt, err := time.Parse(time.RFC3339, claim.claimedAt)
+	expiresAt, err := time.Parse(time.RFC3339, claim.expiresAt)
 	if err != nil {
-		return false, time.Time{}, fmt.Errorf("check claim %s time: %w", claim.refID, err)
+		return false, time.Time{}, fmt.Errorf("check claim %s time: %w", claim.issueID, err)
 	}
-	expiresAt := claimedAt.UTC().Add(time.Duration(claim.ttlSeconds) * time.Second)
-	return now.Before(expiresAt), expiresAt, nil
+	expiresAt = expiresAt.UTC()
+	return claim.status == "active" && now.Before(expiresAt), expiresAt, nil
 }
 
 func startedWithoutClaimFindings(db *sql.DB, claims []claimRecord, now time.Time, graceSeconds int) ([]Finding, error) {
@@ -148,15 +147,12 @@ func startedWithoutClaimFindings(db *sql.DB, claims []claimRecord, now time.Time
 func liveIssueClaims(claims []claimRecord, now time.Time) (map[string]bool, error) {
 	live := make(map[string]bool)
 	for _, claim := range claims {
-		if claim.refType != "issue" {
-			continue
-		}
 		isLive, _, err := claim.liveAt(now)
 		if err != nil {
 			return nil, err
 		}
 		if isLive {
-			live[claim.refID] = true
+			live[claim.issueID] = true
 		}
 	}
 	return live, nil

@@ -3,7 +3,6 @@ package issues
 import (
 	"database/sql"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
@@ -11,29 +10,31 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/validation"
 )
 
 const AcceptanceCriteriaLimit = 1000
 
 type AddAcceptanceCriterionOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	IssueID       string
-	Text          string
-	Ordinal       int
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	IssueID        string
+	Text           string
+	Ordinal        int
+	Actor          string
+	IdempotencyKey string
 }
 
 type AddAcceptanceCriterionResult struct {
-	ID            string
-	IssueID       string
-	Text          string
-	Ordinal       int
-	IssueRevision int
-	EventID       string
-	OccurredAt    string
+	ID             string
+	IssueID        string
+	Text           string
+	Ordinal        int
+	IssueRevision  int
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanceCriterionResult, error) {
@@ -60,7 +61,8 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 	if options.Ordinal > 2147483647 {
 		return AddAcceptanceCriterionResult{}, fmt.Errorf("add acceptance criterion: ordinal must be between 1 and 2147483647")
 	}
-	if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, actionIssueACAdd); err != nil {
+	actor, err := standaloneActorForOptions(options.Actor)
+	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
 	}
 
@@ -68,11 +70,18 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		return AddAcceptanceCriterionResult{}, err
 	}
 
-	commandArgv := issueACAddArgv(issueID, text, options.Ordinal, options.ActorRole)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return AddAcceptanceCriterionResult{}, err
+	}
+	requestDigest, err := issueRequestDigest("issue.ac.add", projectConfig.ProjectID, actor, map[string]any{"issue_id": issueID, "ordinal": options.Ordinal, "text": text})
+	if err != nil {
+		return AddAcceptanceCriterionResult{}, err
+	}
+	commandArgv := issueACAddArgv(issueID, text, options.Ordinal, options.Actor, options.IdempotencyKey)
 	var result AddAcceptanceCriterionResult
 	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
@@ -80,6 +89,13 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 			return err
 		}
 		defer closeIssueDB(conn)
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.ac.add:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			result, err = acAddResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			return err
+		}
 
 		issueRevision, err := acceptanceCriteriaIssueRevision(conn, issueID)
 		if err != nil {
@@ -112,24 +128,13 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 			return err
 		}
 
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
-			EventType:   "issue.ac_added",
-			Actor: journal.Actor{
-				Role: options.ActorRole,
-			},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-		})
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: issueID, Type: "issue"})
 		if err != nil {
 			return err
 		}
-
+		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "issue.ac-added", OccurredAt: issueMutationNow(nil), ActorV2: actor.eventActor(), Aggregate: journal.Aggregate{ID: issueID, Sequence: aggregateSequence, Type: "issue"}, CommandName: "issue.ac.add"}
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
-		event.Effects = []journal.Effect{
+		effects := []journal.Effect{
 			{
 				Op:    "insert",
 				Table: "acceptance_criteria",
@@ -145,61 +150,27 @@ func AddAcceptanceCriterion(options AddAcceptanceCriterionOptions) (AddAcceptanc
 		if err != nil {
 			return err
 		}
-		event.Effects = append(event.Effects, revisionEffects...)
-		event.Effects = append(event.Effects, issueActivityEffect(
-			activityID,
-			event.EventID,
-			options.ActorRole,
-			timestamp,
-			issueID,
-			"ac_added",
-			map[string]any{
-				"ac_id":   criterionID,
-				"ordinal": options.Ordinal,
-			},
-		))
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		effects = append(effects, revisionEffects...)
+		event.Effects = effects
+		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
 			return err
 		}
-
-		eventHash, err := journal.HashEvent(appended)
+		event.EventID, event.OccurredAt = prepared.EventID, prepared.OccurredAt
+		event.Effects = append(effects, issueActivityEffect(activityID, event.EventID, actor.id, timestamp, issueID, "ac-added", map[string]any{"ac_id": criterionID, "ordinal": options.Ordinal}))
+		seed := AddAcceptanceCriterionResult{ID: criterionID, IssueID: issueID, Text: text, Ordinal: options.Ordinal, IssueRevision: issueRevision + 1, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey}
+		resultJSON, err := acAddResultJSON(seed)
 		if err != nil {
-			return fmt.Errorf("hash issue event %q: %w", appended.EventID, err)
-		}
-
-		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-		info, err := os.Stat(journalPath)
-		if err != nil {
-			return fmt.Errorf("stat issue journal %q: %w", journalPath, err)
-		}
-
-		if err := journal.ProjectEvent(conn, journal.ProjectionInput{
-			Event:     appended,
-			EventHash: eventHash,
-			File:      journalFile,
-			Line:      countJournalLines(journalPath),
-			Offset:    info.Size(),
-		}); err != nil {
 			return err
 		}
-
-		result = AddAcceptanceCriterionResult{
-			ID:            criterionID,
-			IssueID:       issueID,
-			Text:          text,
-			Ordinal:       options.Ordinal,
-			IssueRevision: issueRevision + 1,
-			EventID:       appended.EventID,
-			OccurredAt:    appended.OccurredAt.UTC().Format(time.RFC3339Nano),
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			return journal.IdempotencyMutation{EntityID: criterionID, ResultJSON: resultJSON}, nil
+		})
+		if err != nil {
+			return err
 		}
-		return nil
+		result, err = acAddResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		return err
 	})
 	if err != nil {
 		return AddAcceptanceCriterionResult{}, err
@@ -240,11 +211,12 @@ func acceptanceCriterionIDExists(conn *sql.DB, criterionID string) (bool, error)
 	return false, fmt.Errorf("query acceptance criterion id %q: %w", criterionID, err)
 }
 
-func issueACAddArgv(issueID, text string, ordinal int, actorRole string) []string {
+func issueACAddArgv(issueID, text string, ordinal int, actor, key string) []string {
 	return []string{
 		"fid", "issue", "ac", "add", issueID,
 		"--text", text,
 		"--ordinal", fmt.Sprintf("%d", ordinal),
-		"--by", actorRole,
+		"--actor", actor,
+		"--idempotency-key", key,
 	}
 }

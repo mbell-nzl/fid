@@ -19,12 +19,12 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	journalPath := workflowJournalPath(t, workspace)
 	beforeJournal := readWorkflowTestFile(t, journalPath)
 
-	result, err := Define(DefineOptions{
+	_, err := Define(DefineOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: migrationsDir,
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 		Request: DefinitionRequest{
-			Name:        "direct-flow",
+			Name:        "requirement-flow",
 			AppliesTo:   "task",
 			States:      []string{"todo", "done", "cancelled"},
 			Categories:  []string{"unstarted", "completed", "cancelled"},
@@ -34,10 +34,29 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 			}},
 		},
 	})
+	if err == nil || err.Error() != "workflow transition requirements are unavailable" {
+		t.Fatalf("Define() error = %v, want unavailable transition requirements", err)
+	}
+	if afterRejectedJournal := readWorkflowTestFile(t, journalPath); !bytes.Equal(afterRejectedJournal, beforeJournal) {
+		t.Fatal("rejected transition requirements changed journal bytes")
+	}
+
+	result, err := Define(DefineOptions{
+		WorkspaceRoot: workspace,
+		MigrationsDir: migrationsDir,
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Request: DefinitionRequest{
+			Name:        "direct-flow",
+			AppliesTo:   "task",
+			States:      []string{"todo", "done", "cancelled"},
+			Categories:  []string{"unstarted", "completed", "cancelled"},
+			Transitions: []Transition{{From: "todo", To: "done"}},
+		},
+	})
 	if err != nil {
 		t.Fatalf("Define() error = %v", err)
 	}
-	if result.Name != "direct-flow" || result.AppliesTo != "task" || result.States != 3 || result.Transitions != 3 || result.Requirements != 1 || result.EventID == "" || result.OccurredAt.IsZero() {
+	if result.Name != "direct-flow" || result.AppliesTo != "task" || result.States != 3 || result.Transitions != 3 || result.Requirements != 0 || result.EventID == "" || result.OccurredAt.IsZero() {
 		t.Fatalf("Define() result = %#v, want projected counts and appended Event identity", result)
 	}
 
@@ -51,11 +70,11 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if err := json.Unmarshal([]byte(afterLines[len(afterLines)-1]), &event); err != nil {
 		t.Fatalf("decode appended event: %v", err)
 	}
-	if event.EventType != "workflow.defined" || event.EventSchema != journal.CurrentEventSchema {
-		t.Fatalf("appended event = (%q, schema %d), want (workflow.defined, schema %d)", event.EventType, event.EventSchema, journal.CurrentEventSchema)
+	if event.EventType != "workflow.defined" || event.EventSchema != journal.EventSchemaV2 {
+		t.Fatalf("appended event = (%q, schema %d), want Event-v2 workflow.defined", event.EventType, event.EventSchema)
 	}
-	if got, want := len(event.Effects), 8; got != want {
-		t.Fatalf("event effects = %d, want %d", got, want)
+	if got, want := len(event.Effects), 8; got != want || event.Effects[len(event.Effects)-1].Table != "idempotency_results" {
+		t.Fatalf("event effects = %#v, want workflow effects plus idempotency result", event.Effects)
 	}
 
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -77,7 +96,7 @@ func TestDefineAppendsOneAtomicWorkflowDefinedEvent(t *testing.T) {
 	if activityCount != 0 {
 		t.Fatalf("activity_log rows = %d, want 0", activityCount)
 	}
-	if _, err := Define(DefineOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorRole: "tl", Request: DefinitionRequest{Name: "direct-flow", AppliesTo: "task", States: []string{"todo", "cancelled"}, Categories: []string{"unstarted", "cancelled"}, Transitions: []Transition{{From: "todo", To: "cancelled"}}}}); err == nil {
+	if _, err := Define(DefineOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Actor: testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(), Request: DefinitionRequest{Name: "direct-flow", AppliesTo: "task", States: []string{"todo", "cancelled"}, Categories: []string{"unstarted", "cancelled"}, Transitions: []Transition{{From: "todo", To: "cancelled"}}}}); err == nil {
 		t.Fatal("duplicate Define() error = nil, want rejection")
 	}
 	if finalJournal := readWorkflowTestFile(t, journalPath); !bytes.Equal(finalJournal, afterJournal) {

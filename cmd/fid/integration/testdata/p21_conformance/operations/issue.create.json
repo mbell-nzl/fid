@@ -1,0 +1,5 @@
+{
+  "operation": "issue.create",
+  "command": "fid issue create",
+  "kind": "accepted"
+}

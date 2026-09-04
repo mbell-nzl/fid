@@ -132,7 +132,7 @@ func TestMigrateUpCreatesBaseSchema(t *testing.T) {
 	defer closeDB(t, conn)
 
 	assertTableExists(t, conn, "projection_meta")
-	assertTableExists(t, conn, "roles")
+	assertTableDoesNotExist(t, conn, "roles")
 	assertTableExists(t, conn, "issues")
 	assertTableExists(t, conn, "epic_metadata")
 	assertTableExists(t, conn, "concerns")
@@ -187,7 +187,7 @@ func TestMigrateRoundTripRestoresBaseSchema(t *testing.T) {
 	defer closeDB(t, conn)
 
 	assertTableExists(t, conn, "projection_meta")
-	assertTableExists(t, conn, "roles")
+	assertTableDoesNotExist(t, conn, "roles")
 	assertTableExists(t, conn, "issues")
 	assertTableExists(t, conn, "epic_metadata")
 	assertTableExists(t, conn, "concerns")

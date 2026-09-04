@@ -63,6 +63,18 @@ Rules:
   SQLite, journal, and projection tests remain in their ordinary owning
   packages so the integration gate does not rerun the default suite.
 
+Phase 21 keeps the recorded package boundaries: Work Envelope, Activation,
+and generic Run logic are owned by `internal/workflow`; generic authority
+replaces V1 role policy inside `internal/policy`; generic Claim behavior
+replaces the V1 implementation inside `internal/claims`; and Gate
+Registration, executor, Receipt, Artifact, and Evidence logic are owned by
+`internal/evidence`. The slice does not create parallel `internal/envelopes`,
+`internal/authority`, `internal/executor`, or `internal/artifacts` packages.
+`internal/bootstrap` and the init/rebuild adapters own the role-free
+`project.initialized` Event-v2 fixture. The generic evaluator in
+`internal/validation` is called by both terminal-success Issue transition and
+Envelope completion; neither adapter duplicates its rules.
+
 ## 3. Versioned Backend Capabilities
 
 Capability versions evolve independently of the fid product version.
@@ -83,8 +95,36 @@ Capability versions evolve independently of the fid product version.
 | `export.portable.v1` | Versioned backend-neutral validation, export, and import semantics |
 
 Discovery returns product/version, supported backend-port range, each
-capability/version/schema range, read/write availability, limits, and accepted
-trust sources. Missing or incompatible capability returns a typed stop.
+capability/version/schema range, binary availability, limits, and accepted
+trust sources. Missing or incompatible capability returns typed unavailability;
+it returns a Stop only after the Stop capability exists.
+
+### 3.1 Phase 21 qualification boundary
+
+Phase 21 fixes the complete availability matrix in its slice contract. An
+operation used by the one-Issue walking skeleton does not make its semantic
+capability available when recovery, parallelism, import, or another required
+behavior is deferred. Availability is derived from binary and migration state,
+cannot be caller-declared, and has no partial or experimental value.
+
+Kit-mode Actor identity, capabilities, producer, and provenance resolve only
+from the active Kit Activation authority profile. Callers pass an Actor
+reference and cannot augment it. Gate Registration similarly resolves a
+finalized activated Gate Definition before any Envelope may reference it.
+
+The Phase 21 executor is a standard-library local process adapter, not an OS
+containment boundary. It enforces structured argv without a shell, exact
+contained cwd, a closed environment allowlist, timeout/output ceilings,
+credential-name policy, redaction, and contained Artifact paths. It accepts
+only `sandbox:none`, `network:allowed`, and `write:allowed`; registration
+rejects stronger unsupported values. There is no automatic process/agent
+respawn or Run continuation.
+
+The complete Phase 21 wire surface, including closed input/result/error/live
+schemas and process exits, is
+`../docs/phases/phase-21/public-interface.md`. The live legacy caller and
+reader/writer disposition is
+`../docs/phases/phase-21/v1-convergence-inventory.md`.
 
 ## 4. Contract Rules
 
@@ -101,6 +141,9 @@ trust sources. Missing or incompatible capability returns a typed stop.
   and optional structured details. Human message text is never control flow.
 - Full logs, secrets, credentials, and raw environment snapshots are forbidden
   in normal JSON responses and journal payloads.
+- Phase 21 mutation retries use a durable operation/project-scoped idempotency
+  key and canonical request digest; same key/digest replays the stored result,
+  while a changed digest conflicts without an Event.
 
 ## 5. Semantic Operation Groups
 
@@ -233,6 +276,16 @@ Targets include deterministic benchmark fixtures and may not be weakened to
 accommodate a regression. A performance tier remains evidence-gated under
 ADR-0011.
 
+For Phase 21, the 100k-Event reference instance is Linux/amd64 on an AMD Ryzen
+7 5700G with six exposed logical CPUs and 8,133,236 kB recorded memory, using
+Go 1.26.2. Evidence also records the exact kernel, `GOOS`/`GOARCH`, toolchain,
+logical CPU count, CPU model, and memory visible to the process. Acceptance is
+three consecutive fresh one-iteration benchmark processes on that instance;
+every sample must self-assert parity and complete below 30 seconds. Best-of or
+median tolerance is not accepted. The general benchmark gate retains the same
+per-sample failure assertion. An unavailable reference instance is `BLOCKED`,
+and a slow sample requires causal optimization rather than threshold change.
+
 ## 10. Pre-Dogfood Convergence Rules
 
 - Replacement contracts and tests land before displaced V1 code is deleted in
@@ -246,4 +299,4 @@ ADR-0011.
   physical DDL and Event payload are recorded in `03_TRD_SCHEMA.md` for that
   slice.
 
-*Last updated: 2026-08-09 (ADR-0011 target architecture)*
+*Last updated: 2026-08-23 (Phase 21 DEC-156/157/158 planning amendments)*

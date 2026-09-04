@@ -43,15 +43,13 @@ func TestProjectEventAppliesEffectsAndUpdatesProjectionMeta(t *testing.T) {
 		Effects: []Effect{
 			{
 				Op:    "insert",
-				Table: "roles",
+				Table: "labels",
 				PK: map[string]any{
 					"name": "developer",
 				},
 				Values: map[string]any{
 					"description": "Developer",
-					"active":      true,
-					"is_human":    false,
-					"created_at":  "2026-06-05T14:23:11Z",
+					"colour":      "#00ff00",
 				},
 			},
 		},
@@ -73,20 +71,20 @@ func TestProjectEventAppliesEffectsAndUpdatesProjectionMeta(t *testing.T) {
 	}
 
 	var description string
-	var active bool
+	var colour string
 	if err := conn.QueryRow(`
-		SELECT description, active
-		FROM roles
+		SELECT description, colour
+		FROM labels
 		WHERE name = ?
-	`, "developer").Scan(&description, &active); err != nil {
-		t.Fatalf("query projected role: %v", err)
+	`, "developer").Scan(&description, &colour); err != nil {
+		t.Fatalf("query projected label: %v", err)
 	}
 
 	if description != "Developer" {
 		t.Fatalf("projected description = %q, want %q", description, "Developer")
 	}
-	if !active {
-		t.Fatal("projected role active = false, want true")
+	if colour != "#00ff00" {
+		t.Fatalf("projected label colour = %q, want %q", colour, "#00ff00")
 	}
 
 	meta, found, err := fiddb.ReadProjectionMeta(conn)
@@ -216,15 +214,15 @@ func TestProjectEventAppliesUpdateDeleteAndReplayStatus(t *testing.T) {
 	}
 
 	var description string
-	var active bool
-	if err := conn.QueryRow(`SELECT description, active FROM roles WHERE name = ?`, "developer").Scan(&description, &active); err != nil {
-		t.Fatalf("query updated role: %v", err)
+	var colour string
+	if err := conn.QueryRow(`SELECT description, colour FROM labels WHERE name = ?`, "developer").Scan(&description, &colour); err != nil {
+		t.Fatalf("query updated label: %v", err)
 	}
 	if description != "Developer Updated" {
 		t.Fatalf("updated description = %q, want %q", description, "Developer Updated")
 	}
-	if active {
-		t.Fatal("updated active = true, want false")
+	if colour != "#ff0000" {
+		t.Fatalf("updated label colour = %q, want %q", colour, "#ff0000")
 	}
 
 	deleteEvent := projectRoleEvent("EVT-20260605-000003", "delete", nil, map[string]any{
@@ -245,8 +243,8 @@ func TestProjectEventAppliesUpdateDeleteAndReplayStatus(t *testing.T) {
 	}
 
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles WHERE name = ?`, "developer").Scan(&count); err != nil {
-		t.Fatalf("count deleted role: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM labels WHERE name = ?`, "developer").Scan(&count); err != nil {
+		t.Fatalf("count deleted label: %v", err)
 	}
 	if count != 0 {
 		t.Fatalf("deleted role count = %d, want %d", count, 0)
@@ -620,7 +618,7 @@ func TestRebuildWorkspaceReplaysActivityLogDeterministically(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t), "developer")
+	rebuildStats, err := RebuildWorkspace(workspace, testProjectMigrationsDir(t))
 	if err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
@@ -846,15 +844,13 @@ func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *t
 		Effects: []Effect{
 			{
 				Op:    "insert",
-				Table: "roles",
+				Table: "labels",
 				PK: map[string]any{
 					"name": "qa_lead",
 				},
 				Values: map[string]any{
 					"description": "QA Lead",
-					"active":      true,
-					"is_human":    true,
-					"created_at":  "2026-06-13T10:00:00Z",
+					"colour":      "#00ff00",
 				},
 			},
 		},
@@ -864,8 +860,8 @@ func TestDryRunProjectEventRollsBackEffectsAndLeavesProjectionMetaUnchanged(t *t
 	}
 
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM roles WHERE name = ?`, "qa_lead").Scan(&count); err != nil {
-		t.Fatalf("count dry-run role: %v", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM labels WHERE name = ?`, "qa_lead").Scan(&count); err != nil {
+		t.Fatalf("count dry-run label: %v", err)
 	}
 	if count != 0 {
 		t.Fatalf("dry-run inserted roles = %d, want 0", count)
@@ -1099,6 +1095,8 @@ func closeProjectDB(t *testing.T, conn interface{ Close() error }) {
 }
 
 func projectRoleEvent(eventID, op string, values, preconditions map[string]any) Event {
+	values = labelValues(values)
+	preconditions = labelValues(preconditions)
 	return Event{
 		EventID:     eventID,
 		EventSchema: EventSchemaV1,
@@ -1115,13 +1113,34 @@ func projectRoleEvent(eventID, op string, values, preconditions map[string]any) 
 		Effects: []Effect{
 			{
 				Op:            op,
-				Table:         "roles",
+				Table:         "labels",
 				PK:            map[string]any{"name": "developer"},
 				Values:        values,
 				Preconditions: preconditions,
 			},
 		},
 	}
+}
+
+func labelValues(values map[string]any) map[string]any {
+	if values == nil {
+		return nil
+	}
+	converted := make(map[string]any, len(values))
+	for key, value := range values {
+		if key == "active" {
+			if active, ok := value.(bool); ok {
+				if active {
+					converted["colour"] = "#00ff00"
+				} else {
+					converted["colour"] = "#ff0000"
+				}
+				continue
+			}
+		}
+		converted[key] = value
+	}
+	return converted
 }
 
 func projectIssueEffect(id string, values map[string]any) Effect {

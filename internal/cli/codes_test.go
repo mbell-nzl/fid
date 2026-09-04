@@ -14,6 +14,7 @@ const (
 	detailStringKind detailKind = iota
 	detailIntegerKind
 	detailStringsKind
+	detailBooleanKind
 	detailObjectKind
 	detailObjectsKind
 )
@@ -80,6 +81,46 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		}},
 		{CodeResultLimitExceeded, CategoryIntegrity, false, nil, []detailExpectation{stringDetail("collection"), integerDetail("limit"), integerDetail("observed")}},
 		{CodeInternalError, CategoryInternal, false, nil, nil},
+		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
+		}},
+		{CodeActivationRecoveryUnavailable, CategoryAuthority, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("status"), {name: "point_of_no_return", kind: detailBooleanKind}, integerDetail("owner_phase"),
+		}},
+		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
+			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
+		}},
+		{CodeCapabilityUnavailable, CategoryAuthority, false, []SubjectType{SubjectCapability}, []detailExpectation{
+			stringDetail("capability_id"), {name: "available", kind: detailBooleanKind}, integerDetail("owner_phase"),
+		}},
+		{CodeExecutorPolicyUnsupported, CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition}, []detailExpectation{
+			{name: "fields", kind: detailStringsKind}, {name: "supported", kind: detailObjectKind, children: []detailExpectation{
+				stringDetail("network"), {name: "shell", kind: detailBooleanKind}, stringDetail("sandbox"), stringDetail("write"),
+			}},
+		}},
+		{CodeRegistrationNotFound, CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringDetails("id")},
+		{CodeEnvelopeNotFound, CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringDetails("id")},
+		{CodeClaimNotFound, CategoryNotFound, false, []SubjectType{SubjectClaim}, stringDetails("id")},
+		{CodeClaimConflict, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimExpired, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
+		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
+		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
+		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
+		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
+		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
+			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
+		}},
+		{CodeObligationUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
+			{name: "reasons", kind: detailObjectsKind, children: []detailExpectation{
+				stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type"),
+			}},
+		}},
+		{CodeArchiveInvalid, CategoryIntegrity, false, []SubjectType{SubjectExport}, []detailExpectation{
+			stringDetail("archive_path"), {name: "checks", kind: detailObjectsKind, children: []detailExpectation{
+				stringDetail("code"), nullableStringDetail("entry"), stringDetail("detail"),
+			}},
+		}},
 	}
 
 	registered := RegisteredCodes()
@@ -137,6 +178,13 @@ func authorityDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("operation"), nullableStringDetail("actor")}
 }
 
+func claimConflictDetails() []detailExpectation {
+	return []detailExpectation{
+		stringDetail("issue_id"), nullableStringDetail("claim_id"), nullableIntegerDetail("expected_version"),
+		nullableIntegerDetail("actual_version"), nullableStringDetail("expires_at"),
+	}
+}
+
 func findingDetails() []detailExpectation {
 	return []detailExpectation{stringDetail("check"), stringDetail("message"), stringDetail("entity_id")}
 }
@@ -186,6 +234,8 @@ func detailValue(field detailExpectation) any {
 		return int64(7)
 	case detailStringsKind:
 		return []string{field.name + "-one", field.name + "-two"}
+	case detailBooleanKind:
+		return true
 	case detailObjectKind:
 		return detailValues(field.children)
 	case detailObjectsKind:
@@ -283,7 +333,11 @@ func assertDetailRules(t *testing.T, expectation reasonCodeExpectation, subject 
 			assertNewFailureRejected(t, expectation.code, subject, extra)
 
 			wrongType := cloneDetails(validDetails)
-			detailParent(wrongType, path.names)[path.names[len(path.names)-1]] = true
+			wrongValue := any(true)
+			if path.kind == detailBooleanKind {
+				wrongValue = "not-a-boolean"
+			}
+			detailParent(wrongType, path.names)[path.names[len(path.names)-1]] = wrongValue
 			assertNewFailureRejected(t, expectation.code, subject, wrongType)
 
 			if path.nullable {
@@ -318,13 +372,14 @@ func assertDetailRules(t *testing.T, expectation reasonCodeExpectation, subject 
 type detailPath struct {
 	names    []string
 	nullable bool
+	kind     detailKind
 }
 
 func detailPaths(fields []detailExpectation, prefix []string) []detailPath {
 	var paths []detailPath
 	for _, field := range fields {
 		path := append(append([]string(nil), prefix...), field.name)
-		paths = append(paths, detailPath{names: path, nullable: field.nullable})
+		paths = append(paths, detailPath{names: path, nullable: field.nullable, kind: field.kind})
 		paths = append(paths, detailPaths(field.children, path)...)
 	}
 	return paths
@@ -419,6 +474,11 @@ func assertSerializedDetailValue(t *testing.T, raw json.RawMessage, field detail
 		var value []string
 		if err := json.Unmarshal(raw, &value); err != nil {
 			t.Fatalf("json.Unmarshal(%q string array) error = %v", field.name, err)
+		}
+	case detailBooleanKind:
+		var value bool
+		if err := json.Unmarshal(raw, &value); err != nil {
+			t.Fatalf("json.Unmarshal(%q boolean) error = %v", field.name, err)
 		}
 	case detailObjectKind:
 		assertSerializedDetails(t, raw, field.children)

@@ -24,7 +24,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement AC add",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -38,7 +38,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		IssueID:       taskCreated.ID,
 		Text:          "Second acceptance criterion",
 		Ordinal:       2,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion(second) error = %v", err)
@@ -53,7 +53,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		IssueID:       taskCreated.ID,
 		Text:          "First acceptance criterion",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion(first) error = %v", err)
@@ -95,11 +95,11 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("stored events len = %d, want at least 2", len(stored))
 	}
 	last := stored[len(stored)-1]
-	if last.EventType != "issue.ac_added" {
-		t.Fatalf("last event type = %q, want issue.ac_added", last.EventType)
+	if last.EventType != "issue.ac-added" || last.EventSchema != journal.EventSchemaV2 {
+		t.Fatalf("last event = (%q, schema %d), want issue.ac-added Event-v2", last.EventType, last.EventSchema)
 	}
-	if last.Actor.Role != "developer" || len(last.Effects) != 3 {
-		t.Fatalf("AC Event actor/effects = (%q, %d), want (developer, 3)", last.Actor.Role, len(last.Effects))
+	if last.ActorV2.ActorID != "developer" || last.ActorV2.ActorType != "agent" || len(last.Effects) != 4 {
+		t.Fatalf("AC Event actor/effects = (%#v, %d), want agent developer and 4 effects", last.ActorV2, len(last.Effects))
 	}
 
 	var (
@@ -121,8 +121,8 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 	if activityEffect == nil {
 		t.Fatal("missing ac_added activity effect")
 	}
-	if got := activityEffect.Values["event"]; got != "ac_added" {
-		t.Fatalf("activity event = %#v, want ac_added", got)
+	if got := activityEffect.Values["event"]; got != "ac-added" {
+		t.Fatalf("activity event = %#v, want ac-added", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -138,7 +138,7 @@ func TestAddAcceptanceCriterionPersistsAndReadsBackInOrdinalOrder(t *testing.T) 
 		t.Fatalf("stored row = (%q, %d, %q), want (%q, 1, %q)", issueID, ordinal, text, taskCreated.ID, "First acceptance criterion")
 	}
 
-	assertIssueLabelActivity(t, conn, last.EventID, "ac_added", "developer", first.ID, `"ordinal":1`)
+	assertIssueLabelActivity(t, conn, last.EventID, "ac-added", "developer", first.ID, `"ordinal":1`)
 }
 
 func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
@@ -160,8 +160,8 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "epic",
 					Title:         "Epic without ACs",
-					ActorRole:     "tl",
-					Scheduling:    "prioritised",
+					Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+					Scheduling: "prioritised",
 				})
 				if err != nil {
 					t.Fatalf("Create(epic) error = %v", err)
@@ -175,7 +175,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					IssueID:       issueID,
 					Text:          "Rejected on epic",
 					Ordinal:       1,
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				}
 			},
 			wantErr: `add acceptance criterion: issue "`,
@@ -187,7 +187,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 			},
 		},
 		{
-			name: "unknown role rejected before append",
+			name: "malformed actor rejected before append",
 			prepare: func(t *testing.T, workspace string) string {
 				t.Helper()
 				created, err := Create(CreateOptions{
@@ -195,7 +195,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "Task for role validation",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				if err != nil {
 					t.Fatalf("Create(task) error = %v", err)
@@ -207,12 +207,12 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					WorkspaceRoot: workspace,
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
-					Text:          "Unknown role rejection",
+					Text:          "Malformed actor rejection",
 					Ordinal:       1,
-					ActorRole:     "intern",
+					Actor:         "intern",
 				}
 			},
-			wantErr: `role "intern" not in project profile`,
+			wantErr: "Issue actor must match <agent|human|service>:<id>",
 			verify: func(t *testing.T, workspace, issueID string) {
 				t.Helper()
 				conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -229,7 +229,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "Task for ordinal validation",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				if err != nil {
 					t.Fatalf("Create(task) error = %v", err)
@@ -243,7 +243,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					IssueID:       issueID,
 					Text:          "Ordinal rejection",
 					Ordinal:       0,
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				}
 			},
 			wantErr: "add acceptance criterion: ordinal must be a positive integer",
@@ -267,7 +267,7 @@ func TestAddAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					IssueID:       issueID,
 					Text:          "Not found rejection",
 					Ordinal:       1,
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				}
 			},
 			wantErr: `issue "FID-missing" not found`,
@@ -313,7 +313,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 				IssueID:       "FID-123",
 				Text:          "Missing workspace",
 				Ordinal:       1,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: workspace root is required",
 		},
@@ -324,7 +324,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 				IssueID:       "FID-123",
 				Text:          "Missing migrations",
 				Ordinal:       1,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: migrations dir is required",
 		},
@@ -335,7 +335,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Text:          "Missing issue id",
 				Ordinal:       1,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: issue id is required",
 		},
@@ -346,7 +346,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				IssueID:       "FID-123",
 				Ordinal:       1,
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: text is required",
 		},
@@ -357,7 +357,7 @@ func TestAddAcceptanceCriterionInputValidation(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				IssueID:       "FID-123",
 				Text:          "Bad ordinal",
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "add acceptance criterion: ordinal must be a positive integer",
 		},
@@ -381,7 +381,7 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 
 	t.Run("accepts exact maxima", func(t *testing.T) {
 		workspace := newIssueWorkspace(t)
-		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC boundaries", ActorRole: "developer"})
+		created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC boundaries", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 		if err != nil {
 			t.Fatalf("Create() error = %v", err)
 		}
@@ -391,7 +391,7 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 			IssueID:       created.ID,
 			Text:          strings.Repeat("x", 4096),
 			Ordinal:       2147483647,
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		})
 		if err != nil || len(result.Text) != 4096 || result.Ordinal != 2147483647 {
 			t.Fatalf("AddAcceptanceCriterion() = (%#v, %v), want exact maxima", result, err)
@@ -412,13 +412,13 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			workspace := newIssueWorkspace(t)
-			created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC rejection", ActorRole: "developer"})
+			created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC rejection", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
 			}
 			journalPath := journalPathForWorkspace(t, workspace)
 			before := countJournalLines(journalPath)
-			_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: test.text, Ordinal: test.ordinal, ActorRole: "developer"})
+			_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: test.text, Ordinal: test.ordinal, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 			if err == nil || err.Error() != test.wantErr {
 				t.Fatalf("AddAcceptanceCriterion() error = %v, want %q", err, test.wantErr)
 			}
@@ -432,7 +432,7 @@ func TestAddAcceptanceCriterionClosedValueBoundaries(t *testing.T) {
 func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *testing.T) {
 	t.Parallel()
 	workspace := newIssueWorkspace(t)
-	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC limit", ActorRole: "developer"})
+	created, err := Create(CreateOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), Kind: "task", Title: "AC limit", Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
@@ -453,7 +453,7 @@ func TestAcceptanceCriterionNestedLimitRejectsMutationAndReadWithoutAppend(t *te
 
 	journalPath := journalPathForWorkspace(t, workspace)
 	before := countJournalLines(journalPath)
-	_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: "over limit", Ordinal: 1001, ActorRole: "developer"})
+	_, err = AddAcceptanceCriterion(AddAcceptanceCriterionOptions{WorkspaceRoot: workspace, MigrationsDir: testIssueMigrationsDir(t), IssueID: created.ID, Text: "over limit", Ordinal: 1001, Actor: testActorForRole("developer"), IdempotencyKey: testIdempotencyKey()})
 	var limit *ResultLimitExceededError
 	if !errors.As(err, &limit) || limit.Collection != "acceptance_criteria" || limit.Limit != 1000 || limit.Observed != 1001 {
 		t.Fatalf("AddAcceptanceCriterion() error = %#v, want acceptance_criteria 1001/1000 limit", err)
@@ -526,7 +526,7 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Round-trip AC add",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -538,7 +538,7 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 		IssueID:       taskCreated.ID,
 		Text:          "Canonical event",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -565,11 +565,11 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 	if err := json.Unmarshal(payload, &roundTripped); err != nil {
 		t.Fatalf("Unmarshal(round-trip) error = %v", err)
 	}
-	if roundTripped.EventType != "issue.ac_added" {
-		t.Fatalf("round-tripped event type = %q, want issue.ac_added", roundTripped.EventType)
+	if roundTripped.EventType != "issue.ac-added" {
+		t.Fatalf("round-tripped event type = %q, want issue.ac-added", roundTripped.EventType)
 	}
-	if len(roundTripped.Effects) != 3 {
-		t.Fatalf("round-tripped event effects = %#v, want insert, revision, and activity", roundTripped.Effects)
+	if len(roundTripped.Effects) != 4 {
+		t.Fatalf("round-tripped event effects = %#v, want insert, revision, activity, and idempotency", roundTripped.Effects)
 	}
 	if roundTripped.Effects[0].PK["id"] != result.ID {
 		t.Fatalf("round-tripped insert effect PK = %#v, want %q", roundTripped.Effects[0].PK, result.ID)
@@ -584,6 +584,14 @@ func TestAddAcceptanceCriterionEventRoundTripStaysCanonical(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -593,7 +601,7 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement AC verify",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -605,7 +613,7 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 		IssueID:       taskCreated.ID,
 		Text:          "Acceptance criterion can be verified",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -618,11 +626,11 @@ func TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "developer",
-		Status:        "pass",
-		EvidenceType:  acStringPointer("test"),
-		EvidenceRef:   acStringPointer("internal/issues/ac_test.go::TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent"),
-		Notes:         acStringPointer("Verified by targeted engine test"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status:       "pass",
+		EvidenceType: acStringPointer("test"),
+		EvidenceRef:  acStringPointer("internal/issues/ac_test.go::TestVerifyAcceptanceCriterionPersistsAllFieldsAndAppendsEvent"),
+		Notes:        acStringPointer("Verified by targeted engine test"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion() error = %v", err)
@@ -740,7 +748,7 @@ func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *test
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Deterministic AC latest ordering",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -752,7 +760,7 @@ func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *test
 		IssueID:       taskCreated.ID,
 		Text:          "Latest-per-role follows append order",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -798,6 +806,14 @@ func TestLatestVerificationSelectionPrefersAppendOrderWithinTimestampTie(t *test
 }
 
 func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -807,7 +823,7 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Append-only AC verification history",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -819,7 +835,7 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		IssueID:       taskCreated.ID,
 		Text:          "History is append only",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -830,9 +846,9 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "developer",
-		Status:        "fail",
-		Notes:         acStringPointer("Initial developer failure"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status: "fail",
+		Notes:  acStringPointer("Initial developer failure"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(developer fail) error = %v", err)
@@ -859,9 +875,9 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "qa_lead",
-		Status:        "fail",
-		Notes:         acStringPointer("Independent QA lead failure"),
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
+		Status: "fail",
+		Notes:  acStringPointer("Independent QA lead failure"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(qa_lead fail) error = %v", err)
@@ -872,9 +888,9 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "developer",
-		Status:        "pass",
-		Notes:         acStringPointer("Developer fixed the failure"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status: "pass",
+		Notes:  acStringPointer("Developer fixed the failure"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(developer pass) error = %v", err)
@@ -956,6 +972,14 @@ func TestVerifyAcceptanceCriterionPreservesHistoryAndLatestPerRole(t *testing.T)
 }
 
 func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -965,7 +989,7 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Rebuild AC latest-per-role parity",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -977,7 +1001,7 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		IssueID:       taskCreated.ID,
 		Text:          "Rebuild keeps latest verification",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -988,9 +1012,9 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "developer",
-		Status:        "fail",
-		Notes:         acStringPointer("Initial failure before immediate pass"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status: "fail",
+		Notes:  acStringPointer("Initial failure before immediate pass"),
 	}); err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(developer fail) error = %v", err)
 	}
@@ -999,9 +1023,9 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "developer",
-		Status:        "pass",
-		Notes:         acStringPointer("Immediate pass before rebuild"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status: "pass",
+		Notes:  acStringPointer("Immediate pass before rebuild"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(developer pass) error = %v", err)
@@ -1011,9 +1035,9 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   criterion.ID,
-		ActorRole:     "qa_lead",
-		Status:        "fail",
-		Notes:         acStringPointer("Independent QA lead failure"),
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
+		Status: "fail",
+		Notes:  acStringPointer("Independent QA lead failure"),
 	})
 	if err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(qa_lead fail) error = %v", err)
@@ -1033,7 +1057,7 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
@@ -1066,6 +1090,14 @@ func TestVerifyAcceptanceCriterionLatestPerRoleSurvivesRebuild(t *testing.T) {
 }
 
 func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	tests := []struct {
@@ -1086,8 +1118,8 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
 					CriterionID:   criterionID,
-					ActorRole:     "developer",
-					Status:        "bogus",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Status: "bogus",
 				}
 			},
 			wantErr: `verify acceptance criterion: status "bogus" must be one of pass, fail, blocked, not_applicable`,
@@ -1103,9 +1135,9 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
 					CriterionID:   criterionID,
-					ActorRole:     "developer",
-					Status:        "pass",
-					EvidenceType:  acStringPointer("pdf"),
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Status:       "pass",
+					EvidenceType: acStringPointer("pdf"),
 				}
 			},
 			wantErr: `verify acceptance criterion: evidence type "pdf" must be one of test, source, screenshot, manual, command, commit`,
@@ -1122,8 +1154,8 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
 					CriterionID:   criterionID,
-					ActorRole:     "developer",
-					Status:        "pass",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Status: "pass",
 				}
 			},
 			wantErr: `verify acceptance criterion: acceptance criterion "AC-missing" not found`,
@@ -1137,7 +1169,7 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "Other issue",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				if err != nil {
 					t.Fatalf("Create(other task) error = %v", err)
@@ -1150,8 +1182,8 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
 					CriterionID:   criterionID,
-					ActorRole:     "developer",
-					Status:        "pass",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+					Status: "pass",
 				}
 			},
 			wantErr: `verify acceptance criterion: acceptance criterion "`,
@@ -1173,8 +1205,8 @@ func TestVerifyAcceptanceCriterionRejectsBeforeAppend(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					IssueID:       issueID,
 					CriterionID:   criterionID,
-					ActorRole:     "intern",
-					Status:        "pass",
+					Actor:         testActorForRole("intern"), IdempotencyKey: testIdempotencyKey(),
+					Status: "pass",
 				}
 			},
 			wantErr: `role "intern" not in project profile`,
@@ -1222,7 +1254,7 @@ func seedAcceptanceCriterionForVerification(t *testing.T, workspace string) (str
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Verification task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -1234,7 +1266,7 @@ func seedAcceptanceCriterionForVerification(t *testing.T, workspace string) (str
 		IssueID:       taskCreated.ID,
 		Text:          "Criterion for verification",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion() error = %v", err)
@@ -1278,7 +1310,7 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 		IssueID:       "FID-missing",
 		Text:          "Missing issue",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("AddAcceptanceCriterion() error = nil, want not found")
@@ -1294,6 +1326,14 @@ func TestAddAcceptanceCriterionNotFoundErrorShape(t *testing.T) {
 }
 
 func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *testing.T) {
+	assertJudgmentUnavailable(t, "reviews.coverage.v1", func() error {
+		_, err := VerifyAcceptanceCriterion(VerifyAcceptanceCriterionOptions{})
+		return err
+	})
+	if !t.Failed() {
+		return
+	}
+
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -1303,7 +1343,7 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "List acceptance criteria",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -1315,7 +1355,7 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		IssueID:       taskCreated.ID,
 		Text:          "Second criterion",
 		Ordinal:       2,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion(second) error = %v", err)
@@ -1327,7 +1367,7 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		IssueID:       taskCreated.ID,
 		Text:          "First criterion",
 		Ordinal:       1,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("AddAcceptanceCriterion(first) error = %v", err)
@@ -1338,8 +1378,8 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   first.ID,
-		ActorRole:     "developer",
-		Status:        "fail",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status: "fail",
 	}); err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(fail) error = %v", err)
 	}
@@ -1348,10 +1388,10 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   first.ID,
-		ActorRole:     "developer",
-		Status:        "pass",
-		EvidenceType:  acStringPointer("test"),
-		EvidenceRef:   acStringPointer("internal/issues/ac_test.go::TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet"),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		Status:       "pass",
+		EvidenceType: acStringPointer("test"),
+		EvidenceRef:  acStringPointer("internal/issues/ac_test.go::TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet"),
 	}); err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(pass) error = %v", err)
 	}
@@ -1360,8 +1400,8 @@ func TestListAcceptanceCriteriaReturnsOrdinalLatestPerRoleAndMatchesIssueGet(t *
 		MigrationsDir: testIssueMigrationsDir(t),
 		IssueID:       taskCreated.ID,
 		CriterionID:   first.ID,
-		ActorRole:     "qa_lead",
-		Status:        "blocked",
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
+		Status: "blocked",
 	}); err != nil {
 		t.Fatalf("VerifyAcceptanceCriterion(qa_lead blocked) error = %v", err)
 	}
@@ -1423,7 +1463,7 @@ func TestListAcceptanceCriteriaEmptyAndNotFound(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Empty acceptance criteria",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)

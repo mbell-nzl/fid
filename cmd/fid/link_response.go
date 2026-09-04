@@ -13,21 +13,17 @@ func renderLinkError(cmd *cobra.Command, operation string, cause error) error {
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
-			return err
-		}
-		return cause
-	}
-
 	failure, err := linkFailure(cmd, operation, cause)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, cause)
 	}
-	return cause
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, cause)
 }
 
 func linkFailure(cmd *cobra.Command, operation string, cause error) (cli.Failure, error) {

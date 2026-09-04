@@ -59,8 +59,9 @@ func ReplayJournal(conn *sql.DB, journalDir string, options *ReplayOptions) (Rep
 	}
 
 	var stats ReplayStats
+	tracker := newAggregateSequenceTracker()
 	for _, fileName := range files {
-		fileReplayed, err := replayJournalFile(conn, journalDir, fileName, options, &stats)
+		fileReplayed, err := replayJournalFile(conn, journalDir, fileName, options, &stats, tracker)
 		if err != nil {
 			return ReplayStats{}, err
 		}
@@ -72,7 +73,7 @@ func ReplayJournal(conn *sql.DB, journalDir string, options *ReplayOptions) (Rep
 	return stats, nil
 }
 
-func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats) (bool, error) {
+func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *ReplayOptions, stats *ReplayStats, tracker *aggregateSequenceTracker) (bool, error) {
 	path := filepath.Join(journalDir, fileName)
 	file, err := os.Open(path)
 	if err != nil {
@@ -113,13 +114,6 @@ func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *Repla
 			continue
 		}
 
-		if startFile != "" && (fileName < startFile || (fileName == startFile && offset <= startOffset)) {
-			if errors.Is(readErr, io.EOF) {
-				break
-			}
-			continue
-		}
-
 		var stored Event
 		if err := json.Unmarshal(trimmed, &stored); err != nil {
 			return false, &CorruptJournalError{
@@ -127,6 +121,19 @@ func replayJournalFile(conn *sql.DB, journalDir, fileName string, options *Repla
 				Line: lineNumber,
 				Err:  err,
 			}
+		}
+		if err := tracker.add(stored); err != nil {
+			return false, &CorruptJournalError{
+				File: filepath.ToSlash(filepath.Join(".fid", "journal", fileName)),
+				Line: lineNumber,
+				Err:  err,
+			}
+		}
+		if startFile != "" && (fileName < startFile || (fileName == startFile && offset <= startOffset)) {
+			if errors.Is(readErr, io.EOF) {
+				break
+			}
+			continue
 		}
 
 		eventHash, err := HashEvent(stored)

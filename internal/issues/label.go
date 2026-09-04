@@ -2,6 +2,7 @@ package issues
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -10,42 +11,47 @@ import (
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/validation"
 )
 
 const IssueLabelsLimit = 100
 
 type AddLabelOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	IssueID       string
-	Label         string
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	IssueID        string
+	Label          string
+	Actor          string
+	IdempotencyKey string
 }
 
 type AddLabelResult struct {
-	IssueID       string
-	Label         string
-	IssueRevision int
-	EventID       string
-	OccurredAt    string
+	IssueID        string
+	Label          string
+	IssueRevision  int
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type RemoveLabelOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	IssueID       string
-	Label         string
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	IssueID        string
+	Label          string
+	Actor          string
+	IdempotencyKey string
 }
 
 type RemoveLabelResult struct {
-	IssueID       string
-	Label         string
-	IssueRevision int
-	EventID       string
-	OccurredAt    string
+	IssueID        string
+	Label          string
+	IssueRevision  int
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
@@ -54,15 +60,15 @@ func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 		options.MigrationsDir,
 		options.IssueID,
 		options.Label,
-		options.ActorRole,
-		actionIssueLabelAdd,
+		options.Actor,
+		options.IdempotencyKey,
 		issueLabelAddArgv,
 		"issue label add",
 		issueLabelOperationSpec{
 			eventType: "issue.label.added",
 			effectOp:  "insert",
 			direction: "added",
-			eventName: "issue_label_added",
+			eventName: "issue-label-added",
 			validate:  assertIssueLabelAddable,
 		},
 	)
@@ -74,7 +80,7 @@ func AddLabel(options AddLabelOptions) (AddLabelResult, error) {
 	if err != nil {
 		return AddLabelResult{}, err
 	}
-	return AddLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt}, nil
+	return AddLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt, IdempotencyKey: result.idempotencyKey, Replayed: result.replayed}, nil
 }
 
 func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
@@ -83,15 +89,15 @@ func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
 		options.MigrationsDir,
 		options.IssueID,
 		options.Label,
-		options.ActorRole,
-		actionIssueLabelRemove,
+		options.Actor,
+		options.IdempotencyKey,
 		issueLabelRemoveArgv,
 		"issue label remove",
 		issueLabelOperationSpec{
 			eventType: "issue.label.removed",
 			effectOp:  "delete",
 			direction: "removed",
-			eventName: "issue_label_removed",
+			eventName: "issue-label-removed",
 			validate:  assertIssueLabelRemovable,
 		},
 	)
@@ -103,7 +109,7 @@ func RemoveLabel(options RemoveLabelOptions) (RemoveLabelResult, error) {
 	if err != nil {
 		return RemoveLabelResult{}, err
 	}
-	return RemoveLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt}, nil
+	return RemoveLabelResult{IssueID: result.issueID, Label: result.label, IssueRevision: result.revision, EventID: result.eventID, OccurredAt: result.occurredAt, IdempotencyKey: result.idempotencyKey, Replayed: result.replayed}, nil
 }
 
 type issueLabelOperationSpec struct {
@@ -115,26 +121,30 @@ type issueLabelOperationSpec struct {
 }
 
 type issueLabelWriteRequest struct {
-	workspaceRoot string
-	migrationsDir string
-	issueID       string
-	label         string
-	actorRole     string
-	commandArgv   []string
-	spec          issueLabelOperationSpec
+	workspaceRoot  string
+	migrationsDir  string
+	issueID        string
+	label          string
+	actor          standaloneActor
+	idempotencyKey string
+	operation      string
+	commandArgv    []string
+	spec           issueLabelOperationSpec
 }
 
 type issueLabelWriteResult struct {
-	issueID    string
-	label      string
-	revision   int
-	eventID    string
-	occurredAt string
+	issueID        string
+	label          string
+	revision       int
+	eventID        string
+	occurredAt     string
+	idempotencyKey string
+	replayed       bool
 }
 
 func prepareIssueLabelWrite(
-	workspaceRoot, migrationsDir, issueID, label, actorRole, action string,
-	argvBuilder func(string, string, string) []string,
+	workspaceRoot, migrationsDir, issueID, label, actorValue, idempotencyKey string,
+	argvBuilder func(string, string, string, string) []string,
 	opName string,
 	spec issueLabelOperationSpec,
 ) (issueLabelWriteRequest, error) {
@@ -156,26 +166,28 @@ func prepareIssueLabelWrite(
 	if err != nil {
 		return issueLabelWriteRequest{}, err
 	}
-	if err := policy.Authorize(workspaceRoot, actorRole, action); err != nil {
+	actor, err := standaloneActorForOptions(actorValue)
+	if err != nil {
 		return issueLabelWriteRequest{}, err
 	}
 
 	return issueLabelWriteRequest{
-		workspaceRoot: workspaceRoot,
-		migrationsDir: migrationsDir,
-		issueID:       trimmedIssueID,
-		label:         trimmedLabel,
-		actorRole:     actorRole,
-		commandArgv:   argvBuilder(trimmedIssueID, trimmedLabel, actorRole),
-		spec:          spec,
+		workspaceRoot:  workspaceRoot,
+		migrationsDir:  migrationsDir,
+		issueID:        trimmedIssueID,
+		label:          trimmedLabel,
+		actor:          actor,
+		idempotencyKey: idempotencyKey,
+		operation:      strings.ReplaceAll(opName, " ", "."),
+		commandArgv:    argvBuilder(trimmedIssueID, trimmedLabel, actorValue, idempotencyKey),
+		spec:           spec,
 	}, nil
 }
 
 func issueLabelWrite(request issueLabelWriteRequest) (issueLabelWriteResult, error) {
 	var result issueLabelWriteResult
 	err := journal.WithLock(request.workspaceRoot, journal.LockOwner{
-		Command:   strings.Join(request.commandArgv, " "),
-		ActorRole: request.actorRole,
+		Command: strings.Join(request.commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		return issueLabelWriteLocked(lock, request, &result)
 	})
@@ -195,6 +207,25 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 		return err
 	}
 	defer closeIssueDB(conn)
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(request.workspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return err
+	}
+	digest, err := issueRequestDigest(request.operation, projectConfig.ProjectID, request.actor, map[string]any{"issue_id": request.issueID, "label": request.label})
+	if err != nil {
+		return err
+	}
+	idempotencyRequest := journal.IdempotencyRequest{OperationScope: request.operation + ":" + projectConfig.ProjectID, IdempotencyKey: request.idempotencyKey, RequestDigest: digest}
+	if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+		return err
+	} else if found {
+		decoded, err := issueLabelResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+		if err != nil {
+			return err
+		}
+		*result = decoded
+		return nil
+	}
 
 	revision, err := issueLabelCurrentRevision(conn, request.issueID)
 	if err != nil {
@@ -204,15 +235,45 @@ func issueLabelWriteLocked(lock *journal.WriteLock, request issueLabelWriteReque
 		return err
 	}
 
-	event, err := prepareIssueLabelEvent(lock, conn, request, revision)
+	activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
+		return activityIDExists(conn, candidate)
+	})
 	if err != nil {
 		return err
 	}
-	if err := appendAndProjectIssueLabelEvent(conn, request.workspaceRoot, lock, event); err != nil {
+	sequence, err := journal.NextAggregateSequence(filepath.Join(request.workspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: request.issueID, Type: "issue"})
+	if err != nil {
 		return err
 	}
-
-	*result = issueLabelWriteResult{issueID: request.issueID, label: request.label, revision: revision + 1, eventID: event.EventID, occurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano)}
+	baseEffects, err := issueLabelCoreEffects(request, revision)
+	if err != nil {
+		return err
+	}
+	event, err := journal.PrepareEvent(lock, journal.Event{EventSchema: journal.EventSchemaV2, EventType: request.spec.eventType, OccurredAt: issueMutationNow(nil), ActorV2: request.actor.eventActor(), Aggregate: journal.Aggregate{ID: request.issueID, Sequence: sequence, Type: "issue"}, CommandName: request.operation, Effects: baseEffects})
+	if err != nil {
+		return err
+	}
+	timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
+	event.Effects, err = issueLabelEffects(request, activityID, event.EventID, timestamp, revision)
+	if err != nil {
+		return err
+	}
+	seed := issueLabelWriteResult{issueID: request.issueID, label: request.label, revision: revision + 1, occurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), idempotencyKey: request.idempotencyKey}
+	outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		encoded, err := issueLabelResultJSON(seed)
+		if err != nil {
+			return journal.IdempotencyMutation{}, err
+		}
+		return journal.IdempotencyMutation{EntityID: request.issueID + ":" + request.label, ResultJSON: encoded}, nil
+	})
+	if err != nil {
+		return err
+	}
+	decoded, err := issueLabelResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+	if err != nil {
+		return err
+	}
+	*result = decoded
 	return nil
 }
 
@@ -220,39 +281,25 @@ func openIssueLabelDB(workspaceRoot string) (*sql.DB, error) {
 	return fiddb.Open(filepath.Join(workspaceRoot, config.WorkspaceDirName, config.DatabaseFileName))
 }
 
-func prepareIssueLabelEvent(lock *journal.WriteLock, conn *sql.DB, request issueLabelWriteRequest, revision int) (journal.Event, error) {
-	activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
-		return activityIDExists(conn, candidate)
-	})
+func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, timestamp string, revision int) ([]journal.Effect, error) {
+	effects, err := issueLabelCoreEffects(request, revision)
 	if err != nil {
-		return journal.Event{}, err
+		return nil, err
 	}
-
-	event, err := journal.PrepareEvent(lock, journal.Event{
-		EventSchema: journal.CurrentEventSchema,
-		EventType:   request.spec.eventType,
-		Actor: journal.Actor{
-			Role: request.actorRole,
-		},
-		Command: journal.Command{
-			Argv:       request.commandArgv,
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-	})
-	if err != nil {
-		return journal.Event{}, err
-	}
-
-	timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
-	event.Effects, err = issueLabelEffects(request, activityID, event.EventID, timestamp, revision)
-	if err != nil {
-		return journal.Event{}, err
-	}
-	return event, nil
+	effects = append(effects, issueLabelActivityEffect(
+		activityID,
+		eventID,
+		request.actor.id,
+		timestamp,
+		request.issueID,
+		request.label,
+		request.spec.direction,
+		request.spec.eventName,
+	))
+	return effects, nil
 }
 
-func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, timestamp string, revision int) ([]journal.Effect, error) {
+func issueLabelCoreEffects(request issueLabelWriteRequest, revision int) ([]journal.Effect, error) {
 	effects := []journal.Effect{
 		{
 			Op:    request.spec.effectOp,
@@ -271,29 +318,7 @@ func issueLabelEffects(request issueLabelWriteRequest, activityID, eventID, time
 		return nil, err
 	}
 	effects = append(effects, revisionEffects...)
-	effects = append(effects, issueLabelActivityEffect(
-		activityID,
-		eventID,
-		request.actorRole,
-		timestamp,
-		request.issueID,
-		request.label,
-		request.spec.direction,
-		request.spec.eventName,
-	))
 	return effects, nil
-}
-
-func appendAndProjectIssueLabelEvent(conn *sql.DB, workspaceRoot string, lock *journal.WriteLock, event journal.Event) error {
-	if err := journal.DryRunProjectEvent(conn, event); err != nil {
-		return err
-	}
-
-	appended, err := journal.AppendEvent(lock, event)
-	if err != nil {
-		return err
-	}
-	return projectIssueEvent(conn, workspaceRoot, appended)
 }
 
 func assertIssueLabelAddable(conn *sql.DB, issueID, label string) error {
@@ -359,12 +384,12 @@ func issueLabelExists(conn *sql.DB, label string) error {
 	return err
 }
 
-func issueLabelAddArgv(issueID, label, actorRole string) []string {
-	return []string{"fid", "issue", "label", "add", issueID, label, "--by", actorRole}
+func issueLabelAddArgv(issueID, label, actor, key string) []string {
+	return []string{"fid", "issue", "label", "add", issueID, label, "--actor", actor, "--idempotency-key", key}
 }
 
-func issueLabelRemoveArgv(issueID, label, actorRole string) []string {
-	return []string{"fid", "issue", "label", "remove", issueID, label, "--by", actorRole}
+func issueLabelRemoveArgv(issueID, label, actor, key string) []string {
+	return []string{"fid", "issue", "label", "remove", issueID, label, "--actor", actor, "--idempotency-key", key}
 }
 
 func issueLabelActivityEffect(activityID, eventID, actorRole, occurredAt, issueID, label, direction, eventName string) journal.Effect {
@@ -385,4 +410,23 @@ func issueLabelActivityEffect(activityID, eventID, actorRole, occurredAt, issueI
 			"occurred_at": occurredAt,
 		},
 	}
+}
+
+func issueLabelResultJSON(result issueLabelWriteResult) (string, error) {
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"event_occurred_at": result.occurredAt, "idempotency_key": result.idempotencyKey, "issue_id": result.issueID, "issue_revision": result.revision, "label": result.label, "replayed": false})
+	return string(payload), err
+}
+
+func issueLabelResultFromJSON(raw, eventID string, replayed bool) (issueLabelWriteResult, error) {
+	var value struct {
+		OccurredAt     string `json:"event_occurred_at"`
+		IdempotencyKey string `json:"idempotency_key"`
+		IssueID        string `json:"issue_id"`
+		IssueRevision  int    `json:"issue_revision"`
+		Label          string `json:"label"`
+	}
+	if err := json.Unmarshal([]byte(raw), &value); err != nil {
+		return issueLabelWriteResult{}, fmt.Errorf("decode stored issue label result: %w", err)
+	}
+	return issueLabelWriteResult{issueID: value.IssueID, label: value.Label, revision: value.IssueRevision, eventID: eventID, occurredAt: value.OccurredAt, idempotencyKey: value.IdempotencyKey, replayed: replayed}, nil
 }

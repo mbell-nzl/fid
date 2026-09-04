@@ -2,16 +2,13 @@ package issues
 
 import (
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/config"
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/journal"
-	"github.com/mbell-nzl/fid/internal/policy"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -20,17 +17,21 @@ type TransitionOptions struct {
 	MigrationsDir    string
 	ID               string
 	ToState          string
-	ActorRole        string
+	Actor            string
+	IdempotencyKey   string
 	ExpectedRevision *int
+	now              func() time.Time
 }
 
 type TransitionResult struct {
-	ID         string
-	Revision   int
-	FromState  string
-	ToState    string
-	EventID    string
-	OccurredAt string
+	ID             string
+	Revision       int
+	FromState      string
+	ToState        string
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type InvalidTransitionError struct {
@@ -57,6 +58,18 @@ type BlockedTransitionError struct {
 	RequestedState string
 	Unmet          []workflow.UnmetCondition
 	Cause          error
+}
+
+// ExecutionBoundTransitionError preserves every failed generic predicate.
+type ExecutionBoundTransitionError struct {
+	IssueID        string
+	CurrentState   string
+	RequestedState string
+	Reasons        []workflow.EvaluationReason
+}
+
+func (err *ExecutionBoundTransitionError) Error() string {
+	return fmt.Sprintf("execution-bound transition for issue %q is not permitted", err.IssueID)
 }
 
 func (err *BlockedTransitionError) Unwrap() error {
@@ -116,6 +129,10 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if strings.TrimSpace(options.ID) == "" {
 		return TransitionResult{}, fmt.Errorf("transition issue: issue id is required")
 	}
+	actor, err := standaloneActorForOptions(options.Actor)
+	if err != nil {
+		return TransitionResult{}, err
+	}
 
 	toState := strings.TrimSpace(options.ToState)
 	if toState == "" {
@@ -124,12 +141,19 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
 		return TransitionResult{}, err
 	}
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.ConfigFileName))
+	if err != nil {
+		return TransitionResult{}, err
+	}
+	requestDigest, err := issueRequestDigest("issue.transition", projectConfig.ProjectID, actor, transitionRequestValue(toState, options.ExpectedRevision))
+	if err != nil {
+		return TransitionResult{}, err
+	}
 
-	commandArgv := issueTransitionArgv(options.ID, toState, options.ActorRole, options.ExpectedRevision)
+	commandArgv := issueTransitionArgv(options.ID, toState, options.Actor, options.IdempotencyKey, options.ExpectedRevision)
 	var result TransitionResult
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
-		Command:   strings.Join(commandArgv, " "),
-		ActorRole: options.ActorRole,
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{
+		Command: strings.Join(commandArgv, " "),
 	}, func(lock *journal.WriteLock) error {
 		dbPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.DatabaseFileName)
 		conn, err := fiddb.Open(dbPath)
@@ -137,88 +161,80 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 			return err
 		}
 		defer closeIssueDB(conn)
+		idempotencyRequest := journal.IdempotencyRequest{OperationScope: "issue.transition:" + projectConfig.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotencyRequest); err != nil {
+			return err
+		} else if found {
+			result, err = transitionResultFromJSON(outcome.ResultJSON, outcome.EventID, true)
+			return err
+		}
 
 		current, err := loadIssueTransitionState(conn, options.ID)
 		if err != nil {
 			return err
 		}
-		if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
-			return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
-		}
 		registry, err := workflow.Load(conn)
 		if err != nil {
 			return err
 		}
-		if _, known := registry.CategoryForState(current.WorkflowID, toState); !known {
-			return &InvalidTransitionError{
-				IssueID:        current.ID,
-				CurrentState:   current.Status,
-				RequestedState: toState,
-			}
-		}
-		if err := policy.Authorize(options.WorkspaceRoot, options.ActorRole, issueTransitionAction(toState)); err != nil {
-			return err
-		}
-
+		toCategory, known := registry.CategoryForState(current.WorkflowID, toState)
 		rules, allowed := registry.RulesForEdge(current.WorkflowID, current.Status, toState)
-		if !allowed {
-			return &InvalidTransitionError{
-				IssueID:        current.ID,
-				CurrentState:   current.Status,
-				RequestedState: toState,
-			}
-		}
-
-		unmet, err := evaluateTransitionRules(conn, current, rules)
+		execution, err := workflow.EvaluateExecutionTransition(options.WorkspaceRoot, options.MigrationsDir, workflow.ExecutionTransitionRequest{
+			IssueID: current.ID, ActorID: actor.id, ExpectedIssueRevision: options.ExpectedRevision,
+			ActualIssueRevision: current.Revision, WorkflowEdgeValid: known && allowed,
+			TerminalSuccess: toCategory == "completed",
+		})
 		if err != nil {
 			return err
 		}
-		if len(unmet) > 0 {
-			return &BlockedTransitionError{
+		if execution.Bound {
+			if len(execution.Reasons) > 0 {
+				return &ExecutionBoundTransitionError{IssueID: current.ID, CurrentState: current.Status, RequestedState: toState, Reasons: execution.Reasons}
+			}
+		} else if !known || !allowed {
+			return &InvalidTransitionError{
 				IssueID:        current.ID,
 				CurrentState:   current.Status,
 				RequestedState: toState,
-				Unmet:          unmet,
 			}
 		}
-		if entersStartedCategory(registry, current.WorkflowID, current.Status, toState) {
-			if err := claims.RequireLiveIssueClaimHeld(conn, current.ID, options.ActorRole); err != nil {
+		if !execution.Bound {
+			if options.ExpectedRevision != nil && *options.ExpectedRevision != current.Revision {
+				return &StateConflictError{IssueID: current.ID, ExpectedRevision: *options.ExpectedRevision, ActualRevision: current.Revision}
+			}
+			unmet, err := evaluateTransitionRules(conn, current, rules)
+			if err != nil {
+				return err
+			}
+			if len(unmet) > 0 {
 				return &BlockedTransitionError{
 					IssueID:        current.ID,
 					CurrentState:   current.Status,
 					RequestedState: toState,
-					Unmet:          []workflow.UnmetCondition{{Rule: "live_claim_held"}},
-					Cause:          err,
+					Unmet:          unmet,
 				}
 			}
 		}
 
-		activityID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
-			return activityIDExists(conn, candidate)
-		})
+		activityID, err := nextIssueActivityID(conn)
+		if err != nil {
+			return err
+		}
+		aggregateSequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "journal"), journal.Aggregate{ID: current.ID, Type: "issue"})
 		if err != nil {
 			return err
 		}
 
-		event, err := journal.PrepareEvent(lock, journal.Event{
-			EventSchema: journal.CurrentEventSchema,
+		event := journal.Event{
+			EventSchema: journal.EventSchemaV2,
 			EventType:   "issue.transitioned",
-			OccurredAt:  nextIssueUpdateTime(current.UpdatedAt, time.Now().UTC()),
-			Actor: journal.Actor{
-				Role: options.ActorRole,
-			},
-			Command: journal.Command{
-				Argv:       commandArgv,
-				CWD:        ".",
-				FIDVersion: fidVersion,
-			},
-		})
-		if err != nil {
-			return err
+			OccurredAt:  issueMutationNow(options.now),
+			ActorV2:     actor.eventActor(),
+			Aggregate:   journal.Aggregate{ID: current.ID, Sequence: aggregateSequence, Type: "issue"},
+			CommandName: "issue.transition",
 		}
-
 		timestamp := event.OccurredAt.UTC().Format(time.RFC3339)
-		event.Effects = []journal.Effect{
+		effects := []journal.Effect{
 			{
 				Op:    "update",
 				Table: "issues",
@@ -243,76 +259,25 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 		if err != nil {
 			return err
 		}
-		event.Effects = append(event.Effects, revisionEffects...)
-		if leavesStartedCategory(registry, current.WorkflowID, current.Status, toState) {
-			releaseEffect, err := claims.MaybeBuildIssueReleaseEffect(conn, current.ID, options.ActorRole)
-			if err != nil {
-				return err
-			}
-			if releaseEffect != nil {
-				event.Effects = append(event.Effects, *releaseEffect)
-			}
-		}
-		event.Effects = append(event.Effects,
-			journal.Effect{
-				Op:    "activity",
-				Table: "activity_log",
-				PK:    map[string]any{"id": activityID},
-				Values: map[string]any{
-					"journal_event_id": event.EventID,
-					"ref_type":         "issue",
-					"ref_id":           current.ID,
-					"event":            "status_changed",
-					"details": map[string]any{
-						"from": current.Status,
-						"to":   toState,
-					},
-					"actor":       options.ActorRole,
-					"occurred_at": timestamp,
-				},
-			},
-		)
-
-		if err := journal.DryRunProjectEvent(conn, event); err != nil {
-			return err
-		}
-
-		appended, err := journal.AppendEvent(lock, event)
+		effects = append(effects, revisionEffects...)
+		event.Effects = effects
+		prepared, err := journal.PrepareEvent(lock, event)
 		if err != nil {
 			return err
 		}
-
-		eventHash, err := journal.HashEvent(appended)
+		event.Effects = append(effects, issueActivityEffect(activityID, prepared.EventID, actor.id, timestamp, current.ID, "status-changed", map[string]any{"from": current.Status, "to": toState}))
+		resultJSON, err := transitionResultJSON(TransitionResult{ID: current.ID, Revision: current.Revision + 1, FromState: current.Status, ToState: toState, OccurredAt: event.OccurredAt.UTC().Format(time.RFC3339Nano), IdempotencyKey: options.IdempotencyKey})
 		if err != nil {
-			return fmt.Errorf("hash issue event %q: %w", appended.EventID, err)
-		}
-
-		journalFile := appended.OccurredAt.UTC().Format("2006-01-02") + ".jsonl"
-		journalPath := filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName, journalFile)
-		info, err := os.Stat(journalPath)
-		if err != nil {
-			return fmt.Errorf("stat issue journal %q: %w", journalPath, err)
-		}
-
-		if err := journal.ProjectEvent(conn, journal.ProjectionInput{
-			Event:     appended,
-			EventHash: eventHash,
-			File:      journalFile,
-			Line:      countJournalLines(journalPath),
-			Offset:    info.Size(),
-		}); err != nil {
 			return err
 		}
-
-		result = TransitionResult{
-			ID:         current.ID,
-			Revision:   current.Revision + 1,
-			FromState:  current.Status,
-			ToState:    toState,
-			EventID:    appended.EventID,
-			OccurredAt: appended.OccurredAt.UTC().Format(time.RFC3339Nano),
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotencyRequest, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+			return journal.IdempotencyMutation{EntityID: current.ID, ResultJSON: resultJSON}, nil
+		})
+		if err != nil {
+			return err
 		}
-		return nil
+		result, err = transitionResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
+		return err
 	})
 	if err != nil {
 		return TransitionResult{}, err
@@ -321,30 +286,6 @@ func Transition(options TransitionOptions) (TransitionResult, error) {
 	return result, nil
 }
 
-func entersStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
-	if !ok {
-		return false
-	}
-	return fromCategory != "started" && toCategory == "started"
-}
-
-func leavesStartedCategory(registry *workflow.Registry, workflowID, fromState, toState string) bool {
-	fromCategory, toCategory, ok := transitionCategories(registry, workflowID, fromState, toState)
-	if !ok {
-		return false
-	}
-	return fromCategory == "started" && toCategory != "started"
-}
-
-func transitionCategories(registry *workflow.Registry, workflowID, fromState, toState string) (string, string, bool) {
-	fromCategory, ok := registry.CategoryForState(workflowID, fromState)
-	if !ok {
-		return "", "", false
-	}
-	toCategory, ok := registry.CategoryForState(workflowID, toState)
-	if !ok {
-		return "", "", false
-	}
-	return fromCategory, toCategory, true
+func transitionRequestValue(toState string, expectedRevision *int) map[string]any {
+	return map[string]any{"expected_revision": expectedRevision, "to": toState}
 }

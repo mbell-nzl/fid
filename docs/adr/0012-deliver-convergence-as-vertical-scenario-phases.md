@@ -49,6 +49,49 @@ is delivery scaffolding, not fid product scope. The Tech Lead may now plan the
 new Phase 20 from the accepted roadmap. The exact one-Issue Routine walking-
 skeleton boundary is the next product discussion before Phase 21 is planned.
 
+## Gate D3.2 amendment - 2026-08-22
+
+The Human accepted the one-Issue walking-skeleton boundary as one **Heavy
+Phase 21**, not formal 21A/21B phases. Phase 21 uses two internal task groups
+with a fresh independent review and executor-feasibility checkpoint after the
+authority/activation/Gate Registration/Work Envelope/Claim/Run group and before
+trusted execution/evidence. This is internal sequencing, not a new acceptance
+boundary; Phase 21 still closes only through the complete vertical journey.
+
+The accepted thinness decisions are:
+
+- Attention, typed Stops, budget consumption/exhaustion, interruption
+  recovery, automatic respawn, activation recovery, and export import belong
+  to Phase 22;
+- Phase 21 stores immutable Envelope/Run budget contracts with consumption and
+  remaining unavailable (`null`);
+- Phase 21 supports one complete generic Obligation value shape and one type,
+  deterministic gate evidence from fid-executed Receipts;
+- executor policy is limited to standard-library-enforceable controls and
+  rejects unsupported restrictive policy rather than claiming OS containment;
+- export create and non-mutating validate land, but `export.portable.v1`
+  remains unavailable until import identity/history parity passes; and
+- every incomplete semantic capability remains unavailable in discovery.
+
+`Routine` is an external kit risk-lane term. fid neither persists nor
+evaluates it; fid receives only the activated, approved operational values
+compiled from kit policy.
+
+## Phase 21 terminal-gate amendment - 2026-08-22
+
+The one gate-evidence Obligation guards the selected Issue's terminal-success
+transition before it also guards Work Envelope completion. The representative
+journey therefore executes the registered Gate, records and links its Receipt,
+and obtains a satisfied evaluation before terminal Issue mutation. Completion
+then independently re-evaluates the same current facts and requires the
+terminal-success Issue. One shared evaluator prevents the two guards from
+becoming separate authorities.
+
+The post-rebuild half is a parity proof, not a second journey mutation: rebuild
+replays the one set of durable facts, then repeats reads, evaluation,
+completion state, resume, export, and negative conformance. It does not create
+a second one-revision Envelope in the project.
+
 ## Consequences
 
 - architecture is still developed in dependency order inside a phase, but

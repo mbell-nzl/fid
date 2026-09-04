@@ -9,7 +9,7 @@ dependencies.
 | `sync-skills.sh` | Generate provider skill copies from `project-docs/skills/`. Use `--check` to compare without writing. |
 | `workflow-lint.sh` | Verify agent workflow artifacts, templates, config, and generated prompt/skill copies have not drifted. |
 | `report-lint.sh <report> <task-spec>` | Deterministically verify a completion report: typed workflow outcome, required headings, command coverage, observed termination, commit identity, and that the report is committed and clean. Emits `OUTCOME COMPLETE`, `OUTCOME RECOVERY_REQUIRED`, or `OUTCOME BLOCKED`. `--self-test` proves pass and fail cases. |
-| `workflow-route.sh <source> <outcome> [attempts]` | Map typed Developer, report, QA, triage, command-liveness, and recovery-budget outcomes to the Phase Runner's next action. |
+| `workflow-route.sh <source> <outcome> [attempts]` | Map typed Developer, report, QA, triage, command/session-liveness, and recovery-budget outcomes to the Phase Runner's next action. |
 | `workflow-control-scope-lint.sh <repo> <base> <head> <allowed...>` | Verify a runner-bound control-conformance base-to-HEAD repair is clean, regular-file-only, and changes no path outside its explicit tools allowlist. |
 | `workflow-sequence-lint.sh <run-ledger> [--append-stdin]` | Validate schema, triage/STOP authority, typed recovery budgets and ordering, or idempotently validate/append one stdin event at EOF; a byte-identical retry confirms a lost receipt without duplication. Reports state but never chooses the next action. |
 | `drills/run-drills.sh` | Evidence-chain drills: seed known defects into a fixture mini-phase and verify the QA chain catches them. Mechanical drills score automatically; agent drills produce workspaces plus a scoring sheet. |
@@ -68,6 +68,17 @@ decisions. A normal resume uses `N/A` governing IDs and `Next recovery`.
 Every schema-v2 external TRG and ledger TRIAGE carries exactly one
 `Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
 and `Repair authority`; direct REPAIR binds all five through TASK-RECOVERY.
+
+## Child-Session Liveness
+
+A parent polling wait timeout and a child still reported live both route to
+`ACTION WAIT`; neither authorizes interruption. A returned child routes to
+`ACTION EVALUATE`. An externally interrupted child routes to `ACTION REPAIR`
+on the first consecutive occurrence and `ACTION TRIAGE` on the second. Its
+ledger REPAIR uses `Outcome: INTERRUPTED`, records interruption cause, elapsed
+session duration, and command in flight, and preserves the preceding
+no-progress count. Only declared per-command budgets apply to commands; none
+bounds the child session lifetime.
 
 Run from the repository root:
 

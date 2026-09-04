@@ -4,7 +4,7 @@ set -eu
 
 usage() {
   cat >&2 <<'EOF'
-Usage: workflow-route.sh <source> <outcome> [consecutive-no-progress-attempts]
+Usage: workflow-route.sh <source> <outcome> [consecutive-attempts]
 
 Sources and outcomes:
   developer   COMPLETE | RECOVERY_REQUIRED | BLOCKED
@@ -12,6 +12,8 @@ Sources and outcomes:
   qa          PASS | REPAIR | BLOCK
   triage      RESUME | REPAIR | BLOCK
   command     LIVE | TERMINATED | INTERRUPTED | MISSING_TERMINATION
+  session     LIVE | WAIT_TIMEOUT | RETURNED | INTERRUPTED
+              (INTERRUPTED requires consecutive interruption count)
   recovery    PROGRESS | NO_PROGRESS (requires attempt count for NO_PROGRESS)
   control     CONFORMANCE_DEFECT | DEFINITION_CHANGE | AMBIGUOUS
 
@@ -42,11 +44,27 @@ case "$source:$outcome" in
   command:LIVE)
     action=WAIT
     ;;
+  session:LIVE|session:WAIT_TIMEOUT)
+    action=WAIT
+    ;;
+  session:RETURNED)
+    action=EVALUATE
+    ;;
   command:TERMINATED)
     action=EVALUATE
     ;;
   command:INTERRUPTED|command:MISSING_TERMINATION|recovery:PROGRESS)
     action=REPAIR
+    ;;
+  session:INTERRUPTED)
+    case "$attempts" in
+      ''|*[!0-9]*) usage ;;
+    esac
+    if [ "$attempts" -ge 2 ]; then
+      action=TRIAGE
+    else
+      action=REPAIR
+    fi
     ;;
   control:CONFORMANCE_DEFECT)
     action=REPAIR
@@ -69,8 +87,9 @@ case "$source:$outcome" in
     ;;
 esac
 
-if [ "$source" != recovery ] && [ -n "$attempts" ]; then
-  usage
-fi
+case "$source:$outcome" in
+  recovery:NO_PROGRESS|session:INTERRUPTED) ;;
+  *) [ -z "$attempts" ] || usage ;;
+esac
 
 printf 'ACTION %s\n' "$action"

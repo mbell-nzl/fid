@@ -22,7 +22,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 		FromID:        primaryIssueID,
 		Relation:      "blocks",
 		ToID:          outgoingIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(blocks) error = %v", err)
 	}
@@ -32,7 +32,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 		FromID:        primaryIssueID,
 		Relation:      "implements",
 		ToID:          requirementID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(implements) error = %v", err)
 	}
@@ -42,7 +42,7 @@ func TestListReturnsOutgoingAndIncomingLinksWithResolvedTitlesInStableOrder(t *t
 		FromID:        incomingIssueID,
 		Relation:      "discovered_from",
 		ToID:          primaryIssueID,
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("seed Add(discovered_from) error = %v", err)
 	}

@@ -8,18 +8,11 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-func nextIssueUpdateTime(currentUpdatedAt string, now time.Time) time.Time {
-	parsed, err := time.Parse(time.RFC3339, currentUpdatedAt)
-	if err != nil {
-		return now.UTC()
+func issueMutationNow(now func() time.Time) time.Time {
+	if now == nil {
+		return time.Now().UTC()
 	}
-
-	candidate := now.UTC()
-	if candidate.Format(time.RFC3339) <= parsed.UTC().Format(time.RFC3339) {
-		return parsed.UTC().Add(time.Second)
-	}
-
-	return candidate
+	return now().UTC()
 }
 
 func activityIDExists(conn *sql.DB, activityID string) (bool, error) {

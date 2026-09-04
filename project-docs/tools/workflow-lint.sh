@@ -184,6 +184,26 @@ for file in project-docs/agents/phase-runner.md .codex/agents/phase_runner.toml;
   check_contains "$file" 'outer.*execution cell|execution cell.*outer' "Phase Runner wrapper-completion guardrail"
 done
 
+session_liveness_surfaces="
+project-docs/specs/09_AI_WORKFLOW.md
+project-docs/agents/phase-runner.md
+project-docs/templates/phase-runner-prompt.md
+project-docs/docs/playbook.md
+.claude/agents/phase-runner.md
+.codex/agents/phase_runner.toml
+"
+
+for file in $session_liveness_surfaces; do
+  check_contains "$file" 'externally interrupted|interrupted.*outside|shut down.*outside' "external child interruption rule"
+  check_contains "$file" 'does not consume|never consumes' "interruption does not consume no-progress budget"
+  check_contains "$file" 'wait timeout|polling wait' "parent polling timeout distinction"
+  check_contains "$file" 'command in flight' "session-liveness command capture"
+done
+
+check_contains "project-docs/tools/workflow-route.sh" 'session:WAIT_TIMEOUT.*session:LIVE|session:LIVE.*session:WAIT_TIMEOUT' "live child-session wait route"
+check_contains "project-docs/tools/workflow-route.sh" 'session:INTERRUPTED' "interrupted child-session route"
+check_contains "project-docs/tools/workflow-sequence-lint.sh" 'INTERRUPTED' "interrupted recovery ledger outcome"
+
 check_file "project-docs/docs/playbook.md" "operator playbook"
 check_file "project-docs/templates/hooks/claude-settings.example.json" "Claude hook example"
 check_file "project-docs/templates/hooks/codex-hooks-notes.md" "Codex hook notes"

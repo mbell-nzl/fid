@@ -32,28 +32,32 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	p20RememberEvent(t, eventIDs, assignmentEvent)
 
 	epicResult, epicEvent := p20JourneyMutation(t, workspace,
-		"issue", "create", "--kind", "epic", "--title", "Phase 20 journey", "--scheduling", "sequential", "--by", "tl",
+		"issue", "create", "--kind", "epic", "--title", "Phase 20 journey", "--scheduling", "sequential", "--actor", "agent:tl", "--idempotency-key", "p20-issue-create-epic",
 	)
+	p20AssertIdempotencyKey(t, epicResult, "p20-issue-create-epic")
 	p20RememberEvent(t, eventIDs, epicEvent)
 	epicID := p20IssueID(t, epicResult)
 
 	taskResult, taskEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Exercise retained journey", "--epic", epicID,
-		"--sequence", "1", "--priority", "1", "--by", "developer",
+		"--sequence", "1", "--priority", "1", "--actor", "agent:developer", "--idempotency-key", "p20-issue-create-task",
 	)
+	p20AssertIdempotencyKey(t, taskResult, "p20-issue-create-task")
 	p20RememberEvent(t, eventIDs, taskEvent)
 	taskID := p20IssueID(t, taskResult)
 
 	followUpResult, followUpEvent := p20JourneyMutation(t, workspace,
 		"issue", "create", "--kind", "task", "--title", "Follow-up retained journey", "--epic", epicID,
-		"--sequence", "2", "--priority", "2", "--by", "developer",
+		"--sequence", "2", "--priority", "2", "--actor", "agent:developer", "--idempotency-key", "p20-issue-create-follow-up",
 	)
+	p20AssertIdempotencyKey(t, followUpResult, "p20-issue-create-follow-up")
 	p20RememberEvent(t, eventIDs, followUpEvent)
 	followUpID := p20IssueID(t, followUpResult)
 
 	subtaskResult, subtaskEvent := p20JourneyMutation(t, workspace,
-		"issue", "create", "--kind", "subtask", "--title", "Inspect canonical state", "--parent", taskID, "--by", "developer",
+		"issue", "create", "--kind", "subtask", "--title", "Inspect canonical state", "--parent", taskID, "--actor", "agent:developer", "--idempotency-key", "p20-issue-create-subtask",
 	)
+	p20AssertIdempotencyKey(t, subtaskResult, "p20-issue-create-subtask")
 	p20RememberEvent(t, eventIDs, subtaskEvent)
 	subtaskID := p20IssueID(t, subtaskResult)
 
@@ -119,19 +123,17 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	beforeUpdate := p20IssueGet(t, workspace, taskID)
 	currentRevision := p20IssueRevision(t, beforeUpdate)
 	updateResult, updateEvent := p20JourneyMutation(t, workspace,
-		"issue", "update", taskID, "--title", "Exercise retained journey, updated", "--expected-revision", strconv.Itoa(currentRevision), "--by", "developer",
+		"issue", "update", taskID, "--title", "Exercise retained journey, updated", "--expected-revision", strconv.Itoa(currentRevision), "--actor", "agent:developer",
 	)
 	p20RememberEvent(t, eventIDs, updateEvent)
 	updatedRevision := p20Integer(t, p20Object(t, updateResult["issue"])["revision"])
 	if updatedRevision != currentRevision+1 {
 		t.Fatalf("updated revision = %d, want %d", updatedRevision, currentRevision+1)
 	}
-	if actor := p20JournalEventActor(t, workspace, updateEvent); actor != "developer" {
-		t.Fatalf("update event actor = %q, want supplied local attribution developer", actor)
-	}
+	p20AssertJournalEventAttribution(t, workspace, updateEvent, "developer")
 
 	transitionResult, transitionEvent := p20JourneyMutation(t, workspace,
-		"issue", "transition", taskID, "--to", "cancelled", "--expected-revision", strconv.Itoa(updatedRevision), "--by", "tl",
+		"issue", "transition", taskID, "--to", "cancelled", "--expected-revision", strconv.Itoa(updatedRevision), "--actor", "agent:tl",
 	)
 	p20RememberEvent(t, eventIDs, transitionEvent)
 	transitionedRevision := p20Integer(t, p20Object(t, transitionResult["issue"])["revision"])
@@ -150,7 +152,7 @@ func TestP20StandaloneIssueJourneyJSONAndRebuildParity(t *testing.T) {
 	for _, issueID := range []string{epicID, taskID, followUpID, subtaskID} {
 		beforeRebuild[issueID] = p20IssueGet(t, workspace, issueID)
 	}
-	p20JourneyRead(t, workspace, "rebuild", "--by", "tl")
+	p20JourneyRead(t, workspace, "rebuild")
 	for issueID, want := range beforeRebuild {
 		if got := p20IssueGet(t, workspace, issueID); got != want {
 			t.Fatalf("canonical issue.get bytes after rebuild for %s differ\n got: %q\nwant: %q", issueID, got, want)
@@ -258,6 +260,13 @@ func p20IssueID(t *testing.T, result map[string]any) string {
 	return id
 }
 
+func p20AssertIdempotencyKey(t *testing.T, result map[string]any, want string) {
+	t.Helper()
+	if got, _ := result["idempotency_key"].(string); got != want {
+		t.Fatalf("idempotency key = %q, want %q", got, want)
+	}
+}
+
 func p20RememberEvent(t *testing.T, eventIDs map[string]bool, eventID string) {
 	t.Helper()
 	if eventID == "" || eventIDs[eventID] {
@@ -269,7 +278,7 @@ func p20RememberEvent(t *testing.T, eventIDs map[string]bool, eventID string) {
 func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expected, actual int) {
 	t.Helper()
 	stdout, stderr, err := closureRunFIDExpectError(t, integrationFIDBinary(t), workspace,
-		"--json", "issue", "update", issueID, "--title", "stale update must not apply", "--expected-revision", strconv.Itoa(expected), "--by", "developer",
+		"--json", "issue", "update", issueID, "--title", "stale update must not apply", "--expected-revision", strconv.Itoa(expected), "--actor", "agent:developer",
 	)
 	if err == nil || stdout != "" {
 		t.Fatalf("stale update = (%v, stdout %q, stderr %q), want stderr-only typed failure", err, stdout, stderr)
@@ -300,7 +309,7 @@ func p20AssertStaleRevisionFailure(t *testing.T, workspace, issueID string, expe
 	}
 }
 
-func p20JournalEventActor(t *testing.T, workspace, eventID string) string {
+func p20AssertJournalEventAttribution(t *testing.T, workspace, eventID, actorID string) {
 	t.Helper()
 	paths, err := filepath.Glob(filepath.Join(workspace, ".fid", "journal", "*.jsonl"))
 	if err != nil || len(paths) != 1 {
@@ -314,23 +323,30 @@ func p20JournalEventActor(t *testing.T, workspace, eventID string) string {
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		var event struct {
-			ID    string `json:"event_id"`
-			Actor struct {
-				Role string `json:"role"`
+			ID     string `json:"event_id"`
+			Schema int    `json:"event_schema"`
+			Actor  struct {
+				ActorID       string  `json:"actor_id"`
+				ActorType     string  `json:"actor_type"`
+				Producer      string  `json:"producer"`
+				ProvenanceRef string  `json:"provenance_ref"`
+				SessionRef    *string `json:"session_ref"`
 			} `json:"actor"`
 		}
 		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
 			t.Fatalf("decode journal event: %v", err)
 		}
 		if event.ID == eventID {
-			return event.Actor.Role
+			if event.Schema != 2 || event.Actor.ActorID != actorID || event.Actor.ActorType != "agent" || event.Actor.Producer != "fid-standalone" || event.Actor.ProvenanceRef != "project-local-attribution" || event.Actor.SessionRef != nil {
+				t.Fatalf("update Event-v2 attribution = %+v, want standalone agent %q with project-local provenance", event, actorID)
+			}
+			return
 		}
 	}
 	if err := scanner.Err(); err != nil {
 		t.Fatalf("read journal: %v", err)
 	}
 	t.Fatalf("journal has no event %q", eventID)
-	return ""
 }
 
 func p20Object(t *testing.T, value any) map[string]any {

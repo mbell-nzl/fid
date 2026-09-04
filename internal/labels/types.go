@@ -5,18 +5,21 @@ import "fmt"
 const ReadCollectionLimit = 10000
 
 type AddOptions struct {
-	WorkspaceRoot string
-	MigrationsDir string
-	Name          string
-	Colour        *string
-	Description   *string
-	ActorRole     string
+	WorkspaceRoot  string
+	MigrationsDir  string
+	Name           string
+	Colour         *string
+	Description    *string
+	Actor          string
+	IdempotencyKey string
 }
 
 type AddResult struct {
-	Label      Label
-	EventID    string
-	OccurredAt string
+	Label          Label
+	EventID        string
+	OccurredAt     string
+	IdempotencyKey string
+	Replayed       bool
 }
 
 type ListOptions struct {

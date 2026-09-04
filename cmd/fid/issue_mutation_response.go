@@ -50,6 +50,8 @@ func renderIssueCreateSuccess(cmd *cobra.Command, result issues.CreateResult) er
 				"id": result.ID, "kind": result.Kind, "title": result.Title,
 				"status": result.Status, "revision": result.Revision,
 			},
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "created issue %s (%s) %q\n", result.ID, result.Kind, result.Title)
@@ -66,8 +68,10 @@ func renderIssueUpdateSuccess(cmd *cobra.Command, result issues.UpdateResult) er
 			changes = append(changes, map[string]any{"field": change.Field, "from": change.From, "to": change.To})
 		}
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.update", map[string]any{
-			"issue":   map[string]any{"id": result.ID, "revision": result.Revision},
-			"changes": changes,
+			"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+			"changes":         changes,
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "updated %s:\n%s\n", result.ID, issueUpdateSummary(result.Changes))
@@ -80,9 +84,11 @@ func renderIssueTransitionSuccess(cmd *cobra.Command, result issues.TransitionRe
 	}
 	if jsonMode {
 		return cli.WriteSuccess(cmd.OutOrStdout(), "issue.transition", map[string]any{
-			"issue":      map[string]any{"id": result.ID, "revision": result.Revision},
-			"from_state": result.FromState,
-			"to_state":   result.ToState,
+			"issue":           map[string]any{"id": result.ID, "revision": result.Revision},
+			"from_state":      result.FromState,
+			"to_state":        result.ToState,
+			"idempotency_key": result.IdempotencyKey,
+			"replayed":        result.Replayed,
 		}, &cli.Event{ID: result.EventID, OccurredAt: result.OccurredAt})
 	}
 	return writeIssueLine(cmd.OutOrStdout(), "transitioned %s: %s → %s\n", result.ID, result.FromState, result.ToState)
@@ -93,21 +99,17 @@ func renderIssueMutationError(cmd *cobra.Command, operation, issueID string, mut
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := renderIssueError(cmd.ErrOrStderr(), mutationErr); err != nil {
-			return err
-		}
-		return mutationErr
-	}
-
 	failure, err := issueMutationFailure(cmd, operation, issueID, mutationErr)
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := renderIssueError(cmd.ErrOrStderr(), mutationErr); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, mutationErr)
 	}
-	return mutationErr
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, mutationErr)
 }
 
 func issueMutationFlagError(operation string) func(*cobra.Command, error) error {
@@ -115,12 +117,6 @@ func issueMutationFlagError(operation string) func(*cobra.Command, error) error 
 		jsonMode, err := readJSONMode(cmd)
 		if err != nil {
 			return err
-		}
-		if !jsonMode {
-			if err := writeIssueLine(cmd.ErrOrStderr(), "error: invalid Issue mutation request\n"); err != nil {
-				return err
-			}
-			return flagErr
 		}
 		failure, err := cli.NewFailure(cli.CodeInvalidArgument, "invalid Issue mutation request", nil, map[string]any{
 			"argument": "request",
@@ -130,10 +126,13 @@ func issueMutationFlagError(operation string) func(*cobra.Command, error) error 
 		if err != nil {
 			return err
 		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), operation, failure); err != nil {
-			return err
+		if !jsonMode {
+			if err := writeIssueLine(cmd.ErrOrStderr(), "error: invalid Issue mutation request\n"); err != nil {
+				return err
+			}
+			return cli.NewFailureError(failure, flagErr)
 		}
-		return flagErr
+		return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), operation, failure, flagErr)
 	}
 }
 
@@ -148,11 +147,6 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 			return cli.Failure{}, err
 		}
 		return cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: path}, map[string]any{"path": path})
-	}
-	if failure, handled, err := authorityFailure(operation, mutationActor(cmd), mutationErr); err != nil {
-		return cli.Failure{}, err
-	} else if handled {
-		return failure, nil
 	}
 	if failure, handled, err := lockUnavailableFailure(mutationErr); err != nil {
 		return cli.Failure{}, err
@@ -201,6 +195,14 @@ func issueMutationFailure(cmd *cobra.Command, operation, issueID string, mutatio
 	if errors.As(mutationErr, &invalidTransition) {
 		return transitionNotPermittedFailure(invalidTransition.IssueID, invalidTransition.CurrentState, invalidTransition.RequestedState, nil)
 	}
+	var executionTransition *issues.ExecutionBoundTransitionError
+	if errors.As(mutationErr, &executionTransition) {
+		unsatisfied := make([]string, 0, len(executionTransition.Reasons))
+		for _, reason := range executionTransition.Reasons {
+			unsatisfied = append(unsatisfied, reason.Code)
+		}
+		return transitionNotPermittedFailure(executionTransition.IssueID, executionTransition.CurrentState, executionTransition.RequestedState, unsatisfied)
+	}
 	var blockedTransition *issues.BlockedTransitionError
 	if errors.As(mutationErr, &blockedTransition) {
 		unsatisfied := make([]string, 0, len(blockedTransition.Unmet))
@@ -224,12 +226,4 @@ func optionalString(value *string) any {
 		return nil
 	}
 	return *value
-}
-
-func mutationActor(cmd *cobra.Command) string {
-	value, err := cmd.Flags().GetString("by")
-	if err != nil {
-		return ""
-	}
-	return value
 }

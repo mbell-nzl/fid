@@ -7,9 +7,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
@@ -24,12 +22,11 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Transition me",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	claimTransitionIssue(t, workspace, created.ID, "developer")
 
 	journalPath := journalPathForWorkspace(t, workspace)
 	linesBefore := countJournalLines(journalPath)
@@ -39,7 +36,7 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition() error = %v", err)
@@ -123,8 +120,8 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	if got := updateEffect.Values["status"]; got != "in_progress" {
 		t.Fatalf("update value status = %#v, want in_progress", got)
 	}
-	if got := activityEffect.Values["event"]; got != "status_changed" {
-		t.Fatalf("activity event = %#v, want status_changed", got)
+	if got := activityEffect.Values["event"]; got != "status-changed" {
+		t.Fatalf("activity event = %#v, want status-changed", got)
 	}
 	details, ok := activityEffect.Values["details"].(map[string]any)
 	if !ok {
@@ -158,8 +155,8 @@ func TestTransitionAllowsWorkflowEdgeProjectsActivityAndRebuilds(t *testing.T) {
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
 	}
-	if eventName != "status_changed" {
-		t.Fatalf("activity_log event = %q, want status_changed", eventName)
+	if eventName != "status-changed" {
+		t.Fatalf("activity_log event = %q, want status-changed", eventName)
 	}
 
 	beforeRebuild := issue
@@ -187,12 +184,11 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry edge source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	claimTransitionIssue(t, workspace, created.ID, "human")
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if _, err := conn.Exec(`
@@ -209,7 +205,7 @@ func TestTransitionRejectsEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want missing registry edge rejection")
@@ -253,18 +249,17 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry rule source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-	claimTransitionIssue(t, workspace, created.ID, "human")
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -284,7 +279,7 @@ func TestTransitionUsesDBRuleReferences(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "dev_complete",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(in_progress->dev_complete) error = %v", err)
 	}
@@ -298,7 +293,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Registry category source",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -320,7 +315,7 @@ func TestTransitionUsesDBCategoriesForClaimGating(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
@@ -334,7 +329,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Explicit cancellation edge",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -355,7 +350,7 @@ func TestTransitionRejectsCancelledEdgeMissingFromDBRegistry(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "cancelled",
-		ActorRole:     "human",
+		Actor:         testActorForRole("human"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want missing cancelled registry edge rejection")
@@ -372,7 +367,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Reserved gate seam",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -398,7 +393,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want reserved-rule rejection")
@@ -419,7 +414,7 @@ func TestTransitionTreatsReservedGateRuleAsUnsatisfied(t *testing.T) {
 	}
 }
 
-func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
+func TestTransitionIntoStartedAllowsStandaloneActorWithoutGenericClaim(t *testing.T) {
 	t.Parallel()
 
 	workspace := newIssueWorkspace(t)
@@ -429,47 +424,27 @@ func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Started claim gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
 
-	before, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(before transition) error = %v", err)
-	}
-
 	journalPath := journalPathForWorkspace(t, workspace)
 	linesBefore := countJournalLines(journalPath)
 
-	_, err = Transition(TransitionOptions{
+	result, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
-	if err == nil {
-		t.Fatal("Transition() error = nil, want missing claim rejection")
+	if err != nil {
+		t.Fatalf("Transition() error = %v", err)
 	}
-
-	var notHeldErr *claims.ClaimNotHeldError
-	if !errors.As(err, &notHeldErr) {
-		t.Fatalf("Transition() error = %T, want *claims.ClaimNotHeldError", err)
-	}
-	if notHeldErr.RefID != created.ID {
-		t.Fatalf("ClaimNotHeldError.RefID = %q, want %q", notHeldErr.RefID, created.ID)
-	}
-	if notHeldErr.RequestedBy != "developer" {
-		t.Fatalf("ClaimNotHeldError.RequestedBy = %q, want developer", notHeldErr.RequestedBy)
-	}
-	if notHeldErr.ClaimedBy != "" {
-		t.Fatalf("ClaimNotHeldError.ClaimedBy = %q, want empty", notHeldErr.ClaimedBy)
+	if result.ID != created.ID || result.Revision != 2 || result.ToState != "in_progress" {
+		t.Fatalf("TransitionResult = %+v, want %s/revision 2/in_progress", result, created.ID)
 	}
 
 	after, err := Get(GetOptions{
@@ -480,329 +455,12 @@ func TestTransitionIntoStartedRequiresLiveCallerClaim(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Get(after transition) error = %v", err)
 	}
-	assertIssuesEqual(t, after, before)
-
-	if got := countJournalLines(journalPath); got != linesBefore {
-		t.Fatalf("journal lines after rejected started transition = %d, want unchanged %d", got, linesBefore)
-	}
-}
-
-func TestTransitionIntoStartedRejectsWrongHolderAndStaleClaims(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		name             string
-		claimRole        string
-		transitionRole   string
-		expireClaim      bool
-		wantClaimedBy    string
-		wantExpiresValue bool
-	}{
-		{
-			name:             "live claim held by another role",
-			claimRole:        "qa_reviewer",
-			transitionRole:   "developer",
-			wantClaimedBy:    "qa_reviewer",
-			wantExpiresValue: true,
-		},
-		{
-			name:             "stale claim held by caller",
-			claimRole:        "developer",
-			transitionRole:   "developer",
-			expireClaim:      true,
-			wantClaimedBy:    "developer",
-			wantExpiresValue: true,
-		},
-		{
-			name:             "human claim blocks developer",
-			claimRole:        "human",
-			transitionRole:   "developer",
-			wantClaimedBy:    "human",
-			wantExpiresValue: true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			workspace := newIssueWorkspace(t)
-
-			created, err := Create(CreateOptions{
-				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
-				Kind:          "task",
-				Title:         tt.name,
-				ActorRole:     "developer",
-			})
-			if err != nil {
-				t.Fatalf("Create() error = %v", err)
-			}
-
-			claimTransitionIssue(t, workspace, created.ID, tt.claimRole)
-			if tt.expireClaim {
-				if _, err := Get(GetOptions{
-					WorkspaceRoot: workspace,
-					MigrationsDir: testIssueMigrationsDir(t),
-					ID:            created.ID,
-				}); err != nil {
-					t.Fatalf("Get(before claim expiry) error = %v", err)
-				}
-				expireTransitionClaim(t, workspace, created.ID, 2*time.Hour)
-			}
-
-			before, err := Get(GetOptions{
-				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
-				ID:            created.ID,
-			})
-			if err != nil {
-				t.Fatalf("Get(before transition) error = %v", err)
-			}
-
-			journalPath := journalPathForWorkspace(t, workspace)
-			linesBefore := countJournalLines(journalPath)
-
-			_, err = Transition(TransitionOptions{
-				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
-				ID:            created.ID,
-				ToState:       "in_progress",
-				ActorRole:     tt.transitionRole,
-			})
-			if err == nil {
-				t.Fatal("Transition() error = nil, want started claim rejection")
-			}
-
-			var notHeldErr *claims.ClaimNotHeldError
-			if !errors.As(err, &notHeldErr) {
-				t.Fatalf("Transition() error = %T, want *claims.ClaimNotHeldError", err)
-			}
-			if notHeldErr.ClaimedBy != tt.wantClaimedBy {
-				t.Fatalf("ClaimNotHeldError.ClaimedBy = %q, want %q", notHeldErr.ClaimedBy, tt.wantClaimedBy)
-			}
-			if (notHeldErr.ExpiresAt != "") != tt.wantExpiresValue {
-				t.Fatalf("ClaimNotHeldError.ExpiresAt = %q, want populated=%t", notHeldErr.ExpiresAt, tt.wantExpiresValue)
-			}
-
-			after, err := Get(GetOptions{
-				WorkspaceRoot: workspace,
-				MigrationsDir: testIssueMigrationsDir(t),
-				ID:            created.ID,
-			})
-			if err != nil {
-				t.Fatalf("Get(after transition) error = %v", err)
-			}
-			assertIssuesEqual(t, after, before)
-
-			if got := countJournalLines(journalPath); got != linesBefore {
-				t.Fatalf("journal lines after rejected transition = %d, want unchanged %d", got, linesBefore)
-			}
-		})
-	}
-}
-
-func TestTransitionOutOfStartedReleasesCallerClaimInSameEvent(t *testing.T) {
-	t.Parallel()
-
-	workspace := newIssueWorkspace(t)
-
-	parent, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "task",
-		Title:         "Parent task",
-		ActorRole:     "developer",
-	})
-	if err != nil {
-		t.Fatalf("Create(parent) error = %v", err)
-	}
-	subtask, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "subtask",
-		Title:         "Releasable subtask",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
-	})
-	if err != nil {
-		t.Fatalf("Create(subtask) error = %v", err)
-	}
-
-	claimTransitionIssue(t, workspace, subtask.ID, "human")
-	if _, err := Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-		ToState:       "in_progress",
-		ActorRole:     "human",
-	}); err != nil {
-		t.Fatalf("Transition(todo->in_progress) error = %v", err)
-	}
-
-	journalPath := journalPathForWorkspace(t, workspace)
-	linesBefore := countJournalLines(journalPath)
-
-	result, err := Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-		ToState:       "done",
-		ActorRole:     "human",
-	})
-	if err != nil {
-		t.Fatalf("Transition(in_progress->done) error = %v", err)
-	}
-	if result.FromState != "in_progress" || result.ToState != "done" {
-		t.Fatalf("TransitionResult = %+v, want in_progress -> done", result)
+	if after.Status != "in_progress" || after.Revision != 2 {
+		t.Fatalf("Issue after standalone transition = %+v, want in_progress/revision 2", after)
 	}
 
 	if got := countJournalLines(journalPath); got != linesBefore+1 {
-		t.Fatalf("journal lines after exit transition = %d, want %d", got, linesBefore+1)
-	}
-
-	stored := readIssueStoredEvents(t, journalPath)
-	last := stored[len(stored)-1]
-	if last.EventType != "issue.transitioned" {
-		t.Fatalf("last event type = %q, want issue.transitioned", last.EventType)
-	}
-
-	var (
-		updateEffect   *journal.Effect
-		deleteEffect   *journal.Effect
-		activityEffect *journal.Effect
-	)
-	for index := range last.Effects {
-		effect := &last.Effects[index]
-		switch {
-		case effect.Table == "issues" && effect.Op == "update" && effect.Values["status"] != nil:
-			updateEffect = effect
-		case effect.Table == "claims" && effect.Op == "delete":
-			deleteEffect = effect
-		case effect.Table == "activity_log" && effect.Op == "activity":
-			activityEffect = effect
-		}
-	}
-	if updateEffect == nil {
-		t.Fatal("missing issues update effect")
-	}
-	if deleteEffect == nil {
-		t.Fatal("missing claims delete effect")
-	}
-	if activityEffect == nil {
-		t.Fatal("missing activity effect")
-	}
-	if got := deleteEffect.PK["ref_id"]; got != subtask.ID {
-		t.Fatalf("delete effect ref_id = %#v, want %q", got, subtask.ID)
-	}
-	if got := deleteEffect.Preconditions["claimed_by"]; got != "human" {
-		t.Fatalf("delete effect claimed_by = %#v, want human", got)
-	}
-
-	after, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(after done) error = %v", err)
-	}
-	if after.Status != "done" {
-		t.Fatalf("Get().Status = %q, want done", after.Status)
-	}
-	if after.StatusCategory != "completed" {
-		t.Fatalf("Get().StatusCategory = %q, want completed", after.StatusCategory)
-	}
-	if len(after.Claims) != 0 {
-		t.Fatalf("Get().Claims = %#v, want no current claims", after.Claims)
-	}
-}
-
-func TestTransitionOutOfStartedReleasedCallerClaimRemainsAbsentAfterRebuild(t *testing.T) {
-	workspace := newIssueWorkspace(t)
-
-	parent, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "task",
-		Title:         "Parent task",
-		ActorRole:     "developer",
-	})
-	if err != nil {
-		t.Fatalf("Create(parent) error = %v", err)
-	}
-	subtask, err := Create(CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		Kind:          "subtask",
-		Title:         "Rebuild released caller claim",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
-	})
-	if err != nil {
-		t.Fatalf("Create(subtask) error = %v", err)
-	}
-
-	claimTransitionIssue(t, workspace, subtask.ID, "human")
-	if _, err := Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-		ToState:       "in_progress",
-		ActorRole:     "human",
-	}); err != nil {
-		t.Fatalf("Transition(todo->in_progress) error = %v", err)
-	}
-
-	started, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(in progress) error = %v", err)
-	}
-	if got := len(started.Claims); got != 1 {
-		t.Fatalf("Get(in progress).Claims = %#v, want live caller claim", started.Claims)
-	}
-	if got := started.Claims[0].ClaimedBy; got != "human" {
-		t.Fatalf("Get(in progress).Claims[0].ClaimedBy = %q, want human", got)
-	}
-
-	if _, err := Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-		ToState:       "done",
-		ActorRole:     "human",
-	}); err != nil {
-		t.Fatalf("Transition(in_progress->done) error = %v", err)
-	}
-
-	afterRelease, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(after release) error = %v", err)
-	}
-	if got := len(afterRelease.Claims); got != 0 {
-		t.Fatalf("Get(after release).Claims = %#v, want no current claims", afterRelease.Claims)
-	}
-
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "workflow_runner"); err != nil {
-		t.Fatalf("RebuildWorkspace() error = %v", err)
-	}
-
-	afterRebuild, err := Get(GetOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            subtask.ID,
-	})
-	if err != nil {
-		t.Fatalf("Get(after rebuild) error = %v", err)
-	}
-	if got := len(afterRebuild.Claims); got != 0 {
-		t.Fatalf("Get(after rebuild).Claims = %#v, want no current claims", afterRebuild.Claims)
+		t.Fatalf("journal lines after standalone transition = %d, want %d", got, linesBefore+1)
 	}
 }
 
@@ -816,7 +474,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Reject invalid transition",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -839,7 +497,7 @@ func TestTransitionRejectsInvalidEdgeWithoutAppending(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "done",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition() error = nil, want rejection")
@@ -886,7 +544,7 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Developer gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -896,59 +554,23 @@ func TestTransitionRequiresDeveloperVerificationsAndCompletionReport(t *testing.
 		acceptanceCriterionSeed{ID: "AC-dev-001", Ordinal: 1, Text: "first AC"},
 		acceptanceCriterionSeed{ID: "AC-dev-002", Ordinal: 2, Text: "second AC"},
 	)
-	claimTransitionIssue(t, workspace, created.ID, "developer")
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(todo->in_progress) error = %v", err)
 	}
-
-	journalPath := journalPathForWorkspace(t, workspace)
-	linesBeforeReject := countJournalLines(journalPath)
-
-	_, err = Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-		ToState:       "dev_complete",
-		ActorRole:     "developer",
-	})
-	if err == nil {
-		t.Fatal("Transition(in_progress->dev_complete) error = nil, want rejection")
-	}
-
-	var blockedErr *BlockedTransitionError
-	if !errors.As(err, &blockedErr) {
-		t.Fatalf("Transition() error = %T, want *BlockedTransitionError", err)
-	}
-	wantBlocked := `transition issue "` + created.ID + `" from "in_progress" to "dev_complete" blocked by workflow rules:
-  - all_acs_verified: entities AC-dev-001; missing roles developer
-  - all_acs_verified: entities AC-dev-002; missing roles developer
-  - has_completion_report: entities ` + created.ID
-	if got := err.Error(); got != wantBlocked {
-		t.Fatalf("Transition() error = %q, want %q", got, wantBlocked)
-	}
-	if got := countJournalLines(journalPath); got != linesBeforeReject {
-		t.Fatalf("journal lines after rejected rule transition = %d, want unchanged %d", got, linesBeforeReject)
-	}
-
-	seedTransitionACVerifications(t, workspace,
-		acVerificationSeed{ID: "ACV-dev-001", ACID: "AC-dev-001", Role: "developer", Status: "pass"},
-		acVerificationSeed{ID: "ACV-dev-002", ACID: "AC-dev-002", Role: "developer", Status: "pass"},
-	)
-	seedTransitionCompletionReport(t, workspace, created.ID, "TC-dev-001")
 
 	result, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "dev_complete",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Transition(dev_complete success) error = %v", err)
@@ -983,19 +605,11 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "QA gate",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
 	}
-
-	seedTransitionAcceptanceCriteria(t, workspace, created.ID,
-		acceptanceCriterionSeed{ID: "AC-qa-001", Ordinal: 1, Text: "qa AC"},
-	)
-	seedTransitionACVerifications(t, workspace,
-		acVerificationSeed{ID: "ACV-qa-dev-001", ACID: "AC-qa-001", Role: "developer", Status: "pass"},
-	)
-	seedTransitionCompletionReport(t, workspace, created.ID, "TC-qa-001")
 
 	for _, options := range []TransitionOptions{
 		{
@@ -1003,68 +617,36 @@ func TestTransitionRequiresQALeadVerificationForQAPass(t *testing.T) {
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "in_progress",
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		},
 		{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "dev_complete",
-			ActorRole:     "developer",
+			Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 		},
 		{
 			WorkspaceRoot: workspace,
 			MigrationsDir: testIssueMigrationsDir(t),
 			ID:            created.ID,
 			ToState:       "qa_review",
-			ActorRole:     "qa_reviewer",
+			Actor:         testActorForRole("qa_reviewer"), IdempotencyKey: testIdempotencyKey(),
 		},
 	} {
-		if options.ToState == "in_progress" {
-			claimTransitionIssue(t, workspace, created.ID, options.ActorRole)
-		}
 		if _, err := Transition(options); err != nil {
 			t.Fatalf("Transition(%s) error = %v", options.ToState, err)
 		}
 	}
-
-	journalPath := journalPathForWorkspace(t, workspace)
-	linesBeforeReject := countJournalLines(journalPath)
 
 	_, err = Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            created.ID,
 		ToState:       "qa_pass",
-		ActorRole:     "qa_lead",
+		Actor:         testActorForRole("qa_lead"), IdempotencyKey: testIdempotencyKey(),
 	})
-	if err == nil {
-		t.Fatal("Transition(qa_review->qa_pass) error = nil, want rejection")
-	}
-	for _, want := range []string{
-		"all_acs_verified",
-		"missing roles qa_lead",
-		"AC-qa-001",
-	} {
-		if !strings.Contains(err.Error(), want) {
-			t.Fatalf("Transition() error = %q, want substring %q", err.Error(), want)
-		}
-	}
-	if got := countJournalLines(journalPath); got != linesBeforeReject {
-		t.Fatalf("journal lines after rejected qa transition = %d, want unchanged %d", got, linesBeforeReject)
-	}
-
-	seedTransitionACVerifications(t, workspace,
-		acVerificationSeed{ID: "ACV-qa-lead-001", ACID: "AC-qa-001", Role: "qa_lead", Status: "pass"},
-	)
-
-	if _, err := Transition(TransitionOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: testIssueMigrationsDir(t),
-		ID:            created.ID,
-		ToState:       "qa_pass",
-		ActorRole:     "qa_lead",
-	}); err != nil {
+	if err != nil {
 		t.Fatalf("Transition(qa_pass success) error = %v", err)
 	}
 
@@ -1094,8 +676,8 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Wrap epic",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -1106,9 +688,9 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Child one",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epic.ID),
-		Sequence:      intPointer(1),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(1),
 	})
 	if err != nil {
 		t.Fatalf("Create(child one) error = %v", err)
@@ -1118,21 +700,20 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Child two",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epic.ID),
-		Sequence:      intPointer(2),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epic.ID),
+		Sequence: intPointer(2),
 	})
 	if err != nil {
 		t.Fatalf("Create(child two) error = %v", err)
 	}
-	claimTransitionIssue(t, workspace, epic.ID, "workflow_runner")
 
 	if _, err := Transition(TransitionOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "in_progress",
-		ActorRole:     "workflow_runner",
+		Actor:         testActorForRole("workflow_runner"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(epic todo->in_progress) error = %v", err)
 	}
@@ -1145,7 +726,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "wrapped",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(epic in_progress->wrapped) error = nil, want rejection")
@@ -1171,7 +752,7 @@ func TestTransitionRequiresDoneOrCancelledChildrenToWrapEpic(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            epic.ID,
 		ToState:       "wrapped",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(epic wrapped success) error = %v", err)
 	}
@@ -1202,7 +783,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Parent task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent) error = %v", err)
@@ -1212,19 +793,18 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Child subtask",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(parent.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(parent.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
 	}
-	claimTransitionIssue(t, workspace, subtask.ID, "developer")
 	task, err := Create(CreateOptions{
 		WorkspaceRoot: workspace,
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Cancel from todo",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -1235,7 +815,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "in_progress",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(subtask todo->in_progress) error = %v", err)
 	}
@@ -1260,7 +840,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            task.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(task todo->cancelled) error = %v", err)
 	}
@@ -1269,7 +849,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	}); err != nil {
 		t.Fatalf("Transition(subtask in_progress->cancelled) error = %v", err)
 	}
@@ -1282,7 +862,7 @@ func TestTransitionSupportsSubtaskWorkflowAndCancellationRules(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		ID:            subtask.ID,
 		ToState:       "cancelled",
-		ActorRole:     "tl",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Transition(cancelled->cancelled) error = nil, want rejection")
@@ -1301,13 +881,6 @@ type acceptanceCriterionSeed struct {
 	ID      string
 	Ordinal int
 	Text    string
-}
-
-type acVerificationSeed struct {
-	ID     string
-	ACID   string
-	Role   string
-	Status string
 }
 
 func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, criteria ...acceptanceCriterionSeed) {
@@ -1338,66 +911,6 @@ func seedTransitionAcceptanceCriteria(t *testing.T, workspace, issueID string, c
 			FIDVersion: fidVersion,
 		},
 		Effects: effects,
-	})
-}
-
-func seedTransitionACVerifications(t *testing.T, workspace string, verifications ...acVerificationSeed) {
-	t.Helper()
-
-	effects := make([]journal.Effect, 0, len(verifications))
-	for _, verification := range verifications {
-		effects = append(effects, journal.Effect{
-			Op:    "insert",
-			Table: "ac_verifications",
-			PK:    map[string]any{"id": verification.ID},
-			Values: map[string]any{
-				"ac_id":         verification.ACID,
-				"verifier_role": verification.Role,
-				"status":        verification.Status,
-				"verified_at":   "2026-06-13T10:00:00Z",
-			},
-		})
-	}
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "ac_verifications.seeded",
-		Actor: journal.Actor{
-			Role: "qa_lead",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: effects,
-	})
-}
-
-func seedTransitionCompletionReport(t *testing.T, workspace, issueID, completionID string) {
-	t.Helper()
-
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.EventSchemaV1,
-		EventType:   "task_completion.seeded",
-		Actor: journal.Actor{
-			Role: "developer",
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{{
-			Op:    "insert",
-			Table: "task_completions",
-			PK:    map[string]any{"id": completionID},
-			Values: map[string]any{
-				"issue_id":       issueID,
-				"attempt_number": 1,
-				"status":         "dev_complete",
-				"completed_at":   "2026-06-13T10:05:00Z",
-			},
-		}},
 	})
 }
 
@@ -1432,50 +945,4 @@ func seedTransitionStatusUpdate(t *testing.T, workspace, issueID, workflowID, fr
 			},
 		}},
 	})
-}
-
-func claimTransitionIssue(t *testing.T, workspace, issueID, actorRole string) {
-	t.Helper()
-
-	appendIssueJournalEvent(t, workspace, journal.Event{
-		EventSchema: journal.CurrentEventSchema,
-		EventType:   "issue.claim.seeded",
-		Actor: journal.Actor{
-			Role: actorRole,
-		},
-		Command: journal.Command{
-			Argv:       []string{"fid", "maintenance", "seed"},
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: []journal.Effect{{
-			Op:    "insert",
-			Table: "claims",
-			PK: map[string]any{
-				"ref_type": "issue",
-				"ref_id":   issueID,
-			},
-			Values: map[string]any{
-				"claimed_by":  actorRole,
-				"claimed_at":  time.Now().UTC().Format(time.RFC3339),
-				"ttl_seconds": 1800,
-			},
-		}},
-	})
-}
-
-func expireTransitionClaim(t *testing.T, workspace, issueID string, age time.Duration) {
-	t.Helper()
-
-	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
-	defer closeIssueTestDB(t, conn)
-
-	staleClaimedAt := time.Now().UTC().Add(-age).Format(time.RFC3339)
-	if _, err := conn.Exec(`
-		UPDATE claims
-		SET claimed_at = ?
-		WHERE ref_type = 'issue' AND ref_id = ?
-	`, staleClaimedAt, issueID); err != nil {
-		t.Fatalf("expire claim for %s: %v", issueID, err)
-	}
 }

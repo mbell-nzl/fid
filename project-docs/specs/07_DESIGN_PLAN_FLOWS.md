@@ -30,11 +30,15 @@ keeps fid useful as an Issue tracker without requiring the V2 kit.
 2. Kit evaluates risk, roles/routing, authority, protected Decisions, gates,
    validation/review/Human Obligations, budgets, Stops, and repository scope.
 3. Human approval is obtained where kit policy requires it.
-4. Kit submits the complete versioned Envelope through the backend port.
-5. fid validates references, capability support, provenance, non-weakening, and
+4. fid creates immutable Gate Definition Registrations from the activated Gate
+   Definition values that the Envelope will reference.
+5. Kit submits the complete versioned Envelope through the backend port.
+6. fid validates references, capability support, provenance, non-weakening, and
    revision invariants, then records the approved/active revision.
 
-fid does not recalculate the risk lane or create Issue copies.
+fid does not persist or recalculate the external kit's risk lane and does not
+create Issue copies. A caller cannot substitute a mutable Gate Definition for
+the activated Registration reference.
 
 ## 4. Builder Execution
 
@@ -110,6 +114,16 @@ No QA Work Item, QA Plan, handoff, or completion report is created.
 
 Routine status never raises Attention.
 
+### Phase 21 terminal-success qualification
+
+The one-Issue slice performs a nonterminal execution-bound transition first.
+It then executes the registered Gate, records and links the fid-executed
+Receipt, and evaluates the gate-evidence Obligation. Only `satisfied` permits
+the terminal-success Issue transition. Envelope completion follows and calls
+the same evaluator again while also requiring that terminal Issue. A
+role-looking attribution, AC verification, concern, or V1 completion row cannot
+satisfy either guarded action.
+
 ## 9. Envelope Revision And Multi-Issue Progress
 
 1. Progress is read from selected Issue states; it is never written as partial
@@ -135,6 +149,22 @@ Routine status never raises Attention.
    match the source semantics.
 5. Projections are regenerated; project prose is not copied.
 
+Phase 21 implements deterministic export creation and non-mutating validation
+only. Import, identity/history preservation, and full live/rebuild/import
+equivalence enter with Phase 22 recovery; `export.portable.v1` remains
+unavailable until that parity passes.
+
+The Phase 21 rebuild proof mutates once. After projection deletion/rebuild it
+repeats capability/Envelope/Receipt/Evidence reads, evaluation, completion
+state, resume, export create/validate, and negative conformance checks. It does
+not create a second Envelope revision or repeat the mutation journey.
+
+An operational journey runs on a project-authored workflow. The project defines
+and assigns the workflow before the Issue is created, and fid enforces its
+declared edges and terminal-success category generically from the projection.
+The migration-seeded reference workflows are retained V1 role choreography, are
+not the operational journey's authority, and are not extended to suit one.
+
 ## 11. Pre-Dogfood Convergence
 
 1. A D3 slice specifies its JSON contracts, DDL, Event fixtures, conformance
@@ -146,4 +176,4 @@ Routine status never raises Attention.
 5. Final convergence replaces the development migration chain with the first
    supported schema/Event baseline and rehearses a disposable project.
 
-*Last updated: 2026-08-09 (ADR-0011)*
+*Last updated: 2026-08-22 (Phase 21 DEC-156/157 flow amendment)*

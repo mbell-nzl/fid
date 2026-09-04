@@ -1,0 +1,5 @@
+{
+  "operation": "capabilities.get",
+  "command": "fid capabilities",
+  "kind": "accepted"
+}

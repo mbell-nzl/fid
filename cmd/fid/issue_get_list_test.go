@@ -109,7 +109,7 @@ func TestIssueGetJSONMatchesClosedSchema(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
-	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Closed read", "--by", "developer")
+	_, stderr := runFIDCommand(t, workspace, "issue", "create", "--kind", "task", "--title", "Closed read", "--actor", "agent:developer")
 	issueID := parseCreatedIssueID(t, stderr)
 
 	result := executeCommandForTest(workspace, "--json", "issue", "get", issueID)
@@ -133,6 +133,7 @@ func TestIssueGetJSONMatchesClosedSchema(t *testing.T) {
 }
 
 func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {
@@ -162,6 +163,7 @@ func TestIssueListJSONMatchesClosedSchemaAndRetainedFilters(t *testing.T) {
 }
 
 func TestReadyJSONHasExclusiveClosedResultStates(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	ready := executeCommandForTest(workspace, "--json", "ready")
 	if ready.err != nil || ready.stderr != "" {
@@ -181,6 +183,7 @@ func TestReadyJSONHasExclusiveClosedResultStates(t *testing.T) {
 }
 
 func TestIssueReadRejectsRetiredAndMalformedInputs(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	for _, args := range [][]string{
 		{"--json", "issue", "get", "missing", "--section", "acceptance"},
@@ -203,6 +206,7 @@ func TestIssueReadRejectsRetiredAndMalformedInputs(t *testing.T) {
 }
 
 func TestReadCollectionLimitRejectsOnlyOverLimit(t *testing.T) {
+	t.Parallel()
 	if err := issues.EnforceReadCollectionLimit("issues", 10000); err != nil {
 		t.Fatalf("at limit error = %v", err)
 	}
@@ -212,6 +216,7 @@ func TestReadCollectionLimitRejectsOnlyOverLimit(t *testing.T) {
 }
 
 func TestReadyJSONSequentialBlockerUsesClosedExplanation(t *testing.T) {
+	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
 	if err != nil {

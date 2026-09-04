@@ -1,10 +1,10 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 
 	internalactivity "github.com/mbell-nzl/fid/internal/activity"
+	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func newActivityListCommand() *cobra.Command {
 		Short: "List projected activity entries.",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
+			workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
 			if err != nil {
 				return fmt.Errorf("resolve workspace root: %w", err)
 			}
@@ -49,13 +49,17 @@ func newActivityListCommand() *cobra.Command {
 				return err
 			}
 
-			encoder := json.NewEncoder(cmd.OutOrStdout())
-			encoder.SetEscapeHTML(false)
-			if err := encoder.Encode(items); err != nil {
-				if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-					return renderErr
-				}
+			jsonMode, err := readJSONMode(cmd)
+			if err != nil {
 				return err
+			}
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), "activity.list", map[string]any{"items": items}, nil)
+			}
+			for _, item := range items {
+				if _, err := fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", item.OccurredAt, item.Event); err != nil {
+					return err
+				}
 			}
 			return nil
 		},
@@ -65,4 +69,8 @@ func newActivityListCommand() *cobra.Command {
 	cmd.Flags().StringVar(&since, "since", "", "Include entries on or after this timestamp")
 	cmd.Flags().StringVar(&eventName, "event", "", "Filter by projected activity event name")
 	return cmd
+}
+
+func init() {
+	rootFlagCapabilities["activity list"] = rootFlagCapability{Project: true, JSON: true}
 }

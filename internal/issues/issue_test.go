@@ -56,7 +56,7 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "Implement coverage",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -69,7 +69,7 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 					WorkspaceRoot: t.TempDir(),
 					Kind:          "task",
 					Title:         "Implement coverage",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -84,7 +84,7 @@ func TestCreateAndGetValidateInputGuards(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "  ",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				return err
 			},
@@ -150,7 +150,7 @@ func TestCreateRejectsUnsupportedKind(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "bug",
 		Title:         "Unsupported kind",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err == nil {
 		t.Fatal("Create() error = nil, want unsupported kind")
@@ -226,7 +226,7 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 					MigrationsDir: testIssueMigrationsDir(t),
 					Kind:          "task",
 					Title:         "Parent task",
-					ActorRole:     "developer",
+					Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 				})
 				if err != nil {
 					t.Fatalf("Create(parent task) error = %v", err)
@@ -239,8 +239,8 @@ func TestIssueCreateUsesAssignedWorkflowAndItsInitialState(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          fixture.kind,
 				Title:         "Use assigned workflow",
-				ActorRole:     "developer",
-				ParentID:      parentID,
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: parentID,
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -287,8 +287,8 @@ func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) 
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Use project workflow",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(project fallback) error = %v", err)
@@ -298,7 +298,7 @@ func TestIssueCreateResolvesKindAssignmentBeforeProjectAssignment(t *testing.T) 
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Use kind workflow",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(kind override) error = %v", err)
@@ -332,8 +332,8 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Phase 4 authoring",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -371,12 +371,12 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement authoring domain",
-		ActorRole:     "tl",
-		ParentID:      stringPointer(epicCreated.ID),
-		Priority:      intPointer(1),
-		Sequence:      intPointer(1),
-		SpecMDPath:    stringPointer("project-docs/docs/phases/phase-4/tasks/task-2.md"),
-		Labels:        []string{"phase-4", "core"},
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		ParentID:   stringPointer(epicCreated.ID),
+		Priority:   intPointer(1),
+		Sequence:   intPointer(1),
+		SpecMDPath: stringPointer("project-docs/docs/phases/phase-4/tasks/task-2.md"),
+		Labels:     []string{"phase-4", "core"},
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -420,8 +420,8 @@ func TestCreateSupportsEpicTaskAndSubtaskAuthoring(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Cover rebuild parity",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(taskCreated.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(taskCreated.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(subtask) error = %v", err)
@@ -481,8 +481,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Parent epic",
-		ActorRole:     "tl",
-		Scheduling:    "prioritised",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "prioritised",
 	})
 	if err != nil {
 		t.Fatalf("Create(parent epic) error = %v", err)
@@ -493,7 +493,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Parent task",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent task) error = %v", err)
@@ -504,8 +504,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "subtask",
 		Title:         "Existing subtask",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(taskCreated.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(taskCreated.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(parent subtask) error = %v", err)
@@ -523,9 +523,9 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "epic",
 				Title:         "Invalid epic",
-				ActorRole:     "tl",
-				ParentID:      stringPointer(epicCreated.ID),
-				Scheduling:    "sequential",
+				Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+				ParentID:   stringPointer(epicCreated.ID),
+				Scheduling: "sequential",
 			},
 			wantErr: "issues: epic parent_id must be NULL",
 		},
@@ -536,7 +536,7 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "subtask",
 				Title:         "Missing subtask parent",
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			},
 			wantErr: "issues: subtask parent_id must reference a task",
 		},
@@ -547,8 +547,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Task under subtask",
-				ActorRole:     "developer",
-				ParentID:      stringPointer(subtaskCreated.ID),
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: stringPointer(subtaskCreated.ID),
 			},
 			wantErr: "issues: task parent_id must reference an epic or be NULL",
 		},
@@ -559,8 +559,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "subtask",
 				Title:         "Subtask under epic",
-				ActorRole:     "developer",
-				ParentID:      stringPointer(epicCreated.ID),
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				ParentID: stringPointer(epicCreated.ID),
 			},
 			wantErr: "issues: subtask parent_id must reference a task",
 		},
@@ -571,8 +571,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Task with scheduling",
-				ActorRole:     "developer",
-				Scheduling:    "sequential",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				Scheduling: "sequential",
 			},
 			wantErr: "create issue: scheduling is only valid for epics",
 		},
@@ -583,8 +583,8 @@ func TestCreateRejectsInvalidHierarchyAndUnknownLabels(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Unknown label",
-				ActorRole:     "developer",
-				Labels:        []string{"known", "missing"},
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+				Labels: []string{"known", "missing"},
 			},
 			wantErr: `create issue: label "missing" does not exist`,
 		},
@@ -613,8 +613,8 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Prioritised parent",
-		ActorRole:     "tl",
-		Scheduling:    "prioritised",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "prioritised",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -625,8 +625,8 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Valid sibling",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epicCreated.ID),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epicCreated.ID),
 	})
 	if err != nil {
 		t.Fatalf("Create(valid task) error = %v", err)
@@ -640,9 +640,9 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Invalid sequenced task",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epicCreated.ID),
-		Sequence:      intPointer(1),
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID: stringPointer(epicCreated.ID),
+		Sequence: intPointer(1),
 	})
 	if err == nil {
 		t.Fatal("Create(invalid task) error = nil, want projection failure")
@@ -672,7 +672,7 @@ func TestCreateRejectsProjectionFailingWriteBeforeAppend(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() after rejected create error = %v", err)
 	}
 
@@ -700,8 +700,8 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "epic",
 		Title:         "Rebuild parent",
-		ActorRole:     "tl",
-		Scheduling:    "sequential",
+		Actor:         testActorForRole("tl"), IdempotencyKey: testIdempotencyKey(),
+		Scheduling: "sequential",
 	})
 	if err != nil {
 		t.Fatalf("Create(epic) error = %v", err)
@@ -712,12 +712,12 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Rebuild task",
-		ActorRole:     "developer",
-		ParentID:      stringPointer(epicCreated.ID),
-		Priority:      intPointer(2),
-		Sequence:      intPointer(1),
-		SpecMDPath:    stringPointer("project-docs/specs/02_TRD.md"),
-		Labels:        []string{"ready", "phase-4"},
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
+		ParentID:   stringPointer(epicCreated.ID),
+		Priority:   intPointer(2),
+		Sequence:   intPointer(1),
+		SpecMDPath: stringPointer("project-docs/specs/02_TRD.md"),
+		Labels:     []string{"ready", "phase-4"},
 	})
 	if err != nil {
 		t.Fatalf("Create(task) error = %v", err)
@@ -737,7 +737,7 @@ func TestCreatePreservesAuthoringFieldsAcrossRebuild(t *testing.T) {
 		t.Fatalf("Remove(%q) error = %v", dbPath, err)
 	}
 
-	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t), "developer"); err != nil {
+	if _, err := journal.RebuildWorkspace(workspace, testIssueMigrationsDir(t)); err != nil {
 		t.Fatalf("RebuildWorkspace() error = %v", err)
 	}
 
@@ -776,7 +776,7 @@ func TestCreateAndGetRoundTrip(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Implement coverage remediation",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -849,7 +849,7 @@ func TestCreateEventOmitsRetiredPhase20Fields(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Retired field event coverage",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -893,7 +893,7 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Record create activity",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -920,8 +920,8 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	if activityEffect == nil {
 		t.Fatal("missing issue_created activity effect")
 	}
-	if got := activityEffect.Values["event"]; got != "issue_created" {
-		t.Fatalf("activity event = %#v, want issue_created", got)
+	if got := activityEffect.Values["event"]; got != "issue-created" {
+		t.Fatalf("activity event = %#v, want issue-created", got)
 	}
 
 	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
@@ -944,8 +944,8 @@ func TestCreateAppendsIssueCreatedActivityInSameEvent(t *testing.T) {
 	if activityCount != 1 {
 		t.Fatalf("activity_log grouped row count = %d, want 1", activityCount)
 	}
-	if eventName != "issue_created" {
-		t.Fatalf("activity_log event = %q, want issue_created", eventName)
+	if eventName != "issue-created" {
+		t.Fatalf("activity_log event = %q, want issue-created", eventName)
 	}
 	if actor != "developer" {
 		t.Fatalf("activity_log actor = %q, want developer", actor)
@@ -967,7 +967,7 @@ func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Surface open concerns",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -1023,8 +1023,7 @@ func TestGetReturnsEnrichedConcernFields(t *testing.T) {
 	}
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: "developer",
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err
@@ -1071,7 +1070,7 @@ func TestGetTreatsAddressedConcernsAsNotOpen(t *testing.T) {
 		MigrationsDir: testIssueMigrationsDir(t),
 		Kind:          "task",
 		Title:         "Ignore addressed concerns",
-		ActorRole:     "developer",
+		Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -1209,6 +1208,29 @@ func TestGetConcernsOrderSameSecondRowsByAppendOrder(t *testing.T) {
 	}
 }
 
+func seedConcernRaiseIssueAndCompletion(t *testing.T, workspace string) (string, string) {
+	t.Helper()
+
+	created, err := Create(CreateOptions{
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  testIssueMigrationsDir(t),
+		Kind:           "task",
+		Title:          "Concern history task",
+		Actor:          testActorForRole("developer"),
+		IdempotencyKey: testIdempotencyKey(),
+	})
+	if err != nil {
+		t.Fatalf("Create() error = %v", err)
+	}
+	conn := openIssueDB(t, filepath.Join(workspace, ".fid", "fid.sqlite"))
+	defer closeIssueTestDB(t, conn)
+	const completionID = "TC-000200"
+	if _, err := conn.Exec(`INSERT INTO task_completions (id, issue_id, attempt_number, status, gate_results, human_intervention, completed_at) VALUES (?, ?, 1, 'completed', '[]', 0, '2026-06-20T12:00:00Z')`, completionID, created.ID); err != nil {
+		t.Fatalf("seed frozen completion: %v", err)
+	}
+	return created.ID, completionID
+}
+
 func TestGetReturnsLatestTriageStatus(t *testing.T) {
 	t.Parallel()
 
@@ -1244,7 +1266,7 @@ func TestGetReturnsLatestTriageStatus(t *testing.T) {
 				MigrationsDir: testIssueMigrationsDir(t),
 				Kind:          "task",
 				Title:         "Map latest triage verdict",
-				ActorRole:     "developer",
+				Actor:         testActorForRole("developer"), IdempotencyKey: testIdempotencyKey(),
 			})
 			if err != nil {
 				t.Fatalf("Create() error = %v", err)
@@ -1560,8 +1582,7 @@ func appendIssueJournalEvent(t *testing.T, workspace string, event journal.Event
 	t.Helper()
 
 	if err := journal.WithLock(workspace, journal.LockOwner{
-		Command:   "fid maintenance seed",
-		ActorRole: event.Actor.Role,
+		Command: "fid maintenance seed",
 	}, func(lock *journal.WriteLock) error {
 		_, err := journal.AppendEvent(lock, event)
 		return err

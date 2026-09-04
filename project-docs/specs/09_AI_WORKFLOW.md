@@ -251,7 +251,17 @@ Triage rules:
   byte-for-byte through the ledger TRIAGE into TASK-RECOVERY (`Repair category`
   maps to TASK-RECOVERY `Category`). RESUME/BLOCK uses `N/A` for repair
   category or authority when none applies. The external TRG is authoritative,
-  not merely a referenced narrative.
+  not merely a referenced narrative. The TASK-RECOVERY `Source` references the
+  governing TRG; its `Repair authority` remains the external scalar exactly and
+  is not changed merely to repeat that TRG ID. The separate control-conformance
+  route still requires its typed `Repair authority` to name the governing
+  TRIAGE. These five values are plain, single-line
+  schema scalars: write their bytes directly after the field label. Markdown
+  code delimiters, emphasis, links, or quotation marks are not presentation
+  wrappers and therefore must not surround a value. Narrative fields may use
+  Markdown. A malformed historical TRG remains immutable; a later valid,
+  task-prefixed TRG or a recorded decision-authorized RUN-RESUME supplies the
+  recovery boundary without rewriting that evidence.
 - Triage `RESUME` means the trigger is demonstrably misclassified,
   already resolved by verified evidence, or covered by an accepted decision.
   The Phase Runner may advance from the current checkpoint.
@@ -260,7 +270,11 @@ Triage rules:
   control-conformance directive. The Phase Runner must not advance: it appends
   `TASK-RECOVERY`, keeps the originating task identity and trigger budget,
   dispatches the matching same-task continuation, reruns required verification,
-  and repeats any affected independent review.
+  and repeats any affected independent review. When this verdict classifies a
+  blocker candidate returned by an active schema-v2 recovery awaiting its
+  REPAIR event, the immediately bound TASK-RECOVERY replaces that pending
+  dispatch only for the same task. It does not permit cross-task replacement or
+  bypass any other recovery stage.
 - A **protected gate/control definition change** changes a command, assertion's
   accepted pass/fail semantics, accepted status, scope,
   threshold/budget/tolerance, or governing policy. It requires `BLOCK` unless
@@ -399,13 +413,17 @@ Responsibilities:
    command must be recorded as `PASS`, or as `BLOCKED` with reason in a
    non-complete report. Missing, silently skipped, or narrower substituted
    required commands prevent completion and enter recovery.
-10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness, and
-    recovery-budget results through
+10. Route parsed Developer, report-lint, QA, TL-Lite, command-liveness,
+    child-session-liveness, and recovery-budget results through
     `project-docs/tools/workflow-route.sh <source> <outcome> [attempts]` and
     follow its literal `ACTION` result. `WAIT` retains and polls a live command
     session; `EVALUATE` inspects its observed terminated result. Invalid router
     input is an orchestration defect to repair, not permission to invent a
-    route.
+    route. A parent polling wait timeout is not child termination: route
+    `session WAIT_TIMEOUT`, retain the same child on `ACTION WAIT`, and poll it
+    again. Route an externally interrupted child as
+    `session INTERRUPTED <consecutive-count>`; the first interruption repairs
+    and the second triages orchestration session-liveness.
     Every newly appended RUN-START/RUN-RESUME carries exactly one
     `Sequence contract: v2` and exactly one `Recovery directive schema: v2` in
     that same event; both become effective immediately and schema cannot
@@ -429,7 +447,12 @@ Responsibilities:
     an actual advance. After a schema-v2 marker, the validator requires the
     complete typed control directive and binds its values byte-for-byte to the
     governing real phase triage-log entry. It also binds the five ordinary
-    TRIAGE authority fields byte-for-byte. Every TRIAGE ID and exact verdict
+    TRIAGE authority fields byte-for-byte and requires the following
+    TASK-RECOVERY `Source` to reference the governing TRG; it does not add that
+    ID to the exact-bound ordinary `Repair authority`. A direct schema-v2
+    TRIAGE `REPAIR` may replace the active `needs-repair` dispatch that returned
+    its blocker candidate only when the bound recovery keeps the same task;
+    other overlaps remain invalid. Every TRIAGE ID and exact verdict
     must match that log; TRG/ESC identity is bound to the ledger phase. It
     rejects STOP without its exact preceding TRIAGE BLOCK/ESC and binds
     RUN-RESUME to the exact next task, trigger, category, mode, and attempt.
@@ -441,8 +464,17 @@ Responsibilities:
     report-repair; its later `RESOLVED` permits task completion. It preserves
     task identity and requires recovery completion
     plus an explicitly linked, differently identified QA re-review.
-    A linked re-review may transfer repair ownership to another task only after
-    the current owner completes; it cannot overwrite an unresolved owner. An
+    A REVIEW event whose outcome is `REPAIR` carries exactly one `Owning task`
+    field holding an ordered, comma-separated list of one or more distinct task
+    IDs, in the same order as the review artifact's Repair Plan rows. Multiple
+    owners are valid; `none` is valid only for `PASS` and `BLOCK`. Every listed
+    owner must complete TASK-RECOVERY, REPAIR, and TASK complete before the open
+    review can be closed by a linked `PASS` or replaced by a linked `REPAIR`,
+    and owners are repaired one at a time in list order. A linked re-review may
+    transfer repair ownership to a task outside the list only after every listed
+    owner completes; it cannot overwrite an unresolved owner. A `CORRECTION` is
+    evidence only: it never changes review ownership, recovery state, or any
+    other sequence state, and it is not a mechanism for selecting owners. An
     `INVALID` candidate is recoverable while the ledger remains valid. A
     missing receipt is an ambiguous result resolved only by byte-identical
     retry; retain and stop only if standalone validation fails after a confirmed
@@ -468,8 +500,9 @@ Responsibilities:
 14. Every third completed task, or at the cadence defined by the QA plan,
     spawn QA Reviewer for the review window with exact task, report, and
     output paths, then append the REVIEW entry. `PASS` advances.
-    `REPAIR` dispatches the named owning task to a Developer continuation
-    and requires a fresh independent re-review of the same window. `BLOCK`
+    `REPAIR` dispatches each named owning task, in the review's Repair Plan
+    order, to its own Developer continuation, and requires a fresh independent
+    re-review of the same window after the last owner completes. `BLOCK`
     is a blocker candidate for TL-Lite.
 15. Route blocker candidates, ambiguous recovery classifications, and proposed
     cross-scope control-conformance repairs through TL-Lite triage.
@@ -491,8 +524,18 @@ Responsibilities:
     relevant in-scope change tied to the trigger is progress only when it newly
     satisfies or removes an obligation, or verification demonstrably narrows
     the failure. Formatting and metadata-only or unrelated changes do not
-    qualify; no-op churn is not progress. On exhaustion, triage the protected
-    `recovery-budget-exhausted` candidate.
+    qualify; no-op churn is not progress. An attempt whose child session is
+    interrupted, cancelled, timed out, or shut down from outside, and which
+    never returns a typed result, does not consume the budget; no budget bounds
+    a child session's lifetime, and only declared per-command budgets are
+    enforced. Its ledger REPAIR uses `Outcome: INTERRUPTED`, preserves the
+    preceding no-progress count, and records the interruption cause, elapsed
+    session duration, and command in flight. Two consecutive externally
+    interrupted attempts are triaged as `orchestration session-liveness`,
+    never as recovery-budget exhaustion. A TRIAGE `REPAIR` advances the next
+    total attempt, preserves the no-progress count, and starts a new
+    interruption streak. On exhaustion by reporting attempts, triage the
+    protected `recovery-budget-exhausted` candidate.
 17. After all tasks complete, spawn QA Lead for final review and human
     checklist.
 18. Append the RUN-END entry to the run ledger and notify the Human with the
@@ -1680,6 +1723,16 @@ Enter `BLOCK` and surface the issue instead of guessing only when:
 - A required external capability or child role remains unavailable after
   bounded recovery.
 - Two consecutive same-trigger continuation attempts make no material progress.
+
+For retained tests and fixtures, a filename, test name, embedded task number,
+or prose label does not establish current-phase task ownership. Before treating
+retained-test repair as protected re-slicing or cross-task authority, establish
+the introducing phase/task from commit provenance and compare the assertion
+with the current task pack, convergence inventory, and accepted contract. When
+the current accepted change displaced the assertion, its task owns
+subject-preserving convergence. Repeating an unproven label-based
+classification neither creates a specification contradiction nor counts as a
+distinct no-progress condition.
 
 Red tests, vet/lint failures, missing reports, interrupted sessions, incomplete
 in-scope work, and bounded QA findings are `REPAIR` by default. In Phase

@@ -15,14 +15,6 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-const fidVersion = "0.1.0"
-
-type RoleSeed struct {
-	Name        string
-	Description string
-	IsHuman     bool
-}
-
 type InitOptions struct {
 	WorkspaceRoot string
 	MigrationsDir string
@@ -186,7 +178,7 @@ func initializeStagedWorkspace(stagingRoot, databasePath string, plan initPlan, 
 	if err := runInitHook(hooks, initStageSchemaInitialized); err != nil {
 		return InitResult{}, err
 	}
-	result, err := initializeJournaledState(stagingRoot, databasePath, plan.prefix, plan.explicit)
+	result, err := initializeJournaledState(stagingRoot, databasePath, plan.projectConfig.ProjectID, plan.prefix)
 	if err != nil {
 		return InitResult{}, err
 	}
@@ -201,7 +193,7 @@ func verifyStagedRebuild(stagingRoot, databasePath, migrationsDir string, hooks 
 	if err != nil {
 		return fmt.Errorf("read staged projection before rebuild: %w", err)
 	}
-	if _, err := journal.RebuildWorkspace(stagingRoot, migrationsDir, "human"); err != nil {
+	if _, err := journal.RebuildWorkspace(stagingRoot, migrationsDir); err != nil {
 		return fmt.Errorf("rebuild staged projection: %w", err)
 	}
 	if err := runInitHook(hooks, initStageRebuilt); err != nil {
@@ -295,25 +287,10 @@ func DefaultPrefix(workspaceRoot string) string {
 	return strings.ToUpper(filepath.Base(workspaceRoot))
 }
 
-func DefaultRoles() []RoleSeed {
-	return []RoleSeed{
-		{Name: "developer", Description: "Developer"},
-		{Name: "qa_reviewer", Description: "QA Reviewer"},
-		{Name: "qa_lead", Description: "QA Lead"},
-		{Name: "tl_lite", Description: "TL-Lite"},
-		{Name: "tl", Description: "TL"},
-		{Name: "workflow_runner", Description: "Workflow Runner"},
-		{Name: "human", Description: "Human", IsHuman: true},
-	}
-}
-
-func initializeJournaledState(workspaceRoot, dbPath, prefix string, explicitPrefix bool) (InitResult, error) {
+func initializeJournaledState(workspaceRoot, dbPath, projectID, prefix string) (InitResult, error) {
 	var result InitResult
-	err := journal.WithLock(workspaceRoot, journal.LockOwner{
-		Command:   initCommand(prefix),
-		ActorRole: "human",
-	}, func(lock *journal.WriteLock) error {
-		event := BuildProjectInitializedEvent(prefix, explicitPrefix)
+	err := journal.WithLock(workspaceRoot, journal.LockOwner{Command: "fid init"}, func(lock *journal.WriteLock) error {
+		event := BuildProjectInitializedEvent(projectID)
 		appended, err := journal.AppendEvent(lock, event)
 		if err != nil {
 			return err
@@ -352,7 +329,6 @@ func initializeJournaledState(workspaceRoot, dbPath, prefix string, explicitPref
 			JournalPath: filepath.ToSlash(filepath.Join(config.WorkspaceDirName, config.JournalDirName, journalFile)),
 			EventID:     appended.EventID,
 			OccurredAt:  appended.OccurredAt.UTC(),
-			SeededRoles: SeededRoleNames(),
 		}
 		return nil
 	})
@@ -363,58 +339,20 @@ func initializeJournaledState(workspaceRoot, dbPath, prefix string, explicitPref
 	return result, nil
 }
 
-func BuildProjectInitializedEvent(prefix string, explicitPrefix bool) journal.Event {
-	roles := DefaultRoles()
-	effects := make([]journal.Effect, 0, len(roles))
-	for _, role := range roles {
-		effects = append(effects, journal.Effect{
-			Op:    "insert",
-			Table: "roles",
-			PK: map[string]any{
-				"name": role.Name,
-			},
-			Values: map[string]any{
-				"description": role.Description,
-				"is_human":    role.IsHuman,
-				"active":      true,
-			},
-		})
-	}
-
-	argv := []string{"fid", "init"}
-	if explicitPrefix {
-		argv = append(argv, "--prefix", prefix)
-	}
-
+func BuildProjectInitializedEvent(projectID string) journal.Event {
 	return journal.Event{
-		EventSchema: journal.CurrentEventSchema,
+		EventSchema: journal.EventSchemaV2,
 		EventType:   "project.initialized",
-		Actor: journal.Actor{
-			Role: "human",
+		ActorV2: journal.EventActor{
+			ActorID:       "fid-bootstrap",
+			ActorType:     "service",
+			Producer:      "fid",
+			ProvenanceRef: "fid:init",
 		},
-		Command: journal.Command{
-			Argv:       argv,
-			CWD:        ".",
-			FIDVersion: fidVersion,
-		},
-		Effects: effects,
+		Aggregate:   journal.Aggregate{ID: projectID, Sequence: 1, Type: "project"},
+		CommandName: "project.init",
+		Effects:     []journal.Effect{},
 	}
-}
-
-func SeededRoleNames() []string {
-	roles := DefaultRoles()
-	names := make([]string, 0, len(roles))
-	for _, role := range roles {
-		names = append(names, role.Name)
-	}
-	return names
-}
-
-func initCommand(prefix string) string {
-	if strings.TrimSpace(prefix) == "" {
-		return "fid init"
-	}
-	return "fid init --prefix " + prefix
 }
 
 func closeBootstrapDB(conn *sql.DB) {

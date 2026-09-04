@@ -60,17 +60,17 @@ func TestActivityListAppliesFilters(t *testing.T) {
 	}{
 		{
 			name:    "on filter",
-			args:    []string{"activity", "list", "--on", "issue/" + primaryIssueID},
+			args:    []string{"--json", "activity", "list", "--on", "issue/" + primaryIssueID},
 			wantIDs: []string{firstEntry.activityID, secondEntry.activityID},
 		},
 		{
 			name:    "since filter",
-			args:    []string{"activity", "list", "--since", secondEntry.occurredAt},
+			args:    []string{"--json", "activity", "list", "--since", secondEntry.occurredAt},
 			wantIDs: []string{secondEntry.activityID, thirdEntry.activityID},
 		},
 		{
 			name:    "event filter",
-			args:    []string{"activity", "list", "--event", "issue_updated"},
+			args:    []string{"--json", "activity", "list", "--event", "issue-updated"},
 			wantIDs: []string{thirdEntry.activityID},
 		},
 	}
@@ -82,7 +82,9 @@ func TestActivityListAppliesFilters(t *testing.T) {
 				t.Fatalf("stderr = %q, want empty", stderr)
 			}
 
-			rows := decodeCommandJSONStructure(t, stdout).([]any)
+			envelope := decodeCommandJSONStructure(t, stdout).(map[string]any)
+			result := envelope["result"].(map[string]any)
+			rows := result["items"].([]any)
 			gotIDs := make([]string, 0, len(rows))
 			for _, row := range rows {
 				gotIDs = append(gotIDs, row.(map[string]any)["id"].(string))
@@ -94,7 +96,7 @@ func TestActivityListAppliesFilters(t *testing.T) {
 	}
 }
 
-func TestActivityListUsesDirectLegacyJSON(t *testing.T) {
+func TestActivityListUsesEnvelopeAndNormalizedActivityEvent(t *testing.T) {
 	t.Parallel()
 	workspace := t.TempDir()
 	clonePristineWorkspaceInto(t, workspace)
@@ -111,7 +113,7 @@ func TestActivityListUsesDirectLegacyJSON(t *testing.T) {
 		details:    map[string]any{"from": "todo", "to": "in_progress"},
 	})
 
-	stdout, stderr := runFIDCommand(t, workspace, "activity", "list")
+	stdout, stderr := runFIDCommand(t, workspace, "--json", "activity", "list")
 	if stderr != "" {
 		t.Fatalf("stderr = %q, want empty", stderr)
 	}
@@ -122,13 +124,14 @@ func TestActivityListUsesDirectLegacyJSON(t *testing.T) {
 			JournalEventID: entry.eventID,
 			RefType:        "issue",
 			RefID:          issueID,
-			Event:          "status_changed",
+			Event:          "status-changed",
 			Actor:          "developer",
 			OccurredAt:     entry.occurredAt,
 			Details:        map[string]any{"from": "todo", "to": "in_progress"},
 		},
 	})
-	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {
+	envelope := decodeCommandJSONStructure(t, stdout).(map[string]any)
+	if got := envelope["result"].(map[string]any)["items"]; !reflect.DeepEqual(got, want) {
 		t.Fatalf("activity list json = %#v, want %#v", got, want)
 	}
 }
@@ -153,11 +156,12 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 	t.Helper()
 
 	created, err := issues.Create(issues.CreateOptions{
-		WorkspaceRoot: workspace,
-		MigrationsDir: issueMigrationsDir(),
-		Kind:          "task",
-		Title:         title,
-		ActorRole:     "developer",
+		WorkspaceRoot:  workspace,
+		MigrationsDir:  issueMigrationsDir(),
+		Kind:           "task",
+		Title:          title,
+		Actor:          "agent:developer",
+		IdempotencyKey: "activity-command-create-" + title,
 	})
 	if err != nil {
 		t.Fatalf("Create() error = %v", err)
@@ -171,7 +175,7 @@ func createActivityCommandIssue(t *testing.T, workspace, title string) string {
 
 	if _, err := conn.Exec(`
 		DELETE FROM activity_log
-		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue_created'
+		WHERE ref_type = 'issue' AND ref_id = ? AND event = 'issue-created'
 	`, created.ID); err != nil {
 		t.Fatalf("delete create activity row: %v", err)
 	}

@@ -1,0 +1,9 @@
+[stdout] first stdout [REDACTED]\u001b[31m\r
+[stderr] first stderr [REDACTED]\u0007\n
+[stdout] second stdout
+[stderr] second stderr
+[stdout] xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+[control] output-truncated limit_bytes=128 observed_bytes_lower_bound=200
+[control] redaction-applied replacements=2
+[control] artifact-rejected path=missing-artifact.txt reason=missing
+[terminal] receipt=none outcome=failed exit=23 signal=none timed_out=false artifacts=none rejected_artifacts=1 obligation=unsatisfied

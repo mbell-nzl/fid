@@ -1,0 +1,5 @@
+{
+  "operation": "activation.abort",
+  "command": "fid activation abort",
+  "kind": "accepted"
+}

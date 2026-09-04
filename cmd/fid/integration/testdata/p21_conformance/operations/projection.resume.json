@@ -1,0 +1,5 @@
+{
+  "operation": "projection.resume",
+  "command": "fid resume \u003cissue-id\u003e",
+  "kind": "accepted"
+}

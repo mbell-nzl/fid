@@ -26,6 +26,39 @@ Use when: content may be referenced by fid but must not be copied into its
 operational model.
 Avoid: “fid document” or “backend prose.”
 
+**Routine (external kit term)**
+Definition: An external kit risk-lane classification for work the kit judges
+eligible for its routine policy path. It is not a fid entity or lifecycle.
+Use when: discussing how the external kit selects and compiles policy before
+activation.
+Avoid: persisting a Routine, evaluating a Routine in fid, naming a fid command
+or Event with it, or using it as a synonym for Work Envelope.
+
+**Capability availability**
+Definition: A discovery claim that one independently versioned semantic
+capability is complete within its declared limits and trust sources.
+Use when: a consumer decides whether it can rely on that capability.
+Avoid: “partial availability”; an incomplete semantic capability is
+unavailable even when internal walking-skeleton operations exist.
+
+**Public enum value**
+Definition: A member of a closed, contract-controlled value set serialized on
+a public machine interface, including reason, outcome, control, status,
+availability, and Event-kind values. Public enum values use lowercase
+kebab-case.
+Use when: distinguishing closed values from their JSON field names.
+Avoid: classifying opaque entity IDs, user-authored workflow-state identifiers,
+paths, capability IDs, or digests as enums merely because they are strings.
+
+**Project-local attribution**
+Definition: A typed `<agent|human|service>:<id>` caller label recorded on a
+retained standalone inventory fact to show who invoked it, with producer
+`fid-standalone` and provenance `project-local-attribution`, without
+establishing kit Actor capability or trusted provenance.
+Use when: converting retained V1 `--by` mutations to `--actor` during Phase 21.
+Avoid: using a role-looking attribution to authorize a protected operation,
+satisfy Evidence or a Human Outcome, or permit guarded transition/completion.
+
 ## Work Inventory
 
 **Issue**
@@ -56,6 +89,13 @@ Avoid: using Subtasks only as a checklist.
 Definition: A named state machine governing one or more Issue kinds.
 Use when: describing Issue lifecycle states and legal transitions.
 Avoid: using it for kit risk, role-routing, or assurance policy.
+
+**Terminal-success Issue state**
+Definition: A workflow state in the completed category that qualifies as the
+successful terminal outcome for the selected Issue rather than cancellation.
+Use when: applying the gate-evidence guard before Phase 21 completion.
+Avoid: treating a legacy completion row, role-specific verification, or
+caller attribution as the terminal-success state or its evidence.
 
 **Acceptance criterion**
 Definition: An Issue-level statement of an observable required outcome.
@@ -89,9 +129,10 @@ Avoid: “QA step,” “validation assertion,” or an untyped checklist item.
 
 **Actor**
 Definition: A Human, agent, harness, or trusted producer identity recorded with
-declared capabilities and provenance.
+capabilities and provenance established by the applicable trusted source.
 Use when: attributing an attempted or completed action.
-Avoid: assuming a kit role name is a fid-global role.
+Avoid: assuming a kit role name is a fid-global role or treating
+caller-self-declared capabilities as authority.
 
 **Authority Grant**
 Definition: The explicit actions and protected-decision classes an Actor may
@@ -166,7 +207,7 @@ Use when: proving deterministic execution.
 Avoid: caller-reported exit codes or mutable result rows.
 
 **Trust Source**
-Definition: The provenance class of evidence: `executed`, `attested`, or
+Definition: The provenance class of evidence: `fid-executed`, `attested`, or
 `reported`.
 Use when: evaluating whether evidence may satisfy an Obligation.
 Avoid: treating `reported` as deterministic proof.
@@ -365,6 +406,17 @@ Definition: One Phase Runner-mediated Developer continuation for one Trigger
 signature. Same-session red/green work is not an orchestration Recovery attempt.
 Use when: recording total and consecutive no-progress attempts.
 Avoid: resetting the count for context refresh or planned handoff.
+
+**Orchestration session-liveness (V1)**
+Definition: A child-agent execution condition in which the child is externally
+interrupted before returning a typed result, distinct from a command timeout or
+a parent polling wait timeout. The ledger records `Outcome: INTERRUPTED` with
+the cause, elapsed session duration, and command in flight.
+Use when: preserving the no-progress count after one interruption and triaging
+the execution shape after two consecutive interruptions. A repair verdict
+advances total attempt count while starting a new interruption streak.
+Avoid: charging an interruption to repair capability, resetting an existing
+no-progress count, or treating an expired parent wait as child termination.
 
 **V1 recovery ledger event**
 Definition: An append-only run-ledger entry: `TASK-RECOVERY` records a

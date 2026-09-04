@@ -7,6 +7,7 @@ import (
 )
 
 func TestIssueUpdateAndTransitionDoNotRegisterParentMutationFlags(t *testing.T) {
+	t.Parallel()
 	for _, command := range []*cobra.Command{
 		newIssueUpdateCommand(),
 		newIssueTransitionCommand(),

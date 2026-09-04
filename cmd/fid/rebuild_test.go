@@ -14,7 +14,52 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-func TestRebuildJSONMapsMissingAuthorityWithoutMutation(t *testing.T) {
+func TestRebuildJSONSucceedsWithoutActorAuthority(t *testing.T) {
+	workspace := t.TempDir()
+	runInitCommand(t, workspace, "init")
+	journalPath := mustJournalPath(t, workspace)
+	beforeJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) error = %v", journalPath, err)
+	}
+	if err := os.Remove(filepath.Join(workspace, ".fid", "fid.sqlite")); err != nil {
+		t.Fatalf("Remove(projection) error = %v", err)
+	}
+
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	cmd := newRootCommandAt(workspace)
+	cmd.SetOut(stdout)
+	cmd.SetErr(stderr)
+	cmd.SetArgs([]string{"--json", "rebuild"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("Execute() error = %v, want role-free rebuild success", err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("stderr = %q, want empty", stderr.String())
+	}
+	var success struct {
+		OK        bool   `json:"ok"`
+		Operation string `json:"operation"`
+		Event     *any   `json:"event"`
+	}
+	if err := json.Unmarshal(stdout.Bytes(), &success); err != nil {
+		t.Fatalf("Unmarshal(stdout) error = %v", err)
+	}
+	if !success.OK || success.Operation != "project.rebuild" || success.Event != nil {
+		t.Fatalf("success = %+v, want role-free project.rebuild result", success)
+	}
+	afterJournal, err := os.ReadFile(journalPath)
+	if err != nil {
+		t.Fatalf("ReadFile(%q) after rebuild error = %v", journalPath, err)
+	}
+	if !bytes.Equal(afterJournal, beforeJournal) {
+		t.Fatal("role-free rebuild appended journal data")
+	}
+}
+
+func TestRebuildRejectsRemovedByFlagWithoutMutation(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 
@@ -34,40 +79,11 @@ func TestRebuildJSONMapsMissingAuthorityWithoutMutation(t *testing.T) {
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"--json", "rebuild"})
+	cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
 
-	if err := cmd.Execute(); err == nil {
-		t.Fatal("Execute() error = nil, want missing authority rejection")
-	}
-	if stdout.Len() != 0 {
-		t.Fatalf("stdout = %q, want empty", stdout.String())
-	}
-	assertEnvelopeKeySet(t, stderr.Bytes(), []string{"contract_version", "error", "ok", "operation"})
-	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error", []string{"category", "code", "details", "message", "retryable", "subject"})
-	assertNestedEnvelopeKeySet(t, stderr.Bytes(), "error.details", []string{"actor", "operation"})
-
-	var envelope struct {
-		ContractVersion string `json:"contract_version"`
-		OK              bool   `json:"ok"`
-		Operation       string `json:"operation"`
-		Error           struct {
-			Code      string `json:"code"`
-			Category  string `json:"category"`
-			Retryable bool   `json:"retryable"`
-			Subject   *any   `json:"subject"`
-			Details   struct {
-				Operation string  `json:"operation"`
-				Actor     *string `json:"actor"`
-			} `json:"details"`
-		} `json:"error"`
-	}
-	if err := json.Unmarshal(stderr.Bytes(), &envelope); err != nil {
-		t.Fatalf("Unmarshal(stderr) error = %v\nstderr=%q", err, stderr.String())
-	}
-	if envelope.ContractVersion != "fid-cli.v1" || envelope.OK || envelope.Operation != "project.rebuild" ||
-		envelope.Error.Code != "authority-missing" || envelope.Error.Category != "authority" || envelope.Error.Retryable ||
-		envelope.Error.Subject != nil || envelope.Error.Details.Operation != "project.rebuild" || envelope.Error.Details.Actor != nil {
-		t.Fatalf("failure envelope = %+v, want typed missing rebuild authority", envelope)
+	err = cmd.Execute()
+	if err == nil || err.Error() != "unknown flag: --by" {
+		t.Fatalf("Execute() error = %v, want removed --by rejection", err)
 	}
 
 	afterJournal, err := os.ReadFile(journalPath)
@@ -79,11 +95,11 @@ func TestRebuildJSONMapsMissingAuthorityWithoutMutation(t *testing.T) {
 		t.Fatalf("ReadFile(%q) after rejection error = %v", databasePath, err)
 	}
 	if !bytes.Equal(afterJournal, beforeJournal) || !bytes.Equal(afterDatabase, beforeDatabase) {
-		t.Fatal("missing-authority rebuild changed journal or projection")
+		t.Fatal("removed-flag rebuild changed journal or projection")
 	}
 }
 
-func TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation(t *testing.T) {
+func TestRebuildRejectsEveryFormerByValueWithoutMutation(t *testing.T) {
 	workspace := t.TempDir()
 	runInitCommand(t, workspace, "init")
 	journalPath := mustJournalPath(t, workspace)
@@ -93,13 +109,11 @@ func TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation(t *testing.T) {
 	}
 
 	for _, testCase := range []struct {
-		name      string
-		actor     string
-		wantCode  string
-		wantActor string
+		name  string
+		actor string
 	}{
-		{name: "unknown", actor: "intern", wantCode: "authority-unknown-actor", wantActor: "intern"},
-		{name: "denied", actor: "developer", wantCode: "authority-denied", wantActor: "developer"},
+		{name: "unknown", actor: "intern"},
+		{name: "denied", actor: "developer"},
 	} {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
@@ -109,34 +123,9 @@ func TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation(t *testing.T) {
 			cmd.SetOut(stdout)
 			cmd.SetErr(stderr)
 			cmd.SetArgs([]string{"--json", "rebuild", "--by", testCase.actor})
-			if err := cmd.Execute(); err == nil {
-				t.Fatal("Execute() error = nil, want authority rejection")
-			}
-			if stdout.Len() != 0 {
-				t.Fatalf("stdout = %q, want empty", stdout.String())
-			}
-			var failure struct {
-				OK        bool   `json:"ok"`
-				Operation string `json:"operation"`
-				Error     struct {
-					Code      string `json:"code"`
-					Category  string `json:"category"`
-					Retryable bool   `json:"retryable"`
-					Subject   *any   `json:"subject"`
-					Details   struct {
-						Operation string  `json:"operation"`
-						Actor     *string `json:"actor"`
-					} `json:"details"`
-				} `json:"error"`
-			}
-			if err := json.Unmarshal(stderr.Bytes(), &failure); err != nil {
-				t.Fatalf("Unmarshal(stderr) error = %v", err)
-			}
-			if failure.OK || failure.Operation != "project.rebuild" || failure.Error.Code != testCase.wantCode ||
-				failure.Error.Category != "authority" || failure.Error.Retryable || failure.Error.Subject != nil ||
-				failure.Error.Details.Operation != "project.rebuild" || failure.Error.Details.Actor == nil ||
-				*failure.Error.Details.Actor != testCase.wantActor {
-				t.Fatalf("authority failure = %+v, want %s for %q", failure, testCase.wantCode, testCase.wantActor)
+			err := cmd.Execute()
+			if err == nil || err.Error() != "unknown flag: --by" {
+				t.Fatalf("Execute() error = %v, want removed --by rejection", err)
 			}
 		})
 	}
@@ -146,7 +135,7 @@ func TestRebuildJSONMapsUnknownAndDeniedAuthorityWithoutMutation(t *testing.T) {
 		t.Fatalf("ReadFile(%q) after rejection error = %v", journalPath, err)
 	}
 	if !bytes.Equal(afterJournal, beforeJournal) {
-		t.Fatal("authority-rejected rebuild appended journal data")
+		t.Fatal("removed-flag rebuild appended journal data")
 	}
 }
 
@@ -165,8 +154,8 @@ func TestRebuildJSONRejectsClosedRequestsBeforeProjectionWork(t *testing.T) {
 		wantArgument string
 		wantValue    string
 	}{
-		{name: "positional argument", args: []string{"--json", "rebuild", "unexpected", "--by", "workflow_runner"}, wantArgument: "arguments", wantValue: "unexpected"},
-		{name: "verbose JSON", args: []string{"--json", "rebuild", "--verbose", "--by", "workflow_runner"}, wantArgument: "verbose", wantValue: "true"},
+		{name: "positional argument", args: []string{"--json", "rebuild", "unexpected"}, wantArgument: "arguments", wantValue: "unexpected"},
+		{name: "verbose JSON", args: []string{"--json", "rebuild", "--verbose"}, wantArgument: "verbose", wantValue: "true"},
 	} {
 		testCase := testCase
 		t.Run(testCase.name, func(t *testing.T) {
@@ -230,7 +219,7 @@ func TestRebuildJSONMapsExplicitMissingProjectToSelectedPath(t *testing.T) {
 	cmd := newRootCommandAt(workingDirectory)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"--project", missingProject, "--json", "rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"--project", missingProject, "--json", "rebuild"})
 	if err := cmd.Execute(); err == nil {
 		t.Fatal("Execute() error = nil, want selected-project rejection")
 	}
@@ -277,7 +266,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 		cmd := newRootCommandAt(workspace)
 		cmd.SetOut(lockedStdout)
 		cmd.SetErr(lockedStderr)
-		cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+		cmd.SetArgs([]string{"--json", "rebuild"})
 		lockedErr = cmd.Execute()
 		return nil
 	})
@@ -327,7 +316,7 @@ func TestRebuildJSONReportsRetryableHeldLockAndSucceedsAfterRelease(t *testing.T
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"--json", "rebuild"})
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() after lock release error = %v", err)
 	}
@@ -359,7 +348,7 @@ func TestRebuildJSONMapsReplayStopWithClosedDetails(t *testing.T) {
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"--json", "rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"--json", "rebuild"})
 	if err := cmd.Execute(); err == nil {
 		t.Fatal("Execute() error = nil, want replay-stop failure")
 	}
@@ -404,7 +393,7 @@ func TestRebuildCommandReplaysJournalAndReportsCounts(t *testing.T) {
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"rebuild"})
 
 	if err := cmd.Execute(); err != nil {
 		t.Fatalf("Execute() error = %v", err)
@@ -445,7 +434,7 @@ func TestRebuildCommandReportsCorruptJournal(t *testing.T) {
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"rebuild"})
 
 	err := cmd.Execute()
 	if err == nil {
@@ -467,7 +456,7 @@ func TestRebuildCommandReportsPreconditionConflict(t *testing.T) {
 	cmd := newRootCommandAt(workspace)
 	cmd.SetOut(stdout)
 	cmd.SetErr(stderr)
-	cmd.SetArgs([]string{"rebuild", "--by", "workflow_runner"})
+	cmd.SetArgs([]string{"rebuild"})
 
 	err := cmd.Execute()
 	if err == nil {

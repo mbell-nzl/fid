@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/mbell-nzl/fid/internal/cli"
 	"github.com/mbell-nzl/fid/internal/config"
@@ -26,6 +25,7 @@ type maintenanceCheckResult struct {
 
 func init() {
 	rootFlagCapabilities["maintenance check"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["maintenance vacuum"] = rootFlagCapability{Project: true, JSON: true}
 }
 
 func newMaintenanceCommand() *cobra.Command {
@@ -39,37 +39,19 @@ func newMaintenanceCommand() *cobra.Command {
 }
 
 func newMaintenanceVacuumCommand() *cobra.Command {
-	var actorRole string
+	var actor string
 
 	cmd := &cobra.Command{
 		Use:   "vacuum",
 		Short: "Compact the derived SQLite projection without changing the journal.",
-		Args:  cobra.NoArgs,
+		Args:  canonicalNoArgs("maintenance.vacuum"),
 		RunE: func(cmd *cobra.Command, _ []string) error {
-			workspaceRoot, err := commandWorkingDirectory(cmd)
-			if err != nil {
-				return fmt.Errorf("resolve workspace root: %w", err)
-			}
-
-			result, err := maintenance.Vacuum(workspaceRoot, issueMigrationsDir(), actorRole)
-			if err != nil {
-				return renderMaintenanceVacuumError(cmd, err)
-			}
-			if err := writeIssueLine(cmd.ErrOrStderr(), "vacuum complete — .fid/fid.sqlite: %d B → %d B\n", result.BeforeBytes, result.AfterBytes); err != nil {
-				return err
-			}
-			return nil
+			return writeCapabilityUnavailable(cmd, "maintenance.vacuum", "telemetry.trajectory.v1", 25)
 		},
 	}
-	cmd.Flags().StringVar(&actorRole, "by", "", "Acting role")
+	cmd.Flags().StringVar(&actor, "actor", "", "Standalone attribution")
+	cmd.SetFlagErrorFunc(canonicalFlagError("maintenance.vacuum"))
 	return cmd
-}
-
-func renderMaintenanceVacuumError(cmd *cobra.Command, err error) error {
-	if renderErr := renderIssueError(cmd.ErrOrStderr(), err); renderErr != nil {
-		return renderErr
-	}
-	return err
 }
 
 func newMaintenanceCheckCommand() *cobra.Command {
@@ -170,20 +152,17 @@ func renderMaintenanceDivergence(cmd *cobra.Command, result maintenanceCheckResu
 	if err != nil {
 		return err
 	}
-	if !jsonMode {
-		if err := writeIssueLine(cmd.ErrOrStderr(), "error: %s\n", errMaintenanceCheckFailed); err != nil {
-			return err
-		}
-		return errMaintenanceCheckFailed
-	}
 	failure, err := cli.NewFailure(cli.CodeProjectionDivergence, "maintenance check found integrity divergence", nil, maintenanceResultMap(result))
 	if err != nil {
 		return err
 	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
-		return err
+	if !jsonMode {
+		if err := writeIssueLine(cmd.ErrOrStderr(), "error: %s\n", errMaintenanceCheckFailed); err != nil {
+			return err
+		}
+		return cli.NewFailureError(failure, errMaintenanceCheckFailed)
 	}
-	return errMaintenanceCheckFailed
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "maintenance.check", failure, errMaintenanceCheckFailed)
 }
 
 func renderMaintenanceCheckError(cmd *cobra.Command, cause error) error {
@@ -191,57 +170,41 @@ func renderMaintenanceCheckError(cmd *cobra.Command, cause error) error {
 	if err != nil {
 		return err
 	}
+	failure, err := maintenanceCheckFailure(cmd, cause)
+	if err != nil {
+		return err
+	}
 	if !jsonMode {
 		if err := renderIssueError(cmd.ErrOrStderr(), cause); err != nil {
 			return err
 		}
-		return cause
+		return cli.NewFailureError(failure, cause)
 	}
+	return cli.WriteFailureAndReturn(cmd.ErrOrStderr(), "maintenance.check", failure, cause)
+}
+
+func maintenanceCheckFailure(cmd *cobra.Command, cause error) (cli.Failure, error) {
 	if errors.Is(cause, project.ErrNotFound) {
 		workingDirectory, err := commandWorkingDirectory(cmd)
 		if err != nil {
-			return err
+			return cli.Failure{}, err
 		}
 		projectPath, err := rebuildProjectCandidate(cmd, workingDirectory)
 		if err != nil {
-			return err
+			return cli.Failure{}, err
 		}
-		failure, err := cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: projectPath}, map[string]any{"path": projectPath})
-		if err != nil {
-			return err
-		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
-			return err
-		}
-		return cause
+		return cli.NewFailure(cli.CodeProjectNotFound, "fid project was not found", &cli.Subject{Type: cli.SubjectProject, ID: projectPath}, map[string]any{"path": projectPath})
 	}
 	if failure, handled, err := journalReplayStoppedFailure(cause); err != nil {
-		return err
+		return cli.Failure{}, err
 	} else if handled {
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
-			return err
-		}
-		return cause
+		return failure, nil
 	}
 	var limit *maintenance.ResultLimitExceededError
 	if errors.As(cause, &limit) {
-		failure, err := cli.NewFailure(cli.CodeResultLimitExceeded, "maintenance findings exceed their collection limit", nil, map[string]any{
+		return cli.NewFailure(cli.CodeResultLimitExceeded, "maintenance findings exceed their collection limit", nil, map[string]any{
 			"collection": limit.Collection, "limit": limit.Limit, "observed": limit.Observed,
 		})
-		if err != nil {
-			return err
-		}
-		if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
-			return err
-		}
-		return cause
 	}
-	failure, err := cli.NewFailure(cli.CodeInternalError, "maintenance check failed", nil, map[string]any{})
-	if err != nil {
-		return err
-	}
-	if err := cli.WriteFailure(cmd.ErrOrStderr(), "maintenance.check", failure); err != nil {
-		return err
-	}
-	return cause
+	return cli.NewFailure(cli.CodeInternalError, "maintenance check failed", nil, map[string]any{})
 }

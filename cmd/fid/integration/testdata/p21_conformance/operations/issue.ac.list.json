@@ -1,0 +1,5 @@
+{
+  "operation": "issue.ac.list",
+  "command": "fid issue ac list \u003cissue-id\u003e",
+  "kind": "accepted"
+}

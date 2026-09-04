@@ -87,6 +87,14 @@ ordinary `Trigger signature` and `Attempt count` must equal `Control trigger
 signature` and `Control attempt count`. TL-Lite copies the runner-supplied full
 `Control repair base`; it never selects or verifies a different base.
 
+For ordinary schema-v2 `REPAIR`, the following TASK-RECOVERY copies
+`Originating task`, `Trigger signature`, `Attempt count`, `Repair category`,
+and `Repair authority` byte-for-byte. Its `Source` references this TRG; its
+exact-bound `Repair authority` is not altered merely to repeat the TRG ID. This
+does not change the control-conformance rule above. If this verdict classified
+a blocker candidate returned by an active schema-v2 recovery awaiting REPAIR,
+the bound recovery replaces that pending dispatch only for the same task.
+
 ## Control Directive Amendment For TRG-<phase>-<NNN>
 
 Use this append-only form only when an existing `DEC-<NNN>` resolves the

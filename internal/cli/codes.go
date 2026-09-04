@@ -20,40 +20,72 @@ const (
 )
 
 const (
-	CodeInvalidArgument        Code = "invalid-argument"
-	CodeUnsupportedKind        Code = "unsupported-kind"
-	CodeUnsupportedRelation    Code = "unsupported-relation"
-	CodeProjectNotFound        Code = "project-not-found"
-	CodeProjectAlreadyInit     Code = "project-already-initialized"
-	CodeIssueNotFound          Code = "issue-not-found"
-	CodeRequirementNotFound    Code = "requirement-not-found"
-	CodeLabelNotFound          Code = "label-not-found"
-	CodeLinkNotFound           Code = "link-not-found"
-	CodeWorkflowNotFound       Code = "workflow-not-found"
-	CodeDuplicateEntity        Code = "duplicate-entity"
-	CodeStateConflict          Code = "state-conflict"
-	CodeLockUnavailable        Code = "lock-unavailable"
-	CodeHierarchyInvalid       Code = "hierarchy-invalid"
-	CodeDependencyCycle        Code = "dependency-cycle"
-	CodeTransitionNotPermitted Code = "transition-not-permitted"
-	CodeAuthorityMissing       Code = "authority-missing"
-	CodeAuthorityUnknownActor  Code = "authority-unknown-actor"
-	CodeAuthorityDenied        Code = "authority-denied"
-	CodeJournalReplayStopped   Code = "journal-replay-stopped"
-	CodeProjectionDivergence   Code = "projection-divergence"
-	CodeResultLimitExceeded    Code = "result-limit-exceeded"
-	CodeInternalError          Code = "internal-error"
+	CodeInvalidArgument               Code = "invalid-argument"
+	CodeUnsupportedKind               Code = "unsupported-kind"
+	CodeUnsupportedRelation           Code = "unsupported-relation"
+	CodeProjectNotFound               Code = "project-not-found"
+	CodeProjectAlreadyInit            Code = "project-already-initialized"
+	CodeIssueNotFound                 Code = "issue-not-found"
+	CodeRequirementNotFound           Code = "requirement-not-found"
+	CodeLabelNotFound                 Code = "label-not-found"
+	CodeLinkNotFound                  Code = "link-not-found"
+	CodeWorkflowNotFound              Code = "workflow-not-found"
+	CodeDuplicateEntity               Code = "duplicate-entity"
+	CodeStateConflict                 Code = "state-conflict"
+	CodeLockUnavailable               Code = "lock-unavailable"
+	CodeHierarchyInvalid              Code = "hierarchy-invalid"
+	CodeDependencyCycle               Code = "dependency-cycle"
+	CodeTransitionNotPermitted        Code = "transition-not-permitted"
+	CodeAuthorityMissing              Code = "authority-missing"
+	CodeAuthorityUnknownActor         Code = "authority-unknown-actor"
+	CodeAuthorityDenied               Code = "authority-denied"
+	CodeJournalReplayStopped          Code = "journal-replay-stopped"
+	CodeProjectionDivergence          Code = "projection-divergence"
+	CodeResultLimitExceeded           Code = "result-limit-exceeded"
+	CodeInternalError                 Code = "internal-error"
+	CodeActivationConflict            Code = "activation-conflict"
+	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
+	CodeAuthorityUnavailable          Code = "authority-unavailable"
+	CodeCapabilityUnavailable         Code = "capability-unavailable"
+	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
+	CodeRegistrationNotFound          Code = "registration-not-found"
+	CodeEnvelopeNotFound              Code = "envelope-not-found"
+	CodeClaimNotFound                 Code = "claim-not-found"
+	CodeClaimConflict                 Code = "claim-conflict"
+	CodeClaimExpired                  Code = "claim-expired"
+	CodeClaimStale                    Code = "claim-stale"
+	CodeRunNotFound                   Code = "run-not-found"
+	CodeRunInactive                   Code = "run-inactive"
+	CodeReceiptNotFound               Code = "receipt-not-found"
+	CodeEvidenceNotFound              Code = "evidence-not-found"
+	CodeEvidenceInvalid               Code = "evidence-invalid"
+	CodeEvidenceStale                 Code = "evidence-stale"
+	CodeArtifactUnavailable           Code = "artifact-unavailable"
+	CodeGateUnsuccessful              Code = "gate-unsuccessful"
+	CodeObligationUnsatisfied         Code = "obligation-unsatisfied"
+	CodeArchiveInvalid                Code = "archive-invalid"
 )
 
 type SubjectType string
 
 const (
-	SubjectProject     SubjectType = "project"
-	SubjectIssue       SubjectType = "issue"
-	SubjectRequirement SubjectType = "requirement"
-	SubjectLabel       SubjectType = "label"
-	SubjectLink        SubjectType = "link"
-	SubjectWorkflow    SubjectType = "workflow"
+	SubjectProject          SubjectType = "project"
+	SubjectIssue            SubjectType = "issue"
+	SubjectRequirement      SubjectType = "requirement"
+	SubjectLabel            SubjectType = "label"
+	SubjectLink             SubjectType = "link"
+	SubjectWorkflow         SubjectType = "workflow"
+	SubjectActivation       SubjectType = "activation"
+	SubjectGateDefinition   SubjectType = "gate-definition"
+	SubjectGateRegistration SubjectType = "gate-registration"
+	SubjectEnvelope         SubjectType = "envelope"
+	SubjectClaim            SubjectType = "claim"
+	SubjectRun              SubjectType = "run"
+	SubjectReceipt          SubjectType = "receipt"
+	SubjectEvidence         SubjectType = "evidence"
+	SubjectArtifact         SubjectType = "artifact"
+	SubjectCapability       SubjectType = "capability"
+	SubjectExport           SubjectType = "export"
 )
 
 type Subject struct {
@@ -88,6 +120,7 @@ const (
 	detailString detailType = iota
 	detailInteger
 	detailStrings
+	detailBoolean
 	detailObject
 	detailObjects
 )
@@ -117,6 +150,8 @@ func nullableIntegerField(name string) detailField {
 }
 
 func stringsField(name string) detailField { return detailField{name: name, typeOf: detailStrings} }
+
+func booleanField(name string) detailField { return detailField{name: name, typeOf: detailBoolean} }
 
 func objectField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObject, fields: fields}
@@ -167,6 +202,35 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 		stringField("status"), objectsField("errors", findingFields()...), objectsField("warnings", findingFields()...), objectField("info", infoFields()...)),
 	CodeResultLimitExceeded: definition(CategoryIntegrity, false, nil, stringField("collection"), integerField("limit"), integerField("observed")),
 	CodeInternalError:       definition(CategoryInternal, false, nil),
+	CodeActivationConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
+		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
+	CodeActivationRecoveryUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectActivation},
+		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
+	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
+		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
+	CodeCapabilityUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectCapability},
+		stringField("capability_id"), booleanField("available"), integerField("owner_phase")),
+	CodeExecutorPolicyUnsupported: definition(CategoryInvalidInput, false, []SubjectType{SubjectGateDefinition},
+		stringsField("fields"), objectField("supported", stringField("network"), booleanField("shell"), stringField("sandbox"), stringField("write"))),
+	CodeRegistrationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectGateDefinition, SubjectGateRegistration}, stringField("id")),
+	CodeEnvelopeNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEnvelope}, stringField("id")),
+	CodeClaimNotFound:        definition(CategoryNotFound, false, []SubjectType{SubjectClaim}, stringField("id")),
+	CodeClaimConflict:        definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimExpired:         definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
+	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
+	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
+	CodeReceiptNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
+	CodeEvidenceNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
+	CodeEvidenceInvalid:      definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeEvidenceStale:        definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeArtifactUnavailable:  definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeGateUnsuccessful: definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt},
+		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
+	CodeObligationUnsatisfied: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
+		objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeArchiveInvalid: definition(CategoryIntegrity, false, []SubjectType{SubjectExport},
+		stringField("archive_path"), objectsField("checks", stringField("code"), nullableStringField("entry"), stringField("detail"))),
 }
 
 var registeredCodes = []Code{
@@ -175,6 +239,14 @@ var registeredCodes = []Code{
 	CodeDuplicateEntity, CodeStateConflict, CodeLockUnavailable, CodeHierarchyInvalid, CodeDependencyCycle,
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
+	CodeActivationConflict,
+	CodeActivationRecoveryUnavailable,
+	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
+	CodeReceiptNotFound, CodeEvidenceNotFound,
+	CodeGateUnsuccessful,
+	CodeObligationUnsatisfied,
+	CodeArchiveInvalid,
 }
 
 func findingFields() []detailField {
@@ -312,6 +384,10 @@ func validateDetailValue(value any, field detailField) error {
 	case detailStrings:
 		if !isStrings(value) {
 			return fmt.Errorf("must be a string array")
+		}
+	case detailBoolean:
+		if _, ok := value.(bool); !ok {
+			return fmt.Errorf("must be a boolean")
 		}
 	case detailObject:
 		object, ok := value.(map[string]any)
