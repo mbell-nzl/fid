@@ -1,7 +1,7 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 21 complete; Phase 22 (failure and recovery) is next to plan
-**Last updated:** 2026-09-04
+**Status:** Phase 21 complete and merged; Phase 22 planning draft awaits QA and Human approval
+**Last updated:** 2026-09-05
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
 
@@ -62,7 +62,11 @@ generic Actor/Claim/Run authority, fid-executed Attempts and Receipts, guarded
 terminal-success transition, completion, resume, export create/validate, and
 rebuild parity - and the section 5 Phase 21 removal column is discharged through
 migrations `0013`/`0014`. Incomplete semantic capabilities remain
-`available:false`. **Phase 22 (failure and recovery) is the next phase to plan.**
+`available:false`. Phase 21 is merged at
+`89d964a84dbdd297fdf472d6f78b001e2efac702`. **Phase 22 (failure and recovery)
+has a proposed Heavy pack: 18 tasks and 80 validation assertions.** The pack is
+under `../docs/phases/phase-22/` and awaits independent QA consistency/fresh
+feasibility, a Ready QA plan, Tech Lead refinements, and Human acceptance.
 
 ## 3. Foundation to retain
 
@@ -129,6 +133,12 @@ surface until Phase 25. Phase planning must enumerate exact commands, packages,
 tables, events, migrations, fixtures, and tests. If implementation discovery
 moves an item, the owning phase records the reason and a concrete new expiry
 point.
+
+Phase 22 planning explicitly proposes retaining `work.claims.v1` as unavailable
+until Phase 24's parallel-conflict semantics qualify (DEC-180). The Phase 22
+row's "only when complete" condition does not authorize partial advertisement.
+Recovery operations and limits advance in Phase 22; the three other named
+capabilities require their complete scoped conformance before enablement.
 
 ### 5.1 Current implementation ownership check
 
@@ -242,14 +252,14 @@ reading `.fid/` internals.
    one-Issue operational walking skeleton and its owned V1 removal; all 87 VAL
    assertions and all four Human checks pass. The delivered wire contract is
    `../docs/phases/phase-21/public-interface.md` and the sign-off is DEC-179.
-5. Plan Phase 22 (failure and recovery) from the section 5 row: operating mode,
-   exact slice and wire contract, validation contract, ordered task pack, QA
-   Lead handoff, and Ready QA plan. Carry CF-024 (rebuild headroom), CF-033
-   (`AGENTS.md` package inventory), CF-034 (in-package recovery-branch
-   coverage), CF-035 (unknown config-key validation), and re-targeted CF-018 as
-   planning inputs. A deep delivery-workflow retrospective is recommended first.
-   No implementation begins before a Ready QA plan, Tech Lead refinements, and
-   Human execution approval.
+5. **Planning draft written (2026-09-05).** Review the Phase 22 Heavy mode,
+   18-task pack, 80-assertion validation contract, exact slice/wire/DDL/Event
+   amendments, removal inventory, and QA handoff in `../docs/phases/phase-22/`.
+   DEC-182 dispositions every carry-forward; DEC-183 schedules the remaining
+   delivery-control retrospective work separately as CF-036. QA Lead prepares
+   fresh feasibility and independent kit consistency review, then Tech Lead
+   applies refinements. No implementation begins before a Ready QA plan and
+   Human acceptance of the mode, product amendments, and ordered task list.
 
 No implementation task should cite the superseded historical version roadmap
 as forward authority.

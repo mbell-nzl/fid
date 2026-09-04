@@ -294,6 +294,16 @@ Avoid: routine progress notifications.
 
 ## Recovery And Projection
 
+Phase 22 proposed terminology clarification (DEC-180; pending Human acceptance):
+an executor liveness observation binds one Run/session identity and records
+`terminated`, `live`, or `unknown` from an authorized observer. Lease expiry is
+not such an observation. Unknown always blocks takeover; a live takeover needs
+an exact current Human force grant and does not assert process termination.
+Intentional Run abandonment is distinct from interruption and produces no
+trusted execution proof. A budget sample is an append-only observed measurement
+or fid-derived charge, not an editable counter. Detailed proposed value schemas
+are in `../docs/phases/phase-22/public-interface.md`.
+
 **Kit Activation**
 Definition: The durable cross-resource state that aligns one kit version,
 overlay, provider projections, and backend migration before normal execution.

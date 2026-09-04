@@ -698,4 +698,20 @@ Migration `0014` does not drop `task_completions`, `agent_runs`,
 `ac_verifications`, or `concerns`; the convergence inventory freezes them
 without writers or protected-semantic readers and names Phase 23/25 ownership.
 
-*Last updated: 2026-09-03 (Phase 21 final-review reconciliation; DEC-178)*
+### 8.3 Phase 22 - proposed failure-and-recovery amendment
+
+Status: proposed under DEC-180; Human acceptance and a Ready QA plan are
+required before implementation. The exact SQL and equivalent closed Event
+fixture contract are incorporated here from
+`../docs/phases/phase-22/schema.md`. Its sections 1-3 define the precise 0013
+development-baseline replacements and 0015 up/down SQL; section 4 defines
+replacement-bound 0016 escalation removal/reset; sections 5-6 define Event
+Effects, references, rejection, and live/rebuild/import proof obligations.
+
+The associated JSON values and mutation semantics are
+`../docs/phases/phase-22/public-interface.md` and `contracts.md`. These proposed
+amendments neither silently rewrite section 8.2's historical Phase 21 SQL nor
+authorize an old-data migration. Once accepted, their explicit replacements
+are the Phase 22 baseline, and shipped SQL must match this incorporated source.
+
+*Last updated: 2026-09-05 (Phase 22 proposed DDL/Event contract; DEC-180)*

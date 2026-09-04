@@ -128,6 +128,21 @@ reader/writer disposition is
 
 ## 4. Contract Rules
 
+Phase 22 has a proposed recovery amendment under DEC-180, pending Human
+acceptance: `../docs/phases/phase-22/contracts.md`, `public-interface.md`, and
+`schema.md` in the same directory. The proposal keeps Run/Stop/Attention/budget/
+Activation rules in `internal/workflow`, leases in `internal/claims`, observed
+execution in `internal/evidence`, and shared guards in `internal/validation`.
+Read-only repository observation extends the existing `internal/project`
+adapter. It adds no package or dependency. The live package reconciliation and
+gate reach are recorded in `../docs/phases/phase-22/execution-scope.md`.
+
+The proposed final matrix enables Attention, activation recovery, and portable
+export/import only after their complete conformance evidence. Claims recovery
+does not by itself qualify `work.claims.v1`: parallel scope semantics remain
+Phase 24, so that capability remains unavailable. Existing delivered behavior
+is authoritative until the proposal is accepted and implemented.
+
 - JSON objects include a schema or contract version at the operation envelope
   or record level.
 - IDs are opaque stable strings. Consumers do not parse prefixes for behavior.

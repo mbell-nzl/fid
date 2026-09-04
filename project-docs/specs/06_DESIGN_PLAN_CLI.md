@@ -322,4 +322,14 @@ failure details/channel/exit, and live frame payload lives in the cited public
 interface. All closed public enum members are lowercase kebab-case; JSON field
 names and opaque workflow-state/entity identifiers are not enum members.
 
-*Last updated: 2026-08-22 (Phase 21 DEC-157 complete interface amendment)*
+### Phase 22 proposed amendment
+
+`../docs/phases/phase-22/public-interface.md` contains the proposed closed
+recovery, liveness, Stop/Attention, budget, derived Run closure, activation
+recovery, and portable-import leaf schemas, errors, exits, and live frames.
+It explicitly replaces caller-controlled `run finish` and the walking-skeleton
+recovery-unavailable response, and updates affected reads and capability rows.
+The proposal is not an accepted leaf contract until the Human approves DEC-180
+after independent QA consistency review and a Ready QA plan.
+
+*Last updated: 2026-09-05 (Phase 22 proposed wire amendment; DEC-180)*
