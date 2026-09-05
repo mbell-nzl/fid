@@ -79,6 +79,57 @@ func TestRaiseStopUsesOneOpenAttentionAndRejectsRoutineReadsWithoutEffects(t *te
 	}
 }
 
+func TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop(t *testing.T) {
+	workspace, migrationsDir := initializedWorkflowWorkspace(t)
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatalf("open workflow database: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	installStopTestActor(t, conn)
+
+	beforeJournal := readWorkflowTestFile(t, workflowJournalPath(t, workspace))
+	assertOpenAttentionCount(t, conn, 0)
+	if _, err := ActivationStatus(workspace, migrationsDir, "ACT-stop-test"); err != nil {
+		t.Fatalf("ActivationStatus() error = %v", err)
+	}
+	assertOpenAttentionCount(t, conn, 0)
+	if afterJournal := readWorkflowTestFile(t, workflowJournalPath(t, workspace)); string(afterJournal) != string(beforeJournal) {
+		t.Fatal("routine status changed journal bytes")
+	}
+
+	result, err := RaiseStop(StopOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "agent:stop-test", IdempotencyKey: testIdempotencyKey()}, stopTestRequest())
+	if err != nil {
+		t.Fatalf("RaiseStop() error = %v", err)
+	}
+	if result.Stop.ID == "" || result.Attention.ID == "" {
+		t.Fatalf("RaiseStop() = %#v, want Stop and Attention IDs", result)
+	}
+	assertOpenAttentionCount(t, conn, 1)
+	if afterJournal := readWorkflowTestFile(t, workflowJournalPath(t, workspace)); string(afterJournal) == string(beforeJournal) {
+		t.Fatal("explicit Stop did not append a journal Event")
+	}
+}
+
+func assertOpenAttentionCount(t *testing.T, conn *sql.DB, want int) {
+	t.Helper()
+	var got int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM attention_items WHERE status = 'open'`).Scan(&got); err != nil {
+		t.Fatalf("count open Attention: %v", err)
+	}
+	if got != want {
+		t.Fatalf("open Attention count = %d, want %d", got, want)
+	}
+}
+
+func stopTestRequest() StopRaiseRequest {
+	return StopRaiseRequest{
+		Subject: Subject{Type: "activation", ID: "ACT-stop-test"}, Code: "operator-stop",
+		BlockedActions: []string{"run.recover"}, Details: []byte(`{"reason":"operator intervention","reference":"DEC-188"}`),
+		ResolutionCondition: Condition{Type: "activation-recovered", Subject: Subject{Type: "activation", ID: "ACT-stop-test"}}, ResolverCapability: "stop.resolve",
+	}
+}
+
 func installStopTestActor(t *testing.T, conn *sql.DB) {
 	t.Helper()
 	if _, err := conn.Exec(`INSERT INTO kit_activations (id, kit_identity, backend_identity, phase, status, point_of_no_return, direction, created_at, updated_at, version) VALUES ('ACT-stop-test', 'kit', 'backend', 22, 'finalized', 0, 'activate', '2026-09-05T00:00:00Z', '2026-09-05T00:00:00Z', 1)`); err != nil {
