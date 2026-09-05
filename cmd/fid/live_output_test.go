@@ -43,6 +43,7 @@ func TestLiveOutputGoldenFixtures(t *testing.T) {
 func runLiveGoldenFixture(t *testing.T) evidence.LiveResult {
 	t.Helper()
 	workspace := t.TempDir()
+	coverageDir := t.TempDir()
 	t.Setenv("FID_CREDENTIAL_GATE_TOKEN", "CANARY-val-036")
 	literal := "literal-val-036"
 	definition := evidence.GateDefinition{
@@ -55,6 +56,7 @@ func runLiveGoldenFixture(t *testing.T) evidence.LiveResult {
 		DefinitionVersion: 1,
 		Environment: []evidence.EnvironmentEntry{
 			{Name: "GATE_TOKEN", Source: "credential"},
+			{Name: "GOCOVERDIR", Source: "literal", Value: &coverageDir},
 			{Name: "LITERAL", Source: "literal", Value: &literal},
 		},
 		ExcerptBytes:     96,

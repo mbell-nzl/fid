@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: qa-rework
-- Condition: The review-1 evidence repair is implemented, but the required `go test -race -coverprofile=coverage.out ./...` attempt failed in retained `TestLiveOutputGoldenFixtures` outside the two bounded Must-fix repair paths.
-- Recovery attempts: 1
-- Next action: The Phase Runner must preserve the failed receipt and provide the next task-2 recovery boundary for the retained live-output golden failure; a later green attempt without a causal repair cannot close this task.
+- Condition: The DEC-189 harness repair and every required task command now pass, but review-1 requires a fresh independent re-review before this task can advance.
+- Recovery attempts: 2
+- Next action: The Phase Runner must obtain the independent review-1 re-review for task-2's repaired evidence; the Developer cannot self-attest that review.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -17,6 +17,7 @@
 - Reopened the Stop/Attention Event projection family while keeping rejected reads and unavailable recovery branches free of Stop/Attention effects.
 - Added the tagged built-binary contract fixture for the accepted unavailable Stop/Attention CLI boundary, without adding deferred leaves.
 - Added direct status, warning, and qualifying explicit-Stop evidence for VAL-007.
+- Stabilized the retained live-output fixture by passing a fresh coverage directory through its closed child environment, preserving both Phase 21 VAL-036 goldens byte-for-byte.
 
 ## Files created or modified
 
@@ -27,6 +28,7 @@
 - `internal/journal/project_effects.go`
 - `cmd/fid/contract_surface_test.go`
 - `cmd/fid/integration/task22_stop_attention_test.go`
+- `cmd/fid/live_output_test.go`
 - `project-docs/docs/phases/phase-22/tasks/task-2-done.md`
 
 ## Documentation updated
@@ -74,6 +76,10 @@
   - Diagnostic only: the retained golden passes in isolation, so it does not replace the failed required repository-wide receipt.
 - `go test -race -coverprofile=coverage.out ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t166.657s\tcoverage: 77.1% of statements` (terminated `exit_code: 0`)
   - Diagnostic only: package-level reproduction passed after the failed repository-wide receipt; it is not used to close the required gate.
+- `B=$(mktemp -d)` then `go test -c -cover -o "$B/covbin" ./cmd/fid` then `env -i "$B/covbin" -test.run='^TestLiveGoldenChild$' -- --live-golden-child` - PASS - `warning: GOCOVERDIR not set, no coverage data emitted` (expected child `exit_code: 23`; terminated `exit_code: 23`)
+  - Pre-repair DEC-189 mechanism diagnostic. The coverage-instrumented child emitted the required warning under the closed environment.
+- `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=20` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t30.436s\tcoverage: 3.3% of statements` (terminated `exit_code: 0`)
+  - Post-repair focused green confirmation across twenty fixture executions.
 
 ## Exact quality-gate results
 
@@ -104,6 +110,20 @@
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.157s` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.188s` (terminated `exit_code: 0`)
   - Review-1 repair attempt.
+- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+  - Attempt-2 required workflow coverage measurement.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Attempt-2 required format check.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - Attempt-2 required lint gate.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+  - Attempt-2 byte-identical required full gate; `cmd/fid` completed at `192.255s` with `77.1%` coverage and all packages passed.
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.1%` (terminated `exit_code: 0`)
+  - Attempt-2 coverage profile result from the passing full gate.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t10.782s` (terminated `exit_code: 0`)
+  - Attempt-2 required tagged integration gate.
+- `git status --porcelain -- cmd/fid/testdata/val-036` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Recovery-specific proof that both golden fixtures remain byte-identical.
 
 ## Deviations from spec
 
@@ -111,11 +131,12 @@
 - The first full race/coverage attempt failed because `TestPhase21AttentionBoundary`, introduced by `7277139ee5d5dde4cd3627335d39b14f616f46a1` (`feat(evidence): evaluate trusted receipt evidence`, Refs: phase-21/task-17), prohibited every production Attention reference except the unavailable capability row. Task 2's accepted Stop/Attention domain and public-interface section 2.1 displaced that broad assertion. The converged test still proves the exact unavailable `attention.v1` row, absent `fid attention` leaf, no rejected-read effects, and limits Attention references to `activation.go`, `capabilities.go`, and task-2 `stop.go`. The byte-identical full gate later passed.
 - The first intended red test established unavailable Stop Event effects. Its next attempt exposed a malformed test Event ID; correcting the fixture preserved the assertion. The attention-resolution red test then found and repaired the aggregate sequence from 2 to 1.
 - Review-1 repair added only task-2 evidence. The first two focused tagged fixture attempts failed because the external unknown-command process reports `exit status 2` without text on stdout/stderr; the fixture now asserts that actual rejection and the absent help leaf while preserving the no-leaf contract. The required full race/coverage command then failed in the retained `cmd/fid` live-output golden despite the isolated and package-level diagnostic receipts passing. No causal repair is authorized in this bounded review rework, so this report remains RECOVERY_REQUIRED rather than claiming a later green as closure.
+- Mandatory deviation note for DEC-189: first failure token `FAIL` (terminated `exit_code: 1`) came from the byte-identical `go test -race -coverprofile=coverage.out ./...` gate in retained `TestLiveOutputGoldenFixtures`. Root cause: the coverage-instrumented child inherited the fixture's closed environment without `GOCOVERDIR`, so its exit hook could add `warning: GOCOVERDIR not set, no coverage data emitted` to the captured stderr before the output ceiling. Repair: `cmd/fid/live_output_test.go` now passes a fresh `t.TempDir()` as the sorted literal `GOCOVERDIR` entry between `GATE_TOKEN` and `LITERAL`. Later result: the 20-run focused coverage fixture and the byte-identical full gate both passed, while `cmd/fid/testdata/val-036` remained unchanged.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - No CLI wiring was added because task 2 expressly excludes it. The direct workflow API and Event effects are ready for the later public CLI owner; `attention.v1` remains unavailable as required.
-- The task cannot close until the Phase Runner provides scope for the retained live-output full-gate failure or establishes an authorized causal repair. The review-1 Must-fix evidence itself is complete.
+- The scoped repair is complete and all task commands pass. A fresh independent review-1 re-review remains required; this report does not claim that QA outcome.
 
 ## Dependency-budget note
 
