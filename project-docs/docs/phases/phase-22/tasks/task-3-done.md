@@ -98,8 +98,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `7e419bfd8c233f933680d4a3b3957814c29dbd5e`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add lease expiry and executor observations`
