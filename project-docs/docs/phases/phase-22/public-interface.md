@@ -1,6 +1,6 @@
 # Phase 22 Public Interface Amendment
 
-> PROPOSED with DEC-180. Read with `contracts.md` and `schema.md`.
+> ACCEPTED under DEC-188. Read with `contracts.md` and `schema.md`.
 > Phase 21 `public-interface.md` remains the baseline for unmodified leaves.
 
 ## 1. Transport And Shared Grammar

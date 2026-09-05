@@ -21,7 +21,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - DEC-184/public-interface section 2.1: add exactly run.observe-budget to
   profile/grant acceptance; activation and binary capability IDs are not actions.
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 6; schema.md budget Effects.
 - CF-034: capture evidence package coverage before edits and after completion, with direct tests of budget and abandoned-execution branches.
 - Five fid-owned units cannot be supplied by a caller; external measurements require activated harness provenance and evidence reference.

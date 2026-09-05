@@ -1,6 +1,6 @@
 # Phase 22 Decisions
 
-> Tech Lead planning, 2026-09-05. Product proposals await Human acceptance.
+> Tech Lead planning, 2026-09-05. Human acceptance recorded in DEC-188.
 > Global DEC numbering continues after Phase 21 DEC-179.
 
 ## Decisions
@@ -195,6 +195,29 @@
   exclusions; it does not approve or edit the external kit contract. Production
   adapter qualification remains unclaimed. VAL-080 still requires independent
   QA recheck of the final implementation and pin currency.
+
+### DEC-188: Human Approves The Refined Phase 22 Pack
+
+- **Date:** 2026-09-05.
+- **Status:** ACCEPTED by Human: "Approved. Provide handoff prompt to get phase runner going."
+- **Decision:** Approve Heavy mode, all 18 ordered task specs, the 80-assertion
+  validation contract, exact slice/wire/DDL contracts, CF-035 under DEC-182,
+  and refinements DEC-184..187 as committed in
+  8dee0a194a494f575b7c5f64caf6ed9ac7da70f8. DEC-180/182/184/185/187 proposals
+  are now accepted; DEC-181/183/186 planning dispositions apply. Earlier
+  proposed/pending wording in historical entries describes their original state.
+- **Execution authority:** The Phase Runner may start Phase 22 on branch
+  phase-22, perform its required QA Lead readiness refresh using the existing
+  plan and TL addendum, then dispatch task 1 and continue the approved sequence.
+  Approval does not waive any gate, independent review, or Human outcome.
+- **Evidence state:** All VAL rows become Ready, not PASS. No implementation
+  has started and no RUN-START exists at this handoff. QA's original failed
+  attempts remain immutable. Tech Lead ran no quality gates or agents.
+- **Handoff:** runner-handoff.md records startup inputs, cadence, R-14 handling,
+  ledger/report controls and the phase-end Human/Tech Lead boundary. The Runner
+  creates its own ledger through the canonical transactional append control.
+- **Limits:** No release, adoption, merge, external kit edit, workflow-control
+  redesign, or acceptance of Human validation outcomes is implied.
 
 ## Planning Spec Impact
 

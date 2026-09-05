@@ -1,6 +1,6 @@
 # Phase 22 DDL And Event Contract
 
-> PROPOSED with DEC-180. Incorporated by `03_TRD_SCHEMA.md` section 8.3.
+> ACCEPTED under DEC-188. Incorporated by `03_TRD_SCHEMA.md` section 8.3.
 > No implementation may infer additional tables, fields, or Event families.
 
 ## 1. Development Baseline

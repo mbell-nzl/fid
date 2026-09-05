@@ -7,6 +7,8 @@
 > Tech Lead planning update, 2026-09-05: **READY FOR HUMAN APPROVAL** with
 > [tl-refinement.md](tl-refinement.md), DEC-184..187. All original findings and
 > measurements below are retained; this update records no new QA execution.
+> Status: **Ready**. Human approved the refined pack under DEC-188, 2026-09-05.
+> Runner still obtains the required QA Lead readiness refresh before task 1.
 > Not `BLOCKED`: every required command is concrete and was executed or
 > feasibility-proven fresh in this session (section 6). The plan becomes Ready
 > when the Tech Lead dispositions R-01..R-14 in section 2.8; the linked addendum

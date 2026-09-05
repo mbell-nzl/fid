@@ -1,6 +1,6 @@
 # IMPLEMENTATION ROADMAP - fid
 
-**Status:** Phase 21 complete and merged; Phase 22 QA refinements recorded, awaiting Human approval
+**Status:** Phase 21 complete and merged; Phase 22 refined pack approved under DEC-188
 **Last updated:** 2026-09-05
 **Authority:** [ADR-0011](../../docs/adr/0011-realign-fid-around-the-durable-operational-kernel.md),
 [ADR-0012](../../docs/adr/0012-deliver-convergence-as-vertical-scenario-phases.md)
@@ -67,7 +67,7 @@ migrations `0013`/`0014`. Incomplete semantic capabilities remain
 has a proposed Heavy pack: 18 tasks and 80 validation assertions.** The pack is
 under `../docs/phases/phase-22/`. QA recorded fresh feasibility and independent
 consistency assessment; DEC-184..187 and `qa/tl-refinement.md` disposition all
-findings. The combined plan is ready for Human acceptance; execution is pending.
+findings. Human accepted the combined pack under DEC-188; Runner startup is next.
 
 ## 3. Foundation to retain
 

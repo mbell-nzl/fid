@@ -16,7 +16,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 10; public-interface.md section 5.
 - Use stdlib ZIP/JSON and existing Event appliers; no runtime dependency.
 - Bound actual expanded bytes and line sizes, reject unknown Effects and special/path-escaping entries.

@@ -16,7 +16,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 11; public-interface.md section 5; CF-024.
 - CF-024: retain the exact reference instance, three consecutive fresh processes, and per-sample <30-second self-assertion.
 - Do not infer liveness from lease expiry, repair state in maintenance, or advertise work.claims.v1 complete.

@@ -15,7 +15,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 10; schema.md section 6.
 - Use named JSON reads and ordered Events, not an opaque SQLite dump, as parity evidence.
 - Add portable recovery cases to the shared semantic runner/fake now; the same

@@ -1,7 +1,7 @@
 # Phase 22 Tech Lead Refinement
 
 > Tech Lead: Codex, 2026-09-05. Decisions: DEC-184..187.
-> Status: **READY FOR HUMAN APPROVAL**; execution remains unauthorized.
+> Status: **ACCEPTED** by Human under DEC-188, 2026-09-05; execution authorized.
 > Read with qa-plan.md and consistency-review.md. This is a planning disposition,
 > not a new QA test result or a Phase 22 completion review.
 
@@ -13,8 +13,8 @@ in `../kit-contract-mapping.md`. Heavy mode, 18 sequential tasks, 80 assertions,
 six review windows, and the independent task-12 checkpoint are unchanged.
 
 The QA plan's readiness condition was disposition of these findings. This
-addendum closes that planning condition; Human acceptance of DEC-180/182 and
-DEC-184..187 is still required by the phase-start contract. No Developer has
+addendum closes that planning condition; Human accepted DEC-180/182 and
+DEC-184..187 under DEC-188. Runner performs its required readiness refresh. No Developer has
 started, no agent is activated, and no product/test file is edited by this TL.
 The existing QA assessment and failed attempts remain historical evidence.
 
@@ -76,7 +76,7 @@ failures remain failures; assigning a repair does not claim it has landed.
 VAL coverage and command reach were inspected as planning documents: all 80
 IDs retain one owning task and one final validator (77 QA Lead, 3 Human), with
 no added/retired IDs. The explicit matrix/evidence sections refine those same
-assertions. Final outcomes remain Draft until approval, then evidence-backed.
+assertions. All rows are Ready after DEC-188; no outcome is promoted to PASS.
 
 Kit coordinator export binding, terminalState mapping, scope/asOf, dedup-key
 alignment and missing code representations remain CF-037/Phase 25 qualification

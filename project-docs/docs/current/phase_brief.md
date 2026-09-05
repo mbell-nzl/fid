@@ -1,4 +1,4 @@
-# Phase Brief - Phase 22 (Planning)
+# Phase Brief - Phase 22 (Approved)
 
 ## Phase Goal
 
@@ -9,18 +9,18 @@ export the same state, rebuild, and resume without contradictory facts.
 
 ## Status
 
-**Planning; execution unauthorized.** Branch `phase-22`, created from merged
+**Approved for execution (DEC-188); not yet started.** Branch `phase-22`, created from merged
 main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 is wrapped under
 DEC-179 and already merged. Phase 22's proposed contracts and task pack are
 refined against QA R-01..14 and all kit comparison items (DEC-184..187).
-The QA plan plus `qa/tl-refinement.md` is ready for Human approval; execution
-and implementation evidence remain pending. Do not dispatch a Developer yet.
+Human approved the refined pack on 2026-09-05. Runner starts with its required
+QA Lead readiness refresh, then task 1. See `../phases/phase-22/runner-handoff.md`.
 
 ## Operating Mode
 
-**Heavy (proposed).** Persistence, public JSON, executor authority, and import
+**Heavy (approved, DEC-188).** Persistence, public JSON, executor authority, and import
 publication change. Full artifacts and fresh QA feasibility are required under
-`09_AI_WORKFLOW.md` section 4. Human approves mode with the task list.
+`09_AI_WORKFLOW.md` section 4. Mode and ordered task list are approved.
 
 ## Task Index
 
@@ -29,7 +29,7 @@ Tasks are sequential; reviews follow every three tasks.
 
 | Task | Title | Status | Dependency |
 |---|---|---|---|
-| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Pending | Ready QA + approval |
+| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Pending | Runner QA readiness refresh |
 | [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Pending | 1 |
 | [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Pending | 2 |
 | [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Pending | 3 |
@@ -50,7 +50,7 @@ Tasks are sequential; reviews follow every three tasks.
 
 ## Validation Contract
 
-`../phases/phase-22/qa/validation-contract.md`: 80 Draft assertions, each
+`../phases/phase-22/qa/validation-contract.md`: 80 Ready assertions, each
 cited by an owning task. QA Lead owns 77 final deterministic validations;
 Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 
@@ -69,16 +69,16 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 | Artifact | Path under phase-22/ | Status |
 |---|---|---|
 | QA Lead handoff | qa/qa-lead-handoff.md | Written |
-| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | QA assessment recorded |
-| TL refinement / readiness | qa/tl-refinement.md | Ready for Human approval |
+| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | Ready; Runner refresh before task 1 |
+| TL refinement / readiness | qa/tl-refinement.md | Accepted, DEC-188 |
 | Mid-phase reviews | qa/review-1.md through qa/review-6.md | After tasks 3,6,9,12,15,18 |
 | Independent checkpoint | qa/checkpoint-after-task-12.md | Required before task 13 |
 | Final review / Human checklist | qa/final-review.md / qa/human-checklist.md | Pending |
 
 ## Active Constraints
 
-- Proposed semantic/wire/DDL authority: `../phases/phase-22/contracts.md`,
-  `public-interface.md`, and `schema.md`. DEC-180/184..187 require Human acceptance.
+- Accepted semantic/wire/DDL authority: `../phases/phase-22/contracts.md`,
+  `public-interface.md`, and `schema.md`. DEC-188 ratifies DEC-180/182/184..187.
 - Exact removal and executable ownership: `v1-convergence-inventory.md` and
   `execution-scope.md` in that phase directory; DEC-181.
 - Every task runs the ordinary full task gate AND tagged integration gate.
@@ -126,8 +126,8 @@ in the task specs, not inferred from this summary.
 
 ## Open Questions
 
-Human acceptance of Heavy mode, DEC-180/182 and DEC-184..187 is pending.
-All 14 QA planning refinements are dispositioned; runtime proofs remain required.
+No open planning approval. All 14 QA refinements are dispositioned and accepted;
+runtime evidence and the three Human assertion outcomes remain required.
 
 ## Success / Exit Criteria
 
@@ -138,6 +138,6 @@ No first-adoption or release authorization is implied.
 
 ## Next Planning Checkpoint
 
-Human reviews the refined pack and approves execution. The QA assessment and
-TL refinement addendum are read together. Phase 23 review/Human judgment follows this
-phase's signed-off recovery boundary.
+Runner verifies branch/approval and obtains the required QA Lead refresh, then
+dispatches task 1. Reviews follow each three tasks; the independent task-12
+checkpoint must pass before task 13. Human checks and TL wrap-up close the phase.

@@ -61,7 +61,7 @@
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 
-## Phase 22 Planning
+## Phase 22 Approval
 
 `../phases/phase-22/decisions.md` records:
 DEC-180 proposed Heavy mode/18-task/80-VAL product contract;
@@ -72,11 +72,12 @@ DEC-184 closed wire/authority/observation/Stop refinements;
 DEC-185 canonical dirty/reconciliation digest;
 DEC-186 boundary evidence, early rebuild samples and bounded R-14 repair;
 DEC-187 complete kit comparison dispositions and CF-037 qualification work.
+DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 
-No product proposal is ratified merely by being written. QA assessment is
-recorded and all refinements are dispositioned in `qa/tl-refinement.md`;
-the combined plan is ready for Human approval, which remains required before
-implementation. Current branch is `phase-22`; Phase 21 is merged.
+Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
+dispositions apply. QA assessment and refinements are recorded. Runner begins
+with its required QA Lead readiness refresh before task 1. No task has started.
+Current branch is `phase-22`; Phase 21 is merged.
 
 ## Carry-Forward Register
 
@@ -92,7 +93,7 @@ implementation. Current branch is `phase-22`; Phase 21 is merged.
 | CF-030 | Report-lint rejected-token diagnostics deferred; no new product need. |
 | CF-033 | Kickoff inventory recorded in Phase 22 execution-scope.md/TRD. Separate AGENTS maintenance still owns matching package inventory and correction of its nonexistent quality §5.2 pointer (QA plan incidental finding). |
 | CF-034 | Task 2 workflow and task 7 evidence: direct recovery-branch tests plus before/after package coverage; VAL-079/035, no numeric threshold. |
-| CF-035 | Proposal: whole-config validation on consuming paths, preserving config-independent diagnostics. Task 11/VAL-047; Human acceptance pending. |
+| CF-035 | Accepted under DEC-188: whole-config validation on consuming paths, preserving config-independent diagnostics. Task 11/VAL-047. |
 | CF-036 | New from DEC-183: dedicated workflow-maintenance planning for phase/cross-task ledger identities and fail-closed ESC registration; product Phase 22 does not change controls. |
 | CF-037 | DEC-187: kit V2-3 adapter/Phase 25 qualification must prove activation export binding, terminalState expectation mapping, scope/asOf/validate-only, dedup-key agreement and explicit unmapped Stop-code representations. Exact obligations: Phase 22 kit-contract-mapping.md. |
 

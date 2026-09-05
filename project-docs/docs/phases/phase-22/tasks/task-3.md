@@ -21,7 +21,7 @@ Full sources, pass/fail criteria, and validator ownership are in
   Executor IDs are project-global immutable identities; conflicting new start
   or imported identity reuse returns the declared duplicate-entity shape with
   no effects. Same-key replay returns the original result first. (VAL-012)
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 2; schema.md section 5.
 - Unknown liveness is not termination; expiry equality is expired.
 - Run start adds executor/optional Obligation binding immediately; update current command parsing and every affected ordinary/tagged fixture in this task.

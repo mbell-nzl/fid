@@ -1,6 +1,6 @@
 # Phase 22 Kit Contract Dispositions
 
-> Tech Lead, 2026-09-05; DEC-187. Proposed with the Phase 22 pack.
+> Tech Lead, 2026-09-05; DEC-187, accepted by Human under DEC-188.
 > Independent source: `qa/consistency-review.md`, authored by QA Lead.
 > Kit pin: `c5229617220f97ff9228df261e24718b1d1d6d89`.
 

@@ -15,7 +15,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - schema.md sections 1-3,5-6.
 - Apply exactly the DDL in schema.md; no migration of old fid journals.
 - DEC-184: prove non-null recovery observation references and the identical

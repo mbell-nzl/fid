@@ -16,7 +16,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 3; public-interface.md Reconciliation.
 - DEC-185/contracts sections 3.1/3.2 are the exact dirty/reconciliation digest
   algorithms. Add independently pinned canonical-byte/hash vectors for staged,

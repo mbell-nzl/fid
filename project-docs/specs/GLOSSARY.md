@@ -294,7 +294,7 @@ Avoid: routine progress notifications.
 
 ## Recovery And Projection
 
-Phase 22 proposed terminology clarification (DEC-180; pending Human acceptance):
+Phase 22 terminology clarification (DEC-180/184/185; accepted under DEC-188):
 an executor liveness observation binds one Run/session identity and records
 `terminated`, `live`, or `unknown` from an authorized observer. Lease expiry is
 not such an observation. Unknown always blocks takeover; a live takeover needs

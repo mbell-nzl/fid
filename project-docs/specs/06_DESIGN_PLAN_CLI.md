@@ -322,7 +322,7 @@ failure details/channel/exit, and live frame payload lives in the cited public
 interface. All closed public enum members are lowercase kebab-case; JSON field
 names and opaque workflow-state/entity identifiers are not enum members.
 
-### Phase 22 proposed amendment
+### Phase 22 accepted amendment
 
 `../docs/phases/phase-22/public-interface.md` contains the proposed closed
 recovery, liveness, Stop/Attention, budget, derived Run closure, activation
@@ -334,7 +334,7 @@ exceptions, requires recovery/abandon observation IDs, defines executor reuse
 errors and Attention disposition references, and separates activation version
 conflict from competing prepare. DEC-185 supplies the canonical repository
 digest contract; DEC-187 records external kit port mappings and exclusions.
-The proposal is not an accepted leaf contract until the Human approves DEC-180
-after independent QA consistency review and a Ready QA plan.
+Human accepted these leaf contracts and refinements under DEC-188; Runner QA
+readiness and task evidence remain required before claiming implementation.
 
 *Last updated: 2026-09-05 (Phase 22 proposed wire amendment; DEC-180)*

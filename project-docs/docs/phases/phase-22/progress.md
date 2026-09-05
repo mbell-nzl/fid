@@ -32,3 +32,15 @@
   readiness addendum to the preserved independent QA assessment.
 - No product/test edits, quality gate execution or agent activation by TL.
   All implementation tasks remain pending; execution remains unauthorized.
+
+## 2026-09-05 - Human Approval And Runner Handoff
+
+- Human approved the refined pack at 8dee0a194a494f575b7c5f64caf6ed9ac7da70f8.
+  DEC-188 records acceptance of Heavy mode, 18 tasks, 80 assertions and all
+  product/contract refinements, including CF-035 and the kit dispositions.
+- Updated current approval state and task/contract status markers. All 80 VAL
+  rows are Ready; no implementation outcome or gate result is promoted to PASS.
+- Wrote runner-handoff.md. Runner starts with the mandated QA Lead readiness
+  refresh, then task 1; it alone creates the schema-v2 run ledger.
+- Tasks 1..18 remain pending; no RUN-START, product/test edits, quality gates
+  or agent activation by this Tech Lead. No further planning approval is needed.

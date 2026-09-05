@@ -16,7 +16,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 7; public-interface.md run.close/run.abandon.
 - Cancellation, timeout, signal, spawn failure, and harness failure are distinct non-success observations.
 - DEC-184: add exactly run.close/run.abandon actions; abandonment requires a

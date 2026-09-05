@@ -17,7 +17,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 10; public-interface.md export.import.
 - Use target-specific exclusive locking and same-filesystem publication; do not replace any existing .fid project.
 - Preserve original Event bytes/order and idempotency results; publication adds no domain Event.

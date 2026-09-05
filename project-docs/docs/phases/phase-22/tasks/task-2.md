@@ -17,7 +17,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 5; public-interface.md sections 2,4.
 - CF-034: capture workflow package coverage before edits and after completion; add direct in-package positive and rejection branch tests. No numeric threshold.
 - Resolving Attention never deletes Stops or accepts an unqualified reference.

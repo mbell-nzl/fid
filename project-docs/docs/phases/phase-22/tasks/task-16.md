@@ -15,7 +15,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - schema.md section 4; v1-convergence-inventory.md.
 - Removal roots and retained exceptions are exact in the inventory; classify every match, including tests and migration-scoped fixtures.
 - Do not drop triage_events or its Issue projection (Phase 24), or Concern/Review/telemetry history owned by Phases 23/25.

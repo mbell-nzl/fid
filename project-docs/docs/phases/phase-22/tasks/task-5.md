@@ -22,7 +22,7 @@ Full sources, pass/fail criteria, and validator ownership are in
   null/missing/nonexistent/wrong-subject and unknown cases reject. A rejected
   recovery creates no Event, Stop, Attention, Claim, or successor. Reused new
   executor identity returns the exact duplicate-entity shape. (VAL-019/020)
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 4; schema.md run.recovered.
 - Closed liveness is terminated/live/unknown: unknown always rejects, live requires exact Human force authority.
 - Re-observe repository under the write lock and compare the supplied digest before any Effect.

@@ -698,10 +698,10 @@ Migration `0014` does not drop `task_completions`, `agent_runs`,
 `ac_verifications`, or `concerns`; the convergence inventory freezes them
 without writers or protected-semantic readers and names Phase 23/25 ownership.
 
-### 8.3 Phase 22 - proposed failure-and-recovery amendment
+### 8.3 Phase 22 - accepted failure-and-recovery amendment
 
-Status: proposed under DEC-180; Human acceptance and a Ready QA plan are
-required before implementation. The exact SQL and equivalent closed Event
+Status: accepted by Human under DEC-188; the Runner performs its required
+QA readiness check before implementation. The exact SQL and closed Event
 fixture contract are incorporated here from
 `../docs/phases/phase-22/schema.md`. Its sections 1-3 define the precise 0013
 development-baseline replacements and 0015 up/down SQL; section 4 defines

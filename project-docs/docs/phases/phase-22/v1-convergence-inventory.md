@@ -1,6 +1,6 @@
 # Phase 22 V1 Convergence Inventory
 
-> PROPOSED with DEC-180/181; inventory base 89d964a84dbdd297fdf472d6f78b001e2efac702.
+> ACCEPTED under DEC-188; inventory base 89d964a84dbdd297fdf472d6f78b001e2efac702.
 > Git history is the archive; no legacy compatibility mode is promised.
 
 ## Exact Live Dispositions

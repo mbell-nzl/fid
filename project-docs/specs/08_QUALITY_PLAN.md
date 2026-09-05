@@ -268,7 +268,7 @@ export parity, and the 100k Event-v2 check. Task 22 performs final wire and
 real-process conformance. The journey mutates once; post-rebuild evidence is
 read/evaluation/export/negative parity, not a second Envelope mutation.
 
-For proposed Heavy Phase 22 (DEC-180/186), reviews follow tasks 3/6/9/12/15/18;
+For approved Heavy Phase 22 (DEC-180/186/188), reviews follow tasks 3/6/9/12/15/18;
 the independent task-12 checkpoint precedes archive/import work. Its QA plan
 and TL refinement addendum enumerate the deterministic/Human checks. Tasks 1
 and 16 add one fresh reference rebuild sample each, without replacing task 17

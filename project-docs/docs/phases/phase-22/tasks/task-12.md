@@ -17,7 +17,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 9; public-interface.md Resume.
 - DEC-185/contracts sections 3.1/3.2 bind all comparisons. Reuse task 4's
   observer and independent vectors; do not invent a freshness-specific digest.

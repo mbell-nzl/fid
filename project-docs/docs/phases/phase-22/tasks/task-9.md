@@ -16,7 +16,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - public-interface.md Stop/Attention/budget/closure leaves and section 4.
 - Committed denials name their Event and replay result while retaining a nonzero exit.
 - Extend task 6's shared case runner/fake with these implemented operations;

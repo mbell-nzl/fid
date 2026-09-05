@@ -17,7 +17,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md section 8; schema.md activation resources/recovery.
 - DEC-184: version mismatch uses activation-version-conflict; competing prepare
   retains its separate activation-conflict shape. Recovery leaves retain

@@ -1,7 +1,7 @@
 # Phase 22 Slice Contract - Failure And Recovery
 
-> Status: PROPOSED; requires Human acceptance and Ready QA plan.
-> Author: Tech Lead, 2026-09-05. Decision: DEC-180 (proposal).
+> Status: ACCEPTED by Human under DEC-188, 2026-09-05.
+> Author: Tech Lead. Decisions: DEC-180/182/184..188.
 > Planning base: `89d964a84dbdd297fdf472d6f78b001e2efac702`.
 
 ## 1. Boundary And Authority
@@ -14,7 +14,7 @@ Reviews, multiple selected Issues, or Envelope revision authoring.
 
 The Phase 21 contracts remain authoritative except the explicit replacements
 here, in `public-interface.md`, and in `schema.md`. These three documents are
-proposed together; none authorizes implementation before acceptance. The exact
+accepted together under DEC-188. The exact
 DDL amendment is incorporated by `03_TRD_SCHEMA.md` section 8.3. All new Events
 retain `fid.event.v2`; the recovery archive becomes `fid.export-manifest.v2`.
 No old fid-data migration, dual writer, or compatibility command is introduced.

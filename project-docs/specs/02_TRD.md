@@ -128,8 +128,8 @@ reader/writer disposition is
 
 ## 4. Contract Rules
 
-Phase 22 has a proposed recovery amendment under DEC-180, pending Human
-acceptance: `../docs/phases/phase-22/contracts.md`, `public-interface.md`, and
+Phase 22's recovery amendment under DEC-180/184..187 is Human-approved in
+DEC-188: `../docs/phases/phase-22/contracts.md`, `public-interface.md`, and
 `schema.md` in the same directory. The proposal keeps Run/Stop/Attention/budget/
 Activation rules in `internal/workflow`, leases in `internal/claims`, observed
 execution in `internal/evidence`, and shared guards in `internal/validation`.

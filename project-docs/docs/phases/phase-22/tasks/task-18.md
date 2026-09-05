@@ -20,7 +20,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Binding Constraints
 
-- PROPOSED: execution requires Human acceptance of DEC-180 and a Ready QA plan.
+- APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - contracts.md sections 1-12; public-interface.md sections 1-6.
 - The same cases execute against a test-only semantic fake and the fid JSON adapter; the fake never opens fid SQLite/journal/.fid files.
 - Pin kit backend-port.v1 at c5229617220f97ff9228df261e24718b1d1d6d89 for semantic comparison; any mismatch requires explicit TL disposition.
