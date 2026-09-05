@@ -636,7 +636,7 @@ func validateActorProfiles(profiles []ActorProfile) error {
 }
 
 func sortedUniqueCapabilities(capabilities []string) bool {
-	allowed := map[string]bool{"artifact.verify": true, "claim.acquire": true, "claim.release": true, "claim.renew": true, "envelope.activate": true, "envelope.complete": true, "envelope.create": true, "evidence.link": true, "gate.register": true, "gate.run": true, "issue.transition": true, "run.finish": true, "run.start": true}
+	allowed := map[string]bool{"artifact.verify": true, "attention.resolve": true, "claim.acquire": true, "claim.release": true, "claim.renew": true, "envelope.activate": true, "envelope.complete": true, "envelope.create": true, "evidence.link": true, "gate.register": true, "gate.run": true, "issue.transition": true, "run.finish": true, "run.start": true, "stop.raise": true, "stop.resolve": true}
 	previous := ""
 	for _, capability := range capabilities {
 		if !allowed[capability] || previous >= capability {

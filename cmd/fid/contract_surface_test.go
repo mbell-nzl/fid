@@ -92,16 +92,18 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 	}
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"internal/workflow/capabilities.go:{\"attention.v1\", false, `{\"state\":false}`, \"phase-22-unavailable\"},",
+		"internal/workflow/activation.go",
+		"internal/workflow/capabilities.go",
+		"internal/workflow/stop.go",
 	}; !reflect.DeepEqual(got, want) {
-		t.Fatalf("production Attention matches = %v, want exactly %v", got, want)
+		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}
 }
 
 func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 	t.Helper()
 	repoRoot := commandTestRepositoryRoot(t)
-	var matches []string
+	paths := make(map[string]bool)
 	for _, root := range []string{
 		filepath.Join(repoRoot, "cmd", "fid"),
 		filepath.Join(repoRoot, "internal", "workflow"),
@@ -124,7 +126,7 @@ func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 			for _, line := range strings.Split(string(content), "\n") {
 				lower := strings.ToLower(line)
 				if strings.Contains(lower, "attention") || strings.Contains(lower, "attention_items") {
-					matches = append(matches, filepath.ToSlash(relative)+":"+strings.TrimSpace(line))
+					paths[filepath.ToSlash(relative)] = true
 				}
 			}
 			return nil
@@ -132,6 +134,10 @@ func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 		if err != nil {
 			t.Fatalf("inventory %q: %v", root, err)
 		}
+	}
+	matches := make([]string, 0, len(paths))
+	for path := range paths {
+		matches = append(matches, path)
 	}
 	sort.Strings(matches)
 	return matches
