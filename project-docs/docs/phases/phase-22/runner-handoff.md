@@ -2,9 +2,45 @@
 
 > Human execution approval: DEC-188, 2026-09-05.
 > Approved refined pack: 8dee0a194a494f575b7c5f64caf6ed9ac7da70f8.
-> Start state: branch phase-22; tasks 1..18 pending; no run ledger or Open ESC.
+> Initial start state (historical): tasks 1..18 pending; no ledger or Open ESC.
+> Current restart checkpoint: DEC-190/191; ESC-22-001 resolved; valid ledger
+> ends in task-2 TASK-RECOVERY attempt 2, ready for Developer dispatch.
 
-## Prompt
+## Current Recovery Handoff - 2026-09-06
+
+Resume Phase 22 on `phase-22` from the existing ledger. The protected verifier
+repair is commit `3bb42b4efd391b216b752db2c31fe793f3538bac`. All 30 regression
+checks, complete mechanical drills and workflow lint passed. Normal
+RUN-RESUME, correcting TRIAGE TRG-22-005 and the exact task-2 recovery were
+already accepted on the real ledger, each returning
+`APPEND_CONFIRMED state=REPAIR_PENDING` and `exit_code: 0`. The escalation
+register has no Open item. DEC-188 execution approval remains in force.
+
+1. Read the current role/context and reconcile the final ledger entry with
+   TRG-22-005, DEC-189..191, task-2's report and review-1. The old TRIAGE
+   TRG-22-003 remains history; TRG-22-005 is the current authority. TRG-22-006
+   retains its original BLOCK plus a separate verified resolution.
+2. Append normal RUN-RESUME for task-2 with all STOP-only fields `N/A`.
+   Neither rejected BLOCK nor STOP was persisted; do not invent a STOP
+   reconciliation, another TRG, or a new task-2 recovery attempt.
+3. Dispatch the **already recorded** task-2 TASK-RECOVERY at attempt 2 to a
+   fresh `developer` child. Preserve the exact review trigger, DEC-189
+   authority and two-file allowlist. The child has not yet run this attempt.
+   It must confirm the coverage-child warning mechanism before repairing
+   `cmd/fid/live_output_test.go`, leave both goldens unchanged, update
+   `tasks/task-2-done.md`, and run every exact command in the directive/task.
+4. After its typed result, follow normal REPAIR/report verification. Finish
+   task-3 review-1 MF-3 in its own Developer continuation and obtain a fresh
+   independent review-1 re-review before advancing to task 4.
+5. Continue the previously approved sequence below from that checkpoint.
+   Do not repeat initial readiness, completed tasks 1..3, or the existing
+   task-2 attempt-1 review repairs merely because the original prompt follows.
+
+Maintenance evidence: `../../reviews/2026-09-06-phase-22-workflow-recovery.md`.
+The maintenance task changed no product code, product tests, or goldens and
+does not claim task-2 product gates or review closure.
+
+## Original Execution Prompt (Apply From The Current Checkpoint Above)
 
 You are the Phase Runner for fid. Execute the approved Phase 22 failure-and-
 recovery plan in /home/mark/projects/fid on branch phase-22. Human approval is

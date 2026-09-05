@@ -207,3 +207,56 @@
 - Verdict: REPAIR
 - Resolution evidence: Corrected TL-Lite triage TRG-22-003 authorizes a minimum causal task-2 repair limited exactly to cmd/fid/live_output_test.go, cmd/fid/testdata/val-036/live-frames.jsonl, and project-docs/docs/phases/phase-22/tasks/task-2-done.md, preserving the live-output framing subject and exact required gate.
 - Triage log: project-docs/docs/phases/phase-22/triage-log.md entry TRG-22-003 confirmed
+
+### 2026-09-06 11:15 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: Phase 22 runner stopped operationally under ESC-22-001; rejected BLOCK/STOP appends never entered the ledger
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: verified maintenance commit 3bb42b4efd391b216b752db2c31fe793f3538bac on phase-22; ledger ends at TRG-22-003; task-2 review attempt 1 remains MATERIAL-PROGRESS
+- Resolution evidence: DEC-190/DEC-191 protected maintenance completed; all 30 review-recovery regressions, complete mechanical drills and workflow lint passed with exit_code: 0; preserve pending task-2 continuation and apply TRG-22-005
+- Resolution authority: N/A
+- Continuing task: task-2
+- Next recovery: N/A
+
+### 2026-09-06 11:15 TRIAGE TRG-22-005
+
+- Trigger: task-2 review-repair exact full-gate failure in the retained cmd/fid live-output golden.
+- Originating task: task-2
+- Trigger signature: review-1:qa-rework:task-2-stop-attention-evidence
+- Attempt count: 2
+- Repair category: in-scope-implementation
+- Repair authority: DEC-189
+- Checkpoint: verified maintenance commit 3bb42b4efd391b216b752db2c31fe793f3538bac; task-2 review attempt 1 remains MATERIAL-PROGRESS; correcting unconsumed TRG-22-003 at dispatch attempt 2
+- Verdict: REPAIR
+- Resolution evidence: DEC-189 and TRG-22-005 replace the prior pending scope and retain the active review trigger; canonical correction supported by DEC-190. Repair only the diagnosed test harness and task-2 report, preserving golden bytes and original failed evidence.
+- Triage log: project-docs/docs/phases/phase-22/triage-log.md entry TRG-22-005 read in full; five raw authority scalars copied exactly
+
+### 2026-09-06 11:15 TASK-RECOVERY task-2
+
+- Source: project-docs/docs/phases/phase-22/triage-log.md TRG-22-005; DEC-189
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: DEC-189
+- Triage disposition: N/A
+- Trigger signature: review-1:qa-rework:task-2-stop-attention-evidence
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/live_output_test.go,project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- Forbidden changes: `cmd/fid/testdata/val-036/live-frames.jsonl` and `cmd/fid/testdata/val-036/human-session.txt` (must remain byte-identical), all product code including `internal/evidence/`, Stop/Attention behavior, public interfaces, schema, gate command/result/scope/threshold/tolerance, live-output assertion semantics, task specs, QA artifacts, decisions, dependencies, workflow controls, and run-ledger entries.
+- Originating report: N/A
+- Exact verification: From `/home/mark/projects/fid`, in order: (1) mechanism diagnostic `B=$(mktemp -d)` then `go test -c -cover -o "$B/covbin" ./cmd/fid` then `env -i "$B/covbin" -test.run='^TestLiveGoldenChild$' -- --live-golden-child`, whose stderr must contain the verbatim `warning: GOCOVERDIR not set, no coverage data emitted` line and which terminates non-zero at the child's own `exit_code: 23`; (2) `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=20` to exit 0; (3) the byte-identical required command `go test -race -coverprofile=coverage.out ./...` to exit 0 with all packages passing; (4) every remaining task-2 required command from `tasks/task-2.md` Exact Commands; (5) `git status --porcelain -- cmd/fid/testdata/val-036` recording `exit 0 (no output)` as proof the goldens did not move; (6) fresh independent review-1 re-review.
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: verified maintenance commit 3bb42b4efd391b216b752db2c31fe793f3538bac; retained implementation 0bf39eb2c54aadef2999bed41c654973673cfc57 and report 4dd41c97385f0655140bf56b094528cc4cafe6c1; TRG-22-005 now governs attempt 2
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger only dirt at append
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - product recovery is not yet dispatched; protected verifier repair is complete; preserve original required-gate failure and confirm DEC-189 mechanism before changing the harness
+- Next action: dispatch task-2 Developer continuation under TRG-22-005, confirm the coverage-child warning at expected exit_code: 23, repair the harness without changing goldens, run exact required commands and return typed evidence; then task-3 MF-3 and fresh independent review-1 re-review
+- Human attention required: no

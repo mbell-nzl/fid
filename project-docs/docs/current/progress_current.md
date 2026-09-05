@@ -12,30 +12,34 @@ its two Must-fix repairs are implemented, but the required repository-wide
 race/coverage gate exposed a nondeterministic retained `cmd/fid` live-output
 golden. DEC-189 classifies and bounds that repair; TRG-22-005 carries the
 governing directive. Review 1 also leaves task-3 MF-3 (VAL-011 attribution)
-open. No escalation is open and no Human decision is pending.
+open. ESC-22-001 is resolved under DEC-190/191: protected workflow maintenance
+is committed at `3bb42b4efd391b216b752db2c31fe793f3538bac`, and the canonical
+ledger now contains the correcting TRG-22-005 and its exact task-2 attempt-2
+recovery. No escalation is open and no Human decision is pending.
 
 ## Phase 22 Pack
 
 Heavy mode approved; 18 sequential tasks and 80 Ready validation assertions.
 Exact slice/wire/DDL/Event contracts, executable-scope matrix, V1 convergence
-inventory, QA Lead handoff, decisions and empty triage log are in
+inventory, QA Lead handoff, decisions and triage log are in
 `../phases/phase-22/`. `phase_brief.md` indexes every task.
 
-No implementation tasks have started and no RUN-START exists. Human execution
-approval is recorded in DEC-188. QA's plan and consistency assessment are in
-`qa/qa-plan.md` and `qa/consistency-review.md`. Tech Lead dispositioned all
-R-01..14 and C-01..13 through DEC-184..187 and `qa/tl-refinement.md`.
-QA's baseline failures and measurements remain attributed to its session;
-this TL authored documentation only and ran no quality gates.
+Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
+assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
+refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
+records completed tasks 1..3 and the open review-1 repair window. Product QA
+receipts retain their original session attribution; the separate maintenance
+report records freshly executed workflow checks only.
 
 ## Approval State
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
 - Task statuses: 1 and 3 complete; 2 in same-task continuation; 4..18 pending.
-- Next: Runner records TRIAGE TRG-22-005, then dispatches the bound task-2
-  review-1 continuation at attempt 2; fresh independent review-1 re-review
-  closes the window after task-3 MF-3.
+- Next: Runner records normal RUN-RESUME and dispatches the already recorded
+  task-2 review-1 continuation at attempt 2. Do not duplicate TRIAGE/recovery
+  or increment the attempt before dispatch. Fresh independent review-1
+  re-review closes the window after task-3 MF-3.
 
 ## Carry-Forward
 

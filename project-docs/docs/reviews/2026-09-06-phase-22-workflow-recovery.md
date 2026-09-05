@@ -82,8 +82,50 @@ transactions, not a hand-edited ledger or a batch-event bypass.
 - `project-docs/tools/workflow-sequence-lint.sh project-docs/docs/phases/phase-22/run-ledger.md` - PASS - `VALID state=REPAIR_PENDING` (terminated `exit_code: 0`), before appending reconciliation.
 - `git diff --check` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
 
-Real ledger append receipts and final handoff are recorded after the maintenance
-checkpoint commit. No task-2 product gate is claimed by this maintenance run.
+## Real Ledger Resolution
+
+Maintenance commit: `3bb42b4efd391b216b752db2c31fe793f3538bac` —
+`fix(workflow): unblock reviewed task recovery and runner restart`.
+
+From `/home/mark/projects/fid`, each of the following candidates was supplied
+separately to
+`project-docs/tools/workflow-sequence-lint.sh project-docs/docs/phases/phase-22/run-ledger.md --append-stdin`:
+
+- Normal RUN-RESUME — PASS — `APPEND_CONFIRMED state=REPAIR_PENDING`
+  (terminated `exit_code: 0`).
+- Correcting TRIAGE TRG-22-005 — PASS — `APPEND_CONFIRMED state=REPAIR_PENDING`
+  (terminated `exit_code: 0`).
+- Exact task-2 TASK-RECOVERY attempt 2 — PASS —
+  `APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`).
+- Post-append standalone sequence command — PASS —
+  `VALID state=REPAIR_PENDING` (terminated `exit_code: 0`).
+
+Candidate bodies are the final three entries in the committed ledger. The
+five authority scalars and exact allowed/forbidden/verification fields were
+read directly from TRG-22-005 when preparing the candidates. An independent
+byte comparison against a snapshot taken before any append printed
+`PASS original ledger prefix preserved; exactly three canonical events appended`
+(terminated `exit_code: 0`).
+
+ESC-22-001 is resolved, with its original entry archived and TRG-22-006's
+original BLOCK retained. No rejected BLOCK/STOP entry is fabricated.
+`runner-handoff.md` now directs the next runner to the already recorded
+task-2 recovery. The task-2 child has not yet been dispatched; its product
+repair/gates, task-3 MF-3 and independent re-review remain phase work.
+
+The next-runner handoff was also rehearsed against a fresh scratch copy of the
+resolved real phase ledger plus its current decision/triage records. Appending
+the replacement runner's normal RUN-RESUME through the same validator returned
+`APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`), preserving
+the already bound recovery. This rehearsal did not append another event to
+the real ledger.
+
+Final product-scope check:
+`git diff --exit-code 3e06f12fe4ae42e2694958043b95741bbb2c5c8a -- cmd internal`
+— PASS — `exit 0 (no output)` (terminated `exit_code: 0`). The real ledger
+again returned `VALID state=REPAIR_PENDING` (terminated `exit_code: 0`), and
+final `git diff --check` returned `exit 0 (no output)` (terminated
+`exit_code: 0`).
 
 ## Expected Non-Zero Commands
 

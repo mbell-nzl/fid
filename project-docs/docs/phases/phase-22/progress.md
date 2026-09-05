@@ -44,3 +44,20 @@
   refresh, then task 1; it alone creates the schema-v2 run ledger.
 - Tasks 1..18 remain pending; no RUN-START, product/test edits, quality gates
   or agent activation by this Tech Lead. No further planning approval is needed.
+
+## 2026-09-06 - Protected Workflow Repair And Execution Handoff
+
+- DEC-190 authorized repair of the protected sequence verifier following
+  ESC-22-001; DEC-191 reconciled committed model/tool settings with canonical
+  prompts. Maintenance commit: `3bb42b4efd391b216b752db2c31fe793f3538bac`.
+- All 30 recovery regressions, the complete mechanical drills and workflow
+  lint passed with observed exit 0; failed attempts and causes are preserved
+  in `../../reviews/2026-09-06-phase-22-workflow-recovery.md`.
+- The real ledger accepted normal RUN-RESUME, TRIAGE TRG-22-005 and the exact
+  task-2 attempt-2 recovery through three canonical append transactions.
+  Original ledger history is unchanged. ESC-22-001 is resolved; the standalone
+  ledger is valid in REPAIR_PENDING, ready to dispatch the recorded recovery.
+- Product status: tasks 1 and 3 have prior completion records; task 2 awaits
+  its bounded harness recovery, task-3 MF-3 remains open, and fresh review-1
+  re-review is required before task 4. Tasks 4..18 remain pending.
+- No product code, product tests or goldens changed in this maintenance task.

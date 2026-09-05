@@ -5,19 +5,18 @@
 
 ## Open Escalations
 
-### ESC-22-001 - Protected workflow-sequence control cannot represent DEC-189 supersession
-
-- **Phase:** 22
-- **Status:** OPEN
-- **Raised by:** TRG-22-006
-- **Category:** protected workflow-control definition/policy
-- **Summary:** `project-docs/tools/workflow-sequence-lint.sh` rejects the user-authorized TRIAGE TRG-22-005 and bound task-2 TASK-RECOVERY despite the accepted contract permitting a later same-task schema-v2 TRIAGE REPAIR to replace its pending dispatch and retain the review-form trigger identity.
-- **Evidence:** From `/home/mark/projects/fid`, the supplied exact append reproducer terminated `exit_code: 1` with `INVALID TRIAGE REPAIR must be followed by its bound TASK-RECOVERY before TRIAGE; INVALID schema v2 TRIAGE Originating task does not match Trigger signature`; the ledger remained unchanged and standalone validation remained `VALID state=REPAIR_PENDING`.
-- **Why blocked:** The required corrective edit is to `project-docs/tools/workflow-sequence-lint.sh`. `09_AI_WORKFLOW.md` §§2.3 and 9 prohibit normal control-conformance self-repair of that verifier; changing it requires separate protected workflow-control authority.
-- **Required resolution:** Full Tech Lead or authorized protected workflow-control decision must reconcile the verifier implementation with `project-docs/templates/run-ledger-template.md` and DEC-189's same-task supersession and review-form trigger contract, then provide a concrete authorized recovery route. Preserve the valid Phase 22 ledger; do not bypass the validator or authorize product/task recovery first.
-- **References:** TRG-22-006; `project-docs/specs/09_AI_WORKFLOW.md:427-458,586-614,703-713`; `project-docs/templates/run-ledger-template.md`; `project-docs/docs/phases/phase-22/decisions.md:222-270` (DEC-189); `project-docs/docs/phases/phase-22/run-ledger.md:158-209`.
+None.
 
 ## Latest Resolution
+
+ESC-22-001 resolved on 2026-09-06 under DEC-190/191. Protected sequence
+verification and canonical role configuration are repaired in
+`3bb42b4efd391b216b752db2c31fe793f3538bac`; the real ledger accepted the
+correcting triage and task-2 attempt-2 recovery through the canonical append
+command. Resume that existing entry. Original escalation and resolution are
+archived in `../phases/phase-22/tl-escalations.md`.
+
+## Prior Phase Resolution
 
 Phase 21 closed on 2026-09-04 (DEC-179) with every allocated escalation
 resolved. All seventeen Phase 21 escalations and their resolutions are archived
@@ -32,6 +31,7 @@ an escalation here at allocation time, not at resolution time.
 
 ## Archive Pointers
 
+- Phase 22: `../phases/phase-22/tl-escalations.md`
 - Phase 21: `../phases/phase-21/tl-escalations.md`
 - Phase 20: `../phases/phase-20/tl-escalations.md`
 - Phase 19: `../phases/phase-19/tl-escalations.md`

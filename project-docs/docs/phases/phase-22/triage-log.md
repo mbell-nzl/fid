@@ -216,3 +216,27 @@ Runner-owned run-ledger state is created only after execution approval.
 - **If BLOCK:** category protected workflow-control definition/policy; ESC-22-001 raised in `project-docs/docs/current/tl_escalations_current.md`; resolution condition separate protected workflow-control authority reconciles `project-docs/tools/workflow-sequence-lint.sh` with the accepted same-task supersession and review-form trigger contract before Phase 22 resumes.
 - **Human attention required:** yes
 - **References:** `project-docs/specs/09_AI_WORKFLOW.md:427-458,586-614,703-713`; `project-docs/templates/run-ledger-template.md`; `project-docs/docs/phases/phase-22/decisions.md:222-270` (DEC-189); `project-docs/docs/phases/phase-22/triage-log.md:153-185` (TRG-22-005); `project-docs/docs/phases/phase-22/run-ledger.md:158-209`; `project-docs/tools/workflow-sequence-lint.sh`.
+
+## Resolution For TRG-22-006 - ESC-22-001 closed under DEC-190
+
+- **Date:** 2026-09-06.
+- **Status:** RESOLVED. Original BLOCK verdict and failed append evidence above
+  remain unchanged.
+- **Authority:** DEC-190, separate Human-authorized protected verifier
+  maintenance; DEC-191 covers the discovered canonical/provider config drift.
+- **Repair commit:** `3bb42b4efd391b216b752db2c31fe793f3538bac`.
+- **Observed resolution:** All 30 recovery boundary checks, the full mechanical
+  drill suite and workflow lint passed, each terminating `exit_code: 0`.
+  The real Phase 22 normal RUN-RESUME, correcting TRIAGE TRG-22-005, and bound
+  task-2 TASK-RECOVERY each returned `APPEND_CONFIRMED state=REPAIR_PENDING`
+  (terminated `exit_code: 0`). Standalone validation returned
+  `VALID state=REPAIR_PENDING` (terminated `exit_code: 0`). Original ledger
+  bytes remain an unchanged prefix, followed by exactly those three events.
+- **Reconciliation:** The rejected BLOCK and STOP were never persisted. This
+  resolution invents neither event and is not a control-conformance amendment.
+  The existing pending ordinary triage was corrected through the canonical
+  append path; DEC-189/TRG-22-005 continue to govern product task 2, attempt 2.
+- **Next action:** Resume the existing task-2 recovery entry, then task-3 MF-3
+  and fresh independent review-1 re-review. Product repair remains pending;
+  workflow maintenance does not claim its test gates or QA outcomes.
+- **Evidence:** `project-docs/docs/reviews/2026-09-06-phase-22-workflow-recovery.md`.
