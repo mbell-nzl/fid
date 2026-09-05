@@ -57,8 +57,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `091d9c0ddc9d2e5afdeeb9b0ee6c70706fc54c2e`
 
 ## Commit subject
 
-- Pending commit
+- `test(workflow): capture lease expiry recovery`
