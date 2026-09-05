@@ -76,8 +76,15 @@
   - Diagnostic only: the retained golden passes in isolation, so it does not replace the failed required repository-wide receipt.
 - `go test -race -coverprofile=coverage.out ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t166.657s\tcoverage: 77.1% of statements` (terminated `exit_code: 0`)
   - Diagnostic only: package-level reproduction passed after the failed repository-wide receipt; it is not used to close the required gate.
-- `B=$(mktemp -d)` then `go test -c -cover -o "$B/covbin" ./cmd/fid` then `env -i "$B/covbin" -test.run='^TestLiveGoldenChild$' -- --live-golden-child` - PASS - `warning: GOCOVERDIR not set, no coverage data emitted` (expected child `exit_code: 23`; terminated `exit_code: 23`)
-  - Pre-repair DEC-189 mechanism diagnostic. The coverage-instrumented child emitted the required warning under the closed environment.
+The pre-repair DEC-189 mechanism diagnostic ran this exact sequence from the repository root:
+
+```sh
+B=$(mktemp -d)
+go test -c -cover -o "$B/covbin" ./cmd/fid
+env -i "$B/covbin" -test.run='^TestLiveGoldenChild$' -- --live-golden-child
+```
+
+Its child receipt ended with `warning: GOCOVERDIR not set, no coverage data emitted`; the expected child termination was observed as `exit_code: 23`.
 - `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=20` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t30.436s\tcoverage: 3.3% of statements` (terminated `exit_code: 0`)
   - Post-repair focused green confirmation across twenty fixture executions.
 
