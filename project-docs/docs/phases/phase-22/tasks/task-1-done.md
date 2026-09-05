@@ -51,39 +51,66 @@
 - `go test -race ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/internal/journal	2.670s` (terminated `exit_code: 0`).
 - `go test -race ./internal/db -run '^TestMigration0015RecoverySchemaConstraintsAndRoundTrip$' -count=1` - RED - `FAIL` (terminated `exit_code: 1`); before the migration, `table "run_runtime" does not exist`.
 - `go test -race ./internal/db -run '^TestMigration0015RecoverySchemaConstraintsAndRoundTrip$' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/internal/db	3.751s` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestRecoverySchemaFreshBinaryInitAndRebuild$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.352s` (terminated `exit_code: 0`).
-- `/tmp/fid-phase22-task1 --project /tmp/fid-phase22-task1.Sw07ej --json init --prefix P22` - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260905-000001","occurred_at":"2026-09-05T02:05:09.402846Z"},"ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-09-05.jsonl","project":{"id":"project-252b9f9aeebb071de1f086771f08c54f","issue_prefix":"P22","root":"/tmp/fid-phase22-task1.Sw07ej"}}}` (terminated `exit_code: 0`).
-- `/tmp/fid-phase22-task1 --project /tmp/fid-phase22-task1.Sw07ej --json rebuild` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":15,"upgraded_events":0}}` (terminated `exit_code: 0`).
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestRecoverySchemaFreshBinaryInitAndRebuild$' -count=1` - GREEN - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.352s` (terminated `exit_code: 0`).
+- `/tmp/fid-phase22-task1 --project /tmp/fid-phase22-task1.Sw07ej --json init --prefix P22` - GREEN - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260905-000001","occurred_at":"2026-09-05T02:05:09.402846Z"},"ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-09-05.jsonl","project":{"id":"project-252b9f9aeebb071de1f086771f08c54f","issue_prefix":"P22","root":"/tmp/fid-phase22-task1.Sw07ej"}}}` (terminated `exit_code: 0`).
+- `/tmp/fid-phase22-task1 --project /tmp/fid-phase22-task1.Sw07ej --json rebuild` - GREEN - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"project.rebuild","result":{"events_replayed":1,"files_replayed":1,"schema_version":15,"upgraded_events":0}}` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` (attempt 1) - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` (attempt 2) - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `gofmt -l cmd internal` (attempt 3) - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` (attempt 1) - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` (attempt 2) - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` (attempt 3) - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` (attempt 1) - FAIL - `FAIL` (terminated `exit_code: 1`).
-- `go test -race -coverprofile=coverage.out ./...` (attempt 2) - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	35.791s	coverage: 27.4% of statements` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` (attempt 3) - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 27.4% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` (attempt 1) - PASS - `total:										(statements)				61.2%` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` (attempt 2) - PASS - `total:										(statements)				61.2%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` (attempt 1) - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.145s` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` (attempt 2) - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.933s` (terminated `exit_code: 0`).
-- `go version` (attempt 1) - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`).
-- `go version` (attempt 2) - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`).
-- `go env GOOS GOARCH` (attempt 1) - PASS - `amd64` (terminated `exit_code: 0`).
-- `go env GOOS GOARCH` (attempt 2) - PASS - `amd64` (terminated `exit_code: 0`).
-- `uname -srm` (attempt 1) - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`).
-- `uname -srm` (attempt 2) - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`).
-- `nproc` (attempt 1) - PASS - `6` (terminated `exit_code: 0`).
-- `nproc` (attempt 2) - PASS - `6` (terminated `exit_code: 0`).
-- `grep -m1 '^model name' /proc/cpuinfo` (attempt 1) - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`).
-- `grep -m1 '^model name' /proc/cpuinfo` (attempt 2) - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`).
-- `grep -m1 '^MemTotal:' /proc/meminfo` (attempt 1) - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`).
-- `grep -m1 '^MemTotal:' /proc/meminfo` (attempt 2) - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`).
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` (attempt 1) - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	31.083s` (terminated `exit_code: 0`); sample `28341 ms/rebuild`, below the unchanged `<30000 ms` assertion.
-- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` (attempt 2) - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	30.587s` (terminated `exit_code: 0`); sample `27805 ms/rebuild`, below the unchanged `<30000 ms` assertion.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - Attempt 3.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - Attempt 3.
+- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`).
+  - Attempt 1.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	35.791s	coverage: 27.4% of statements` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 27.4% of statements` (terminated `exit_code: 0`)
+  - Attempt 3.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				61.2%` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				61.2%` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.145s` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	7.933s` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `go version` - PASS - `go version go1.26.2 linux/amd64` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `go env GOOS GOARCH` - PASS - `amd64` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `uname -srm` - PASS - `Linux 6.6.114.1-microsoft-standard-WSL2 x86_64` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `nproc` - PASS - `6` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `nproc` - PASS - `6` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `grep -m1 '^model name' /proc/cpuinfo` - PASS - `model name	: AMD Ryzen 7 5700G with Radeon Graphics` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`)
+  - Attempt 1.
+- `grep -m1 '^MemTotal:' /proc/meminfo` - PASS - `MemTotal:        8133236 kB` (terminated `exit_code: 0`)
+  - Attempt 2.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	31.083s` (terminated `exit_code: 0`)
+  - Attempt 1; sample `28341 ms/rebuild`, below the unchanged `<30000 ms` assertion.
+- `go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal` - PASS - `ok  	github.com/mbell-nzl/fid/internal/journal	30.587s` (terminated `exit_code: 0`)
+  - Attempt 2; sample `27805 ms/rebuild`, below the unchanged `<30000 ms` assertion.
 
 ## Deviations from spec
 
