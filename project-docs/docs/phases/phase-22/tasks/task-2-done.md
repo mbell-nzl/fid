@@ -144,8 +144,8 @@
 
 ## Commit hash
 
-- `0bf39eb2c54aadef2999bed41c654973673cfc57`
+- `daca8392a580ebdd2b6a8d3dab011910e39a779e`
 
 ## Commit subject
 
-- `test(workflow): cover Stop Attention boundaries`
+- `test(fid): stabilize live output coverage fixture`
