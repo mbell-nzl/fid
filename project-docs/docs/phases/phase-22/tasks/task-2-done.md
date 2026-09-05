@@ -2,9 +2,9 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: qa-rework
-- Condition: The DEC-189 harness repair and every required task command now pass, but review-1 requires a fresh independent re-review before this task can advance.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: The bounded DEC-189 implementation repair, every exact task command, and this report's required evidence are resolved.
 - Recovery attempts: 2
 - Next action: The Phase Runner must obtain the independent review-1 re-review for task-2's repaired evidence; the Developer cannot self-attest that review.
 - Human attention required: no
