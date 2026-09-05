@@ -2,10 +2,10 @@
 
 # Keep provider, profile, auth, telemetry, and notification routing in
 # ~/.codex/config.toml. Project-local config should contain repo behavior only.
-model = "gpt-5.5"
+model = "gpt-6-astra"
 approval_policy = "on-request"
 sandbox_mode = "workspace-write"
-model_reasoning_effort = "high"
+model_reasoning_effort = "xhigh"
 plan_mode_reasoning_effort = "high"
 model_verbosity = "medium"
 personality = "pragmatic"
