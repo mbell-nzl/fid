@@ -123,8 +123,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `0bf39eb2c54aadef2999bed41c654973673cfc57`
 
 ## Commit subject
 
-- Pending commit
+- `test(workflow): cover Stop Attention boundaries`
