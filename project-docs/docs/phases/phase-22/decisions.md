@@ -219,6 +219,123 @@
 - **Limits:** No release, adoption, merge, external kit edit, workflow-control
   redesign, or acceptance of Human validation outcomes is implied.
 
+### DEC-189: Resolve the task-2 retained live-output golden failure as a nondeterministic-test defect
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED, Tech Lead. Execution authority; no Human product decision
+  is required and none is implied. This is the admissible substantive authority
+  for the repair proposed in TRG-22-001..004.
+- **Context:** The task-2 review-1 continuation reached MATERIAL-PROGRESS with
+  both Must-fix findings implemented, then the byte-identical required command
+  `go test -race -coverprofile=coverage.out ./...` failed in retained
+  `cmd/fid/TestLiveOutputGoldenFixtures` (terminated `exit_code: 1`). Three
+  successive triage records corrected only the formal admissibility of the
+  disposition (TRG-22-001 cited DEC-175, which has no heading in this file;
+  TRG-22-002 used a backticked trigger signature; TRG-22-003 fixed the raw
+  scalar) and TRG-22-004 corrected the recovery-identity binding. None of them
+  established the defect's mechanism, so the bounded directive risked being
+  discharged by re-baselining a golden rather than by repairing a cause.
+
+- **Classification (why the existing rules do not reach this case):**
+  - This is **not** subject-preserving convergence. Task 2 changed Stop and
+    Attention domain behavior; it did not displace the live-output framing
+    subject. DEC-162/165/166 assign convergence to the task whose accepted
+    change invalidated the assertion, and no task-2 change did.
+  - This is **not** DEC-175. That rule covers a latent *production* defect first
+    observable under a *new* gate. This gate is not new — task 1 and two earlier
+    task-2 attempts ran the identical command to `exit 0` — and the defect is in
+    the retained test harness, not in production code.
+  - Provenance is phase-21/task-14 (`tasks/task-14-live-output.md`, phase-21
+    VAL-036). The directory name `cmd/fid/testdata/val-036/` refers to that
+    archived phase-21 assertion, not to this phase's unrelated VAL-036; no
+    ownership follows from the name.
+  - The correct class is a **nondeterministic retained test that first failed
+    under an existing required gate**. It is a real latent defect, and its prior
+    greens were partly luck, so it is neither waivable as pre-existing nor
+    dismissible as flake.
+
+- **Mechanism (arithmetic-supported hypothesis, to be confirmed before repair):**
+  `internal/evidence.RunLive` gives the child a fully closed environment
+  (`executor.go:66`), so under a coverage-instrumented build the spawned child —
+  which is the `cmd/fid` test binary itself, re-entered as `os.Args[0]` — has no
+  `GOCOVERDIR` and its exit hook writes
+  `warning: GOCOVERDIR not set, no coverage data emitted\n` (54 bytes) to the
+  observed stderr. `RunLive` consumes both pipes through one channel in arrival
+  order and stops accumulating `OutputBytes` once the ceiling fires
+  (`live.go:179-181`), so the last accounted read is whichever chunk wins that
+  race. Redacted output before the final write is 29+25+13+13 = 80 bytes against
+  a 128-byte ceiling. If the 120-byte stdout payload is consumed first the result
+  is the committed golden, 48 retained `x` bytes and
+  `observed_bytes_lower_bound` 200. If the coverage warning is consumed first the
+  result is 80+54 = **134**, which is exactly the value the failed run recorded.
+  The independently derived 134 matching the observed 134 is why this mechanism,
+  not read-chunk splitting, is the working explanation.
+
+- **Decision:**
+  1. Task 2 owns this repair. Amend its scope to add exactly
+     `cmd/fid/live_output_test.go`; task 2's required gates already walk
+     `cmd/fid`, so the assignment is executable under DEC-167/173.
+  2. The repair must remove the nondeterminism at its source by making the
+     fixture's child emit only its intended bytes in every build mode. The
+     expected minimal form is a `GOCOVERDIR` literal entry in the definition's
+     closed environment, inserted in sorted position between `GATE_TOKEN` and
+     `LITERAL` as `validEnvironment` requires, pointing at a fresh `t.TempDir()`.
+  3. **Both committed goldens must remain byte-identical.** Neither
+     `live-frames.jsonl` nor `human-session.txt` is in the allowed file list.
+     Re-baselining either one to a load- or instrumentation-dependent value is
+     mining a flaky green and is forbidden regardless of how many times it
+     passes afterwards.
+  4. No product change is authorized. `RunLive` conforms to its accepted
+     contract: `05_DESIGN_PLAN.md` and phase-21 `contracts.md` require exactly
+     one `output-truncated` control, continued draining, and observed
+     termination, and the control field is explicitly named
+     `observed_bytes_lower_bound`.
+  5. The mechanism must be confirmed by a deterministic diagnostic receipt
+     before the repair lands. If the coverage-instrumented child does not
+     reproduce the warning, the hypothesis is falsified: stop, return
+     `RECOVERY_REQUIRED`, and hand the observation back to Tech Lead rather than
+     adjusting a fixture to fit an unexplained failure.
+  6. TRG-22-005 carries the exact bounded directive. It supersedes the
+     substantive scope of TRG-22-003 and the pending binding of TRG-22-004 for
+     the same task, and retains the review-1 recovery identity and attempt 2.
+     The earlier records stay unedited as orchestration evidence.
+
+- **Consequences:** The immutable failed receipt in `task-2-done.md` stays, and
+  a mandatory deviation note must carry its verbatim token, termination, root
+  cause, repair, and later result. Task 2 still cannot close on the strength of
+  a later green alone. Fresh independent review-1 re-review remains required for
+  MF-1 and MF-2, and task-3's MF-3 is untouched by this decision.
+- **Authority limits:** No protected gate command, result, scope, threshold,
+  tolerance, assertion semantic, public interface, schema, dependency, policy,
+  or workflow control changes. No ESC is allocated and no Human attention is
+  requested. Archived phase-21 VAL-036 is strengthened, never weakened: every
+  asserted subject — interleaving, redaction, the three control kinds, the
+  non-success terminal frame, and safe escape rendering — is preserved with
+  unchanged golden bytes.
+- **Spec impact:** `05_DESIGN_PLAN.md` gains one clarifying sentence that
+  retained byte counts become lower bounds once the ceiling fires and are not
+  reproducible across runs. This records existing accepted behavior so no future
+  fixture pins an exact post-truncation count; it changes no frame schema, field
+  type, or wire shape. Phase-21 archived contracts are not edited.
+- **New carry-forward CF-038:** two residual items, neither blocking. First,
+  `cmd/fid/live_output_test.go` still depends on five sleep-separated child
+  writes arriving as five separate reads, so same-stream coalescing under
+  extreme load remains a theoretical golden break; harden it when a task next
+  opens that file with cause. Second, the terminal frame's `output_bytes` is
+  typed `int` with no lower-bound qualifier in phase-21 `public-interface.md`
+  section 8; fold that wording into the next accepted live-output wire revision.
+- **Triage audit note for wrap-up:** TRG-22-001 asserted an inadmissible
+  authority and an incorrect DEC-175 classification; TRG-22-002 and TRG-22-003
+  repaired only its form and carried the classification forward unexamined. All
+  four records were correct to keep this as REPAIR and to refuse an ESC. Record
+  at wrap-up that formal-admissibility churn substituted for root-cause analysis
+  across three consecutive triage cycles.
+- **Refs:** `triage-log.md` TRG-22-001..005; `tasks/task-2-done.md:5-9,95-118`;
+  `tasks/task-2.md:32-34,94-116`; `qa/review-1.md:97-98,122-123`;
+  `execution-scope.md:6-27`; `internal/evidence/live.go:96-115,175-213`;
+  `internal/evidence/executor.go:59-80`; `internal/evidence/policy.go:147-174`;
+  `cmd/fid/live_output_test.go:43-107`; DEC-162/165/166/167/173/175/181.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

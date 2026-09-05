@@ -9,12 +9,16 @@ export the same state, rebuild, and resume without contradictory facts.
 
 ## Status
 
-**Approved for execution (DEC-188); not yet started.** Branch `phase-22`, created from merged
+**Executing (DEC-188).** Branch `phase-22`, created from merged
 main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 is wrapped under
 DEC-179 and already merged. Phase 22's proposed contracts and task pack are
 refined against QA R-01..14 and all kit comparison items (DEC-184..187).
-Human approved the refined pack on 2026-09-05. Runner starts with its required
-QA Lead readiness refresh, then task 1. See `../phases/phase-22/runner-handoff.md`.
+Human approved the refined pack on 2026-09-05. See
+`../phases/phase-22/runner-handoff.md`.
+
+Tasks 1 and 3 are complete; review 1 returned REPAIR. Task 2 is in a same-task
+review-1 continuation bounded by DEC-189 and TRG-22-005 (nondeterministic
+retained `cmd/fid` live-output golden). Task-3 MF-3 remains open. No open ESC.
 
 ## Operating Mode
 
@@ -29,9 +33,9 @@ Tasks are sequential; reviews follow every three tasks.
 
 | Task | Title | Status | Dependency |
 |---|---|---|---|
-| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Pending | Runner QA readiness refresh |
-| [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Pending | 1 |
-| [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Pending | 2 |
+| [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete | Runner QA readiness refresh |
+| [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Continuation (DEC-189 / TRG-22-005) | 1 |
+| [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete; review-1 MF-3 open | 2 |
 | [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Pending | 3 |
 | [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Pending | 4 |
 | [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Pending | 5 |

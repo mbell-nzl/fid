@@ -52,6 +52,10 @@
   covers every path its gates walk. Amend incomplete assignments before dispatch.
 - DEC-175: a latent implementation defect first observable under a new gate
   belongs to that task with minimum causal source/regression scope.
+- DEC-189: a nondeterministic retained test that first fails under an existing
+  required gate is neither convergence nor DEC-175. Assign it to the observing
+  task with a scope amendment, repair the nondeterminism at its source, and
+  never re-baseline a golden to a load- or instrumentation-dependent value.
 - DEC-170/171: external interruptions do not consume no-progress budget; polling
   timeout means wait. Only declared command budgets apply; preserve real outcomes.
 - DEC-172: an unavailable capability row is required negative metadata, not an
@@ -96,6 +100,7 @@ Current branch is `phase-22`; Phase 21 is merged.
 | CF-035 | Accepted under DEC-188: whole-config validation on consuming paths, preserving config-independent diagnostics. Task 11/VAL-047. |
 | CF-036 | New from DEC-183: dedicated workflow-maintenance planning for phase/cross-task ledger identities and fail-closed ESC registration; product Phase 22 does not change controls. |
 | CF-037 | DEC-187: kit V2-3 adapter/Phase 25 qualification must prove activation export binding, terminalState expectation mapping, scope/asOf/validate-only, dedup-key agreement and explicit unmapped Stop-code representations. Exact obligations: Phase 22 kit-contract-mapping.md. |
+| CF-038 | New from DEC-189: harden `cmd/fid/live_output_test.go` against remaining same-stream read coalescing when a task next opens it with cause, and qualify the terminal frame's `output_bytes` as a post-truncation lower bound in the next accepted live-output wire revision. Neither item blocks Phase 22. |
 
 All rows were dispositioned against the Phase 22 task scope in DEC-182..187;
 check triggers again at task-12 checkpoint and wrap-up. Closed CF IDs remain in

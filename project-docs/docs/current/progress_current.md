@@ -2,11 +2,17 @@
 
 ## Project State
 
-Phase 22 is **approved for execution (DEC-188), not yet started**
-on `phase-22`.
-The planning base is merged main
-`89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed under DEC-179
-on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since been merged.
+Phase 22 is **executing** on `phase-22` under DEC-188. The planning base is
+merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
+under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
+been merged.
+
+Tasks 1 and 3 are complete. Task 2 is in a same-task review-1 continuation:
+its two Must-fix repairs are implemented, but the required repository-wide
+race/coverage gate exposed a nondeterministic retained `cmd/fid` live-output
+golden. DEC-189 classifies and bounds that repair; TRG-22-005 carries the
+governing directive. Review 1 also leaves task-3 MF-3 (VAL-011 attribution)
+open. No escalation is open and no Human decision is pending.
 
 ## Phase 22 Pack
 
@@ -26,8 +32,10 @@ this TL authored documentation only and ran no quality gates.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..18 pending.
-- Next: Runner QA Lead readiness refresh, then task 1; see phase-22/runner-handoff.md.
+- Task statuses: 1 and 3 complete; 2 in same-task continuation; 4..18 pending.
+- Next: Runner records TRIAGE TRG-22-005, then dispatches the bound task-2
+  review-1 continuation at attempt 2; fresh independent review-1 re-review
+  closes the window after task-3 MF-3.
 
 ## Carry-Forward
 
@@ -40,6 +48,8 @@ Other CFs re-deferred with rationale in DEC-182; CF-036 schedules separate
 workflow identity/registration maintenance planning from DEC-183.
 CF-037: external kit contract/adapter duties required for Phase 25 qualification.
 R-14: task 8 owns process fixture repair; earlier-failure route is DEC-186.
+CF-038: live-output golden hardening and post-truncation `output_bytes`
+wording, both from DEC-189; neither blocks this phase.
 
 ## References
 
