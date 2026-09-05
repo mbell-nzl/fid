@@ -226,6 +226,46 @@ func TestClaimConflictsExpiryAndWrongHolderFailWithoutMutation(t *testing.T) {
 	}
 }
 
+func TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired(t *testing.T) {
+	workspace, issueID, envelopeID := runEnvelopeForTest(t)
+	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "expired-unresolved-claim")
+	repository := runRepositoryForTest(t, workspace)
+	startPath := filepath.Join(workspace, "expired-unresolved-run.json")
+	writeActivationInput(t, startPath, runStartInput(issueID, envelopeID, claim["id"], repository))
+	started := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "run", "start", "--actor", "actor-builder",
+		"--input", startPath, "--idempotency-key", "expired-unresolved-run",
+	)
+	if started.err != nil || started.stderr != "" {
+		t.Fatalf("start unresolved Run = %#v, want stdout-only success", started)
+	}
+
+	expirePath := filepath.Join(workspace, "expired-unresolved-expire.json")
+	writeActivationInput(t, expirePath, map[string]any{"claim_id": claim["id"], "expected_version": 1})
+	expired := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "expire", "--actor", "actor-builder",
+		"--input", expirePath, "--idempotency-key", "expired-unresolved-expire",
+	)
+	if expired.err != nil || expired.stderr != "" {
+		t.Fatalf("expire Claim = %#v, want explicit expiry success", expired)
+	}
+
+	before := snapshotWorkspacePersistence(t, workspace)
+	reacquirePath := filepath.Join(workspace, "expired-unresolved-reacquire.json")
+	writeActivationInput(t, reacquirePath, map[string]any{
+		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
+		"worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": 60,
+	})
+	reacquired := executeCommandForTest(workspace,
+		"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder",
+		"--input", reacquirePath, "--idempotency-key", "expired-unresolved-reacquire",
+	)
+	if reacquired.err == nil || !strings.Contains(reacquired.stderr, `"code":"claim-conflict"`) {
+		t.Fatalf("reacquire with unresolved executor = %#v, want typed claim conflict", reacquired)
+	}
+	assertClaimStateUnchanged(t, workspace, before)
+}
+
 func TestClaimRenewReleaseVersionAndReplayAreExact(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := claimEnvelopeForTest(t)
