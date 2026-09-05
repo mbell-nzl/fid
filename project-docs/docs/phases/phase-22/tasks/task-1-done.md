@@ -100,8 +100,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `72c5974f6698fa08a4fe1a24099b3a93b3882f1d`
 
 ## Commit subject
 
-- Pending commit
+- `feat(recovery): add schema and replay foundation`
