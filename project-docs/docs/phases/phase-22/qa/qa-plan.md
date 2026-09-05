@@ -1,5 +1,10 @@
 # Phase 22 QA Plan - Failure And Recovery
 
+> Runner readiness refresh: **PASS**, Codex QA Lead, 2026-09-05.
+> See section 11 for this session's evidence and current task-1 disposition.
+> The original assessment and TL updates below remain historical, verbatim;
+> their measurements are not this session's results or implementation PASS.
+
 > Phase: 22 - Failure And Recovery
 > Refreshed: 2026-09-05
 > QA Lead: Claude Opus 5
@@ -638,3 +643,306 @@ realised as QA-77..QA-84. Also, `08_QUALITY_PLAN.md` section 8 still describes
 "Heavy Phase 21" as the current Heavy phase. Both are workflow-maintenance
 items in the CF-033 / CF-036 family, not Phase 22 product defects, and are
 raised here for the Tech Lead rather than fixed by QA.
+
+## 11. Runner Readiness Refresh Before Task 1
+
+QA READINESS: PASS
+
+Author: Codex QA Lead, 2026-09-05. Reviewed branch `phase-22` at
+`ec5278faee272e8106f5f8a286369b59a74a530a`, the Runner-supplied approved pack.
+DEC-188 ratifies the refined contract at
+`8dee0a194a494f575b7c5f64caf6ed9ac7da70f8`; the later supplied commit records
+approval and the Runner handoff. Fresh `git log` verified that relationship.
+The only initial dirt was untracked `run-ledger.md`, owned by the Runner.
+The current progress document's pre-RUN wording is a handoff snapshot; it is
+not used to contradict the Runner's subsequent RUN-START or to start another run.
+
+This refresh used the validation-contract and qa-evidence skills. It read all
+18 ordered task specs and every input named in the Runner's readiness request,
+plus `kit-contract-mapping.md`, the QA/validation templates, quality plan,
+workflow sections 2.6/4.3/6.1/8, schema section 8.3, config sections 2/3, and
+the glossary's recovery terminology. There are no task completion reports yet;
+the 18 report paths are future artifacts with explicit producing tasks.
+
+Readiness covers the accepted plan and executable evidence strategy. It does
+not declare any of VAL-001..080 satisfied. Their existing Ready states and
+future final-outcome obligations remain intact. Only the build command below
+was executed as a product quality gate in this refresh; the full suites,
+coverage, lint, repeated outcome test, and rebuild/benchmark gates were checked
+for feasibility, not represented as newly passing runs. Previous measurements
+and failed attempts in sections 2/6 and `consistency-review.md` remain unchanged.
+
+### 11.1 Coverage, Ownership, And Refinement Audit
+
+All in-scope requirement groups remain referenced by at least one VAL: **YES**.
+The contract's explicit exclusions still assign parallel Claims, Review/Human
+Outcome implementation, external adapter qualification, and later removals to
+their approved owners. No new protected contract gap or uncovered row was found.
+
+An inline read-only Python audit parsed each original assertion table row,
+each task's Validation Contract Coverage and Acceptance Criteria, all fenced
+blocks in each Exact Commands section, and sections 7/9 of this plan. It
+compared ordered command lists against the literals in section 11.2, including
+repeated occurrences, and required one matching task/window and validator per
+ID. The command terminated `exit_code: 0`, with these verbatim summary tokens:
+
+```text
+coverage: 80 unique rows; 77 QA Lead / 3 Human; 18 exact owners; uncovered=0; 84 QA checks; 6 Human fan-outs
+commands: 124 ordered occurrences; 17 distinct; placeholders=0; full ordinary/tagged gates=18/18
+contract matrices: 056-a..k=11; activated actions=23 exact members; phase reports=0 (not yet due)
+```
+
+For reproduction, enumerate table rows matching `^\| VAL-[0-9]{3} \|`, split
+on unescaped pipes, require exactly VAL-001..080, and match their task/window
+columns against task coverage bullets and acceptance criteria. Check the same
+IDs in deterministic or Human checklist rows according to validator. Extract
+**every** fenced command block under each task's Exact Commands heading,
+retaining order and duplicates; compare with section 11.2's base and additions.
+Required commands contain no angle-bracket placeholder, TBD, or TODO. The
+illustrative report-lint argument notation in historical prose is not a
+Developer command; `execution-scope.md` supplies the concrete task-1 invocation.
+
+| Refinement | Fresh readiness disposition and remaining evidence owner |
+|---|---|
+| R-01/11 | `--project` matches built help; read-leaf and positional import exceptions are explicit. Tasks 6/15 and final wire checks retain their positive/negative cases. |
+| R-02/12 | Independently compared the full explicit 23-action table, not just its count. Activation bootstrap, import, and read operations are excluded; task 9 removes run.finish leaf/action/Event. owner_phase is opaque metadata. Tasks 2..9/18 own the listed acceptance/rejection evidence. |
+| R-03 | Contracts 3.1/3.2 and tasks 4/12 agree on canonical bytes, independent vectors, real dirty-target freshness and separate reconciliation binding; details below. |
+| R-04/09 | Fresh execution of the amended DDL confirms required observation NOT NULL/FK and equal seven-code CHECKs. Task 1 still owes runtime-driver, common Event-applier, replay and built-init evidence. |
+| R-05/06/07 | Exact reused-executor error shape/replay precedence, exact disposition-containing Event set with fact revalidation, and recovery rejection without Event/Stop/Attention are explicit in contracts/wire/tasks. Missing/null/nonexistent/wrong-subject observations and missing/extra/duplicate/underlying-only disposition references have rejection owners. |
+| R-08 | VAL-056 is now a finite conformance matrix, 056-a..k, with individual evidence and both states. Numeric L-1/L/L+1 and actual measured decompression remain mandatory; task 13 owns validator proof. |
+| R-10 | Version, competing-prepare and direction conflicts now have distinct closed shapes; tasks 10/11/18 own the corpus. |
+| R-13 | Exact single-sample commands and six reference commands appear at tasks 1/16. Task 17/final QA retain three fresh processes, parity evidence and the unchanged <30 s self-assert. |
+| R-14 | Repair is explicitly owned by task 8/VAL-031. Signal/timeout synchronization, cancellation, bounded load, focused 15-repeat race command and two full benchmark runs are required. Earlier encounters use DEC-186's bounded same-task amendment before retry, never a waiver. The repair has not landed. |
+| C-01..13 | Every original AGREE/RECORD/DECIDE item has an accepted disposition in kit-contract-mapping.md/DEC-187. C-06b export binding and C-08 terminalState expectation mapping remain CF-037/Phase 25 qualification obligations; no production adapter qualification is claimed. |
+
+The earlier NO answers in sections 2/6 describe the original draft. The accepted
+refinements now provide one observable or explicit finite matrix per assertion,
+both qualifying and rejecting states, deterministic structural parity, and
+the six Human fan-outs. This disposition supplements those historical answers;
+it does not rewrite the original findings or give implementation credit.
+
+### 11.2 Command And Feasibility Validation — Fresh Session
+
+All project commands use `/home/mark/projects/fid`. Disposable CLI/Git probes
+declare their fresh temporary working directory; none uses the phase worktree
+as a fixture. No additional Developer gate is introduced by this refresh.
+
+The exact ordered base required by all 18 tasks is:
+
+```text
+gofmt -l cmd internal
+golangci-lint run ./...
+go test -race -coverprofile=coverage.out ./...
+go tool cover -func=coverage.out
+go test -tags integration -race ./cmd/fid/integration/...
+```
+
+| Tasks | Exact additions/order, mechanically reconciled |
+|---|---|
+| 1,16 | Base, then the six reference commands below, then one reference benchmark. 12 occurrences each. |
+| 2 | `go test -race -cover ./internal/workflow` before edits, the same command after edits, then base. 7 occurrences. |
+| 3,4,5,6,9,10,11,12,13,14,15 | Base only. 5 occurrences each. |
+| 7 | `go test -race -cover ./internal/evidence` before edits, the same command after edits, then base. 7 occurrences. |
+| 8 | Base, then `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid`, then `go test -bench . -benchmem ./...` twice. 8 occurrences. |
+| 17 | Base, six reference commands, reference benchmark three times, `go test -bench . -benchmem ./...` twice, `go build -o /tmp/fid ./cmd/fid`. 17 occurrences. |
+| 18 | Base, then `go build -o /tmp/fid ./cmd/fid`. 6 occurrences. |
+
+The exact reference commands and benchmark are:
+
+```text
+go version
+go env GOOS GOARCH
+uname -srm
+nproc
+grep -m1 '^model name' /proc/cpuinfo
+grep -m1 '^MemTotal:' /proc/meminfo
+go test -run '^$' -bench '^BenchmarkRebuildWorkspace100kEvents$' -benchmem -benchtime 1x -timeout 30m ./internal/journal
+```
+
+Final QA still executes the seven-command full phase gate, the separate three
+reference samples, and QA-78's second consecutive full benchmark run. Neither
+early samples nor a successful build replaces any of these. QA-84 reconciles
+all command occurrences and before/after timing. The existing report-lint
+`required_commands()` reads the first fenced block; its receipt cannot replace
+the QA audit of tasks 2/7's later block or distinct repeated-run receipts.
+
+| Command or step | Fresh validation method | Result and observed evidence |
+|---|---|---|
+| Format and edited-file formatting prerequisites | `gofmt -h`; `goimports -h` | Feasible: `-l` and `-w` documented; help terminated 0 and 2 respectively. These are help statuses, not format-gate results. |
+| `golangci-lint run ./...` | `golangci-lint run --help` | Feasible: `golangci-lint run [flags]`; terminated `exit_code: 0`. |
+| Full race/coverage, package coverage and tagged integration | `go help build`, `go help test`, `go help testflag`; `go list -json ./...`; `go list -tags integration -json ./cmd/fid/integration/...` | Feasible: race supported on linux/amd64; tags/coverage flags documented. 21 ordinary packages and one tagged package; all five commands terminated `exit_code: 0`. No test result is inferred. |
+| Coverage report | `go tool cover -help` plus coverage-producing command's documented usage | Feasible: `-func string`; help terminated `exit_code: 2`. coverage.out must come from that session's preceding successful coverage gate, never an old file. |
+| Focused 15-repeat race and both benchmark forms | `go help testflag`; current test/benchmark definitions and `go list` selection | Feasible: `-run regexp`, `-count n`, `-bench regexp`, `-benchmem`, `-benchtime t`, `-timeout d`; help terminated `exit_code: 0`. Ordinary package includes gate_run_test.go and journal includes rebuild_bench_test.go; definitions exist at lines 213 and 19 respectively. This proves reach, not stability or speed. |
+| `go build -o /tmp/fid ./cmd/fid` | Executed; retained session 63074 and polled to actual termination | PASS: `exit 0 (no output)` (terminated `exit_code: 0`). Built baseline help was then exercised. |
+| Six reference-instance commands | Executed freshly | All terminated `exit_code: 0`: Go 1.26.2; linux/amd64; Linux 6.6.114.1-microsoft-standard-WSL2 x86_64; 6 CPUs; AMD Ryzen 7 5700G with Radeon Graphics; MemTotal 8133236 kB. Exact task-17 reference matches. No fresh timing qualification claimed. |
+| Runner report-lint step | Read usage and required_commands implementation in project-docs/tools/report-lint.sh:40/71; checked execution-scope's exact two positional paths | Feasible once task-1-done.md is committed. Control was not run against an absent future report. No Runner control or ledger edit. |
+| Test roots and fixtures | File existence plus ordinary/tagged package enumeration | 54 explicit create/modify paths exist; 56 future paths have producing tasks, including reports. Existing p21 corpus has 142 closed values, 61 operations, 54 failures, 13 live variants. Future p22 corpus/fake/journey begins at task 6; activation at 11, import at 15, final audit at 18. |
+| Process and publication assumptions | Fresh Git fixture and disposable same-filesystem stage/rename/fsync probe | Probe terminated `exit_code: 0`; file, stage-directory and parent-directory fsync succeeded; target absent before rename and complete after. Linux process primitives and existing real-binary TestMain remain available. Task 14 still owes every injected fault boundary. |
+| Storage constraints | Fresh stat/disk-usage inspection | /tmp device 72, 2931380224 bytes free; repository device 2096, 980212994048 bytes free. Keep stage/target siblings; stream/discard expanded data. Materialized large import fixtures belong on disk-backed storage. These are observations, not reserved capacity. |
+| Kit pin currency | Exact rev-parse HEAD, status --porcelain, rev-list --count pin..HEAD against the named kit repository | Each terminated `exit_code: 0`: c5229617220f97ff9228df261e24718b1d1d6d89; `exit 0 (no output)` for clean status; `0` later commits. Final QA must repeat currency and as-built comparison. |
+
+### 11.3 Amended DDL, Digest, And Archive Feasibility
+
+**DDL:** The fresh probe extracted only schema.md section 1's five replacement
+pairs and its four exact SQL fences. Each 0013 replacement matched exactly
+once. It fed the unchanged migration chain plus amended SQL to
+`sqlite3 :memory:` with `.bail on` and `PRAGMA foreign_keys=ON`. SQLite CLI
+3.50.6 executed the complete chain; the runtime dependency remains
+modernc.org/sqlite v1.51.0 (embedded SQLite 3.53.1, verified in the installed
+linux/amd64 source). No migration file was written.
+
+The schema source SHA-256 was
+`1a41c65e587dfede3a48686b67bafc746f31573de51764f0e4250b0b4d2058ef`.
+Fresh evidence: 44 tables after 0001..0014; ten added tables at 0015;
+`PRAGMA table_info(run_recoveries)` marks observation_id non-null and
+`PRAGMA foreign_key_list(run_recoveries)` points it to run_observations.id.
+Independent disposable insert invocations accepted all seven codes in each
+of stops/attention_items and rejected unknown-code in each (expected and
+observed SQLite `exit_code: 1`, `CHECK constraint failed: code IN`). A null
+observation insert rejected with `NOT NULL constraint failed:
+run_recoveries.observation_id` (expected/observed SQLite `exit_code: 1`).
+All positive SQL invocations terminated 0; foreign_key_check was empty.
+
+The probe applied 0016, checked escalation table and both reference-column
+absence, applied 0016/0015 down and 0014..0001 down to zero tables, then the
+same amended full up chain. Ordered `SELECT type,name,sql FROM sqlite_master
+ORDER BY type,name` results agreed exactly across reset. Final probe token:
+`DDL feasibility PASS: 15 constraints; 16 removal; 16 -> 0 -> 16 exact schema equality; foreign_key_check empty; sqlite3 positive invocations exit_code=0`
+(terminated `exit_code: 0`). This is SQL feasibility; it does not exercise
+future Event appliers, role-free bootstrap, live/replay parity or shipped new
+migrations. Task 1/16/17 evidence remains required. The historical 42-table
+measurement remains attributed to the original assessment, not substituted
+for this session's observed 44.
+
+**Digests:** Rechecked contracts 3.1/3.2 against glossary, task 4/12 and
+VAL-014/048/049. Dirty input binds sorted UTF-8 paths and exact HEAD/index/
+worktree byte hashes/modes, including symlink target bytes, staged-restored,
+mode-only, rename-as-delete/add, deletion and untracked states. Clean is
+false/null; branch/time/absolute path/scope and operational metadata are
+excluded. Unsupported/unmerged/unobservable/changing state rejects. Existing
+Event canonical JSON sorts object keys and preserves array order; fixed
+expected bytes/hashes must be independent of the repository observer.
+
+Fresh disposable Git commands (`status --porcelain=v1 -z --untracked-files=all`,
+`diff --no-renames --name-only -z HEAD`, `ls-files --others --exclude-standard -z`,
+`show HEAD:a.txt`, `show :a.txt`, HEAD/tree and ancestry reads) each terminated
+0. They recovered distinct old/index/worktree bytes and a quoted Unicode
+filename with NUL delimiters, read a symlink target without following it, and
+preserved index/refs. This proves primitive feasibility, not a delivered
+observer. Task 4 must supply independent vectors and every rejection case;
+task 12 must observe a real unchanged dirty target and then one changed byte
+at unchanged HEAD through public/Receipt/Evidence paths. Legacy hashes remain
+verbatim and can project stale. Reconciliation separately hashes the complete
+object minus digest, including scope/checkpoint/safety, and is rechecked under
+the write lock; it never substitutes for dirty identity or liveness.
+
+**Archive boundaries:** Rechecked every 056-a..k row and task-13 ownership.
+The numeric ceilings are 1000000 entries, 64 MiB ordinary entry, 1 GiB Artifact,
+8 GiB measured cumulative bytes, 1 MiB Event line; each needs L-1/L/L+1 evidence
+at the intended limiter and a valid complete control. Safe/unsafe path, regular/
+symlink/device/directory, and unique/duplicate states have separate cases.
+The cumulative case must not fail first on an oversized individual entry.
+
+A fresh Python stdlib ZIP probe generated eight 1 GiB entries plus a one-byte
+ninth entry into compressed memory, streamed all decompressed bytes in 1 MiB
+chunks while counting/discarding, and observed the crossing at 8589934593.
+It measured 37484749 compressed bytes, 11.932 s generation, 18.661 s total,
+57636 KiB peak RSS; no expanded file was materialized. Another fresh probe
+constructed/read 1000001 entries: 94000192-byte archive, 15.571 s,
+706324 KiB peak RSS. Separate small fixtures preserved traversal, absolute,
+drive-rooted, symlink, device, directory and duplicate-entry metadata. Both
+probe sessions terminated `exit_code: 0` (86388 and 95145 polled to completion).
+
+These measurements prove environment/resource feasibility only, not Go product
+acceptance or rejection. Fresh `go doc` calls for archive/zip.File.Open,
+archive/zip.Writer.RegisterCompressor, io.LimitReader and compress/flate.BestSpeed
+each terminated 0; installed stdlib ZIP64 writer support was inspected. Task 13
+uses Go stdlib, generates its own fixtures per run and proves its actual
+measured-byte limiter. Forged raw ZIP rejected before streaming remains only
+corruption evidence; the original failed construction is not erased.
+
+### 11.4 Review Cadence And Human Feasibility
+
+The six windows remain 1–3, 4–6, 7–9, 10–12, 13–15, 16–18. Reviews after
+tasks **3,6,9,12,15,18** go to review-1.md through review-6.md. The independent
+QA Lead checkpoint at `qa/checkpoint-after-task-12.md` is additional to
+review-4 and must PASS before task 13; task-13's start condition says so.
+It reruns recovery, known-live force and unknown liveness, Stop disposition,
+budget atomicity, activation both directions and freshness, then refreshes
+import fault-injection/environment feasibility before archive implementation.
+Task 6's early subprocess journey and shared fake must already be executing.
+Required repair re-reviews remain fresh and independent.
+
+Built `/tmp/fid` help was executed for run/start/claim/resume/activation status/
+export/create/validate and root help; each terminated 0. Disposable `git init`
+and `fid init` plus JSON capabilities established a usable Human fixture setup.
+Use a valid short directory basename or explicit `fid init --prefix QA` in
+generated instructions; the fresh successful invocation printed
+`initialized fid project in .fid/` (terminated `exit_code: 0`).
+
+All six Human steps were checked for an available inspection surface and
+task-18 fixture/instruction owner: HUMAN-01a/b use fresh resume and distinguish
+adoption from proof; HUMAN-02a/b use paired activation status/recovery views;
+HUMAN-03a/b use imported identity/history and remaining intervention views.
+Task 18 must produce actual disposable checkpoints and exact invocation IDs;
+QA must verify those setup steps when delivered. Future recovery/import leaves
+and p22 fixtures are not present yet and receive no PASS. Only the Human judges
+VAL-076..078. Held-out scenarios remain N/A; no evaluator material was read.
+
+### 11.5 Retained Failures, Probe Corrections, And Disposition
+
+R-14 remains an open implementation obligation. Preserve the original
+`--- FAIL: TestGateRunRecordsExactNonSuccessTerminalOutcomes/signaled` and
+`FAIL github.com/mbell-nzl/fid/cmd/fid 11.016s` from the full benchmark gate
+(terminated `exit_code: 1`), and the saturated timed_out failure
+(terminated `exit_code: 1`). The historical later green is not a repair.
+Fresh blame at gate_run_test.go:225..233 confirms b694991 introduced both
+cases and timeout_ms=1; 76ad781 added only the signal case's 10000 ms timeout.
+Both commits were freshly proven ancestors of phase base 89d964a (each
+merge-base --is-ancestor terminated 0). DEC-186's provenance correction is
+accepted without editing R-14's original wording.
+
+This readiness session also preserves its unsuccessful scratch attempts:
+
+- Help audit attempt 1 terminated `exit_code: 1` with `AssertionError` because
+  it looked for -coverprofile in `go help build`. Moving that lookup to the
+  documented `go help testflag` produced `missing=[]` for every flag; the
+  corrected audit terminated 0. No required product command changed.
+- DDL extraction attempts 1/2 terminated `exit_code: 1`, `AssertionError`,
+  before executing SQL: the first pattern missed prose outside location
+  backticks; the second also selected later Event rows. Restricting extraction
+  to section 1 fixed it. Attempt 3 reached the existing chain with Python's
+  SQLite 3.46.1 and terminated 1, `sqlite3.OperationalError: near "CASE":
+  syntax error`. The exact SQL then succeeded using installed SQLite CLI
+  3.50.6 as recorded above. This was a probe/parser prerequisite correction;
+  no accepted SQL, migration, dependency or gate definition changed.
+- Bare `fid init` in a long random directory failed: `error: invalid project
+  initialization argument`. The wrapper terminated 1; a fresh reproduction
+  captured the CLI's own `exit_code: 2`. DefaultPrefix uses the directory
+  basename, which violated the existing prefix grammar. The same command in
+  a fresh directory named qa terminated 0, as did explicit `--prefix QA` in
+  a long directory. Fixture instructions now require a valid prefix. This
+  does not alter product initialization behavior or waive a gate.
+- An exploratory source search named nonexistent integration/task3_journey_test.go
+  and integration/init_test.go paths and terminated 2 with `No such file or
+  directory`. The subsequent actual file/package inventory verified the real
+  TestMain and conformance paths; neither guessed name is a required fixture.
+
+There is no new Must-fix readiness finding or blocker candidate. The existing
+R-14 implementation repair is bounded and scheduled by DEC-186; if a task-1..7
+gate encounters it, the Runner obtains the exact same-task amendment and
+required verification before retry. Readiness does not waive that failure or
+authorize QA to repair product/tests. No new escalation ID is allocated.
+
+The Runner may dispatch task 1 under existing DEC-188 authority. All 80 final
+outcomes, six reviews, the independent task-12 checkpoint, full phase gates and
+Human judgments remain due. No other agent was activated by this QA child.
+
+Preservation verification: removing only this refresh's notice and section 11
+reproduced the original QA plan bytes exactly (SHA-256
+`2cc3747035881582b1207f16ba1d609af3e05bb92094deea3bec52dd283cd504`).
+`consistency-review.md` remained
+`9faedb906f03703be43112358cbdaa10771c44bf526d043358be2536b7f8196f`;
+the contract and Runner ledger also matched their initial hashes. The
+verification terminated `exit_code: 0` with `write boundary PASS: only
+qa/qa-plan.md changed; runner ledger remains byte-identical`.
