@@ -90,8 +90,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ac827959f8359473cbd6546ac6bea1ff1fd20751`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add typed Stop and Attention facts`
