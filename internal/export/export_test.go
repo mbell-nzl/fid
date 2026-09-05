@@ -62,6 +62,9 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 		t.Fatalf("archive entries = %v, want %v", entries, wantEntries)
 	}
 	manifest := archiveManifest(t, first)
+	if schema, ok := manifest["projection_schema"].(float64); !ok || int(schema) != db.ActiveMigrationVersion {
+		t.Fatalf("manifest projection_schema = %#v, want active schema %d", manifest["projection_schema"], db.ActiveMigrationVersion)
+	}
 	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 1 {
 		t.Fatalf("manifest sources = %#v, want one canonical source", manifest["sources"])
 	}

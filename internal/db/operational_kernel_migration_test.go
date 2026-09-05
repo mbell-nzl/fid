@@ -233,7 +233,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   limits_json TEXT NOT NULL CHECK (json_valid(limits_json)),
   trust_source TEXT NOT NULL CHECK (trust_source IN (
     'active-kit-activation','fid-executed','fid-git-observation','fid-journal',
-    'phase-22-unavailable','phase-23-unavailable','phase-25-unavailable'
+    'phase-22-unavailable','phase-23-unavailable','phase-24-unavailable','phase-25-unavailable'
   ))
 )`,
 		"table:idempotency_results": `CREATE TABLE idempotency_results (
@@ -253,7 +253,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   kit_identity TEXT NOT NULL,
   backend_identity TEXT NOT NULL,
   phase INTEGER NOT NULL CHECK (phase > 0),
-  status TEXT NOT NULL CHECK (status IN ('prepared','staged','committed','finalized','aborted')),
+  status TEXT NOT NULL CHECK (status IN ('prepared','staged','committed','finalized','aborted','superseded')),
   point_of_no_return INTEGER NOT NULL DEFAULT 0 CHECK (point_of_no_return IN (0, 1)),
   direction TEXT NOT NULL CHECK (direction = 'activate'),
   created_at DATETIME NOT NULL,
@@ -393,12 +393,12 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   scope_json TEXT NOT NULL CHECK (json_valid(scope_json)),
   mode TEXT NOT NULL CHECK (mode = 'mutation'),
   version INTEGER NOT NULL CHECK (version > 0),
-  status TEXT NOT NULL CHECK (status IN ('active','released','expired')),
+  status TEXT NOT NULL CHECK (status IN ('active','released','expired','superseded')),
   acquired_at DATETIME NOT NULL,
   expires_at DATETIME NOT NULL,
   released_at DATETIME,
   release_reason TEXT CHECK (release_reason IS NULL OR release_reason IN (
-    'completed','failed','operator-released'
+    'completed','failed','operator-released','interrupted','recovery-superseded','abandoned'
   )),
   FOREIGN KEY (envelope_id, envelope_revision) REFERENCES envelope_revisions(envelope_id, revision)
 )`,
@@ -414,7 +414,7 @@ func expectedOperationalKernelSchemaObjects() map[string]string {
   actor_id TEXT NOT NULL,
   start_repository_json TEXT NOT NULL CHECK (json_valid(start_repository_json)),
   terminal_repository_json TEXT CHECK (terminal_repository_json IS NULL OR json_valid(terminal_repository_json)),
-  status TEXT NOT NULL CHECK (status IN ('active','succeeded','failed','abandoned')),
+  status TEXT NOT NULL CHECK (status IN ('active','succeeded','failed','abandoned','interrupted')),
   started_at DATETIME NOT NULL,
   ended_at DATETIME,
   FOREIGN KEY (envelope_id, envelope_revision) REFERENCES envelope_revisions(envelope_id, revision)

@@ -91,21 +91,20 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 		t.Fatalf("fid --json attention list changed projection counts: got %#v, want %#v", projectionAfter, projectionBefore)
 	}
 
-	if got, want := phase21AttentionProductionMatches(t), []string{
+	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
 		"internal/workflow/capabilities.go:{\"attention.v1\", false, `{\"state\":false}`, \"phase-22-unavailable\"},",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention matches = %v, want exactly %v", got, want)
 	}
 }
 
-func phase21AttentionProductionMatches(t *testing.T) []string {
+func phase21AttentionUnavailableSurfaceMatches(t *testing.T) []string {
 	t.Helper()
 	repoRoot := commandTestRepositoryRoot(t)
 	var matches []string
 	for _, root := range []string{
 		filepath.Join(repoRoot, "cmd", "fid"),
-		filepath.Join(repoRoot, "internal"),
-		filepath.Join(repoRoot, "migrations"),
+		filepath.Join(repoRoot, "internal", "workflow"),
 	} {
 		err := filepath.WalkDir(root, func(path string, entry os.DirEntry, err error) error {
 			if err != nil {

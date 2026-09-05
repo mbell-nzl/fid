@@ -133,7 +133,7 @@ func Create(options CreateOptions) (Summary, error) {
 		ProjectID:         project.ProjectID,
 		EventCount:        eventCount,
 		TerminalEventHash: terminalHash,
-		ProjectionSchema:  14,
+		ProjectionSchema:  fiddb.ActiveMigrationVersion,
 		Capabilities:      capabilitySnapshot(),
 		Sources:           sources,
 		Entries:           manifestEntries,
@@ -150,7 +150,7 @@ func Create(options CreateOptions) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
-	return Summary{ArchivePath: options.ArchivePath, ArchiveDigest: archiveDigest, ManifestSchema: manifestSchema, ProjectID: project.ProjectID, EventCount: eventCount, TerminalEventHash: terminalHash, ProjectionSchema: 14, EntryCount: len(entries)}, nil
+	return Summary{ArchivePath: options.ArchivePath, ArchiveDigest: archiveDigest, ManifestSchema: manifestSchema, ProjectID: project.ProjectID, EventCount: eventCount, TerminalEventHash: terminalHash, ProjectionSchema: fiddb.ActiveMigrationVersion, EntryCount: len(entries)}, nil
 }
 
 // Validate checks one archive without importing, repairing, or writing project state.
@@ -260,7 +260,7 @@ func decodeManifest(data []byte) (manifest, []Check) {
 		return manifest{}, []Check{check("manifest-invalid", "manifest.json", "manifest is not a closed JSON object")}
 	}
 	canonical, err := journal.MarshalCanonicalJSON(decoded)
-	if err != nil || !bytes.Equal(canonical, data) || decoded.Schema != manifestSchema || decoded.ProjectID == "" || decoded.EventCount < 1 || decoded.TerminalEventHash == "" || decoded.ProjectionSchema != 14 {
+	if err != nil || !bytes.Equal(canonical, data) || decoded.Schema != manifestSchema || decoded.ProjectID == "" || decoded.EventCount < 1 || decoded.TerminalEventHash == "" || decoded.ProjectionSchema != fiddb.ActiveMigrationVersion {
 		return manifest{}, []Check{check("manifest-invalid", "manifest.json", "manifest fields are invalid or noncanonical")}
 	}
 	return decoded, nil
