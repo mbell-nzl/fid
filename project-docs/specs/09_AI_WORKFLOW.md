@@ -452,7 +452,18 @@ Responsibilities:
     ID to the exact-bound ordinary `Repair authority`. A direct schema-v2
     TRIAGE `REPAIR` may replace the active `needs-repair` dispatch that returned
     its blocker candidate only when the bound recovery keeps the same task;
-    other overlaps remain invalid. Every TRIAGE ID and exact verdict
+    other overlaps remain invalid. Under DEC-190, a later schema-v2 ordinary
+    REPAIR TRIAGE may correct an unconsumed ordinary REPAIR TRIAGE for the same
+    task and dispatch attempt. An active continuation still retains its trigger
+    and next attempt; the correcting external TRG binds the eventual recovery.
+    This correction cannot replace a control directive or reset a budget.
+    A normal RUN-RESUME for that same task may precede the correction or bound
+    recovery, with all STOP-only fields `N/A`, preserving pending authority.
+    Task-prefixed triggers remain valid. Review-form triggers must name the
+    active owning review, use `qa-rework`, and begin their source with the exact
+    owning task token followed by `-`, `:`, or end of value. This identity rule
+    also applies at budget/session triage and STOP resume boundaries.
+    Every TRIAGE ID and exact verdict
     must match that log; TRG/ESC identity is bound to the ledger phase. It
     rejects STOP without its exact preceding TRIAGE BLOCK/ESC and binds
     RUN-RESUME to the exact next task, trigger, category, mode, and attempt.

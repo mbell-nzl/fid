@@ -2,7 +2,7 @@
 name: tech-lead
 description: Plans implementation phases and wraps them up. Writes task specs, records decisions, and never writes product code.
 tools: Read, Glob, Grep, Write, Edit, Bash
-disallowedTools: Bash, Agent
+disallowedTools: Agent
 model: opus
 effort: xhigh
 ---

@@ -62,6 +62,11 @@
   implementation of that capability. Replace only when owning semantics qualify.
 - DEC-178: shipped migration SQL and canonical slice DDL must agree exactly.
 - DEC-002: autonomous TL-Lite resume remains enabled under the current workflow.
+- DEC-190: separate Human-authorized verifier maintenance resolves ESC-22-001;
+  ordinary pending-triage correction and normal restart retain task/attempt
+  authority, and active owning-review triggers work across recovery boundaries.
+- DEC-191: canonical prompts retain the committed Codex model choices and
+  the TL Bash capability; generated provider copies are synchronized.
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 

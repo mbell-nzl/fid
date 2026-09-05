@@ -336,6 +336,64 @@
   `internal/evidence/executor.go:59-80`; `internal/evidence/policy.go:147-174`;
   `cmd/fid/live_output_test.go:43-107`; DEC-162/165/166/167/173/175/181.
 
+### DEC-190: Repair the protected sequence verifier and reconcile ESC-22-001
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED under the Human instruction to do what is necessary to
+  resolve the repeated Phase 22 stops. This is separate protected workflow
+  maintenance authority, not a normal task-2 control-conformance directive.
+- **Scope:** `project-docs/tools/workflow-sequence-lint.sh`, its shell regression
+  drills, workflow specification/template/tool documentation, and the Phase 22
+  decision, escalation, progress, handoff and repair-evidence records. The
+  run ledger may change only through the canonical append transaction.
+- **Contract:** A schema-v2 ordinary REPAIR triage may correct another
+  unconsumed ordinary REPAIR triage for the same originating task at the same
+  dispatch attempt. It must match its unique external record. If an active
+  continuation exists, the correction retains that continuation's trigger and
+  next attempt; its eventual recovery binds the correcting TRG and all five
+  authority fields. This does not permit cross-task substitution, control
+  directive replacement, budget resets, or skipping recovery/QA completion.
+- **Review identity:** Task-prefixed signatures remain accepted. A review-form
+  signature is accepted when it names the active owning review, has category
+  `qa-rework`, and its source begins with the exact owning task token (followed
+  by `-`, `:`, or end of value). The same identity rule applies at triage,
+  recovery-budget/session triage, and STOP resume boundaries.
+- **Runner restart:** A normal schema-v2 RUN-RESUME may reconcile a pending
+  ordinary triage for its same task, with all STOP-only fields `N/A`. It leaves
+  the pending authority and continuation untouched. It cannot replace the
+  mandatory recovery bound by a STOP resume or skip a required STOP.
+- **Resolution route:** Preserve TRG-22-006 and the existing ESC evidence.
+  Reproduce the defects, run red/green boundary regressions and the complete
+  mechanical workflow drills, then verify the real Phase 22 append sequence.
+  Since neither rejected BLOCK nor STOP was persisted, do not invent either
+  event or a STOP-resume tuple. Append a normal RUN-RESUME, TRG-22-005, and its
+  bound task-2 recovery at attempt 2; close ESC-22-001 only after canonical
+  append receipts. DEC-189 remains the product-test repair authority.
+- **Limits:** No product code, product tests, goldens, dependencies, accepted
+  product gates, task/VAL definitions, or scope verifier changes. Product
+  execution and independent re-review remain under the approved phase roles.
+- **Evidence and exact maintenance gates:**
+  `project-docs/docs/reviews/2026-09-06-phase-22-workflow-recovery.md`.
+
+### DEC-191: Preserve committed role configuration in canonical sources
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED under the same Human workflow-recovery instruction.
+- **Cause:** The required workflow lint reports generated prompt drift.
+  `cbeadd3c8f06adee3a7e4be6fd4920d23cff4077` changed only generated Codex model
+  routing, and `3e06f12fe4ae42e2694958043b95741bbb2c5c8a` added Bash only to
+  the generated Claude TL tools while leaving Bash in `disallowedTools`.
+- **Resolution:** Record the already committed model choices in canonical
+  `project-docs/agents/phase-runner.md`, `qa-lead.md`, and `tech-lead.md`.
+  Preserve the Human's TL Bash addition in the canonical source and remove its
+  contradictory Bash denial. TL's existing role prohibition on product
+  implementation remains binding; shell access enables diagnosis/verification.
+  Run the normal agent generator, then the byte-identical workflow lint.
+- **Scope:** Those three canonical prompts and their generated provider copies,
+  plus maintenance evidence. No model migration is selected, no root config is
+  changed, and no product/task/gate semantics change. This is an explicit
+  maintenance extension, outside normal isolated control-conformance repair.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

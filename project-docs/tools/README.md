@@ -47,6 +47,14 @@ control-conformance cannot repair `workflow-control-scope-lint.sh` or
 `workflow-sequence-lint.sh`; either verifier requires separate protected
 decision authority.
 
+DEC-190 covers ordinary schema-v2 correction of an unconsumed triage for the
+same task and attempt, and normal same-task Runner restart without clearing
+that pending authority. A review trigger must name the active owning review
+and exact task token. The correction retains continuation identity and binds
+the replacement external authority; it cannot replace control directives or
+reset recovery budgets. `drills/review-recovery.sh` tests these boundaries
+through the append entrypoint and runs as part of the mechanical drill suite.
+
 After every control scope PASS, fast-forward, append REPAIR, and clean up. For
 nonresolved control repair, increment attempt count, use the prior integrated
 HEAD as the next runner-owned base, and preserve every semantic directive

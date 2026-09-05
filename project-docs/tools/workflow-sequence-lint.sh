@@ -385,6 +385,47 @@ function valid_commit(id) {
   return length(id) == 40 && id !~ /[^0-9a-f]/
 }
 
+function trigger_matches_task(trigger, task, prefix, suffix) {
+  if (task !~ /^task-[0-9]+[a-z]*$/) {
+    return 0
+  }
+  if (index(trigger, task ":") == 1) {
+    return 1
+  }
+  prefix = review_id ":qa-rework:" task
+  if (!review_open || !(task in review_owner_position) ||
+      index(trigger, prefix) != 1) {
+    return 0
+  }
+  suffix = substr(trigger, length(prefix) + 1)
+  return suffix == "" || suffix ~ /^[-:]/
+}
+
+function pending_triage_reconciliation() {
+  if (!event_directive_v2 || stopped || resume_recovery_pending ||
+      latest_triage_verdict != "REPAIR" || triage_session_liveness_pending) {
+    return 0
+  }
+  if (event == "RUN-RESUME") {
+    return event_continuing_task == latest_triage_task
+  }
+  if (event != "TRIAGE" || event_verdict != "REPAIR" ||
+      event_originating_task != latest_triage_task ||
+      event_attempt != latest_triage_attempt) {
+    return 0
+  }
+  if (recovery_task == "") {
+    return 1
+  }
+  if (event_originating_task != recovery_task || recovery_mode != "task-scope") {
+    return 0
+  }
+  return recovery_stage == "needs-repair" ||
+         (recovery_stage == "needs-continuation" &&
+          event_trigger_signature == recovery_trigger &&
+          event_attempt + 0 == recovery_attempt + 1)
+}
+
 function finish_event() {
   event_strict = strict || event_contract == "v2" || event_directive_schema != ""
   event_directive_strict = directive_strict || event_directive_schema == "v1" || event_directive_schema == "v2"
@@ -407,7 +448,8 @@ function finish_event() {
   if (resume_recovery_pending && event != "" && event != "TASK-RECOVERY") {
     invalid("RUN-RESUME must be followed by its bound TASK-RECOVERY before " event)
   }
-  if (triage_repair_pending && event != "" && event != "TASK-RECOVERY") {
+  if (triage_repair_pending && event != "" && event != "TASK-RECOVERY" &&
+      !pending_triage_reconciliation()) {
     invalid("TRIAGE REPAIR must be followed by its bound TASK-RECOVERY before " event)
   }
   if (event_strict && event == "REVIEW" && event_outcome !~ /^(PASS|REPAIR|BLOCK)$/) {
@@ -922,7 +964,7 @@ function finish_event() {
       invalid("TRIAGE is missing Triage log")
     }
     if (event_directive_v2) {
-      if (index(event_trigger_signature, event_originating_task ":") != 1) {
+      if (!trigger_matches_task(event_trigger_signature, event_originating_task)) {
         invalid("schema v2 TRIAGE Originating task does not match Trigger signature")
       }
       if (event_verdict ~ /^REPAIR/) {
@@ -938,13 +980,13 @@ function finish_event() {
     }
     if (recovery_stage == "needs-triage" &&
         (event_trigger_signature != recovery_trigger ||
-         index(event_trigger_signature, recovery_task ":") != 1 ||
+         !trigger_matches_task(event_trigger_signature, recovery_task) ||
          event_attempt != recovery_attempt)) {
       invalid("exhausted no-progress recovery TRIAGE changed task, trigger, or attempt")
     }
     if (recovery_stage == "needs-session-triage" &&
         (event_trigger_signature != recovery_trigger ||
-         index(event_trigger_signature, recovery_task ":") != 1 ||
+         !trigger_matches_task(event_trigger_signature, recovery_task) ||
          event_attempt != recovery_attempt)) {
       invalid("orchestration session-liveness TRIAGE changed task, trigger, or attempt")
     }
@@ -972,7 +1014,7 @@ function finish_event() {
       if (event_attempt + 0 != latest_triage_attempt + 1) {
         invalid("RUN-RESUME Attempt count must increment its governing TRIAGE")
       }
-      if (index(event_trigger_signature, event_continuing_task ":") != 1) {
+      if (!trigger_matches_task(event_trigger_signature, event_continuing_task)) {
         invalid("RUN-RESUME Continuing task does not match its Trigger signature")
       }
       if (event_directive_v2 &&
