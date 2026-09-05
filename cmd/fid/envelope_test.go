@@ -134,6 +134,9 @@ func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, s
 		profileDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "envelope-builders", []any{map[string]any{
 			"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/envelope-builders", "session_ref": nil,
 			"capabilities": authorityCapabilities(),
+		}, map[string]any{
+			"actor_id": "actor-harness", "actor_type": "service", "producer": "activated-harness", "provenance_ref": "activation:profile/envelope-harness", "session_ref": nil,
+			"capabilities": []string{"run.observe"},
 		}})
 		return workspace, []string{issue.Result.Issue.ID, activationID, profileDigest}
 	})
@@ -168,8 +171,8 @@ func gateDefinitionsForTest(modifyDefinition func(map[string]any)) []any {
 
 func authorityCapabilities() []string {
 	return []string{
-		"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
-		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.start",
+		"artifact.verify", "claim.acquire", "claim.expire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
+		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.observe", "run.start",
 	}
 }
 

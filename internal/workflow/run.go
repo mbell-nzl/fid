@@ -18,12 +18,19 @@ const (
 	runFinishAction = "run.finish"
 )
 
+type Executor struct {
+	ID     string `json:"id"`
+	Source string `json:"source"`
+}
+
 type RunStartRequest struct {
 	IssueID          string     `json:"issue_id"`
 	EnvelopeID       string     `json:"envelope_id"`
 	EnvelopeRevision int        `json:"envelope_revision"`
 	ClaimID          string     `json:"claim_id"`
 	ClaimVersion     int        `json:"claim_version"`
+	Executor         Executor   `json:"executor"`
+	ObligationID     *string    `json:"obligation_id"`
 	Repository       Repository `json:"repository"`
 }
 
@@ -49,6 +56,9 @@ type Run struct {
 	EnvelopeRevision   int         `json:"envelope_revision"`
 	ClaimID            string      `json:"claim_id"`
 	ClaimVersion       int         `json:"claim_version"`
+	Version            int         `json:"version"`
+	Executor           Executor    `json:"executor"`
+	ObligationID       *string     `json:"obligation_id"`
 	ActorID            string      `json:"actor_id"`
 	StartRepository    Repository  `json:"start_repository"`
 	TerminalRepository *Repository `json:"terminal_repository"`
@@ -91,6 +101,18 @@ type RunInvalidError struct{ Reason string }
 
 func (err *RunInvalidError) Error() string { return err.Reason }
 
+type RunVersionConflictError struct {
+	RunID           string
+	ExpectedVersion int
+	ActualVersion   int
+}
+
+func (err *RunVersionConflictError) Error() string { return "run version conflict" }
+
+type DuplicateRunExecutorError struct{ ExecutorID string }
+
+func (err *DuplicateRunExecutorError) Error() string { return "run executor already exists" }
+
 func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, error) {
 	if err := validateRunOptions(options); err != nil || !validRunStartRequest(request) {
 		return RunMutationResult{}, invalidRun("run start input is invalid")
@@ -115,7 +137,7 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		if err != nil {
 			return journal.Event{}, Run{}, err
 		}
-		run := Run{ID: id, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ClaimID: request.ClaimID, ClaimVersion: request.ClaimVersion, ActorID: options.ActorID, StartRepository: request.Repository, Status: "active", Budgets: envelope.Budgets, StartedAt: now.Format(time.RFC3339Nano)}
+		run := Run{ID: id, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ClaimID: request.ClaimID, ClaimVersion: request.ClaimVersion, Version: 1, Executor: request.Executor, ObligationID: request.ObligationID, ActorID: options.ActorID, StartRepository: request.Repository, Status: "active", Budgets: envelope.Budgets, StartedAt: now.Format(time.RFC3339Nano)}
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.started", runStartAction, runStartEffects(run))
 		return event, run, err
 	})
@@ -237,6 +259,21 @@ func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string,
 	if err := AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: runStartAction, Capability: runStartAction, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, Revision: request.EnvelopeRevision}); err != nil {
 		return err
 	}
+	if request.ObligationID != nil {
+		var found int
+		if err := conn.QueryRow(`SELECT 1 FROM envelope_obligations WHERE id = ? AND envelope_id = ? AND revision = ?`, *request.ObligationID, request.EnvelopeID, request.EnvelopeRevision).Scan(&found); err != nil {
+			if err == sql.ErrNoRows {
+				return invalidRun("run obligation binding is invalid")
+			}
+			return fmt.Errorf("load run obligation: %w", err)
+		}
+	}
+	var existingRun string
+	if err := conn.QueryRow(`SELECT run_id FROM run_runtime WHERE executor_id = ?`, request.Executor.ID).Scan(&existingRun); err == nil {
+		return &DuplicateRunExecutorError{ExecutorID: request.Executor.ID}
+	} else if err != sql.ErrNoRows {
+		return fmt.Errorf("load run executor: %w", err)
+	}
 	var id string
 	err = conn.QueryRow(`SELECT id FROM runs WHERE claim_id = ? AND status = 'active'`, request.ClaimID).Scan(&id)
 	if err == nil {
@@ -252,7 +289,7 @@ func runStartEffects(run Run) []journal.Effect {
 	effects := []journal.Effect{{Op: "insert", Table: "runs", PK: map[string]any{"id": run.ID}, Values: map[string]any{
 		"issue_id": run.IssueID, "envelope_id": run.EnvelopeID, "envelope_revision": run.EnvelopeRevision, "claim_id": run.ClaimID, "claim_version": run.ClaimVersion, "actor_id": run.ActorID,
 		"start_repository_json": string(mustRunJSON(run.StartRepository)), "terminal_repository_json": nil, "status": run.Status, "started_at": run.StartedAt, "ended_at": nil,
-	}}}
+	}}, {Op: "insert", Table: "run_runtime", PK: map[string]any{"run_id": run.ID}, Values: map[string]any{"version": run.Version, "executor_id": run.Executor.ID, "obligation_id": run.ObligationID}}}
 	for _, budget := range run.Budgets {
 		effects = append(effects, journal.Effect{Op: "insert", Table: "run_budget_bindings", PK: map[string]any{"run_id": run.ID, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustRunJSON(budget))}})
 	}
@@ -279,7 +316,7 @@ func validateRunOptions(options RunOptions) error {
 }
 
 func validRunStartRequest(request RunStartRequest) bool {
-	return strings.TrimSpace(request.IssueID) != "" && strings.TrimSpace(request.EnvelopeID) != "" && request.EnvelopeRevision == 1 && strings.TrimSpace(request.ClaimID) != "" && request.ClaimVersion > 0
+	return strings.TrimSpace(request.IssueID) != "" && strings.TrimSpace(request.EnvelopeID) != "" && request.EnvelopeRevision == 1 && strings.TrimSpace(request.ClaimID) != "" && request.ClaimVersion > 0 && strings.TrimSpace(request.Executor.ID) != "" && request.Executor.Source == "activated-harness"
 }
 
 func validRunFinishRequest(request RunFinishRequest) bool {

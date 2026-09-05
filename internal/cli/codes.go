@@ -56,6 +56,7 @@ const (
 	CodeClaimStale                    Code = "claim-stale"
 	CodeRunNotFound                   Code = "run-not-found"
 	CodeRunInactive                   Code = "run-inactive"
+	CodeRunVersionConflict            Code = "run-version-conflict"
 	CodeReceiptNotFound               Code = "receipt-not-found"
 	CodeEvidenceNotFound              Code = "evidence-not-found"
 	CodeEvidenceInvalid               Code = "evidence-invalid"
@@ -90,7 +91,7 @@ const (
 
 type Subject struct {
 	Type SubjectType `json:"type"`
-	ID   string      `json:"id"`
+	ID   any         `json:"id"`
 }
 
 type RedactionPolicy string
@@ -184,7 +185,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeLinkNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectLink},
 		stringField("from_type"), stringField("from_id"), stringField("relation"), stringField("to_type"), stringField("to_id")),
 	CodeWorkflowNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringField("id")),
-	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow},
+	CodeDuplicateEntity: definition(CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow, SubjectRun},
 		stringField("entity_type"), objectField("identity", stringsField("fields"), stringsField("values"))),
 	CodeStateConflict:   definition(CategoryConflict, false, []SubjectType{SubjectIssue}, integerField("expected_revision"), integerField("actual_revision")),
 	CodeLockUnavailable: definition(CategoryConflict, true, nil, stringField("lock_path")),
@@ -220,6 +221,7 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeClaimStale:           definition(CategoryConflict, false, []SubjectType{SubjectClaim}, stringField("issue_id"), nullableStringField("claim_id"), nullableIntegerField("expected_version"), nullableIntegerField("actual_version"), nullableStringField("expires_at")),
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
+	CodeRunVersionConflict:   definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), integerField("expected_version"), integerField("actual_version")),
 	CodeReceiptNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
 	CodeEvidenceNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
 	CodeEvidenceInvalid:      definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
@@ -242,7 +244,7 @@ var registeredCodes = []Code{
 	CodeActivationConflict,
 	CodeActivationRecoveryUnavailable,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
-	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive,
+	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,
 	CodeObligationUnsatisfied,

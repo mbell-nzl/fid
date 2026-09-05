@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -110,10 +111,16 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	activateInput := p21Input(t, workspace, "envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", activateInput, "--idempotency-key", "p21-envelope-activate")
 
-	claimInput := p21Input(t, workspace, "claim-acquire", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/integration"}}, "ttl_seconds": 60})
-	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", claimInput, "--idempotency-key", "p21-claim-acquire")
+	claimRequest := map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/integration"}}, "ttl_seconds": 60}
+	claimInput := p21Input(t, workspace, "claim-acquire", claimRequest)
+	otherClaimInput := p21Input(t, workspace, "claim-acquire-race", claimRequest)
+	beforeClaimRace := p21JournalEventCount(t, workspace)
+	claim := p21ConcurrentClaim(t, binary, workspace, claimInput, otherClaimInput)
+	if afterClaimRace := p21JournalEventCount(t, workspace); afterClaimRace != beforeClaimRace+1 {
+		t.Fatalf("two-process Claim race appended %d Events, want one", afterClaimRace-beforeClaimRace)
+	}
 	claimID := p21PathString(t, claim, "result", "claim", "id")
-	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "repository": repository})
+	runInput := p21Input(t, workspace, "run-start", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository})
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", runInput, "--idempotency-key", "p21-run-start")
 	runID := p21PathString(t, run, "result", "run", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "transition", issueID, "--to", "started", "--actor", "agent:actor-builder", "--expected-revision", "1", "--idempotency-key", "p21-transition-nonterminal")
@@ -256,6 +263,48 @@ func p21Input(t *testing.T, workspace, name string, value map[string]any) string
 		t.Fatalf("write %s input: %v", name, err)
 	}
 	return path
+}
+
+func p21ConcurrentClaim(t *testing.T, binary, workspace, firstInput, secondInput string) map[string]any {
+	t.Helper()
+	type process struct {
+		stdout bytes.Buffer
+		stderr bytes.Buffer
+		cmd    *exec.Cmd
+	}
+	arguments := [][]string{
+		{"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", firstInput, "--idempotency-key", "p21-claim-race-a"},
+		{"--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", secondInput, "--idempotency-key", "p21-claim-race-b"},
+	}
+	processes := make([]process, len(arguments))
+	for index, args := range arguments {
+		processes[index].cmd = exec.Command(binary, args...)
+		processes[index].cmd.Dir = workspace
+		processes[index].cmd.Stdout = &processes[index].stdout
+		processes[index].cmd.Stderr = &processes[index].stderr
+		if err := processes[index].cmd.Start(); err != nil {
+			t.Fatalf("start Claim contender %d: %v", index, err)
+		}
+	}
+	winners := []map[string]any{}
+	for index := range processes {
+		err := processes[index].cmd.Wait()
+		if err == nil {
+			var response map[string]any
+			if decodeErr := json.Unmarshal(processes[index].stdout.Bytes(), &response); decodeErr != nil {
+				t.Fatalf("decode winning Claim contender %d: %v; stdout=%q", index, decodeErr, processes[index].stdout.String())
+			}
+			winners = append(winners, response)
+			continue
+		}
+		if code := processExitCode(t, err); code != 4 || processes[index].stdout.Len() != 0 || !strings.Contains(processes[index].stderr.String(), `"code":"claim-conflict"`) {
+			t.Fatalf("losing Claim contender %d = exit %d stdout=%q stderr=%q, want typed conflict/no stdout", index, code, processes[index].stdout.String(), processes[index].stderr.String())
+		}
+	}
+	if len(winners) != 1 {
+		t.Fatalf("two real Claim processes produced %d winners, want one", len(winners))
+	}
+	return winners[0]
 }
 
 func p21Run(t *testing.T, binary, workspace string, args ...string) map[string]any {

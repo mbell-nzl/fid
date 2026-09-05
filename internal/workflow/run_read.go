@@ -87,6 +87,14 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 	if ended.Valid {
 		run.EndedAt = &ended.String
 	}
+	var obligation sql.NullString
+	if err := conn.QueryRow(`SELECT version, executor_id, obligation_id FROM run_runtime WHERE run_id = ?`, run.ID).Scan(&run.Version, &run.Executor.ID, &obligation); err != nil {
+		return Run{}, fmt.Errorf("load run runtime: %w", err)
+	}
+	run.Executor.Source = "activated-harness"
+	if obligation.Valid {
+		run.ObligationID = &obligation.String
+	}
 	rows, err := conn.Query(`SELECT budget_json FROM run_budget_bindings WHERE run_id = ? ORDER BY name`, run.ID)
 	if err != nil {
 		return Run{}, fmt.Errorf("load run budgets: %w", err)

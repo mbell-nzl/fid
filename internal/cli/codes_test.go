@@ -49,7 +49,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 			stringDetail("from_type"), stringDetail("from_id"), stringDetail("relation"), stringDetail("to_type"), stringDetail("to_id"),
 		}},
 		{CodeWorkflowNotFound, CategoryNotFound, false, []SubjectType{SubjectWorkflow}, stringDetails("id")},
-		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow}, []detailExpectation{
+		{CodeDuplicateEntity, CategoryConflict, false, []SubjectType{SubjectIssue, SubjectLabel, SubjectLink, SubjectWorkflow, SubjectRun}, []detailExpectation{
 			stringDetail("entity_type"),
 			{name: "identity", kind: detailObjectKind, children: []detailExpectation{
 				{name: "fields", kind: detailStringsKind, value: []string{"name", "colour"}},
@@ -106,6 +106,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeClaimStale, CategoryConflict, false, []SubjectType{SubjectClaim}, claimConflictDetails()},
 		{CodeRunNotFound, CategoryNotFound, false, []SubjectType{SubjectRun}, stringDetails("id")},
 		{CodeRunInactive, CategoryPrecondition, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), stringDetail("status")}},
+		{Code("run-version-conflict"), CategoryConflict, false, []SubjectType{SubjectRun}, []detailExpectation{stringDetail("run_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
 		{CodeReceiptNotFound, CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringDetails("id")},
 		{CodeEvidenceNotFound, CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringDetails("id")},
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{

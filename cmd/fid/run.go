@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	for _, operation := range []string{"run start", "run finish", "run get", "run list"} {
+	for _, operation := range []string{"run start", "run finish", "run observe", "run get", "run list"} {
 		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
 	}
 }
@@ -34,7 +34,28 @@ func newRunCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunGetCommand(), newRunListCommand())
+	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunObserveCommand(), newRunGetCommand(), newRunListCommand())
+	return cmd
+}
+
+func newRunObserveCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "observe", Short: "Record a trusted Run liveness observation.", Args: canonicalNoArgs("run.observe"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunObserveRequest
+		if err := runRequest(cmd, "run.observe", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.observe", err)
+		}
+		result, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.observe", err)
+		}
+		return writeRunObservationSuccess(cmd, result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
 }
 
@@ -189,6 +210,16 @@ func writeRunSuccess(cmd *cobra.Command, operation string, result workflow.RunMu
 	return err
 }
 
+func writeRunObservationSuccess(cmd *cobra.Command, result workflow.RunObservationResult) error {
+	if jsonMode, err := readJSONMode(cmd); err != nil {
+		return err
+	} else if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "run.observe", map[string]any{"observation": result.Observation, "run": result.Run, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Observation.ObservedAt})
+	}
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "observed Run %s\n", result.Run.ID)
+	return err
+}
+
 func runEventTime(run workflow.Run) string {
 	if run.EndedAt != nil {
 		return *run.EndedAt
@@ -208,6 +239,14 @@ func renderRunError(cmd *cobra.Command, operation string, cause error) error {
 	var inactive *workflow.RunInactiveError
 	if errors.As(cause, &inactive) {
 		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunInactive, "run is not active", &cli.Subject{Type: cli.SubjectRun, ID: inactive.RunID}, map[string]any{"run_id": inactive.RunID, "status": inactive.Status})
+	}
+	var versionConflict *workflow.RunVersionConflictError
+	if errors.As(cause, &versionConflict) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRunVersionConflict, "run version conflict", &cli.Subject{Type: cli.SubjectRun, ID: versionConflict.RunID}, map[string]any{"run_id": versionConflict.RunID, "expected_version": versionConflict.ExpectedVersion, "actual_version": versionConflict.ActualVersion})
+	}
+	var duplicateExecutor *workflow.DuplicateRunExecutorError
+	if errors.As(cause, &duplicateExecutor) {
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeDuplicateEntity, "executor identity already exists", &cli.Subject{Type: cli.SubjectRun, ID: nil}, map[string]any{"entity_type": "run", "identity": map[string]any{"fields": []string{"executor_id"}, "values": []string{duplicateExecutor.ExecutorID}}})
 	}
 	var denied *policy.EnvelopeAuthorityDeniedError
 	if errors.As(cause, &denied) {
