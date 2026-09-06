@@ -71,8 +71,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `f28ebc7766fc149c72b07a80e3e1bb90f614d3ca`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): add budget accounting core`
