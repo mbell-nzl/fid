@@ -99,8 +99,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): derive task-8 Run closure`
