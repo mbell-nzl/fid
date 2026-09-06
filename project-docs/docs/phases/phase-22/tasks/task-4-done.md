@@ -80,8 +80,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ac5e6f9bec80e06bfe5b7b33e3611a894d16038a`
 
 ## Commit subject
 
-- Pending commit
+- `feat(recovery): add repository reconciliation observation`
