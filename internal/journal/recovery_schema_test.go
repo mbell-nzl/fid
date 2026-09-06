@@ -91,12 +91,12 @@ func sqliteTableExists(t *testing.T, conn *sql.DB, table string) bool {
 
 func assertUnknownRecoveryEffect(t *testing.T, err error) {
 	t.Helper()
-	if err == nil || !strings.Contains(err.Error(), "Event-v2 \"run.closed\" does not permit effect") {
-		t.Fatalf("recovery Effect error = %v, want closed Event-v2 rejection", err)
+	if err == nil || !strings.Contains(err.Error(), "Event-v2 \"activation.resource-observed\" does not permit effect") {
+		t.Fatalf("recovery Effect error = %v, want activation Event-v2 rejection", err)
 	}
 	var corrupt *CorruptJournalError
-	if errors.As(err, &corrupt) && !strings.Contains(corrupt.Error(), "Event-v2 \"run.closed\" does not permit effect") {
-		t.Fatalf("ReplayJournal() error = %v, want closed Event-v2 rejection", err)
+	if errors.As(err, &corrupt) && !strings.Contains(corrupt.Error(), "Event-v2 \"activation.resource-observed\" does not permit effect") {
+		t.Fatalf("ReplayJournal() error = %v, want activation Event-v2 rejection", err)
 	}
 }
 
@@ -104,7 +104,7 @@ func unknownRecoveryEffectEvent() Event {
 	return Event{
 		EventID:     "EVT-20260905-000001",
 		EventSchema: EventSchemaV2,
-		EventType:   "run.closed",
+		EventType:   "activation.resource-observed",
 		OccurredAt:  time.Date(2026, time.September, 5, 0, 0, 0, 0, time.UTC),
 		ActorV2: EventActor{
 			ActorID:       "actor-recovery",

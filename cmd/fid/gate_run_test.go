@@ -198,15 +198,18 @@ func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
 	if terminal.Stream != "terminal" || terminal.Data.ReceiptID != "" || terminal.Data.Outcome != "fid-error" || terminal.Data.ExitCode != nil || terminal.Data.Signal != nil || terminal.Data.TimedOut || terminal.Data.Replayed {
 		t.Fatalf("fid-error terminal = %#v, want null Receipt and exact frame-only outcome", terminal)
 	}
-	var receipts, idempotency int
+	var attempts, receipts, idempotency int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM execution_attempts`).Scan(&attempts); err != nil {
+		t.Fatalf("count fid-error Attempts: %v", err)
+	}
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM execution_receipts`).Scan(&receipts); err != nil {
 		t.Fatalf("count fid-error Receipts: %v", err)
 	}
 	if err := conn.QueryRow(`SELECT COUNT(*) FROM idempotency_results WHERE operation_scope LIKE 'gate.run:%'`).Scan(&idempotency); err != nil {
 		t.Fatalf("count fid-error idempotency results: %v", err)
 	}
-	if receipts != 0 || idempotency != 0 {
-		t.Fatalf("fid-error Receipt/idempotency counts = %d/%d, want 0/0", receipts, idempotency)
+	if attempts != 1 || receipts != 0 || idempotency != 1 {
+		t.Fatalf("fid-error Attempt/Receipt/idempotency counts = %d/%d/%d, want 1/0/1", attempts, receipts, idempotency)
 	}
 }
 

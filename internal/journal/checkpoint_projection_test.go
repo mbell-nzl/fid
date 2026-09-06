@@ -133,10 +133,47 @@ func TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	}
 }
 
+func TestRunClosureEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
+	tests := []struct {
+		name      string
+		eventType string
+		status    string
+	}{
+		{name: "closed", eventType: "run.closed", status: "succeeded"},
+		{name: "abandoned", eventType: "run.abandoned", status: "abandoned"},
+	}
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			event := runClosureProjectionEvent(testCase.eventType, testCase.status)
+			live := openReplayDB(t, filepath.Join(t.TempDir(), "live-closure.sqlite"))
+			defer closeProjectDB(t, live)
+			seedRunClosureProjection(t, live)
+			hash, err := HashEvent(event)
+			if err != nil {
+				t.Fatalf("HashEvent() error = %v", err)
+			}
+			if err := ProjectEvent(live, ProjectionInput{Event: event, EventHash: hash, File: "2026-09-06.jsonl", Line: 1, Offset: 1}); err != nil {
+				t.Fatalf("ProjectEvent() error = %v", err)
+			}
+			liveState := runClosureProjectionState(t, live)
+
+			workspace := newReplayWorkspace(t)
+			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+			replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-closure.sqlite"))
+			defer closeProjectDB(t, replayed)
+			seedRunClosureProjection(t, replayed)
+			if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+				t.Fatalf("ReplayJournal() error = %v", err)
+			}
+			if replayState := runClosureProjectionState(t, replayed); replayState != liveState {
+				t.Fatalf("closure replay state = %q, want live state %q", replayState, liveState)
+			}
+		})
+	}
+}
+
 func TestRemainingRecoveryEventsRemainFenced(t *testing.T) {
 	for _, eventType := range []string{
-		"run.closed",
-		"run.abandoned",
 		"activation.resource-observed",
 		"activation.recovery-selected",
 		"activation.recovery-completed",
@@ -150,6 +187,63 @@ func TestRemainingRecoveryEventsRemainFenced(t *testing.T) {
 			}
 		})
 	}
+}
+
+func runClosureProjectionEvent(eventType, status string) Event {
+	event := Event{
+		EventID:     "EVT-20260906-000006",
+		EventSchema: EventSchemaV2,
+		EventType:   eventType,
+		OccurredAt:  time.Date(2026, time.September, 6, 0, 0, 0, 0, time.UTC),
+		ActorV2:     EventActor{ActorID: "agent:closure", ActorType: "agent", Producer: "fid", ProvenanceRef: "test:closure"},
+		Aggregate:   Aggregate{ID: "RUN-closure", Type: "run", Sequence: 1},
+		CommandName: strings.TrimSuffix(eventType, "d"),
+		Effects: []Effect{
+			{Op: "update", Table: "runs", PK: map[string]any{"id": "RUN-closure"}, Values: map[string]any{"status": status, "terminal_repository_json": `{}`, "ended_at": "2026-09-06T00:00:00Z"}, Preconditions: map[string]any{"status": "active"}},
+			{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": "RUN-closure"}, Values: map[string]any{"version": 2}, Preconditions: map[string]any{"version": 1}},
+		},
+	}
+	if eventType == "run.abandoned" {
+		event.CommandName = "run.abandon"
+		event.Effects = append(event.Effects, Effect{Op: "update", Table: "claims", PK: map[string]any{"id": "CLM-closure"}, Values: map[string]any{"version": 2, "status": "released", "released_at": "2026-09-06T00:00:00Z", "release_reason": "abandoned"}, Preconditions: map[string]any{"status": "active", "version": 1}})
+	}
+	return event
+}
+
+func seedRunClosureProjection(t *testing.T, conn *sql.DB) {
+	t.Helper()
+	if _, err := conn.Exec(`PRAGMA foreign_keys = OFF`); err != nil {
+		t.Fatalf("disable foreign keys for closure projection seed: %v", err)
+	}
+	statements := []string{
+		`INSERT INTO claims (id, issue_id, envelope_id, envelope_revision, actor_id, worktree_id, scope_json, mode, version, status, acquired_at, expires_at) VALUES ('CLM-closure', 'ISS-closure', 'ENV-closure', 1, 'agent:closure', 'WT-closure', '{}', 'mutation', 1, 'active', '2026-09-06T00:00:00Z', '2026-09-07T00:00:00Z')`,
+		`INSERT INTO runs (id, issue_id, envelope_id, envelope_revision, claim_id, claim_version, actor_id, start_repository_json, status, started_at) VALUES ('RUN-closure', 'ISS-closure', 'ENV-closure', 1, 'CLM-closure', 1, 'agent:closure', '{}', 'active', '2026-09-06T00:00:00Z')`,
+		`INSERT INTO run_runtime (run_id, version, executor_id, obligation_id) VALUES ('RUN-closure', 1, 'executor-closure', NULL)`,
+	}
+	for _, statement := range statements {
+		if _, err := conn.Exec(statement); err != nil {
+			t.Fatalf("seed closure projection: %v", err)
+		}
+	}
+	if _, err := conn.Exec(`PRAGMA foreign_keys = ON`); err != nil {
+		t.Fatalf("enable foreign keys after closure projection seed: %v", err)
+	}
+}
+
+func runClosureProjectionState(t *testing.T, conn *sql.DB) string {
+	t.Helper()
+	var status, terminal, ended, claimStatus, released, reason string
+	var version, claimVersion int
+	if err := conn.QueryRow(`SELECT status, terminal_repository_json, ended_at FROM runs WHERE id = 'RUN-closure'`).Scan(&status, &terminal, &ended); err != nil {
+		t.Fatalf("load closure Run: %v", err)
+	}
+	if err := conn.QueryRow(`SELECT version FROM run_runtime WHERE run_id = 'RUN-closure'`).Scan(&version); err != nil {
+		t.Fatalf("load closure runtime: %v", err)
+	}
+	if err := conn.QueryRow(`SELECT status, version, COALESCE(released_at, ''), COALESCE(release_reason, '') FROM claims WHERE id = 'CLM-closure'`).Scan(&claimStatus, &claimVersion, &released, &reason); err != nil {
+		t.Fatalf("load closure Claim: %v", err)
+	}
+	return fmt.Sprintf("%s|%s|%s|%d|%s|%d|%s|%s", status, terminal, ended, version, claimStatus, claimVersion, released, reason)
 }
 
 func checkpointedProjectionEvent() Event {
