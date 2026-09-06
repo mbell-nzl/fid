@@ -54,23 +54,25 @@
 
 - `go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: the accepted action admission rejected `run.abandon` and `run.close`.
-- `gofmt -w internal/workflow/activation.go internal/workflow/run_close_test.go && go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - PASS - `ok` (terminated `exit_code: 0`)
+- `gofmt -w internal/workflow/activation.go internal/workflow/run_close_test.go && go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 0.004s` (terminated `exit_code: 0`)
 - `gofmt -w internal/workflow/run_close_test.go && go test ./internal/workflow -run '^(TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: `RunCloseRequest`, `CloseRun`, `RunAbandonRequest`, and `AbandonRun` were undefined.
 - `go test ./internal/journal -run '^TestRunClosureEventsProjectIdenticallyLiveAndReplay$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: both accepted closure Events were rejected by their DEC-192 availability fences.
 - `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - First green attempt preserved: the Claim provenance `run-abandoned` violated the accepted DDL's closed `release_reason` domain.
-- `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' -count=1` - PASS - `ok` (terminated `exit_code: 0`)
+- `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 0.393s` (terminated `exit_code: 0`)
 - `go test ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - DEC-192 made its retained `run.closed` rejection fixture projectable, reaching `run_recoveries.prior_run_id` validation.
 - `go test ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.104s` (terminated `exit_code: 0`)
 - `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Retained `TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError` expected no idempotency record after task 8's durable pre-spawn Attempt.
 - `gofmt -w cmd/fid/gate_run_test.go && go test ./cmd/fid -run '^TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.260s` (terminated `exit_code: 0`)
-- `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - PASS - `ok` (terminated `exit_code: 0`)
+- `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 14.569s` (terminated `exit_code: 0`)
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`)
   - Root cause: `Recovery attempts` was not a typed integer, and one new `go test` receipt was not an output token. Repair: retain attempt count `3` alone and record `ok` as the exact short terminal token.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - FAIL - `FAIL report-lint found 3 failure(s)` (terminated `exit_code: 3`)
+  - Root cause: bare `ok` is too short for the report control's `go test` receipt grammar. Repair: restore the exact package output lines from the observed terminal results.
 
 ## Exact quality-gate results
 
