@@ -100,7 +100,7 @@ func renderRunRecoveryError(cmd *cobra.Command, operation string, cause error, r
 	}
 	var conflict *workflow.RecoveryStateConflictError
 	if errors.As(cause, &conflict) {
-		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRecoveryStateConflict, "recovery state conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"run_id": runID, "observation_digest": nullableRunDigest(digest), "paths": conflict.Paths, "reasons": conflict.Reasons})
+		return writeRunFailure(cmd, jsonMode, operation, cause, cli.CodeRecoveryStateConflict, "recovery state conflict", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{"run_id": runID, "observation_digest": nullableRunDigest(digest), "paths": append([]string{}, conflict.Paths...), "reasons": conflict.Reasons})
 	}
 	var unknown *workflow.ExecutorLivenessUnknownError
 	if errors.As(cause, &unknown) {

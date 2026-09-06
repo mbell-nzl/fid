@@ -3,6 +3,7 @@
 package integration
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -12,6 +13,22 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/project"
 )
+
+func TestP22RecoveryConformanceCorpusHasSharedCases(t *testing.T) {
+	fixture, err := os.ReadFile(filepath.Join("testdata", "p22_conformance", "manifest.json"))
+	if err != nil {
+		t.Fatalf("read Phase 22 recovery conformance manifest: %v", err)
+	}
+	var manifest struct {
+		Cases []json.RawMessage `json:"cases"`
+	}
+	if err := json.Unmarshal(fixture, &manifest); err != nil {
+		t.Fatalf("decode Phase 22 recovery conformance manifest: %v", err)
+	}
+	if len(manifest.Cases) == 0 {
+		t.Fatal("Phase 22 recovery conformance manifest has no shared cases")
+	}
+}
 
 func TestP22EarlyRecoveryJourney(t *testing.T) {
 	binary := integrationFIDBinary(t)

@@ -1,0 +1,14 @@
+{
+  "cases": [
+    "operations/run.observe.unknown-field.json",
+    "operations/run.observe.accepted.json",
+    "operations/run.inspect.unknown-field.json",
+    "operations/run.inspect.accepted.json",
+    "operations/run.checkpoint.unknown-field.json",
+    "operations/run.checkpoint.accepted.json",
+    "operations/claim.expire.unknown-field.json",
+    "operations/claim.expire.accepted.json",
+    "operations/run.recover.unknown-field.json",
+    "operations/run.recover.accepted.json"
+  ]
+}

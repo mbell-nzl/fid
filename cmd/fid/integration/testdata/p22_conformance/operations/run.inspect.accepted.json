@@ -1,0 +1,1 @@
+{"name":"run-inspect-accepted","operation":"run.inspect","kind":"accepted","result_fields":["run","reconciliation","liveness"],"event":false,"exit_code":0}
