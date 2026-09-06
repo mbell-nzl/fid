@@ -221,7 +221,7 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		} else {
 			cancel()
 		}
-		attempt, err := appendAttempt(lock, conn, binding, options.Request)
+		attempt, err := appendAttempt(lock, conn, binding, options, requestDigest)
 		if err != nil {
 			return err
 		}
@@ -363,7 +363,7 @@ func sameGateRepository(left, right Repository) bool {
 	return sameStringPointer(left.BaseOID, right.BaseOID) && left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameStringPointer(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
 }
 
-func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, request GateRunRequest) (Attempt, error) {
+func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, requestDigest string) (Attempt, error) {
 	id, err := journal.GenerateID("ATT", func(candidate string) (bool, error) {
 		var count int
 		err := conn.QueryRow(`SELECT COUNT(*) FROM execution_attempts WHERE id = ?`, candidate).Scan(&count)
@@ -373,11 +373,11 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Attempt{}, err
 	}
 	now := time.Now().UTC()
-	repositoryJSON, err := journal.MarshalCanonicalJSON(request.Repository)
+	repositoryJSON, err := journal.MarshalCanonicalJSON(options.Request.Repository)
 	if err != nil {
 		return Attempt{}, err
 	}
-	attempt := Attempt{ID: id, RegistrationID: binding.registration.ID, RegistrationVersion: binding.registration.Version, ObligationID: request.ObligationID, RunID: request.RunID, ActorID: binding.actor.ActorID, StartRepository: request.Repository, ResolvedPolicyDigest: binding.registration.DefinitionDigest, StartedAt: now.Format(time.RFC3339Nano)}
+	attempt := Attempt{ID: id, RegistrationID: binding.registration.ID, RegistrationVersion: binding.registration.Version, ObligationID: options.Request.ObligationID, RunID: options.Request.RunID, ActorID: binding.actor.ActorID, StartRepository: options.Request.Repository, ResolvedPolicyDigest: binding.registration.DefinitionDigest, StartedAt: now.Format(time.RFC3339Nano)}
 	chains, err := loadBudgetChains(conn, attempt.RunID)
 	if err != nil {
 		return Attempt{}, err
@@ -386,18 +386,26 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if err != nil {
 		return Attempt{}, err
 	}
-	effects := []journal.Effect{{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}}}
+	pendingResult, err := journal.MarshalCanonicalJSON(map[string]any{"attempt": attempt, "idempotency_key": options.IdempotencyKey, "receipt": nil, "replayed": false})
+	if err != nil {
+		return Attempt{}, fmt.Errorf("run gate: canonicalize pending Attempt result: %w", err)
+	}
+	effects := []journal.Effect{
+		{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}},
+		{Op: "insert", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"request_digest": requestDigest, "result_entity_id": attempt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(pendingResult), "created_at": "<occurred-at>"}},
+	}
 	budgetEffects, err := appendFIDBudgetEffects(conn, chains, charges, attempt.RunID, binding.actor.ActorID)
 	if err != nil {
 		return Attempt{}, err
 	}
 	effects = append(effects, budgetEffects...)
-	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Repository: repositoryEventValue(request.Repository), Effects: effects}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Idempotency: &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}, Repository: repositoryEventValue(options.Request.Repository), Effects: effects}
 	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return Attempt{}, err
 	}
 	fillCreatedEventIDs(prepared.Effects, prepared.EventID)
+	fillAttemptIdempotencyEventValues(prepared.Effects, prepared.EventID, prepared.OccurredAt)
 	if _, err := journal.CommitEvent(lock, conn, prepared); err != nil {
 		return Attempt{}, err
 	}
@@ -566,7 +574,9 @@ func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateR
 
 func replayGateRunResult(conn *sql.DB, options GateRunOptions, outcome journal.IdempotencyOutcome, result *GateRunResult) error {
 	var stored struct {
-		Denial *BudgetDenial `json:"denial"`
+		Attempt *Attempt      `json:"attempt"`
+		Denial  *BudgetDenial `json:"denial"`
+		Receipt *Receipt      `json:"receipt"`
 	}
 	if err := json.Unmarshal([]byte(outcome.ResultJSON), &stored); err != nil {
 		return fmt.Errorf("decode gate replay result: %w", err)
@@ -576,6 +586,13 @@ func replayGateRunResult(conn *sql.DB, options GateRunOptions, outcome journal.I
 		stored.Denial.EventOccurredAt, _ = gateEventOccurredAt(options.WorkspaceRoot, outcome.EventID)
 		*result = GateRunResult{Denial: stored.Denial, EventID: outcome.EventID, EventOccurredAt: stored.Denial.EventOccurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
 		return &BudgetAdmissionDeniedError{Code: budgetDenialCode(stored.Denial), Denial: *stored.Denial}
+	}
+	if stored.Receipt == nil {
+		if stored.Attempt == nil {
+			return fmt.Errorf("decode gate replay result: missing Attempt and Receipt")
+		}
+		*result = GateRunResult{Attempt: *stored.Attempt, EventID: outcome.EventID, IdempotencyKey: options.IdempotencyKey, Replayed: true}
+		return fmt.Errorf("run gate: Attempt %q has no observed terminal Receipt", stored.Attempt.ID)
 	}
 	receipt, err := loadReceipt(conn, outcome.EntityID)
 	if err != nil {
@@ -675,15 +692,37 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 	if err != nil {
 		return Receipt{}, "", err
 	}
-	idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
-	outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
-		fillCreatedEventIDs(prepared.Effects, prepared.EventID)
-		return journal.IdempotencyMutation{EntityID: receipt.ID, ResultJSON: string(resultJSON)}, nil
-	})
+	event.Idempotency = &journal.EventIdempotency{Key: options.IdempotencyKey, RequestDigest: requestDigest, Scope: "gate.run:" + binding.projectID}
+	event.Effects = append(event.Effects, journal.Effect{Op: "update", Table: "idempotency_results", PK: map[string]any{"operation_scope": "gate.run:" + binding.projectID, "idempotency_key": options.IdempotencyKey}, Values: map[string]any{"result_entity_id": receipt.ID, "result_event_id": "<event-id>", "aggregate_sequence": 1, "result_json": string(resultJSON)}, Preconditions: map[string]any{"request_digest": requestDigest}})
+	prepared, err := journal.PrepareEvent(lock, event)
 	if err != nil {
 		return Receipt{}, "", err
 	}
-	return receipt, outcome.EventID, nil
+	fillCreatedEventIDs(prepared.Effects, prepared.EventID)
+	fillReceiptIdempotencyEventValues(prepared.Effects, prepared.EventID)
+	appended, err := journal.CommitEvent(lock, conn, prepared)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	return receipt, appended.EventID, nil
+}
+
+func fillAttemptIdempotencyEventValues(effects []journal.Effect, eventID string, occurredAt time.Time) {
+	for index := range effects {
+		if effects[index].Table != "idempotency_results" || effects[index].Values["result_event_id"] != "<event-id>" {
+			continue
+		}
+		effects[index].Values["result_event_id"] = eventID
+		effects[index].Values["created_at"] = occurredAt.UTC().Format(time.RFC3339Nano)
+	}
+}
+
+func fillReceiptIdempotencyEventValues(effects []journal.Effect, eventID string) {
+	for index := range effects {
+		if effects[index].Table == "idempotency_results" && effects[index].Values["result_event_id"] == "<event-id>" {
+			effects[index].Values["result_event_id"] = eventID
+		}
+	}
 }
 
 func receiptEvent(actor storedActor, receipt Receipt, repositoryJSON, toolchainJSON, rejectedJSON string, repository Repository, artifactEffects []journal.Effect) journal.Event {

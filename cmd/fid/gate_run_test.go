@@ -210,6 +210,41 @@ func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
 	}
 }
 
+func TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
+		definition["argv"] = []string{"/bin/echo", "started"}
+	})
+	inputPath, key := gateRunInputForTest(t, workspace, issueID, envelopeID, "killed-fid")
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open killed-fid database: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	if _, err := conn.Exec(`CREATE TRIGGER lose_terminal_observation BEFORE INSERT ON execution_receipts BEGIN SELECT RAISE(ABORT, 'injected fid termination before Receipt'); END`); err != nil {
+		t.Fatalf("inject terminal observation loss: %v", err)
+	}
+
+	first := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", key)
+	if first.err == nil || cli.ExitCode(first.err) != 7 {
+		t.Fatalf("initial interrupted gate run = %#v, want frame-only fid error", first)
+	}
+	retry := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", key)
+	if retry.err == nil || cli.ExitCode(retry.err) != 2 || retry.stdout != "" {
+		t.Fatalf("same-key retry after lost terminal observation = %#v, want rejection without spawn", retry)
+	}
+	var attempts, receipts int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM execution_attempts`).Scan(&attempts); err != nil {
+		t.Fatalf("count interrupted Attempts: %v", err)
+	}
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM execution_receipts`).Scan(&receipts); err != nil {
+		t.Fatalf("count interrupted Receipts: %v", err)
+	}
+	if attempts != 1 || receipts != 0 {
+		t.Fatalf("interrupted Attempt/Receipt counts after same-key retry = %d/%d, want 1/0", attempts, receipts)
+	}
+}
+
 func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 	t.Parallel()
 	cases := []struct {
@@ -223,8 +258,9 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 		{"failed", func(definition map[string]any) { definition["argv"] = []string{"/bin/false"} }, "failed", float64(1), false, false},
 		{"spawn failed", func(definition map[string]any) { definition["argv"] = []string{"/missing/fid-gate"} }, "spawn-failed", nil, false, false},
 		{"timed out", func(definition map[string]any) {
-			definition["argv"] = []string{"/bin/sleep", "1"}
-			definition["timeout_ms"] = 1
+			definition["argv"] = []string{os.Args[0], "-test.run=^TestGateRunHelperProcess$", "--"}
+			definition["timeout_ms"] = 5_000
+			definition["environment"] = []any{map[string]any{"name": "FID_GATE_HELPER", "source": "literal", "value": "timeout"}}
 		}, "timed-out", nil, true, true},
 		{"signaled", func(definition map[string]any) {
 			definition["argv"] = []string{os.Args[0], "-test.run=^TestGateRunHelperProcess$", "--"}
@@ -286,10 +322,14 @@ func TestGateRunRecordsExactNonSuccessTerminalOutcomes(t *testing.T) {
 }
 
 func TestGateRunHelperProcess(t *testing.T) {
-	if os.Getenv("FID_GATE_HELPER") != "signal" {
-		return
+	switch os.Getenv("FID_GATE_HELPER") {
+	case "signal":
+		_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
+		select {}
+	case "timeout":
+		_, _ = os.Stdout.WriteString("ready\n")
+		select {}
 	}
-	_ = syscall.Kill(os.Getpid(), syscall.SIGTERM)
 }
 
 type gateTerminalFrame struct {

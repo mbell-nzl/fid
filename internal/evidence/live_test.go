@@ -3,6 +3,7 @@ package evidence
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -86,6 +87,45 @@ func TestLiveRedactorWithoutSourcesPreservesUTF8Sanitization(t *testing.T) {
 	}
 }
 
+func TestRunLiveRecordsCancellationAsCancelled(t *testing.T) {
+	workspace := t.TempDir()
+	ready := filepath.Join(workspace, "child-ready")
+	definition := GateDefinition{
+		ArtifactBytes: 1, Argv: []string{os.Args[0], "-test.run=^TestLiveCancellationChild$", "--", "--live-cancellation-child"}, CWD: ".",
+		DefinitionID: "live-cancellation", DefinitionVersion: 1, Environment: []EnvironmentEntry{{Name: "FID_READY", Source: "literal", Value: &ready}}, Network: "allowed", OutputBytes: 64,
+		Sandbox: "none", Shell: false, SuccessExitCodes: []int{0}, TimeoutMS: 5000, Write: "allowed",
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	resultCh := make(chan LiveResult, 1)
+	errCh := make(chan error, 1)
+	go func() {
+		result, err := RunLive(ctx, workspace, definition, "EXE-cancelled")
+		resultCh <- result
+		errCh <- err
+	}()
+	deadline := time.After(2 * time.Second)
+	for {
+		if _, err := os.Stat(ready); err == nil {
+			break
+		}
+		select {
+		case <-deadline:
+			t.Fatal("cancellation child did not report readiness")
+		default:
+			time.Sleep(time.Millisecond)
+		}
+	}
+	cancel()
+	result, err := <-resultCh, <-errCh
+	if err != nil {
+		t.Fatalf("RunLive() error = %v", err)
+	}
+	if result.Outcome != "cancelled" || result.ExitCode != nil || result.Signal == nil || result.TimedOut {
+		t.Fatalf("RunLive() cancellation = %#v, want cancelled observed termination", result)
+	}
+}
+
 func TestLiveProcessChild(t *testing.T) {
 	if !containsArgument(os.Args, "--live-process-child") {
 		return
@@ -100,6 +140,16 @@ func TestLiveProcessChild(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	_, _ = os.Stdout.WriteString(strings.Repeat("x", 80))
 	os.Exit(23)
+}
+
+func TestLiveCancellationChild(t *testing.T) {
+	if !containsArgument(os.Args, "--live-cancellation-child") {
+		return
+	}
+	if err := os.WriteFile(os.Getenv("FID_READY"), []byte("ready"), 0o600); err != nil {
+		os.Exit(25)
+	}
+	select {}
 }
 
 func TestRunLiveDrainsBothPipesAfterTruncationAndPreservesOutcome(t *testing.T) {

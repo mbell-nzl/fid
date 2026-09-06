@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -114,9 +115,11 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 		}
 	}
 	if err := command.Wait(); err != nil {
-		if processContext.Err() != nil {
+		if errors.Is(processContext.Err(), context.DeadlineExceeded) {
 			result.Outcome = "timed-out"
 			result.TimedOut = true
+		} else if errors.Is(processContext.Err(), context.Canceled) {
+			result.Outcome = "cancelled"
 		} else {
 			result.Outcome = "failed"
 		}
@@ -130,7 +133,7 @@ func RunLive(ctx context.Context, workspaceRoot string, definition GateDefinitio
 			signal := status.Signal().String()
 			result.Signal = &signal
 			result.ExitCode = nil
-			if !result.TimedOut {
+			if !result.TimedOut && result.Outcome != "cancelled" {
 				result.Outcome = "signaled"
 			}
 		}
