@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	for _, operation := range []string{"run start", "run finish", "run observe", "run get", "run list"} {
+	for _, operation := range []string{"run start", "run finish", "run observe", "run checkpoint", "run recover", "run inspect", "run get", "run list"} {
 		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
 	}
 }
@@ -34,7 +34,7 @@ func newRunCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunObserveCommand(), newRunGetCommand(), newRunListCommand())
+	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunObserveCommand(), newRunCheckpointCommand(), newRunInspectCommand(), newRunRecoverCommand(), newRunGetCommand(), newRunListCommand())
 	return cmd
 }
 

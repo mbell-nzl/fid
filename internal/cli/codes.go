@@ -57,6 +57,11 @@ const (
 	CodeRunNotFound                   Code = "run-not-found"
 	CodeRunInactive                   Code = "run-inactive"
 	CodeRunVersionConflict            Code = "run-version-conflict"
+	CodeExecutorLivenessUnknown       Code = "executor-liveness-unknown"
+	CodeExecutorStillLive             Code = "executor-still-live"
+	CodeRecoveryStateConflict         Code = "recovery-state-conflict"
+	CodeObservationNotFound           Code = "observation-not-found"
+	CodeRecoveryAlreadyLinked         Code = "recovery-already-linked"
 	CodeReceiptNotFound               Code = "receipt-not-found"
 	CodeEvidenceNotFound              Code = "evidence-not-found"
 	CodeEvidenceInvalid               Code = "evidence-invalid"
@@ -222,11 +227,19 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeRunNotFound:          definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
 	CodeRunInactive:          definition(CategoryPrecondition, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("status")),
 	CodeRunVersionConflict:   definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), integerField("expected_version"), integerField("actual_version")),
-	CodeReceiptNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
-	CodeEvidenceNotFound:     definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
-	CodeEvidenceInvalid:      definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
-	CodeEvidenceStale:        definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
-	CodeArtifactUnavailable:  definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeExecutorLivenessUnknown: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		stringField("run_id"), stringField("executor_id"), nullableStringField("observation_id")),
+	CodeExecutorStillLive: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		stringField("run_id"), stringField("executor_id"), stringField("observation_id")),
+	CodeRecoveryStateConflict: definition(CategoryConflict, false, []SubjectType{SubjectRun},
+		stringField("run_id"), nullableStringField("observation_digest"), stringsField("paths"), stringsField("reasons")),
+	CodeObservationNotFound:   definition(CategoryNotFound, false, []SubjectType{SubjectRun}, stringField("id")),
+	CodeRecoveryAlreadyLinked: definition(CategoryConflict, false, []SubjectType{SubjectRun}, stringField("run_id"), stringField("successor_run_id")),
+	CodeReceiptNotFound:       definition(CategoryNotFound, false, []SubjectType{SubjectReceipt}, stringField("id")),
+	CodeEvidenceNotFound:      definition(CategoryNotFound, false, []SubjectType{SubjectEvidence}, stringField("id")),
+	CodeEvidenceInvalid:       definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeEvidenceStale:         definition(CategoryPrecondition, false, []SubjectType{SubjectEvidence}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeArtifactUnavailable:   definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeGateUnsuccessful: definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt},
 		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
 	CodeObligationUnsatisfied: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
@@ -245,6 +258,7 @@ var registeredCodes = []Code{
 	CodeActivationRecoveryUnavailable,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
+	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,
 	CodeObligationUnsatisfied,

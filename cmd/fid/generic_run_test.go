@@ -252,7 +252,7 @@ func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
 	assertRunStateUnchanged(t, workspace, beforeWrongObligation)
 }
 
-func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
+func TestRunFinishIsOneWayAndUnsupportedRespawnLeavesAreAbsent(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-finish-claim")
@@ -285,7 +285,7 @@ func TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent(t *testing.T) {
 		t.Fatalf("repeat finish changed Event count to %d, want %d", after, before)
 	}
 
-	for _, absent := range []string{"run recover", "run predecessor", "run continuation", "run respawn"} {
+	for _, absent := range []string{"run predecessor", "run continuation", "run respawn"} {
 		for _, leaf := range liveExecutableLeafCommands(newRootCommandAt(workspace)) {
 			if leaf == absent {
 				t.Fatalf("unavailable Run leaf %q remains registered", absent)
