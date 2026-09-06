@@ -435,3 +435,194 @@
 - Triage: TRG-22-007 (BLOCK, escalated as ESC-22-002)
 - Protected category: protected task boundary and ambiguous retained-test ownership
 - Next Human or external-authority action: Full Tech Lead must establish exact bounded authority for the run.checkpointed journal projection and separately assign the retained task-2 fixture repair, preserving the required gate and accepted event semantics; Human decision is required for any task allocation or contract change.
+
+### 2026-09-06 12:31 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-06 12:21 STOP / TRG-22-007 / ESC-22-002
+- Governing TRG: TRG-22-007
+- Governing ESC: ESC-22-002
+- Trigger signature: task-4:scope-gap:checkpoint-projection-and-retained-gate
+- Attempt count: 3
+- Checkpoint: phase-22 HEAD 322a70e94d1cb331772574a9297b878f95a598ba verified on branch phase-22; prior ledger STOP validates; worktree clean; ESC-22-002 resolution and amended task-4 scope are committed
+- Resolution evidence: DEC-192 authorizes deletion of exactly the run.checkpointed progressive fence key and the new checkpoint projection parity test; DEC-193 authorizes source repair of the retained fixed-date Stop fixture using the production two-phase journal.PrepareEvent pattern, preserving the required gate, assertion subject, task allocation, and both failed receipts; triage-log.md records the resolution and tl_escalations_current.md has no open escalations
+- Resolution authority: DEC-192
+- Continuing task: task-4
+- Next recovery: task-4 | in-scope-implementation | task-scope | task-4:scope-gap:checkpoint-projection-and-retained-gate | 3
+
+### 2026-09-06 12:33 TASK-RECOVERY task-4
+
+- Source: TRG-22-007 resolution / DEC-192 / DEC-193
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-22-007 / DEC-192 / DEC-193
+- Triage disposition: N/A
+- Trigger signature: task-4:scope-gap:checkpoint-projection-and-retained-gate
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/project/repository.go,internal/project/repository_test.go,internal/workflow/reconciliation.go,internal/workflow/reconciliation_test.go,internal/workflow/run_checkpoint.go,internal/workflow/run_checkpoint_test.go,internal/workflow/activation.go,internal/journal/project_effects.go,internal/journal/checkpoint_projection_test.go,internal/workflow/stop_test.go,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- Forbidden changes: re-pinning a newer fixed date; freezing or faking the clock in product code; editing internal/journal/writer.go or relaxing the out-of-order guard; unfencing any Event other than run.checkpointed; any gate command, threshold, tolerance, pass/fail semantic, VAL row, validator, task allocation, schema, public-interface, decision, QA artifact, or ledger-entry change; editing internal/journal/recovery_schema_test.go
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-22 HEAD 322a70e94d1cb331772574a9297b878f95a598ba verified; STOP TRG-22-007 / ESC-22-002 is resolved under DEC-192 and DEC-193; prior task-4 TASK-RECOVERY attempt 1 remains preserved; worktree clean except the runner-owned ledger
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - remove exactly the run.checkpointed progressive fence key, add live-apply/replay parity coverage while preserving rejection of the eight remaining fenced Events, repair the retained Stop fixture with the production two-phase journal.PrepareEvent pattern while preserving the 2/1/2 assertion, run all six exact task-4 commands with observed termination, and preserve both immutable failed receipts and DEC-193 provenance in the report
+- Next action: dispatch the same-task task-4 Developer continuation under the DEC-192/DEC-193 bounded scope and exact task-4 verification
+- Human attention required: no
+
+### 2026-09-06 13:36 REPAIR task-4
+
+- Trigger signature: task-4:scope-gap:checkpoint-projection-and-retained-gate
+- Attempt count: 3
+- Starting checkpoint: phase-22 HEAD 322a70e94d1cb331772574a9297b878f95a598ba; STOP TRG-22-007 / ESC-22-002 resolved under DEC-192 and DEC-193; bound task-4 TASK-RECOVERY attempt 3 with consecutive no-progress 0/2; Runner ledger only dirt
+- Ending checkpoint: implementation commit 59c62b9e1d82c5f698d1e173908446d35b64f539; finalized report commit 918bd52130818c97d23cb7772f1ad61460ca0892; report-lint returned OUTCOME COMPLETE with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: DEC-192 bounded the exact run.checkpointed fence-key removal and live-apply/replay parity test while the eight remaining fenced Events still reject. DEC-193 bounded the source-level writer-assigned Event repair in stop_test.go while preserving the 2/1/2 assertion. All six task-4 exact commands passed with observed exit_code: 0, including the byte-identical repository-wide race/coverage gate and the five-run retained Stop stability proof. Both immutable failed receipts and DEC-193 provenance remain in the completion report; report-lint returned literal OUTCOME COMPLETE with terminated exit_code: 0.
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-06 13:37 TASK task-4 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 918bd52130818c97d23cb7772f1ad61460ca0892 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 14:02 TASK-RECOVERY task-5
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-5-done.md project-docs/docs/phases/phase-22/tasks/task-5.md; report-lint returned nonzero
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-5:report-repair:task-5-done.md-report-lint
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- Forbidden changes: all product code, tests, task specifications, QA artifacts, decisions, dependencies, workflow controls, gate commands, gate semantics, VAL rows, public interfaces, schemas, and every path except the exact task-5 completion report
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: task-5 implementation commit b7dce8e747a3f2d720002faee3db7f95b3cb4019 and report commit 7a956973e4034b3f692369ac2d666cd62298688c; report-lint returned nonzero on the committed report; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - repair only the task-5 completion report to satisfy the canonical workflow outcome fields and required-command row syntax while preserving implementation evidence, all prior red/green receipts, exact required commands, and the reported task commit hash and subject
+- Next action: dispatch a same-task report-only Developer continuation, then rerun report-lint independently
+- Human attention required: no
+
+### 2026-09-06 14:03 REPAIR task-5
+
+- Trigger signature: task-5:report-repair:task-5-done.md-report-lint
+- Attempt count: 1
+- Starting checkpoint: task-5 implementation commit b7dce8e747a3f2d720002faee3db7f95b3cb4019; report commit 7a956973e4034b3f692369ac2d666cd62298688c; task-5 TASK-RECOVERY attempt 1; Runner ledger only dirt
+- Ending checkpoint: report correction commit a6d7866e82617f044a9359037e49cbdb12dcab9c; report-lint completed with seven failures after reducing the original 18 failures; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The report-only continuation restored the required workflow outcome fields and converted the five required gate rows to canonical ASCII-hyphen syntax. Independent report-lint narrowed the remaining defect to silent or insufficient Go-test output tokens and parser-invalid trailing punctuation in the recorded termination receipts; implementation evidence and required command identities remain preserved.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 14:04 TASK-RECOVERY task-5
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-5-done.md project-docs/docs/phases/phase-22/tasks/task-5.md; report-lint narrowed to seven receipt-token failures
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-5:report-repair:task-5-done.md-report-lint
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- Forbidden changes: all product code, tests, task specifications, QA artifacts, decisions, dependencies, workflow controls, gate commands, gate semantics, VAL rows, public interfaces, schemas, and every path except the exact task-5 completion report
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit b7dce8e747a3f2d720002faee3db7f95b3cb4019; first report correction commit a6d7866e82617f044a9359037e49cbdb12dcab9c; report-lint narrowed to seven failures; task-5 REPAIR attempt 1 recorded MATERIAL-PROGRESS; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - repair only the task-5 completion report so each required Go-test row carries a non-silent verbatim output token and every termination receipt matches the canonical report-lint syntax, preserving all evidence and the implementation commit hash and subject
+- Next action: dispatch a second same-task report-only Developer continuation, then rerun report-lint independently
+- Human attention required: no
+
+### 2026-09-06 14:09 REPAIR task-5
+
+- Trigger signature: task-5:report-repair:task-5-done.md-report-lint
+- Attempt count: 2
+- Starting checkpoint: task-5 implementation commit b7dce8e747a3f2d720002faee3db7f95b3cb4019; report correction commit a6d7866e82617f044a9359037e49cbdb12dcab9c; task-5 TASK-RECOVERY attempt 2 after prior report repair MATERIAL-PROGRESS; Runner ledger only dirt
+- Ending checkpoint: report correction commit 9adcc7217120613622e119aff75b9502783c0e62; report-lint returned literal OUTCOME COMPLETE with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The report-only continuation corrected the remaining Go-test output tokens using non-silent recorded results and removed parser-invalid trailing punctuation from all required termination receipts. Independent report-lint passed all required headings, workflow fields, command rows, implementation commit identity, and clean-report checks with literal OUTCOME COMPLETE and terminated exit_code: 0. Implementation evidence, DEC-192, VAL-017 through VAL-021, and prior failed receipts remain preserved.
+- Next checkpoint: VERIFY/REPORT
+
+### 2026-09-06 14:10 TASK task-5 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-5-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 9adcc7217120613622e119aff75b9502783c0e62 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 17:11 TASK-RECOVERY task-6
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-6-done.md report-lint; built-binary journey reached run inspect then exposed missing checkpoint and inspection domain producers
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/run.go,cmd/fid/run_recovery.go,cmd/fid/claim.go,cmd/fid/response_errors.go,internal/cli/,cmd/fid/integration/p22_recovery_journey_test.go,cmd/fid/integration/p22_fake_test.go,cmd/fid/integration/testdata/p22_conformance/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- Forbidden changes: budget or Attention CLI leaves, import, final capability enablement, future-feature stubs, product policy, protected gate definitions, workflow controls, dependencies, task specifications, QA artifacts, decisions, run-ledger entries, and domain or persistence changes outside the accepted task-6 scope
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: task-6 implementation/test checkpoint c69456fc9bf42f811e4999f1968a48c4a82d3cc5; recovery report commit 7f91325ee2c96d50205dca9564806080dc4e3059; report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger is the only dirty path
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - obtain an authoritative disposition for the missing checkpoint/inspection domain producers exposed by the real built-binary task-6 journey before changing task scope
+- Next action: invoke TL-Lite to classify the task-6 scope-gap candidate; dispatch only the exact bounded continuation authorized by the resulting disposition
+- Human attention required: no
+
+### 2026-09-06 17:13 TRIAGE TRG-22-008
+
+- Trigger: Task 6 cannot implement the required recovery CLI journey because canonical checkpoint and inspection domain behavior is absent outside its accepted scope.
+- Originating task: task-6
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 2
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: Runner verified task-6 implementation checkpoint c69456fc9bf42f811e4999f1968a48c4a82d3cc5 and finalized recovery report HEAD 7f91325ee2c96d50205dca9564806080dc4e3059; report-lint returned OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; phase-22 branch with the Runner ledger, triage log, and current escalation register as the only workflow-owned dirt
+- Verdict: BLOCK (escalated as ESC-22-003)
+- Resolution evidence: Protected task boundary and ambiguous owner for required canonical workflow behavior. The real built-binary journey reaches absent fid run inspect and terminates exit_code: 1 with final token FAIL; task 6 scope contains CLI and integration paths only, while the required internal/workflow checkpoint mutation/Event producer and inspection read API are absent. Full Tech Lead authority must identify the accepted owner and bounded repair scope before task 6 can resume.
+- Triage log: project-docs/docs/phases/phase-22/triage-log.md entry TRG-22-008 confirmed; ESC-22-003 recorded in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-06 17:14 STOP
+
+- Cause: task-6 / TRG-22-008 / ESC-22-003 - the real built-binary recovery journey requires canonical checkpoint and inspection domain behavior outside the accepted task-6 scope.
+- Triage: TRG-22-008 (BLOCK, escalated as ESC-22-003)
+- Protected category: protected task boundary and ambiguous owner for required canonical workflow behavior
+- Next Human or external-authority action: Full Tech Lead must identify the accepted owner and record a bounded authority for the internal/workflow checkpoint mutation/Event producer and inspection API, preserving the accepted public interface, schema/Event, VAL, gate, and workflow-control contracts, before task 6 resumes.

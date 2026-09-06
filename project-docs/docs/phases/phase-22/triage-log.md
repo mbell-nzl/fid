@@ -331,3 +331,36 @@ Runner-owned run-ledger state is created only after execution approval.
 - **Human attention required:** no. Nothing accepted was changed; a planning
   omission was corrected and an existing decision was applied to a second
   instance of its own class.
+
+---
+
+## TRG-22-008 - Task 6 recovery CLI lacks canonical checkpoint and inspection domain APIs
+
+- **Trigger:** The task-6 real built-binary journey reached fid run inspect and terminated with exit_code: 1 and final token FAIL because the current CLI has no canonical checkpoint or inspection behavior; the Developer reports internal/workflow contains no checkpoint mutation/Event producer or inspection API, but task-6's accepted source scope is CLI and integration only.
+- **Originating task:** task-6
+- **Trigger signature:** task-6:scope-gap:recovery-cli-domain-producers
+- **Attempt count:** 2
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-22/tasks/task-6-done.md`.
+- **Candidate:** protected task-boundary and missing canonical domain behavior blocker candidate.
+- **Checkpoint:** Runner verified implementation commit `c69456fc9bf42f811e4999f1968a48c4a82d3cc5` with subject `test(recovery): checkpoint task-6 CLI gap`; report commit `7f91325ee2c96d50205dca9564806080dc4e3059` is current HEAD with the finalized task-6 `RECOVERY_REQUIRED` report. Independent report-lint returned `OUTCOME RECOVERY_REQUIRED` (terminated `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Reasoning:** The built-binary journey demonstrates that `fid run inspect` is absent, and task 6 cannot truthfully expose the required recovery CLI leaves while `internal/workflow` has neither a canonical checkpoint mutation/Event producer nor an inspection read API. Implementing those domain operations is outside task 6's accepted CLI-and-integration scope and changes a protected task boundary. The supplied material names no accepted decision or bounded authority that assigns the missing domain behavior to task 6 or another task, and no control-conformance mismatch is proposed.
+- **Local decisions made:**
+  - Preserve the immutable built-binary failure and the finalized `RECOVERY_REQUIRED` report.
+  - Do not fabricate checkpoint or inspection behavior in the CLI, widen task 6, alter the public recovery leaf contract, or modify domain Event/API behavior without Tech Lead authority.
+- **Resolution evidence:** `TestP22EarlyRecoveryJourney` reaches the real `fid run inspect` invocation and the built binary rejects the absent leaf, causing the focused integration test to terminate `exit_code: 1` with final token `FAIL`. The task report establishes that the canonical workflow producer and inspection API required to make the CLI conform are absent.
+- **If REPAIR:** N/A pending a full Tech Lead disposition that identifies the accepted owner and grants a bounded domain-and-task-scope repair route or records an accepted authority; no ESC-free same-task repair is authorized.
+- **Control trigger signature:** N/A; no control-conformance repair is proposed.
+- **Control attempt count:** N/A; no control-conformance repair is proposed.
+- **Control contract:** N/A; no control-conformance repair is proposed.
+- **Control mismatch:** N/A; no control-conformance repair is proposed.
+- **Allowed files:** N/A; no control-conformance repair is proposed.
+- **Forbidden changes:** Do not change the required gate commands, task allocation, accepted public interface, schema, VAL rows, validator, workflow-control definitions, or protected semantics. Do not invent authority for `internal/workflow` domain changes under task-6's CLI-only scope.
+- **Exact verification:** N/A; no control-conformance repair is proposed.
+- **Originating report:** project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- **Control repair base:** 7f91325ee2c96d50205dca9564806080dc4e3059
+- **If BLOCK:** category protected task boundary and ambiguous owner for required canonical workflow behavior; ESC-22-003 raised in `project-docs/docs/current/tl_escalations_current.md`; full Tech Lead must establish an accepted owner and bounded authority for the missing checkpoint mutation/Event producer and inspection API before task 6 can resume.
+- **Human attention required:** yes
+- **References:** `project-docs/docs/phases/phase-22/tasks/task-6.md:5-45,54-80`; `project-docs/docs/phases/phase-22/tasks/task-6-done.md:5-10,21-31,50-64,82-84`; `project-docs/docs/current/phase_brief.md:41`; `project-docs/docs/current/decisions_active.md:109-121`; `project-docs/docs/phases/phase-22/decisions.md:397-455`; `project-docs/specs/09_AI_WORKFLOW.md` §2.3.
