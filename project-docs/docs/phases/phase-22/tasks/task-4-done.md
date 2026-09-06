@@ -60,7 +60,7 @@
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - `FAIL` (terminated `exit_code: 1`)
   - Immutable failed attempt: `TestEquivalentStopsShareAttentionButKeepDistinctFacts` printed `system clock is behind latest journal date 2026-09-06; refusing to append out of order`. Root cause is a retained fixed-date fixture introduced by `ac827959f8359473cbd6546ac6bea1ff1fd20751` (phase-22/task-2), not the task-4 observer. No repair was authorized because that retained assertion is outside the named task scope and is not invalidated by an accepted task-4 change.
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.3%` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.529s` (terminated `exit_code: 0`)
