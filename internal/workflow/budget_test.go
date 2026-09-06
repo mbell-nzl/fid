@@ -77,3 +77,34 @@ func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
 		t.Fatalf("DeriveBudget() exhausted = %#v, %v; want zero remaining", exhausted, err)
 	}
 }
+
+func TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape(t *testing.T) {
+	workspace, _ := initializedWorkflowWorkspace(t)
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatalf("open workflow database: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+
+	unknown := Budget{Name: "input", Scope: "envelope", Unit: "input-tokens", Maximum: 10}
+	exhausted := Budget{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 1, Consumed: int64Pointer(1), Remaining: int64Pointer(0)}
+	blocks := BudgetAdmissionBlocks([]Budget{unknown, exhausted})
+	if len(blocks) != 2 || blocks[0].Code != "budget-data-unavailable" || blocks[1].Code != "budget-exhausted" {
+		t.Fatalf("BudgetAdmissionBlocks() = %#v, want unknown and exhausted blocks", blocks)
+	}
+	effects, stops, attention, err := BudgetStopEffects(conn, Subject{Type: "run", ID: "RUN-budget"}, "ENV-budget", "actor:budget", blocks, "2026-09-06T00:00:00Z")
+	if err != nil {
+		t.Fatalf("BudgetStopEffects() error = %v", err)
+	}
+	if len(stops) != 2 || len(attention) != 2 || len(effects) != 6 {
+		t.Fatalf("BudgetStopEffects() = %d effects, %d Stops, %d Attention items; want 6/2/2", len(effects), len(stops), len(attention))
+	}
+	for _, stop := range stops {
+		if stop.Subject != (Subject{Type: "run", ID: "RUN-budget"}) || len(stop.BlockedActions) != 3 || stop.BlockedActions[0] != "gate.run" || stop.BlockedActions[1] != "run.recover" || stop.BlockedActions[2] != "run.start" {
+			t.Fatalf("budget Stop = %#v, want run-scoped exact blocked actions", stop)
+		}
+	}
+	if effects[0].Table != "stops" || effects[1].Table != "attention_items" || effects[2].Table != "attention_stop_links" {
+		t.Fatalf("first budget effects = %#v, want Stop, Attention, link order", effects[:3])
+	}
+}

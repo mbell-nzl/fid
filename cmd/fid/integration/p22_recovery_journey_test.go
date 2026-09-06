@@ -46,7 +46,7 @@ func TestP22EarlyRecoveryJourney(t *testing.T) {
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 22 recovery journey", "--actor", "agent:developer", "--idempotency-key", "p22-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
 
-	capabilities := []string{"artifact.verify", "claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "run.checkpoint", "run.observe", "run.recover", "run.start"}
+	capabilities := []string{"artifact.verify", "claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "gate.run", "run.checkpoint", "run.observe", "run.recover", "run.start"}
 	activationID := p21Activation(t, binary, workspace, "prepare", "p22-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22", "phase": 21})
 	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-authority", []any{map[string]any{"actor_id": "actor-recovery", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22", "session_ref": nil, "capabilities": capabilities}})
 	gateDigest := p21Component(t, binary, workspace, activationID, "gate-definitions", "p22-gates", []any{map[string]any{"artifact_bytes": 1024, "artifact_paths": []string{}, "argv": []string{"/bin/true"}, "credential_names": []string{}, "cwd": ".", "definition_id": "gate-p22", "definition_version": 1, "environment": []any{}, "excerpt_bytes": 0, "network": "allowed", "output_bytes": 1024, "redact_literals": []string{}, "sandbox": "none", "shell": false, "success_exit_codes": []int{0}, "timeout_ms": 1000, "write": "allowed"}})
@@ -74,14 +74,18 @@ func TestP22EarlyRecoveryJourney(t *testing.T) {
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-run-start")
 	runID := p21PathString(t, run, "result", "run", "id")
+	gateInput := p21Input(t, workspace, "p22-gate-run", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-p22", "run_id": runID, "repository": repository})
+	if stdout, stderr, err := closureRunCommand(workspace, binary, "--project", workspace, "gate", "run", "--actor", "actor-recovery", "--input", gateInput, "--idempotency-key", "p22-gate-run"); err != nil {
+		t.Fatalf("gate run before recovery = err:%v stdout:%q stderr:%q", err, stdout, stderr)
+	}
 
 	terminatedAt := time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)
-	observed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-observe", map[string]any{"run_id": runID, "expected_version": 1, "liveness": map[string]any{"executor_id": "executor-prior", "state": "terminated", "source_ref": "process:p22", "observed_at": terminatedAt}}), "--idempotency-key", "p22-observe")
+	observed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-observe", map[string]any{"run_id": runID, "expected_version": 2, "liveness": map[string]any{"executor_id": "executor-prior", "state": "terminated", "source_ref": "process:p22", "observed_at": terminatedAt}}), "--idempotency-key", "p22-observe")
 	observationID := p21PathString(t, observed, "result", "observation", "id")
 
 	inspected := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "inspect", runID)
 	digest := p21PathString(t, inspected, "result", "reconciliation", "digest")
-	checkpointed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "checkpoint", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-checkpoint", map[string]any{"run_id": runID, "expected_version": 2, "reconciliation_digest": digest}), "--idempotency-key", "p22-checkpoint")
+	checkpointed := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "checkpoint", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-checkpoint", map[string]any{"run_id": runID, "expected_version": 3, "reconciliation_digest": digest}), "--idempotency-key", "p22-checkpoint")
 	runVersion := int(p21Path(t, checkpointed, "result", "run", "version").(float64))
 	expired := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "expire", "--actor", "actor-recovery", "--input", p21Input(t, workspace, "p22-expire", map[string]any{"claim_id": claimID, "expected_version": 1}), "--idempotency-key", "p22-expire")
 	claimVersion := int(p21Path(t, expired, "result", "claim", "version").(float64))
@@ -98,8 +102,8 @@ func TestP22EarlyRecoveryJourney(t *testing.T) {
 	}
 	for _, budget := range p21Path(t, successor, "result", "run", "budgets").([]any) {
 		value := budget.(map[string]any)
-		if value["consumed"] != nil || value["remaining"] != nil {
-			t.Fatalf("early recovery budget = %#v, want unavailable null counters", value)
+		if value["consumed"] != float64(1) || value["remaining"] != float64(2) {
+			t.Fatalf("recovered budget = %#v, want one preserved attempt charge and remaining two", value)
 		}
 	}
 }

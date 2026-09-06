@@ -1,8 +1,13 @@
 package workflow
 
 import (
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math"
+	"time"
+
+	"github.com/mbell-nzl/fid/internal/journal"
 )
 
 // BudgetSample is one append-only observed measurement in a budget chain.
@@ -22,6 +27,12 @@ type BudgetAdmission struct {
 	Budget    Budget
 	Exhausted bool
 	Warning   bool
+}
+
+// BudgetAdmissionBlock identifies the durable reason execution cannot begin.
+type BudgetAdmissionBlock struct {
+	Code   string
+	Budget Budget
 }
 
 type BudgetSampleConflictError struct {
@@ -140,6 +151,89 @@ func budgetAdmission(budget Budget) BudgetAdmission {
 	exhausted := budget.Remaining != nil && *budget.Remaining == 0
 	warning := budget.WarningThreshold != nil && budget.Remaining != nil && *budget.Remaining <= *budget.WarningThreshold && !exhausted
 	return BudgetAdmission{Admitted: true, Budget: budget, Exhausted: exhausted, Warning: warning}
+}
+
+// BudgetAdmissionBlocks returns each unknown or exhausted budget that blocks
+// a new execution. Warning budgets remain admissible.
+func BudgetAdmissionBlocks(budgets []Budget) []BudgetAdmissionBlock {
+	blocks := make([]BudgetAdmissionBlock, 0, len(budgets))
+	for _, budget := range budgets {
+		code := ""
+		switch {
+		case budget.Consumed == nil || budget.Remaining == nil:
+			code = "budget-data-unavailable"
+		case *budget.Remaining == 0:
+			code = "budget-exhausted"
+		}
+		if code != "" {
+			blocks = append(blocks, BudgetAdmissionBlock{Code: code, Budget: budget})
+		}
+	}
+	return blocks
+}
+
+// BudgetStopEffects prepares the Stop/Attention effects that must share the
+// Event which denied execution or crossed a budget exhaustion boundary.
+func BudgetStopEffects(conn *sql.DB, subject Subject, envelopeID, actorID string, blocks []BudgetAdmissionBlock, raisedAt string) ([]journal.Effect, []Stop, []Attention, error) {
+	if conn == nil || !validSubject(subject) || envelopeID == "" || actorID == "" {
+		return nil, nil, nil, fmt.Errorf("budget Stop effects are invalid")
+	}
+	if raisedAt == "" {
+		raisedAt = time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	effects := []journal.Effect{}
+	stops := make([]Stop, 0, len(blocks))
+	attention := make([]Attention, 0, len(blocks))
+	for _, block := range blocks {
+		if block.Code != "budget-exhausted" && block.Code != "budget-data-unavailable" {
+			return nil, nil, nil, fmt.Errorf("budget Stop code is invalid")
+		}
+		condition := Condition{Type: "work-ended", Subject: subject}
+		if block.Code == "budget-data-unavailable" {
+			name := block.Budget.Name
+			condition = Condition{Type: "budget-observed", Subject: subject, BudgetName: &name}
+		}
+		details, err := json.Marshal(map[string]any{
+			"envelope_id": envelopeID,
+			"budget_name": block.Budget.Name,
+			"unit":        block.Budget.Unit,
+			"maximum":     block.Budget.Maximum,
+			"consumed":    block.Budget.Consumed,
+			"remaining":   block.Budget.Remaining,
+		})
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		request := StopRaiseRequest{Subject: subject, Code: block.Code, BlockedActions: []string{"gate.run", "run.recover", "run.start"}, Details: details, ResolutionCondition: condition, ResolverCapability: "stop.resolve"}
+		if err := validateStopRaise(request); err != nil {
+			return nil, nil, nil, err
+		}
+		stopID, err := newStopID(conn)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		key, err := attentionSemanticKey(subject, block.Code, condition)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		item, found, err := loadOpenAttentionByKey(conn, key)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if !found {
+			item.ID, err = newAttentionID(conn)
+			if err != nil {
+				return nil, nil, nil, err
+			}
+			item = Attention{ID: item.ID, SemanticKey: key, Subject: subject, Code: block.Code, Status: "open", Version: 1}
+		}
+		stop := Stop{ID: stopID, Subject: subject, Code: block.Code, BlockedActions: request.BlockedActions, Details: details, ResolutionCondition: condition, ResolverCapability: request.ResolverCapability, ActorID: actorID, RaisedAt: raisedAt}
+		item.RaisedAt = raisedAt
+		stopEffects := stopRaisedEventForDomain(stop, item, !found, "<event-id>").Effects
+		effects = append(effects, stopEffects...)
+		stops, attention = append(stops, stop), append(attention, item)
+	}
+	return effects, stops, attention, nil
 }
 
 func sameBudgetSample(left, right BudgetSample) bool {

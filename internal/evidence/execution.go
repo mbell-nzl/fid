@@ -78,6 +78,7 @@ type GateRunOptions struct {
 type GateRunResult struct {
 	Attempt         Attempt
 	Receipt         *Receipt
+	Denial          *BudgetDenial
 	Live            LiveResult
 	EventID         string
 	EventOccurredAt string
@@ -85,6 +86,23 @@ type GateRunResult struct {
 	Replayed        bool
 	definition      GateDefinition
 }
+
+// BudgetDenial is the durable pre-spawn rejection produced by a required
+// unknown or exhausted budget chain.
+type BudgetDenial struct {
+	Budget          workflow.Budget `json:"budget"`
+	StopIDs         []string        `json:"stop_ids"`
+	AttentionIDs    []string        `json:"attention_ids"`
+	EventID         string          `json:"event_id"`
+	EventOccurredAt string          `json:"event_occurred_at"`
+}
+
+type BudgetAdmissionDeniedError struct {
+	Code   string
+	Denial BudgetDenial
+}
+
+func (err *BudgetAdmissionDeniedError) Error() string { return err.Code }
 
 type gateRunBinding struct {
 	registration Registration
@@ -118,8 +136,10 @@ func fidBudgetCharges(budgets []workflow.Budget, attempt Attempt, receipt *Recei
 		sourceID, observedAt := attempt.ID, attempt.StartedAt
 		switch budget.Unit {
 		case "attempts":
-			unit := int64(1)
-			value = &unit
+			if receipt == nil {
+				unit := int64(1)
+				value = &unit
+			}
 		case "failures":
 			if receipt != nil && receipt.Outcome != "succeeded" {
 				unit := int64(1)
@@ -177,16 +197,23 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			receipt, err := loadReceipt(conn, outcome.EntityID)
+			return replayGateRunResult(conn, options, outcome, &prepared)
+		}
+		chains, err := loadBudgetChains(conn, options.Request.RunID)
+		if err != nil {
+			return err
+		}
+		blocks, err := budgetAdmissionBlocks(chains)
+		if err != nil {
+			return err
+		}
+		if len(blocks) != 0 {
+			denial, err := appendExecutionBlocked(lock, conn, binding, options, requestDigest, chains, blocks)
 			if err != nil {
 				return err
 			}
-			occurredAt, err := gateEventOccurredAt(options.WorkspaceRoot, outcome.EventID)
-			if err != nil {
-				return err
-			}
-			prepared = GateRunResult{Attempt: Attempt{ID: receipt.AttemptID}, Receipt: &receipt, Live: LiveResult{Outcome: receipt.Outcome, ExitCode: receipt.ExitCode, Signal: receipt.Signal, TimedOut: receipt.TimedOut, OutputBytes: receipt.OutputBytes, OutputTruncated: receipt.OutputTruncated, RedactionApplied: receipt.RedactionApplied, RejectedArtifacts: receipt.RejectedArtifacts, executionID: receipt.AttemptID}, EventID: outcome.EventID, EventOccurredAt: occurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
-			return nil
+			prepared = GateRunResult{Denial: &denial, EventID: denial.EventID, EventOccurredAt: denial.EventOccurredAt, IdempotencyKey: options.IdempotencyKey}
+			return &BudgetAdmissionDeniedError{Code: blocks[0].Code, Denial: denial}
 		}
 
 		if _, _, cancel, err := executorCommand(ctx, options.WorkspaceRoot, binding.registration.Policy); err != nil {
@@ -385,6 +412,25 @@ func chainBudgets(chains []budgetChain) []workflow.Budget {
 	return budgets
 }
 
+func budgetBoundaryBlocks(before, after workflow.Budget) []workflow.BudgetAdmissionBlock {
+	if before.Remaining != nil && *before.Remaining == 0 {
+		return nil
+	}
+	return workflow.BudgetAdmissionBlocks([]workflow.Budget{after})
+}
+
+func budgetAdmissionBlocks(chains []budgetChain) ([]workflow.BudgetAdmissionBlock, error) {
+	budgets := make([]workflow.Budget, 0, len(chains))
+	for _, chain := range chains {
+		budget, err := workflow.DeriveBudget(chain.Budget, chain.Samples)
+		if err != nil {
+			return nil, fmt.Errorf("derive budget admission %q: %w", chain.Budget.Name, err)
+		}
+		budgets = append(budgets, budget)
+	}
+	return workflow.BudgetAdmissionBlocks(budgets), nil
+}
+
 func loadBudgetChains(conn *sql.DB, runID string) ([]budgetChain, error) {
 	var envelopeID string
 	var revision, runtimeVersion int
@@ -451,11 +497,24 @@ func appendFIDBudgetEffects(conn *sql.DB, chains []budgetChain, charges []fidBud
 				previous := chain.Samples[len(chain.Samples)-1].ID
 				sample.PreviousSampleID = &previous
 			}
-			if _, err := workflow.AdmitBudgetSample(chain.Budget, chain.Samples, sample); err != nil {
+			before, err := workflow.DeriveBudget(chain.Budget, chain.Samples)
+			if err != nil {
+				return nil, fmt.Errorf("derive fid budget %q: %w", chain.Budget.Name, err)
+			}
+			admission, err := workflow.AdmitBudgetSample(chain.Budget, chain.Samples, sample)
+			if err != nil {
 				return nil, fmt.Errorf("admit fid budget sample %q: %w", chain.Budget.Name, err)
 			}
+			boundary := budgetBoundaryBlocks(before, admission.Budget)
 			chain.Samples = append(chain.Samples, sample)
 			effects = append(effects, journal.Effect{Op: "insert", Table: "budget_samples", PK: map[string]any{"id": sample.ID}, Values: map[string]any{"envelope_id": chain.EnvelopeID, "envelope_revision": chain.EnvelopeRevision, "budget_name": chain.Budget.Name, "run_id": runID, "actor_id": actorID, "source": sample.Source, "source_sample_id": sample.SourceSampleID, "sample_kind": sample.SampleKind, "previous_sample_id": sample.PreviousSampleID, "value": sample.Value, "measurement_ref_json": nil, "observed_at": charge.ObservedAt, "created_event_id": "<event-id>"}})
+			if len(boundary) != 0 {
+				stopEffects, _, _, err := workflow.BudgetStopEffects(conn, workflow.Subject{Type: "run", ID: runID}, chain.EnvelopeID, actorID, boundary, charge.ObservedAt)
+				if err != nil {
+					return nil, err
+				}
+				effects = append(effects, stopEffects...)
+			}
 			charged = true
 			break
 		}
@@ -464,6 +523,77 @@ func appendFIDBudgetEffects(conn *sql.DB, chains []budgetChain, charges []fidBud
 		effects = append(effects, journal.Effect{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": runID}, Values: map[string]any{"version": chains[0].RuntimeVersion + 1}, Preconditions: map[string]any{"version": chains[0].RuntimeVersion}})
 	}
 	return effects, nil
+}
+
+func appendExecutionBlocked(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, options GateRunOptions, requestDigest string, chains []budgetChain, blocks []workflow.BudgetAdmissionBlock) (BudgetDenial, error) {
+	if len(chains) == 0 || len(blocks) == 0 {
+		return BudgetDenial{}, fmt.Errorf("execution budget denial is invalid")
+	}
+	effects, stops, attention, err := workflow.BudgetStopEffects(conn, workflow.Subject{Type: "run", ID: options.Request.RunID}, chains[0].EnvelopeID, binding.actor.ActorID, blocks, time.Now().UTC().Format(time.RFC3339Nano))
+	if err != nil {
+		return BudgetDenial{}, err
+	}
+	effects = append(effects, journal.Effect{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": options.Request.RunID}, Values: map[string]any{"version": chains[0].RuntimeVersion + 1}, Preconditions: map[string]any{"version": chains[0].RuntimeVersion}})
+	sequence, err := journal.NextAggregateSequence(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, config.JournalDirName), journal.Aggregate{ID: options.Request.RunID, Type: "run"})
+	if err != nil {
+		return BudgetDenial{}, err
+	}
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "run.execution-blocked", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: options.Request.RunID, Sequence: sequence, Type: "run"}, CommandName: "gate.run", CorrelationID: &options.Request.RunID, Repository: repositoryEventValue(options.Request.Repository), Effects: effects}
+	prepared, err := journal.PrepareEvent(lock, event)
+	if err != nil {
+		return BudgetDenial{}, err
+	}
+	fillCreatedEventIDs(prepared.Effects, prepared.EventID)
+	denial := BudgetDenial{Budget: blocks[0].Budget, EventID: prepared.EventID, EventOccurredAt: prepared.OccurredAt.UTC().Format(time.RFC3339Nano)}
+	for _, stop := range stops {
+		denial.StopIDs = append(denial.StopIDs, stop.ID)
+	}
+	for _, item := range attention {
+		denial.AttentionIDs = append(denial.AttentionIDs, item.ID)
+	}
+	payload, err := journal.MarshalCanonicalJSON(map[string]any{"denial": denial, "idempotency_key": options.IdempotencyKey, "replayed": false})
+	if err != nil {
+		return BudgetDenial{}, err
+	}
+	idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+	if _, err := journal.CommitIdempotent(lock, conn, idempotency, prepared, func(journal.Event) (journal.IdempotencyMutation, error) {
+		return journal.IdempotencyMutation{EntityID: denial.StopIDs[0], ResultJSON: string(payload)}, nil
+	}); err != nil {
+		return BudgetDenial{}, err
+	}
+	return denial, nil
+}
+
+func replayGateRunResult(conn *sql.DB, options GateRunOptions, outcome journal.IdempotencyOutcome, result *GateRunResult) error {
+	var stored struct {
+		Denial *BudgetDenial `json:"denial"`
+	}
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), &stored); err != nil {
+		return fmt.Errorf("decode gate replay result: %w", err)
+	}
+	if stored.Denial != nil {
+		stored.Denial.EventID = outcome.EventID
+		stored.Denial.EventOccurredAt, _ = gateEventOccurredAt(options.WorkspaceRoot, outcome.EventID)
+		*result = GateRunResult{Denial: stored.Denial, EventID: outcome.EventID, EventOccurredAt: stored.Denial.EventOccurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
+		return &BudgetAdmissionDeniedError{Code: budgetDenialCode(stored.Denial), Denial: *stored.Denial}
+	}
+	receipt, err := loadReceipt(conn, outcome.EntityID)
+	if err != nil {
+		return err
+	}
+	occurredAt, err := gateEventOccurredAt(options.WorkspaceRoot, outcome.EventID)
+	if err != nil {
+		return err
+	}
+	*result = GateRunResult{Attempt: Attempt{ID: receipt.AttemptID}, Receipt: &receipt, Live: LiveResult{Outcome: receipt.Outcome, ExitCode: receipt.ExitCode, Signal: receipt.Signal, TimedOut: receipt.TimedOut, OutputBytes: receipt.OutputBytes, OutputTruncated: receipt.OutputTruncated, RedactionApplied: receipt.RedactionApplied, RejectedArtifacts: receipt.RejectedArtifacts, executionID: receipt.AttemptID}, EventID: outcome.EventID, EventOccurredAt: occurredAt, IdempotencyKey: options.IdempotencyKey, Replayed: true}
+	return nil
+}
+
+func budgetDenialCode(denial *BudgetDenial) string {
+	if denial != nil && denial.Budget.Remaining != nil && *denial.Budget.Remaining == 0 {
+		return "budget-exhausted"
+	}
+	return "budget-data-unavailable"
 }
 
 func fillCreatedEventIDs(effects []journal.Effect, eventID string) {

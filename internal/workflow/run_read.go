@@ -107,7 +107,15 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 		if err := rows.Scan(&raw); err != nil || json.Unmarshal([]byte(raw), &budget) != nil {
 			return Run{}, fmt.Errorf("decode run budget")
 		}
-		run.Budgets = append(run.Budgets, budget)
+		samples, err := loadRunBudgetSamples(conn, run.EnvelopeID, run.EnvelopeRevision, budget.Name)
+		if err != nil {
+			return Run{}, err
+		}
+		derived, err := DeriveBudget(budget, samples)
+		if err != nil {
+			return Run{}, fmt.Errorf("derive run budget %q: %w", budget.Name, err)
+		}
+		run.Budgets = append(run.Budgets, derived)
 	}
 	if err := rows.Err(); err != nil {
 		return Run{}, err
@@ -119,6 +127,23 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 		return Run{}, fmt.Errorf("load run successor: %w", err)
 	}
 	return run, nil
+}
+
+func loadRunBudgetSamples(conn *sql.DB, envelopeID string, revision int, name string) ([]BudgetSample, error) {
+	rows, err := conn.Query(`SELECT id, source, source_sample_id, sample_kind, previous_sample_id, value FROM budget_samples WHERE envelope_id = ? AND envelope_revision = ? AND budget_name = ? ORDER BY observed_at, id`, envelopeID, revision, name)
+	if err != nil {
+		return nil, fmt.Errorf("load run budget samples: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	samples := []BudgetSample{}
+	for rows.Next() {
+		var sample BudgetSample
+		if err := rows.Scan(&sample.ID, &sample.Source, &sample.SourceSampleID, &sample.SampleKind, &sample.PreviousSampleID, &sample.Value); err != nil {
+			return nil, fmt.Errorf("read run budget sample: %w", err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, rows.Err()
 }
 
 func sameRepository(left, right Repository) bool {

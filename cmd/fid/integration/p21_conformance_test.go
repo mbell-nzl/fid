@@ -104,7 +104,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		"outcome": "Exercise the one Issue walking skeleton", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + strings.Repeat("1", 64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{},
 		"authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": "actor-builder", "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}},
 		"obligations":      []any{map[string]any{"id": "OBL-1", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}},
-		"budgets":          []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}},
+		"budgets":          []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 1, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}},
 	})
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", "actor-builder", "--input", envelopeInput, "--idempotency-key", "p21-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
@@ -127,6 +127,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 
 	gate := p21GateRun(t, binary, workspace, map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
 	receiptID := p21PathString(t, gate, "result", "receipt", "id")
+	p21AssertBudgetBoundaryAndLaterGateDenial(t, binary, workspace, registrationID, registrationVersion, runID, repository)
 	linkInput := p21Input(t, workspace, "evidence-link", map[string]any{"obligation_id": "OBL-1", "receipt_id": receiptID, "target_repository": repository, "required_artifact_ids": []string{}})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "evidence", "link", "--actor", "actor-builder", "--input", linkInput, "--idempotency-key", "p21-evidence-link")
 	evaluateInput := p21Input(t, workspace, "evidence-evaluate", map[string]any{"obligation_id": "OBL-1", "target_repository": repository})
@@ -148,7 +149,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
 		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
-		"gate.execution-started", "gate.receipt-recorded", "evidence.linked", "issue.transitioned",
+		"gate.execution-started", "gate.receipt-recorded", "run.execution-blocked", "evidence.linked", "issue.transitioned",
 		"run.finished", "claim.released", "envelope.completed",
 	})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "get", envelopeID)
@@ -187,7 +188,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
 		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
-		"gate.execution-started", "gate.receipt-recorded", "evidence.linked", "issue.transitioned",
+		"gate.execution-started", "gate.receipt-recorded", "run.execution-blocked", "evidence.linked", "issue.transitioned",
 		"run.finished", "claim.released", "envelope.completed",
 	})
 }
@@ -236,6 +237,23 @@ func p21GateRun(t *testing.T, binary, workspace string, input map[string]any) ma
 		t.Fatalf("gate terminal response = %#v, want success envelope", terminal["response"])
 	}
 	return response
+}
+
+func p21AssertBudgetBoundaryAndLaterGateDenial(t *testing.T, binary, workspace, registrationID string, registrationVersion any, runID string, repository map[string]any) {
+	t.Helper()
+	before := p21JournalBytes(t, workspace)
+	if strings.Count(string(before), `"table":"execution_attempts"`) != 1 || strings.Count(string(before), `"table":"budget_samples"`) != 1 || strings.Count(string(before), `"table":"stops"`) != 1 || strings.Count(string(before), `"table":"attention_items"`) != 1 || strings.Count(string(before), `"table":"attention_stop_links"`) != 1 {
+		t.Fatalf("boundary Event effects = %q, want one Attempt, budget sample, Stop, Attention, and link", before)
+	}
+	input := p21Input(t, workspace, "gate-run-after-exhaustion", map[string]any{"registration_id": registrationID, "registration_version": registrationVersion, "obligation_id": "OBL-1", "run_id": runID, "repository": repository})
+	stdout, stderr, runErr := closureRunCommand(workspace, binary, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", input, "--idempotency-key", "p21-gate-run-after-exhaustion")
+	if processExitCode(t, runErr) != 2 || stdout != "" || !strings.Contains(stderr, `"code":"invalid-argument"`) {
+		t.Fatalf("later gate denial = exit:%d stdout:%q stderr:%q, want current pre-spawn denial rendering", processExitCode(t, runErr), stdout, stderr)
+	}
+	after := p21JournalBytes(t, workspace)
+	if !strings.Contains(string(after), `"event_type":"run.execution-blocked"`) || strings.Count(string(after), `"table":"execution_attempts"`) != 1 || strings.Count(string(after), `"table":"stops"`) != 2 {
+		t.Fatalf("later denial journal = %q, want execution-blocked with no second Attempt and one additional Stop", after)
+	}
 }
 
 func p21Activation(t *testing.T, binary, workspace, operation, key string, input map[string]any) string {
@@ -384,6 +402,19 @@ func p21JournalEventTypes(t *testing.T, workspace string) []string {
 		}
 	}
 	return types
+}
+
+func p21JournalBytes(t *testing.T, workspace string) []byte {
+	t.Helper()
+	entries, err := os.ReadDir(filepath.Join(workspace, ".fid", "journal"))
+	if err != nil {
+		t.Fatalf("read journal: %v", err)
+	}
+	var journal []byte
+	for _, entry := range entries {
+		journal = append(journal, readP21File(t, filepath.Join(workspace, ".fid", "journal", entry.Name()))...)
+	}
+	return journal
 }
 
 func p21ExpectedCorpus(t *testing.T, publicInterface string) map[string][]byte {
