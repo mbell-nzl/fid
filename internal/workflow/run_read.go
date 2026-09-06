@@ -22,7 +22,7 @@ func GetRun(workspaceRoot, migrationsDir, id string) (Run, error) {
 }
 
 func ListRuns(options RunListOptions) ([]Run, error) {
-	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || options.Limit < 1 || options.Limit > 10000 || (options.Status != "" && options.Status != "abandoned" && options.Status != "active" && options.Status != "failed" && options.Status != "succeeded") {
+	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" || options.Limit < 1 || options.Limit > 10000 || (options.Status != "" && options.Status != "abandoned" && options.Status != "active" && options.Status != "failed" && options.Status != "interrupted" && options.Status != "succeeded") {
 		return nil, invalidRun("run list input is invalid")
 	}
 	if _, err := journal.EnsureProjectionFresh(options.WorkspaceRoot, options.MigrationsDir); err != nil {
@@ -109,7 +109,16 @@ func loadRun(conn *sql.DB, id string) (Run, error) {
 		}
 		run.Budgets = append(run.Budgets, budget)
 	}
-	return run, rows.Err()
+	if err := rows.Err(); err != nil {
+		return Run{}, err
+	}
+	if err := conn.QueryRow(`SELECT prior_run_id FROM run_recoveries WHERE successor_run_id = ?`, run.ID).Scan(&run.PredecessorRunID); err != nil && err != sql.ErrNoRows {
+		return Run{}, fmt.Errorf("load run predecessor: %w", err)
+	}
+	if err := conn.QueryRow(`SELECT successor_run_id FROM run_recoveries WHERE prior_run_id = ?`, run.ID).Scan(&run.SuccessorRunID); err != nil && err != sql.ErrNoRows {
+		return Run{}, fmt.Errorf("load run successor: %w", err)
+	}
+	return run, nil
 }
 
 func sameRepository(left, right Repository) bool {

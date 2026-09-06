@@ -59,6 +59,8 @@ type Run struct {
 	Version            int         `json:"version"`
 	Executor           Executor    `json:"executor"`
 	ObligationID       *string     `json:"obligation_id"`
+	PredecessorRunID   *string     `json:"predecessor_run_id"`
+	SuccessorRunID     *string     `json:"successor_run_id"`
 	ActorID            string      `json:"actor_id"`
 	StartRepository    Repository  `json:"start_repository"`
 	TerminalRepository *Repository `json:"terminal_repository"`
