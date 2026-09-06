@@ -124,8 +124,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `d85ab7018903300ccb53199c49fdea04e1a0bdc6`
 
 ## Commit subject
 
-- Pending commit
+- `feat(budget): enforce durable execution admission`
