@@ -71,8 +71,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `b7dce8e747a3f2d720002faee3db7f95b3cb4019`
 
 ## Commit subject
 
-- Pending commit
+- `feat(recovery): add atomic linked run recovery`
