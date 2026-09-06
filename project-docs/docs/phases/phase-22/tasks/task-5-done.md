@@ -3,6 +3,11 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 0
+- Next action: None.
+- Human attention required: no
 
 ## Summary of what was implemented
 
@@ -51,11 +56,11 @@
 
 ## Exact quality-gate results
 
-- `gofmt -l cmd internal` — PASS — `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` — PASS — `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` — PASS — `ok` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` — PASS — `62.7%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` — PASS — `ok` (terminated `exit_code: 0`).
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`).
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok` (terminated `exit_code: 0`).
+- `go tool cover -func=coverage.out` - PASS - `62.7%` (terminated `exit_code: 0`).
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok` (terminated `exit_code: 0`).
 
 ## Deviations from spec
 
