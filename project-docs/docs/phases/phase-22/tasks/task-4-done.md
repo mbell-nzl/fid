@@ -82,8 +82,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `59c62b9e1d82c5f698d1e173908446d35b64f539`
 
 ## Commit subject
 
-- Pending commit
+- `fix(recovery): admit checkpoint projection`
