@@ -58,12 +58,12 @@
   - Intended red evidence: `fid --project /tmp/TestP22EarlyRecoveryJourney327508039/001 --json run inspect RUN-c620cb = err:exit status 2 stdout:"" stderr:""`. The focused test itself terminated `exit_code: 1` after the built binary rejected the absent leaf.
 - `go test ./internal/workflow -run '^TestRunCheckpoint' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red TDD evidence: the test initially failed because `RunCheckpoint` and `RunCheckpointRequest` were undefined.
-- `go test ./internal/workflow -run '^(TestRunCheckpoint|TestRunInspect)' -count=1` - PASS - `ok	github.com/mbell-nzl/fid/internal/workflow	1.508s` (terminated `exit_code: 0`)
+- `go test ./internal/workflow -run '^(TestRunCheckpoint|TestRunInspect)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	1.508s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run 'Test.*Run' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Preserved-gate evidence: `TestRunFinishIsOneWayAndRecoveryRespawnAreAbsent` retained `run recover` as an absent leaf.
-- `go test ./cmd/fid -run '^TestRunRecoveryErrorsUseClosedRecoveryEnvelopes$' -count=1` - PASS - `ok	github.com/mbell-nzl/fid/cmd/fid	0.076s` (terminated `exit_code: 0`)
-- `go test ./cmd/fid ./internal/cli ./internal/workflow -run '^(TestRunFinishIsOneWayAndUnsupportedRespawnLeavesAreAbsent|TestReasonCodeDetailSchemaIsExactForEveryCode|TestRunCheckpoint|TestRunInspect)' -count=1` - PASS - `ok	github.com/mbell-nzl/fid/internal/workflow	1.142s` (terminated `exit_code: 0`)
-- Real entrypoint exercise: `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok	github.com/mbell-nzl/fid/cmd/fid/integration	1.055s` (terminated `exit_code: 0`). The test builds and invokes the `fid` process.
+- `go test ./cmd/fid -run '^TestRunRecoveryErrorsUseClosedRecoveryEnvelopes$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.076s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid ./internal/cli ./internal/workflow -run '^(TestRunFinishIsOneWayAndUnsupportedRespawnLeavesAreAbsent|TestReasonCodeDetailSchemaIsExactForEveryCode|TestRunCheckpoint|TestRunInspect)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	1.142s` (terminated `exit_code: 0`)
+- Real entrypoint exercise: `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.055s` (terminated `exit_code: 0`). The test builds and invokes the `fid` process.
 
 ## Exact quality-gate results
 
@@ -76,10 +76,10 @@
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Immutable first full-gate attempt: `TestLiveLeafCommandsMatchContractInventories` rejected the new recovery leaves because its retained inventory did not include `run checkpoint`, `run inspect`, or `run recover`.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 46.0% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 46.0% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `62.8%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok	github.com/mbell-nzl/fid/cmd/fid/integration	8.763s` (terminated `exit_code: 0`)
-- `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok	github.com/mbell-nzl/fid/cmd/fid/integration	1.055s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.763s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.055s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
