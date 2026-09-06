@@ -3,7 +3,6 @@ package workflow
 import (
 	"database/sql"
 	"testing"
-	"time"
 
 	"github.com/mbell-nzl/fid/internal/journal"
 )
@@ -16,13 +15,23 @@ func TestEquivalentStopsShareAttentionButKeepDistinctFacts(t *testing.T) {
 	}
 	defer closeWorkflowDB(conn)
 
-	first := stopRaisedEvent("EVT-20260905-000001", "STOP-1", "ATT-1", true)
-	second := stopRaisedEvent("EVT-20260905-000002", "STOP-2", "ATT-1", false)
+	first := stopRaisedEvent("", "STOP-1", "ATT-1", true)
+	second := stopRaisedEvent("", "STOP-2", "ATT-1", false)
 	if err := journal.WithLock(workspace, journal.LockOwner{Command: "test stop raise"}, func(lock *journal.WriteLock) error {
+		prepared, err := journal.PrepareEvent(lock, first)
+		if err != nil {
+			return err
+		}
+		first = stopRaisedEvent(prepared.EventID, "STOP-1", "ATT-1", true)
 		if _, err := journal.CommitEvent(lock, conn, first); err != nil {
 			return err
 		}
-		_, err := journal.CommitEvent(lock, conn, second)
+		prepared, err = journal.PrepareEvent(lock, second)
+		if err != nil {
+			return err
+		}
+		second = stopRaisedEvent(prepared.EventID, "STOP-2", "ATT-1", false)
+		_, err = journal.CommitEvent(lock, conn, second)
 		return err
 	}); err != nil {
 		t.Fatalf("commit equivalent stop events: %v", err)
@@ -157,7 +166,7 @@ func stopRaisedEvent(eventID, stopID, attentionID string, createAttention bool) 
 	}
 	effects = append(effects, journal.Effect{Op: "insert", Table: "attention_stop_links", PK: map[string]any{"attention_id": attentionID, "stop_id": stopID}})
 	return journal.Event{
-		EventID: eventID, EventSchema: journal.EventSchemaV2, EventType: "stop.raised", OccurredAt: time.Date(2026, 9, 5, 0, 0, 0, 0, time.UTC),
+		EventID: eventID, EventSchema: journal.EventSchemaV2, EventType: "stop.raised",
 		ActorV2:   journal.EventActor{ActorID: "agent:tl", ActorType: "agent", Producer: "test", ProvenanceRef: "test"},
 		Aggregate: journal.Aggregate{ID: stopID, Type: "stop", Sequence: 1}, CommandName: "stop.raise", Effects: effects,
 	}
