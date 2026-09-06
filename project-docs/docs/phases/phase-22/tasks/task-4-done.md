@@ -3,6 +3,11 @@
 ## Workflow outcome
 
 - Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 3
+- Next action: None.
+- Human attention required: no
 - Recovery authority: TRG-22-007 / DEC-192 / DEC-193; attempt 3.
 - The bounded continuation admitted the task-4-owned `run.checkpointed` Event to projection and removed calendar dependence from the retained Stop fixture without changing any accepted contract, gate, schema, public interface, or validation row.
 
@@ -61,8 +66,7 @@
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - FAIL (immutable prior attempt) - `FAIL` (terminated `exit_code: 1`)
-  - The prior attempt failed only in `TestEquivalentStopsShareAttentionButKeepDistinctFacts` with `system clock is behind latest journal date 2026-09-06; refusing to append out of order` (terminated `exit_code: 1`). Root cause: the calendar-only task-2 fixture. Repair: writer-assigned IDs and date via the production `journal.PrepareEvent` pattern; no assertion, guard, command, or policy changed.
+- Immutable repository-wide race/coverage attempt: `FAIL` (terminated `exit_code: 1`). It failed only in `TestEquivalentStopsShareAttentionButKeepDistinctFacts` with `system clock is behind latest journal date 2026-09-06; refusing to append out of order`. Root cause: the calendar-only task-2 fixture. Repair: writer-assigned IDs and date via the production `journal.PrepareEvent` pattern; no assertion, guard, command, or policy changed.
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t58.618s\tcoverage: 35.0% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.3%` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t12.269s` (terminated `exit_code: 0`)
