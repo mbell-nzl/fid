@@ -93,6 +93,7 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
 		"internal/workflow/activation.go",
+		"internal/workflow/budget.go",
 		"internal/workflow/capabilities.go",
 		"internal/workflow/stop.go",
 	}; !reflect.DeepEqual(got, want) {

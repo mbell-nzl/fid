@@ -41,8 +41,8 @@ func TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets(t *testing.T)
 		t.Fatalf("start_repository = %#v, want exact input repository %#v", got, repository)
 	}
 	budgets := run["budgets"].([]any)
-	if len(budgets) != 1 || budgets[0].(map[string]any)["consumed"] != nil || budgets[0].(map[string]any)["remaining"] != nil {
-		t.Fatalf("run budgets = %#v, want one immutable null-counter budget", budgets)
+	if len(budgets) != 1 || stringifyClaimValue(budgets[0].(map[string]any)["consumed"]) != "0" || stringifyClaimValue(budgets[0].(map[string]any)["remaining"]) != "3" {
+		t.Fatalf("run budgets = %#v, want one derived attempts budget with zero consumption and three remaining", budgets)
 	}
 	got := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", run["id"].(string))
 	if got.err != nil || runFromResponse(t, got.stdout)["id"] != run["id"] {
