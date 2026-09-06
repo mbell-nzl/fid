@@ -364,3 +364,39 @@ Runner-owned run-ledger state is created only after execution approval.
 - **If BLOCK:** category protected task boundary and ambiguous owner for required canonical workflow behavior; ESC-22-003 raised in `project-docs/docs/current/tl_escalations_current.md`; full Tech Lead must establish an accepted owner and bounded authority for the missing checkpoint mutation/Event producer and inspection API before task 6 can resume.
 - **Human attention required:** yes
 - **References:** `project-docs/docs/phases/phase-22/tasks/task-6.md:5-45,54-80`; `project-docs/docs/phases/phase-22/tasks/task-6-done.md:5-10,21-31,50-64,82-84`; `project-docs/docs/current/phase_brief.md:41`; `project-docs/docs/current/decisions_active.md:109-121`; `project-docs/docs/phases/phase-22/decisions.md:397-455`; `project-docs/specs/09_AI_WORKFLOW.md` §2.3.
+
+---
+
+## TRG-22-009 - Task 8 cancelled Receipt requirement contradicts canonical terminal-status DDL
+
+- **Trigger:** Phase 22 task 8 cannot satisfy the accepted cancellation Receipt behavior because the canonical `execution_receipts` DDL rejects the required `cancelled` terminal status.
+- **Originating task:** task-8
+- **Trigger signature:** task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- **Attempt count:** 3
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-22/tasks/task-8-done.md`.
+- **Candidate:** protected specification-contradiction blocker candidate.
+- **Checkpoint:** Runner-supplied commit-verification evidence confirms implementation commit `b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74` with subject `feat(workflow): derive task-8 Run closure` and report commit `764396118ce7d1cbb9a068ca7179ad204afb1566` with subject `docs(task): correct task-8 blocker receipts`; independent report-lint returned `OUTCOME BLOCKED` and `PASS report file committed and clean` (terminated `exit_code: 0`).
+- **Verdict:** BLOCK
+- **Exact mismatch:** `contracts.md` section 7 requires that cancellation adds terminal outcome `cancelled`, and task-8 VAL-031 requires a fid-observed cancelled terminal outcome to persist a durable non-passing Receipt. Canonical `migrations/0013_p21_operational_kernel.up.sql:250-268` instead constrains `execution_receipts.terminal_status` to `succeeded`, `failed`, `timed-out`, `signaled`, and `spawn-failed`; `cancelled` is excluded. Substitution of an admitted status would falsify the accepted cancellation behavior.
+- **Preserved evidence:** The Developer implemented and focused-tested fid-observed cancellation, interrupted-attempt preservation, run closure, action admission, Event live/replay parity, and bounded retained-fixture convergence without changing the migration, wire shape, error/exit code, VAL row, gate, or policy. The task report retains each failed attempt and records all eight required task gates as `BLOCKED` because VAL-031 cannot complete under the protected contradiction.
+- **Reasoning:** This is neither an in-scope implementation defect nor a canonical workflow-control mismatch. The accepted product/validation contract requires a durable Receipt value that the canonical persistence contract rejects. Task 8 expressly reserves contract/schema changes to Tech Lead authority. Repair would therefore require either an approved DDL/schema and task-scope amendment to admit `cancelled`, or an approved change to the accepted VAL-031/contracts cancellation requirement; TL-Lite cannot select either resolution.
+- **Local decisions made:**
+  - Preserve the task-8 implementation, immutable failed evidence, and blocked-gate receipts; do not map cancellation to `timed-out`, `signaled`, `failed`, or another existing status.
+  - Do not authorize a migration, DDL, wire-shape, contract, VAL, gate, workflow-control, or policy change, and do not dispatch a repair directive.
+- **Allowed repair boundary:** No local repair is authorized. A later full Tech Lead/Human resolution must state whether the canonical Receipt DDL and owning task scope are amended to admit `cancelled`, or whether the accepted cancellation Receipt requirement is amended, with matching accepted contract/schema/task authority before a same-task continuation.
+- **Forbidden changes:** Any unapproved change to `migrations/0013_p21_operational_kernel.up.sql`, canonical Receipt DDL/domain, wire shape, cancellation semantics, VAL-031, `contracts.md` section 7, required gate definitions, workflow controls, or policy; no substitution of an existing terminal status.
+- **Resolution condition:** Full Tech Lead/Human protected authority must reconcile the accepted durable cancelled Receipt behavior with the canonical `execution_receipts.terminal_status` CHECK and task-8 constraints, record the authoritative contract/schema disposition and bounded follow-up scope, then route a same-task continuation with the unchanged trigger and attempt accounting.
+- **If REPAIR:** N/A pending the protected resolution condition; no decision-free in-scope repair exists.
+- **Control trigger signature:** N/A; this is not a control-conformance repair.
+- **Control attempt count:** N/A; this is not a control-conformance repair.
+- **Control contract:** N/A; this is not a control-conformance repair.
+- **Control mismatch:** N/A; no canonical workflow verifier is implicated.
+- **Allowed files:** N/A; no local repair is authorized.
+- **Exact verification:** N/A pending protected resolution and a newly authorized continuation.
+- **Originating report:** `project-docs/docs/phases/phase-22/tasks/task-8-done.md`
+- **Control repair base:** N/A
+- **If BLOCK:** category specification-contradiction; ESC-22-004 raised in `project-docs/docs/current/tl_escalations_current.md`; full Tech Lead/Human authority must reconcile the accepted cancelled Receipt behavior with the canonical DDL before task 8 can resume.
+- **Human attention required:** yes
+- **References:** `project-docs/docs/phases/phase-22/contracts.md:278-285`; `project-docs/docs/phases/phase-22/tasks/task-8.md:17-24,54-63,74-78,82-108`; `project-docs/docs/phases/phase-22/tasks/task-8-done.md:3-10,34-38,139-153`; `migrations/0013_p21_operational_kernel.up.sql:250-268`; `project-docs/specs/09_AI_WORKFLOW.md` §§2.3, 9.

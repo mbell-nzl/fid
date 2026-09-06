@@ -65,3 +65,16 @@ the candidate task specs' file scopes, `schema.md` section 5 owner column,
 `public-interface.md` section 3 task column, and `contracts.md` subject
 statements. Behavior that is missing is not the same as behavior that is
 unassigned; undelivered accepted in-scope work is bounded repair (DEC-194).
+
+## ESC-22-004 - Task 8 cancelled Receipt requirement contradicts canonical terminal-status DDL
+
+- **Phase:** 22
+- **Status:** OPEN
+- **Raised by:** TRG-22-009
+- **Category:** specification-contradiction
+- **Summary:** Task 8's accepted VAL-031/contracts behavior requires a fid-observed cancellation to persist a durable Receipt with `terminal_status` `cancelled`, but canonical `execution_receipts.terminal_status` DDL excludes that value.
+- **Evidence:** `project-docs/docs/phases/phase-22/contracts.md` section 7 states that cancellation adds terminal outcome `cancelled`; `migrations/0013_p21_operational_kernel.up.sql:250-268` permits only `succeeded`, `failed`, `timed-out`, `signaled`, and `spawn-failed`. The committed task-8 report preserves focused passing cancellation/workflow evidence and records the required gates `BLOCKED` because VAL-031 cannot be completed without changing the protected DDL or accepted requirement. Runner-supplied verification confirms implementation `b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74` and report `764396118ce7d1cbb9a068ca7179ad204afb1566`; independent report-lint returned `OUTCOME BLOCKED` and `PASS report file committed and clean` (terminated `exit_code: 0`).
+- **Why blocked:** The current task forbids DDL, wire-shape, and contract changes. Mapping cancellation to an existing permitted status violates the accepted cancellation Receipt behavior, while modifying the DDL, schema/task scope, VAL-031, or contracts requirement is protected authority outside TL-Lite and task 8.
+- **Required resolution:** Full Tech Lead/Human authority must reconcile the accepted durable `cancelled` Receipt requirement with the canonical `execution_receipts.terminal_status` CHECK. It must record whether the canonical DDL and bounded owning scope are amended to admit `cancelled`, or the accepted VAL-031/contracts behavior is amended, and then provide the authorized same-task continuation and verification path. Preserve all failed receipts and do not substitute an existing terminal status.
+- **Links:** TRG-22-009; `project-docs/docs/phases/phase-22/tasks/task-8-done.md`; `project-docs/docs/phases/phase-22/tasks/task-8.md`; `project-docs/docs/phases/phase-22/contracts.md` section 7; `migrations/0013_p21_operational_kernel.up.sql:250-268`; `project-docs/specs/09_AI_WORKFLOW.md` §§2.3, 9.
+- **Human attention required:** yes
