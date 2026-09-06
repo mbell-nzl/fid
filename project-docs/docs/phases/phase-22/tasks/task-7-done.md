@@ -4,9 +4,9 @@
 
 - Task outcome: RECOVERY_REQUIRED
 - Category: in-scope-implementation
-- Condition: The accounting core, accepted authoring policy, and DEC-192 recovery-fence availability are checkpointed. Durable `budget_samples` projection, execution/Receipt coupling, accepted Event producers and effects, recovery/rebuild evidence, and the required quality gate remain unfinished.
-- Recovery attempts: 2
-- Next action: Continue phase-22/task-7 from this checkpoint. Add the missing `budget_samples` read/write slice around `internal/evidence.RunGate`: load the cross-Run chain before spawn, append fid observed samples with the Attempt/Receipt events, and produce exact Stop/Attention effects. Then replace the generic Event fixtures with exact effects and add recovery, rebuild, and real-entrypoint evidence before running the exact full gate.
+- Condition: Attempt/Receipt automatic fid-owned budget sample persistence and cross-Run sample-chain reads are checkpointed. Unknown/exhausted pre-spawn denial, exact Stop/Attention effects and response coupling, recovery/rebuild proof, real-entrypoint coverage, and the required quality gate remain unfinished.
+- Recovery attempts: 3
+- Next action: Continue phase-22/task-7 from implementation commit `a3766804f1a40ca5e827748f59550e1d72d452aa`. Add the exact `run.execution-blocked` unknown/exhausted producer with atomic Stop/Attention/runtime effects before spawn; attach boundary Stop/Attention effects to the admitted Attempt/Receipt Event producers; then add recovery/rebuild and real-entrypoint evidence and run the exact full gate.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -15,6 +15,7 @@
 - Added direct red/green tests for the final admitted attempt, null-to-baseline recovery, duplicate idempotency, conflicting duplicate keys, stale predecessor rejection, and int64 overflow rejection.
 - Converged envelope authoring to the accepted `budget-exhausted` policy, full accepted budget-unit set, zero warning threshold, and the sole `run.observe-budget` profile/grant capability.
 - Applied the pre-authorized DEC-192 change by making `run.budget-observed` and `run.execution-blocked` projectable, while retaining every other recovery fence entry; added live-apply/replay parity coverage for the newly available event types.
+- Added the first durable execution-accounting slice: `RunGate` reads each envelope budget's ordered cross-Run sample chain, derives fid-only charges from observed Attempt/Receipt facts, and persists the corresponding `budget_samples` plus Run runtime version update in the same Event transaction.
 
 ## Files created or modified
 
@@ -36,8 +37,8 @@
 
 ## Validation Contract Coverage
 
-- VAL-025: UNVERIFIED - `run.observe-budget` authoring acceptance is converged, but automatic fid-owned charging and caller-substitution rejection are not yet connected to execution.
-- VAL-026: PARTIAL - `TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines` in `internal/workflow/budget_test.go` covers the in-memory accounting chain; durable recovery and rebuild are unfinished.
+- VAL-025: PARTIAL - `TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts` in `internal/evidence/execution_test.go` proves automatic `attempts`, non-success `failures`, and measured `milliseconds` charges are derived only from fid-observed Attempt/Receipt facts. `RunGate` now includes those sample Effects in its Attempt/Receipt commits; caller-substitution and process-level proof remain unfinished.
+- VAL-026: PARTIAL - `TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines` and `TestDeriveBudgetPreservesUnknownAndExhaustedChains` in `internal/workflow/budget_test.go` cover ordered/idempotent and derived-chain state. `loadBudgetChains` reads by envelope/revision/budget across Runs, but durable recovery/rebuild proof is unfinished.
 - VAL-027: PARTIAL - the same direct test proves a null sample leaves totals null until a baseline; no durable admission denial exists yet.
 - VAL-028: PARTIAL - `TestFinalAllowedAttemptChargesAndRaisesStopAtomically` in `internal/workflow/budget_test.go` proves the derived boundary state only. `TestBudgetObservedEventProjectsIdenticallyLiveAndReplay` and `TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay` in `internal/journal/checkpoint_projection_test.go` prove generic projector live/replay parity after DEC-192; accepted budget/Stop/Attention effects and atomicity are unfinished.
 - VAL-029: UNVERIFIED - successor Run and rebuild evidence is unfinished.
@@ -47,6 +48,7 @@
 ## Tests run
 
 - Required pre-edit baseline: `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.250s\tcoverage: 25.2% of statements` (terminated `exit_code: 0`)
+- Required pre-edit baseline for recovery attempt 3: `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.254s\tcoverage: 25.2% of statements` (terminated `exit_code: 0`)
 - `go test ./internal/workflow -run '^TestFinalAllowedAttemptChargesAndRaisesStopAtomically$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Initial compile receipt: `AdmitBudgetSample` and `BudgetSample` were absent. A minimal accounting API was added; the immediately following semantic red attempt observed null consumption, null remaining, and no exhaustion state.
 - `go test ./internal/workflow -run '^TestFinalAllowedAttemptChargesAndRaisesStopAtomically$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
@@ -62,10 +64,19 @@
 - `gofmt -w internal/workflow/budget.go internal/workflow/envelope.go internal/workflow/activation.go internal/journal/checkpoint_projection_test.go && go test ./internal/workflow ./internal/journal ./cmd/fid -run '^(TestFinalAllowedAttemptChargesAndRaisesStopAtomically|TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines|TestBudgetSamplesRejectOverflow|TestBudgetObservedEventProjectsIdenticallyLiveAndReplay|TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestEnvelope)' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.749s` (terminated `exit_code: 0`)
   - The preceding package lines were `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.006s` and `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.403s`; the command termination is the observed combined result.
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- `go test ./internal/evidence -run '^TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - Red TDD evidence: `undefined: fidBudgetCharges`. Repair: add the fid-observed Attempt/Receipt charge derivation seam; the byte-identical command later passed.
+- `go test ./internal/evidence -run '^TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t0.004s` (terminated `exit_code: 0`)
+- `go test ./internal/workflow -run '^TestDeriveBudgetPreservesUnknownAndExhaustedChains$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - Red TDD evidence: `undefined: DeriveBudget`. Repair: expose the existing pure chain derivation for the execution admission reader; the byte-identical command later passed.
+- `go test ./internal/workflow -run '^TestDeriveBudgetPreservesUnknownAndExhaustedChains$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.005s` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.266s\tcoverage: 24.5% of statements` (terminated `exit_code: 0`)
+- `go test ./internal/evidence ./internal/workflow -run '^(TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts|TestDeriveBudgetPreservesUnknownAndExhaustedChains|TestFinalAllowedAttemptChargesAndRaisesStopAtomically|TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines|TestBudgetSamplesRejectOverflow)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.004s` (terminated `exit_code: 0`)
+  - The preceding package line was `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t0.004s`; the command termination is the observed combined result.
 
 ## Exact quality-gate results
 
-- `go test -race -cover ./internal/evidence` - BLOCKED - not rerun after implementation because the task is checkpointed before the required evidence wiring is complete; no observed termination result.
+- `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.266s\tcoverage: 24.5% of statements` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
 - `golangci-lint run ./...` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
 - `go test -race -coverprofile=coverage.out ./...` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
@@ -82,6 +93,7 @@
 - Convergence provenance: `internal/journal/checkpoint_projection_test.go` was introduced by `59c62b9e1d82c5f698d1e173908446d35b64f539` (`fix(recovery): admit checkpoint projection`, phase-22/task-4). DEC-192 and schema §5 changed the retained `TestRemainingRecoveryEventsRemainFenced` rows for `run.budget-observed` and `run.execution-blocked` from rejection to availability. This continuation removes exactly those two rows, adds their live/replay coverage, and uses the same focused journal command above. The five remaining fence rows are unchanged.
 - Convergence provenance: `internal/workflow/envelope.go`, `internal/workflow/run_read.go`, and `internal/evidence/execution.go` were introduced as the old immutable-null-budget surface before the phase planning base (the convergence inventory identifies the generic Run predecessor as `5ca732f` phase-21/task-11 and Attempt/Receipt as `b694991` phase-21/task-15). Their subject-preserving convergence remains assigned to task 7; only the accepted authoring validator is changed in this checkpoint, and durable execution convergence remains unfinished.
 - Recovery attempt 2 re-read the Task 7 authority and current producers. `internal/evidence/execution.go` still appends only the existing `execution_attempts` Effect before spawning and existing Receipt/Artifact Effects after termination; `internal/workflow/run_read.go` still reads only `run_budget_bindings`. This confirms the remaining work is the in-scope durable producer/read slice, rather than a report or DEC-192 fence defect.
+- Recovery attempt 3 convergence: the Task 7 accepted change now requires `internal/evidence/execution.go` to replace its pre-task-7 Attempt-only and Receipt/Artifact-only Event effects. The implementation loads `budget_samples` using the Envelope/revision/budget key rather than only the current Run, so successor Runs retain the same ordered chain. It appends only fid-derived `attempts`, non-success `failures`, elapsed `milliseconds`, and spawn-failure `tool-failures` values; external units still receive no automatic sample. The next continuation must complete the accepted unknown/exhausted rejection and Stop/Attention Event effects rather than changing this bounded behavior.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
@@ -93,8 +105,8 @@
 
 ## Commit hash
 
-- `a37e7d9a18fcb8d19432e1ce5100a33db839f978`
+- `a3766804f1a40ca5e827748f59550e1d72d452aa`
 
 ## Commit subject
 
-- `feat(budget): converge budget event admission policy`
+- `feat(budget): persist gate execution charges`
