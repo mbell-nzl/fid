@@ -7,15 +7,19 @@ merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1 and 3 are complete. Task 2 is in a same-task review-1 continuation:
-its two Must-fix repairs are implemented, but the required repository-wide
-race/coverage gate exposed a nondeterministic retained `cmd/fid` live-output
-golden. DEC-189 classifies and bounds that repair; TRG-22-005 carries the
-governing directive. Review 1 also leaves task-3 MF-3 (VAL-011 attribution)
-open. ESC-22-001 is resolved under DEC-190/191: protected workflow maintenance
-is committed at `3bb42b4efd391b216b752db2c31fe793f3538bac`, and the canonical
-ledger now contains the correcting TRG-22-005 and its exact task-2 attempt-2
-recovery. No escalation is open and no Human decision is pending.
+Tasks 1-5 are complete and review-1b passed. Task 6 is in a same-task
+continuation: its real built-binary journey reached the absent `fid run inspect`
+leaf and returned `RECOVERY_REQUIRED`, raising TRG-22-008 / ESC-22-003. DEC-194
+resolves it. Task 4 closed COMPLETE without writing the `run.checkpoint`
+producer or `run.inspect` read API that its own file scope, `schema.md` section
+5, `public-interface.md` section 3, and `contracts.md` section 3.1 all assign to
+it, so the owner was never ambiguous and this is undelivered in-scope work, not
+a protected boundary. Task 4 is closed with two successors on top and the
+Runner's only recovery route is a same-task continuation, so DEC-194 moves
+execution of exactly four `internal/workflow` files into task 6 with task-4
+provenance recorded. Task 4 stays COMPLETE and unedited. ESC-22-001 (DEC-190/
+191) and ESC-22-002 (DEC-192/193) closed earlier. No escalation is open and no
+Human decision is pending.
 
 ## Phase 22 Pack
 
@@ -27,7 +31,7 @@ inventory, QA Lead handoff, decisions and triage log are in
 Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
 assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
 refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
-records completed tasks 1..3 and the open review-1 repair window. Product QA
+records completed tasks 1..5 and the open task-6 recovery window. Product QA
 receipts retain their original session attribution; the separate maintenance
 report records freshly executed workflow checks only.
 
@@ -35,11 +39,12 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1 and 3 complete; 2 in same-task continuation; 4..18 pending.
-- Next: Runner records normal RUN-RESUME and dispatches the already recorded
-  task-2 review-1 continuation at attempt 2. Do not duplicate TRIAGE/recovery
-  or increment the attempt before dispatch. Fresh independent review-1
-  re-review closes the window after task-3 MF-3.
+- Task statuses: 1..5 complete; 6 in same-task continuation; 7..18 pending.
+- Next: Runner appends RUN-RESUME retaining TRG-22-008 / ESC-22-003 with
+  `Resolution authority: DEC-194`, then dispatches the bound task-6 same-task
+  continuation at the next monotonic attempt. Do not allocate a new TRG, do not
+  duplicate the recovery, and do not reopen task 4. QA review window 2 covers
+  tasks 4-6 after task 6 closes.
 
 ## Carry-Forward
 
@@ -54,6 +59,10 @@ CF-037: external kit contract/adapter duties required for Phase 25 qualification
 R-14: task 8 owns process fixture repair; earlier-failure route is DEC-186.
 CF-038: live-output golden hardening and post-truncation `output_bytes`
 wording, both from DEC-189; neither blocks this phase.
+CF-039: a task file scope is not self-enforcing (DEC-194). Planning must give
+every named production path an acceptance criterion or VAL citation that fails
+when it is absent; wrap-up should decide whether report-lint or QA review should
+also diff a report's delivered files against its accepted file scope.
 
 ## References
 

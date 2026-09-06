@@ -27,11 +27,39 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
+- DEC-194 amends this scope with the four `internal/workflow` domain files
+  below. They are task 4's accepted but undelivered scope; `run.checkpoint` and
+  `run.inspect` have no domain producer or read API, so no CLI leaf here can
+  conform without them. Implement them to the already accepted
+  `contracts.md` section 3/3.2, `public-interface.md` section 3, and
+  `schema.md` section 5 rows. Change no wire shape, error code, exit code, DDL,
+  Effect, or Event semantic. Record task-4 provenance for each file; do not
+  relabel the accepted owner. Task 4 stays COMPLETE and its report is not edited.
 
 ## Scope
 
 ### Files To Create Or Modify
 
+- `internal/workflow/run_checkpoint.go` - ADDED under DEC-194; the
+  `run.checkpoint` mutation and `run.checkpointed` Event producer, structured
+  exactly like `ObserveRun` in `internal/workflow/run_observation.go` and
+  emitting only the `schema.md` section 5 Effects (insert one
+  `run_observations` row with `kind='checkpoint'`; increment
+  `run_runtime.version`). Re-observe under the write lock and reject a
+  mismatched `reconciliation_digest` with `recovery-state-conflict`.
+- `internal/workflow/run_checkpoint_test.go` - ADDED under DEC-194; positive,
+  stale-version, inactive-Run, authority-denied, conflicting-observation, and
+  idempotent-replay coverage.
+- `internal/workflow/run_inspect.go` - ADDED under DEC-194; the read-only
+  `{run,reconciliation,liveness}` composition over existing `loadRun`,
+  `project.ObserveRepository`, `ReconcileRepository`, the latest accepted
+  checkpoint as comparison base, and the same-package `latestLiveness` reused
+  directly, never duplicated. Appends no Event and writes nothing.
+- `internal/workflow/run_inspect_test.go` - ADDED under DEC-194; repeated
+  unchanged inspection yields the same reconciliation digest, a checkpoint moves
+  the comparison base, and inspection leaves refs/index/stash/worktree byte-inert.
+- Only the minimum additional `internal/workflow` edit needed to register
+  these operations. No other domain change.
 - `cmd/fid/run.go`
 - `cmd/fid/run_recovery.go`
 - `cmd/fid/claim.go`
@@ -56,6 +84,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 ### Out Of Scope
 
 - Budget/Attention CLI leaves, import, final capability enablement, and future-feature stubs.
+- Any `internal/workflow` behavior beyond the four DEC-194 files; reopening,
+  re-reporting, or editing task 4; and any change to VAL-013..016 ownership.
 - Product policy, protected gate definitions, workflow controls, dependencies,
   and unrelated implementation changes beyond this accepted task.
 
@@ -68,6 +98,15 @@ Full sources, pass/fail criteria, and validator ownership are in
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,
   invalidating change, and the exact command that executes it.
+- [ ] `run.checkpoint` has a real domain producer whose accepted Effects and
+  preconditions are proven in `internal/workflow`, and `fid run checkpoint`
+  exposes it. (VAL-022/023, DEC-194)
+- [ ] `run.inspect` has a real read-only domain composition returning
+  `{run,reconciliation,liveness}` with a stable repeated digest, and
+  `fid run inspect <run-id>` exposes it. (VAL-022/023, DEC-194)
+- [ ] Each of the four DEC-194 files records accepted owner phase-22/task-4,
+  that no commit ever created it, the DEC-194 transfer, and the exact command
+  that executes it.
 
 ## First Failing Test
 

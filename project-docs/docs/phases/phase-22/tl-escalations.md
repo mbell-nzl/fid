@@ -81,3 +81,67 @@
 - **References:** TRG-22-007 and its resolution; `../phase-22/decisions.md`
   DEC-192/193; `../phase-22/execution-scope.md` section 3;
   `../phase-22/tasks/task-4.md`; `../phase-22/tasks/task-{5,7,8,10}.md`.
+
+## Retained original escalation
+
+### ESC-22-003 - Task 6 lacks canonical checkpoint and inspection domain behavior
+
+- **Phase:** 22
+- **Status:** OPEN
+- **Raised by:** TRG-22-008
+- **Category:** protected task boundary and ambiguous owner for required canonical workflow behavior
+- **Summary:** Task 6's real built-binary journey reaches absent `fid run inspect` and fails with `exit_code: 1` / `FAIL`. Its accepted source scope is CLI and integration only, while the required canonical `internal/workflow` checkpoint mutation/Event producer and inspection read API are absent.
+- **Required resolution:** Identify the accepted owner for those domain operations and record a bounded task-scope amendment or other accepted authority that preserves the existing public-interface, schema/Event, VAL, gate, and workflow-control contracts, naming exact permissible paths, required verification, and review route before a recovery dispatch.
+- **Evidence:** `tasks/task-6-done.md` records the focused real-process journey's absent inspect leaf and the missing workflow APIs; Runner verified task implementation commit `c69456fc9bf42f811e4999f1968a48c4a82d3cc5` and report HEAD `7f91325ee2c96d50205dca9564806080dc4e3059`; independent report-lint returned `OUTCOME RECOVERY_REQUIRED` (terminated `exit_code: 0`).
+- **Human attention required:** yes
+
+## Resolution ESC-22-003
+
+- **Status:** RESOLVED, 2026-09-06.
+- **Authority:** DEC-194. No Human decision was required: an accepted allocation
+  already existed, nothing accepted changed, and no contract, VAL row, gate,
+  validator, or workflow control was altered.
+- **The owner was never ambiguous.** Four accepted records agree that task 4
+  owns both domain operations: `tasks/task-4.md` names
+  `internal/workflow/run_checkpoint.go` and its test in its file scope;
+  `schema.md` section 5 assigns the `run.checkpointed` producer to task 4;
+  `public-interface.md` section 3 lists `run.inspect` and `run.checkpoint` as
+  `4,6` on the same domain-then-CLI split used by `run.observe` (3,6) and
+  `run.recover` (5,6); `contracts.md` sections 3/3.1 place both subjects and the
+  observer in task 4. Task 4 delivered the observer, reconciliation, the
+  `run.checkpoint` capability, and the DEC-192 fence removal, then closed
+  COMPLETE. `internal/workflow/run_checkpoint.go` has never existed in any
+  commit on any branch and no inspection read API was written. That is
+  undelivered accepted in-scope work, which is bounded repair, not a protected
+  task boundary and not a Human decision.
+- **The enabling defect is Tech Lead planning.** Task 4's acceptance criteria
+  demanded VAL-013..016, `run.checkpointed` projection parity, and the DEC-193
+  row, but never the producer or read API its own file scope named. A truthful
+  COMPLETE was therefore reachable with two named production files unwritten,
+  and the gap stayed invisible until the first process journey two tasks later.
+  A file scope is not self-enforcing; carried to wrap-up.
+- **Resolution route.** Reopening task 4 is rejected: it is closed, tasks 5 and
+  6 ran on top of it, and the Runner's only recovery route is a same-task
+  continuation of the active task. DEC-194 therefore moves execution of exactly
+  four `internal/workflow` files into task 6, the first task whose accepted
+  validation cannot pass without them (VAL-022 names `inspect`; VAL-023 covers
+  every section-3 recovery leaf), with task-4 provenance recorded rather than
+  relabelled. Task 4 stays COMPLETE and its report is preserved unedited.
+- **Executability:** task 6's existing required commands already compile and run
+  `internal/workflow` (`go test -race -coverprofile=coverage.out ./...`) and
+  build the binary exposing the leaves (tagged integration). No gate, tag, or
+  environment switch is added, so the assignment is executable where it lands.
+- **TL-Lite / Runner audit:** The BLOCK was correct in effect and wrong in one
+  reason. Refusing to fabricate domain behavior inside a CLI-scoped task and
+  refusing to widen a task boundary without authority is exactly the standing
+  rule, and the escalation was the right call. But "ambiguous owner" was not
+  established: the task-4 spec, `schema.md` section 5, `public-interface.md`
+  section 3, and `contracts.md` section 3.1 all name the owner, and none was
+  consulted before classification. Missing behavior is not the same as
+  unassigned behavior. Check the accepted ownership records before classifying
+  an owner as ambiguous.
+- **References:** TRG-22-008; `../phase-22/decisions.md` DEC-194;
+  `../phase-22/tasks/task-4.md`; `../phase-22/tasks/task-4-done.md`;
+  `../phase-22/tasks/task-6.md`; `../phase-22/schema.md` section 5;
+  `../phase-22/public-interface.md` section 3; `../phase-22/contracts.md`
+  sections 3/3.1/3.2.

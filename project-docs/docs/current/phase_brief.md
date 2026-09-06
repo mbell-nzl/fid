@@ -15,10 +15,13 @@ merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`.
 
-Tasks 1-3 complete; review-1b PASS. Task 4 stopped at TRG-22-007 / ESC-22-002,
-resolved under DEC-192 (the owning task unfences its own recovery Event) and
-DEC-193 (calendar-dependent retained fixtures are DEC-189 nondeterminism).
-Task 4 is amended and ready for a same-task continuation. No open ESC.
+Tasks 1-5 complete; review-1b PASS. Task 6 stopped at TRG-22-008 / ESC-22-003,
+resolved under DEC-194: task 4 closed COMPLETE without the `run.checkpoint`
+producer or `run.inspect` read API that four accepted records assign to it, so
+the owner was never ambiguous and this is undelivered in-scope work. DEC-194
+moves execution of four `internal/workflow` files into task 6 with task-4
+provenance recorded; task 4 stays COMPLETE and unedited. Task 6 is amended and
+ready for a same-task continuation. No open ESC.
 
 ## Operating Mode
 
@@ -36,9 +39,9 @@ Tasks are sequential; reviews follow every three tasks.
 | [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete | Runner QA readiness refresh |
 | [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Complete | 1 |
 | [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete | 2 |
-| [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Continuation (DEC-192/193) | 3 |
-| [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Pending | 4 |
-| [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Pending | 5 |
+| [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Complete | 3 |
+| [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Complete | 4 |
+| [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Continuation (DEC-194) | 5 |
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Pending | 6 |
 | [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Pending | 7 |
 | [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Pending | 8 |
@@ -55,8 +58,7 @@ Tasks are sequential; reviews follow every three tasks.
 ## Validation Contract
 
 `../phases/phase-22/qa/validation-contract.md`: 80 Ready assertions, each cited
-by an owning task. QA Lead owns 77; Human owns VAL-076..078. QA Reviewer checks
-windows without replacing owners.
+by an owning task. QA Lead owns 77; Human owns VAL-076..078.
 
 | Assertions | Scope / tasks | Final validator |
 |---|---|---|
@@ -66,15 +68,14 @@ windows without replacing owners.
 | VAL-054..065 | Portable recovery, tasks 13-15 | QA Lead |
 | VAL-066..072 | Removal/maintenance/performance, tasks 16-17 | QA Lead |
 | VAL-053,073..075,080 | Final conformance/consistency, task 18 | QA Lead |
-| VAL-076..078 | Human recovery/activation/import, task 18 fixture | Human |
+| VAL-076..078 | Human recovery/activation/import, task 18 | Human |
 
 ## QA Artifacts
 
 | Artifact | Path under phase-22/ | Status |
 |---|---|---|
-| QA Lead handoff | qa/qa-lead-handoff.md | Written |
-| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | Ready; Runner refresh before task 1 |
-| TL refinement / readiness | qa/tl-refinement.md | Accepted, DEC-188 |
+| QA Lead handoff / TL refinement | qa/qa-lead-handoff.md / qa/tl-refinement.md | Written; accepted DEC-188 |
+| QA plan / consistency review | qa/qa-plan.md / qa/consistency-review.md | Ready; refreshed before task 1 |
 | Mid-phase reviews | qa/review-1.md through qa/review-6.md | After tasks 3,6,9,12,15,18 |
 | Independent checkpoint | qa/checkpoint-after-task-12.md | Required before task 13 |
 | Final review / Human checklist | qa/final-review.md / qa/human-checklist.md | Pending |
@@ -100,12 +101,17 @@ windows without replacing owners.
 - DEC-193: no test pins an absolute date on a writer-appended Event in a
   live-clock workspace; such a failure is DEC-189 nondeterminism owned by the
   observing task, not convergence.
-- CF-033 inventory is recorded; AGENTS maintenance edit remains separately
-  scheduled. CF-018 fires only if production sqlquery.go is edited.
+- DEC-194: task 6 also implements `internal/workflow/run_{checkpoint,inspect}.go`
+  and their tests - task 4's undelivered domain scope; record task-4 provenance.
+  QA window 2 audits VAL-013's checkpoint clause with it. Read the accepted
+  ownership records before calling any owner ambiguous.
+- CF-033 recorded; AGENTS edit scheduled; CF-018 fires on sqlquery.go edits.
 - Canonical digests: contracts 3.1/3.2; closed 23-action set: interface 2.1.
-- Kit RECORD/DECIDE dispositions: `kit-contract-mapping.md`; CF-037 retains
-  external adapter obligations for Phase 25 qualification.
+- Kit dispositions: `kit-contract-mapping.md`; CF-037 retains external adapter
+  obligations for Phase 25 qualification.
 - No TL product code/tests, gates, or agent activation; Runner lint unchanged.
+- In scope: existing workflow, claims, evidence, validation, project, journal,
+  db, export, maintenance and CLI boundaries; no new dependency.
 
 ## Parity Matrix
 
@@ -117,33 +123,27 @@ windows without replacing owners.
 | Machine/Human | Closed JSON projection | Same JSON | Same semantic projection | VAL-053,075 |
 | Archive | Manifest v2 | Canonical equivalent | Re-export equivalent | VAL-054,064 |
 
-## Interfaces / Subsystems In Scope
-
-Existing workflow, claims, evidence, validation, project, journal, db, export,
-maintenance and CLI boundaries; no new dependency. Ownership is in task specs.
-
 ## Known Risks
 
 - Limited rebuild headroom; retain reference and per-sample failure semantics.
 - Force recovery fences fid authority, not a live process's direct file writes.
-- Archive validation/publication and cross-resource agreement need fault evidence.
+- Archive validation/publication and cross-resource agreement need fault proof.
 - DEC-187 records every pinned-kit difference; no production adapter qualifies.
+- A task file scope is not self-enforcing (DEC-194): a named production path
+  without a failing acceptance criterion can go unwritten for tasks.
 
-## Open Questions
+## Open Questions / Success / Exit Criteria
 
-None. All 14 QA refinements are dispositioned; runtime evidence and the three
-Human assertion outcomes remain required.
-
-## Success / Exit Criteria
-
+No open questions: all 14 QA refinements are dispositioned; runtime evidence and
+the three Human assertion outcomes remain required.
 All task gates and 80 assertions have evidence-backed outcomes, required reviews
 and Human checks pass, owned legacy state is removed, every exception is
-dispositioned, and Tech Lead records spec sync and sign-off. No first-adoption
-or release authorization is implied.
+dispositioned, and Tech Lead records spec sync and sign-off. No first-adoption or
+release authorization is implied.
 
 ## Next Planning Checkpoint
 
-Runner resumes with a normal RUN-RESUME, appends an ordinary TRIAGE REPAIR
-carrying DEC-192/193, and dispatches the bound task-4 same-task continuation.
-Review 2 covers tasks 4-6; the independent task-12 checkpoint must pass before
-task 13. Human checks and TL wrap-up close the phase.
+Runner appends RUN-RESUME retaining TRG-22-008 / ESC-22-003 with `Resolution
+authority: DEC-194`, then dispatches the bound task-6 same-task continuation at
+the next monotonic attempt. Review 2 covers tasks 4-6; the independent task-12
+checkpoint must pass before task 13. Human checks and TL wrap-up close it.

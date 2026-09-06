@@ -270,7 +270,7 @@ All inserted entity IDs/times are bound consistently across Effects/results.
 | `run.started` (replacement) | run | existing Run and immutable budget bindings; insert run_runtime with version 1 | 3 |
 | `claim.expired` | claim | update active claims to expired, version +1, preserve expires_at | 3 |
 | `run.observed` | run | insert liveness run_observations; increment run_runtime.version | 3 |
-| `run.checkpointed` | run | insert checkpoint run_observations; increment run_runtime.version | 4 |
+| `run.checkpointed` | run | insert checkpoint run_observations; increment run_runtime.version | 4; producer executed in 6 (DEC-194) |
 | `run.recovered` | predecessor run | terminalize active predecessor if needed; increment predecessor runtime version; dispose prior Claim if needed; insert successor Claim, Run, budget bindings, runtime; insert run_recoveries; optional fid intervention budget effects | 5, 7 |
 | `stop.raised` | stop | insert stops; insert or reuse open attention_items; insert attention_stop_links | 2 |
 | `stop.resolved` | stop | insert stop_resolutions only | 2 |

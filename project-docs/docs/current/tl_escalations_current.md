@@ -5,21 +5,27 @@
 
 ## Open Escalations
 
-None. ESC-22-002 was resolved on 2026-09-06 under DEC-192/193 and is archived
-in `../phases/phase-22/tl-escalations.md`.
+None. ESC-22-001, ESC-22-002, and ESC-22-003 are all resolved and archived in
+`../phases/phase-22/tl-escalations.md`.
 
 ## Latest Resolution
 
-ESC-22-002 resolved on 2026-09-06 under DEC-192 and DEC-193. Task 4's file
-scope is amended to delete exactly the `run.checkpointed` key from the task-1
-progressive fence in `internal/journal/project_effects.go` and to add a
-task-4-owned projection test; DEC-192 pre-authorizes the same key removal for
-tasks 5, 7, 8 and 10 and schedules the displaced VAL-003 convergence. The
-retained fixed-date Stop fixture is DEC-189 nondeterminism, assigned to the
-observing task and repaired at its source, with task 2 keeping subject
-ownership. No accepted contract, gate, VAL row, or task allocation changed and
-no Human decision was required. ESC-22-001 remains resolved under DEC-190/191.
-Both escalations and their resolutions are archived in
+ESC-22-003 resolved on 2026-09-06 under DEC-194. The owner was never ambiguous:
+`tasks/task-4.md`, `schema.md` section 5, `public-interface.md` section 3, and
+`contracts.md` sections 3/3.1 all assign the `run.checkpoint` producer and the
+`run.inspect` read API to task 4. Task 4 closed COMPLETE without writing
+`internal/workflow/run_checkpoint.go` (which has never existed in any commit) or
+any inspection read API, so this is undelivered accepted in-scope work, not a
+protected task boundary. Because task 4 is closed with two successors on top and
+the Runner's only recovery route is a same-task continuation, DEC-194 moves
+execution of exactly four `internal/workflow` files into task 6 with task-4
+provenance recorded. Task 4 stays COMPLETE and unedited. No contract, schema,
+Event, VAL row, validator, gate, task allocation, or workflow control changed;
+no Human decision was required. Task 6's existing required commands already
+execute the assigned files.
+
+ESC-22-002 was resolved earlier the same day under DEC-192/193, and ESC-22-001
+under DEC-190/191. All three and their resolutions are archived in
 `../phases/phase-22/tl-escalations.md`.
 
 ## Prior Phase Resolution
@@ -53,3 +59,9 @@ remain bounded repair. Before claiming recovery exhaustion, confirm each
 counted attempt returned a typed result and its directive permitted causal
 repair. Externally interrupted attempts are session-liveness evidence, not
 repair-capability evidence.
+
+Before classifying an owner as ambiguous, read the accepted ownership records:
+the candidate task specs' file scopes, `schema.md` section 5 owner column,
+`public-interface.md` section 3 task column, and `contracts.md` subject
+statements. Behavior that is missing is not the same as behavior that is
+unassigned; undelivered accepted in-scope work is bounded repair (DEC-194).

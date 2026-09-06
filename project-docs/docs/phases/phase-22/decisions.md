@@ -532,6 +532,111 @@
 - **Human decision required:** No. This applies accepted DEC-189 to a second
   instance of the same class and changes no accepted contract or test semantic.
 
+### DEC-194: Task 4 under-delivered its own accepted checkpoint and inspection domain scope
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED. Resolves ESC-22-003 / TRG-22-008.
+- **Cause:** Task 6's real built-binary journey reached `fid run inspect` and
+  terminated `exit_code: 1` / `FAIL`. The Developer correctly established that
+  `internal/workflow` contains no `run.checkpoint` mutation/Event producer and
+  no `run.inspect` read API, and correctly refused to fabricate them in the CLI
+  or to widen its own scope. TRG-22-008 then classified this as a protected
+  task boundary with an **ambiguous owner**.
+- **Finding - the owner is not ambiguous.** Four accepted records already name
+  it, and they agree:
+  - `tasks/task-4.md` Files To Create Or Modify names
+    `internal/workflow/run_checkpoint.go` and
+    `internal/workflow/run_checkpoint_test.go`.
+  - `schema.md` section 5 assigns the `run.checkpointed` Event producer to
+    task 4.
+  - `public-interface.md` section 3 assigns `run.inspect` and `run.checkpoint`
+    to tasks `4,6`; every peer row uses the same split (`run.observe` 3,6;
+    `run.recover` 5,6), where the lower task owns the domain operation and
+    task 6 owns the CLI leaf.
+  - `contracts.md` section 3 places `run.inspect` read-only reconciliation and
+    `run.checkpoint` observation semantics in task 4's subject, and section 3.1
+    states "Task 4 owns the observer".
+  Task 4 delivered `internal/project/repository.go`, `reconciliation.go`, the
+  `run.checkpoint` activated capability, and the DEC-192 fence removal, then
+  closed COMPLETE. `internal/workflow/run_checkpoint.go` has never existed in
+  any commit on any branch, and no inspection read API was written. This is
+  undelivered accepted in-scope work by task 4, not a contract change, not a
+  new task boundary, and not a decision the Human must make.
+- **Finding - the enabling defect is mine.** Task 4's acceptance criteria
+  demanded VAL-013..016, `run.checkpointed` live/replay projection parity, and
+  the DEC-193 row. None of them demanded the producer or the read API that the
+  same spec's file scope named. A truthful COMPLETE was therefore reachable
+  with two named domain files unwritten, and the omission stayed invisible
+  until the first process journey two tasks later. `internal/journal/`
+  `checkpoint_projection_test.go` proves the Event projects correctly when
+  something emits it; nothing emitted it. Recorded for wrap-up: a task's file
+  scope is not self-enforcing, so every named production path needs an
+  acceptance criterion or VAL citation that fails when it is absent.
+- **Resolution - execute the missing task-4 domain scope inside task 6.**
+  Reopening task 4 is rejected: it is closed, tasks 5 and 6 have run on top of
+  it, and the Phase Runner's only recovery route is a same-task continuation of
+  the currently active task. Task 6 is the first task whose accepted validation
+  cannot pass without this behavior (VAL-022 names `inspect`; VAL-023 covers
+  every section-3 recovery leaf), so execution moves to task 6 with ownership
+  provenance recorded rather than relabelled. Add to task 6's Files To Create
+  Or Modify, restricted exactly as written:
+  - `internal/workflow/run_checkpoint.go` (new) - the `run.checkpoint`
+    mutation and `run.checkpointed` Event producer, structured exactly like the
+    task-3 `ObserveRun` producer in `internal/workflow/run_observation.go`:
+    write lock, projection freshness, idempotency replay, Run load, active-Run
+    and `expected_version` preconditions, trusted `activated-harness` Actor,
+    `run.checkpoint` capability and Envelope grant, re-observation under the
+    lock, `reconciliation_digest` comparison rejecting with
+    `recovery-state-conflict`, then exactly the `schema.md` section 5 Effects:
+    insert one `run_observations` row with `kind='checkpoint'` and increment
+    `run_runtime.version`. No new Effect, table, or column.
+  - `internal/workflow/run_checkpoint_test.go` (new) - in-package positive,
+    stale-version, inactive-Run, authority-denied, conflicting-observation, and
+    idempotent-replay coverage.
+  - `internal/workflow/run_inspect.go` (new) - the read-only `run.inspect`
+    composition returning `{run, reconciliation, liveness}` exactly per
+    `public-interface.md` section 3, built from the existing `loadRun`,
+    `project.ObserveRepository`, `ReconcileRepository`, the latest accepted
+    checkpoint as reconciliation base, and the same-package `latestLiveness`
+    reused directly, never duplicated. It appends no Event, takes no mutation
+    write lock, and writes nothing to the repository.
+  - `internal/workflow/run_inspect_test.go` (new) - in-package coverage that
+    repeated unchanged inspection returns the same reconciliation digest
+    (contracts section 3.2), that a checkpoint moves the comparison base, and
+    that inspection is byte-inert against refs, index, stash, and worktree.
+  No other `internal/workflow` file may be edited except the minimum needed to
+  register these operations.
+- **Executability check.** Task 6's required commands already run these files:
+  `go test -race -coverprofile=coverage.out ./...` compiles and executes
+  `internal/workflow`, and `go test -tags integration -race`
+  `./cmd/fid/integration/...` builds the binary that exposes the leaves. The
+  assignment is therefore executable at the task that receives it; no gate,
+  tag, or environment switch is added.
+- **What does not change.** No public interface, wire shape, error code, exit
+  code, DDL, Effect list, Event semantic, VAL row, VAL wording, validator,
+  operating mode, gate command, threshold, tolerance, dependency, or workflow
+  control changes. Task 4 stays COMPLETE and its report is preserved unedited
+  as the durable evidence of what it did and did not deliver. VAL-013..016 stay
+  owned and validated by task 4.
+- **QA note carried to window 2.** VAL-013's fixture clause reads "unchanged
+  tree/checkpoint" and VAL-022 names `inspect`. QA Lead must audit the
+  checkpoint producer evidence under task 6 with task-4 provenance, not treat
+  its absence from task 4's report as a task-6 defect. This is a review
+  instruction, not a contract change.
+- **Convergence and provenance.** The task-6 report must record, for each of
+  the four files above, that the accepted owner of record is phase-22/task-4,
+  that no commit ever created them, that DEC-194 transferred execution to task
+  6, and the exact command that executes them. Provenance is recorded, not
+  rewritten.
+- **Verification:** Task 6's unchanged full gate in its existing order, plus
+  the byte-identical rerun of the preserved red command
+  `go test -tags integration ./cmd/fid/integration -run`
+  `'^TestP22EarlyRecoveryJourney$' -count=1`. The preserved failed receipts and
+  the `RECOVERY_REQUIRED` history in `task-6-done.md` stay intact.
+- **Human decision required:** No. An accepted allocation already existed; this
+  corrects a mis-classified owner and moves execution of undelivered in-scope
+  work to the first task that cannot pass without it.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
