@@ -3,7 +3,7 @@
 ## Workflow outcome
 
 - Task outcome: RECOVERY_REQUIRED
-- Category: implementation
+- Category: in-scope-implementation
 - Condition: The tested accounting core is checkpointed, but durable sample projection, admission/Receipt coupling, the two Event producers and their live/replay parity, retained fixture convergence, and the complete required quality gate remain unfinished.
 - Recovery attempts: 0
 - Next action: Continue phase-22/task-7 from this checkpoint. Persist `BudgetSample` chains in `budget_samples`, wire automatic fid observations and unknown/exhausted admission into `internal/evidence.RunGate`, then add the required journal and entrypoint evidence before running the exact full gate.
@@ -49,16 +49,17 @@
 
 ## Exact quality-gate results
 
-- `go test -race -cover ./internal/evidence` - UNVERIFIED after implementation; reserved for the complete task gate after the evidence changes land.
-- `gofmt -l cmd internal` - UNVERIFIED; not run because the task implementation is incomplete.
-- `golangci-lint run ./...` - UNVERIFIED; not run because the task implementation is incomplete.
-- `go test -race -coverprofile=coverage.out ./...` - UNVERIFIED; not run because the task implementation is incomplete.
-- `go tool cover -func=coverage.out` - UNVERIFIED; not run because the task implementation is incomplete.
-- `go test -tags integration -race ./cmd/fid/integration/...` - UNVERIFIED; not run because the task implementation is incomplete.
+- `go test -race -cover ./internal/evidence` - BLOCKED - not rerun after implementation because the task is checkpointed before the required evidence wiring is complete; no observed termination result.
+- `gofmt -l cmd internal` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
+- `golangci-lint run ./...` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
+- `go tool cover -func=coverage.out` - BLOCKED - not started because its required coverage profile was not produced; no observed termination result.
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - not started because the task implementation is incomplete; no observed termination result.
 
 ## Deviations from spec
 
 - No accepted contract or schema deviation. This is an incomplete same-task checkpoint, not a completed implementation.
+- Mandatory checkpoint-report correction: the first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` attempt ended `FAIL report-lint found 3 failure(s)` with `exit_code: 3`. Root cause: the recovery category was not one of the template's typed values and incomplete gates were labelled `UNVERIFIED` instead of `BLOCKED`. Repair: use `in-scope-implementation` and record the unstarted required commands as blocked with no observed termination. The byte-identical later command is recorded after this committed correction.
 - Convergence provenance: `internal/workflow/envelope.go`, `internal/workflow/run_read.go`, and `internal/evidence/execution.go` were introduced as the old immutable-null-budget surface before the phase planning base (the convergence inventory identifies the generic Run predecessor as `5ca732f` phase-21/task-11 and Attempt/Receipt as `b694991` phase-21/task-15). Their subject-preserving convergence remains assigned to task 7 and has not yet been edited.
 
 ## Concerns, technical debt, or notes for the Tech Lead
