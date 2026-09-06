@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `bead7efb134f80726022f1e38d7b6749fe550073`
 
 ## Commit subject
 
-- Pending commit
+- `feat(evidence): fence interrupted gate attempts`
