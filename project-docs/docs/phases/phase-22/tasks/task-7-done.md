@@ -61,6 +61,7 @@
 - `go test ./internal/journal -run '^(TestBudgetObservedEventProjectsIdenticallyLiveAndReplay|TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.319s` (terminated `exit_code: 0`)
 - `gofmt -w internal/workflow/budget.go internal/workflow/envelope.go internal/workflow/activation.go internal/journal/checkpoint_projection_test.go && go test ./internal/workflow ./internal/journal ./cmd/fid -run '^(TestFinalAllowedAttemptChargesAndRaisesStopAtomically|TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines|TestBudgetSamplesRejectOverflow|TestBudgetObservedEventProjectsIdenticallyLiveAndReplay|TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestEnvelope)' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.749s` (terminated `exit_code: 0`)
   - The preceding package lines were `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.006s` and `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.403s`; the command termination is the observed combined result.
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
