@@ -62,8 +62,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c69456fc9bf42f811e4999f1968a48c4a82d3cc5`
 
 ## Commit subject
 
-- Pending commit
+- `test(recovery): checkpoint task-6 CLI gap`
