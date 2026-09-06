@@ -37,12 +37,12 @@
 ## Tests run
 
 - `go test -race -run '^TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn$' ./cmd/fid` - FAIL - `FAIL` (terminated `exit_code: 1`); red evidence: same-key retry created `2/0` Attempts/Receipts.
-- `gofmt -w internal/evidence/execution.go cmd/fid/gate_run_test.go && go test -race -run '^TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	4.507s` (terminated `exit_code: 0`).
-- `go test -race -run '^(TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn|TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame|TestGateRunRecordsExactNonSuccessTerminalOutcomes)$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	12.909s` (terminated `exit_code: 0`).
+- `gofmt -w internal/evidence/execution.go cmd/fid/gate_run_test.go && go test -race -run '^TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	4.507s` (terminated `exit_code: 0`)
+- `go test -race -run '^(TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn|TestGateRunPersistsAttemptAndSuccessfulReceiptBeforeTerminalFrame|TestGateRunRecordsExactNonSuccessTerminalOutcomes)$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	12.909s` (terminated `exit_code: 0`)
 - `gofmt -w internal/evidence/live_test.go && go test -race -run '^TestRunLiveRecordsCancellationAsCancelled$' ./internal/evidence` - FAIL - `FAIL` (terminated `exit_code: 1`); red evidence: cancellation was incorrectly observed as `timed-out`.
 - `gofmt -w internal/evidence/live.go && go test -race -run '^TestRunLiveRecordsCancellationAsCancelled$' ./internal/evidence` - FAIL - `FAIL` (terminated `exit_code: 1`); the process signal overwrote the newly derived `cancelled` outcome.
-- `gofmt -w internal/evidence/live.go && go test -race -run '^TestRunLiveRecordsCancellationAsCancelled$' ./internal/evidence` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	1.031s` (terminated `exit_code: 0`).
-- `gofmt -w cmd/fid/gate_run_test.go && go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	17.140s` (terminated `exit_code: 0`).
+- `gofmt -w internal/evidence/live.go && go test -race -run '^TestRunLiveRecordsCancellationAsCancelled$' ./internal/evidence` - PASS - `ok  	github.com/mbell-nzl/fid/internal/evidence	1.031s` (terminated `exit_code: 0`)
+- `gofmt -w cmd/fid/gate_run_test.go && go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	17.140s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
