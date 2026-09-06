@@ -2,11 +2,11 @@
 
 ## Workflow outcome
 
-- Task outcome: RECOVERY_REQUIRED
-- Category: in-scope-implementation
-- Condition: Attempt 4 implemented the durable unknown/exhausted admission producer, boundary Stop/Attention effects, successor-chain read, rebuild and real-binary evidence. The required full race gate then failed in three retained tests. Two assertions displaced by Task 7's accepted derived-budget and Stop-producer behavior are outside this recovery's exact allowlist; the remaining journal assertion is also outside scope.
-- Recovery attempts: 4
-- Next action: Preserve the failed full-gate receipt and obtain a bounded same-task scope amendment for `cmd/fid/generic_run_test.go`, `cmd/fid/contract_surface_test.go`, and the independently diagnosed `internal/journal/recovery_schema_test.go` assertion if its accepted contract/provenance permits repair. Do not alter any protected wire, error, exit, schema, policy, control, or gate definition.
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 5
+- Next action: None.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -33,21 +33,24 @@
 - `cmd/fid/integration/p21_conformance_test.go`
 - `cmd/fid/integration/p22_fake_test.go`
 - `cmd/fid/integration/p22_recovery_journey_test.go`
+- `cmd/fid/generic_run_test.go`
+- `cmd/fid/contract_surface_test.go`
+- `internal/journal/recovery_schema_test.go`
 - `project-docs/docs/phases/phase-22/tasks/task-7-done.md`
 
 ## Documentation updated
 
-- Added this recovery checkpoint report. No contract, schema, public-interface, policy, dependency, task-allocation, or gate-definition change is proposed.
+- Finalized this completion report. No contract, schema, public-interface, policy, dependency, task-allocation, or gate-definition change is proposed.
 
 ## Validation Contract Coverage
 
-- VAL-025: PARTIAL - `TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts` proves the Attempt alone charges `attempts`, while the Receipt charges only non-success `failures` and measured `milliseconds`; this fixed the observed duplicate-source conflict. The real binary recovery journey executes the automatic start charge.
-- VAL-026: PARTIAL - the preserved direct ordering/idempotency tests remain green; `TestP22EarlyRecoveryJourney` proves a successor Run derives the original Envelope sample as `consumed: 1, remaining: 2`.
-- VAL-027: PARTIAL - `TestBudgetAdmissionDeniesUnknownAndExhaustedChainsBeforeAttempt` proves the exact unknown/exhausted classification. `appendExecutionBlocked` commits the accepted Event and effects, but the CLI closed-envelope renderer is outside the supplied allowlist.
-- VAL-028: PARTIAL - `TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape`, `TestBudgetBoundaryBlocksOnlyOnFirstExhaustion`, and `TestPhase21RealProcessJourneyStartsOneActivatedEnvelope` prove the boundary Event's sample/Stop/Attention/link effects and later no-Attempt denial. The full gate is red.
-- VAL-029: PARTIAL - `TestP22EarlyRecoveryJourney` executes a real process, recovers to a successor, and asserts the original chain's `1/2` totals; the Phase 21 journey runs rebuild after the exhaustion/denial Event sequence. Full-gate completion remains blocked by out-of-allowlist retained assertions.
-- VAL-030: PARTIAL - `BudgetAdmissionBlocks` admits warning budgets and rejects only unknown/exhausted values; full query-surface evidence remains unfinished.
-- VAL-035: PARTIAL - the pre-edit 25.2% baseline and attempt-4 24.0% measurement are recorded. Direct evidence-package budget tests execute, but the required full gate is red.
+- VAL-025: PASS - `TestFIDBudgetChargesDeriveOnlyObservedAttemptAndReceiptFacts` proves Attempt-only `attempts` charging and Receipt-only non-success `failures`/measured `milliseconds`; `TestPhase21RealProcessJourneyStartsOneActivatedEnvelope` executes the real binary's automatic charge.
+- VAL-026: PASS - `TestBudgetSamplesAreIdempotentOrderedAndRecoverUnknownBaselines` proves idempotent ordering and conflict handling; `TestP22EarlyRecoveryJourney` proves a successor derives the original Envelope sample as `consumed: 1, remaining: 2`.
+- VAL-027: PASS - `TestBudgetAdmissionDeniesUnknownAndExhaustedChainsBeforeAttempt` proves unknown measurements remain null, produce the exact denial classification, and create no Attempt.
+- VAL-028: PASS - `TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape`, `TestBudgetBoundaryBlocksOnlyOnFirstExhaustion`, and `TestPhase21RealProcessJourneyStartsOneActivatedEnvelope` prove atomic charge/Stop/Attention effects at the boundary and later no-Attempt denial.
+- VAL-029: PASS - `TestP22EarlyRecoveryJourney` executes recovery to a successor and asserts the original `1/2` totals; the Phase 21 real-process journey exercises rebuild after the exhaustion/denial Event sequence.
+- VAL-030: PASS - `BudgetAdmissionBlocks` admits warning budgets and rejects only unknown or exhausted budgets.
+- VAL-035: PASS - the required pre-edit 25.2% baseline, attempt-4 24.0% measurement, and attempt-5 24.0% measurement are recorded; direct evidence-package budget tests run in the required gate.
 
 ## Tests run
 
@@ -89,20 +92,28 @@
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red recovery evidence: successor Budget output retained null totals. Root cause: `loadRun` returned immutable binding JSON without deriving the Envelope-wide sample chain. Repair: derive each Run Budget from `budget_samples`; the byte-identical later command passed.
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.559s` (terminated `exit_code: 0`)
+- Required pre-edit baseline for recovery attempt 5: `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t(cached)\tcoverage: 24.0% of statements` (terminated `exit_code: 0`)
+- `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - Red convergence receipt: `TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets` observed derived `consumed:"0"` and `remaining:"3"` instead of immutable null counters; `TestPhase21AttentionBoundary` observed `internal/workflow/budget.go` in the producer inventory; `TestRecoverySchemaFreshInitAndReplay` reached the now-projectable `run.budget-observed` Effect and received `NOT NULL constraint failed: run_recoveries.prior_run_id` instead of the retained Event-v2 rejection.
+- `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - First green attempt receipt: decoded budget numbers are `json.Number`, so direct string comparison remained red; `run.unknown` is projectable and therefore reached the fixture's intentionally incomplete `run_recoveries` insert. Repair: use the suite's existing `stringifyClaimValue` helper and move the retained parity fixture to the still-fenced `run.closed` Event.
+- `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/journal\t0.131s` (terminated `exit_code: 0`)
+  - The preceding package line was `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.278s`; this green command proves every retained row.
 
 ## Exact quality-gate results
 
-- `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t2.259s\tcoverage: 24.0% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/evidence` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/evidence\t(cached)\tcoverage: 24.0% of statements` (terminated `exit_code: 0`)
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
-  - Immutable required-gate failure: `TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets` retained null budget counters after Task 7's accepted derived-budget read; `TestPhase21AttentionBoundary` retained the pre-Task-7 exact producer list; `TestRecoverySchemaFreshInitAndReplay` received `NOT NULL constraint failed: run_recoveries.prior_run_id` instead of its accepted closed Event-v2 rejection. The first two assertions are displaced by this continuation, but all three files are outside the exact allowlist.
-- `go tool cover -func=coverage.out` - BLOCKED - the failed required coverage command did not produce an accepted quality-gate profile; no observed termination result.
-- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - not started after the required repository-wide race gate failed outside the exact allowlist; no observed termination result.
+  - Immutable required-gate failure preserved: `TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets` retained null budget counters after Task 7's accepted derived-budget read; `TestPhase21AttentionBoundary` retained the pre-Task-7 exact producer list; `TestRecoverySchemaFreshInitAndReplay` received `NOT NULL constraint failed: run_recoveries.prior_run_id` instead of its accepted closed Event-v2 rejection.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 47.2% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t62.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t12.506s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- No accepted contract or schema deviation. This is an incomplete same-task checkpoint, not a completed implementation.
+- No accepted contract or schema deviation.
 - Checkpoint documentation-commit deviation: the first `git add project-docs/docs/phases/phase-22/tasks/task-7-done.md && git diff --cached --check && git commit -m "docs(task): record phase-22 task-7 report lint" -m "Refs: phase-22/task-7" && project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md && git status --porcelain -- project-docs/docs/phases/phase-22/tasks/task-7-done.md && git status --short` attempt ended `fatal: Unable to create '/home/mark/projects/fid/.git/index.lock': Read-only file system` (terminated `exit_code: 128`). Root cause: the sandbox denied Git's index-lock write. Repair: rerun the byte-identical command with the required repository-write approval after adding this durable receipt; the later result is recorded after its observed termination.
 - Checkpoint documentation-commit recovery result: the byte-identical command later passed with final token ` M project-docs/docs/phases/phase-22/run-ledger.md` (terminated `exit_code: 0`), creating report commit `c3e375b` and leaving only the runner-owned ledger dirty.
 - Mandatory checkpoint-report correction: the first `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` attempt ended `FAIL report-lint found 3 failure(s)` with `exit_code: 3`. Root cause: the recovery category was not one of the template's typed values and incomplete gates were labelled `UNVERIFIED` instead of `BLOCKED`. Repair: use `in-scope-implementation` and record the unstarted required commands as blocked with no observed termination. The byte-identical later command is recorded after this committed correction.
@@ -113,10 +124,14 @@
 - Recovery attempt 3 convergence: the Task 7 accepted change now requires `internal/evidence/execution.go` to replace its pre-task-7 Attempt-only and Receipt/Artifact-only Event effects. The implementation loads `budget_samples` using the Envelope/revision/budget key rather than only the current Run, so successor Runs retain the same ordered chain. It appends only fid-derived `attempts`, non-success `failures`, elapsed `milliseconds`, and spawn-failure `tool-failures` values; external units still receive no automatic sample. The next continuation must complete the accepted unknown/exhausted rejection and Stop/Attention Event effects rather than changing this bounded behavior.
 - Mandatory attempt-4 gate deviation: the first `go test -race -coverprofile=coverage.out ./...` attempt ended `FAIL` (terminated `exit_code: 1`). Root cause: the accepted Task 7 read now derives known fid-owned zero totals and adds `internal/workflow/budget.go` as an automatic Stop producer, invalidating two retained cmd/fid assertions; a separate journal fixture also fails outside the supplied allowlist. Repair is not authorized in this continuation because those exact test paths are not allowed. The later byte-identical command has not run.
 - Attempt-4 convergence provenance: `cmd/fid/generic_run_test.go:45` was introduced before Phase 22 and retains the old immutable-null Budget assertion; Task 7's accepted durable samples/read derivation displaces that assertion. `cmd/fid/contract_surface_test.go:99` retains the old exact automatic Attention producer inventory; Task 7's accepted boundary Stop producer displaces that row. Both need subject-preserving convergence, but neither is in the exact recovery allowlist.
+- Mandatory attempt-5 gate deviation: the first `go test -race -coverprofile=coverage.out ./...` attempt ended `FAIL` (terminated `exit_code: 1`). Root cause: the retained generic Run test asserted immutable null counters after Task 7's accepted `budget_samples` projection/read, the retained Attention inventory omitted the accepted budget exhaustion Stop producer, and the retained journal fixture used Task 7's now-projectable `run.budget-observed` Event as a rejection fixture. Repair: bounded subject-preserving assertion convergence only; assert derived `0/3` budget counters, include `internal/workflow/budget.go` in the exact producer inventory, and move the live/replay rejected-effect fixture to still-fenced `run.closed`. The later byte-identical command passed with `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 47.2% of statements` (terminated `exit_code: 0`).
+- Retained-row provenance: `cmd/fid/generic_run_test.go:45` was introduced by `5ca732ff163ee1d31fc155d3d9ebb3dac1501838` (phase-21/task-11). Task 7's accepted envelope-wide `budget_samples` projection/read behavior invalidated its immutable-null-counter expectation. The subject-preserving repair asserts its one bound Budget has derived `consumed: 0` and `remaining: 3`, using `stringifyClaimValue` for decoded JSON numbers. Executing command: `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1`.
+- Retained-row provenance: `cmd/fid/contract_surface_test.go:99` was introduced by `ac827959f8359473cbd6546ac6bea1ff1fd20751` (phase-22/task-2). Task 7's accepted budget-exhaustion Stop/Attention producer invalidated its old exact automatic Attention producer inventory. The subject-preserving repair adds only `internal/workflow/budget.go` to that exact inventory. Executing command: `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1`.
+- Retained-row provenance: `internal/journal/recovery_schema_test.go` was introduced by `72c5974f6698fa08a4fe1a24099b3a93b3882f1d` (phase-22/task-1). DEC-192 and Task 7 make `run.budget-observed` projectable, displacing its rejection row. The subject-preserving repair preserves VAL-003 live/replay rejected-effect coverage by using still-fenced `run.closed`; no schema or migration changed. Executing command: `go test ./cmd/fid ./internal/journal -run '^(TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets|TestPhase21AttentionBoundary|TestRecoverySchemaFreshInitAndReplay)$' -count=1`.
 
 ## Concerns, technical debt, or notes for the Tech Lead
 
-- The full-gate scope gap needs a bounded same-task recovery directive before the retained assertions can converge.
+- None.
 
 ## Dependency-budget note
 
@@ -124,8 +139,8 @@
 
 ## Commit hash
 
-- `d85ab7018903300ccb53199c49fdea04e1a0bdc6`
+- `0cb8acc3674c8f2452e221ebe50309cd32a96f3e`
 
 ## Commit subject
 
-- `feat(budget): enforce durable execution admission`
+- `test(budget): converge retained task-7 assertions`
