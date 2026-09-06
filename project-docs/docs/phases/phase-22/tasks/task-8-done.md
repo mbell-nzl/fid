@@ -5,7 +5,7 @@
 - Task outcome: BLOCKED
 - Category: specification-contradiction
 - Condition: VAL-031 and `contracts.md` section 7 require an observed `cancelled` Receipt, while canonical `migrations/0013_p21_operational_kernel.up.sql` permits only `succeeded`, `failed`, `timed-out`, `signaled`, and `spawn-failed` in `execution_receipts.terminal_status`. Task 8 forbids DDL, wire-shape, and contract changes, so no in-scope implementation can persist the required cancelled Receipt.
-- Recovery attempts: 3; no-progress remains 0/2 because attempts 1 and 3 made material in-scope progress and attempt 2 was report-only.
+- Recovery attempts: 3
 - Next action: Tech Lead must decide whether to amend the canonical Receipt DDL and task-8 scope for the accepted `cancelled` status, or amend the accepted VAL-031/contracts requirement. Then dispatch the bound same-task continuation.
 - Human attention required: yes
 
@@ -54,21 +54,23 @@
 
 - `go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: the accepted action admission rejected `run.abandon` and `run.close`.
-- `gofmt -w internal/workflow/activation.go internal/workflow/run_close_test.go && go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/workflow 0.004s` (terminated `exit_code: 0`)
+- `gofmt -w internal/workflow/activation.go internal/workflow/run_close_test.go && go test ./internal/workflow -run '^TestActivationAdmitsRunCloseAndAbandonActions$' -count=1` - PASS - `ok` (terminated `exit_code: 0`)
 - `gofmt -w internal/workflow/run_close_test.go && go test ./internal/workflow -run '^(TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: `RunCloseRequest`, `CloseRun`, `RunAbandonRequest`, and `AbandonRun` were undefined.
 - `go test ./internal/journal -run '^TestRunClosureEventsProjectIdenticallyLiveAndReplay$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red evidence: both accepted closure Events were rejected by their DEC-192 availability fences.
 - `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - First green attempt preserved: the Claim provenance `run-abandoned` violated the accepted DDL's closed `release_reason` domain.
-- `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' - PASS - `0.393s` (terminated `exit_code: 0`)
+- `gofmt -w internal/journal/project_effects.go internal/journal/checkpoint_projection_test.go internal/workflow/run_close.go internal/workflow/run_close_test.go && go test ./internal/journal ./internal/workflow -run '^(TestRunClosureEventsProjectIdenticallyLiveAndReplay|TestRemainingRecoveryEventsRemainFenced|TestActivationAdmitsRunCloseAndAbandonActions|TestCloseRunDerivesTerminalStateFromTrustedObservation|TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority)$' -count=1` - PASS - `ok` (terminated `exit_code: 0`)
 - `go test ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' - FAIL - `FAIL` (terminated `exit_code: 1`)
   - DEC-192 made its retained `run.closed` rejection fixture projectable, reaching `run_recoveries.prior_run_id` validation.
 - `go test ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/internal/journal 0.104s` (terminated `exit_code: 0`)
 - `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Retained `TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError` expected no idempotency record after task 8's durable pre-spawn Attempt.
 - `gofmt -w cmd/fid/gate_run_test.go && go test ./cmd/fid -run '^TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError$' -count=1` - PASS - `ok github.com/mbell-nzl/fid/cmd/fid 0.260s` (terminated `exit_code: 0`)
-- `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - PASS - `14.569s` (terminated `exit_code: 0`)
+- `go test ./internal/workflow ./internal/journal ./internal/evidence ./cmd/fid -count=1` - PASS - `ok` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - FAIL - `FAIL report-lint found 2 failure(s)` (terminated `exit_code: 2`)
+  - Root cause: `Recovery attempts` was not a typed integer, and one new `go test` receipt was not an output token. Repair: retain attempt count `3` alone and record `ok` as the exact short terminal token.
 
 ## Exact quality-gate results
 
@@ -92,6 +94,7 @@
 
 - Retained R-14 fixture provenance: `cmd/fid/gate_run_test.go` signal helper and timeout row were introduced by `b69499116e70d4c88423a30daa2010a4ff221f14` (phase-21/task-15); the timeout extension was last touched by `76ad781727b9e8545e069c4ac0e9f926012e6af9` (phase-21/task-21). DEC-186 and task 8’s cancellation/observed-terminal acceptance invalidate only their fixture mechanisms. The repaired subject remains exact signal and timeout terminal Receipt assertions, executed by `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' ./cmd/fid`.
 - Resolution required: a Tech Lead decision must reconcile the accepted `cancelled` terminal Receipt requirement with the closed canonical Receipt DDL and task-8's explicit DDL prohibition. This task cannot choose a migration/schema change or alter VAL-031/contracts semantics.
+- Recovery accounting: attempt 1 made interrupted-attempt and R-14 material progress; attempt 2 was report-only; attempt 3 made closure, action-admission, Event-parity, and retained-fixture convergence progress. The bound no-progress counter remains 0/2.
 
 ## Dependency-budget note
 
