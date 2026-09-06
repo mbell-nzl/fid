@@ -499,7 +499,7 @@ func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
 	}
 	previous = ""
 	for _, budget := range request.Budgets {
-		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || (budget.Unit != "attempts" && budget.Unit != "milliseconds" && budget.Unit != "tokens") || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 1 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "unavailable" || budget.Consumed != nil || budget.Remaining != nil {
+		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "budget-exhausted" || budget.Consumed != nil || budget.Remaining != nil {
 			return &EnvelopeInvalidError{Reason: "budget values must remain immutable null counters"}
 		}
 		previous = budget.Name

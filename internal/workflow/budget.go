@@ -85,6 +85,15 @@ func fidOwnedBudgetUnit(unit string) bool {
 	return unit == "attempts" || unit == "failures" || unit == "milliseconds" || unit == "tool-failures" || unit == "interventions"
 }
 
+func validBudgetUnit(unit string) bool {
+	switch unit {
+	case "attempts", "failures", "milliseconds", "input-tokens", "output-tokens", "micro-usd", "tool-failures", "diff-bytes", "interventions":
+		return true
+	default:
+		return false
+	}
+}
+
 func deriveBudget(budget Budget, samples []BudgetSample) (Budget, error) {
 	known := fidOwnedBudgetUnit(budget.Unit)
 	var consumed int64

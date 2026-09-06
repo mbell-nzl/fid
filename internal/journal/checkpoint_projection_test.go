@@ -69,10 +69,72 @@ func TestRecoveredEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
 	}
 }
 
+func TestBudgetObservedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	event := checkpointedProjectionEvent()
+	event.EventID = "EVT-20260906-000004"
+	event.EventType = "run.budget-observed"
+	event.CommandName = "run.observe-budget"
+	event.Effects[0].Values["created_event_id"] = event.EventID
+
+	live := openReplayDB(t, filepath.Join(t.TempDir(), "live-budget.sqlite"))
+	defer closeProjectDB(t, live)
+	seedCheckpointProjectionRun(t, live)
+	hash, err := HashEvent(event)
+	if err != nil {
+		t.Fatalf("HashEvent() error = %v", err)
+	}
+	if err := ProjectEvent(live, ProjectionInput{Event: event, EventHash: hash, File: "2026-09-06.jsonl", Line: 1, Offset: 1}); err != nil {
+		t.Fatalf("ProjectEvent() error = %v", err)
+	}
+	liveState := checkpointProjectionState(t, live)
+
+	workspace := newReplayWorkspace(t)
+	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-budget.sqlite"))
+	defer closeProjectDB(t, replayed)
+	seedCheckpointProjectionRun(t, replayed)
+	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+		t.Fatalf("ReplayJournal() error = %v", err)
+	}
+	if replayState := checkpointProjectionState(t, replayed); replayState != liveState {
+		t.Fatalf("budget projection replay state = %q, want live state %q", replayState, liveState)
+	}
+}
+
+func TestExecutionBlockedEventProjectsIdenticallyLiveAndReplay(t *testing.T) {
+	event := checkpointedProjectionEvent()
+	event.EventID = "EVT-20260906-000005"
+	event.EventType = "run.execution-blocked"
+	event.CommandName = "gate.run"
+	event.Effects[0].Values["created_event_id"] = event.EventID
+
+	live := openReplayDB(t, filepath.Join(t.TempDir(), "live-blocked.sqlite"))
+	defer closeProjectDB(t, live)
+	seedCheckpointProjectionRun(t, live)
+	hash, err := HashEvent(event)
+	if err != nil {
+		t.Fatalf("HashEvent() error = %v", err)
+	}
+	if err := ProjectEvent(live, ProjectionInput{Event: event, EventHash: hash, File: "2026-09-06.jsonl", Line: 1, Offset: 1}); err != nil {
+		t.Fatalf("ProjectEvent() error = %v", err)
+	}
+	liveState := checkpointProjectionState(t, live)
+
+	workspace := newReplayWorkspace(t)
+	writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+	replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-blocked.sqlite"))
+	defer closeProjectDB(t, replayed)
+	seedCheckpointProjectionRun(t, replayed)
+	if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+		t.Fatalf("ReplayJournal() error = %v", err)
+	}
+	if replayState := checkpointProjectionState(t, replayed); replayState != liveState {
+		t.Fatalf("execution-blocked projection replay state = %q, want live state %q", replayState, liveState)
+	}
+}
+
 func TestRemainingRecoveryEventsRemainFenced(t *testing.T) {
 	for _, eventType := range []string{
-		"run.budget-observed",
-		"run.execution-blocked",
 		"run.closed",
 		"run.abandoned",
 		"activation.resource-observed",

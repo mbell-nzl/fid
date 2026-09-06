@@ -202,7 +202,7 @@ func envelopeCreateInput(t *testing.T, workspace, issueID string, registration g
 		}},
 		"budgets": []any{map[string]any{
 			"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil,
-			"exhaustion_action": "unavailable", "consumed": nil, "remaining": nil,
+			"exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil,
 		}},
 	}
 }

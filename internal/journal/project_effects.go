@@ -31,8 +31,6 @@ func validateProjectedEvent(event Event) error {
 }
 
 var unavailableRecoveryEvents = map[string]struct{}{
-	"run.budget-observed":           {},
-	"run.execution-blocked":         {},
 	"run.closed":                    {},
 	"run.abandoned":                 {},
 	"activation.resource-observed":  {},
