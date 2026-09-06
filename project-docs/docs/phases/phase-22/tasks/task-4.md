@@ -31,6 +31,21 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
+- DEC-192 amends this scope for the progressive recovery-Event fence. Removing
+  exactly the `run.checkpointed` key implements the already accepted
+  `schema.md` section 5 ownership row; it is not a contract or task-boundary
+  change. Every other fenced Event stays fenced for its own owning task.
+- DEC-193 amends this scope for the retained fixed-date Stop fixture. It is a
+  DEC-189 nondeterministic retained test, introduced by
+  `ac827959f8359473cbd6546ac6bea1ff1fd20751` (phase-22/task-2) and not
+  displaced by any accepted task-4 change; task 2 keeps Stop/Attention subject
+  ownership. Repair the date binding at its source using the production
+  two-phase `journal.PrepareEvent` pattern at `internal/workflow/stop.go:185-190`.
+  Forbidden: re-pinning a newer fixed date, freezing or faking the clock in
+  product code, touching `internal/journal/writer.go`, relaxing the
+  out-of-order append guard, or weakening the assertion.
+- No test may pin an absolute calendar date on an Event appended through the
+  journal writer into a workspace initialized by the live clock (DEC-193).
 
 ## Scope
 
@@ -43,6 +58,19 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/workflow/run_checkpoint.go`
 - `internal/workflow/run_checkpoint_test.go`
 - `internal/workflow/activation.go` - only the run.checkpoint action addition.
+- `internal/journal/project_effects.go` - AMENDED under DEC-192; delete exactly
+  the `"run.checkpointed"` key from `unavailableRecoveryEvents`. No other edit:
+  the guard, its message, `validateProjectedEvent`, and all remaining keys stay
+  byte-identical. Do not edit `internal/journal/recovery_schema_test.go`.
+- `internal/journal/checkpoint_projection_test.go` - AMENDED under DEC-192; new
+  task-4-owned test proving `run.checkpointed` applies its accepted
+  `run_observations` insert and `run_runtime` version increment identically
+  under live apply and replay, and that the eight remaining fenced Events still
+  reject.
+- `internal/workflow/stop_test.go` - AMENDED under DEC-193; remove the
+  fixed-date binding in `stopRaisedEvent` and its two call sites only. Keep the
+  assertion subject exactly: two equivalent Stops share one open Attention while
+  keeping distinct facts and two links, asserted as `2/1/2`.
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
 - `project-docs/docs/phases/phase-22/tasks/task-4-done.md`.
@@ -74,6 +102,12 @@ Full sources, pass/fail criteria, and validator ownership are in
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,
   invalidating change, and the exact command that executes it.
+- [ ] `run.checkpointed` projects its accepted effects identically under live
+  apply and replay, and the eight remaining fenced Events still reject. (VAL-013)
+- [ ] The DEC-193 retained Stop fixture row records introducing commit
+  `ac827959f8359473cbd6546ac6bea1ff1fd20751`, phase-22/task-2, the calendar
+  mechanism, the evidence that no accepted task-4 change displaced it, the exact
+  repair, and the command that executes it. The preserved failed receipt stays.
 
 ## First Failing Test
 
@@ -104,7 +138,11 @@ golangci-lint run ./...
 go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 go test -tags integration -race ./cmd/fid/integration/...
+go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=5
 ```
+
+The final command is added by DEC-193 and proves the repaired fixture is stable
+rather than newly date-lucky. It does not replace any command above.
 
 No exception to the full task gate. Commands whose expected pass is nonzero:
 none. Focused red/green selections do not replace these commands. Report each

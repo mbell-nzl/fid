@@ -260,3 +260,178 @@
 - Resolution evidence: PENDING - product recovery is not yet dispatched; protected verifier repair is complete; preserve original required-gate failure and confirm DEC-189 mechanism before changing the harness
 - Next action: dispatch task-2 Developer continuation under TRG-22-005, confirm the coverage-child warning at expected exit_code: 23, repair the harness without changing goldens, run exact required commands and return typed evidence; then task-3 MF-3 and fresh independent review-1 re-review
 - Human attention required: no
+
+### 2026-09-06 11:24 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: Phase 22 runner restart after the committed TRG-22-005 task-2 TASK-RECOVERY attempt 2; no STOP was persisted
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: verified phase HEAD ba434f8d6322a0b06748861fb5a49ed906d8461f on branch phase-22; ledger ends at TASK-RECOVERY task-2 attempt 2 under TRG-22-005; task-2 review attempt 1 remains MATERIAL-PROGRESS; worktree clean
+- Resolution evidence: Reconciled runner-handoff.md, committed ledger, TRG-22-005, DEC-189..191, task-2 report, review-1, and the no-Open-ESC escalation register; the pending recovery remains unconsumed
+- Resolution authority: N/A
+- Continuing task: task-2
+- Next recovery: N/A
+
+### 2026-09-06 11:36 REPAIR task-2
+
+- Trigger signature: review-1:qa-rework:task-2-stop-attention-evidence
+- Attempt count: 2
+- Starting checkpoint: verified maintenance commit 3bb42b4efd391b216b752db2c31fe793f3538bac; retained task-2 implementation 0bf39eb2c54aadef2999bed41c654973673cfc57 and report 4dd41c97385f0655140bf56b094528cc4cafe6c1; task-2 TASK-RECOVERY attempt 2 under TRG-22-005; Runner ledger only dirt
+- Ending checkpoint: implementation commit daca8392a580ebdd2b6a8d3dab011910e39a779e; report commits 6681248da02ddc66ca3665172b6c80e60b830505 and cc5a1cc30d9d8e8ea1c946d74cf5411f70e7cde8; report-lint passed but report outcome remains RECOVERY_REQUIRED; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: DEC-189 mechanism diagnostic confirmed the coverage-child warning at observed exit_code: 23; the minimum harness repair now supplies a fresh GOCOVERDIR; the focused 20-run fixture, byte-identical repository-wide gate, remaining task-2 commands, and protected golden status all pass; the task-2 report remains RECOVERY_REQUIRED solely because independent review-1 re-review is still pending
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 11:37 TASK-RECOVERY task-2
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-2-done.md report-lint; linked review-1 re-review prerequisite
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: DEC-189
+- Triage disposition: N/A
+- Trigger signature: review-1:qa-rework:task-2-stop-attention-evidence
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- Forbidden changes: all product code, tests, golden fixtures, task specs, QA artifacts, decisions, dependencies, workflow controls, run-ledger entries, and every path except the exact task-2 completion report
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit daca8392a580ebdd2b6a8d3dab011910e39a779e; report commits 6681248da02ddc66ca3665172b6c80e60b830505 and cc5a1cc30d9d8e8ea1c946d74cf5411f70e7cde8; report-lint passed with OUTCOME RECOVERY_REQUIRED; task-2 recovery attempt 2 recorded MATERIAL-PROGRESS; Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger only dirt
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - finalize the report as OUTCOME COMPLETE while preserving all failed attempts, mandatory deviation evidence, exact gate receipts, and the note that independent review-1 re-review remains required; rerun report-lint
+- Next action: edit only project-docs/docs/phases/phase-22/tasks/task-2-done.md, preserve the completed implementation and all command evidence, set the typed task outcome to COMPLETE because the task gates and bounded repair are resolved, then commit the report and return the typed result
+- Human attention required: no
+
+### 2026-09-06 11:40 REPAIR task-2
+
+- Trigger signature: review-1:qa-rework:task-2-stop-attention-evidence
+- Attempt count: 3
+- Starting checkpoint: implementation commit daca8392a580ebdd2b6a8d3dab011910e39a779e; report commits 6681248da02ddc66ca3665172b6c80e60b830505 and cc5a1cc30d9d8e8ea1c946d74cf5411f70e7cde8; task-2 TASK-RECOVERY attempt 3; Runner ledger only dirt
+- Ending checkpoint: report commit b6935f3772f29aa01fc200b1538d029a00dd9aa3; report-lint completed with OUTCOME COMPLETE; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The exact task-2 completion report now records OUTCOME COMPLETE while preserving all failed attempts, the DEC-189 deviation and later green gates, the unchanged protected goldens, and the independent review-1 re-review prerequisite; report-lint passed with OUTCOME COMPLETE and terminated exit_code: 0
+- Next checkpoint: REVIEW
+
+### 2026-09-06 11:40 TASK task-2 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: b6935f3772f29aa01fc200b1538d029a00dd9aa3 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 11:41 TASK-RECOVERY task-3
+
+- Source: project-docs/docs/phases/phase-22/qa/review-1.md MF-3
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-1:qa-rework:task-3-claim-renewal-run-lineage
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/generic_claim_test.go,project-docs/docs/phases/phase-22/tasks/task-3-done.md
+- Forbidden changes: all product implementation, public interfaces, schema, journal contracts, task specs, QA artifacts, decisions, dependencies, workflow controls, golden fixtures, run-ledger entries, and every path outside the exact task-3 test scenario and completion report
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: task-3 implementation commit 7e419bfd8c233f933680d4a3b3957814c29dbd5e; task-3 report 6715c73f3c478c2a3244dbe6c41c91aa933b7901; task-2 complete at b6935f3772f29aa01fc200b1538d029a00dd9aa3; review-1 f5a859983bd2bef92c470efd37ea867fca20f545 remains open; Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger only dirt
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - add the single task-owned end-to-end Claim-renewal-after-Run scenario required by MF-3, prove immutable Run lineage and current versus stale Claim-version admission, correct VAL-011 evidence, run every exact task-3 command, finalize the report, and obtain a fresh independent review-1 re-review
+- Next action: dispatch a same-task task-3 Developer continuation in the exact review repair boundary
+- Human attention required: no
+
+### 2026-09-06 11:51 REPAIR task-3
+
+- Trigger signature: review-1:qa-rework:task-3-claim-renewal-run-lineage
+- Attempt count: 1
+- Starting checkpoint: task-3 implementation commit 7e419bfd8c233f933680d4a3b3957814c29dbd5e; task-3 report 6715c73f3c478c2a3244dbe6c41c91aa933b7901; task-3 TASK-RECOVERY attempt 1; task-2 complete at b6935f3772f29aa01fc200b1538d029a00dd9aa3; Runner ledger only dirt
+- Ending checkpoint: test commit d6d140a12bb36e9926f009aba8fc49c1446b39c2; report commit 8f22fa9c9de86e165214b47070064427bae385b3; report-lint completed with OUTCOME COMPLETE; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The task-owned Claim-renewal-after-Run scenario now proves immutable Run lineage and binding, stale Claim-version rejection without persistence mutation, and current Claim-version acceptance; all exact task-3 commands passed with observed termination; report-lint passed with OUTCOME COMPLETE and terminated exit_code: 0
+- Next checkpoint: REVIEW
+
+### 2026-09-06 11:51 TASK task-3 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-3-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 8f22fa9c9de86e165214b47070064427bae385b3 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 11:58 REVIEW review-1b
+
+- Path: project-docs/docs/phases/phase-22/qa/review-1b.md
+- Tasks covered: phase-22/task-1, phase-22/task-2, phase-22/task-3
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-1
+- Must-fix: 0 / Improvement: 1 / blocker candidates: 0
+
+### 2026-09-06 12:18 TASK-RECOVERY task-4
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-4-done.md report-lint; accepted run.checkpoint projection scope gap and retained full-gate failure
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-4:scope-gap:checkpoint-projection-and-retained-gate
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/project/repository.go,internal/project/repository_test.go,internal/workflow/reconciliation.go,internal/workflow/reconciliation_test.go,internal/workflow/run_checkpoint.go,internal/workflow/run_checkpoint_test.go,internal/workflow/activation.go,cmd/fid/integration,project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- Forbidden changes: Git mutation, force takeover, caller-supplied repository truth, public CLI wiring, product policy, protected gate definitions, workflow controls, dependencies, task specifications, QA artifacts, decisions, run-ledger entries, and paths outside the accepted task-4 scope
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit ac5e6f9bec80e06bfe5b7b33e3611a894d16038a; report commit 79c4bd10f84ba7fa43c467b10952055dcc1c03d9; report-lint completed with OUTCOME RECOVERY_REQUIRED; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger only dirt
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - obtain authoritative disposition for the required run.checkpointed projection path outside the named task scope and the retained fixed-date full-gate failure before dispatching continuation
+- Next action: invoke TL-Lite to decide RESUME, bounded REPAIR, or BLOCK; then follow its exact triage disposition
+- Human attention required: no
+
+### 2026-09-06 12:20 TRIAGE TRG-22-007
+
+- Trigger: Task 4 cannot complete accepted run.checkpoint behavior without an excluded canonical journal projection edit, and the required full gate fails in a retained task-2 fixture with no established task-4 causal ownership.
+- Originating task: task-4
+- Trigger signature: task-4:scope-gap:checkpoint-projection-and-retained-gate
+- Attempt count: 2
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-22 branch at 79c4bd10f84ba7fa43c467b10952055dcc1c03d9; task-4 implementation ac5e6f9bec80e06bfe5b7b33e3611a894d16038a and recovery report committed; Runner ledger is the only phase-worktree dirt before this append
+- Verdict: BLOCK (escalated as ESC-22-002)
+- Resolution evidence: The accepted schema assigns run.checkpointed observation and runtime effects to task 4, while internal/journal/project_effects.go rejects that Event outside task-4 scope. The required go test -race -coverprofile=coverage.out ./... terminated exit_code: 1 in TestEquivalentStopsShareAttentionButKeepDistinctFacts because its retained fixed 2026-09-05 Event is behind journal date 2026-09-06; provenance identifies task-2's introducing commit and no task-4 invalidating change. This requires protected task-boundary authority and separate retained-test ownership authority.
+- Triage log: project-docs/docs/phases/phase-22/triage-log.md entry TRG-22-007 confirmed; ESC-22-002 is recorded in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-06 12:21 STOP
+
+- Cause: task-4 / TRG-22-007 / ESC-22-002: accepted run.checkpoint projection requires an excluded journal-effect path, and the required full gate fails in a retained task-2 fixture whose ownership has not been established.
+- Triage: TRG-22-007 (BLOCK, escalated as ESC-22-002)
+- Protected category: protected task boundary and ambiguous retained-test ownership
+- Next Human or external-authority action: Full Tech Lead must establish exact bounded authority for the run.checkpointed journal projection and separately assign the retained task-2 fixture repair, preserving the required gate and accepted event semantics; Human decision is required for any task allocation or contract change.

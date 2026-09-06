@@ -32,6 +32,16 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
+- DEC-192 progressive fence, final owner: `internal/journal/` is already in
+  scope. Delete exactly the three `"activation.*"` keys from
+  `unavailableRecoveryEvents` in `internal/journal/project_effects.go`, prove
+  live-apply/replay parity for each, and then remove the now-empty map together
+  with the `validateProjectedEvent` fence branch it feeds.
+- DEC-192 scheduled convergence: removing the fence displaces task 1's
+  remaining fence assertion in `internal/journal/recovery_schema_test.go`
+  (VAL-003). Converge it to a genuinely unknown Event type, preserving the
+  VAL-003 live/replay parity subject and the corrupt Stop-code branch. Never
+  delete the parity assertion. Record provenance and the executing command.
 
 ## Scope
 

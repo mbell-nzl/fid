@@ -36,6 +36,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
+- DEC-192 progressive fence: `internal/journal/` is already in scope. Delete
+  exactly the `"run.closed"` and `"run.abandoned"` keys from
+  `unavailableRecoveryEvents` in `internal/journal/project_effects.go` as part
+  of implementing those Events, and prove live-apply/replay parity for each.
+  Leave every other key fenced.
 
 ## Scope
 

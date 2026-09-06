@@ -9,16 +9,16 @@ export the same state, rebuild, and resume without contradictory facts.
 
 ## Status
 
-**Executing (DEC-188).** Branch `phase-22`, created from merged
-main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 is wrapped under
-DEC-179 and already merged. Phase 22's proposed contracts and task pack are
-refined against QA R-01..14 and all kit comparison items (DEC-184..187).
-Human approved the refined pack on 2026-09-05. See
-`../phases/phase-22/runner-handoff.md`.
+**Executing (DEC-188).** Branch `phase-22` from merged main
+`89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 is wrapped (DEC-179) and
+merged. Contracts and task pack are refined against QA R-01..14 and all kit
+comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
+See `../phases/phase-22/runner-handoff.md`.
 
-Tasks 1 and 3 are complete; review 1 returned REPAIR. Task 2 is in a same-task
-review-1 continuation bounded by DEC-189 and TRG-22-005 (nondeterministic
-retained `cmd/fid` live-output golden). Task-3 MF-3 remains open. No open ESC.
+Tasks 1-3 complete; review-1b PASS. Task 4 stopped at TRG-22-007 / ESC-22-002,
+resolved under DEC-192 (the owning task unfences its own recovery Event) and
+DEC-193 (calendar-dependent retained fixtures are DEC-189 nondeterminism).
+Task 4 is amended and ready for a same-task continuation. No open ESC.
 
 ## Operating Mode
 
@@ -34,9 +34,9 @@ Tasks are sequential; reviews follow every three tasks.
 | Task | Title | Status | Dependency |
 |---|---|---|---|
 | [1](../phases/phase-22/tasks/task-1.md) | Recovery schema and replay foundation | Complete | Runner QA readiness refresh |
-| [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Continuation (DEC-189 / TRG-22-005) | 1 |
-| [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete; review-1 MF-3 open | 2 |
-| [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Pending | 3 |
+| [2](../phases/phase-22/tasks/task-2.md) | Typed Stops and Attention domain | Complete | 1 |
+| [3](../phases/phase-22/tasks/task-3.md) | Lease lifecycle and executor observations | Complete | 2 |
+| [4](../phases/phase-22/tasks/task-4.md) | Read-only repository reconciliation | Continuation (DEC-192/193) | 3 |
 | [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Pending | 4 |
 | [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Pending | 5 |
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Pending | 6 |
@@ -54,9 +54,9 @@ Tasks are sequential; reviews follow every three tasks.
 
 ## Validation Contract
 
-`../phases/phase-22/qa/validation-contract.md`: 80 Ready assertions, each
-cited by an owning task. QA Lead owns 77 final deterministic validations;
-Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
+`../phases/phase-22/qa/validation-contract.md`: 80 Ready assertions, each cited
+by an owning task. QA Lead owns 77; Human owns VAL-076..078. QA Reviewer checks
+windows without replacing owners.
 
 | Assertions | Scope / tasks | Final validator |
 |---|---|---|
@@ -93,16 +93,19 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 - Claims capability stays false until Phase 24 parallel semantics qualify.
 - CF-024 unchanged three-fresh-sample <30 s rebuild rule, early samples at 1/16;
   R-14 synchronized fixture repair at task 8, earlier-failure route in DEC-186.
-- CF-034 direct workflow/
-  evidence coverage in tasks 2/7; CF-035 consuming-config proposal in task 11.
+- CF-034 workflow/evidence coverage in tasks 2/7; CF-035 config in task 11.
+- DEC-192: each fenced recovery Event in `internal/journal/project_effects.go`
+  is unfenced by its `schema.md` section 5 owner (4,5,7,8,10); task 10 removes
+  the empty fence; VAL-003 convergence is scheduled for tasks 5 and 10.
+- DEC-193: no test pins an absolute date on a writer-appended Event in a
+  live-clock workspace; such a failure is DEC-189 nondeterminism owned by the
+  observing task, not convergence.
 - CF-033 inventory is recorded; AGENTS maintenance edit remains separately
   scheduled. CF-018 fires only if production sqlquery.go is edited.
-- Canonical digests: contracts sections 3.1/3.2. Closed 23-action set:
-  public-interface section 2.1; activation remains bootstrap-attributed.
+- Canonical digests: contracts 3.1/3.2; closed 23-action set: interface 2.1.
 - Kit RECORD/DECIDE dispositions: `kit-contract-mapping.md`; CF-037 retains
   external adapter obligations for Phase 25 qualification.
-- No product code/tests, gates, or agent activation by Tech Lead.
-  Runner report lint and schema-v2 ledger rules remain unchanged.
+- No TL product code/tests, gates, or agent activation; Runner lint unchanged.
 
 ## Parity Matrix
 
@@ -117,31 +120,30 @@ Human owns VAL-076..078. QA Reviewer checks windows without replacing owners.
 ## Interfaces / Subsystems In Scope
 
 Existing workflow, claims, evidence, validation, project, journal, db, export,
-maintenance and CLI boundaries; no new runtime dependency. Exact ownership is
-in the task specs, not inferred from this summary.
+maintenance and CLI boundaries; no new dependency. Ownership is in task specs.
 
 ## Known Risks
 
 - Limited rebuild headroom; retain reference and per-sample failure semantics.
 - Force recovery fences fid authority, not a live process's direct file writes.
 - Archive validation/publication and cross-resource agreement need fault evidence.
-- QA reviewed the pinned kit; DEC-187 records every difference and later owner.
-  Final QA must recheck currency/as-built behavior; no production adapter qualifies.
+- DEC-187 records every pinned-kit difference; no production adapter qualifies.
 
 ## Open Questions
 
-No open planning approval. All 14 QA refinements are dispositioned and accepted;
-runtime evidence and the three Human assertion outcomes remain required.
+None. All 14 QA refinements are dispositioned; runtime evidence and the three
+Human assertion outcomes remain required.
 
 ## Success / Exit Criteria
 
 All task gates and 80 assertions have evidence-backed outcomes, required reviews
 and Human checks pass, owned legacy state is removed, every exception is
-explicitly dispositioned, and Tech Lead records spec sync and phase sign-off.
-No first-adoption or release authorization is implied.
+dispositioned, and Tech Lead records spec sync and sign-off. No first-adoption
+or release authorization is implied.
 
 ## Next Planning Checkpoint
 
-Runner verifies branch/approval and obtains the required QA Lead refresh, then
-dispatches task 1. Reviews follow each three tasks; the independent task-12
-checkpoint must pass before task 13. Human checks and TL wrap-up close the phase.
+Runner resumes with a normal RUN-RESUME, appends an ordinary TRIAGE REPAIR
+carrying DEC-192/193, and dispatches the bound task-4 same-task continuation.
+Review 2 covers tasks 4-6; the independent task-12 checkpoint must pass before
+task 13. Human checks and TL wrap-up close the phase.

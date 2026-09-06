@@ -394,6 +394,144 @@
   changed, and no product/task/gate semantics change. This is an explicit
   maintenance extension, outside normal isolated control-conformance repair.
 
+### DEC-192: The owning task removes its own progressive recovery-Event fence
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED. Resolves obligation 1 of ESC-22-002 / TRG-22-007.
+- **Cause:** Task 1 introduced `unavailableRecoveryEvents` in
+  `internal/journal/project_effects.go` as a progressive availability fence:
+  every Event-v2 recovery type is rejected before effects apply until its
+  recovery domain exists. `schema.md` section 5 assigns each fenced Event to
+  exactly one owning task (`run.checkpointed` -> 4, `run.recovered` -> 5,
+  `run.budget-observed`/`run.execution-blocked` -> 7, `run.closed`/
+  `run.abandoned` -> 8, the three `activation.*` rows -> 10). No task spec
+  listed the fence file, so task 4 could not implement the `run.checkpointed`
+  Event it owns and reported RECOVERY_REQUIRED.
+- **Finding:** This is a Tech Lead planning omission under DEC-167/173, not a
+  contract change and not a protected task-boundary change. The accepted
+  contract already requires `run.checkpointed` to become projectable in task 4;
+  the fence is the implementation of "not yet", and its per-key removal is the
+  implementation of "now". Deleting one key neither changes accepted Event or
+  Effect semantics nor alters replay/live-apply parity: `applyEventEffects`
+  keeps the identical generic insert/update path for both, and the
+  `run_observations.kind` CHECK already admits `'checkpoint'` from task 1's
+  migration.
+- **Resolution - task 4 scope amendment:** Add to task 4's Files To Create Or
+  Modify, restricted exactly as written:
+  - `internal/journal/project_effects.go` - delete exactly the
+    `"run.checkpointed"` map key. No other edit to that file: the guard, its
+    message, `validateProjectedEvent`, and every remaining key stay
+    byte-identical.
+  - `internal/journal/checkpoint_projection_test.go` (new, task-4 owned) -
+    prove `run.checkpointed` applies its accepted `run_observations` insert and
+    `run_runtime` version increment identically under live apply and replay,
+    and that the eight remaining fenced Events still reject. Do not edit
+    `internal/journal/recovery_schema_test.go`; it is task-1 owned and its
+    `run.recovered` rejection must stay intact.
+- **Resolution - standing protocol for tasks 5, 7, 8, 10:** The same amendment
+  is pre-authorized, so this must not be escalated again. Each owning task's
+  scope includes `internal/journal/project_effects.go` restricted to deleting
+  exactly its own key(s) from `unavailableRecoveryEvents`, plus proof of live/
+  replay parity for the newly available Event. Task 10 owns the last three
+  keys and therefore also deletes the now-empty map and the
+  `validateProjectedEvent` fence branch it feeds.
+- **Resolution - VAL-003 convergence, scheduled not discovered:** Task 1's
+  `internal/journal/recovery_schema_test.go` pins VAL-003 partly on the
+  `run.recovered` rejection, which task 5's accepted change displaces, and on
+  the fence generally, which task 10's accepted change displaces. Both are
+  subject-preserving convergence owned by the displacing task under
+  DEC-162/165/166, and both are executed by the ordinary race/coverage gate.
+  VAL-003's subject is live/replay parity for accepted and for rejected
+  Effects; converge it by substituting a still-fenced Event (task 5) and then a
+  genuinely unknown Event type (task 10), keeping the corrupt Stop-code branch.
+  Never satisfy convergence by deleting the parity assertion.
+- **Verification:** Task 4's unchanged full gate, including the byte-identical
+  `go test -race -coverprofile=coverage.out ./...` and the tagged integration
+  command. No gate command, threshold, tolerance, pass/fail semantic, VAL row,
+  validator, task allocation, public interface, DDL, or Event contract changes.
+- **Human decision required:** No. Nothing accepted is altered; a planning
+  omission in one task's file list is corrected against the already accepted
+  `schema.md` section 5 ownership table.
+
+### DEC-193: Calendar-dependent retained fixtures are DEC-189 nondeterminism
+
+- **Date:** 2026-09-06.
+- **Status:** ACCEPTED. Resolves obligation 2 of ESC-22-002 / TRG-22-007.
+- **Cause:** Task 4's byte-identical required `go test -race
+  -coverprofile=coverage.out ./...` failed in
+  `internal/workflow/stop_test.go` `TestEquivalentStopsShareAttentionButKeep`
+  `DistinctFacts` with `system clock is behind latest journal date 2026-09-06;
+  refusing to append out of order`.
+- **Established provenance:** The assertion was introduced by
+  `ac827959f8359473cbd6546ac6bea1ff1fd20751` `feat(workflow): add typed Stop
+  and Attention facts` (`Refs: phase-22/task-2`). Ownership was established
+  from the introducing commit, not from a filename or task label.
+- **Established mechanism:** `stopRaisedEvent` pins
+  `OccurredAt: time.Date(2026, 9, 5, ...)` and the literal EventIDs
+  `EVT-20260905-00000{1,2}`, while `initializedWorkflowWorkspace` runs the real
+  `bootstrap.InitializeWorkspace`, which writes an Event dated by the live
+  clock. On 2026-09-05 both dates agreed. From 2026-09-06 the initialization
+  Event is newer, so `prepareEventWithClockOptions` correctly refuses the
+  backdated append. The failure is produced by the calendar, not by any code
+  change.
+- **Not task-4 convergence:** `ac5e6f9bec80e06bfe5b7b33e3611a894d16038a` touches
+  only `internal/project/repository{,_test}.go`,
+  `internal/workflow/reconciliation{,_test}.go`, and one `activation.go` line
+  adding `run.checkpoint` to the allowed capability set. None of that reaches
+  the journal writer, the date guard, or the workspace initializer. No accepted
+  task-4 change displaced the assertion, so DEC-162/165/166 convergence and
+  DEC-175 do not assign it to task 4. TRG-22-007 was right to refuse to infer
+  ownership from gate reach.
+- **Governing rule already accepted:** DEC-189 covers exactly this class. A
+  retained test that is nondeterministic under an unchanged required gate is
+  neither convergence nor a DEC-175 latent implementation defect; it is
+  assigned to the observing task by scope amendment, and the nondeterminism is
+  repaired at its source. Time dependence is nondeterminism: the same bytes and
+  the same command pass or fail according to the wall clock. DEC-189 therefore
+  already answers this, and no new ownership principle is created.
+- **Resolution - task 4 scope amendment:** Add `internal/workflow/stop_test.go`
+  to task 4, restricted to removing the fixed-date binding in `stopRaisedEvent`
+  and its two call sites. `internal/workflow` is walked by task 4's ordinary
+  race/coverage gate, so the assignment is executable, as DEC-167/173 requires.
+- **Required repair shape:** Derive the Event date from the workspace instead
+  of pinning it, using the production two-phase pattern at
+  `internal/workflow/stop.go:185-190`: build the Event with an empty EventID,
+  call `journal.PrepareEvent` to obtain the writer-assigned ID, then rebuild the
+  Effects with that ID. Any equivalent repair that leaves no absolute calendar
+  literal on this append path is acceptable. Forbidden: re-pinning a newer fixed
+  date, faking or freezing the clock inside product code, relaxing or bypassing
+  the `prepareEventWithClockOptions` out-of-order guard, changing
+  `internal/journal/writer.go`, or weakening the assertion. The subject is
+  unchanged and must stay unchanged: two equivalent Stops share one open
+  Attention while keeping distinct Stop facts and two links, asserted as
+  `2/1/2`.
+- **Task 2 retains subject ownership:** Task 2's gate passed correctly when it
+  ran; the fixture decayed afterwards. Task 4 makes the exact date-binding
+  repair and records full provenance; task 2's Stop/Attention semantics
+  ownership and review-1b PASS are untouched. This mirrors the already accepted
+  `execution-scope.md` R-14 pattern, where the encountering task takes a bounded
+  same-task amendment and the scheduled owner keeps the subject.
+- **Required report provenance:** Task 4's report must record, for this row, the
+  introducing commit, phase/task, the calendar mechanism, the evidence that no
+  accepted task-4 change displaced it, the exact repair, and the command that
+  executes it. The preserved failed receipt stays in the report.
+- **Standing prevention:** No test in this repository may pin an absolute
+  calendar date on an Event that is appended through the journal writer into a
+  workspace initialized by the live clock. `internal/workflow/stop_test.go` is
+  the only current instance; `internal/journal/{event_v2,writer}_test.go` pin
+  dates only in self-contained journal directories and are unaffected.
+  Fixed-date rows written directly into journal files or SQL, as in
+  `internal/journal/recovery_schema_test.go` and
+  `internal/db/recovery_migration_test.go`, remain allowed. Every later task
+  and QA review applies this rule to new tests.
+- **Verification:** Task 4's unchanged full gate, plus one repeat of
+  `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttention`
+  `ButKeepDistinctFacts$' -count=5` to show the repair is stable rather than
+  newly date-lucky. No gate command, threshold, tolerance, pass/fail semantic,
+  VAL row, validator, task allocation, or product contract changes.
+- **Human decision required:** No. This applies accepted DEC-189 to a second
+  instance of the same class and changes no accepted contract or test semantic.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

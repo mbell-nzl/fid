@@ -67,6 +67,16 @@
   authority, and active owning-review triggers work across recovery boundaries.
 - DEC-191: canonical prompts retain the committed Codex model choices and
   the TL Bash capability; generated provider copies are synchronized.
+- DEC-192: a progressive availability fence is removed key-by-key by the task
+  that owns the fenced Event; the owning table, not the fence file's author,
+  fixes ownership, and the last owner removes the empty fence and its guard.
+  Fence removal is implementation of an accepted contract, never a boundary
+  change, and the displaced fence assertions are scheduled convergence.
+- DEC-193: a calendar-dependent retained test is DEC-189 nondeterminism, not
+  convergence and not DEC-175. Assign it to the observing task, repair the date
+  binding at its source with recorded introducing-commit provenance, and never
+  pin an absolute date on an Event appended through the journal writer into a
+  live-clock workspace.
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 

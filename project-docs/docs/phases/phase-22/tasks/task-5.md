@@ -31,6 +31,15 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
+- DEC-192 progressive fence: `internal/journal/` is already in scope. Delete
+  exactly the `"run.recovered"` key from `unavailableRecoveryEvents` in
+  `internal/journal/project_effects.go` as part of implementing this Event, and
+  prove live-apply/replay parity for it. Leave every other key fenced.
+- DEC-192 scheduled convergence: this task's accepted change displaces task 1's
+  `run.recovered` rejection in `internal/journal/recovery_schema_test.go`
+  (VAL-003). Converge it by substituting a still-fenced Event, preserving the
+  VAL-003 subject and the corrupt Stop-code branch. Never delete the parity
+  assertion. Record introducing-commit provenance and the executing command.
 
 ## Scope
 

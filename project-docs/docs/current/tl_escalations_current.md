@@ -5,16 +5,22 @@
 
 ## Open Escalations
 
-None.
+None. ESC-22-002 was resolved on 2026-09-06 under DEC-192/193 and is archived
+in `../phases/phase-22/tl-escalations.md`.
 
 ## Latest Resolution
 
-ESC-22-001 resolved on 2026-09-06 under DEC-190/191. Protected sequence
-verification and canonical role configuration are repaired in
-`3bb42b4efd391b216b752db2c31fe793f3538bac`; the real ledger accepted the
-correcting triage and task-2 attempt-2 recovery through the canonical append
-command. Resume that existing entry. Original escalation and resolution are
-archived in `../phases/phase-22/tl-escalations.md`.
+ESC-22-002 resolved on 2026-09-06 under DEC-192 and DEC-193. Task 4's file
+scope is amended to delete exactly the `run.checkpointed` key from the task-1
+progressive fence in `internal/journal/project_effects.go` and to add a
+task-4-owned projection test; DEC-192 pre-authorizes the same key removal for
+tasks 5, 7, 8 and 10 and schedules the displaced VAL-003 convergence. The
+retained fixed-date Stop fixture is DEC-189 nondeterminism, assigned to the
+observing task and repaired at its source, with task 2 keeping subject
+ownership. No accepted contract, gate, VAL row, or task allocation changed and
+no Human decision was required. ESC-22-001 remains resolved under DEC-190/191.
+Both escalations and their resolutions are archived in
+`../phases/phase-22/tl-escalations.md`.
 
 ## Prior Phase Resolution
 

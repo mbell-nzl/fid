@@ -240,3 +240,94 @@ Runner-owned run-ledger state is created only after execution approval.
   and fresh independent review-1 re-review. Product repair remains pending;
   workflow maintenance does not claim its test gates or QA outcomes.
 - **Evidence:** `project-docs/docs/reviews/2026-09-06-phase-22-workflow-recovery.md`.
+
+---
+
+## TRG-22-007 - Task 4 checkpoint projection and retained Stop fixture boundary
+
+- **Trigger:** Task 4 completion report exposes two unresolved obligations outside the task's recorded source boundary: the accepted run.checkpoint behavior cannot admit or project run.checkpointed because internal/journal/project_effects.go rejects it, and the byte-identical required repository-wide race/coverage gate fails in the retained task-2 TestEquivalentStopsShareAttentionButKeepDistinctFacts fixture because its fixed 2026-09-05 Event is behind the journal date 2026-09-06.
+- **Originating task:** task-4
+- **Trigger signature:** task-4:scope-gap:checkpoint-projection-and-retained-gate
+- **Attempt count:** 2
+- **Repair category:** N/A
+- **Repair authority:** N/A
+- **Source:** `project-docs/docs/phases/phase-22/tasks/task-4-done.md`.
+- **Candidate:** protected task-boundary and retained-test ownership blocker candidate.
+- **Checkpoint:** Commit-verification evidence supplied by the Runner: implementation `ac5e6f9bec80e06bfe5b7b33e3611a894d16038a` verified as a commit with subject `feat(recovery): add repository reconciliation observation`; completion-report commit `79c4bd10f84ba7fa43c467b10952055dcc1c03d9` is current HEAD with subject `docs(task): record task-4 gate recovery`.
+- **Verdict:** BLOCK
+- **Reasoning:** The accepted public and schema contracts assign `run.checkpoint` and the `run.checkpointed` effect to task 4, but task 4's recorded source list excludes the journal projection file that currently rejects that Event. Extending the task into that canonical journal-effect implementation changes an accepted task boundary and can affect event replay/projection behavior, so it requires Tech Lead authority. Separately, the failed Stop fixture has supplied Task 2 introducing provenance and its task-4 report states no accepted task-4 change displaced it. The mandatory gate executes it, but gate reach does not establish task-4 ownership. No current authority assigns its repair to task 4, and this triage cannot invent an owner or authorize a task-2 test edit.
+- **Local decisions made:**
+  - Preserve both immutable conditions: the rejected `run.checkpointed` projection path and the failed full-gate receipt.
+  - Do not dispatch task-4 recovery, alter the required gate, change journal event/effect semantics, or edit the retained Task 2 fixture under task-4 authority.
+- **Resolution evidence:** `project_effects.go` rejects `run.checkpointed` before its required effects; the accepted schema assigns that Event's checkpoint observation and runtime-version effects to task 4. The required `go test -race -coverprofile=coverage.out ./...` attempt failed in `TestEquivalentStopsShareAttentionButKeepDistinctFacts` with `system clock is behind latest journal date 2026-09-06; refusing to append out of order` because the fixture uses 2026-09-05. The report supplies introducing commit `ac827959f8359473cbd6546ac6bea1ff1fd20751` for task 2 and supplies no invalidating task-4 change.
+- **If REPAIR:** N/A pending a full Tech Lead disposition that either grants a bounded task-4 journal-projection scope amendment conforming to the accepted `run.checkpointed` contract and separately establishes the retained fixture's causal owner, or records another accepted authority.
+- **Control trigger signature:** N/A; no control-conformance repair is proposed.
+- **Control attempt count:** N/A; no control-conformance repair is proposed.
+- **Control contract:** N/A; no control-conformance repair is proposed.
+- **Control mismatch:** N/A; no control-conformance repair is proposed.
+- **Allowed files:** N/A; no control-conformance repair is proposed.
+- **Forbidden changes:** Do not change the required gate command, accepted pass/fail semantics, scope, threshold, tolerance, product contract, task boundaries, or workflow-control definitions. Do not authorize editing task-2-owned retained tests as task-4 work without provenance and authority.
+- **Exact verification:** N/A; no control-conformance repair is proposed.
+- **Originating report:** project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- **Control repair base:** 79c4bd10f84ba7fa43c467b10952055dcc1c03d9
+- **If BLOCK:** category protected task boundary and ambiguous retained-test ownership; ESC-22-002 raised in `project-docs/docs/current/tl_escalations_current.md`. Full Tech Lead must establish an authorized bounded repair route before task 4 can resume.
+- **Human attention required:** yes
+- **References:** `project-docs/docs/phases/phase-22/tasks/task-4.md:20-44,55-67`; `project-docs/docs/phases/phase-22/tasks/task-4-done.md:5-10,34-37,60-71`; `project-docs/docs/phases/phase-22/schema.md:268-274`; `project-docs/docs/phases/phase-22/public-interface.md:145-151`; `project-docs/docs/phases/phase-22/execution-scope.md:70-75`; `project-docs/docs/phases/phase-22/tasks/task-2.md:77-84`; `project-docs/docs/current/decisions_active.md` DEC-162/165/166/167/173; `project-docs/specs/09_AI_WORKFLOW.md` §2.3.
+
+---
+
+## Resolution For TRG-22-007 - ESC-22-002 closed under DEC-192/193
+
+- **Date:** 2026-09-06.
+- **Status:** RESOLVED. The original BLOCK verdict, its reasoning, and the
+  preserved failed receipts above remain unchanged and correct on their own
+  terms: TL-Lite was right to refuse to extend a task boundary or to infer
+  retained-test ownership from gate reach.
+- **Authority:** DEC-192 (progressive recovery-Event fence) and DEC-193
+  (calendar-dependent retained fixtures are DEC-189 nondeterminism), in
+  `project-docs/docs/phases/phase-22/decisions.md`.
+- **Obligation 1 - `run.checkpointed` projection.** Not a protected boundary
+  change. `schema.md` section 5 already assigns `run.checkpointed` to task 4,
+  and `unavailableRecoveryEvents` is task 1's progressive "not yet available"
+  fence, whose per-key removal is how the owning task implements its Event.
+  Tasks 5, 7, 8 and 10 already carry `internal/journal/` in scope; task 4's
+  file-level list omitted it. That is a Tech Lead planning omission under
+  DEC-167/173, now corrected. Task 4 is amended to delete exactly the
+  `"run.checkpointed"` key and to add `internal/journal/checkpoint_projection_test.go`.
+- **Obligation 2 - retained fixed-date Stop fixture.** Provenance confirmed
+  from the introducing commit `ac827959f8359473cbd6546ac6bea1ff1fd20751`
+  (`feat(workflow): add typed Stop and Attention facts`, phase-22/task-2), not
+  from a filename or label. Mechanism confirmed: `stopRaisedEvent` pins
+  `time.Date(2026, 9, 5, ...)` while `initializedWorkflowWorkspace` writes a
+  live-clock initialization Event, so the writer's out-of-order guard correctly
+  refuses the backdated append from 2026-09-06 onward. Task 4's commit
+  `ac5e6f9bec80e06bfe5b7b33e3611a894d16038a` touches only
+  `internal/project/repository{,_test}.go`,
+  `internal/workflow/reconciliation{,_test}.go` and one `activation.go`
+  capability line, none of which reaches the writer, the guard, or the
+  initializer. So this is not task-4 convergence, as TRG-22-007 held. It is
+  instead the already accepted DEC-189 class: a nondeterministic retained test
+  failing under an unchanged required gate, assigned to the observing task by
+  scope amendment with the nondeterminism repaired at its source. Time
+  dependence is nondeterminism; the same bytes and command pass or fail by the
+  wall clock. Task 2 retains Stop/Attention subject ownership and its review-1b
+  PASS is untouched.
+- **Executability check:** Both amendments are executed by task 4's unchanged
+  `go test -race -coverprofile=coverage.out ./...`, which walks
+  `internal/journal` and `internal/workflow`. DEC-193 adds one repeat command
+  proving the repaired fixture is stable rather than newly date-lucky.
+- **Preserved:** Every required gate command, threshold, tolerance, and pass/fail
+  semantic; the `2/1/2` assertion subject; the `run.checkpointed` Event and
+  Effect contract; all VAL rows and validators; the task allocation; and both
+  immutable failed receipts in the task-4 report.
+- **Systemic prevention:** DEC-192 pre-authorizes the identical fence removal
+  for tasks 5, 7, 8 and 10 and schedules the VAL-003 convergence for tasks 5
+  and 10, so this cannot re-escalate four more times. DEC-193 bans absolute
+  calendar dates on writer-appended Events; `internal/workflow/stop_test.go` is
+  the only current instance.
+- **Next action:** Runner resumes with a normal RUN-RESUME, appends an ordinary
+  TRIAGE REPAIR carrying this authority, then dispatches the bound task-4
+  same-task continuation. No Human decision is required.
+- **Human attention required:** no. Nothing accepted was changed; a planning
+  omission was corrected and an existing decision was applied to a second
+  instance of its own class.

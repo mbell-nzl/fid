@@ -84,6 +84,30 @@ failure is never waived until the scheduled owner. No unrestricted earlier-task
 repair or gate change is authorized. Keep both failure and integrated repair
 provenance; task 8 retains cancellation ownership and checks the repair.
 
+DEC-192 adds the progressive recovery-Event fence protocol. Task 1's
+`unavailableRecoveryEvents` in `internal/journal/project_effects.go` rejects
+each Event-v2 recovery type until its domain exists. The owning task in
+`schema.md` section 5 deletes exactly its own key as part of implementing that
+Event and proves live-apply/replay parity for it: task 4 `run.checkpointed`,
+task 5 `run.recovered`, task 7 `run.budget-observed` and
+`run.execution-blocked`, task 8 `run.closed` and `run.abandoned`, task 10 the
+three `activation.*` rows plus the now-empty map and its guard branch. Tasks
+5, 7, 8 and 10 already carry `internal/journal/`; task 4's file-level scope is
+amended to that one key and a new task-4-owned projection test. Task 1's
+VAL-003 fence assertion is scheduled convergence for tasks 5 and 10, never a
+deleted parity assertion. This is not a task-boundary or contract change and
+must not be escalated again.
+
+DEC-193 adds the calendar rule. No test may pin an absolute date on an Event
+appended through the journal writer into a workspace initialized by the live
+clock; such a fixture passes only on its authoring day and then fails every
+later task's ordinary gate. A retained fixture that fails this way is DEC-189
+nondeterminism, not convergence and not DEC-175: the observing task takes a
+bounded scope amendment, repairs the date binding at its source, and records
+the introducing commit, mechanism, and executing command, while the introducing
+task keeps subject ownership. `internal/workflow/stop_test.go` is assigned to
+task 4 on those terms; it is the only current instance.
+
 ## 4. Review And Command Accounting
 
 Three-task windows: 1-3, 4-6, 7-9, 10-12, 13-15, 16-18. QA Reviewer reviews
