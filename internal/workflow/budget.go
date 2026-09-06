@@ -130,6 +130,12 @@ func deriveBudget(budget Budget, samples []BudgetSample) (Budget, error) {
 	return budget, nil
 }
 
+// DeriveBudget returns the current budget state for an already durable sample
+// chain. It does not append or normalize a sample.
+func DeriveBudget(budget Budget, samples []BudgetSample) (Budget, error) {
+	return deriveBudget(budget, samples)
+}
+
 func budgetAdmission(budget Budget) BudgetAdmission {
 	exhausted := budget.Remaining != nil && *budget.Remaining == 0
 	warning := budget.WarningThreshold != nil && budget.Remaining != nil && *budget.Remaining <= *budget.WarningThreshold && !exhausted

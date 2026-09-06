@@ -14,6 +14,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 // GateRunRequest is the closed gate.run input after CLI decoding.
@@ -89,6 +90,62 @@ type gateRunBinding struct {
 	registration Registration
 	actor        storedActor
 	projectID    string
+}
+
+type fidBudgetCharge struct {
+	BudgetName     string
+	Source         string
+	SourceSampleID string
+	SampleKind     string
+	Value          *int64
+	ObservedAt     string
+}
+
+type budgetChain struct {
+	Budget           workflow.Budget
+	EnvelopeID       string
+	EnvelopeRevision int
+	Samples          []workflow.BudgetSample
+	RuntimeVersion   int
+}
+
+// fidBudgetCharges derives automatic charges only from facts fid observed while
+// executing a registered gate. Caller input never contributes a charge.
+func fidBudgetCharges(budgets []workflow.Budget, attempt Attempt, receipt *Receipt) ([]fidBudgetCharge, error) {
+	charges := make([]fidBudgetCharge, 0, len(budgets))
+	for _, budget := range budgets {
+		var value *int64
+		sourceID, observedAt := attempt.ID, attempt.StartedAt
+		switch budget.Unit {
+		case "attempts":
+			unit := int64(1)
+			value = &unit
+		case "failures":
+			if receipt != nil && receipt.Outcome != "succeeded" {
+				unit := int64(1)
+				value, sourceID, observedAt = &unit, receipt.ID, receipt.EndedAt
+			}
+		case "milliseconds":
+			if receipt != nil {
+				started, startErr := time.Parse(time.RFC3339Nano, receipt.StartedAt)
+				ended, endErr := time.Parse(time.RFC3339Nano, receipt.EndedAt)
+				if startErr != nil || endErr != nil || ended.Before(started) {
+					return nil, fmt.Errorf("derive fid budget milliseconds: invalid Receipt timing")
+				}
+				unit := ended.Sub(started).Milliseconds()
+				value, sourceID, observedAt = &unit, receipt.ID, receipt.EndedAt
+			}
+		case "tool-failures":
+			if receipt != nil && receipt.Outcome == "spawn-failed" {
+				unit := int64(1)
+				value, sourceID, observedAt = &unit, receipt.ID, receipt.EndedAt
+			}
+		}
+		if value != nil {
+			charges = append(charges, fidBudgetCharge{BudgetName: budget.Name, Source: "fid", SourceSampleID: sourceID, SampleKind: "delta", Value: value, ObservedAt: observedAt})
+		}
+	}
+	return charges, nil
 }
 
 // RunGate appends an Attempt before invoking the process and records exactly
@@ -294,11 +351,127 @@ func appendAttempt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Attempt{}, err
 	}
 	attempt := Attempt{ID: id, RegistrationID: binding.registration.ID, RegistrationVersion: binding.registration.Version, ObligationID: request.ObligationID, RunID: request.RunID, ActorID: binding.actor.ActorID, StartRepository: request.Repository, ResolvedPolicyDigest: binding.registration.DefinitionDigest, StartedAt: now.Format(time.RFC3339Nano)}
-	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Repository: repositoryEventValue(request.Repository), Effects: []journal.Effect{{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}}}}
-	if _, err := journal.CommitEvent(lock, conn, event); err != nil {
+	chains, err := loadBudgetChains(conn, attempt.RunID)
+	if err != nil {
+		return Attempt{}, err
+	}
+	charges, err := fidBudgetCharges(chainBudgets(chains), attempt, nil)
+	if err != nil {
+		return Attempt{}, err
+	}
+	effects := []journal.Effect{{Op: "insert", Table: "execution_attempts", PK: map[string]any{"id": attempt.ID}, Values: map[string]any{"registration_id": attempt.RegistrationID, "registration_version": attempt.RegistrationVersion, "obligation_id": attempt.ObligationID, "run_id": attempt.RunID, "actor_id": attempt.ActorID, "start_repository_json": string(repositoryJSON), "resolved_policy_digest": attempt.ResolvedPolicyDigest, "producer": "fid", "started_at": attempt.StartedAt}}}
+	budgetEffects, err := appendFIDBudgetEffects(conn, chains, charges, attempt.RunID, binding.actor.ActorID)
+	if err != nil {
+		return Attempt{}, err
+	}
+	effects = append(effects, budgetEffects...)
+	event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "gate.execution-started", ActorV2: journal.EventActor{ActorID: binding.actor.ActorID, ActorType: binding.actor.ActorType, Producer: binding.actor.Producer, ProvenanceRef: binding.actor.ProvenanceRef, SessionRef: binding.actor.SessionRef}, Aggregate: journal.Aggregate{ID: attempt.ID, Sequence: 1, Type: "attempt"}, CommandName: "gate.run", CorrelationID: &attempt.RunID, Repository: repositoryEventValue(request.Repository), Effects: effects}
+	prepared, err := journal.PrepareEvent(lock, event)
+	if err != nil {
+		return Attempt{}, err
+	}
+	fillCreatedEventIDs(prepared.Effects, prepared.EventID)
+	if _, err := journal.CommitEvent(lock, conn, prepared); err != nil {
 		return Attempt{}, err
 	}
 	return attempt, nil
+}
+
+func chainBudgets(chains []budgetChain) []workflow.Budget {
+	budgets := make([]workflow.Budget, 0, len(chains))
+	for _, chain := range chains {
+		budgets = append(budgets, chain.Budget)
+	}
+	return budgets
+}
+
+func loadBudgetChains(conn *sql.DB, runID string) ([]budgetChain, error) {
+	var envelopeID string
+	var revision, runtimeVersion int
+	if err := conn.QueryRow(`SELECT r.envelope_id, r.envelope_revision, rr.version FROM runs r JOIN run_runtime rr ON rr.run_id = r.id WHERE r.id = ?`, runID).Scan(&envelopeID, &revision, &runtimeVersion); err != nil {
+		return nil, fmt.Errorf("load budget chain Run: %w", err)
+	}
+	rows, err := conn.Query(`SELECT name, budget_json FROM run_budget_bindings WHERE run_id = ? ORDER BY name`, runID)
+	if err != nil {
+		return nil, fmt.Errorf("load budget bindings: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	chains := []budgetChain{}
+	for rows.Next() {
+		var name, raw string
+		var budget workflow.Budget
+		if err := rows.Scan(&name, &raw); err != nil || json.Unmarshal([]byte(raw), &budget) != nil || budget.Name != name {
+			return nil, fmt.Errorf("decode Run budget")
+		}
+		samples, err := loadBudgetSamples(conn, envelopeID, revision, name)
+		if err != nil {
+			return nil, err
+		}
+		chains = append(chains, budgetChain{Budget: budget, EnvelopeID: envelopeID, EnvelopeRevision: revision, Samples: samples, RuntimeVersion: runtimeVersion})
+	}
+	return chains, rows.Err()
+}
+
+func loadBudgetSamples(conn *sql.DB, envelopeID string, revision int, name string) ([]workflow.BudgetSample, error) {
+	rows, err := conn.Query(`SELECT id, source, source_sample_id, sample_kind, previous_sample_id, value FROM budget_samples WHERE envelope_id = ? AND envelope_revision = ? AND budget_name = ? ORDER BY observed_at, id`, envelopeID, revision, name)
+	if err != nil {
+		return nil, fmt.Errorf("load budget samples: %w", err)
+	}
+	defer func() { _ = rows.Close() }()
+	samples := []workflow.BudgetSample{}
+	for rows.Next() {
+		var sample workflow.BudgetSample
+		if err := rows.Scan(&sample.ID, &sample.Source, &sample.SourceSampleID, &sample.SampleKind, &sample.PreviousSampleID, &sample.Value); err != nil {
+			return nil, fmt.Errorf("read budget sample: %w", err)
+		}
+		samples = append(samples, sample)
+	}
+	return samples, rows.Err()
+}
+
+func appendFIDBudgetEffects(conn *sql.DB, chains []budgetChain, charges []fidBudgetCharge, runID, actorID string) ([]journal.Effect, error) {
+	effects := []journal.Effect{}
+	charged := false
+	for _, charge := range charges {
+		for index := range chains {
+			chain := &chains[index]
+			if chain.Budget.Name != charge.BudgetName {
+				continue
+			}
+			id, err := journal.GenerateID("BSM", func(candidate string) (bool, error) {
+				var count int
+				err := conn.QueryRow(`SELECT COUNT(*) FROM budget_samples WHERE id = ?`, candidate).Scan(&count)
+				return count > 0, err
+			})
+			if err != nil {
+				return nil, err
+			}
+			sample := workflow.BudgetSample{ID: id, Source: charge.Source, SourceSampleID: charge.SourceSampleID, SampleKind: charge.SampleKind, Value: charge.Value}
+			if len(chain.Samples) > 0 {
+				previous := chain.Samples[len(chain.Samples)-1].ID
+				sample.PreviousSampleID = &previous
+			}
+			if _, err := workflow.AdmitBudgetSample(chain.Budget, chain.Samples, sample); err != nil {
+				return nil, fmt.Errorf("admit fid budget sample %q: %w", chain.Budget.Name, err)
+			}
+			chain.Samples = append(chain.Samples, sample)
+			effects = append(effects, journal.Effect{Op: "insert", Table: "budget_samples", PK: map[string]any{"id": sample.ID}, Values: map[string]any{"envelope_id": chain.EnvelopeID, "envelope_revision": chain.EnvelopeRevision, "budget_name": chain.Budget.Name, "run_id": runID, "actor_id": actorID, "source": sample.Source, "source_sample_id": sample.SourceSampleID, "sample_kind": sample.SampleKind, "previous_sample_id": sample.PreviousSampleID, "value": sample.Value, "measurement_ref_json": nil, "observed_at": charge.ObservedAt, "created_event_id": "<event-id>"}})
+			charged = true
+			break
+		}
+	}
+	if charged && len(chains) > 0 {
+		effects = append(effects, journal.Effect{Op: "update", Table: "run_runtime", PK: map[string]any{"run_id": runID}, Values: map[string]any{"version": chains[0].RuntimeVersion + 1}, Preconditions: map[string]any{"version": chains[0].RuntimeVersion}})
+	}
+	return effects, nil
+}
+
+func fillCreatedEventIDs(effects []journal.Effect, eventID string) {
+	for index := range effects {
+		if effects[index].Values["created_event_id"] == "<event-id>" {
+			effects[index].Values["created_event_id"] = eventID
+		}
+	}
 }
 
 func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding, attempt Attempt, options GateRunOptions, requestDigest string, live *LiveResult) (Receipt, string, error) {
@@ -354,13 +527,27 @@ func appendReceipt(lock *journal.WriteLock, conn *sql.DB, binding gateRunBinding
 		return Receipt{}, "", fmt.Errorf("run gate: canonicalize rejected Artifacts: %w", err)
 	}
 	receipt := Receipt{ID: id, AttemptID: attempt.ID, RegistrationID: attempt.RegistrationID, RegistrationVersion: attempt.RegistrationVersion, ObligationID: attempt.ObligationID, RunID: attempt.RunID, ActorID: attempt.ActorID, TrustSource: "fid-executed", Outcome: live.Outcome, ExitCode: live.ExitCode, Signal: live.Signal, TimedOut: live.TimedOut, StartedAt: attempt.StartedAt, EndedAt: endedAt.Format(time.RFC3339Nano), TerminalRepository: options.Request.Repository, Toolchain: toolchain, OutputExcerpt: excerpt, OutputDigest: "sha256:" + hex.EncodeToString(digest[:]), OutputBytes: live.OutputBytes, OutputTruncated: live.OutputTruncated, RedactionApplied: live.RedactionApplied, Artifacts: artifacts, RejectedArtifacts: rejectedArtifacts}
+	chains, err := loadBudgetChains(conn, receipt.RunID)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	charges, err := fidBudgetCharges(chainBudgets(chains), attempt, &receipt)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	budgetEffects, err := appendFIDBudgetEffects(conn, chains, charges, receipt.RunID, binding.actor.ActorID)
+	if err != nil {
+		return Receipt{}, "", err
+	}
+	effects = append(effects, budgetEffects...)
 	event := receiptEvent(binding.actor, receipt, string(repositoryJSON), string(toolchainJSON), string(rejectedJSON), options.Request.Repository, effects)
 	resultJSON, err := journal.MarshalCanonicalJSON(map[string]any{"receipt": receipt, "idempotency_key": options.IdempotencyKey, "replayed": false})
 	if err != nil {
 		return Receipt{}, "", err
 	}
 	idempotency := journal.IdempotencyRequest{OperationScope: "gate.run:" + binding.projectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
-	outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+	outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(prepared journal.Event) (journal.IdempotencyMutation, error) {
+		fillCreatedEventIDs(prepared.Effects, prepared.EventID)
 		return journal.IdempotencyMutation{EntityID: receipt.ID, ResultJSON: string(resultJSON)}, nil
 	})
 	if err != nil {

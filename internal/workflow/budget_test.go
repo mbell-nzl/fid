@@ -65,3 +65,15 @@ func TestBudgetSamplesRejectOverflow(t *testing.T) {
 		t.Fatal("overflow admission error = nil, want rejection")
 	}
 }
+
+func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
+	budget := Budget{Name: "attempts", Scope: "envelope", Unit: "attempts", Maximum: 1, ExhaustionAction: "budget-exhausted"}
+	unknown, err := DeriveBudget(budget, []BudgetSample{{ID: "unknown", Source: "activated-harness", SourceSampleID: "unknown", SampleKind: "delta"}})
+	if err != nil || unknown.Consumed != nil || unknown.Remaining != nil {
+		t.Fatalf("DeriveBudget() unknown = %#v, %v; want null totals", unknown, err)
+	}
+	exhausted, err := DeriveBudget(budget, []BudgetSample{{ID: "attempt", Source: "fid", SourceSampleID: "ATT-1", SampleKind: "delta", Value: int64Pointer(1)}})
+	if err != nil || exhausted.Remaining == nil || *exhausted.Remaining != 0 {
+		t.Fatalf("DeriveBudget() exhausted = %#v, %v; want zero remaining", exhausted, err)
+	}
+}
