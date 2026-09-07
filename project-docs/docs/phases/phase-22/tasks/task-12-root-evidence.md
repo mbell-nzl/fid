@@ -159,6 +159,49 @@ uncommitted shared test file back for the Developer's final commit/gates.
 
 ### Required Material And Metadata-Sufficient Artifact Loss
 
+### Recovery Report Control And Git Permission Receipts
+
+### Executable Ready Actions And Producer Rejection
+
+Root added p22_resume_actions_test.go with a separate public fixture constructor
+that grants renew/release/evidence.link and permits an explicit producer. It
+does not change the shared fake/fid fixtures. Each of run.inspect, run.observe,
+gate.run, claim.renew and claim.release gets a fresh real activated-harness
+fixture, must appear ready in Resume, and then executes its actual public
+operation. Reads append no Event; mutations append durable Events. A kit
+producer with matching capability/grant must appear blocked for run.observe,
+and its actual operation rejects authority without adding an Event.
+
+`go test -tags integration ./cmd/fid/integration/... -run '^TestP22Resume(ReadyCandidatesExecuteTheirActualOperations|ObserveRejectsUntrustedProducerDespiteCapabilities)$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid/integration [build failed]`
+  (terminated `exit_code: 1`): root assumed an adapter obligationID field;
+  corrected the request to the fixture's explicit OBL-p22-corpus identity.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.000s`
+  (terminated `exit_code: 0`). This verifies the Developer's producer repair
+  after implementation and is not claimed as its original TDD red. Root
+  hands back the complete new fixture/test file before final task-wide gates.
+
+The Developer produced implementation checkpoint 2339dc9 and report checkpoint
+6e04604, then handed a report formatting correction to root after its Git write
+failed. Root's first normal commit also printed
+`fatal: Unable to create '/home/mark/projects/fid/.git/index.lock': Read-only file system`
+(terminated `exit_code: 128`). Root used the required escalation surface; the
+first escalated commit found the report unstaged and printed
+`no changes added to commit (use "git add" and/or "git commit -a")`
+(terminated `exit_code: 1`). Explicit approved staging/commit then succeeded
+at 3c27a25. No Git metadata was changed through a bypass tool.
+
+Root ran the exact task-12 report-lint command: first it printed
+`FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`), because four
+other focused PASS rows still ended with punctuation after termination. Root
+removed that punctuation only, preserved this failed receipt in the originating
+report, committed 2278953, and reran the byte-identical command. It printed
+`OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`
+(terminated `exit_code: 0`). This validates recovery-report form, not task
+completion. The Developer's separately reported earlier three-row formatting
+failure remains attributed to that Developer; root does not claim its execution.
+
 Root owned new artifact_material_policy_test.go. Both fixtures execute a Gate
 that retains actual material, then link Evidence through the public operation
 with required_artifact_ids either populated or empty. They delete retained
