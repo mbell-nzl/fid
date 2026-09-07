@@ -16,8 +16,8 @@ completed under DEC-198 at 03cc6c7 with exact binding/agreement/upgrade/replay
 coverage, all five final gates and independent report lint. Task 11 completed
 under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
 boundary tests, all five final gates and root report lint. Task 12 completed under DEC-196/201 at c2d8098, with final gate addendum
-833b4fc and preserved report f57b4aa. Review 4 and the independent checkpoint
-are executing; task 13 is prepared but has not started. No escalation is open.
+833b4fc and preserved report f57b4aa. Review 4 passed at 3addf7d and the independent checkpoint passed at a9bf3bf.
+Task 13 is executing; no escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -56,9 +56,9 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..12 complete; reviews 1b/2b/3 passed; review 4/checkpoint executing; 13..18 pending.
-- Next: complete review window 4 and the independent task-12 checkpoint
-  before task 13.
+- Task statuses: 1..12 complete; reviews 1b/2b/3 passed; review 4/checkpoint passed; 13 executing; 14..18 pending.
+- Next: task 13 bounded archive semantics and validation, then atomic import
+  and CLI/parity tasks 14–15. DEC-202 supplies the imported destination scope.
 
 ## Carry-Forward
 

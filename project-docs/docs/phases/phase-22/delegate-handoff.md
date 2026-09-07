@@ -221,3 +221,24 @@ each independently printed `OUTCOME COMPLETE` and terminated successfully:
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-4-done.md project-docs/docs/phases/phase-22/tasks/task-4.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+
+## Task 13 Dispatch — 2026-09-08 02:09
+
+Task 12 is COMPLETE at 9948e16. Review 4 passed at 3addf7d; the independent
+checkpoint passed at a9bf3bf with its own fresh ordinary and tagged commands.
+Root verified those artifacts before dispatching task 13. Root owns only
+`internal/export/export_boundary_test.go` and its contribution record;
+Developer owns production/archive semantics and the final task report/gates.
+Root captured the initial special-file/64 MiB + 1 semantic red before scanner
+changes; numeric limits remain unchanged.
+
+The completed task-12 tool thread is reused for a fresh logical task-14
+session, currently preparation only. Task 14 implementation waits for task 13
+completion. The completed Review4 thread similarly prepares window5, whose
+verdict waits for task15. This follows the bounded thread-reuse exception above;
+closed task/report ownership does not carry into the new assignment.
+
+DEC-202 records the imported destination reconciliation allocation found in
+that preflight. It preserves imported history and ordinary foreign-repository
+rejection while requiring new local liveness/reconciliation before successor
+work qualifies. It changes no wire/schema/Event/policy or validation threshold.
