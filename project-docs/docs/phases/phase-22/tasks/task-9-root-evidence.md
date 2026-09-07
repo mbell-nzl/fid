@@ -44,19 +44,18 @@ Command B:
 | Attempt | Command | Observed token | Observed termination | Finding or repair |
 |---|---|---|---|---|
 | 1 | A | `FAIL` | `exit_code: 1` | Strong typed assertion rejected `run.observe first delivery replayed = "replayed-fake", want boolean false`; run inspection likewise returned a string instead of state. |
-| 2 | A | `ok  github.com/mbell-nzl/fid/cmd/fid/integration 0.836s` | `exit_code: 0` | Independent memory state passed the initial ten cases. |
+| 2 | A | `0.836s` | `exit_code: 0` | Independent memory state passed the initial ten cases. |
 | 3 | A | `FAIL` | `exit_code: 1` | Replay assertion found regenerated request timestamps/versions: `idempotency-conflict`, exit 4. |
-| 4 | B | `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.167s` | `exit_code: 0` | Exact request caching and replay handling passed both adapters. |
+| 4 | B | `1.167s` | `exit_code: 0` | Exact request caching and replay handling passed both adapters. |
 | 5 | B | `FAIL` | `exit_code: 1` | Expanded 32-case corpus exposed missing fake operations, omitted required Stop reference and fixture directory lifetime tied to a completed subtest. Implemented independent operations, supplied the reference and retained fixtures at parent-test lifetime. |
 | 6 | B | `FAIL` | `exit_code: 1` | Real stop.resolve and attention.resolve first deliveries succeeded but identical replays returned invalid-argument/2. DEC-197 assigned the causal persisted replay repair. |
-| 7 | A | `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.736s` | `exit_code: 0` | Expanded independent fake passed. |
+| 7 | A | `1.736s` | `exit_code: 0` | Expanded independent fake passed. |
 | 8 | B | `FAIL` | `exit_code: 1` | With wrong-fact and stale Attention cases added, real stop.raise failed during an incomplete typed-not-found transition. Developer repaired loadOpenAttentionByKey's typed absence handling. |
 | 9 | B | `FAIL` | `exit_code: 1` | At 37 cases the sole remaining failure was committed denial replay: top-level data.replayed false while nested error.details.replayed true. Developer corrected the pre-start committed-denial frame builder. |
 | 10 | A | `2.729s` | `exit_code: 0` | All final fake cases passed. |
 | 11 | B | `2.568s` | `exit_code: 0` | All final shared cases passed against both adapters. |
 
-The earlier green rows reproduce the package/result/time content with spacing
-normalized; the final receipts use a short verbatim time token. No failed
+The green receipts use a short verbatim time token. No failed
 attempt was omitted to obtain a green result or used to narrow a test.
 
 Final combined regression command:
