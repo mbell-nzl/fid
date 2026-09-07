@@ -36,18 +36,18 @@ func TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree(t 
 	assertStopAttentionEffectFree(t, workspace, journalPath, journalBefore, "maintenance warning")
 
 	capabilities, _ := closureRun(t, workspace, binary, "--json", "capabilities")
-	if !strings.Contains(capabilities, `"capability_id":"attention.v1"`) || !strings.Contains(capabilities, `"available":false`) {
-		t.Fatalf("capabilities = %q, want unavailable attention.v1", capabilities)
+	if !strings.Contains(capabilities, `"capability_id":"attention.v1"`) || !strings.Contains(capabilities, `"available":true`) {
+		t.Fatalf("capabilities = %q, want available attention.v1", capabilities)
 	}
 	help, _ := closureRun(t, workspace, binary, "--help")
-	if strings.Contains(help, "\n  attention") {
-		t.Fatalf("fid --help = %q, want no deferred attention leaf", help)
+	if !strings.Contains(help, "\n  attention") {
+		t.Fatalf("fid --help = %q, want Attention leaf", help)
 	}
-	stdout, stderr, err := closureRunCommand(workspace, binary, "--json", "attention", "list")
-	if err == nil || stdout != "" || stderr != "" {
-		t.Fatalf("fid --json attention list = (%v, %q, %q), want unavailable no-leaf rejection", err, stdout, stderr)
+	attention, _ := closureRun(t, workspace, binary, "--json", "attention", "list")
+	if !strings.Contains(attention, `"operation":"attention.list"`) {
+		t.Fatalf("fid --json attention list = %q, want read-only list response", attention)
 	}
-	assertStopAttentionEffectFree(t, workspace, journalPath, journalBefore, "unavailable Attention leaf")
+	assertStopAttentionEffectFree(t, workspace, journalPath, journalBefore, "Attention list")
 }
 
 func setStartedIssueOldEnoughForWarning(t *testing.T, workspace string) {

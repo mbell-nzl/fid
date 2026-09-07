@@ -13,10 +13,7 @@ import (
 	"github.com/mbell-nzl/fid/internal/journal"
 )
 
-const (
-	runStartAction  = "run.start"
-	runFinishAction = "run.finish"
-)
+const runStartAction = "run.start"
 
 type Executor struct {
 	ID     string `json:"id"`
@@ -32,13 +29,6 @@ type RunStartRequest struct {
 	Executor         Executor   `json:"executor"`
 	ObligationID     *string    `json:"obligation_id"`
 	Repository       Repository `json:"repository"`
-}
-
-type RunFinishRequest struct {
-	RunID          string     `json:"run_id"`
-	ExpectedStatus string     `json:"expected_status"`
-	Outcome        string     `json:"outcome"`
-	Repository     Repository `json:"repository"`
 }
 
 type RunOptions struct {
@@ -123,6 +113,13 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		if err := validateRunStartBinding(conn, options, projectID, request, now); err != nil {
 			return journal.Event{}, Run{}, err
 		}
+		stops, err := ApplicableStops(conn, runStartAction, Subject{Type: "envelope", ID: request.EnvelopeID})
+		if err != nil {
+			return journal.Event{}, Run{}, err
+		}
+		if len(stops) != 0 {
+			return journal.Event{}, Run{}, &StopBlockedError{Action: runStartAction, Stops: stops}
+		}
 		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
 		if err != nil {
 			return journal.Event{}, Run{}, err
@@ -141,39 +138,6 @@ func StartRun(options RunOptions, request RunStartRequest) (RunMutationResult, e
 		}
 		run := Run{ID: id, IssueID: request.IssueID, EnvelopeID: request.EnvelopeID, EnvelopeRevision: request.EnvelopeRevision, ClaimID: request.ClaimID, ClaimVersion: request.ClaimVersion, Version: 1, Executor: request.Executor, ObligationID: request.ObligationID, ActorID: options.ActorID, StartRepository: request.Repository, Status: "active", Budgets: envelope.Budgets, StartedAt: now.Format(time.RFC3339Nano)}
 		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.started", runStartAction, runStartEffects(run))
-		return event, run, err
-	})
-}
-
-func FinishRun(options RunOptions, request RunFinishRequest) (RunMutationResult, error) {
-	if err := validateRunOptions(options); err != nil || !validRunFinishRequest(request) {
-		return RunMutationResult{}, invalidRun("run finish input is invalid")
-	}
-	return mutateRun(options, runFinishAction, request, func(conn *sql.DB, _ string, now time.Time) (journal.Event, Run, error) {
-		run, err := loadRun(conn, request.RunID)
-		if err != nil {
-			return journal.Event{}, Run{}, err
-		}
-		if run.Status != "active" {
-			return journal.Event{}, Run{}, &RunInactiveError{RunID: run.ID, Status: run.Status}
-		}
-		if run.ActorID != options.ActorID || !sameRepositoryLocation(run.StartRepository, request.Repository) {
-			return journal.Event{}, Run{}, invalidRun("run finish binding is invalid")
-		}
-		if err := AuthorizeEnvelopeGrant(options.WorkspaceRoot, options.MigrationsDir, EnvelopeAuthorityRequest{ActorID: options.ActorID, Action: runFinishAction, Capability: runFinishAction, IssueID: run.IssueID, EnvelopeID: run.EnvelopeID, Revision: run.EnvelopeRevision}); err != nil {
-			return journal.Event{}, Run{}, err
-		}
-		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
-		if err != nil {
-			return journal.Event{}, Run{}, err
-		}
-		endedAt := now.Format(time.RFC3339Nano)
-		run.Status, run.TerminalRepository, run.EndedAt = request.Outcome, &request.Repository, &endedAt
-		event, err := runEvent(options.WorkspaceRoot, actor, run, "run.finished", runFinishAction, []journal.Effect{{
-			Op: "update", Table: "runs", PK: map[string]any{"id": run.ID},
-			Values:        map[string]any{"status": run.Status, "terminal_repository_json": string(mustRunJSON(request.Repository)), "ended_at": endedAt},
-			Preconditions: map[string]any{"status": "active"},
-		}})
 		return event, run, err
 	})
 }
@@ -319,10 +283,6 @@ func validateRunOptions(options RunOptions) error {
 
 func validRunStartRequest(request RunStartRequest) bool {
 	return strings.TrimSpace(request.IssueID) != "" && strings.TrimSpace(request.EnvelopeID) != "" && request.EnvelopeRevision == 1 && strings.TrimSpace(request.ClaimID) != "" && request.ClaimVersion > 0 && strings.TrimSpace(request.Executor.ID) != "" && request.Executor.Source == "activated-harness"
-}
-
-func validRunFinishRequest(request RunFinishRequest) bool {
-	return strings.TrimSpace(request.RunID) != "" && request.ExpectedStatus == "active" && (request.Outcome == "abandoned" || request.Outcome == "failed" || request.Outcome == "succeeded") && validEnvelopeRepository(request.Repository)
 }
 
 func runRequestDigest(operation, projectID, actorID string, request any) (string, error) {

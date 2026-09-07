@@ -156,6 +156,13 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err != nil {
 			return err
 		}
+		stops, err := ApplicableStops(conn, runRecoverAction, Subject{Type: "run", ID: prior.ID}, Subject{Type: "envelope", ID: prior.EnvelopeID})
+		if err != nil {
+			return err
+		}
+		if len(stops) != 0 {
+			return &StopBlockedError{Action: runRecoverAction, Stops: stops}
+		}
 		if prior.Version != request.ExpectedRunVersion {
 			return &RunVersionConflictError{RunID: prior.ID, ExpectedVersion: request.ExpectedRunVersion, ActualVersion: prior.Version}
 		}

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"sort"
@@ -209,6 +210,9 @@ func GetStop(workspaceRoot, migrationsDir, id string) (Stop, error) {
 	}
 	conn, err := openWorkflowDB(workspaceRoot)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return Stop{}, &StopNotFoundError{ID: id}
+		}
 		return Stop{}, err
 	}
 	defer closeWorkflowDB(conn)
@@ -233,19 +237,6 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 		if err != nil {
 			return err
 		}
-		stop, err := loadStop(conn, request.StopID)
-		if err != nil {
-			return err
-		}
-		if stop.Resolution != nil {
-			return fmt.Errorf("stop %q is already resolved", stop.ID)
-		}
-		if err := authorizeStop(conn, options, stop.Subject, "stop.resolve", stop.ResolverCapability); err != nil {
-			return err
-		}
-		if err := qualifyingFact(options.WorkspaceRoot, stop, request.FactEventID); err != nil {
-			return err
-		}
 		digest, err := stopDigest("stop.resolve", project.ProjectID, options.ActorID, request)
 		if err != nil {
 			return err
@@ -257,6 +248,19 @@ func ResolveStop(options StopOptions, request StopResolveRequest) (StopResolveRe
 			loaded, err := loadStop(conn, replay.EntityID)
 			result = StopResolveResult{Stop: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
 			return err
+		}
+		stop, err := loadStop(conn, request.StopID)
+		if err != nil {
+			return err
+		}
+		if stop.Resolution != nil {
+			return fmt.Errorf("stop %q is already resolved", stop.ID)
+		}
+		if err := authorizeStop(conn, options, stop.Subject, "stop.resolve", stop.ResolverCapability); err != nil {
+			return err
+		}
+		if err := qualifyingFact(options.WorkspaceRoot, stop, request.FactEventID); err != nil {
+			return &ResolutionInvalidError{Subject: stop.Subject, FactEventIDs: []string{request.FactEventID}, Reasons: []EvaluationReason{evaluationReason("resolution-invalid", err.Error(), stop.ID, "stop")}}
 		}
 		now := time.Now().UTC().Format(time.RFC3339Nano)
 		event := stopResolvedEvent(stop, options.ActorID, request.FactEventID, now, "")
@@ -296,19 +300,6 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 		if err != nil {
 			return err
 		}
-		attention, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, request.AttentionID)
-		if err != nil {
-			return err
-		}
-		if attention.Status != "open" || attention.Version != request.ExpectedVersion {
-			return fmt.Errorf("attention %q version or status is invalid", attention.ID)
-		}
-		if err := authorizeStop(conn, options, attention.Subject, "attention.resolve", ""); err != nil {
-			return err
-		}
-		if err := qualifyingDispositions(options.WorkspaceRoot, conn, attention, request.FactEventIDs); err != nil {
-			return err
-		}
 		digest, err := stopDigest("attention.resolve", project.ProjectID, options.ActorID, request)
 		if err != nil {
 			return err
@@ -320,6 +311,22 @@ func ResolveAttention(options StopOptions, request AttentionResolveRequest) (Att
 			loaded, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, replay.EntityID)
 			result = AttentionResolveResult{Attention: loaded, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
 			return err
+		}
+		attention, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE id = ?`, request.AttentionID)
+		if err != nil {
+			return err
+		}
+		if attention.Version != request.ExpectedVersion {
+			return &AttentionVersionConflictError{AttentionID: attention.ID, ExpectedVersion: request.ExpectedVersion, ActualVersion: attention.Version}
+		}
+		if attention.Status != "open" {
+			return &ResolutionInvalidError{Subject: attention.Subject, FactEventIDs: request.FactEventIDs, Reasons: []EvaluationReason{evaluationReason("attention-not-open", attention.Status, attention.ID, "attention")}}
+		}
+		if err := authorizeStop(conn, options, attention.Subject, "attention.resolve", ""); err != nil {
+			return err
+		}
+		if err := qualifyingDispositions(options.WorkspaceRoot, conn, attention, request.FactEventIDs); err != nil {
+			return &ResolutionInvalidError{Subject: attention.Subject, FactEventIDs: request.FactEventIDs, Reasons: []EvaluationReason{evaluationReason("resolution-invalid", err.Error(), attention.ID, "attention")}}
 		}
 		event := attentionResolvedEvent(attention, options.ActorID, "")
 		prepared, err := journal.PrepareEvent(lock, event)
@@ -545,7 +552,8 @@ func eventSubjectMatches(event journal.Event, subject Subject) bool {
 
 func loadOpenAttentionByKey(conn *sql.DB, key string) (Attention, bool, error) {
 	attention, err := loadAttentionByQuery(conn, `SELECT id, semantic_key, subject_type, subject_id, code, status, version, raised_at, resolution_event_id FROM attention_items WHERE semantic_key = ? AND status = 'open'`, key)
-	if err == sql.ErrNoRows {
+	var notFound *AttentionNotFoundError
+	if errors.As(err, &notFound) {
 		return Attention{}, false, nil
 	}
 	return attention, err == nil, err
@@ -596,6 +604,9 @@ func loadAttentionByQuery(conn *sql.DB, query string, argument string) (Attentio
 	var resolution sql.NullString
 	err := conn.QueryRow(query, argument).Scan(&item.ID, &item.SemanticKey, &item.Subject.Type, &item.Subject.ID, &item.Code, &item.Status, &item.Version, &item.RaisedAt, &resolution)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return Attention{}, &AttentionNotFoundError{ID: argument}
+		}
 		return Attention{}, err
 	}
 	if resolution.Valid {

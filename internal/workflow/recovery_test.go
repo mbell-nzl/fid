@@ -99,6 +99,43 @@ func TestRecoverRunRejectsUnknownLivenessForOrdinaryAndForce(t *testing.T) {
 	}
 }
 
+func TestRecoverRunRejectsApplicableStopWithoutEffects(t *testing.T) {
+	options, request := recoveryFixture(t)
+	conn, err := openWorkflowDB(options.WorkspaceRoot)
+	if err != nil {
+		t.Fatalf("open workflow database: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	if err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "test recovery Stop"}, func(lock *journal.WriteLock) error {
+		event := recoveryStopEvent("", "STOP-recovery", "ATT-recovery")
+		prepared, err := journal.PrepareEvent(lock, event)
+		if err != nil {
+			return err
+		}
+		_, err = journal.CommitEvent(lock, conn, recoveryStopEvent(prepared.EventID, "STOP-recovery", "ATT-recovery"))
+		return err
+	}); err != nil {
+		t.Fatalf("commit recovery Stop: %v", err)
+	}
+	before := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot))
+	_, err = RecoverRun(options, request)
+	var blocked *StopBlockedError
+	if !errors.As(err, &blocked) || len(blocked.Stops) != 1 || blocked.Stops[0].ID != "STOP-recovery" {
+		t.Fatalf("RecoverRun(applicable Stop) error = %v, want STOP-recovery", err)
+	}
+	if after := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot)); string(after) != string(before) {
+		t.Fatal("Stop-blocked recovery appended an Event")
+	}
+}
+
+func recoveryStopEvent(eventID, stopID, attentionID string) journal.Event {
+	event := stopRaisedEvent(eventID, stopID, attentionID, true)
+	event.Effects[0].Values["subject_id"] = "RUN-prior"
+	event.Effects[0].Values["resolution_condition_json"] = `{"type":"work-ended","subject":{"type":"run","id":"RUN-prior"}}`
+	event.Effects[1].Values["subject_id"] = "RUN-prior"
+	return event
+}
+
 func TestRecoverRunForceRequiresCurrentHumanAuthorityAndFencesPriorRun(t *testing.T) {
 	options, request := recoveryFixture(t)
 	setRecoveryObservationState(t, options.WorkspaceRoot, "live")
@@ -127,8 +164,8 @@ func TestRecoverRunForceRequiresCurrentHumanAuthorityAndFencesPriorRun(t *testin
 	if prior.Status != "interrupted" || result.Run.PredecessorRunID == nil || *result.Run.PredecessorRunID != prior.ID {
 		t.Fatalf("force recovery Run chain = prior %#v successor %#v, want fenced predecessor", prior, result.Run)
 	}
-	if _, err := FinishRun(options, RunFinishRequest{RunID: prior.ID, ExpectedStatus: "active", Outcome: "failed", Repository: prior.StartRepository}); err == nil {
-		t.Fatal("FinishRun(fenced predecessor) error = nil, want inactive predecessor")
+	if _, err := CloseRun(options, RunCloseRequest{RunID: prior.ID, ExpectedVersion: prior.Version, ObservationID: "OBS-fenced", Repository: prior.StartRepository}); err == nil {
+		t.Fatal("CloseRun(fenced predecessor) error = nil, want inactive predecessor")
 	}
 }
 

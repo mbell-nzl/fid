@@ -169,6 +169,56 @@ func TestGateRunAttemptAppendFailureDoesNotSpawn(t *testing.T) {
 	}
 }
 
+func TestBudgetDenialReportsCommittedStopWithoutStartFrame(t *testing.T) {
+	t.Parallel()
+	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {
+		definition["argv"] = []string{"/bin/true"}
+	})
+	inputPath, _ := gateRunInputForTest(t, workspace, issueID, envelopeID, "budget-denial")
+	for _, key := range []string{"budget-denial-one", "budget-denial-two", "budget-denial-three"} {
+		result := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", key)
+		if result.err != nil {
+			t.Fatalf("admitted budget run %q = %#v", key, result)
+		}
+	}
+
+	denied := executeCommandForTest(workspace, "--project", workspace, "--json", "gate", "run", "--actor", "actor-builder", "--input", inputPath, "--idempotency-key", "budget-denial-four")
+	if denied.err == nil || denied.stderr != "" || cli.ExitCode(denied.err) != 4 {
+		t.Fatalf("budget denial = %#v (%v), want frame-only committed denial with exit 4", denied, denied.err)
+	}
+	lines := strings.Split(strings.TrimSpace(denied.stdout), "\n")
+	if len(lines) != 1 {
+		t.Fatalf("budget denial frames = %d, want only one fid-error terminal", len(lines))
+	}
+	var terminal gateTerminalFrame
+	if err := json.Unmarshal([]byte(lines[0]), &terminal); err != nil {
+		t.Fatalf("decode budget denial terminal: %v", err)
+	}
+	if terminal.Stream != "terminal" || terminal.Data.AttemptID != "" || terminal.Data.ReceiptID != "" || terminal.Data.Outcome != "fid-error" {
+		t.Fatalf("budget denial terminal = %#v, want no Attempt or Receipt", terminal)
+	}
+	errorValue, ok := terminal.Data.Response["error"].(map[string]any)
+	if !ok || errorValue["code"] != "budget-exhausted" {
+		t.Fatalf("budget denial response = %#v, want budget-exhausted error", terminal.Data.Response)
+	}
+	details, ok := errorValue["details"].(map[string]any)
+	if !ok || details["event"] == nil || len(details["stop_ids"].([]any)) == 0 || len(details["attention_ids"].([]any)) == 0 {
+		t.Fatalf("budget denial details = %#v, want committed Event, Stop, and Attention IDs", details)
+	}
+	conn, err := fiddb.Open(filepath.Join(workspace, ".fid", config.DatabaseFileName))
+	if err != nil {
+		t.Fatalf("open budget-denial database: %v", err)
+	}
+	defer func() { _ = conn.Close() }()
+	var attempts int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM execution_attempts`).Scan(&attempts); err != nil {
+		t.Fatalf("count budget-denial Attempts: %v", err)
+	}
+	if attempts != 3 {
+		t.Fatalf("budget denial Attempt count = %d, want no fourth Attempt", attempts)
+	}
+}
+
 func TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTestWithDefinition(t, func(definition map[string]any) {

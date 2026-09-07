@@ -7,7 +7,7 @@ import (
 )
 
 func TestActivationAdmitsRunCloseAndAbandonActions(t *testing.T) {
-	if !sortedUniqueCapabilities([]string{"run.abandon", "run.close", "run.finish"}) {
+	if !sortedUniqueCapabilities([]string{"run.abandon", "run.close"}) {
 		t.Fatal("sortedUniqueCapabilities() rejected task-8 Run actions")
 	}
 }

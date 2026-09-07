@@ -215,6 +215,13 @@ func RunGate(ctx context.Context, options GateRunOptions) (GateRunResult, error)
 			prepared = GateRunResult{Denial: &denial, EventID: denial.EventID, EventOccurredAt: denial.EventOccurredAt, IdempotencyKey: options.IdempotencyKey}
 			return &BudgetAdmissionDeniedError{Code: blocks[0].Code, Denial: denial}
 		}
+		stops, err := workflow.ApplicableStops(conn, "gate.run", workflow.Subject{Type: "run", ID: options.Request.RunID})
+		if err != nil {
+			return err
+		}
+		if len(stops) != 0 {
+			return &workflow.StopBlockedError{Action: "gate.run", Stops: stops}
+		}
 
 		if _, _, cancel, err := executorCommand(ctx, options.WorkspaceRoot, binding.registration.Policy); err != nil {
 			return err

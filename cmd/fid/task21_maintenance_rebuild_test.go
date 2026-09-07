@@ -83,9 +83,7 @@ func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 		task21Mutate(t, workspace, "issue", "transition", issueID, "--to", step.state, "--actor", "agent:actor-builder", "--expected-revision", step.revision, "--idempotency-key", "task21-"+step.state)
 	}
 	runID, claimID := task18RunAndClaim(t, workspace, issueID)
-	finishPath := filepath.Join(workspace, "task21-finish-run.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
-	task21Mutate(t, workspace, "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "task21-finish-run")
+	closeRunForTest(t, workspace, runID, repository, "task21-close-run")
 	releasePath := filepath.Join(workspace, "task21-release-claim.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	task21Mutate(t, workspace, "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task21-release-claim")

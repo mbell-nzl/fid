@@ -155,12 +155,7 @@ func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testi
 	}
 
 	runID, claimID := task18RunAndClaim(t, workspace, issueID)
-	finishPath := filepath.Join(workspace, "task18-finish-run.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
-	finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "task18-finish-run")
-	if finished.err != nil || finished.stderr != "" {
-		t.Fatalf("finish Run = %#v", finished)
-	}
+	closeRunForTest(t, workspace, runID, repository, "task18-close-run")
 	releasePath := filepath.Join(workspace, "task18-release-claim.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 	released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task18-release-claim")
@@ -245,11 +240,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 			t.Fatalf("terminal transition for completed resume = %#v", transitioned)
 		}
 		runID, claimID := task18RunAndClaim(t, workspace, issueID)
-		finishPath := filepath.Join(workspace, "task18-resume-finish.json")
-		writeActivationInput(t, finishPath, map[string]any{"run_id": runID, "expected_status": "active", "outcome": "succeeded", "repository": repository})
-		if finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "task18-resume-finish"); finished.err != nil || finished.stderr != "" {
-			t.Fatalf("finish completed resume Run = %#v", finished)
-		}
+		closeRunForTest(t, workspace, runID, repository, "task18-resume-close")
 		releasePath := filepath.Join(workspace, "task18-resume-release.json")
 		writeActivationInput(t, releasePath, map[string]any{"claim_id": claimID, "expected_version": 1, "reason": "completed"})
 		if released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "task18-resume-release"); released.err != nil || released.stderr != "" {

@@ -56,7 +56,7 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 		}},
 		{"other obligation type", func(value map[string]any) { value["obligations"].([]any)[0].(map[string]any)["type"] = "human-outcome" }},
 		{"guard widening", func(value map[string]any) {
-			value["obligations"].([]any)[0].(map[string]any)["guarded_actions"] = []string{"envelope.complete", "issue.transition-terminal-success", "run.finish"}
+			value["obligations"].([]any)[0].(map[string]any)["guarded_actions"] = []string{"envelope.complete", "issue.transition-terminal-success", "run.close"}
 		}},
 		{"mutable budget", func(value map[string]any) { value["budgets"].([]any)[0].(map[string]any)["consumed"] = 1 }},
 		{"routine lane", func(value map[string]any) { value["routine"] = map[string]any{"classification": "external"} }},
@@ -172,7 +172,7 @@ func gateDefinitionsForTest(modifyDefinition func(map[string]any)) []any {
 func authorityCapabilities() []string {
 	return []string{
 		"artifact.verify", "claim.acquire", "claim.expire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete",
-		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.finish", "run.observe", "run.start",
+		"envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.observe", "run.start",
 	}
 }
 

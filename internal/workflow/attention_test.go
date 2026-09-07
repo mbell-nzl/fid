@@ -34,6 +34,10 @@ func TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable
 	if err != nil {
 		t.Fatalf("ResolveStop(first) error = %v", err)
 	}
+	replayedStop, err := ResolveStop(options, StopResolveRequest{StopID: first.Stop.ID, FactEventID: factID})
+	if err != nil || !replayedStop.Replayed || replayedStop.EventID != firstResolution.EventID || replayedStop.Stop.ID != firstResolution.Stop.ID {
+		t.Fatalf("ResolveStop(replay) = (%#v, %v), want original resolution", replayedStop, err)
+	}
 	options.IdempotencyKey = testIdempotencyKey()
 	secondResolution, err := ResolveStop(options, StopResolveRequest{StopID: second.Stop.ID, FactEventID: factID})
 	if err != nil {
@@ -56,6 +60,10 @@ func TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable
 	}
 	if resolved.Attention.Status != "resolved" || resolved.Attention.Version != 2 {
 		t.Fatalf("resolved Attention = %#v, want resolved version 2", resolved.Attention)
+	}
+	replayedAttention, err := ResolveAttention(options, AttentionResolveRequest{AttentionID: first.Attention.ID, ExpectedVersion: 1, FactEventIDs: ids})
+	if err != nil || !replayedAttention.Replayed || replayedAttention.EventID != resolved.EventID || replayedAttention.Attention.ID != resolved.Attention.ID {
+		t.Fatalf("ResolveAttention(replay) = (%#v, %v), want original resolution", replayedAttention, err)
 	}
 	for _, id := range []string{first.Stop.ID, second.Stop.ID} {
 		stop, err := GetStop(workspace, migrationsDir, id)

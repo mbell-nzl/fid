@@ -415,6 +415,11 @@ func evaluateEnvelopeCompletion(options EnvelopeOptions, conn *sql.DB, envelope 
 	if envelope.Status != "active" {
 		reasons = append(reasons, evaluationReason("envelope-inactive", envelope.Status, envelope.ID, "envelope"))
 	}
+	stopReasons, err := stopEvaluationReasons(conn, "envelope.complete", Subject{Type: "envelope", ID: envelope.ID})
+	if err != nil {
+		return nil, ObligationEvaluation{}, err
+	}
+	reasons = append(reasons, stopReasons...)
 	evaluation, err := currentEnvelopeEvaluation(conn, envelope, request.Repository)
 	if err != nil {
 		return nil, ObligationEvaluation{}, err

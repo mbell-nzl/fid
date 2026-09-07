@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
-func TestPhase21AttentionBoundary(t *testing.T) {
+func TestPhase22AttentionReadBoundary(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
 	discovery := executeCommandForTest(workspace, "--json", "capabilities")
@@ -57,32 +57,15 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 		}
 	}
 	if len(matches) != 1 {
-		t.Fatalf("attention capability rows = %#v, want one canonical unavailable row", matches)
-	}
-	if got, want := matches[0], (struct {
-		Available    bool           `json:"available"`
-		CapabilityID string         `json:"capability_id"`
-		Limits       map[string]any `json:"limits"`
-		SchemaMax    int            `json:"schema_max"`
-		SchemaMin    int            `json:"schema_min"`
-		TrustSource  string         `json:"trust_source"`
-	}{
-		Available:    false,
-		CapabilityID: "attention.v1",
-		Limits:       map[string]any{"state": false},
-		SchemaMax:    1,
-		SchemaMin:    1,
-		TrustSource:  "phase-22-unavailable",
-	}); !reflect.DeepEqual(got, want) {
-		t.Fatalf("attention capability row = %#v, want %#v", got, want)
+		t.Fatalf("attention capability rows = %#v, want one canonical row", matches)
 	}
 
 	journalPath := mustJournalPath(t, workspace)
 	journalBefore := mustReadCommandFile(t, journalPath)
 	projectionBefore := commandProjectionTableCounts(t, workspace)
 	probe := executeCommandForTest(workspace, "--json", "attention", "list")
-	if probe.err == nil || probe.stdout != "" || !strings.Contains(probe.err.Error(), `unknown command "attention"`) {
-		t.Fatalf("fid --json attention list = %#v, want unavailable no-leaf rejection", probe)
+	if probe.err != nil || probe.stderr != "" || !strings.Contains(probe.stdout, `"operation":"attention.list"`) {
+		t.Fatalf("fid --json attention list = %#v, want read-only list success", probe)
 	}
 	if journalAfter := mustReadCommandFile(t, journalPath); !bytes.Equal(journalAfter, journalBefore) {
 		t.Fatal("fid --json attention list changed journal bytes")
@@ -92,10 +75,8 @@ func TestPhase21AttentionBoundary(t *testing.T) {
 	}
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
-		"internal/workflow/activation.go",
-		"internal/workflow/budget.go",
-		"internal/workflow/capabilities.go",
-		"internal/workflow/stop.go",
+		"cmd/fid/attention.go", "cmd/fid/gate.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
+		"internal/workflow/activation.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}
@@ -173,14 +154,21 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"claim release",
 		"claim list",
 		"run start",
-		"run finish",
+		"run close",
+		"run abandon",
 		"run observe",
+		"run observe-budget",
 		"run checkpoint",
 		"run inspect",
 		"run recover",
 		"run get",
 		"run list",
 		"run",
+		"stop raise",
+		"stop resolve",
+		"stop list",
+		"attention resolve",
+		"attention list",
 		"receipt get",
 		"receipt list",
 		"init",
@@ -218,8 +206,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 68 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 68 and 2", len(retained), len(legacy))
+	if len(retained) != 75 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 75 and 2", len(retained), len(legacy))
 	}
 	want := append(append(append([]string{}, retained...), "export"), legacy...)
 	sort.Strings(want)

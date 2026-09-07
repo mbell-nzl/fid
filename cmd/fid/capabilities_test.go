@@ -158,12 +158,6 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 			args:         []string{"--json", "concern", "raise"},
 			errorText:    `"code":"capability-unavailable"`,
 		},
-		{
-			capabilityID: "attention.v1",
-			surface:      "Attention absence",
-			args:         []string{"--json", "attention", "list"},
-			errorText:    `unknown command "attention"`,
-		},
 	} {
 		probe := probe
 		t.Run(probe.capabilityID+" "+probe.surface, func(t *testing.T) {

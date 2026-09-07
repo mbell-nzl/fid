@@ -68,6 +68,13 @@ const (
 	CodeEvidenceStale                 Code = "evidence-stale"
 	CodeArtifactUnavailable           Code = "artifact-unavailable"
 	CodeGateUnsuccessful              Code = "gate-unsuccessful"
+	CodeBudgetExhausted               Code = "budget-exhausted"
+	CodeBudgetDataUnavailable         Code = "budget-data-unavailable"
+	CodeStopNotFound                  Code = "stop-not-found"
+	CodeAttentionNotFound             Code = "attention-not-found"
+	CodeAttentionVersionConflict      Code = "attention-version-conflict"
+	CodeStopUnresolved                Code = "stop-unresolved"
+	CodeResolutionInvalid             Code = "resolution-invalid"
 	CodeObligationUnsatisfied         Code = "obligation-unsatisfied"
 	CodeArchiveInvalid                Code = "archive-invalid"
 )
@@ -92,6 +99,8 @@ const (
 	SubjectArtifact         SubjectType = "artifact"
 	SubjectCapability       SubjectType = "capability"
 	SubjectExport           SubjectType = "export"
+	SubjectStop             SubjectType = "stop"
+	SubjectAttention        SubjectType = "attention"
 )
 
 type Subject struct {
@@ -161,6 +170,10 @@ func booleanField(name string) detailField { return detailField{name: name, type
 
 func objectField(name string, fields ...detailField) detailField {
 	return detailField{name: name, typeOf: detailObject, fields: fields}
+}
+
+func nullableObjectField(name string, fields ...detailField) detailField {
+	return detailField{name: name, typeOf: detailObject, nullable: true, fields: fields}
 }
 
 func objectsField(name string, fields ...detailField) detailField {
@@ -242,6 +255,17 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeArtifactUnavailable:   definition(CategoryPrecondition, false, []SubjectType{SubjectArtifact}, objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeGateUnsuccessful: definition(CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt},
 		stringField("attempt_id"), stringField("receipt_id"), stringField("outcome"), nullableIntegerField("exit_code"), nullableStringField("signal"), booleanField("timed_out")),
+	CodeBudgetExhausted: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining")),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeBudgetDataUnavailable: definition(CategoryPrecondition, false, []SubjectType{SubjectRun},
+		objectField("budget", stringField("name"), stringField("scope"), stringField("unit"), integerField("maximum"), nullableIntegerField("warning_threshold"), stringField("exhaustion_action"), nullableIntegerField("consumed"), nullableIntegerField("remaining")),
+		stringsField("stop_ids"), stringsField("attention_ids"), nullableObjectField("event", stringField("id"), stringField("occurred_at")), booleanField("replayed")),
+	CodeStopNotFound:             definition(CategoryNotFound, false, []SubjectType{SubjectStop}, stringField("id")),
+	CodeAttentionNotFound:        definition(CategoryNotFound, false, []SubjectType{SubjectAttention}, stringField("id")),
+	CodeAttentionVersionConflict: definition(CategoryConflict, false, []SubjectType{SubjectAttention}, stringField("attention_id"), integerField("expected_version"), integerField("actual_version")),
+	CodeStopUnresolved:           definition(CategoryPrecondition, false, []SubjectType{SubjectStop}, stringsField("stop_ids"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
+	CodeResolutionInvalid:        definition(CategoryPrecondition, false, []SubjectType{SubjectStop, SubjectAttention}, objectField("subject", stringField("type"), stringField("id")), stringsField("fact_event_ids"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeObligationUnsatisfied: definition(CategoryPrecondition, false, []SubjectType{SubjectEnvelope},
 		objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeArchiveInvalid: definition(CategoryIntegrity, false, []SubjectType{SubjectExport},
@@ -261,6 +285,8 @@ var registeredCodes = []Code{
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,
 	CodeReceiptNotFound, CodeEvidenceNotFound,
 	CodeGateUnsuccessful,
+	CodeBudgetExhausted, CodeBudgetDataUnavailable,
+	CodeStopNotFound, CodeAttentionNotFound, CodeAttentionVersionConflict, CodeStopUnresolved, CodeResolutionInvalid,
 	CodeObligationUnsatisfied,
 	CodeArchiveInvalid,
 }

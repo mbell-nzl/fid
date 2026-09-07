@@ -15,7 +15,7 @@ import (
 )
 
 func init() {
-	for _, operation := range []string{"run start", "run finish", "run observe", "run checkpoint", "run recover", "run inspect", "run get", "run list"} {
+	for _, operation := range []string{"run start", "run close", "run abandon", "run observe", "run observe-budget", "run checkpoint", "run recover", "run inspect", "run get", "run list"} {
 		rootFlagCapabilities[operation] = rootFlagCapability{Project: true, JSON: true}
 	}
 }
@@ -34,7 +34,7 @@ func newRunCommand() *cobra.Command {
 			return cmd.Help()
 		},
 	}
-	cmd.AddCommand(newRunStartCommand(), newRunFinishCommand(), newRunObserveCommand(), newRunCheckpointCommand(), newRunInspectCommand(), newRunRecoverCommand(), newRunGetCommand(), newRunListCommand())
+	cmd.AddCommand(newRunStartCommand(), newRunCloseCommand(), newRunAbandonCommand(), newRunObserveCommand(), newRunObserveBudgetCommand(), newRunCheckpointCommand(), newRunInspectCommand(), newRunRecoverCommand(), newRunGetCommand(), newRunListCommand())
 	return cmd
 }
 
@@ -54,6 +54,33 @@ func newRunObserveCommand() *cobra.Command {
 			return renderRunError(cmd, "run.observe", err)
 		}
 		return writeRunObservationSuccess(cmd, result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
+}
+
+func newRunObserveBudgetCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "observe-budget", Short: "Record a trusted external budget observation.", Args: canonicalNoArgs("run.observe-budget"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunBudgetObserveRequest
+		if err := runRequest(cmd, "run.observe-budget", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.observe-budget", err)
+		}
+		result, err := workflow.ObserveRunBudget(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.observe-budget", err)
+		}
+		if jsonMode, err := readJSONMode(cmd); err != nil {
+			return err
+		} else if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), "run.observe-budget", map[string]any{"sample": result.Sample, "budget": result.Budget, "stops": result.Stops, "attention": result.Attention, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Sample.ObservedAt})
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "observed budget %s\n", result.Budget.Name)
+		return err
 	}}
 	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
@@ -80,22 +107,43 @@ func newRunStartCommand() *cobra.Command {
 	return cmd
 }
 
-func newRunFinishCommand() *cobra.Command {
+func newRunCloseCommand() *cobra.Command {
 	var inputPath, actor, key string
-	cmd := &cobra.Command{Use: "finish", Short: "Terminalize one active Run.", Args: canonicalNoArgs("run.finish"), RunE: func(cmd *cobra.Command, _ []string) error {
-		var request workflow.RunFinishRequest
-		if err := runRequest(cmd, "run.finish", inputPath, actor, key, &request); err != nil {
+	cmd := &cobra.Command{Use: "close", Short: "Close one Run from trusted observations and Evidence.", Args: canonicalNoArgs("run.close"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunCloseRequest
+		if err := runRequest(cmd, "run.close", inputPath, actor, key, &request); err != nil {
 			return err
 		}
 		workspace, err := issueMutationWorkspaceRoot(cmd)
 		if err != nil {
-			return renderRunError(cmd, "run.finish", err)
+			return renderRunError(cmd, "run.close", err)
 		}
-		result, err := workflow.FinishRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		result, err := workflow.CloseRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
 		if err != nil {
-			return renderRunError(cmd, "run.finish", err)
+			return renderRunError(cmd, "run.close", err)
 		}
-		return writeRunSuccess(cmd, "run.finish", result)
+		return writeRunSuccess(cmd, "run.close", result)
+	}}
+	runMutationFlags(cmd, &inputPath, &actor, &key)
+	return cmd
+}
+
+func newRunAbandonCommand() *cobra.Command {
+	var inputPath, actor, key string
+	cmd := &cobra.Command{Use: "abandon", Short: "Abandon one Run with recovery authority.", Args: canonicalNoArgs("run.abandon"), RunE: func(cmd *cobra.Command, _ []string) error {
+		var request workflow.RunAbandonRequest
+		if err := runRequest(cmd, "run.abandon", inputPath, actor, key, &request); err != nil {
+			return err
+		}
+		workspace, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderRunError(cmd, "run.abandon", err)
+		}
+		result, err := workflow.AbandonRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
+		if err != nil {
+			return renderRunError(cmd, "run.abandon", err)
+		}
+		return writeRunAbandonSuccess(cmd, result)
 	}}
 	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
@@ -220,6 +268,16 @@ func writeRunObservationSuccess(cmd *cobra.Command, result workflow.RunObservati
 	return err
 }
 
+func writeRunAbandonSuccess(cmd *cobra.Command, result workflow.RunAbandonResult) error {
+	if jsonMode, err := readJSONMode(cmd); err != nil {
+		return err
+	} else if jsonMode {
+		return cli.WriteSuccess(cmd.OutOrStdout(), "run.abandon", map[string]any{"run": result.Run, "claim": result.Claim, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: runEventTime(result.Run)})
+	}
+	_, err := fmt.Fprintf(cmd.OutOrStdout(), "abandoned Run %s\n", result.Run.ID)
+	return err
+}
+
 func runEventTime(run workflow.Run) string {
 	if run.EndedAt != nil {
 		return *run.EndedAt
@@ -228,6 +286,10 @@ func runEventTime(run workflow.Run) string {
 }
 
 func renderRunError(cmd *cobra.Command, operation string, cause error) error {
+	var stopped *workflow.StopBlockedError
+	if errors.As(cause, &stopped) {
+		return renderStopError(cmd, operation, cause)
+	}
 	jsonMode, err := readJSONMode(cmd)
 	if err != nil {
 		return err

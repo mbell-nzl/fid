@@ -150,10 +150,6 @@ func sameRepository(left, right Repository) bool {
 	return sameStringPointer(left.BaseOID, right.BaseOID) && left.CaptureSource == right.CaptureSource && left.Dirty == right.Dirty && sameStringPointer(left.DirtyDigest, right.DirtyDigest) && left.HeadOID == right.HeadOID && left.ProjectID == right.ProjectID && left.TreeOID == right.TreeOID && left.WorktreeID == right.WorktreeID
 }
 
-func sameRepositoryLocation(left, right Repository) bool {
-	return validEnvelopeRepository(right) && left.ProjectID == right.ProjectID && left.WorktreeID == right.WorktreeID
-}
-
 func sameStringPointer(left, right *string) bool {
 	if left == nil || right == nil {
 		return left == right

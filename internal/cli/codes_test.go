@@ -117,6 +117,13 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeGateUnsuccessful, CategoryGateUnsuccessful, false, []SubjectType{SubjectReceipt}, []detailExpectation{
 			stringDetail("attempt_id"), stringDetail("receipt_id"), stringDetail("outcome"), nullableIntegerDetail("exit_code"), nullableStringDetail("signal"), {name: "timed_out", kind: detailBooleanKind},
 		}},
+		{CodeBudgetExhausted, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
+		{CodeBudgetDataUnavailable, CategoryPrecondition, false, []SubjectType{SubjectRun}, budgetDenialDetails()},
+		{CodeStopNotFound, CategoryNotFound, false, []SubjectType{SubjectStop}, stringDetails("id")},
+		{CodeAttentionNotFound, CategoryNotFound, false, []SubjectType{SubjectAttention}, stringDetails("id")},
+		{CodeAttentionVersionConflict, CategoryConflict, false, []SubjectType{SubjectAttention}, []detailExpectation{stringDetail("attention_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
+		{CodeStopUnresolved, CategoryPrecondition, false, []SubjectType{SubjectStop}, []detailExpectation{{name: "stop_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
+		{CodeResolutionInvalid, CategoryPrecondition, false, []SubjectType{SubjectStop, SubjectAttention}, []detailExpectation{{name: "subject", kind: detailObjectKind, children: []detailExpectation{stringDetail("type"), stringDetail("id")}}, {name: "fact_event_ids", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}}}},
 		{CodeObligationUnsatisfied, CategoryPrecondition, false, []SubjectType{SubjectEnvelope}, []detailExpectation{
 			{name: "reasons", kind: detailObjectsKind, children: []detailExpectation{
 				stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type"),
@@ -173,6 +180,14 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		if _, err := NewFailure(code, "message", nil, map[string]any{}); err == nil {
 			t.Errorf("NewFailure(%q) error = nil, want unknown-code rejection", code)
 		}
+	}
+}
+
+func budgetDenialDetails() []detailExpectation {
+	return []detailExpectation{
+		{name: "budget", kind: detailObjectKind, children: []detailExpectation{stringDetail("name"), stringDetail("scope"), stringDetail("unit"), integerDetail("maximum"), nullableIntegerDetail("warning_threshold"), stringDetail("exhaustion_action"), nullableIntegerDetail("consumed"), nullableIntegerDetail("remaining")}},
+		{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
+		{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
 	}
 }
 

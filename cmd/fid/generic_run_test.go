@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -219,11 +220,7 @@ func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
 		t.Fatalf("Run obligation = %#v, want exact bound obligation", first["obligation_id"])
 	}
 
-	finishPath := filepath.Join(workspace, "run-executor-finish.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": first["id"], "expected_status": "active", "outcome": "failed", "repository": repository})
-	if finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "run-executor-finish"); finished.err != nil {
-		t.Fatalf("finish first Run: %#v", finished)
-	}
+	closeRunForTest(t, workspace, first["id"].(string), repository, "run-executor-close")
 	releasePath := filepath.Join(workspace, "run-executor-release.json")
 	writeActivationInput(t, releasePath, map[string]any{"claim_id": claim["id"], "expected_version": 1, "reason": "failed"})
 	if released := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "release", "--actor", "actor-builder", "--input", releasePath, "--idempotency-key", "run-executor-release"); released.err != nil {
@@ -252,7 +249,7 @@ func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
 	assertRunStateUnchanged(t, workspace, beforeWrongObligation)
 }
 
-func TestRunFinishIsOneWayAndUnsupportedRespawnLeavesAreAbsent(t *testing.T) {
+func TestRetiredRunLeafAndUnsupportedRespawnLeavesAreAbsent(t *testing.T) {
 	t.Parallel()
 	workspace, issueID, envelopeID := runEnvelopeForTest(t)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-finish-claim")
@@ -263,26 +260,13 @@ func TestRunFinishIsOneWayAndUnsupportedRespawnLeavesAreAbsent(t *testing.T) {
 	if started.err != nil {
 		t.Fatalf("start run: %v; stderr=%q", started.err, started.stderr)
 	}
-	run := runFromResponse(t, started.stdout)
-
-	finishPath := filepath.Join(workspace, "run-finish.json")
-	writeActivationInput(t, finishPath, map[string]any{"run_id": run["id"], "expected_status": "active", "outcome": "succeeded", "repository": repository})
-	finished := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "run-finish-1")
-	if finished.err != nil || finished.stderr != "" {
-		t.Fatalf("finish run = %#v, want stdout-only success", finished)
-	}
-	finishedRun := runFromResponse(t, finished.stdout)
-	if finishedRun["status"] != "succeeded" || finishedRun["ended_at"] == nil || finishedRun["terminal_repository"] == nil {
-		t.Fatalf("finished run = %#v, want one terminal succeeded Run", finishedRun)
-	}
-
 	before := journalEventCount(t, workspace)
-	repeated := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish", "--actor", "actor-builder", "--input", finishPath, "--idempotency-key", "run-finish-repeat")
-	if repeated.err == nil || repeated.stdout != "" {
-		t.Fatalf("repeat finish = %#v, want closed failure", repeated)
+	retired := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "finish")
+	if retired.err == nil || retired.stdout != "" || !strings.Contains(retired.err.Error(), `unknown command "finish"`) {
+		t.Fatalf("retired finish = %#v, want absent-leaf rejection", retired)
 	}
 	if after := journalEventCount(t, workspace); after != before {
-		t.Fatalf("repeat finish changed Event count to %d, want %d", after, before)
+		t.Fatalf("retired finish changed Event count to %d, want %d", after, before)
 	}
 
 	for _, absent := range []string{"run predecessor", "run continuation", "run respawn"} {
@@ -322,10 +306,10 @@ func buildRunEnvelopeForTest(t *testing.T, definitions []any) (string, string, s
 	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
-	grant["actions"] = []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.observe", "run.start"}
+	grant["actions"] = []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.close", "run.observe", "run.start"}
 	grant["actor_selector"] = map[string]any{
 		"actor_id":              "actor-builder",
-		"required_capabilities": []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.finish", "run.observe", "run.start"},
+		"required_capabilities": []string{"claim.acquire", "claim.expire", "claim.release", "envelope.activate", "gate.run", "run.close", "run.observe", "run.start"},
 	}
 	input["authority_grants"] = append(input["authority_grants"].([]any), map[string]any{
 		"actor_selector": map[string]any{"actor_id": "actor-harness", "required_capabilities": []string{"run.observe"}},
@@ -361,6 +345,36 @@ func runStartInput(issueID, envelopeID, claimID any, repository map[string]any) 
 	return map[string]any{
 		"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1,
 		"claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-builder", "source": "activated-harness"}, "obligation_id": nil, "repository": repository,
+	}
+}
+
+func closeRunForTest(t *testing.T, workspace, runID string, repository map[string]any, key string) {
+	t.Helper()
+	current := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "get", runID)
+	if current.err != nil {
+		t.Fatalf("get Run before close: %#v", current)
+	}
+	currentRun := runFromResponse(t, current.stdout)
+	var err error
+	version, err := strconv.Atoi(fmt.Sprint(currentRun["version"]))
+	if err != nil {
+		t.Fatalf("decode Run version: %v", err)
+	}
+	executorID := currentRun["executor"].(map[string]any)["id"]
+	observePath := filepath.Join(workspace, key+"-observe.json")
+	writeActivationInput(t, observePath, map[string]any{"run_id": runID, "expected_version": version, "liveness": map[string]any{"executor_id": executorID, "state": "terminated", "source_ref": "process:test", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}})
+	observed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "observe", "--actor", "actor-harness", "--input", observePath, "--idempotency-key", key+"-observe")
+	if observed.err != nil {
+		t.Fatalf("observe terminated Run: %#v", observed)
+	}
+	response := decodeCommandJSONStructure(t, observed.stdout).(map[string]any)["result"].(map[string]any)
+	observation := response["observation"].(map[string]any)
+	run := response["run"].(map[string]any)
+	closePath := filepath.Join(workspace, key+"-close.json")
+	writeActivationInput(t, closePath, map[string]any{"run_id": runID, "expected_version": run["version"], "observation_id": observation["id"], "repository": repository})
+	closed := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "close", "--actor", "actor-builder", "--input", closePath, "--idempotency-key", key+"-close")
+	if closed.err != nil {
+		t.Fatalf("close Run: %#v", closed)
 	}
 }
 

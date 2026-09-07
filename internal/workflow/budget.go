@@ -14,11 +14,19 @@ import (
 // A nil Value is an explicitly unknown observation.
 type BudgetSample struct {
 	ID               string  `json:"id"`
+	EnvelopeID       string  `json:"envelope_id"`
+	EnvelopeRevision int     `json:"envelope_revision"`
+	BudgetName       string  `json:"budget_name"`
+	RunID            string  `json:"run_id"`
+	ActorID          string  `json:"actor_id"`
 	Source           string  `json:"source"`
 	SourceSampleID   string  `json:"source_sample_id"`
 	SampleKind       string  `json:"sample_kind"`
 	PreviousSampleID *string `json:"previous_sample_id"`
 	Value            *int64  `json:"value"`
+	MeasurementRef   *Source `json:"measurement_ref"`
+	ObservedAt       string  `json:"observed_at"`
+	EventID          string  `json:"event_id"`
 }
 
 // BudgetAdmission is the state derived while admitting an execution fact.
