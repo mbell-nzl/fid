@@ -1,0 +1,12 @@
+{
+  "name": "budget-stale-version",
+  "operation": "run.observe-budget",
+  "kind": "rejected",
+  "result_fields": [],
+  "event": false,
+  "exit_code": 4,
+  "failure_code": "run-version-conflict",
+  "input": {
+    "expected_version": 999
+  }
+}

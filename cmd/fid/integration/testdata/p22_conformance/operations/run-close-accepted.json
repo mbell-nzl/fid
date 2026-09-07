@@ -1,0 +1,15 @@
+{
+  "name": "run-close-accepted",
+  "operation": "run.close",
+  "kind": "accepted",
+  "result_fields": [
+    "run",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "run.status": "failed",
+    "run.version": 3
+  }
+}

@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -17,13 +19,16 @@ import (
 const p22CorpusDir = "testdata/p22_conformance"
 
 type p22ConformanceCase struct {
-	Name         string   `json:"name"`
-	Operation    string   `json:"operation"`
-	Kind         string   `json:"kind"`
-	ResultFields []string `json:"result_fields"`
-	Event        bool     `json:"event"`
-	FailureCode  string   `json:"failure_code"`
-	ExitCode     int      `json:"exit_code"`
+	Name         string         `json:"name"`
+	Operation    string         `json:"operation"`
+	Kind         string         `json:"kind"`
+	ResultFields []string       `json:"result_fields"`
+	Event        bool           `json:"event"`
+	FailureCode  string         `json:"failure_code"`
+	ExitCode     int            `json:"exit_code"`
+	Expected     map[string]any `json:"expected"`
+	Input        map[string]any `json:"input,omitempty"`
+	Reset        bool           `json:"reset,omitempty"`
 }
 
 type p22ConformanceResponse struct {
@@ -40,14 +45,77 @@ type p22RecoveryAdapter interface {
 func TestP22DualAdapterRecoveryConformance(t *testing.T) {
 	fixtures := p22RecoveryFixtures(t)
 	for _, newAdapter := range []func(*testing.T) p22RecoveryAdapter{
-		func(_ *testing.T) p22RecoveryAdapter { return p22FakeRecoveryAdapter{} },
+		func(_ *testing.T) p22RecoveryAdapter { return p22NewFakeRecoveryAdapter() },
 		func(t *testing.T) p22RecoveryAdapter { return p22NewFIDRecoveryAdapter(t) },
 	} {
 		adapter := newAdapter(t)
 		t.Run(adapter.Name(), func(t *testing.T) {
+			var priorRun string
+			var denialStops, denialAttention any
+			adapterScope := t
 			for _, fixture := range fixtures {
 				t.Run(fixture.Name, func(t *testing.T) {
-					assertP22ConformanceResponse(t, fixture, adapter.Execute(t, fixture))
+					if fixture.Reset {
+						adapter = newAdapter(adapterScope)
+						priorRun = ""
+						denialStops, denialAttention = nil, nil
+					}
+					response := adapter.Execute(t, fixture)
+					if fixture.Kind == "denied" {
+						first := assertP22LiveDenial(t, response, false)
+						denialStops = p22ResultPath(first, "error.details.stop_ids")
+						denialAttention = p22ResultPath(first, "error.details.attention_ids")
+						replay := assertP22LiveDenial(t, adapter.Execute(t, fixture), true)
+						replay["error"].(map[string]any)["details"].(map[string]any)["replayed"] = false
+						if !p22SameResult(first, replay) {
+							t.Fatalf("committed denial replay changed identities: %#v %#v", first, replay)
+						}
+						return
+					}
+					assertP22ConformanceResponse(t, fixture, response)
+					if response.ExitCode != 0 {
+						return
+					}
+					var original map[string]any
+					if err := json.Unmarshal([]byte(response.Stdout), &original); err != nil {
+						t.Fatal(err)
+					}
+					result := original["result"].(map[string]any)
+					if fixture.Operation == "stop.raise" {
+						stop := result["stop"].(map[string]any)
+						attention := result["attention"].(map[string]any)
+						if p22ResultPath(stop, "subject.id") != priorRun || !reflect.DeepEqual(attention["stop_ids"], []any{stop["id"]}) {
+							t.Fatalf("Stop/Attention linkage = %#v; run=%q", result, priorRun)
+						}
+					}
+					if fixture.Operation == "stop.resolve" && p22ResultPath(result, "stop.resolution.event_id") != p22ResultPath(original, "event.id") {
+						t.Fatalf("Stop disposition does not bind its Event: %#v", original)
+					}
+					if fixture.Operation == "stop.list" && denialStops != nil {
+						if !reflect.DeepEqual([]any{p22ResultPath(result, "items.0.id")}, denialStops) {
+							t.Fatalf("listed Stop differs from committed denial: %#v", result)
+						}
+					}
+					if fixture.Operation == "attention.list" && denialAttention != nil {
+						if !reflect.DeepEqual([]any{p22ResultPath(result, "items.0.id")}, denialAttention) || !reflect.DeepEqual(p22ResultPath(result, "items.0.stop_ids"), denialStops) {
+							t.Fatalf("listed Attention differs from committed denial: %#v", result)
+						}
+					}
+
+					if fixture.Operation == "run.recover" {
+						run := result["run"].(map[string]any)
+						claim := result["claim"].(map[string]any)
+						recovery := result["recovery"].(map[string]any)
+						if run["id"] == priorRun || run["predecessor_run_id"] != priorRun || recovery["prior_run_id"] != priorRun || recovery["successor_run_id"] != run["id"] || run["claim_id"] != claim["id"] {
+							t.Fatalf("recovery identity relationships = %#v; prior=%q", result, priorRun)
+						}
+					}
+					if run, ok := result["run"].(map[string]any); ok {
+						priorRun, _ = run["id"].(string)
+					}
+					if fixture.Event {
+						assertP22Replay(t, fixture, original, adapter.Execute(t, fixture))
+					}
 				})
 			}
 		})
@@ -66,8 +134,8 @@ func p22RecoveryFixtures(t *testing.T) []p22ConformanceCase {
 	if err := json.Unmarshal(contents, &manifest); err != nil {
 		t.Fatalf("decode Phase 22 recovery conformance manifest: %v", err)
 	}
-	if len(manifest.Cases) != 10 {
-		t.Fatalf("Phase 22 recovery conformance fixture count = %d, want 10", len(manifest.Cases))
+	if len(manifest.Cases) != 37 {
+		t.Fatalf("Phase 22 recovery conformance fixture count = %d, want 37", len(manifest.Cases))
 	}
 	fixtures := make([]p22ConformanceCase, 0, len(manifest.Cases))
 	for _, path := range manifest.Cases {
@@ -107,9 +175,27 @@ func assertP22ConformanceResponse(t *testing.T, fixture p22ConformanceCase, resp
 		if !ok {
 			t.Fatalf("%s accepted result = %#v, want object", fixture.Operation, envelope["result"])
 		}
+		for path, want := range fixture.Expected {
+			got := p22ResultPath(result, path)
+			if !reflect.DeepEqual(got, want) {
+				t.Fatalf("%s result %s = %#v, want %#v", fixture.Operation, path, got, want)
+			}
+		}
 		for _, field := range fixture.ResultFields {
 			if _, ok := result[field]; !ok {
 				t.Fatalf("%s accepted result missing %q: %#v", fixture.Operation, field, result)
+			}
+		}
+		if fixture.Event {
+			if replayed, ok := result["replayed"].(bool); !ok || replayed {
+				t.Fatalf("%s first delivery replayed = %#v, want boolean false", fixture.Operation, result["replayed"])
+			}
+		}
+		for _, field := range []string{"run", "claim", "observation", "checkpoint", "recovery", "reconciliation"} {
+			if value, exists := result[field]; exists {
+				if _, ok := value.(map[string]any); !ok {
+					t.Fatalf("%s %s = %#v, want typed object", fixture.Operation, field, value)
+				}
 			}
 		}
 		if fixture.Event {
@@ -134,26 +220,6 @@ func assertP22ConformanceResponse(t *testing.T, fixture p22ConformanceCase, resp
 	}
 }
 
-type p22FakeRecoveryAdapter struct{}
-
-func (p22FakeRecoveryAdapter) Name() string { return "fake" }
-
-func (p22FakeRecoveryAdapter) Execute(t *testing.T, fixture p22ConformanceCase) p22ConformanceResponse {
-	t.Helper()
-	if fixture.Kind == "accepted" {
-		result := map[string]any{}
-		for _, field := range fixture.ResultFields {
-			result[field] = field + "-fake"
-		}
-		event := any(nil)
-		if fixture.Event {
-			event = map[string]any{"id": "EVT-fake", "occurred_at": "2026-09-06T00:00:00Z"}
-		}
-		return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": true, "operation": fixture.Operation, "result": result, "event": event}, true, fixture.ExitCode)
-	}
-	return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": fixture.Operation, "error": map[string]any{"code": fixture.FailureCode}}, false, fixture.ExitCode)
-}
-
 func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exitCode int) p22ConformanceResponse {
 	t.Helper()
 	encoded, err := json.Marshal(envelope)
@@ -168,17 +234,29 @@ func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exit
 }
 
 type p22FIDRecoveryAdapter struct {
-	binary       string
-	workspace    string
-	projectID    string
-	actor        string
-	repository   map[string]any
-	claimID      string
-	claimVersion int
-	runID        string
-	runVersion   int
-	observation  string
-	digest       string
+	registrationID                                                 string
+	registrationVersion                                            any
+	binary                                                         string
+	workspace                                                      string
+	projectID                                                      string
+	actor                                                          string
+	repository                                                     map[string]any
+	claimID                                                        string
+	claimVersion                                                   int
+	runID                                                          string
+	runVersion                                                     int
+	observation                                                    string
+	digest                                                         string
+	requests                                                       map[string]p22PreparedRequest
+	executorID                                                     string
+	stopID, attentionID, terminalEvent, dispositionEvent, sampleID string
+	attentionVersion                                               int
+	measurement                                                    map[string]any
+}
+
+type p22PreparedRequest struct {
+	args  []string
+	input map[string]any
 }
 
 func (adapter *p22FIDRecoveryAdapter) Name() string { return "fid" }
@@ -199,7 +277,7 @@ func p22NewFIDRecoveryAdapter(t *testing.T) *p22FIDRecoveryAdapter {
 	issue := p21Run(t, binary, workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Phase 22 conformance", "--actor", "agent:developer", "--idempotency-key", "p22-corpus-issue")
 	issueID := p21PathString(t, issue, "result", "issue", "id")
 	actor := "actor-recovery"
-	capabilities := []string{"artifact.verify", "claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "run.checkpoint", "run.observe", "run.recover", "run.start"}
+	capabilities := []string{"artifact.verify", "attention.resolve", "claim.acquire", "claim.expire", "envelope.activate", "envelope.create", "gate.register", "gate.run", "run.abandon", "run.checkpoint", "run.close", "run.observe", "run.observe-budget", "run.recover", "run.start", "stop.raise", "stop.resolve"}
 	activationID := p21Activation(t, binary, workspace, "prepare", "p22-corpus-activation-prepare", map[string]any{"backend_identity": "fid", "direction": "activate", "kit_identity": "p22-corpus", "phase": 21})
 	profileDigest := p21Component(t, binary, workspace, activationID, "authority-profile", "p22-corpus-authority", []any{
 		map[string]any{"actor_id": "actor-denied", "actor_type": "agent", "producer": "activated-harness", "provenance_ref": "activation:p22-corpus", "session_ref": nil, "capabilities": capabilities},
@@ -215,14 +293,14 @@ func p22NewFIDRecoveryAdapter(t *testing.T) *p22FIDRecoveryAdapter {
 	registrationID := p21PathString(t, registered, "result", "registration", "id")
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
 	source := map[string]any{"digest": "sha256:" + p22Zeros(64), "display_label": "Phase 22 corpus", "external_id": nil, "path": "project-docs/p22-corpus.md", "repository": repository, "section": nil, "source_type": "project-file"}
-	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}})
+	envelopeInput := p21Input(t, workspace, "p22-corpus-envelope", map[string]any{"outcome": "Recover one interrupted Run", "non_goals": []string{}, "risk_result": map[string]any{"source": source, "result_digest": "sha256:" + p22Ones(64)}, "repository_scope": repository, "sources": []any{source}, "primary_issue_id": issueID, "related_issue_ids": []string{}, "authority_grants": []any{map[string]any{"actions": capabilities[1:], "actor_selector": map[string]any{"actor_id": actor, "required_capabilities": capabilities[1:]}, "scope": map[string]any{"issue_id": issueID}}}, "obligations": []any{map[string]any{"id": "OBL-p22-corpus", "type": "gate-evidence", "applicability": "required", "guarded_actions": []string{"envelope.complete", "issue.transition-terminal-success"}, "subject": map[string]any{"type": "issue", "id": issueID}, "registration": map[string]any{"id": registrationID, "version": registrationVersion}, "accepted_evidence_types": []string{"receipt"}, "accepted_trust_sources": []string{"fid-executed"}, "freshness_target": "repository-tree", "artifact_policy": "required-available", "independence": "fid-executed", "required_lane": nil, "source": source}}, "budgets": []any{map[string]any{"name": "attempts", "scope": "envelope", "unit": "attempts", "maximum": 3, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}, map[string]any{"name": "tokens", "scope": "envelope", "unit": "input-tokens", "maximum": 10, "warning_threshold": nil, "exhaustion_action": "budget-exhausted", "consumed": nil, "remaining": nil}}})
 	created := p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "create", "--actor", actor, "--input", envelopeInput, "--idempotency-key", "p22-corpus-envelope-create")
 	envelopeID := p21PathString(t, created, "result", "envelope", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1}), "--idempotency-key", "p22-corpus-envelope-activate")
 	claim := p21Run(t, binary, workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-claim", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"base.txt"}}, "ttl_seconds": 60}), "--idempotency-key", "p22-corpus-claim-acquire")
 	claimID := p21PathString(t, claim, "result", "claim", "id")
 	run := p21Run(t, binary, workspace, "--project", workspace, "--json", "run", "start", "--actor", actor, "--input", p21Input(t, workspace, "p22-corpus-run", map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "claim_id": claimID, "claim_version": 1, "executor": map[string]any{"id": "executor-corpus-prior", "source": "activated-harness"}, "obligation_id": nil, "repository": repository}), "--idempotency-key", "p22-corpus-run-start")
-	return &p22FIDRecoveryAdapter{binary: binary, workspace: workspace, projectID: projectID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1}
+	return &p22FIDRecoveryAdapter{binary: binary, workspace: workspace, projectID: projectID, actor: actor, repository: repository, claimID: claimID, claimVersion: 1, runID: p21PathString(t, run, "result", "run", "id"), runVersion: 1, executorID: "executor-corpus-prior", measurement: source, registrationID: registrationID, registrationVersion: registrationVersion}
 }
 
 func p22CorpusRepository(t *testing.T, workspace, projectID string) map[string]any {
@@ -247,7 +325,7 @@ func (adapter *p22FIDRecoveryAdapter) Execute(t *testing.T, fixture p22Conforman
 	} else {
 		response.ExitCode = 0
 	}
-	if fixture.Kind == "accepted" {
+	if response.ExitCode == 0 {
 		adapter.p22Advance(t, fixture.Operation, stdout)
 	}
 	return response
@@ -255,13 +333,29 @@ func (adapter *p22FIDRecoveryAdapter) Execute(t *testing.T, fixture p22Conforman
 
 func (adapter *p22FIDRecoveryAdapter) p22Args(t *testing.T, fixture p22ConformanceCase) ([]string, map[string]any) {
 	t.Helper()
+	if request, ok := adapter.requests[fixture.Name]; ok {
+		return request.args, request.input
+	}
+	args, input := adapter.p22BuildArgs(t, fixture)
+	for key, value := range fixture.Input {
+		input[key] = value
+	}
+	if adapter.requests == nil {
+		adapter.requests = map[string]p22PreparedRequest{}
+	}
+	adapter.requests[fixture.Name] = p22PreparedRequest{args: args, input: input}
+	return args, input
+}
+
+func (adapter *p22FIDRecoveryAdapter) p22BuildArgs(t *testing.T, fixture p22ConformanceCase) ([]string, map[string]any) {
+	t.Helper()
 	args := []string{"--project", adapter.workspace, "--json"}
 	unknown := fixture.Kind == "unknown-field"
 	var input map[string]any
 	switch fixture.Operation {
 	case "run.observe":
 		args = append(args, "run", "observe", "--actor", adapter.actor)
-		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "liveness": map[string]any{"executor_id": "executor-corpus-prior", "state": "terminated", "source_ref": "process:p22-corpus", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}
+		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "liveness": map[string]any{"executor_id": adapter.executorID, "state": "terminated", "source_ref": "process:p22-corpus", "observed_at": time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}}
 	case "run.inspect":
 		args = append(args, "run", "inspect", adapter.runID)
 		if unknown {
@@ -277,6 +371,41 @@ func (adapter *p22FIDRecoveryAdapter) p22Args(t *testing.T, fixture p22Conforman
 	case "run.recover":
 		args = append(args, "run", "recover", "--actor", adapter.actor)
 		input = map[string]any{"prior_run_id": adapter.runID, "expected_run_version": adapter.runVersion, "expected_claim_version": adapter.claimVersion, "observation_id": adapter.observation, "reconciliation_digest": adapter.digest, "adopted_paths": []string{}, "authority": map[string]any{"mode": "ordinary", "actor_id": adapter.actor, "reason": "trusted termination", "reference": nil, "grant_ref": nil}, "executor": map[string]any{"id": "executor-corpus-successor", "source": "activated-harness"}, "ttl_seconds": 60}
+	case "stop.list", "attention.list":
+		group := strings.Split(fixture.Operation, ".")[0]
+		args = append(args, group, "list", "--subject", "run:"+adapter.runID, "--limit", "10")
+		if unknown {
+			args = append(args, "--unknown-field")
+		}
+		return args, nil
+	case "stop.raise":
+		args = append(args, "stop", "raise", "--actor", adapter.actor)
+		subject := map[string]any{"type": "run", "id": adapter.runID}
+		input = map[string]any{"subject": subject, "code": "operator-stop", "blocked_actions": []string{"gate.run"}, "details": map[string]any{"reason": "conformance operator intervention", "reference": "policy:conformance"}, "resolution_condition": map[string]any{"type": "work-ended", "subject": subject}, "resolver_capability": "stop.resolve"}
+	case "stop.resolve":
+		args = append(args, "stop", "resolve", "--actor", adapter.actor)
+		input = map[string]any{"stop_id": adapter.stopID, "fact_event_id": adapter.terminalEvent}
+	case "attention.resolve":
+		args = append(args, "attention", "resolve", "--actor", adapter.actor)
+		input = map[string]any{"attention_id": adapter.attentionID, "expected_version": adapter.attentionVersion, "fact_event_ids": []string{adapter.dispositionEvent}}
+	case "run.observe-budget":
+		args = append(args, "run", "observe-budget", "--actor", adapter.actor)
+		var previous any
+		kind := "baseline"
+		if adapter.sampleID != "" {
+			previous, kind = adapter.sampleID, "delta"
+		}
+		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "budget_name": "tokens", "source_sample_id": fixture.Name, "sample_kind": kind, "previous_sample_id": previous, "value": 3, "measurement_ref": adapter.measurement, "observed_at": time.Now().UTC().Format(time.RFC3339Nano)}
+	case "gate.run":
+		args = append(args, "gate", "run", "--actor", adapter.actor)
+		input = map[string]any{"run_id": adapter.runID, "registration_id": adapter.registrationID, "registration_version": adapter.registrationVersion, "obligation_id": "OBL-p22-corpus", "repository": adapter.repository}
+	case "run.close", "run.abandon":
+		args = append(args, "run", strings.TrimPrefix(fixture.Operation, "run."), "--actor", adapter.actor)
+		input = map[string]any{"run_id": adapter.runID, "expected_version": adapter.runVersion, "observation_id": adapter.observation, "repository": adapter.repository}
+		if fixture.Operation == "run.abandon" {
+			input["expected_claim_version"] = adapter.claimVersion
+			input["authority"] = map[string]any{"mode": "ordinary", "actor_id": adapter.actor, "reason": "intentional conformance cessation", "reference": nil, "grant_ref": nil}
+		}
 	default:
 		t.Fatalf("unsupported Phase 22 conformance operation %q", fixture.Operation)
 	}
@@ -293,6 +422,9 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 		t.Fatalf("decode %s accepted response: %v; stdout=%q", operation, err, stdout)
 	}
 	result := p21Path(t, envelope, "result").(map[string]any)
+	if result["replayed"] == true {
+		return
+	}
 	switch operation {
 	case "run.observe":
 		adapter.observation = p21PathString(t, envelope, "result", "observation", "id")
@@ -307,6 +439,25 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 		if p21PathString(t, envelope, "result", "recovery", "prior_run_id") != adapter.runID {
 			t.Fatalf("recovery response = %#v, want prior Run %q", result, adapter.runID)
 		}
+		adapter.runID = p21PathString(t, envelope, "result", "run", "id")
+		adapter.runVersion = p22Number(p21Path(t, envelope, "result", "run", "version"))
+		adapter.claimID = p21PathString(t, envelope, "result", "claim", "id")
+		adapter.claimVersion = p22Number(p21Path(t, envelope, "result", "claim", "version"))
+		adapter.executorID = "executor-corpus-successor"
+	case "run.observe-budget":
+		adapter.sampleID = p21PathString(t, envelope, "result", "sample", "id")
+		adapter.runVersion++
+	case "stop.raise":
+		adapter.stopID = p21PathString(t, envelope, "result", "stop", "id")
+		adapter.attentionID = p21PathString(t, envelope, "result", "attention", "id")
+		adapter.attentionVersion = p22Number(p21Path(t, envelope, "result", "attention", "version"))
+	case "run.close", "run.abandon":
+		adapter.terminalEvent = p21PathString(t, envelope, "event", "id")
+		adapter.runVersion = p22Number(p21Path(t, envelope, "result", "run", "version"))
+	case "stop.resolve":
+		adapter.dispositionEvent = p21PathString(t, envelope, "event", "id")
+	case "attention.resolve":
+		adapter.attentionVersion = p22Number(p21Path(t, envelope, "result", "attention", "version"))
 	}
 }
 

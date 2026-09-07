@@ -1,0 +1,12 @@
+{
+  "name": "stop-resolve-wrong-fact",
+  "operation": "stop.resolve",
+  "kind": "rejected",
+  "result_fields": [],
+  "event": false,
+  "exit_code": 4,
+  "failure_code": "resolution-invalid",
+  "input": {
+    "fact_event_id": "EVT-missing"
+  }
+}

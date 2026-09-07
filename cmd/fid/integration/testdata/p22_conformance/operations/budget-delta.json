@@ -1,0 +1,23 @@
+{
+  "name": "budget-delta",
+  "operation": "run.observe-budget",
+  "kind": "accepted",
+  "result_fields": [
+    "sample",
+    "budget",
+    "stops",
+    "attention",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "budget.consumed": 5,
+    "budget.remaining": 5,
+    "sample.sample_kind": "delta",
+    "sample.value": 2
+  },
+  "input": {
+    "value": 2
+  }
+}

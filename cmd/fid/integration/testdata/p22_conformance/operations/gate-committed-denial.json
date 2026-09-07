@@ -1,0 +1,10 @@
+{
+  "name": "gate-committed-denial",
+  "operation": "gate.run",
+  "kind": "denied",
+  "event": false,
+  "exit_code": 4,
+  "result_fields": [],
+  "expected": {},
+  "reset": true
+}

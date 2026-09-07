@@ -1,1 +1,16 @@
-{"name":"claim-expire-accepted","operation":"claim.expire","kind":"accepted","result_fields":["claim","idempotency_key","replayed"],"event":true,"exit_code":0}
+{
+  "name": "claim-expire-accepted",
+  "operation": "claim.expire",
+  "kind": "accepted",
+  "result_fields": [
+    "claim",
+    "idempotency_key",
+    "replayed"
+  ],
+  "event": true,
+  "exit_code": 0,
+  "expected": {
+    "claim.version": 2,
+    "claim.status": "expired"
+  }
+}
