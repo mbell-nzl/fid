@@ -157,6 +157,31 @@ printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.454s`
 (terminated `exit_code: 0`). gofmt/goimports were applied. Root hands the
 uncommitted shared test file back for the Developer's final commit/gates.
 
+### Required Material And Metadata-Sufficient Artifact Loss
+
+Root owned new artifact_material_policy_test.go. Both fixtures execute a Gate
+that retains actual material, then link Evidence through the public operation
+with required_artifact_ids either populated or empty. They delete retained
+bytes and use artifact.verify, proving only required material blocks Evidence
+evaluation. Both retain Evidence identity and provenance, Receipt facts, and
+all Artifact metadata except its current availability. Receipt embeds current
+Artifact availability, so that projection member alone may change; the
+remaining Receipt value is compared in full. Missing bytes are not recreated.
+
+`go test ./cmd/fid -run '^TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+  (terminated `exit_code: 1`): root referenced ArtifactIDs omitted by the local
+  terminal test struct. Read the existing public Receipt.artifacts instead.
+- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.456s`
+  (terminated `exit_code: 1`): root assumed an artifact.get operation; it is
+  not an accepted leaf. Use the accepted receipt.get nested Artifact view.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.701s`
+  (terminated `exit_code: 0`). These are construction failures and subsequent
+  regression proof of existing policy, not red/green product repair. No product
+  policy or serialization was changed for this test. Developer owns the new
+  test after handback and includes it in the five final task-wide gates.
+
 Root subsequently accepted the new budget_projection_replay_test.go file and
 the narrow committed-denial renderer/closed error Budget shape under DEC-201.
 The previous handback receipt remains evidence for its stated source boundary;
