@@ -316,10 +316,6 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 	}
 }
 
-func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
-	return evidenceEnvelopeForTest(t, modifyDefinition, false)
-}
-
 func observedEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
 	return evidenceEnvelopeForTest(t, modifyDefinition, true)
 }

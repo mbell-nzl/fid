@@ -76,6 +76,12 @@ func TestPhase21ConformanceCorpusIsCompleteAndByteExact(t *testing.T) {
 func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	binary := integrationFIDBinary(t)
 	workspace := t.TempDir()
+	p22Git(t, workspace, "init", "-q")
+	p22Git(t, workspace, "config", "user.email", "p21-corpus@example.test")
+	p22Git(t, workspace, "config", "user.name", "Phase 21 corpus")
+	p22Write(t, workspace, ".gitignore", ".fid/\n*.json\n*.zip\n")
+	p22Git(t, workspace, "add", ".gitignore")
+	p22Git(t, workspace, "commit", "-qm", "fixture")
 	init := p21Run(t, binary, workspace, "--json", "init", "--prefix", "P21")
 	projectID := p21PathString(t, init, "result", "project", "id")
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "workflow", "define", "--name", "p21-journey", "--applies-to", "task",
@@ -98,8 +104,8 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p21Activation(t, binary, workspace, "commit", "p21-activation-commit", map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
 	p21Activation(t, binary, workspace, "finalize", "p21-activation-finalize", map[string]any{"activation_id": activationID, "expected_status": "committed"})
 
-	repository := map[string]any{"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil, "head_oid": strings.Repeat("a", 40), "project_id": projectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1"}
-	registerInput := p21Input(t, workspace, "gate-register", map[string]any{"definition_id": "gate-unit", "definition_version": 1, "worktree_id": "worktree-1", "scope": map[string]any{"issue_id": issueID}, "repository": repository})
+	repository := p22CorpusRepository(t, workspace, projectID)
+	registerInput := p21Input(t, workspace, "gate-register", map[string]any{"definition_id": "gate-unit", "definition_version": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"issue_id": issueID}, "repository": repository})
 	registered := p21Run(t, binary, workspace, "--project", workspace, "--json", "gate", "register", "--actor", "actor-builder", "--input", registerInput, "--idempotency-key", "p21-gate-register")
 	registrationID := p21PathString(t, registered, "result", "registration", "id")
 	registrationVersion := p21Path(t, registered, "result", "registration", "version")
@@ -119,7 +125,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	activateInput := p21Input(t, workspace, "envelope-activate", map[string]any{"envelope_id": envelopeID, "expected_revision": 1})
 	p21Run(t, binary, workspace, "--project", workspace, "--json", "envelope", "activate", "--actor", "actor-builder", "--input", activateInput, "--idempotency-key", "p21-envelope-activate")
 
-	claimRequest := map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/integration"}}, "ttl_seconds": 60}
+	claimRequest := map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": repository["worktree_id"], "scope": map[string]any{"paths": []string{"cmd/fid/integration"}}, "ttl_seconds": 60}
 	claimInput := p21Input(t, workspace, "claim-acquire", claimRequest)
 	otherClaimInput := p21Input(t, workspace, "claim-acquire-race", claimRequest)
 	beforeClaimRace := p21JournalEventCount(t, workspace)

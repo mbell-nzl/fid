@@ -279,7 +279,13 @@ func executionRunActive(conn *sql.DB, claim executionClaim, usableClaim bool, en
 		return false
 	}
 	var repository Repository
-	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil && sameRepository(repository, envelope.RepositoryScope)
+	// A recovered Run has a newly observed repository target but remains bound
+	// to the Envelope's approved project and worktree. Comparing its full target
+	// to the original Envelope snapshot would reject the very reconciliation
+	// that admitted the successor Run; content may change, identity may not.
+	return json.Unmarshal([]byte(repositoryJSON), &repository) == nil &&
+		repository.ProjectID == envelope.RepositoryScope.ProjectID &&
+		repository.WorktreeID == envelope.RepositoryScope.WorktreeID
 }
 
 func evaluateObligations(conn *sql.DB, obligations []Obligation, current Repository) ([]EvaluationReason, error) {

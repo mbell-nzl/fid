@@ -12,7 +12,7 @@ import (
 
 func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRevision(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID, repository := executionTransitionFixture(t)
+	workspace, issueID, envelopeID, repository := executionTransitionObservedFixture(t)
 	before := journalEventCount(t, workspace)
 
 	transition := executeCommandForTest(workspace,
@@ -46,7 +46,7 @@ func TestExecutionBoundNonterminalTransitionRequiresActiveEnvelopeClaimRunAndRev
 		"qa_pass", "agent:actor-builder", "4", "execution-transition-terminal",
 		[]string{"obligation-evidence-absent"},
 	)
-	if repository["worktree_id"] != "worktree-1" || envelopeID == "" {
+	if repository["worktree_id"] == "" || envelopeID == "" {
 		t.Fatalf("fixture repository/envelope = %#v/%q, want active execution binding", repository, envelopeID)
 	}
 }
@@ -165,6 +165,14 @@ func TestExecutionBoundTransitionPredicateMatrix(t *testing.T) {
 			name: "run repository mismatched",
 			prepare: func(t *testing.T, workspace, issueID, _ string) {
 				mutateExecutionTransitionFixture(t, workspace, `UPDATE runs SET start_repository_json = json_set(start_repository_json, '$.worktree_id', 'other-worktree') WHERE issue_id = ?`, issueID)
+			},
+			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
+			want: []string{"run-inactive"},
+		},
+		{
+			name: "run repository project mismatched",
+			prepare: func(t *testing.T, workspace, issueID, _ string) {
+				mutateExecutionTransitionFixture(t, workspace, `UPDATE runs SET start_repository_json = json_set(start_repository_json, '$.project_id', 'PRJ-other') WHERE issue_id = ?`, issueID)
 			},
 			toState: "in_progress", actor: "agent:actor-builder", revision: "1",
 			want: []string{"run-inactive"},
@@ -311,7 +319,7 @@ func mutateExecutionTransitionFixture(t *testing.T, workspace, statement string,
 func executionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
 	workspace, values := cloneReusableWorkspaceFixture(t, "execution-transition", func() (string, []string) {
-		workspace, issueID, envelopeID, repository := buildExecutionTransitionFixture(t)
+		workspace, issueID, envelopeID, repository := buildExecutionTransitionFixture(t, false)
 		repositoryJSON, err := json.Marshal(repository)
 		if err != nil {
 			t.Fatalf("encode execution-transition repository: %v", err)
@@ -325,9 +333,20 @@ func executionTransitionFixture(t *testing.T) (string, string, string, map[strin
 	return workspace, values[0], values[1], repository
 }
 
-func buildExecutionTransitionFixture(t *testing.T) (string, string, string, map[string]any) {
+func executionTransitionObservedFixture(t *testing.T) (string, string, string, map[string]any) {
 	t.Helper()
-	workspace, issueID, registration := finalizedEnvelopeWorkspace(t)
+	return buildExecutionTransitionFixture(t, true)
+}
+
+func buildExecutionTransitionFixture(t *testing.T, observedRepository bool) (string, string, string, map[string]any) {
+	t.Helper()
+	var workspace, issueID string
+	var registration gateRegistrationView
+	if observedRepository {
+		workspace, issueID, registration = finalizedObservedEnvelopeWorkspaceWithDefinitions(t, gateDefinitionsForTest(nil))
+	} else {
+		workspace, issueID, registration = finalizedEnvelopeWorkspace(t)
+	}
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "envelope.activate", "issue.transition", "run.start"}
