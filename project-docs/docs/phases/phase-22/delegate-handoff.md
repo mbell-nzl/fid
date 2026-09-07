@@ -102,6 +102,25 @@ PASS — `ok  	github.com/mbell-nzl/fid/cmd/fid	0.293s`
 not a claimed red/green product change. The Developer's own final gates execute
 it again; root's focused receipt retains root attribution.
 
+Root also accepted ownership of the unstarted per-resource matrix in
+`cmd/fid/activation_resource_matrix_test.go`, then handed it back before source
+repair. From `/home/mark/projects/fid`, root ran
+`go test ./cmd/fid -run '^TestActivation(RequiresEveryResourceAtCommitAndFinalize|CompleteResourceAgreementFinalizesTrust)$' -count=1`
+twice. Attempt 1 ended with `FAIL` (package result 1.463s; terminated
+`exit_code: 1`). Each missing row and each NULL observed identity incorrectly
+reached commit/finalize. Pending and mismatched cases did reject, but the test
+also incorrectly required an uncontracted message substring. Root corrected
+that construction assumption to structured rejection, retaining unchanged
+state/Event count and denied-trust assertions; typed adapter errors are task
+11's separate obligation. Attempt 2, the byte-identical command, ended with
+`FAIL` (package result 1.330s; terminated `exit_code: 1`), exposing only the
+real missing-row/NULL-observation acceptance. The causal query counted
+disagreements among present rows, so missing rows and SQL NULL comparison were
+not counted. No product source changed before either root red run. The matrix
+has 40 negative states plus an all-agree positive control; its direct projection
+fixtures isolate transition guards and do not claim producer or replay parity.
+Developer owns causal repair and subsequent green receipts after handback.
+
 After task 18 and review 6, the QA Lead's scope is a fresh deterministic final
 review plus a feasible Human checklist. Its report must explicitly distinguish
 that requested readiness verdict from the plan's full phase-end sign-off,
