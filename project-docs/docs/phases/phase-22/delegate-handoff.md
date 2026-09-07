@@ -192,3 +192,16 @@ Carry these implementation traps into task 13's handoff, not as final QA PASS:
 Root can own a separate archive boundary test file after checkpoint PASS while
 the task-13 Developer owns archive implementation. Agree concrete helper seams
 before concurrent edits and hand all tests back before the final task gates.
+
+## Execution Thread Reuse — 2026-09-08
+
+The orchestration tool refused two attempts to allocate a task-13 Developer
+with `agent thread limit reached`; all five retained threads are occupied,
+including a completed task-11 thread. Under the Human's explicit root-delegate
+permission to smooth role/workflow friction, root reuses that thread for a
+fresh logical task-13 execution session. Task 11 remains closed; no second task
+is concurrent in its Developer session. The new assignment reloads task-13
+artifacts and has preparation-only authority until task-12 completion, Review
+4 and the independent checkpoint all pass. Root records the task identity in
+every dispatch and report, rather than relying on the thread's historical name.
+This changes no gate, assertion, scope, evidence rule or product contract.
