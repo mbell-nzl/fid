@@ -815,6 +815,19 @@
   obsolete run.finish action/request/validator/producer from
   `internal/workflow/run.go`. Root inspected the bounded removal diff and names
   that path explicitly; no other Run behavior is assigned by this addition.
+- **Shared Stop call sites:** Task 9's VAL-037 requires the same applicable
+  predicates across guarded operations. Root verified that contracts section 5
+  binds these actions, while the named task scope omitted their existing
+  producers. Add only shared applicable-Stop calls and matching tests in
+  `internal/evidence/execution.go`, `internal/workflow/run.go` and
+  `internal/workflow/recovery.go`. No new action is blocked: each Stop's exact
+  declared actions/subject and qualifying disposition govern. Retain existing
+  authority, idempotent replay, no-effects ordinary rejection, budget denial
+  atomicity and completion of an already-admitted Attempt. Shared predicates
+  stay in the existing workflow evaluation boundary. The unchanged task gates
+  execute each call site; report predecessor provenance and both applicable/
+  unrelated/resolved Stop cases. This explicitly extends the preceding
+  run.go retirement-only assignment for its required run.start call site.
 - **Provenance:** Existing Stop domain commit
   `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
   domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;

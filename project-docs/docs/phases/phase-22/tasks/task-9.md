@@ -71,7 +71,14 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/workflow/budget.go` - only shared helper support needed by that
   producer, retaining the existing accepted admission and accounting rules.
 - `internal/workflow/run.go` - only removal of the retired run.finish action,
-  request, validation and producer, plus necessary unused-import cleanup.
+  request, validation and producer, plus the shared applicable-Stop check on
+  run.start and necessary unused-import cleanup.
+- `internal/workflow/recovery.go` - only shared applicable-Stop checks before
+  ordinary/force recovery mutation, retaining its existing authority rules.
+- `internal/evidence/execution.go` - only invoking the shared applicable-Stop
+  predicate before new Attempt/spawn; retain committed budget denial and
+  already-admitted Receipt behavior and idempotent result replay.
+- Matching in-package tests for the three shared Stop call sites above.
 - `internal/workflow/evaluation.go`
 - `internal/workflow/activation.go` - remove run.finish action acceptance.
 - `internal/workflow/envelope.go` - converge grant validation for retired action.
