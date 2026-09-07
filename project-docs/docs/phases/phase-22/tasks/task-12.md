@@ -53,6 +53,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/claims/generic.go`
 - `internal/validation/`
 - `cmd/fid/resume.go`
+- `cmd/fid/run_recovery.go` - DEC-196: ordinary and force recovery Human
+  result rendering only, from the existing mutation result; preserve JSON,
+  authority and operation semantics, with task-6 provenance.
 - `cmd/fid/evidence.go`
 - `cmd/fid/integration/p22_recovery_journey_test.go`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
@@ -88,6 +91,11 @@ Full sources, pass/fail criteria, and validator ownership are in
   authority, budgets and eligible next actions for qualifying and blocked
   states, using one semantic projection and built-binary evidence. (VAL-051/052;
   supports final task-18 VAL-053 and Human-owned VAL-076)
+- [ ] The recovery mutation's Human result also names prior/successor IDs,
+  adopted paths, authority and remaining budgets; force explicitly names
+  known-live takeover and residual filesystem risk. Paired real-binary cases
+  preserve the same result facts as JSON. (public-interface section 6;
+  supports VAL-053)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,

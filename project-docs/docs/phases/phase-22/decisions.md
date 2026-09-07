@@ -757,6 +757,16 @@
   scope, with explicit paired rendering evidence. Public-interface section 6
   supplies the content; the excluded Human brief product stays excluded.
   Task 18 audits this delivered behavior under VAL-053.
+- **Task 12 recovery-result completion:** Root subsequently inspected
+  `cmd/fid/run_recovery.go`: its Human mutation result prints only the
+  successor ID, while section 6 also requires predecessor, adoption, authority,
+  budgets and force-risk context. Introducing commit
+  `69941fc1b6262fdd7efaaeecfe72760390dbd511` records task 6. Assign that file's
+  rendering and paired real-binary regressions to task 12 alongside resume,
+  explicitly before its dispatch. Reuse the mutation's semantic result;
+  preserve JSON, actions and authority. Task 6 remains complete with history
+  unchanged. This closes the same accepted Human-rendering allocation, with
+  task-6 provenance, rather than deferring production work to task 18.
 - **Task 18 assignment:** Add `p22_human_fixtures_test.go` plus
   `qa/human-fixtures.md` for reproducible retained checkpoints, durable binary,
   exact IDs and neutral inspection commands. The optional
