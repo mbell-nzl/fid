@@ -84,8 +84,15 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
 			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
 		}},
+		{CodeActivationNotFound, CategoryNotFound, false, []SubjectType{SubjectActivation}, stringDetails("id")},
+		{CodeActivationInvalid, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("status"), {name: "expected_statuses", kind: detailStringsKind}, {name: "component_errors", kind: detailObjectsKind, children: []detailExpectation{stringDetail("component_id"), stringDetail("code")}},
+		}},
 		{CodeActivationVersionConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
 		{CodeActivationDirectionConflict, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), {name: "point_of_no_return", kind: detailBooleanKind}, stringDetail("required_direction")}},
+		{CodeActivationIncomplete, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{
+			stringDetail("activation_id"), {name: "components", kind: detailStringsKind}, {name: "reasons", kind: detailObjectsKind, children: []detailExpectation{stringDetail("code"), stringDetail("detail"), stringDetail("subject_id"), stringDetail("subject_type")}},
+		}},
 		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
 			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
 		}},

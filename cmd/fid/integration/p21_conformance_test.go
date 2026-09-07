@@ -280,7 +280,7 @@ func p21Activation(t *testing.T, binary, workspace, operation, key string, input
 		activationID, _ := input["activation_id"].(string)
 		activation := p21ActivationStatus(t, workspace, activationID)
 		if operation == "commit" {
-			p21ObserveNewActivationResources(t, workspace, activation)
+			p21ObserveNewActivationResources(t, binary, workspace, activation)
 			activation = p21ActivationStatus(t, workspace, activationID)
 		}
 		input["expected_version"] = activation.Version
@@ -317,15 +317,12 @@ func p21ActivationStatus(t *testing.T, workspace, activationID string) workflow.
 	return activation
 }
 
-func p21ObserveNewActivationResources(t *testing.T, workspace string, activation workflow.Activation) {
+func p21ObserveNewActivationResources(t *testing.T, binary, workspace string, activation workflow.Activation) {
 	t.Helper()
 	for _, resource := range activation.Resources {
-		identity := resource.NewIdentity
-		result, err := workflow.ObserveActivationResource(workflow.ActivationTransitionOptions{WorkspaceRoot: workspace, MigrationsDir: filepath.Join(integrationRepositoryRoot(), "migrations"), IdempotencyKey: "p21-activation-resource-" + activation.ID + "-" + resource.Component}, workflow.ActivationResourceObservationRequest{ActivationID: activation.ID, Component: resource.Component, ExpectedActivationVersion: activation.Version, ExpectedVersion: resource.Version, ObservedIdentity: &identity, State: "new", EvidenceRef: "integration:" + resource.Component})
-		if err != nil {
-			t.Fatalf("observe new Activation resource %q: %v", resource.Component, err)
-		}
-		activation = result.Activation
+		input := p21Input(t, workspace, "activation-resource-"+resource.Component, map[string]any{"activation_id": activation.ID, "component": resource.Component, "expected_activation_version": activation.Version, "expected_version": resource.Version, "observed_identity": resource.NewIdentity, "state": "new", "evidence_ref": "integration:" + resource.Component, "error_code": nil})
+		result := p21Run(t, binary, workspace, "--project", workspace, "--json", "activation", "resource", "--input", input, "--idempotency-key", "p21-activation-resource-"+activation.ID+"-"+resource.Component)
+		activation = workflow.Activation{ID: activation.ID, Version: int(p21Path(t, result, "result", "activation", "version").(float64))}
 	}
 }
 

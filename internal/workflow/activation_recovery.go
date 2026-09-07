@@ -159,16 +159,17 @@ func CompleteActivationRecovery(options ActivationTransitionOptions, request Act
 			return nil, fmt.Errorf("activation recovery selection is invalid")
 		}
 		for _, resource := range activation.Resources {
-			if versionForResource(request.ResourceVersions, resource.Component) != resource.Version {
-				return nil, fmt.Errorf("activation recovery resource version is stale")
+			expected := versionForResource(request.ResourceVersions, resource.Component)
+			if expected != resource.Version {
+				return nil, &ActivationVersionConflictError{ActivationID: activation.ID, ExpectedVersion: expected, ActualVersion: resource.Version}
 			}
 		}
 		if activation.Recovery.Direction == "complete-forward" {
 			if err := requireNewResourceAgreement(conn, activation.ID); err != nil {
 				return nil, err
 			}
-		} else if !resourcesAgreeWithPrior(activation.Resources) {
-			return nil, &ActivationInvalidError{Status: "resource-agreement", ExpectedStatuses: []string{"all resources observed as old"}}
+		} else if err := requirePriorResourceAgreement(activation); err != nil {
+			return nil, err
 		}
 		updatedAt := time.Now().UTC().Format(time.RFC3339Nano)
 		status := "aborted"
@@ -212,12 +213,49 @@ func CompleteActivationRecovery(options ActivationTransitionOptions, request Act
 	return activationPrepareResultFromJSON(outcome.ResultJSON, outcome.EventID, outcome.Replayed)
 }
 
+func requirePriorResourceAgreement(activation Activation) error {
+	resources := make(map[string]ActivationResource, len(activation.Resources))
+	for _, resource := range activation.Resources {
+		resources[resource.Component] = resource
+	}
+	components := make([]string, 0)
+	reasons := make([]EvaluationReason, 0)
+	for _, component := range activationResourceComponents {
+		resource, found := resources[component]
+		if !found {
+			components = append(components, component)
+			reasons = append(reasons, evaluationReason("activation-incomplete", "resource "+component+" is missing", activation.ID, "activation"))
+			continue
+		}
+		if resource.State == "old" && sameOptionalIdentity(resource.ObservedIdentity, resource.OldIdentity) {
+			continue
+		}
+		components = append(components, component)
+		reasons = append(reasons, evaluationReason("activation-incomplete", "resource "+component+" does not agree with the prior identity", activation.ID, "activation"))
+	}
+	if len(components) == 0 {
+		return nil
+	}
+	return &ActivationIncompleteError{ActivationID: activation.ID, Components: components, Reasons: reasons}
+}
+
+func sameOptionalIdentity(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
 func activationMutation(options ActivationTransitionOptions, operation string, request any, build func(*sql.DB, Activation) ([]journal.Effect, error), resultJSON func(journal.Event) (string, error)) (journal.IdempotencyOutcome, error) {
 	if strings.TrimSpace(options.WorkspaceRoot) == "" || strings.TrimSpace(options.MigrationsDir) == "" {
 		return journal.IdempotencyOutcome{}, fmt.Errorf("%s: workspace root and migrations directory are required", operation)
 	}
+	project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
+	if err != nil {
+		return journal.IdempotencyOutcome{}, err
+	}
 	var outcome journal.IdempotencyOutcome
-	err := journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid " + strings.ReplaceAll(operation, ".", " ")}, func(lock *journal.WriteLock) error {
+	err = journal.WithLock(options.WorkspaceRoot, journal.LockOwner{Command: "fid " + strings.ReplaceAll(operation, ".", " ")}, func(lock *journal.WriteLock) error {
 		if _, err := journal.EnsureProjectionFreshWithLock(lock, options.MigrationsDir); err != nil {
 			return err
 		}
@@ -226,10 +264,6 @@ func activationMutation(options ActivationTransitionOptions, operation string, r
 			return err
 		}
 		defer closeWorkflowDB(conn)
-		project, err := config.ReadProjectConfig(filepath.Join(options.WorkspaceRoot, config.WorkspaceDirName, "config.toml"))
-		if err != nil {
-			return err
-		}
 		digest, err := activationRequestDigest(operation, project.ProjectID, options.BootstrapActor, request)
 		if err != nil {
 			return err
@@ -395,25 +429,4 @@ func versionForResource(values []ActivationResourceVersion, component string) in
 		}
 	}
 	return 0
-}
-func resourcesAgreeWithPrior(resources []ActivationResource) bool {
-	if len(resources) != len(activationResourceComponents) {
-		return false
-	}
-	seen := map[string]bool{}
-	for _, resource := range resources {
-		if seen[resource.Component] {
-			return false
-		}
-		seen[resource.Component] = true
-		if resource.State != "old" || (resource.OldIdentity == nil && resource.ObservedIdentity != nil) || (resource.OldIdentity != nil && (resource.ObservedIdentity == nil || *resource.OldIdentity != *resource.ObservedIdentity)) {
-			return false
-		}
-	}
-	for _, component := range activationResourceComponents {
-		if !seen[component] {
-			return false
-		}
-	}
-	return true
 }

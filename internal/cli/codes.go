@@ -44,8 +44,11 @@ const (
 	CodeResultLimitExceeded         Code = "result-limit-exceeded"
 	CodeInternalError               Code = "internal-error"
 	CodeActivationConflict          Code = "activation-conflict"
+	CodeActivationNotFound          Code = "activation-not-found"
+	CodeActivationInvalid           Code = "activation-invalid"
 	CodeActivationVersionConflict   Code = "activation-version-conflict"
 	CodeActivationDirectionConflict Code = "activation-direction-conflict"
+	CodeActivationIncomplete        Code = "activation-incomplete"
 	CodeAuthorityUnavailable        Code = "authority-unavailable"
 	CodeCapabilityUnavailable       Code = "capability-unavailable"
 	CodeExecutorPolicyUnsupported   Code = "executor-policy-unsupported"
@@ -224,10 +227,16 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeInternalError:       definition(CategoryInternal, false, nil),
 	CodeActivationConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
 		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
+	CodeActivationNotFound: definition(CategoryNotFound, false, []SubjectType{SubjectActivation},
+		stringField("id")),
+	CodeActivationInvalid: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("status"), stringsField("expected_statuses"), objectsField("component_errors", stringField("component_id"), stringField("code"))),
 	CodeActivationVersionConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
 		stringField("activation_id"), integerField("expected_version"), integerField("actual_version")),
 	CodeActivationDirectionConflict: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
 		stringField("activation_id"), booleanField("point_of_no_return"), stringField("required_direction")),
+	CodeActivationIncomplete: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), stringsField("components"), objectsField("reasons", stringField("code"), stringField("detail"), stringField("subject_id"), stringField("subject_type"))),
 	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
 		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
 	CodeCapabilityUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectCapability},
@@ -282,8 +291,11 @@ var registeredCodes = []Code{
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
+	CodeActivationNotFound,
+	CodeActivationInvalid,
 	CodeActivationVersionConflict,
 	CodeActivationDirectionConflict,
+	CodeActivationIncomplete,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,

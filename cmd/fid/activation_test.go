@@ -475,6 +475,48 @@ func TestActivationRecoveryPreservesDirectionAndIdentityAcrossReplay(t *testing.
 	}
 }
 
+func TestActivationStatusHumanAndJSONDescribeRecoveryDirectionAtCommitBoundary(t *testing.T) {
+	for _, testCase := range []struct {
+		name, status, direction, human string
+	}{
+		{"before commit", "prepared", "restore-prior", "restore-prior"},
+		{"after commit", "committed", "complete-forward", "complete-forward; irreversible commit"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			fixture := activationLifecycleFixtureAt(t, testCase.status)
+			activation := activationVersionForTest(t, fixture.workspace, fixture.activationID)
+			inputPath := filepath.Join(fixture.workspace, "activation-human-recovery.json")
+			writeActivationInput(t, inputPath, map[string]any{"activation_id": fixture.activationID, "expected_version": activation, "expected_status": testCase.status, "direction": testCase.direction, "reason": "render recovery direction"})
+			selected := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "activation", "recover", "--input", inputPath, "--idempotency-key", "activation-human-"+testCase.status)
+			if selected.err != nil || !strings.Contains(selected.stdout, `"direction":"`+testCase.direction+`"`) {
+				t.Fatalf("JSON activation recovery %s = %#v, want exact direction", testCase.status, selected)
+			}
+			human := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "activation", "status", fixture.activationID)
+			if human.err != nil || !strings.Contains(human.stdout, testCase.human) {
+				t.Fatalf("Human activation status %s = %#v, want %q", testCase.status, human, testCase.human)
+			}
+			if testCase.direction == "complete-forward" && strings.Contains(human.stdout, "rollback") {
+				t.Fatalf("post-commit Human status = %q, must not claim rollback", human.stdout)
+			}
+		})
+	}
+}
+
+func TestActivationRecoveryLeavesRenderExistingNotFoundAndInvalidVariants(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	missing := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "status", "ACT-missing")
+	if missing.err == nil || !strings.Contains(missing.stderr, `"code":"activation-not-found"`) || !strings.Contains(missing.stderr, `"id":"ACT-missing"`) {
+		t.Fatalf("activation status missing = %#v, want closed activation-not-found", missing)
+	}
+	fixture := activationLifecycleFixtureAt(t, "aborted")
+	inputPath := filepath.Join(fixture.workspace, "activation-terminal-recover.json")
+	writeActivationInput(t, inputPath, map[string]any{"activation_id": fixture.activationID, "expected_version": activationVersionForTest(t, fixture.workspace, fixture.activationID), "expected_status": "aborted", "direction": "restore-prior", "reason": "terminal recovery"})
+	invalid := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "activation", "recover", "--input", inputPath, "--idempotency-key", "activation-terminal-recover")
+	if invalid.err == nil || !strings.Contains(invalid.stderr, `"code":"activation-invalid"`) || !strings.Contains(invalid.stderr, `"status":"aborted"`) {
+		t.Fatalf("terminal activation recovery = %#v, want closed activation-invalid", invalid)
+	}
+}
+
 func TestIncompleteUpgradeBlocksNormalWorkWhileInspectionAndRestoreRemainAvailable(t *testing.T) {
 	t.Parallel()
 	workspace, _, _ := buildFinalizedEnvelopeWorkspace(t, validGateDefinitions())
@@ -572,20 +614,20 @@ func TestActivationLifecycleRejectsSkippedAndExtraTransitionsWithoutEvents(t *te
 	for _, testCase := range []struct {
 		name, status, operation, wantCode string
 	}{
-		{"prepared skips commit", "prepared", "commit", "invalid-argument"},
-		{"prepared skips finalize", "prepared", "finalize", "invalid-argument"},
-		{"staged skips finalize", "staged", "finalize", "invalid-argument"},
-		{"committed stages extra component", "committed", "component", "invalid-argument"},
-		{"committed repeats commit", "committed", "commit", "invalid-argument"},
+		{"prepared skips commit", "prepared", "commit", "activation-invalid"},
+		{"prepared skips finalize", "prepared", "finalize", "activation-invalid"},
+		{"staged skips finalize", "staged", "finalize", "activation-invalid"},
+		{"committed stages extra component", "committed", "component", "activation-invalid"},
+		{"committed repeats commit", "committed", "commit", "activation-invalid"},
 		{"committed abort requires forward recovery", "committed", "abort", "activation-direction-conflict"},
-		{"finalized stages extra component", "finalized", "component", "invalid-argument"},
-		{"finalized repeats commit", "finalized", "commit", "invalid-argument"},
-		{"finalized repeats finalize", "finalized", "finalize", "invalid-argument"},
+		{"finalized stages extra component", "finalized", "component", "activation-invalid"},
+		{"finalized repeats commit", "finalized", "commit", "activation-invalid"},
+		{"finalized repeats finalize", "finalized", "finalize", "activation-invalid"},
 		{"finalized abort requires forward recovery", "finalized", "abort", "activation-direction-conflict"},
-		{"aborted stages extra component", "aborted", "component", "invalid-argument"},
-		{"aborted skips commit", "aborted", "commit", "invalid-argument"},
-		{"aborted skips finalize", "aborted", "finalize", "invalid-argument"},
-		{"aborted repeats abort", "aborted", "abort", "invalid-argument"},
+		{"aborted stages extra component", "aborted", "component", "activation-invalid"},
+		{"aborted skips commit", "aborted", "commit", "activation-invalid"},
+		{"aborted skips finalize", "aborted", "finalize", "activation-invalid"},
+		{"aborted repeats abort", "aborted", "abort", "activation-invalid"},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
 			fixture := activationLifecycleFixtureAt(t, testCase.status)

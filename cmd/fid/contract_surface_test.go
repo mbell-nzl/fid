@@ -134,6 +134,9 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 		"activation commit",
 		"activation abort",
 		"activation finalize",
+		"activation resource",
+		"activation recover",
+		"activation recover-complete",
 		"activation status",
 		"artifact verify",
 		"gate register",
@@ -206,8 +209,8 @@ func TestLiveLeafCommandsMatchContractInventories(t *testing.T) {
 	}
 	legacy := []string{"sql", "journal inspect"}
 
-	if len(retained) != 75 || len(legacy) != 2 {
-		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 75 and 2", len(retained), len(legacy))
+	if len(retained) != 78 || len(legacy) != 2 {
+		t.Fatalf("contract inventory counts = retained %d, legacy %d; want 78 and 2", len(retained), len(legacy))
 	}
 	want := append(append(append([]string{}, retained...), "export"), legacy...)
 	sort.Strings(want)

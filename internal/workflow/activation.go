@@ -173,6 +173,14 @@ type ActivationInvalidError struct {
 	ExpectedStatuses []string
 }
 
+// ActivationIncompleteError preserves the rejected activation's exact
+// resource agreement facts for the public recovery adapter.
+type ActivationIncompleteError struct {
+	ActivationID string
+	Components   []string
+	Reasons      []EvaluationReason
+}
+
 type ActivationVersionConflictError struct {
 	ActivationID                   string
 	ExpectedVersion, ActualVersion int
@@ -194,6 +202,10 @@ func (err *ActivationDirectionConflictError) Error() string {
 
 func (err *ActivationInvalidError) Error() string {
 	return fmt.Sprintf("activation status %q is not permitted", err.Status)
+}
+
+func (err *ActivationIncompleteError) Error() string {
+	return fmt.Sprintf("activation %q has incomplete resource agreement", err.ActivationID)
 }
 
 type ActivationOperationError struct{ Operation string }
@@ -866,12 +878,38 @@ func exactActivationComponentTypes(components []activationComponentIdentity) boo
 }
 
 func requireNewResourceAgreement(conn *sql.DB, activationID string) error {
-	var agreed int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activation_resources WHERE activation_id = ? AND state = 'new' AND observed_identity IS NOT NULL AND observed_identity = new_identity`, activationID).Scan(&agreed); err != nil {
+	rows, err := conn.Query(`SELECT component, state, observed_identity, new_identity FROM activation_resources WHERE activation_id = ? ORDER BY component`, activationID)
+	if err != nil {
 		return err
 	}
-	if agreed != len(activationResourceComponents) {
-		return &ActivationInvalidError{Status: "resource-agreement", ExpectedStatuses: []string{"all resources observed as new"}}
+	defer func() { _ = rows.Close() }()
+	components := make([]string, 0)
+	reasons := make([]EvaluationReason, 0)
+	seen := make(map[string]bool, len(activationResourceComponents))
+	for rows.Next() {
+		var component, state, newIdentity string
+		var observed *string
+		if err := rows.Scan(&component, &state, &observed, &newIdentity); err != nil {
+			return err
+		}
+		seen[component] = true
+		if state == "new" && observed != nil && *observed == newIdentity {
+			continue
+		}
+		components = append(components, component)
+		reasons = append(reasons, evaluationReason("activation-incomplete", "resource "+component+" does not agree with the new identity", activationID, "activation"))
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for _, component := range activationResourceComponents {
+		if !seen[component] {
+			components = append(components, component)
+			reasons = append(reasons, evaluationReason("activation-incomplete", "resource "+component+" is missing", activationID, "activation"))
+		}
+	}
+	if len(components) != 0 {
+		return &ActivationIncompleteError{ActivationID: activationID, Components: components, Reasons: reasons}
 	}
 	return nil
 }

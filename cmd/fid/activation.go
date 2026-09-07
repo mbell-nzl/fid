@@ -19,6 +19,9 @@ func init() {
 	rootFlagCapabilities["activation commit"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["activation abort"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["activation finalize"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["activation resource"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["activation recover"] = rootFlagCapability{Project: true, JSON: true}
+	rootFlagCapabilities["activation recover-complete"] = rootFlagCapability{Project: true, JSON: true}
 	rootFlagCapabilities["activation status"] = rootFlagCapability{Project: true, JSON: true}
 }
 
@@ -29,6 +32,9 @@ func newActivationCommand() *cobra.Command {
 	cmd.AddCommand(newActivationTransitionCommand("commit"))
 	cmd.AddCommand(newActivationTransitionCommand("abort"))
 	cmd.AddCommand(newActivationFinalizeCommand())
+	cmd.AddCommand(newActivationResourceCommand())
+	cmd.AddCommand(newActivationRecoverCommand())
+	cmd.AddCommand(newActivationRecoverCompleteCommand())
 	cmd.AddCommand(newActivationStatusCommand())
 	return cmd
 }
@@ -88,10 +94,96 @@ func newActivationStatusCommand() *cobra.Command {
 		if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "activation.status", map[string]any{"activation": activation}, nil)
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", activation.ID, activation.Status)
+		if activation.Recovery == nil {
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\n", activation.ID, activation.Status)
+			return err
+		}
+		boundary := "restore-prior"
+		if activation.PointOfNoReturn {
+			boundary = "complete-forward; irreversible commit"
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s\t%s\t%s\n", activation.ID, activation.Status, boundary)
 		return err
 	}}
 	cmd.SetFlagErrorFunc(canonicalFlagError("activation.status"))
+	return cmd
+}
+
+func newActivationResourceCommand() *cobra.Command {
+	return newActivationRecoveryMutationCommand("resource", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		var request workflow.ActivationResourceObservationRequest
+		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			return workflow.ActivationPrepareResult{}, nil, err
+		}
+		result, err := workflow.ObserveActivationResource(options, request)
+		return workflow.ActivationPrepareResult{}, &result, err
+	})
+}
+
+func newActivationRecoverCommand() *cobra.Command {
+	return newActivationRecoveryMutationCommand("recover", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		var request workflow.ActivationRecoveryRequest
+		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			return workflow.ActivationPrepareResult{}, nil, err
+		}
+		result, err := workflow.RecoverActivation(options, request)
+		return result, nil, err
+	})
+}
+
+func newActivationRecoverCompleteCommand() *cobra.Command {
+	return newActivationRecoveryMutationCommand("recover-complete", func(options workflow.ActivationTransitionOptions, inputPath string, cmd *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error) {
+		var request workflow.ActivationRecoveryCompleteRequest
+		if err := decodeClosedActivationInput(cmd.InOrStdin(), inputPath, &request); err != nil {
+			return workflow.ActivationPrepareResult{}, nil, err
+		}
+		result, err := workflow.CompleteActivationRecovery(options, request)
+		return result, nil, err
+	})
+}
+
+type activationRecoveryMutation func(workflow.ActivationTransitionOptions, string, *cobra.Command) (workflow.ActivationPrepareResult, *workflow.ActivationResourceResult, error)
+
+func newActivationRecoveryMutationCommand(name string, mutate activationRecoveryMutation) *cobra.Command {
+	var inputPath, key, bootstrapActor string
+	operation := "activation." + name
+	cmd := &cobra.Command{Use: name, Short: name + " an activation.", Args: canonicalNoArgs(operation), RunE: func(cmd *cobra.Command, _ []string) error {
+		if err := requireCanonicalFlag(cmd, operation, "input"); err != nil {
+			return err
+		}
+		if err := requireCanonicalFlag(cmd, operation, "idempotency-key"); err != nil {
+			return err
+		}
+		workspaceRoot, err := issueMutationWorkspaceRoot(cmd)
+		if err != nil {
+			return renderActivationError(cmd, operation, err)
+		}
+		options := workflow.ActivationTransitionOptions{WorkspaceRoot: workspaceRoot, MigrationsDir: issueMigrationsDir(), BootstrapActor: bootstrapActor, IdempotencyKey: key}
+		activationResult, resourceResult, err := mutate(options, inputPath, cmd)
+		if err != nil {
+			return renderActivationError(cmd, operation, err)
+		}
+		jsonMode, err := readJSONMode(cmd)
+		if err != nil {
+			return err
+		}
+		if resourceResult != nil {
+			if jsonMode {
+				return cli.WriteSuccess(cmd.OutOrStdout(), operation, map[string]any{"activation": resourceResult.Activation, "resource": resourceResult.Resource, "idempotency_key": resourceResult.IdempotencyKey, "replayed": resourceResult.Replayed}, &cli.Event{ID: resourceResult.EventID, OccurredAt: resourceResult.Activation.UpdatedAt})
+			}
+			_, err = fmt.Fprintf(cmd.OutOrStdout(), "observed activation resource %s\n", resourceResult.Resource.Component)
+			return err
+		}
+		if jsonMode {
+			return cli.WriteSuccess(cmd.OutOrStdout(), operation, map[string]any{"activation": activationResult.Activation, "idempotency_key": activationResult.IdempotencyKey, "replayed": activationResult.Replayed}, &cli.Event{ID: activationResult.EventID, OccurredAt: activationResult.Activation.UpdatedAt})
+		}
+		_, err = fmt.Fprintf(cmd.OutOrStdout(), "%s activation %s\n", name, activationResult.Activation.ID)
+		return err
+	}}
+	cmd.Flags().StringVar(&inputPath, "input", "", "Activation JSON input")
+	cmd.Flags().StringVar(&key, "idempotency-key", "", "Idempotency key")
+	cmd.Flags().StringVar(&bootstrapActor, "actor", "", "Untrusted bootstrap attribution")
+	cmd.SetFlagErrorFunc(canonicalFlagError(operation))
 	return cmd
 }
 
@@ -297,9 +389,25 @@ func activationFailure(cause error) (cli.Failure, error) {
 	if errors.As(cause, &version) {
 		return cli.NewFailure(cli.CodeActivationVersionConflict, "activation version does not match", &cli.Subject{Type: cli.SubjectActivation, ID: version.ActivationID}, map[string]any{"activation_id": version.ActivationID, "expected_version": version.ExpectedVersion, "actual_version": version.ActualVersion})
 	}
+	var incomplete *workflow.ActivationIncompleteError
+	if errors.As(cause, &incomplete) {
+		reasons := make([]map[string]any, 0, len(incomplete.Reasons))
+		for _, reason := range incomplete.Reasons {
+			reasons = append(reasons, map[string]any{"code": reason.Code, "detail": reason.Detail, "subject_id": reason.SubjectID, "subject_type": reason.SubjectType})
+		}
+		return cli.NewFailure(cli.CodeActivationIncomplete, "activation resource agreement is incomplete", &cli.Subject{Type: cli.SubjectActivation, ID: incomplete.ActivationID}, map[string]any{"activation_id": incomplete.ActivationID, "components": incomplete.Components, "reasons": reasons})
+	}
 	var direction *workflow.ActivationDirectionConflictError
 	if errors.As(cause, &direction) {
 		return cli.NewFailure(cli.CodeActivationDirectionConflict, "activation recovery direction is not permitted", &cli.Subject{Type: cli.SubjectActivation, ID: direction.ActivationID}, map[string]any{"activation_id": direction.ActivationID, "point_of_no_return": direction.PointOfNoReturn, "required_direction": direction.RequiredDirection})
+	}
+	var notFound *workflow.ActivationNotFoundError
+	if errors.As(cause, &notFound) {
+		return cli.NewFailure(cli.CodeActivationNotFound, "activation was not found", &cli.Subject{Type: cli.SubjectActivation, ID: notFound.ID}, map[string]any{"id": notFound.ID})
+	}
+	var invalid *workflow.ActivationInvalidError
+	if errors.As(cause, &invalid) {
+		return cli.NewFailure(cli.CodeActivationInvalid, "activation state is not permitted", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": invalid.Status, "expected_statuses": invalid.ExpectedStatuses, "component_errors": []map[string]any{}})
 	}
 	return cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
 }

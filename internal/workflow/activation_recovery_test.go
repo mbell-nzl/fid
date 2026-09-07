@@ -112,9 +112,9 @@ func TestCompleteActivationRecoveryRejectsMissingPriorResourceSet(t *testing.T) 
 		t.Fatalf("delete resource projection rows: %v", err)
 	}
 	_, err = CompleteActivationRecovery(ActivationTransitionOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, BootstrapActor: "bootstrap:test", IdempotencyKey: "activation-missing-prior-complete"}, ActivationRecoveryCompleteRequest{ActivationID: selected.Activation.ID, ExpectedVersion: selected.Activation.Version, SelectedEventID: selected.EventID, ResourceVersions: activationResourceVersions(selected.Activation.Resources)})
-	var invalid *ActivationInvalidError
-	if !errors.As(err, &invalid) {
-		t.Fatalf("CompleteActivationRecovery(missing resources) error = %v, want ActivationInvalidError", err)
+	var incomplete *ActivationIncompleteError
+	if !errors.As(err, &incomplete) || incomplete.ActivationID != selected.Activation.ID || len(incomplete.Components) != len(activationResourceComponents) || len(incomplete.Reasons) != len(activationResourceComponents) {
+		t.Fatalf("CompleteActivationRecovery(missing resources) error = %#v, want typed incomplete resources", err)
 	}
 }
 

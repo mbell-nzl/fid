@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
@@ -30,12 +31,27 @@ func TestActivationRequiresEveryResourceAtCommitAndFinalize(t *testing.T) {
 					eventsBefore := journalEventCount(t, fixture.workspace)
 					result := executeActivationAgreementTransition(t, fixture, operation)
 					var failure struct {
-						OK        bool           `json:"ok"`
-						Operation string         `json:"operation"`
-						Error     map[string]any `json:"error"`
+						OK        bool   `json:"ok"`
+						Operation string `json:"operation"`
+						Error     struct {
+							Code    string `json:"code"`
+							Details struct {
+								ActivationID string   `json:"activation_id"`
+								Components   []string `json:"components"`
+								Reasons      []struct {
+									Code        string `json:"code"`
+									Detail      string `json:"detail"`
+									SubjectID   string `json:"subject_id"`
+									SubjectType string `json:"subject_type"`
+								} `json:"reasons"`
+							} `json:"details"`
+						} `json:"error"`
 					}
-					if result.err == nil || result.stdout != "" || json.Unmarshal([]byte(result.stderr), &failure) != nil || failure.OK || failure.Operation != "activation."+operation || failure.Error == nil {
+					if result.err == nil || result.stdout != "" || json.Unmarshal([]byte(result.stderr), &failure) != nil || failure.OK || failure.Operation != "activation."+operation || failure.Error.Code != "activation-incomplete" {
 						t.Fatalf("%s with %s %s = %#v, want structured rejection", operation, component, defect, result)
+					}
+					if failure.Error.Details.ActivationID != fixture.activationID || len(failure.Error.Details.Components) != 1 || failure.Error.Details.Components[0] != component || len(failure.Error.Details.Reasons) != 1 || failure.Error.Details.Reasons[0].Code != "activation-incomplete" || !strings.Contains(failure.Error.Details.Reasons[0].Detail, component) || failure.Error.Details.Reasons[0].SubjectID != fixture.activationID || failure.Error.Details.Reasons[0].SubjectType != "activation" {
+						t.Fatalf("%s with %s %s details = %+v, want exact activation and component reason", operation, component, defect, failure.Error.Details)
 					}
 					after, err := workflow.ActivationStatus(fixture.workspace, issueMigrationsDir(), fixture.activationID)
 					if err != nil || !reflect.DeepEqual(after, before) {
