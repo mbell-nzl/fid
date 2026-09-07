@@ -65,6 +65,9 @@ Full sources, pass/fail criteria, and validator ownership are in
   terminal cases, without changing observed execution outcomes.
 - `internal/workflow/stop_read.go` and `internal/workflow/stop_read_test.go` -
   accepted Stop/Attention list filters, limits and read-only results.
+- `internal/workflow/stop.go` and matching tests - only causal correction of
+  identical-key stop.resolve/attention.resolve replay exposed by DEC-196's
+  shared corpus; preserve result/Event identity and current-state semantics.
 - `internal/workflow/run_budget.go` and `internal/workflow/run_budget_test.go` -
   durable run.observe-budget operation, authority, expected versions,
   source/predecessor deduplication, measurement binding and atomic Effects.

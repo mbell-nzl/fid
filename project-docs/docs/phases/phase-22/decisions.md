@@ -828,6 +828,15 @@
   execute each call site; report predecessor provenance and both applicable/
   unrelated/resolved Stop cases. This explicitly extends the preceding
   run.go retirement-only assignment for its required run.start call site.
+- **Resolution replay repair:** Root's new shared corpus executed successful
+  stop.resolve/attention.resolve first deliveries, then both identical cached
+  requests failed with invalid-argument/2 on replay. The focused shared corpus
+  command terminated exit 1; the fake's independently derived immutable replay
+  and other real cases passed. Assign only the causal replay correction and
+  matching regression tests in `internal/workflow/stop.go` to task 9. Preserve
+  the task-2 source provenance, exact result/Event identity, rejection rules,
+  failed receipt and unchanged gate commands. This is the accepted idempotency
+  contract, not a new public behavior or a reopened task 2.
 - **Provenance:** Existing Stop domain commit
   `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
   domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;
