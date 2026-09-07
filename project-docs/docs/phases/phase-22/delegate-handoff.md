@@ -91,6 +91,17 @@ no routing control or accepted outcome changed.
 
 ## Preparatory Final QA Dispatch
 
+Task 10 root assistance: by explicit ownership agreement, root added
+`cmd/fid/activation_export_test.go` and handed it back before the Developer's
+final gates. The test invokes export create/validate during a prepared upgrade
+and checks that the activation projection and journal Event count remain
+unchanged after each command. Root ran, from `/home/mark/projects/fid`,
+`go test ./cmd/fid -run '^TestIncompleteActivationAllowsExportWithoutChangingActivation$' -count=1`:
+PASS — `ok  	github.com/mbell-nzl/fid/cmd/fid	0.293s`
+(terminated `exit_code: 0`). This is a regression check of retained behavior,
+not a claimed red/green product change. The Developer's own final gates execute
+it again; root's focused receipt retains root attribution.
+
 After task 18 and review 6, the QA Lead's scope is a fresh deterministic final
 review plus a feasible Human checklist. Its report must explicitly distinguish
 that requested readiness verdict from the plan's full phase-end sign-off,
