@@ -133,6 +133,11 @@ DEC-200 explicitly adds stop and activation to retained ReasonSubjectType;
 activation disagreement uses activation-incomplete with the Activation ID.
 Component names remain in components/detail, with no private subject/code enum.
 
+DEC-201 assigns the omitted derived Budget output state to task 12 with task-7
+provenance, preserving policy/accounting/history. It explicitly adds only
+effective_status to the Resume Claim projection so elapsed leases are visible
+without rewriting durable Claim status.
+
 ## Carry-Forward Register
 
 | ID | Current disposition |

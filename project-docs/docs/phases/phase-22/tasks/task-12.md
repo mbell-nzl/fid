@@ -28,6 +28,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Run/Registration repository matching must allow the reconciled current target within unchanged approved location/path scope; do not silently widen scope.
 - Adoption, branch rename, and recovery do not refresh proof.
 - An unavailable Findings dimension is explicit; no empty-list claim of completed Review support.
+- DEC-201: complete the accepted derived Budget output state across public
+  Budget-bearing results, with task-7 provenance. Preserve immutable policy,
+  request digests, Event Effects and historical idempotency snapshots; reject
+  caller-supplied state even when empty/null. Add only the explicitly allocated
+  Resume Claim effective_status read member, preserving durable status/expiry.
 - DEC-196: deliver the ordinary Human-readable resume/recovery rendering from
   the same semantic projection as JSON now, per public-interface.md section 6.
   Show prior/successor identities, adopted paths as unproven work, applicable
@@ -46,6 +51,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/workflow/resume_test.go`
 - `internal/workflow/evaluation.go`
 - `internal/workflow/evaluation_test.go`
+- `internal/workflow/budget.go`, `internal/workflow/envelope.go`,
+  `internal/workflow/run_read.go`, `internal/workflow/run_budget.go` and
+  matching tests - DEC-201 output state closure only; existing arithmetic,
+  admission and policy persistence stay unchanged.
 - `internal/evidence/evidence.go`
 - `internal/evidence/execution.go`
 - `internal/evidence/registration.go`
@@ -85,6 +94,11 @@ Full sources, pass/fail criteria, and validator ownership are in
   recovery and branch rename; dirty coverage cannot use synthetic matching
   strings without actual observation. (VAL-049)
 - [ ] Artifact loss preserves Evidence identity while changing only availability and policy outcome. (VAL-050)
+- [ ] Budget-bearing outputs expose all four derived states, reject authored
+  state members, keep raw policy/Effects unchanged, and replay historical
+  results without later counters. Resume Claim effective_status distinguishes
+  an elapsed active lease from its unchanged durable status. (DEC-201;
+  supports VAL-051/052, retained VAL-026/027/030)
 - [ ] Fresh resume reconstructs bounded recovery context without prior chat. (VAL-051)
 - [ ] Resume action eligibility matches actual mutation predicates. (VAL-052)
 - [ ] Human and JSON resume views agree on recovery identities, adoption,

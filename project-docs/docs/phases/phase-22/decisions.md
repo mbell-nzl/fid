@@ -999,6 +999,44 @@
   closes an omitted enum allocation; it does not admit activation-resource or
   resource-not-observed-* and does not weaken any failure condition.
 
+## DEC-201 — Complete Recovery Read Projections
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  authority to complete remaining execution and resolve omitted allocation.
+- **Budget gap:** The accepted public-interface Budget amendment requires
+  derived output `state`, but task 7 delivered arithmetic/admission without
+  that serialized member. Task 12 needs the same Budget projection. Transfer
+  execution of the omitted output member to task 12 with task-7 provenance;
+  task 7 and its historical evidence stay closed.
+- **Budget resolution:** Every public Budget output includes the accepted
+  `unknown`, `available`, `warning` or `exhausted` state. Derive from the
+  existing sample-chain counters and admission semantics: unknown counters
+  mean unknown; zero remaining means exhausted; positive remaining at or
+  below a non-null warning threshold means warning; otherwise available.
+  Authoring never accepts the output member, including empty or null values.
+  Immutable policy JSON, request identity and Event Effects retain their
+  accepted shapes; output/idempotency result snapshots include the derived
+  output. Do not refresh a historical replay snapshot using later counters.
+- **Lease gap and resolution:** Contracts section 9 requires effective lease
+  status but the retained Resume Claim only names durable `status`. Add
+  exactly `effective_status` to the non-null Resume Claim projection. Its
+  value is the durable status except that an active Claim whose expiry has
+  passed projects `expired`. Retain `status` and `expires_at` verbatim and
+  keep the existing null Claim case. This is a derived read member, never a
+  Claim mutation, renewal or expiry Event. No other Claim payload gains it.
+- **Execution:** Task 12 may edit the narrow Budget output/derivation and
+  Envelope result paths in envelope.go, budget.go, run_read.go, run_budget.go,
+  internal/evidence/execution.go and matching tests, plus required retained
+  corpus convergence. Resume/Human projections use the same semantic facts.
+  Reject every caller-supplied state member, preserve unknown-field rejection,
+  and prove all four output states, immutable raw policy and replay snapshots.
+  Root owns Human rendering; Developer owns domain output and causal tests.
+- **Limits:** No arithmetic, admission, authority, persistence schema, Event
+  Effect, budget threshold, new operation, VAL criterion, gate command,
+  dependency or workflow control changes. Required task-12 gates and the
+  independent checkpoint remain unchanged.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
