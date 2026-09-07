@@ -79,7 +79,7 @@
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - FAIL - `FAIL report-lint found 3 failure(s)` (terminated `exit_code: 3`)
   - Root cause: bare `ok` is too short for the report control's `go test` receipt grammar. Repair: restore the exact package output lines from the observed terminal results.
 - DEC-195 continuation red: `go test ./internal/db ./cmd/fid -run '^(TestMigration0013CancelledReceiptTerminalConstraint|TestMigration0013OperationalKernelInventoryAndRoundTrip|TestReceiptReadFailuresAreTypedAndClosed)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`). `execution_receipts` rejected a valid cancelled Receipt and `receipt list --outcome cancelled` returned `invalid-argument`.
-- DEC-195 continuation green: `gofmt -w internal/db/operational_kernel_migration_test.go cmd/fid/receipt_test.go internal/evidence/receipt_read.go && go test ./internal/db ./cmd/fid -run '^(TestMigration0013CancelledReceiptTerminalConstraint|TestMigration0013OperationalKernelInventoryAndRoundTrip|TestReceiptReadFailuresAreTypedAndClosed)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.091s` (terminated `exit_code: 0`)
+- DEC-195 continuation green: `gofmt -w internal/db/operational_kernel_migration_test.go cmd/fid/receipt_test.go internal/evidence/receipt_read.go && go test ./internal/db ./cmd/fid -run '^(TestMigration0013CancelledReceiptTerminalConstraint|TestMigration0013OperationalKernelInventoryAndRoundTrip|TestReceiptReadFailuresAreTypedAndClosed)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.091s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -93,12 +93,12 @@
 - `go test -bench . -benchmem ./...` - BLOCKED - not run because the protected cancelled-Receipt contradiction prevents task completion.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t77.478s\tcoverage: 48.4% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t62.3%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t12.709s` (terminated `exit_code: 0`)
-- `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t192.448s` (terminated `exit_code: 0`)
-- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t5.097s` (terminated `exit_code: 0`)
-- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t5.093s` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	77.478s	coverage: 48.4% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				62.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	12.709s` (terminated `exit_code: 0`)
+- `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	192.448s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	5.097s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	5.093s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -124,3 +124,11 @@
 ## Commit subject
 
 - `fix(evidence): persist cancelled receipts`
+
+## Root report display correction — 2026-09-08
+
+The root delegate decoded escaped tab characters in historical Go-output
+receipts following the QA-84 preflight. The original Developer sessions remain
+the source of those receipts, including every recorded outcome, duration,
+coverage value and observed termination. This formatting correction records
+no new execution or attestation. Original encoded text remains in Git history.

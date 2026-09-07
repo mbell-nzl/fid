@@ -53,45 +53,45 @@
 
 ## Tests run
 
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 33.7% of statements` (terminated `exit_code: 0`)
   - Required QA-rework baseline run before editing `cmd/fid/generic_claim_test.go`.
 - `go test ./cmd/fid -run '^TestClaimRenewalAfterRunPreservesLineageAndFencesClaimVersions$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Focused red receipt: `generic_claim_test.go:270: MF-3 Claim-renewal Run-lineage scenario is not implemented`.
-- `go test ./cmd/fid -run '^TestClaimRenewalAfterRunPreservesLineageAndFencesClaimVersions$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.364s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestClaimRenewalAfterRunPreservesLineageAndFencesClaimVersions$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.364s` (terminated `exit_code: 0`)
   - The green scenario exercises the registered `envelope create`, `envelope activate`, `claim acquire`, `run start`, `claim renew`, `run get`, and `claim release` command boundary with JSON request and response envelopes.
 - `go test ./cmd/fid -run '^TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Prior scope-gap red evidence retained: `generic_claim_test.go:250: expire Claim = main.commandExecutionResult{stdout:"", stderr:"", err:(*pflag.NotExistError)(0x814ac82f8c0)}, want explicit expiry success`.
 - `go test ./cmd/fid -run '^TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - After adding expiry, the preserved test reached the next causal failure: `generic_claim_test.go:264: reacquire ... success, want typed claim conflict`.
-- `go test ./cmd/fid -run '^TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.281s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestExpiredClaimWithUnresolvedExecutorCannotBeReacquired$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.281s` (terminated `exit_code: 0`)
 - `go test ./internal/cli -run '^TestReasonCodeDetailSchemaIsExactForEveryCode$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red contract test: `codes_test.go:129: RegisteredCodes() length = 41, want 42`.
-- `go test ./internal/cli -run '^TestReasonCodeDetailSchemaIsExactForEveryCode$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/cli\t0.014s` (terminated `exit_code: 0`)
+- `go test ./internal/cli -run '^TestReasonCodeDetailSchemaIsExactForEveryCode$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	0.014s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red binding test: the start request received the typed invalid-argument executor rejection before runtime binding existed.
-- `go test ./cmd/fid -run '^TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.256s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestRunStartBindsActiveClaimEnvelopeActorRepositoryAndBudgets$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.256s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red observer test: `pflag.NotExistError` reported that `run observe` was not registered.
-- `go test ./cmd/fid -run '^TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.277s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.183s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.277s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.183s` (terminated `exit_code: 0`)
   - This is the real CLI entrypoint exercise: the test launches two concurrent external `fid` processes, not goroutines.
 - `go test ./... -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
-  - Diagnostic attempt only: `TestGateRunRecordsExactNonSuccessTerminalOutcomes/signaled` observed its helper process exit successfully. The isolated subtest rerun passed (`ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.350s`, terminated `exit_code: 0`); no test or gate definition was changed, and the required race suite below passed.
+  - Diagnostic attempt only: `TestGateRunRecordsExactNonSuccessTerminalOutcomes/signaled` observed its helper process exit successfully. The isolated subtest rerun passed (`ok  	github.com/mbell-nzl/fid/cmd/fid	0.350s`, terminated `exit_code: 0`); no test or gate definition was changed, and the required race suite below passed.
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t39.316s\tcoverage: 32.9% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t60.9%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.112s` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	39.316s	coverage: 32.9% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:									(statements)				60.9%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.112s` (terminated `exit_code: 0`)
 
 - QA-rework repeat of every exact task-3 command from `/home/mark/projects/fid`:
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.1%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t9.280s` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 33.7% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:									(statements)				61.1%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	9.280s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
@@ -114,3 +114,11 @@
 ## Commit subject
 
 - `test(fid): cover claim renewal run lineage`
+
+## Root report display correction — 2026-09-08
+
+The root delegate decoded escaped tab characters in historical Go-output
+receipts following the QA-84 preflight. The original Developer sessions remain
+the source of those receipts, including every recorded outcome, duration,
+coverage value and observed termination. This formatting correction records
+no new execution or attestation. Original encoded text remains in Git history.

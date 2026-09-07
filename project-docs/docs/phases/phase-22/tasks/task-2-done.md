@@ -45,36 +45,36 @@
 
 ## Tests run
 
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t26.550s\tcoverage: 27.4% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	26.550s	coverage: 27.4% of statements` (terminated `exit_code: 0`)
   - Pre-edit CF-034 baseline.
 - `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - First red attempt: `Event-v2 "stop.raised" does not permit effect application before its recovery domain is available`.
 - `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - The initial green implementation exposed a test-harness Event-ID error: `parse event id "EVT-stop-1" date`.
-- `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t2.141s` (terminated `exit_code: 0`)
+- `go test -race ./internal/workflow -run '^TestEquivalentStopsShareAttentionButKeepDistinctFacts$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	2.141s` (terminated `exit_code: 0`)
 - `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Red attempt: `aggregate attention/ATT-814a6f sequence 2, want 1`.
-- `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t3.260s` (terminated `exit_code: 0`)
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	3.260s` (terminated `exit_code: 0`)
 - `/tmp/fid-phase22-task2 --project /tmp/tmp.gBaYkXcrYj --json init --prefix P22` - PASS - `{"contract_version":"fid-cli.v1","event":{"id":"EVT-20260905-000001","occurred_at":"2026-09-05T02:46:37.657134114Z"},"ok":true,"operation":"project.init","result":{"journal_path":".fid/journal/2026-09-05.jsonl","project":{"id":"project-a1b27a80ed0eb60ae3332e573f81d738","issue_prefix":"P22","root":"/tmp/tmp.gBaYkXcrYj"}}}` (terminated `exit_code: 0`)
 - `/tmp/fid-phase22-task2 --project /tmp/tmp.gBaYkXcrYj --json capabilities` - PASS - `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"capabilities.get","result":{"items":[{"available":false,"capability_id":"attention.v1"` (terminated `exit_code: 0`)
   - Real CLI entrypoint confirms the accepted unavailable-capability boundary remains intact.
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 32.9% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 32.9% of statements` (terminated `exit_code: 0`)
   - Required pre-review-repair baseline captured before adding the new tests.
-- `go test -race ./internal/workflow -run '^TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t2.315s` (terminated `exit_code: 0`)
+- `go test -race ./internal/workflow -run '^TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	2.315s` (terminated `exit_code: 0`)
   - New direct observable status and explicit Stop evidence was green on first execution because the review finding was missing coverage, not a product defect.
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Attempt 1: the fresh process rejected the absent `attention` leaf with `exit status 2`, but the fixture incorrectly expected a stderr message.
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Attempt 2: the process error still exposed only `exit status 2`; the fixture was corrected to assert the observable non-zero no-leaf rejection and root-help omission.
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.856s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.856s` (terminated `exit_code: 0`)
   - Attempt 3: the built binary proved routine `pass`, warning `warn`, zero Attention rows, unchanged journal bytes, unavailable capability, and no deferred leaf.
-- `go test -race ./internal/workflow -run '^TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t2.323s` (terminated `exit_code: 0`)
+- `go test -race ./internal/workflow -run '^TestRoutineStatusLeavesAttentionAndJournalUnchangedUntilExplicitStop$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	2.323s` (terminated `exit_code: 0`)
   - Post-format focused workflow confirmation.
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t1.809s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.809s` (terminated `exit_code: 0`)
   - Post-format focused tagged confirmation.
-- `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t3.410s\tcoverage: 3.3% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	3.410s	coverage: 3.3% of statements` (terminated `exit_code: 0`)
   - Diagnostic only: the retained golden passes in isolation, so it does not replace the failed required repository-wide receipt.
-- `go test -race -coverprofile=coverage.out ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t166.657s\tcoverage: 77.1% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	166.657s	coverage: 77.1% of statements` (terminated `exit_code: 0`)
   - Diagnostic only: package-level reproduction passed after the failed repository-wide receipt; it is not used to close the required gate.
 The pre-repair DEC-189 mechanism diagnostic ran this exact sequence from the repository root:
 
@@ -85,14 +85,14 @@ env -i "$B/covbin" -test.run='^TestLiveGoldenChild$' -- --live-golden-child
 ```
 
 Its child receipt ended with `warning: GOCOVERDIR not set, no coverage data emitted`; the expected child termination was observed as `exit_code: 23`.
-- `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=20` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t30.436s\tcoverage: 3.3% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./cmd/fid -run '^TestLiveOutputGoldenFixtures$' -count=20` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	30.436s	coverage: 3.3% of statements` (terminated `exit_code: 0`)
   - Post-repair focused green confirmation across twenty fixture executions.
 
 ## Exact quality-gate results
 
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 34.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 34.7% of statements` (terminated `exit_code: 0`)
   - Final CF-034 measurement; earlier after-implementation attempt was `34.6%` (terminated `exit_code: 0`).
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t32.901s\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	32.901s	coverage: 33.7% of statements` (terminated `exit_code: 0`)
   - Review-1 repair final workflow coverage measurement.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - FAIL - `* unused: 1` (terminated `exit_code: 1`)
@@ -107,27 +107,27 @@ Its child receipt ended with `warning: GOCOVERDIR not set, no coverage data emit
   - Review-1 repair attempt.
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Attempt 1: retained `TestPhase21AttentionBoundary` rejected the accepted task-2 Attention implementation surface.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 34.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 34.7% of statements` (terminated `exit_code: 0`)
   - Attempt 2 after subject-preserving convergence.
 - `go test -race -coverprofile=coverage.out ./...` - FAIL - `FAIL` (terminated `exit_code: 1`)
   - Review-1 repair attempt: retained `TestLiveOutputGoldenFixtures` expected its coverage-child `GOCOVERDIR not set` warning and 134 observed bytes, but the full run instead captured 200 `x` bytes. The exact failure is preserved; no task-2 review-repair path authorizes changing this golden or its live-output implementation.
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.6%` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.1%` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				61.6%` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				61.1%` (terminated `exit_code: 0`)
   - Review-1 repair attempt; the coverage profile was emitted despite the preceding failed test command.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.157s` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t8.188s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.157s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	8.188s` (terminated `exit_code: 0`)
   - Review-1 repair attempt.
-- `go test -race -cover ./internal/workflow` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 33.7% of statements` (terminated `exit_code: 0`)
   - Attempt-2 required workflow coverage measurement.
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
   - Attempt-2 required format check.
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
   - Attempt-2 required lint gate.
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t(cached)\tcoverage: 33.7% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 33.7% of statements` (terminated `exit_code: 0`)
   - Attempt-2 byte-identical required full gate; `cmd/fid` completed at `192.255s` with `77.1%` coverage and all packages passed.
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t61.1%` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)				61.1%` (terminated `exit_code: 0`)
   - Attempt-2 coverage profile result from the passing full gate.
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t10.782s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	10.782s` (terminated `exit_code: 0`)
   - Attempt-2 required tagged integration gate.
 - `git status --porcelain -- cmd/fid/testdata/val-036` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
   - Recovery-specific proof that both golden fixtures remain byte-identical.
@@ -156,3 +156,11 @@ Its child receipt ended with `warning: GOCOVERDIR not set, no coverage data emit
 ## Commit subject
 
 - `test(fid): stabilize live output coverage fixture`
+
+## Root report display correction — 2026-09-08
+
+The root delegate decoded escaped tab characters in historical Go-output
+receipts following the QA-84 preflight. The original Developer sessions remain
+the source of those receipts, including every recorded outcome, duration,
+coverage value and observed termination. This formatting correction records
+no new execution or attestation. Original encoded text remains in Git history.
