@@ -1,5 +1,190 @@
 # Phase 22 - Independent QA Lead Checkpoint After Task 12
 
+Reviewer: independent QA Lead `checkpoint12_final`
+Date: 2026-09-08
+Status: **PASS**
+Scope: the additional task-12 checkpoint required by QA plan sections 8 and 11.4, before task 13
+
+```text
+CHECKPOINT STATUS: PASS
+Must-fix findings: 0
+Blocker candidates: 0
+Continuing task: task-13
+```
+
+The required fresh product checks terminated successfully after the orchestrator
+verified task 12 COMPLETE and after Review4's independent tagged gate finished.
+This checkpoint permits archive implementation to start. It is not the final
+phase review and does not record Human judgments.
+
+## Verified hand-back and independence
+
+- Product: `c2d80980b9bfa9c1c20723cc7751526eb8baf2bf`,
+  `feat(workflow): reconcile recovered execution targets`.
+- Final completion report: `f57b4aa307fe5d3bb700ac04e8229070422b2d0e`.
+- Developer's own final-gate addendum: `833b4fc2cefcdade9fd36c74e9b14573caa682fa`.
+- Review4: `3addf7d6886b9c2b94ed8e5baeeff8c2dcbe1834`,
+  `docs(qa): pass phase 22 review 4`; PASS, zero Must-fix and zero blockers.
+  Its one improvement concerns report readability and is deferrable.
+
+This reviewer has written no product code, tests, specifications, task reports
+or workflow controls. The checkpoint product commands below were executed in
+this reviewer's own session after COMPLETE; both use `-count=1`. Task-12
+Developer/root gate receipts and Review4's full tagged receipt retain their
+separate authorship. They are not re-attested as this reviewer's executions.
+
+The task report and its addendum contain the exact five required commands in
+the task specification's order, each with a closing output token and observed
+termination. Earlier failures, superseded passes and the original checkpoint
+remain attributed in the report/addenda. The disclosed test-order deviation is
+retained; later behavioral tests are not represented as retrospective TDD.
+
+## Own command receipts
+
+All commands ran from `/home/mark/projects/fid`. Required task gates were
+reconciled, not narrowed: these fresh focused commands implement this additional
+checkpoint's named behavioral matrix. QA plan section 11.4 does not prescribe
+a separate byte-exact command list for the checkpoint. Review4 independently
+ran the unchanged full tagged gate before these commands.
+
+### CP-01 — fresh ordinary recovery, disposition, budget and projection matrix
+
+```bash
+go test -race -count=1 ./internal/workflow ./internal/evidence ./cmd/fid -run '^(TestRecoverRun|TestAttentionResolution|TestEquivalentStops|TestRaiseStop|TestRoutineStatus|TestStopAndAttention|TestObserveRunBudget|TestFinalAllowedAttempt|TestBudget|TestDeriveBudget|TestResume|TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState|TestExecutionBound|TestTerminalSuccess|TestFIDBudget|TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity|TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent|TestEvidenceEvaluationMultiFailureGoldenSurvivesRepeatAndRebuild|TestStopPredicates)'
+```
+
+PASS. Complete package output:
+
+```text
+ok  	github.com/mbell-nzl/fid/internal/workflow	41.065s
+ok  	github.com/mbell-nzl/fid/internal/evidence	1.017s
+ok  	github.com/mbell-nzl/fid/cmd/fid	192.410s
+```
+
+Observed termination: `exit_code: 0` (session 78472, final result chunk
+259e6e). Earlier polls that printed package lines while the command was still
+running were not treated as command completion.
+
+### CP-02 — fresh built-binary recovery and activation journeys
+
+```bash
+go test -tags integration -race -count=1 ./cmd/fid/integration/... -run '^(TestP22|TestActivationRecoveryAtEveryDurableBoundary|TestActivationPrepareResponseLossReplaysDurableResult|TestPhase21RealProcessJourneyStartsOneActivatedEnvelope)'
+```
+
+PASS — `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	45.880s`
+(terminated `exit_code: 0`; session 27575, final result chunk d90a4f).
+The selector includes all Phase-22 recovery/activation/resume tables, the actual
+activation interruption journey and the retained real-process final-budget
+boundary journey. It exercises real child processes and disposable Git/SQLite
+projects; none of these results are cache receipts.
+
+### CP-03 — committed report reconciliation
+
+```text
+project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-12-done.md project-docs/docs/phases/phase-22/tasks/task-12.md
+```
+
+PASS — `PASS report-lint completed with no failures`
+(terminated `exit_code: 0`; chunk 7005fa). Output included
+`OUTCOME COMPLETE`, all five exact command matches, resolved product commit,
+matching subject, and committed/clean report. Direct reading additionally
+verified the gate addendum and preserved continuation history.
+
+### CP-04 — source identity, isolation and CF-018 trigger
+
+```bash
+python3 - <<'PY'
+import subprocess
+product='c2d80980b9bfa9c1c20723cc7751526eb8baf2bf'
+for ref in (product,'f57b4aa307fe5d3bb700ac04e8229070422b2d0e','833b4fc2cefcdade9fd36c74e9b14573caa682fa','3addf7d6886b9c2b94ed8e5baeeff8c2dcbe1834'):
+ assert subprocess.check_output(['git','rev-parse','--verify',ref+'^{commit}'],text=True).strip()==ref
+paths=['cmd','internal','migrations','go.mod','go.sum']
+assert not subprocess.check_output(['git','diff','--name-only',product,'HEAD','--',*paths],text=True)
+assert not subprocess.check_output(['git','status','--porcelain','--',*paths],text=True)
+assert not subprocess.check_output(['git','diff','--name-only','89d964a84dbdd297fdf472d6f78b001e2efac702','HEAD','--','internal/sqlquery/sqlquery.go'],text=True)
+print('CHECKPOINT IDENTITY PASS: four commits resolve; product unchanged and clean; CF-018 production-file trigger absent')
+PY
+```
+
+PASS —
+`CHECKPOINT IDENTITY PASS: four commits resolve; product unchanged and clean; CF-018 production-file trigger absent`
+(terminated `exit_code: 0`; chunk a5631b). Source remained identical to the
+verified task-12 product commit through both fresh runs. Only orchestrator-owned
+documentation was dirty. CF-018's production-file-change condition did not fire;
+this is not a new deferral.
+
+## Required checkpoint matrix
+
+| Check | Outcome | Own reproducible evidence and both-state coverage |
+|---|---|---|
+| Ordinary recovery | PASS | CP-01 `TestRecoverRunCommitsExactlyOneSuccessorAfterLostResponse` and CP-02 `TestP22DualAdapterRecoveryConformance` / real failure corpus: valid terminated recovery creates one successor, same-key response-loss replay preserves identity, stale/conflicting requests reject. |
+| Known-live Human force recovery | PASS | CP-01 `TestRecoverRunForceRequiresCurrentHumanAuthorityAndFencesPriorRun`; CP-02 shared corpus and `TestP22RecoveryHumanResultMatchesDurableJSON`: current Human authority permits known-live takeover, ordinary/unauthorized paths reject, prior Run is fenced, result preserves force risk and provenance. |
+| Unknown liveness | PASS | CP-01 `TestRecoverRunRejectsUnknownLivenessForOrdinaryAndForce` and CP-02 real failure corpus: both ordinary and force reject uncertainty without successor/effect creation. |
+| Stop and Attention disposition | PASS | CP-01 `TestRecoverRunAppliesStopsBeforeOrdinaryOrForceMutation` covers applicable, unrelated-subject, unrelated-action and resolved states for ordinary/force recovery; `TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable` requires the exact separate disposition set. `TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved` proves zero unresolved Stops does not hide independently open Attention. Read-only and shared-Attention identity tests also execute. |
+| Budget atomicity | PASS | CP-01 external-sample append/replay/rejection, unknown/exhausted admission, first-exhaustion boundary and committed-denial tests; CP-02 `TestPhase21RealProcessJourneyStartsOneActivatedEnvelope` executes the final permitted Attempt with its durable Budget/Stop/Attention Effects and rejects the next execution before spawn. The pure accounting helper is supplemental, not the sole atomicity proof. |
+| Activation recovery, both directions | PASS | CP-02 `TestP22DualAdapterActivationConformance`, `TestActivationRecoveryAtEveryDurableBoundary` and `TestActivationPrepareResponseLossReplaysDurableResult`: pre-commit restore-prior, post-commit complete-forward, wrong direction/missing agreement rejection, actual response loss at prepare/first-stage/commit/finalize, same identity on retry. |
+| Observed freshness, recovery and rebuild | PASS | CP-02 `TestP22EarlyRecoveryJourney` clean and dirty cases: actual canonical Git observation, unchanged proof through recovery/branch rename, fresh successor Gate/Receipt/Evidence, full Resume equality across actual rebuild, and one-byte same-HEAD staleness retaining original Evidence identity. |
+| Import fault/environment feasibility | PASS — feasibility only | Own CP-ENV-01/02 receipts retained below: disk-backed sibling stage/target, real device identity, file/stage/parent fsync, complete rename publication, four synchronized SIGTERM boundaries and injected missing-stage/closed-fsync/occupied-target faults. These current-session preparation probes remain valid because the environment did not change; they do not claim task-14 product import behavior. |
+
+## Scoped validation outcomes
+
+| Assertion | Outcome | Evidence and practical boundary |
+|---|---|---|
+| VAL-048 / QA-49 | PASS | CP-02 clean/dirty `TestP22EarlyRecoveryJourney` observes the actual changed target and retains old Evidence ID. CP-01 `TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed` proves actual terminal Issue transition and Envelope completion reject newly stale observed proof without Events, then succeed when the qualifying target is restored. |
+| VAL-049 / QA-50 | PASS | CP-02 actual clean and dirty unchanged targets stay fresh through recovery, branch rename and rebuild. The A-to-B adopted-target cases additionally create new successor Gate/Receipt/Evidence within the same original Registration/Obligation and complete terminal operations; adoption does not refresh prior proof. CP-01 rejects foreign Project/worktree bindings. |
+| VAL-050 / QA-51 | PASS | CP-01 `TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity` runs metadata-sufficient and required-material cases using actual Artifact deletion and verification. Both retain complete Evidence/Receipt/Artifact metadata except availability; only required material produces the missing-Artifact policy rejection. Independent validity/freshness/multi-failure cases also execute. |
+| VAL-051 / QA-52 | PASS | CP-02 fresh processes after interruption and complete Resume equality before/after real rebuild reconstruct bounded context. CP-01 exact active/completed projections and independently open Attention cover durable reads; CP-02 elapsed Claim test preserves recorded status/expiry while deriving effective status. Findings remains explicitly unavailable, with no invented completed Review support or stored next-action state. |
+| VAL-052 / QA-53 | PASS | CP-02 `TestP22ResumeReadyCandidatesExecuteTheirActualOperations` actually executes run.inspect, run.observe, gate.run, claim.renew and claim.release at matching fixture revisions. The untrusted-producer case advertises a reason and rejects actual observation without Events; incomplete activation advertises gate denial and actually rejects Gate execution. CP-01 scoped Stop/authority/Run/Claim/revision/repository matrices and CP-02 adopted-target terminal journey retain qualifying and rejecting predicates. |
+
+DEC-201 is reconciled by CP-01's derived-state, immutable-policy stripping,
+closed authoring input (including empty/null state), unknown counters and
+historical Budget projection/replay tests, together with CP-02's four public
+Run replay paths. Available/warning/exhausted/unknown output states are derived
+without rewriting policy, request digests or Event Effects; replay returns the
+stored historical snapshot. The elapsed Claim case projects only the accepted
+`effective_status` read member.
+
+The lease matrix follows existing operation predicates: Claim renewal,
+Issue transition, Run start and recovery retain their accepted guards. No new
+Claim-expiry policy is imposed on `gate.run`; its accepted predicates are
+active Run/Actor/Registration/repository/grant, Budget and Stop checks. The
+advertised candidate set is verified against actual operations, not assumed to
+be a fixed public list.
+
+This is a scoped checkpoint outcome for VAL-048–052 plus supporting regression
+evidence. It does not assign final outcomes to all phase rows. Final QA and
+task-18 assembly remain due; VAL-076–078 require the Human's six separate
+judgments. The neutral human-checklist draft has blank evidence/outcomes and
+awaits the task-18 retained fixture manifest.
+
+## Command and fixture feasibility
+
+The report's exact commands and final result/termination fields were read and
+matched independently (CP-03). Named test functions were located in the committed
+ordinary/tagged files before selection; CP-01 and CP-02 produced actual package
+results, not a no-tests result. The tagged harness builds and uses its binary
+during each test process. Disposable test state is sufficient for this
+deterministic checkpoint; task 18 separately owns durable Human fixtures and
+post-generator inspection.
+
+Archive feasibility and semantic-validation preflight below retain their
+separate limitations. Task 13 still owes actual measured production ZIP limits,
+valid complete controls, semantic rejection and no-effect checks; task 14 still
+owes real staged publication/reconstruction/fault/idempotency proof. The accepted
+boundary matrix's isolated limiter proof plus separate full-valid controls
+interpretation is unchanged.
+
+## Retained preparation history
+
+Everything below this heading is historical preparation. Its PENDING labels
+describe the state before task 12 was complete and are not this checkpoint's
+current outcome. Prior-root-delegate receipts, their failed scratch attempts and
+the inapplicable report-lint probe retain their original attribution and status.
+Own preparation receipts remain identified by their independent reviewer
+sections. No historical result has been upgraded to product PASS.
+
+### Original preparation heading and status
+
 Reviewer: qa-lead
 Date: 2026-09-07
 Status: PENDING task-12 completion
