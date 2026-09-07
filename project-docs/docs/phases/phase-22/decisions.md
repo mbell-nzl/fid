@@ -1042,7 +1042,7 @@
   wire serialization conformance, not a workflow validator or gate change.
 - **Replay allocation closure:** Root executes the same stored-result rule in
   run_observation.go, run_checkpoint.go, recovery.go and the abandon branch of
-  run_close.go, with public-process regressions. Their original task-3/5/6/8
+  run_close.go, with public-process regressions. Their original task-3/4/5/8
   ownership remains provenance; those completed tasks are not reopened. Only
   replay response construction changes. Later Budget samples and Run/Claim
   versions must not replace the original result, and replay adds no Event.

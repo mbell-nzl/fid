@@ -346,8 +346,8 @@ failure remains attributed to that Developer; root does not claim its execution.
 
 Root's finite replay inventory found run.observe, run.checkpoint, run.recover
 and run.abandon reloading current Run/Claim projections. DEC-201/task-12 now
-explicitly allocate those four replay branches, retaining original task-3/5/6/8
-provenance. Only stored result decoding changed; Event identity, admission,
+explicitly allocate those four replay branches, retaining original task-3/4/5/8
+provenance (task-4 checkpoint execution was transferred to task 6 by DEC-194). Only stored result decoding changed; Event identity, admission,
 policy and Effects did not. The new public-process table retries identical
 requests after a real later Gate charge; abandonment uses a newly acquired
 Claim and Run under the same Envelope. Every result and Event must equal its
