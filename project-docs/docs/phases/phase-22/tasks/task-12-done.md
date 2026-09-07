@@ -44,14 +44,14 @@
 - `go test ./cmd/fid -run '^TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): authored empty/null state was initially accepted.
 - `go test ./cmd/fid -run '^TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.072s` (terminated `exit_code: 0`).
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): dirty recovery initially omitted the adopted path and reconciliation digest did not bind.
-- `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.599s` (terminated `exit_code: 0`) before Root's later clean/dirty table extension.
+- `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.599s` (terminated `exit_code: 0`)
 - `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): all resolved Stops hid a still-open Attention item.
 - `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.113s` (terminated `exit_code: 0`).
 - `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): Envelope and Run replay returned later counters/state.
 - `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.570s` (terminated `exit_code: 0`).
 - `go test ./cmd/fid -run '^TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): actual stale current-target terminal transition and Envelope completion were initially admitted.
-- `go test ./cmd/fid -run '^TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 1.139s` (terminated `exit_code: 0`) after current-target evaluation repairs.
-- `go test ./cmd/fid ./internal/workflow -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 7.112s` (terminated `exit_code: 0`) before later source changes.
+- `go test ./cmd/fid -run '^TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed$' - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 1.139s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid ./internal/workflow -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 7.112s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
