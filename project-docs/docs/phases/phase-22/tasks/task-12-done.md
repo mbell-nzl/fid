@@ -40,15 +40,15 @@
 ## Tests run
 
 - `go test ./internal/workflow -run '^TestDeriveBudgetProjectsEveryAcceptedOutputState$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): initial red before `Budget.State` existed.
-- `go test ./internal/workflow -run '^TestDeriveBudgetProjectsEveryAcceptedOutputState$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.004s` (terminated `exit_code: 0`).
+- `go test ./internal/workflow -run '^TestDeriveBudgetProjectsEveryAcceptedOutputState$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.004s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): authored empty/null state was initially accepted.
-- `go test ./cmd/fid -run '^TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.072s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid -run '^TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.072s` (terminated `exit_code: 0`)
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): dirty recovery initially omitted the adopted path and reconciliation digest did not bind.
 - `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 1.599s` (terminated `exit_code: 0`)
 - `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): all resolved Stops hid a still-open Attention item.
-- `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.113s` (terminated `exit_code: 0`).
+- `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 0.113s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): Envelope and Run replay returned later counters/state.
-- `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.570s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 0.570s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`): actual stale current-target terminal transition and Envelope completion were initially admitted.
 - `go test ./cmd/fid -run '^TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery/completed$' - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid 1.139s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid ./internal/workflow -count=1` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 7.112s` (terminated `exit_code: 0`)
@@ -68,6 +68,8 @@
 - The all-Stops-resolved Attention reader repair preceded its decisive focused red case; the subsequent red and green receipts are preserved above.
 
 ## Concerns, technical debt, or notes for the Tech Lead
+
+- Root control repair: `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-12-done.md project-docs/docs/phases/phase-22/tasks/task-12.md` printed `FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`). Four focused PASS rows ended with punctuation after termination; root removed only that punctuation. The byte-identical rerun remains required. Earlier Developer report-lint findings and report-commit sandbox failures are retained in the root contribution evidence; no gate definition or result changed.
 
 - Root owns the still-uncommitted `cmd/fid/integration/p22_resume_actions_test.go` and the A→B changed-target recovery continuation. Do not finalize this checkpoint or claim final gate success until those are integrated and the exact gate sequence is observed anew.
 
