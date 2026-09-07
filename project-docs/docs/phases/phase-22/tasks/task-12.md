@@ -61,6 +61,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/evidence/execution.go`
 - `internal/evidence/registration.go`
 - `internal/workflow/run.go`
+- `internal/workflow/run_observation.go`, `internal/workflow/run_checkpoint.go`,
+  `internal/workflow/recovery.go`, `internal/workflow/run_close.go` - DEC-201:
+  replay stored result snapshots only; no mutation admission or policy changes.
 - `internal/claims/generic.go`
 - `internal/validation/`
 - `cmd/fid/resume.go`

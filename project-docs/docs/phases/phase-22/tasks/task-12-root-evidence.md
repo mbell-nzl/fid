@@ -341,3 +341,28 @@ report, committed 2278953, and reran the byte-identical command. It printed
 (terminated `exit_code: 0`). This validates recovery-report form, not task
 completion. The Developer's separately reported earlier three-row formatting
 failure remains attributed to that Developer; root does not claim its execution.
+
+## Historical Run replay closure (DEC-201)
+
+Root's finite replay inventory found run.observe, run.checkpoint, run.recover
+and run.abandon reloading current Run/Claim projections. DEC-201/task-12 now
+explicitly allocate those four replay branches, retaining original task-3/5/6/8
+provenance. Only stored result decoding changed; Event identity, admission,
+policy and Effects did not. The new public-process table retries identical
+requests after a real later Gate charge; abandonment uses a newly acquired
+Claim and Run under the same Envelope. Every result and Event must equal its
+original snapshot apart from replayed=true; no new Event is admitted.
+
+`go test -tags integration ./cmd/fid/integration/... -run '^TestP22RunReplayRetainsHistoricalBudgetSnapshot$' -count=1`
+
+- Construction attempt failed with `cannot use map[string]any{…} (value of type map[string]any) as string value in argument to p22GateRun` (terminated `exit_code: 1`); corrected the helper call to use its input-path/key signature.
+- Next attempt printed `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.180s` (terminated `exit_code: 1`): three real replay mismatches plus an invalid abandonment fixture whose Claim had already expired. Retained active Claim for abandonment, as its accepted command requires.
+- Full semantic red, before product edits: `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	3.304s` (terminated `exit_code: 1`). All four cases reported historical replay changed after later Budget charge. Full observed output is in `/tmp/p22-replay-red.log` for this session; these retained receipts are the durable evidence.
+- After decoding the stored ResultJSON in the four branches: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.943s` (terminated `exit_code: 0`).
+
+`go test ./internal/workflow -run 'Test.*(ObserveRun|RunObservation|RunCheckpoint|RunRecover|RunAbandon)' -count=1`
+
+- Retained focused domain checks: `ok  	github.com/mbell-nzl/fid/internal/workflow	1.082s` (terminated `exit_code: 0`).
+
+Root hands back these exact files for the Developer's final five-command gate.
+No further root product changes are pending at this handback.

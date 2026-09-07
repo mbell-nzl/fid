@@ -2,6 +2,7 @@ package workflow
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -118,15 +119,10 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			run, err := loadRun(conn, replay.EntityID)
-			if err != nil {
-				return err
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &result); err != nil {
+				return fmt.Errorf("decode Run replay result: %w", err)
 			}
-			claim, err := loadRecoveryClaim(conn, run.ClaimID)
-			if err != nil {
-				return err
-			}
-			result = RunAbandonResult{Run: run, Claim: claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, replay.EventID
 			return nil
 		}
 

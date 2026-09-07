@@ -65,15 +65,10 @@ func RunCheckpoint(options RunOptions, request RunCheckpointRequest) (RunCheckpo
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			checkpoint, err := loadRunCheckpoint(conn, replay.EntityID)
-			if err != nil {
-				return err
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &result); err != nil {
+				return fmt.Errorf("decode Run replay result: %w", err)
 			}
-			run, err := loadRun(conn, checkpoint.RunID)
-			if err != nil {
-				return err
-			}
-			result = RunCheckpointResult{Checkpoint: checkpoint, Run: run, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, replay.EventID
 			return nil
 		}
 		run, err := loadRun(conn, request.RunID)

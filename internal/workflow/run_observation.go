@@ -71,15 +71,10 @@ func ObserveRun(options RunOptions, request RunObserveRequest) (RunObservationRe
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			observation, err := loadRunObservation(conn, replay.EntityID)
-			if err != nil {
-				return err
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &result); err != nil {
+				return fmt.Errorf("decode Run replay result: %w", err)
 			}
-			run, err := loadRun(conn, observation.RunID)
-			if err != nil {
-				return err
-			}
-			result = RunObservationResult{Observation: observation, Run: run, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, replay.EventID
 			return nil
 		}
 		now := runNow(options.Now)

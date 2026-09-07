@@ -137,19 +137,10 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			recovery, err := loadRecovery(conn, replay.EntityID)
-			if err != nil {
-				return err
+			if err := json.Unmarshal([]byte(replay.ResultJSON), &result); err != nil {
+				return fmt.Errorf("decode Run replay result: %w", err)
 			}
-			run, err := loadRun(conn, recovery.SuccessorRunID)
-			if err != nil {
-				return err
-			}
-			claim, err := loadRecoveryClaim(conn, recovery.SuccessorClaimID)
-			if err != nil {
-				return err
-			}
-			result = RunRecoveryResult{Recovery: recovery, Run: run, Claim: claim, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
+			result.IdempotencyKey, result.Replayed, result.EventID = options.IdempotencyKey, true, replay.EventID
 			return nil
 		}
 		prior, err := loadRun(conn, request.PriorRunID)
