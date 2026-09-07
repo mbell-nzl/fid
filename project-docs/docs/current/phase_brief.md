@@ -15,9 +15,10 @@ merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-Tasks 1-8 complete; reviews 1b and 2b PASS. Task 8 closed under DEC-195 with
+Tasks 1-9 complete; reviews 1b and 2b PASS. Task 8 closed under DEC-195 with
 the exact cancelled-Receipt DDL/filter convergence and all eight gates passed;
-its failed history remains in the report. Task 9 is executing, then review 3.
+its failed history remains in the report. Task 9 completed its final five gates
+and actual-operation Stop matrix; independent review 3 is running.
 DEC-196 assigns semantic fake strengthening to task 9, Human resume rendering
 to task 12 and retained Human fixture generation to task 18. Root orchestrates
 under the Human delegation in `delegate-handoff.md`. No open ESC.
@@ -43,7 +44,7 @@ Tasks are sequential; reviews follow every three tasks.
 | [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Complete (DEC-194) | 5 |
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Complete | 6 |
 | [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
-| [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Executing (DEC-196) | 8 |
+| [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Complete (DEC-196/197) | 8 |
 | [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Pending | 9 |
 | [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Pending | 10 |
 | [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Pending | 11 |
