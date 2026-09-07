@@ -125,6 +125,52 @@ and activation boundary tests. No root source edit follows this receipt.
 Task 12's remaining domain tests and five full final-source gates belong to
 the Developer and remain required before task closure.
 
+## Retained Terminal Fixture Convergence
+
+The current-target terminal/completion consumers displaced synthetic repository
+fixtures. Root accepted only task18_completion_resume_test.go and the Stop
+matrix for repair; the Stop matrix itself required no edit. The task-18 helper
+now creates a fresh observed Git fixture rather than cloning a bound worktree,
+and its declared generated Artifact is ignored through that fixture's local
+Git exclude file. This keeps generated material outside the source freshness
+target; actual retained-byte loss and every rejection assertion stay intact.
+Other tests and global synthetic repository helpers remain as before.
+
+Root's introducing-commit inventory (`git log --diff-filter=A`) identified
+task18_completion_resume_test.go at
+2313235ba463060538f2f0d4bcfa61f039fcdc13 (Phase 21 task 18) and the unchanged
+Stop matrix at 4b690e8b863abac96c9abfd72709ac36db2235b2 (Phase 22 task 9).
+The former is subject-preserving convergence under task 12's execution scope.
+
+`go test ./cmd/fid -run '^(TestStopPredicatesAcrossIssueAndEnvelopeCommands|TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState)$' -count=1`
+
+- Root first attempt: `FAIL	github.com/mbell-nzl/fid/cmd/fid	1.881s`
+  (terminated `exit_code: 1`): synthetic fixtures could not supply actual Git
+  observations, so guards failed before their intended Stop/Evidence predicate.
+- After the bounded fixture repair, byte-identical rerun printed
+  `ok  	github.com/mbell-nzl/fid/cmd/fid	11.211s`
+  (terminated `exit_code: 0`). All ten Stop states and all four nonqualifying
+  Evidence states execute their original assertions.
+
+`go test ./cmd/fid -count=1` then printed
+`FAIL	github.com/mbell-nzl/fid/cmd/fid	36.298s`
+(terminated `exit_code: 1`). It found three further synthetic consumers:
+qualified completion after Run release, incomplete Envelope all-reasons, and
+the retained nonterminal-transition test's eventual terminal attempt. Root
+converted the first two to existing observed variants; Developer owned the
+third in task12_execution_transition_test.go. No expected rejection was weakened.
+
+`go test ./cmd/fid -run '^(TestStopPredicatesAcrossIssueAndEnvelopeCommands|TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState|TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence|TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease|TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation)$' -count=1`
+printed `ok  	github.com/mbell-nzl/fid/cmd/fid	10.766s`
+(terminated `exit_code: 0`). The broader byte-identical cmd/fid rerun follows
+the Developer's matching fixture repair; final task-wide gates remain separate.
+
+The byte-identical `go test ./cmd/fid -count=1` rerun printed
+`ok  	github.com/mbell-nzl/fid/cmd/fid	33.890s`
+(terminated `exit_code: 0`). Root hands the repaired fixture file back to the
+Developer after this whole-package regression; the earlier 36.298s failed
+attempt remains above.
+
 ## Budget Output And Historical Replay Contribution
 
 Root subsequently accepted the new budget_projection_replay_test.go file and
@@ -136,51 +182,51 @@ the task-12 prototype; only the actual failures below claim semantic red.
 
 `go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1`
 
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+- Attempt 1: `FAIL	github.com/mbell-nzl/fid/cmd/fid [build failed]`
   (terminated `exit_code: 1`), root used nonexistent journal.Line; corrected
   to journal.Event. This is test construction, not behavioral red.
-- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.574s`
+- Attempt 2: `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.574s`
   (terminated `exit_code: 1`). After three real Gate charges, Envelope create
   replay returned the current active/exhausted object instead of its original
   draft/available snapshot. Developer repaired stored-result replay paths and
   initial output derivation while retaining input-only policy Effects.
-- Root byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.574s`
+- Root byte-identical rerun: `ok  	github.com/mbell-nzl/fid/cmd/fid	0.574s`
   (terminated `exit_code: 0`). It covers create/activate, Run start, both current
   get surfaces, available/warning/exhausted transitions, historical create/start
   snapshots, replay persistence equality and canonical journal policy Effects.
 
 `go test ./cmd/fid -run '^TestBudgetDenialIncludesDerivedOutputState$' -count=1`
 
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.619s`
+- Attempt 1: `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.619s`
   (terminated `exit_code: 1`): committed exhausted denial omitted Budget state.
-- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.537s`
+- Attempt 2: `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.537s`
   (terminated `exit_code: 1`): adding the manual renderer field exposed the
   product error serializer's retained Phase 21 closed shape, which rejected the
   accepted output. Root added exactly state to both Budget denial shapes and
   the matching contract fixture; DEC-201/task scope records that consequence.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.559s`
+- Byte-identical rerun: `ok  	github.com/mbell-nzl/fid/cmd/fid	0.559s`
   (terminated `exit_code: 0`). Denial replay retains counters/state and adds no
   persisted effect. No admission predicate, policy, schema or workflow control
   changed.
 
 `go test ./cmd/fid -run '^TestBudgetUnknownProjectionPreservesNullCounters$' -count=1`
 
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+- Attempt 1: `FAIL	github.com/mbell-nzl/fid/cmd/fid [build failed]`
   (terminated `exit_code: 1`), overlapping Developer test-fixture construction:
   changed builder arity, undefined initializeObservedRepositoryForTest and
   temporary unused imports. Root waited for explicit compile-stable handback.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.371s`
+- Byte-identical rerun: `ok  	github.com/mbell-nzl/fid/cmd/fid	0.371s`
   (terminated `exit_code: 0`): external Budget without a sample stays unknown
   with null counters through Envelope create/activate and Run start/get;
   canonical policy Effects retain input-only values.
 
 `go test ./internal/cli -count=1` printed
-`ok  \tgithub.com/mbell-nzl/fid/internal/cli\t0.019s`
+`ok  	github.com/mbell-nzl/fid/internal/cli	0.019s`
 (terminated `exit_code: 0`).
 
 Final root Budget set:
 `go test ./cmd/fid -run '^TestBudget(ProjectionAndHistoricalReplayAcrossCLI|DenialIncludesDerivedOutputState|UnknownProjectionPreservesNullCounters)$' -count=1`
-printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1.122s`
+printed `ok  	github.com/mbell-nzl/fid/cmd/fid	1.122s`
 (terminated `exit_code: 0`). The Developer receives all root Budget files after
 this receipt and owns subsequent changes and the five final task-wide gates.
 
@@ -192,7 +238,7 @@ only sql/json/fmt. The NextAction comment now includes reads. gofmt/goimports
 were applied; the files are 381 and 196 lines. Root handed the uncommitted
 source back to its Developer owner for the final product commit and gates.
 `go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1`
-printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.133s`
+printed `ok  	github.com/mbell-nzl/fid/internal/workflow	0.133s`
 (terminated `exit_code: 0`). This is verification of a mechanical extraction,
 not a claimed behavior change or substitute for the final suite.
 
@@ -210,7 +256,7 @@ parameterized; neither state was removed. This is additional regression proof
 against the completed prototype, not a retrospective red/green claim.
 
 `go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1`
-printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.454s`
+printed `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	3.454s`
 (terminated `exit_code: 0`). gofmt/goimports were applied. Root hands the
 uncommitted shared test file back for the Developer's final commit/gates.
 
@@ -227,13 +273,13 @@ remaining Receipt value is compared in full. Missing bytes are not recreated.
 
 `go test ./cmd/fid -run '^TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity$' -count=1`
 
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+- Attempt 1: `FAIL	github.com/mbell-nzl/fid/cmd/fid [build failed]`
   (terminated `exit_code: 1`): root referenced ArtifactIDs omitted by the local
   terminal test struct. Read the existing public Receipt.artifacts instead.
-- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.456s`
+- Attempt 2: `FAIL	github.com/mbell-nzl/fid/cmd/fid	0.456s`
   (terminated `exit_code: 1`): root assumed an artifact.get operation; it is
   not an accepted leaf. Use the accepted receipt.get nested Artifact view.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.701s`
+- Byte-identical rerun: `ok  	github.com/mbell-nzl/fid/cmd/fid	0.701s`
   (terminated `exit_code: 0`). These are construction failures and subsequent
   regression proof of existing policy, not red/green product repair. No product
   policy or serialization was changed for this test. Developer owns the new
@@ -252,10 +298,10 @@ and its actual operation rejects authority without adding an Event.
 
 `go test -tags integration ./cmd/fid/integration/... -run '^TestP22Resume(ReadyCandidatesExecuteTheirActualOperations|ObserveRejectsUntrustedProducerDespiteCapabilities)$' -count=1`
 
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid/integration [build failed]`
+- Attempt 1: `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration [build failed]`
   (terminated `exit_code: 1`): root assumed an adapter obligationID field;
   corrected the request to the fixture's explicit OBL-p22-corpus identity.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.000s`
+- Byte-identical rerun: `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	4.000s`
   (terminated `exit_code: 0`). This verifies the Developer's producer repair
   after implementation and is not claimed as its original TDD red. Root
   hands back the complete new fixture/test file before final task-wide gates.
@@ -295,4 +341,3 @@ report, committed 2278953, and reran the byte-identical command. It printed
 (terminated `exit_code: 0`). This validates recovery-report form, not task
 completion. The Developer's separately reported earlier three-row formatting
 failure remains attributed to that Developer; root does not claim its execution.
-

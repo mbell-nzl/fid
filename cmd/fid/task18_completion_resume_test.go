@@ -15,7 +15,7 @@ import (
 
 func TestTerminalSuccessTransitionRejectsUnsuccessfulReceiptEvidence(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/false"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-unsuccessful")
@@ -113,7 +113,7 @@ func TestTerminalSuccessTransitionRejectsEveryOtherNonqualifyingEvidenceState(t 
 
 func TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task18-qualified")
@@ -293,7 +293,7 @@ func TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery(t *tes
 
 func TestEnvelopeCompleteReturnsAllCurrentReasonsWithoutMutation(t *testing.T) {
 	t.Parallel()
-	workspace, issueID, envelopeID := runEvidenceEnvelopeForTest(t, nil)
+	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	repository := runRepositoryForTest(t, workspace)
 	beforeEnvelope := executeCommandForTest(workspace, "--project", workspace, "--json", "envelope", "get", envelopeID).stdout
 	beforeIssue := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "get", issueID).stdout
@@ -370,13 +370,18 @@ func task18TableCounts(t *testing.T, workspace string) (int, int) {
 
 func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 		if withArtifact {
 			definition["artifact_paths"] = []string{"task18-evidence.txt"}
 		}
 	})
 	if withArtifact {
+		// This declared Gate output is material, not a project-source change.
+		// Keep its generation outside the repository freshness target.
+		if err := os.WriteFile(filepath.Join(workspace, ".git", "info", "exclude"), []byte("/task18-evidence.txt\n"), 0o600); err != nil {
+			t.Fatalf("exclude generated Gate Artifact: %v", err)
+		}
 		if err := os.WriteFile(filepath.Join(workspace, "task18-evidence.txt"), []byte("terminal evidence\n"), 0o600); err != nil {
 			t.Fatalf("write terminal Evidence Artifact: %v", err)
 		}
@@ -420,13 +425,9 @@ func task18QualifiedEvidenceFixture(t *testing.T, withArtifact, linkEvidence boo
 
 func task18TerminalGuardFixture(t *testing.T, withArtifact, linkEvidence bool) (string, string, string, string, string) {
 	t.Helper()
-	key := "task18-terminal-guard:" + strconv.FormatBool(withArtifact) + ":" + strconv.FormatBool(linkEvidence)
-	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, withArtifact, linkEvidence)
-		task18AdvanceToTerminalGuard(t, workspace, issueID)
-		return workspace, []string{issueID, envelopeID, evidenceID, artifactID}
-	})
-	return workspace, values[0], values[1], values[2], values[3]
+	workspace, issueID, envelopeID, evidenceID, artifactID := task18QualifiedEvidenceFixture(t, withArtifact, linkEvidence)
+	task18AdvanceToTerminalGuard(t, workspace, issueID)
+	return workspace, issueID, envelopeID, evidenceID, artifactID
 }
 
 func task18AdvanceToTerminalGuard(t *testing.T, workspace, issueID string) {
