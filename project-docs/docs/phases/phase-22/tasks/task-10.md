@@ -25,7 +25,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 - DEC-187/kit-contract-mapping.md: fid persists component agreement; the kit
   coordinator owns durable recovery-export binding. No fid archive field or
   claim that portable availability proves that external binding is authorized.
-- Five resource identities plus authority/Gate content are immutable prepare inputs; observations use expected versions.
+- DEC-198: the five old/new resource identities and exact predecessor binding
+  are immutable prepare inputs. Authority-profile/Gate content is supplied
+  and made immutable through the retained component-staged operations under
+  that same activation ID; commit binds the exact two staged internal digests
+  and required resource agreement. Observations use expected versions. No
+  new prepare field, DDL column, Event family or provider-file read is authorized.
 - Kit materializes files; fid records and validates agreement without editing provider/project files.
 - Converge the existing activation.prepare adapter input and all resource fixtures now; task 11 adds the new recovery leaves, not delayed parser compatibility.
 - Prepare with a predecessor, ordinary finalize, abort, and recovery all preserve exactly one active trust selection.
@@ -78,6 +83,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Acceptance Criteria
 
 - [ ] Activation prepare records the exact old and new resource sets. (VAL-040)
+- [ ] First-activation and upgrade cases prove immutable prepare-time resource
+  and predecessor bindings, separately staged immutable authority/Gate content
+  under the same activation ID, and exact selected internal digests at commit.
+  Missing, mismatched or mixed component sets cannot commit/finalize; recovery
+  retains the corresponding prior or forward trust without rewriting content.
+  Do not require an undeclared internal payload in prepare. (DEC-198; VAL-040..044)
 - [ ] Activation recovery direction respects the point of no return. (VAL-041)
 - [ ] Activation cannot finalize until every required resource agrees. (VAL-042)
 - [ ] Incomplete activation blocks normal work and preserves recovery inspection. (VAL-043)

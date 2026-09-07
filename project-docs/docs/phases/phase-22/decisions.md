@@ -877,6 +877,67 @@
   code, budget rule, threshold, dependency, VAL row or workflow control changes.
   This completes already accepted operations; it introduces no product policy.
 
+### DEC-198: Distinguish Prepare Bindings From Immutable Component Staging
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate exercising the Human's explicit
+  authority to complete and smooth the remaining Phase 22 execution, recorded
+  in `delegate-handoff.md`. Root requested an independent contract audit and
+  then explicitly authorized this bounded Tech Lead resolution before task 10
+  dispatch. It is not a Developer inference or a new prepare input contract.
+- **Contradiction:** `contracts.md` section 8 said prepare freezes the complete
+  old/new sets including authority-profile and Gate Definition content; task
+  10 called that content immutable prepare inputs. The accepted closed input
+  has no such content or digest commitment: `public-interface.md` section 3
+  retains Phase 21 prepare plus predecessor ID/version and five resources.
+  Internal content arrives through retained `activation.component`, and
+  `schema.md` section 5 permits component/profile/definition inserts only in
+  that retained component-staged Event family, not in `activation.prepared`.
+  Two different valid future component payloads can follow the same prepare
+  request, so that request cannot already freeze either exact payload.
+- **Provenance:** Both conflicting prose clauses originated in Tech Lead
+  planning commit `6563fb4b4b92402c9df7826c577041bcac4e65b3`
+  (`Refs: phase-22/task-planning`) and were accepted with the pack in DEC-188.
+  No earlier inspected decision resolves the timing contradiction. The source
+  audit is `qa/task-10-prepare-contract-audit.md`, committed independently at
+  `8a4ff6d`; no implementation failure or recovery attempt caused this finding.
+- **Resolution:** Prepare freezes the exact predecessor identity/version and
+  the five declared old/new resource identities. The predecessor identifies
+  its immutable internal component set; first activation has none. New
+  authority-profile/Gate content is separately validated, content-addressed and
+  made immutable when staged under the same new activation ID. Commit binds
+  the exact two staged internal component digests and required resource
+  agreement before the existing point of no return. No later staging or
+  recovery rewrites prepare bindings; finalization/recovery cannot mix old
+  and new internal sets. Normal workflow stays blocked while incomplete.
+- **Why this resolution:** It reconciles prose with the already explicit
+  closed wire and Event protocol, including Phase 21's retained
+  prepare/component/commit boundaries, rather than inventing an unapproved
+  payload, hidden resolver or provider-file read. This is an explicit
+  authority-backed correction of contradictory prose, not a claim that the
+  original pack was already unambiguous. It changes no accepted input field,
+  DDL, Event family/Effect allocation, recovery direction or selected trust.
+- **VAL-040 strength:** Keep its row and every VAL-041..044 row byte-identical.
+  Task 10 now explicitly tests first activation and upgrade across their real
+  operation boundaries: predecessor/resource freeze, separately staged
+  immutable internal contents, exact selected digests and rejection of
+  missing/mismatched/mixed sets. Resource binding and internal immutability
+  are both required; neither is waived by moving the impossible payload
+  expectation out of the prepare operation. Existing task gates and QA window
+  4/checkpoint execute and independently review that evidence.
+- **Spec impact:** Correct `contracts.md` section 8 and task 10's binding
+  constraint/acceptance criterion. `public-interface.md` section 3 and
+  `schema.md` section 5 already specify these operation boundaries and need no
+  normative-row edits. Canonical `03_TRD_SCHEMA.md` section 8.3 incorporates
+  the corrected slice contract; `07_DESIGN_PLAN_FLOWS.md` section 2 already
+  separates prepare from staging. No separate canonical timing clause needs
+  changing. This bounded inspection is not the phase-end full spec audit.
+- **Limits and evidence:** No product code, tests, QA contract, validator,
+  command, threshold, tolerance, dependency or workflow control changes.
+  No gate was run and no VAL result is claimed. The resolution clears this
+  pre-dispatch specification contradiction; all implementation and independent
+  QA evidence remain task 10/11 and window 4 obligations.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

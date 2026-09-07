@@ -135,3 +135,14 @@ The root owns the disposition and any spec/task edits. Task 10 should receive
 the recorded clarification before dispatching dependent implementation. This
 audit does not allocate an ESC, consume recovery budget, change a gate, or
 claim any implementation/QA success. Only this new audit artifact was edited.
+
+## Subsequent Authority Disposition
+
+After the independent audit commit `8a4ff6d`, the root explicitly accepted its
+closed-interface-preserving recommendation under the Human's super-delegate
+authority and assigned this reviewer the bounded documentation correction.
+DEC-198 now records that resolution; `contracts.md` section 8 and task 10's
+binding/acceptance language distinguish prepare bindings from immutable staged
+content and exact commit selection. The original finding above remains the
+record of the inspected baseline. Its specification contradiction is resolved
+for dispatch; runtime conformance remains unverified by this audit.

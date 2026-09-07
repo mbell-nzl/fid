@@ -1,7 +1,7 @@
 # Phase 22 Slice Contract - Failure And Recovery
 
 > Status: ACCEPTED by Human under DEC-188, 2026-09-05.
-> Author: Tech Lead. Decisions: DEC-180/182/184..188.
+> Author: Tech Lead. Decisions: DEC-180/182/184..188; DEC-198 prepare/staging clarification.
 > Planning base: `89d964a84dbdd297fdf472d6f78b001e2efac702`.
 
 ## 1. Boundary And Authority
@@ -304,13 +304,25 @@ or both null for first activation. Terminal history remains immutable in Events;
 the current projection marks a predecessor superseded only through a new
 activation's successful forward-finalization Event.
 
-Prepare may follow one finalized activation and records its predecessor. It
-freezes the old and new complete component sets: kit, overlay, provider,
-project, backend, authority profile, and Gate Definitions. The kit owns actual
-file materialization; fid persists content identity and observed component
-state. A component observation binds identity/digest, expected version, state,
-and evidence reference. Bootstrap attribution remains explicitly untrusted;
-fid is a local integrity boundary, not authentication for the local operator.
+Prepare may follow one finalized activation and freezes its exact predecessor
+identity/version and the old/new identities of the five declared resources:
+kit, overlay, provider, project and backend. The predecessor identifies its
+immutable authority-profile and Gate Definition components; first activation
+has no predecessor component set. New internal component content is supplied
+through the retained `activation.component` operations under the same new
+activation ID. Staging validates and content-addresses that content, which
+remains immutable. Commit binds the exact two staged internal component digests
+and checks the required resource agreement before the point of no return.
+Finalization and recovery cannot mix old and new internal component sets.
+DEC-198 makes these distinct operation boundaries explicit: prepare contains
+no internal component payload, and neither staging nor recovery rewrites its
+frozen resource/predecessor bindings.
+
+The kit owns actual file materialization; fid persists content identity and
+observed component state. A component observation binds identity/digest,
+expected version, state, and evidence reference. Bootstrap attribution remains
+explicitly untrusted; fid is a local integrity boundary, not authentication for
+the local operator.
 
 One nonterminal activation blocks normal kit work even while the previous
 identity is retained. Inspection, discovery, export/validation, and activation
