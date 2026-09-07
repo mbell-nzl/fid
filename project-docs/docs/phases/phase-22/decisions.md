@@ -811,6 +811,10 @@
   while reproducing the first test; root records the omitted scope now before
   further domain work or task closure, rather than treating it as self-granted
   general evidence-package access.
+- **Retirement support:** The accepted task-9 retirement also removes the
+  obsolete run.finish action/request/validator/producer from
+  `internal/workflow/run.go`. Root inspected the bounded removal diff and names
+  that path explicitly; no other Run behavior is assigned by this addition.
 - **Provenance:** Existing Stop domain commit
   `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
   domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;

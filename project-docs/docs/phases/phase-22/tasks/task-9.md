@@ -70,6 +70,8 @@ Full sources, pass/fail criteria, and validator ownership are in
   source/predecessor deduplication, measurement binding and atomic Effects.
 - `internal/workflow/budget.go` - only shared helper support needed by that
   producer, retaining the existing accepted admission and accounting rules.
+- `internal/workflow/run.go` - only removal of the retired run.finish action,
+  request, validation and producer, plus necessary unused-import cleanup.
 - `internal/workflow/evaluation.go`
 - `internal/workflow/activation.go` - remove run.finish action acceptance.
 - `internal/workflow/envelope.go` - converge grant validation for retired action.
