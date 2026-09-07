@@ -68,3 +68,16 @@ Root refreshed stale current progress and approval text at dispatch. The
 ledger and actual completion/review artifacts remain the detailed execution
 record. Root does not edit active child-owned implementation files or the
 Runner ledger without coordinating ownership first.
+
+During task 9, root owned the semantic corpus while the Developer owned
+product code. Root handed back and committed its separately attributed
+evidence before the Developer's final gates. Root resolved omitted causal file
+scope directly in DEC-197 without creating a protected-control repair cycle.
+The Developer's brief scope-request return did not abandon or replace the
+active task: root supplied the exact cleanup authority and continued the same
+agent. Failed lint and integration receipts remain in that task's report.
+
+Review 3 may prepare by inspecting completed tasks 7/8 and the committed corpus
+while task 9 finishes. Its final source verification, representative gate,
+verdict and commit wait for root's verified task-9 completion checkpoint. No
+review outcome or next-task dispatch is advanced on mutable partial work.
