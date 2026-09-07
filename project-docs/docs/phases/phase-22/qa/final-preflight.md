@@ -166,3 +166,205 @@ phase commands and deterministic checklist, verify review/repair closures, and
 record each validation outcome independently. The separate human checklist has
 six blank judgments; task 18 must supply, and QA must verify, its retained
 fixture manifest before Human execution. No Human outcome is recorded here.
+
+
+## Post-task-12 update and final QA queue — 2026-09-08
+
+This append supersedes the earlier pending task-12 status without rewriting its
+history. Tasks 1–12 are COMPLETE. Review4 is PASS at
+`3addf7d6886b9c2b94ed8e5baeeff8c2dcbe1834`; the additional independent
+checkpoint is PASS at `a9bf3bf48442d587f70b824a54254f09ccd61d66`.
+Task 13 is active. This queue is preparation only: no final-phase product gate,
+timing qualification, final VAL outcome or Human judgment is claimed.
+
+Task 12 adds five reconciled exact gate occurrences to the preceding 70.
+The checkpoint independently read its final report
+`f57b4aa307fe5d3bb700ac04e8229070422b2d0e` and Developer addendum
+`833b4fc2cefcdade9fd36c74e9b14573caa682fa`, verified product commit
+`c2d80980b9bfa9c1c20723cc7751526eb8baf2bf`, and ran report lint to
+observed exit_code 0 / OUTCOME COMPLETE. Those attributed task-gate receipts
+remain distinct from the checkpoint's own fresh focused product checks.
+
+### DEC-202 import qualification allocation
+
+Verified in decision DEC-202, task-14 Binding Constraints/Scope/Acceptance
+Criteria and commit `af820bf0a95d290fab9ba9777e50f717dbe0d437`
+(`docs(phase-22): bind imported destination recovery scope`).
+Contracts section 10 supplies the unchanged portable-recovery requirement.
+
+Task 14 owns the added destination reconciliation, inspection, recovery,
+observation, Run and evaluation paths, with tasks 3/4/5/6/12 provenance.
+Installed-import delivery metadata may qualify the preserved Project/history
+at the actual destination; it is not an authority grant. Required positive
+evidence is fresh destination liveness plus exact reconciliation, then a new
+successor Claim/Run and qualifying execution. Required negatives include
+unqualified imported mutation, replay of an imported observation, ordinary
+foreign-worktree requests without the installed association, unknown liveness
+and existing applicable authority/Stop/Budget/freshness guards. Existing Git
+metadata and source files must survive import into a target with no .fid.
+Original history, repository values, policy, Event order/bytes and proof IDs
+remain immutable. Task 15 carries the route through the real CLI journey.
+
+No missing allocation or new protected requirement was identified in this
+check. The private publication marker remains delivery metadata excluded from
+canonical export; no public/schema/Event member is added by DEC-202.
+
+### Remaining task command obligations
+
+The current task specs, including accepted amendments, have 126 ordered command
+occurrences overall: 75 reconciled for tasks 1–12 and 51 future occurrences
+below. Historical QA-plan readiness totals predate task 4's added repeated Stop
+regression and DEC-196's task-18 generator command; use each current task spec.
+No required command is a placeholder.
+
+| Task | Ordered required commands | Occurrences | Additional final evidence obligation |
+|---|---|---:|---|
+| 13 | Five-command base printed above | 5 | Actual ZIP boundary matrix 056-a..k, measured expansion, complete valid controls, semantic rejection and no-effect snapshots |
+| 14 | Five-command base | 5 | Real lock/stage/reconstruct/fsync/rename/publication faults and retries; DEC-202 qualified/unqualified destination route |
+| 15 | Five-command base | 5 | Source/live/rebuilt/imported parity with declared exclusions, re-export and real CLI journey; then Review5 |
+| 16 | Base, six reference-instance commands, one exact 100k benchmark | 12 | Schema-16 removal/classification, provenance and fresh early timing sample |
+| 17 | Base, six reference commands, three exact 100k processes, full benchmark twice, build | 17 | Final schema/parity/maintenance and exact capability matrix; each timing sample below 30000 ms |
+| 18 | Base, build, exact retained Human-fixture generator below | 7 | Final shared corpus, 23 independently pinned actions, emptiness guard, Human/JSON parity, retained fixture survival; then Review6 |
+
+The exact reference command and instance capture are already printed above
+under tasks 1–11. They stay byte-identical. Task 16's early sample does not
+replace any of task 17's three samples or the separate final-QA three samples.
+Task 17's reference identity remains Go 1.26.2; linux/amd64;
+Linux 6.6.114.1-microsoft-standard-WSL2 x86_64; six logical CPUs;
+AMD Ryzen 7 5700G with Radeon Graphics; MemTotal 8133236 kB.
+
+Task 18's additional exact delivery command, after its build:
+
+```text
+FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanFixtures$' -count=1 -v
+```
+
+The full tagged gate must also execute generator setup modes and a subprocess
+smoke check. The retained manifest must name a durable binary, exact projects
+and entity IDs, and neutral inspection commands usable after generation exits.
+Fresh uniquely named children must preserve existing fixtures. QA must run the
+delivered inspection commands before replacing the checklist's pending locations.
+Only the six HUMAN-01a..03b prompts belong in the user-facing checklist; expected
+judgments stay separate and every Human evidence/outcome cell remains blank.
+
+### Final execution order after verified task 18 and Review6
+
+1. Verify all 18 completion reports/commits, reviews 1b/2b/3/4/5/6 and the
+   additional task-12 checkpoint, including every earlier REPAIR's independent
+   closure. Reconcile all 126 command occurrences and retained-test provenance.
+2. Execute the full phase gate in its accepted order, recording each command's
+   own token and actual termination. This is the five-command base, then
+   `go test -bench . -benchmem ./...`, then
+   `go build -o /tmp/fid ./cmd/fid`. QA-78 separately requires a second
+   consecutive clean full benchmark invocation. Preserve failed attempts;
+   never select a green from a failing series.
+3. Capture all six reference-instance commands in that final-QA session.
+   Execute three consecutive fresh processes of the exact 100k benchmark,
+   preserving all three parity/self-asserting transcripts and each measured
+   ms/rebuild. Each must remain strictly below 30000 ms on the accepted
+   reference. Run the timing block without overlapping other heavy work;
+   earlier task/checkpoint measurements cannot substitute.
+4. Execute and map every deterministic QA-01..84 item and all 77 QA-owned VAL
+   rows against final source. The full ordinary/tagged gates supply behavioral
+   execution, with focused demonstrations where a row additionally needs an
+   emptiness guard, filesystem comparison, provenance or other explicit proof.
+5. Repeat the three external source-currency commands below; complete the
+   final as-built task-18 corpus comparison against every C-01..C-13 item and
+   DEC-187 disposition. Source-currency preparation is not final VAL-080 proof.
+6. Complete security, requirement and documentation reviews; verify the actual
+   retained Human fixtures and finalize neutral checklist locations. Record
+   all 80 VAL rows in the final artifact with evidence and actual ownership.
+   Human rows must remain explicitly unjudged until the Human records answers;
+   deterministic completion does not claim phase sign-off or release readiness.
+
+Required command results must be observed in the recording session. Keep each
+long-running nested result/session until actual termination; coverage.out must
+come from that session's successful coverage gate. Report-control receipts do
+not replace product commands or the complete repeated-command reconciliation.
+
+### Security and documentation review prerequisites
+
+| Final check | Required evidence source |
+|---|---|
+| Archive expansion and entry containment | Task13's real measured 056 matrix; unsafe entries, duplicate keys/IDs and unknown Event/Effect/schema rejection; complete valid controls and unchanged source/destination snapshots |
+| Atomic publication and target preservation | Task14 fault-point/state snapshots, populated-.fid rejection, preserved preexisting source files, same-key response-loss retry and changed digest/key rejection |
+| Imported authority and old executor fencing | Task14/15 DEC-202 positive/negative journeys plus retained recovery force/unknown/replay/Stop/Budget cases; no import-created domain Event or automatic spawn |
+| Force authority, unknown liveness, path scope | Existing task4–9 matrices rerun on final source; exact Human grant, scoped adoption, old fid-write fencing and no side effects on rejection |
+| Contract/docs conformance | contracts.md, public-interface.md, schema.md, canonical 03_TRD_SCHEMA.md §8.3 and AGENTS.md command list against final CLI/catalog/migrations/discovery and task18 manifest |
+| Removal/provenance | Task16's complete classified removal inventory and introducing commits; historical fixtures retain their original subject while latest-schema assertions prove absence |
+| Capability honesty and exclusions | Exactly activation/Attention/export become available; Claims remains false with Phase24 ownership; no Review/Human/telemetry or full kit-production qualification inferred |
+
+These are QA-79/80/81 preparation inputs, not completed security or documentation
+findings. The quality plan requires written, evidence-linked review; this is not
+an external-release phase and no new SAST/dependency/release gate is introduced.
+Held-out scenarios remain outside this task and were not accessed.
+
+### Future artifact inventory
+
+The read-only inventory observed all task13–18 reports, review-5.md,
+review-6.md, human-fixtures.md and final-review.md absent at this preparation
+point. Each has an explicit future owner: Developers 13–18, the two window
+reviewers, task18 fixture author, and final QA Lead respectively. The current
+human-checklist.md exists with six neutral blank judgments. The named
+p22_human_fixtures_test.go is not yet present and is allocated to task18.
+These are scheduled deliveries, not present-readiness evidence or unowned
+missing-artifact blockers.
+
+The remaining-command/artifact Python inventory terminated exit_code 0 with:
+`FINAL QUEUE INVENTORY COMPLETE: future artifacts classified by producing tasks; no product execution`.
+The benchmark definition exists at internal/journal/rebuild_bench_test.go:19;
+its 100000-Event path retains the 30-second self-assertion. `go help testflag`
+terminated exit_code 0 and documents -bench, -benchtime 1x, -count, -run,
+-timeout and explicit cache disabling. This validates syntax/reach only;
+timing and retained-fixture usability remain unexecuted.
+
+## External source-currency drift preflight — 2026-09-08
+
+Own read-only commands, each with actual exit_code 0:
+
+| Exact command | Observed output |
+|---|---|
+| `git -C /home/mark/projects/agentic-coding-project-starter-kit rev-parse HEAD` | `8fdd7d22c80ec508646ce53d0fae112f5b9216a2` |
+| `git -C /home/mark/projects/agentic-coding-project-starter-kit status --porcelain` | `exit 0 (no output)` |
+| `git -C /home/mark/projects/agentic-coding-project-starter-kit rev-list --count c5229617220f97ff9228df261e24718b1d1d6d89..HEAD` | `10` |
+
+The kickoff's current-at-pin claim is stale. The accepted task18 comparison
+pin remains c5229617220f97ff9228df261e24718b1d1d6d89; this review does not
+silently replace it. Per consistency-review.md §5, the final comparison must
+be re-derived and source currency rerun.
+
+Only named normal specification sources were inspected. The exact read-only
+diff command was:
+
+```text
+git -C /home/mark/projects/agentic-coding-project-starter-kit diff c5229617220f97ff9228df261e24718b1d1d6d89 HEAD -- project-docs/specs/trd/02_INTERFACES.md project-docs/specs/FID_COMPATIBILITY.md project-docs/specs/decisions/0005-linked-run-interruption-recovery.md
+```
+
+Observed exit_code 0. The port changes only add §7.1 offline ordinary-frame
+binding; that section explicitly changes no public CLI/schema/backend-port
+version and grants no production qualification. The current compatibility
+matrix describes receiving/reconciliation obligations, an unqualified
+production state, the discovery negotiation gap and offline decoder progress.
+It retains DEC-187/CF-037 obligations rather than resolving them by fallback.
+
+A separate Python comparison loaded both pinned Git blobs with git show.
+The interval from the §3 Backend Port Operations heading through the end of
+§4 Error And Stop Contract is byte-identical; Decision 0005 is byte-identical.
+Observed output (exit_code 0):
+
+```text
+kit normative port sections 3/4 byte-identical: sha256=affa51f5a4658953b645a34945cb857500b419479601719342b7b81c324f4687
+kit Decision 0005 byte-identical: sha256=e5725b67efeec17f87bd71cf46573560abfb4e8e1ff9f574fb3182cd6ab55820
+SOURCE DRIFT CLASSIFIED: named recovery operations/errors unchanged; compatibility/receiving-status update requires final as-built review, not silent pin replacement
+```
+
+Thus the C-01..C-13 normative comparison inputs remain unchanged for liveness,
+exact force grants, scoped/deferred budget units, Stop mappings, identity,
+activation directions/export binding, validate-only/import, derived terminal
+truth, Attention identity/disposition, repository observation and telemetry
+ownership. DEC-187 and kit-contract-mapping.md still disposition every row.
+The new compatibility status does not qualify any fid row and does not assign
+new Phase22 product behavior. No new unresolved Phase22 contract difference was
+identified in this preflight. Final VAL-080 remains pending comparison against
+the completed task18 manifest and a fresh currency check, with any subsequently
+changed normative requirement returned to the owning authority.
