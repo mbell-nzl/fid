@@ -247,7 +247,7 @@ CREATE TABLE execution_receipts (
   id TEXT PRIMARY KEY,
   attempt_id TEXT NOT NULL UNIQUE REFERENCES execution_attempts(id),
   trust_source TEXT NOT NULL CHECK (trust_source = 'fid-executed'),
-  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed-out','signaled','spawn-failed')),
+  terminal_status TEXT NOT NULL CHECK (terminal_status IN ('succeeded','failed','timed-out','signaled','spawn-failed','cancelled')),
   exit_code INTEGER,
   signal TEXT,
   timed_out INTEGER NOT NULL CHECK (timed_out IN (0, 1)),
@@ -265,7 +265,8 @@ CREATE TABLE execution_receipts (
   CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
       OR (terminal_status = 'timed-out' AND timed_out = 1)
       OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)
-      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0))
+      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0)
+      OR (terminal_status = 'cancelled' AND timed_out = 0 AND NOT (exit_code IS NOT NULL AND signal IS NOT NULL)))
 );
 
 CREATE TABLE receipt_artifacts (

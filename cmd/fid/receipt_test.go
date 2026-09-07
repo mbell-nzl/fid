@@ -71,6 +71,10 @@ func TestReceiptReadsAreExactFilteredOrderedAndReadOnly(t *testing.T) {
 func TestReceiptReadFailuresAreTypedAndClosed(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
+	cancelled := executeCommandForTest(workspace, "--project", workspace, "--json", "receipt", "list", "--outcome", "cancelled")
+	if cancelled.err != nil || cancelled.stderr != "" {
+		t.Fatalf("receipt list --outcome cancelled = %#v, want accepted empty result", cancelled)
+	}
 	notFound := executeCommandForTest(workspace, "--project", workspace, "--json", "receipt", "get", "RCP-missing")
 	if notFound.err == nil || notFound.stdout != "" || !strings.Contains(notFound.stderr, `"code":"receipt-not-found"`) || !strings.Contains(notFound.stderr, `"category":"not-found"`) {
 		t.Fatalf("receipt get missing = %#v, want typed not-found", notFound)
