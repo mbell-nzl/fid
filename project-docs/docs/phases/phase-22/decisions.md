@@ -844,6 +844,13 @@
   corresponding narrow return-site changes in `stop.go`, with regression tests.
   The CLI maps these types; it must not infer control semantics from message
   text. Existing rejection predicates and every accepted wire code stay intact.
+- **Retirement cleanup:** The first task-9 lint attempt found
+  `sameRepositoryLocation` unused in `internal/workflow/run_read.go` after
+  FinishRun removal. Root inspected the exact helper and authorizes only its
+  removal in that additional path. Preserve the failed lint attempt, repair the
+  separately identified in-scope test-helper finding, and rerun the identical
+  lint command before continuing the unchanged gates. No control definition
+  changes; this is a direct consequence of the accepted retirement.
 - **Provenance:** Existing Stop domain commit
   `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
   domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;

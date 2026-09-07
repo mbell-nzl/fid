@@ -50,6 +50,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 ## Scope
 
+- `internal/workflow/run_read.go` - remove only the now-unused
+  `sameRepositoryLocation` helper displaced by the accepted FinishRun retirement
+  (DEC-197); preserve all remaining reads and comparisons.
+
 ### Files To Create Or Modify
 
 - `cmd/fid/stop.go`
