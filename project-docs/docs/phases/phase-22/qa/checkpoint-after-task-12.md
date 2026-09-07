@@ -104,6 +104,23 @@ The corrected command receipts above use `exec()` for the multiline helper and
 completed with observed `exit_code: 0`. No source, test, QA plan, task report,
 specification, or ledger file was changed by the probes.
 
+## Non-Applicable Control Probe
+
+After committing this preparation artifact, I ran the Runner report-lint
+control against it while checking the artifact boundary:
+
+```text
+project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/qa/checkpoint-after-task-12.md project-docs/docs/phases/phase-22/tasks/task-12.md
+```
+
+Observed output ended with `FAIL report-lint found 30 failure(s)` and included
+the expected completion-report heading, outcome-field, task-command, and
+commit-section failures. Observed termination: `exit_code: 30`.
+
+This control is for Developer completion reports and is not applicable to a QA
+checkpoint artifact. The result is preserved as a diagnostic receipt only; it
+does not alter the checkpoint disposition or provide task-12 evidence.
+
 ## Later Update Contract
 
 After task 12's completion report and commit are independently verified, append
