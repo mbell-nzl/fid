@@ -66,3 +66,45 @@ Final combined regression command:
 The four root Go files were formatted with gofmt and goimports; each command
 terminated `exit_code: 0` with no output. These focused receipts supplement
 the unchanged five-command task gate; they do not substitute for it.
+
+## Human rendering completion — root-owned follow-through
+
+Before task closure root inspected the default Stop/Attention output against
+public-interface section 6. The first Developer renderer handled singular
+results only; list results still printed only their operation. Root took
+exclusive ownership of the renderer and matching tests while the Developer
+completed cross-surface Stop enforcement, then handed every file back before
+the final five-command gate. The Developer's product commit includes this
+source; these focused receipts remain root-attributed.
+
+- `go test ./cmd/fid -run '^TestStopHumanListsShowOpenResolvedAndEmptyState$' -count=1`
+  — first attempt `FAIL` (terminated `exit_code: 1`), because the new test
+  declared json as a local flag rather than the required root persistent flag.
+  Root corrected only that harness setup and reran the identical command.
+- The identical command then produced the intended red `FAIL` (terminated
+  `exit_code: 1`): open/resolved Stop lists and empty Stop/Attention lists
+  printed only their operation, missing IDs/state.
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22StopAttentionHumanListsNameReasonAndResolution$' -count=1`
+  — intended red `FAIL` (terminated `exit_code: 1`): the built binary's
+  `stop list` printed `stop.list` without the actual Stop ID.
+
+Root added `cmd/fid/stop_human.go`, delegated Human output from
+`writeStopSuccess`, and extended `cmd/fid/stop_test.go` plus the real-process
+`cmd/fid/integration/p22_stop_human_test.go`. Lists now report open/resolved
+state and empty results. Open Attention reads linked immutable Stop facts to
+name the actual reason and qualifying condition. Resolved Stop text names its
+fact and disposition without claiming it still blocks; Attention resolution
+is correctly labelled as its own disposition Event. JSON remains unchanged.
+
+- `go test ./cmd/fid -run '^TestStop(SuccessHumanNamesBlockingReasonAndQualifyingResolution|HumanListsShowOpenResolvedAndEmptyState)$' -count=1`
+  — PASS — `0.076s` (terminated `exit_code: 0`).
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22StopAttentionHumanListsNameReasonAndResolution$' -count=1`
+  — PASS — `1.194s` (terminated `exit_code: 0`). The real binary checks both
+  Stop and Attention lists for the actual Stop/Run identities, intervention
+  reason and `work-ended` condition.
+- gofmt and goimports on the renderer and matching two test files terminated
+  `exit_code: 0` with no output. No dependency changed.
+
+Root explicitly required the Developer to rerun the unchanged five-command
+gate on the final source after handback; earlier race receipts predating final
+source changes remain historical evidence, not substitutes for the final gate.
