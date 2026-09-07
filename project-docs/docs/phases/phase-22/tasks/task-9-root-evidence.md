@@ -110,3 +110,29 @@ is correctly labelled as its own disposition Event. JSON remains unchanged.
 Root explicitly required the Developer to rerun the unchanged five-command
 gate on the final source after handback; earlier race receipts predating final
 source changes remain historical evidence, not substitutes for the final gate.
+
+## Issue and Envelope Stop operation matrix
+
+Root added `cmd/fid/stop_evaluation_matrix_test.go` while the fresh Developer
+continuation owned start/execute/recovery. The table runs actual Issue
+terminal-transition and Envelope-completion commands for applicable,
+unrelated-subject, unrelated-action, resolved and two-applicable-Stop states.
+It independently invokes the shared Issue evaluator, compares every Stop ID,
+checks rejected mutations leave Issue/Envelope/Event state unchanged, and
+requires permitted mutations to reach qa_pass/completed. It therefore does not
+infer cross-surface enforcement from source wiring or renderer calls.
+
+The test reuses the retained qualifying Receipt/Evidence fixture and seeds
+admitted Stop projection state to isolate guard selection. Synthetic fixture
+disposition references are not evidence of resolution admission or live/replay
+parity; those producers have separate tests. No existing test or product code
+was changed, so no artificial red or behavior change is claimed.
+
+- `go test ./cmd/fid -run '^TestStopPredicatesAcrossIssueAndEnvelopeCommands$' -count=1`
+  — PASS — `1.243s` (terminated `exit_code: 0`).
+- gofmt and goimports on the new test, and `git diff --check`, each terminated
+  `exit_code: 0` with no output.
+
+Root handed this file back before the continuation's final-source gates. Its
+receipt is root-attributed; the continuation independently executes the full
+matrix under the unchanged ordinary race gate.
