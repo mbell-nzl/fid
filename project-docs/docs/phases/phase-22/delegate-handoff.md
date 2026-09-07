@@ -121,6 +121,21 @@ has 40 negative states plus an all-agree positive control; its direct projection
 fixtures isolate transition guards and do not claim producer or replay parity.
 Developer owns causal repair and subsequent green receipts after handback.
 
+Before task-10 close, root found that VAL-040's cited prepare test did not
+actually inspect predecessor/resource bindings, and the other cited tests did
+not reject mixed internal digest selections. The Developer confirmed the gap.
+Root added `cmd/fid/activation_binding_test.go`, covering first/upgrade frozen
+bindings across staging/observation/restore, new-key immutable-content rejection,
+missing/mismatched/mixed/prior-only digest negatives and the exact new-set
+positive upgrade through finalization. From `/home/mark/projects/fid`, root ran
+`go test ./cmd/fid -run '^Test(ActivationFreezesFirstAndUpgradeBindingsAcrossStagingAndRecovery|ActivationCommitRejectsMissingMismatchedAndMixedComponentDigests|StagedActivationContentCannotBeReplacedUnderANewKey)$' -count=1`.
+It ended with `FAIL` (package result 0.655s; terminated `exit_code: 1`): the
+positive upgrade committed but failed to finalize. The other binding and
+rejection cases passed. Root handed this test back for Developer diagnosis and
+causal repair, including the same upgrade ordering in forward recovery. The
+earlier five PASS gates remain evidence for the earlier product checkpoint;
+the Developer must rerun them on the final source before task completion.
+
 After task 18 and review 6, the QA Lead's scope is a fresh deterministic final
 review plus a feasible Human checklist. Its report must explicitly distinguish
 that requested readiness verdict from the plan's full phase-end sign-off,
