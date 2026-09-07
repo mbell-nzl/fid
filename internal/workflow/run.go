@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -165,12 +166,7 @@ func mutateRun(options RunOptions, operation string, request any, build func(*sq
 		if replay, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			run, err := loadRun(conn, replay.EntityID)
-			if err != nil {
-				return err
-			}
-			result = RunMutationResult{Run: run, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: replay.EventID}
-			return nil
+			return loadRunMutationReplay(replay, options.IdempotencyKey, &result)
 		}
 		event, run, err := build(conn, project.ProjectID, runNow(options.Now))
 		if err != nil {
@@ -186,6 +182,9 @@ func mutateRun(options RunOptions, operation string, request any, build func(*sq
 		if err != nil {
 			return err
 		}
+		if outcome.Replayed {
+			return loadRunMutationReplay(outcome, options.IdempotencyKey, &result)
+		}
 		loaded, err := loadRun(conn, outcome.EntityID)
 		if err != nil {
 			return err
@@ -194,6 +193,16 @@ func mutateRun(options RunOptions, operation string, request any, build func(*sq
 		return nil
 	})
 	return result, err
+}
+
+func loadRunMutationReplay(outcome journal.IdempotencyOutcome, key string, result *RunMutationResult) error {
+	var stored RunMutationResult
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), &stored); err != nil {
+		return fmt.Errorf("decode Run replay result: %w", err)
+	}
+	stored.IdempotencyKey, stored.Replayed, stored.EventID = key, true, outcome.EventID
+	*result = stored
+	return nil
 }
 
 func validateRunStartBinding(conn *sql.DB, options RunOptions, projectID string, request RunStartRequest, now time.Time) error {
@@ -257,7 +266,8 @@ func runStartEffects(run Run) []journal.Effect {
 		"start_repository_json": string(mustRunJSON(run.StartRepository)), "terminal_repository_json": nil, "status": run.Status, "started_at": run.StartedAt, "ended_at": nil,
 	}}, {Op: "insert", Table: "run_runtime", PK: map[string]any{"run_id": run.ID}, Values: map[string]any{"version": run.Version, "executor_id": run.Executor.ID, "obligation_id": run.ObligationID}}}
 	for _, budget := range run.Budgets {
-		effects = append(effects, journal.Effect{Op: "insert", Table: "run_budget_bindings", PK: map[string]any{"run_id": run.ID, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustRunJSON(budget))}})
+		policyBudget := budgetPolicyValue(budget)
+		effects = append(effects, journal.Effect{Op: "insert", Table: "run_budget_bindings", PK: map[string]any{"run_id": run.ID, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustRunJSON(policyBudget))}})
 	}
 	return effects
 }

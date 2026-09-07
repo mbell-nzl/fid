@@ -78,6 +78,34 @@ func TestDeriveBudgetPreservesUnknownAndExhaustedChains(t *testing.T) {
 	}
 }
 
+func TestDeriveBudgetProjectsEveryAcceptedOutputState(t *testing.T) {
+	maximum := int64(10)
+	warning := int64(3)
+	budget := Budget{Name: "tokens", Scope: "envelope", Unit: "input-tokens", Maximum: maximum, WarningThreshold: &warning, ExhaustionAction: "budget-exhausted"}
+
+	tests := []struct {
+		name    string
+		samples []BudgetSample
+		want    string
+	}{
+		{name: "unknown", samples: []BudgetSample{{Source: "activated-harness", SourceSampleID: "unknown", SampleKind: "delta"}}, want: "unknown"},
+		{name: "available", samples: []BudgetSample{{Source: "activated-harness", SourceSampleID: "available", SampleKind: "baseline", Value: int64Pointer(2)}}, want: "available"},
+		{name: "warning", samples: []BudgetSample{{Source: "activated-harness", SourceSampleID: "warning", SampleKind: "baseline", Value: int64Pointer(7)}}, want: "warning"},
+		{name: "exhausted", samples: []BudgetSample{{Source: "activated-harness", SourceSampleID: "exhausted", SampleKind: "baseline", Value: int64Pointer(10)}}, want: "exhausted"},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			derived, err := DeriveBudget(budget, test.samples)
+			if err != nil {
+				t.Fatalf("DeriveBudget() error = %v", err)
+			}
+			if derived.State != test.want {
+				t.Fatalf("DeriveBudget() state = %q, want %q", derived.State, test.want)
+			}
+		})
+	}
+}
+
 func TestBudgetAdmissionBlockAndEffectsUseExactBudgetStopShape(t *testing.T) {
 	workspace, _ := initializedWorkflowWorkspace(t)
 	conn, err := openWorkflowDB(workspace)

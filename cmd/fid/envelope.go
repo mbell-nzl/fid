@@ -185,6 +185,9 @@ func decodeClosedEnvelopeInput(stdin io.Reader, path string, target any) error {
 	if len(payload) > 1_048_576 {
 		return fmt.Errorf("envelope input exceeds 1048576 bytes")
 	}
+	if err := rejectAuthoredBudgetState(payload, target); err != nil {
+		return err
+	}
 	decoder := json.NewDecoder(strings.NewReader(string(payload)))
 	decoder.DisallowUnknownFields()
 	if err := decoder.Decode(target); err != nil {
@@ -193,6 +196,24 @@ func decodeClosedEnvelopeInput(stdin io.Reader, path string, target any) error {
 	var extra any
 	if err := decoder.Decode(&extra); err != io.EOF {
 		return fmt.Errorf("envelope input must contain one object")
+	}
+	return nil
+}
+
+func rejectAuthoredBudgetState(payload []byte, target any) error {
+	if _, ok := target.(*workflow.EnvelopeCreateRequest); !ok {
+		return nil
+	}
+	var input struct {
+		Budgets []map[string]json.RawMessage `json:"budgets"`
+	}
+	if err := json.Unmarshal(payload, &input); err != nil {
+		return nil
+	}
+	for _, budget := range input.Budgets {
+		if _, found := budget["state"]; found {
+			return fmt.Errorf("envelope budget state is output-only")
+		}
 	}
 	return nil
 }

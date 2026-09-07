@@ -177,7 +177,12 @@ func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string,
 		model.sequence++
 		model.sampleID = fmt.Sprintf("BSM-%d", model.sequence)
 		model.run["version"] = p22Number(model.run["version"]) + 1
-		result = map[string]any{"sample": map[string]any{"id": model.sampleID, "run_id": model.run["id"], "source": "activated-harness", "source_sample_id": input["source_sample_id"], "sample_kind": input["sample_kind"], "previous_sample_id": previous, "value": value}, "budget": map[string]any{"name": "tokens", "consumed": model.consumed, "remaining": max(0, 10-model.consumed)}, "stops": []any{}, "attention": []any{}}
+		remaining := max(0, 10-model.consumed)
+		state := "available"
+		if remaining == 0 {
+			state = "exhausted"
+		}
+		result = map[string]any{"sample": map[string]any{"id": model.sampleID, "run_id": model.run["id"], "source": "activated-harness", "source_sample_id": input["source_sample_id"], "sample_kind": input["sample_kind"], "previous_sample_id": previous, "value": value}, "budget": map[string]any{"name": "tokens", "consumed": model.consumed, "remaining": remaining, "state": state}, "stops": []any{}, "attention": []any{}}
 	case "stop.raise":
 		model.sequence++
 		model.stop = map[string]any{"id": fmt.Sprintf("STP-%d", model.sequence), "subject": input["subject"], "code": input["code"], "details": input["details"], "blocked_actions": input["blocked_actions"], "resolution_condition": input["resolution_condition"], "resolver_capability": input["resolver_capability"], "actor_id": actor}

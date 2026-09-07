@@ -219,12 +219,16 @@ func evaluateExecutionTransition(conn *sql.DB, workspaceRoot, migrationsDir stri
 		reasons = append(reasons, evaluationReason("workflow-transition-invalid", "workflow edge", request.IssueID, "issue"))
 	}
 	if request.TerminalSuccess {
+		repository, err := resumeObservedRepository(workspaceRoot, workspaceRoot)
+		if err != nil {
+			return ExecutionTransitionEvaluation{}, fmt.Errorf("observe terminal transition repository: %w", err)
+		}
 		stopReasons, err := stopEvaluationReasons(conn, "issue.transition-terminal-success", Subject{Type: "envelope", ID: envelope.ID})
 		if err != nil {
 			return ExecutionTransitionEvaluation{}, err
 		}
 		reasons = append(reasons, stopReasons...)
-		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, envelope.RepositoryScope)
+		obligationReasons, err := evaluateObligations(conn, envelope.Obligations, repository)
 		if err != nil {
 			return ExecutionTransitionEvaluation{}, err
 		}

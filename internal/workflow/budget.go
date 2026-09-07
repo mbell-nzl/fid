@@ -138,6 +138,7 @@ func deriveBudget(budget Budget, samples []BudgetSample) (Budget, error) {
 	}
 	if !known {
 		budget.Consumed, budget.Remaining = nil, nil
+		budget.State = "unknown"
 		return budget, nil
 	}
 	budget.Consumed = &consumed
@@ -146,7 +147,30 @@ func deriveBudget(budget Budget, samples []BudgetSample) (Budget, error) {
 		remaining = 0
 	}
 	budget.Remaining = &remaining
+	budget.State = budgetState(budget)
 	return budget, nil
+}
+
+func budgetState(budget Budget) string {
+	if budget.Consumed == nil || budget.Remaining == nil {
+		return "unknown"
+	}
+	if *budget.Remaining == 0 {
+		return "exhausted"
+	}
+	if budget.WarningThreshold != nil && *budget.Remaining <= *budget.WarningThreshold {
+		return "warning"
+	}
+	return "available"
+}
+
+// budgetPolicyValue removes derived read fields before an immutable budget is
+// persisted into policy or an Event Effect.
+func budgetPolicyValue(budget Budget) Budget {
+	budget.Consumed = nil
+	budget.Remaining = nil
+	budget.State = ""
+	return budget
 }
 
 // DeriveBudget returns the current budget state for an already durable sample

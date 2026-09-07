@@ -55,6 +55,7 @@ type Budget struct {
 	ExhaustionAction string `json:"exhaustion_action"`
 	Consumed         *int64 `json:"consumed"`
 	Remaining        *int64 `json:"remaining"`
+	State            string `json:"state,omitempty"`
 }
 
 type ObligationInput struct {
@@ -223,6 +224,9 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		}
 		createdAt := time.Now().UTC().Format(time.RFC3339Nano)
 		envelope := envelopeFromCreate(envelopeID, actor.ActorID, createdAt, request)
+		if err := deriveInitialEnvelopeBudgets(&envelope); err != nil {
+			return err
+		}
 		requestDigest, err := envelopeRequestDigest("envelope.create", project.ProjectID, actor.ActorID, request)
 		if err != nil {
 			return err
@@ -237,6 +241,9 @@ func CreateEnvelope(options EnvelopeOptions, request EnvelopeCreateRequest) (Env
 		})
 		if err != nil {
 			return err
+		}
+		if outcome.Replayed {
+			return loadEnvelopeMutationReplay(outcome, options.IdempotencyKey, &result)
 		}
 		loaded, err := loadEnvelope(conn, outcome.EntityID)
 		if err != nil {
@@ -282,6 +289,16 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 		if err != nil {
 			return err
 		}
+		requestDigest, err := envelopeRequestDigest("envelope.activate", project.ProjectID, actor.ActorID, request)
+		if err != nil {
+			return err
+		}
+		idempotency := journal.IdempotencyRequest{OperationScope: "envelope.activate:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}
+		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
+			return err
+		} else if found {
+			return loadEnvelopeMutationReplay(outcome, options.IdempotencyKey, &result)
+		}
 		envelope, err := loadEnvelope(conn, request.EnvelopeID)
 		if err != nil {
 			return err
@@ -297,10 +314,6 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 			return &EnvelopeInvalidError{Reason: "active mutation claim blocks envelope activation"}
 		}
 		activatedAt := time.Now().UTC().Format(time.RFC3339Nano)
-		requestDigest, err := envelopeRequestDigest("envelope.activate", project.ProjectID, actor.ActorID, request)
-		if err != nil {
-			return err
-		}
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: "envelope.activated", ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: envelope.ID, Sequence: 2, Type: "envelope"}, CommandName: "envelope.activate", Repository: envelopeRepository(envelope.RepositoryScope), Effects: []journal.Effect{
 			{Op: "update", Table: "work_envelopes", PK: map[string]any{"id": envelope.ID}, Values: map[string]any{"status": "active"}},
 			{Op: "update", Table: "envelope_revisions", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1}, Values: map[string]any{"status": "active", "activated_at": activatedAt}},
@@ -309,7 +322,7 @@ func ActivateEnvelope(options EnvelopeOptions, request EnvelopeActivateRequest) 
 		if err != nil {
 			return err
 		}
-		outcome, err := journal.CommitIdempotent(lock, conn, journal.IdempotencyRequest{OperationScope: "envelope.activate:" + project.ProjectID, IdempotencyKey: options.IdempotencyKey, RequestDigest: requestDigest}, event, func(journal.Event) (journal.IdempotencyMutation, error) {
+		outcome, err := journal.CommitIdempotent(lock, conn, idempotency, event, func(journal.Event) (journal.IdempotencyMutation, error) {
 			return journal.IdempotencyMutation{EntityID: envelope.ID, ResultJSON: resultJSON}, nil
 		})
 		if err != nil {
@@ -351,22 +364,18 @@ func CompleteEnvelope(options EnvelopeOptions, request EnvelopeCompleteRequest) 
 		if outcome, found, err := journal.ReplayIdempotent(conn, idempotency); err != nil {
 			return err
 		} else if found {
-			loaded, err := loadEnvelope(conn, outcome.EntityID)
-			if err != nil {
-				return err
-			}
-			evaluation, err := currentEnvelopeEvaluation(conn, loaded, request.Repository)
-			if err != nil {
-				return err
-			}
-			result = EnvelopeMutationResult{Envelope: loaded, Evaluation: evaluation, IdempotencyKey: options.IdempotencyKey, Replayed: true, EventID: outcome.EventID}
-			return nil
+			return loadEnvelopeMutationReplay(outcome, options.IdempotencyKey, &result)
 		}
 
 		envelope, err := loadEnvelope(conn, request.EnvelopeID)
 		if err != nil {
 			return err
 		}
+		currentRepository, err := resumeObservedRepository(options.WorkspaceRoot, options.WorkspaceRoot)
+		if err != nil {
+			return fmt.Errorf("complete envelope: observe repository: %w", err)
+		}
+		request.Repository = currentRepository
 		reasons, evaluation, err := evaluateEnvelopeCompletion(options, conn, envelope, request)
 		if err != nil {
 			return err
@@ -504,7 +513,7 @@ func validateEnvelopeCreate(request EnvelopeCreateRequest) error {
 	}
 	previous = ""
 	for _, budget := range request.Budgets {
-		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "budget-exhausted" || budget.Consumed != nil || budget.Remaining != nil {
+		if budget.Name == "" || previous >= budget.Name || budget.Scope != "envelope" || !validBudgetUnit(budget.Unit) || budget.Maximum < 1 || (budget.WarningThreshold != nil && (*budget.WarningThreshold < 0 || *budget.WarningThreshold > budget.Maximum)) || budget.ExhaustionAction != "budget-exhausted" || budget.Consumed != nil || budget.Remaining != nil || budget.State != "" {
 			return &EnvelopeInvalidError{Reason: "budget values must remain immutable null counters"}
 		}
 		previous = budget.Name
@@ -618,6 +627,19 @@ func envelopeFromCreate(id, actorID, createdAt string, request EnvelopeCreateReq
 	return Envelope{ID: id, CurrentRevision: 1, Status: "draft", Outcome: request.Outcome, NonGoals: request.NonGoals, RiskResult: mustEnvelopeJSON(request.RiskResult), RepositoryScope: request.RepositoryScope, Sources: request.Sources, PrimaryIssueID: request.PrimaryIssueID, RelatedIssueIDs: []string{}, AuthorityGrants: request.AuthorityGrants, Obligations: []Obligation{obligation}, Budgets: request.Budgets, CreatedActorID: actorID, ApprovedActorID: nil, CreatedAt: createdAt, ActivatedAt: nil, CompletedAt: nil}
 }
 
+func deriveInitialEnvelopeBudgets(envelope *Envelope) error {
+	derived := make([]Budget, 0, len(envelope.Budgets))
+	for _, budget := range envelope.Budgets {
+		value, err := deriveBudget(budget, nil)
+		if err != nil {
+			return fmt.Errorf("derive initial envelope budget %q: %w", budget.Name, err)
+		}
+		derived = append(derived, value)
+	}
+	envelope.Budgets = derived
+	return nil
+}
+
 func mustEnvelopeJSON(value any) json.RawMessage {
 	payload, err := journal.MarshalCanonicalJSON(value)
 	if err != nil {
@@ -643,7 +665,8 @@ func envelopeCreateEffects(envelope Envelope, request EnvelopeCreateRequest) []j
 	obligation := request.Obligations[0]
 	effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_obligations", PK: map[string]any{"id": obligation.ID}, Values: map[string]any{"envelope_id": envelope.ID, "revision": 1, "obligation_type": obligation.Type, "registration_id": obligation.Registration.ID, "registration_version": obligation.Registration.Version, "obligation_json": string(mustEnvelopeJSON(obligation))}})
 	for _, budget := range request.Budgets {
-		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_budgets", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustEnvelopeJSON(budget))}})
+		policyBudget := budgetPolicyValue(budget)
+		effects = append(effects, journal.Effect{Op: "insert", Table: "envelope_budgets", PK: map[string]any{"envelope_id": envelope.ID, "revision": 1, "name": budget.Name}, Values: map[string]any{"budget_json": string(mustEnvelopeJSON(policyBudget))}})
 	}
 	return effects
 }
@@ -747,7 +770,15 @@ func loadEnvelopeBudgets(conn *sql.DB, envelope *Envelope) error {
 		if err := rows.Scan(&raw); err != nil || json.Unmarshal([]byte(raw), &budget) != nil {
 			return fmt.Errorf("decode envelope budget")
 		}
-		envelope.Budgets = append(envelope.Budgets, budget)
+		samples, err := loadRunBudgetSamples(conn, envelope.ID, envelope.CurrentRevision, budget.Name)
+		if err != nil {
+			return err
+		}
+		derived, err := DeriveBudget(budget, samples)
+		if err != nil {
+			return fmt.Errorf("derive envelope budget %q: %w", budget.Name, err)
+		}
+		envelope.Budgets = append(envelope.Budgets, derived)
 	}
 	return rows.Err()
 }
@@ -764,6 +795,16 @@ func envelopeRequestDigest(operation, projectID, actorID string, value any) (str
 func envelopeResultJSON(envelope Envelope, key string) (string, error) {
 	payload, err := journal.MarshalCanonicalJSON(map[string]any{"envelope": envelope, "idempotency_key": key, "replayed": false})
 	return string(payload), err
+}
+
+func loadEnvelopeMutationReplay(outcome journal.IdempotencyOutcome, key string, result *EnvelopeMutationResult) error {
+	var stored EnvelopeMutationResult
+	if err := json.Unmarshal([]byte(outcome.ResultJSON), &stored); err != nil {
+		return fmt.Errorf("decode envelope replay result: %w", err)
+	}
+	stored.IdempotencyKey, stored.Replayed, stored.EventID = key, true, outcome.EventID
+	*result = stored
+	return nil
 }
 
 func envelopeActivateResultJSON(envelope Envelope, activatedAt, key string) (string, error) {

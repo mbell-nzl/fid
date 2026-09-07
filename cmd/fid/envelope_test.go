@@ -2,12 +2,16 @@ package main
 
 import (
 	"encoding/json"
+	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/mbell-nzl/fid/internal/config"
+	"github.com/mbell-nzl/fid/internal/project"
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 const testEvidenceObligationID = "OBL-1"
@@ -59,6 +63,8 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 			value["obligations"].([]any)[0].(map[string]any)["guarded_actions"] = []string{"envelope.complete", "issue.transition-terminal-success", "run.close"}
 		}},
 		{"mutable budget", func(value map[string]any) { value["budgets"].([]any)[0].(map[string]any)["consumed"] = 1 }},
+		{"budget output state empty", func(value map[string]any) { value["budgets"].([]any)[0].(map[string]any)["state"] = "" }},
+		{"budget output state null", func(value map[string]any) { value["budgets"].([]any)[0].(map[string]any)["state"] = nil }},
 		{"routine lane", func(value map[string]any) { value["routine"] = map[string]any{"classification": "external"} }},
 		{"revision", func(value map[string]any) { value["revision"] = 2 }},
 		{"cancellation", func(value map[string]any) { value["cancellation"] = map[string]any{} }},
@@ -85,6 +91,19 @@ func TestEnvelopeCreateGetActivateRoundTripAndRejectsWidening(t *testing.T) {
 	}
 }
 
+func TestDecodeClosedEnvelopeInputRejectsAuthoredBudgetState(t *testing.T) {
+	t.Parallel()
+	for _, state := range []string{`""`, `null`} {
+		t.Run(state, func(t *testing.T) {
+			var request workflow.EnvelopeCreateRequest
+			err := decodeClosedEnvelopeInput(strings.NewReader(`{"budgets":[{"state":`+state+`}]}`), "-", &request)
+			if err == nil || !strings.Contains(err.Error(), "budget state is output-only") {
+				t.Fatalf("decodeClosedEnvelopeInput() error = %v, want output-only state rejection", err)
+			}
+		})
+	}
+}
+
 func finalizedEnvelopeWorkspace(t *testing.T) (string, string, gateRegistrationView) {
 	return finalizedEnvelopeWorkspaceWithDefinition(t, nil)
 }
@@ -95,10 +114,21 @@ func finalizedEnvelopeWorkspaceWithDefinition(t *testing.T, modifyDefinition fun
 }
 
 func finalizedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
+	return finalizedEnvelopeWorkspaceWithRepository(t, definitions, false)
+}
+
+func finalizedObservedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
+	return finalizedEnvelopeWorkspaceWithRepository(t, definitions, true)
+}
+
+func finalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []any, observeRepository bool) (string, string, gateRegistrationView) {
 	t.Helper()
-	key := reusableWorkspaceFixtureKey(t, "finalized-envelope", definitions)
+	if observeRepository {
+		return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, true)
+	}
+	key := reusableWorkspaceFixtureKey(t, "finalized-envelope", map[string]any{"definitions": definitions, "observed_repository": observeRepository})
 	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, registration := buildFinalizedEnvelopeWorkspace(t, definitions)
+		workspace, issueID, registration := buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, observeRepository)
 		registrationJSON, err := json.Marshal(registration)
 		if err != nil {
 			t.Fatalf("encode cached gate registration: %v", err)
@@ -113,9 +143,16 @@ func finalizedEnvelopeWorkspaceWithDefinitions(t *testing.T, definitions []any) 
 }
 
 func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, string, gateRegistrationView) {
+	return buildFinalizedEnvelopeWorkspaceWithRepository(t, definitions, false)
+}
+
+func buildFinalizedEnvelopeWorkspaceWithRepository(t *testing.T, definitions []any, observeRepository bool) (string, string, gateRegistrationView) {
 	t.Helper()
-	workspace, values := cloneReusableWorkspaceFixture(t, "prepared-envelope", func() (string, []string) {
+	prepare := func() (string, []string) {
 		workspace := clonePristineWorkspace(t)
+		if observeRepository {
+			initializeObservedRepositoryForTest(t, workspace)
+		}
 		created := executeCommandForTest(workspace, "--project", workspace, "--json", "issue", "create", "--kind", "task", "--title", "Envelope issue", "--actor", "agent:developer")
 		if created.err != nil {
 			t.Fatalf("create issue: %v; stderr=%q", created.err, created.stderr)
@@ -139,7 +176,14 @@ func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, s
 			"capabilities": []string{"run.observe"},
 		}})
 		return workspace, []string{issue.Result.Issue.ID, activationID, profileDigest}
-	})
+	}
+	var workspace string
+	var values []string
+	if observeRepository {
+		workspace, values = prepare()
+	} else {
+		workspace, values = cloneReusableWorkspaceFixture(t, reusableWorkspaceFixtureKey(t, "prepared-envelope", false), prepare)
+	}
 	issueID, activationID, profileDigest := values[0], values[1], values[2]
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
 	observeActivationResourcesForTest(t, workspace, activationID, "new")
@@ -210,13 +254,37 @@ func envelopeCreateInput(t *testing.T, workspace, issueID string, registration g
 
 func testEnvelopeRepository(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
+	projectConfig, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
 	if err != nil {
 		t.Fatalf("read project config: %v", err)
 	}
+	if _, err := os.Stat(filepath.Join(workspace, ".git")); err == nil {
+		observation, err := project.ObserveRepository(workspace)
+		if err != nil {
+			t.Fatalf("observe test repository: %v", err)
+		}
+		return map[string]any{"base_oid": observation.HeadOID, "capture_source": "git", "dirty": observation.Dirty, "dirty_digest": observation.DirtyDigest, "head_oid": observation.HeadOID, "project_id": projectConfig.ProjectID, "tree_oid": observation.TreeOID, "worktree_id": observation.WorktreeID}
+	}
 	return map[string]any{
 		"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil,
-		"head_oid": strings.Repeat("a", 40), "project_id": project.ProjectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1",
+		"head_oid": strings.Repeat("a", 40), "project_id": projectConfig.ProjectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1",
+	}
+}
+
+func initializeObservedRepositoryForTest(t *testing.T, workspace string) {
+	t.Helper()
+	for _, arguments := range [][]string{{"init", "-q"}, {"config", "user.email", "fid@example.test"}, {"config", "user.name", "fid test"}} {
+		if output, err := exec.Command("git", append([]string{"-C", workspace}, arguments...)...).CombinedOutput(); err != nil {
+			t.Fatalf("initialize observed repository %v: %v (%s)", arguments, err, output)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n*.json\n"), 0o600); err != nil {
+		t.Fatalf("write observed repository ignore: %v", err)
+	}
+	for _, arguments := range [][]string{{"add", ".gitignore"}, {"commit", "-qm", "fixture"}} {
+		if output, err := exec.Command("git", append([]string{"-C", workspace}, arguments...)...).CombinedOutput(); err != nil {
+			t.Fatalf("commit observed repository %v: %v (%s)", arguments, err, output)
+		}
 	}
 }
 
@@ -236,8 +304,8 @@ func assertEnvelopeShape(t *testing.T, output, wantStatus string) string {
 		t.Fatalf("obligation = %#v, want one gate-evidence dual-guard value", obligation)
 	}
 	budget := envelope["budgets"].([]any)[0].(map[string]any)
-	if budget["consumed"] != nil || budget["remaining"] != nil {
-		t.Fatalf("budget = %#v, want immutable null counters", budget)
+	if budget["consumed"] != json.Number("0") || budget["remaining"] != json.Number("3") || budget["state"] != "available" {
+		t.Fatalf("budget = %#v, want derived counters and available state", budget)
 	}
 	return envelope["id"].(string)
 }

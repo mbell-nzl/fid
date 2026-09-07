@@ -64,7 +64,7 @@ func task21Read(t *testing.T, workspace string, args ...string) string {
 
 func task21CompletedWorkspace(t *testing.T) (string, string, string, string) {
 	t.Helper()
-	workspace, issueID, envelopeID := gateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
+	workspace, issueID, envelopeID := observedGateReadyEvidenceEnvelopeForTest(t, func(definition map[string]any) {
 		definition["argv"] = []string{"/bin/true"}
 	})
 	terminal, gateRun := executeGateRunForTest(t, workspace, issueID, envelopeID, "task21-parity-gate")

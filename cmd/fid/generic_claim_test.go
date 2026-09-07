@@ -473,7 +473,8 @@ func acquireGenericClaimForTest(t *testing.T, workspace, issueID, envelopeID, ke
 func acquireGenericClaimForTestWithTTL(t *testing.T, workspace, issueID, envelopeID, key string, ttlSeconds int) (map[string]any, string) {
 	t.Helper()
 	path := filepath.Join(workspace, key+".json")
-	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": "worktree-1", "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": ttlSeconds})
+	worktreeID := testEnvelopeRepository(t, workspace)["worktree_id"]
+	writeActivationInput(t, path, map[string]any{"issue_id": issueID, "envelope_id": envelopeID, "envelope_revision": 1, "worktree_id": worktreeID, "scope": map[string]any{"paths": []string{"cmd/fid/claim.go"}}, "ttl_seconds": ttlSeconds})
 	result := executeCommandForTest(workspace, "--project", workspace, "--json", "claim", "acquire", "--actor", "actor-builder", "--input", path, "--idempotency-key", key)
 	if result.err != nil || result.stderr != "" {
 		t.Fatalf("acquire = %#v, want stdout-only success", result)

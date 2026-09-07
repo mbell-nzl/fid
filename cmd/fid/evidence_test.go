@@ -40,8 +40,16 @@ func TestEvidenceLinkAndEvaluateKeepsTrustedDimensionsIndependent(t *testing.T) 
 	t.Run("Artifact availability changes only Artifact availability", func(t *testing.T) {
 		fixture := newLinkedEvidenceFixture(t, "artifact")
 		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "available", []string{})
-		fixture.updateArtifactAvailability(t, "missing")
+		fixture.observeArtifactMissing(t)
 		assertEvaluation(t, fixture.evaluate(t, fixture.repository), "valid", "fresh", "missing", []string{"artifact-unavailable"})
+		got := executeCommandForTest(fixture.workspace, "--project", fixture.workspace, "--json", "evidence", "get", fixture.evidenceID)
+		if got.err != nil || got.stderr != "" {
+			t.Fatalf("Artifact loss changed Evidence identity: %#v", got)
+		}
+		evidence := decodeCanonicalResult(t, got.stdout)["evidence"].(map[string]any)
+		if evidence["id"] != fixture.evidenceID {
+			t.Fatalf("Artifact loss changed Evidence identity: %#v", evidence)
+		}
 	})
 }
 
@@ -160,11 +168,6 @@ func (fixture linkedEvidenceFixture) evaluateGolden(t *testing.T, repository map
 func (fixture linkedEvidenceFixture) updateValidity(t *testing.T, validity string) {
 	t.Helper()
 	fixture.updateProjection(t, `UPDATE evidence_records SET validity = ? WHERE id = ?`, validity, fixture.evidenceID)
-}
-
-func (fixture linkedEvidenceFixture) updateArtifactAvailability(t *testing.T, availability string) {
-	t.Helper()
-	fixture.updateProjection(t, `UPDATE referenced_artifacts SET availability = ? WHERE id = ?`, availability, fixture.artifactID)
 }
 
 func (fixture linkedEvidenceFixture) updateProjection(t *testing.T, query string, arguments ...any) {
@@ -314,11 +317,24 @@ func TestEvidenceLinkRejectsPersistedReceiptBindingMismatches(t *testing.T) {
 }
 
 func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	return evidenceEnvelopeForTest(t, modifyDefinition, false)
+}
+
+func observedEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	return evidenceEnvelopeForTest(t, modifyDefinition, true)
+}
+
+func evidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any), observedRepository bool) (string, string, string) {
 	t.Helper()
 	definitions := gateDefinitionsForTest(modifyDefinition)
-	key := reusableWorkspaceFixtureKey(t, "evidence-envelope", definitions)
+	if observedRepository {
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, true)
+		rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID})
+		return workspace, issueID, envelopeID
+	}
+	key := reusableWorkspaceFixtureKey(t, "evidence-envelope", map[string]any{"definitions": definitions, "observed_repository": observedRepository})
 	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions)
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, observedRepository)
 		return workspace, []string{issueID, envelopeID, registration.ID, strconv.Itoa(registration.Version)}
 	})
 	registrationVersion, err := strconv.Atoi(values[3])
@@ -332,11 +348,33 @@ func runEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]a
 }
 
 func gateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	return readyEvidenceEnvelopeForTest(t, modifyDefinition, false)
+}
+
+func observedGateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any)) (string, string, string) {
+	return readyEvidenceEnvelopeForTest(t, modifyDefinition, true)
+}
+
+func readyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[string]any), observedRepository bool) (string, string, string) {
 	t.Helper()
 	definitions := gateDefinitionsForTest(modifyDefinition)
-	key := reusableWorkspaceFixtureKey(t, "gate-ready-evidence-envelope", definitions)
+	if observedRepository {
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, true)
+		claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
+		repository := testEnvelopeRepository(t, workspace)
+		path := filepath.Join(workspace, "gate-ready-run.json")
+		writeActivationInput(t, path, runStartInput(issueID, envelopeID, claim["id"], repository))
+		started := executeCommandForTest(workspace, "--project", workspace, "--json", "run", "start", "--actor", "actor-builder", "--input", path, "--idempotency-key", "gate-ready-run")
+		if started.err != nil {
+			t.Fatalf("start observed gate-ready Run: %v; stderr=%q", started.err, started.stderr)
+		}
+		runID := runFromResponse(t, started.stdout)["id"].(string)
+		rememberEnvelopeBindingForTest(t, workspace, envelopeBindingForTest{registrationID: registration.ID, registrationVersion: registration.Version, obligationID: testEvidenceObligationID, runID: runID, claimID: claim["id"].(string)})
+		return workspace, issueID, envelopeID
+	}
+	key := reusableWorkspaceFixtureKey(t, "gate-ready-evidence-envelope", map[string]any{"definitions": definitions, "observed_repository": observedRepository})
 	workspace, values := cloneReusableWorkspaceFixture(t, key, func() (string, []string) {
-		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions)
+		workspace, issueID, envelopeID, registration := buildEvidenceEnvelopeForTest(t, definitions, observedRepository)
 		claim, _ := acquireGenericClaimForTestWithTTL(t, workspace, issueID, envelopeID, "gate-ready-claim", 86400)
 		repository := testEnvelopeRepository(t, workspace)
 		path := filepath.Join(workspace, "gate-ready-run.json")
@@ -362,9 +400,15 @@ func gateReadyEvidenceEnvelopeForTest(t *testing.T, modifyDefinition func(map[st
 	return workspace, values[0], values[1]
 }
 
-func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any) (string, string, string, gateRegistrationView) {
+func buildEvidenceEnvelopeForTest(t *testing.T, definitions []any, observedRepository bool) (string, string, string, gateRegistrationView) {
 	t.Helper()
-	workspace, issueID, registration := finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
+	var workspace, issueID string
+	var registration gateRegistrationView
+	if observedRepository {
+		workspace, issueID, registration = finalizedObservedEnvelopeWorkspaceWithDefinitions(t, definitions)
+	} else {
+		workspace, issueID, registration = finalizedEnvelopeWorkspaceWithDefinitions(t, definitions)
+	}
 	input := envelopeCreateInput(t, workspace, issueID, registration)
 	grant := input["authority_grants"].([]any)[0].(map[string]any)
 	grant["actions"] = []string{"claim.acquire", "claim.release", "envelope.activate", "envelope.complete", "evidence.link", "gate.run", "issue.transition", "run.close", "run.start"}

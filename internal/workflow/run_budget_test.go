@@ -82,6 +82,29 @@ func TestObserveRunBudgetRejectsFidOwnedUnitAndConflictWithoutEffects(t *testing
 	}
 }
 
+func TestObserveRunBudgetReplayKeepsHistoricalDerivedState(t *testing.T) {
+	options, recovery := recoveryFixture(t)
+	observeBudgetAuthorize(t, options.WorkspaceRoot, "input-tokens", 10)
+	baseline := int64(2)
+	firstRequest := RunBudgetObserveRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion, BudgetName: "external", SourceSampleID: "historical-baseline", SampleKind: "baseline", Value: &baseline, ObservedAt: time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)}
+	first, err := ObserveRunBudget(options, firstRequest)
+	if err != nil || first.Budget.State != "available" || first.Budget.Remaining == nil || *first.Budget.Remaining != 8 {
+		t.Fatalf("ObserveRunBudget(first) = (%#v, %v), want available historical state", first, err)
+	}
+	charged := int64(8)
+	secondOptions := options
+	secondOptions.IdempotencyKey = "observe-budget-later"
+	secondRequest := RunBudgetObserveRequest{RunID: recovery.PriorRunID, ExpectedVersion: recovery.ExpectedRunVersion + 1, BudgetName: "external", SourceSampleID: "later-charge", SampleKind: "delta", PreviousSampleID: &first.Sample.ID, Value: &charged, ObservedAt: time.Now().UTC().Format(time.RFC3339Nano)}
+	second, err := ObserveRunBudget(secondOptions, secondRequest)
+	if err != nil || second.Budget.State != "exhausted" {
+		t.Fatalf("ObserveRunBudget(second) = (%#v, %v), want later exhausted state", second, err)
+	}
+	replayed, err := ObserveRunBudget(options, firstRequest)
+	if err != nil || !replayed.Replayed || replayed.Budget.State != "available" || replayed.Budget.Remaining == nil || *replayed.Budget.Remaining != 8 {
+		t.Fatalf("ObserveRunBudget(replay) = (%#v, %v), want original available snapshot", replayed, err)
+	}
+}
+
 func observeBudgetAuthorize(t *testing.T, workspace, unit string, maximum int64) {
 	t.Helper()
 	conn, err := openWorkflowDB(workspace)

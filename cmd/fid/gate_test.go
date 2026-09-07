@@ -246,16 +246,10 @@ func registrationCount(t *testing.T, workspace string) int {
 
 func gateRegisterInput(t *testing.T, workspace string) map[string]any {
 	t.Helper()
-	project, err := config.ReadProjectConfig(filepath.Join(workspace, ".fid", "config.toml"))
-	if err != nil {
-		t.Fatalf("read test project config: %v", err)
-	}
+	repository := testEnvelopeRepository(t, workspace)
 	return map[string]any{
-		"definition_id": "gate-unit", "definition_version": 1, "worktree_id": "worktree-1",
-		"scope": map[string]any{"issue_id": "ISS-1"},
-		"repository": map[string]any{
-			"base_oid": nil, "capture_source": "git", "dirty": false, "dirty_digest": nil,
-			"head_oid": strings.Repeat("a", 40), "project_id": project.ProjectID, "tree_oid": strings.Repeat("b", 40), "worktree_id": "worktree-1",
-		},
+		"definition_id": "gate-unit", "definition_version": 1, "worktree_id": repository["worktree_id"],
+		"scope":      map[string]any{"issue_id": "ISS-1"},
+		"repository": repository,
 	}
 }
