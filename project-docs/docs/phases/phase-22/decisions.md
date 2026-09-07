@@ -837,6 +837,13 @@
   the task-2 source provenance, exact result/Event identity, rejection rules,
   failed receipt and unchanged gate commands. This is the accepted idempotency
   contract, not a new public behavior or a reopened task 2.
+- **Typed Stop errors:** The retained Stop domain returns plain errors for
+  not-found, version conflict and nonqualifying resolution, while the new CLI
+  must expose public-interface section 4's accepted distinct codes/details.
+  Permit typed error carriers in `internal/workflow/stop_errors.go` and the
+  corresponding narrow return-site changes in `stop.go`, with regression tests.
+  The CLI maps these types; it must not infer control semantics from message
+  text. Existing rejection predicates and every accepted wire code stay intact.
 - **Provenance:** Existing Stop domain commit
   `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
   domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;

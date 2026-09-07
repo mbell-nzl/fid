@@ -67,7 +67,10 @@ Full sources, pass/fail criteria, and validator ownership are in
   accepted Stop/Attention list filters, limits and read-only results.
 - `internal/workflow/stop.go` and matching tests - only causal correction of
   identical-key stop.resolve/attention.resolve replay exposed by DEC-196's
-  shared corpus; preserve result/Event identity and current-state semantics.
+  shared corpus, plus typed domain errors needed for the accepted Stop/Attention
+  CLI failures; preserve result/Event identity and current-state semantics.
+- `internal/workflow/stop_errors.go` and matching tests - typed error carriers
+  for public-interface section 4, without changing rejection predicates.
 - `internal/workflow/run_budget.go` and `internal/workflow/run_budget_test.go` -
   durable run.observe-budget operation, authority, expected versions,
   source/predecessor deduplication, measurement binding and atomic Effects.
