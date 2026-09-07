@@ -127,118 +127,6 @@ the Developer and remain required before task closure.
 
 ## Budget Output And Historical Replay Contribution
 
-### Later Same-Package Size Extraction
-
-At Developer request, root moved resumeNextActions through withSortedReasons
-verbatim from resume.go to resume_actions.go, preserving behavior and importing
-only sql/json/fmt. The NextAction comment now includes reads. gofmt/goimports
-were applied; the files are 381 and 196 lines. Root handed the uncommitted
-source back to its Developer owner for the final product commit and gates.
-`go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1`
-printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.133s`
-(terminated `exit_code: 0`). This is verification of a mechanical extraction,
-not a claimed behavior change or substitute for the final suite.
-
-### Clean And Dirty Recovery, Then Rebuild
-
-At the checkpoint reviewer's pre-final request, root accepted the existing
-p22_recovery_journey_test.go from the Developer. Root table-drove its already
-implemented journey with clean and dirty starting targets, using empty adoption
-for the clean case and base.txt adoption for the dirty case. Both retain valid
-fresh proof after recovery and branch rename, create a new successor
-Gate/Receipt/Evidence, compare the full recovered Resume before/after real
-rebuild, then change one byte at the same HEAD and require stale but valid
-proof with retained original Evidence identity. Existing dirty assertions were
-parameterized; neither state was removed. This is additional regression proof
-against the completed prototype, not a retrospective red/green claim.
-
-`go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1`
-printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.454s`
-(terminated `exit_code: 0`). gofmt/goimports were applied. Root hands the
-uncommitted shared test file back for the Developer's final commit/gates.
-
-### Required Material And Metadata-Sufficient Artifact Loss
-
-### Recovery Report Control And Git Permission Receipts
-
-The first recovery ledger append began with a blank line and returned
-`INVALID append candidate must start with an event heading`
-(terminated `exit_code: 1`). Corrected input returned
-`INVALID TASK-RECOVERY cites an unrecorded or malformed phase decision`
-(terminated `exit_code: 1`): root had authored DEC-199..201 with H2/em-dash
-headings, whereas the accepted sequence control recognizes canonical H3
-`### DEC-NNN:` headings. Root corrected only those three heading formats;
-their accepted authority and content are unchanged. A premature ledger commit
-after the rejected append printed `nothing to commit, working tree clean`
-(terminated `exit_code: 1`); the rejection had not appended any event. No
-workflow control was edited. The same candidate is retried after the heading
-conformance repair; that byte-identical retry printed
-`APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`).
-
-### Executable Ready Actions And Producer Rejection
-
-Root added p22_resume_actions_test.go with a separate public fixture constructor
-that grants renew/release/evidence.link and permits an explicit producer. It
-does not change the shared fake/fid fixtures. Each of run.inspect, run.observe,
-gate.run, claim.renew and claim.release gets a fresh real activated-harness
-fixture, must appear ready in Resume, and then executes its actual public
-operation. Reads append no Event; mutations append durable Events. A kit
-producer with matching capability/grant must appear blocked for run.observe,
-and its actual operation rejects authority without adding an Event.
-
-`go test -tags integration ./cmd/fid/integration/... -run '^TestP22Resume(ReadyCandidatesExecuteTheirActualOperations|ObserveRejectsUntrustedProducerDespiteCapabilities)$' -count=1`
-
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid/integration [build failed]`
-  (terminated `exit_code: 1`): root assumed an adapter obligationID field;
-  corrected the request to the fixture's explicit OBL-p22-corpus identity.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.000s`
-  (terminated `exit_code: 0`). This verifies the Developer's producer repair
-  after implementation and is not claimed as its original TDD red. Root
-  hands back the complete new fixture/test file before final task-wide gates.
-
-The Developer produced implementation checkpoint 2339dc9 and report checkpoint
-6e04604, then handed a report formatting correction to root after its Git write
-failed. Root's first normal commit also printed
-`fatal: Unable to create '/home/mark/projects/fid/.git/index.lock': Read-only file system`
-(terminated `exit_code: 128`). Root used the required escalation surface; the
-first escalated commit found the report unstaged and printed
-`no changes added to commit (use "git add" and/or "git commit -a")`
-(terminated `exit_code: 1`). Explicit approved staging/commit then succeeded
-at 3c27a25. No Git metadata was changed through a bypass tool.
-
-Root ran the exact task-12 report-lint command: first it printed
-`FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`), because four
-other focused PASS rows still ended with punctuation after termination. Root
-removed that punctuation only, preserved this failed receipt in the originating
-report, committed 2278953, and reran the byte-identical command. It printed
-`OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`
-(terminated `exit_code: 0`). This validates recovery-report form, not task
-completion. The Developer's separately reported earlier three-row formatting
-failure remains attributed to that Developer; root does not claim its execution.
-
-Root owned new artifact_material_policy_test.go. Both fixtures execute a Gate
-that retains actual material, then link Evidence through the public operation
-with required_artifact_ids either populated or empty. They delete retained
-bytes and use artifact.verify, proving only required material blocks Evidence
-evaluation. Both retain Evidence identity and provenance, Receipt facts, and
-all Artifact metadata except its current availability. Receipt embeds current
-Artifact availability, so that projection member alone may change; the
-remaining Receipt value is compared in full. Missing bytes are not recreated.
-
-`go test ./cmd/fid -run '^TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity$' -count=1`
-
-- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
-  (terminated `exit_code: 1`): root referenced ArtifactIDs omitted by the local
-  terminal test struct. Read the existing public Receipt.artifacts instead.
-- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.456s`
-  (terminated `exit_code: 1`): root assumed an artifact.get operation; it is
-  not an accepted leaf. Use the accepted receipt.get nested Artifact view.
-- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.701s`
-  (terminated `exit_code: 0`). These are construction failures and subsequent
-  regression proof of existing policy, not red/green product repair. No product
-  policy or serialization was changed for this test. Developer owns the new
-  test after handback and includes it in the five final task-wide gates.
-
 Root subsequently accepted the new budget_projection_replay_test.go file and
 the narrow committed-denial renderer/closed error Budget shape under DEC-201.
 The previous handback receipt remains evidence for its stated source boundary;
@@ -295,3 +183,116 @@ Final root Budget set:
 printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1.122s`
 (terminated `exit_code: 0`). The Developer receives all root Budget files after
 this receipt and owns subsequent changes and the five final task-wide gates.
+
+### Later Same-Package Size Extraction
+
+At Developer request, root moved resumeNextActions through withSortedReasons
+verbatim from resume.go to resume_actions.go, preserving behavior and importing
+only sql/json/fmt. The NextAction comment now includes reads. gofmt/goimports
+were applied; the files are 381 and 196 lines. Root handed the uncommitted
+source back to its Developer owner for the final product commit and gates.
+`go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1`
+printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.133s`
+(terminated `exit_code: 0`). This is verification of a mechanical extraction,
+not a claimed behavior change or substitute for the final suite.
+
+### Clean And Dirty Recovery, Then Rebuild
+
+At the checkpoint reviewer's pre-final request, root accepted the existing
+p22_recovery_journey_test.go from the Developer. Root table-drove its already
+implemented journey with clean and dirty starting targets, using empty adoption
+for the clean case and base.txt adoption for the dirty case. Both retain valid
+fresh proof after recovery and branch rename, create a new successor
+Gate/Receipt/Evidence, compare the full recovered Resume before/after real
+rebuild, then change one byte at the same HEAD and require stale but valid
+proof with retained original Evidence identity. Existing dirty assertions were
+parameterized; neither state was removed. This is additional regression proof
+against the completed prototype, not a retrospective red/green claim.
+
+`go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1`
+printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.454s`
+(terminated `exit_code: 0`). gofmt/goimports were applied. Root hands the
+uncommitted shared test file back for the Developer's final commit/gates.
+
+### Required Material And Metadata-Sufficient Artifact Loss
+
+Root owned new artifact_material_policy_test.go. Both fixtures execute a Gate
+that retains actual material, then link Evidence through the public operation
+with required_artifact_ids either populated or empty. They delete retained
+bytes and use artifact.verify, proving only required material blocks Evidence
+evaluation. Both retain Evidence identity and provenance, Receipt facts, and
+all Artifact metadata except its current availability. Receipt embeds current
+Artifact availability, so that projection member alone may change; the
+remaining Receipt value is compared in full. Missing bytes are not recreated.
+
+`go test ./cmd/fid -run '^TestArtifactLossHonorsRequiredMaterialAndPreservesProofIdentity$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+  (terminated `exit_code: 1`): root referenced ArtifactIDs omitted by the local
+  terminal test struct. Read the existing public Receipt.artifacts instead.
+- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.456s`
+  (terminated `exit_code: 1`): root assumed an artifact.get operation; it is
+  not an accepted leaf. Use the accepted receipt.get nested Artifact view.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.701s`
+  (terminated `exit_code: 0`). These are construction failures and subsequent
+  regression proof of existing policy, not red/green product repair. No product
+  policy or serialization was changed for this test. Developer owns the new
+  test after handback and includes it in the five final task-wide gates.
+
+### Executable Ready Actions And Producer Rejection
+
+Root added p22_resume_actions_test.go with a separate public fixture constructor
+that grants renew/release/evidence.link and permits an explicit producer. It
+does not change the shared fake/fid fixtures. Each of run.inspect, run.observe,
+gate.run, claim.renew and claim.release gets a fresh real activated-harness
+fixture, must appear ready in Resume, and then executes its actual public
+operation. Reads append no Event; mutations append durable Events. A kit
+producer with matching capability/grant must appear blocked for run.observe,
+and its actual operation rejects authority without adding an Event.
+
+`go test -tags integration ./cmd/fid/integration/... -run '^TestP22Resume(ReadyCandidatesExecuteTheirActualOperations|ObserveRejectsUntrustedProducerDespiteCapabilities)$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid/integration [build failed]`
+  (terminated `exit_code: 1`): root assumed an adapter obligationID field;
+  corrected the request to the fixture's explicit OBL-p22-corpus identity.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t4.000s`
+  (terminated `exit_code: 0`). This verifies the Developer's producer repair
+  after implementation and is not claimed as its original TDD red. Root
+  hands back the complete new fixture/test file before final task-wide gates.
+
+### Recovery Report Control And Git Permission Receipts
+
+The first recovery ledger append began with a blank line and returned
+`INVALID append candidate must start with an event heading`
+(terminated `exit_code: 1`). Corrected input returned
+`INVALID TASK-RECOVERY cites an unrecorded or malformed phase decision`
+(terminated `exit_code: 1`): root had authored DEC-199..201 with H2/em-dash
+headings, whereas the accepted sequence control recognizes canonical H3
+`### DEC-NNN:` headings. Root corrected only those three heading formats;
+their accepted authority and content are unchanged. A premature ledger commit
+after the rejected append printed `nothing to commit, working tree clean`
+(terminated `exit_code: 1`); the rejection had not appended any event. No
+workflow control was edited. The same candidate is retried after the heading
+conformance repair; that byte-identical retry printed
+`APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`).
+
+The Developer produced implementation checkpoint 2339dc9 and report checkpoint
+6e04604, then handed a report formatting correction to root after its Git write
+failed. Root's first normal commit also printed
+`fatal: Unable to create '/home/mark/projects/fid/.git/index.lock': Read-only file system`
+(terminated `exit_code: 128`). Root used the required escalation surface; the
+first escalated commit found the report unstaged and printed
+`no changes added to commit (use "git add" and/or "git commit -a")`
+(terminated `exit_code: 1`). Explicit approved staging/commit then succeeded
+at 3c27a25. No Git metadata was changed through a bypass tool.
+
+Root ran the exact task-12 report-lint command: first it printed
+`FAIL report-lint found 4 failure(s)` (terminated `exit_code: 4`), because four
+other focused PASS rows still ended with punctuation after termination. Root
+removed that punctuation only, preserved this failed receipt in the originating
+report, committed 2278953, and reran the byte-identical command. It printed
+`OUTCOME RECOVERY_REQUIRED` and `PASS report-lint completed with no failures`
+(terminated `exit_code: 0`). This validates recovery-report form, not task
+completion. The Developer's separately reported earlier three-row formatting
+failure remains attributed to that Developer; root does not claim its execution.
+
