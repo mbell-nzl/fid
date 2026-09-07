@@ -102,9 +102,12 @@ DEC-187 complete kit comparison dispositions and CF-037 qualification work.
 DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 
 Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
-dispositions apply. QA assessment and refinements are recorded. Runner begins
-with its required QA Lead readiness refresh before task 1. No task has started.
-Current branch is `phase-22`; Phase 21 is merged.
+dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-7 are
+complete and review-1b/review-2b passed. Task 8 resumes under DEC-195, followed
+by tasks 9-18 and required QA. The Human delegated remaining execution and
+checklist preparation on 2026-09-07; Human outcomes remain pending. See
+`../phases/phase-22/delegate-handoff.md`. Current branch is `phase-22`;
+Phase 21 is merged.
 
 ## Carry-Forward Register
 

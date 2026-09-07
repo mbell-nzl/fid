@@ -1,0 +1,57 @@
+# Phase 22 Delegated Completion
+
+## Human Instruction — 2026-09-07
+
+The Human authorized the root delegate to orchestrate the rest of Phase 22,
+including final QA, so the Human checklist is ready for the following day.
+The Human explicitly permitted canonical subagents and direct root edits to
+repair routine workflow friction without repeated role handoffs. This is
+execution authority from the current request, not a new product decision.
+
+Preserve accepted product contracts, deterministic evidence, failed attempts,
+and independent review. Human VAL-076..078 remain for the Human. No release,
+merge, or completed Human sign-off is implied.
+
+## Starting Checkpoint
+
+Root inspected branch `phase-22` at
+`3438f8cc0b445247069611f2d74fb827a2187eb7` (DEC-195 docs resolution).
+Only `run-ledger.md` was dirty, containing earlier execution history through
+the task-8 STOP. Tasks 1-7 and reviews 1b/2b are recorded complete. This is
+historical artifact inspection, not a fresh attestation of their test gates.
+
+The Phase Runner owns the append-only ledger and task/review dispatch.
+Resume task 8 at attempt 4 under DEC-195 and the unchanged trigger. Use the
+amended task scope; attempt 3's directive forbids the required DDL repair.
+
+## Remaining Sequence And Delivery
+
+- Complete task 8, then 9; review window 3.
+- Complete tasks 10-12; review window 4 and independent QA Lead checkpoint
+  after task 12 before dispatching task 13.
+- Complete tasks 13-15; review window 5.
+- Complete tasks 16-18; review window 6.
+- Complete fresh final deterministic QA, including all 77 QA-owned assertions,
+  the exact phase gates, reference rebuild samples, and comparison obligations.
+- Provide verified, reproducible Human fixtures and the six separately
+  markable Human checklist rows covering VAL-076..078.
+- Refresh current context to distinguish deterministic readiness from pending
+  Human validation. Full phase closure and post-Human wrap-up follow the
+  actual Human outcomes; no pending outcome is upgraded to PASS.
+
+The QA plan's full phase-end decision rule still governs full phase closure.
+Preparing the final deterministic review before Human execution implements
+the Human's requested handoff order; it does not waive the Human criteria.
+
+## Coordination
+
+The root delegate handles routine scope/documentation/control friction when
+accepted behavior determines the repair. Preserve the failed attempt and
+record any bounded scope amendment before a canonical Developer executes it.
+Any new product or architecture choice remains explicit, never an implicit
+substitution to obtain a green gate.
+
+Root refreshed stale current progress and approval text at dispatch. The
+ledger and actual completion/review artifacts remain the detailed execution
+record. Root does not edit active child-owned implementation files or the
+Runner ledger without coordinating ownership first.
