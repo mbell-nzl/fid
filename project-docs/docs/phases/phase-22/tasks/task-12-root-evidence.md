@@ -139,6 +139,24 @@ printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.133s`
 (terminated `exit_code: 0`). This is verification of a mechanical extraction,
 not a claimed behavior change or substitute for the final suite.
 
+### Clean And Dirty Recovery, Then Rebuild
+
+At the checkpoint reviewer's pre-final request, root accepted the existing
+p22_recovery_journey_test.go from the Developer. Root table-drove its already
+implemented journey with clean and dirty starting targets, using empty adoption
+for the clean case and base.txt adoption for the dirty case. Both retain valid
+fresh proof after recovery and branch rename, create a new successor
+Gate/Receipt/Evidence, compare the full recovered Resume before/after real
+rebuild, then change one byte at the same HEAD and require stale but valid
+proof with retained original Evidence identity. Existing dirty assertions were
+parameterized; neither state was removed. This is additional regression proof
+against the completed prototype, not a retrospective red/green claim.
+
+`go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1`
+printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t3.454s`
+(terminated `exit_code: 0`). gofmt/goimports were applied. Root hands the
+uncommitted shared test file back for the Developer's final commit/gates.
+
 Root subsequently accepted the new budget_projection_replay_test.go file and
 the narrow committed-denial renderer/closed error Budget shape under DEC-201.
 The previous handback receipt remains evidence for its stated source boundary;
