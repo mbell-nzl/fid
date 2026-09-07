@@ -81,3 +81,10 @@ Review 3 may prepare by inspecting completed tasks 7/8 and the committed corpus
 while task 9 finishes. Its final source verification, representative gate,
 verdict and commit wait for root's verified task-9 completion checkpoint. No
 review outcome or next-task dispatch is advanced on mutable partial work.
+
+Review 3 passed at `3305edea74862a752be6376b49aed5e2f809128e` and is
+recorded in the ledger. Root initially invoked the route helper with the
+unsupported source `qa-review` (usage output, terminated `exit_code: 2`),
+then corrected the source to `qa`; `workflow-route.sh qa PASS` returned
+`ACTION ADVANCE` (terminated `exit_code: 0`). This was an invocation error;
+no routing control or accepted outcome changed.
