@@ -1029,11 +1029,17 @@
 - **Execution:** Task 12 may edit the narrow Budget output/derivation and
   Envelope result paths in envelope.go, budget.go, run_read.go, run_budget.go,
   internal/evidence/execution.go and matching tests, plus cmd/fid/envelope.go
-  for strict authored-state rejection and required retained
+  for strict authored-state rejection, cmd/fid/gate.go for the same derived
+  state in its manually assembled committed-denial Budget, and required retained
   corpus convergence. Resume/Human projections use the same semantic facts.
   Reject every caller-supplied state member, preserve unknown-field rejection,
   and prove all four output states, immutable raw policy and replay snapshots.
   Root owns Human rendering; Developer owns domain output and causal tests.
+- **Denial shape conformance:** The committed-denial adapter and product error
+  serializer must both accept the same Budget output. The root's focused test
+  exposed the retained Phase 21 closed object in internal/cli/codes.go; add
+  exactly the accepted state member there and in codes_test.go. This is product
+  wire serialization conformance, not a workflow validator or gate change.
 - **Limits:** No arithmetic, admission, authority, persistence schema, Event
   Effect, budget threshold, new operation, VAL criterion, gate command,
   dependency or workflow control changes. Required task-12 gates and the

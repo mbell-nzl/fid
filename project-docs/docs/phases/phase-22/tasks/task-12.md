@@ -70,6 +70,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `cmd/fid/evidence.go`
 - `cmd/fid/envelope.go` - DEC-201: reject the output-only Budget state key
   on authoring input, including null/empty, while retaining the closed decoder.
+- `cmd/fid/gate.go` - DEC-201: include derived state in the existing manually
+  assembled committed-denial Budget; no admission or denial policy change.
+- `internal/cli/codes.go`, `internal/cli/codes_test.go` - DEC-201: the product
+  error serializer's Budget shape and matching retained contract fixture include
+  the accepted output state; no workflow control or error taxonomy change.
 - `cmd/fid/integration/p22_recovery_journey_test.go`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.

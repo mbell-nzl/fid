@@ -191,7 +191,7 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 
 func budgetDenialDetails() []detailExpectation {
 	return []detailExpectation{
-		{name: "budget", kind: detailObjectKind, children: []detailExpectation{stringDetail("name"), stringDetail("scope"), stringDetail("unit"), integerDetail("maximum"), nullableIntegerDetail("warning_threshold"), stringDetail("exhaustion_action"), nullableIntegerDetail("consumed"), nullableIntegerDetail("remaining")}},
+		{name: "budget", kind: detailObjectKind, children: []detailExpectation{stringDetail("name"), stringDetail("scope"), stringDetail("unit"), integerDetail("maximum"), nullableIntegerDetail("warning_threshold"), stringDetail("exhaustion_action"), nullableIntegerDetail("consumed"), nullableIntegerDetail("remaining"), stringDetail("state")}},
 		{name: "stop_ids", kind: detailStringsKind}, {name: "attention_ids", kind: detailStringsKind},
 		{name: "event", kind: detailObjectKind, nullable: true, children: []detailExpectation{stringDetail("id"), stringDetail("occurred_at")}}, {name: "replayed", kind: detailBooleanKind},
 	}

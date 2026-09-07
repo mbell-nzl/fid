@@ -103,6 +103,7 @@ func writeCommittedBudgetDenial(cmd *cobra.Command, runID string, result evidenc
 	budget["warning_threshold"] = optionalBudgetValue(denial.Budget.WarningThreshold)
 	budget["consumed"] = optionalBudgetValue(denial.Budget.Consumed)
 	budget["remaining"] = optionalBudgetValue(denial.Budget.Remaining)
+	budget["state"] = denial.Budget.State
 	failure, err := cli.NewFailure(code, "gate execution admission was denied", &cli.Subject{Type: cli.SubjectRun, ID: runID}, map[string]any{
 		"budget": budget, "stop_ids": denial.StopIDs, "attention_ids": denial.AttentionIDs,
 		"event": map[string]any{"id": denial.EventID, "occurred_at": denial.EventOccurredAt}, "replayed": result.Replayed,

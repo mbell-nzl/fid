@@ -124,3 +124,62 @@ activation cases after constructor extraction, plus all four new root Human
 and activation boundary tests. No root source edit follows this receipt.
 Task 12's remaining domain tests and five full final-source gates belong to
 the Developer and remain required before task closure.
+
+## Budget Output And Historical Replay Contribution
+
+Root subsequently accepted the new budget_projection_replay_test.go file and
+the narrow committed-denial renderer/closed error Budget shape under DEC-201.
+The previous handback receipt remains evidence for its stated source boundary;
+this later contribution requires the final task-wide gates independently.
+The Developer owned causal domain replay repairs. Tests were written against
+the task-12 prototype; only the actual failures below claim semantic red.
+
+`go test ./cmd/fid -run '^TestBudgetProjectionAndHistoricalReplayAcrossCLI$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+  (terminated `exit_code: 1`), root used nonexistent journal.Line; corrected
+  to journal.Event. This is test construction, not behavioral red.
+- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.574s`
+  (terminated `exit_code: 1`). After three real Gate charges, Envelope create
+  replay returned the current active/exhausted object instead of its original
+  draft/available snapshot. Developer repaired stored-result replay paths and
+  initial output derivation while retaining input-only policy Effects.
+- Root byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.574s`
+  (terminated `exit_code: 0`). It covers create/activate, Run start, both current
+  get surfaces, available/warning/exhausted transitions, historical create/start
+  snapshots, replay persistence equality and canonical journal policy Effects.
+
+`go test ./cmd/fid -run '^TestBudgetDenialIncludesDerivedOutputState$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.619s`
+  (terminated `exit_code: 1`): committed exhausted denial omitted Budget state.
+- Attempt 2: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid\t0.537s`
+  (terminated `exit_code: 1`): adding the manual renderer field exposed the
+  product error serializer's retained Phase 21 closed shape, which rejected the
+  accepted output. Root added exactly state to both Budget denial shapes and
+  the matching contract fixture; DEC-201/task scope records that consequence.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.559s`
+  (terminated `exit_code: 0`). Denial replay retains counters/state and adds no
+  persisted effect. No admission predicate, policy, schema or workflow control
+  changed.
+
+`go test ./cmd/fid -run '^TestBudgetUnknownProjectionPreservesNullCounters$' -count=1`
+
+- Attempt 1: `FAIL\tgithub.com/mbell-nzl/fid/cmd/fid [build failed]`
+  (terminated `exit_code: 1`), overlapping Developer test-fixture construction:
+  changed builder arity, undefined initializeObservedRepositoryForTest and
+  temporary unused imports. Root waited for explicit compile-stable handback.
+- Byte-identical rerun: `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.371s`
+  (terminated `exit_code: 0`): external Budget without a sample stays unknown
+  with null counters through Envelope create/activate and Run start/get;
+  canonical policy Effects retain input-only values.
+
+`go test ./internal/cli -count=1` printed
+`ok  \tgithub.com/mbell-nzl/fid/internal/cli\t0.019s`
+(terminated `exit_code: 0`).
+
+Final root Budget set:
+`go test ./cmd/fid -run '^TestBudget(ProjectionAndHistoricalReplayAcrossCLI|DenialIncludesDerivedOutputState|UnknownProjectionPreservesNullCounters)$' -count=1`
+printed `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t1.122s`
+(terminated `exit_code: 0`). The Developer receives all root Budget files after
+this receipt and owns subsequent changes and the five final task-wide gates.
