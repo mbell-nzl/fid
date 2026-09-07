@@ -69,8 +69,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c2d8098bfe271ce87e14b60a2778eb4532a60506`
 
 ## Commit subject
 
-- Pending commit
+- `feat(workflow): reconcile recovered execution targets`
