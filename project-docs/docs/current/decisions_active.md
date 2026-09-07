@@ -95,6 +95,11 @@ retained Human fixture generation explicit in tasks 9/12/18 under the Human's
 delegated execution authority. Existing gates and VAL ownership remain;
 task 18 adds a concrete retained-fixture generation command. See phase decisions.
 
+DEC-197 assigns task 9 the omitted domain/read/frame support required by its
+accepted leaves and Stop guards, plus causal replay/error/retirement cleanup.
+The task spec names each bounded path; prior task provenance and failed
+receipts remain intact, with no protected contract or gate change.
+
 `../phases/phase-22/decisions.md` records:
 DEC-180 proposed Heavy mode/18-task/80-VAL product contract;
 DEC-181 executable ownership and early journey;
@@ -107,9 +112,9 @@ DEC-187 complete kit comparison dispositions and CF-037 qualification work.
 DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 
 Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
-dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-7 are
-complete and review-1b/review-2b passed. Task 8 resumes under DEC-195, followed
-by tasks 9-18 and required QA. The Human delegated remaining execution and
+dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-8 are
+complete and review-1b/review-2b passed. Task 9 is executing under DEC-196/197,
+followed by review 3, tasks 10-18 and required QA. The Human delegated remaining execution and
 checklist preparation on 2026-09-07; Human outcomes remain pending. See
 `../phases/phase-22/delegate-handoff.md`. Current branch is `phase-22`;
 Phase 21 is merged.
