@@ -142,15 +142,16 @@ func buildFinalizedEnvelopeWorkspace(t *testing.T, definitions []any) (string, s
 	})
 	issueID, activationID, profileDigest := values[0], values[1], values[2]
 	gateDigest := stageActivationComponentForTest(t, workspace, activationID, "gate-definitions", "default-gates", definitions)
+	observeActivationResourcesForTest(t, workspace, activationID, "new")
 	digests := []string{profileDigest, gateDigest}
 	sort.Strings(digests)
 	commitPath := filepath.Join(workspace, "activation-commit-envelope.json")
-	writeActivationInput(t, commitPath, map[string]any{"activation_id": activationID, "expected_status": "staged", "component_digests": digests})
+	writeActivationInput(t, commitPath, map[string]any{"activation_id": activationID, "expected_status": "staged", "expected_version": activationVersionForTest(t, workspace, activationID), "component_digests": digests})
 	if result := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "commit", "--input", commitPath, "--idempotency-key", "activation-commit-envelope"); result.err != nil {
 		t.Fatalf("commit activation: %v; stderr=%q", result.err, result.stderr)
 	}
 	finalizePath := filepath.Join(workspace, "activation-finalize-envelope.json")
-	writeActivationInput(t, finalizePath, map[string]any{"activation_id": activationID, "expected_status": "committed"})
+	writeActivationInput(t, finalizePath, map[string]any{"activation_id": activationID, "expected_status": "committed", "expected_version": activationVersionForTest(t, workspace, activationID)})
 	if result := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "finalize", "--input", finalizePath, "--idempotency-key", "activation-finalize-envelope"); result.err != nil {
 		t.Fatalf("finalize activation: %v; stderr=%q", result.err, result.stderr)
 	}

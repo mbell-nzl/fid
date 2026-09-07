@@ -26,13 +26,13 @@ func TestRecoverySchemaFreshInitAndReplay(t *testing.T) {
 		t.Fatal("run_recoveries table absent after fresh init")
 	}
 
-	event := unknownRecoveryEffectEvent()
+	event := unknownRecoveryEvent()
 	eventHash, err := HashEvent(event)
 	if err != nil {
 		t.Fatalf("HashEvent() error = %v", err)
 	}
 	err = ProjectEvent(conn, ProjectionInput{Event: event, EventHash: eventHash})
-	assertUnknownRecoveryEffect(t, err)
+	assertUnknownRecoveryEvent(t, err)
 	assertInvalidStopCodeRejectsLiveAndReplay(t, conn)
 
 	workspace := newReplayWorkspace(t)
@@ -47,7 +47,7 @@ func TestRecoverySchemaFreshInitAndReplay(t *testing.T) {
 	}
 	defer func() { _ = replayConn.Close() }()
 	_, err = ReplayJournal(replayConn, filepath.Join(workspace, ".fid", "journal"), nil)
-	assertUnknownRecoveryEffect(t, err)
+	assertUnknownRecoveryEvent(t, err)
 }
 
 func assertInvalidStopCodeRejectsLiveAndReplay(t *testing.T, conn *sql.DB) {
@@ -89,22 +89,22 @@ func sqliteTableExists(t *testing.T, conn *sql.DB, table string) bool {
 	return count == 1
 }
 
-func assertUnknownRecoveryEffect(t *testing.T, err error) {
+func assertUnknownRecoveryEvent(t *testing.T, err error) {
 	t.Helper()
-	if err == nil || !strings.Contains(err.Error(), "Event-v2 \"activation.resource-observed\" does not permit effect") {
-		t.Fatalf("recovery Effect error = %v, want activation Event-v2 rejection", err)
+	if err == nil || !strings.Contains(err.Error(), "unsupported effect op \"unknown\"") {
+		t.Fatalf("recovery Event error = %v, want unknown Event effect rejection", err)
 	}
 	var corrupt *CorruptJournalError
-	if errors.As(err, &corrupt) && !strings.Contains(corrupt.Error(), "Event-v2 \"activation.resource-observed\" does not permit effect") {
-		t.Fatalf("ReplayJournal() error = %v, want activation Event-v2 rejection", err)
+	if errors.As(err, &corrupt) && !strings.Contains(corrupt.Error(), "unsupported effect op \"unknown\"") {
+		t.Fatalf("ReplayJournal() error = %v, want unknown Event effect rejection", err)
 	}
 }
 
-func unknownRecoveryEffectEvent() Event {
+func unknownRecoveryEvent() Event {
 	return Event{
 		EventID:     "EVT-20260905-000001",
 		EventSchema: EventSchemaV2,
-		EventType:   "activation.resource-observed",
+		EventType:   "unknown.recovery-event",
 		OccurredAt:  time.Date(2026, time.September, 5, 0, 0, 0, 0, time.UTC),
 		ActorV2: EventActor{
 			ActorID:       "actor-recovery",
@@ -115,7 +115,7 @@ func unknownRecoveryEffectEvent() Event {
 		Aggregate:   Aggregate{ID: "RUN-prior", Sequence: 1, Type: "run"},
 		CommandName: "run.observe-budget",
 		Effects: []Effect{{
-			Op:    "insert",
+			Op:    "unknown",
 			Table: "run_recoveries",
 			PK:    map[string]any{"id": "REC-1"},
 		}},

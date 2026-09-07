@@ -16,23 +16,55 @@ import (
 
 // Activation is the durable lifecycle record for one kit trust selection.
 type Activation struct {
-	ID               string   `json:"id"`
-	Status           string   `json:"status"`
-	KitIdentity      string   `json:"kit_identity"`
-	BackendIdentity  string   `json:"backend_identity"`
-	Phase            int      `json:"phase"`
-	Direction        string   `json:"direction"`
-	PointOfNoReturn  bool     `json:"point_of_no_return"`
-	ComponentDigests []string `json:"component_digests"`
-	CreatedAt        string   `json:"created_at"`
-	UpdatedAt        string   `json:"updated_at"`
+	ID                string               `json:"id"`
+	Status            string               `json:"status"`
+	KitIdentity       string               `json:"kit_identity"`
+	BackendIdentity   string               `json:"backend_identity"`
+	Phase             int                  `json:"phase"`
+	Direction         string               `json:"direction"`
+	PointOfNoReturn   bool                 `json:"point_of_no_return"`
+	Version           int                  `json:"version"`
+	PriorActivationID *string              `json:"prior_activation_id"`
+	ComponentDigests  []string             `json:"component_digests"`
+	Resources         []ActivationResource `json:"resources"`
+	Recovery          *ActivationRecovery  `json:"recovery"`
+	CreatedAt         string               `json:"created_at"`
+	UpdatedAt         string               `json:"updated_at"`
 }
 
 type ActivationPrepareRequest struct {
-	KitIdentity     string `json:"kit_identity"`
-	BackendIdentity string `json:"backend_identity"`
-	Phase           int    `json:"phase"`
-	Direction       string `json:"direction"`
+	KitIdentity               string                    `json:"kit_identity"`
+	BackendIdentity           string                    `json:"backend_identity"`
+	Phase                     int                       `json:"phase"`
+	Direction                 string                    `json:"direction"`
+	ExpectedPriorActivationID *string                   `json:"expected_prior_activation_id"`
+	ExpectedPriorVersion      *int                      `json:"expected_prior_version"`
+	Resources                 []ActivationResourceInput `json:"resources"`
+}
+
+type ActivationResourceInput struct {
+	Component   string  `json:"component"`
+	OldIdentity *string `json:"old_identity"`
+	NewIdentity string  `json:"new_identity"`
+}
+
+type ActivationResource struct {
+	Component        string  `json:"component"`
+	Version          int     `json:"version"`
+	OldIdentity      *string `json:"old_identity"`
+	NewIdentity      string  `json:"new_identity"`
+	ObservedIdentity *string `json:"observed_identity"`
+	State            string  `json:"state"`
+	EvidenceRef      *string `json:"evidence_ref"`
+	ErrorCode        *string `json:"error_code"`
+}
+
+type ActivationRecovery struct {
+	Direction        string  `json:"direction"`
+	ActorAttribution string  `json:"actor_attribution"`
+	Reason           string  `json:"reason"`
+	SelectedEventID  string  `json:"selected_event_id"`
+	CompletedEventID *string `json:"completed_event_id"`
 }
 
 type ActivationPrepareOptions struct {
@@ -58,6 +90,7 @@ type ActivationComponentRequest struct {
 	ComponentVersion    int             `json:"component_version"`
 	ExpectedPriorDigest *string         `json:"expected_prior_digest"`
 	Content             json.RawMessage `json:"content"`
+	ExpectedVersion     int             `json:"expected_version"`
 }
 
 type ActivationComponentOptions struct {
@@ -87,17 +120,20 @@ type ActivationCommitRequest struct {
 	ActivationID     string   `json:"activation_id"`
 	ExpectedStatus   string   `json:"expected_status"`
 	ComponentDigests []string `json:"component_digests"`
+	ExpectedVersion  int      `json:"expected_version"`
 }
 
 type ActivationAbortRequest struct {
-	ActivationID   string `json:"activation_id"`
-	ExpectedStatus string `json:"expected_status"`
-	Reason         string `json:"reason"`
+	ActivationID    string `json:"activation_id"`
+	ExpectedStatus  string `json:"expected_status"`
+	Reason          string `json:"reason"`
+	ExpectedVersion int    `json:"expected_version"`
 }
 
 type ActivationFinalizeRequest struct {
-	ActivationID   string `json:"activation_id"`
-	ExpectedStatus string `json:"expected_status"`
+	ActivationID    string `json:"activation_id"`
+	ExpectedStatus  string `json:"expected_status"`
+	ExpectedVersion int    `json:"expected_version"`
 }
 
 type ActivationTransitionOptions struct {
@@ -136,14 +172,27 @@ type ActivationInvalidError struct {
 	ExpectedStatuses []string
 }
 
-func (err *ActivationInvalidError) Error() string {
-	return fmt.Sprintf("activation status %q is not permitted", err.Status)
+type ActivationVersionConflictError struct {
+	ActivationID                   string
+	ExpectedVersion, ActualVersion int
 }
 
-type ActivationRecoveryUnavailableError struct{ Status string }
+func (err *ActivationVersionConflictError) Error() string {
+	return fmt.Sprintf("activation %q version %d does not match expected version %d", err.ActivationID, err.ActualVersion, err.ExpectedVersion)
+}
 
-func (err *ActivationRecoveryUnavailableError) Error() string {
-	return fmt.Sprintf("activation recovery is unavailable after %s", err.Status)
+type ActivationDirectionConflictError struct {
+	ActivationID      string
+	PointOfNoReturn   bool
+	RequiredDirection string
+}
+
+func (err *ActivationDirectionConflictError) Error() string {
+	return fmt.Sprintf("activation %q requires %s recovery", err.ActivationID, err.RequiredDirection)
+}
+
+func (err *ActivationInvalidError) Error() string {
+	return fmt.Sprintf("activation status %q is not permitted", err.Status)
 }
 
 type ActivationOperationError struct{ Operation string }
@@ -198,7 +247,8 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 			result = decoded
 			return nil
 		}
-		if err := assertActivationAvailable(conn); err != nil {
+		prior, err := activationPreparePredecessor(conn, options.Request)
+		if err != nil {
 			return err
 		}
 		activationID, err := journal.GenerateID("ACT", func(candidate string) (bool, error) {
@@ -210,18 +260,22 @@ func PrepareActivation(options ActivationPrepareOptions) (ActivationPrepareResul
 			return err
 		}
 		createdAt := time.Now().UTC()
-		activation := Activation{ID: activationID, Status: "prepared", KitIdentity: options.Request.KitIdentity, BackendIdentity: options.Request.BackendIdentity, Phase: 21, Direction: "activate", ComponentDigests: []string{}, CreatedAt: createdAt.Format(time.RFC3339Nano), UpdatedAt: createdAt.Format(time.RFC3339Nano)}
+		activation := Activation{ID: activationID, Status: "prepared", KitIdentity: options.Request.KitIdentity, BackendIdentity: options.Request.BackendIdentity, Phase: 21, Direction: "activate", Version: 1, PriorActivationID: optionalActivationID(prior), ComponentDigests: []string{}, Resources: preparedResources(options.Request.Resources), CreatedAt: createdAt.Format(time.RFC3339Nano), UpdatedAt: createdAt.Format(time.RFC3339Nano)}
+		effects := []journal.Effect{{
+			Op: "insert", Table: "kit_activations", PK: map[string]any{"id": activationID}, Values: map[string]any{
+				"prior_activation_id": activation.PriorActivationID, "kit_identity": activation.KitIdentity, "backend_identity": activation.BackendIdentity,
+				"phase": activation.Phase, "status": activation.Status, "point_of_no_return": false, "direction": activation.Direction,
+				"created_at": activation.CreatedAt, "updated_at": activation.UpdatedAt, "version": activation.Version,
+			},
+		}}
+		for _, resource := range activation.Resources {
+			effects = append(effects, journal.Effect{Op: "insert", Table: "activation_resources", PK: map[string]any{"activation_id": activation.ID, "component": resource.Component}, Values: map[string]any{"version": resource.Version, "old_identity": resource.OldIdentity, "new_identity": resource.NewIdentity, "observed_identity": nil, "state": resource.State, "evidence_ref": nil, "error_code": nil}})
+		}
 		event := journal.Event{
 			EventSchema: journal.EventSchemaV2, EventType: "activation.prepared",
 			ActorV2:     journal.EventActor{ActorID: "fid-bootstrap", ActorType: "service", Producer: "fid", ProvenanceRef: "activation:bootstrap"},
 			Aggregate:   journal.Aggregate{ID: activationID, Sequence: 1, Type: "activation"},
-			CommandName: "activation.prepare", Effects: []journal.Effect{{
-				Op: "insert", Table: "kit_activations", PK: map[string]any{"id": activationID}, Values: map[string]any{
-					"prior_activation_id": nil, "kit_identity": activation.KitIdentity, "backend_identity": activation.BackendIdentity,
-					"phase": activation.Phase, "status": activation.Status, "point_of_no_return": false, "direction": activation.Direction,
-					"created_at": activation.CreatedAt, "updated_at": activation.UpdatedAt,
-				},
-			}},
+			CommandName: "activation.prepare", Effects: effects,
 		}
 		resultJSON, err := activationResultJSON(activation, options.IdempotencyKey)
 		if err != nil {
@@ -268,6 +322,13 @@ func ResolveTrustedActor(workspaceRoot, migrationsDir, actorID string) (ActorPro
 		return ActorProfile{}, err
 	}
 	defer closeWorkflowDB(conn)
+	var incomplete int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM kit_activations WHERE status IN ('prepared', 'staged', 'committed')`).Scan(&incomplete); err != nil {
+		return ActorProfile{}, fmt.Errorf("resolve trusted actor: read incomplete activation: %w", err)
+	}
+	if incomplete != 0 {
+		return ActorProfile{}, &TrustedActorUnavailableError{ActorID: actorID}
+	}
 	var activationID string
 	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status = 'finalized' LIMIT 1`).Scan(&activationID); err == sql.ErrNoRows {
 		return ActorProfile{}, &TrustedActorUnavailableError{ActorID: actorID}
@@ -333,6 +394,9 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 		if activation.Status != "prepared" && activation.Status != "staged" {
 			return &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"prepared", "staged"}}
 		}
+		if err := requireActivationVersion(activation, options.Request.ExpectedVersion); err != nil {
+			return err
+		}
 		nextSequence, err := activationComponentSequence(conn, activation.ID)
 		if err != nil {
 			return err
@@ -346,7 +410,7 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 			CommandName: "activation.component", Effects: effects,
 		}
 		staged := activation
-		staged.Status, staged.UpdatedAt = "staged", updatedAt
+		staged.Status, staged.UpdatedAt, staged.Version = "staged", updatedAt, activation.Version+1
 		staged.ComponentDigests = append(staged.ComponentDigests, component.Digest)
 		resultJSON, err := activationComponentResultJSON(staged, component, options.IdempotencyKey)
 		if err != nil {
@@ -372,12 +436,15 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 }
 
 func CommitActivation(options ActivationTransitionOptions, request ActivationCommitRequest) (ActivationPrepareResult, error) {
-	if request.ExpectedStatus != "staged" || len(request.ComponentDigests) != 2 || request.ComponentDigests[0] >= request.ComponentDigests[1] {
+	if request.ExpectedStatus != "staged" || request.ExpectedVersion < 1 || len(request.ComponentDigests) != 2 || request.ComponentDigests[0] >= request.ComponentDigests[1] {
 		return ActivationPrepareResult{}, fmt.Errorf("activation commit input is invalid")
 	}
 	return transitionActivation(options, request.ActivationID, "activation.commit", "committed", func(conn *sql.DB, activation Activation) ([]journal.Effect, error) {
 		if activation.Status != request.ExpectedStatus {
 			return nil, &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"staged"}}
+		}
+		if err := requireActivationVersion(activation, request.ExpectedVersion); err != nil {
+			return nil, err
 		}
 		rows, err := conn.Query(`SELECT component_type, component_id, component_version, content_digest FROM activation_components WHERE activation_id = ? AND status = 'staged' ORDER BY content_digest`, activation.ID)
 		if err != nil {
@@ -398,29 +465,35 @@ func CommitActivation(options ActivationTransitionOptions, request ActivationCom
 		if err := rows.Err(); err != nil {
 			return nil, err
 		}
-		if len(digests) != 2 || digests[0] != request.ComponentDigests[0] || digests[1] != request.ComponentDigests[1] {
+		if len(digests) != 2 || digests[0] != request.ComponentDigests[0] || digests[1] != request.ComponentDigests[1] || !exactActivationComponentTypes(components) {
 			return nil, &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"staged"}}
 		}
+		if err := requireNewResourceAgreement(conn, activation.ID); err != nil {
+			return nil, err
+		}
 		effects := []journal.Effect{
-			{Op: "update", Table: "kit_activations", PK: map[string]any{"id": activation.ID}, Values: map[string]any{"status": "committed", "point_of_no_return": true, "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}},
+			activationUpdateEffect(activation, map[string]any{"status": "committed", "point_of_no_return": true, "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}),
 		}
 		return append(effects, activationComponentStatusEffects(activation.ID, components, "committed")...), nil
 	}, request)
 }
 
 func AbortActivation(options ActivationTransitionOptions, request ActivationAbortRequest) (ActivationPrepareResult, error) {
-	if (request.ExpectedStatus != "prepared" && request.ExpectedStatus != "staged") || strings.TrimSpace(request.Reason) == "" || len(request.Reason) > 256 {
+	if (request.ExpectedStatus != "prepared" && request.ExpectedStatus != "staged") || request.ExpectedVersion < 1 || strings.TrimSpace(request.Reason) == "" || len(request.Reason) > 256 {
 		return ActivationPrepareResult{}, fmt.Errorf("activation abort input is invalid")
 	}
 	return transitionActivation(options, request.ActivationID, "activation.abort", "aborted", func(conn *sql.DB, activation Activation) ([]journal.Effect, error) {
 		if activation.Status == "committed" || activation.Status == "finalized" {
-			return nil, &ActivationRecoveryUnavailableError{Status: activation.Status}
+			return nil, &ActivationDirectionConflictError{ActivationID: activation.ID, PointOfNoReturn: true, RequiredDirection: "complete-forward"}
 		}
 		if activation.Status != request.ExpectedStatus {
 			return nil, &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"prepared", "staged"}}
 		}
+		if err := requireActivationVersion(activation, request.ExpectedVersion); err != nil {
+			return nil, err
+		}
 		effects := []journal.Effect{
-			{Op: "update", Table: "kit_activations", PK: map[string]any{"id": activation.ID}, Values: map[string]any{"status": "aborted", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}},
+			activationUpdateEffect(activation, map[string]any{"status": "aborted", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}),
 		}
 		components, err := activationComponentIdentities(conn, activation.ID)
 		if err != nil {
@@ -431,18 +504,31 @@ func AbortActivation(options ActivationTransitionOptions, request ActivationAbor
 }
 
 func FinalizeActivation(options ActivationTransitionOptions, request ActivationFinalizeRequest) (ActivationPrepareResult, error) {
-	if request.ExpectedStatus != "committed" || strings.TrimSpace(request.ActivationID) == "" {
+	if request.ExpectedStatus != "committed" || request.ExpectedVersion < 1 || strings.TrimSpace(request.ActivationID) == "" {
 		return ActivationPrepareResult{}, fmt.Errorf("activation finalize input is invalid")
 	}
 	return transitionActivation(options, request.ActivationID, "activation.finalize", "finalized", func(conn *sql.DB, activation Activation) ([]journal.Effect, error) {
 		if activation.Status != "committed" {
 			return nil, &ActivationInvalidError{Status: activation.Status, ExpectedStatuses: []string{"committed"}}
 		}
+		if err := requireActivationVersion(activation, request.ExpectedVersion); err != nil {
+			return nil, err
+		}
+		if err := requireNewResourceAgreement(conn, activation.ID); err != nil {
+			return nil, err
+		}
 		components, err := activationComponentIdentities(conn, activation.ID)
 		if err != nil {
 			return nil, err
 		}
-		effects := []journal.Effect{{Op: "update", Table: "kit_activations", PK: map[string]any{"id": activation.ID}, Values: map[string]any{"status": "finalized", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}}}
+		effects := []journal.Effect{activationUpdateEffect(activation, map[string]any{"status": "finalized", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)})}
+		if activation.PriorActivationID != nil {
+			prior, err := loadActivation(conn, *activation.PriorActivationID)
+			if err != nil {
+				return nil, err
+			}
+			effects = append(effects, activationUpdateEffect(prior, map[string]any{"status": "superseded", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}))
+		}
 		return append(effects, activationComponentStatusEffects(activation.ID, components, "finalized")...), nil
 	}, request)
 }
@@ -536,6 +622,7 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 		event := journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: "fid-bootstrap", ActorType: "service", Producer: "fid", ProvenanceRef: "activation:bootstrap"}, Aggregate: journal.Aggregate{ID: activation.ID, Sequence: nextSequence, Type: "activation"}, CommandName: operation, Effects: effects}
 		updated := activation
 		updated.Status = status
+		updated.Version = activation.Version + 1
 		updated.PointOfNoReturn = status == "committed" || activation.PointOfNoReturn
 		updated.UpdatedAt = time.Now().UTC().Format(time.RFC3339Nano)
 		resultJSON, err := activationResultJSON(updated, options.IdempotencyKey)
@@ -562,21 +649,102 @@ func transitionActivation(options ActivationTransitionOptions, activationID, ope
 }
 
 func activationTransitionSequence(conn *sql.DB, activation Activation) (int, error) {
-	sequence, err := activationComponentSequence(conn, activation.ID)
-	if err != nil {
-		return 0, err
-	}
-	if activation.Status == "committed" {
-		return sequence + 1, nil
-	}
-	return sequence, nil
+	return activationComponentSequence(conn, activation.ID)
 }
 
 func validateActivationPrepare(request ActivationPrepareRequest) error {
 	if strings.TrimSpace(request.KitIdentity) == "" || strings.TrimSpace(request.BackendIdentity) == "" || request.Phase != 21 || request.Direction != "activate" {
 		return fmt.Errorf("activation prepare input is invalid")
 	}
+	if (request.ExpectedPriorActivationID == nil) != (request.ExpectedPriorVersion == nil) || !validActivationResources(request.Resources) {
+		return fmt.Errorf("activation prepare input is invalid")
+	}
 	return nil
+}
+
+var activationResourceComponents = []string{"backend", "kit", "overlay", "project", "provider"}
+
+func validActivationResources(resources []ActivationResourceInput) bool {
+	if len(resources) != len(activationResourceComponents) {
+		return false
+	}
+	seen := map[string]bool{}
+	for _, resource := range resources {
+		if strings.TrimSpace(resource.NewIdentity) == "" || seen[resource.Component] {
+			return false
+		}
+		seen[resource.Component] = true
+	}
+	for _, component := range activationResourceComponents {
+		if !seen[component] {
+			return false
+		}
+	}
+	return true
+}
+
+func activationPreparePredecessor(conn *sql.DB, request ActivationPrepareRequest) (*Activation, error) {
+	var nonterminal sql.NullString
+	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status IN ('prepared', 'staged', 'committed') LIMIT 1`).Scan(&nonterminal); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if nonterminal.Valid {
+		return nil, &ActivationConflictError{NonterminalID: optionalString(nonterminal)}
+	}
+	var currentID sql.NullString
+	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status = 'finalized' LIMIT 1`).Scan(&currentID); err != nil && err != sql.ErrNoRows {
+		return nil, err
+	}
+	if !currentID.Valid {
+		if request.ExpectedPriorActivationID != nil || request.ExpectedPriorVersion != nil {
+			return nil, &ActivationConflictError{}
+		}
+		for _, resource := range request.Resources {
+			if resource.OldIdentity != nil {
+				return nil, fmt.Errorf("first activation resources must have null old identity")
+			}
+		}
+		return nil, nil
+	}
+	prior, err := loadActivation(conn, currentID.String)
+	if err != nil {
+		return nil, err
+	}
+	if request.ExpectedPriorActivationID == nil || request.ExpectedPriorVersion == nil || *request.ExpectedPriorActivationID != prior.ID || *request.ExpectedPriorVersion != prior.Version {
+		return nil, &ActivationConflictError{ActiveID: &prior.ID}
+	}
+	for _, resource := range request.Resources {
+		priorResource, ok := activationResourceByComponent(prior.Resources, resource.Component)
+		if !ok || resource.OldIdentity == nil || *resource.OldIdentity != priorResource.NewIdentity {
+			return nil, fmt.Errorf("activation prepare old resource identity does not match predecessor")
+		}
+	}
+	return &prior, nil
+}
+
+func optionalActivationID(activation *Activation) *string {
+	if activation == nil {
+		return nil
+	}
+	value := activation.ID
+	return &value
+}
+
+func preparedResources(inputs []ActivationResourceInput) []ActivationResource {
+	resources := make([]ActivationResource, len(inputs))
+	for index, input := range inputs {
+		resources[index] = ActivationResource{Component: input.Component, Version: 1, OldIdentity: input.OldIdentity, NewIdentity: input.NewIdentity, State: "pending"}
+	}
+	return resources
+}
+
+func activationResourceByComponent(resources []ActivationResource, component string) (ActivationResource, bool) {
+	for _, resource := range resources {
+		if resource.Component == component {
+			return resource, true
+		}
+	}
+	return ActivationResource{}, false
 }
 
 func validateActivationComponent(request ActivationComponentRequest) (ActivationComponent, []ActorProfile, []map[string]any, error) {
@@ -649,15 +817,15 @@ func sortedUniqueCapabilities(capabilities []string) bool {
 
 func activationComponentSequence(conn *sql.DB, activationID string) (int, error) {
 	var count int
-	if err := conn.QueryRow(`SELECT COUNT(*) FROM activation_components WHERE activation_id = ?`, activationID).Scan(&count); err != nil {
-		return 0, fmt.Errorf("count activation components: %w", err)
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM idempotency_results WHERE result_entity_id = ?`, activationID).Scan(&count); err != nil {
+		return 0, fmt.Errorf("count activation Events: %w", err)
 	}
-	return count + 2, nil
+	return count + 1, nil
 }
 
 func activationComponentEffects(activation Activation, request ActivationComponentRequest, component ActivationComponent, profiles []ActorProfile, definitions []map[string]any, updatedAt string) []journal.Effect {
 	effects := []journal.Effect{
-		{Op: "update", Table: "kit_activations", PK: map[string]any{"id": activation.ID}, Values: map[string]any{"status": "staged", "updated_at": updatedAt}},
+		activationUpdateEffect(activation, map[string]any{"status": "staged", "updated_at": updatedAt}),
 		{Op: "insert", Table: "activation_components", PK: map[string]any{"activation_id": activation.ID, "component_type": component.Type, "component_id": component.ID, "component_version": component.Version}, Values: map[string]any{"content_digest": component.Digest, "expected_prior_digest": request.ExpectedPriorDigest, "status": "staged", "evidence_json": string(request.Content), "error_code": nil}},
 	}
 	for _, profile := range profiles {
@@ -674,17 +842,32 @@ func activationComponentEffects(activation Activation, request ActivationCompone
 	return effects
 }
 
-func assertActivationAvailable(conn *sql.DB) error {
-	var active sql.NullString
-	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status = 'finalized' LIMIT 1`).Scan(&active); err != nil && err != sql.ErrNoRows {
-		return fmt.Errorf("read active activation: %w", err)
+func activationUpdateEffect(activation Activation, values map[string]any) journal.Effect {
+	values["version"] = activation.Version + 1
+	return journal.Effect{Op: "update", Table: "kit_activations", PK: map[string]any{"id": activation.ID}, Preconditions: map[string]any{"version": activation.Version}, Values: values}
+}
+
+func requireActivationVersion(activation Activation, expected int) error {
+	if expected != activation.Version {
+		return &ActivationVersionConflictError{ActivationID: activation.ID, ExpectedVersion: expected, ActualVersion: activation.Version}
 	}
-	var nonterminal sql.NullString
-	if err := conn.QueryRow(`SELECT id FROM kit_activations WHERE status IN ('prepared', 'staged', 'committed') LIMIT 1`).Scan(&nonterminal); err != nil && err != sql.ErrNoRows {
-		return fmt.Errorf("read nonterminal activation: %w", err)
+	return nil
+}
+
+func exactActivationComponentTypes(components []activationComponentIdentity) bool {
+	if len(components) != 2 {
+		return false
 	}
-	if active.Valid || nonterminal.Valid {
-		return &ActivationConflictError{ActiveID: optionalString(active), NonterminalID: optionalString(nonterminal)}
+	return (components[0].Type == "authority-profile" && components[1].Type == "gate-definitions") || (components[1].Type == "authority-profile" && components[0].Type == "gate-definitions")
+}
+
+func requireNewResourceAgreement(conn *sql.DB, activationID string) error {
+	var agreed int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM activation_resources WHERE activation_id = ? AND state = 'new' AND observed_identity IS NOT NULL AND observed_identity = new_identity`, activationID).Scan(&agreed); err != nil {
+		return err
+	}
+	if agreed != len(activationResourceComponents) {
+		return &ActivationInvalidError{Status: "resource-agreement", ExpectedStatuses: []string{"all resources observed as new"}}
 	}
 	return nil
 }
@@ -693,10 +876,10 @@ func loadActivation(conn *sql.DB, id string) (Activation, error) {
 	var activation Activation
 	var pointOfNoReturn int
 	err := conn.QueryRow(`
-		SELECT id, status, kit_identity, backend_identity, phase, direction, point_of_no_return, created_at, updated_at
+		SELECT id, status, kit_identity, backend_identity, phase, direction, point_of_no_return, version, prior_activation_id, created_at, updated_at
 		FROM kit_activations WHERE id = ?`, id).Scan(
 		&activation.ID, &activation.Status, &activation.KitIdentity, &activation.BackendIdentity, &activation.Phase,
-		&activation.Direction, &pointOfNoReturn, &activation.CreatedAt, &activation.UpdatedAt,
+		&activation.Direction, &pointOfNoReturn, &activation.Version, &activation.PriorActivationID, &activation.CreatedAt, &activation.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return Activation{}, &ActivationNotFoundError{ID: id}
@@ -718,7 +901,32 @@ func loadActivation(conn *sql.DB, id string) (Activation, error) {
 		}
 		activation.ComponentDigests = append(activation.ComponentDigests, digest)
 	}
-	return activation, rows.Err()
+	if err := rows.Err(); err != nil {
+		return Activation{}, err
+	}
+	resourceRows, err := conn.Query(`SELECT component, version, old_identity, new_identity, observed_identity, state, evidence_ref, error_code FROM activation_resources WHERE activation_id = ? ORDER BY component`, id)
+	if err != nil {
+		return Activation{}, fmt.Errorf("load activation resources: %w", err)
+	}
+	defer func() { _ = resourceRows.Close() }()
+	for resourceRows.Next() {
+		var resource ActivationResource
+		if err := resourceRows.Scan(&resource.Component, &resource.Version, &resource.OldIdentity, &resource.NewIdentity, &resource.ObservedIdentity, &resource.State, &resource.EvidenceRef, &resource.ErrorCode); err != nil {
+			return Activation{}, err
+		}
+		activation.Resources = append(activation.Resources, resource)
+	}
+	if err := resourceRows.Err(); err != nil {
+		return Activation{}, err
+	}
+	var recovery ActivationRecovery
+	err = conn.QueryRow(`SELECT direction, actor_attribution, reason, selected_event_id, completed_event_id FROM activation_recoveries WHERE activation_id = ?`, id).Scan(&recovery.Direction, &recovery.ActorAttribution, &recovery.Reason, &recovery.SelectedEventID, &recovery.CompletedEventID)
+	if err == nil {
+		activation.Recovery = &recovery
+	} else if err != sql.ErrNoRows {
+		return Activation{}, fmt.Errorf("load activation recovery: %w", err)
+	}
+	return activation, nil
 }
 
 func activationRequestDigest(operation, projectID, bootstrapActor string, request any) (string, error) {

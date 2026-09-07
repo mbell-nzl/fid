@@ -293,9 +293,13 @@ func activationFailure(cause error) (cli.Failure, error) {
 	if errors.As(cause, &conflict) {
 		return cli.NewFailure(cli.CodeActivationConflict, "another activation blocks this request", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"active_id": activationConflictID(conflict.ActiveID), "nonterminal_id": activationConflictID(conflict.NonterminalID), "requested_direction": "activate"})
 	}
-	var recovery *workflow.ActivationRecoveryUnavailableError
-	if errors.As(cause, &recovery) {
-		return cli.NewFailure(cli.CodeActivationRecoveryUnavailable, "activation recovery is unavailable", &cli.Subject{Type: cli.SubjectActivation, ID: ""}, map[string]any{"status": recovery.Status, "point_of_no_return": true, "owner_phase": 22})
+	var version *workflow.ActivationVersionConflictError
+	if errors.As(cause, &version) {
+		return cli.NewFailure(cli.CodeActivationVersionConflict, "activation version does not match", &cli.Subject{Type: cli.SubjectActivation, ID: version.ActivationID}, map[string]any{"activation_id": version.ActivationID, "expected_version": version.ExpectedVersion, "actual_version": version.ActualVersion})
+	}
+	var direction *workflow.ActivationDirectionConflictError
+	if errors.As(cause, &direction) {
+		return cli.NewFailure(cli.CodeActivationDirectionConflict, "activation recovery direction is not permitted", &cli.Subject{Type: cli.SubjectActivation, ID: direction.ActivationID}, map[string]any{"activation_id": direction.ActivationID, "point_of_no_return": direction.PointOfNoReturn, "required_direction": direction.RequiredDirection})
 	}
 	return cli.NewFailure(cli.CodeInvalidArgument, "invalid activation input", nil, map[string]any{"argument": "input", "value": nil, "allowed": []string{"accepted activation input"}})
 }

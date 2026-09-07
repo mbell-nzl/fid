@@ -8,9 +8,6 @@ import (
 )
 
 func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
-	if err := validateProjectedEvent(input.Event); err != nil {
-		return err
-	}
 	for _, effect := range input.Event.Effects {
 		if err := applyEffect(tx, input, effect); err != nil {
 			return err
@@ -19,23 +16,6 @@ func applyEventEffects(tx *sql.Tx, input ProjectionInput) error {
 
 	return nil
 }
-
-func validateProjectedEvent(event Event) error {
-	if event.EventSchema != EventSchemaV2 {
-		return nil
-	}
-	if _, unavailable := unavailableRecoveryEvents[event.EventType]; unavailable {
-		return fmt.Errorf("Event-v2 %q does not permit effect application before its recovery domain is available", event.EventType)
-	}
-	return nil
-}
-
-var unavailableRecoveryEvents = map[string]struct{}{
-	"activation.resource-observed":  {},
-	"activation.recovery-selected":  {},
-	"activation.recovery-completed": {},
-}
-
 func applyEffect(tx *sql.Tx, input ProjectionInput, effect Effect) error {
 	table, err := validatedIdentifier(effect.Table)
 	if err != nil {

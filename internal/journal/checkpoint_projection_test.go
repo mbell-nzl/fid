@@ -172,21 +172,77 @@ func TestRunClosureEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
 	}
 }
 
-func TestRemainingRecoveryEventsRemainFenced(t *testing.T) {
+func TestActivationRecoveryEventsProjectIdenticallyLiveAndReplay(t *testing.T) {
 	for _, eventType := range []string{
 		"activation.resource-observed",
 		"activation.recovery-selected",
 		"activation.recovery-completed",
 	} {
 		t.Run(eventType, func(t *testing.T) {
-			event := checkpointedProjectionEvent()
-			event.EventType = eventType
-			err := DryRunProjectEvent(openReplayDB(t, filepath.Join(t.TempDir(), "fence.sqlite")), event)
-			if err == nil || !strings.Contains(err.Error(), fmt.Sprintf(`Event-v2 %q does not permit effect application before its recovery domain is available`, eventType)) {
-				t.Fatalf("DryRunProjectEvent() error = %v, want %q fence", err, eventType)
+			event := activationRecoveryProjectionEvent(eventType)
+			live := openReplayDB(t, filepath.Join(t.TempDir(), "live-activation.sqlite"))
+			defer closeProjectDB(t, live)
+			seedActivationRecoveryProjection(t, live, eventType)
+			hash, err := HashEvent(event)
+			if err != nil {
+				t.Fatalf("HashEvent() error = %v", err)
+			}
+			if err := ProjectEvent(live, ProjectionInput{Event: event, EventHash: hash, File: "2026-09-06.jsonl", Line: 1, Offset: 1}); err != nil {
+				t.Fatalf("ProjectEvent() error = %v", err)
+			}
+			liveState := activationRecoveryProjectionState(t, live)
+			workspace := newReplayWorkspace(t)
+			writeReplayEvents(t, filepath.Join(workspace, ".fid", "journal", "2026-09-06.jsonl"), event)
+			replayed := openReplayDB(t, filepath.Join(t.TempDir(), "replay-activation.sqlite"))
+			defer closeProjectDB(t, replayed)
+			seedActivationRecoveryProjection(t, replayed, eventType)
+			if _, err := ReplayJournal(replayed, filepath.Join(workspace, ".fid", "journal"), nil); err != nil {
+				t.Fatalf("ReplayJournal() error = %v", err)
+			}
+			if replayState := activationRecoveryProjectionState(t, replayed); replayState != liveState {
+				t.Fatalf("activation replay state = %q, want live state %q", replayState, liveState)
 			}
 		})
 	}
+}
+
+func activationRecoveryProjectionEvent(eventType string) Event {
+	event := Event{EventID: "EVT-20260906-000099", EventSchema: EventSchemaV2, EventType: eventType, OccurredAt: time.Date(2026, time.September, 6, 0, 0, 0, 0, time.UTC), ActorV2: EventActor{ActorID: "fid-bootstrap", ActorType: "service", Producer: "fid", ProvenanceRef: "test:activation"}, Aggregate: Aggregate{ID: "ACT-projection", Type: "activation", Sequence: 1}, CommandName: "activation.resource"}
+	switch eventType {
+	case "activation.resource-observed":
+		event.Effects = []Effect{{Op: "update", Table: "kit_activations", PK: map[string]any{"id": "ACT-projection"}, Preconditions: map[string]any{"version": 1}, Values: map[string]any{"version": 2}}, {Op: "update", Table: "activation_resources", PK: map[string]any{"activation_id": "ACT-projection", "component": "kit"}, Preconditions: map[string]any{"version": 1}, Values: map[string]any{"version": 2, "observed_identity": "kit:new", "state": "new", "evidence_ref": "test:kit", "error_code": nil}}}
+	case "activation.recovery-selected":
+		event.CommandName = "activation.recover"
+		event.Effects = []Effect{{Op: "update", Table: "kit_activations", PK: map[string]any{"id": "ACT-projection"}, Preconditions: map[string]any{"version": 1}, Values: map[string]any{"version": 2}}, {Op: "insert", Table: "activation_recoveries", PK: map[string]any{"activation_id": "ACT-projection"}, Values: map[string]any{"direction": "restore-prior", "actor_attribution": "fid-bootstrap", "reason": "test", "selected_event_id": "EVT-20260906-000099", "completed_event_id": nil}}}
+	case "activation.recovery-completed":
+		event.CommandName = "activation.recover-complete"
+		event.Effects = []Effect{{Op: "update", Table: "kit_activations", PK: map[string]any{"id": "ACT-projection"}, Preconditions: map[string]any{"version": 1}, Values: map[string]any{"version": 2, "status": "aborted"}}, {Op: "update", Table: "activation_recoveries", PK: map[string]any{"activation_id": "ACT-projection"}, Values: map[string]any{"completed_event_id": "EVT-20260906-000099"}}}
+	}
+	return event
+}
+
+func seedActivationRecoveryProjection(t *testing.T, conn *sql.DB, eventType string) {
+	t.Helper()
+	if _, err := conn.Exec(`INSERT INTO kit_activations (id, kit_identity, backend_identity, phase, status, point_of_no_return, direction, created_at, updated_at, version) VALUES ('ACT-projection','kit','fid',21,'prepared',0,'activate','2026-09-06T00:00:00Z','2026-09-06T00:00:00Z',1)`); err != nil {
+		t.Fatalf("seed activation: %v", err)
+	}
+	if _, err := conn.Exec(`INSERT INTO activation_resources (activation_id, component, version, old_identity, new_identity, state) VALUES ('ACT-projection','kit',1,NULL,'kit:new','pending')`); err != nil {
+		t.Fatalf("seed activation resource: %v", err)
+	}
+	if eventType == "activation.recovery-completed" {
+		if _, err := conn.Exec(`INSERT INTO activation_recoveries (activation_id, direction, actor_attribution, reason, selected_event_id, completed_event_id) VALUES ('ACT-projection','restore-prior','fid-bootstrap','test','EVT-selected',NULL)`); err != nil {
+			t.Fatalf("seed activation recovery: %v", err)
+		}
+	}
+}
+
+func activationRecoveryProjectionState(t *testing.T, conn *sql.DB) string {
+	t.Helper()
+	var state string
+	if err := conn.QueryRow(`SELECT status || ':' || version || ':' || COALESCE((SELECT state FROM activation_resources WHERE activation_id = 'ACT-projection' AND component = 'kit'),'') || ':' || COALESCE((SELECT direction || ':' || COALESCE(completed_event_id,'') FROM activation_recoveries WHERE activation_id = 'ACT-projection'),'') FROM kit_activations WHERE id = 'ACT-projection'`).Scan(&state); err != nil {
+		t.Fatalf("read activation projection: %v", err)
+	}
+	return state
 }
 
 func runClosureProjectionEvent(eventType, status string) Event {

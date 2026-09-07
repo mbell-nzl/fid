@@ -84,9 +84,8 @@ func TestReasonCodeDetailSchemaIsExactForEveryCode(t *testing.T) {
 		{CodeActivationConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{
 			nullableStringDetail("active_id"), nullableStringDetail("nonterminal_id"), stringDetail("requested_direction"),
 		}},
-		{CodeActivationRecoveryUnavailable, CategoryAuthority, false, []SubjectType{SubjectActivation}, []detailExpectation{
-			stringDetail("status"), {name: "point_of_no_return", kind: detailBooleanKind}, integerDetail("owner_phase"),
-		}},
+		{CodeActivationVersionConflict, CategoryConflict, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), integerDetail("expected_version"), integerDetail("actual_version")}},
+		{CodeActivationDirectionConflict, CategoryPrecondition, false, []SubjectType{SubjectActivation}, []detailExpectation{stringDetail("activation_id"), {name: "point_of_no_return", kind: detailBooleanKind}, stringDetail("required_direction")}},
 		{CodeAuthorityUnavailable, CategoryAuthority, false, nil, []detailExpectation{
 			nullableStringDetail("actor_id"), stringDetail("operation"), {name: "required_actions", kind: detailStringsKind}, {name: "required_capabilities", kind: detailStringsKind},
 		}},

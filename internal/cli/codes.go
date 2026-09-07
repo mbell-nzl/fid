@@ -20,63 +20,64 @@ const (
 )
 
 const (
-	CodeInvalidArgument               Code = "invalid-argument"
-	CodeUnsupportedKind               Code = "unsupported-kind"
-	CodeUnsupportedRelation           Code = "unsupported-relation"
-	CodeProjectNotFound               Code = "project-not-found"
-	CodeProjectAlreadyInit            Code = "project-already-initialized"
-	CodeIssueNotFound                 Code = "issue-not-found"
-	CodeRequirementNotFound           Code = "requirement-not-found"
-	CodeLabelNotFound                 Code = "label-not-found"
-	CodeLinkNotFound                  Code = "link-not-found"
-	CodeWorkflowNotFound              Code = "workflow-not-found"
-	CodeDuplicateEntity               Code = "duplicate-entity"
-	CodeStateConflict                 Code = "state-conflict"
-	CodeLockUnavailable               Code = "lock-unavailable"
-	CodeHierarchyInvalid              Code = "hierarchy-invalid"
-	CodeDependencyCycle               Code = "dependency-cycle"
-	CodeTransitionNotPermitted        Code = "transition-not-permitted"
-	CodeAuthorityMissing              Code = "authority-missing"
-	CodeAuthorityUnknownActor         Code = "authority-unknown-actor"
-	CodeAuthorityDenied               Code = "authority-denied"
-	CodeJournalReplayStopped          Code = "journal-replay-stopped"
-	CodeProjectionDivergence          Code = "projection-divergence"
-	CodeResultLimitExceeded           Code = "result-limit-exceeded"
-	CodeInternalError                 Code = "internal-error"
-	CodeActivationConflict            Code = "activation-conflict"
-	CodeActivationRecoveryUnavailable Code = "activation-recovery-unavailable"
-	CodeAuthorityUnavailable          Code = "authority-unavailable"
-	CodeCapabilityUnavailable         Code = "capability-unavailable"
-	CodeExecutorPolicyUnsupported     Code = "executor-policy-unsupported"
-	CodeRegistrationNotFound          Code = "registration-not-found"
-	CodeEnvelopeNotFound              Code = "envelope-not-found"
-	CodeClaimNotFound                 Code = "claim-not-found"
-	CodeClaimConflict                 Code = "claim-conflict"
-	CodeClaimExpired                  Code = "claim-expired"
-	CodeClaimStale                    Code = "claim-stale"
-	CodeRunNotFound                   Code = "run-not-found"
-	CodeRunInactive                   Code = "run-inactive"
-	CodeRunVersionConflict            Code = "run-version-conflict"
-	CodeExecutorLivenessUnknown       Code = "executor-liveness-unknown"
-	CodeExecutorStillLive             Code = "executor-still-live"
-	CodeRecoveryStateConflict         Code = "recovery-state-conflict"
-	CodeObservationNotFound           Code = "observation-not-found"
-	CodeRecoveryAlreadyLinked         Code = "recovery-already-linked"
-	CodeReceiptNotFound               Code = "receipt-not-found"
-	CodeEvidenceNotFound              Code = "evidence-not-found"
-	CodeEvidenceInvalid               Code = "evidence-invalid"
-	CodeEvidenceStale                 Code = "evidence-stale"
-	CodeArtifactUnavailable           Code = "artifact-unavailable"
-	CodeGateUnsuccessful              Code = "gate-unsuccessful"
-	CodeBudgetExhausted               Code = "budget-exhausted"
-	CodeBudgetDataUnavailable         Code = "budget-data-unavailable"
-	CodeStopNotFound                  Code = "stop-not-found"
-	CodeAttentionNotFound             Code = "attention-not-found"
-	CodeAttentionVersionConflict      Code = "attention-version-conflict"
-	CodeStopUnresolved                Code = "stop-unresolved"
-	CodeResolutionInvalid             Code = "resolution-invalid"
-	CodeObligationUnsatisfied         Code = "obligation-unsatisfied"
-	CodeArchiveInvalid                Code = "archive-invalid"
+	CodeInvalidArgument             Code = "invalid-argument"
+	CodeUnsupportedKind             Code = "unsupported-kind"
+	CodeUnsupportedRelation         Code = "unsupported-relation"
+	CodeProjectNotFound             Code = "project-not-found"
+	CodeProjectAlreadyInit          Code = "project-already-initialized"
+	CodeIssueNotFound               Code = "issue-not-found"
+	CodeRequirementNotFound         Code = "requirement-not-found"
+	CodeLabelNotFound               Code = "label-not-found"
+	CodeLinkNotFound                Code = "link-not-found"
+	CodeWorkflowNotFound            Code = "workflow-not-found"
+	CodeDuplicateEntity             Code = "duplicate-entity"
+	CodeStateConflict               Code = "state-conflict"
+	CodeLockUnavailable             Code = "lock-unavailable"
+	CodeHierarchyInvalid            Code = "hierarchy-invalid"
+	CodeDependencyCycle             Code = "dependency-cycle"
+	CodeTransitionNotPermitted      Code = "transition-not-permitted"
+	CodeAuthorityMissing            Code = "authority-missing"
+	CodeAuthorityUnknownActor       Code = "authority-unknown-actor"
+	CodeAuthorityDenied             Code = "authority-denied"
+	CodeJournalReplayStopped        Code = "journal-replay-stopped"
+	CodeProjectionDivergence        Code = "projection-divergence"
+	CodeResultLimitExceeded         Code = "result-limit-exceeded"
+	CodeInternalError               Code = "internal-error"
+	CodeActivationConflict          Code = "activation-conflict"
+	CodeActivationVersionConflict   Code = "activation-version-conflict"
+	CodeActivationDirectionConflict Code = "activation-direction-conflict"
+	CodeAuthorityUnavailable        Code = "authority-unavailable"
+	CodeCapabilityUnavailable       Code = "capability-unavailable"
+	CodeExecutorPolicyUnsupported   Code = "executor-policy-unsupported"
+	CodeRegistrationNotFound        Code = "registration-not-found"
+	CodeEnvelopeNotFound            Code = "envelope-not-found"
+	CodeClaimNotFound               Code = "claim-not-found"
+	CodeClaimConflict               Code = "claim-conflict"
+	CodeClaimExpired                Code = "claim-expired"
+	CodeClaimStale                  Code = "claim-stale"
+	CodeRunNotFound                 Code = "run-not-found"
+	CodeRunInactive                 Code = "run-inactive"
+	CodeRunVersionConflict          Code = "run-version-conflict"
+	CodeExecutorLivenessUnknown     Code = "executor-liveness-unknown"
+	CodeExecutorStillLive           Code = "executor-still-live"
+	CodeRecoveryStateConflict       Code = "recovery-state-conflict"
+	CodeObservationNotFound         Code = "observation-not-found"
+	CodeRecoveryAlreadyLinked       Code = "recovery-already-linked"
+	CodeReceiptNotFound             Code = "receipt-not-found"
+	CodeEvidenceNotFound            Code = "evidence-not-found"
+	CodeEvidenceInvalid             Code = "evidence-invalid"
+	CodeEvidenceStale               Code = "evidence-stale"
+	CodeArtifactUnavailable         Code = "artifact-unavailable"
+	CodeGateUnsuccessful            Code = "gate-unsuccessful"
+	CodeBudgetExhausted             Code = "budget-exhausted"
+	CodeBudgetDataUnavailable       Code = "budget-data-unavailable"
+	CodeStopNotFound                Code = "stop-not-found"
+	CodeAttentionNotFound           Code = "attention-not-found"
+	CodeAttentionVersionConflict    Code = "attention-version-conflict"
+	CodeStopUnresolved              Code = "stop-unresolved"
+	CodeResolutionInvalid           Code = "resolution-invalid"
+	CodeObligationUnsatisfied       Code = "obligation-unsatisfied"
+	CodeArchiveInvalid              Code = "archive-invalid"
 )
 
 type SubjectType string
@@ -223,8 +224,10 @@ var reasonCodeDefinitions = map[Code]reasonDefinition{
 	CodeInternalError:       definition(CategoryInternal, false, nil),
 	CodeActivationConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
 		nullableStringField("active_id"), nullableStringField("nonterminal_id"), stringField("requested_direction")),
-	CodeActivationRecoveryUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectActivation},
-		stringField("status"), booleanField("point_of_no_return"), integerField("owner_phase")),
+	CodeActivationVersionConflict: definition(CategoryConflict, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), integerField("expected_version"), integerField("actual_version")),
+	CodeActivationDirectionConflict: definition(CategoryPrecondition, false, []SubjectType{SubjectActivation},
+		stringField("activation_id"), booleanField("point_of_no_return"), stringField("required_direction")),
 	CodeAuthorityUnavailable: definition(CategoryAuthority, false, nil,
 		nullableStringField("actor_id"), stringField("operation"), stringsField("required_actions"), stringsField("required_capabilities")),
 	CodeCapabilityUnavailable: definition(CategoryAuthority, false, []SubjectType{SubjectCapability},
@@ -279,7 +282,8 @@ var registeredCodes = []Code{
 	CodeTransitionNotPermitted, CodeAuthorityMissing, CodeAuthorityUnknownActor, CodeAuthorityDenied,
 	CodeJournalReplayStopped, CodeProjectionDivergence, CodeResultLimitExceeded, CodeInternalError,
 	CodeActivationConflict,
-	CodeActivationRecoveryUnavailable,
+	CodeActivationVersionConflict,
+	CodeActivationDirectionConflict,
 	CodeAuthorityUnavailable, CodeCapabilityUnavailable, CodeExecutorPolicyUnsupported, CodeRegistrationNotFound, CodeEnvelopeNotFound,
 	CodeClaimNotFound, CodeClaimConflict, CodeClaimExpired, CodeClaimStale, CodeRunNotFound, CodeRunInactive, CodeRunVersionConflict,
 	CodeExecutorLivenessUnknown, CodeExecutorStillLive, CodeRecoveryStateConflict, CodeObservationNotFound, CodeRecoveryAlreadyLinked,

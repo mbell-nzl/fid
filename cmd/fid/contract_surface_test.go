@@ -76,7 +76,7 @@ func TestPhase22AttentionReadBoundary(t *testing.T) {
 
 	if got, want := phase21AttentionUnavailableSurfaceMatches(t), []string{
 		"cmd/fid/attention.go", "cmd/fid/gate.go", "cmd/fid/root.go", "cmd/fid/run.go", "cmd/fid/stop.go", "cmd/fid/stop_human.go",
-		"internal/workflow/activation.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
+		"internal/workflow/activation.go", "internal/workflow/activation_recovery.go", "internal/workflow/budget.go", "internal/workflow/capabilities.go", "internal/workflow/run_budget.go", "internal/workflow/stop.go", "internal/workflow/stop_errors.go", "internal/workflow/stop_read.go",
 	}; !reflect.DeepEqual(got, want) {
 		t.Fatalf("production Attention paths = %v, want exactly %v", got, want)
 	}

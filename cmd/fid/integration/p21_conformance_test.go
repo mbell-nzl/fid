@@ -13,6 +13,8 @@ import (
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
 const p21CorpusDir = "testdata/p21_conformance"
@@ -156,6 +158,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p21AssertJournalTypes(t, workspace, []string{
 		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
+		"activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
 		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
 		"gate.execution-started", "gate.receipt-recorded", "run.execution-blocked", "evidence.linked", "issue.transitioned",
@@ -195,6 +198,7 @@ func TestPhase21RealProcessJourneyStartsOneActivatedEnvelope(t *testing.T) {
 	p21AssertJournalTypes(t, workspace, []string{
 		"project.initialized", "workflow.defined", "workflow.assigned", "issue.created",
 		"activation.prepared", "activation.component-staged", "activation.component-staged",
+		"activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed", "activation.resource-observed",
 		"activation.committed", "activation.finalized", "gate.registered", "envelope.created",
 		"envelope.activated", "claim.acquired", "run.started", "issue.transitioned",
 		"gate.execution-started", "gate.receipt-recorded", "run.execution-blocked", "evidence.linked", "issue.transitioned",
@@ -267,6 +271,20 @@ func p21AssertBudgetBoundaryAndLaterGateDenial(t *testing.T, binary, workspace, 
 
 func p21Activation(t *testing.T, binary, workspace, operation, key string, input map[string]any) string {
 	t.Helper()
+	if operation == "prepare" {
+		input["expected_prior_activation_id"] = nil
+		input["expected_prior_version"] = nil
+		input["resources"] = p21ActivationResources()
+	}
+	if operation == "commit" || operation == "finalize" {
+		activationID, _ := input["activation_id"].(string)
+		activation := p21ActivationStatus(t, workspace, activationID)
+		if operation == "commit" {
+			p21ObserveNewActivationResources(t, workspace, activation)
+			activation = p21ActivationStatus(t, workspace, activationID)
+		}
+		input["expected_version"] = activation.Version
+	}
 	path := p21Input(t, workspace, "activation-"+operation, input)
 	result := p21Run(t, binary, workspace, "--project", workspace, "--json", "activation", operation, "--input", path, "--idempotency-key", key)
 	return p21PathString(t, result, "result", "activation", "id")
@@ -274,9 +292,41 @@ func p21Activation(t *testing.T, binary, workspace, operation, key string, input
 
 func p21Component(t *testing.T, binary, workspace, activationID, componentType, componentID string, content []any) string {
 	t.Helper()
-	path := p21Input(t, workspace, componentID, map[string]any{"activation_id": activationID, "component_type": componentType, "component_id": componentID, "component_version": 1, "expected_prior_digest": nil, "content": content})
+	activation := p21ActivationStatus(t, workspace, activationID)
+	path := p21Input(t, workspace, componentID, map[string]any{"activation_id": activationID, "component_type": componentType, "component_id": componentID, "component_version": 1, "expected_version": activation.Version, "expected_prior_digest": nil, "content": content})
 	result := p21Run(t, binary, workspace, "--project", workspace, "--json", "activation", "component", "--input", path, "--idempotency-key", "p21-"+componentID)
 	return p21PathString(t, result, "result", "component", "digest")
+}
+
+func p21ActivationResources() []any {
+	return []any{
+		map[string]any{"component": "backend", "old_identity": nil, "new_identity": "fid"},
+		map[string]any{"component": "kit", "old_identity": nil, "new_identity": "p21-kit"},
+		map[string]any{"component": "overlay", "old_identity": nil, "new_identity": "p21-overlay"},
+		map[string]any{"component": "project", "old_identity": nil, "new_identity": "p21-project"},
+		map[string]any{"component": "provider", "old_identity": nil, "new_identity": "p21-provider"},
+	}
+}
+
+func p21ActivationStatus(t *testing.T, workspace, activationID string) workflow.Activation {
+	t.Helper()
+	activation, err := workflow.ActivationStatus(workspace, filepath.Join(integrationRepositoryRoot(), "migrations"), activationID)
+	if err != nil {
+		t.Fatalf("load Activation %q: %v", activationID, err)
+	}
+	return activation
+}
+
+func p21ObserveNewActivationResources(t *testing.T, workspace string, activation workflow.Activation) {
+	t.Helper()
+	for _, resource := range activation.Resources {
+		identity := resource.NewIdentity
+		result, err := workflow.ObserveActivationResource(workflow.ActivationTransitionOptions{WorkspaceRoot: workspace, MigrationsDir: filepath.Join(integrationRepositoryRoot(), "migrations"), IdempotencyKey: "p21-activation-resource-" + activation.ID + "-" + resource.Component}, workflow.ActivationResourceObservationRequest{ActivationID: activation.ID, Component: resource.Component, ExpectedActivationVersion: activation.Version, ExpectedVersion: resource.Version, ObservedIdentity: &identity, State: "new", EvidenceRef: "integration:" + resource.Component})
+		if err != nil {
+			t.Fatalf("observe new Activation resource %q: %v", resource.Component, err)
+		}
+		activation = result.Activation
+	}
 }
 
 func p21Input(t *testing.T, workspace, name string, value map[string]any) string {
