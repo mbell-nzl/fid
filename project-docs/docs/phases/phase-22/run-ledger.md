@@ -1260,3 +1260,28 @@
 - report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0); first root attempt failed with 3 trailing-punctuation findings (exit_code: 3), report-only repair c0511ae retained that receipt, and the byte-identical rerun passed
 - Commit: 30dd780e8d610962d304cf93ddab933a060e8f03 - verified, subject matched
 - QA-plan commands beyond the task spec: none required
+
+### 2026-09-08 00:54 TASK-RECOVERY task-12
+
+- Source: task-12-done.md RECOVERY_REQUIRED at 2278953; originating Developer session limit
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-12.md / DEC-196 / DEC-201
+- Triage disposition: N/A
+- Trigger signature: task-12:in-scope-implementation:changed-target-mutation-and-final-gates
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: amended task-12.md ordinary implementation/test/report scope including resume_actions.go; root-owned action tests are handed back before dispatch
+- Forbidden changes: protected commands, VAL semantics, schemas, Events, wire contracts, dependencies, workflow controls and unrelated source; no new Gate Claim-expiry policy, no historical Evidence rewrite, no weakened freshness/location/pathscope checks
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, in order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation 2339dc9ebd8d0e6b5502ca32e1562892cf704ce6; root report-format repair 2278953; root observed report-lint OUTCOME RECOVERY_REQUIRED exit_code: 0 after retaining four punctuation findings exit_code: 4; no active command remains
+- Phase worktree: /home/mark/projects/fid on phase-22; ordinary same-task continuation, root-owned ledger may be dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - actual A-to-B approved-path adopted recovery followed by successor Gate/Receipt/Evidence at B, then all five final-source gates and committed report; Review 4 and independent task-12 checkpoint wait for completion. Initial root append had a leading blank line and returned INVALID append candidate must start with an event heading (exit_code: 1); corrected input begins with this heading, with no control change.
+- Next action: dispatch same-task Developer continuation using durable report and root action-matrix handback 98020ed, preserving every prior failed receipt and attribution
+- Human attention required: no

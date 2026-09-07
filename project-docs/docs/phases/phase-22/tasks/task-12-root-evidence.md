@@ -161,6 +161,20 @@ uncommitted shared test file back for the Developer's final commit/gates.
 
 ### Recovery Report Control And Git Permission Receipts
 
+The first recovery ledger append began with a blank line and returned
+`INVALID append candidate must start with an event heading`
+(terminated `exit_code: 1`). Corrected input returned
+`INVALID TASK-RECOVERY cites an unrecorded or malformed phase decision`
+(terminated `exit_code: 1`): root had authored DEC-199..201 with H2/em-dash
+headings, whereas the accepted sequence control recognizes canonical H3
+`### DEC-NNN:` headings. Root corrected only those three heading formats;
+their accepted authority and content are unchanged. A premature ledger commit
+after the rejected append printed `nothing to commit, working tree clean`
+(terminated `exit_code: 1`); the rejection had not appended any event. No
+workflow control was edited. The same candidate is retried after the heading
+conformance repair; that byte-identical retry printed
+`APPEND_CONFIRMED state=REPAIR_PENDING` (terminated `exit_code: 0`).
+
 ### Executable Ready Actions And Producer Rejection
 
 Root added p22_resume_actions_test.go with a separate public fixture constructor

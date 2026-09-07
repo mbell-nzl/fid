@@ -938,7 +938,7 @@
   pre-dispatch specification contradiction; all implementation and independent
   QA evidence remain task 10/11 and window 4 obligations.
 
-## DEC-199 — Allocate Activation Error Enrichment To Its CLI Task
+### DEC-199: Allocate Activation Error Enrichment To Its CLI Task
 
 - **Date:** 2026-09-07.
 - **Status:** ACCEPTED by the root delegate under the Human's explicit
@@ -965,7 +965,7 @@
   until its own unchanged gates/report close; this amendment does not advance
   task 11 or claim any implementation evidence.
 
-## DEC-200 — Close The Reason Subject Allocation
+### DEC-200: Close The Reason Subject Allocation
 
 - **Date:** 2026-09-07.
 - **Status:** ACCEPTED by the root delegate under the Human's explicit
@@ -999,7 +999,7 @@
   closes an omitted enum allocation; it does not admit activation-resource or
   resource-not-observed-* and does not weaken any failure condition.
 
-## DEC-201 — Complete Recovery Read Projections
+### DEC-201: Complete Recovery Read Projections
 
 - **Date:** 2026-09-07.
 - **Status:** ACCEPTED by the root delegate under the Human's explicit
