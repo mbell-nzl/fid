@@ -15,13 +15,12 @@ merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-Tasks 1-7 complete (ESC-22-003 resolved under DEC-194); review-1b PASS. Task 8
-stopped at TRG-22-009 / ESC-22-004, resolved under DEC-195: the accepted
-`cancelled` terminal outcome had no `execution_receipts` DDL row - a real
-specification contradiction and a TL planning omission. DEC-195 amends
-`schema.md` section 1 to admit it and assigns the two exact 0013 edits to task 8
-with task-1 provenance; task 1 stays COMPLETE and VAL-031 is unchanged. Task 8
-is amended and ready for a same-task continuation. No open ESC.
+Tasks 1-8 complete; reviews 1b and 2b PASS. Task 8 closed under DEC-195 with
+the exact cancelled-Receipt DDL/filter convergence and all eight gates passed;
+its failed history remains in the report. Task 9 is executing, then review 3.
+DEC-196 assigns semantic fake strengthening to task 9, Human resume rendering
+to task 12 and retained Human fixture generation to task 18. Root orchestrates
+under the Human delegation in `delegate-handoff.md`. No open ESC.
 
 ## Operating Mode
 
@@ -43,8 +42,8 @@ Tasks are sequential; reviews follow every three tasks.
 | [5](../phases/phase-22/tasks/task-5.md) | Atomic linked Run recovery | Complete | 4 |
 | [6](../phases/phase-22/tasks/task-6.md) | Recovery CLI and early process journey | Complete (DEC-194) | 5 |
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Complete | 6 |
-| [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Continuation (DEC-195) | 7 |
-| [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Pending | 8 |
+| [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
+| [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Executing (DEC-196) | 8 |
 | [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Pending | 9 |
 | [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Pending | 10 |
 | [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Pending | 11 |
@@ -142,8 +141,7 @@ Tech Lead records spec sync and sign-off. No release authorization is implied.
 
 ## Next Planning Checkpoint
 
-Runner appends RUN-RESUME retaining TRG-22-009 / ESC-22-004 with `Resolution
-authority: DEC-195`, then dispatches the bound task-8 same-task continuation at
-the next monotonic attempt under the unchanged trigger signature and attempt
-accounting; the blocked gates consumed no no-progress budget. Review 3 covers
-tasks 7-9; the task-12 checkpoint must pass before task 13.
+Review 3 covers tasks 7-9 after task 9 closes, including DEC-196 semantic fake
+evidence. The independent task-12 checkpoint must pass before task 13. Final
+deterministic QA and runnable Human fixtures precede tomorrow's Human judgments;
+Human outcomes and full phase sign-off remain pending.

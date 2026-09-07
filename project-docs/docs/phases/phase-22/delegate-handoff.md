@@ -20,9 +20,17 @@ Only `run-ledger.md` was dirty, containing earlier execution history through
 the task-8 STOP. Tasks 1-7 and reviews 1b/2b are recorded complete. This is
 historical artifact inspection, not a fresh attestation of their test gates.
 
-The Phase Runner owns the append-only ledger and task/review dispatch.
-Resume task 8 at attempt 4 under DEC-195 and the unchanged trigger. Use the
-amended task scope; attempt 3's directive forbids the required DDL repair.
+The Phase Runner child appended the task-8 resume/recovery but reported that
+its tool surface could not spawn children. Root took over orchestration with
+a normal RUN-RESUME, retaining the bound attempt 4. Root owns the append-only
+ledger and direct canonical task/review dispatch for this delegated run.
+
+Task 8 completed at product `c5dc59e4bb9cf9db20a4aa157daeef68d132bb60`,
+report `622089e59211ac5612674651ef917a7002e41ba9`. Root observed report-lint
+`OUTCOME COMPLETE` with `exit_code: 0`, verified commit identity/subject,
+appended REPAIR RESOLVED/TASK COMPLETE, and observed `VALID state=ADVANCEABLE`.
+Task 9 is dispatched. All product gate results retain Developer-session
+attribution in the report; root's fresh checks are orchestration evidence.
 
 ## Remaining Sequence And Delivery
 

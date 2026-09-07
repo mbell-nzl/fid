@@ -1170,3 +1170,24 @@
 - Resolution authority: N/A
 - Continuing task: task-8
 - Next recovery: N/A
+
+### 2026-09-07 20:34 REPAIR task-8
+
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 4
+- Starting checkpoint: DEC-195 at 3438f8cc0b445247069611f2d74fb827a2187eb7; bound task-8 attempt 4 resumed by root at 7d29403c5e8868085a7c43c89ffe821492e13181; no-progress 0/2
+- Ending checkpoint: implementation c5dc59e4bb9cf9db20a4aa157daeef68d132bb60; finalized report 622089e59211ac5612674651ef917a7002e41ba9; report committed and clean; root report-lint terminated exit_code: 0 with OUTCOME COMPLETE
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: DEC-195 two execution_receipts replacements and matching golden/filter convergence are implemented with task-1 provenance; Developer recorded targeted red/green plus all eight unchanged exact gates including count15 and both benchmarks with observed successful termination; failed and BLOCKED history retained. Root independently verified commit identity/subject and report-lint. Root initially passed invalid report-lint route outcome PASS (exit_code: 2); corrected router input COMPLETE returned ACTION ADVANCE (exit_code: 0), without changing any gate or report.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-07 20:34 TASK task-8 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: c5dc59e4bb9cf9db20a4aa157daeef68d132bb60 - verified, subject matched
+- QA-plan commands beyond the task spec: none required

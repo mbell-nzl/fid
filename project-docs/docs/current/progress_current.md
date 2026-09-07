@@ -7,10 +7,10 @@ merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1-7 are complete; review-1b and review-2b passed. Task 8 awaits its
-DEC-195 same-task continuation. The accepted cancellation outcome was absent
-from the Receipt DDL; DEC-195 supplies the exact schema amendment and assigns
-execution to task 8 with task-1 provenance. No escalation is open.
+Tasks 1-8 are complete; review-1b and review-2b passed. Task 8 completed the
+DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
+required gates and independent report lint. Task 9 is executing under DEC-196,
+including semantic fake strengthening. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -41,7 +41,7 @@ inventory, QA Lead handoff, decisions and triage log are in
 Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
 assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
 refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
-records completed tasks 1..7 and the task-8 STOP resolved by DEC-195. Product QA
+records completed tasks 1..8 and the task-8 STOP resolved by DEC-195. Product QA
 receipts retain their original session attribution; the separate maintenance
 report records freshly executed workflow checks only.
 
@@ -49,10 +49,9 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..7 complete; 8 in same-task continuation; 9..18 pending.
-- Next: Runner resumes TRG-22-009 / ESC-22-004 under DEC-195 with task-8
-  attempt 4, then completes the remaining sequence. Review window 3 follows
-  task 9; the independent task-12 checkpoint precedes task 13.
+- Task statuses: 1..8 complete; 9 executing; 10..18 pending.
+- Next: review window 3 follows task 9, including DEC-196 semantic fake
+  evidence; the independent task-12 checkpoint precedes task 13.
 
 ## Carry-Forward
 
