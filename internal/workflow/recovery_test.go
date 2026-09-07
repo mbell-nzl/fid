@@ -128,6 +128,106 @@ func TestRecoverRunRejectsApplicableStopWithoutEffects(t *testing.T) {
 	}
 }
 
+// TestRecoverRunAppliesStopsBeforeOrdinaryOrForceMutation covers both recovery
+// authorities with admitted Stop facts. Stop producer and resolution validation
+// are covered separately; this matrix isolates the recovery guard and verifies
+// that rejected requests do not append a recovery Event or successor Run.
+func TestRecoverRunAppliesStopsBeforeOrdinaryOrForceMutation(t *testing.T) {
+	for _, mode := range []string{"ordinary", "force"} {
+		for _, state := range []string{"applicable", "unrelated-subject", "unrelated-action", "resolved"} {
+			t.Run(mode+"/"+state, func(t *testing.T) {
+				options, request := recoveryFixture(t)
+				if mode == "force" {
+					setRecoveryObservationState(t, options.WorkspaceRoot, "live")
+					configureForceRecoveryAuthority(t, options.WorkspaceRoot)
+					reference := "HUM-stop-matrix"
+					request.Authority = RecoveryAuthority{Mode: "force", ActorID: options.ActorID, Reason: "operator takeover", Reference: &reference, GrantRef: &RecoveryGrantRef{EnvelopeID: "ENV-recovery", Revision: 1, Ordinal: 0}}
+					conn, err := openWorkflowDB(options.WorkspaceRoot)
+					if err != nil {
+						t.Fatalf("open force recovery projection: %v", err)
+					}
+					if _, err := conn.Exec(`UPDATE claims SET status = 'active', expires_at = ? WHERE id = 'CLM-prior'`, time.Now().UTC().Add(time.Minute).Format(time.RFC3339Nano)); err != nil {
+						closeWorkflowDB(conn)
+						t.Fatalf("activate force recovery Claim: %v", err)
+					}
+					closeWorkflowDB(conn)
+				}
+				wantIDs := seedRecoveryStopMatrix(t, options.WorkspaceRoot, state)
+				beforeJournal := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot))
+				beforeSuccessors := recoverySuccessorCount(t, options.WorkspaceRoot)
+
+				result, err := RecoverRun(options, request)
+				if len(wantIDs) == 0 {
+					if err != nil || result.Run.PredecessorRunID == nil || *result.Run.PredecessorRunID != request.PriorRunID {
+						t.Fatalf("nonqualifying Stop recovery = %#v, %v; want linked successor", result, err)
+					}
+					if recoverySuccessorCount(t, options.WorkspaceRoot) != beforeSuccessors+1 {
+						t.Fatal("nonqualifying Stop did not create exactly one successor")
+					}
+					return
+				}
+				var blocked *StopBlockedError
+				if !errors.As(err, &blocked) || blocked.Action != runRecoverAction || len(blocked.Stops) != len(wantIDs) {
+					t.Fatalf("applicable Stop recovery error = %v, want ordered Stops %v", err, wantIDs)
+				}
+				for index, stop := range blocked.Stops {
+					if stop.ID != wantIDs[index] || stop.Code != "operator-stop" {
+						t.Fatalf("Stop %d = %#v, want %q operator-stop", index, stop, wantIDs[index])
+					}
+				}
+				if after := readWorkflowTestFile(t, workflowJournalPath(t, options.WorkspaceRoot)); string(after) != string(beforeJournal) {
+					t.Fatal("Stop-blocked recovery appended an Event")
+				}
+				if recoverySuccessorCount(t, options.WorkspaceRoot) != beforeSuccessors {
+					t.Fatal("Stop-blocked recovery created a successor Run")
+				}
+			})
+		}
+	}
+}
+
+func seedRecoveryStopMatrix(t *testing.T, workspace, state string) []string {
+	t.Helper()
+	subjectID, actions := "RUN-prior", `["run.recover"]`
+	if state == "unrelated-subject" {
+		subjectID = "RUN-unrelated"
+	}
+	if state == "unrelated-action" {
+		actions = `["gate.run"]`
+	}
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatalf("open recovery Stop projection: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	if _, err := conn.Exec(`INSERT INTO stops (id, subject_type, subject_id, code, blocked_actions_json, details_json, resolution_condition_json, resolver_capability, actor_id, raised_at, created_event_id) VALUES ('STOP-recovery-matrix', 'run', ?, 'operator-stop', ?, '{"reason":"recovery guard matrix","reference":"policy:matrix"}', '{"type":"work-ended","subject":{"type":"run","id":"RUN-prior"}}', 'stop.resolve', 'agent:recovery', '2026-01-01T00:00:00Z', 'EVT-recovery-matrix-raised')`, subjectID, actions); err != nil {
+		t.Fatalf("seed recovery Stop: %v", err)
+	}
+	if state == "resolved" {
+		if _, err := conn.Exec(`INSERT INTO stop_resolutions (stop_id, actor_id, fact_event_id, resolved_at, created_event_id) VALUES ('STOP-recovery-matrix', 'agent:recovery', 'EVT-recovery-matrix-fact', '2026-01-01T00:00:01Z', 'EVT-recovery-matrix-resolved')`); err != nil {
+			t.Fatalf("seed resolved recovery Stop: %v", err)
+		}
+	}
+	if state == "applicable" {
+		return []string{"STOP-recovery-matrix"}
+	}
+	return nil
+}
+
+func recoverySuccessorCount(t *testing.T, workspace string) int {
+	t.Helper()
+	conn, err := openWorkflowDB(workspace)
+	if err != nil {
+		t.Fatalf("open recovery successor projection: %v", err)
+	}
+	defer closeWorkflowDB(conn)
+	var count int
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM run_recoveries WHERE prior_run_id = 'RUN-prior'`).Scan(&count); err != nil {
+		t.Fatalf("count recovery successors: %v", err)
+	}
+	return count
+}
+
 func recoveryStopEvent(eventID, stopID, attentionID string) journal.Event {
 	event := stopRaisedEvent(eventID, stopID, attentionID, true)
 	event.Effects[0].Values["subject_id"] = "RUN-prior"
