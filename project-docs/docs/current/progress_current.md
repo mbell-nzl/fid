@@ -7,14 +7,16 @@ merged main `89d964a84dbdd297fdf472d6f78b001e2efac702`. Phase 21 completed
 under DEC-179 on 2026-09-04 (87/87 VAL, 4/4 Human), and its branch has since
 been merged.
 
-Tasks 1-10 are complete; review-1b and review-2b passed. Task 8 completed the
+Tasks 1-11 are complete; review-1b and review-2b passed. Task 8 completed the
 DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
 required gates and independent report lint. Task 9 completed DEC-196/197 semantic
 conformance, Human Stop text and actual-operation Stop guards with all five
 final gates and independent report lint. Review 3 passed independently. Task 10
 completed under DEC-198 at 03cc6c7 with exact binding/agreement/upgrade/replay
-coverage, all five final gates and independent report lint. Task 11 is executing
-under DEC-199; no escalation is open.
+coverage, all five final gates and independent report lint. Task 11 completed
+under DEC-199/200 at 30dd780 with independent fake/fid cases, real response-loss
+boundary tests, all five final gates and root report lint. Task 12 is executing
+under DEC-196/201; no escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -45,7 +47,7 @@ inventory, QA Lead handoff, decisions and triage log are in
 Execution started on 2026-09-05 under DEC-188. QA's plan and consistency
 assessment remain in `qa/qa-plan.md` and `qa/consistency-review.md`; the
 refinement authority is DEC-184..187 and `qa/tl-refinement.md`. The ledger
-records completed tasks 1..10 and the task-8 STOP resolved by DEC-195. Product QA
+records completed tasks 1..11 and the task-8 STOP resolved by DEC-195. Product QA
 receipts retain their original session attribution; the separate maintenance
 report records freshly executed workflow checks only.
 
@@ -53,8 +55,8 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..10 complete; reviews 1b/2b/3 passed; 11 executing; 12..18 pending.
-- Next: tasks 11-12, review window 4 and the independent task-12 checkpoint
+- Task statuses: 1..11 complete; reviews 1b/2b/3 passed; 12 executing; 13..18 pending.
+- Next: task 12, review window 4 and the independent task-12 checkpoint
   before task 13.
 
 ## Carry-Forward

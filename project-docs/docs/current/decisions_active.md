@@ -112,9 +112,9 @@ DEC-187 complete kit comparison dispositions and CF-037 qualification work.
 DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 
 Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
-dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-10 are
+dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-11 are
 complete and review-1b/review-2b passed. Task 9 completed under DEC-196/197;
-review 3 passed and task 11 is executing before the remaining required QA. The Human delegated remaining execution and
+review 3 passed and task 12 is executing before the remaining required QA. The Human delegated remaining execution and
 checklist preparation on 2026-09-07; Human outcomes remain pending. See
 `../phases/phase-22/delegate-handoff.md`. Current branch is `phase-22`;
 Phase 21 is merged.
