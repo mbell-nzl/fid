@@ -1285,3 +1285,24 @@
 - Resolution evidence: PENDING - actual A-to-B approved-path adopted recovery followed by successor Gate/Receipt/Evidence at B, then all five final-source gates and committed report; Review 4 and independent task-12 checkpoint wait for completion. Initial root append had a leading blank line and returned INVALID append candidate must start with an event heading (exit_code: 1); corrected input begins with this heading, with no control change.
 - Next action: dispatch same-task Developer continuation using durable report and root action-matrix handback 98020ed, preserving every prior failed receipt and attribution
 - Human attention required: no
+
+### 2026-09-08 01:58 REPAIR task-12
+
+- Trigger signature: task-12:in-scope-implementation:changed-target-mutation-and-final-gates
+- Attempt count: 1
+- Starting checkpoint: 2339dc9ebd8d0e6b5502ca32e1562892cf704ce6 implementation; 2278953 valid recovery report; dispatch 0360166
+- Ending checkpoint: c2d80980b9bfa9c1c20723cc7751526eb8baf2bf final implementation; Developer gate addendum 833b4fc; root-preserved completion report f57b4aa
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: real target-A to adopted-target-B recovery creates successor Gate/Receipt/Evidence and permits terminal Issue and Envelope completion while retaining project/worktree rejection; all four remaining Run replays retain historical Budget snapshots. Developer observed every final exact gate terminate successfully, with failed and invalidated attempts preserved in its addendum. Root restored the original checkpoint verbatim after a report rewrite omitted history, retained attribution, corrected test-name references and verified report-lint OUTCOME COMPLETE and exit_code: 0 at f57b4aa. Root independently verified implementation hash/subject, clean tree and workflow-route ACTION ADVANCE exit_code: 0. No gate definition or Human judgment changed.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-08 01:58 TASK task-12 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-12-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: c2d80980b9bfa9c1c20723cc7751526eb8baf2bf - verified, subject matched
+- QA-plan commands beyond the task spec: none required

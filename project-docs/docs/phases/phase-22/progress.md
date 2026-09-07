@@ -85,3 +85,23 @@
 - Task 9 remains active until its final Human text, cross-surface predicate
   evidence, required gates and report close. Review 3 is preparing committed
   evidence but waits for the final task-9 checkpoint before gate/verdict.
+
+## 2026-09-08 - Recovery Slice Completed
+
+- Tasks 9–12 completed their required gates; task 12 final product is c2d8098,
+  with Developer gate addendum 833b4fc and root-preserved report f57b4aa.
+- Root independently observed task-12 report-lint OUTCOME COMPLETE and exit 0,
+  verified the commit and clean tree, and appended REPAIR RESOLVED / TASK
+  COMPLETE through the sequence control (ADVANCEABLE, exit 0).
+- Task 12 includes actual target-A to adopted-target-B execution/completion,
+  current repository freshness, independent Attention/Stop projection,
+  effective lease status, derived Budget states, historical Run replay
+  snapshots, and paired actual next-action/Human projection checks.
+- Review 3 passed earlier; Review 4 and the independent task-12 checkpoint
+  now execute against the completed source. Task 13 is prepared and held
+  until both pass; tasks 13–18 and final deterministic QA remain.
+- QA's final preparation reconciled all 70 required task1–11 command
+  occurrences. Root corrected display-only escaped tabs in five old reports,
+  retaining original evidence attribution, and independently linted them.
+- Six neutral Human checklist prompts are prepared with blank outcomes;
+  task-18 retained fixtures and final QA verification are still pending.
