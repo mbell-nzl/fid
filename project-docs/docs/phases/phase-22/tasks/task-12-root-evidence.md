@@ -127,6 +127,18 @@ the Developer and remain required before task closure.
 
 ## Budget Output And Historical Replay Contribution
 
+### Later Same-Package Size Extraction
+
+At Developer request, root moved resumeNextActions through withSortedReasons
+verbatim from resume.go to resume_actions.go, preserving behavior and importing
+only sql/json/fmt. The NextAction comment now includes reads. gofmt/goimports
+were applied; the files are 381 and 196 lines. Root handed the uncommitted
+source back to its Developer owner for the final product commit and gates.
+`go test ./internal/workflow -run '^TestResumeKeepsOpenAttentionAfterAllLinkedStopsAreResolved$' -count=1`
+printed `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t0.133s`
+(terminated `exit_code: 0`). This is verification of a mechanical extraction,
+not a claimed behavior change or substitute for the final suite.
+
 Root subsequently accepted the new budget_projection_replay_test.go file and
 the narrow committed-denial renderer/closed error Budget shape under DEC-201.
 The previous handback receipt remains evidence for its stated source boundary;

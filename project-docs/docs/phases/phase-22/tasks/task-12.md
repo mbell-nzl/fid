@@ -48,6 +48,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 ### Files To Create Or Modify
 
 - `internal/workflow/resume.go`
+- `internal/workflow/resume_actions.go` - same-package extraction of typed
+  action projection helpers to retain the 400-line file target.
 - `internal/workflow/resume_test.go`
 - `internal/workflow/evaluation.go`
 - `internal/workflow/evaluation_test.go`
