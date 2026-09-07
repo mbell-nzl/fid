@@ -938,6 +938,33 @@
   pre-dispatch specification contradiction; all implementation and independent
   QA evidence remain task 10/11 and window 4 obligations.
 
+## DEC-199 — Allocate Activation Error Enrichment To Its CLI Task
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  execution/scope-repair authority in `delegate-handoff.md`.
+- **Finding:** Task 11 owns exact activation CLI errors, including the accepted
+  `activation-incomplete/4` details in public-interface section 4. Task 10's
+  resource-agreement rejection currently carries only a status and expected
+  statuses. It cannot supply the required activation ID, disagreeing component
+  list and Reasons without bounded domain error enrichment. Putting the
+  agreement decision into the CLI would violate the existing layer boundary.
+- **Resolution:** Add `internal/workflow/activation.go`,
+  `internal/workflow/activation_recovery.go`, optional extracted
+  `activation_errors.go` and matching tests to task 11 for typed failure data
+  only. The Developer records task-10 introducing-commit provenance after its
+  hand-back. Keep operation predicates, complete resource agreement, lifecycle,
+  trust, replay, DDL and Events unchanged. New errors or changed error shapes
+  are not authorized; this executes the already accepted closed contract.
+- **Human rendering:** Make the already assigned Human status/recovery
+  obligation explicit in task 11. Paired views name restore-prior before commit
+  and complete-forward after it. Task 18 supplies retained fixtures and audits
+  completeness; it does not first implement this adapter behavior.
+- **Limits:** No VAL row, validator, gate command, accepted status, threshold,
+  tolerance, dependency or workflow control changes. Task 10 remains active
+  until its own unchanged gates/report close; this amendment does not advance
+  task 11 or claim any implementation evidence.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

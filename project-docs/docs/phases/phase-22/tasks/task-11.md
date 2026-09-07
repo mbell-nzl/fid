@@ -22,6 +22,13 @@ Full sources, pass/fail criteria, and validator ownership are in
 - public-interface.md activation leaves; contracts.md section 12.
 - CF-035 uses consuming-path validation; help and archive validation must remain usable with malformed project config.
 - Remove activation-recovery-unavailable only when direction/agreement errors are wired.
+- DEC-199: the typed agreement failure must carry its activation identity,
+  disagreeing components and Reasons from the domain to the adapter. Bounded
+  error enrichment of task 10's activation files is included below; retain
+  their accepted agreement, lifecycle, trust and idempotency predicates.
+- Exercise Human activation status/recovery output against public-interface
+  section 6 with paired pre/post-commit cases. State restore-prior or
+  complete-forward accurately, preserving the irreversible commit boundary.
 - Extend the shared case runner/fake with activation recovery and run the same
   semantic expectations against fake and fid before task close.
 - Converge existing activation request/resource fixtures in the same task that changes their adapter.
@@ -35,6 +42,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 
 - `cmd/fid/activation.go`
 - `cmd/fid/activation_test.go`
+- `internal/workflow/activation.go` and `internal/workflow/activation_recovery.go`
+  - DEC-199: enrich typed activation failure data for the exact accepted CLI
+  errors only; preserve task 10's operation semantics and record provenance.
+- `internal/workflow/activation_errors.go` and matching tests, if separating
+  those typed errors keeps the existing files smaller.
 - `internal/config/project_config.go`
 - `internal/config/project_config_test.go`
 - `internal/cli/`
@@ -62,6 +74,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Acceptance Criteria
 
 - [ ] Activation recovery commands expose closed results and typed direction errors. (VAL-045)
+- [ ] Agreement failures return activation-incomplete/4 with the exact closed
+  activation ID, component list and Reasons, while direction/version/competing
+  prepare failures retain their distinct closed variants. (VAL-045)
+- [ ] Paired Human/JSON activation views preserve the pre/post-commit recovery
+  direction and never describe forward completion as rollback. (VAL-045/046;
+  prepares task-18 VAL-053 and Human VAL-077)
 - [ ] Activation recovers at every durable boundary through the built binary. (VAL-046)
 - [ ] Whole-config validation occurs before a consuming operation uses values. (VAL-047)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
