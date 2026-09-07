@@ -155,3 +155,40 @@ retained binary, manifest IDs, commands and fixture roots after generator exit.
 If source changed after the prior retained generation, regenerate from final
 committed source and preserve both receipts. Release gates and held-out
 scenarios remain explicitly outside this phase per the accepted QA plan.
+
+## Task 12 Handoff And Archive Preparation
+
+Tasks 10 and 11 closed with root-observed report lint and ledger receipts.
+Task 12 root contributions are committed at 43ae4c7 (Human/activation views),
+8670e66 (Budget denial serialization/tests) and 8cb8771 (helper extraction
+record). `tasks/task-12-root-evidence.md` retains every root attempt. The
+Developer owns all product files after handback, including the uncommitted
+mechanical resume_actions.go extraction, and must finish the five exact gates.
+Review 4 and the fresh independent task-12 checkpoint still precede task 13.
+
+Checkpoint QA's preparatory source check found no archive contract blocker.
+Carry these implementation traps into task 13's handoff, not as final QA PASS:
+
+- Semantic validation may sequentially apply Events to a real in-memory SQLite
+  database using trusted installed migrations and journal.ProjectEvent.
+  DryRunProjectEvent rolls back each Event and cannot accumulate references.
+  internal/db.Open(":memory:") resolves an absolute filesystem path, so it is
+  not an in-memory constructor. Use the existing modernc driver correctly;
+  foreign_keys/recursive_triggers and one connection must retain accepted
+  applier semantics. No SQL/schema comes from the archive.
+- ProjectEvent alone does not close Event-type or Effect table/column domains.
+  Enforce the accepted schema catalogs, immutable IDs, references, order,
+  duplicate keys and semantics in addition to hashes and SQL constraints.
+- Validate each exact archive-version capability matrix. Retained v1 read-only
+  acceptance must not track the current binary's changing discovery response.
+  v2 remains unqualified until tasks 16/17 converge schema and capabilities.
+- VAL-056 explicitly says permitted means the individual limit accepts, while
+  full archive acceptance still needs all semantic checks. Actual ZIP count and
+  streamed-byte L-1/L/L+1 fixtures may reach shared production limiters with
+  separate fully valid controls. Identify the reached limiter; do not claim a
+  million-entry fixture is a fully valid manifest or use forged metadata as
+  measured decompression evidence. Generate per run, never commit large data.
+
+Root can own a separate archive boundary test file after checkpoint PASS while
+the task-13 Developer owns archive implementation. Agree concrete helper seams
+before concurrent edits and hand all tests back before the final task gates.
