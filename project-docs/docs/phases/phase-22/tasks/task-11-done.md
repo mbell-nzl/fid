@@ -66,8 +66,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `30dd780e8d610962d304cf93ddab933a060e8f03`
 
 ## Commit subject
 
-- Pending commit
+- `feat(activation): expose recovery CLI and config boundary`
