@@ -119,8 +119,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `c5dc59e4bb9cf9db20a4aa157daeef68d132bb60`
 
 ## Commit subject
 
-- Pending commit
+- `fix(evidence): persist cancelled receipts`
