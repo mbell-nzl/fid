@@ -1191,3 +1191,28 @@
 - report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
 - Commit: c5dc59e4bb9cf9db20a4aa157daeef68d132bb60 - verified, subject matched
 - QA-plan commands beyond the task spec: none required
+
+### 2026-09-07 21:41 TASK-RECOVERY task-9
+
+- Source: task-9-done.md RECOVERY_REQUIRED at 158cdc7; originating Developer session limit
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task-9.md / DEC-196 / DEC-197
+- Triage disposition: N/A
+- Trigger signature: task-9:in-scope-implementation:stop-runtime-matrix-and-final-gates
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: amended task-9.md ordinary implementation/test/report scope; root owns cmd/fid/stop_evaluation_matrix_test.go until explicit handback
+- Forbidden changes: protected commands, VAL semantics, schemas, Events, wire contracts, dependencies, workflow controls and unrelated source; do not weaken tests or replace actual-operation evidence with renderer-only tests
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, in order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460; report finalized at 158cdc7; root observed report-lint OUTCOME RECOVERY_REQUIRED and exit_code: 0 after preserving initial exit_code: 8 formatting failure
+- Phase worktree: /home/mark/projects/fid on phase-22; ordinary same-task continuation, root-owned ledger and announced matrix may be dirty
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - actual run.start/gate.run/recovery Stop matrix and root Issue/Envelope handback, then all five final-source gates and committed report; Review 3 waits for completion
+- Next action: dispatch fresh same-task Developer continuation for the actual-operation matrix and final verification, preserving prior failed receipts and root attribution
+- Human attention required: no
