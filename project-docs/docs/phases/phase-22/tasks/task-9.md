@@ -19,6 +19,14 @@ Full sources, pass/fail criteria, and validator ownership are in
 - APPROVED under DEC-188; execute after the Runner's required QA readiness check.
 - public-interface.md Stop/Attention/budget/closure leaves and section 4.
 - Committed denials name their Event and replay result while retaining a nonzero exit.
+- DEC-197: complete the minimum domain/read support required by this task's
+  accepted leaves. Add Stop/Attention filtered read APIs and the durable
+  run.observe-budget producer using the accepted sample/authority/version/
+  idempotency/Event contract. Reuse task-2/task-7 rules rather than implementing
+  business rules in CLI adapters. Extend the evidence live-frame builder only
+  for the accepted pre-start committed denial; preserve ordinary started-frame
+  and duplicate-terminal validation. Record predecessor provenance in the
+  report; prior completed tasks remain closed.
 - Extend task 6's shared case runner/fake with these implemented operations;
   identical semantic expectations must pass against both fake and fid now.
 - DEC-196: strengthen the existing shared runner into semantic conformance
@@ -51,6 +59,17 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `cmd/fid/live_output.go`
 - `cmd/fid/response_errors.go`
 - `internal/cli/`
+- `internal/evidence/live.go` - only pre-start committed-denial terminal
+  construction in AppendFidError and its minimum call-boundary support.
+- `internal/evidence/live_test.go` - corresponding pre-start/started/duplicate
+  terminal cases, without changing observed execution outcomes.
+- `internal/workflow/stop_read.go` and `internal/workflow/stop_read_test.go` -
+  accepted Stop/Attention list filters, limits and read-only results.
+- `internal/workflow/run_budget.go` and `internal/workflow/run_budget_test.go` -
+  durable run.observe-budget operation, authority, expected versions,
+  source/predecessor deduplication, measurement binding and atomic Effects.
+- `internal/workflow/budget.go` - only shared helper support needed by that
+  producer, retaining the existing accepted admission and accounting rules.
 - `internal/workflow/evaluation.go`
 - `internal/workflow/activation.go` - remove run.finish action acceptance.
 - `internal/workflow/envelope.go` - converge grant validation for retired action.
@@ -82,6 +101,13 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Acceptance Criteria
 
 - [ ] Stop, Attention, budget, and closure leaves implement their declared contracts. (VAL-036)
+- [ ] Stop/Attention lists apply accepted filters/limits without mutation, and
+  run.observe-budget durably applies a qualifying external sample with version,
+  idempotency and live/rebuild parity. Fid-owned unit, missing authority,
+  malformed measurement, stale version and conflicting predecessor/source
+  reject without effects. A pre-start committed-denial terminal has no Attempt
+  or start/output frame; started and duplicate-terminal validation remains.
+  (VAL-036/038; task-2/task-7/task-8 provenance under DEC-197)
 - [ ] All guarded actions apply the same scoped Stop predicates. (VAL-037)
 - [ ] A committed execution denial names its durable effects without implying execution success. (VAL-038)
 - [ ] Shared fake/fid cases assert typed recovery lineage and replay identity,

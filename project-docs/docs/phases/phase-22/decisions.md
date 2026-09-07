@@ -784,6 +784,49 @@
   `qa/remaining-scope-audit.md`; its findings are not a substitute for the
   later Developer or QA evidence.
 
+### DEC-197: Supply task 9's required domain/read and pre-start frame support
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate under the explicit Human execution
+  authority in `delegate-handoff.md`. Bounded accepted-behavior allocation.
+- **Cause:** Task 9's accepted first failing test demonstrated the missing
+  committed-denial frame. Its builder lives in `internal/evidence/live.go`,
+  outside the listed CLI files. While wiring the other accepted leaves, the
+  Developer found no Stop/Attention list APIs and no durable external
+  run.observe-budget operation. Root inspected the domain functions: task 2
+  provides mutation/GetStop primitives and task 7 provides sample admission,
+  derivation and Stop effects; they do not supply those public leaf entrypoints.
+- **Bounded assignment:** Task 9 adds `internal/workflow/stop_read.go` and its
+  matching test for the accepted read contract; `internal/workflow/run_budget.go`
+  and matching test for the accepted durable observation operation; and only
+  necessary shared helper support in `internal/workflow/budget.go`. Domain
+  authorization, measurement/source identity, versioning, idempotency, budget
+  derivation and Event effects stay in workflow. No CLI-local counterfeit
+  domain state or caller-supplied counters are authorized.
+- **Frame assignment:** Extend `internal/evidence/live.go`'s AppendFidError
+  and matching `live_test.go` only to support public-interface section 4's one
+  pre-start terminal fid-error frame with no Attempt/start/output. Preserve
+  started-frame consistency, duplicate-terminal rejection and all observed
+  execution semantics. The Developer had made the minimal causal builder edit
+  while reproducing the first test; root records the omitted scope now before
+  further domain work or task closure, rather than treating it as self-granted
+  general evidence-package access.
+- **Provenance:** Existing Stop domain commit
+  `ac827959f8359473cbd6546ac6bea1ff1fd20751` cites phase-22/task-2; budget
+  domain commit `d85ab7018903300ccb53199c49fdea04e1a0bdc6` cites task 7;
+  retained live builder commit `bead7efb134f80726022f1e38d7b6749fe550073`
+  cites task 8. The report identifies these predecessors and the accepted
+  task-9 leaf requirements, without relabelling their completed work. Prior
+  tasks and reports stay closed and unedited.
+- **Verification:** The unchanged five task-9 commands execute all additional
+  domain/read/frame files, matching tests and the real-binary fixtures. Include
+  qualifying and rejecting read/sample cases, no-effects rejection, Event
+  live/rebuild parity and pre-start versus started-terminal cases. Review 3
+  independently audits the bounded additions. No new gate or environment mode.
+- **Limits:** No schema, Event shape, closed value, wire result/error, exit
+  code, budget rule, threshold, dependency, VAL row or workflow control changes.
+  This completes already accepted operations; it introduces no product policy.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
