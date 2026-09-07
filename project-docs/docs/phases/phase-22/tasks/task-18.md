@@ -36,6 +36,17 @@ Full sources, pass/fail criteria, and validator ownership are in
   version/direction/competing-prepare error shapes already owned by earlier tasks.
 - No new domain behavior is assigned to this final assembly task. Return causal findings for minimum-scope amendment per DEC-175.
 - Developer produces runnable Human fixtures; only Human may judge VAL-076..078.
+- DEC-196: deliver a reproducible test-only Human fixture generator, not only
+  test workspaces deleted at process exit. TestP22HumanFixtures exercises the
+  setup under the ordinary tagged gate and, with FID_P22_HUMAN_FIXTURE_ROOT,
+  retains fresh uniquely named fixtures beneath that directory. Retain the
+  built binary or record a durable binary path, exact project/entity IDs and
+  neutral inspection commands in a manifest; never reference TestMain's
+  deleted binary. Cover interrupted/adopted resume, pre/post-commit activation
+  recovery and imported work still needing intervention. A subprocess smoke
+  test inspects the retained fixtures after generation exits. Do not overwrite
+  existing fixtures or use user project data. Keep expected Human judgments
+  separate from the neutral instructions presented before answers are recorded.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
@@ -49,7 +60,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `cmd/fid/integration/p22_activation_recovery_test.go`
 - `cmd/fid/integration/p22_import_recovery_test.go`
 - `cmd/fid/integration/p22_fake_test.go`
+- `cmd/fid/integration/p22_human_fixtures_test.go`
 - `cmd/fid/integration/testdata/p22_conformance/`
+- `project-docs/docs/phases/phase-22/qa/human-fixtures.md` - generator usage,
+  neutral inspection instructions and manifest location; QA Lead owns the
+  separate human-checklist.md.
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
 - `project-docs/docs/phases/phase-22/tasks/task-18-done.md`.
@@ -80,6 +95,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] A Human can choose the next recovery action from a fresh resume view. (VAL-076)
 - [ ] A Human can distinguish restore-prior from complete-forward recovery. (VAL-077)
 - [ ] A Human can recognize restored work and its remaining intervention need. (VAL-078)
+- [ ] The generator leaves reproducible checkpoints, a usable binary and exact
+  inspection instructions after its process exits. A fresh subprocess opens
+  every checkpoint successfully, and every setup mode also executes under the
+  unchanged full tagged integration gate. Record the generated manifest path
+  for QA. Human judgment outcomes remain pending. (VAL-076..078 readiness)
 - [ ] Independent review finds no unresolved cross-product recovery contract mismatch. (VAL-080)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
@@ -116,6 +136,7 @@ go test -race -coverprofile=coverage.out ./...
 go tool cover -func=coverage.out
 go test -tags integration -race ./cmd/fid/integration/...
 go build -o /tmp/fid ./cmd/fid
+FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanFixtures$' -count=1 -v
 ```
 
 No exception to the full task gate. Commands whose expected pass is nonzero:

@@ -90,6 +90,11 @@
 
 ## Phase 22 Approval
 
+DEC-196 makes accepted semantic fake behavior, Human resume rendering and
+retained Human fixture generation explicit in tasks 9/12/18 under the Human's
+delegated execution authority. Existing gates and VAL ownership remain;
+task 18 adds a concrete retained-fixture generation command. See phase decisions.
+
 `../phases/phase-22/decisions.md` records:
 DEC-180 proposed Heavy mode/18-task/80-VAL product contract;
 DEC-181 executable ownership and early journey;

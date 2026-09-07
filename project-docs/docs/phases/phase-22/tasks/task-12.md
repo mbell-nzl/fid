@@ -28,6 +28,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Run/Registration repository matching must allow the reconciled current target within unchanged approved location/path scope; do not silently widen scope.
 - Adoption, branch rename, and recovery do not refresh proof.
 - An unavailable Findings dimension is explicit; no empty-list claim of completed Review support.
+- DEC-196: deliver the ordinary Human-readable resume/recovery rendering from
+  the same semantic projection as JSON now, per public-interface.md section 6.
+  Show prior/successor identities, adopted paths as unproven work, applicable
+  authority, remaining budgets and eligible next actions. This is the existing
+  CLI projection, not the excluded Human brief product. Task 18 audits parity
+  and supplies Human fixtures; it does not first implement this rendering.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
   change. All owned ordinary and tagged code executes under the commands below.
@@ -78,6 +84,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] Artifact loss preserves Evidence identity while changing only availability and policy outcome. (VAL-050)
 - [ ] Fresh resume reconstructs bounded recovery context without prior chat. (VAL-051)
 - [ ] Resume action eligibility matches actual mutation predicates. (VAL-052)
+- [ ] Human and JSON resume views agree on recovery identities, adoption,
+  authority, budgets and eligible next actions for qualifying and blocked
+  states, using one semantic projection and built-binary evidence. (VAL-051/052;
+  supports final task-18 VAL-053 and Human-owned VAL-076)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,

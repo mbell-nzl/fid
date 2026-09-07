@@ -21,6 +21,14 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Committed denials name their Event and replay result while retaining a nonzero exit.
 - Extend task 6's shared case runner/fake with these implemented operations;
   identical semantic expectations must pass against both fake and fid now.
+- DEC-196: strengthen the existing shared runner into semantic conformance
+  while extending it. The fake must derive typed results from requests and
+  independent in-memory state, never echo fixture-declared expected fields,
+  outcomes, or error codes. Shared assertions compare independently declared
+  values and identity relationships, including same-key replay without a
+  second mutation and rejection without effects. Include the existing recovery
+  cases and this task's Stop/Attention/budget/closure operations; record
+  task-6 provenance at f3be616f0587881ee3f5c3716ffbf6167e3f2a20.
 - Remove finish parsing/outcome requests and current run.finished fixture acceptance only after close/abandon replacements pass.
 - Remove run.finish from activated profile and Envelope grant acceptance in
   the same task; both the retired action and retired leaf must reject. Final
@@ -50,6 +58,7 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/validation/`
 - `internal/issues/transition.go`
 - `cmd/fid/integration/p22_recovery_journey_test.go`
+- `cmd/fid/integration/p22_fake_test.go` - DEC-196 semantic runner/fake repair.
 - `cmd/fid/integration/testdata/p22_conformance/`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
@@ -75,6 +84,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] Stop, Attention, budget, and closure leaves implement their declared contracts. (VAL-036)
 - [ ] All guarded actions apply the same scoped Stop predicates. (VAL-037)
 - [ ] A committed execution denial names its durable effects without implying execution success. (VAL-038)
+- [ ] Shared fake/fid cases assert typed recovery lineage and replay identity,
+  Stop/Attention disposition relationships, budget counters and denial effects,
+  closure outcomes, and rejected-request state preservation. Wrong types or
+  values must fail, even when every required result field is present. The fake
+  derives outcomes independently of expected results. (VAL-036..038; supports
+  task-18 VAL-073, whose final completeness ownership remains there)
 - [ ] Caller-reported run.finish leaf, action, and current Event acceptance are
   absent after derived closure lands; old names reject in the corpus. (VAL-039)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt

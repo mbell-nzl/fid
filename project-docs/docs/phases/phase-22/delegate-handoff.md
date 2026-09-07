@@ -45,6 +45,11 @@ the Human's requested handoff order; it does not waive the Human criteria.
 
 ## Coordination
 
+DEC-196 records the preflight allocation repairs for tasks 9/12/18: semantic
+fake assertions, Human resume rendering, and retained fixture generation.
+Review 3 must independently check the fake repair; the task-12 checkpoint
+checks both renderings; final QA verifies the retained fixture instructions.
+
 The root delegate handles routine scope/documentation/control friction when
 accepted behavior determines the repair. Preserve the failed attempt and
 record any bounded scope amendment before a canonical Developer executes it.

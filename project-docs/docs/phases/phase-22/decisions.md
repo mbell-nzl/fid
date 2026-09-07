@@ -729,6 +729,61 @@
   `qa/validation-contract.md` VAL-031; `tasks/task-8.md`;
   `tasks/task-8-done.md`; `migrations/0013_p21_operational_kernel.up.sql`.
 
+### DEC-196: Make semantic conformance and Human fixture delivery executable
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  authority to complete the phase and directly resolve workflow friction;
+  authority is recorded in `delegate-handoff.md`. This allocates accepted
+  behavior and evidence, without changing the product contracts.
+- **Observed gaps:** The task-6 shared fake introduced at
+  `f3be616f0587881ee3f5c3716ffbf6167e3f2a20` returns fixture field names with
+  `-fake` appended and echoes declared outcomes. Its shared assertions check
+  field presence, so `replayed: "replayed-fake"` passes. That is insufficient
+  for contracts section 11's shared semantic inputs/expected outputs. The
+  retained ordinary Human resume renderer prints only Issue ID and completion
+  status, while task 18 prohibits new production behavior. Finally, task 18
+  promises Human checkpoints but names no retained generator; existing
+  `t.TempDir` fixtures and TestMain's temporary binary disappear after tests.
+- **Task 9 assignment:** Its already accepted runner/fake extension now
+  explicitly includes independent in-memory request/state semantics, typed
+  value and identity assertions, same-key replay, rejection without effects,
+  and this task's Stop/Attention/budget/closure relationships. Include existing
+  recovery cases and record task-6 introducing provenance. Task 6 and its
+  review history stay intact; review 3 independently checks this repair.
+  Task 18 retains the full final corpus completeness obligation.
+- **Task 12 assignment:** Implement ordinary Human recovery/resume rendering
+  from the JSON semantic projection under its existing `cmd/fid/resume.go`
+  scope, with explicit paired rendering evidence. Public-interface section 6
+  supplies the content; the excluded Human brief product stays excluded.
+  Task 18 audits this delivered behavior under VAL-053.
+- **Task 18 assignment:** Add `p22_human_fixtures_test.go` plus
+  `qa/human-fixtures.md` for reproducible retained checkpoints, durable binary,
+  exact IDs and neutral inspection commands. The optional
+  `FID_P22_HUMAN_FIXTURE_ROOT` output mode creates fresh children and never
+  overwrites existing fixtures. Default tagged tests execute setup and a
+  subprocess smoke test proves that retained fixtures survive generator exit.
+  Add the explicit focused generation command after the existing six commands;
+  every original gate remains byte-identical, ordered and mandatory. The new
+  invocation is evidence/delivery for an accepted Human fixture obligation,
+  not a substitute or a narrower pass criterion. No dependency is added.
+- **Authority and limits:** VAL rows, final validator ownership, product wire,
+  DDL, Event semantics, thresholds and all existing gate commands are unchanged.
+  Root explicitly authorizes the additional task-18 delivery command before
+  task dispatch; no failed gate is being redefined. Only the Human judges
+  VAL-076..078. Expected judgments remain separately inspectable so initial
+  prompts can ask for the Human's understanding without supplying the answer.
+- **Verification:** Task 9's ordinary and tagged gates execute its fake/corpus
+  repair; review 3 independently checks semantic assertions. Task 12's gates
+  and the independent checkpoint execute both renderings. Task 18's full
+  tagged gate exercises fixture setup/survival; its additional exact command
+  generates tomorrow's retained inputs. Final QA reruns the setup and records
+  all 77 deterministic outcomes, leaving Human outcomes pending until tested.
+- **Evidence attribution:** This is source/allocation inspection, not runtime
+  validation of unfinished tasks. The independent preflight artifact is
+  `qa/remaining-scope-audit.md`; its findings are not a substitute for the
+  later Developer or QA evidence.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
