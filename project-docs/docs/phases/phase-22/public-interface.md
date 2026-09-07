@@ -54,6 +54,7 @@ no effects except the explicitly committed execution denial described below.
 | ActivationResource | `{component:"kit"\|"overlay"\|"provider"\|"project"\|"backend",version:int,old_identity:?text,new_identity:text,observed_identity:?text,state:"pending"\|"old"\|"new"\|"error",evidence_ref:?text,error_code:?text}` |
 | Activation (amend) | Phase 21 fields plus `{version:int,prior_activation_id:?ID,resources:ActivationResource[],recovery:?ActivationRecovery}`; status adds `superseded`; original direction remains `activate` |
 | ActivationRecovery | `{direction:"restore-prior"\|"complete-forward",actor_attribution:text,reason:text,selected_event_id:ID,completed_event_id:?ID}` |
+| ReasonSubjectType (amend, DEC-200) | Retain the Phase 21 set and add `stop` and `activation`. A Stop Reason names its Stop ID; an activation agreement Reason names its Activation ID. Resource component names stay in the closed `components` list and explanatory `detail`, not a new subject type. |
 | NextAction | `{operation:text,subject:Subject,required_capabilities:ID[],reasons:Reason[]}`; operation is a present public operation ID; reasons are empty only when executable |
 | Resume (amend) | Phase 21 fields; replace next_actions with NextAction[]; add `{stops:Stop[],attention:Attention[],budgets:Budget[],recoveries:Recovery[],findings:{available:false,items:[]}}`; repository is observed current target |
 
@@ -180,6 +181,11 @@ uses both expected_prior fields null; otherwise both must match current state.
 Reason retains the Phase 21 structure and extends its code domain with the
 applicable Stop and failure codes in this amendment. Human message text is never
 used to decide resolution or action eligibility.
+
+DEC-200 makes the corresponding Reason subject additions explicit in section
+2. Activation resource disagreement uses the admitted `activation-incomplete`
+Reason code with `subject_type:"activation"` and the Activation ID. No
+`activation-resource` subject or `resource-not-observed-*` Reason code is added.
 
 The Actor in RecoveryAuthority must equal `--actor`; it never grants itself
 capabilities. Ordinary `run.recover` requires `run.recover`; force additionally

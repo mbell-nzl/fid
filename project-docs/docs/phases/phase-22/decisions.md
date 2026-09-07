@@ -965,6 +965,40 @@
   until its own unchanged gates/report close; this amendment does not advance
   task 11 or claim any implementation evidence.
 
+## DEC-200 — Close The Reason Subject Allocation
+
+- **Date:** 2026-09-07.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  authority to complete and repair remaining execution. This is an explicit
+  specification correction before task-11 finalization, not Developer license
+  to invent private enum values.
+- **Gap:** Phase 22 retains the Phase-21 Reason structure and explicitly
+  extends ReasonCode for Stop/failure codes, but omits the corresponding
+  ReasonSubjectType additions. The accepted Stop and activation-incomplete
+  error contracts require Reasons about those subjects; their typed identity
+  domains already exist in this phase. Task 9 emits Stop Reasons, while task
+  11 initially invented activation-resource/resource-not-observed-old to name
+  a disagreeing resource. Neither invented value is admitted by the closed
+  interface.
+- **Resolution:** Explicitly retain the Phase-21 ReasonSubjectType set and add
+  exactly `stop` and `activation`. Stop Reasons name the Stop ID; activation
+  disagreement Reasons use the already admitted `activation-incomplete` code,
+  Activation subject and Activation ID. The existing typed `components` list
+  identifies disagreeing resources; explanatory detail can name the resource
+  without introducing an entity/subject kind. Reason prose never determines
+  action eligibility or resolution.
+- **Execution:** Amend public-interface sections 2/3 and task 11. Root's shared
+  fake/fid corpus asserts closed Reason fields and the exact activation
+  subject; task 11 updates its typed error carriers under DEC-199. Keep the
+  previously captured failing receipts. Review 4 and final conformance audit
+  independently check the allocation; task 9's Stop subject semantics stay
+  unchanged and its report/history remain closed.
+- **Limits:** No new product operation, payload key, Reason structure, error
+  code, DDL, Event Effect, authority predicate, validation assertion, validator,
+  gate command, threshold, tolerance, dependency or workflow control. This
+  closes an omitted enum allocation; it does not admit activation-resource or
+  resource-not-observed-* and does not weaken any failure condition.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

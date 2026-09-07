@@ -26,6 +26,10 @@ Full sources, pass/fail criteria, and validator ownership are in
   disagreeing components and Reasons from the domain to the adapter. Bounded
   error enrichment of task 10's activation files is included below; retain
   their accepted agreement, lifecycle, trust and idempotency predicates.
+- DEC-200: use the explicit Reason subject/code allocation in public-interface
+  sections 2/3. Activation disagreement Reasons use activation-incomplete,
+  subject type activation and the Activation ID; components remain in the
+  typed component list and explanatory detail. No private enum is admitted.
 - Exercise Human activation status/recovery output against public-interface
   section 6 with paired pre/post-commit cases. State restore-prior or
   complete-forward accurately, preserving the irreversible commit boundary.

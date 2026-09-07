@@ -129,6 +129,10 @@ activation-incomplete result, preserving task 10's predicates. It also makes
 the existing Human activation direction rendering explicit. No command or VAL
 definition changed.
 
+DEC-200 explicitly adds stop and activation to retained ReasonSubjectType;
+activation disagreement uses activation-incomplete with the Activation ID.
+Component names remain in components/detail, with no private subject/code enum.
+
 ## Carry-Forward Register
 
 | ID | Current disposition |
