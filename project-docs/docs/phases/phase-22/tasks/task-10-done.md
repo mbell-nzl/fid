@@ -39,26 +39,27 @@
 ## Tests run
 
 - `go test ./cmd/fid -run '^TestCommittedActivationCanOnlyRecoverForward$' -count=1` - RED then PASS - `FAIL` (terminated `exit_code: 1`); later `0.188s` (terminated `exit_code: 0`)
-- `go test ./internal/workflow -run '^TestActivationRecoverySelectionRaisesAndCompletionDisposesIncompleteStop$' -count=1` - PASS - `0.160s` (terminated `exit_code: 0`)
-- `go test ./internal/workflow -run '^TestCompleteActivationRecoveryRejectsMissingPriorResourceSet$' -count=1` - PASS - `0.087s` (terminated `exit_code: 0`)
-- `go test ./cmd/fid -run '^TestActivation(RequiresEveryResourceAtCommitAndFinalize|CompleteResourceAgreementFinalizesTrust)$' -count=1` - PASS - `1.397s` (terminated `exit_code: 0`)
+- `go test ./internal/workflow -run '^TestActivationRecoverySelectionRaisesAndCompletionDisposesIncompleteStop$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.160s` (terminated `exit_code: 0`)
+- `go test ./internal/workflow -run '^TestCompleteActivationRecoveryRejectsMissingPriorResourceSet$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	0.087s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestActivation(RequiresEveryResourceAtCommitAndFinalize|CompleteResourceAgreementFinalizesTrust)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	1.397s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^Test(ActivationFreezesFirstAndUpgradeBindingsAcrossStagingAndRecovery|ActivationCommitRejectsMissingMismatchedAndMixedComponentDigests|StagedActivationContentCannotBeReplacedUnderANewKey)$' -count=1` - RED then PASS - `FAIL` (terminated `exit_code: 1`); later `0.672s` (terminated `exit_code: 0`)
-- `go test ./cmd/fid -run '^TestUpgradeForwardRecoverySelectsOnlyNewFinalTrust$' -count=1` - PASS - `0.503s` (terminated `exit_code: 0`)
+- `go test ./cmd/fid -run '^TestUpgradeForwardRecoverySelectsOnlyNewFinalTrust$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	0.503s` (terminated `exit_code: 0`)
 - `go test ./cmd/fid -run '^TestActivationComponentResponseDigestsRemainSortedAfterSmallerSecondStage$' -count=1` - RED then PASS - `FAIL` (terminated `exit_code: 1`); later `0.103s` (terminated `exit_code: 0`)
-- `go test -tags integration ./cmd/fid/integration/...` - PASS - `11.407s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	11.407s` (terminated `exit_code: 0`)
 - Real `fid` CLI: `/tmp/fid-task10 --project /tmp/fid-task10-runtime.wYHpfL --json activation prepare --input /tmp/fid-task10-runtime.wYHpfL/activation.json --idempotency-key runtime-activation-prepare` - PASS - output contained `"ok":true,"operation":"activation.prepare"` and five pending resources (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `coverage: 55.3% of statements` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	85.511s	coverage: 55.3% of statements` (terminated `exit_code: 0`)
 - `go tool cover -func=coverage.out` - PASS - `63.3%` (terminated `exit_code: 0`)
-- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `24.661s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	24.661s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
 - The first required `golangci-lint run ./...` attempt ended `exit_code: 1` with `* unused: 1`: an unused activation helper, unchecked rows close, and redundant test type were introduced by this task's recovery convergence. Removed the unused helper, checked the close result, simplified the declaration, and reran the byte-identical command successfully with `0 issues.` (terminated `exit_code: 0`).
+- Root's first report-lint attempt ended `exit_code: 7` with `FAIL report-lint found 7 failure(s)`: seven Go-test receipt tokens omitted their terminal `ok` result lines. Restored the captured verbatim Go result lines; root will rerun the byte-identical report lint against this committed report.
 - Root assistance captured the initial resource-matrix failure and a test-construction correction in `project-docs/docs/phases/phase-22/delegate-handoff.md` at commit `523de68`; this task reran the exact matrix command and records its passing receipt above.
 - The same handoff preserves the VAL-040 binding-test red receipt: its exact focused command ended `exit_code: 1` with `FAIL` because a successor was finalized before its predecessor was superseded, violating the unique finalized activation constraint. This task ordered predecessor supersession before successor finalization in the same Event and reran the byte-identical binding command successfully.
 - `TestActivationComponentResponseDigestsRemainSortedAfterSmallerSecondStage` first ended `exit_code: 1` with `FAIL`: staging appended a lexicographically smaller second digest without sorting the response snapshot. The staged snapshot now sorts component digests before canonical result serialization; its focused rerun passed.
