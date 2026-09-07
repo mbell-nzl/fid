@@ -15,10 +15,12 @@ merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-Tasks 1-9 complete; reviews 1b and 2b PASS. Task 8 closed under DEC-195 with
+Tasks 1-9 complete; reviews 1b, 2b and 3 PASS. Task 8 closed under DEC-195 with
 the exact cancelled-Receipt DDL/filter convergence and all eight gates passed;
 its failed history remains in the report. Task 9 completed its final five gates
-and actual-operation Stop matrix; independent review 3 is running.
+and actual-operation Stop matrix; independent review 3 passed. Task 10 is
+executing under DEC-198, which reconciles prepare versus component staging
+while preserving the accepted closed interface and immutable content.
 DEC-196 assigns semantic fake strengthening to task 9, Human resume rendering
 to task 12 and retained Human fixture generation to task 18. Root orchestrates
 under the Human delegation in `delegate-handoff.md`. No open ESC.
@@ -45,7 +47,7 @@ Tasks are sequential; reviews follow every three tasks.
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Complete | 6 |
 | [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
 | [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Complete (DEC-196/197) | 8 |
-| [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Pending | 9 |
+| [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Executing (DEC-198) | 9 |
 | [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Pending | 10 |
 | [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Pending | 11 |
 | [13](../phases/phase-22/tasks/task-13.md) | Recovery archive format and validation | Pending | 12 + independent checkpoint |
@@ -142,7 +144,8 @@ Tech Lead records spec sync and sign-off. No release authorization is implied.
 
 ## Next Planning Checkpoint
 
-Review 3 covers tasks 7-9 after task 9 closes, including DEC-196 semantic fake
-evidence. The independent task-12 checkpoint must pass before task 13. Final
+Review 3 passed tasks 7-9, including DEC-196 semantic fake and actual-operation
+Stop evidence. Tasks 10-12 lead to review 4 and the independent task-12
+checkpoint, which must pass before task 13. Final
 deterministic QA and runnable Human fixtures precede tomorrow's Human judgments;
 Human outcomes and full phase sign-off remain pending.

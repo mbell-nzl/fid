@@ -11,7 +11,8 @@ Tasks 1-9 are complete; review-1b and review-2b passed. Task 8 completed the
 DEC-195 cancellation DDL/filter convergence with task-1 provenance, all eight
 required gates and independent report lint. Task 9 completed DEC-196/197 semantic
 conformance, Human Stop text and actual-operation Stop guards with all five
-final gates and independent report lint. Review 3 is running. No escalation is open.
+final gates and independent report lint. Review 3 passed independently. Task 10 is executing under the DEC-198
+prepare/staging clarification. No escalation is open.
 
 The Human delegated completion of tasks 8-18, required reviews, final
 deterministic QA, and runnable Human checklist preparation on 2026-09-07.
@@ -50,9 +51,9 @@ report records freshly executed workflow checks only.
 
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
-- Task statuses: 1..9 complete; review 3 running; 10..18 pending.
-- Next: review window 3 follows task 9, including DEC-196 semantic fake
-  evidence; the independent task-12 checkpoint precedes task 13.
+- Task statuses: 1..9 complete; reviews 1b/2b/3 passed; 10 executing; 11..18 pending.
+- Next: tasks 10-12, review window 4 and the independent task-12 checkpoint
+  before task 13.
 
 ## Carry-Forward
 

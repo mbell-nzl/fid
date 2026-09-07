@@ -114,10 +114,15 @@ DEC-188 Human acceptance of Heavy mode, the full refined pack and execution.
 Human approval on 2026-09-05 ratifies DEC-180/182/184..187; the other planning
 dispositions apply. QA readiness refreshed on 2026-09-05; tasks 1-9 are
 complete and review-1b/review-2b passed. Task 9 completed under DEC-196/197;
-review 3 is running before tasks 10-18 and required QA. The Human delegated remaining execution and
+review 3 passed and task 10 is executing before the remaining required QA. The Human delegated remaining execution and
 checklist preparation on 2026-09-07; Human outcomes remain pending. See
 `../phases/phase-22/delegate-handoff.md`. Current branch is `phase-22`;
 Phase 21 is merged.
+
+DEC-198 resolves contradictory prepare-time prose in favor of the already
+closed activation protocol: prepare freezes the predecessor and five resources;
+component staging supplies immutable internal content; commit selects the exact
+two digests with resource agreement. No new wire/DDL/Event or weakened VAL row.
 
 ## Carry-Forward Register
 
