@@ -1021,13 +1021,15 @@
 - **Lease gap and resolution:** Contracts section 9 requires effective lease
   status but the retained Resume Claim only names durable `status`. Add
   exactly `effective_status` to the non-null Resume Claim projection. Its
-  value is the durable status except that an active Claim whose expiry has
-  passed projects `expired`. Retain `status` and `expires_at` verbatim and
+  value is the durable status except that an active Claim at or beyond its
+  expiry projects `expired`, using the existing lease predicate. Retain
+  `status` and `expires_at` verbatim and
   keep the existing null Claim case. This is a derived read member, never a
   Claim mutation, renewal or expiry Event. No other Claim payload gains it.
 - **Execution:** Task 12 may edit the narrow Budget output/derivation and
   Envelope result paths in envelope.go, budget.go, run_read.go, run_budget.go,
-  internal/evidence/execution.go and matching tests, plus required retained
+  internal/evidence/execution.go and matching tests, plus cmd/fid/envelope.go
+  for strict authored-state rejection and required retained
   corpus convergence. Resume/Human projections use the same semantic facts.
   Reject every caller-supplied state member, preserve unknown-field rejection,
   and prove all four output states, immutable raw policy and replay snapshots.

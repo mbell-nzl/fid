@@ -57,7 +57,7 @@ no effects except the explicitly committed execution denial described below.
 | ReasonSubjectType (amend, DEC-200) | Retain the Phase 21 set and add `stop` and `activation`. A Stop Reason names its Stop ID; an activation agreement Reason names its Activation ID. Resource component names stay in the closed `components` list and explanatory `detail`, not a new subject type. |
 | NextAction | `{operation:text,subject:Subject,required_capabilities:ID[],reasons:Reason[]}`; operation is a present public operation ID; reasons are empty only when executable |
 | Resume (amend) | Phase 21 fields; replace next_actions with NextAction[]; add `{stops:Stop[],attention:Attention[],budgets:Budget[],recoveries:Recovery[],findings:{available:false,items:[]}}`; repository is observed current target |
-| Resume Claim (amend, DEC-201) | Retain the null case and all Phase 21 Claim projection fields; add `effective_status:text`. It equals durable `status`, except an active Claim past `expires_at` has effective status `expired`. Durable status/expiry remain verbatim; no expiry Event is inferred. Other Claim payloads are unchanged. |
+| Resume Claim (amend, DEC-201) | Retain the null case and all Phase 21 Claim projection fields; add `effective_status:text`. It equals durable `status`, except an active Claim at or beyond `expires_at` has effective status `expired`, matching the existing lease predicate. Durable status/expiry remain verbatim; no expiry Event is inferred. Other Claim payloads are unchanged. |
 
 StopCode is exactly the seven-code set in `contracts.md` section 5. Subject
 types for Stop/Attention are only run, envelope, activation. Blocked actions

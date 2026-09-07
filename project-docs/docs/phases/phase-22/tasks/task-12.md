@@ -66,6 +66,8 @@ Full sources, pass/fail criteria, and validator ownership are in
   result rendering only, from the existing mutation result; preserve JSON,
   authority and operation semantics, with task-6 provenance.
 - `cmd/fid/evidence.go`
+- `cmd/fid/envelope.go` - DEC-201: reject the output-only Budget state key
+  on authoring input, including null/empty, while retaining the closed decoder.
 - `cmd/fid/integration/p22_recovery_journey_test.go`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
   the behavior above, including retained rows invalidated by this change.
