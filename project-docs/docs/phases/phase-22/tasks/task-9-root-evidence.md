@@ -98,6 +98,8 @@ is correctly labelled as its own disposition Event. JSON remains unchanged.
 
 - `go test ./cmd/fid -run '^TestStop(SuccessHumanNamesBlockingReasonAndQualifyingResolution|HumanListsShowOpenResolvedAndEmptyState)$' -count=1`
   — PASS — `0.076s` (terminated `exit_code: 0`).
+- `go test ./cmd/fid -run '^TestStopHumanListsShowOpenResolvedAndEmptyState$' -count=1`
+  — byte-identical rerun PASS — `0.076s` (terminated `exit_code: 0`).
 - `go test -tags integration ./cmd/fid/integration/... -run '^TestP22StopAttentionHumanListsNameReasonAndResolution$' -count=1`
   — PASS — `1.194s` (terminated `exit_code: 0`). The real binary checks both
   Stop and Attention lists for the actual Stop/Run identities, intervention
