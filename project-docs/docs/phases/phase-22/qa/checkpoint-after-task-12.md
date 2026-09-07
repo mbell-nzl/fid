@@ -146,6 +146,182 @@ Post-task-12 product evidence: NOT RUN
 CHECKPOINT STATUS: PENDING
 ```
 
+
+## Independent Import Feasibility Receipts — 2026-09-08
+
+These commands ran in this independent checkpoint reviewer's session from
+`/home/mark/projects/fid` while task 12 was still implementing. They prove only
+environment and primitive feasibility. The orchestrator confirmed that these
+fresh receipts need not be repeated after task 12 unless the environment changes.
+
+### CP-ENV-01 — disk-backed scratch and same-filesystem identity
+
+Exact command:
+
+```bash
+stat -f -c 'filesystem=%T block=%S' .cache /tmp && stat -c 'path=%n st_dev=%d' .cache /tmp && df -Pk .cache /tmp
+```
+
+PASS — observed `filesystem=ext2/ext3 block=4096`,
+`path=.cache st_dev=2096`; `/tmp` is tmpfs with `st_dev=72`.
+Disk-backed scratch had `952266204` KiB available; tmpfs had `1917552` KiB.
+Final verbatim output token:
+`tmpfs              4066620  2149068   1917552      53% /tmp`
+(terminated `exit_code: 0`).
+
+The filesystem-format `stat -f %d` field used in an earlier preparation command
+counts free file nodes; it is not a device identifier. This independent receipt
+uses ordinary `stat -c %d` and the probe below uses `os.stat().st_dev` for
+actual device equality. The preceding historical receipt remains unmodified.
+
+### CP-ENV-02 — synchronized interruption and filesystem faults
+
+Exact command:
+
+```bash
+python3 - <<'PY'
+import errno
+import os
+import pathlib
+import selectors
+import signal
+import subprocess
+import sys
+import tempfile
+
+root = pathlib.Path(tempfile.mkdtemp(prefix="qa-checkpoint12-import-", dir=".cache")).resolve()
+child_source = """
+import os, pathlib, sys
+root, boundary = pathlib.Path(sys.argv[1]), sys.argv[2]
+stage, target = root / "stage", root / "published"
+stage.mkdir()
+def barrier(name):
+    if name == boundary:
+        print(name, flush=True)
+        os.read(0, 1)
+(stage / "state").write_bytes(b"complete-state")
+fd = os.open(stage / "state", os.O_RDONLY)
+os.fsync(fd)
+os.close(fd)
+barrier("file-fsync")
+fd = os.open(stage, os.O_RDONLY | os.O_DIRECTORY)
+os.fsync(fd)
+os.close(fd)
+barrier("stage-fsync")
+os.rename(stage, target)
+barrier("published")
+fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+os.fsync(fd)
+os.close(fd)
+barrier("parent-fsync")
+"""
+for boundary in ("file-fsync", "stage-fsync", "published", "parent-fsync"):
+    case = root / boundary
+    case.mkdir()
+    child = subprocess.Popen([sys.executable, "-c", child_source, str(case), boundary],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ready = selectors.DefaultSelector()
+    ready.register(child.stdout, selectors.EVENT_READ)
+    assert ready.select(timeout=10), boundary
+    assert child.stdout.readline().decode().strip() == boundary, boundary
+    child.send_signal(signal.SIGTERM)
+    assert child.wait(timeout=5) == -signal.SIGTERM, boundary
+    assert child.stderr.read() == b"", boundary
+    published = boundary in ("published", "parent-fsync")
+    assert (case / "published").exists() == published, boundary
+    materialized = case / ("published" if published else "stage")
+    assert (materialized / "state").read_bytes() == b"complete-state", boundary
+    assert materialized.stat().st_dev == case.stat().st_dev
+    ready.close()
+    child.stdin.close()
+    child.stdout.close()
+    child.stderr.close()
+    print(f"{boundary}: synchronized SIGTERM observed; child returncode=-15; published={published}; complete bytes; same device")
+
+def expect_error(operation, expected):
+    try:
+        operation()
+    except OSError as failure:
+        assert failure.errno in expected, failure
+        return failure.errno
+    raise AssertionError("fault did not reject")
+
+missing = expect_error(lambda: os.rename(root / "missing", root / "missing-target"), (errno.ENOENT,))
+fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
+os.close(fd)
+closed = expect_error(lambda: os.fsync(fd), (errno.EBADF,))
+occupied, stage = root / "occupied", root / "new-stage"
+occupied.mkdir()
+(occupied / "sentinel").write_bytes(b"keep")
+stage.mkdir()
+(stage / "state").write_bytes(b"new")
+collision = expect_error(lambda: os.rename(stage, occupied), (errno.EEXIST, errno.ENOTEMPTY))
+assert (occupied / "sentinel").read_bytes() == b"keep"
+assert (stage / "state").read_bytes() == b"new"
+print(f"fault errnos: missing-stage={missing}; closed-fsync={closed}; occupied-target={collision}; sentinel and stage retained")
+print(f"IMPORT FEASIBILITY PASS: four synchronized interruption boundaries; scratch={root}")
+PY
+```
+
+PASS — each child reached the named pipe barrier before SIGTERM; every child
+terminated with the observed `returncode=-15`. The destination remained absent
+after file/stage fsync and contained complete bytes after publication/parent
+fsync. Each stage/target shared its parent device. Missing-stage rename returned
+errno 2, closed-descriptor fsync errno 9, and occupied-target rename errno 39;
+the occupied sentinel and rejected staging bytes remained intact.
+
+Final verbatim token:
+`IMPORT FEASIBILITY PASS: four synchronized interruption boundaries; scratch=/home/mark/projects/fid/.cache/qa-checkpoint12-import-7j7ms836`
+(terminated `exit_code: 0`).
+
+This exercises Python/OS primitives, not a fid import operation. Task 14 still
+owns the real target lock, accepted Event reconstruction, semantic verification,
+durability/publication faults, populated-target rejection, and same-key
+response-loss retry. No project source or Git state was changed by the probe;
+scratch is retained under ignored `.cache`.
+
+### Semantic-validation feasibility for task 13
+
+Task 13 expressly calls for existing Event appliers and no new dependency.
+Contracts section 10 prohibits SQLite/SQL in the archive and mutation of the
+source/destination project; it does not prohibit private in-memory SQLite during
+validation. The existing exported applier is
+`journal.ProjectEvent(*sql.DB, ProjectionInput)`. Sequential application can
+retain references between Events; `DryRunProjectEvent` rolls back each Event
+and cannot by itself validate a complete cross-Event history.
+
+An implementation must create a real in-memory connection with the existing
+modernc driver and accepted trusted schema, a controlled connection count,
+foreign keys and recursive triggers. `internal/db.Open(":memory:")` is not an
+in-memory constructor: its DSN helper applies `filepath.Abs`, yielding a disk
+path. Never obtain executable SQL or schema definitions from an archive.
+A private export-owned constructor can stay in task 13's current scope; adding
+a new internal/db API needs an explicit bounded scope allocation.
+
+ProjectEvent enforces SQL constraints, update preconditions and selected
+immutability rules, but it is not the complete archive semantic validator.
+`validateV2Event` currently accepts a nonempty Event type and `applyEffect`
+validates identifiers/operations; task 13 must additionally enforce the accepted
+closed Event/Effect grammar from Phase 22 schema section 5 and the retained
+Phase 21 contract, including references not represented by foreign keys,
+duplicate keys/IDs, ordering, and allowed tables/columns. A valid hash is not
+semantic acceptance.
+
+The current export validator compares capabilities to its binary's
+`capabilitySnapshot()`; the accepted replacement is an explicit archive-version
+profile (contracts section 10, public-interface section 5). Retain the Phase 21
+v1 profile for read-only v1 validation and the accepted developmental v2 profile
+during schema-15 work. Task 17 owns the final qualification update and exact
+schema-16 capability profile. Never infer historical archive acceptance from
+current discovery; intermediate pre-adoption work does not create a new legacy
+compatibility promise.
+
+These are source/contract feasibility findings, not executed product acceptance.
+No declaration above replaces task 13's red/green semantic archive tests, full
+valid controls or measured-byte boundary evidence. No contradiction requiring
+new product policy was identified by this bounded preflight.
+
+
 ## Independent Checkpoint Preparation — 2026-09-08
 
 Reviewer: independent QA Lead `checkpoint12_final`. The preceding preparation
