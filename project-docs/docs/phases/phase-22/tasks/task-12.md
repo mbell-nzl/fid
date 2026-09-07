@@ -62,6 +62,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/claims/generic.go`
 - `internal/validation/`
 - `cmd/fid/resume.go`
+- `cmd/fid/resume_human.go` - ordinary Human rendering shared with the
+  recovery result, using the domain's accepted semantic projections.
 - `cmd/fid/run_recovery.go` - DEC-196: ordinary and force recovery Human
   result rendering only, from the existing mutation result; preserve JSON,
   authority and operation semantics, with task-6 provenance.

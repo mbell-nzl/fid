@@ -86,8 +86,7 @@ func newRunRecoverCommand() *cobra.Command {
 		} else if jsonMode {
 			return cli.WriteSuccess(cmd.OutOrStdout(), "run.recover", map[string]any{"recovery": result.Recovery, "run": result.Run, "claim": result.Claim, "idempotency_key": result.IdempotencyKey, "replayed": result.Replayed}, &cli.Event{ID: result.EventID, OccurredAt: result.Run.StartedAt})
 		}
-		_, err = fmt.Fprintf(cmd.OutOrStdout(), "recovered Run %s\n", result.Run.ID)
-		return err
+		return writeRunRecoveryHuman(cmd, result)
 	}}
 	runMutationFlags(cmd, &inputPath, &actor, &key)
 	return cmd
