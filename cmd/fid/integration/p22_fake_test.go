@@ -234,6 +234,7 @@ func p22FixtureResponse(t *testing.T, envelope map[string]any, stdout bool, exit
 }
 
 type p22FIDRecoveryAdapter struct {
+	activation                                                     map[string]any
 	registrationID                                                 string
 	registrationVersion                                            any
 	binary                                                         string
@@ -349,6 +350,9 @@ func (adapter *p22FIDRecoveryAdapter) p22Args(t *testing.T, fixture p22Conforman
 
 func (adapter *p22FIDRecoveryAdapter) p22BuildArgs(t *testing.T, fixture p22ConformanceCase) ([]string, map[string]any) {
 	t.Helper()
+	if strings.HasPrefix(fixture.Operation, "activation.") {
+		return adapter.p22ActivationArgs(t, fixture)
+	}
 	args := []string{"--project", adapter.workspace, "--json"}
 	unknown := fixture.Kind == "unknown-field"
 	var input map[string]any
@@ -423,6 +427,10 @@ func (adapter *p22FIDRecoveryAdapter) p22Advance(t *testing.T, operation, stdout
 	}
 	result := p21Path(t, envelope, "result").(map[string]any)
 	if result["replayed"] == true {
+		return
+	}
+	if activation, ok := result["activation"].(map[string]any); ok {
+		adapter.activation = activation
 		return
 	}
 	switch operation {

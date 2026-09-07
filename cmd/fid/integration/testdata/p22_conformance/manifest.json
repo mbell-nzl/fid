@@ -37,5 +37,6 @@
     "operations/gate-committed-denial.json",
     "operations/denial-stop-list.json",
     "operations/denial-attention-list.json"
-  ]
+  ],
+  "activation_cases": ["activation-cases.json"]
 }

@@ -18,6 +18,7 @@ type p22FakeRecoveryAdapter struct {
 }
 
 type p22MemoryModel struct {
+	activation                    map[string]any
 	denials                       map[string]map[string]any
 	run, claim                    map[string]any
 	liveness, observation, digest string
@@ -58,6 +59,9 @@ func (adapter *p22FakeRecoveryAdapter) Execute(t *testing.T, fixture p22Conforma
 
 func (model *p22MemoryModel) execute(t *testing.T, operation, key, actor string, input map[string]any, invalidFlag bool) p22ConformanceResponse {
 	t.Helper()
+	if strings.HasPrefix(operation, "activation.") {
+		return model.executeActivation(t, operation, key, actor, input, invalidFlag)
+	}
 	failure := func(code string, exit int) p22ConformanceResponse {
 		return p22FixtureResponse(t, map[string]any{"contract_version": "fid-cli.v1", "ok": false, "operation": operation, "error": map[string]any{"code": code}}, false, exit)
 	}
