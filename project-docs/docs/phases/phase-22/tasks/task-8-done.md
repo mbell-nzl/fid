@@ -2,12 +2,13 @@
 
 ## Workflow outcome
 
-- Task outcome: BLOCKED
-- Category: specification-contradiction
-- Condition: VAL-031 and `contracts.md` section 7 require an observed `cancelled` Receipt, while canonical `migrations/0013_p21_operational_kernel.up.sql` permits only `succeeded`, `failed`, `timed-out`, `signaled`, and `spawn-failed` in `execution_receipts.terminal_status`. Task 8 forbids DDL, wire-shape, and contract changes, so no in-scope implementation can persist the required cancelled Receipt.
-- Recovery attempts: 3
-- Next action: Tech Lead must decide whether to amend the canonical Receipt DDL and task-8 scope for the accepted `cancelled` status, or amend the accepted VAL-031/contracts requirement. Then dispatch the bound same-task continuation.
-- Human attention required: yes
+- Task outcome: COMPLETE
+- Category: none
+- Condition: None.
+- Recovery attempts: 4
+- Next action: None.
+- Human attention required: no
+- Historical blocker resolved: DEC-195 resolved ESC-22-004 / TRG-22-009 by assigning the two exact `execution_receipts` baseline replacements, with task-1 provenance, to this same-task continuation. The preserved prior BLOCKED evidence below records the formerly missing authority.
 
 ## Summary of what was implemented
 
@@ -29,6 +30,10 @@
 - `internal/journal/checkpoint_projection_test.go`
 - `internal/journal/recovery_schema_test.go`
 - `cmd/fid/gate_run_test.go`
+- `cmd/fid/receipt_test.go`
+- `internal/db/operational_kernel_migration_test.go`
+- `internal/evidence/receipt_read.go`
+- `migrations/0013_p21_operational_kernel.up.sql`
 - `project-docs/docs/phases/phase-22/tasks/task-8-done.md`
 
 ## Documentation updated
@@ -37,10 +42,10 @@
 
 ## Validation Contract Coverage
 
-- VAL-031: BLOCKED - `TestRunLiveRecordsCancellationAsCancelled` proves the fid-observed `cancelled` process outcome, but `migrations/0013_p21_operational_kernel.up.sql:250-268` rejects that required Receipt status. No task-8-authorized source change can satisfy the cancellation Receipt branch.
+- VAL-031: PASS - `TestRunLiveRecordsCancellationAsCancelled` proves the fid-observed `cancelled` process outcome; `TestMigration0013CancelledReceiptTerminalConstraint` admits cancelled Receipts carrying an exit code, signal, or neither and rejects `timed_out = 1` and a simultaneous exit code/signal; `TestReceiptReadFailuresAreTypedAndClosed` exercises the real `receipt list --outcome cancelled` CLI acceptance while retaining unknown-outcome rejection. The repeated R-14 gate command passed fifteen times.
 - VAL-032: PASS - `TestKilledFidLeavesAttemptWithoutReceiptAndCannotReplaySpawn` proves one durable Attempt, no Receipt, and no same-key second spawn after terminal-observation loss.
-- VAL-033: PARTIAL - `TestCloseRunDerivesTerminalStateFromTrustedObservation` proves trusted terminal observation, shared-evaluator-derived success, versioning, and idempotent replay; the required full gate and integration evidence are blocked by VAL-031's protected contradiction.
-- VAL-034: PARTIAL - `TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority` proves ordinary intentional abandonment, Claim release provenance, no Evidence, and unknown-liveness rejection; `TestRunClosureEventsProjectIdenticallyLiveAndReplay` proves the `run.abandoned` Event's live/replay parity.
+- VAL-033: PASS - `TestCloseRunDerivesTerminalStateFromTrustedObservation` proves trusted terminal observation, shared-evaluator-derived success, versioning, and idempotent replay; the complete ordinary and tagged race gates passed.
+- VAL-034: PASS - `TestAbandonRunRequiresTerminalProofOrExactHumanForceAuthority` proves ordinary intentional abandonment, Claim release provenance, no Evidence, and unknown-liveness rejection; `TestRunClosureEventsProjectIdenticallyLiveAndReplay` proves the `run.abandoned` Event's live/replay parity.
 
 ## Tests run
 
@@ -73,6 +78,8 @@
   - Root cause: `Recovery attempts` was not a typed integer, and one new `go test` receipt was not an output token. Repair: retain attempt count `3` alone and record `ok` as the exact short terminal token.
 - `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - FAIL - `FAIL report-lint found 3 failure(s)` (terminated `exit_code: 3`)
   - Root cause: bare `ok` is too short for the report control's `go test` receipt grammar. Repair: restore the exact package output lines from the observed terminal results.
+- DEC-195 continuation red: `go test ./internal/db ./cmd/fid -run '^(TestMigration0013CancelledReceiptTerminalConstraint|TestMigration0013OperationalKernelInventoryAndRoundTrip|TestReceiptReadFailuresAreTypedAndClosed)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`). `execution_receipts` rejected a valid cancelled Receipt and `receipt list --outcome cancelled` returned `invalid-argument`.
+- DEC-195 continuation green: `gofmt -w internal/db/operational_kernel_migration_test.go cmd/fid/receipt_test.go internal/evidence/receipt_read.go && go test ./internal/db ./cmd/fid -run '^(TestMigration0013CancelledReceiptTerminalConstraint|TestMigration0013OperationalKernelInventoryAndRoundTrip|TestReceiptReadFailuresAreTypedAndClosed)$' -count=1` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t0.091s` (terminated `exit_code: 0`)
 
 ## Exact quality-gate results
 
@@ -84,10 +91,18 @@
 - `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid` - BLOCKED - not run because the protected cancelled-Receipt contradiction prevents task completion.
 - `go test -bench . -benchmem ./...` - BLOCKED - not run because the protected cancelled-Receipt contradiction prevents task completion.
 - `go test -bench . -benchmem ./...` - BLOCKED - not run because the protected cancelled-Receipt contradiction prevents task completion.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t77.478s\tcoverage: 48.4% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t62.3%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid/integration\t12.709s` (terminated `exit_code: 0`)
+- `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid` - PASS - `ok  \tgithub.com/mbell-nzl/fid/cmd/fid\t192.448s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t5.097s` (terminated `exit_code: 0`)
+- `go test -bench . -benchmem ./...` - PASS - `ok  \tgithub.com/mbell-nzl/fid/internal/workflow\t5.093s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
-- No contract, DDL, wire shape, error code, Event semantic, or gate definition was changed. The protected contradiction is recorded rather than silently mapping cancellation to another accepted Receipt status.
+- DEC-195 accepts the two exact 0013 baseline replacements for `execution_receipts`: the closed `terminal_status` list gains `cancelled` and its four-clause terminal CHECK becomes the schema.md section-1 five-clause block. `git blame` attributes both prior migration lines and the retained golden DDL string to the task-1 baseline (`72c5974f6698fa08a4fe1a24099b3a93b3882f1d`); DEC-195 transferred their execution to task 8. No other 0013 byte, migration, DDL surface, wire shape, error code, Event semantic, or gate definition changed.
 - The first closure implementation attempt used Claim `release_reason: "run-abandoned"`; the accepted DDL rejected it. The causal repair uses the existing closed `"abandoned"` value and preserves explicit Claim-release provenance.
 - Convergence provenance: `internal/journal/recovery_schema_test.go:94-107` was introduced by `72c5974f6698fa08a4fe1a24099b3a93b3882f1d` (phase-22/task-1) and was moved to its `run.closed` fence subject by task 7's accepted retained-row convergence. DEC-192 and task 8's accepted `run.closed` producer invalidate only that unavailable-Event identity. The subject-preserving repair keeps live/replay rejection coverage by using still-fenced `activation.resource-observed`; executing command: `go test ./internal/journal -run '^TestRecoverySchemaFreshInitAndReplay$' -count=1`.
 - Convergence provenance: `cmd/fid/gate_run_test.go:180-209` was introduced by `da6970b4ac5562e20c62f6c72ed8568c10d36f08` (phase-21/task-15). Task 8 implementation commit `bead7efb134f80726022f1e38d7b6749fe550073` persistently fences the pre-spawn Attempt and its pending idempotency result, invalidating only the old `0/0` Receipt/idempotency count. The subject-preserving repair retains the frame-only `fid-error` and no-Receipt assertions, and adds the required `1/0/1` Attempt/Receipt/idempotency proof; executing command: `go test ./cmd/fid -run '^TestGateRunReceiptAppendFailureEmitsFrameOnlyFidError$' -count=1`.
@@ -95,7 +110,7 @@
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - Retained R-14 fixture provenance: `cmd/fid/gate_run_test.go` signal helper and timeout row were introduced by `b69499116e70d4c88423a30daa2010a4ff221f14` (phase-21/task-15); the timeout extension was last touched by `76ad781727b9e8545e069c4ac0e9f926012e6af9` (phase-21/task-21). DEC-186 and task 8’s cancellation/observed-terminal acceptance invalidate only their fixture mechanisms. The repaired subject remains exact signal and timeout terminal Receipt assertions, executed by `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' ./cmd/fid`.
-- Resolution required: a Tech Lead decision must reconcile the accepted `cancelled` terminal Receipt requirement with the closed canonical Receipt DDL and task-8's explicit DDL prohibition. This task cannot choose a migration/schema change or alter VAL-031/contracts semantics.
+- DEC-195 resolution provenance: task-1 owns the accepted 0013 baseline and its golden DDL inventory; DEC-195 assigned only the two omitted cancellation replacements and corresponding golden convergence to task 8. `TestMigration0013CancelledReceiptTerminalConstraint` is the executing proof.
 - Recovery accounting: attempt 1 made interrupted-attempt and R-14 material progress; attempt 2 was report-only; attempt 3 made closure, action-admission, Event-parity, and retained-fixture convergence progress. The bound no-progress counter remains 0/2.
 
 ## Dependency-budget note
@@ -104,8 +119,8 @@
 
 ## Commit hash
 
-- `b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74`
+- Pending commit
 
 ## Commit subject
 
-- `feat(workflow): derive task-8 Run closure`
+- Pending commit
