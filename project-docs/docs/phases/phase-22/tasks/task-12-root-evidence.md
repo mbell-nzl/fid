@@ -366,3 +366,13 @@ original snapshot apart from replayed=true; no new Event is admitted.
 
 Root hands back these exact files for the Developer's final five-command gate.
 No further root product changes are pending at this handback.
+
+## Final coverage rendering cross-check
+
+After the Developer's final source gate and product commit c2d8098, root ran
+`go tool cover -func=coverage.out` from `/home/mark/projects/fid` against that
+retained coverage profile. It printed
+`total:										(statements)					62.4%`
+(terminated `exit_code: 0`). This is a root-session cross-check of the final
+profile and its verbatim display token; the ordered task gate retains its
+Developer-session attribution.

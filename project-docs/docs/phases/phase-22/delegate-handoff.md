@@ -205,3 +205,19 @@ artifacts and has preparation-only authority until task-12 completion, Review
 4 and the independent checkpoint all pass. Root records the task identity in
 every dispatch and report, rather than relying on the thread's historical name.
 This changes no gate, assertion, scope, evidence rule or product contract.
+
+## Historical Report Display Repair — 2026-09-08
+
+QA-84 preparation identified escaped tab characters in task-2/3/4/7/8 Go
+output tokens. Root committed the display-only decoding at be53eda, retaining
+original outcome, duration, coverage, termination and Developer attribution.
+No historical product command is claimed as freshly executed by root.
+
+Root then ran each following report control from `/home/mark/projects/fid`;
+each independently printed `OUTCOME COMPLETE` and terminated successfully:
+
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-2-done.md project-docs/docs/phases/phase-22/tasks/task-2.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-3-done.md project-docs/docs/phases/phase-22/tasks/task-3.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-4-done.md project-docs/docs/phases/phase-22/tasks/task-4.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-7-done.md project-docs/docs/phases/phase-22/tasks/task-7.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
+- `project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-8-done.md project-docs/docs/phases/phase-22/tasks/task-8.md` - PASS - `PASS report-lint completed with no failures` (terminated `exit_code: 0`)
