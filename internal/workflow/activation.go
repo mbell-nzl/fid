@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -412,6 +413,7 @@ func StageActivationComponent(options ActivationComponentOptions) (ActivationCom
 		staged := activation
 		staged.Status, staged.UpdatedAt, staged.Version = "staged", updatedAt, activation.Version+1
 		staged.ComponentDigests = append(staged.ComponentDigests, component.Digest)
+		sort.Strings(staged.ComponentDigests)
 		resultJSON, err := activationComponentResultJSON(staged, component, options.IdempotencyKey)
 		if err != nil {
 			return err
@@ -521,14 +523,16 @@ func FinalizeActivation(options ActivationTransitionOptions, request ActivationF
 		if err != nil {
 			return nil, err
 		}
-		effects := []journal.Effect{activationUpdateEffect(activation, map[string]any{"status": "finalized", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)})}
+		updatedAt := time.Now().UTC().Format(time.RFC3339Nano)
+		effects := []journal.Effect{}
 		if activation.PriorActivationID != nil {
 			prior, err := loadActivation(conn, *activation.PriorActivationID)
 			if err != nil {
 				return nil, err
 			}
-			effects = append(effects, activationUpdateEffect(prior, map[string]any{"status": "superseded", "updated_at": time.Now().UTC().Format(time.RFC3339Nano)}))
+			effects = append(effects, activationUpdateEffect(prior, map[string]any{"status": "superseded", "updated_at": updatedAt}))
 		}
+		effects = append(effects, activationUpdateEffect(activation, map[string]any{"status": "finalized", "updated_at": updatedAt}))
 		return append(effects, activationComponentStatusEffects(activation.ID, components, "finalized")...), nil
 	}, request)
 }

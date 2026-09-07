@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"os"
 	"path/filepath"
@@ -9,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mbell-nzl/fid/internal/journal"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -293,6 +296,55 @@ func TestActivationComponentStagesValidatedProfilesAndRejectsCallerAugmentation(
 			}
 		})
 	}
+}
+
+func TestActivationComponentResponseDigestsRemainSortedAfterSmallerSecondStage(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	activationID := prepareActivationForTest(t, workspace)
+	profileContent := []any{map[string]any{"actor_id": "actor-builder", "actor_type": "agent", "producer": "kit", "provenance_ref": "activation:profile/sorted", "session_ref": nil, "capabilities": []string{"claim.acquire"}}}
+	firstDigest := stageActivationComponentForTest(t, workspace, activationID, "authority-profile", "sorted-profile", profileContent)
+	var smaller []any
+	for timeout := 1; timeout < 10000; timeout++ {
+		candidate := validGateDefinitions()
+		candidate[0].(map[string]any)["timeout_ms"] = timeout
+		if activationContentDigest(t, candidate) < firstDigest {
+			smaller = candidate
+			break
+		}
+	}
+	if smaller == nil {
+		t.Fatal("could not construct a lexicographically smaller second component digest")
+	}
+	path := filepath.Join(workspace, "sorted-gates.json")
+	writeActivationInput(t, path, map[string]any{"activation_id": activationID, "component_type": "gate-definitions", "component_id": "sorted-gates", "component_version": 1, "expected_prior_digest": nil, "expected_version": activationVersionForTest(t, workspace, activationID), "content": smaller})
+	result := executeCommandForTest(workspace, "--project", workspace, "--json", "activation", "component", "--input", path, "--idempotency-key", "sorted-gates")
+	if result.err != nil {
+		t.Fatalf("stage smaller second component: %#v", result)
+	}
+	var envelope struct {
+		Result struct {
+			Activation struct {
+				ComponentDigests []string `json:"component_digests"`
+			} `json:"activation"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil || len(envelope.Result.Activation.ComponentDigests) != 2 || !sort.StringsAreSorted(envelope.Result.Activation.ComponentDigests) {
+		t.Fatalf("staged component digests = %#v, decode error = %v, want sorted exact pair", envelope.Result.Activation.ComponentDigests, err)
+	}
+}
+
+func activationContentDigest(t *testing.T, content []any) string {
+	t.Helper()
+	raw, err := json.Marshal(content)
+	if err != nil {
+		t.Fatalf("marshal component content: %v", err)
+	}
+	canonical, err := journal.MarshalCanonicalJSON(json.RawMessage(raw))
+	if err != nil {
+		t.Fatalf("canonical component content: %v", err)
+	}
+	sum := sha256.Sum256(canonical)
+	return "sha256:" + hex.EncodeToString(sum[:])
 }
 
 func prepareActivationForTest(t *testing.T, workspace string) string {

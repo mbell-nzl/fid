@@ -176,12 +176,7 @@ func CompleteActivationRecovery(options ActivationTransitionOptions, request Act
 		if activation.Recovery.Direction == "complete-forward" {
 			status, componentStatus = "finalized", "finalized"
 		}
-		effects := []journal.Effect{activationUpdateEffect(activation, map[string]any{"status": status, "updated_at": updatedAt}), {Op: "update", Table: "activation_recoveries", PK: map[string]any{"activation_id": activation.ID}, Values: map[string]any{"completed_event_id": "<event-id>"}}}
-		components, err := activationComponentIdentities(conn, activation.ID)
-		if err != nil {
-			return nil, err
-		}
-		effects = append(effects, activationComponentStatusEffects(activation.ID, components, componentStatus)...)
+		effects := []journal.Effect{}
 		if status == "finalized" && activation.PriorActivationID != nil {
 			prior, err := loadActivation(conn, *activation.PriorActivationID)
 			if err != nil {
@@ -189,6 +184,12 @@ func CompleteActivationRecovery(options ActivationTransitionOptions, request Act
 			}
 			effects = append(effects, activationUpdateEffect(prior, map[string]any{"status": "superseded", "updated_at": updatedAt}))
 		}
+		effects = append(effects, activationUpdateEffect(activation, map[string]any{"status": status, "updated_at": updatedAt}), journal.Effect{Op: "update", Table: "activation_recoveries", PK: map[string]any{"activation_id": activation.ID}, Values: map[string]any{"completed_event_id": "<event-id>"}})
+		components, err := activationComponentIdentities(conn, activation.ID)
+		if err != nil {
+			return nil, err
+		}
+		effects = append(effects, activationComponentStatusEffects(activation.ID, components, componentStatus)...)
 		resolutionEffects, err := activationIncompleteStopResolutionEffects(conn, activation.ID, options.BootstrapActor, time.Now().UTC().Format(time.RFC3339Nano))
 		if err != nil {
 			return nil, err
