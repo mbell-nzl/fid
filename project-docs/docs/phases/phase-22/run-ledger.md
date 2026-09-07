@@ -1216,3 +1216,24 @@
 - Resolution evidence: PENDING - actual run.start/gate.run/recovery Stop matrix and root Issue/Envelope handback, then all five final-source gates and committed report; Review 3 waits for completion
 - Next action: dispatch fresh same-task Developer continuation for the actual-operation matrix and final verification, preserving prior failed receipts and root attribution
 - Human attention required: no
+
+### 2026-09-07 21:55 REPAIR task-9
+
+- Trigger signature: task-9:in-scope-implementation:stop-runtime-matrix-and-final-gates
+- Attempt count: 1
+- Starting checkpoint: a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460 implementation; 158cdc7 valid recovery report; dispatch 2aa9330
+- Ending checkpoint: cb94ae172c9ac8587ef471e0dd2a1edb94d94ea1 final matrix; a78c75b finalized report; root report evidence correction at 0e4f744 with fresh report-lint OUTCOME COMPLETE exit_code: 0
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: actual Issue/Envelope/start/execute/ordinary-force recovery Stop cases cover applicable, unrelated and resolved states, all applicable reasons and rejected-operation no-effects; Developer recorded all five unchanged final-source gates PASS. Root independently verified product hash/subject and report lint, and reran the coverage command with verbatim 62.7% token and exit_code: 0 to correct escaped formatting. Earlier failures and root attribution remain. Child reported a later read-only .git failure while adding its preserved construction-failure paragraph; root git surface committed that paragraph successfully at 0e4f744, with no discarded report change or capability bypass.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-07 21:55 TASK task-9 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-9-done.md
+- report-lint: PASS - OUTCOME COMPLETE (terminated exit_code: 0)
+- Commit: cb94ae172c9ac8587ef471e0dd2a1edb94d94ea1 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
