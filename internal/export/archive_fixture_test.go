@@ -4,15 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/mbell-nzl/fid/internal/claims"
 	"github.com/mbell-nzl/fid/internal/config"
+	fiddb "github.com/mbell-nzl/fid/internal/db"
 	"github.com/mbell-nzl/fid/internal/evidence"
 	"github.com/mbell-nzl/fid/internal/issues"
+	"github.com/mbell-nzl/fid/internal/project"
 	"github.com/mbell-nzl/fid/internal/workflow"
 )
 
@@ -46,7 +50,7 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	}
 
 	activation := activateExportFixture(t, workspace, migrationsDir)
-	repository := workflow.Repository{CaptureSource: "git", HeadOID: strings.Repeat("1", 40), ProjectID: project.ProjectID, TreeOID: strings.Repeat("2", 40), WorktreeID: "WT-fixture"}
+	repository := fixtureRepository(t, workspace, project.ProjectID)
 	registration, err := evidence.Register(evidence.RegisterOptions{
 		WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-gate-register",
 		Request: evidence.RegisterRequest{DefinitionID: "fixture-gate", DefinitionVersion: 1, WorktreeID: repository.WorktreeID, Scope: evidence.GateScope{IssueID: issue.ID}, Repository: evidenceRepository(repository)},
@@ -62,7 +66,10 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	obligation := workflow.ObligationInput{ID: "OBL-fixture", Type: "gate-evidence", Applicability: "required", GuardedActions: []string{"envelope.complete", "issue.transition-terminal-success"}, AcceptedEvidenceTypes: []string{"receipt"}, AcceptedTrustSources: []string{"fid-executed"}, FreshnessTarget: "repository-tree", ArtifactPolicy: "required-available", Independence: "fid-executed", Source: source}
 	obligation.Subject.Type, obligation.Subject.ID = "issue", issue.ID
 	obligation.Registration.ID, obligation.Registration.Version = registration.Registration.ID, registration.Registration.Version
-	request := workflow.EnvelopeCreateRequest{Outcome: "Archive semantic fixture", NonGoals: []string{}, RepositoryScope: repository, Sources: []workflow.Source{source}, PrimaryIssueID: issue.ID, RelatedIssueIDs: []string{}, AuthorityGrants: []workflow.AuthorityGrant{grant}, Obligations: []workflow.ObligationInput{obligation}}
+	harnessGrant := workflow.AuthorityGrant{Actions: fixtureHarnessCapabilities()}
+	harnessGrant.ActorSelector.ActorID, harnessGrant.ActorSelector.RequiredCapabilities = "actor-harness", fixtureHarnessCapabilities()
+	harnessGrant.Scope.IssueID = issue.ID
+	request := workflow.EnvelopeCreateRequest{Outcome: "Archive semantic fixture", NonGoals: []string{}, RepositoryScope: repository, Sources: []workflow.Source{source}, PrimaryIssueID: issue.ID, RelatedIssueIDs: []string{}, AuthorityGrants: []workflow.AuthorityGrant{grant, harnessGrant}, Obligations: []workflow.ObligationInput{obligation}}
 	request.RiskResult.Source, request.RiskResult.ResultDigest = source, "sha256:"+strings.Repeat("4", 64)
 	created, err := workflow.CreateEnvelope(workflow.EnvelopeOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-envelope-create"}, request)
 	if err != nil {
@@ -98,6 +105,52 @@ func addJournalBackedExportFixtureFacts(t *testing.T, workspace string) string {
 	return "artifacts/" + strings.TrimPrefix(artifact.Digest, "sha256:")
 }
 
+// addRecoveredExportFixtureFacts extends the ordinary archive fixture through
+// a genuine terminated observation, released predecessor Claim, read-only
+// reconciliation, and ordinary Run recovery.  It leaves the complete Event
+// reference chain available to archive semantic tests.
+func addRecoveredExportFixtureFacts(t *testing.T, workspace string) string {
+	t.Helper()
+	artifactEntry := addJournalBackedExportFixtureFacts(t, workspace)
+	migrationsDir := testMigrationsDir(t)
+	runs, err := workflow.ListRuns(workflow.RunListOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, Status: "active", Limit: 1})
+	if err != nil || len(runs) != 1 {
+		t.Fatalf("list fixture active Run: %#v, %v", runs, err)
+	}
+	prior := runs[0]
+	observedAt := time.Now().UTC().Add(-time.Second).Format(time.RFC3339Nano)
+	observation, err := workflow.ObserveRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-harness", IdempotencyKey: "fixture-run-observe"}, workflow.RunObserveRequest{RunID: prior.ID, ExpectedVersion: prior.Version, Liveness: workflow.Liveness{ExecutorID: prior.Executor.ID, State: "terminated", SourceRef: "fixture:terminated", ObservedAt: observedAt}})
+	if err != nil {
+		t.Fatalf("observe fixture Run termination: %v", err)
+	}
+	claimVersion := fixtureClaimVersion(t, workspace, prior.ClaimID)
+	if _, err := claims.ReleaseGeneric(claims.MutationOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-claim-release"}, claims.ReleaseRequest{ClaimID: prior.ClaimID, ExpectedVersion: claimVersion, Reason: "interrupted"}); err != nil {
+		t.Fatalf("release fixture predecessor Claim: %v", err)
+	}
+	inspection, err := workflow.InspectRun(workspace, migrationsDir, prior.ID, workspace)
+	if err != nil {
+		t.Fatalf("inspect fixture Run for recovery: %v", err)
+	}
+	if _, err := workflow.RecoverRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: migrationsDir, ActorID: "actor-builder", IdempotencyKey: "fixture-run-recover"}, workflow.RunRecoveryRequest{PriorRunID: prior.ID, ExpectedRunVersion: observation.Run.Version, ExpectedClaimVersion: claimVersion + 1, ObservationID: observation.Observation.ID, ReconciliationDigest: inspection.Reconciliation.Digest, AdoptedPaths: []string{"fixture-artifact.txt"}, Authority: workflow.RecoveryAuthority{Mode: "ordinary", ActorID: "actor-builder", Reason: "trusted termination"}, Executor: workflow.Executor{ID: "executor-recovered", Source: "activated-harness"}, TTLSeconds: 60}); err != nil {
+		t.Fatalf("recover fixture Run: %v", err)
+	}
+	return artifactEntry
+}
+
+func fixtureClaimVersion(t *testing.T, workspace, claimID string) int {
+	t.Helper()
+	database, err := fiddb.Open(filepath.Join(workspace, ".fid", "fid.sqlite"))
+	if err != nil {
+		t.Fatalf("open fixture projection for Claim: %v", err)
+	}
+	defer func() { _ = database.Close() }()
+	var version int
+	if err := database.QueryRow(`SELECT version FROM claims WHERE id = ?`, claimID).Scan(&version); err != nil {
+		t.Fatalf("read fixture Claim version: %v", err)
+	}
+	return version
+}
+
 func activateExportFixture(t *testing.T, workspace, migrationsDir string) workflow.Activation {
 	t.Helper()
 	resources := make([]workflow.ActivationResourceInput, 0, 5)
@@ -108,7 +161,10 @@ func activateExportFixture(t *testing.T, workspace, migrationsDir string) workfl
 	if err != nil {
 		t.Fatalf("prepare fixture activation: %v", err)
 	}
-	profiles, err := json.Marshal([]workflow.ActorProfile{{ActorID: "actor-builder", ActorType: "agent", Producer: "fid", ProvenanceRef: "fixture:activation", Capabilities: fixtureCapabilities()}})
+	profiles, err := json.Marshal([]workflow.ActorProfile{
+		{ActorID: "actor-builder", ActorType: "agent", Producer: "fid", ProvenanceRef: "fixture:activation", Capabilities: fixtureCapabilities()},
+		{ActorID: "actor-harness", ActorType: "agent", Producer: "activated-harness", ProvenanceRef: "fixture:activation", Capabilities: fixtureHarnessCapabilities()},
+	})
 	if err != nil {
 		t.Fatalf("encode fixture authority profile: %v", err)
 	}
@@ -148,7 +204,42 @@ func activateExportFixture(t *testing.T, workspace, migrationsDir string) workfl
 }
 
 func fixtureCapabilities() []string {
-	return []string{"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.start"}
+	return []string{"artifact.verify", "claim.acquire", "claim.release", "claim.renew", "envelope.activate", "envelope.complete", "envelope.create", "evidence.link", "gate.register", "gate.run", "issue.transition", "run.close", "run.recover", "run.start"}
+}
+
+func fixtureHarnessCapabilities() []string { return []string{"run.observe"} }
+
+func fixtureRepository(t *testing.T, workspace, projectID string) workflow.Repository {
+	t.Helper()
+	fixtureGit(t, workspace, "init", "-q")
+	fixtureGit(t, workspace, "config", "user.email", "fixture@example.test")
+	fixtureGit(t, workspace, "config", "user.name", "Archive fixture")
+	if err := os.MkdirAll(filepath.Join(workspace, "project-docs", "gates"), 0o755); err != nil {
+		t.Fatalf("create fixture Source directory: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, ".gitignore"), []byte(".fid/\n"), 0o644); err != nil {
+		t.Fatalf("write fixture gitignore: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(workspace, "project-docs", "gates", "fixture.json"), []byte("{\"fixture\":true}\n"), 0o644); err != nil {
+		t.Fatalf("write fixture Source prose: %v", err)
+	}
+	fixtureGit(t, workspace, "add", ".gitignore", "project-docs/gates/fixture.json")
+	fixtureGit(t, workspace, "commit", "-qm", "fixture source")
+	observed, err := project.ObserveRepository(workspace)
+	if err != nil {
+		t.Fatalf("capture fixture repository: %v", err)
+	}
+	base := observed.HeadOID
+	return workflow.Repository{BaseOID: &base, CaptureSource: "git", Dirty: observed.Dirty, DirtyDigest: observed.DirtyDigest, HeadOID: observed.HeadOID, ProjectID: projectID, TreeOID: observed.TreeOID, WorktreeID: observed.WorktreeID}
+}
+
+func fixtureGit(t *testing.T, workspace string, arguments ...string) {
+	t.Helper()
+	command := exec.Command("git", arguments...)
+	command.Dir = workspace
+	if output, err := command.CombinedOutput(); err != nil {
+		t.Fatalf("git %s: %v: %s", strings.Join(arguments, " "), err, output)
+	}
 }
 
 func fixtureSource(repository workflow.Repository) workflow.Source {
