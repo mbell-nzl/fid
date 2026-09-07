@@ -40,9 +40,13 @@
 ## Tests run
 
 - `go test -tags integration -race ./cmd/fid/integration/... -run '^TestActivationRecoveryAtEveryDurableBoundary$' -count=1` - FAIL - `FAIL	github.com/mbell-nzl/fid/cmd/fid/integration	0.805s` (terminated `exit_code: 1`). First behavioral red: the public `activation resource` leaf was absent.
-- `go test ./cmd/fid ./internal/workflow ./internal/cli -run 'TestActivation|TestReasonCodeDetailSchemaIsExactForEveryCode' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	0.026s` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestActivationRecoveryAtEveryDurableBoundary$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.555s` (terminated `exit_code: 0`).
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22DualAdapterActivationConformance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.834s` (terminated `exit_code: 0`). This root-owned independent fake/fid corpus receipt is cited from `task-11-root-evidence.md`; it is not presented as Developer-run evidence.
+- `go test ./cmd/fid ./internal/workflow ./internal/cli -run 'TestActivation|TestReasonCodeDetailSchemaIsExactForEveryCode' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/cli	0.026s` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestActivationRecoveryAtEveryDurableBoundary$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	5.555s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22DualAdapterActivationConformance$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.834s` (terminated `exit_code: 0`)
+
+The last receipt is the root's own captured execution, retained in
+`task-11-root-evidence.md` and recorded here by the root during report repair;
+it is not presented as Developer-run evidence.
 
 ## Exact quality-gate results
 
@@ -59,6 +63,14 @@
 ## Concerns, technical debt, or notes for the Tech Lead
 
 - None.
+
+Root's first report-lint attempt ended `FAIL report-lint found 3 failure(s)`
+(terminated `exit_code: 3`). Three successful focused rows placed punctuation
+or attribution prose after their termination marker; all five required gate,
+commit identity and clean-report checks passed. Root removed only the trailing
+punctuation and moved attribution to its own paragraph. Tokens and observed
+terminations are unchanged. The byte-identical control is rerun after this
+report-only commit; its fresh result is recorded in the Runner ledger.
 
 ## Dependency-budget note
 
