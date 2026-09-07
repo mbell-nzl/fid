@@ -65,12 +65,21 @@ Fresh final-source results after the complete Stop matrix:
 - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
 - `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
 - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 76.392s coverage: 51.8% of statements` (terminated `exit_code: 0`)
-- `go tool cover -func=coverage.out` - PASS - `total:\t\t\t\t\t\t\t\t\t\t(statements)\t\t\t\t62.7%` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `62.7%` (terminated `exit_code: 0`)
 - `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 13.470s` (terminated `exit_code: 0`)
 
 ## Deviations from spec
 
+- Root observed that the finalized coverage token contained literal escaped tab text. Root reran the byte-identical `go tool cover -func=coverage.out`, observed `62.7%` and `exit_code: 0`, and replaced that formatting with the short verbatim percentage. This row is a fresh root receipt; the remaining final gates retain continuation-session attribution. No source or gate definition changed.
+
 - Root checkpoint report-lint first attempt failed: `FAIL report-lint found 8 failure(s)` (terminated `exit_code: 8`). The inherited draft combined failed and passing attempts on one line, placed extra backticks before test receipts, and used punctuation the termination parser rejected. Root retained those historical rows as attributed quotations and supplied explicit current BLOCKED rows; no control or gate definition changed.
+
+- The first recovery-matrix construction attempt failed before it exercised a
+  Stop assertion because its test-only successor counter queried nonexistent
+  `runs.predecessor_run_id`: `FAIL github.com/mbell-nzl/fid/internal/workflow
+  0.810s` (terminated `exit_code: 1`). The count now reads the accepted
+  `run_recoveries.prior_run_id` projection, and the focused matrix passed. No
+  product behavior or test assertion was narrowed.
 
 - Root checkpoint after the Developer's session-limit handback: VAL-037 lacked
   actual run.start/gate.run applicable/unrelated/resolved/all-reasons cases.
