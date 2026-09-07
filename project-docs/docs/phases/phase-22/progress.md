@@ -61,3 +61,27 @@
   its bounded harness recovery, task-3 MF-3 remains open, and fresh review-1
   re-review is required before task 4. Tasks 4..18 remain pending.
 - No product code, product tests or goldens changed in this maintenance task.
+
+## 2026-09-07 - Delegated Remaining Execution
+
+- Human authorized root to complete the remaining phase and independent QA,
+  preparing retained Human fixtures/checklist for the following day. Scope and
+  pending Human judgment are recorded in `delegate-handoff.md`.
+- Root resumed task 8 under DEC-195 after verifying the resolved escalation.
+  Product `c5dc59e4bb9cf9db20a4aa157daeef68d132bb60` and finalized report
+  `622089e59211ac5612674651ef917a7002e41ba9` close cancellation persistence
+  and the unchanged eight-command gate. Root independently observed report
+  lint COMPLETE, verified the commit, and appended task completion through the
+  sequence control. Developer receipts remain attributed to its session.
+- DEC-196 closes three delivery allocations found by independent preflight:
+  semantic fake/corpus in task 9, Human recovery/resume text in task 12, and
+  retained Human fixtures in task 18. A follow-up source inspection explicitly
+  assigns the recovery mutation's Human renderer with task-6 provenance.
+- Root committed task-9's 37-case independent fake/fid semantic corpus and
+  separately attributed focused evidence. It exposed real resolution replay
+  and committed-denial frame replay defects, causally repaired by the Developer
+  under DEC-197. That decision also names omitted domain/read/guard and exact
+  retired-helper cleanup scope. Failed receipts are retained.
+- Task 9 remains active until its final Human text, cross-surface predicate
+  evidence, required gates and report close. Review 3 is preparing committed
+  evidence but waits for the final task-9 checkpoint before gate/verdict.
