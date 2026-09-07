@@ -77,6 +77,14 @@
   binding at its source with recorded introducing-commit provenance, and never
   pin an absolute date on an Event appended through the journal writer into a
   live-clock workspace.
+- DEC-194: an accepted allocation that exists but was never delivered is bounded
+  repair, not an ambiguous owner. Read the task spec, schema owner column,
+  public-interface task column, and contract subjects before classifying.
+- DEC-195: an accepted contract clause that adds a closed-domain member requires
+  a matching schema row. Where the row is missing, amend the schema and keep the
+  assertion; never substitute an admitted value or weaken the assertion. Assign
+  execution to the first task that cannot pass without it, with provenance to the
+  original owner recorded rather than relabelled.
 - Current V1 delivery scaffolding is binding engineering procedure, not forward
   fid product scope. No failed gate authorizes a protected definition change.
 

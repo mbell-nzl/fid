@@ -145,3 +145,81 @@
   `../phase-22/tasks/task-6.md`; `../phase-22/schema.md` section 5;
   `../phase-22/public-interface.md` section 3; `../phase-22/contracts.md`
   sections 3/3.1/3.2.
+
+## Retained original escalation
+
+### ESC-22-004 - Task 8 cancelled Receipt requirement contradicts canonical terminal-status DDL
+
+- **Phase:** 22
+- **Status:** OPEN (as raised)
+- **Raised by:** TRG-22-009
+- **Category:** specification-contradiction
+- **Summary:** Task 8's accepted VAL-031/contracts behavior requires a fid-observed cancellation to persist a durable Receipt with `terminal_status` `cancelled`, but canonical `execution_receipts.terminal_status` DDL excludes that value.
+- **Evidence:** `contracts.md` section 7 states that cancellation adds terminal outcome `cancelled`; `migrations/0013_p21_operational_kernel.up.sql:250-268` permits only `succeeded`, `failed`, `timed-out`, `signaled`, and `spawn-failed`. The committed task-8 report preserves focused passing cancellation/workflow evidence and records the required gates `BLOCKED`. Runner-supplied verification confirms implementation `b965b24` and report `7643961`; independent report-lint returned `OUTCOME BLOCKED` and `PASS report file committed and clean` (terminated `exit_code: 0`).
+- **Why blocked:** The current task forbids DDL, wire-shape, and contract changes. Mapping cancellation to an existing permitted status violates the accepted cancellation Receipt behavior, while modifying the DDL, schema/task scope, VAL-031, or contracts requirement is protected authority outside TL-Lite and task 8.
+- **Required resolution:** Full Tech Lead/Human authority must reconcile the accepted durable `cancelled` Receipt requirement with the canonical `execution_receipts.terminal_status` CHECK, record which side is amended, and provide the authorized same-task continuation and verification path. Preserve all failed receipts and do not substitute an existing terminal status.
+- **Human attention required:** yes
+
+## Resolution ESC-22-004
+
+- **Status:** RESOLVED, 2026-09-07. Governing decision: DEC-195.
+- **The contradiction was real, and it was a Tech Lead planning omission.** Every
+  other accepted record agrees that cancellation is its own terminal outcome:
+  `contracts.md` section 7, `public-interface.md` section 4's
+  `gate-unsuccessful`/8 with outcome `cancelled`, VAL-031's mislabelled-outcome
+  failure condition and its "exact signal/timeout/cancelled outcomes" note, the
+  v1 convergence inventory, and QA plan R-14, which states that task 8's accepted
+  change adds the `cancelled` terminal outcome. Only `schema.md` section 1 is
+  silent: it lists five 0013 CHECK member-list replacements for Phase 22 and
+  omits the one its own accepted contract requires. Migration 0015 never touches
+  the table, and `03_TRD_SCHEMA.md` section 8.3 incorporates `schema.md` by
+  reference, so the omission propagated into the canonical record. Unlike
+  ESC-22-003, no accepted record assigned this work to anyone, so there was
+  nothing to deliver and nothing to repair below full Tech Lead authority.
+- **The escalation was correct.** TRG-22-009's BLOCK, its
+  `specification-contradiction` category, and its refusal to map cancellation to
+  `signaled`, `timed-out`, or `failed` were all right. Substituting an admitted
+  status would have falsified an accepted, Human-approved behavior and defeated
+  the exact failure condition VAL-031 exists to catch. The preserved BLOCKED gate
+  rows and failed receipts are the correct artifact. No no-progress attempt is
+  counted against the three-attempt history: the blocker was a missing authority,
+  not exhausted repair capability.
+- **Resolution route - amend the schema, keep the assertion.** DEC-188 already
+  accepted the cancellation behavior by Human approval; only its persistence
+  derivation was missing, and `schema.md` section 1 is already an accepted
+  pre-adoption in-place baseline replacement of 0013 that task 1 executed five
+  times. Section 1 now carries two further `execution_receipts` rows: `'cancelled'`
+  joins the `terminal_status` member list, and the composite terminal CHECK gains
+  exactly `OR (terminal_status = 'cancelled' AND timed_out = 0 AND NOT (exit_code
+  IS NOT NULL AND signal IS NOT NULL))`. The clause follows observed behavior:
+  `RunLive` classifies context cancellation as `cancelled` and then records
+  whichever of signal or exit code the process state carried, so signal-only,
+  exit-code-only, and neither must all be admitted, while the impossible pair is
+  refused and `timed_out = 1` stays the `timed-out` discriminator.
+- **Execution assignment:** task 8, as an authorized same-task continuation with
+  task-1 provenance recorded; task 1 stays COMPLETE and unedited. Its scope now
+  names the 0013 file limited to those two exact replacements, the retained
+  golden DDL string in `internal/db/operational_kernel_migration_test.go` as
+  subject-preserving convergence, and `validReceiptListOptions` in
+  `internal/evidence/receipt_read.go`, because a stored status that its own read
+  API rejects is an incoherent closed domain. `internal/workflow/evaluation.go`
+  needs nothing: it derives success from an `outcome == "succeeded"` allowlist.
+- **Executability:** task 8's unchanged eight-command gate already executes every
+  assigned file. `go test -race -coverprofile=coverage.out ./...` compiles and
+  runs `internal/db` against the real migration directory plus `internal/evidence`
+  and `cmd/fid`; the tagged integration gate builds the binary and initializes
+  fresh workspaces from the same SQL. No gate, tag, or environment switch added.
+- **What did not change:** no Event, Effect, table, column, index, wire shape,
+  error code, exit code, VAL row or wording, validator, gate command, threshold,
+  task allocation, operating mode, dependency, or workflow control. VAL-031 is
+  not weakened; it becomes satisfiable as written.
+- **Carried to wrap-up:** DEC-194 recorded that a task file scope is not
+  self-enforcing. This is the converse: an accepted contract clause is not
+  self-enforcing either. A closed-domain member was added in prose with no schema
+  row, no task scope, and no acceptance criterion behind it, and nothing failed
+  until an implementation reached the CHECK.
+- **References:** TRG-22-009; `decisions.md` DEC-195; `schema.md` section 1;
+  `contracts.md` section 7; `public-interface.md` section 4;
+  `qa/validation-contract.md` VAL-031; `tasks/task-8.md`; `tasks/task-8-done.md`;
+  `qa/qa-plan.md` R-14; `v1-convergence-inventory.md`.
+

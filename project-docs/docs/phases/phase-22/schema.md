@@ -6,7 +6,9 @@
 ## 1. Development Baseline
 
 Task 1 owns the following exact textual changes to migration
-`0013_p21_operational_kernel.up.sql`, plus new migration `0015_p22_recovery`.
+`0013_p21_operational_kernel.up.sql`, plus new migration `0015_p22_recovery`,
+except the two `execution_receipts` rows, which DEC-195 adds later and assigns
+to task 8 with task-1 provenance recorded.
 This deliberate pre-adoption baseline replacement requires fresh init/rebuild;
 it is not an upgrade of old fid data. All other 0013 SQL stays byte-identical.
 
@@ -17,6 +19,26 @@ it is not an upgrade of old fid data. All other 0013 SQL stays byte-identical.
 | `work_claims.status` CHECK | `('active','released','expired')` | `('active','released','expired','superseded')` |
 | `work_claims.release_reason` CHECK member list | `'completed','failed','operator-released'` | `'completed','failed','operator-released','interrupted','recovery-superseded','abandoned'` |
 | `runs.status` CHECK | `('active','succeeded','failed','abandoned')` | `('active','succeeded','failed','abandoned','interrupted')` |
+| `execution_receipts.terminal_status` CHECK member list (task 8, DEC-195) | `('succeeded','failed','timed-out','signaled','spawn-failed')` | `('succeeded','failed','timed-out','signaled','spawn-failed','cancelled')` |
+| `execution_receipts` composite terminal CHECK (task 8, DEC-195) | its four-clause block | the five-clause block below; the original four clauses stay byte-identical |
+
+Contracts section 7 and `public-interface.md` section 4 accept `cancelled` as a
+distinct terminal outcome, so the Receipt domain must admit it. DEC-195 replaces
+the `execution_receipts` composite CHECK with exactly:
+
+```sql
+  CHECK ((terminal_status = 'spawn-failed' AND exit_code IS NULL AND signal IS NULL AND timed_out = 0)
+      OR (terminal_status = 'timed-out' AND timed_out = 1)
+      OR (terminal_status = 'signaled' AND exit_code IS NULL AND signal IS NOT NULL AND timed_out = 0)
+      OR (terminal_status IN ('succeeded','failed') AND exit_code IS NOT NULL AND signal IS NULL AND timed_out = 0)
+      OR (terminal_status = 'cancelled' AND timed_out = 0 AND NOT (exit_code IS NOT NULL AND signal IS NOT NULL)))
+```
+
+A cancelled Receipt therefore records whichever of exit code or signal was
+actually observed, or neither when observation carried no detail; it never
+records both, and it never sets `timed_out`, which stays the `timed-out`
+discriminator. No other column, table, index, or Event changes, and `cancelled`
+never satisfies the `terminal_status = 'succeeded'` success predicate.
 
 The historical section 8.2 of the canonical schema remains the Phase 21 record;
 section 8.3 and this replacement table define the Phase 22 baseline. Migration
