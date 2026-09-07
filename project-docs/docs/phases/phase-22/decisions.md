@@ -1051,6 +1051,47 @@
   dependency or workflow control changes. Required task-12 gates and the
   independent checkpoint remain unchanged.
 
+### DEC-202: Allocate Imported Destination Reconciliation
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's explicit
+  execution authority to complete the remaining phase and resolve omitted
+  allocation; accepted portable-recovery behavior is unchanged.
+- **Contract:** Contracts section 10 preserves imported identity/history,
+  treats destination observations as new local facts, and requires current
+  liveness/reconciliation before active work regains mutation capability.
+  A target repository may contain Git metadata and project files; it must
+  have no `.fid` project. Import does not restore source code.
+- **Gap:** The existing reconciliation rejects every physical Worktree ID
+  change. Recovery copies the old Claim Worktree ID, and Run/evaluation binding
+  checks retain the original Envelope Worktree ID. Task 14's listed authority,
+  Claim and executor files can deny historical authority but cannot deliver
+  the required positive destination route. Rewriting history is forbidden.
+- **Allocation:** Task 14 additionally owns reconciliation.go, run_inspect.go,
+  recovery.go, run_observation.go, run.go and evaluation.go in internal/workflow,
+  plus matching tests. Task 3/4/5/6/12 ownership remains provenance; their
+  completed reports and historical outcomes are not reopened.
+- **Execution boundary:** Use the accepted installed-import delivery metadata
+  to bind the imported Project ID/archive history to the actual destination.
+  Only that verified local association may qualify a destination Worktree ID
+  different from the historical one. Require a fresh destination liveness
+  fact and exact current reconciliation; replaying an imported observation
+  cannot qualify. New successor Claim/Run facts bind the observed destination.
+  Preserve the Project ID, all imported repository values, Evidence/Receipt
+  identity, Event order/bytes and policy. Existing ancestry, approved-path,
+  unknown/live executor, Stop, Budget, grant and freshness checks still apply.
+  Ordinary requests without the installed import association retain their
+  foreign-project/worktree rejection. Import alone permits no spawn/takeover.
+- **Evidence:** Task 14 proves populated source-directory preservation,
+  unqualified imported mutation denial, old-observation replay denial, fresh
+  local observation/reconciliation and successor execution, and retained
+  rejection without an import association. Task 15 carries this route through
+  the real CLI/import journey; final QA checks the same contract.
+- **Limits:** No new public field, error code, Event/Effect/schema member,
+  policy, dependency, gate, VAL semantics, threshold or workflow control.
+  Private delivery-metadata representation is an implementation choice under
+  the already accepted publication-marker contract, excluded from export.
+
 ## Planning Spec Impact
 
 | Document | Planning change |

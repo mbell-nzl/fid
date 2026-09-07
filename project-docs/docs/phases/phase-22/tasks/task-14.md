@@ -22,6 +22,9 @@ Full sources, pass/fail criteria, and validator ownership are in
 - Use target-specific exclusive locking and same-filesystem publication; do not replace any existing .fid project.
 - Preserve original Event bytes/order and idempotency results; publication adds no domain Event.
 - Active imported work remains historical until explicit liveness/reconciliation; no automatic authorization or spawn.
+- DEC-202 allocates the import-specific destination reconciliation route. The
+  target may contain Git metadata and project source files; empty means no
+  existing `.fid` project. Preserve those files and all imported history.
 - Tests inject faults before/after durability and publication boundaries with fresh scratch targets.
 - `execution-scope.md` is incorporated into this scope: it assigns only
   subject-preserving convergence of assertions displaced by this task's accepted
@@ -39,6 +42,11 @@ Full sources, pass/fail criteria, and validator ownership are in
 - `internal/journal/`
 - `internal/db/`
 - `internal/workflow/authority.go`
+- `internal/workflow/reconciliation.go`, `internal/workflow/run_inspect.go`,
+  `internal/workflow/recovery.go`, `internal/workflow/run_observation.go`,
+  `internal/workflow/run.go`, `internal/workflow/evaluation.go` - DEC-202:
+  qualify new destination facts through the installed import binding only;
+  preserve ordinary foreign-project/worktree rejection and historical values.
 - `internal/claims/generic.go`
 - `internal/evidence/execution.go`
 - Matching in-package tests and `cmd/fid/integration/` contract fixtures for
@@ -67,6 +75,12 @@ Full sources, pass/fail criteria, and validator ownership are in
 - [ ] Import response-loss retry does not duplicate facts. (VAL-060)
 - [ ] Import cannot overwrite or merge a populated target. (VAL-061)
 - [ ] Imported active work does not automatically regain mutation authority. (VAL-062)
+- [ ] A target containing Git/source files but no `.fid` imports without
+  changing those files. Fresh local liveness and exact destination
+  reconciliation can produce a successor Claim/Run bound to that destination;
+  new successor execution qualifies while imported proof/history stays
+  immutable. Unqualified imported work and ordinary foreign-worktree requests
+  remain rejected. (VAL-058/061/062; DEC-202)
 - [ ] Full required commands terminate; preserve red/green and failed-attempt
   evidence with output tokens and observed exit status.
 - [ ] Every converged retained row identifies introducing commit/phase/task,
