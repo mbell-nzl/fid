@@ -15,12 +15,13 @@ merged. Contracts and task pack are refined against QA R-01..14 and all kit
 comparison items (DEC-184..187); Human approved the refined pack on 2026-09-05.
 See `../phases/phase-22/runner-handoff.md`. Status is per-task below.
 
-Tasks 1-9 complete; reviews 1b, 2b and 3 PASS. Task 8 closed under DEC-195 with
+Tasks 1-10 complete; reviews 1b, 2b and 3 PASS. Task 8 closed under DEC-195 with
 the exact cancelled-Receipt DDL/filter convergence and all eight gates passed;
 its failed history remains in the report. Task 9 completed its final five gates
-and actual-operation Stop matrix; independent review 3 passed. Task 10 is
-executing under DEC-198, which reconciles prepare versus component staging
-while preserving the accepted closed interface and immutable content.
+and actual-operation Stop matrix; independent review 3 passed. Task 10 completed
+under DEC-198 with final binding, agreement, upgrade and replay tests plus all
+five gates and independent report lint. Task 11 is executing under DEC-199's
+bounded typed-error enrichment and Human activation rendering allocation.
 DEC-196 assigns semantic fake strengthening to task 9, Human resume rendering
 to task 12 and retained Human fixture generation to task 18. Root orchestrates
 under the Human delegation in `delegate-handoff.md`. No open ESC.
@@ -47,8 +48,8 @@ Tasks are sequential; reviews follow every three tasks.
 | [7](../phases/phase-22/tasks/task-7.md) | Durable budget accounting and execution admission | Complete | 6 |
 | [8](../phases/phase-22/tasks/task-8.md) | Interrupted Attempts and derived Run closure | Complete (DEC-195) | 7 |
 | [9](../phases/phase-22/tasks/task-9.md) | Stop, budget, and closure commands | Complete (DEC-196/197) | 8 |
-| [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Executing (DEC-198) | 9 |
-| [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Pending | 10 |
+| [10](../phases/phase-22/tasks/task-10.md) | Activation recovery domain | Complete (DEC-198) | 9 |
+| [11](../phases/phase-22/tasks/task-11.md) | Activation CLI and config boundary | Executing (DEC-199) | 10 |
 | [12](../phases/phase-22/tasks/task-12.md) | Recovery freshness and actionable resume | Pending | 11 |
 | [13](../phases/phase-22/tasks/task-13.md) | Recovery archive format and validation | Pending | 12 + independent checkpoint |
 | [14](../phases/phase-22/tasks/task-14.md) | Atomic import into an empty target | Pending | 13 |
