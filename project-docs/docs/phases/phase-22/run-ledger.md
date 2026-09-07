@@ -626,3 +626,547 @@
 - Triage: TRG-22-008 (BLOCK, escalated as ESC-22-003)
 - Protected category: protected task boundary and ambiguous owner for required canonical workflow behavior
 - Next Human or external-authority action: Full Tech Lead must identify the accepted owner and record a bounded authority for the internal/workflow checkpoint mutation/Event producer and inspection API, preserving the accepted public interface, schema/Event, VAL, gate, and workflow-control contracts, before task 6 resumes.
+
+### 2026-09-06 17:52 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-06 17:14 STOP / TRG-22-008 / ESC-22-003
+- Governing TRG: TRG-22-008
+- Governing ESC: ESC-22-003
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 3
+- Checkpoint: phase-22 HEAD 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f verified on branch phase-22; the prior STOP validates; runner-owned ledger and triage-log dirt were committed as 372adc3; the escalation register is committed and has no open escalation
+- Resolution evidence: DEC-194 resolves TRG-22-008 and ESC-22-003 as ordinary in-scope-implementation task-scope repair. The verified commit 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f amends task 6 with exactly four internal/workflow domain files plus the minimum registration edit, transfers execution from accepted phase-22/task-4 ownership without reopening task 4, preserves all accepted wire, Event, Effect, VAL, gate, task-allocation, and workflow-control contracts, and records the required QA window-2 provenance note.
+- Resolution authority: DEC-194
+- Continuing task: task-6
+- Next recovery: task-6 | in-scope-implementation | task-scope | task-6:scope-gap:recovery-cli-domain-producers | 3
+
+### 2026-09-06 17:54 TASK-RECOVERY task-6
+
+- Source: TRG-22-008 resolution / DEC-194 / verified commit 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-22-008 / DEC-194
+- Triage disposition: N/A
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/run_checkpoint.go,internal/workflow/run_checkpoint_test.go,internal/workflow/run_inspect.go,internal/workflow/run_inspect_test.go,internal/workflow/ (minimum registration edit only),cmd/fid/run.go,cmd/fid/run_recovery.go,cmd/fid/claim.go,cmd/fid/response_errors.go,internal/cli/,cmd/fid/integration/p22_recovery_journey_test.go,cmd/fid/integration/p22_fake_test.go,cmd/fid/integration/testdata/p22_conformance/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- Forbidden changes: fabricating checkpoint or inspect behavior in the CLI; changing any wire shape, error code, exit code, DDL, Effect, Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, dependency, or workflow control; editing task 4 or its report; editing any internal/workflow file beyond the four named domain files and the minimum registration edit
+- Originating report: N/A
+- Exact verification: task-6 Exact Commands To Run in project-docs/docs/phases/phase-22/tasks/task-6.md in its existing order; plus byte-identical go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-22 HEAD 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f verified on branch phase-22; task-6 prior implementation/test checkpoint c69456fc9bf42f811e4999f1968a48c4a82d3cc5 and RECOVERY_REQUIRED report history are preserved; task 4 remains COMPLETE and its report is unchanged; runner-owned ledger and triage-log were committed as 372adc3; phase worktree has the runner ledger as its only dirty path
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: DEC-194 transfers execution of exactly the four missing internal/workflow domain files from accepted phase-22/task-4 ownership into the active task-6 continuation without reopening task 4. For each file, the report must state owner phase-22/task-4, that no commit ever created it, the DEC-194 transfer, and the exact command that executes it. QA window-2 must audit VAL-013 unchanged tree/checkpoint and VAL-022 inspect against task-6 evidence with task-4 provenance; absence from task 4 report is not a task-6 defect.
+- Next action: re-read the amended task-6 spec and DEC-194; implement the bounded domain producers/read API and minimum registration edit, preserve all failed receipts and RECOVERY_REQUIRED history, run the unchanged five-command task gate in order, then rerun the preserved red integration command byte-identically and return a typed completion report
+- Human attention required: no
+
+### 2026-09-06 19:02 REPAIR task-6
+
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 3
+- Starting checkpoint: phase-22 HEAD 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f; STOP TRG-22-008 / ESC-22-003 resolved under DEC-194; bound task-6 TASK-RECOVERY attempt 3 with consecutive no-progress 0/2; Runner ledger only dirt
+- Ending checkpoint: implementation commit 69941fc1b6262fdd7efaaeecfe72760390dbd511; report correction commit 8ea314bea86c1b6045922a235f1ee6aa707f6b28; report-lint returned FAIL report-lint found 6 failure(s) with terminated exit_code: 6; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The DEC-194 domain implementation, CLI registration, in-package coverage, full five-command task gate, and byte-identical preserved-red integration rerun are complete with observed exit_code: 0. The report correction preserved the prior failed receipts and required per-file provenance, while independent report-lint narrowed the remaining defect to six Go test receipt tokens whose escaped-tab formatting is rejected by the canonical parser; no product or test repair is required.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 19:03 TASK-RECOVERY task-6
+
+- Source: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-6-done.md project-docs/docs/phases/phase-22/tasks/task-6.md; independent report-lint returned FAIL report-lint found 6 failure(s) with terminated exit_code: 6
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: TRG-22-008 / DEC-194
+- Triage disposition: N/A
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- Forbidden changes: all product code, tests, task specifications, QA artifacts, decisions, dependencies, workflow controls, gate commands, gate semantics, VAL rows, public interfaces, schemas, Event or Effect semantics, task allocation, task-4 files and report, and every path except the exact task-6 completion report
+- Originating report: N/A
+- Exact verification: project-docs/tools/report-lint.sh project-docs/docs/phases/phase-22/tasks/task-6-done.md project-docs/docs/phases/phase-22/tasks/task-6.md from /home/mark/projects/fid
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit 69941fc1b6262fdd7efaaeecfe72760390dbd511; report correction commit 8ea314bea86c1b6045922a235f1ee6aa707f6b28; full task-6 gate and byte-identical preserved-red integration rerun passed with observed exit_code: 0; independent report-lint found six receipt-token failures; report committed and clean; Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - edit only task-6-done.md so the six affected Go test rows contain the exact non-escaped verbatim output tokens from their recorded commands and canonical termination syntax, while preserving every prior failed receipt, RECOVERY_REQUIRED history, implementation evidence, DEC-194 provenance, and required gate identity; rerun the exact report-lint command independently
+- Next action: dispatch a same-task report-only Developer continuation, then rerun report-lint independently
+- Human attention required: no
+
+### 2026-09-06 19:04 REPAIR task-6
+
+- Trigger signature: task-6:scope-gap:recovery-cli-domain-producers
+- Attempt count: 4
+- Starting checkpoint: phase-22 HEAD 16f7bf036dd0e7d82b97cdef176b0a1d005b5a1f; STOP TRG-22-008 / ESC-22-003 resolved under DEC-194; bound task-6 TASK-RECOVERY attempt 4 was report-only; implementation commit 69941fc1b6262fdd7efaaeecfe72760390dbd511 and report 8ea314bea86c1b6045922a235f1ee6aa707f6b28; Runner ledger only dirt
+- Ending checkpoint: implementation commit 69941fc1b6262fdd7efaaeecfe72760390dbd511; final report correction commit 63daa299378473362bc2b449ec510c284fd70526; independent report-lint returned literal OUTCOME COMPLETE with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The report-only continuation corrected the six parser-invalid escaped-tab Go test receipt tokens to exact non-escaped output tokens while preserving every immutable failed receipt, RECOVERY_REQUIRED history, implementation evidence, DEC-194 provenance, and required command identity. Independent report-lint passed all required headings, canonical workflow outcome fields, six required task commands, implementation commit identity, and clean-report checks with literal OUTCOME COMPLETE and terminated exit_code: 0.
+- Next checkpoint: REVIEW
+
+### 2026-09-06 19:05 TASK task-6 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 63daa299378473362bc2b449ec510c284fd70526 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 19:10 REVIEW review-2
+
+- Path: project-docs/docs/phases/phase-22/qa/review-2.md
+- Tasks covered: phase-22/task-4, phase-22/task-5, phase-22/task-6
+- Outcome: REPAIR
+- Owning task: task-6
+- Re-review of: none
+- Must-fix: 2 / Improvement: 0 / blocker candidates: 0
+
+### 2026-09-06 19:11 TASK-RECOVERY task-6
+
+- Source: project-docs/docs/phases/phase-22/qa/review-2.md; QA review returned REPAIR with Must-fix MF-01 and MF-02
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: QA review
+- Triage disposition: N/A
+- Trigger signature: review-2:qa-rework:task-6-recovery-conformance-corpus
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: cmd/fid/integration/p22_fake_test.go,cmd/fid/integration/testdata/p22_conformance/,cmd/fid/integration/p22_recovery_journey_test.go,cmd/fid/integration/,cmd/fid/run_recovery_test.go,cmd/fid/run.go,cmd/fid/run_recovery.go,cmd/fid/claim.go,cmd/fid/response_errors.go,internal/cli/,project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- Forbidden changes: internal/workflow domain behavior, task-4 files or report, product policy, any wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, dependency, QA plan/review definitions, decisions, workflow controls, held-out scenarios, and every path outside the bounded task-6 CLI/integration conformance repair and exact task-6 report
+- Originating report: N/A
+- Exact verification: task-6 Exact Commands To Run in project-docs/docs/phases/phase-22/tasks/task-6.md in its existing order; plus byte-identical go test -tags integration ./cmd/fid/integration -run '^TestP22EarlyRecoveryJourney$' -count=1; affected real-binary conformance cases must record exact JSON codes and observed process exit statuses for accepted/unknown-field leaf cases and not-found/authority/liveness/revision/conflict failures; shared semantic cases must run against both fake and fid adapters
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: task-6 COMPLETE at report commit 63daa299378473362bc2b449ec510c284fd70526 with implementation 69941fc1b6262fdd7efaaeecfe72760390dbd511; review-2 commit 267637832d6aec7a9b8cc7e7faa81d4895f9e68c returned REPAIR with two task-6 Must-fix findings and no blocker candidates; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - add the reusable dual-adapter semantic case runner, test-only fake, and conformance fixtures; add real-binary accepted/unknown-field recovery leaf cases and the VAL-024 failure corpus with exact JSON codes and observed nonzero exits; preserve the existing positive journey, every prior task-6 receipt and recovery history, DEC-194 provenance, task-4 closure, and accepted contracts; obtain a fresh independent review-2 re-review after completion
+- Next action: dispatch the same-task task-6 Developer continuation for QA-rework, then independently inspect the report and run report-lint before the fresh QA re-review
+- Human attention required: no
+
+### 2026-09-06 19:31 REPAIR task-6
+
+- Trigger signature: review-2:qa-rework:task-6-recovery-conformance-corpus
+- Attempt count: 1
+- Starting checkpoint: task-6 COMPLETE at report 63daa299378473362bc2b449ec510c284fd70526 with implementation 69941fc1b6262fdd7efaaeecfe72760390dbd511; review-2 commit 267637832d6aec7a9b8cc7e7faa81d4895f9e68c returned REPAIR with two task-6 Must-fix findings and no blocker candidates; bound QA-rework TASK-RECOVERY attempt 1; Runner ledger only dirt
+- Ending checkpoint: implementation/test/fixture commit f3be616f0587881ee3f5c3716ffbf6167e3f2a20; finalized report commit 84133161e454db50e1bb4a5117f626324c9ef7c1; independent report-lint returned literal OUTCOME COMPLETE with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The task-6 QA repair added the reusable dual-adapter semantic runner, test-only fake, conformance fixtures, and real-binary accepted/unknown-field and not-found/authority/liveness/revision/conflict failure corpus. The focused corpus runs both adapters and asserts typed JSON codes with observed process exits; the unchanged five-command task gate and byte-identical preserved-red journey rerun passed with observed exit_code: 0. The in-scope empty paths rendering defect exposed by the new corpus was repaired. Both review-2 Must-fix findings are resolved without changing accepted contracts or task-4 ownership; the report preserves all prior receipts and DEC-194 provenance.
+- Next checkpoint: REVIEW
+
+### 2026-09-06 19:32 TASK task-6 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-6-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 84133161e454db50e1bb4a5117f626324c9ef7c1 - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 19:37 REVIEW review-2b
+
+- Path: project-docs/docs/phases/phase-22/qa/review-2b.md
+- Tasks covered: phase-22/task-4, phase-22/task-5, phase-22/task-6
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-2
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0
+
+### 2026-09-06 19:47 TASK-RECOVERY task-7
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-7-done.md; report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0 and the report records unfinished durable budget projection/admission work
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: telemetry summary capability, provider integration, budget edits/resets, Review-cycle charging, public budget wiring, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6 source or report, and every path outside the accepted task-7 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, before any test or production edit record go test -race -cover ./internal/evidence once; after implementation run in this exact order: go test -race -cover ./internal/evidence; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit f28ebc7766fc149c72b07a80e3e1bb90f614d3ca; recovery report commits ad7ce2b6e7ead9401e1f61d74c70dff4317e26fa and 883acc0ec509b6db242e923817642206a2eb7a0d; pre-edit internal/evidence coverage baseline passed at 25.2%; final required gates are recorded BLOCKED because durable sample projection, RunGate coupling, journal parity, recovery/rebuild, and entrypoint evidence remain unfinished; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - complete the accepted durable budget sample projection, automatic observed charging, unknown/exhausted RunGate admission and Receipt coupling, Stop/Attention atomicity, run.budget-observed and run.execution-blocked live/replay parity, recovery/rebuild and integration evidence; delete exactly those two DEC-192 fence keys and leave all other unavailableRecoveryEvents keys byte-identical; run the exact task-7 commands with observed termination and preserve every failed receipt
+- Next action: dispatch the same-task task-7 Developer continuation from this checkpoint, then independently run report-lint
+- Human attention required: no
+
+### 2026-09-06 19:58 REPAIR task-7
+
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 1
+- Starting checkpoint: implementation commit f28ebc7766fc149c72b07a80e3e1bb90f614d3ca; recovery report commit 883acc0ec509b6db242e923817642206a2eb7a0d; bound task-7 TASK-RECOVERY attempt 1; Runner ledger only dirt
+- Ending checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; checkpoint/report commits 78c83de69b053b82afd2d99b02d1af3aedf2f1b5 and f6b21cd050ab76c00506e6d13ea4cf530ca9d831; report has a durable post-commit evidence correction; report-lint returned FAIL report-lint found 1 failure(s) with terminated exit_code: 1 because the report was modified after commit; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The accepted budget Event admission policy is converged, DEC-192 deleted exactly run.budget-observed and run.execution-blocked from the progressive fence, and live/replay parity plus retained-fence evidence passes. The report records that durable budget sample projection, RunGate execution/Receipt coupling, atomic Stop/Attention behavior, recovery/rebuild, and the required final gate remain unfinished; report evidence was still being finalized when independent report-lint detected the uncommitted post-commit correction.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 19:59 TASK-RECOVERY task-7
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-7-done.md; continuation attempt 1 made material budget Event admission progress but report-lint found a post-commit report modification and the durable execution obligations remain unfinished
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: telemetry summary capability, provider integration, budget edits/resets, Review-cycle charging, public budget wiring, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6 source or report, and every path outside the accepted task-7 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after implementation run in this exact order: go test -race -cover ./internal/evidence; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; report commits 78c83de69b053b82afd2d99b02d1af3aedf2f1b5 and f6b21cd050ab76c00506e6d13ea4cf530ca9d831 with an uncommitted evidence correction; task-7 REPAIR attempt 1 recorded MATERIAL-PROGRESS; durable sample projection, RunGate coupling, Stop/Attention atomicity, recovery/rebuild, and final required gates remain pending; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - finish the accepted durable budget sample persistence and execution admission/Receipt coupling, prove unknown and exhausted budget behavior including atomic Stop/Attention and later spawn denial, complete run.budget-observed and run.execution-blocked live/replay parity with exactly the two DEC-192 fence removals, add recovery/rebuild and integration evidence, run the exact task gate with observed termination, commit the completed report, and preserve every failed receipt and prior recovery history
+- Next action: dispatch the same-task task-7 Developer continuation from the current checkpoint, then independently run report-lint
+- Human attention required: no
+
+### 2026-09-06 20:04 REPAIR task-7
+
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 2
+- Starting checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; recovery report commit f6b21cd050ab76c00506e6d13ea4cf530ca9d831; bound task-7 TASK-RECOVERY attempt 2; Runner ledger only dirt
+- Ending checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; finalized report commit 4135735d2e05c2994a8cf5b79d0c0cc47287c8cd; independent report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: NO-PROGRESS
+- Resolution evidence: Attempt 2 produced only report checkpoint corrections and no relevant in-scope implementation change tied to the durable budget accounting trigger. The report preserves all failed receipts and remains a clean RECOVERY_REQUIRED report; durable budget sample persistence, RunGate coupling, Stop/Attention atomicity, recovery/rebuild, and final gates remain unfinished. Consecutive no-progress budget advances to 1/2.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 20:04 TASK-RECOVERY task-7
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-7-done.md; task-7 continuation attempt 2 returned typed OUTCOME RECOVERY_REQUIRED, report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0, and REPAIR attempt 2 recorded NO-PROGRESS
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: telemetry summary capability, provider integration, budget edits/resets, Review-cycle charging, public budget wiring, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6 source or report, and every path outside the accepted task-7 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after implementation run in this exact order: go test -race -cover ./internal/evidence; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 1/2
+- Checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; finalized recovery report commit 4135735d2e05c2994a8cf5b79d0c0cc47287c8cd; independent report-lint passed with literal OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; task-7 REPAIR attempt 2 recorded NO-PROGRESS; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - complete the accepted durable budget sample persistence and execution admission/Receipt coupling, prove unknown and exhausted budget behavior including atomic Stop/Attention and later spawn denial, complete run.budget-observed and run.execution-blocked live/replay parity with exactly the two DEC-192 fence removals, add recovery/rebuild and integration evidence, run the exact task gate with observed termination, commit the completed report, and preserve every failed receipt and prior recovery history
+- Next action: dispatch the same-task task-7 Developer continuation from the current checkpoint with the remaining durable implementation scope; then independently run report-lint and reconcile the typed outcome
+- Human attention required: no
+
+### 2026-09-06 20:13 REPAIR task-7
+
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 3
+- Starting checkpoint: implementation commit a37e7d9a18fcb8d19432e1ce5100a33db839f978; finalized recovery report commit 4135735d2e05c2994a8cf5b79d0c0cc47287c8cd; bound task-7 TASK-RECOVERY attempt 3; Runner ledger only dirt
+- Ending checkpoint: implementation commit a3766804f1a40ca5e827748f59550e1d72d452aa; checkpointed recovery report commit 1ff74ac3e936f6046166b0d61c40629c01fc28a6; independent report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The continuation added durable budget_samples loading across linked Runs, fid-owned charge derivation from observed Attempt and Receipt facts, and persistence with the corresponding Event and Run runtime update. Red/green evidence covers charge derivation and read-only unknown/exhausted chain derivation. The report preserves all failed receipts, prior recovery history, and DEC-192 provenance; exact unknown/exhausted execution-blocked admission, atomic Stop/Attention effects, recovery/rebuild, real-entrypoint evidence, and the full gate remain unfinished. Consecutive no-progress budget resets to 0/2.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 20:13 TASK-RECOVERY task-7
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-7-done.md; task-7 continuation attempt 3 returned typed OUTCOME RECOVERY_REQUIRED after material durable sample and charge persistence progress; report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: telemetry summary capability, provider integration, budget edits/resets, Review-cycle charging, public budget wiring, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6 source or report, and every path outside the accepted task-7 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after implementation run in this exact order: go test -race -cover ./internal/evidence; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit a3766804f1a40ca5e827748f59550e1d72d452aa; finalized recovery report commit 1ff74ac3e936f6046166b0d61c40629c01fc28a6; independent report-lint passed with literal OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; task-7 REPAIR attempt 3 recorded MATERIAL-PROGRESS; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - complete the accepted unknown/exhausted run.execution-blocked path, exact atomic Stop/Attention effects for denial and boundary crossing, recovery/rebuild and real-entrypoint evidence, run the exact task gate with observed termination, commit the completed report, and preserve every failed receipt and prior recovery history
+- Next action: dispatch the same-task task-7 Developer continuation from the current checkpoint for the remaining in-scope implementation; then independently run report-lint and reconcile the typed outcome
+- Human attention required: no
+
+### 2026-09-06 20:45 REPAIR task-7
+
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 4
+- Starting checkpoint: implementation commit a3766804f1a40ca5e827748f59550e1d72d452aa; finalized recovery report commit 1ff74ac3e936f6046166b0d61c40629c01fc28a6; bound task-7 TASK-RECOVERY attempt 4; Runner ledger only dirt
+- Ending checkpoint: implementation commit d85ab7018903300ccb53199c49fdea04e1a0bdc6; checkpointed recovery report commit dfba9b3685c2dfd706c8f792eb2e7ff3dbbdb66d; independent report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The continuation completed the durable unknown/exhausted pre-spawn run.execution-blocked Event, exact Stop/Attention effects, later no-Attempt denial, exhaustion-boundary effects, successor-chain derivation, rebuild path, and real-process evidence. The unchanged repository-wide race/coverage gate then failed in three retained assertions. Provenance audit confirms the generic Run null-budget assertion originated in 5ca732ff phase-21/task-11, the Attention producer inventory in ac827959f phase-22/task-2, and the journal parity fixture in 72c5974f phase-22/task-1; the first two are displaced by task 7 accepted behavior and the journal run.budget-observed rejection is displaced by DEC-192 task-7 fence ownership. Subject-preserving convergence remains decision-free under the accepted execution-scope rule. The later coverage-summary and tagged race commands were not started because the required race gate is red and remain blocked in the report. Consecutive no-progress budget resets to 0/2.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 20:45 TASK-RECOVERY task-7
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-7-done.md; task-7 continuation attempt 4 returned typed OUTCOME RECOVERY_REQUIRED after material in-scope implementation progress, report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0, and the required repository-wide race/coverage gate exposed three retained assertions displaced by the accepted task-7 change
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 5
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/budget.go,internal/workflow/budget_test.go,internal/workflow/envelope.go,internal/workflow/run_read.go,internal/evidence/execution.go,internal/evidence/execution_test.go,internal/evidence/budget_test.go,internal/workflow/activation.go,internal/journal/,cmd/fid/integration/,cmd/fid/generic_run_test.go,cmd/fid/contract_surface_test.go,project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- Forbidden changes: telemetry summary capability, provider integration, budget edits/resets, Review-cycle charging, public budget wiring, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6 source or report, and every path outside the accepted task-7 scope and the three subject-preserving retained assertions identified in the checkpoint
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after the bounded convergence repair run in this exact order: go test -race -cover ./internal/evidence; gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit d85ab7018903300ccb53199c49fdea04e1a0bdc6; finalized recovery report commit dfba9b3685c2dfd706c8f792eb2e7ff3dbbdb66d; independent report-lint passed with literal OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; task-7 REPAIR attempt 4 recorded MATERIAL-PROGRESS; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - preserve the failed repository-wide race/coverage receipt; update only the displaced generic Run budget assertion, displaced Attention producer inventory, and the task-7-displaced recovery_schema fence row to preserve live/replay parity with a still-fenced or genuinely unknown Event; record each row's introducing commit, phase/task, accepted invalidating change, subject-preserving repair, and exact executing command; then rerun the byte-identical full task gate in order with observed termination and complete any remaining evidence
+- Next action: dispatch the same-task task-7 Developer continuation for the bounded retained-assertion convergence and exact gate rerun; then independently run report-lint and reconcile the typed outcome
+- Human attention required: no
+
+### 2026-09-06 20:56 REPAIR task-7
+
+- Trigger signature: task-7:in-scope-implementation:durable-budget-accounting
+- Attempt count: 5
+- Starting checkpoint: implementation commit d85ab7018903300ccb53199c49fdea04e1a0bdc6; finalized recovery report commit dfba9b3685c2dfd706c8f792eb2e7ff3dbbdb66d; bound task-7 TASK-RECOVERY attempt 5; Runner ledger only dirt
+- Ending checkpoint: implementation/test convergence commit 0cb8acc3674c8f2452e221ebe50309cd32a96f3e; finalized report commit c126e870cbc5889c1f09e64c1383d3f5e6cf4f6a; independent report-lint returned literal OUTCOME COMPLETE with terminated exit_code: 0; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The continuation converged only the three retained assertions displaced by the accepted task-7 change: generic Run derived budget counters, the automatic budget Stop/Attention producer inventory, and the recovery schema live/replay rejection fixture using still-fenced run.closed. Each row's introducing commit, phase/task, accepted invalidating change, subject-preserving repair, and exact executing command is recorded in the report. The preserved failed repository-wide race/coverage receipt remains immutable with its deviation note, and the byte-identical full gate plus coverage summary and tagged race integration command all passed with observed exit_code: 0. Independent report-lint passed with literal OUTCOME COMPLETE and terminated exit_code: 0.
+- Next checkpoint: TASK COMPLETE
+
+### 2026-09-06 20:56 TASK task-7 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-7-done.md
+- report-lint: PASS - OUTCOME COMPLETE
+- Commit: 0cb8acc3674c8f2452e221ebe50309cd32a96f3e - verified, subject matched
+- QA-plan commands beyond the task spec: none required
+
+### 2026-09-06 21:10 TASK-RECOVERY task-8
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-8-done.md; initial task-8 Developer session returned typed OUTCOME RECOVERY_REQUIRED with durable interrupted-attempt and R-14 progress, and independent report-lint requires report repair
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/evidence/execution.go,internal/evidence/executor.go,internal/evidence/live.go,internal/evidence/execution_test.go,internal/evidence/executor_test.go,internal/workflow/run.go,internal/workflow/run_close.go,internal/workflow/run_close_test.go,internal/workflow/activation.go,cmd/fid/gate_run_test.go,internal/validation/,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Forbidden changes: caller-reported terminal outcomes, external attested Receipts, process supervision, CLI finish removal before task 9, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6/task-7 source or reports, and every path outside the accepted task-8 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after implementation run in this exact order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...; go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid; go test -bench . -benchmem ./...; go test -bench . -benchmem ./...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: task-8 initial dispatch from task-7 completion commit c126e870cbc5889c1f09e64c1383d3f5e6cf4f6a; Developer implementation commit bead7efb134f80726022f1e38d7b6749fe550073 and report commit daaf195e207b7d041ef9a13b0eb32a1024b9378c; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: PENDING - complete run.close and run.abandon behavior, Event live/replay parity, integration and bounded CPU-load evidence, repair the committed report-lint receipt formatting, and run the exact eight-command task-8 gate with observed termination
+- Next action: record the already observed implementation continuation in the following REPAIR event, dispatch a report-only continuation for the report-lint defect, then resume task-scope implementation
+- Human attention required: no
+
+### 2026-09-06 21:10 REPAIR task-8
+
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 1
+- Starting checkpoint: task-8 initial dispatch from task-7 completion commit c126e870cbc5889c1f09e64c1383d3f5e6cf4f6a; bound task-8 TASK-RECOVERY attempt 1; Runner ledger only dirt
+- Ending checkpoint: implementation commit bead7efb134f80726022f1e38d7b6749fe550073; checkpointed report commit daaf195e207b7d041ef9a13b0eb32a1024b9378c; independent report-lint returned FAIL report-lint found 4 failure(s) with terminated exit_code: 4; report committed and clean; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: MATERIAL-PROGRESS
+- Resolution evidence: The continuation added durable pre-spawn idempotency fencing for lost terminal observations, distinct observed cancellation, and the bounded DEC-186/R-14 signal and timeout fixture repairs. Red/green evidence is preserved. The derived run.close and run.abandon domain behavior, Event parity, integration fixtures, bounded CPU-load coverage, and required final gates remain unfinished. Independent report-lint found four focused receipt termination-format defects in the committed report; this is a report-repair stage and does not consume no-progress budget.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 21:10 TASK-RECOVERY task-8
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-8-done.md report-lint; independent report-lint returned FAIL report-lint found 4 failure(s) with terminated exit_code: 4 after the task-8 implementation continuation, while the report outcome remains RECOVERY_REQUIRED
+- Category: report-repair
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Forbidden changes: product code, tests, task spec, QA artifacts, specs, decisions, workflow controls, dependencies, gate definitions, task allocation, held-out scenarios, and run-ledger entries
+- Originating report: N/A
+- Exact verification: N/A
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit bead7efb134f80726022f1e38d7b6749fe550073; report commit daaf195e207b7d041ef9a13b0eb32a1024b9378c; report-lint found four receipt termination-format failures; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - correct only the four report-lint receipt-format defects while preserving every prior receipt, implementation evidence, and RECOVERY_REQUIRED outcome, then rerun the exact report-lint command with a committed clean report
+- Next action: dispatch a same-task report-only continuation limited to task-8-done.md; after report-lint resolves, dispatch the remaining task-scope implementation recovery
+- Human attention required: no
+
+### 2026-09-06 21:14 REPAIR task-8
+
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 2
+- Starting checkpoint: implementation commit bead7efb134f80726022f1e38d7b6749fe550073; report commit daaf195e207b7d041ef9a13b0eb32a1024b9378c; bound task-8 report-repair TASK-RECOVERY attempt 2; Runner ledger only dirt
+- Ending checkpoint: report repair commit e461d6f735b296010bb22e9e5cd1c9c1e54c00d6; independent report-lint returned literal OUTCOME RECOVERY_REQUIRED with terminated exit_code: 0; report committed and clean; implementation checkpoint unchanged; Runner ledger only dirt
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: The report-only continuation removed only the trailing punctuation that prevented report-lint from parsing four successful termination receipts. Every prior receipt, BLOCKED required gate, implementation commit field, and RECOVERY_REQUIRED outcome remains intact. Independent report-lint completed with no failures and literal OUTCOME RECOVERY_REQUIRED, terminated exit_code: 0. The task's implementation obligations remain open.
+- Next checkpoint: another TASK-RECOVERY
+
+### 2026-09-06 21:14 TASK-RECOVERY task-8
+
+- Source: project-docs/docs/phases/phase-22/tasks/task-8-done.md; report-only recovery attempt 2 resolved report-lint, while task-8 report remains OUTCOME RECOVERY_REQUIRED with run.close/run.abandon and final gates unfinished
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: task spec
+- Triage disposition: N/A
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 3
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/evidence/execution.go,internal/evidence/executor.go,internal/evidence/live.go,internal/evidence/execution_test.go,internal/evidence/executor_test.go,internal/workflow/run.go,internal/workflow/run_close.go,internal/workflow/run_close_test.go,internal/workflow/activation.go,cmd/fid/gate_run_test.go,internal/validation/,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Forbidden changes: caller-reported terminal outcomes, external attested Receipts, process supervision, CLI finish removal before task 9, product policy, protected gate definitions, workflow controls, dependencies, unrelated implementation changes, any accepted wire shape, error code, exit code, DDL, Effect or Event semantic, VAL row, validator, gate command, threshold, tolerance, task allocation, task-4/task-6/task-7 source or reports, and every path outside the accepted task-8 scope
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, after implementation run in this exact order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...; go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid; go test -bench . -benchmem ./...; go test -bench . -benchmem ./...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: implementation commit bead7efb134f80726022f1e38d7b6749fe550073; finalized report repair commit e461d6f735b296010bb22e9e5cd1c9c1e54c00d6; independent report-lint passed with literal OUTCOME RECOVERY_REQUIRED and terminated exit_code: 0; report-repair REPAIR attempt 2 recorded RESOLVED; phase-22 branch with Runner ledger only dirt
+- Phase worktree: /home/mark/projects/fid on branch phase-22; runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - implement run.close and run.abandon with trusted observation/force semantics, preserve interrupted and abandoned evidence distinctions, delete exactly run.closed and run.abandoned fence keys under DEC-192, add live/replay parity and integration coverage, satisfy bounded CPU-load evidence, and run all eight exact task-8 gate commands with observed termination
+- Next action: dispatch the same-task task-8 Developer continuation for the remaining in-scope implementation and exact gate
+- Human attention required: no
+
+### 2026-09-06 21:38 TRIAGE TRG-22-009
+
+- Trigger: Phase 22 task 8 cannot satisfy the accepted cancellation Receipt behavior because the canonical execution_receipts DDL rejects the required cancelled terminal status
+- Originating task: task-8
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 3
+- Repair category: N/A
+- Repair authority: N/A
+- Checkpoint: phase-22 HEAD 97cfb28c720a351e6485698adba5978f9703286f on branch phase-22; task-8 implementation b965b24748f57a0f5e42b8dd3054dfe6fd5dbb74 and blocker report 764396118ce7d1cbb9a068ca7179ad204afb1566 verified; report-lint returned OUTCOME BLOCKED with terminated exit_code: 0; Runner ledger is the only dirty path
+- Verdict: BLOCK (escalated as ESC-22-004)
+- Resolution evidence: contracts.md section 7 and VAL-031 require a fid-observed cancelled terminal outcome to persist a durable non-passing Receipt, while migrations/0013_p21_operational_kernel.up.sql:250-268 permits only succeeded, failed, timed-out, signaled, and spawn-failed. Task 8 forbids DDL, wire-shape, and contract changes, so no decision-free repair can satisfy both accepted requirements. TL-Lite confirmed specification-contradiction and wrote TRG-22-009 plus ESC-22-004.
+- Triage log: project-docs/docs/phases/phase-22/triage-log.md entry TRG-22-009 confirmed; ESC-22-004 is recorded in project-docs/docs/current/tl_escalations_current.md
+
+### 2026-09-06 21:38 STOP
+
+- Cause: task-8 / TRG-22-009 / ESC-22-004 - accepted VAL-031/contracts.md cancellation requires a durable Receipt with terminal_status cancelled, while canonical execution_receipts DDL excludes cancelled and task 8 forbids DDL or contract changes
+- Triage: TRG-22-009 (BLOCK, escalated as ESC-22-004)
+- Protected category: specification-contradiction
+- Next Human or external-authority action: Full Tech Lead/Human authority must reconcile the accepted durable cancelled Receipt requirement with the canonical execution_receipts terminal-status CHECK and task-8 constraints, record the authoritative contract/schema disposition and bounded follow-up scope, then resume task 8 with the unchanged trigger and attempt accounting
+
+### 2026-09-07 20:16 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-06 21:38 STOP / TRG-22-009 / ESC-22-004
+- Governing TRG: TRG-22-009
+- Governing ESC: ESC-22-004
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 4
+- Checkpoint: phase-22 HEAD 3438f8cc0b445247069611f2d74fb827a2187eb7 verified on branch phase-22; prior STOP validates; worktree has only the runner-owned ledger dirty; DEC-195 commit ancestry and subject verified; amended task-8, schema.md section 1, and current escalation register are present
+- Resolution evidence: DEC-195 is present in project-docs/docs/phases/phase-22/decisions.md and resolves ESC-22-004/TRG-22-009; git show --verify 3438f8cc0b445247069611f2d74fb827a2187eb7^{commit} and subject verification succeeded; the amended task-8 assigns exactly two execution_receipts replacements plus golden DDL and receipt-read convergence; schema.md section 1 contains the exact five-clause CHECK; current tl_escalations_current.md reports no open ESC
+- Resolution authority: DEC-195
+- Continuing task: task-8
+- Next recovery: task-8 | in-scope-implementation | task-scope | task-8:in-scope-implementation:interrupted-attempts-and-run-closure | 4
+
+### 2026-09-07 20:17 TASK-RECOVERY task-8
+
+- Source: TRG-22-009 resolution / DEC-195
+- Category: in-scope-implementation
+- Repair mode: task-scope
+- Repair authority: TRG-22-009 / DEC-195
+- Triage disposition: N/A
+- Trigger signature: task-8:in-scope-implementation:interrupted-attempts-and-run-closure
+- Attempt count: 4
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/evidence/execution.go,internal/evidence/executor.go,internal/evidence/live.go,internal/evidence/execution_test.go,internal/evidence/executor_test.go,internal/workflow/run.go,internal/workflow/run_close.go,internal/workflow/run_close_test.go,internal/workflow/activation.go,cmd/fid/gate_run_test.go,migrations/0013_p21_operational_kernel.up.sql,internal/db/operational_kernel_migration_test.go,internal/evidence/receipt_read.go,cmd/fid/receipt_test.go,internal/validation/,internal/journal/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- Forbidden changes: any 0013 edit beyond DEC-195's two exact execution_receipts replacements; any new or edited migration file; migrations 0015/0016; any other status, column, table, Event, Effect, wire shape, error code or exit code; caller-reported terminal outcomes; external attested Receipts; process supervision; CLI finish removal before task 9; product policy; protected gate definitions; workflow controls; dependencies; VAL rows; validators; gate commands; thresholds; tolerances; task allocation; task-4/task-6/task-7 source or reports; every path outside the amended task-8 scope. Substituting an admitted terminal status for cancelled remains forbidden.
+- Originating report: N/A
+- Exact verification: from /home/mark/projects/fid, in this exact order: gofmt -l cmd internal; golangci-lint run ./...; go test -race -coverprofile=coverage.out ./...; go tool cover -func=coverage.out; go test -tags integration -race ./cmd/fid/integration/...; go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid; go test -bench . -benchmem ./...; go test -bench . -benchmem ./...
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: phase-22 HEAD 3438f8cc0b445247069611f2d74fb827a2187eb7 verified on branch phase-22; prior STOP validates; worktree has only the runner-owned ledger dirty; DEC-195 commit ancestry and subject verified; amended task-8, schema.md section 1, and current escalation register are present
+- Phase worktree: /home/mark/projects/fid on branch phase-22; Runner ledger is the only dirty path; assume-unchanged and skip-worktree are forbidden
+- Temporary repair worktree: N/A
+- Hidden-index flags: none; assume-unchanged and skip-worktree are forbidden
+- Resolution evidence: DEC-195 authorizes task-8 same-task continuation with task-1 provenance; preserve the task-8 implementation, all failed receipts, BLOCKED gate rows, and blocker history; copy the schema.md section 1 five-clause CHECK byte-for-byte; execute the exact eight unchanged commands and record observed termination
+- Next action: dispatch the same-task task-8 Developer continuation under DEC-195, implement the two exact execution_receipts DDL replacements and bounded convergence surfaces, preserve prior evidence, run the exact eight commands in order, commit the report, and independently run report-lint
+- Human attention required: no
+
+### 2026-09-07 20:17 RUN-RESUME
+
+- Sequence contract: v2
+- Recovery directive schema: v2
+- Prior run/session or STOP: 2026-09-07 20:17 TASK-RECOVERY task-8; Phase Runner child returned after recording dispatch because its tool surface lacked child spawning
+- Governing TRG: N/A
+- Governing ESC: N/A
+- Trigger signature: N/A
+- Attempt count: N/A
+- Checkpoint: phase-22 HEAD 7d29403c5e8868085a7c43c89ffe821492e13181; task-8 attempt 4 is pending under DEC-195; root independently observed VALID state=REPAIR_PENDING with exit_code: 0; root documentation refresh is committed
+- Resolution evidence: root assumes direct orchestration under the Human delegation recorded in delegate-handoff.md; preserves the existing attempt 4 directive and all prior ledger entries; no Developer attempt was dispatched or interrupted
+- Resolution authority: N/A
+- Continuing task: task-8
+- Next recovery: N/A
