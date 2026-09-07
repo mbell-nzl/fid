@@ -35,11 +35,11 @@
 
 ## Tests run
 
-- Red: `go test ./cmd/fid -run '^TestBudgetDenialReportsCommittedStopWithoutStartFrame$' -count=1` - expected failure before the committed-denial representation - `FAIL github.com/mbell-nzl/fid/cmd/fid` (terminated `exit_code: 1`). Green after the implementation: `ok github.com/mbell-nzl/fid/cmd/fid` (terminated `exit_code: 0`).
-- Red: `go test ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - identical-key replay was rejected after state checking - `FAIL github.com/mbell-nzl/fid/internal/workflow 0.113s` (terminated `exit_code: 1`). Green after replay-before-state correction: `ok github.com/mbell-nzl/fid/internal/workflow 0.156s` (terminated `exit_code: 0`).
-- `go test ./internal/workflow -run '^TestObserveRunBudget' -count=1` - `ok github.com/mbell-nzl/fid/internal/workflow 0.286s` (terminated `exit_code: 0`).
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - real `fid` process entrypoint journey, including observe-budget and derived close - `ok github.com/mbell-nzl/fid/cmd/fid/integration 1.669s` (terminated `exit_code: 0`).
-- `go test -tags integration ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - converged read-only Attention boundary - `ok github.com/mbell-nzl/fid/cmd/fid/integration 0.585s` (terminated `exit_code: 0`).
+> - Red: `go test ./cmd/fid -run '^TestBudgetDenialReportsCommittedStopWithoutStartFrame$' -count=1` - expected failure before the committed-denial representation - `FAIL github.com/mbell-nzl/fid/cmd/fid` (terminated `exit_code: 1`). Green after the implementation: `ok github.com/mbell-nzl/fid/cmd/fid` (terminated `exit_code: 0`).
+> - Red: `go test ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - identical-key replay was rejected after state checking - `FAIL github.com/mbell-nzl/fid/internal/workflow 0.113s` (terminated `exit_code: 1`). Green after replay-before-state correction: `ok github.com/mbell-nzl/fid/internal/workflow 0.156s` (terminated `exit_code: 0`).
+> - `go test ./internal/workflow -run '^TestObserveRunBudget' -count=1` - `ok github.com/mbell-nzl/fid/internal/workflow 0.286s` (terminated `exit_code: 0`).
+> - `go test -tags integration ./cmd/fid/integration/... -run '^TestPhase21RealProcessJourneyStartsOneActivatedEnvelope$' -count=1` - real `fid` process entrypoint journey, including observe-budget and derived close - `ok github.com/mbell-nzl/fid/cmd/fid/integration 1.669s` (terminated `exit_code: 0`).
+> - `go test -tags integration ./cmd/fid/integration/... -run '^TestStopAttentionExternalBoundaryKeepsRoutineStatusAndWarningsEffectFree$' -count=1` - converged read-only Attention boundary - `ok github.com/mbell-nzl/fid/cmd/fid/integration 0.585s` (terminated `exit_code: 0`).
 
 ## Exact quality-gate results
 
@@ -48,13 +48,24 @@ session and are retained as historical evidence. Root does not re-attest them.
 They predate the final Human renderer and typed error changes and do not close
 the current task. Fresh final-source results are required below.
 
-- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
-- `golangci-lint run ./...` - FAILED ATTEMPT - `3 issues:` (terminated `exit_code: 1`); byte-identical rerun - PASS - `0 issues.` (terminated `exit_code: 0`).
-- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 69.373s coverage: 50.4% of statements` (terminated `exit_code: 0`).
-- `go tool cover -func=coverage.out` - PASS - `total:									(statements)			62.2%` (terminated `exit_code: 0`).
-- `go test -tags integration -race ./cmd/fid/integration/...` - FAILED ATTEMPT - `FAIL` (terminated `exit_code: 1`); byte-identical rerun - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 12.644s` (terminated `exit_code: 0`).
+> - `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`).
+> - `golangci-lint run ./...` - FAILED ATTEMPT - `3 issues:` (terminated `exit_code: 1`); byte-identical rerun - PASS - `0 issues.` (terminated `exit_code: 0`).
+> - `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  github.com/mbell-nzl/fid/internal/workflow 69.373s coverage: 50.4% of statements` (terminated `exit_code: 0`).
+> - `go tool cover -func=coverage.out` - PASS - `total:									(statements)			62.2%` (terminated `exit_code: 0`).
+> - `go test -tags integration -race ./cmd/fid/integration/...` - FAILED ATTEMPT - `FAIL` (terminated `exit_code: 1`); byte-identical rerun - PASS - `ok  github.com/mbell-nzl/fid/cmd/fid/integration 12.644s` (terminated `exit_code: 0`).
+
+
+Current final-source gate state (the commands have not yet run on the completed matrix):
+
+- `gofmt -l cmd internal` - BLOCKED - remaining implementation and final-source execution required.
+- `golangci-lint run ./...` - BLOCKED - remaining implementation and final-source execution required.
+- `go test -race -coverprofile=coverage.out ./...` - BLOCKED - remaining implementation and final-source execution required.
+- `go tool cover -func=coverage.out` - BLOCKED - remaining implementation and final-source execution required.
+- `go test -tags integration -race ./cmd/fid/integration/...` - BLOCKED - remaining implementation and final-source execution required.
 
 ## Deviations from spec
+
+- Root checkpoint report-lint first attempt failed: `FAIL report-lint found 8 failure(s)` (terminated `exit_code: 8`). The inherited draft combined failed and passing attempts on one line, placed extra backticks before test receipts, and used punctuation the termination parser rejected. Root retained those historical rows as attributed quotations and supplied explicit current BLOCKED rows; no control or gate definition changed.
 
 - Root checkpoint after the Developer's session-limit handback: VAL-037 still
   lacks actual run.start/gate.run applicable/unrelated/resolved/all-reasons
