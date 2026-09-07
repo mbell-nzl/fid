@@ -88,3 +88,25 @@ unsupported source `qa-review` (usage output, terminated `exit_code: 2`),
 then corrected the source to `qa`; `workflow-route.sh qa PASS` returned
 `ACTION ADVANCE` (terminated `exit_code: 0`). This was an invocation error;
 no routing control or accepted outcome changed.
+
+## Preparatory Final QA Dispatch
+
+After task 18 and review 6, the QA Lead's scope is a fresh deterministic final
+review plus a feasible Human checklist. Its report must explicitly distinguish
+that requested readiness verdict from the plan's full phase-end sign-off,
+which still awaits Human judgment. Record all 80 VAL rows; use `BLOCKED` with
+the precise reason “Human judgment not yet performed” for VAL-076..078 in
+this preparatory report, never PASS or an unexplained carry-forward. Pending
+scheduled Human judgment is not a new product/spec escalation. All 77
+QA-owned rows and QA-01..84 still require the QA Lead's own reproducible
+evidence, including reference identity, three fresh consecutive rebuild
+samples, both full benchmark runs, source-currency comparison and security
+review. The root supplies no proxy pass for those checks.
+
+Keep Human-facing prompts neutral and the six answers independently markable.
+Put expected judgments in separately inspectable QA material, rather than
+providing the answer in the first inspection instructions. Validate the exact
+retained binary, manifest IDs, commands and fixture roots after generator exit.
+If source changed after the prior retained generation, regenerate from final
+committed source and preserve both receipts. Release gates and held-out
+scenarios remain explicitly outside this phase per the accepted QA plan.
