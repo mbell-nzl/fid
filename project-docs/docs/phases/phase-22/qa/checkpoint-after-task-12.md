@@ -145,3 +145,40 @@ Import feasibility: PASS as environment/primitive preparation only
 Post-task-12 product evidence: NOT RUN
 CHECKPOINT STATUS: PENDING
 ```
+
+## Independent Checkpoint Preparation — 2026-09-08
+
+Reviewer: independent QA Lead `checkpoint12_final`. The preceding preparation
+receipts belong to the prior non-implementing root delegate's session. They
+remain intact, including its failed scratch constructions and inapplicable
+report-lint probe; they are not fresh product PASS evidence for this reviewer.
+Task 12 is still implementing at this preparation point. Final product checks
+will begin only after the orchestrator verifies its COMPLETE hand-back.
+
+### Archive boundary interpretation for task 13
+
+The accepted validation contract already distinguishes boundary admission from
+whole-archive validity. Its `VAL-056 Boundary Acceptance Matrix` introduction
+states: "Permitted means that limit check accepts; full archive acceptance still
+requires every semantic check. Use valid complete controls as well". Task 13's
+acceptance criteria likewise require full valid controls to accompany the
+matrix. No contract amendment or relaxed limit is needed.
+
+Consequently 056-a may use real ZIP files with 999999, 1000000 and 1000001 entries
+to exercise the actual production count limiter, together with separate valid
+complete archives through public validation. The large count fixtures need not
+pretend to be semantically valid exports: manifest metadata can exceed its own
+64 MiB bound before an otherwise valid million-entry export exists. Evidence
+must identify the actual count-check acceptance/rejection, rather than infer it
+from an unrelated error or repeat the arithmetic in test-only code. All three
+numeric states remain required, and large fixtures remain generated per run.
+
+For 056-d the measured production limiter must process actual decompressed bytes
+at 8 GiB minus one, exactly 8 GiB and 8 GiB plus one, with every individual entry
+within its own bound. A full-archive fixture includes manifest and other entry
+bytes in that total; a focused limiter fixture can isolate the measurement and
+use separate complete valid controls. Metadata-only rejection or an invalid ZIP
+that never yields bytes is insufficient under the matrix's final paragraph.
+
+This is a contract/feasibility interpretation, not evidence that the task-13
+validator exists or passes. Product boundary evidence remains with task 13.
