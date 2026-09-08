@@ -1861,3 +1861,25 @@
 - Resolution evidence: PENDING - final-review FQ-01 reproduces relabeled checkpoint Effects accepted as recovery/budget/blocked families; existing journal transaction and producer seams are in scope
 - Next action: root sole Task1 writer; retain all failed attempts; then one independent final re-review and refreshed blank Human fixtures
 - Human attention required: no
+
+### 2026-09-09 09:13 REPAIR task-1
+
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 1
+- Starting checkpoint: d26c28b
+- Ending checkpoint: 7647abc66d0e309b7ab056d05e80d1c501d758dd; report 5d220aa
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root implemented closed22 current-family validation at shared live/replay transaction boundary, exact captured Prior, references and conditional controls; genuine all22 CLI corpus verifies malformed rejection with full rollback and replay parity. Fixture provenance and all failed attempts preserved, including tmpfs exhaustion and Receipt budget ordering. All twelve unchanged final gates PASS; coverage65.6%, tagged409.209s, reference27599ms with parity below30000ms. Own report-lint COMPLETE and route ADVANCE terminated exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 09:13 TASK task-1 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: 7647abc66d0e309b7ab056d05e80d1c501d758dd - verified, subject matched; report 5d220aa
+- QA-plan commands beyond the task spec: real all22-family live/replay corruption and rollback corpus, conditional predecessor/Claim controls, retained actual budget interruption proof
+- Evidence: All seven final-QA repair owners are complete. Source frozen for one fresh independent final-review-2; only that review may close FQ-01 through FQ-07. Human readiness and judgments remain pending.
