@@ -57,7 +57,7 @@ report records freshly executed workflow checks only.
 - Mode, contracts, task list and refinements: Human approved under DEC-188.
 - QA plan and cross-product review: assessment recorded; TL refinements applied.
 - Task statuses: original 1..18 complete; all six windows/checkpoint passed. Independent final QA ec4daa9 returned seven bounded findings, reopening owners 2,4,5,7,8,10,1 in that execution order.
-- Next: root serial repairs with original reports/required gates preserved, then fresh independent final-review-2 and refreshed blank Human fixtures. Task2/4/5/7/8 repair owners are complete with all exact gates and reports. Task10 FQ-07 is active, followed by Task1; deterministic Human readiness is not yet established.
+- Next: root serial repairs with original reports/required gates preserved, then fresh independent final-review-2 and refreshed blank Human fixtures. Task2/4/5/7/8/10 repair owners are complete with all exact gates and reports. Task1 FQ-01 is the final active repair; deterministic Human readiness is not yet established.
   DEC-202 supplies the imported destination scope; DEC-203 allocates Task15's
   already accepted import failure registry entry. Implementation and review are
   serialized under the renewed Human authorization.

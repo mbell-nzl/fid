@@ -1814,3 +1814,50 @@
 - Resolution evidence: PENDING - reuse existing test-only SQLite fault mechanism to distinguish dry-run and actual projection after durable append
 - Next action: root sole Task10 writer; close owner before Task1; one independent final re-review follows all owners
 - Human attention required: no
+
+### 2026-09-09 06:58 REPAIR task-10
+
+- Trigger signature: task-10:qa-rework:activation-recovery-append-interruption
+- Attempt count: 1
+- Starting checkpoint: 2c89e0d
+- Ending checkpoint: e7d5963105fa3a40b8d0d687902def63595ade2f; report d26c28b
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root supplied eight actual preappend/postappend selected/completed fault cases in both directions with exact catch-up/replay/Event identity, competing rejection, frozen predecessor/resources/components, whole Stop/Attention/disposition facts, unchanged files and rebuild parity. No product change. All five exact gates PASS, coverage65.4%, tagged250.170s; fixture failure preserved. Own report-lint COMPLETE and route ADVANCE exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 06:58 TASK task-10 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-10-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: e7d5963105fa3a40b8d0d687902def63595ade2f - verified, subject matched; report d26c28b
+- QA-plan commands beyond the task spec: eight activation interruption cases plus retained real closed-pipe lifecycle tests
+- Evidence: Same-task FQ-07 complete; Task1 remains last final-QA repair owner before independent final-review-2.
+
+### 2026-09-09 06:58 TASK-RECOVERY task-1
+
+- Source: review-7 / final-review.md FQ-01
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-1.md / schema.md sections 5 and 6 / final-review.md FQ-01
+- Triage disposition: N/A
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/journal/,internal/db/,internal/export/export.go,cmd/fid/rebuild.go,cmd/fid/integration/,internal/export/*_test.go,internal/workflow/*_test.go,internal/evidence/*_test.go,cmd/fid/*_test.go,project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Forbidden changes: any DDL/schema/migration edit, accepted Event/Effect/wire/authority/policy semantics, new generic historical Event policy, dependencies, protected gates or controls, VAL definitions, unrelated product changes or other task reports; matching test convergence must preserve subject and record introducing provenance; retain pinned Phase21 archive grammar
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Exact verification: from /home/mark/projects/fid all twelve unchanged task-1 commands in original order including six reference environment commands and fresh100k sample below30000ms with parity, plus closed current-family live/replay positive and malformed/missing/reordered/unrelated Effects/fields/scalars/bindings/references/duplicates/stale/sequence negatives with rollback and legitimate conditional controls
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: d26c28b; all other final-QA repair owners complete
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - final-review FQ-01 reproduces relabeled checkpoint Effects accepted as recovery/budget/blocked families; existing journal transaction and producer seams are in scope
+- Next action: root sole Task1 writer; retain all failed attempts; then one independent final re-review and refreshed blank Human fixtures
+- Human attention required: no
