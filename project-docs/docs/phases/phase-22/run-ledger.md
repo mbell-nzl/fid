@@ -1520,3 +1520,12 @@
 - Commit: e04bfbdd0194393b0bfee200477a14bc6c563fb3 - verified, subject matched; continuation report3e96018
 - QA-plan commands beyond the task spec: none required
 - Evidence: Same-task R6-01 test-only continuation and all seven fresh exact gates complete; original receipts retained. Fresh independent Review6b is required before finalQA; Human outcomes remain blank.
+
+### 2026-09-08 23:08 REVIEW review-6b
+
+- Path: project-docs/docs/phases/phase-22/qa/review-6b.md
+- Tasks covered: task-16, task-17, task-18
+- Outcome: PASS
+- Owning task: none
+- Re-review of: review-6
+- Must-fix: 0 / Improvement: 0 / blocker candidates: 0; R6-01 independently RESOLVED at7e78b834eac6a81480d9e9b05fdb42f02827b71f. Reviewer reproduced closed50/90cases and actual12domain outputs, affected corpus, maintenance/capability/schema and unchanged tagged race101.464s, each exit0. All36 window command occurrences reconcile; retained manifest/hash verified. Final independent QA now due; Human judgments remain blank.

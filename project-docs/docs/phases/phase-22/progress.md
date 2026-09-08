@@ -203,3 +203,18 @@
 - Root report-lint COMPLETE and route ADVANCE observed exit0; ledger closure
   passed. Fresh independent Review6 now owns one artifact only; source frozen.
   Independent finalQA, exact kit mapping and runnable blank checklist remain.
+
+## 2026-09-08 - Review6b Pass; Independent FinalQA Next
+
+- Original Review6 ea9b83f returned R6-01 REPAIR for closed-domain evidence.
+  Root completed test-only repair e04bfbd/report3e96018, all seven unchanged
+  exact gates, and root report/route/sequence controls.
+- Fresh independent Review6b PASS7e78b83 resolves R6-01:12domains,15fields,
+  50accepted/90invalid or missing schema cases, actualfid outputs and mutations.
+  Invented claim.get inventory row corrected; all23amended operations retained.
+- Reviewer independently reproduced full tagged race101.464s plus focused
+  corpus and maintenance/schema checks, and reconciled all36 window commands.
+- Latest retained manifest .cache/phase-22-human/checkpoints-4043242815/manifest.json
+  is clean-source e04bfbd with own binary/hash; lease expires2026-09-09T10:57:54.448190739Z.
+- All18 tasks and all six review windows are closed. Independent finalQA and
+  runnable blank Human checklist remain; Human judgments/sign-off are pending.
