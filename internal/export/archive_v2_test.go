@@ -78,6 +78,7 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 	contents := archiveContents(t, archive)
 	m := decodeManifestMap(t, contents["manifest.json"])
 	m["schema"], m["projection_schema"] = "fid.export-manifest.v1", 14
+	m["capabilities"] = legacyCapabilitySnapshot()
 	delete(m, "project_config")
 	contents["journal/2026-08-30.jsonl"] = contents["journal/00000001.jsonl"]
 	delete(contents, "journal/00000001.jsonl")
@@ -91,8 +92,21 @@ func TestValidateRetainsPinnedV1Profile(t *testing.T) {
 	if workspaceTreeDigest(t, workspace) != before {
 		t.Fatal("v1 validation mutated project")
 	}
+	tampered := decodeManifestMap(t, contents["manifest.json"])
+	tamperedCapabilities := tampered["capabilities"].([]any)
+	tamperedCapabilities[0].(map[string]any)["available"] = true
+	tampered["capabilities"] = tamperedCapabilities
+	contents["manifest.json"] = encodeManifestMap(t, tampered)
+	writeTestArchive(t, archive, contents)
+	_, err := Validate(ValidateOptions{ArchivePath: archive, MigrationsDir: testMigrationsDir(t)})
+	assertArchiveCheck(t, err, "capability-snapshot-mismatch")
+	if workspaceTreeDigest(t, workspace) != before {
+		t.Fatal("tampered v1 validation mutated project")
+	}
+	contents["manifest.json"] = encodeManifestMap(t, m)
+	writeTestArchive(t, archive, contents)
 	target := t.TempDir()
-	_, err := Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "v1-rejected"})
+	_, err = Import(ImportOptions{ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "v1-rejected"})
 	var invalid *InvalidArchiveError
 	if !errors.As(err, &invalid) || len(invalid.Checks) != 1 || invalid.Checks[0].Code != "schema-unsupported" {
 		t.Fatalf("v1 import error = %#v, want schema-unsupported archive check", err)

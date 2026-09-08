@@ -14,7 +14,18 @@ import (
 	fiddb "github.com/mbell-nzl/fid/internal/db"
 )
 
-const capabilitiesGolden = `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"capabilities.get","result":{"items":[{"available":false,"capability_id":"attention.v1","limits":{"state":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"evidence.freshness.v1","limits":{"branch_labels":false,"target":"repository-tree"},"schema_max":1,"schema_min":1,"trust_source":"fid-git-observation"},{"available":true,"capability_id":"evidence.gate-definitions.v1","limits":{"executor_policy":"standard-library","network":"allowed","sandbox":"none","write":"allowed"},"schema_max":1,"schema_min":1,"trust_source":"active-kit-activation"},{"available":true,"capability_id":"evidence.receipts.v1","limits":{"attestation":false,"producer":"fid","terminal_receipts":true},"schema_max":1,"schema_min":1,"trust_source":"fid-executed"},{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"human.outcomes.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"reviews.coverage.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"telemetry.trajectory.v1","limits":{"ingest":false},"schema_max":1,"schema_min":1,"trust_source":"phase-25-unavailable"},{"available":false,"capability_id":"work.claims.v1","limits":{"max_active_per_issue":1,"parallelism":false,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"workflow.state.v1","limits":{"max_envelope_revisions":1,"max_primary_issues":1,"related_issues":false},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"},{"available":true,"capability_id":"workflow.transitions.v1","limits":{"execution_bound":true,"terminal_evidence_guard":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}]}}`
+const legacyCapabilitiesGolden = `{"contract_version":"fid-cli.v1","event":null,"ok":true,"operation":"capabilities.get","result":{"items":[{"available":false,"capability_id":"attention.v1","limits":{"state":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"evidence.freshness.v1","limits":{"branch_labels":false,"target":"repository-tree"},"schema_max":1,"schema_min":1,"trust_source":"fid-git-observation"},{"available":true,"capability_id":"evidence.gate-definitions.v1","limits":{"executor_policy":"standard-library","network":"allowed","sandbox":"none","write":"allowed"},"schema_max":1,"schema_min":1,"trust_source":"active-kit-activation"},{"available":true,"capability_id":"evidence.receipts.v1","limits":{"attestation":false,"producer":"fid","terminal_receipts":true},"schema_max":1,"schema_min":1,"trust_source":"fid-executed"},{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"human.outcomes.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":false,"capability_id":"reviews.coverage.v1","limits":{"record":false},"schema_max":1,"schema_min":1,"trust_source":"phase-23-unavailable"},{"available":false,"capability_id":"telemetry.trajectory.v1","limits":{"ingest":false},"schema_max":1,"schema_min":1,"trust_source":"phase-25-unavailable"},{"available":false,"capability_id":"work.claims.v1","limits":{"max_active_per_issue":1,"parallelism":false,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"},{"available":true,"capability_id":"workflow.state.v1","limits":{"max_envelope_revisions":1,"max_primary_issues":1,"related_issues":false},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"},{"available":true,"capability_id":"workflow.transitions.v1","limits":{"execution_bound":true,"terminal_evidence_guard":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}]}}`
+
+var capabilitiesGolden = strings.NewReplacer(
+	`{"available":false,"capability_id":"attention.v1","limits":{"state":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
+	`{"available":true,"capability_id":"attention.v1","limits":{"human_outcome_resolution":false,"state":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
+	`{"available":false,"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
+	`{"available":true,"capability_id":"export.portable.v1","limits":{"create":true,"import":true,"import_mode":"empty-target","validate":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"}`,
+	`{"available":false,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
+	`{"available":true,"capability_id":"kit.activation.v1","limits":{"abort_before_commit":true,"automatic_respawn":false,"finalize":true,"recover":true},"schema_max":1,"schema_min":1,"trust_source":"active-kit-activation"}`,
+	`{"available":false,"capability_id":"work.claims.v1","limits":{"max_active_per_issue":1,"parallelism":false,"recover":false},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"}`,
+	`{"available":false,"capability_id":"work.claims.v1","limits":{"max_active_per_issue":1,"parallelism":false,"recover":true},"schema_max":1,"schema_min":1,"trust_source":"phase-24-unavailable"}`,
+).Replace(legacyCapabilitiesGolden)
 
 func TestCapabilitiesJSONGoldenAndProjectionRows(t *testing.T) {
 	t.Parallel()
@@ -56,6 +67,53 @@ func TestCapabilitiesJSONGoldenAndProjectionRows(t *testing.T) {
 	}
 }
 
+func TestCapabilitiesAdvertiseOnlyFinalQualifiedRows(t *testing.T) {
+	workspace := clonePristineWorkspace(t)
+	result := executeCommandForTest(workspace, "--json", "capabilities")
+	if result.err != nil || result.stderr != "" {
+		t.Fatalf("capabilities = %#v", result)
+	}
+	var envelope struct {
+		Result struct {
+			Items []struct {
+				Available    bool           `json:"available"`
+				CapabilityID string         `json:"capability_id"`
+				Limits       map[string]any `json:"limits"`
+				TrustSource  string         `json:"trust_source"`
+			} `json:"items"`
+		} `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(result.stdout), &envelope); err != nil {
+		t.Fatalf("decode capability discovery: %v", err)
+	}
+	got := make(map[string]struct {
+		available bool
+		limits    map[string]any
+		trust     string
+	})
+	for _, item := range envelope.Result.Items {
+		got[item.CapabilityID] = struct {
+			available bool
+			limits    map[string]any
+			trust     string
+		}{item.Available, item.Limits, item.TrustSource}
+	}
+	for id, want := range map[string]struct {
+		available bool
+		limits    map[string]any
+		trust     string
+	}{
+		"attention.v1":       {true, map[string]any{"state": true, "human_outcome_resolution": false}, "fid-journal"},
+		"kit.activation.v1":  {true, map[string]any{"abort_before_commit": true, "automatic_respawn": false, "finalize": true, "recover": true}, "active-kit-activation"},
+		"export.portable.v1": {true, map[string]any{"create": true, "import": true, "validate": true, "import_mode": "empty-target"}, "fid-journal"},
+		"work.claims.v1":     {false, map[string]any{"max_active_per_issue": float64(1), "parallelism": false, "recover": true}, "phase-24-unavailable"},
+	} {
+		if actual, ok := got[id]; !ok || actual.available != want.available || actual.trust != want.trust || !reflect.DeepEqual(actual.limits, want.limits) {
+			t.Fatalf("%s = %#v, want %#v", id, actual, want)
+		}
+	}
+}
+
 func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.T) {
 	t.Parallel()
 	workspace := clonePristineWorkspace(t)
@@ -84,7 +142,7 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 		{"reviews.coverage.v1", "fail-closed AC and Concern judgment"},
 		{"human.outcomes.v1", "fail-closed AC and Concern judgment"},
 		{"telemetry.trajectory.v1", "historical stats"},
-		{"attention.v1", "Attention-absence surfaces"},
+		{"attention.v1", "Attention state surfaces"},
 	} {
 		t.Run(fixture.capabilityID+" "+fixture.surfaces, func(t *testing.T) {
 			if _, err := conn.Exec(`UPDATE system_capabilities SET available = 1 WHERE capability_id = ?`, fixture.capabilityID); err != nil {
@@ -94,8 +152,8 @@ func TestCapabilitiesRejectsOverridesAndKeepsDeferredRowsUnavailable(t *testing.
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("capabilities after %s override = %#v", fixture.capabilityID, result)
 			}
-			if available := capabilityAvailability(t, result.stdout, fixture.capabilityID); available {
-				t.Fatalf("%s availability = true after optimistic projection write, want false for %s", fixture.capabilityID, fixture.surfaces)
+			if available := capabilityAvailability(t, result.stdout, fixture.capabilityID); available != (fixture.capabilityID == "kit.activation.v1" || fixture.capabilityID == "export.portable.v1" || fixture.capabilityID == "attention.v1") {
+				t.Fatalf("%s availability = %t after optimistic projection write, want binary-qualified state for %s", fixture.capabilityID, available, fixture.surfaces)
 			}
 		})
 	}
@@ -113,13 +171,13 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 		capabilityID string
 		available    bool
 	}{
-		{"attention.v1", false},
+		{"attention.v1", true},
 		{"evidence.freshness.v1", true},
 		{"evidence.gate-definitions.v1", true},
 		{"evidence.receipts.v1", true},
-		{"export.portable.v1", false},
+		{"export.portable.v1", true},
 		{"human.outcomes.v1", false},
-		{"kit.activation.v1", false},
+		{"kit.activation.v1", true},
 		{"reviews.coverage.v1", false},
 		{"telemetry.trajectory.v1", false},
 		{"work.claims.v1", false},
@@ -183,8 +241,8 @@ func TestDeferredCapabilitySurfacesStayUnavailableWithoutSideEffects(t *testing.
 			if result.err != nil || result.stderr != "" {
 				t.Fatalf("capability discovery after %s probe = %#v", probe.surface, result)
 			}
-			if capabilityAvailability(t, result.stdout, probe.capabilityID) {
-				t.Fatalf("%s became available after %s probe", probe.capabilityID, probe.surface)
+			if available := capabilityAvailability(t, result.stdout, probe.capabilityID); available != (probe.capabilityID == "export.portable.v1") {
+				t.Fatalf("%s availability = %t after %s probe, want binary-qualified state", probe.capabilityID, available, probe.surface)
 			}
 		})
 	}

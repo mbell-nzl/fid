@@ -34,8 +34,8 @@ func TestExportCreateValidateAndImportUsesClosedTargetConflict(t *testing.T) {
 		t.Fatalf("export import target conflict = %#v, want closed non-retryable conflict", conflict)
 	}
 	capabilities := executeCommandForTest(workspace, "capabilities", "--json")
-	if capabilities.err != nil || !strings.Contains(capabilities.stdout, `"capability_id":"export.portable.v1","limits":{"create":true,"import":false,"validate":true},"schema_max":1,"schema_min":1,"trust_source":"phase-22-unavailable"`) {
-		t.Fatalf("export capability = %#v, want exact unavailable row", capabilities)
+	if capabilities.err != nil || !strings.Contains(capabilities.stdout, `"capability_id":"export.portable.v1","limits":{"create":true,"import":true,"import_mode":"empty-target","validate":true},"schema_max":1,"schema_min":1,"trust_source":"fid-journal"`) {
+		t.Fatalf("export capability = %#v, want exact qualified row", capabilities)
 	}
 }
 

@@ -17,7 +17,6 @@ import (
 
 const manifestSchema = "fid.export-manifest.v2"
 const legacyManifestSchema = "fid.export-manifest.v1"
-const unavailableCapabilityOne = "at" + "tention.v1"
 
 var zipEpoch = time.Date(1980, time.January, 1, 0, 0, 0, 0, time.UTC)
 
