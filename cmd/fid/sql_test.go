@@ -25,7 +25,7 @@ func TestSQLCommandAcceptsReadStatementsAsDirectLegacyJSON(t *testing.T) {
 
 	wantRows := []internalsqlquery.Row{
 		{"id": "epic-default", "active": int64(1)},
-		{"id": "escalation-default", "active": int64(1)},
+		{"id": "subtask-default", "active": int64(1)},
 	}
 	want := expectedCommandStructure(t, wantRows)
 	if got := decodeCommandJSONStructure(t, stdout); !reflect.DeepEqual(got, want) {

@@ -102,7 +102,6 @@ func TestLinkScopeAndRelationTriggersRejectInvalidCombosAndAllowValidRows(t *tes
 	})
 	insertRefTriggerRequirement(t, conn, "REQ-link-001")
 	insertRefTriggerDecision(t, conn, "DEC-link-001", "FID-link-epic")
-	insertRefTriggerEscalation(t, conn, "ESC-link-001")
 
 	t.Run("rejects decision endpoint", func(t *testing.T) {
 		_, err := conn.Exec(`
@@ -317,17 +316,6 @@ func insertRefTriggerDecision(t *testing.T, conn *sql.DB, decisionID, epicID str
 		VALUES (?, ?, ?, ?, ?, ?, ?)
 	`, decisionID, epicID, "tl", "Decision "+decisionID, "project-docs/decisions/"+decisionID+".md", "open", "2026-06-07T15:08:00Z"); err != nil {
 		t.Fatalf("insert decisions(%q) error = %v", decisionID, err)
-	}
-}
-
-func insertRefTriggerEscalation(t *testing.T, conn *sql.DB, escalationID string) {
-	t.Helper()
-
-	if _, err := conn.Exec(`
-		INSERT INTO escalations (id, status, trigger_class, raised_by_role, raised_at)
-		VALUES (?, ?, ?, ?, ?)
-	`, escalationID, "open", "policy", "qa_lead", "2026-06-07T15:09:00Z"); err != nil {
-		t.Fatalf("insert escalations(%q) error = %v", escalationID, err)
 	}
 }
 

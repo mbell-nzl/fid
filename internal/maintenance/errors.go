@@ -295,8 +295,6 @@ func referenceTable(refType string) (string, bool) {
 		return "requirements", true
 	case "decision":
 		return "decisions", true
-	case "escalation":
-		return "escalations", true
 	default:
 		return "", false
 	}

@@ -468,10 +468,6 @@ var closureProjectedTableQueries = []struct {
 		query: "SELECT * FROM epic_metadata ORDER BY issue_id",
 	},
 	{
-		name:  "escalations",
-		query: "SELECT * FROM escalations ORDER BY id",
-	},
-	{
 		name:  "issue_labels",
 		query: "SELECT * FROM issue_labels ORDER BY issue_id, label",
 	},

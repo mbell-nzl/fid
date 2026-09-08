@@ -119,7 +119,7 @@ func recoveryEventWithMissingReference() journal.Event {
 }
 
 func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
-	validator, err := newSemanticValidator(testMigrationsDir(t), 15)
+	validator, err := newSemanticValidator(testMigrationsDir(t), 16)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
 	}
@@ -132,7 +132,7 @@ func TestSemanticValidatorRejectsNestedDuplicateJSONKey(t *testing.T) {
 }
 
 func TestSemanticValidatorRejectsMissingRecoveryReference(t *testing.T) {
-	validator, err := newSemanticValidator(testMigrationsDir(t), 15)
+	validator, err := newSemanticValidator(testMigrationsDir(t), 16)
 	if err != nil {
 		t.Fatalf("new semantic validator: %v", err)
 	}
@@ -176,7 +176,7 @@ func TestSemanticValidatorRejectsRecoveryEffectFamilyTampering(t *testing.T) {
 		},
 	} {
 		t.Run(testCase.name, func(t *testing.T) {
-			validator, err := newSemanticValidator(testMigrationsDir(t), 15)
+			validator, err := newSemanticValidator(testMigrationsDir(t), 16)
 			if err != nil {
 				t.Fatalf("new semantic validator: %v", err)
 			}

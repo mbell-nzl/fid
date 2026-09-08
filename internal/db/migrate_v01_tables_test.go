@@ -54,8 +54,8 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 		},
 		{
 			table:              "concerns",
-			columns:            []string{"id", "issue_id", "raised_in_completion_id", "status", "escalated_to_esc_id", "triaged_in_event_id"},
-			foreignKeyContains: []string{"issue_id->issues.id", "raised_in_completion_id->task_completions.id", "escalated_to_esc_id->escalations.id", "triaged_in_event_id->triage_events.id"},
+			columns:            []string{"id", "issue_id", "raised_in_completion_id", "status", "triaged_in_event_id"},
+			foreignKeyContains: []string{"issue_id->issues.id", "raised_in_completion_id->task_completions.id", "triaged_in_event_id->triage_events.id"},
 		},
 		{
 			table:   "requirements",
@@ -94,14 +94,9 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 			foreignKeyContains: []string{"epic_id->issues.id"},
 		},
 		{
-			table:              "escalations",
-			columns:            []string{"id", "status", "trigger_class", "raised_by_role", "raised_at", "resolved_at", "resolution_dec"},
-			foreignKeyContains: []string{"resolution_dec->decisions.id"},
-		},
-		{
 			table:              "triage_events",
-			columns:            []string{"id", "epic_id", "issue_id", "triager_role", "source", "source_ref_id", "verdict", "esc_id", "reasoning_md", "created_at"},
-			foreignKeyContains: []string{"epic_id->issues.id", "issue_id->issues.id", "esc_id->escalations.id"},
+			columns:            []string{"id", "epic_id", "issue_id", "triager_role", "source", "source_ref_id", "verdict", "reasoning_md", "created_at"},
+			foreignKeyContains: []string{"epic_id->issues.id", "issue_id->issues.id"},
 		},
 	}
 
@@ -118,6 +113,7 @@ func TestMigrateUpCreatesRetainedFrozenAndGenericClaimTables(t *testing.T) {
 		})
 	}
 	assertTableDoesNotExist(t, conn, "gate_runs")
+	assertTableDoesNotExist(t, conn, "escalations")
 }
 
 func TestMigration0002DownLeavesPhaseOneSchemaAndUpRestoresPhaseTwoTables(t *testing.T) {

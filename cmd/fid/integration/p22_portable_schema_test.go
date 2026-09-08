@@ -2,7 +2,7 @@
 
 package integration
 
-// Independent test-model column/default snapshot of accepted schema15.
+// Independent test-model column/default snapshot of accepted schema16 (these Effect tables/columns are unchanged by 0016).
 // The fake uses only these literals and in-memory Effect application; it never
 // opens a fid database or calls its appliers. Task16 owns schema16 convergence.
 var p22PortableColumns = map[string]string{

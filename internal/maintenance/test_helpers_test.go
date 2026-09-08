@@ -118,7 +118,6 @@ func seedImpossibleStructuralRows(t *testing.T, db *sql.DB) {
 	seedEpicMetadata(t, db, "FID-parent-task", "prioritised")
 	seedDecision(t, db, "DEC-valid", "FID-parent-epic")
 	seedDecision(t, db, "DEC-invalid", "FID-parent-task")
-	seedEscalation(t, db, "ESC-valid")
 	seedTriageEvent(t, db, "TRI-invalid", "FID-parent-task", "FID-parent-task")
 	seedRequirement(t, db, "REQ-valid")
 
@@ -129,7 +128,7 @@ func seedImpossibleStructuralRows(t *testing.T, db *sql.DB) {
 	seedActivity(t, db, "ACT-invalid-ref", "EVT-20260715-000001", "issue", "FID-missing-activity")
 	seedActivity(t, db, "ACT-invalid-type", "EVT-20260715-000001", "unknown", "UNKNOWN-1")
 	seedActivity(t, db, "ACT-missing-event", "EVT-20260715-999999", "decision", "DEC-valid")
-	seedActivity(t, db, "ACT-missing-event-second", "EVT-20260715-999999", "escalation", "ESC-valid")
+	seedActivity(t, db, "ACT-missing-event-second", "EVT-20260715-999999", "issue", "FID-parent-task")
 
 	seedForeignKeyViolation(t, db)
 }
@@ -150,7 +149,6 @@ func seedValidStructuralRows(t *testing.T, db *sql.DB) {
 	seedCompletion(t, db, "CMP-task", "FID-task-sequential")
 	seedCompletion(t, db, "CMP-subtask", "FID-subtask")
 	seedDecision(t, db, "DEC-valid", "FID-epic-sequential")
-	seedEscalation(t, db, "ESC-valid")
 	seedTriageEvent(t, db, "TRI-valid", "FID-epic-sequential", "FID-task-sequential")
 	seedRequirement(t, db, "REQ-valid")
 	seedLink(t, db, "issue", "FID-task-sequential", "implements", "requirement", "REQ-valid")
@@ -159,7 +157,7 @@ func seedValidStructuralRows(t *testing.T, db *sql.DB) {
 	seedActivity(t, db, "ACT-issue", "EVT-20260715-000001", "issue", "FID-task-sequential")
 	seedActivity(t, db, "ACT-requirement", "EVT-20260715-000001", "requirement", "REQ-valid")
 	seedActivity(t, db, "ACT-decision", "EVT-20260715-000001", "decision", "DEC-valid")
-	seedActivity(t, db, "ACT-escalation", "EVT-20260715-000001", "escalation", "ESC-valid")
+	seedActivity(t, db, "ACT-retained-issue", "EVT-20260715-000001", "issue", "FID-task-prioritised")
 	seedAllWorkflowStates(t, db)
 }
 
@@ -242,13 +240,6 @@ func seedDecision(t *testing.T, db *sql.DB, id, epicID string) {
 		VALUES (?, ?, 'tl', 'decision', 'decision.md', 'active')
 	`, id, epicID); err != nil {
 		t.Fatalf("insert decision %q: %v", id, err)
-	}
-}
-
-func seedEscalation(t *testing.T, db *sql.DB, id string) {
-	t.Helper()
-	if _, err := db.Exec(`INSERT INTO escalations (id, status) VALUES (?, 'open')`, id); err != nil {
-		t.Fatalf("insert escalation %q: %v", id, err)
 	}
 }
 
