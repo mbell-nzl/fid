@@ -140,3 +140,19 @@
   and task completion were appended through the canonical sequence control.
 - Task15 CLI/parity is the next single-owner implementation. Review5 remains
   independent and follows its completion.
+
+## 2026-09-08 - Task15 Closure And Independent Review5
+
+- Task15 product 5ec69e6, final report59d86a3, closure b9ad453. Root completed
+  the missing eight-state portable corpus after an incomplete Developer hand-back.
+  Named live/rebuilt/imported JSON and canonical entry bytes match; the separate
+  fake interprets logical Effects without fid storage/appliers. Actual destination
+  recovery produces a successor Gate Receipt.
+- The first full race gate found the generic error test's invalid valid-sample
+  reason. Root corrected that sample without opening the production enum, then
+  observed all five final gates pass. The failed attempt and report-heading
+  repair remain recorded. Coverage is 63.2%; full tagged integration took 72.834s.
+- Fresh independent Review5 owns only its review artifact. No product writer is
+  active during review. Root prepares Task16 through read-only inspection.
+- Tasks16–18, Review6, full independent QA and retained Human fixtures remain
+  authorized and pending. No Human outcome or final readiness is claimed early.
