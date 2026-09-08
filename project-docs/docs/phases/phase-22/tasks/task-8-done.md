@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: None.
-- Recovery attempts: 4
-- Next action: None.
+- Condition: FQ-06 repair complete; all eight unchanged final commands passed.
+- Recovery attempts: 5
+- Next action: Task10 FQ-07, then Task1 FQ-01 and independent final-review-2.
 - Human attention required: no
 - Historical blocker resolved: DEC-195 resolved ESC-22-004 / TRG-22-009 by assigning the two exact `execution_receipts` baseline replacements, with task-1 provenance, to this same-task continuation. The preserved prior BLOCKED evidence below records the formerly missing authority.
 
@@ -119,11 +119,11 @@
 
 ## Commit hash
 
-- `c5dc59e4bb9cf9db20a4aa157daeef68d132bb60`
+- `c0003e0c5df7f2dffc46e05d04ddd7bdfa53f307`
 
 ## Commit subject
 
-- `fix(evidence): persist cancelled receipts`
+- `fix(workflow): verify terminal repository and exact abandon authority`
 
 ## Root report display correction — 2026-09-08
 
@@ -132,3 +132,105 @@ receipts following the QA-84 preflight. The original Developer sessions remain
 the source of those receipts, including every recorded outcome, duration,
 coverage value and observed termination. This formatting correction records
 no new execution or attestation. Original encoded text remains in Git history.
+
+
+## Final-QA FQ-06 same-task continuation — 2026-09-09
+
+Authority: review-7, final-review.md FQ-06, task-8.md, contracts.md §§3/7 and
+DEC-208. Root is the sole writer. All original failures, BLOCKED receipts and
+DEC-195 history remain above. Prior primary binding:
+c5dc59e4bb9cf9db20a4aa157daeef68d132bb60,
+`fix(evidence): persist cancelled receipts`.
+
+### Implementation and validation evidence
+
+- VAL-033: CloseRun validates the asserted terminal repository against the
+  actual current observer while holding the write lock, before shared Obligation
+  evaluation. Base remains the historical comparison origin; a non-null base
+  must exist, and nullable base remains supported. Every other identity/dirty
+  field must match observation. Caller assertions are never refreshed into
+  current proof. AbandonRun uses the same current terminal assertion check.
+- VAL-034: exact force abandonment additionally checks the referenced grant's
+  Issue scope and required force capability. Another valid grant cannot make an
+  unrelated referenced ordinal sufficient. Existing Human type, current Envelope,
+  Actor, live observation, grant action and reference checks remain.
+- New run_close_authority_test.go executes 39 abandonment cases across ordinary
+  and Human force, plus ten direct CloseRun observation/version/authority cases.
+  It covers valid controls, missing/nonexistent/wrong-Run/wrong-executor/wrong-kind
+  observations, unknown/live states, stale Run/Claim versions, absent grants,
+  closed Envelope, Actor mismatch, expired Claim, non-Human force, capability,
+  reference/Envelope/revision/ordinal and four separately referenced-grant defects.
+  Every rejection compares all projection tables and journal bytes unchanged.
+- Successful abandonment checks distinct abandoned status, current version,
+  Claim release reason/version/time, immutable Claim identity/scope, durable
+  Actor/Run Event provenance, no successor identity, no new Receipt/Evidence or
+  changed other context, and exact public terminal replay without new facts.
+- New p22_close_proof_test.go executes 13 actual CLI cases against a required
+  Obligation. Qualifying fid execution plus linked Evidence succeeds; missing,
+  stale and failed proof derive failure. A real Receipt append fault supplies
+  an outstanding Attempt, which close rejects. Live/unknown, missing/null
+  observation, stale version, forged old repository and missing base reject
+  unchanged. A null base is handled without panic or manufactured proof.
+  Stale proof is tested by changing real base.txt bytes; the forged old-target
+  test proves the caller cannot choose an old target to make that proof current.
+  Accepted close changes only terminal Run/runtime and persistence bookkeeping;
+  it leaves the Claim, Issue, Envelope and all proof unchanged. Exact CLI replay
+  retains the terminal Run and Event once.
+- New p22_abandon_authority_test.go exercises 14 actual CLI cases. Ordinary
+  terminated and exact Human known-live controls succeed. Both modes reject
+  unknown, missing/null/nonexistent observation and forged target; ordinary live
+  and force without a reference reject. It proves the accepted typed failures,
+  no-effect rejection, distinct release provenance, no new proof/successor and
+  byte-equivalent public replay apart from replayed=true.
+- DEC-208 allocates only cmd/fid/run.go's close/abandon domain-error returns to
+  the existing recovery renderer. This restores accepted liveness/observation/
+  repository error codes, categories and exits without editing the registry or
+  renderer. Introducing Task9 commit:
+  a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460, verified with git log -S for both
+  domain calls. Task9's report remains COMPLETE and unchanged.
+
+### Mandatory deviations and failed attempts
+
+- Authority red ended `FAIL` (exit_code: 1), 111.545s. Wrong-Issue and missing
+  force capability on the specifically referenced grant were accepted. The
+  exact-grant checks repair these causal defects. The identical command passed
+  at 112.277s. Two initial valid replay assertions compared ScopeJSON, an internal
+  field explicitly excluded from serialized Claim results. The comparison now
+  checks the complete public Claim JSON and preserves the separate immutable
+  database Claim scope assertion; no product field or wire contract changed.
+- Actual close red ended `FAIL` (exit_code: 1), 19.394s. Reusing the old repository
+  assertion after a real change produced succeeded; live/unknown domain failures
+  became generic invalid-argument/2. Actual observation validation plus DEC-208's
+  existing renderer delegation repaired them. The identical command passed at
+  25.438s, including two added nullable/missing-base controls.
+- Actual public abandonment matrix passed at 17.355s (exit_code: 0).
+- No cancellation, signal, timeout, Receipt outcome/DDL, Event grammar, dependency,
+  protected gate/control/threshold, validation assertion or product policy changed.
+  All synchronized executor cases and both required benchmark commands remain.
+  Independent final-review-2 judges sufficiency after all owners; Human judgments
+  remain blank.
+
+### Continuation command receipts
+
+Working directory: `/home/mark/projects/fid`. Root captured each following
+command token and nested observed termination in this recording session.
+
+Retained caller convergence: TestRunStartBindsOptionalObligationAndRejectsReusedExecutor initially failed `FAIL` (exit_code: 1),47.663s, because its synthetic non-Git repository could not supply the now-required current terminal observation. Its original Task3 introducing commit is 7e419bfd8c233f933680d4a3b3957814c29dbd5e. Replacing only its setup with observedEvidenceEnvelopeForTest(t,nil) preserves optional Obligation binding, duplicate executor rejection and exact null subject/details assertions. The byte-identical four-caller command passed51.094s (exit_code: 0). New primary implementation c0003e0, fix(workflow): verify terminal repository and exact abandon authority.
+
+Recovery accounting: four original attempts plus FQ-06 attempt1; consecutive no-progress remains0/2. All eight final commands passed. Aggregate coverage65.4%; first/second 100k rebuild26718/27316ms. Required cancellation cases passed in the ordinary race suite; fifteen-repeat command preserves failed/spawn-failed/timed-out/signaled cases.
+
+- `go test -race ./internal/workflow -run '^(TestAbandonRunRequiresExactCurrentAuthorityAndObservation|TestCloseRunRejectsUnqualifiedObservationVersionAndAuthority)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 1: close and abandonment authority matrix red.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CloseRunUsesObservedRepositoryAndQualifyingProof$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 2: actual close proof and repository assertion red.
+- `go test -race ./internal/workflow -run '^(TestAbandonRunRequiresExactCurrentAuthorityAndObservation|TestCloseRunRejectsUnqualifiedObservationVersionAndAuthority)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	112.277s` (terminated `exit_code: 0`). Attempt 3: close and abandonment authority matrix green.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22CloseRunUsesObservedRepositoryAndQualifyingProof$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	25.438s` (terminated `exit_code: 0`). Attempt 4: actual close proof and repository assertion green.
+- `go test -tags integration -race ./cmd/fid/integration/... -run '^TestP22AbandonUsesExactHumanForceAndTypedObservationFailures$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	17.355s` (terminated `exit_code: 0`). Attempt 5: actual abandon authority and typed errors.
+- `go test -race ./cmd/fid -run '^(TestRunStartBindsOptionalObligationAndRejectsReusedExecutor|TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease|TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery|TestFinalSchemaNamedReadsAndExportMatchAfterRebuild)$' -count=1` - BLOCKED - `FAIL` (terminated `exit_code: 1`). Attempt 6: retained close caller convergence check.
+- `go test -race ./cmd/fid -run '^(TestRunStartBindsOptionalObligationAndRejectsReusedExecutor|TestEnvelopeCompleteReusesQualifiedTerminalEvidenceAfterRunRelease|TestResumeProjectsExactActiveAndCompletedDurableStateWithoutRecovery|TestFinalSchemaNamedReadsAndExportMatchAfterRebuild)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	51.094s` (terminated `exit_code: 0`). Attempt 7: retained close caller convergence rerun.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`). Attempt 8: full task-8 gate 1.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`). Attempt 9: full task-8 gate 2.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	466.648s	coverage: 62.1% of statements` (terminated `exit_code: 0`). Attempt 10: full task-8 gate 3.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					65.4%` (terminated `exit_code: 0`). Attempt 11: full task-8 gate 4.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	211.237s` (terminated `exit_code: 0`). Attempt 12: full task-8 gate 5.
+- `go test -race -run '^TestGateRunRecordsExactNonSuccessTerminalOutcomes$' -count=15 ./cmd/fid` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid	218.693s` (terminated `exit_code: 0`). Attempt 13: full task-8 gate 6.
+- `go test -bench . -benchmem ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	33.609s` (terminated `exit_code: 0`). Attempt 14: full task-8 gate 7 first benchmark.
+- `go test -bench . -benchmem ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	33.762s` (terminated `exit_code: 0`). Attempt 15: full task-8 gate 8 second benchmark.
