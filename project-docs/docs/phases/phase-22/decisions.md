@@ -1194,7 +1194,8 @@
   unchanged; Task18 records both origins and this minimum repair allocation.
 - **Allocation:** internal/evidence/execution.go, a narrow
   internal/evidence/budget_frames.go helper, internal/evidence/live.go if needed,
-  and matching tests may project committed crossing facts into the already
+  cmd/fid/live_output.go for the corresponding typed Human notice, and matching
+  tests may project committed crossing facts into the already
   accepted budget-stop control. Bind facts to this execution's Attempt/Receipt
   Events, retain historical counters and exact IDs, emit nothing for a rejected
   or uncommitted crossing, and preserve terminal-last/replay behavior.

@@ -60,7 +60,8 @@ Full sources, pass/fail criteria, and validator ownership are in
 ### Files To Create Or Modify
 
 - `internal/evidence/execution.go`, `internal/evidence/budget_frames.go`,
-  `internal/evidence/live.go` and matching tests — DEC-206 only: project committed
+  `internal/evidence/live.go`, `cmd/fid/live_output.go` and matching tests —
+  DEC-206 only: project committed
   crossing facts into the accepted budget-stop control.
 
 - `internal/workflow/stop.go` and matching Stop tests — DEC-205 only: derive
