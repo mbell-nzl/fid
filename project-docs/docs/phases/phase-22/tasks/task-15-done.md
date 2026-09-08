@@ -88,6 +88,11 @@ the affected assertions. No dependency, VAL, command or threshold changed.
 Independent Review 5 follows this task. Human judgments remain pending. The
 portable fake pins schema 15 columns; Task 16 owns schema-16 convergence.
 
+## Dependency-budget note
+
+- None. No dependency was added or updated.
+- The initial root report-lint attempt failed with `FAIL required heading missing: ## Dependency-budget note` (terminated `exit_code: 2`). The report already stated no dependency change; root added this required heading and sentinel. Product and gate evidence are unchanged.
+
 ## Commit hash
 
 - `5ec69e6ef31dd93229c3d42fc76a4c02d60084ee`
