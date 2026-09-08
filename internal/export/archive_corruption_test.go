@@ -2,6 +2,7 @@ package export
 
 import (
 	"bytes"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 
@@ -54,7 +55,26 @@ func TestArchiveRejectsIntegrityValidSemanticCorruptions(t *testing.T) {
 				}
 			}
 		}},
+		{"observation subject differs from its row", "reference-invalid", "run.observed", func(e *journal.Event) {
+			for i := range e.Effects {
+				if e.Effects[i].Table != "run_observations" {
+					continue
+				}
+				var observation map[string]any
+				if err := json.Unmarshal([]byte(e.Effects[i].Values["observation_json"].(string)), &observation); err != nil {
+					t.Fatal(err)
+				}
+				observation["run_id"] = "RUN-forged"
+				encoded, err := journal.MarshalCanonicalJSON(observation)
+				if err != nil {
+					t.Fatal(err)
+				}
+				e.Effects[i].Values["observation_json"] = string(encoded)
+				break
+			}
+		}},
 		{"foreign recovery aggregate", "reference-invalid", "run.recovered", func(e *journal.Event) { e.Aggregate.ID = "RUN-foreign"; e.Aggregate.Sequence = 1 }},
+		{"issue aggregate differs from immutable Effect", "reference-invalid", "issue.created", func(e *journal.Event) { e.Aggregate.ID = "ISS-forged" }},
 		{"immutable Artifact duplicate", "reference-invalid", "gate.receipt-recorded", func(e *journal.Event) { e.Effects = append([]journal.Effect{e.Effects[0]}, e.Effects...) }},
 		{"retired caller outcome", "effect-invalid", "run.recovered", func(e *journal.Event) {
 			e.EventType = "run.finished"

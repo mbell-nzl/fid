@@ -372,10 +372,8 @@ func genericClaimEvent(workspaceRoot string, actor workflow.ActorProfile, reposi
 	if err != nil {
 		return journal.Event{}, err
 	}
-	if next != sequence {
-		return journal.Event{}, fmt.Errorf("claim Event sequence %d, want %d", sequence, next)
-	}
-	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: sequence, Type: "claim"}, CommandName: command, Repository: &journal.Repository{CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID, WorktreeID: repository.WorktreeID}, Effects: effects}, nil
+	_ = sequence // Claim version and aggregate history diverge after atomic recovery creates the Claim under a Run Event.
+	return journal.Event{EventSchema: journal.EventSchemaV2, EventType: eventType, ActorV2: journal.EventActor{ActorID: actor.ActorID, ActorType: actor.ActorType, Producer: actor.Producer, ProvenanceRef: actor.ProvenanceRef, SessionRef: actor.SessionRef}, Aggregate: journal.Aggregate{ID: claimID, Sequence: next, Type: "claim"}, CommandName: command, Repository: &journal.Repository{CaptureSource: repository.CaptureSource, Dirty: repository.Dirty, DirtyDigest: repository.DirtyDigest, HeadOID: repository.HeadOID, ProjectID: repository.ProjectID, TreeOID: repository.TreeOID}, Effects: effects}, nil
 }
 
 func loadGenericClaim(conn *sql.DB, id string) (GenericClaim, error) {

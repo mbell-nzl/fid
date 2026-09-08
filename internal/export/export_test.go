@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -67,6 +68,34 @@ func TestCreateIsByteIdenticalWithCompleteDeterministicInventory(t *testing.T) {
 	}
 	if sources, ok := manifest["sources"].([]any); !ok || len(sources) != 1 {
 		t.Fatalf("manifest sources = %#v, want one canonical source", manifest["sources"])
+	}
+}
+
+func TestImportCrashBeforePublicationLeavesNoPartialProject(t *testing.T) {
+	source := t.TempDir()
+	if _, err := bootstrap.InitializeWorkspace(bootstrap.InitOptions{WorkspaceRoot: source, MigrationsDir: testMigrationsDir(t), Prefix: "FID"}); err != nil {
+		t.Fatalf("initialize source workspace: %v", err)
+	}
+	addJournalBackedExportFixtureFacts(t, source)
+	archive := filepath.Join(t.TempDir(), "recovery.zip")
+	if _, err := Create(CreateOptions{WorkspaceRoot: source, ArchivePath: archive}); err != nil {
+		t.Fatalf("create source archive: %v", err)
+	}
+	target := t.TempDir()
+	_, err := Import(ImportOptions{
+		ArchivePath: archive, RepositoryRoot: target, MigrationsDir: testMigrationsDir(t), IdempotencyKey: "import-crash",
+		Fault: func(stage ImportStage) error {
+			if stage == ImportBeforePublication {
+				return ErrImportFault
+			}
+			return nil
+		},
+	})
+	if !errors.Is(err, ErrImportFault) {
+		t.Fatalf("Import() error = %v, want injected publication fault", err)
+	}
+	if _, err := os.Lstat(filepath.Join(target, ".fid")); !os.IsNotExist(err) {
+		t.Fatalf("target contains a partial project after pre-publication fault: %v", err)
 	}
 }
 

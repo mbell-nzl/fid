@@ -37,10 +37,20 @@ func (err *RecoveryStateConflictError) Error() string { return "recovery state c
 
 // ReconcileRepository converts a read-only Git observation into a bound recovery fact.
 func ReconcileRepository(start Repository, current project.Observation, checkpointID *string, approvedPaths []string) (Reconciliation, error) {
+	return reconcileRepository(start, current, checkpointID, approvedPaths, false)
+}
+
+// ReconcileImportedDestination applies the ordinary reconciliation checks after
+// a verified local import has bound the historical project to this worktree.
+func ReconcileImportedDestination(start Repository, current project.Observation, checkpointID *string, approvedPaths []string) (Reconciliation, error) {
+	return reconcileRepository(start, current, checkpointID, approvedPaths, true)
+}
+
+func reconcileRepository(start Repository, current project.Observation, checkpointID *string, approvedPaths []string, allowDestinationWorktree bool) (Reconciliation, error) {
 	if start.BaseOID == nil || *start.BaseOID == "" || start.HeadOID == "" || start.WorktreeID == "" || current.Root == "" || current.WorktreeID == "" {
 		return Reconciliation{}, recoveryConflict(nil, "missing repository base or identity")
 	}
-	if start.WorktreeID != current.WorktreeID {
+	if start.WorktreeID != current.WorktreeID && !allowDestinationWorktree {
 		return Reconciliation{}, recoveryConflict(nil, "repository identity changed")
 	}
 	if len(current.Unmerged) != 0 {
@@ -73,6 +83,9 @@ func ReconcileRepository(start Repository, current project.Observation, checkpoi
 	}
 	sort.Slice(paths, func(i, j int) bool { return paths[i].Path < paths[j].Path })
 	repository := start
+	if allowDestinationWorktree {
+		repository.WorktreeID = current.WorktreeID
+	}
 	repository.HeadOID, repository.TreeOID, repository.Dirty, repository.DirtyDigest = current.HeadOID, current.TreeOID, current.Dirty, current.DirtyDigest
 	reconciliation := Reconciliation{Repository: repository, CheckpointID: checkpointID, Paths: paths, UnmergedPaths: []string{}, Operation: current.Operation, Ancestry: ancestry}
 	payload, err := journal.MarshalCanonicalJSON(map[string]any{"repository": reconciliation.Repository, "checkpoint_id": reconciliation.CheckpointID, "paths": reconciliation.Paths, "unmerged_paths": reconciliation.UnmergedPaths, "operation": reconciliation.Operation, "ancestry": reconciliation.Ancestry})

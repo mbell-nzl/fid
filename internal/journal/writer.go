@@ -144,46 +144,50 @@ func greatestJournalDate(journalDir string) (string, bool, error) {
 }
 
 func nextSequence(journalPath string) (int, error) {
-	file, err := os.Open(journalPath)
+	date := strings.TrimSuffix(filepath.Base(journalPath), ".jsonl")
+	files, err := orderedJournalFiles(filepath.Dir(journalPath))
 	if err != nil {
-		if os.IsNotExist(err) {
-			return 1, nil
-		}
-		return 0, fmt.Errorf("open journal file %q for sequence scan: %w", journalPath, err)
+		return 0, err
 	}
-	scanner := bufio.NewScanner(file)
-	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
 	highest := 0
-	for scanner.Scan() {
-		line := bytes.TrimSpace(scanner.Bytes())
-		if len(line) == 0 {
-			continue
-		}
-
-		var event Event
-		if err := json.Unmarshal(line, &event); err != nil {
-			_ = file.Close()
-			return 0, fmt.Errorf("scan journal file %q: decode event: %w", journalPath, err)
-		}
-
-		sequence, err := parseEventSequence(event.EventID)
+	for _, name := range files {
+		file, err := os.Open(filepath.Join(filepath.Dir(journalPath), name))
 		if err != nil {
+			return 0, fmt.Errorf("open journal file %q for sequence scan: %w", name, err)
+		}
+		scanner := bufio.NewScanner(file)
+		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+		for scanner.Scan() {
+			line := bytes.TrimSpace(scanner.Bytes())
+			if len(line) == 0 {
+				continue
+			}
+			var event Event
+			if err := json.Unmarshal(line, &event); err != nil {
+				_ = file.Close()
+				return 0, fmt.Errorf("scan journal file %q: decode Event: %w", name, err)
+			}
+			parts := strings.Split(event.EventID, "-")
+			if len(parts) != 3 || parts[1] != strings.ReplaceAll(date, "-", "") {
+				continue
+			}
+			sequence, err := parseEventSequence(event.EventID)
+			if err != nil {
+				_ = file.Close()
+				return 0, fmt.Errorf("scan journal file %q: %w", name, err)
+			}
+			if sequence > highest {
+				highest = sequence
+			}
+		}
+		if err := scanner.Err(); err != nil {
 			_ = file.Close()
-			return 0, fmt.Errorf("scan journal file %q: %w", journalPath, err)
+			return 0, fmt.Errorf("scan journal file %q: %w", name, err)
 		}
-		if sequence > highest {
-			highest = sequence
+		if err := file.Close(); err != nil {
+			return 0, fmt.Errorf("close journal file %q after sequence scan: %w", name, err)
 		}
 	}
-	if err := scanner.Err(); err != nil {
-		_ = file.Close()
-		return 0, fmt.Errorf("scan journal file %q: %w", journalPath, err)
-	}
-	if err := file.Close(); err != nil {
-		return 0, fmt.Errorf("close journal file %q after sequence scan: %w", journalPath, err)
-	}
-
 	return highest + 1, nil
 }
 

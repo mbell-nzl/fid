@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -194,13 +195,28 @@ func orderedJournalFiles(journalDir string) ([]string, error) {
 		if !strings.HasSuffix(name, ".jsonl") {
 			continue
 		}
-		if _, err := time.Parse("2006-01-02", strings.TrimSuffix(name, ".jsonl")); err != nil {
+		if !journalFileName(name) {
 			continue
 		}
 		files = append(files, name)
 	}
 	sort.Strings(files)
 	return files, nil
+}
+
+func journalFileName(name string) bool {
+	if !strings.HasSuffix(name, ".jsonl") {
+		return false
+	}
+	stem := strings.TrimSuffix(name, ".jsonl")
+	if _, err := time.Parse("2006-01-02", stem); err == nil {
+		return true
+	}
+	if len(stem) != 8 {
+		return false
+	}
+	_, err := strconv.Atoi(stem)
+	return err == nil
 }
 
 func bytesTrimSpace(value []byte) []byte {

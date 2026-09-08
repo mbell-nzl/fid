@@ -169,7 +169,7 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if priorClaim.Version != request.ExpectedClaimVersion {
 			return invalidRun("run recovery claim version is invalid")
 		}
-		observation, err := recoveryObservation(conn, request.ObservationID, prior)
+		observation, err := recoveryObservationAtWorkspace(options.WorkspaceRoot, conn, request.ObservationID, prior)
 		if err != nil {
 			return err
 		}
@@ -192,7 +192,7 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err != nil {
 			return fmt.Errorf("run recovery: observe repository: %w", err)
 		}
-		reconciliation, err := ReconcileRepository(prior.StartRepository, current, nil, request.AdoptedPaths)
+		reconciliation, err := reconcileRunRepository(options.WorkspaceRoot, prior.StartRepository, current, nil, request.AdoptedPaths)
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func RecoverRun(options RunOptions, request RunRecoveryRequest) (RunRecoveryResu
 		if err != nil {
 			return err
 		}
-		successorClaim := RecoveryClaim{ID: successorClaimID, IssueID: priorClaim.IssueID, EnvelopeID: priorClaim.EnvelopeID, Revision: priorClaim.Revision, ActorID: options.ActorID, WorktreeID: priorClaim.WorktreeID, ScopeJSON: priorClaim.ScopeJSON, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
+		successorClaim := RecoveryClaim{ID: successorClaimID, IssueID: priorClaim.IssueID, EnvelopeID: priorClaim.EnvelopeID, Revision: priorClaim.Revision, ActorID: options.ActorID, WorktreeID: reconciliation.Repository.WorktreeID, ScopeJSON: priorClaim.ScopeJSON, Version: 1, Status: "active", AcquiredAt: now.Format(time.RFC3339Nano), ExpiresAt: now.Add(time.Duration(request.TTLSeconds) * time.Second).Format(time.RFC3339Nano)}
 		successor := Run{ID: successorRunID, IssueID: prior.IssueID, EnvelopeID: prior.EnvelopeID, EnvelopeRevision: prior.EnvelopeRevision, ClaimID: successorClaim.ID, ClaimVersion: successorClaim.Version, Version: 1, Executor: request.Executor, ObligationID: prior.ObligationID, ActorID: options.ActorID, StartRepository: reconciliation.Repository, Status: "active", Budgets: prior.Budgets, StartedAt: now.Format(time.RFC3339Nano), PredecessorRunID: &prior.ID}
 		recovery := Recovery{ID: recoveryID, PriorRunID: prior.ID, SuccessorRunID: successor.ID, PriorClaimID: priorClaim.ID, SuccessorClaimID: successorClaim.ID, ObservationID: observation.ID, Reconciliation: reconciliation, AdoptedPaths: append([]string(nil), request.AdoptedPaths...), Authority: request.Authority}
 		effects := recoveryEffects(prior, priorClaim, successor, successorClaim, recovery, now)
@@ -329,6 +329,17 @@ func recoveryObservation(conn *sql.DB, id string, run Run) (RunObservation, erro
 	}
 	if observation.Kind != "liveness" || observation.RunID != run.ID || observation.Liveness.ExecutorID != run.Executor.ID {
 		return RunObservation{}, invalidRun("recovery observation binding is invalid")
+	}
+	return observation, nil
+}
+
+func recoveryObservationAtWorkspace(workspaceRoot string, conn *sql.DB, id string, run Run) (RunObservation, error) {
+	observation, err := recoveryObservation(conn, id, run)
+	if err != nil {
+		return RunObservation{}, err
+	}
+	if importedObservation(workspaceRoot, conn, id) {
+		return RunObservation{}, invalidRun("recovery observation is imported history")
 	}
 	return observation, nil
 }

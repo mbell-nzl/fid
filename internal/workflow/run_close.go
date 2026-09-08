@@ -57,7 +57,7 @@ func CloseRun(options RunOptions, request RunCloseRequest) (RunMutationResult, e
 		if run.Version != request.ExpectedVersion {
 			return journal.Event{}, Run{}, &RunVersionConflictError{RunID: run.ID, ExpectedVersion: request.ExpectedVersion, ActualVersion: run.Version}
 		}
-		if err := requireTerminalObservation(conn, request.ObservationID, run); err != nil {
+		if err := requireTerminalObservation(options.WorkspaceRoot, conn, request.ObservationID, run); err != nil {
 			return journal.Event{}, Run{}, err
 		}
 		if err := requireNoOutstandingAttempts(conn, run.ID); err != nil {
@@ -136,7 +136,7 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		if run.Version != request.ExpectedVersion {
 			return &RunVersionConflictError{RunID: run.ID, ExpectedVersion: request.ExpectedVersion, ActualVersion: run.Version}
 		}
-		observation, err := recoveryObservation(conn, request.ObservationID, run)
+		observation, err := recoveryObservationAtWorkspace(options.WorkspaceRoot, conn, request.ObservationID, run)
 		if err != nil {
 			return err
 		}
@@ -213,8 +213,8 @@ func validRunAbandonRequest(request RunAbandonRequest) bool {
 	return request.Authority.Mode == "force" && request.Authority.Reference != nil && strings.TrimSpace(*request.Authority.Reference) != "" && request.Authority.GrantRef != nil
 }
 
-func requireTerminalObservation(conn *sql.DB, observationID string, run Run) error {
-	observation, err := recoveryObservation(conn, observationID, run)
+func requireTerminalObservation(workspaceRoot string, conn *sql.DB, observationID string, run Run) error {
+	observation, err := recoveryObservationAtWorkspace(workspaceRoot, conn, observationID, run)
 	if err != nil {
 		return err
 	}

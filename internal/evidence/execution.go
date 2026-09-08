@@ -303,7 +303,7 @@ func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, s
 	if err != nil {
 		return gateRunBinding{}, "", err
 	}
-	if err := validateRepositoryBinding(RegisterRequest{WorktreeID: registration.WorktreeID, Repository: options.Request.Repository}, project.ProjectID); err != nil || registration.ProjectID != project.ProjectID {
+	if err := validateRepositoryBinding(RegisterRequest{WorktreeID: registration.WorktreeID, Repository: options.Request.Repository}, project.ProjectID); (err != nil && !importedGateDestination(conn, options.WorkspaceRoot, registration, options.Request)) || registration.ProjectID != project.ProjectID {
 		return gateRunBinding{}, "", fmt.Errorf("run gate: repository binding is invalid")
 	}
 	_, actor, err := loadActiveActor(conn, options.ActorID)
@@ -322,6 +322,23 @@ func loadGateRunBinding(conn *sql.DB, options GateRunOptions) (gateRunBinding, s
 	}
 	sum := sha256.Sum256(payload)
 	return gateRunBinding{registration: registration, actor: actor, projectID: project.ProjectID}, "sha256:" + hex.EncodeToString(sum[:]), nil
+}
+
+func importedGateDestination(conn *sql.DB, workspaceRoot string, registration Registration, request GateRunRequest) bool {
+	binding, err := config.ReadImportBinding(workspaceRoot)
+	if err != nil || binding.ProjectID != registration.ProjectID || request.Repository.WorktreeID == registration.WorktreeID {
+		return false
+	}
+	root, err := filepath.Abs(workspaceRoot)
+	if err != nil || binding.TargetRoot != root {
+		return false
+	}
+	var repositoryJSON string
+	if err := conn.QueryRow(`SELECT start_repository_json FROM runs WHERE id = ?`, request.RunID).Scan(&repositoryJSON); err != nil {
+		return false
+	}
+	var start Repository
+	return json.Unmarshal([]byte(repositoryJSON), &start) == nil && sameGateRepository(start, request.Repository)
 }
 
 func validateGateRunReferences(conn *sql.DB, registration Registration, actorID string, request GateRunRequest) error {

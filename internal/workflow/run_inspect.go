@@ -42,7 +42,7 @@ func InspectRun(workspaceRoot, migrationsDir, runID, repositoryRoot string) (Run
 	if err != nil {
 		return RunInspection{}, err
 	}
-	reconciliation, err := ReconcileRepository(base, current, checkpointID, paths)
+	reconciliation, err := reconcileRunRepository(workspaceRoot, base, current, checkpointID, paths)
 	if err != nil {
 		return RunInspection{}, err
 	}
