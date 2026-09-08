@@ -10,6 +10,7 @@ import (
 
 	"github.com/mbell-nzl/fid/internal/config"
 	"github.com/mbell-nzl/fid/internal/journal"
+	"github.com/mbell-nzl/fid/internal/project"
 )
 
 const (
@@ -72,6 +73,9 @@ func CloseRun(options RunOptions, request RunCloseRequest) (RunMutationResult, e
 		}
 		envelope, err := loadEnvelope(conn, run.EnvelopeID)
 		if err != nil {
+			return journal.Event{}, Run{}, err
+		}
+		if err := validateRunTerminalRepository(options.WorkspaceRoot, request.Repository); err != nil {
 			return journal.Event{}, Run{}, err
 		}
 		reasons, err := evaluateObligations(conn, envelope.Obligations, request.Repository)
@@ -155,6 +159,9 @@ func AbandonRun(options RunOptions, request RunAbandonRequest) (RunAbandonResult
 		}
 		if claim.Version != request.ExpectedClaimVersion || claim.Status != "active" {
 			return invalidRun("run abandon claim is invalid")
+		}
+		if err := validateRunTerminalRepository(options.WorkspaceRoot, request.Repository); err != nil {
+			return err
 		}
 		actor, err := ResolveTrustedActor(options.WorkspaceRoot, options.MigrationsDir, options.ActorID)
 		if err != nil {
@@ -271,8 +278,27 @@ func validateAbandonAuthority(options RunOptions, run Run, authority RecoveryAut
 		return invalidRun("force abandon grant reference is invalid")
 	}
 	grant := envelope.AuthorityGrants[ref.Ordinal]
-	if grant.ActorSelector.ActorID != options.ActorID || !containsRecoveryAction(grant.Actions, runForceRecoverAction) {
+	if grant.ActorSelector.ActorID != options.ActorID || grant.Scope.IssueID != run.IssueID || !containsRecoveryAction(grant.Actions, runForceRecoverAction) || !containsRecoveryAction(grant.ActorSelector.RequiredCapabilities, runForceRecoverAction) {
 		return invalidRun("force abandon grant reference is stale")
+	}
+	return nil
+}
+
+func validateRunTerminalRepository(workspaceRoot string, asserted Repository) error {
+	current, err := resumeObservedRepository(workspaceRoot, workspaceRoot)
+	if err != nil {
+		return recoveryConflict(nil, err.Error())
+	}
+	// Base is the retained comparison origin, while HEAD/tree/dirty identity
+	// must match the current observation. Never refresh a caller's assertion.
+	if asserted.BaseOID != nil {
+		if exists, err := project.IsAncestor(workspaceRoot, *asserted.BaseOID, *asserted.BaseOID); err != nil || !exists {
+			return recoveryConflict(nil, "repository base is unavailable")
+		}
+	}
+	current.BaseOID = asserted.BaseOID
+	if !sameRepository(current, asserted) {
+		return recoveryConflict(nil, "terminal repository assertion is stale or changed")
 	}
 	return nil
 }

@@ -204,7 +204,7 @@ func TestRunObserveRequiresTrustedBoundHarnessAndCurrentVersion(t *testing.T) {
 }
 
 func TestRunStartBindsOptionalObligationAndRejectsReusedExecutor(t *testing.T) {
-	workspace, issueID, envelopeID := runEnvelopeForTest(t)
+	workspace, issueID, envelopeID := observedEvidenceEnvelopeForTest(t, nil)
 	claim, _ := acquireGenericClaimForTest(t, workspace, issueID, envelopeID, "run-executor-claim-1")
 	repository := runRepositoryForTest(t, workspace)
 	firstInput := runStartInput(issueID, envelopeID, claim["id"], repository)

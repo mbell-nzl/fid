@@ -120,7 +120,7 @@ func newRunCloseCommand() *cobra.Command {
 		}
 		result, err := workflow.CloseRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
 		if err != nil {
-			return renderRunError(cmd, "run.close", err)
+			return renderRunRecoveryError(cmd, "run.close", err, request.RunID, "")
 		}
 		return writeRunSuccess(cmd, "run.close", result)
 	}}
@@ -141,7 +141,7 @@ func newRunAbandonCommand() *cobra.Command {
 		}
 		result, err := workflow.AbandonRun(workflow.RunOptions{WorkspaceRoot: workspace, MigrationsDir: issueMigrationsDir(), ActorID: actor, IdempotencyKey: key}, request)
 		if err != nil {
-			return renderRunError(cmd, "run.abandon", err)
+			return renderRunRecoveryError(cmd, "run.abandon", err, request.RunID, "")
 		}
 		return writeRunAbandonSuccess(cmd, result)
 	}}
