@@ -88,8 +88,8 @@
 
 ## Commit hash
 
-- Pending commit
+- `ccc15f664c74494cf16219ca350fbec96c51808d`
 
 ## Commit subject
 
-- Pending commit
+- `feat(maintenance): qualify recovery integrity and capabilities`
