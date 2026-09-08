@@ -5,7 +5,7 @@
 - Task outcome: COMPLETE
 - Category: none
 - Condition: None.
-- Recovery attempts: 0
+- Recovery attempts: 1
 - Next action: Independent Review6, then finalQA and Human checklist readiness.
 - Human attention required: no
 
@@ -62,7 +62,7 @@
 - VAL-053: PASS - `TestP22RecoveryHumanResultMatchesDurableJSON`, `TestP22ResumeHumanMatchesEligibleAndStoppedRecoveryState`, `TestP22ResumeHumanDistinguishesElapsedLeaseFromRecordedStatus` in `p22_resume_human_test.go`; generated recovery and activation Human views also have paired JSON assertions before neutral instructions are written.
 - VAL-073: PASS - `TestP22DualAdapterRecoveryConformance`, `TestP22DualAdapterActivationConformance`, and `TestP22PortableRecoveryConformance` execute shared accepted/rejected cases against fake and fid. The latter pins ten fields, eight states and full summary equality; `p22PortableThreeWay` separately preserves full named fid reads and canonical entry bytes across source/imported/rebuilt states. Fake code receives semantic inputs and never opens the backend.
 - VAL-074: PASS - `TestP22CompleteOneIssueRecoveryJourney` connects every required step on one Issue, including committed denial and same-key replay, durable Stop disposition/replay and separate Attention resolution, interrupted predecessor/successor identity, adopted work staying stale until fresh Gate/Receipt/Evidence, and the full portable roundtrip.
-- VAL-075: PASS, subject to independent QA sufficiency review - `TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure` binds 32 operations,22 failure codes,10 frame variants and12 quoted closed-value rows to actual behavioral tests. `TestP22FinalActivatedActionSetAcceptsProfilesAndGrants` independently pins all23 names and executes actual profile/grant acceptance plus unknown/retired/bootstrap exclusions. `TestP22AmendedFailureWireCorpus` supplies actual closed failures including non-null observation rejection and recovery duplicate subject. `TestP22BudgetCrossingFrameOrder` proves no control before crossing, committed control before normal terminal and terminal-only replay with no Event. Inventory reference presence alone is not behavioral evidence; its referenced tests run under the full ordinary/tagged gates.
+- VAL-075: PASS, subject to independent QA sufficiency review - `TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure` initially bound 32 operations (corrected to31 in the R6-01 continuation below),22 failure codes,10 frame variants and12 quoted closed-value rows to actual behavioral tests. `TestP22FinalActivatedActionSetAcceptsProfilesAndGrants` independently pins all23 names and executes actual profile/grant acceptance plus unknown/retired/bootstrap exclusions. `TestP22AmendedFailureWireCorpus` supplies actual closed failures including non-null observation rejection and recovery duplicate subject. `TestP22BudgetCrossingFrameOrder` proves no control before crossing, committed control before normal terminal and terminal-only replay with no Event. Inventory reference presence alone is not behavioral evidence; its referenced tests run under the full ordinary/tagged gates.
 - VAL-076, VAL-077, VAL-078: Human judgments PENDING. Readiness only: `TestP22HumanFixtures` generates four final-path checkpoints in a subprocess; after it exits, the parent validates retained binary SHA256 and executes every Human/JSON inspection. The exact retained-root gate below records the durable manifest. No response/outcome has been filled for the Human.
 - VAL-080: PENDING independent finalQA; this implementation report does not self-certify the independent cross-product comparison. DEC-187 and the accepted kit pin/dispositions remain unchanged.
 
@@ -148,8 +148,81 @@ Preserved first required-gate attempt (superseded after the documented inventory
 
 ## Commit hash
 
-- `24e3cbdb22dd9e43b55636da313dcef1ef633b6f`
+- `e04bfbdd0194393b0bfee200477a14bc6c563fb3`
 
 ## Commit subject
 
-- `feat(recovery): complete conformance and retained Human fixtures`
+- `test(conformance): bind every closed domain to wire assertions`
+
+## R6-01 same-task conformance continuation
+
+Independent Review6 at `ea9b83fe9c894c8e7ec36214a238ed0209faaf39` returned
+REPAIR for missing closed-domain behavioral bindings (VAL-075). Root owns this
+single test/report continuation under task18/review6; no product edits or
+concurrent writer. The original report, failed attempts and gate receipts above
+are retained as historical evidence, superseded only for final-source closure
+by the continuation receipts below. Fresh independent review owns disposition.
+
+- Added `p22_closed_values_test.go`, extended `p22_conformance_test.go` and
+  `wire-inventory.json`. All12 closed domains now have explicit test references
+  checked by the corpus, field-specific literal fixture cases and an independently
+  compiled wire-enum oracle. The oracle reads neither docs nor inventory nor
+  product allowlists. It checks the closed fields, not the entire object shape.
+- `TestP22ClosedValueSchemaCases` accepts all50 specified member cases and
+  rejects90 invalid/missing cases across15 fields. A union/count check ties
+  field cases to every documented member; malformed component/state assignment
+  cannot pass by belonging to a merged row's union. Unknown, empty, null, numeric,
+  boolean and missing values are negative controls.
+- `TestP22ClosedValuesObserveRealResponses` creates actual public Run, Stop,
+  Budget, reconciliation, recovery and activation responses. Its12 domain
+  objects pass the same oracle; substituting an unaccepted enum into each of
+  their15 fields fails it. These are output-conformance negatives, not claims
+  that callers may submit derived output fields or that every well-formed enum
+  makes a lifecycle transition executable. Existing domain/admission tests
+  retain that separate responsibility.
+- Corrected an invented `claim.get` inventory entry. The retained Phase21
+  public-interface table declares `claim.list` only. The final inventory has31
+  operations (all23 amended plus8 retained); no accepted operation was removed.
+  DEC-201 explicitly places `effective_status` in the resume Claim projection,
+  so the real-response fixture reads it there and leaves other Claim payloads
+  unchanged. No product or public contract was changed to accommodate the test.
+- Retained-row provenance: the three inventory/test rows being expanded were
+  introduced by root at `24e3cbdb22dd9e43b55636da313dcef1ef633b6f`, phase22/task18.
+  R6-01 invalidates their incomplete evidence bindings, not their accepted
+  members. The unchanged tagged integration gate executes all added assertions.
+
+### Continuation red/green and deviations
+
+The intended red was `closed domain Reconciliation has no qualifying/rejecting
+behavioral evidence`, terminal `FAIL` / observed exit_code1. Two actual-response
+setup failures followed: the nonexistent `claim get` leaf printed help, then
+`claim.list` lacked the resume-only effective_status field. Their separate failed
+receipts are retained. The fixture now uses the DEC-201 resume projection; no
+assertion was weakened. Both byte-identical focused commands passed afterwards.
+
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(ClosedValueSchemaCases|ClosedValuesObserveRealResponses|ConformanceCorpusHasEveryAcceptedOperationAndFailure)$' -count=1 -v` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(ClosedValueSchemaCases|ClosedValuesObserveRealResponses|ConformanceCorpusHasEveryAcceptedOperationAndFailure)$' -count=1 -v` - FAIL - `FAIL` (terminated `exit_code: 1`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(ClosedValueSchemaCases|ClosedValuesObserveRealResponses|ConformanceCorpusHasEveryAcceptedOperationAndFailure)$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.487s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22(ClosedValueSchemaCases|ClosedValuesObserveRealResponses|ConformanceCorpusHasEveryAcceptedOperationAndFailure)$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	1.534s` (terminated `exit_code: 0`)
+- `go test -tags integration ./cmd/fid/integration/... -run '^TestP22ConformanceCorpusHasEveryAcceptedOperationAndFailure$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	0.812s` (terminated `exit_code: 0`)
+
+### Continuation exact quality-gate results
+
+Working directory: `/home/mark/projects/fid`. All seven original commands,
+unchanged and in their original order, executed after the test repair:
+
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	(cached)	coverage: 52.9% of statements` (terminated `exit_code: 0`)
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					63.0%` (terminated `exit_code: 0`)
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	102.204s` (terminated `exit_code: 0`)
+- `go build -o /tmp/fid ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+- `FID_P22_HUMAN_FIXTURE_ROOT=/home/mark/projects/fid/.cache/phase-22-human go test -tags integration ./cmd/fid/integration/... -run '^TestP22HumanFixtures$' -count=1 -v` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	18.902s` (terminated `exit_code: 0`)
+
+### Continuation source and retained fixture
+
+- Test-only repair commit: `e04bfbdd0194393b0bfee200477a14bc6c563fb3`
+- Retained manifest: `/home/mark/projects/fid/.cache/phase-22-human/checkpoints-4043242815/manifest.json`; generated from clean source revision e04bfbd, with post-exit inspection PASS.
+- Product semantics and dependencies: unchanged; all original failed evidence
+  remains. VAL-076..078 stay Human-pending; VAL-080 stays independent finalQA.
