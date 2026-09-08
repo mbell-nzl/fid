@@ -38,6 +38,8 @@ Full sources, pass/fail criteria, and validator ownership are in
   internal/workflow/stop.go, with task-2 provenance and unchanged contracts/gates.
 - DEC-206 assigns only the accepted budget-stop control derived from this
   execution's committed crossing facts; preserve admission and terminal replay.
+- DEC-207 assigns only three accepted failure mappings: missing Stop, Budget
+  sample conflict, and duplicate-executor recovery subject, with original task provenance.
 - No new domain behavior is assigned to this final assembly task. Return causal findings for minimum-scope amendment per DEC-175.
 - Developer produces runnable Human fixtures; only Human may judge VAL-076..078.
 - DEC-196: deliver a reproducible test-only Human fixture generator, not only
@@ -58,6 +60,10 @@ Full sources, pass/fail criteria, and validator ownership are in
 ## Scope
 
 ### Files To Create Or Modify
+
+- `internal/workflow/stop.go`, `cmd/fid/run.go`, `cmd/fid/run_recovery.go`,
+  `internal/cli/codes.go` and matching tests — DEC-207 only: the three exact
+  accepted failure-wire mappings named in that decision.
 
 - `internal/evidence/execution.go`, `internal/evidence/budget_frames.go`,
   `internal/evidence/live.go`, `cmd/fid/live_output.go` and matching tests —

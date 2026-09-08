@@ -1206,6 +1206,43 @@
   committed/denied execution distinction, terminal-only replay and final seven
   unchanged Task18 commands. Review6 and independent finalQA audit the repair.
 
+### DEC-207: Allocate three accepted failure-wire mapping repairs
+
+- **Date:** 2026-09-08.
+- **Status:** ACCEPTED by the root delegate under the Human's bounded Phase22
+  completion authority; minimum-scope causal allocation under DEC-175.
+- **Existing requirement:** public-interface.md section4 already requires
+  stop-not-found/3, budget-sample-conflict/4 with four exact detail keys, and
+  duplicate-entity/4 with the predecessor Run subject for recovery (null only
+  for run.start). All rejections leave domain state and Events unchanged.
+- **Evidence:** TestP22AmendedFailureWireCorpus actual built-binary requests
+  fail these three cases (exit_code1): missing Stop and conflicting Budget
+  sample each return invalid-argument/2; duplicate executor recovery has
+  subject.id null. Valid otherwise-equivalent requests and the remaining
+  error cases pass. Test-only empty disposition arrays were corrected before
+  this isolated red, because they failed input validation before lookup/version.
+- **Causes:** loadStop leaks sql.ErrNoRows instead of StopNotFoundError;
+  the accepted budget-sample-conflict is absent from the CLI registry and the
+  run.observe-budget adapter; recovery falls through to run.start's null-subject
+  duplicate-executor renderer. These are missing implementations, not a reason
+  to weaken the promised errors or their fixture expectations.
+- **Allocation:** Task18 may edit internal/workflow/stop.go for the missing-Stop
+  mapping only, cmd/fid/run.go for the Budget-sample mapping, cmd/fid/run_recovery.go
+  for the recovery duplicate subject, internal/cli/codes.go for the already
+  accepted Budget-sample registry member, and their matching tests. The Budget
+  conflict references its request Run and preserves both nullable predecessor
+  sample IDs. No caller-authored authority or outcome is admitted.
+- **Provenance:** Stop loader: ac827959f8359473cbd6546ac6bea1ff1fd20751,
+  phase22/task2. Duplicate renderer:7e419bfd8c233f933680d4a3b3957814c29dbd5e,
+  phase22/task3; recovery adapter task6 inherited it. Observe-budget adapter:
+  a0a93c7ce4dd0c7dfda4eb39a6ba40760068e460, phase22/task9, consuming task7's
+  typed BudgetSampleConflictError. Original tasks/reports remain COMPLETE.
+- **Limits/evidence:** No new error contract, category, exit, retryability,
+  nullability, request/result/Event/DDL shape, dependency, gate or VAL change.
+  Same actual-request corpus, closed-registry positive/negative tests, retained
+  run.start null-subject case, and all seven unchanged Task18 gates must pass.
+  Review6 and final independent QA own the final sufficiency judgment.
+
 ## Planning Spec Impact
 
 | Document | Planning change |
