@@ -4,9 +4,9 @@
 
 - Task outcome: COMPLETE
 - Category: none
-- Condition: The bounded DEC-189 implementation repair, every exact task command, and this report's required evidence are resolved.
+- Condition: FQ-02 qualifying Stop/Attention repair and all six unchanged post-edit gates are complete; independent final re-review remains.
 - Recovery attempts: 2
-- Next action: The Phase Runner must obtain the independent review-1 re-review for task-2's repaired evidence; the Developer cannot self-attest that review.
+- Next action: Root continues queued Task 4 repair; fresh independent final-review-2 follows all seven owners.
 - Human attention required: no
 
 ## Summary of what was implemented
@@ -151,11 +151,11 @@ Its child receipt ended with `warning: GOCOVERDIR not set, no coverage data emit
 
 ## Commit hash
 
-- `daca8392a580ebdd2b6a8d3dab011910e39a779e`
+- `f973bca7ea146f00c0e16ca5e5117a8d13f769b9`
 
 ## Commit subject
 
-- `test(fid): stabilize live output coverage fixture`
+- `fix(workflow): enforce qualifying Stop and Attention facts`
 
 ## Root report display correction — 2026-09-08
 
@@ -164,3 +164,153 @@ receipts following the QA-84 preflight. The original Developer sessions remain
 the source of those receipts, including every recorded outcome, duration,
 coverage value and observed termination. This formatting correction records
 no new execution or attestation. Original encoded text remains in Git history.
+
+## Final-QA FQ-02 same-task continuation — 2026-09-09
+
+Authority: review-7, final-review.md FQ-02, task-2.md and contracts.md §5.
+Root is the sole writer under the Human's delegate instruction. This appendix
+supersedes the original readiness statements; every historical receipt and
+failed attempt above remains unchanged. The prior primary product binding was
+daca8392a580ebdd2b6a8d3dab011910e39a779e, `test(fid): stabilize live output coverage fixture`.
+
+### Behavior and assertion evidence
+
+- VAL-004/006/080: Stop resolution now checks each of the six closed conditions
+  against its exact durable fact and current subject state. Executor tests reject
+  live, unknown, wrong-Run, missing, changed-executor and changed-liveness facts.
+  Recovery tests bind the predecessor. Activation tests require terminal resource
+  agreement; capability tests additionally require the selected backend and named
+  compiled capability. Budget tests bind the named Envelope chain and reject
+  unknown, exhausted, wrong-budget, wrong-Envelope and later-exhausted totals.
+  Work-ended tests require the terminal Run or an Envelope with no active Run.
+- The envelope.completed positive/active-Run negative uses an explicitly admitted
+  exact two-Effect Event through the journal kernel after actual CloseRun. It is
+  predicate evidence, not a claim to execute the full CompleteEnvelope journey.
+- Attention uses the sorted unique containing-disposition Event set and
+  revalidates every underlying Stop fact. Actual activation recovery disposes two
+  Stops in one Event; one ID resolves the Attention, while corruption of either
+  underlying fact rejects. Missing, extra, duplicate, wrong-subject and
+  underlying-only IDs leave journal, Attention, dispositions and idempotency
+  unchanged. Later budget exhaustion also invalidates the prior disposition.
+- VAL-007 retained routine-read/warning assertions remain unchanged. VAL-079:
+  fresh pre-edit workflow coverage was 52.9%; final direct package gate was 60.6%.
+- Built `/tmp/fid-fq2` from the repair source and executed actual JSON CLI
+  observation/Stop operations in a fresh copy of the retained recovery checkpoint.
+  A live observation returns resolution-invalid/precondition/exit 4 with no Event,
+  unchanged journal bytes and unresolved Stop. A subsequent terminated observation
+  resolves successfully. Child argv/stdout/stderr/return codes are retained in
+  `.cache/phase-22-fq2-cli-digut1t_/receipts.json`; originals were not mutated.
+
+### Files and provenance
+
+- Product: internal/workflow/stop.go and new stop_conditions.go. Exact qualifying
+  helpers replace broad Effect-subject matching; disposition Event IDs are
+  deduplicated without skipping any Stop. Envelope authorization joins canonical
+  envelope_issue_selection instead of querying a nonexistent primary_issue_id
+  column. No schema or authority semantics changed.
+- Tests: new stop_conditions_test.go; attention_test.go; resume_test.go.
+  The obsolete updated_at-only activation.finalized helper and Envelope SQL
+  defect originated in ac827959f8359473cbd6546ac6bea1ff1fd20751, Phase22/Task2.
+  The retained resume helper caller originated in
+  2339dc9ebd8d0e6b5502ca32e1562892cf704ce6, Phase22/Task12. Its independently-open
+  Attention assertion is preserved with the actual Prepare/Stage/Observe/Commit/
+  Finalize fixture. The ledger's 00:13 matching-fixture correction records scope;
+  Task12's original report is unchanged. All rows execute under the required
+  workflow/full race gates and the focused commands below.
+
+### Mandatory failed-attempt deviations
+
+- Intended red commands ended with `FAIL` (exit_code: 1): live/unknown executor
+  facts were accepted; activation/resource/capability current state was unchecked;
+  named/current budget and Envelope work-ended predicates were incorrect; shared
+  containing Event IDs were counted twice. Corresponding byte-identical focused
+  commands passed after their causal in-scope repairs, as recorded below.
+- Envelope Stop authority red ended `FAIL` (exit_code: 1), with `SQL logic error:
+  no such column: primary_issue_id (1)`. The canonical primary-Issue join repaired
+  it; the identical command passed at 3.704s.
+- Retained Attention fixture red ended `FAIL` (exit_code: 1): its incomplete
+  activation did not satisfy the real agreement. Replacing it exposed
+  `undefined: commitActivationRecoveryFact` in resume_test.go (exit_code: 1).
+  The provenance-bound caller convergence preserves both subjects; identical
+  Attention command then passed at 5.544s.
+- Test-construction attempts remain failed evidence: unsupported fixture phase22
+  was corrected to the actual supported phase21 profile; a wrong-Run fixture
+  originally mismatched Stop and Condition subjects before reaching the intended
+  check and now cites the predecessor fact from a real successor; the minimal
+  recovery fixture has no Obligation and cannot run full CompleteEnvelope, so its
+  panic-producing setup was replaced by the explicit admitted Event predicate
+  control described above. The combined focused command failed at 104.470s and
+  109.534s (both final token `FAIL`, exit_code: 1), then passed at 108.770s.
+- The first actual CLI probe command terminated exit_code: 1 with
+  `json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)` after
+  its live rejection had passed: the script invented stop.get. Using the accepted
+  stop.list leaf with exact ID selection repaired the probe; the byte-identical
+  Python invocation passed. Failed raw receipts remain in
+  `.cache/phase-22-fq2-cli-rnlauihv/receipts.json`.
+- No dependency, policy, contract, schema, protected gate, tolerance or command
+  changed. FQ-02 implementation closure remains subject to independent final
+  re-review after all seven owners; Human judgments remain pending.
+
+### Continuation command receipts
+
+Working directory: `/home/mark/projects/fid`. Tokens and terminations below were
+captured by root in this recording session; repeated commands are separate
+immutable attempts. Required post-edit commands retain their original order.
+
+
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	114.339s	coverage: 52.9% of statements` (terminated `exit_code: 0`)
+  - baseline workflow coverage.
+- `go test -race ./internal/workflow -run '^TestStopResolutionRequiresTerminatedExecutorFact$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - executor condition behavioral red.
+- `go test -race ./internal/workflow -run '^TestStopResolutionRequiresTerminatedExecutorFact$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	9.057s` (terminated `exit_code: 0`)
+  - executor condition behavioral green.
+- `go test -race ./internal/workflow -run '^TestStopResolutionChecksCurrentActivationAgreementAndCapability$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - activation/capability condition red.
+- `go test -race ./internal/workflow -run '^TestStopResolutionChecksCurrentActivationAgreementAndCapability$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - activation/capability corrected fixture red.
+- `go test -race ./internal/workflow -run '^TestStopResolutionChecksCurrentActivationAgreementAndCapability$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	29.218s` (terminated `exit_code: 0`)
+  - activation/capability condition green.
+- `go test -race ./internal/workflow -run '^TestStopResolution(RecoveryFactNamesThePredecessor|RequiresNamedKnownNonExhaustedBudget|WorkEndedRequiresCurrentTerminalSubject)$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - recovery/budget/work-ended condition red.
+- `go test -race ./internal/workflow -run '^TestStopResolution(RecoveryFactNamesThePredecessor|RequiresNamedKnownNonExhaustedBudget|WorkEndedRequiresCurrentTerminalSubject)$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	29.441s` (terminated `exit_code: 0`)
+  - recovery/budget/work-ended condition green.
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - retained Attention fixture convergence red.
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - retained Attention fixture convergence green.
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionRequiresExactDispositionEventsAndKeepsStopsImmutable$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	5.544s` (terminated `exit_code: 0`)
+  - retained Attention fixture green after caller convergence.
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionDeduplicatesContainingEventAndRevalidatesEveryStop$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - shared disposition Event red.
+- `go test -race ./internal/workflow -run '^TestAttentionResolutionDeduplicatesContainingEventAndRevalidatesEveryStop$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	14.135s` (terminated `exit_code: 0`)
+  - shared disposition Event green.
+- `go test -race ./internal/workflow -run '^TestEnvelopeStopResolutionUsesPrimaryIssueGrantAndCurrentBudget$' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - Envelope Stop authority red.
+- `go test -race ./internal/workflow -run '^TestEnvelopeStopResolutionUsesPrimaryIssueGrantAndCurrentBudget$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	3.704s` (terminated `exit_code: 0`)
+  - Envelope Stop authority green.
+- `go test -race ./internal/workflow -run '^(TestAttentionResolution|TestStopResolution|TestEnvelopeStopResolution|TestResumeKeepsOpenAttention)' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - complete current FQ02 focused matrix.
+- `go test -race ./internal/workflow -run '^(TestAttentionResolution|TestStopResolution|TestEnvelopeStopResolution|TestResumeKeepsOpenAttention)' -count=1` - FAIL - `FAIL` (terminated `exit_code: 1`)
+  - complete FQ02 matrix after wrong-Run fixture correction.
+- `go test -race ./internal/workflow -run '^TestStopResolutionWorkEndedAcceptsCompletedEnvelopeFact$' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	3.179s` (terminated `exit_code: 0`)
+  - completed Envelope admitted-fact control.
+- `go test -race ./internal/workflow -run '^(TestAttentionResolution|TestStopResolution|TestEnvelopeStopResolution|TestResumeKeepsOpenAttention)' -count=1` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	108.770s` (terminated `exit_code: 0`)
+  - complete FQ02 final focused matrix.
+- `go build -o /tmp/fid-fq2 ./cmd/fid` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - FQ02 real CLI build.
+- `python3 /tmp/fid-fq2-cli.py` - FAIL - `json.decoder.JSONDecodeError: Expecting value: line 1 column 1 (char 0)` (terminated `exit_code: 1`)
+  - FQ02 actual CLI regression.
+- `python3 /tmp/fid-fq2-cli.py` - PASS - `PASS stop condition CLI: live rejected exit=4; terminated resolved exit=0; journal unchanged on rejection; receipts=/home/mark/projects/fid/.cache/phase-22-fq2-cli-digut1t_/receipts.json` (terminated `exit_code: 0`)
+  - FQ02 actual CLI regression corrected list leaf.
+- `go test -race -cover ./internal/workflow` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	212.427s	coverage: 60.6% of statements` (terminated `exit_code: 0`)
+  - required post-gate 1 workflow coverage.
+- `gofmt -l cmd internal` - PASS - `exit 0 (no output)` (terminated `exit_code: 0`)
+  - required post-gate.
+- `golangci-lint run ./...` - PASS - `0 issues.` (terminated `exit_code: 0`)
+  - required post-gate.
+- `go test -race -coverprofile=coverage.out ./...` - PASS - `ok  	github.com/mbell-nzl/fid/internal/workflow	238.821s	coverage: 60.6% of statements` (terminated `exit_code: 0`)
+  - required full coverage.
+- `go tool cover -func=coverage.out` - PASS - `total:										(statements)					64.9%` (terminated `exit_code: 0`)
+  - required final gates.
+- `go test -tags integration -race ./cmd/fid/integration/...` - PASS - `ok  	github.com/mbell-nzl/fid/cmd/fid/integration	100.809s` (terminated `exit_code: 0`)
+  - required final gates.
