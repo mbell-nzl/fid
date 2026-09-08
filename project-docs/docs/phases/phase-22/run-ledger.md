@@ -1883,3 +1883,37 @@
 - Commit: 7647abc66d0e309b7ab056d05e80d1c501d758dd - verified, subject matched; report 5d220aa
 - QA-plan commands beyond the task spec: real all22-family live/replay corruption and rollback corpus, conditional predecessor/Claim controls, retained actual budget interruption proof
 - Evidence: All seven final-QA repair owners are complete. Source frozen for one fresh independent final-review-2; only that review may close FQ-01 through FQ-07. Human readiness and judgments remain pending.
+
+### 2026-09-09 09:54 REVIEW review-7b
+
+- Path: project-docs/docs/phases/phase-22/qa/final-review-2.md
+- Tasks covered: task-1 through task-18
+- Outcome: REPAIR
+- Owning task: task-1
+- Re-review of: review-7
+- Must-fix: 1 / Improvement: 0 / blocker candidates: 0; fresh independent b55c96b115029fbc1a4b69d8789dbfce1294f294 closes FQ-02 through FQ-07. FQ-01 retains23 demonstrated current-Event corruptions and four controls; closed values, result bindings and state-dependent completeness require one Task1 continuation. Own five gates passed including65.6% coverage/tagged422.634s; final performance/build/Human qualification pending. No protected decision required.
+
+### 2026-09-09 09:54 TASK-RECOVERY task-1
+
+- Source: review-7b / final-review-2.md FQ-01 STILL OPEN
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-1.md / schema.md sections 5 and 6 / final-review-2.md FQ-01
+- Triage disposition: N/A
+- Trigger signature: task-1:qa-rework:closed-current-event-live-replay-semantics
+- Attempt count: 2
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/journal/,internal/db/,internal/export/export.go,cmd/fid/rebuild.go,cmd/fid/integration/,internal/export/*_test.go,internal/workflow/*_test.go,internal/evidence/*_test.go,cmd/fid/*_test.go,project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Forbidden changes: any DDL/schema/migration edit, accepted Event/Effect/wire/authority/policy semantics, new generic historical Event policy, dependencies, protected gates or controls, VAL definitions, unrelated product changes or other task reports; matching test convergence must preserve subject and record introducing provenance; retain pinned Phase21 archive grammar
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-1-done.md
+- Exact verification: from /home/mark/projects/fid all twelve unchanged task-1 commands in original order including six reference commands and fresh100k below30000ms with parity; all23 demonstrated corruptions red/green with genuine controls, closed current JSON/non-JSON domains and results, active/terminal predecessor and active/expired Claim controls, mandatory budget inheritance/supersession/whole Stop disposition, all22 real families and direct live/replay/rebuild rollback plus integrity-valid archive rejection
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: b55c96b115029fbc1a4b69d8789dbfce1294f294; prior Task1 repair7647abc made material progress but independent review finds incomplete accepted grammar; other six FQs resolved
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - independent23 corruptions and four controls retained in final-review-2 and .cache/phase-22-fresh-final-qa-6OHCXS; no-op expired-Claim removal explicitly excluded from defect count
+- Next action: root sole implementation writer; complete one cohesive current grammar repair, preserve every prior receipt, then fresh independent final-review-3 and final Human qualification
+- Human attention required: no
