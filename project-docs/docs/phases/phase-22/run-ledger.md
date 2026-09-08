@@ -1767,3 +1767,50 @@
 - Allowed files amendment: add cmd/fid/run.go only for the two close/abandon domain-call error returns, delegating to the existing recovery renderer with request Run ID and empty optional digest.
 - Evidence: actual close red19.394s exit1 shows accepted live/unknown domain errors fall through to invalid-argument/2; Task9 introducing commit a0a93c7 verified by git log -S workflow.CloseRun and workflow.AbandonRun.
 - Preserved fields: trigger signature, attempt count, task scope, exact eight commands and all protected semantics remain unchanged. No registry/renderer implementation, gate, policy or other task report change.
+
+### 2026-09-09 03:04 REPAIR task-8
+
+- Trigger signature: task-8:qa-rework:derived-close-and-exact-abandon-authority
+- Attempt count: 1
+- Starting checkpoint: 7bf2165
+- Ending checkpoint: c0003e0c5df7f2dffc46e05d04ddd7bdfa53f307; report 2c89e0d
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root proved exact referenced force grants and actual current terminal repository,39 abandonment and10 close authority cases,13 actual close and14 actual abandon cases, retained caller convergence. DEC-208 existing error rendering allocated. All eight exact gates PASS, coverage65.4%, tagged211.237s, fifteen repeats218.693s, full benchmark100k26718/27316ms. Failed receipts and Task3/9 provenance preserved. Own report-lint COMPLETE and route ADVANCE exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 03:04 TASK task-8 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-8-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: c0003e0c5df7f2dffc46e05d04ddd7bdfa53f307 - verified, subject matched; report 2c89e0d
+- QA-plan commands beyond the task spec: direct close/abandon matrix and actual public proof captured
+- Evidence: Same-task FQ-06 complete. All prior failed evidence preserved; independent final-review-2 follows remaining owners.
+
+### 2026-09-09 03:04 TASK-RECOVERY task-10
+
+- Source: review-7 / final-review.md FQ-07
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-10.md / contracts.md section 8 / final-review.md FQ-07
+- Triage disposition: N/A
+- Trigger signature: task-10:qa-rework:activation-recovery-append-interruption
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/workflow/activation.go,internal/workflow/activation_recovery.go,internal/workflow/activation_recovery_test.go,internal/workflow/authority.go,internal/evidence/registration.go,internal/journal/,cmd/fid/activation.go,cmd/fid/response_errors.go,internal/cli/,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-10-done.md
+- Forbidden changes: accepted resource/direction/identity/schema/Event/wire/policy semantics, provider or project file mutation, gate definitions or commands, workflow controls, dependencies, unrelated product paths and other task reports; retained Task11 lifecycle response-loss cases stay intact
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-10-done.md
+- Exact verification: from /home/mark/projects/fid all five unchanged task-10 commands in original order plus actual selected/completed preappend/postappend faults in both restore-prior and complete-forward, fresh catch-up/exact replay/conflict rejection, immutable activation/predecessor/resource and full Stop/Attention/disposition facts, unchanged provider/project bytes
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: 2c89e0d; Task2/4/5/7/8 final-QA owners complete
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - reuse existing test-only SQLite fault mechanism to distinguish dry-run and actual projection after durable append
+- Next action: root sole Task10 writer; close owner before Task1; one independent final re-review follows all owners
+- Human attention required: no
