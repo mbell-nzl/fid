@@ -1571,3 +1571,50 @@
 - Allowed files amendment: add internal/workflow/resume_test.go only. This retained caller of commitActivationRecoveryFact shares Task2's incomplete activation fixture. Preserve its independently-open Attention assertion and record introducing-task provenance.
 - Evidence: deleting the obsolete helper exposed the retained caller at resume_test.go:24; focused Attention command terminated exit_code: 1 with undefined: commitActivationRecoveryFact. The fixture must use the real finalized activation helper, preserving its tested subject. This is existing task-scope fixture work, not a new product allocation or control-conformance repair.
 - Preserved fields: source, category, repair authority, trigger signature, attempt count, exact verification and all forbidden changes are unchanged. No gate/control definition or required test is changed.
+
+### 2026-09-09 00:50 REPAIR task-2
+
+- Trigger signature: task-2:qa-rework:qualifying-stop-and-attention-facts
+- Attempt count: 1
+- Starting checkpoint: ec4daa9e4bae6da6f3bb224ff92e5fd4d3424af6
+- Ending checkpoint: f973bca7ea146f00c0e16ca5e5117a8d13f769b9; report ead1a04
+- Control repair base: N/A
+- Control repair head: N/A
+- Control scope check: N/A
+- Phase-branch integration: N/A
+- Outcome: RESOLVED
+- Resolution evidence: Root captured six-condition paired tests, exact unique Attention disposition set and per-Stop revalidation, actual CLI live rejection exit4 with unchanged journal and terminated success. Baseline52.9%, post60.6%; all six unchanged post-gates PASS with observed terminations, aggregate64.9%, tagged100.809s. Immutable failed receipts and Task2/Task12 fixture provenance retained. Report-lint COMPLETE and route ADVANCE observed exit0.
+- Next checkpoint: VERIFY/REPORT/REVIEW
+
+### 2026-09-09 00:50 TASK task-2 COMPLETE
+
+- Report: project-docs/docs/phases/phase-22/tasks/task-2-done.md
+- report-lint: PASS - OUTCOME COMPLETE; PASS report-lint completed with no failures (terminated exit_code: 0)
+- Commit: f973bca7ea146f00c0e16ca5e5117a8d13f769b9 - verified, subject matched; report ead1a04
+- QA-plan commands beyond the task spec: focused condition/exact-set and actual CLI regression captured
+- Evidence: Same-task FQ-02 repair complete; original receipts retained. Fresh independent final-review-2 follows all seven owners; Human judgments remain blank.
+
+### 2026-09-09 00:51 TASK-RECOVERY task-4
+
+- Source: review-7 / final-review.md FQ-03
+- Category: qa-rework
+- Repair mode: task-scope
+- Repair authority: task-4.md / contracts.md section 3 / final-review.md FQ-03
+- Triage disposition: N/A
+- Trigger signature: task-4:qa-rework:unsafe-repository-and-recovery-byte-inertness
+- Attempt count: 1
+- Control contract: N/A
+- Control mismatch: N/A
+- Allowed files: internal/project/repository.go,internal/project/repository_test.go,internal/project/repository_safety_test.go,internal/workflow/reconciliation.go,internal/workflow/reconciliation_test.go,internal/workflow/recovery_repository_test.go,internal/workflow/run_checkpoint.go,internal/workflow/run_checkpoint_test.go,cmd/fid/run_recovery.go,cmd/fid/run_recovery_test.go,cmd/fid/integration/,project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- Forbidden changes: accepted repository/digest/scope/authority/wire/Event/schema/policy semantics, gate definitions or commands, workflow controls, dependencies, unrelated product paths and other task reports; matching fixture convergence must preserve subject and introducing-task provenance; recovery authority and Claim scope repair remains Task5
+- Originating report: project-docs/docs/phases/phase-22/tasks/task-4-done.md
+- Exact verification: from /home/mark/projects/fid all six unchanged task-4 commands in original order plus finite unsafe observer/recovery matrix, source and complete Git snapshots on actual success/rejection, and actual typed public recovery-state-conflict
+- Control repair base: N/A
+- Consecutive no-progress attempts: 0/2
+- Checkpoint: ead1a04; FQ-02 owner complete, FQ-03 now active
+- Phase worktree: /home/mark/projects/fid on phase-22
+- Temporary repair worktree: N/A
+- Hidden-index flags: none
+- Resolution evidence: PENDING - source inspection confirms uppercase skip-worktree hole; FQ-03 authorizes causal existing public error mapping with Task6 provenance
+- Next action: root sole Task4 product/test writer; complete owner before Task5; one fresh final re-review after every owner closes
+- Human attention required: no
