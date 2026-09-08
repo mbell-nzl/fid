@@ -368,3 +368,33 @@ new Phase22 product behavior. No new unresolved Phase22 contract difference was
 identified in this preflight. Final VAL-080 remains pending comparison against
 the completed task18 manifest and a fresh currency check, with any subsequently
 changed normative requirement returned to the owning authority.
+
+## Root Administrative Update After Task13 — 2026-09-08
+
+Author: root delegate. This append updates the execution queue; it is not an
+independent QA verdict or a replacement for the QA Lead's retained preflight.
+
+- Task13 product `acb569bb9447a3259991520669167fdc819c1706`, final report
+  `9ad0585`, closed in ledger at `1b03c15`. Root directly observed its five
+  final-source gates, report-lint and workflow route terminate successfully.
+  Original lint failures, compression timeout and tagged journey failure are
+  retained with causes and repairs in task-13-root-evidence.md.
+- The queue now has 46 future ordered task-command occurrences (Tasks14–18);
+  80 occurrences belong to completed Tasks1–13. These counts refer to command
+  occurrences, not VAL outcomes. Final independent reconciliation still checks
+  all126 occurrences against committed reports and final artifacts.
+- Task14 is assigned to one canonical Developer. Root owns administrative docs
+  while that agent owns product/test/report edits; no parallel product writer.
+- Review5 after15 must include Task13 semantic/archive/error changes, including
+  root's original test-quality deviation and retained v1 interpretation. The
+  independent checkpoint12_final QA Lead has not edited this product and remains
+  eligible; review4's Task13 fixture contributions exclude it from that approval.
+- Task16 must advance both the normal schema and Task13's trusted semantic
+  projection profile to16. Task17 owns the exact final capability snapshot;
+  legacy v1 remains independently pinned to schema14. Both tasks already own
+  internal/export, so no new scope allocation is needed for these consequences.
+- DEC203/76b4453 gives Task15 the two CLI registry paths needed for its accepted
+  import-target-conflict entry. Contract semantics and finalQA scope are unchanged.
+- No Human fixture location or outcome is filled early. The six neutral
+  questions and fresh-session instructions remain as prepared; Task18/finalQA
+  must verify the retained binary and actual delivered commands first.
